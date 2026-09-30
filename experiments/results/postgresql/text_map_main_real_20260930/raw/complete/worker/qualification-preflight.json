@@ -1,0 +1,37 @@
+{
+  "schema": "semloom.text_map_campaign.v1",
+  "stage": "qualification",
+  "specification_sha256": "a0fdb734fd52ee3da851a2af58eea002e0bd1443d9322921ddd2584aa20b8b3c",
+  "rows": 16,
+  "manifest_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+  "model_id": "Qwen2.5-7B-Instruct",
+  "model_config_sha256": "4677e2ed766cd15b0f448a7ad48bd78999a0b03e512813ebb52dd462a40e57ac",
+  "service_signature": "5191a79dd4ae457f38d70ecdba8909b69e0b1207e786dcc781740a797b4dc9b0",
+  "queries": 4,
+  "max_posts": 64,
+  "candidates": [
+    {
+      "id": "pg-daft-ray-c16",
+      "role": "pg-daft-ray",
+      "config_sha256": "64789352e02c52cfecfbdfec920a86e1bc59569ccc98410015c25505b008371d"
+    },
+    {
+      "id": "pg-source-direct-c16",
+      "role": "pg-source-direct",
+      "config_sha256": "e7d39aa13e214eca464d5b8142cd5a02b289aadaec2bd4c67b2a88ce157fda98"
+    },
+    {
+      "id": "ray-data-c16",
+      "role": "ray-data",
+      "config_sha256": "15c0c5f9443ff40348bee29d0597a5a184345b0ba73ca7de7ab0fc4eb974884f"
+    },
+    {
+      "id": "daft-native-c16",
+      "role": "daft-native",
+      "config_sha256": "5a5369e4e56b45e1b455968d41a56112546fae8eb3ced54b5c3b6c9ac27fcf3d"
+    }
+  ],
+  "input_independence": "requires historical-use and overlap audit; differing manifests are insufficient",
+  "database_contacted": false,
+  "model_requests": 0
+}

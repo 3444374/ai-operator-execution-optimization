@@ -1,0 +1,17 @@
+{
+  "model_requests": 0,
+  "source_files_verified": 761,
+  "preparation_issues": [
+    {
+      "stage": "exclusion_csv",
+      "error": "prior exclusion CSV has no scoreSentiment field",
+      "resolution": "retain exclusion fields and use empty unused label; incomplete file preserved"
+    },
+    {
+      "stage": "token_count_record",
+      "error": "exclusive artifact writer refused existing path",
+      "resolution": "preserve prior record under before-tokenizer name and create completed record"
+    }
+  ],
+  "input_selection_changed_after_preparation": false
+}

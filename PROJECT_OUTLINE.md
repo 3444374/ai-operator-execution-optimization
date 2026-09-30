@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-09-28
+更新时间：2026-09-30
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -12,6 +12,16 @@
 
 ## 0. 当前优先级与历史记录范围
 
+2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md)完整清单已完成：
+SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP执行另作内部消融。
+[当前结果](experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，
+1024行三次时间中位数依次为18.101、7.705、22.849、11.668秒，准确率84.961–85.254%。
+路径配对输出相差1–4行，未证明质量等价、吞吐平台或通用系统优势。
+SemLoom本次慢于direct与Daft，短于Ray；下一项先定位约5.3秒的查询专属准备成本，再决定优化切片。
+原生Ray/Daft拥有各自执行与调度；仅代表本次固定语义Map执行层，不替代LOTUS/Sema等语义系统评价。
+此前真实失败、错误观测修订和2,064次诊断均单独保留，旧根因仍未确定；本次源码身份和清理核对通过。
+旧M1平台结论不变；Movie公共查询与图像参照随后按自身条件推进。
+
 2026-09-27：[增量执行工程修订](experiments/results/postgresql/incremental_transport_20260927/README.md)精简重复资源统计与实验记账，
 保留HTTP并接入可选Daft Native分批/Ray Core执行；结果继续返回SQL，暂不扩展持久写表。
 受控PG检查后，[真实模型验证](experiments/results/postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求，计数和资源清理通过。
@@ -22,7 +32,7 @@ C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，仅作为本次单机观�
 PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)完成151次CLIP前向，三路径逐维一致，指定错误/取消及恢复通过。
 GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作为方法贡献。
 
-下一阶段研究重点是说明“哪些工作现在做、哪些稍后做，以及何时值得这样做”。
+以下保留 2026-09-20 的方法研究安排；当前系统比较优先级以上述四路径计划为准。
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
 当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。

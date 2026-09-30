@@ -1,0 +1,7 @@
+{
+  "address": "<private-address>:45759",
+  "workers": 1,
+  "batch_rows": 16,
+  "window_bytes": 2097152,
+  "object_bytes": 4194304
+}

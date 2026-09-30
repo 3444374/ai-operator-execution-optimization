@@ -1,0 +1,16 @@
+{
+  "checked_utc": 1790737401.2622602,
+  "pg_postmaster_pid_absent": true,
+  "owned_running_pids": [],
+  "ports_not_listening": {
+    "18092": true,
+    "55494": true
+  },
+  "acl_changed_paths": [],
+  "gpu_compute_pids": "",
+  "model_stop": {
+    "returncode": 0,
+    "forced": false
+  },
+  "status": "passed"
+}

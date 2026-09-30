@@ -1,0 +1,7 @@
+2026-09-30 11:55:18,941	INFO worker.py:2024 -- Started a local Ray instance.
+test_declared_native_candidates_reach_capacity_and_settle (test_text_map_native_supply.NativeSupplyTests.test_declared_native_candidates_reach_capacity_and_settle) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 17.069s
+
+OK

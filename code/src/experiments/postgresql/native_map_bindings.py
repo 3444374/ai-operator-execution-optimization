@@ -52,7 +52,7 @@ def verify_native_map_results(arm, texts, predictions, events, *, plan, source_p
             if completion_status(plan,completion) != MapCompletionStatus.VALID:
                 raise ValueError('direct completion violates Map semantics')
             bound[row_id] = completion.raw_output
-    elif arm == 'ray-data':
+    elif arm in ('ray-data','daft-native'):
         responses = unique(events, 'http_response', lambda e:e['attempt'])
         if responses.keys() != requests.keys():
             raise ValueError('native Ray POST and response identities differ')

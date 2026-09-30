@@ -1,0 +1,26 @@
+test_remote_http_failure_keeps_cause_key_and_unknown_charge (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge) ... FAIL
+
+======================================================================
+FAIL: test_remote_http_failure_keeps_cause_key_and_unknown_charge (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/async_case.py", line 90, in _callTestMethod
+    if self._callMaybeAsync(method) is not None:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/async_case.py", line 112, in _callMaybeAsync
+    return self._asyncioRunner.run(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<repository>/code/tests/execution_provider/test_ray_map_errors.py", line 49, in test_remote_http_failure_keeps_cause_key_and_unknown_charge
+    self.assertEqual(len(failure),1)
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+FAILED (failures=1)

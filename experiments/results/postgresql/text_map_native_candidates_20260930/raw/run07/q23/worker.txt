@@ -1,0 +1,161 @@
+2026-09-30 11:58:56,598	INFO worker.py:1833 -- Connecting to existing Ray cluster at address: <private-address>:44303...
+2026-09-30 11:58:56,615	INFO worker.py:2024 -- Connected to Ray cluster.
+2026-09-30 11:59:00,453	INFO sql_datasource.py:153 -- Sharding is not supported. Falling back to reading all data in a single task.
+2026-09-30 11:59:00,471	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_19_0. Full logs are in <run-root>/run07/r/session_2026-09-30_11-56-44_898673_159810/logs/ray-data
+2026-09-30 11:59:00,471	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_19_0: InputDataBuffer[Input] -> TaskPoolMapOperator[ReadSQL] -> TaskPoolMapOperator[Map(_preprocess)] -> ActorPoolMapOperator[MapBatches(HttpRequestUDF)] -> TaskPoolMapOperator[Map(_postprocess)]
+2026-09-30 11:59:00,526	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-09-30 11:59:00,538	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from TaskPoolMapOperator[ReadSQL]. The job may hang forever unless the cluster scales up.
+2026-09-30 11:59:00,653	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_19_0 =======
+2026-09-30 11:59:00,653	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-09-30 11:59:00,653	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store (pending: 1 CPU)
+2026-09-30 11:59:00,653	INFO logging_progress.py:181 -- 
+2026-09-30 11:59:00,653	INFO logging_progress.py:231 -- ReadSQL->SplitBlocks(2): 0/1
+2026-09-30 11:59:00,653	INFO logging_progress.py:233 --   Tasks: 1 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 1.0 CPU, 0.0B object store
+2026-09-30 11:59:00,653	INFO logging_progress.py:231 -- Map(_preprocess): 0/1
+2026-09-30 11:59:00,653	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-09-30 11:59:00,653	INFO logging_progress.py:231 -- MapBatches(HttpRequestUDF): 0/1
+2026-09-30 11:59:00,653	INFO logging_progress.py:233 --   Tasks: 0; Actors: 1 (running=0, restarting=0, pending=1, active=0, idle=0, util=0.000, tasks_in_flight=0); Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store; [all objects local]
+2026-09-30 11:59:00,653	INFO logging_progress.py:231 -- Map(_postprocess): 0/1
+2026-09-30 11:59:00,653	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 0 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-09-30 11:59:00,653	INFO logging_progress.py:192 -- =============================================
+/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/task_pool_map_operator.py:271: UserWarning: The maximum number of concurrent tasks for 'ReadSQL->SplitBlocks(2)' is set to 2, but the operator only received 1 input(s). This means that the operator can launch at most 1 task(s), which is less than the concurrency limit. You might be able to increase the number of concurrent tasks by configuring `override_num_blocks` earlier in the pipeline.
+  warnings.warn(
+2026-09-30 11:59:05,912	ERROR streaming_executor_state.py:701 -- An exception was raised from a task of operator "MapBatches(HttpRequestUDF)". Dataset execution will now abort. To ignore this exception and continue, set DataContext.max_errored_blocks.
+Traceback (most recent call last):
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/streaming_executor_state.py", line 666, in process_completed_tasks
+    bytes_read = task.on_data_ready(
+                 ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/interfaces/physical_operator.py", line 241, in on_data_ready
+    raise ex from None
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/interfaces/physical_operator.py", line 231, in on_data_ready
+    ray.get(self._pending_block_ref)
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/_private/client_mode_hook.py", line 110, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 2968, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/_private/worker.py", line 1050, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(UserCodeException): [36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()[39m (pid=164139, ip=<private-address>, actor_id=cd60b8cd318ef4a8dbfd010b0c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/base.py", line 202, in __call__
+    async for output in self.udf(normal_rows):
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/http_request_stage.py", line 138, in udf
+    resp_json = await response.json()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/native_http_observer.py", line 195, in json
+    value = await self.response.json()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 778, in json
+    raise ContentTypeError(
+aiohttp.client_exceptions.ContentTypeError: 500, message='Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8', url='http://127.0.0.1:44693/v1/chat/completions'
+
+The above exception was the direct cause of the following exception:
+
+[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()[39m (pid=164139, ip=<private-address>, actor_id=cd60b8cd318ef4a8dbfd010b0c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/actor_pool_map_operator.py", line 679, in submit
+    yield from _map_task(
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_operator.py", line 826, in _map_task
+    for block in block_iter:
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py", line 150, in __next__
+    return next(self._input)
+           ^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py", line 498, in __next__
+    result = next(self._results_iter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 953, in _transform
+    raise items
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 865, in _reorder
+    output_queue.put(await next_task)
+                     ^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 785, in _apply_udf
+    return [out async for out in gen]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 437, in _wrapped_udf_map_fn
+    _try_wrap_udf_exception(e, item)
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 481, in _try_wrap_udf_exception
+    raise UserCodeException("UDF failed to process a data block.") from e
+ray.exceptions.UserCodeException: UDF failed to process a data block.
+2026-09-30 11:59:05,930	INFO streaming_executor.py:327 -- ⚠️  Dataset dataset_19_0 execution failed
+2026-09-30 11:59:05,931	ERROR exceptions.py:63 -- Exception occurred in user code, with the abbreviated stack trace below. By default, the Ray Data internal stack trace is omitted from stdout, and only written to the Ray Data log files at `<run-root>/run07/r/session_2026-09-30_11-56-44_898673_159810/logs/ray-data`. To output the full stack trace to stdout, set `DataContext.log_internal_stack_trace_to_stdout` to True.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 102, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 89, in main
+    run_query(config,manifest_path=args.manifest,model_path=args.model,budget_path=args.budget,
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 103, in run_query
+    errors.raise_if_failed()
+  File "<run-root>/src-git/code/src/experiments/postgresql/cell_evidence.py", line 37, in raise_if_failed
+    raise self.first
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 73, in run_query
+    execution,resources=run_ray(config,inputs,plan,dsn,model,ledger,root,errors,ray_temp_root)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_execution.py", line 243, in run_ray
+    result=record_execution(root/'q0',lambda:open_rows(inputs,plan,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 299, in record_execution
+    recording.raise_if_failed()
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 138, in raise_if_failed
+    raise self.failure
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 272, in record_execution
+    for row in rows:
+  File "<run-root>/src-git/code/src/baselines/text/frameworks/ray_data_pg_http.py", line 75, in rows
+    for row in iterator:
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/iterator.py", line 338, in _wrapped_iterator
+    for batch in batch_iterable:
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/iterator.py", line 257, in _create_iterator
+    ) = self._to_ref_bundle_iterator()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/iterator/iterator_impl.py", line 36, in _to_ref_bundle_iterator
+    ) = self._base_dataset._execute_to_iterator()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/dataset.py", line 7583, in _execute_to_iterator
+    bundle_iter, stats, executor = self._plan.execute_to_iterator(
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/exceptions.py", line 87, in handle_trace
+    raise e.with_traceback(None)
+ray.exceptions.RayTaskError(UserCodeException): [36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()[39m (pid=164139, ip=<private-address>, actor_id=cd60b8cd318ef4a8dbfd010b0c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/base.py", line 202, in __call__
+    async for output in self.udf(normal_rows):
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/http_request_stage.py", line 138, in udf
+    resp_json = await response.json()
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/native_http_observer.py", line 195, in json
+    value = await self.response.json()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 778, in json
+    raise ContentTypeError(
+aiohttp.client_exceptions.ContentTypeError: 500, message='Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8', url='http://127.0.0.1:44693/v1/chat/completions'
+
+The above exception was the direct cause of the following exception:
+
+[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()[39m (pid=164139, ip=<private-address>, actor_id=cd60b8cd318ef4a8dbfd010b0c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/actor_pool_map_operator.py", line 679, in submit
+    yield from _map_task(
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_operator.py", line 826, in _map_task
+    for block in block_iter:
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py", line 150, in __next__
+    return next(self._input)
+           ^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py", line 498, in __next__
+    result = next(self._results_iter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 953, in _transform
+    raise items
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 865, in _reorder
+    output_queue.put(await next_task)
+                     ^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 785, in _apply_udf
+    return [out async for out in gen]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 437, in _wrapped_udf_map_fn
+    _try_wrap_udf_exception(e, item)
+  File "/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py", line 481, in _try_wrap_udf_exception
+    raise UserCodeException("UDF failed to process a data block.") from e
+ray.exceptions.UserCodeException: UDF failed to process a data block.

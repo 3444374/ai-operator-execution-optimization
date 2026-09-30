@@ -1,0 +1,16 @@
+{
+  "rows": 16,
+  "source_sha256": "5b7e1b3a9e19c5a98de56688b0ec91f4482e74bce01aaea3f82ac7a4d9569e12",
+  "columns": [
+    "source_position",
+    "row_id",
+    "movie_id",
+    "review_text",
+    "review_id"
+  ],
+  "table": "comparison_qualification",
+  "max_source_bytes": 65536,
+  "immutable": true,
+  "identity_order": "input iteration; callers must provide unique increasing source_position",
+  "manifest_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4"
+}

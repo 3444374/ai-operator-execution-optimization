@@ -1,0 +1,126 @@
+{
+  "status": "completed",
+  "result": {
+    "actual_posts": 16,
+    "http": {
+      "status": "unavailable",
+      "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+    },
+    "ray_transport": {
+      "completed_requests": 16,
+      "object_blocks": 10,
+      "peak_arrow_buffer_bytes": 2486,
+      "final_arrow_buffer_bytes": 0,
+      "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+    },
+    "plan": {
+      "semantic_nodes": [
+        {
+          "Node Type": "Custom Scan",
+          "Custom Plan Provider": "SemLoom SemMap",
+          "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+          "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+          "Semantic Input Window": 256,
+          "Semantic Window Fallback Reason": null
+        }
+      ],
+      "scope": "plain EXPLAIN before execution on the same connection/settings",
+      "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+    },
+    "pg_memory": {
+      "operators": 1,
+      "nodes": [
+        {
+          "version": 1,
+          "backend_pid": 29097,
+          "memory_id": 2,
+          "retained_rows": 0,
+          "pending_rows": 0,
+          "retained_bytes": 0,
+          "retained_limit": 268435456,
+          "staging_limit": 4194304,
+          "peak_retained_bytes": 1321856,
+          "peak_staging_bytes": 67640,
+          "peak_conversion_bytes": 1024,
+          "peak_receive_bytes": 8192,
+          "peak_retained_rows": 16,
+          "memory_waits": 0
+        }
+      ],
+      "sum_retained_limits": 268435456,
+      "sum_staging_limits": 4194304,
+      "sum_conversion_limits": 1048576,
+      "sum_retained_peaks": 1321856,
+      "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+    },
+    "logical_resources": {
+      "logical_peaks": {
+        "held_tasks": 16,
+        "input_bytes": 7419,
+        "result_bytes": 16777216,
+        "active_requests": 4,
+        "active_work": 4
+      },
+      "limits": {
+        "held_tasks": 256,
+        "input_bytes": 134217728,
+        "result_bytes": 134217728,
+        "active_requests": 4,
+        "active_work": 4
+      },
+      "observations": 67,
+      "drained_jobs": 1,
+      "result_bytes_kind": "reserved capacity",
+      "scope": "all recorded responsibility transitions; physical RSS reported separately"
+    },
+    "drained_jobs": 1,
+    "association": {
+      "matched_rows": 16,
+      "producer_namespace": [
+        29097,
+        1
+      ],
+      "gateway_session": 1,
+      "binding_source": "PG before-offer row ID plus producer acceptance",
+      "independent_sequence_verified": true
+    },
+    "model_usage": {
+      "status": "observed",
+      "prompt_tokens": 1133,
+      "output_tokens": 48,
+      "output_token_lengths": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "quality": {
+      "true_positive": 10,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 1,
+      "invalid": 0,
+      "evaluated_rows": 16,
+      "missing_rows": 0,
+      "count_error_from_classifications": -1
+    }
+  },
+  "started_ns": 14674581052862250,
+  "ended_ns": 14674581059734013,
+  "mode": "materialized",
+  "consumed_rows": 16,
+  "memory_scope": "post-query evaluation, separate from query/consumer sampling"
+}

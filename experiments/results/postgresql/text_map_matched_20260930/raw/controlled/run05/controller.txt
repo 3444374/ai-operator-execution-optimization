@@ -1,0 +1,36 @@
+2026-09-30 10:06:19,184	INFO worker.py:2024 -- Started a local Ray instance.
+test_complete_four_path_repeats_and_offline_selection (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_complete_four_path_repeats_and_offline_selection) ... ok
+test_error_then_recovery_for_each_execution_owner (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_error_then_recovery_for_each_execution_owner) ... ----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 36156)
+Traceback (most recent call last):
+  File "/root/miniconda3/lib/python3.12/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/root/miniconda3/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/root/miniconda3/lib/python3.12/socketserver.py", line 761, in __init__
+    self.handle()
+  File "/root/miniconda3/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/root/miniconda3/lib/python3.12/http/server.py", line 424, in handle_one_request
+    method()
+  File "<run-root>/src-git/code/tests/experiments/test_text_map_shared_integration.py", line 72, in do_POST
+    body = json.loads(handler.rfile.read(int(handler.headers['Content-Length'])))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+----------------------------------------
+ok
+test_finite_campaign_uses_supervised_native_and_pg_workers (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_finite_campaign_uses_supervised_native_and_pg_workers) ... ok
+test_timeout_during_http_then_recovery_for_ray_paths (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_timeout_during_http_then_recovery_for_ray_paths) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 233.746s
+
+OK

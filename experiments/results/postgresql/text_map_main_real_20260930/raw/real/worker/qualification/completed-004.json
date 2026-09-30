@@ -1,0 +1,9 @@
+{
+  "unit": "daft-native-c16-r0",
+  "role": "daft-native",
+  "summary": {
+    "path": "<run-root>/real02/worker/qualification/daft-native-c16-r0/unit/summary.json",
+    "sha256": "d16500c666fc5a0c13f6ccf57c8f4c553e40de8c3a52ff64517e4e97cd5d914f"
+  },
+  "actual_posts": 16
+}

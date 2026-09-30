@@ -1,0 +1,503 @@
+{
+  "status": "failed",
+  "error_type": "RuntimeError",
+  "error": "query worker failed; see private worker log and unit evidence",
+  "completed": [
+    {
+      "unit": "pg-daft-ray-c16-r0",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c16-r0/unit/summary.json",
+        "sha256": "9c17c33a15ac15d0eb7bb4f196bc08c5550ed3331a5b5a9e7c52a4c2d7e4db29"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c64-r0",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c64-r0/unit/summary.json",
+        "sha256": "dc1efadc00281d51b1c4ec7822eafdc2b042151a0c7f05d4b4167b00424506ca"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c128-r0",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c128-r0/unit/summary.json",
+        "sha256": "ac7357c5112a24916c4da14db171524aa37c1dfdc768c1a1bb4172b54208d2d3"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c16-r0",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c16-r0/unit/summary.json",
+        "sha256": "0c0dcbafd4d740bbdff170046c419a0095d27b4ce9b345b00f067d30e8d5b576"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c64-r0",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c64-r0/unit/summary.json",
+        "sha256": "53d1d787c3266eba9f0296cf92ddcda44db0bf0144867475d39cd383059b721a"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c128-r0",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c128-r0/unit/summary.json",
+        "sha256": "dd00c4f2240eb88a179a25c68b829835c0d16a07a0b57981743bf7693583714e"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c16-r0",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c16-r0/unit/summary.json",
+        "sha256": "46c282d905b289a822c134f0786e9763a02cd551c82ba8f205db2158f7883d44"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c64-r0",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c64-r0/unit/summary.json",
+        "sha256": "c48944804992e83ee21cc724ab77ef5ffc4cf7f9c41a47619e49d7e7a72a949e"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c128-r0",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c128-r0/unit/summary.json",
+        "sha256": "43d3ca556e7833133a6a2b3a4d0c7375f691278fbee192741ec594e2f474f277"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c16-r0",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c16-r0/unit/summary.json",
+        "sha256": "5be25e1eec17efde625516aedfb51119b0690bbe77e4bf19c8563e55f180ed05"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c64-r0",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c64-r0/unit/summary.json",
+        "sha256": "f55e54c400b836a91f7f593934c2f89209ff0deee7aaeba3869adf6165263263"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c128-r0",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c128-r0/unit/summary.json",
+        "sha256": "a4cab2e476a5e944523935cf05c9075f66114972394bf8547f6f300cd336d854"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c16-r1",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c16-r1/unit/summary.json",
+        "sha256": "c04ec39d77346a77a15f50ddc3480cd85236a27301c44e84c891283534ccdb15"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c64-r1",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c64-r1/unit/summary.json",
+        "sha256": "72b86436944bd49d90ee3cafaaef0765d418c91f9dbde8c61c6c1dd2e5c5720c"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-source-direct-c128-r1",
+      "role": "pg-source-direct",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-source-direct-c128-r1/unit/summary.json",
+        "sha256": "2de0cc767054ae28b165b994b2ee413ceccde7fd8533085bf136194f0c07c6a4"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c16-r1",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c16-r1/unit/summary.json",
+        "sha256": "4f2da94a9ad5100a02c1e78ad5b8af0d46341e30ffad1c9c34e90329d85316bd"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c64-r1",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c64-r1/unit/summary.json",
+        "sha256": "b9171c9fde5385d7373d517bb8001a1e95bc99ad6c9608ad0141bfaceaa6e11f"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c128-r1",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c128-r1/unit/summary.json",
+        "sha256": "572cc38b7f40adcf319d02c4324b7e7edee8fd2a4d6a07503046d9dcd6339084"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c16-r1",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c16-r1/unit/summary.json",
+        "sha256": "e1e9d0beac689e6674789e24249a3ba0f68281316d95822d156082c8c2e693d5"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c64-r1",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c64-r1/unit/summary.json",
+        "sha256": "216098f71a7a73e92afaac19648105c612842c5e564c242bcf287db5e8a1e743"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c128-r1",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c128-r1/unit/summary.json",
+        "sha256": "8cfbedc62b58218bc1b309b21204c837e90fd621d96d8a290fe12a6c5fdb1ee3"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c16-r1",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c16-r1/unit/summary.json",
+        "sha256": "0b1ca03c56866b8154ff6cc31319e9c896950c905450562186c44b03090d5f04"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c64-r1",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c64-r1/unit/summary.json",
+        "sha256": "cd2a7c9c872b038c8c258bae394193518631060bb9cb1c157d217673787759e3"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c128-r1",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c128-r1/unit/summary.json",
+        "sha256": "ae94671b403c194f6bbe9077176d00c82612408e2e08e4c8647060136daf7f36"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c16-r2",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c16-r2/unit/summary.json",
+        "sha256": "43b7f83a00350b8ae45b09113a79352323c034f216f9aab7972727511ec1a3f3"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c64-r2",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c64-r2/unit/summary.json",
+        "sha256": "8a3b8891aeded46e7c356e2300f79ed8cc1e9730078d01a9de6041ed3c65c7a3"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "ray-data-c128-r2",
+      "role": "ray-data",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/ray-data-c128-r2/unit/summary.json",
+        "sha256": "cf485d78880e282b728252e0d294c466a66f9514fcace560471d88a604f0f372"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c16-r2",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c16-r2/unit/summary.json",
+        "sha256": "c81e3770fbecb297162efa6cff0685df445f900f1d1b858161e10e675e37f61a"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c64-r2",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c64-r2/unit/summary.json",
+        "sha256": "6cb897269dcadb836b2382e4b846460c631d32d4dcb6c9be98ec576732e4e98a"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "daft-native-c128-r2",
+      "role": "daft-native",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/daft-native-c128-r2/unit/summary.json",
+        "sha256": "021946352eb9a0827b6b9ef6889535ebd915109d6da8a0b382e8b2f4be73055d"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c16-r2",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c16-r2/unit/summary.json",
+        "sha256": "4267130563537a5f8b1da312a632ddd57cdd379e4f0963b44e02d9b720098fe7"
+      },
+      "actual_posts": 512
+    },
+    {
+      "unit": "pg-daft-ray-c64-r2",
+      "role": "pg-daft-ray",
+      "summary": {
+        "path": "<run-root>/real02/worker/tuning/pg-daft-ray-c64-r2/unit/summary.json",
+        "sha256": "9e155c057d775fdc1f4d86e7e9f05618418dcba2a547ed6ec81e7187fb162e5d"
+      },
+      "actual_posts": 512
+    }
+  ],
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "text-map-real02-tuning",
+    "limit": 24576,
+    "allocated_requests": 16896,
+    "deadline_utc": 1790745753.6899166,
+    "units": [
+      {
+        "unit_id": "pg-daft-ray-c16-r0",
+        "first_attempt": 1,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c64-r0",
+        "first_attempt": 513,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c128-r0",
+        "first_attempt": 1025,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c16-r0",
+        "first_attempt": 1537,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c64-r0",
+        "first_attempt": 2049,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c128-r0",
+        "first_attempt": 2561,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c16-r0",
+        "first_attempt": 3073,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c64-r0",
+        "first_attempt": 3585,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c128-r0",
+        "first_attempt": 4097,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c16-r0",
+        "first_attempt": 4609,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c64-r0",
+        "first_attempt": 5121,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c128-r0",
+        "first_attempt": 5633,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c16-r1",
+        "first_attempt": 6145,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c64-r1",
+        "first_attempt": 6657,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-source-direct-c128-r1",
+        "first_attempt": 7169,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c16-r1",
+        "first_attempt": 7681,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c64-r1",
+        "first_attempt": 8193,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c128-r1",
+        "first_attempt": 8705,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c16-r1",
+        "first_attempt": 9217,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c64-r1",
+        "first_attempt": 9729,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c128-r1",
+        "first_attempt": 10241,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c16-r1",
+        "first_attempt": 10753,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c64-r1",
+        "first_attempt": 11265,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c128-r1",
+        "first_attempt": 11777,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c16-r2",
+        "first_attempt": 12289,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c64-r2",
+        "first_attempt": 12801,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "ray-data-c128-r2",
+        "first_attempt": 13313,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c16-r2",
+        "first_attempt": 13825,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c64-r2",
+        "first_attempt": 14337,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "daft-native-c128-r2",
+        "first_attempt": 14849,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c16-r2",
+        "first_attempt": 15361,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c64-r2",
+        "first_attempt": 15873,
+        "requests": 512,
+        "claimed": 1
+      },
+      {
+        "unit_id": "pg-daft-ray-c128-r2",
+        "first_attempt": 16385,
+        "requests": 512,
+        "claimed": 1
+      }
+    ]
+  },
+  "next_stage_started": false
+}

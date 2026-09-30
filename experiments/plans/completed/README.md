@@ -5,6 +5,7 @@
 
 | 文件 | 完成状态 | 结果入口 |
 |---|---|---|
+| [文本Map四路径匹配比较](text_map_matched_comparison.md) | 新主表68查询、41,024次请求及独立评价完成；旧失败与诊断单独保留 | [完整结果](../../results/postgresql/text_map_main_real_20260930/README.md) |
 | [`postgresql_choice_profile_engineering.md`](postgresql_choice_profile_engineering.md) | 四 C 工程验证完成：SQL/plan/wire、受控资源与受限真实服务；当前代码已集成，质量/校准未通过 | [真实服务及收尾](../../results/postgresql/choice_service_20260902/README.md)、[受控资源](../../results/postgresql/choice_resources_20260902/README.md) |
 | [`image_clip_workload_lock_20260731.md`](image_clip_workload_lock_20260731.md) | 图像 workload、5K 画像、原生静态 baseline 和 matched-resource 证据已完成；动态部分迁入当前 state-aware 总合同 | [`image_ai_embed_operator_formal_20260803/`](../../results/image_ai_embed_operator_formal_20260803/)、[`motivation/results/gpu/`](../../../motivation/results/gpu/) |
 | [`operator_cost_profile_pilot_20260804.md`](operator_cost_profile_pilot_20260804.md) | pilot 采样合同完成 | [`operator_cost_profile_pilot_20260804/`](../../results/operator_cost_profile_pilot_20260804/) |

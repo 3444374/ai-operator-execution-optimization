@@ -1,5 +1,24 @@
 # 实验与机制证据台账
 
+2026-09-30：[新版主表完整比较、失败与诊断](postgresql/text_map_main_real_20260930/README.md)。
+后续独立运行完成68条查询、41,024次请求及1024行评价；三次中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒。
+准确率84.961–85.254%，路径配对输出差1–4行；未证明质量等价或平台。本次请求计数、源码与清理一致。
+前次容量128失败（预扣16,862/服务成功16,861）、错误记录修订和2,064次诊断分别保留，不合并成功样本。
+下一项定位SemLoom查询专属准备成本；原真实异常根因仍未确定。
+
+2026-09-30：[原生候选与baseline补充](postgresql/text_map_native_candidates_20260930/README.md)。
+Ray候选实际峰值16/64/128；新增Daft Native SQL/HTTP执行图，相同三档也通过。最终六组3072次合成POST，模型0次。
+主表改为SemLoom Daft/Ray、direct、原生Ray、原生Daft，本地执行另作消融；6项集成、96项本地及8项环境检查通过。
+该次只做合成验证，后续真实运行见上方记录；LOTUS/Sema等语义系统仍有独立缺项。全部失败、源码身份与清理记录保留。
+
+
+2026-09-30：[文本 Map 服务器验证与有限模型比较](postgresql/text_map_matched_20260930/README.md)。
+旧配置完成68条查询、41,024次真实POST及清理；原生Ray实际HTTP峰值仅2，随后按上方记录修订并复测，旧值不能用于完整系统优劣判断。
+
+2026-09-28：[文本 Map 四路径比较准备](postgresql/text_map_comparison_preparation_20260928/README.md)。
+共享本地 Ray 连接、完整记录的有限选点及评价配置核对已有 82 项本地检查。
+实际 PG/Ray 生命周期和真实系统比较仍待验证；旧容量未选点与原始结果保持不变。
+
 2026-09-27：[增量执行与可选Daft/Ray接入](postgresql/incremental_transport_20260927/README.md)保留全部诊断与未采用方案。
 PG受控查询、行关联、对象占用及多查询生命周期通过；该受控记录真实模型0次。
 追加[真实模型验证](postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求及清理；C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，

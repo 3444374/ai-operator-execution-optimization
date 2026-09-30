@@ -1,0 +1,38 @@
+{
+  "actors": [
+    {
+      "actor_id": "d75e412dce704706b5d50a8703000000",
+      "state": "ALIVE",
+      "detached": true,
+      "name": "llm_batch_telemetry",
+      "actor_class": "_TelemetryAgent",
+      "cluster_service": true
+    },
+    {
+      "actor_id": "dd744d49cecc3259be94125203000000",
+      "state": "ALIVE",
+      "detached": true,
+      "name": "ActorLocationTracker",
+      "actor_class": "ActorLocationTracker",
+      "cluster_service": true
+    },
+    {
+      "actor_id": "3804ecc1d1eded48c95b845203000000",
+      "state": "ALIVE",
+      "detached": true,
+      "name": "AutoscalingCoordinator",
+      "actor_class": "_AutoscalingCoordinatorActor",
+      "cluster_service": true
+    },
+    {
+      "actor_id": "1415037eb565bbcd271421c603000000",
+      "state": "ALIVE",
+      "detached": true,
+      "name": "datasets_stats_actor",
+      "actor_class": "_StatsActor",
+      "cluster_service": true
+    }
+  ],
+  "available_cpus": 8.0,
+  "declared_cpus": 8
+}

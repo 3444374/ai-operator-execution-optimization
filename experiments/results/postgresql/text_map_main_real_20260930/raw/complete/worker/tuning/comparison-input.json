@@ -1,0 +1,296 @@
+{
+  "schema": "semloom.text_map_comparison.v1",
+  "stage": "tuning",
+  "repeats": 3,
+  "profile": "main",
+  "candidates": [
+    {
+      "id": "pg-daft-ray-c16",
+      "role": "pg-daft-ray",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c16-r0/unit/summary.json",
+          "sha256": "a23bc779706a46382252399a963b5039f64b93aae152363469c26f67ee161757"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c16-r1/unit/summary.json",
+          "sha256": "b845dfa6c7514e432144299cf15803123ce7377b116a6ad5ca5fba160868cc28"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c16-r2/unit/summary.json",
+          "sha256": "3aa3061690e6d201038f95ae50d60b0d04892447db326987ca54ece7928e51e7"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c16-r3/unit/summary.json",
+          "sha256": "1d513c489e28aedfbb75b11633491b9b33bf6227428df876641bd16aa9511fdd"
+        }
+      ]
+    },
+    {
+      "id": "pg-daft-ray-c64",
+      "role": "pg-daft-ray",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c64-r0/unit/summary.json",
+          "sha256": "dcdaa6e238d47adb2eb768986f4b5e8fc22b9f9d81a6b03e89b39584caf4782a"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c64-r1/unit/summary.json",
+          "sha256": "76056a58399663bba79584d8305044ab14f8a308d90be91d2f45fa02c0ca2673"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c64-r2/unit/summary.json",
+          "sha256": "d9ab5ff47e0c488f366b1ac433df4cfd05faab53792ab5079b388a3d64bdc1db"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c64-r3/unit/summary.json",
+          "sha256": "a2892e44310f9a0ca9a5e3516dd484e517dfdec4532f53d9d33b257a6d2ed99e"
+        }
+      ]
+    },
+    {
+      "id": "pg-daft-ray-c128",
+      "role": "pg-daft-ray",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c128-r0/unit/summary.json",
+          "sha256": "16398ecfe7851d11f9861e303d934227730c55bb277fd1ceeccf62c20fcf725a"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c128-r1/unit/summary.json",
+          "sha256": "7ea3347609a8a7390266b8b0977866ccdbd2f93e59f2e7f70a5e4ee8cae9d861"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c128-r2/unit/summary.json",
+          "sha256": "eb9d2eb0258f35cb5a799783bfeaadd0089341ff8f6a7e7455ac235cad0f2d9b"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-daft-ray-c128-r3/unit/summary.json",
+          "sha256": "9bebf129f03ad4e8778175c6f81f3eed6c26a8f30d4cd4a0032b534eb17e51f0"
+        }
+      ]
+    },
+    {
+      "id": "pg-source-direct-c16",
+      "role": "pg-source-direct",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c16-r0/unit/summary.json",
+          "sha256": "f7c864e91005317345eaf65a966ab44ce81ca397822d555bd83a0303b9f90bd6"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c16-r1/unit/summary.json",
+          "sha256": "f45ed00d0e63ebfe90304986d957793d4bc22f6cf90bc95b932977398cc2a9a8"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c16-r2/unit/summary.json",
+          "sha256": "c4d6fc81a68e9857cefd3111d417a5a2c4213e1688bd7f547416538a16e17f38"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c16-r3/unit/summary.json",
+          "sha256": "daf20b903c329ac02b6ed218808687b5fcb3cbb5f19f6f560dd220fe621a712a"
+        }
+      ]
+    },
+    {
+      "id": "pg-source-direct-c64",
+      "role": "pg-source-direct",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c64-r0/unit/summary.json",
+          "sha256": "aa791fd9c69e723e5f9020709f3ad87f9f0558b043bb741d4bec28cd9d815494"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c64-r1/unit/summary.json",
+          "sha256": "cac5ea2bcbe7c0d19fce616fcf690365db22e8ea53f9b3b16312bbc4281f7242"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c64-r2/unit/summary.json",
+          "sha256": "86d95516a276f9b608e71541e7718708a37f5d08b7c841574a9dcd0b2633208a"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c64-r3/unit/summary.json",
+          "sha256": "ef357eb20822d0bcc86989a8a741287d24b3cb564920ead0e0b5e37a6e148c1b"
+        }
+      ]
+    },
+    {
+      "id": "pg-source-direct-c128",
+      "role": "pg-source-direct",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c128-r0/unit/summary.json",
+          "sha256": "63d635578503e509d3f81f4685a58a27f8b3b08340228d7e49d83cb05e70b79e"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c128-r1/unit/summary.json",
+          "sha256": "a5512ac2fcb5f34d5c9a014c94c69093b3da4a24f818df60a11d72c7ed9768b9"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c128-r2/unit/summary.json",
+          "sha256": "d322002d43b632b51dfc0d6b1a4bf53cb7683d8d1d73a752ec564cad3a7a95d0"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/pg-source-direct-c128-r3/unit/summary.json",
+          "sha256": "7847088d5b8d9ffc633faefa14603d6cd6593d0ec3522b955c48a3acd8627752"
+        }
+      ]
+    },
+    {
+      "id": "ray-data-c16",
+      "role": "ray-data",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c16-r0/unit/summary.json",
+          "sha256": "1813a3cdd8d470730fdf95e29dfbc808056de75699d6d0dc6398f906294d9386"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c16-r1/unit/summary.json",
+          "sha256": "0832e116067aefd7dcddc3cb49cf9fefb30c6190a6dd093ed11369a550de129f"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c16-r2/unit/summary.json",
+          "sha256": "80e8fca6d158ce9a70dad88c4dd7cd076bba623bf43d938924af41ee1c8ef88f"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c16-r3/unit/summary.json",
+          "sha256": "0e5a8d1d4c3c3b826cbc69daa29dc1df15e3b57e0206fdeaa3a53cdaf409a069"
+        }
+      ]
+    },
+    {
+      "id": "ray-data-c64",
+      "role": "ray-data",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c64-r0/unit/summary.json",
+          "sha256": "b55e97c5331c267b9fbc7d4e1691d8f8fc78a35bf4d5f46b1291f187c127169d"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c64-r1/unit/summary.json",
+          "sha256": "acbf9422b6cceec61b0504cf292ece0d8d511c5ba4ef7a45575c62cb7002c2a8"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c64-r2/unit/summary.json",
+          "sha256": "9368dcbfa7be29d29bfccdd7d3945fd88563093ab90ad3b793b1968de86f1af5"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c64-r3/unit/summary.json",
+          "sha256": "a8c20d9d5af896a9ec25b2d2ce9d188c7cb4a1382d8c5744c6feada9db6fd2dc"
+        }
+      ]
+    },
+    {
+      "id": "ray-data-c128",
+      "role": "ray-data",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c128-r0/unit/summary.json",
+          "sha256": "f684817fc870721e34843d7f7a5e06892460a2c57c89ee1630a3df8f128aa0e5"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c128-r1/unit/summary.json",
+          "sha256": "1317b8fafefcc80fdfb3080ef3714144f4efdbfb8878f3669e1844e4b9c859e9"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c128-r2/unit/summary.json",
+          "sha256": "8a113c742477e4bd79832dde39904777c2dd70a17ad2e6ed192ab93c2da283b5"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/ray-data-c128-r3/unit/summary.json",
+          "sha256": "972ffd101666e3e952e64b18a1f07ce43166ad0700221b7019e7d983c5a3957a"
+        }
+      ]
+    },
+    {
+      "id": "daft-native-c16",
+      "role": "daft-native",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c16-r0/unit/summary.json",
+          "sha256": "02a8b4d5a09e71adab03c7085724b0139f6e06961f8ae12a8f659c24c90e0bea"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c16-r1/unit/summary.json",
+          "sha256": "176e445e03341299984c6900db5896ad4062f011b845eedc4768e184780c08d4"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c16-r2/unit/summary.json",
+          "sha256": "4d08b9887d7a37b4a9d58d6c22b763ec68f4f761d0178eddefae9d551919b087"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c16-r3/unit/summary.json",
+          "sha256": "143c5af03f799e3a2c71392d9a48fdd048020b18a2020aa053d974d2a55df892"
+        }
+      ]
+    },
+    {
+      "id": "daft-native-c64",
+      "role": "daft-native",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c64-r0/unit/summary.json",
+          "sha256": "530719c2676acd4eb4633bd92ecfe07a3ee8c772c0bdfe014c06a3a7344d258d"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c64-r1/unit/summary.json",
+          "sha256": "74959d2061b226ba4171653bdaa7b53818e4b1621b529a569fcba5fa8f435d2f"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c64-r2/unit/summary.json",
+          "sha256": "96363d5504e458c48988795ae29216cb5a695da8deb4962eb61e3f7b15868e53"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c64-r3/unit/summary.json",
+          "sha256": "124c7940639ab4101bd7ddf135b348a277225eba37e066c2c3cb9693497e4d59"
+        }
+      ]
+    },
+    {
+      "id": "daft-native-c128",
+      "role": "daft-native",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c128-r0/unit/summary.json",
+          "sha256": "c3d96cdb7a123a731db1f9438f5d6bc0d399e6a4531de0a86de65c3047b201d9"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c128-r1/unit/summary.json",
+          "sha256": "a37197786caeff05f04611911b675b6779ab6ded3d4b4ad90d932790020dfe26"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c128-r2/unit/summary.json",
+          "sha256": "afab86cea2d2bab6db570a4fb20218d78eb056dd4567eba2465a86cd06fc6d2e"
+        },
+        {
+          "path": "<run-root>/real03/worker/tuning/daft-native-c128-r3/unit/summary.json",
+          "sha256": "236c8e9e1ba71c372784f7a0b8661e68bba75932e1f857ff3b4e9e2d7b7ba2fc"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "ray_version": "2.56.1",
+  "files": {
+    "http_request_stage.py": {
+      "sha256": "f5f33356fd3ec7795007585aba9d52c9cf45ff168a77868f3ef598565c3781fd",
+      "hits": [
+        {
+          "line": 85,
+          "text": "            pending_requests = []"
+        },
+        {
+          "line": 104,
+          "text": "                request = session.post("
+        },
+        {
+          "line": 109,
+          "text": "                pending_requests.append((row[self.IDX_IN_BATCH_COLUMN], request))"
+        },
+        {
+          "line": 112,
+          "text": "            for idx_in_batch_column, request in pending_requests:"
+        },
+        {
+          "line": 119,
+          "text": "                        request = session.post("
+        },
+        {
+          "line": 125,
+          "text": "                        async with await request as response:"
+        }
+      ]
+    },
+    "plan_udf_map_op.py": {
+      "sha256": "a0961aa928517df0e9e4d27970944d49714fb302f614206383de33e7c5f96648",
+      "hits": [
+        {
+          "line": 78,
+          "text": "DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY = env_integer("
+        },
+        {
+          "line": 79,
+          "text": "    \"RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY\", 4"
+        },
+        {
+          "line": 381,
+          "text": "            # max_concurrency > 1."
+        },
+        {
+          "line": 625,
+          "text": "            max_concurrency=DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY,"
+        },
+        {
+          "line": 705,
+          "text": "            max_concurrency=DEFAULT_ASYNC_ROW_UDF_MAX_CONCURRENCY,"
+        },
+        {
+          "line": 727,
+          "text": "            max_concurrency=DEFAULT_ASYNC_ROW_UDF_MAX_CONCURRENCY,"
+        },
+        {
+          "line": 774,
+          "text": "    max_concurrency: int,"
+        },
+        {
+          "line": 777,
+          "text": "    assert max_concurrency > 0, \"Max concurrency must be positive\""
+        },
+        {
+          "line": 799,
+          "text": "    #   - No more than `max_concurrency` async tasks are running"
+        },
+        {
+          "line": 806,
+          "text": "    #     if max_concurrency > 1)"
+        },
+        {
+          "line": 814,
+          "text": "    #   - Scheduling stage aim to schedule and run no more than `max_concurrency` tasks"
+        },
+        {
+          "line": 819,
+          "text": "    #     capped at `maxsize=max_concurrency` elements to make sure scheduling stage is"
+        },
+        {
+          "line": 827,
+          "text": "    #   - Output queue is capped at `maxsize=max_concurrency` elements to make sure that"
+        },
+        {
+          "line": 839,
+          "text": "        completed_tasks_queue = asyncio.Queue(maxsize=max_concurrency)"
+        },
+        {
+          "line": 894,
+          "text": "                while len(cur_task_map) < max_concurrency and not consumed:"
+        },
+        {
+          "line": 940,
+          "text": "        output_queue = queue.Queue(maxsize=max_concurrency)"
+        }
+      ]
+    }
+  },
+  "aiohttp_post_source": "        def post(\n            self, url: StrOrURL, *, data: Any = None, **kwargs: Any\n        ) -> \"_RequestContextManager\":\n            \"\"\"Perform HTTP POST request.\"\"\"\n            return _RequestContextManager(\n                self._request(hdrs.METH_POST, url, data=data, **kwargs)\n            )\n",
+  "observation": "source inspection only; no HTTP request"
+}

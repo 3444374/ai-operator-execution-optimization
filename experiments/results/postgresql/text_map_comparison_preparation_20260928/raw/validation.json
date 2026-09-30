@@ -1,0 +1,33 @@
+{
+  "kind": "local_fixture_validation",
+  "base_commit": "1480627681774cf4f98e3526b56219692fafc75f",
+  "branch": "codex/text-map-matched-comparison",
+  "python": "3.12.6",
+  "system": "Darwin",
+  "tests": 82,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "real_model_requests": 0,
+  "actual_pg_ray_integration": false,
+  "patterns": [
+    "test_text_map_comparison.py",
+    "test_query_validation.py",
+    "test_query_workloads.py",
+    "test_query_supervisor.py",
+    "test_native_query_entry.py",
+    "test_native_http_observer.py",
+    "test_map_query_recording.py",
+    "test_async_recording_deadline.py",
+    "test_m1_campaign.py",
+    "test_ray_transport_observation.py"
+  ],
+  "source_sha256": {
+    "code/src/experiments/postgresql/query_config.py": "c720444bd86fa57a329ed44740ffa821f3366e9bdd9d0e2b55cf0191b92224fb",
+    "code/src/experiments/postgresql/query_execution.py": "4b6bd6f3bf74983311c842e4cad0c51e73510c74b685406199af0421d4425962",
+    "code/src/experiments/postgresql/query_runner.py": "5526142208c8ac5636d2a84a8364f7ceffd70d676684f7751b8ea261a9ff4349",
+    "code/src/experiments/postgresql/text_map_comparison.py": "61c79a037a81649bf8fee1f4619fdc0972a5671c3682acc0fc2b7cbcece48d4c",
+    "code/tests/experiments/test_text_map_comparison.py": "a3960408be5762652faa1478c41cd5002fc0658a2aefab993a0b3e7ff6928aa8"
+  },
+  "log_sha256": "1f928f9b24cbb2e30d0274cdc5623aed3cbd3130cb59a9a7733af10f10f48921"
+}

@@ -1,0 +1,298 @@
+{
+  "status": "passed",
+  "config": {
+    "unit_id": "ray-data-c16-r0",
+    "arm": "ray-data",
+    "task": "map",
+    "table": "comparison_qualification",
+    "concurrency": 16,
+    "window": 4,
+    "input_bytes": 134217728,
+    "result_bytes": 67108864,
+    "pg_window_bytes": 67108864,
+    "pg_total_budget": false,
+    "pg_staging_bytes": 16777216,
+    "organization_config": null,
+    "organization_sha256": null,
+    "query_timeout_s": 120,
+    "max_posts": 16,
+    "movie_id": null,
+    "result_order": "input",
+    "ray_read_blocks": 4,
+    "ray_read_concurrency": 2,
+    "ray_batch_rows": 1,
+    "ray_num_cpus": 8,
+    "ray_actors": 1,
+    "ray_object_store_bytes": 268435456,
+    "event_content": "full",
+    "map_transport_config": null,
+    "map_transport_sha256": null,
+    "ray_address": "<private-address>:36229",
+    "ray_async_batches_per_actor": 16,
+    "daft_num_threads": 8,
+    "daft_read_partitions": 4
+  },
+  "manifest_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+  "model_config_sha256": "4677e2ed766cd15b0f448a7ad48bd78999a0b03e512813ebb52dd462a40e57ac",
+  "executor_lifecycle": "per-query",
+  "semantic_reference_sha256": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+  "started_ns": 14682951850432206,
+  "query_preparation_started_ns": 14682951849484306,
+  "prompt_parser_owner": "PostgreSQL SemanticPlanSpec",
+  "measurement": "PG source query; durable shared POST accounting; evaluation after execution",
+  "performance_qualified": false,
+  "execution": {
+    "schema": "semloom.query_execution.v1",
+    "timing_schema": "semloom.query_timing.v3",
+    "status": "completed",
+    "started_ns": 14682954479197087,
+    "ended_ns": 14682975521726830,
+    "elapsed_seconds": 21.042529743,
+    "recorded_rows": 16,
+    "received_rows": 16,
+    "recorded_bytes": 1299,
+    "results_sha256": "8c94365a20ad808289402692e2f805956133645b8f042b5f058e45eff9b18cf6",
+    "error_phase": null,
+    "error": null,
+    "query_error": null,
+    "cleanup_error": null,
+    "recording_error": null,
+    "query_status": "completed",
+    "t_release_ns": 14682954481123358,
+    "t_first_row_ns": 14682975470637005,
+    "t_last_row_ns": 14682975517576973,
+    "t_query_terminal_ns": 14682975519439619,
+    "t_results_durable_ns": 14682975521726222,
+    "t_stream_cleanup_ns": 14682975521524610,
+    "t_stream_entered_ns": 14682958603605046,
+    "entry_observation_scope": "context entry return/error; adapters report first failures before internal cleanup",
+    "t_cancel_triggered_ns": null,
+    "query_jct_seconds": 21.038316261,
+    "inline_recording_seconds": 0.000313479,
+    "timing_scope": "before dispatch through stream consumption and recorder flush",
+    "query_timing_scope": "application release through observed EOF/error; includes inline recording interference",
+    "cleanup_scope": "cursor/iterator only; runner records external resource cleanup separately",
+    "partial_results_are_provisional": false
+  },
+  "resources": {
+    "processes": {
+      "samples": 96,
+      "interval_seconds": 0.2,
+      "peak_rss_bytes": {
+        "preparation:consumer_ray": 791502848
+      },
+      "processes": {
+        "270931:1790744224.62": {
+          "pid": 270931,
+          "created_at": 1790744224.62,
+          "name": "python",
+          "label": "consumer_ray"
+        }
+      },
+      "discovered_but_unobserved": [
+        "pg_reader:271017",
+        "pg_reader:271018",
+        "pg_reader:271019",
+        "pg_reader:271168",
+        "pg_reader:271169",
+        "pg_reader:271170",
+        "pg_reader:271171",
+        "pg_reader:271433"
+      ],
+      "include_children": true,
+      "summed_rss_is_unique_physical_memory": false,
+      "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+    },
+    "ray_runtime_connected": false,
+    "ray_runtime": {
+      "owner": "caller",
+      "startup": "external",
+      "cluster_resources": {
+        "CPU": 8.0,
+        "GPU": 0,
+        "object_store_memory": 268435456.0
+      },
+      "driver_connect_seconds": 0.040055148,
+      "shared_cluster_shutdown_requested": false,
+      "driver_disconnected": true
+    },
+    "source_retention": "native SQL reader materializes each actual shard",
+    "requested_reader_blocks": 4,
+    "reader_concurrency": 2,
+    "ray_logical_cpus": 8,
+    "ray_actors": 1,
+    "http_capacity": 16,
+    "object_store_allocation_bytes": 268435456,
+    "reader_connection_snapshots": [
+      {
+        "pid": 271170,
+        "created_at": 1790744241.89,
+        "initial_rss_bytes": 8912896,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271017,
+        "created_at": 1790744231.6,
+        "initial_rss_bytes": 8908800,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271169,
+        "created_at": 1790744241.87,
+        "initial_rss_bytes": 8908800,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271433,
+        "created_at": 1790744247.56,
+        "initial_rss_bytes": 8908800,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271171,
+        "created_at": 1790744241.89,
+        "initial_rss_bytes": 8908800,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271019,
+        "created_at": 1790744231.7,
+        "initial_rss_bytes": 8908800,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271168,
+        "created_at": 1790744241.87,
+        "initial_rss_bytes": 8843264,
+        "initial_cpu_seconds": 0.0
+      },
+      {
+        "pid": 271018,
+        "created_at": 1790744231.69,
+        "initial_rss_bytes": 8912896,
+        "initial_cpu_seconds": 0.0
+      }
+    ],
+    "physical_cpu_isolation": false,
+    "object_store_used_bytes": null,
+    "ray_service_process_sampling": "unavailable for caller-owned runtime",
+    "native_async_batches_per_actor": 16,
+    "native_http_capacity_upper_bound": 16,
+    "ray_version": "2.56.1"
+  },
+  "t_execution_cleanup_ns": 14682975788410761,
+  "evaluation": {
+    "actual_posts": 16,
+    "http": {
+      "peak_http": 4,
+      "final_http_active": 0,
+      "started_requests": 16
+    },
+    "association": {
+      "rows": 16,
+      "attempts": 16,
+      "independent_occurrence_binding": true
+    },
+    "model_usage": {
+      "status": "observed",
+      "prompt_tokens": 1133,
+      "output_tokens": 48,
+      "output_token_lengths": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "quality": {
+      "true_positive": 10,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 1,
+      "invalid": 0,
+      "evaluated_rows": 16,
+      "missing_rows": 0,
+      "count_error_from_classifications": -1
+    }
+  },
+  "evaluation_resources": {
+    "samples": 1,
+    "interval_seconds": 0.2,
+    "peak_rss_bytes": {
+      "evaluation:evaluator": 795496448
+    },
+    "processes": {
+      "270931:1790744224.62": {
+        "pid": 270931,
+        "created_at": 1790744224.62,
+        "name": "python",
+        "label": "evaluator"
+      }
+    },
+    "discovered_but_unobserved": [],
+    "include_children": false,
+    "summed_rss_is_unique_physical_memory": false,
+    "scope": "sampled process RSS, separate from logical reservation; sub-interval peaks may be missed"
+  },
+  "evidence": {
+    "queries": [
+      {
+        "index": 0,
+        "execution": {
+          "schema": "semloom.query_execution.v1",
+          "timing_schema": "semloom.query_timing.v3",
+          "status": "completed",
+          "started_ns": 14682954479197087,
+          "ended_ns": 14682975521726830,
+          "elapsed_seconds": 21.042529743,
+          "recorded_rows": 16,
+          "received_rows": 16,
+          "recorded_bytes": 1299,
+          "results_sha256": "8c94365a20ad808289402692e2f805956133645b8f042b5f058e45eff9b18cf6",
+          "error_phase": null,
+          "error": null,
+          "query_error": null,
+          "cleanup_error": null,
+          "recording_error": null,
+          "query_status": "completed",
+          "t_release_ns": 14682954481123358,
+          "t_first_row_ns": 14682975470637005,
+          "t_last_row_ns": 14682975517576973,
+          "t_query_terminal_ns": 14682975519439619,
+          "t_results_durable_ns": 14682975521726222,
+          "t_stream_cleanup_ns": 14682975521524610,
+          "t_stream_entered_ns": 14682958603605046,
+          "entry_observation_scope": "context entry return/error; adapters report first failures before internal cleanup",
+          "t_cancel_triggered_ns": null,
+          "query_jct_seconds": 21.038316261,
+          "inline_recording_seconds": 0.000313479,
+          "timing_scope": "before dispatch through stream consumption and recorder flush",
+          "query_timing_scope": "application release through observed EOF/error; includes inline recording interference",
+          "cleanup_scope": "cursor/iterator only; runner records external resource cleanup separately",
+          "partial_results_are_provisional": false
+        },
+        "producer_log_exists": false
+      }
+    ],
+    "observer": null,
+    "resource_state": "unknown",
+    "read_errors": {},
+    "observed_request_events": 16,
+    "malformed_event_lines": 0,
+    "last_drained_usage": null
+  },
+  "errors": {},
+  "ended_ns": 14682975796290368
+}

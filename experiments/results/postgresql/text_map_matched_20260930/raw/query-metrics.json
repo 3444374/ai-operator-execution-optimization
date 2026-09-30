@@ -1,0 +1,2633 @@
+{
+  "groups": [
+    {
+      "stage": "qualification",
+      "role": "pg-daft-ray",
+      "capacity": 4,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "pg-daft-ray-c4-r0",
+          "role": "pg-daft-ray",
+          "capacity": 4,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 6.107623471,
+          "preparation_seconds": 2.581273531,
+          "stream_seconds": 3.52634994,
+          "first_row_seconds": 6.106997852,
+          "cleanup_seconds": 0.768780346,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "4f842c8c8bfa4eaa3fb840c6ec69b939b9fd59f77aca10514f03ea5c3b2f96a9"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 6.107623471,
+      "sample_cv": null,
+      "median_preparation_seconds": 2.581273531,
+      "median_stream_seconds": 3.52634994
+    },
+    {
+      "stage": "qualification",
+      "role": "pg-http",
+      "capacity": 4,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "pg-http-c4-r0",
+          "role": "pg-http",
+          "capacity": 4,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 0.959399102,
+          "preparation_seconds": 0.420531834,
+          "stream_seconds": 0.538867268,
+          "first_row_seconds": 0.958806613,
+          "cleanup_seconds": 0.067164868,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 4,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "a9ba90a7cf0113c53b52d2dcf3db5fbd8fd4e8ae02cee80715817d7afbab94ce"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 0.959399102,
+      "sample_cv": null,
+      "median_preparation_seconds": 0.420531834,
+      "median_stream_seconds": 0.538867268
+    },
+    {
+      "stage": "qualification",
+      "role": "pg-source-direct",
+      "capacity": 4,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "pg-source-direct-c4-r0",
+          "role": "pg-source-direct",
+          "capacity": 4,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 0.667032105,
+          "preparation_seconds": 0.193177888,
+          "stream_seconds": 0.473854217,
+          "first_row_seconds": 0.363066912,
+          "cleanup_seconds": 0.003125642,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 4,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "d6f793cb4a77ebe8e4cdce8689c1b65de2b10283ade30c98122b09b9d1d54eac"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 0.667032105,
+      "sample_cv": null,
+      "median_preparation_seconds": 0.193177888,
+      "median_stream_seconds": 0.473854217
+    },
+    {
+      "stage": "qualification",
+      "role": "ray-data",
+      "capacity": 4,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "ray-data-c4-r0",
+          "role": "ray-data",
+          "capacity": 4,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 11.766687729,
+          "preparation_seconds": 2.64039919,
+          "stream_seconds": 9.126288539,
+          "first_row_seconds": 11.761665511,
+          "cleanup_seconds": 0.277545005,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 1,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "6b4251a55e6116431ae774d3fa2e525fd8172b9cd67b0a1dc7be7117796d76af"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 11.766687729,
+      "sample_cv": null,
+      "median_preparation_seconds": 2.64039919,
+      "median_stream_seconds": 9.126288539
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r1",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 17.816346353,
+          "preparation_seconds": 5.111712205,
+          "stream_seconds": 12.704634148,
+          "first_row_seconds": 11.630188541,
+          "cleanup_seconds": 0.822668599,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "a2ccffdfa8a30893285228c528edae89e17d559671f6706f7e91acf30b921e8d"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r2",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 17.325094908,
+          "preparation_seconds": 5.086532552,
+          "stream_seconds": 12.238562356,
+          "first_row_seconds": 11.665308701,
+          "cleanup_seconds": 0.51893779,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "a4d8eea604858505f08d00d1163cab384ed82f1a6f31b2853e54a515b5c04cc8"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r3",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 17.538170798,
+          "preparation_seconds": 5.23311358,
+          "stream_seconds": 12.305057218,
+          "first_row_seconds": 12.180533084,
+          "cleanup_seconds": 0.821080449,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "986c9df9ea1fb4ee76b881d79fdc3e3b719ed319a8fc35adf16a9d0ed9f28921"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c128-r0",
+        "role": "pg-daft-ray",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 15.63084458,
+        "preparation_seconds": 5.195883516,
+        "stream_seconds": 10.434961064,
+        "first_row_seconds": 10.974386966,
+        "cleanup_seconds": 0.820252554,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 7,
+          "true_negative": 151,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "ec164abfe56dda3f8e04fe110e97f8cd2c2423186fce1966360c4ee5d069a9f4"
+      },
+      "median_jct_seconds": 17.538170798,
+      "sample_cv": 0.014028780987291293,
+      "median_preparation_seconds": 5.111712205,
+      "median_stream_seconds": 12.305057218
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r1",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 14.540642882,
+          "preparation_seconds": 4.873486037,
+          "stream_seconds": 9.667156845,
+          "first_row_seconds": 9.940025072,
+          "cleanup_seconds": 0.720537036,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "047afd5bc5e81e51774ae432c85f245c74175e36f39c429578588dd1c508891c"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r2",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 15.445856913,
+          "preparation_seconds": 5.065283556,
+          "stream_seconds": 10.380573357,
+          "first_row_seconds": 10.824226309,
+          "cleanup_seconds": 0.770633658,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "8bab659e81074e08ea6997fff65d640bd155870e67879c35ab0dca63b00c4611"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r3",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 14.606499334,
+          "preparation_seconds": 4.828239671,
+          "stream_seconds": 9.778259663,
+          "first_row_seconds": 10.395312325,
+          "cleanup_seconds": 0.770190471,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "e8e6ec4270f3d5f7cb6adf5475ac8e77116ce1fd7292f021dfc828cd45c09834"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c16-r0",
+        "role": "pg-daft-ray",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 15.316373601,
+        "preparation_seconds": 5.281149254,
+        "stream_seconds": 10.035224347,
+        "first_row_seconds": 10.914117727,
+        "cleanup_seconds": 0.870867138,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "ffedf70f8870bcbc24db3e396cf1eb613493b48b3cd1c01d7829cbc682888112"
+      },
+      "median_jct_seconds": 14.606499334,
+      "sample_cv": 0.03395307284101249,
+      "median_preparation_seconds": 4.873486037,
+      "median_stream_seconds": 9.778259663
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r1",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.386926169,
+          "preparation_seconds": 4.728940036,
+          "stream_seconds": 7.657986133,
+          "first_row_seconds": 9.688524851,
+          "cleanup_seconds": 0.770429643,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "a6736ad9fc3f38e7c5d2fc9c6eff3fdd904976bababfa3534f9414255611d6ed"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r2",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.837806726,
+          "preparation_seconds": 5.208894719,
+          "stream_seconds": 7.628912007,
+          "first_row_seconds": 9.929065228,
+          "cleanup_seconds": 0.720277486,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "a1dd0fa3f09ffa63fb3567258e81e62f37ac75007864d8a75b7f4e96bf35ac27"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r3",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.701318099,
+          "preparation_seconds": 5.231784751,
+          "stream_seconds": 7.469533348,
+          "first_row_seconds": 9.984685649,
+          "cleanup_seconds": 0.770810486,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "8ccee91f7d75c6aa0a57526dcea220bb38ac2fa0d005226eede3df3bde55d391"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c64-r0",
+        "role": "pg-daft-ray",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 12.639380064,
+        "preparation_seconds": 5.2958992,
+        "stream_seconds": 7.343480864,
+        "first_row_seconds": 9.836165455,
+        "cleanup_seconds": 0.77183436,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "5fd2282d36e46a60e2ed7cc4303106c3b353b7f8d6e323eff5486d3434bef07a"
+      },
+      "median_jct_seconds": 12.701318099,
+      "sample_cv": 0.018289477316188796,
+      "median_preparation_seconds": 5.208894719,
+      "median_stream_seconds": 7.628912007
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-http",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c128-r1",
+          "role": "pg-http",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 14.619365034,
+          "preparation_seconds": 0.508590291,
+          "stream_seconds": 14.110774743,
+          "first_row_seconds": 9.461778797,
+          "cleanup_seconds": 0.119313351,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "10b84c0c765b6df1f5d6b56b22efe31b4f5c425d8b33095876db89143c768d44"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c128-r2",
+          "role": "pg-http",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 14.298257383,
+          "preparation_seconds": 0.500541248,
+          "stream_seconds": 13.797716135,
+          "first_row_seconds": 9.373949826,
+          "cleanup_seconds": 0.119200773,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "16f33aa745bd1081746354f457182194df23371625e1a6bd2b99a8e47c4227e6"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c128-r3",
+          "role": "pg-http",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 14.321932791,
+          "preparation_seconds": 0.501730549,
+          "stream_seconds": 13.820202242,
+          "first_row_seconds": 9.241902244,
+          "cleanup_seconds": 0.120118859,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "1ad667387d8a65cbf2fa23c74c545c0b3d0d83b697841ad0176df1f5e0e1400a"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-http-c128-r0",
+        "role": "pg-http",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 14.235763822,
+        "preparation_seconds": 0.487452964,
+        "stream_seconds": 13.748310858,
+        "first_row_seconds": 9.244769282,
+        "cleanup_seconds": 0.119029605,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "6ed48f0dd07d4207b4834a3c7482b23964b1385c88e1d1f2afd692cc5a5645c5"
+      },
+      "median_jct_seconds": 14.321932791,
+      "sample_cv": 0.012415649632044504,
+      "median_preparation_seconds": 0.501730549,
+      "median_stream_seconds": 13.820202242
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-http",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c16-r1",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 8.285417599,
+          "preparation_seconds": 0.486748953,
+          "stream_seconds": 7.798668646,
+          "first_row_seconds": 3.82460264,
+          "cleanup_seconds": 0.069819508,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "6fbe3ed70d31600aa95c76216838321fa9c564279b763683cd9fe2a2b86fcbb1"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c16-r2",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 8.294284038,
+          "preparation_seconds": 0.46547623,
+          "stream_seconds": 7.828807808,
+          "first_row_seconds": 3.818582972,
+          "cleanup_seconds": 0.12019705,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "9434e95c6e55c4693b68fc86219beeb74dbf24f2e3aa9e35db0734fb368ad8db"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c16-r3",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 8.209414661,
+          "preparation_seconds": 0.501671802,
+          "stream_seconds": 7.707742859,
+          "first_row_seconds": 3.542182143,
+          "cleanup_seconds": 0.1196529,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "63d4d719acd7ade6006b3643e94c5c716979266c027612049281cbdbdb05c0a2"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-http-c16-r0",
+        "role": "pg-http",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 8.278638282,
+        "preparation_seconds": 0.503812609,
+        "stream_seconds": 7.774825673,
+        "first_row_seconds": 3.515023452,
+        "cleanup_seconds": 0.119276705,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "87430271b9fd4bb595e5797fd1c1f299c60398c538c505286059682f518af3ac"
+      },
+      "median_jct_seconds": 8.285417599,
+      "sample_cv": 0.005645738771066134,
+      "median_preparation_seconds": 0.486748953,
+      "median_stream_seconds": 7.798668646
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-http",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c64-r1",
+          "role": "pg-http",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.172573278,
+          "preparation_seconds": 0.505004605,
+          "stream_seconds": 11.667568673,
+          "first_row_seconds": 7.288870591,
+          "cleanup_seconds": 0.118292815,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "6146d0ccb319dff2c23df961f12e1f6e51813f88d966dee9815e5d054064ace4"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c64-r2",
+          "role": "pg-http",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.3524086,
+          "preparation_seconds": 0.503991331,
+          "stream_seconds": 11.848417269,
+          "first_row_seconds": 7.518731811,
+          "cleanup_seconds": 0.118890441,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "1d0a38bf4b6091d537063279bdc3cca9bac18ec9ac1bdcfbd53a97de8a3d35ba"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-http-c64-r3",
+          "role": "pg-http",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 11.598715368,
+          "preparation_seconds": 0.481848516,
+          "stream_seconds": 11.116866852,
+          "first_row_seconds": 7.407891267,
+          "cleanup_seconds": 0.119233935,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "3c2db5df3b4550e6758bef4f186adf3f817dc256c37450209c59c99d2afa28a1"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-http-c64-r0",
+        "role": "pg-http",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 12.340917343,
+        "preparation_seconds": 0.502284543,
+        "stream_seconds": 11.8386328,
+        "first_row_seconds": 7.603967308,
+        "cleanup_seconds": 0.119699516,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "64531e63203ca526c50c7807d338fbfe7388ad2994535a782a6bf30c4e4a9188"
+      },
+      "median_jct_seconds": 12.172573278,
+      "sample_cv": 0.03269087289068105,
+      "median_preparation_seconds": 0.503991331,
+      "median_stream_seconds": 11.667568673
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r1",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.199452439,
+          "preparation_seconds": 0.200106545,
+          "stream_seconds": 3.999345894,
+          "first_row_seconds": 0.406117432,
+          "cleanup_seconds": 0.007343358,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "ca02b17da394a7426051dee65db137164b181c6919199e95f6287b809ddefd0a"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r2",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.945991952,
+          "preparation_seconds": 0.199144451,
+          "stream_seconds": 5.746847501,
+          "first_row_seconds": 0.406812712,
+          "cleanup_seconds": 0.007540045,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "2ea11ab606acfd31ad674323aa735de053cf85e70345e39c28294db9dbe71519"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r3",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.877482809,
+          "preparation_seconds": 0.201940613,
+          "stream_seconds": 5.675542196,
+          "first_row_seconds": 0.43068144,
+          "cleanup_seconds": 0.007566122,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "ff7276adabe0df3eab4279d908d167a790c86043cdb0ea699af17dd3ffcfd276"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c128-r0",
+        "role": "pg-source-direct",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 5.504812305,
+        "preparation_seconds": 0.192092688,
+        "stream_seconds": 5.312719617,
+        "first_row_seconds": 0.398483694,
+        "cleanup_seconds": 0.00782403,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "5238e06c3d4197cd335387bc9233fe628779e1119efff69306dbf47f34ebbaf5"
+      },
+      "median_jct_seconds": 5.877482809,
+      "sample_cv": 0.18520613153296875,
+      "median_preparation_seconds": 0.200106545,
+      "median_stream_seconds": 5.675542196
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r1",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.801081666,
+          "preparation_seconds": 0.192323438,
+          "stream_seconds": 5.608758228,
+          "first_row_seconds": 0.401393384,
+          "cleanup_seconds": 0.003825334,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "feca3a8d397f341176971fc097abe38b8bbc19b2ab790ffb8ce2dbbb03434dd7"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r2",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.815477299,
+          "preparation_seconds": 0.200684379,
+          "stream_seconds": 5.61479292,
+          "first_row_seconds": 0.415281627,
+          "cleanup_seconds": 0.004012494,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "b6cff50d398b929648a836a01f0fd39d77f4b5f3a6a9a63a7b0922c3ae3e0a97"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r3",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.794475265,
+          "preparation_seconds": 0.205219917,
+          "stream_seconds": 5.589255348,
+          "first_row_seconds": 0.406988995,
+          "cleanup_seconds": 0.004131129,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "b58b6d25174887dc4dadef26af509e484957a57bec6479e7ae1c0e28c4abc967"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c16-r0",
+        "role": "pg-source-direct",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 5.893928076,
+        "preparation_seconds": 0.192120287,
+        "stream_seconds": 5.701807789,
+        "first_row_seconds": 0.387121359,
+        "cleanup_seconds": 0.004319824,
+        "accuracy": 0.845703125,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 9,
+          "true_negative": 149,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -61
+        },
+        "private_summary_sha256": "5f57487154520fc7f52556b4d1cc76909d0757684d23a8b57c9a3ef21cc40314"
+      },
+      "median_jct_seconds": 5.801081666,
+      "sample_cv": 0.0018503883188843878,
+      "median_preparation_seconds": 0.200684379,
+      "median_stream_seconds": 5.608758228
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r1",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.110491626,
+          "preparation_seconds": 0.197408217,
+          "stream_seconds": 3.913083409,
+          "first_row_seconds": 0.404097743,
+          "cleanup_seconds": 0.005392507,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "c8180324855cd433029ea08aa26c756932acfe68a573d0b1d57fa498a55344a2"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r2",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.074457514,
+          "preparation_seconds": 0.190614823,
+          "stream_seconds": 3.883842691,
+          "first_row_seconds": 0.458372733,
+          "cleanup_seconds": 0.005364045,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "4c07fee4fd1565d58485bc0a6c4168de307d8fe9b9df34eab77ab1afd18be507"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r3",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.085082873,
+          "preparation_seconds": 0.198668695,
+          "stream_seconds": 3.886414178,
+          "first_row_seconds": 0.40862177,
+          "cleanup_seconds": 0.005490053,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "e5c20f733df1425235af56b7fb7141c043ea20a4307e628c31820165c8145ca3"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c64-r0",
+        "role": "pg-source-direct",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 4.099213797,
+        "preparation_seconds": 0.193427305,
+        "stream_seconds": 3.905786492,
+        "first_row_seconds": 0.404648176,
+        "cleanup_seconds": 0.004776658,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "9b9001e2850aeb85992f4fc88a23a306a0fff1e4d93c2de90764a4bc6efad63e"
+      },
+      "median_jct_seconds": 4.085082873,
+      "sample_cv": 0.00452702485711046,
+      "median_preparation_seconds": 0.197408217,
+      "median_stream_seconds": 3.886414178
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r1",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 31.981244342,
+          "preparation_seconds": 2.822411693,
+          "stream_seconds": 29.158832649,
+          "first_row_seconds": 31.966657518,
+          "cleanup_seconds": 0.271285404,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "e5a53a9d6c9ee12d56a850241c34920f73d8248e43e46aa86ae63b48142248c1"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r2",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 32.229240452,
+          "preparation_seconds": 2.537919175,
+          "stream_seconds": 29.691321277,
+          "first_row_seconds": 32.21551621,
+          "cleanup_seconds": 0.27245834,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "79dccb96a5d224b89f3f9dc071240f27e31f36b2bf934bdb35b3952b9abc8d2a"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r3",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 31.757187739,
+          "preparation_seconds": 2.867723515,
+          "stream_seconds": 28.889464224,
+          "first_row_seconds": 31.746529051,
+          "cleanup_seconds": 0.271475342,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "0226d815b9398d82c7ad77f4562c3ef7a34c1e0f98eb3f40d40057595e8c7206"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c128-r0",
+        "role": "ray-data",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 31.32218268,
+        "preparation_seconds": 2.73557915,
+        "stream_seconds": 28.58660353,
+        "first_row_seconds": 31.31302382,
+        "cleanup_seconds": 0.271720648,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 2,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 7,
+          "true_negative": 151,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "5ea2e7fad5730e25639c6b9103551eb8724355b9671e43b7aebaa4db661a0613"
+      },
+      "median_jct_seconds": 31.981244342,
+      "sample_cv": 0.007381470245243056,
+      "median_preparation_seconds": 2.822411693,
+      "median_stream_seconds": 29.158832649
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r1",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 45.825313957,
+          "preparation_seconds": 2.745992418,
+          "stream_seconds": 43.079321539,
+          "first_row_seconds": 45.811580395,
+          "cleanup_seconds": 0.023216583,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 1,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "b9561c528ebe287f38073f1287b5c9f4caffb5c46ecb4488f2f3cb4dbf7fff2b"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r2",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 45.063802107,
+          "preparation_seconds": 2.576960438,
+          "stream_seconds": 42.486841669,
+          "first_row_seconds": 45.0556533,
+          "cleanup_seconds": 0.27176841,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 1,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "4318ac6c9ec11af56e2392d0eab1bd13d149f4e0bd58585734ce9204156be87e"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r3",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 45.455962477,
+          "preparation_seconds": 2.369030187,
+          "stream_seconds": 43.08693229,
+          "first_row_seconds": 45.449702907,
+          "cleanup_seconds": 0.270821224,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 1,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "681e0fa5fd57b7f0702534e858eb3865b2a53145316e2869e92c807bed050207"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c16-r0",
+        "role": "ray-data",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 45.677279917,
+        "preparation_seconds": 2.425059218,
+        "stream_seconds": 43.252220699,
+        "first_row_seconds": 45.661674847,
+        "cleanup_seconds": 0.024599771,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 1,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 7,
+          "true_negative": 151,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "328574149a6a70155ae1ec89a7ec1edc37d7213cb06ac28ab15f5a8854986bdf"
+      },
+      "median_jct_seconds": 45.455962477,
+      "sample_cv": 0.008379023050032556,
+      "median_preparation_seconds": 2.576960438,
+      "median_stream_seconds": 43.079321539
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r1",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 31.536139796,
+          "preparation_seconds": 2.302249661,
+          "stream_seconds": 29.233890135,
+          "first_row_seconds": 31.521344553,
+          "cleanup_seconds": 0.023804583,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "9bc7c1e0aeffea660d33125e726138fefe3bf97606813e7eedb1938a6e8e24f3"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r2",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 32.430643302,
+          "preparation_seconds": 2.685991466,
+          "stream_seconds": 29.744651836,
+          "first_row_seconds": 32.423203262,
+          "cleanup_seconds": 0.265220685,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "ff51461f943ecd2b8671b2294e5800d31bb90f15823882bae2c88d63502c0883"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r3",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 32.682479267,
+          "preparation_seconds": 2.646898698,
+          "stream_seconds": 30.035580569,
+          "first_row_seconds": 32.668804788,
+          "cleanup_seconds": 0.270014715,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "1502f8f1df3accc9c0bb92cb8d031ea404d8f955e8afd4e93d06df4877df6031"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c64-r0",
+        "role": "ray-data",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 32.470155104,
+        "preparation_seconds": 2.738562357,
+        "stream_seconds": 29.731592747,
+        "first_row_seconds": 32.463870687,
+        "cleanup_seconds": 0.272902948,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 2,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 7,
+          "true_negative": 151,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "0efc5140258fb0e2f04ff97f23c42d434e09c8cdc87bcef832796f75cb56684f"
+      },
+      "median_jct_seconds": 32.430643302,
+      "sample_cv": 0.018699988125900638,
+      "median_preparation_seconds": 2.646898698,
+      "median_stream_seconds": 29.744651836
+    },
+    {
+      "stage": "evaluation",
+      "role": "pg-daft-ray",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r1",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 16.000501912,
+          "preparation_seconds": 5.246964911,
+          "stream_seconds": 10.753537001,
+          "first_row_seconds": 8.77729293,
+          "cleanup_seconds": 0.77341168,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "76c69809f0d90858ee9ae4042fa57c3b227ea32c658351b680a539ef0b426970"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r2",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 17.620885288,
+          "preparation_seconds": 4.70824399,
+          "stream_seconds": 12.912641298,
+          "first_row_seconds": 10.035061835,
+          "cleanup_seconds": 0.822842506,
+          "accuracy": 0.8359375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 514,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 153,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -138
+          },
+          "private_summary_sha256": "cc6154c3fe4253477a692b949752bdb0a89ea0fee5bc59827323477615fbb004"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r3",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 16.514409414,
+          "preparation_seconds": 5.272457403,
+          "stream_seconds": 11.241952011,
+          "first_row_seconds": 9.175329144,
+          "cleanup_seconds": 0.773173549,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "49deed78fd6c5d14e2060e72e0c25344f9c9122ddce95ac981f24b4cac01ffe5"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "pg-daft-ray-c64-r0",
+        "role": "pg-daft-ray",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 18.013841775,
+        "preparation_seconds": 5.212079728,
+        "stream_seconds": 12.801762047,
+        "first_row_seconds": 10.61168082,
+        "cleanup_seconds": 0.873697909,
+        "accuracy": 0.8359375,
+        "prompt_tokens": 73348,
+        "output_tokens": 3072,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 514,
+          "false_positive": 15,
+          "true_negative": 342,
+          "false_negative": 153,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -138
+        },
+        "private_summary_sha256": "9dd3b5c0ff9e2e9cc737bd275569f84a6491ecdd6a7e9deb0bc64bd728634d14"
+      },
+      "median_jct_seconds": 16.514409414,
+      "sample_cv": 0.049548618008358664,
+      "median_preparation_seconds": 5.246964911,
+      "median_stream_seconds": 11.241952011
+    },
+    {
+      "stage": "evaluation",
+      "role": "pg-http",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "pg-http-c16-r1",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 15.583592909,
+          "preparation_seconds": 0.466371046,
+          "stream_seconds": 15.117221863,
+          "first_row_seconds": 3.719205147,
+          "cleanup_seconds": 0.12097464,
+          "accuracy": 0.8369140625,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 516,
+            "false_positive": 16,
+            "true_negative": 341,
+            "false_negative": 151,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -135
+          },
+          "private_summary_sha256": "05cce06f3829554cc4aa6194094f151d0774aa92db7e3ea181f72071bcace561"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-http-c16-r2",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 15.921012538,
+          "preparation_seconds": 0.510555661,
+          "stream_seconds": 15.410456877,
+          "first_row_seconds": 3.666277276,
+          "cleanup_seconds": 0.121510507,
+          "accuracy": 0.8359375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 515,
+            "false_positive": 16,
+            "true_negative": 341,
+            "false_negative": 152,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -136
+          },
+          "private_summary_sha256": "510b78dae95064ea8ad21f015fac3c0161fe5b87aaa42fa25e923a3605088b1e"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-http-c16-r3",
+          "role": "pg-http",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 15.922273651,
+          "preparation_seconds": 0.503060814,
+          "stream_seconds": 15.419212837,
+          "first_row_seconds": 3.833143833,
+          "cleanup_seconds": 0.121671836,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "1029fdb78352395feaec29012d1edefc3c7a648692aabb4274f1ce009395218b"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "pg-http-c16-r0",
+        "role": "pg-http",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 16.140701058,
+        "preparation_seconds": 0.480490347,
+        "stream_seconds": 15.660210711,
+        "first_row_seconds": 3.605640828,
+        "cleanup_seconds": 0.121883312,
+        "accuracy": 0.8369140625,
+        "prompt_tokens": 73348,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 515,
+          "false_positive": 15,
+          "true_negative": 342,
+          "false_negative": 152,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -137
+        },
+        "private_summary_sha256": "a67bb30899f3ffcfd980a0968cc4ad962cae8e2e05b6c7b79afeac0956d4e16c"
+      },
+      "median_jct_seconds": 15.921012538,
+      "sample_cv": 0.012345808193125269,
+      "median_preparation_seconds": 0.503060814,
+      "median_stream_seconds": 15.410456877
+    },
+    {
+      "stage": "evaluation",
+      "role": "pg-source-direct",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r1",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.762298798,
+          "preparation_seconds": 0.198371733,
+          "stream_seconds": 7.563927065,
+          "first_row_seconds": 0.424627959,
+          "cleanup_seconds": 0.005761174,
+          "accuracy": 0.8359375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 514,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 153,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -138
+          },
+          "private_summary_sha256": "0340668048642dec395c8d4ff1fcddad494af375a11daace13bb6d9673d37b89"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r2",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.733776817,
+          "preparation_seconds": 0.19047355,
+          "stream_seconds": 7.543303267,
+          "first_row_seconds": 0.385784721,
+          "cleanup_seconds": 0.005845033,
+          "accuracy": 0.8369140625,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 515,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 152,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -137
+          },
+          "private_summary_sha256": "d47a872fdc8d9d7ef20faca9e82c9ccee4bc6a8d699fbf0c90e00db764e8c3ce"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r3",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.777155715,
+          "preparation_seconds": 0.192997059,
+          "stream_seconds": 7.584158656,
+          "first_row_seconds": 0.414835958,
+          "cleanup_seconds": 0.00620015,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "9a0d3b759c29beddf740f44290b18f9c73372bc70872a374f8a6d48d9275bcee"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "pg-source-direct-c64-r0",
+        "role": "pg-source-direct",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 8.066147227,
+        "preparation_seconds": 0.193214374,
+        "stream_seconds": 7.872932853,
+        "first_row_seconds": 0.394794972,
+        "cleanup_seconds": 0.006011208,
+        "accuracy": 0.8349609375,
+        "prompt_tokens": 73348,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 513,
+          "false_positive": 15,
+          "true_negative": 342,
+          "false_negative": 154,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -139
+        },
+        "private_summary_sha256": "0fd0f88aa8a1d496b310dc23ddc6018911733d2e34296ff60fc296d9b302ddfc"
+      },
+      "median_jct_seconds": 7.762298798,
+      "sample_cv": 0.0028417098806209533,
+      "median_preparation_seconds": 0.192997059,
+      "median_stream_seconds": 7.563927065
+    },
+    {
+      "stage": "evaluation",
+      "role": "ray-data",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r1",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 50.535628018,
+          "preparation_seconds": 2.67188752,
+          "stream_seconds": 47.863740498,
+          "first_row_seconds": 50.516196173,
+          "cleanup_seconds": 0.276339435,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "ca97a0740bc4c8508eefab45822cc6eb54e4eaf26143416a8bc44452e6a2ba92"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r2",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 52.705412569,
+          "preparation_seconds": 2.530169724,
+          "stream_seconds": 50.175242845,
+          "first_row_seconds": 52.685215543,
+          "cleanup_seconds": 0.279800192,
+          "accuracy": 0.8349609375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 513,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 154,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -139
+          },
+          "private_summary_sha256": "4c23a7a120fdd58780a077f91cad2464be242dc55bf62e643890f79c56db66a6"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r3",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 53.494491882,
+          "preparation_seconds": 2.578120676,
+          "stream_seconds": 50.916371206,
+          "first_row_seconds": 53.483029904,
+          "cleanup_seconds": 0.27815087,
+          "accuracy": 0.8359375,
+          "prompt_tokens": 73348,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 2,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 514,
+            "false_positive": 15,
+            "true_negative": 342,
+            "false_negative": 153,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -138
+          },
+          "private_summary_sha256": "a519131571cc8658c8f02d050ba73c18d4629470dfefb54190719e00f031a12a"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "ray-data-c128-r0",
+        "role": "ray-data",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 53.142885567,
+        "preparation_seconds": 2.435171009,
+        "stream_seconds": 50.707714558,
+        "first_row_seconds": 53.125330309,
+        "cleanup_seconds": 0.274432908,
+        "accuracy": 0.8359375,
+        "prompt_tokens": 73348,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 2,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 514,
+          "false_positive": 15,
+          "true_negative": 342,
+          "false_negative": 153,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -138
+        },
+        "private_summary_sha256": "d4571ec47e0e6b4b288c655daaaec877bd3de71b39c5df7db893b99160ee198e"
+      },
+      "median_jct_seconds": 52.705412569,
+      "sample_cv": 0.02932676047697927,
+      "median_preparation_seconds": 2.578120676,
+      "median_stream_seconds": 50.175242845
+    }
+  ],
+  "output_differences": [
+    {
+      "stage": "qualification",
+      "left": "pg-daft-ray",
+      "right": "pg-http",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-daft-ray",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-daft-ray",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-http",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-http",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-source-direct",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-daft-ray",
+      "right": "pg-http",
+      "different_output_rows": [
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-daft-ray",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        3,
+        3,
+        4
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-daft-ray",
+      "right": "ray-data",
+      "different_output_rows": [
+        0,
+        3,
+        3
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-http",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        5,
+        3,
+        4
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-http",
+      "right": "ray-data",
+      "different_output_rows": [
+        4,
+        3,
+        1
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-source-direct",
+      "right": "ray-data",
+      "different_output_rows": [
+        3,
+        2,
+        5
+      ]
+    }
+  ]
+}

@@ -14,6 +14,7 @@ from .movie_queries import verify_filter_decisions
 from .query_workloads import read_prepared
 from .window_memory import verify_window_memory
 from .map_query_recording import evaluate_recording
+from .m1_measurement import token_usage
 from src.experiments.query_resources import verify_logical_resources
 
 
@@ -171,9 +172,10 @@ def _evaluate_rows(config, inputs, plan, manifest_path, root, checkout, recorded
             report['association']=verify_bound_map_results(texts.items(),predictions.items(),
                 parse_pg_bindings((root/'q0-producer.log').read_text().splitlines()),events,
                 read_events(root/'sessions.jsonl'),plan=plan)
-        if config.arm in ('pg-source-direct','ray-data'):
+        if config.arm in ('pg-source-direct','ray-data','daft-native'):
             report['association']=verify_native_map_results(config.arm,texts,predictions,events,plan=plan,
                 source_positions={row[1]:row[0] for row in selected})
+        report['model_usage'] = token_usage(events, len(selected))
         if inputs.kind=='movie':
             report['quality']=classification_audit({key:refs[key]['reference'] for key in texts},predictions.items())
         else:

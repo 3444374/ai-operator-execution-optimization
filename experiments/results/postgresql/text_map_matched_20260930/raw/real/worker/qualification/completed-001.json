@@ -1,0 +1,9 @@
+{
+  "unit": "pg-http-c4-r0",
+  "role": "pg-http",
+  "summary": {
+    "path": "<run-root>/real01/worker/qualification/pg-http-c4-r0/unit/summary.json",
+    "sha256": "a9ba90a7cf0113c53b52d2dcf3db5fbd8fd4e8ae02cee80715817d7afbab94ce"
+  },
+  "actual_posts": 16
+}

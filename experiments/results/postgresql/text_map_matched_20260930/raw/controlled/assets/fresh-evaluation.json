@@ -1,0 +1,46 @@
+{
+  "schema": "semloom.movie_partition.v1",
+  "seed": "m1-real-20260914",
+  "source": {
+    "sha256": "fce65e53761e807276a16a2f1409da13148450036518323b2b37202142cb322f",
+    "bytes": 410691413
+  },
+  "previous": {
+    "sha256": "81b9718a03f3e958ce895249531cc88af393e4395945b2704640a0160b7c1616",
+    "bytes": 610052
+  },
+  "counts": {
+    "source_rows": 1444963,
+    "invalid": 69225,
+    "prior_excluded": 204611,
+    "duplicate": 11756,
+    "eligible": 1159371
+  },
+  "excluded_prior_movies": 1534,
+  "excluded_prior_ids": 3401,
+  "selection": "movie-hash partition, lowest review hash ranks; first unique review ID and exact text occurrence",
+  "role": "new Movie-derived Map workload; not original SemBench program",
+  "splits": {
+    "tuning": {
+      "rows": 1,
+      "manifest_sha256": "6b260e70e719f9a69ee22d64dfd3b9e05b8c3ca4bfd4416f41b1a1c990c257f5",
+      "movies": 1,
+      "positive": 1
+    },
+    "evaluation": {
+      "rows": 1024,
+      "manifest_sha256": "7b1df9db0077515b7f2d3610481e06b66deeb9e9215d3227bb3000f37d0c2bd4",
+      "movies": 933,
+      "positive": 667
+    }
+  },
+  "usage": {
+    "tuning": "preparation byproduct, unused for model calls",
+    "evaluation": "new input excluding prior SemBench and both previously prepared partitions"
+  },
+  "excluded_manifests": [
+    "883f67a00abbb9565b05f7971d2b6f2c22df0008a5133fd9b027496f0223d300",
+    "69324912cd5a5512a95646fe05b78604e0dc2a50af0e93fec01a4a92f2549d7f",
+    "4d07f355e2fe574c78a5b8a292e6e8d3b192035c166c9ed357b52846add7e37e"
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "schema": "semloom.text_map_campaign.v1",
+  "profile": "main",
+  "stage": "evaluation",
+  "repeats": 3,
+  "candidates": [
+    {
+      "id": "pg-daft-ray-c64",
+      "role": "pg-daft-ray",
+      "config": {
+        "unit_id": "pg-daft-ray-c64",
+        "arm": "pg",
+        "task": "map",
+        "table": "comparison_evaluation",
+        "concurrency": 64,
+        "window": 256,
+        "input_bytes": 134217728,
+        "result_bytes": 134217728,
+        "pg_window_bytes": 268435456,
+        "pg_total_budget": true,
+        "pg_staging_bytes": 4194304,
+        "organization_config": null,
+        "organization_sha256": null,
+        "query_timeout_s": 120,
+        "max_posts": 1024,
+        "movie_id": null,
+        "result_order": "input",
+        "ray_read_blocks": 2,
+        "ray_read_concurrency": 2,
+        "ray_batch_rows": 32,
+        "ray_num_cpus": 8,
+        "ray_actors": 2,
+        "ray_object_store_bytes": 268435456,
+        "event_content": "full",
+        "map_transport_config": "<run-root>/real03/worker/transport.json",
+        "map_transport_sha256": "dec35cbdc87d9768a7c4b318a382c3cd3c45406951e7b6620950a415a13e9137",
+        "ray_address": null,
+        "ray_async_batches_per_actor": 1,
+        "daft_num_threads": 8,
+        "daft_read_partitions": 4
+      }
+    },
+    {
+      "id": "pg-source-direct-c64",
+      "role": "pg-source-direct",
+      "config": {
+        "unit_id": "pg-source-direct-c64",
+        "arm": "pg-source-direct",
+        "task": "map",
+        "table": "comparison_evaluation",
+        "concurrency": 64,
+        "window": 256,
+        "input_bytes": 134217728,
+        "result_bytes": 134217728,
+        "pg_window_bytes": 268435456,
+        "pg_total_budget": false,
+        "pg_staging_bytes": 4194304,
+        "organization_config": null,
+        "organization_sha256": null,
+        "query_timeout_s": 120,
+        "max_posts": 1024,
+        "movie_id": null,
+        "result_order": "input",
+        "ray_read_blocks": 2,
+        "ray_read_concurrency": 2,
+        "ray_batch_rows": 32,
+        "ray_num_cpus": 8,
+        "ray_actors": 2,
+        "ray_object_store_bytes": 268435456,
+        "event_content": "full",
+        "map_transport_config": null,
+        "map_transport_sha256": null,
+        "ray_address": null,
+        "ray_async_batches_per_actor": 1,
+        "daft_num_threads": 8,
+        "daft_read_partitions": 4
+      }
+    },
+    {
+      "id": "ray-data-c128",
+      "role": "ray-data",
+      "config": {
+        "unit_id": "ray-data-c128",
+        "arm": "ray-data",
+        "task": "map",
+        "table": "comparison_evaluation",
+        "concurrency": 128,
+        "window": 4,
+        "input_bytes": 134217728,
+        "result_bytes": 67108864,
+        "pg_window_bytes": 67108864,
+        "pg_total_budget": false,
+        "pg_staging_bytes": 16777216,
+        "organization_config": null,
+        "organization_sha256": null,
+        "query_timeout_s": 120,
+        "max_posts": 1024,
+        "movie_id": null,
+        "result_order": "input",
+        "ray_read_blocks": 4,
+        "ray_read_concurrency": 2,
+        "ray_batch_rows": 1,
+        "ray_num_cpus": 8,
+        "ray_actors": 4,
+        "ray_object_store_bytes": 268435456,
+        "event_content": "full",
+        "map_transport_config": null,
+        "map_transport_sha256": null,
+        "ray_address": "<private-address>:45759",
+        "ray_async_batches_per_actor": 32,
+        "daft_num_threads": 8,
+        "daft_read_partitions": 4
+      }
+    },
+    {
+      "id": "daft-native-c64",
+      "role": "daft-native",
+      "config": {
+        "unit_id": "daft-native-c64",
+        "arm": "daft-native",
+        "task": "map",
+        "table": "comparison_evaluation",
+        "concurrency": 64,
+        "window": 4,
+        "input_bytes": 134217728,
+        "result_bytes": 67108864,
+        "pg_window_bytes": 67108864,
+        "pg_total_budget": false,
+        "pg_staging_bytes": 16777216,
+        "organization_config": null,
+        "organization_sha256": null,
+        "query_timeout_s": 120,
+        "max_posts": 1024,
+        "movie_id": null,
+        "result_order": "input",
+        "ray_read_blocks": 2,
+        "ray_read_concurrency": 2,
+        "ray_batch_rows": 32,
+        "ray_num_cpus": 4,
+        "ray_actors": 2,
+        "ray_object_store_bytes": 268435456,
+        "event_content": "full",
+        "map_transport_config": null,
+        "map_transport_sha256": null,
+        "ray_address": null,
+        "ray_async_batches_per_actor": 1,
+        "daft_num_threads": 8,
+        "daft_read_partitions": 4
+      }
+    }
+  ],
+  "orders": [
+    [
+      "pg-daft-ray-c64",
+      "pg-source-direct-c64",
+      "ray-data-c128",
+      "daft-native-c64"
+    ],
+    [
+      "pg-source-direct-c64",
+      "ray-data-c128",
+      "daft-native-c64",
+      "pg-daft-ray-c64"
+    ],
+    [
+      "ray-data-c128",
+      "daft-native-c64",
+      "pg-daft-ray-c64",
+      "pg-source-direct-c64"
+    ],
+    [
+      "daft-native-c64",
+      "pg-daft-ray-c64",
+      "pg-source-direct-c64",
+      "ray-data-c128"
+    ]
+  ],
+  "max_posts": 16384,
+  "max_seconds": 1200,
+  "manifest": {
+    "path": "<run-root>/assets/fresh-evaluation-real02/evaluation/manifest.json",
+    "sha256": "44181b265bac61eb6cca5301fc87d86ea1c4b2a8cb0079ad15b1ae151047103f"
+  },
+  "model": {
+    "path": "<run-root>/real03/model.json",
+    "sha256": "4677e2ed766cd15b0f448a7ad48bd78999a0b03e512813ebb52dd462a40e57ac"
+  },
+  "installation": {
+    "path": "<run-root>/real03/worker/evaluation-installation.json",
+    "sha256": "7e999d2eefbfd4fd8bc983fabe3e962c051531e22ff053f8247f6b442972c739"
+  },
+  "environment": {
+    "path": "<run-root>/preflight-real03.json",
+    "sha256": "8c77dcd4abe5025ffb965069010e67d8da48187fd11897cbd70632a223ac54fd"
+  },
+  "service_signature": "5191a79dd4ae457f38d70ecdba8909b69e0b1207e786dcc781740a797b4dc9b0",
+  "dsn_env": "SEMLOOM_TEST_PG_DSN",
+  "budget_path": "<run-root>/real03/worker/evaluation-budget.sqlite",
+  "budget_id": "text-map-real03-evaluation",
+  "output_root": "<run-root>/real03/worker/evaluation",
+  "pg_log": "<run-root>/real03/pg/postgres.log",
+  "tuning_result": {
+    "path": "<run-root>/real03/worker/tuning/result.json",
+    "sha256": "c0126ac3848c9118556345e18622c4ee3281c7f2cb1f82de5d5a88b77977569c"
+  }
+}

@@ -1,0 +1,22 @@
+2026-09-30 09:32:24,732	INFO worker.py:2024 -- Started a local Ray instance.
+test_complete_four_path_repeats_and_offline_selection (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_complete_four_path_repeats_and_offline_selection) ... ERROR
+
+======================================================================
+ERROR: test_complete_four_path_repeats_and_offline_selection (test_text_map_shared_integration.SharedRuntimeComparisonTests.test_complete_four_path_repeats_and_offline_selection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<run-root>/src/code/tests/experiments/test_text_map_shared_integration.py", line 184, in test_complete_four_path_repeats_and_offline_selection
+    candidates[role]['warmup' if repeat == 0 else 'measured'].append(self.run_role(role))
+                                                                     ^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src/code/tests/experiments/test_text_map_shared_integration.py", line 150, in run_role
+    config = QueryConfig(unit, arm, 'map', self.table, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 30, in __init__
+  File "<run-root>/src/code/src/experiments/postgresql/query_config.py", line 60, in __post_init__
+    raise ValueError('native Ray requires an explicit existing local cluster address')
+ValueError: native Ray requires an explicit existing local cluster address
+
+----------------------------------------------------------------------
+Ran 1 test in 8.630s
+
+FAILED (errors=1)

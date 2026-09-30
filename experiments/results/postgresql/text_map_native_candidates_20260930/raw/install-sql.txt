@@ -1,0 +1,12 @@
+Looking in indexes: http://mirrors.aliyun.com/pypi/simple
+Collecting SQLAlchemy<3,>=2
+  Downloading http://mirrors.aliyun.com/pypi/packages/b2/95/37b6846549a76c69beca71974905446130d78bddd88a4414b5b88c88af16/sqlalchemy-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.7 kB)
+Requirement already satisfied: typing-extensions>=4.6.0 in /root/miniconda3/lib/python3.12/site-packages (from SQLAlchemy<3,>=2) (4.15.0)
+Downloading http://mirrors.aliyun.com/pypi/packages/b2/95/37b6846549a76c69beca71974905446130d78bddd88a4414b5b88c88af16/sqlalchemy-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (4.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.7/4.7 MB 252.9 kB/s eta 0:00:00
+Installing collected packages: SQLAlchemy
+Successfully installed SQLAlchemy-2.1.1
+
+[notice] A new release of pip is available: 24.0 -> 26.2.1
+[notice] To update, run: <data-root>/venvs/text-baselines/bin/python -m pip install --upgrade pip
+{"missing_specs": ["SQLAlchemy>=2,<3"], "command": ["<data-root>/venvs/text-baselines/bin/python", "-m", "pip", "install", "SQLAlchemy>=2,<3"], "dry_run": false}

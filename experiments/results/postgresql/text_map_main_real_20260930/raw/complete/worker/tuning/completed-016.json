@@ -1,0 +1,9 @@
+{
+  "unit": "ray-data-c16-r1",
+  "role": "ray-data",
+  "summary": {
+    "path": "<run-root>/real03/worker/tuning/ray-data-c16-r1/unit/summary.json",
+    "sha256": "0832e116067aefd7dcddc3cb49cf9fefb30c6190a6dd093ed11369a550de129f"
+  },
+  "actual_posts": 512
+}

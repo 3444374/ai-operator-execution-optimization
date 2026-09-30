@@ -1,0 +1,37 @@
+{
+  "schema": "semloom.movie_partition.v1",
+  "seed": "m1-real-20260914",
+  "source": {
+    "sha256": "fce65e53761e807276a16a2f1409da13148450036518323b2b37202142cb322f",
+    "bytes": 410691413
+  },
+  "previous": {
+    "sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "bytes": 654765
+  },
+  "counts": {
+    "source_rows": 1444963,
+    "invalid": 69225,
+    "prior_excluded": 46237,
+    "duplicate": 13069,
+    "eligible": 1316432
+  },
+  "excluded_prior_movies": 105,
+  "excluded_prior_ids": 1865,
+  "selection": "movie-hash partition, lowest review hash ranks; first unique review ID and exact text occurrence",
+  "role": "new Movie-derived Map workload; not original SemBench program",
+  "splits": {
+    "tuning": {
+      "rows": 512,
+      "manifest_sha256": "69324912cd5a5512a95646fe05b78604e0dc2a50af0e93fec01a4a92f2549d7f",
+      "movies": 482,
+      "positive": 354
+    },
+    "evaluation": {
+      "rows": 1024,
+      "manifest_sha256": "4d07f355e2fe574c78a5b8a292e6e8d3b192035c166c9ed357b52846add7e37e",
+      "movies": 947,
+      "positive": 686
+    }
+  }
+}

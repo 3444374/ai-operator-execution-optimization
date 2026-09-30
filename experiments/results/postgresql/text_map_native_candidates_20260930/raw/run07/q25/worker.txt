@@ -1,0 +1,68 @@
+Error when running pipeline node UDF complete
+Traceback (most recent call last):
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/execution/native_executor.py", line 53, in stream_results
+    yield batch
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 102, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 89, in main
+    run_query(config,manifest_path=args.manifest,model_path=args.model,budget_path=args.budget,
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 103, in run_query
+    errors.raise_if_failed()
+  File "<run-root>/src-git/code/src/experiments/postgresql/cell_evidence.py", line 37, in raise_if_failed
+    raise self.first
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 76, in run_query
+    execution,resources=run_daft(config,inputs,plan,dsn,model,ledger,root,errors)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_daft.py", line 34, in run_daft
+    result = record_execution(root/'q0',lambda:open_rows(inputs,plan,connect,factory,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 299, in record_execution
+    recording.raise_if_failed()
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 138, in raise_if_failed
+    raise self.failure
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 272, in record_execution
+    for row in rows:
+  File "<run-root>/src-git/code/src/baselines/text/frameworks/daft_pg_http.py", line 56, in rows
+    for row in iterator:
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/dataframe/dataframe.py", line 597, in iter_rows
+    for partition in partitions_iter:
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py", line 197, in run_iter_tables
+    for result in self.run_iter(builder, results_buffer_size=results_buffer_size):
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py", line 127, in run_iter
+    return (yield from self._optimize_and_execute(builder, query_id))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py", line 192, in _optimize_and_execute
+    raise e
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py", line 163, in _optimize_and_execute
+    result = next(results_gen)
+             ^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/execution/native_executor.py", line 72, in run
+    event_loop.run(async_exec.aclose())
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/event_loop.py", line 28, in run
+    return asyncio.run_coroutine_threadsafe(future, self.loop).result()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/execution/native_executor.py", line 55, in stream_results
+    stats = await result_handle.try_finish()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/udf/execution.py", line 115, in call_batch_async
+    output = await bound_coroutine(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/daft/udf/udf_v2.py", line 438, in bound_coroutine
+    return await method(local_instance, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/baselines/text/frameworks/daft_pg_http.py", line 49, in complete
+    raise RuntimeError('native Daft HTTP status '+str(response.status))
+RuntimeError: native Daft HTTP status 500

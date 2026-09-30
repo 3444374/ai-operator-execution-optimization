@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-09-27。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-09-30。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
@@ -8,8 +8,36 @@
 |---|---|---|
 | PostgreSQL 语义算子 | `REL_18_3` extension 拥有受限 Filter/Map 语义、SQL 与查询生命周期；Map 已有有界多在途路径，图像 `embed` 为可选版本。证据分别见[两算子检查](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)、[Map 多在途](../experiments/results/postgresql/async_window_20260908/README.md)及[图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)。 | Filter 质量与真实成本校准、第二物理路径、更多组合形态；图像计算中故障与匹配性能。 |
 | 外部执行核心 | 增量 session、任务组织、有界提交、多 Job 资源记账和阶段执行已有源码与受控验证；可选 Daft Native/Ray Core 文本路径保留 HTTP 选择。见[最近工程检查](../experiments/results/postgresql/incremental_transport_20260927/README.md)。 | 多节点运行、持续供给及完整查询收益的独立评价。 |
-| 真实服务检查 | [最近一次](../experiments/results/postgresql/transport_real_20260927/README.md)完成 12 条 SQL、4,144 次请求及资源清理；C64 配对输出有 0–2 行差异。 | 质量等价与稳定性能收益尚无结论。 |
+| 真实服务检查 | [完整新版主表](../experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，完成调参与独立评价；源码和清理核对通过，旧失败单独保留。 | 查询准备成本分解；旧异常根因、质量等价与稳定性能收益尚无结论。 |
 | 方法研究 | [容量复查](../experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成 32 个查询和 16,400 次请求；[全局信息与图像检查](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md)保留全部有限结果。 | 持续供给要求未满足，尚无容量参照；全局信息方式未显示稳定收益。 |
+
+2026-09-30：[四路径完整比较](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+1024行时间中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒。
+四路径各自选点、独立三次测量完成；下列失败、修订和诊断记录保留当时身份，不拼接成当前结果。
+
+2026-09-30：[真实诊断复测](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+16行核对及容量128的四次512行查询全部通过，2,064次账本/服务计数一致、281.156秒，清理通过。
+原异常未复现，根因仍未确定；这不替代新版四路径的完整调参和独立评价。
+
+2026-09-30：[Ray远程错误记录修订](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+已修复底层原因丢失与公开事件阶段字段遗漏，保持未确认额度和不重试行为。
+本地9项、Linux21项及实际PG/Ray的7项回归通过，403次合成POST；真实模型未追加。
+断连后错误关联、清理与新查询恢复通过；旧真实异常的根因仍待诊断复测，不能称已根治。
+
+2026-09-30：[原生候选补充](../experiments/results/postgresql/text_map_native_candidates_20260930/README.md)：
+主表增加Daft Native SQL/HTTP工作函数执行图；由Daft自身管理批次并行，不称内置prompt或SemLoom后端。
+Ray和Daft各三档实际HTTP峰值16/64/128通过，最终3072次合成POST；6项集成及96项本地检查通过。
+主表/本地消融/历史四路径分别选择profile，评价不能更换profile；主表拒绝旧Ray欠供给形状和不等的候选容量集合。
+修订后的真实运行在首次异常后停止，服务确认16,861次成功；新评价集没有进入模型执行。下段保留此前真实运行与首轮修订记录。
+
+2026-09-30：[服务器验证与比较](../experiments/results/postgresql/text_map_matched_20260930/README.md)补齐实际共享PG/Ray、错误与在途超时恢复。
+有限阶段执行复用查询监督器并加入整体期限；四路径Map统一记录模型token用量。
+本轮68条查询、41,024次真实请求及清理完成；原生Ray峰值仅2，不能作为充分配置的外部参照。
+已将原生每actor异步批次数独立配置并通过每查询Ray环境传给worker，按actor数×异步批次数核对HTTP上限；本地91项及实际PG/Ray的5项检查通过（235次合成POST，模型0次）；后续新版运行及其停止原因见开头主表。
+
+[四路径比较准备](../experiments/results/postgresql/text_map_comparison_preparation_20260928/README.md)：
+原生 Ray 可显式连接本地共享服务；离线工具按完整查询时间做有限选点并核对独立评价配置。
+当时82项本地检查通过；后续实际PG/Ray与有限真实结果见上方9月30日记录，旧M1结论保留。
 
 以下第 1–8 节保留早期外部执行路径的实现记录。文中的“当前”和“下一步”按记录时的代码与
 实验身份阅读；现行判断以前表、源码和证据台账为准。

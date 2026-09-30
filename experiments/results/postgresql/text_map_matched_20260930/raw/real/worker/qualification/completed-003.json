@@ -1,0 +1,9 @@
+{
+  "unit": "pg-source-direct-c4-r0",
+  "role": "pg-source-direct",
+  "summary": {
+    "path": "<run-root>/real01/worker/qualification/pg-source-direct-c4-r0/unit/summary.json",
+    "sha256": "d6f793cb4a77ebe8e4cdce8689c1b65de2b10283ade30c98122b09b9d1d54eac"
+  },
+  "actual_posts": 16
+}

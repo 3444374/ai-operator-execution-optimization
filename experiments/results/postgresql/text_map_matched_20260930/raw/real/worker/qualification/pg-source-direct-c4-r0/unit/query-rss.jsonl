@@ -1,0 +1,3 @@
+{"monotonic_ns": 14674581607279397, "phase": "preparation", "rss_bytes": {"consumer_direct": 50999296, "pg_backend": 11042816}, "cpu_seconds": {"consumer_direct": 0.39, "pg_backend": 0.0}, "summed_rss_bytes": 62042112}
+{"monotonic_ns": 14674581807928862, "phase": "preparation", "rss_bytes": {"consumer_direct": 55664640, "pg_backend": 14594048}, "cpu_seconds": {"consumer_direct": 0.5, "pg_backend": 0.0}, "summed_rss_bytes": 70258688}
+{"monotonic_ns": 14674582008593419, "phase": "preparation", "rss_bytes": {"consumer_direct": 55664640, "pg_backend": 14594048}, "cpu_seconds": {"consumer_direct": 0.53, "pg_backend": 0.0}, "summed_rss_bytes": 70258688}

@@ -1,5 +1,39 @@
 # 实验 Baseline 参考矩阵
 
+已完成比较（2026-09-30）：[文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)。
+有限配置选点与独立系统评价已完成，后续按差距选择工作；以下长期参照与历史矩阵不自动恢复运行。
+
+<a id="current-map-coverage"></a>
+## 当前Map比较覆盖范围（2026-09-30）
+
+研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+本轮先比较固定语义的单Map执行成本；不能用这张表替代数据库语义优化、跨模态或多Job的完整研究评价。
+下面当前表优先于本文件后续历史矩阵的执行顺序。
+
+| 层次 | 对照及职责 | 当前状态与本次补充 |
+|---|---|---|
+| 被测系统 | PG＋SemLoom，Daft组织批次、Ray承载执行 | 主实现；HTTP本地执行另作内部消融 |
+| 简单客户端 | PG-source direct，包含普通SQL读取和完整模型请求 | 已有；诊断参照，不称服务上限或数据库内语义算子 |
+| 原生执行系统 | Ray Data SQL reader＋HTTP Processor | 已修订三个候选，真实模型峰值达16/64/128；后续完整主表41,024次请求及独立评价通过，旧失败单独保留 |
+| 原生执行系统 | Daft Native read_sql＋单行异步batch UDF | 已补入并运行真实模型，三档峰值达16/64/128；Daft拥有读取、批次并行和背压，不是内置prompt性能结果 |
+| 内部消融 | SemLoom本地执行，绕过Daft/Ray但保留PG算子及核心 | 可选单列，不是第四个外部系统 |
+| 数据库语义系统 | LOTUS固定版本及SemBench原始查询 | 已有Movie Q1/Q2/Q3入口，尚缺当前Map的原生prompt/parser、缓存/优化、质量和计时配平；列入后续语义系统组 |
+| 数据库原生架构 | Sema作者artifact | 官方仓库提供实验脚本与可执行压缩包；当前环境、endpoint、数据和语义适配未验证，不列入已测排名 |
+| 同任务原生AI函数 | Daft内置prompt、DuckDB ai等现有适配 | 历史入口不等于当前PG源/逐行关联/质量已通过；按具体语义问题补充，不把当前HTTP UDF改名为prompt |
+| 服务层 | vLLM固定版本与服务计数；需要时独立服务压测 | 共用计算设施；PG-source direct不是纯服务上限，不把vLLM当同层竞争系统 |
+| 方法与扩展场景 | 同后端静态/方法消融、多Job、图像 | 由各自计划承担；当前没有恢复旧SAOR、多节点或图像矩阵 |
+
+当前主表采用 `profile=main`：SemLoom Daft/Ray、direct、原生Ray Data、原生Daft；
+`local-ablation` 只含两种SemLoom执行方式；`legacy-four-paths` 保留原运行身份。
+数据、消息/生成/解析、请求数、查询起止、输入历史、CPU/GPU与服务设置须各自配平，
+配置存在或受控并发达到目标均不代表真实性能比较已完成。
+[新版完整运行](../results/postgresql/text_map_main_real_20260930/README.md)完成有限选点与独立评价；全部原值、前次失败及诊断分别保留，不据此声明质量等价或通用系统优势。
+
+来源：当前源码与[受控结果](../results/postgresql/text_map_native_candidates_20260930/README.md)；
+[Daft官方SQL读取](https://docs.daft.ai/en/stable/connectors/sql/)及[UDF接口](https://docs.daft.ai/en/stable/custom-code/func/)；
+[LOTUS官方仓库](https://github.com/lotus-data/lotus)、[Sema作者artifact](https://github.com/BITQiKangK/SemaSystem)。
+当前机器行为以固定Daft0.7.21/Ray2.56.1源码和实际验证为准，不把滚动文档当版本一致性证明。
+
 整理日期：2026-07-16；文献、官方 benchmark、厂商 AI 算子可安装性与指标合同复审：2026-08-05
 
 2026-09-03 增补：§0.2 定义 PG semantic gateway 的分层开销对照，§0.3 定义前缀/表示候选的因果对照；

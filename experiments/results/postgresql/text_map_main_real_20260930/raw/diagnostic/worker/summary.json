@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "max_posts": 2064,
+  "completed": [
+    {
+      "unit": "check16",
+      "actual_posts": 16,
+      "summary": {
+        "path": "<run-root>/diag01/worker/check16/unit/summary.json",
+        "sha256": "01447fa414866957dadc2a3d74c8419bd3a9a0203cbf0c404a5c704070715469"
+      }
+    },
+    {
+      "unit": "c128-r0",
+      "actual_posts": 512,
+      "summary": {
+        "path": "<run-root>/diag01/worker/c128-r0/unit/summary.json",
+        "sha256": "d7ab1cadb6946299f949361121855d74ce26087cdeadc7d9a83e1af7333ac39c"
+      }
+    },
+    {
+      "unit": "c128-r1",
+      "actual_posts": 512,
+      "summary": {
+        "path": "<run-root>/diag01/worker/c128-r1/unit/summary.json",
+        "sha256": "d1598062993dd7cd99bb5f4ed65010a0d0f7f71836d0ca598469e93d785b0bff"
+      }
+    },
+    {
+      "unit": "c128-r2",
+      "actual_posts": 512,
+      "summary": {
+        "path": "<run-root>/diag01/worker/c128-r2/unit/summary.json",
+        "sha256": "409b5d56f25ae402fc9273b6c2b6f2ab73299fa0c6fcd1ed70b2433547f16f1d"
+      }
+    },
+    {
+      "unit": "c128-r3",
+      "actual_posts": 512,
+      "summary": {
+        "path": "<run-root>/diag01/worker/c128-r3/unit/summary.json",
+        "sha256": "bd76a7640355b0eab8ba8994c3476013ac5598ee85288ed976738ff3d7a52d0e"
+      }
+    }
+  ],
+  "actual_posts": 2064,
+  "ray_driver_disconnected": true
+}

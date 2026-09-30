@@ -1,0 +1,3230 @@
+[
+  {
+    "unit": "q01",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 296201,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          296201,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q02",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 296221,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          296221,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q03",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q04",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q05",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 296899,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          296899,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q06",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q07",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q08",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 297321,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          297321,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q09",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q10",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q11",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 297706,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          297706,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q12",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 297731,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          297731,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q13",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q14",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 298248,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          298248,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q15",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 298267,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          298267,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q16",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q17",
+    "arm": "pg",
+    "status": "failed",
+    "map_transport": false,
+    "errors": {
+      "query": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685182317728244
+      },
+      "execution": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685182433048055
+      },
+      "unit": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685182433082326
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q18",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 298577,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          298577,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q19",
+    "arm": "pg",
+    "status": "failed",
+    "map_transport": true,
+    "errors": {
+      "query": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685189886970685
+      },
+      "execution": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685190452868510
+      },
+      "unit": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685190452930953
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q20",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 298755,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          298755,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q21",
+    "arm": "pg-source-direct",
+    "status": "failed",
+    "map_transport": false,
+    "errors": {
+      "query": {
+        "type": "CompletionAdapterError",
+        "sqlstate": null,
+        "message": "MODEL_UNAVAILABLE",
+        "observed_ns": 14685197942162799
+      },
+      "execution": {
+        "type": "CompletionAdapterError",
+        "sqlstate": null,
+        "message": "MODEL_UNAVAILABLE",
+        "observed_ns": 14685197943539925
+      },
+      "unit": {
+        "type": "CompletionAdapterError",
+        "sqlstate": null,
+        "message": "MODEL_UNAVAILABLE",
+        "observed_ns": 14685197943552956
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q22",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q23",
+    "arm": "ray-data",
+    "status": "failed",
+    "map_transport": false,
+    "errors": {
+      "query": {
+        "type": "RayTaskError(UserCodeException)",
+        "sqlstate": null,
+        "message": "\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/base.py\", line 202, in __call__\n    async for output in self.udf(normal_rows):\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/http_request_stage.py\", line 138, in udf\n    resp_json = await response.json()\n                ^^^^^^^^^^^^^^^^^^^^^\n  File \"<run-root>/src-git/code/src/experiments/native_http_observer.py\", line 195, in json\n    value = await self.response.json()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/aiohttp/client_reqrep.py\", line 778, in json\n    raise ContentTypeError(\naiohttp.client_exceptions.ContentTypeError: 500, message='Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8', url='http://127.0.0.1:33267/v1/chat/completions'\n\nThe above exception was the direct cause of the following exception:\n\n\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/actor_pool_map_operator.py\", line 679, in submit\n    yield from _map_task(\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_operator.py\", line 826, in _map_task\n    for block in block_iter:\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 150, in __next__\n    return next(self._input)\n           ^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 498, in __next__\n    result = next(self._results_iter)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 953, in _transform\n    raise items\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 865, in _reorder\n    output_queue.put(await next_task)\n                     ^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 785, in _apply_udf\n    return [out async for out in gen]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 437, in _wrapped_udf_map_fn\n    _try_wrap_udf_exception(e, item)\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 481, in _try_wrap_udf_exception\n    raise UserCodeException(\"UDF failed to process a data block.\") from e\nray.exceptions.UserCodeException: UDF failed to process a data block.",
+        "observed_ns": 14685211489658727
+      },
+      "execution": {
+        "type": "RayTaskError(UserCodeException)",
+        "sqlstate": null,
+        "message": "\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/base.py\", line 202, in __call__\n    async for output in self.udf(normal_rows):\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/http_request_stage.py\", line 138, in udf\n    resp_json = await response.json()\n                ^^^^^^^^^^^^^^^^^^^^^\n  File \"<run-root>/src-git/code/src/experiments/native_http_observer.py\", line 195, in json\n    value = await self.response.json()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/aiohttp/client_reqrep.py\", line 778, in json\n    raise ContentTypeError(\naiohttp.client_exceptions.ContentTypeError: 500, message='Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8', url='http://127.0.0.1:33267/v1/chat/completions'\n\nThe above exception was the direct cause of the following exception:\n\n\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/actor_pool_map_operator.py\", line 679, in submit\n    yield from _map_task(\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_operator.py\", line 826, in _map_task\n    for block in block_iter:\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 150, in __next__\n    return next(self._input)\n           ^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 498, in __next__\n    result = next(self._results_iter)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 953, in _transform\n    raise items\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 865, in _reorder\n    output_queue.put(await next_task)\n                     ^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 785, in _apply_udf\n    return [out async for out in gen]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 437, in _wrapped_udf_map_fn\n    _try_wrap_udf_exception(e, item)\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 481, in _try_wrap_udf_exception\n    raise UserCodeException(\"UDF failed to process a data block.\") from e\nray.exceptions.UserCodeException: UDF failed to process a data block.",
+        "observed_ns": 14685211750457766
+      },
+      "unit": {
+        "type": "RayTaskError(UserCodeException)",
+        "sqlstate": null,
+        "message": "\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/base.py\", line 202, in __call__\n    async for output in self.udf(normal_rows):\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/llm/_internal/batch/stages/http_request_stage.py\", line 138, in udf\n    resp_json = await response.json()\n                ^^^^^^^^^^^^^^^^^^^^^\n  File \"<run-root>/src-git/code/src/experiments/native_http_observer.py\", line 195, in json\n    value = await self.response.json()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/aiohttp/client_reqrep.py\", line 778, in json\n    raise ContentTypeError(\naiohttp.client_exceptions.ContentTypeError: 500, message='Attempt to decode JSON with unexpected mimetype: text/html;charset=utf-8', url='http://127.0.0.1:33267/v1/chat/completions'\n\nThe above exception was the direct cause of the following exception:\n\n\u001b[36mray::MapWorker(MapBatches(HttpRequestUDF)).submit()\u001b[39m (pid=299020, ip=<private-address>, actor_id=6b83594e6159668411f764020c000000, repr=MapWorker(MapBatches(HttpRequestUDF)))\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/actor_pool_map_operator.py\", line 679, in submit\n    yield from _map_task(\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_operator.py\", line 826, in _map_task\n    for block in block_iter:\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 150, in __next__\n    return next(self._input)\n           ^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/execution/operators/map_transformer.py\", line 498, in __next__\n    result = next(self._results_iter)\n             ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 953, in _transform\n    raise items\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 865, in _reorder\n    output_queue.put(await next_task)\n                     ^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 785, in _apply_udf\n    return [out async for out in gen]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 437, in _wrapped_udf_map_fn\n    _try_wrap_udf_exception(e, item)\n  File \"/root/miniconda3/lib/python3.12/site-packages/ray/data/_internal/planner/plan_udf_map_op.py\", line 481, in _try_wrap_udf_exception\n    raise UserCodeException(\"UDF failed to process a data block.\") from e\nray.exceptions.UserCodeException: UDF failed to process a data block.",
+        "observed_ns": 14685211751124396
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q24",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q25",
+    "arm": "daft-native",
+    "status": "failed",
+    "map_transport": false,
+    "errors": {
+      "query": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "native Daft HTTP status 500",
+        "observed_ns": 14685230283537401
+      },
+      "execution": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "native Daft HTTP status 500",
+        "observed_ns": 14685230285683462
+      },
+      "unit": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "native Daft HTTP status 500",
+        "observed_ns": 14685230285705196
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q26",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q27",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 300007,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          300007,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q28",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q29",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q30",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q31",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q32",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q33",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q34",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 301351,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          301351,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q35",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q36",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q37",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 301870,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          301870,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q38",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q39",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q40",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 3,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 302163,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          302163,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q41",
+    "arm": "pg-source-direct",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q42",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q43",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q44",
+    "arm": "pg",
+    "status": "failed",
+    "map_transport": true,
+    "errors": {
+      "query": {
+        "type": "ConnectionFailure",
+        "sqlstate": "08006",
+        "message": "SemLoom model endpoint is unavailable",
+        "observed_ns": 14685389232448074
+      },
+      "execution": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "owned test process required forced termination",
+        "observed_ns": 14685394266408166
+      },
+      "unit": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "owned test process required forced termination",
+        "observed_ns": 14685394266472607
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q45",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 303354,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          303354,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q46",
+    "arm": "pg",
+    "status": "failed",
+    "map_transport": true,
+    "errors": {
+      "query": {
+        "type": "QueryCanceled",
+        "sqlstate": "57014",
+        "message": "canceling statement due to statement timeout",
+        "observed_ns": 14685423296236730
+      },
+      "execution": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "owned test process required forced termination",
+        "observed_ns": 14685428327167269
+      },
+      "unit": {
+        "type": "RuntimeError",
+        "sqlstate": null,
+        "message": "owned test process required forced termination",
+        "observed_ns": 14685428327236230
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q47",
+    "arm": "pg",
+    "status": "passed",
+    "map_transport": true,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "status": "unavailable",
+        "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+      },
+      "ray_transport": {
+        "completed_requests": 8,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1482,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      },
+      "plan": {
+        "semantic_nodes": [
+          {
+            "Node Type": "Custom Scan",
+            "Custom Plan Provider": "SemLoom SemMap",
+            "Semantic Spec": "semloom.semantic.sem_map.generate.v1",
+            "Physical Algorithm": "MODEL_REFERENCE_SYNC_V1",
+            "Semantic Input Window": 8,
+            "Semantic Window Fallback Reason": null
+          }
+        ],
+        "scope": "plain EXPLAIN before execution on the same connection/settings",
+        "absent_window": "not exposed by this plan; never inferred from configured HTTP capacity"
+      },
+      "pg_memory": {
+        "operators": 1,
+        "nodes": [
+          {
+            "version": 1,
+            "backend_pid": 303799,
+            "memory_id": 2,
+            "retained_rows": 0,
+            "pending_rows": 0,
+            "retained_bytes": 0,
+            "retained_limit": 67108864,
+            "staging_limit": 4194304,
+            "peak_retained_bytes": 667456,
+            "peak_staging_bytes": 66616,
+            "peak_conversion_bytes": 1024,
+            "peak_receive_bytes": 8192,
+            "peak_retained_rows": 8,
+            "memory_waits": 0
+          }
+        ],
+        "sum_retained_limits": 67108864,
+        "sum_staging_limits": 4194304,
+        "sum_conversion_limits": 1048576,
+        "sum_retained_peaks": 667456,
+        "interpretation": "per-operator accounted row contexts and metadata reservation; sums are not concurrent query RSS"
+      },
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 8,
+          "input_bytes": 2740,
+          "result_bytes": 8388608,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "limits": {
+          "held_tasks": 8,
+          "input_bytes": 134217728,
+          "result_bytes": 67108864,
+          "active_requests": 4,
+          "active_work": 4
+        },
+        "observations": 35,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "drained_jobs": 1,
+      "association": {
+        "matched_rows": 8,
+        "producer_namespace": [
+          303799,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q49",
+    "arm": "ray-data",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 1,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  },
+  {
+    "unit": "q50",
+    "arm": "daft-native",
+    "status": "failed",
+    "map_transport": false,
+    "errors": {
+      "query": {
+        "type": "TimeoutError",
+        "sqlstate": null,
+        "message": "query deadline exceeded",
+        "observed_ns": 14685505628509036
+      },
+      "execution": {
+        "type": "TimeoutError",
+        "sqlstate": null,
+        "message": "query deadline exceeded",
+        "observed_ns": 14685505630537736
+      },
+      "unit": {
+        "type": "TimeoutError",
+        "sqlstate": null,
+        "message": "query deadline exceeded",
+        "observed_ns": 14685505630555959
+      }
+    },
+    "evaluation": null
+  },
+  {
+    "unit": "q51",
+    "arm": "daft-native",
+    "status": "passed",
+    "map_transport": false,
+    "errors": {},
+    "evaluation": {
+      "actual_posts": 8,
+      "http": {
+        "peak_http": 4,
+        "final_http_active": 0,
+        "started_requests": 8
+      },
+      "association": {
+        "rows": 8,
+        "attempts": 8,
+        "independent_occurrence_binding": true
+      },
+      "model_usage": {
+        "status": "observed",
+        "prompt_tokens": 80,
+        "output_tokens": 8,
+        "output_token_lengths": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      "quality": {
+        "true_positive": 4,
+        "false_positive": 0,
+        "true_negative": 4,
+        "false_negative": 0,
+        "invalid": 0,
+        "evaluated_rows": 8,
+        "missing_rows": 0,
+        "count_error_from_classifications": 0
+      }
+    }
+  }
+]

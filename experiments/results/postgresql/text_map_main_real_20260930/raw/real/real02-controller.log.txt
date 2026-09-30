@@ -1,0 +1,14 @@
+Starting approved finite comparison: 41024 POSTs maximum
+{
+  "status": "failed",
+  "actual_posts": 16862,
+  "server_access_posts": 16861,
+  "elapsed_seconds": 681.0529305934906,
+  "errors": [
+    {
+      "phase": "run",
+      "type": "RuntimeError",
+      "message": "comparison worker failed; no retry"
+    }
+  ]
+}

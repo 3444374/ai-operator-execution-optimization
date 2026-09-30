@@ -17,6 +17,10 @@ def output_identity(path):
 def token_usage(events, expected_rows):
     # PG observer and the direct completion event both retain model-reported usage.
     rows = [e for e in events if e['event'] in ('core_map_completion', 'direct_completion')]
+    if not rows:
+        responses = [e.get('response', {}).get('usage', {}) for e in events if e['event'] == 'http_response']
+        rows = [dict(prompt_tokens=value.get('prompt_tokens'), output_tokens=value.get('completion_tokens'))
+                for value in responses if isinstance(value, dict)]
     if len(rows) != expected_rows or any(type(e.get(k)) is not int or e[k] < 0
             for e in rows for k in ('prompt_tokens', 'output_tokens')):
         return dict(status='unavailable', reason='complete model-reported token usage absent from this observation mode')

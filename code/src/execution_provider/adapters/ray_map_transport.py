@@ -10,7 +10,7 @@ from pathlib import Path
 import time
 
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
-from .async_fixed_model import AsyncFixedModelTransport
+from .async_fixed_model import AsyncFixedModelTransport, exception_details
 
 
 @dataclass(frozen=True)
@@ -38,6 +38,13 @@ class RayMapConfig:
         return cls(**json.loads(path.read_text()))
 
 
+@dataclass(frozen=True)
+class _RemoteFailure:
+    key: object
+    stage: str
+    reason: dict
+
+
 class _HttpActor:
     def __init__(self, config, concurrency):
         self.transport = AsyncFixedModelTransport(config, concurrency)
@@ -48,14 +55,19 @@ class _HttpActor:
 
     async def execute(self, table, index, template):
         key = template.key
-        if (table["session_id"][index].as_py(), table["sequence"][index].as_py()) != (key.session_id, key.sequence):
-            raise ValueError("Ray payload row identity differs")
-        task = replace(template, task=replace(template.task, payload=table["payload"][index].as_py()))
         self.active += 1
         start = time.monotonic_ns()
+        stage = "payload"
         try:
+            if (table["session_id"][index].as_py(), table["sequence"][index].as_py()) != (key.session_id, key.sequence):
+                raise ValueError("Ray payload row identity differs")
+            task = replace(template, task=replace(template.task, payload=table["payload"][index].as_py()))
+            stage = "http"
             result = await self.transport.execute(task, "model")
             return key, result, start, time.monotonic_ns()
+        except Exception as error:
+            # Return only safe metadata across Ray; this is not a model receipt.
+            return _RemoteFailure(key, stage, exception_details(error))
         finally:
             self.active -= 1
 
@@ -243,16 +255,28 @@ class RayMapTransport:
         self.actor_index += 1
         template = replace(row.task, task=replace(row.task.task, payload=b""))
         row.sent = True
+        stage, remote_reason = "ray_submit", None
         try:
             call = actor.execute.remote(self.blocks[block_id].reference, index, template)
-            actual_key, result, started, ended = await call
+            stage = "ray_await"
+            reply = await call
+            stage = "result_validation"
+            if isinstance(reply, _RemoteFailure):
+                if reply.key != key or reply.stage not in ("payload", "http"):
+                    raise ValueError("Ray failure differs from its row or execution stage")
+                stage, remote_reason = reply.stage, reply.reason
+                raise RuntimeError("remote actor execution failed")
+            actual_key, result, started, ended = reply
             if actual_key != key or type(result) is not bytes or len(result) > row.task.task.max_result_bytes:
                 raise ValueError("Ray result differs from its row or result capacity")
             self._observe("ray_http_completed", key=dict(session_id=key.session_id, sequence=key.sequence),
                           worker_elapsed_ns=ended-started)
         except Exception as error:
+            reason = remote_reason if remote_reason is not None else exception_details(error)
+            self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
+                          stage=stage, reason=reason, remote_outcome="unconfirmed")
             self.unknown.add(key)
-            row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + type(error).__name__))
+            row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + reason["exception_type"]))
             return
         self._release(block_id, key)
         row.future.set_result(result if not self.observation_failed else b'{"bridge_error":"MODEL_UNAVAILABLE"}')

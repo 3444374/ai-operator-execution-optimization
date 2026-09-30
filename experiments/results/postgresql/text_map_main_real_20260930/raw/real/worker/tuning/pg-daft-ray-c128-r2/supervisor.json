@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "started_ns": 14683398364295824,
+  "remote_compute_end_known": false,
+  "worker_exit": 1,
+  "error_type": "RuntimeError",
+  "failure_phase": "evaluation_and_cleanup",
+  "t_cancel_ns": 14683417688917168,
+  "remaining_owned_pids": [],
+  "ended_ns": 14683417691368933
+}

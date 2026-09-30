@@ -1,0 +1,45 @@
+{
+  "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "files": {
+    "config.json": {
+      "sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "matches": true
+    },
+    "generation_config.json": {
+      "sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "matches": true
+    },
+    "model-00001-of-00004.safetensors": {
+      "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "matches": true
+    },
+    "model-00002-of-00004.safetensors": {
+      "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "matches": true
+    },
+    "model-00003-of-00004.safetensors": {
+      "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "matches": true
+    },
+    "model-00004-of-00004.safetensors": {
+      "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "matches": true
+    },
+    "model.safetensors.index.json": {
+      "sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "matches": true
+    },
+    "tokenizer.json": {
+      "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "matches": true
+    },
+    "tokenizer_config.json": {
+      "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "matches": true
+    }
+  },
+  "all_match": true,
+  "elapsed_seconds": 22.18684015981853,
+  "model_requests": 0
+}

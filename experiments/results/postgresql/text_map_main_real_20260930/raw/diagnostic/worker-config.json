@@ -1,0 +1,11 @@
+{
+  "output_root": "<run-root>/diag01/worker",
+  "ray_root": "<run-root>/diag01/r",
+  "pg_log": "<run-root>/diag01/pg/postgres.log",
+  "model_config": "<run-root>/diag01/model.json",
+  "inputs_record": "<run-root>/assets/diagnostic-inputs.json",
+  "environment_report": "<run-root>/preflight-diagnostic.json",
+  "deadline_utc": 1790755750.70595,
+  "max_posts": 2064,
+  "service_signature": "2e0fbc59063d897f26175ad3c944a39e5d79fb21313c0b855e4f649105bd0f0d"
+}

@@ -5,6 +5,10 @@
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
 `text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。
+`text/frameworks/daft_pg_http.py`使用Daft0.7.21原生SQL reader与单行异步batch UDF，
+由Daft拥有执行并行；它只复用同语义HTTP工作函数与观测，不接SemLoom执行核心。
+该路径不是旧`daft_prompt.py`的内置prompt结果。主表、消融及语义系统缺项见
+[当前覆盖审计](../../../experiments/plans/baseline_reference.md#current-map-coverage)。
 原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
 [受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
 

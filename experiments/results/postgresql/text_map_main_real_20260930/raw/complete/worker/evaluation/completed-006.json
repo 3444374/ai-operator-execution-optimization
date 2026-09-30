@@ -1,0 +1,9 @@
+{
+  "unit": "ray-data-c128-r1",
+  "role": "ray-data",
+  "summary": {
+    "path": "<run-root>/real03/worker/evaluation/ray-data-c128-r1/unit/summary.json",
+    "sha256": "2e9e98658dcb937dfa5400222debcf661f7d14f830245400e65b4f25d9d6a30d"
+  },
+  "actual_posts": 1024
+}

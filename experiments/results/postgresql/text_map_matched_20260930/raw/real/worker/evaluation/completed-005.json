@@ -1,0 +1,9 @@
+{
+  "unit": "pg-daft-ray-c64-r1",
+  "role": "pg-daft-ray",
+  "summary": {
+    "path": "<run-root>/real01/worker/evaluation/pg-daft-ray-c64-r1/unit/summary.json",
+    "sha256": "76c69809f0d90858ee9ae4042fa57c3b227ea32c658351b680a539ef0b426970"
+  },
+  "actual_posts": 1024
+}

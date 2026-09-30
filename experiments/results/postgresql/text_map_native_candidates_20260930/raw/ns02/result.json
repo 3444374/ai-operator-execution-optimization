@@ -1,0 +1,27 @@
+{
+  "completed": [],
+  "fixture": {
+    "active": 0,
+    "peak": 0,
+    "target": 16,
+    "posts": 0,
+    "expired": 0
+  },
+  "model_requests": 0,
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "native-supply-fixture",
+    "limit": 1536,
+    "allocated_requests": 512,
+    "deadline_utc": 1790740551.7867665,
+    "units": [
+      {
+        "unit_id": "daft-native-c16",
+        "first_attempt": 1,
+        "requests": 512,
+        "claimed": 1
+      }
+    ]
+  },
+  "status": "failed"
+}

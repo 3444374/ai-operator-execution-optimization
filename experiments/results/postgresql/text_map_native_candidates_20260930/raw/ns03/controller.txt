@@ -1,0 +1,21 @@
+2026-09-30 11:47:58,573	INFO worker.py:2024 -- Started a local Ray instance.
+test_declared_native_candidates_reach_capacity_and_settle (test_text_map_native_supply.NativeSupplyTests.test_declared_native_candidates_reach_capacity_and_settle) ... 
+  test_declared_native_candidates_reach_capacity_and_settle (test_text_map_native_supply.NativeSupplyTests.test_declared_native_candidates_reach_capacity_and_settle) (role='daft-native', capacity=16) ... ERROR
+
+======================================================================
+ERROR: test_declared_native_candidates_reach_capacity_and_settle (test_text_map_native_supply.NativeSupplyTests.test_declared_native_candidates_reach_capacity_and_settle) (role='daft-native', capacity=16)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<run-root>/src-git/code/tests/experiments/test_text_map_native_supply.py", line 89, in test_declared_native_candidates_reach_capacity_and_settle
+    supervise(command,output,lambda:ledger.close_shared_unit(unit),query_timeout_s=120,max_duration_s=150)
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_supervisor.py", line 119, in supervise
+    if failure:raise failure
+               ^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_supervisor.py", line 72, in supervise
+    raise RuntimeError('query worker failed; see private worker log and unit evidence')
+RuntimeError: query worker failed; see private worker log and unit evidence
+
+----------------------------------------------------------------------
+Ran 1 test in 6.621s
+
+FAILED (errors=1)

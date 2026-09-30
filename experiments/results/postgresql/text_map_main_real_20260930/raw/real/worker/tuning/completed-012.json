@@ -1,0 +1,9 @@
+{
+  "unit": "daft-native-c128-r0",
+  "role": "daft-native",
+  "summary": {
+    "path": "<run-root>/real02/worker/tuning/daft-native-c128-r0/unit/summary.json",
+    "sha256": "a4cab2e476a5e944523935cf05c9075f66114972394bf8547f6f300cd336d854"
+  },
+  "actual_posts": 512
+}

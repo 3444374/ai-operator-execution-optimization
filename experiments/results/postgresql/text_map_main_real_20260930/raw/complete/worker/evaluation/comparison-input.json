@@ -1,0 +1,108 @@
+{
+  "schema": "semloom.text_map_comparison.v1",
+  "stage": "evaluation",
+  "repeats": 3,
+  "profile": "main",
+  "candidates": [
+    {
+      "id": "pg-daft-ray-c64",
+      "role": "pg-daft-ray",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-daft-ray-c64-r0/unit/summary.json",
+          "sha256": "31170e3cdf0cdf4a490f120d2c0654062f519bb177bfc75aa7507e6fda580bca"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-daft-ray-c64-r1/unit/summary.json",
+          "sha256": "087610041018536090fc520af7b9e51a21399ee13ef53ac7fa61022e6710b41d"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-daft-ray-c64-r2/unit/summary.json",
+          "sha256": "7ff940d942c64fa09a6490a505247529a8d6e467b415c78db69059c6dad0b9d5"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-daft-ray-c64-r3/unit/summary.json",
+          "sha256": "30e3852a0db34b14ea63eb5767494967a5815de6fc17dbab6d615105c97cb8ab"
+        }
+      ]
+    },
+    {
+      "id": "pg-source-direct-c64",
+      "role": "pg-source-direct",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-source-direct-c64-r0/unit/summary.json",
+          "sha256": "3f4102ff7f1ef53201c23f37c893bbeb58426bfb9603144c8608f1a6d4f2c27b"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-source-direct-c64-r1/unit/summary.json",
+          "sha256": "8cebad0ee5190434e7c84ed04a5e297f95968e291e3ca6c5427d502e5ce7f4cb"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-source-direct-c64-r2/unit/summary.json",
+          "sha256": "846167465f3fef0c52eb64004990a7bc23af83cd4902b3fba4fc7c2a8c3d93e2"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/pg-source-direct-c64-r3/unit/summary.json",
+          "sha256": "6b20bba2b526cb6d540cd7c64f0840e3ec7cab480eb2ee098c25536054dc5f84"
+        }
+      ]
+    },
+    {
+      "id": "ray-data-c128",
+      "role": "ray-data",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/ray-data-c128-r0/unit/summary.json",
+          "sha256": "6d675b0902d03b3e298224f811fc0ce434748d0d1f0f673b03ca6a39b5a0cd1f"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/ray-data-c128-r1/unit/summary.json",
+          "sha256": "2e9e98658dcb937dfa5400222debcf661f7d14f830245400e65b4f25d9d6a30d"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/ray-data-c128-r2/unit/summary.json",
+          "sha256": "c9f00591509a71b9db731bab9affe286df426fdb7ccdf77331536e22a884eab8"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/ray-data-c128-r3/unit/summary.json",
+          "sha256": "e9fb016f4452998dcee08d793a80b734304c3a15201618b4a785dd123b183686"
+        }
+      ]
+    },
+    {
+      "id": "daft-native-c64",
+      "role": "daft-native",
+      "warmup": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/daft-native-c64-r0/unit/summary.json",
+          "sha256": "c0f7803b11b6f2724559efa35edcc3b027d948db7cb879bd3c72a9bb3f58859f"
+        }
+      ],
+      "measured": [
+        {
+          "path": "<run-root>/real03/worker/evaluation/daft-native-c64-r1/unit/summary.json",
+          "sha256": "8a7cea29e3a75937392401a11d7bd2f38504e43ab534793f4c1f039f13399d83"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/daft-native-c64-r2/unit/summary.json",
+          "sha256": "bc0599e13552232fea2f3b66519beb935c1ddaf8f2792bf60e80e60d6b780d70"
+        },
+        {
+          "path": "<run-root>/real03/worker/evaluation/daft-native-c64-r3/unit/summary.json",
+          "sha256": "bc14e0b9e7f390ca53a8d7506d8759398826874db8a51fadf1b2ff3e1d4574f6"
+        }
+      ]
+    }
+  ],
+  "tuning_result": {
+    "path": "<run-root>/real03/worker/tuning/result.json",
+    "sha256": "c0126ac3848c9118556345e18622c4ee3281c7f2cb1f82de5d5a88b77977569c"
+  }
+}

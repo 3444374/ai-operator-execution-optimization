@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 102, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_cli.py", line 89, in main
+    run_query(config,manifest_path=args.manifest,model_path=args.model,budget_path=args.budget,
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 103, in run_query
+    errors.raise_if_failed()
+  File "<run-root>/src-git/code/src/experiments/postgresql/cell_evidence.py", line 37, in raise_if_failed
+    raise self.first
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_runner.py", line 89, in run_query
+    summary['evaluation']=evaluate(config,inputs,plan,manifest_path,root,checkout)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_evaluation.py", line 105, in evaluate
+    return evaluate_recording(root/'q0', lambda rows: _evaluate_rows(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 250, in evaluate_recording
+    raise failure
+  File "<run-root>/src-git/code/src/experiments/postgresql/map_query_recording.py", line 228, in evaluate_recording
+    result = evaluator(materialized if materialized is not None else rows())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_evaluation.py", line 105, in <lambda>
+    return evaluate_recording(root/'q0', lambda rows: _evaluate_rows(
+                                                      ^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_evaluation.py", line 133, in _evaluate_rows
+    report['http'] = http_accounting(events,config.concurrency)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<run-root>/src-git/code/src/experiments/postgresql/query_evaluation.py", line 36, in http_accounting
+    raise ValueError('actual HTTP occupancy violates query configuration')
+ValueError: actual HTTP occupancy violates query configuration

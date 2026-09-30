@@ -1,0 +1,54 @@
+{
+  "status": "completed",
+  "result": {
+    "actual_posts": 16,
+    "http": {
+      "peak_http": 1,
+      "final_http_active": 0,
+      "started_requests": 16
+    },
+    "association": {
+      "rows": 16,
+      "attempts": 16,
+      "independent_occurrence_binding": true
+    },
+    "model_usage": {
+      "status": "observed",
+      "prompt_tokens": 1133,
+      "output_tokens": 48,
+      "output_token_lengths": [
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "quality": {
+      "true_positive": 10,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 1,
+      "invalid": 0,
+      "evaluated_rows": 16,
+      "missing_rows": 0,
+      "count_error_from_classifications": -1
+    }
+  },
+  "started_ns": 14674594497515784,
+  "ended_ns": 14674594503595956,
+  "mode": "materialized",
+  "consumed_rows": 16,
+  "memory_scope": "post-query evaluation, separate from query/consumer sampling"
+}

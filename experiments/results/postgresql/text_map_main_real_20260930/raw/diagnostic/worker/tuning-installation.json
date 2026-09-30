@@ -1,0 +1,16 @@
+{
+  "rows": 512,
+  "source_sha256": "ad9591285b50d49fd1809a868675fc7cb999bfe34c0d33217e2671ba1c820ae1",
+  "columns": [
+    "source_position",
+    "row_id",
+    "movie_id",
+    "review_text",
+    "review_id"
+  ],
+  "table": "diagnostic_tuning",
+  "max_source_bytes": 65536,
+  "immutable": true,
+  "identity_order": "input iteration; callers must provide unique increasing source_position",
+  "manifest_sha256": "69324912cd5a5512a95646fe05b78604e0dc2a50af0e93fec01a4a92f2549d7f"
+}

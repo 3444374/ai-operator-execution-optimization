@@ -8,6 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 import os
 import time
+import hashlib
 from types import SimpleNamespace
 
 from src.baselines.common.private_artifacts import new_private_directory,write_private_json
@@ -52,6 +53,8 @@ def run_query(config, *, manifest_path, model_path, budget_path, budget, root, d
     ledger=None
     reserved=False
     summary=dict(status='failed',config=asdict(config),manifest_sha256=manifest['sha256'],
+                 model_config_sha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
+                 executor_lifecycle='per-query',
                  semantic_reference_sha256=semantic_digest,started_ns=time.monotonic_ns(),
                  query_preparation_started_ns=preparation_started_ns,
                  prompt_parser_owner='LOTUS1.2.4' if config.arm=='lotus' else 'PostgreSQL SemanticPlanSpec',
@@ -68,6 +71,9 @@ def run_query(config, *, manifest_path, model_path, budget_path, budget, root, d
                 execution,resources=asyncio.run(run_direct(config,inputs,plan,dsn,model,ledger,root,errors))
             elif config.arm=='ray-data':
                 execution,resources=run_ray(config,inputs,plan,dsn,model,ledger,root,errors,ray_temp_root)
+            elif config.arm=='daft-native':
+                from .query_daft import run_daft
+                execution,resources=run_daft(config,inputs,plan,dsn,model,ledger,root,errors)
             else:
                 import psycopg
                 with psycopg.connect(dsn,autocommit=True) as connection:

@@ -4,14 +4,16 @@
 
 当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
 
-更新日期：2026-09-28
+更新日期：2026-09-30
 
-近期按[新 M1](data_organization_batching.md#m1-throughput-platform)研究有效吞吐平台附近的在途工作与资源代价：
-先核对可达供给，匹配 direct/PG 筛查，再比较调优请求数与工作量控制。全局信息归 M2，多查询分配另按自身资格推进。
-[旧常驻对照](../results/postgresql/waiting_positions_persistent_20260914/README.md)作为已完成的指标反例保留；
-[真实输入准备](../results/postgresql/waiting_positions_real_preparation_20260914/README.md)继续使用，旧 44,544 次表已撤下，真实调用暂停。
-E 的既定工程范围已完成；[F 图像接入](data_organization_batching.md#work-package-f)也已完成工程与受控验证，真实 CLIP 仍未运行。
-已有执行与测量能力继续复用；旧正式矩阵不自动恢复，新实验仍需具体输入、预算与授权。
+已完成[文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)：以有限调参与独立评价比较
+SemLoom Daft/Ray、PG-source direct、原生Ray Data和Daft Native的完整查询时间及质量。
+[新版主表完整运行](../results/postgresql/text_map_main_real_20260930/README.md)已完成68条查询、41,024次请求与独立评价。
+下一项为定位SemLoom查询准备成本；旧失败、修订和诊断保留，未称容量平台或质量等价。
+[新 M1](data_organization_batching.md#m1-throughput-platform)仍负责供给平台与工作量控制的方法问题；
+原未选点结论保留，不挡住所有系统比较。旧运行额度不复用，新实验需明确环境、预算与停止条件。
+E/F 工程范围已完成；图像已有[151次真实CLIP检查](../results/postgresql/m1_m2_f_real_20260920/README.md)，
+计算中故障与匹配性能仍待验证。Movie 公共查询和图像批量参照随后按自身条件推进。
 
 本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
 `../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
@@ -20,6 +22,7 @@ E 的既定工程范围已完成；[F 图像接入](data_organization_batching.m
 
 | 问题 | 入口 |
 |---|---|
+| 已完成文本系统比较 | [文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)：范围、选点、生命周期与真实运行清单 |
 | 当前实验完成度、证据缺口与运行条件 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
 | 当前系统架构与实现顺序 | [主设计](postgresql_ai_semantic_operator_architecture_20260827.md)：长期能力、PG/方法/Core职责、调用与任务关系、资源所有权；[实施与验收](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence) |
 | PG公共调用/绑定与首个组合的设计 | [PG调用与绑定详细设计](postgresql_call_binding_design.md)：共同绑定与一个同步 Filter→生成 Map 已验证；更广组合另行验证 |

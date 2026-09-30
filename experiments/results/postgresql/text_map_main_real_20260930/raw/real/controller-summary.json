@@ -1,0 +1,18 @@
+{
+  "status": "failed",
+  "errors": [
+    {
+      "phase": "run",
+      "type": "RuntimeError",
+      "message": "comparison worker failed; no retry"
+    }
+  ],
+  "max_posts": 41024,
+  "max_seconds": 3600,
+  "gpu": "0",
+  "started_utc": 1790744013.5543191,
+  "actual_posts": 16862,
+  "server_access_posts": 16861,
+  "elapsed_seconds": 681.0529305934906,
+  "gpu_compute_pids": ""
+}

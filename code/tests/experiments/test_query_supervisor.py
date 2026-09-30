@@ -42,6 +42,22 @@ while True:time.sleep(.1)
             self.assertEqual(result['status'],'passed')
             self.assertEqual(result['worker_exit'],0)
 
+    def test_overall_duration_is_not_reset_when_query_phase_starts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            script="""import json,time,sys
+from pathlib import Path
+root=Path(sys.argv[1]);time.sleep(.1);(root/'unit/q0').mkdir(parents=True)
+(root/'unit/q0/started.json').write_text(json.dumps({'started_ns':time.monotonic_ns()}))
+time.sleep(30)
+"""
+            started=time.monotonic()
+            with self.assertRaisesRegex(TimeoutError,'overall wall deadline'):
+                supervise([sys.executable,'-c',script,str(root)],root,lambda:None,
+                    query_timeout_s=30,preparation_s=30,grace_s=.1,max_duration_s=.35)
+            self.assertLess(time.monotonic()-started,3)
+            self.assertEqual(json.loads((root/'supervisor.json').read_text())['remaining_owned_pids'],[])
+
     def test_budget_close_failure_still_stops_worker(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);(root/'unit').mkdir();(root/'unit/unit-reserved.json').write_text('{}')

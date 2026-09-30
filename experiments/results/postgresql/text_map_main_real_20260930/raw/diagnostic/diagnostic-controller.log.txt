@@ -1,0 +1,8 @@
+Starting approved finite comparison: 2064 POSTs maximum
+{
+  "status": "passed",
+  "actual_posts": 2064,
+  "server_access_posts": 2064,
+  "elapsed_seconds": 281.15602803230286,
+  "errors": []
+}

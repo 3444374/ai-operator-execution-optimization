@@ -1,0 +1,14 @@
+test_remote_http_failure_keeps_cause_key_and_unknown_charge (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge) ... ok
+test_rpc_and_result_errors_keep_their_distinct_stages (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_rpc_and_result_errors_keep_their_distinct_stages) ... ok
+test_error_causes_are_bounded_and_observer_failure_preserves_original (tests.execution_provider.test_async_transport.AsyncTransportTests.test_error_causes_are_bounded_and_observer_failure_preserves_original) ... ok
+test_http_failure_reports_type_once_without_message_or_body (tests.execution_provider.test_async_transport.AsyncTransportTests.test_http_failure_reports_type_once_without_message_or_body) ... ok
+test_success_keeps_response_and_has_no_error_event (tests.execution_provider.test_async_transport.AsyncTransportTests.test_success_keeps_response_and_has_no_error_event) ... ok
+test_compact_events_retain_hashes_without_input_or_output_text (tests.experiments.test_buffered_events.BufferedEventTests.test_compact_events_retain_hashes_without_input_or_output_text) ... ok
+test_order_durability_and_no_writes_on_callback_thread (tests.experiments.test_buffered_events.BufferedEventTests.test_order_durability_and_no_writes_on_callback_thread) ... ok
+test_overflow_is_explicit_and_does_not_append_a_partial_event (tests.experiments.test_buffered_events.BufferedEventTests.test_overflow_is_explicit_and_does_not_append_a_partial_event) ... ok
+test_write_failure_is_not_reported_as_a_successful_close (tests.experiments.test_buffered_events.BufferedEventTests.test_write_failure_is_not_reported_as_a_successful_close) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.013s
+
+OK

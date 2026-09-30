@@ -1,0 +1,9 @@
+{
+  "unit": "pg-daft-ray-c4-r0",
+  "role": "pg-daft-ray",
+  "summary": {
+    "path": "<run-root>/real01/worker/qualification/pg-daft-ray-c4-r0/unit/summary.json",
+    "sha256": "4f842c8c8bfa4eaa3fb840c6ec69b939b9fd59f77aca10514f03ea5c3b2f96a9"
+  },
+  "actual_posts": 16
+}

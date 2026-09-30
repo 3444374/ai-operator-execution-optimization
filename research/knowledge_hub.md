@@ -22,6 +22,12 @@
 
 ## 阅读指南
 
+2026-09-30：固定语义Map的原生候选增加Daft Native SQL→异步batch UDF路径，
+与SemLoom内部使用Daft/Ray及Daft内置prompt分开记录；Ray/Daft均以实际HTTP峰值核对声明容量。
+这是执行参照补充，不是新的研究贡献。当前覆盖及LOTUS/Sema待验证项见
+[baseline审计](../experiments/plans/baseline_reference.md#current-map-coverage)。
+
+
 讨论 prompt 表示、跨行/跨算子前缀或其创新性时，先读
 [候选设计审查](semantic_prefix_reuse_design_audit_20260903.md)：源码事实、最近邻反例、可证伪命题与
 论文可声称范围；工程改动和实验次序仍分别回到主计划与 baseline reference。

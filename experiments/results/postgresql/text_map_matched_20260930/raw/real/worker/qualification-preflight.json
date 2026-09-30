@@ -1,0 +1,37 @@
+{
+  "schema": "semloom.text_map_campaign.v1",
+  "stage": "qualification",
+  "specification_sha256": "b4ee6ee9fac7dc4f47dae2ba0a86886b3c47155f65078e7c9a9beb5d17eb73a9",
+  "rows": 16,
+  "manifest_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+  "model_id": "Qwen2.5-7B-Instruct",
+  "model_config_sha256": "4677e2ed766cd15b0f448a7ad48bd78999a0b03e512813ebb52dd462a40e57ac",
+  "service_signature": "e92cf3377b7e2ba1c99156853f23bd3b3109ddd2a5011616379fdecee7c5ccd4",
+  "queries": 4,
+  "max_posts": 64,
+  "candidates": [
+    {
+      "id": "pg-http-c4",
+      "role": "pg-http",
+      "config_sha256": "0b04abfe415d598a63eecdc1c94be6dc61b9bf404ca3c1f983497626ff965de0"
+    },
+    {
+      "id": "pg-daft-ray-c4",
+      "role": "pg-daft-ray",
+      "config_sha256": "4e7caab5cfd5d02c1d8b455ad50b77ab9611df1285591127dda88beb1e81c6a4"
+    },
+    {
+      "id": "pg-source-direct-c4",
+      "role": "pg-source-direct",
+      "config_sha256": "340d1f227d4e4e90cd5ec02a3f849e220f69861717f087bec77de53459f60d9b"
+    },
+    {
+      "id": "ray-data-c4",
+      "role": "ray-data",
+      "config_sha256": "c39eb31e261ab6de52ddf6c0c00b1bddb9c65dd2fb4596f996d31371c8c6305d"
+    }
+  ],
+  "input_independence": "requires historical-use and overlap audit; differing manifests are insufficient",
+  "database_contacted": false,
+  "model_requests": 0
+}

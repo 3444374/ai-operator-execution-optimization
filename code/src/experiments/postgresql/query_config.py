@@ -30,13 +30,17 @@ class QueryConfig:
     event_content: str = 'full'
     map_transport_config: str | None = None
     map_transport_sha256: str | None = None
+    ray_address: str | None = None
+    ray_async_batches_per_actor: int = 1
+    daft_num_threads: int = 8
+    daft_read_partitions: int = 4
 
     def __post_init__(self):
         import math
         import re
         if self.event_content not in ('full', 'compact') or (self.event_content == 'compact' and (self.arm != 'pg' or self.task != 'map')):
             raise ValueError('compact query observation requires PG Map')
-        if self.arm not in ('pg','pg-source-direct','ray-data','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):
+        if self.arm not in ('pg','pg-source-direct','ray-data','daft-native','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):
             raise ValueError('unknown query arm or task')
         if (self.map_transport_config is None) != (self.map_transport_sha256 is None):
             raise ValueError('Map transport configuration requires its SHA-256')
@@ -49,23 +53,37 @@ class QueryConfig:
             raise ValueError('Ray Map observation requires full PG Map and an identified transport')
         if not re.fullmatch(r'[A-Za-z0-9_.-]{1,128}',self.unit_id):
             raise ValueError('invalid query unit identity')
-        if self.arm in ('pg-source-direct','ray-data') and self.task!='map':
+        if self.arm in ('pg-source-direct','ray-data','daft-native') and self.task!='map':
             raise ValueError('this native/direct entry supports only Map tasks')
         if self.arm=='lotus' and self.task=='map':
             raise ValueError('LOTUS entry uses original Movie Q1/Q2/Q3 programs')
+        if self.ray_address is not None:
+            from ipaddress import IPv4Address
+            address = re.fullmatch(r'(localhost|[0-9.]+):([0-9]{1,5})', self.ray_address) if isinstance(self.ray_address, str) else None
+            if self.arm != 'ray-data' or address is None or not 1 <= int(address[2]) <= 65535:
+                raise ValueError('native Ray requires an explicit existing local cluster address')
+            if address[1] != 'localhost':
+                IPv4Address(address[1])
         if self.task!='map' and self.movie_id is not None:
             raise ValueError('original Movie tasks own their movie predicate')
         if self.max_posts is not None and (type(self.max_posts) is not int or self.max_posts<1):
             raise ValueError('positive maximum POST count required')
         for name in ('concurrency','window','input_bytes','result_bytes','pg_window_bytes',
                      'pg_staging_bytes','ray_read_blocks','ray_read_concurrency','ray_batch_rows',
-                     'ray_num_cpus','ray_actors','ray_object_store_bytes'):
+                     'ray_num_cpus','ray_actors','ray_object_store_bytes','ray_async_batches_per_actor',
+                     'daft_num_threads','daft_read_partitions'):
             if type(getattr(self,name)) is not int or getattr(self,name)<1:
                 raise ValueError('positive query resource limits required')
         if max(self.concurrency,self.window,self.ray_read_blocks,self.ray_read_concurrency)>256:
             raise ValueError('query concurrency/window exceeds the supported range')
-        if self.arm=='ray-data' and (self.ray_actors>self.concurrency or self.ray_num_cpus<=self.ray_actors):
-            raise ValueError('Ray needs HTTP capacity for each actor and CPU slots for SQL reading')
+        if max(self.daft_num_threads,self.daft_read_partitions)>256:
+            raise ValueError('native Daft CPU/partition configuration exceeds the supported range')
+        if self.arm=='daft-native' and self.concurrency<2:
+            raise ValueError('pinned native Daft batch execution requires an HTTP allowance of at least two')
+        if self.arm != 'ray-data' and self.ray_async_batches_per_actor != 1:
+            raise ValueError('async batch concurrency belongs to native Ray only')
+        if self.arm=='ray-data' and (self.ray_actors*self.ray_async_batches_per_actor>self.concurrency or self.ray_num_cpus<=self.ray_actors):
+            raise ValueError('Ray needs HTTP capacity for every actor async batch and CPU slots for SQL reading')
         if not 80*1048576<=self.ray_object_store_bytes<=4*1073741824:
             raise ValueError('Ray object store allocation exceeds the supported range')
         if type(self.pg_total_budget) is not bool:

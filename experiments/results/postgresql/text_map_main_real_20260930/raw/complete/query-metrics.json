@@ -1,0 +1,2633 @@
+{
+  "groups": [
+    {
+      "stage": "qualification",
+      "role": "daft-native",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "daft-native-c16-r0",
+          "role": "daft-native",
+          "capacity": 16,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 2.945867074,
+          "preparation_seconds": 0.236084347,
+          "stream_seconds": 2.709782727,
+          "first_row_seconds": 2.909748719,
+          "cleanup_seconds": 0.004628163,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "2eacfadd9eb262ec3ba07c384f06dfd3bbcb54d465823e2b7cbb3806a732e60d"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 2.945867074,
+      "sample_cv": null,
+      "median_preparation_seconds": 0.236084347,
+      "median_stream_seconds": 2.709782727
+    },
+    {
+      "stage": "qualification",
+      "role": "pg-daft-ray",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "pg-daft-ray-c16-r0",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 5.617223358,
+          "preparation_seconds": 2.920375987,
+          "stream_seconds": 2.696847371,
+          "first_row_seconds": 5.616568766,
+          "cleanup_seconds": 0.969182559,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "3fbb075203606ff31a80f0e52dbb34993f89781d4088129cc28a992da10438cf"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 5.617223358,
+      "sample_cv": null,
+      "median_preparation_seconds": 2.920375987,
+      "median_stream_seconds": 2.696847371
+    },
+    {
+      "stage": "qualification",
+      "role": "pg-source-direct",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "pg-source-direct-c16-r0",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 0.486045445,
+          "preparation_seconds": 0.200480699,
+          "stream_seconds": 0.285564746,
+          "first_row_seconds": 0.405494938,
+          "cleanup_seconds": 0.003525226,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "3d1ef5033e791eded6416ec59add806df84188565999b98842b1466e3f3c28ac"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 0.486045445,
+      "sample_cv": null,
+      "median_preparation_seconds": 0.200480699,
+      "median_stream_seconds": 0.285564746
+    },
+    {
+      "stage": "qualification",
+      "role": "ray-data",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "qualification",
+          "unit": "ray-data-c16-r0",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 0,
+          "status": "passed",
+          "rows": 16,
+          "actual_posts": 16,
+          "jct_seconds": 22.800617648,
+          "preparation_seconds": 2.747933632,
+          "stream_seconds": 20.052684016,
+          "first_row_seconds": 22.705173439,
+          "cleanup_seconds": 0.267063847,
+          "accuracy": 0.9375,
+          "prompt_tokens": 1133,
+          "output_tokens": 48,
+          "http": {
+            "peak_http": 4,
+            "final_http_active": 0,
+            "started_requests": 16
+          },
+          "quality": {
+            "true_positive": 10,
+            "false_positive": 0,
+            "true_negative": 5,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 16,
+            "missing_rows": 0,
+            "count_error_from_classifications": -1
+          },
+          "private_summary_sha256": "2ec6fb4951f0ee9939d72ac1a03745cb959b6bdc70213ef976723607c20bb8eb"
+        }
+      ],
+      "warmup": null,
+      "median_jct_seconds": 22.800617648,
+      "sample_cv": null,
+      "median_preparation_seconds": 2.747933632,
+      "median_stream_seconds": 20.052684016
+    },
+    {
+      "stage": "tuning",
+      "role": "daft-native",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c128-r1",
+          "role": "daft-native",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 7.185741424,
+          "preparation_seconds": 0.228214772,
+          "stream_seconds": 6.957526652,
+          "first_row_seconds": 3.319269951,
+          "cleanup_seconds": 0.021849221,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "a37197786caeff05f04611911b675b6779ab6ded3d4b4ad90d932790020dfe26"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c128-r2",
+          "role": "daft-native",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 7.932810133,
+          "preparation_seconds": 0.214717526,
+          "stream_seconds": 7.718092607,
+          "first_row_seconds": 3.360878223,
+          "cleanup_seconds": 0.01929775,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "afab86cea2d2bab6db570a4fb20218d78eb056dd4567eba2465a86cd06fc6d2e"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c128-r3",
+          "role": "daft-native",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 8.202668309,
+          "preparation_seconds": 0.239745449,
+          "stream_seconds": 7.96292286,
+          "first_row_seconds": 3.864969678,
+          "cleanup_seconds": 0.019813602,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "236c8e9e1ba71c372784f7a0b8661e68bba75932e1f857ff3b4e9e2d7b7ba2fc"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "daft-native-c128-r0",
+        "role": "daft-native",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 7.701396493,
+        "preparation_seconds": 0.235845782,
+        "stream_seconds": 7.465550711,
+        "first_row_seconds": 3.604686234,
+        "cleanup_seconds": 0.02047361,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 7,
+          "true_negative": 151,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "c3d96cdb7a123a731db1f9438f5d6bc0d399e6a4531de0a86de65c3047b201d9"
+      },
+      "median_jct_seconds": 7.932810133,
+      "sample_cv": 0.06776591643287713,
+      "median_preparation_seconds": 0.228214772,
+      "median_stream_seconds": 7.718092607
+    },
+    {
+      "stage": "tuning",
+      "role": "daft-native",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c16-r1",
+          "role": "daft-native",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 8.727406921,
+          "preparation_seconds": 0.234911331,
+          "stream_seconds": 8.49249559,
+          "first_row_seconds": 2.687057819,
+          "cleanup_seconds": 0.018192399,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "176e445e03341299984c6900db5896ad4062f011b845eedc4768e184780c08d4"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c16-r2",
+          "role": "daft-native",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 9.64367238,
+          "preparation_seconds": 0.247173383,
+          "stream_seconds": 9.396498997,
+          "first_row_seconds": 3.608391285,
+          "cleanup_seconds": 0.020761102,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "4d08b9887d7a37b4a9d58d6c22b763ec68f4f761d0178eddefae9d551919b087"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c16-r3",
+          "role": "daft-native",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 9.258959853,
+          "preparation_seconds": 0.234421398,
+          "stream_seconds": 9.024538455,
+          "first_row_seconds": 3.158908308,
+          "cleanup_seconds": 0.021382246,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "143c5af03f799e3a2c71392d9a48fdd048020b18a2020aa053d974d2a55df892"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "daft-native-c16-r0",
+        "role": "daft-native",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 9.496380294,
+        "preparation_seconds": 0.22952456,
+        "stream_seconds": 9.266855734,
+        "first_row_seconds": 3.453158707,
+        "cleanup_seconds": 0.020526661,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "02a8b4d5a09e71adab03c7085724b0139f6e06961f8ae12a8f659c24c90e0bea"
+      },
+      "median_jct_seconds": 9.258959853,
+      "sample_cv": 0.04995536893152495,
+      "median_preparation_seconds": 0.234911331,
+      "median_stream_seconds": 9.024538455
+    },
+    {
+      "stage": "tuning",
+      "role": "daft-native",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c64-r1",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 7.322487586,
+          "preparation_seconds": 0.225799476,
+          "stream_seconds": 7.09668811,
+          "first_row_seconds": 3.529334366,
+          "cleanup_seconds": 0.025055072,
+          "accuracy": 0.84375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 282,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 72,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -64
+          },
+          "private_summary_sha256": "74959d2061b226ba4171653bdaa7b53818e4b1621b529a569fcba5fa8f435d2f"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c64-r2",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 7.762919357,
+          "preparation_seconds": 0.230103911,
+          "stream_seconds": 7.532815446,
+          "first_row_seconds": 4.064042389,
+          "cleanup_seconds": 0.021707134,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "96363d5504e458c48988795ae29216cb5a695da8deb4962eb61e3f7b15868e53"
+        },
+        {
+          "stage": "tuning",
+          "unit": "daft-native-c64-r3",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 7.239942119,
+          "preparation_seconds": 0.189662215,
+          "stream_seconds": 7.050279904,
+          "first_row_seconds": 3.351662737,
+          "cleanup_seconds": 0.087885113,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "124c7940639ab4101bd7ddf135b348a277225eba37e066c2c3cb9693497e4d59"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "daft-native-c64-r0",
+        "role": "daft-native",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 6.288192562,
+        "preparation_seconds": 0.236274283,
+        "stream_seconds": 6.051918279,
+        "first_row_seconds": 2.356855124,
+        "cleanup_seconds": 0.0201121,
+        "accuracy": 0.84375,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 282,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 72,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -64
+        },
+        "private_summary_sha256": "530719c2676acd4eb4633bd92ecfe07a3ee8c772c0bdfe014c06a3a7344d258d"
+      },
+      "median_jct_seconds": 7.322487586,
+      "sample_cv": 0.037781005981803624,
+      "median_preparation_seconds": 0.225799476,
+      "median_stream_seconds": 7.09668811
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r1",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 17.162052746,
+          "preparation_seconds": 5.271002512,
+          "stream_seconds": 11.891050234,
+          "first_row_seconds": 10.864430332,
+          "cleanup_seconds": 0.871009528,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "7ea3347609a8a7390266b8b0977866ccdbd2f93e59f2e7f70a5e4ee8cae9d861"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r2",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 17.863107322,
+          "preparation_seconds": 5.459224379,
+          "stream_seconds": 12.403882943,
+          "first_row_seconds": 11.016968403,
+          "cleanup_seconds": 0.821776226,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "eb9d2eb0258f35cb5a799783bfeaadd0089341ff8f6a7e7455ac235cad0f2d9b"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c128-r3",
+          "role": "pg-daft-ray",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.541319577,
+          "preparation_seconds": 5.129061957,
+          "stream_seconds": 13.41225762,
+          "first_row_seconds": 12.817912191,
+          "cleanup_seconds": 0.871378072,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -64
+          },
+          "private_summary_sha256": "9bebf129f03ad4e8778175c6f81f3eed6c26a8f30d4cd4a0032b534eb17e51f0"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c128-r0",
+        "role": "pg-daft-ray",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 14.563524154,
+        "preparation_seconds": 2.639087382,
+        "stream_seconds": 11.924436772,
+        "first_row_seconds": 9.489662017,
+        "cleanup_seconds": 0.874516593,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "16398ecfe7851d11f9861e303d934227730c55bb277fd1ceeccf62c20fcf725a"
+      },
+      "median_jct_seconds": 17.863107322,
+      "sample_cv": 0.03862480476860865,
+      "median_preparation_seconds": 5.271002512,
+      "median_stream_seconds": 12.403882943
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r1",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 13.643747476,
+          "preparation_seconds": 3.079350651,
+          "stream_seconds": 10.564396825,
+          "first_row_seconds": 9.147526305,
+          "cleanup_seconds": 0.870679874,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "b845dfa6c7514e432144299cf15803123ce7377b116a6ad5ca5fba160868cc28"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r2",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 15.329221246,
+          "preparation_seconds": 4.960295145,
+          "stream_seconds": 10.368926101,
+          "first_row_seconds": 10.970659709,
+          "cleanup_seconds": 0.825997565,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "3aa3061690e6d201038f95ae50d60b0d04892447db326987ca54ece7928e51e7"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c16-r3",
+          "role": "pg-daft-ray",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 15.504867499,
+          "preparation_seconds": 5.057276682,
+          "stream_seconds": 10.447590817,
+          "first_row_seconds": 10.972089118,
+          "cleanup_seconds": 0.823292894,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "1d513c489e28aedfbb75b11633491b9b33bf6227428df876641bd16aa9511fdd"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c16-r0",
+        "role": "pg-daft-ray",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 12.946876245,
+        "preparation_seconds": 2.864804158,
+        "stream_seconds": 10.082072087,
+        "first_row_seconds": 8.478827829,
+        "cleanup_seconds": 0.920326062,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "a23bc779706a46382252399a963b5039f64b93aae152363469c26f67ee161757"
+      },
+      "median_jct_seconds": 15.329221246,
+      "sample_cv": 0.06930912396999721,
+      "median_preparation_seconds": 4.960295145,
+      "median_stream_seconds": 10.447590817
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-daft-ray",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r1",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 11.62805894,
+          "preparation_seconds": 5.292245982,
+          "stream_seconds": 6.335812958,
+          "first_row_seconds": 8.686989638,
+          "cleanup_seconds": 0.771956647,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "76056a58399663bba79584d8305044ab14f8a308d90be91d2f45fa02c0ca2673"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r2",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.553152443,
+          "preparation_seconds": 4.893332819,
+          "stream_seconds": 7.659819624,
+          "first_row_seconds": 9.689989264,
+          "cleanup_seconds": 0.820408934,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "d9ab5ff47e0c488f366b1ac433df4cfd05faab53792ab5079b388a3d64bdc1db"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-daft-ray-c64-r3",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 12.868886684,
+          "preparation_seconds": 5.146792553,
+          "stream_seconds": 7.722094131,
+          "first_row_seconds": 10.83257143,
+          "cleanup_seconds": 0.82122818,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "a2892e44310f9a0ca9a5e3516dd484e517dfdec4532f53d9d33b257a6d2ed99e"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-daft-ray-c64-r0",
+        "role": "pg-daft-ray",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 9.440686274,
+        "preparation_seconds": 3.146121227,
+        "stream_seconds": 6.294565047,
+        "first_row_seconds": 6.680095029,
+        "cleanup_seconds": 0.920567363,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "dcdaa6e238d47adb2eb768986f4b5e8fc22b9f9d81a6b03e89b39584caf4782a"
+      },
+      "median_jct_seconds": 12.553152443,
+      "sample_cv": 0.052216011015070764,
+      "median_preparation_seconds": 5.146792553,
+      "median_stream_seconds": 7.659819624
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r1",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.701741549,
+          "preparation_seconds": 0.193986306,
+          "stream_seconds": 5.507755243,
+          "first_row_seconds": 0.402459541,
+          "cleanup_seconds": 0.008289941,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "a5512ac2fcb5f34d5c9a014c94c69093b3da4a24f818df60a11d72c7ed9768b9"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r2",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.749123456,
+          "preparation_seconds": 0.175629271,
+          "stream_seconds": 5.573494185,
+          "first_row_seconds": 0.368232555,
+          "cleanup_seconds": 0.008308283,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "d322002d43b632b51dfc0d6b1a4bf53cb7683d8d1d73a752ec564cad3a7a95d0"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c128-r3",
+          "role": "pg-source-direct",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.954978274,
+          "preparation_seconds": 0.209779267,
+          "stream_seconds": 5.745199007,
+          "first_row_seconds": 0.428355883,
+          "cleanup_seconds": 0.008154163,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 7,
+            "true_negative": 151,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "7847088d5b8d9ffc633faefa14603d6cd6593d0ec3522b955c48a3acd8627752"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c128-r0",
+        "role": "pg-source-direct",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 4.059340192,
+        "preparation_seconds": 0.162830265,
+        "stream_seconds": 3.896509927,
+        "first_row_seconds": 0.360070517,
+        "cleanup_seconds": 0.006880715,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "63d635578503e509d3f81f4685a58a27f8b3b08340228d7e49d83cb05e70b79e"
+      },
+      "median_jct_seconds": 5.749123456,
+      "sample_cv": 0.02320413445993511,
+      "median_preparation_seconds": 0.193986306,
+      "median_stream_seconds": 5.573494185
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r1",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.81930109,
+          "preparation_seconds": 0.204587065,
+          "stream_seconds": 5.614714025,
+          "first_row_seconds": 0.424336735,
+          "cleanup_seconds": 0.004866176,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "f45ed00d0e63ebfe90304986d957793d4bc22f6cf90bc95b932977398cc2a9a8"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r2",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.777926137,
+          "preparation_seconds": 0.168363454,
+          "stream_seconds": 5.609562683,
+          "first_row_seconds": 0.365229711,
+          "cleanup_seconds": 0.004842484,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "c4d6fc81a68e9857cefd3111d417a5a2c4213e1688bd7f547416538a16e17f38"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c16-r3",
+          "role": "pg-source-direct",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 5.833669367,
+          "preparation_seconds": 0.19257742,
+          "stream_seconds": 5.641091947,
+          "first_row_seconds": 0.396604129,
+          "cleanup_seconds": 0.005241953,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "daf20b903c329ac02b6ed218808687b5fcb3cbb5f19f6f560dd220fe621a712a"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c16-r0",
+        "role": "pg-source-direct",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 5.323944502,
+        "preparation_seconds": 0.206864002,
+        "stream_seconds": 5.1170805,
+        "first_row_seconds": 0.388878125,
+        "cleanup_seconds": 0.003709816,
+        "accuracy": 0.845703125,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 9,
+          "true_negative": 149,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -61
+        },
+        "private_summary_sha256": "f7c864e91005317345eaf65a966ab44ce81ca397822d555bd83a0303b9f90bd6"
+      },
+      "median_jct_seconds": 5.81930109,
+      "sample_cv": 0.004981058806942886,
+      "median_preparation_seconds": 0.19257742,
+      "median_stream_seconds": 5.614714025
+    },
+    {
+      "stage": "tuning",
+      "role": "pg-source-direct",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r1",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.133982694,
+          "preparation_seconds": 0.222679969,
+          "stream_seconds": 3.911302725,
+          "first_row_seconds": 0.434631988,
+          "cleanup_seconds": 0.005858041,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "cac5ea2bcbe7c0d19fce616fcf690365db22e8ea53f9b3b16312bbc4281f7242"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r2",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.107890167,
+          "preparation_seconds": 0.202976437,
+          "stream_seconds": 3.90491373,
+          "first_row_seconds": 0.414617564,
+          "cleanup_seconds": 0.005529139,
+          "accuracy": 0.841796875,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 281,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 73,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -65
+          },
+          "private_summary_sha256": "86d95516a276f9b608e71541e7718708a37f5d08b7c841574a9dcd0b2633208a"
+        },
+        {
+          "stage": "tuning",
+          "unit": "pg-source-direct-c64-r3",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 4.063058034,
+          "preparation_seconds": 0.167115711,
+          "stream_seconds": 3.895942323,
+          "first_row_seconds": 0.347763228,
+          "cleanup_seconds": 0.007628794,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -61
+          },
+          "private_summary_sha256": "ef357eb20822d0bcc86989a8a741287d24b3cb564920ead0e0b5e37a6e148c1b"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "pg-source-direct-c64-r0",
+        "role": "pg-source-direct",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 4.005579539,
+        "preparation_seconds": 0.168157539,
+        "stream_seconds": 3.837422,
+        "first_row_seconds": 0.362038834,
+        "cleanup_seconds": 0.006218736,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "aa791fd9c69e723e5f9020709f3ad87f9f0558b043bb741d4bec28cd9d815494"
+      },
+      "median_jct_seconds": 4.107890167,
+      "sample_cv": 0.008745901119241138,
+      "median_preparation_seconds": 0.202976437,
+      "median_stream_seconds": 3.90491373
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r1",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.24492396,
+          "preparation_seconds": 2.800979994,
+          "stream_seconds": 15.443943966,
+          "first_row_seconds": 17.235563408,
+          "cleanup_seconds": 0.035862149,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "1317b8fafefcc80fdfb3080ef3714144f4efdbfb8878f3669e1844e4b9c859e9"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r2",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.21610845,
+          "preparation_seconds": 2.70130504,
+          "stream_seconds": 15.51480341,
+          "first_row_seconds": 17.540957694,
+          "cleanup_seconds": 0.290257737,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "8a113c742477e4bd79832dde39904777c2dd70a17ad2e6ed192ab93c2da283b5"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c128-r3",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.36943472,
+          "preparation_seconds": 2.810339048,
+          "stream_seconds": 15.559095672,
+          "first_row_seconds": 17.342417218,
+          "cleanup_seconds": 0.292777668,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "972ffd101666e3e952e64b18a1f07ce43166ad0700221b7019e7d983c5a3957a"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c128-r0",
+        "role": "ray-data",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 18.137417686,
+        "preparation_seconds": 2.859579355,
+        "stream_seconds": 15.277838331,
+        "first_row_seconds": 17.258709054,
+        "cleanup_seconds": 0.2839527,
+        "accuracy": 0.845703125,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 283,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 71,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -63
+        },
+        "private_summary_sha256": "f684817fc870721e34843d7f7a5e06892460a2c57c89ee1630a3df8f128aa0e5"
+      },
+      "median_jct_seconds": 18.24492396,
+      "sample_cv": 0.004458567880992783,
+      "median_preparation_seconds": 2.800979994,
+      "median_stream_seconds": 15.51480341
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 16,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r1",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 22.092754886,
+          "preparation_seconds": 2.64162153,
+          "stream_seconds": 19.451133356,
+          "first_row_seconds": 17.468972423,
+          "cleanup_seconds": 0.288977779,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "0832e116067aefd7dcddc3cb49cf9fefb30c6190a6dd093ed11369a550de129f"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r2",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 21.318141931,
+          "preparation_seconds": 2.424757552,
+          "stream_seconds": 18.893384379,
+          "first_row_seconds": 17.181085847,
+          "cleanup_seconds": 0.289555253,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "80e8fca6d158ce9a70dad88c4dd7cd076bba623bf43d938924af41ee1c8ef88f"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c16-r3",
+          "role": "ray-data",
+          "capacity": 16,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 22.185573891,
+          "preparation_seconds": 2.819174048,
+          "stream_seconds": 19.366399843,
+          "first_row_seconds": 17.799630547,
+          "cleanup_seconds": 0.287143369,
+          "accuracy": 0.84375,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 16,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 9,
+            "true_negative": 149,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "0e5a8d1d4c3c3b826cbc69daa29dc1df15e3b57e0206fdeaa3a53cdaf409a069"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c16-r0",
+        "role": "ray-data",
+        "capacity": 16,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 21.259424932,
+        "preparation_seconds": 2.852801828,
+        "stream_seconds": 18.406623104,
+        "first_row_seconds": 16.918867983,
+        "cleanup_seconds": 0.285682599,
+        "accuracy": 0.84765625,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 16,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 8,
+          "true_negative": 150,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -62
+        },
+        "private_summary_sha256": "1813a3cdd8d470730fdf95e29dfbc808056de75699d6d0dc6398f906294d9386"
+      },
+      "median_jct_seconds": 22.092754886,
+      "sample_cv": 0.0217824532762315,
+      "median_preparation_seconds": 2.64162153,
+      "median_stream_seconds": 19.366399843
+    },
+    {
+      "stage": "tuning",
+      "role": "ray-data",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r1",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.667221731,
+          "preparation_seconds": 2.711618026,
+          "stream_seconds": 15.955603705,
+          "first_row_seconds": 15.927495117,
+          "cleanup_seconds": 0.285391155,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "acbf9422b6cceec61b0504cf292ece0d8d511c5ba4ef7a45575c62cb7002c2a8"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r2",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.290941751,
+          "preparation_seconds": 2.353543513,
+          "stream_seconds": 15.937398238,
+          "first_row_seconds": 15.665569828,
+          "cleanup_seconds": 0.286565642,
+          "accuracy": 0.84765625,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 284,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 70,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -62
+          },
+          "private_summary_sha256": "9368dcbfa7be29d29bfccdd7d3945fd88563093ab90ad3b793b1968de86f1af5"
+        },
+        {
+          "stage": "tuning",
+          "unit": "ray-data-c64-r3",
+          "role": "ray-data",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 512,
+          "actual_posts": 512,
+          "jct_seconds": 18.531764971,
+          "preparation_seconds": 2.914500942,
+          "stream_seconds": 15.617264029,
+          "first_row_seconds": 16.063718803,
+          "cleanup_seconds": 0.288175638,
+          "accuracy": 0.845703125,
+          "prompt_tokens": 37293,
+          "output_tokens": 1536,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 512
+          },
+          "quality": {
+            "true_positive": 283,
+            "false_positive": 8,
+            "true_negative": 150,
+            "false_negative": 71,
+            "invalid": 0,
+            "evaluated_rows": 512,
+            "missing_rows": 0,
+            "count_error_from_classifications": -63
+          },
+          "private_summary_sha256": "a8c20d9d5af896a9ec25b2d2ce9d188c7cb4a1382d8c5744c6feada9db6fd2dc"
+        }
+      ],
+      "warmup": {
+        "stage": "tuning",
+        "unit": "ray-data-c64-r0",
+        "role": "ray-data",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 512,
+        "actual_posts": 512,
+        "jct_seconds": 18.304522273,
+        "preparation_seconds": 2.818077702,
+        "stream_seconds": 15.486444571,
+        "first_row_seconds": 15.946234733,
+        "cleanup_seconds": 0.296234739,
+        "accuracy": 0.845703125,
+        "prompt_tokens": 37293,
+        "output_tokens": 1536,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 512
+        },
+        "quality": {
+          "true_positive": 284,
+          "false_positive": 9,
+          "true_negative": 149,
+          "false_negative": 70,
+          "invalid": 0,
+          "evaluated_rows": 512,
+          "missing_rows": 0,
+          "count_error_from_classifications": -61
+        },
+        "private_summary_sha256": "b55e97c5331c267b9fbc7d4e1691d8f8fc78a35bf4d5f46b1291f187c127169d"
+      },
+      "median_jct_seconds": 18.531764971,
+      "sample_cv": 0.010303646515683298,
+      "median_preparation_seconds": 2.711618026,
+      "median_stream_seconds": 15.937398238
+    },
+    {
+      "stage": "evaluation",
+      "role": "daft-native",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "daft-native-c64-r1",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 11.54435286,
+          "preparation_seconds": 0.231748532,
+          "stream_seconds": 11.312604328,
+          "first_row_seconds": 3.482718706,
+          "cleanup_seconds": 0.041444736,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 522,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 145,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -136
+          },
+          "private_summary_sha256": "8a7cea29e3a75937392401a11d7bd2f38504e43ab534793f4c1f039f13399d83"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "daft-native-c64-r2",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 11.668340765,
+          "preparation_seconds": 0.226188726,
+          "stream_seconds": 11.442152039,
+          "first_row_seconds": 3.705068421,
+          "cleanup_seconds": 0.038361306,
+          "accuracy": 0.8525390625,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 525,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 142,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -133
+          },
+          "private_summary_sha256": "bc0599e13552232fea2f3b66519beb935c1ddaf8f2792bf60e80e60d6b780d70"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "daft-native-c64-r3",
+          "role": "daft-native",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 11.797282714,
+          "preparation_seconds": 0.227703572,
+          "stream_seconds": 11.569579142,
+          "first_row_seconds": 3.954759529,
+          "cleanup_seconds": 0.038871794,
+          "accuracy": 0.8505859375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 524,
+            "false_positive": 10,
+            "true_negative": 347,
+            "false_negative": 143,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -133
+          },
+          "private_summary_sha256": "bc14e0b9e7f390ca53a8d7506d8759398826874db8a51fadf1b2ff3e1d4574f6"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "daft-native-c64-r0",
+        "role": "daft-native",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 12.292992311,
+        "preparation_seconds": 0.233060866,
+        "stream_seconds": 12.059931445,
+        "first_row_seconds": 3.494645091,
+        "cleanup_seconds": 0.03275351,
+        "accuracy": 0.8486328125,
+        "prompt_tokens": 72812,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 521,
+          "false_positive": 9,
+          "true_negative": 348,
+          "false_negative": 146,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -137
+        },
+        "private_summary_sha256": "c0f7803b11b6f2724559efa35edcc3b027d948db7cb879bd3c72a9bb3f58859f"
+      },
+      "median_jct_seconds": 11.668340765,
+      "sample_cv": 0.010837454867433913,
+      "median_preparation_seconds": 0.227703572,
+      "median_stream_seconds": 11.442152039
+    },
+    {
+      "stage": "evaluation",
+      "role": "pg-daft-ray",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r1",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 16.839801637,
+          "preparation_seconds": 5.302597113,
+          "stream_seconds": 11.537204524,
+          "first_row_seconds": 9.916611769,
+          "cleanup_seconds": 0.874245043,
+          "accuracy": 0.8515625,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 524,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 143,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -134
+          },
+          "private_summary_sha256": "087610041018536090fc520af7b9e51a21399ee13ef53ac7fa61022e6710b41d"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r2",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 18.455869167,
+          "preparation_seconds": 5.279763392,
+          "stream_seconds": 13.176105775,
+          "first_row_seconds": 10.537357621,
+          "cleanup_seconds": 0.82295358,
+          "accuracy": 0.8505859375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 524,
+            "false_positive": 10,
+            "true_negative": 347,
+            "false_negative": 143,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -133
+          },
+          "private_summary_sha256": "7ff940d942c64fa09a6490a505247529a8d6e467b415c78db69059c6dad0b9d5"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-daft-ray-c64-r3",
+          "role": "pg-daft-ray",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 18.101177808,
+          "preparation_seconds": 5.422728878,
+          "stream_seconds": 12.67844893,
+          "first_row_seconds": 10.370895584,
+          "cleanup_seconds": 0.87344358,
+          "accuracy": 0.8525390625,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "status": "unavailable",
+            "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+          },
+          "quality": {
+            "true_positive": 525,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 142,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -133
+          },
+          "private_summary_sha256": "30e3852a0db34b14ea63eb5767494967a5815de6fc17dbab6d615105c97cb8ab"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "pg-daft-ray-c64-r0",
+        "role": "pg-daft-ray",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 16.816643293,
+        "preparation_seconds": 4.724164455,
+        "stream_seconds": 12.092478838,
+        "first_row_seconds": 9.444462986,
+        "cleanup_seconds": 0.873676855,
+        "accuracy": 0.8515625,
+        "prompt_tokens": 72812,
+        "output_tokens": 3072,
+        "http": {
+          "status": "unavailable",
+          "reason": "remote worker clocks are not aligned; completion arrival is not HTTP start time"
+        },
+        "quality": {
+          "true_positive": 524,
+          "false_positive": 9,
+          "true_negative": 348,
+          "false_negative": 143,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -134
+        },
+        "private_summary_sha256": "31170e3cdf0cdf4a490f120d2c0654062f519bb177bfc75aa7507e6fda580bca"
+      },
+      "median_jct_seconds": 18.101177808,
+      "sample_cv": 0.04772008687380872,
+      "median_preparation_seconds": 5.302597113,
+      "median_stream_seconds": 12.67844893
+    },
+    {
+      "stage": "evaluation",
+      "role": "pg-source-direct",
+      "capacity": 64,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r1",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.704908816,
+          "preparation_seconds": 0.194159715,
+          "stream_seconds": 7.510749101,
+          "first_row_seconds": 0.407020243,
+          "cleanup_seconds": 0.006424213,
+          "accuracy": 0.849609375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 523,
+            "false_positive": 10,
+            "true_negative": 347,
+            "false_negative": 144,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -134
+          },
+          "private_summary_sha256": "8cebad0ee5190434e7c84ed04a5e297f95968e291e3ca6c5427d502e5ce7f4cb"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r2",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.70720634,
+          "preparation_seconds": 0.198684686,
+          "stream_seconds": 7.508521654,
+          "first_row_seconds": 0.398896073,
+          "cleanup_seconds": 0.00621158,
+          "accuracy": 0.8515625,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 524,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 143,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -134
+          },
+          "private_summary_sha256": "846167465f3fef0c52eb64004990a7bc23af83cd4902b3fba4fc7c2a8c3d93e2"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "pg-source-direct-c64-r3",
+          "role": "pg-source-direct",
+          "capacity": 64,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 7.663782735,
+          "preparation_seconds": 0.202066458,
+          "stream_seconds": 7.461716277,
+          "first_row_seconds": 0.410012349,
+          "cleanup_seconds": 0.006438814,
+          "accuracy": 0.8515625,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 64,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 524,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 143,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -134
+          },
+          "private_summary_sha256": "6b20bba2b526cb6d540cd7c64f0840e3ec7cab480eb2ee098c25536054dc5f84"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "pg-source-direct-c64-r0",
+        "role": "pg-source-direct",
+        "capacity": 64,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 7.786968222,
+        "preparation_seconds": 0.195117519,
+        "stream_seconds": 7.591850703,
+        "first_row_seconds": 0.411791609,
+        "cleanup_seconds": 0.006348205,
+        "accuracy": 0.8505859375,
+        "prompt_tokens": 72812,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 64,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 523,
+          "false_positive": 9,
+          "true_negative": 348,
+          "false_negative": 144,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -135
+        },
+        "private_summary_sha256": "3f4102ff7f1ef53201c23f37c893bbeb58426bfb9603144c8608f1a6d4f2c27b"
+      },
+      "median_jct_seconds": 7.704908816,
+      "sample_cv": 0.003176614541640235,
+      "median_preparation_seconds": 0.198684686,
+      "median_stream_seconds": 7.508521654
+    },
+    {
+      "stage": "evaluation",
+      "role": "ray-data",
+      "capacity": 128,
+      "measured": [
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r1",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 1,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 22.944855682,
+          "preparation_seconds": 2.888255704,
+          "stream_seconds": 20.056599978,
+          "first_row_seconds": 22.734097691,
+          "cleanup_seconds": 0.307792726,
+          "accuracy": 0.8505859375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 523,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 144,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -135
+          },
+          "private_summary_sha256": "2e9e98658dcb937dfa5400222debcf661f7d14f830245400e65b4f25d9d6a30d"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r2",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 2,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 22.173120484,
+          "preparation_seconds": 2.739148029,
+          "stream_seconds": 19.433972455,
+          "first_row_seconds": 21.497090692,
+          "cleanup_seconds": 0.307138918,
+          "accuracy": 0.8505859375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 523,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 144,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -135
+          },
+          "private_summary_sha256": "c9f00591509a71b9db731bab9affe286df426fdb7ccdf77331536e22a884eab8"
+        },
+        {
+          "stage": "evaluation",
+          "unit": "ray-data-c128-r3",
+          "role": "ray-data",
+          "capacity": 128,
+          "round": 3,
+          "status": "passed",
+          "rows": 1024,
+          "actual_posts": 1024,
+          "jct_seconds": 22.848570461,
+          "preparation_seconds": 2.795100072,
+          "stream_seconds": 20.053470389,
+          "first_row_seconds": 21.867213624,
+          "cleanup_seconds": 0.060268364,
+          "accuracy": 0.8505859375,
+          "prompt_tokens": 72812,
+          "output_tokens": 3072,
+          "http": {
+            "peak_http": 128,
+            "final_http_active": 0,
+            "started_requests": 1024
+          },
+          "quality": {
+            "true_positive": 523,
+            "false_positive": 9,
+            "true_negative": 348,
+            "false_negative": 144,
+            "invalid": 0,
+            "evaluated_rows": 1024,
+            "missing_rows": 0,
+            "count_error_from_classifications": -135
+          },
+          "private_summary_sha256": "e9fb016f4452998dcee08d793a80b734304c3a15201618b4a785dd123b183686"
+        }
+      ],
+      "warmup": {
+        "stage": "evaluation",
+        "unit": "ray-data-c128-r0",
+        "role": "ray-data",
+        "capacity": 128,
+        "round": 0,
+        "status": "passed",
+        "rows": 1024,
+        "actual_posts": 1024,
+        "jct_seconds": 22.788715374,
+        "preparation_seconds": 2.734792161,
+        "stream_seconds": 20.053923213,
+        "first_row_seconds": 22.649365464,
+        "cleanup_seconds": 0.307506314,
+        "accuracy": 0.849609375,
+        "prompt_tokens": 72812,
+        "output_tokens": 3072,
+        "http": {
+          "peak_http": 128,
+          "final_http_active": 0,
+          "started_requests": 1024
+        },
+        "quality": {
+          "true_positive": 523,
+          "false_positive": 10,
+          "true_negative": 347,
+          "false_negative": 144,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -134
+        },
+        "private_summary_sha256": "6d675b0902d03b3e298224f811fc0ce434748d0d1f0f673b03ca6a39b5a0cd1f"
+      },
+      "median_jct_seconds": 22.848570461,
+      "sample_cv": 0.018561976998533663,
+      "median_preparation_seconds": 2.795100072,
+      "median_stream_seconds": 20.053470389
+    }
+  ],
+  "output_differences": [
+    {
+      "stage": "qualification",
+      "left": "daft-native",
+      "right": "pg-daft-ray",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "daft-native",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "daft-native",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-daft-ray",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-daft-ray",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "qualification",
+      "left": "pg-source-direct",
+      "right": "ray-data",
+      "different_output_rows": [
+        0
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "daft-native",
+      "right": "pg-daft-ray",
+      "different_output_rows": [
+        4,
+        2,
+        2
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "daft-native",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        4,
+        1,
+        1
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "daft-native",
+      "right": "ray-data",
+      "different_output_rows": [
+        3,
+        2,
+        2
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-daft-ray",
+      "right": "pg-source-direct",
+      "different_output_rows": [
+        2,
+        1,
+        1
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-daft-ray",
+      "right": "ray-data",
+      "different_output_rows": [
+        1,
+        4,
+        2
+      ]
+    },
+    {
+      "stage": "evaluation",
+      "left": "pg-source-direct",
+      "right": "ray-data",
+      "different_output_rows": [
+        3,
+        3,
+        1
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+Operator 1 ReadSQL->SplitBlocks(4): 1 tasks executed, 4 blocks produced in 0.02s
+* Remote wall time: 102.05us min, 14.32ms max, 3.67ms mean, 14.67ms total
+* Remote cpu time: 101.49us min, 8.31ms max, 2.18ms mean, 8.72ms total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 4 min, 4 max, 4 mean, 16 total
+* Output size bytes per block: 720 min, 893 max, 803 mean, 3215 total
+* Output rows per task: 16 min, 16 max, 16 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 16 rows
+	* Ray Data throughput: 740.840957656779 rows/s
+	* Estimated single task throughput: 1090.5838466670602 rows/s
+
+Operator 2 Map(_preprocess): 4 tasks executed, 4 blocks produced in 0.03s
+* Remote wall time: 2.13ms min, 6.44ms max, 3.49ms mean, 13.96ms total
+* Remote cpu time: 2.23ms min, 8.37ms max, 4.13ms mean, 16.52ms total
+* UDF time: 1.02ms min, 5.0ms max, 2.18ms mean, 8.72ms total
+* Output num rows per block: 4 min, 4 max, 4 mean, 16 total
+* Output size bytes per block: 2243 min, 2616 max, 2411 mean, 9645 total
+* Output rows per task: 4 min, 4 max, 4 mean, 4 tasks used
+* Tasks per node: 4 min, 4 max, 4 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 16 rows
+	* Total output num rows: 16 rows
+	* Ray Data throughput: 477.59950057946213 rows/s
+	* Estimated single task throughput: 1145.9438803396022 rows/s
+
+Operator 3 MapBatches(HttpRequestUDF): 4 tasks executed, 4 blocks produced in 0.69s
+* Remote wall time: 108.04ms min, 138.31ms max, 116.41ms mean, 465.62ms total
+* Remote cpu time: 19.97ms min, 38.29ms max, 25.9ms mean, 103.61ms total
+* UDF time: 107.09ms min, 136.06ms max, 115.23ms mean, 460.91ms total
+* Output num rows per block: 4 min, 4 max, 4 mean, 16 total
+* Output size bytes per block: 3067 min, 3439 max, 3235 mean, 12940 total
+* Output rows per task: 4 min, 4 max, 4 mean, 4 tasks used
+* Tasks per node: 4 min, 4 max, 4 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 16 rows
+	* Total output num rows: 16 rows
+	* Ray Data throughput: 23.023783194313072 rows/s
+	* Estimated single task throughput: 34.362625653257886 rows/s
+
+Operator 4 Map(_postprocess): 4 tasks executed, 4 blocks produced in 0.13s
+* Remote wall time: 2.81ms min, 3.18ms max, 2.95ms mean, 11.81ms total
+* Remote cpu time: 3.01ms min, 3.34ms max, 3.13ms mean, 12.52ms total
+* UDF time: 1.63ms min, 1.82ms max, 1.7ms mean, 6.79ms total
+* Output num rows per block: 4 min, 4 max, 4 mean, 16 total
+* Output size bytes per block: 180 min, 181 max, 180 mean, 723 total
+* Output rows per task: 4 min, 4 max, 4 mean, 4 tasks used
+* Tasks per node: 4 min, 4 max, 4 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 16 rows
+	* Total output num rows: 16 rows
+	* Ray Data throughput: 125.14845964893739 rows/s
+	* Estimated single task throughput: 1354.2414553650283 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 16.456826309142695 rows/s
