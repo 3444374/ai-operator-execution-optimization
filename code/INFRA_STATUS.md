@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-02：新增可选单线程持久记账，原事务不变，内容核对和记录仍在事件循环。
+Ray发送前回调可等待异步完成，并在等待后再次检查取消；已提交额度保留，失败不发请求。
+默认同步选择保留，生产未配置回调时不创建记账线程。目标同条件无模型对照pending，模型额度0，
+见[执行安排](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+
 2026-10-01：Ray Map增加热批次、对象写入、RPC及同Linux单调时钟下worker前后计时；
 实验记录器增加账本reserve与请求观察时长。容量、请求、取消和未知远端资源记账保持原行为。
 本地37项中30项通过、7项缺Daft/Arrow跳过；目标环境37项全部通过。

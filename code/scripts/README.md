@@ -442,6 +442,9 @@ Daft Native只处理当前有限窗口；Ray Core actor按对象引用和行位�
 `QueryConfig`新增可选`map_transport_config`与`map_transport_sha256`，用于完整观测的PG Map验证。
 查询runner核对文件身份，并把配置副本写入各运行目录。正式请求仍使用已有预算化实验入口；
 `choice_gateway_observer`会在Ray RPC前持久预扣，不能只观察gateway进程里的HTTP。
+可选`--remote-budget-mode threaded`仅用于有durable ledger的Ray Map，将原reserve交给单个I/O线程，
+完成后再核对/记录请求并允许RPC；默认`synchronous`保留。查询配置使用`remote_budget_mode`选择，
+模式进入配置摘要。取消等待已排队事务完成，不退还已提交额度；线程在事件writer关闭前排空。
 worker的本地耗时和对象占用分别记录；没有对齐跨节点时钟时，HTTP活跃时间线明确不可用。
 
 窗口与对象额度不等于整个进程RSS或Ray对象存储的总大小。首次SQL查询还可能包含Daft及HTTP客户端的惰性准备。

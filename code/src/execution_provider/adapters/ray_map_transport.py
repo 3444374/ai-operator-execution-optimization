@@ -7,6 +7,7 @@ from contextlib import contextmanager, nullcontext
 from dataclasses import asdict, dataclass, replace
 from functools import partial
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -392,23 +393,38 @@ class RayMapTransport:
 
     async def _run_row(self, row, block_id, index):
         key = row.task.key
-        if row.cancelled or self.observation_failed:
+        if row.cancelled or self.observation_failed or row.future.cancelled():
             self._release(block_id, key)
-            row.future.set_result(b"" if row.cancelled else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
+            if not row.future.done():
+                row.future.set_result(b"" if row.cancelled else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
         try:
             if self.before_request:
                 started = time.monotonic_ns()
                 status = 'failed'
                 try:
-                    self.before_request(row.task)
+                    guarded = self.before_request(row.task)
+                    if inspect.isawaitable(guarded):
+                        await guarded
                     status = 'completed'
                 finally:
                     self._observe('ray_request_guard', key=dict(session_id=key.session_id, sequence=key.sequence),
                                   status=status, elapsed_ns=time.monotonic_ns()-started)
+        except asyncio.CancelledError:
+            self._release(block_id, key)
+            if not row.future.done():
+                row.future.set_result(b'')
+            raise
         except Exception:
             self._release(block_id, key)
-            row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
+            if not row.future.done():
+                row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
+            return
+        # Accounting may have yielded while the database cancelled this row.
+        if row.cancelled or self.observation_failed or row.future.cancelled():
+            self._release(block_id, key)
+            if not row.future.done():
+                row.future.set_result(b'' if row.cancelled else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
         actor = self.actors[self.actor_index % len(self.actors)]
         self.actor_index += 1
@@ -458,10 +474,12 @@ class RayMapTransport:
             self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
                           stage=stage, reason=reason, remote_outcome="unconfirmed")
             self.unknown.add(key)
-            row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + reason["exception_type"]))
+            if not row.future.done():
+                row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + reason["exception_type"]))
             return
         self._release(block_id, key)
-        row.future.set_result(result if not self.observation_failed else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
+        if not row.future.done():
+            row.future.set_result(result if not self.observation_failed else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
 
     def _dispose(self):
         failure = None

@@ -34,10 +34,15 @@ class QueryConfig:
     ray_async_batches_per_actor: int = 1
     daft_num_threads: int = 8
     daft_read_partitions: int = 4
+    remote_budget_mode: str = 'synchronous'
 
     def __post_init__(self):
         import math
         import re
+        if self.remote_budget_mode not in ('synchronous', 'threaded'):
+            raise ValueError('unknown remote budget placement')
+        if self.remote_budget_mode == 'threaded' and self.map_transport_config is None:
+            raise ValueError('threaded accounting requires Ray Map transport')
         if self.event_content not in ('full', 'compact') or (self.event_content == 'compact' and (self.arm != 'pg' or self.task != 'map')):
             raise ValueError('compact query observation requires PG Map')
         if self.arm not in ('pg','pg-source-direct','ray-data','daft-native','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):
