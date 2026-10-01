@@ -30,6 +30,7 @@ def pg_gateway_command(config, plan, model_path, ledger, root):
         *event_args,
         '--session-events',str(root/'sessions.jsonl'),'--observer-summary',str(root/'observer.json'),
         '--event-content',config.event_content,'--event-write-mode','buffered','--cell-budget',str(ledger.path),
+        '--remote-budget-mode',config.remote_budget_mode,
         '--shared-unit-budget','--unit-id',config.unit_id,'--budget-id',ledger.budget.budget_id,
         '--max-attempts',str(ledger.budget.limit),'--','--socket',str(socket),
         '--fixed-model-config',str(model_path),'--incremental-map','--max-active-jobs','1',

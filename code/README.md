@@ -20,6 +20,11 @@
 本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
 Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
+实验配置新增`remote_budget_mode=threaded`，将原持久reserve交给单个I/O线程；默认`synchronous`保留。
+内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。
+实现位于[线程记账回调](src/experiments/async_request_guard.py)。[目标同条件对照](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)
+70项及累计8,224次fixture通过，模型0次；线程选择8.287→11.570秒，慢39.606%，仅保留为显式诊断。
+恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，下一项检查小窗口反复创建。
 Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
 实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
 验证安排见[准备调优计划](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。

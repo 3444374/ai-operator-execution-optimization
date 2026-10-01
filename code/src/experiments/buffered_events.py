@@ -25,7 +25,7 @@ def compact_event(event):
                'accepted_prefix_count', 'engine_session_id', 'closed',
                'block_id', 'rows', 'bytes', 'object_bytes', 'object_limit_bytes',
                'submitted_ns', 'resumed_ns', 'queue_ns', 'work_ns', 'resume_ns', 'elapsed_ns',
-               'hash_ns', 'reserve_ns', 'request_observe_ns',
+               'hash_ns', 'reserve_ns', 'reserve_queue_ns', 'reserve_resume_ns', 'request_observe_ns',
                'worker_elapsed_ns', 'submit_elapsed_ns', 'await_elapsed_ns', 'rpc_elapsed_ns',
                'rpc_started_ns', 'rpc_returned_ns', 'received_ns', 'worker_started_ns', 'worker_ended_ns',
                'shared_clock', 'before_worker_ns', 'after_worker_ns'}

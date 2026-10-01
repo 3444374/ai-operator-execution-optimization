@@ -3,15 +3,54 @@
 import json
 from pathlib import Path
 import tempfile
+import asyncio
+import time
 import unittest
 from unittest.mock import Mock, patch
 
 from src.experiments.choice_gateway_observer import main, _guard_remote_request
 from src.experiments.buffered_events import compact_event
 from tests.execution_provider.test_ray_map_transport import task
+from src.experiments.attempt_ledger import AttemptBudget
+from src.experiments.cell_budget import CellBudgetLedger
+from src.experiments.postgresql.query_config import QueryConfig
 
 
 class ChoiceObserverTests(unittest.TestCase):
+    def test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            budget = AttemptBudget('fixture.threaded.cli.v1', 2)
+            ledger = CellBudgetLedger.create(root/'budget.sqlite', budget, deadline_utc=time.time()+20)
+            ledger.reserve_unit('unit', 2)
+            def gateway(args, **options):
+                async def run():
+                    await asyncio.gather(*(options['remote_request_guard'](
+                        task(i, b'{"model":"fixture-model","messages":[]}')) for i in range(2)))
+                asyncio.run(run())
+                return 0
+            with patch('src.experiments.choice_gateway_observer.server.main', side_effect=gateway):
+                self.assertEqual(main(['--events', str(root/'events'), '--observer-summary', str(root/'summary'),
+                    '--event-content', 'compact', '--event-write-mode', 'buffered',
+                    '--cell-budget', str(ledger.path), '--shared-unit-budget', '--unit-id', 'unit',
+                    '--budget-id', budget.budget_id, '--max-attempts', '2', '--remote-budget-mode', 'threaded',
+                    '--', '--socket', str(root/'socket'), '--fixed-model-config', str(root/'model'),
+                    '--incremental-map', '--map-transport-config', str(root/'transport')]), 0)
+            summary = json.loads((root/'summary').read_text())
+            self.assertEqual(summary['remote_budget_mode'], 'threaded')
+            self.assertEqual(summary['observed_attempts'], 2)
+            events = [json.loads(line) for line in (root/'events').read_text().splitlines()]
+            self.assertEqual(sum(e['event']=='request' for e in events), 2)
+            guards = [e for e in events if e['event']=='remote_request_guard']
+            self.assertEqual([e['attempt'] for e in guards], [1, 2])
+            self.assertTrue(all(e['status']=='completed' for e in guards))
+
+    def test_threaded_config_requires_the_remote_map_path(self):
+        with self.assertRaisesRegex(ValueError, 'Ray Map'):
+            QueryConfig('unit', 'pg-source-direct', 'map', 'inputs', remote_budget_mode='threaded')
+        old = QueryConfig('unit', 'pg', 'map', 'inputs')
+        self.assertEqual(old.remote_budget_mode, 'synchronous')
+
     def test_remote_guard_separates_durable_reserve_from_request_recording(self):
         events = []
         ledger = Mock()

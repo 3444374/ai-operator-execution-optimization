@@ -83,6 +83,8 @@ def main(argv=None):
     parser.add_argument("--event-write-mode", choices=("synchronous", "buffered"))
     parser.add_argument("--observer-summary", type=Path)
     parser.add_argument("--event-buffer-bytes", type=int, default=8 * 1024 * 1024)
+    parser.add_argument('--remote-budget-mode', choices=('synchronous', 'threaded'), default='synchronous',
+                        help='durable accounting placement for Ray Map requests')
     parser.add_argument("--dns-release-file", type=Path)
     parser.add_argument("--budget-id", help="expected identity of the existing ledger")
     parser.add_argument(
@@ -92,6 +94,10 @@ def main(argv=None):
         "--session-events", type=Path, help="optional passive socket/session event stream"
     )
     args, gateway_args = parser.parse_known_args(argv)
+    if args.remote_budget_mode == 'threaded':
+        selected = gateway_args[1:] if gateway_args[:1] == ['--'] else gateway_args
+        if args.fixture_only or not server.parse_args(selected).map_transport_config:
+            parser.error('threaded accounting requires a durable ledger and Ray Map transport')
     if args.dns_release_file and not args.fixture_only:
         parser.error("resolver faults require fixture mode")
     if (args.budget_id is None) != (args.max_attempts is None):
@@ -260,7 +266,12 @@ def main(argv=None):
                 def guard_remote(task):
                     _guard_remote_request(task, ledger, observe_request, record)
 
-                options["remote_request_guard"] = guard_remote
+                if args.remote_budget_mode == 'threaded':
+                    from src.experiments.async_request_guard import ThreadedRequestGuard
+                    options['remote_request_guard'] = stack.enter_context(
+                        ThreadedRequestGuard(ledger, observe_request, record))
+                else:
+                    options["remote_request_guard"] = guard_remote
             setup_seconds = (time.monotonic_ns()-setup_started_ns)/1e9
             code = server.main(
                 gateway_args, adapter_wrapper=wrap_adapter, session_wrapper=wrap_session, **options
@@ -278,6 +289,7 @@ def main(argv=None):
                 "event_mode": args.event_mode,
                 "event_content": content,
                 "event_write_mode": write_mode,
+                "remote_budget_mode": args.remote_budget_mode,
                 "unit_id": args.unit_id,
                 "startup": {"module_import_seconds": _IMPORT_SECONDS,
                             "observer_setup_seconds": setup_seconds,

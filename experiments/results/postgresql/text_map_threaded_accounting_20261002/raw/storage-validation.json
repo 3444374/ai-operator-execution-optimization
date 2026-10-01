@@ -1,0 +1,97 @@
+{
+  "status": "passed",
+  "original_backup_sha256": "9180d6f808054fa059c0caa04c0eabd2e79e8ebf373121422c1449dcb4099069",
+  "original_backup_bytes": 9126591,
+  "original_files": 227,
+  "public_restored_files": 225,
+  "archived_unique_files": 168,
+  "reconstructed_files": 57,
+  "original_preserved_outside_git": true,
+  "private_binaries_excluded": true,
+  "public_archive_sha256": "0849e8cb020ac906ed71162f630df74e05abbef65f53efc4a98b6f576b886818",
+  "public_archive_bytes": 3224357,
+  "public_expanded_bytes": 48179561,
+  "original_text_bytes": 129146605,
+  "caller_logs": [
+    {
+      "path": "caller-cleanup.log",
+      "sha256": "96f9a6c3a13ef6e4ee1e64be20ea740ed64e9b05b836d4ec384ae28644b99915",
+      "bytes": 473
+    },
+    {
+      "path": "caller-compatibility.log",
+      "sha256": "8d810a2561ed1cbedb4813ef4abc36b519cab0101065d9e9900528d63bed6ce8",
+      "bytes": 115
+    },
+    {
+      "path": "caller-continue.log",
+      "sha256": "84eb954dda5dd15ea10154a737bc906f69aafd50bd1bfd96c22e74cd5858b629",
+      "bytes": 6
+    },
+    {
+      "path": "caller-export.log",
+      "sha256": "277b6e3a11c27e2c688794a874f75df9b3c0066b70bce36813c97a351f8711d5",
+      "bytes": 111
+    },
+    {
+      "path": "caller-guard-green.log",
+      "sha256": "b70aaee4b98aed3c929b11d2edf077f243b297ed21e6fabbffb70bd38d82b0f9",
+      "bytes": 100
+    },
+    {
+      "path": "caller-guard-red.log",
+      "sha256": "c8eaab3667bab6e3faef3616ce68cc0439e7af7f6d4137bd67468d11898e5a1d",
+      "bytes": 7451
+    },
+    {
+      "path": "caller-launch.log",
+      "sha256": "a755465c905e43a9302ff489866d4f1a6f327c91b864b743fdfb7d29eab7d772",
+      "bytes": 6
+    },
+    {
+      "path": "caller-local-tests-01.log",
+      "sha256": "fe480e63725bc0273f213351f7a8a1dd0c944aa46a8ba0e7fca5b59f398649a7",
+      "bytes": 1252
+    },
+    {
+      "path": "caller-local-tests-02.log",
+      "sha256": "f446abb7722d8f815e45c35fcd724decfe7482f73befaaa6ea145c20f77583f8",
+      "bytes": 1253
+    },
+    {
+      "path": "caller-local-tests-03.log",
+      "sha256": "9ed8da55afdd69428899f2aedffe45e99cd856ce2a1d25cb28e4d8f2251bc829",
+      "bytes": 1264
+    },
+    {
+      "path": "caller-push-01.log",
+      "sha256": "46e2d0797c61e3ea78490e3f963140b98674142780f039350be943cc4de84fdc",
+      "bytes": 2390
+    },
+    {
+      "path": "caller-server-preflight.log",
+      "sha256": "c7b1c34b6f4a9e03e35b41ffbec319432e85139dc9ceedb88849f77f363af33a",
+      "bytes": 813
+    },
+    {
+      "path": "caller-status-01.log",
+      "sha256": "e527a65aebc6a3fbd055a9d3df7effa273fa733ee99701f1d1660153328c35f8",
+      "bytes": 2915
+    },
+    {
+      "path": "caller-status-02.log",
+      "sha256": "26ba5fd28d42516ee2fa2043ccd94fbdaa6c645bce3e256cff9df82d838c1314",
+      "bytes": 5251
+    },
+    {
+      "path": "caller-target-prepare.log",
+      "sha256": "10e464d86a681131b5e04845c65a24d5566dcfc2c46e6474d6f84374e67c3e58",
+      "bytes": 1293
+    },
+    {
+      "path": "caller-timing-inspect.log",
+      "sha256": "ac0d00dfdaab1bbc77d9acad8651f4883ae49aa14758294c1a623824efa8f454",
+      "bytes": 9640
+    }
+  ]
+}
