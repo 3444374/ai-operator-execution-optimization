@@ -6,8 +6,11 @@
 
 2026-10-01：Ray Map增加热批次、对象写入、RPC及同Linux单调时钟下worker前后计时；
 实验记录器增加账本reserve与请求观察时长。容量、请求、取消和未知远端资源记账保持原行为。
-本地37项中30项通过、7项缺Daft/Arrow跳过；目标环境无模型验证pending，
-见[本次安排](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)，新增模型请求0。
+本地37项中30项通过、7项缺Daft/Arrow跳过；目标环境37项全部通过。
+5条查询、4,112次fixture及独立绑定/时钟/资源核对通过，新增模型请求0。
+每1024行同步实验账本占用事件循环5.172–5.287秒，批次next执行约1秒、结束后恢复约5.7秒；
+存在重叠，真实占比和移出事件循环后的收益尚未验证。[完整细分](../experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
+保留两次0请求准备失败和原件；原PG库、PG/Ray/worker/HTTP及ACL独立核对通过。
 
 [worker复用真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)完成：
 最后29条查询/20,624次POST通过，先前64次不重放，累计20,688次。
@@ -27,7 +30,8 @@ direct7.660、Daft12.307、Ray22.756秒。仍慢于direct/Daft，质量差异、
 同日[消费分段](../experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)
 只分析既有3,072行，新增模型请求0。每行RPC前176–232、worker外RPC合计94–147、worker内258–279毫秒；
 实验POST记录器仍在测量中，不能将RPC前整个区间归为调度算法。现有记录缺热批次/账本独立计时、
-worker绝对时刻及真实PG节点时刻；需要继续观测而非直接提高名额。执行层没有新增修改。
+worker绝对时刻及真实PG节点时刻；该轮只分析原件，没有修改执行层。新增无模型计时见上方，
+真实运行的相同分段仍待采集，不能直接提高名额。
 
 2026-09-30：[准备调优与worker复用](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
 完成目标环境无模型分段。可选调用方拥有worker服务，查询独占借用并核对模型/容量，未确认执行保留借用与对象计费；

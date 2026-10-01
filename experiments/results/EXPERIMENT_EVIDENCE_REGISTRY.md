@@ -1,7 +1,11 @@
 # 实验与机制证据台账
 
-2026-10-01：热路径独立计时已补源码，本地37项中30项通过、7项缺Daft/Arrow跳过。
-目标环境4,112次fixture验证pending，新增模型额度0；[安排](../plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+2026-10-01：[热路径独立计时](postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)。
+源码8399b084；本地37项中30项通过、7项缺Daft/Arrow跳过，目标37项全部通过。
+5条查询/4,112次fixture通过，模型0次；每1024行同步实验账本占用事件循环5.172–5.287秒，
+批次next实际执行约1秒、事件循环恢复约5.7秒，区间重叠，真实占比和优化收益尚待确认。
+时钟、绑定、原PG库与PG/Ray/worker/HTTP/ACL独立核对通过，两次0请求准备失败保留。
+131份公开文本以103份唯一成员存储，28份精确恢复通过；1份SQLite仅存私有原件备份。
 
 2026-10-01：[SemLoom消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)。
 只读取已有共享gateway三次真实测量；3,072行独立关联、请求区间与Core名额面积核对通过，新增请求0。

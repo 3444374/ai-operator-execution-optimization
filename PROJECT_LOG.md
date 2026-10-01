@@ -4,8 +4,14 @@
 
 - 按用户继续要求补批次/对象写入的线程池排队、执行和事件循环恢复，以及实验账本、请求观察与RPC时长。
 - Linux时钟来源摘要匹配才拆worker前后时间；不能对齐时保留缺项，未知远端执行继续计费。
-- 本地37项中30项通过、7项Daft/Arrow缺失跳过；目标环境无模型验证pending，新增模型额度0。
-  [运行安排](experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+- 本地37项中30项通过、7项Daft/Arrow缺失跳过；目标37项全部通过，5条查询/4,112次fixture通过，模型0次。
+- 同步实验账本每1024行占用gateway事件循环5.172–5.287秒，批次next执行约1秒、恢复约5.7秒；
+  不把重叠区间相加，也不由fixture更新真实性能结论，移出记账I/O的优化尚未实现。
+- 原件132份保留于独立私有备份，131份公开文本以103份成员存储、28份精确恢复通过；SQLite不提交。
+  两次0请求准备失败及辅助脚本失败保留，原PG库、PG/Ray/worker/HTTP/GPU/ACL独立核对通过。
+- 按源码补当前SQL→SemMap→公共执行核心→Daft/Ray→模型→PG结果流程；修正旧README对所有Map/Filter
+  组合均不支持的过时说明，单Filter→单生成型Map已有绑定验证，任意组合与更宽SQL仍待完成。
+  [完整诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)。
 
 ## 2026-10-01：SemLoom已有真实记录的消费时间拆分
 

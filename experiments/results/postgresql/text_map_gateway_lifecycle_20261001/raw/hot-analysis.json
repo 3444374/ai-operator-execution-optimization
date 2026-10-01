@@ -1,0 +1,889 @@
+{
+  "schema": "semloom.hot_map_timing.v1",
+  "source_revision": "8399b0843ee1877d750f06fdbc46c17e1064646a",
+  "source_files": 818,
+  "real_model_requests": 0,
+  "fixture_posts": 4112,
+  "fixture_queries": 5,
+  "controller_elapsed_seconds": 62.09896265529096,
+  "public_archive_sha256": "9fb10aed2c6f09c15aa150e3c51e463c63dbf26a15a1d2cbf6b623e9f72e9052",
+  "ray_startup_seconds": 8.822918739169836,
+  "shared_gateway_startup_seconds": 2.3371159732341766,
+  "initial_available_cpus": 7.0,
+  "versions": {
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "psycopg": "3.3.4",
+    "httpx": "0.28.1"
+  },
+  "failures": [
+    {
+      "stage": "output-directory permission",
+      "posts": 0
+    },
+    {
+      "stage": "Ray socket pathname",
+      "posts": 0
+    }
+  ],
+  "queries": [
+    {
+      "unit": "check16",
+      "rows": 16,
+      "repeat": -1,
+      "association": {
+        "matched_rows": 16,
+        "producer_namespace": [
+          36296,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 3.179576574,
+      "preparation_seconds": 0.015546633,
+      "stream_seconds": 3.164029941,
+      "first_row_seconds": 3.163822969,
+      "fixture_http_peak": 6,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.000674825,
+          "work_seconds": 2.905095202,
+          "resume_seconds": 0.024827974,
+          "elapsed_seconds": 2.930598001,
+          "calls": 4
+        },
+        "object_put": {
+          "queue_seconds": 0.000325455,
+          "work_seconds": 0.003208389,
+          "resume_seconds": 0.000277116,
+          "elapsed_seconds": 0.00381096,
+          "calls": 2
+        },
+        "payload_close": {
+          "queue_seconds": 0.000217999,
+          "work_seconds": 2.639e-06,
+          "resume_seconds": 0.000171554,
+          "elapsed_seconds": 0.000392192,
+          "calls": 2
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 16,
+          "sum": 0.092433,
+          "mean": 0.0057770625,
+          "median": 0.0042935000000000004,
+          "p95": 0.01344475,
+          "maximum": 0.022495,
+          "minimum": 0.003714
+        },
+        "reserve_ms": {
+          "count": 16,
+          "sum": 16.651684,
+          "mean": 1.04073025,
+          "median": 0.78008,
+          "p95": 1.99189725,
+          "maximum": 2.596677,
+          "minimum": 0.699179
+        },
+        "request_observe_ms": {
+          "count": 16,
+          "sum": 2.182779,
+          "mean": 0.1364236875,
+          "median": 0.13106,
+          "p95": 0.17902649999999998,
+          "maximum": 0.18402,
+          "minimum": 0.116246
+        },
+        "guard_ms": {
+          "count": 16,
+          "sum": 19.477793,
+          "mean": 1.2173620625,
+          "median": 0.9619365,
+          "p95": 2.1904565,
+          "maximum": 2.84525,
+          "minimum": 0.866856
+        },
+        "core_to_rpc_ms": {
+          "count": 16,
+          "sum": 46812.984161,
+          "mean": 2925.8115100625,
+          "median": 2926.395369,
+          "p95": 2935.45131,
+          "maximum": 2936.452311,
+          "minimum": 2907.689948
+        },
+        "submit_elapsed_ms": {
+          "count": 16,
+          "sum": 7.239419,
+          "mean": 0.4524636875,
+          "median": 0.40522800000000003,
+          "p95": 0.6849965,
+          "maximum": 0.712253,
+          "minimum": 0.369706
+        },
+        "await_elapsed_ms": {
+          "count": 16,
+          "sum": 3213.397107,
+          "mean": 200.8373191875,
+          "median": 201.530404,
+          "p95": 209.0023655,
+          "maximum": 211.433276,
+          "minimum": 192.576227
+        },
+        "worker_elapsed_ms": {
+          "count": 16,
+          "sum": 981.237334,
+          "mean": 61.327333375,
+          "median": 58.0480965,
+          "p95": 85.76402775,
+          "maximum": 164.086647,
+          "minimum": 12.130963
+        },
+        "before_worker_ms": {
+          "count": 16,
+          "sum": 2114.52552,
+          "mean": 132.157845,
+          "median": 134.695688,
+          "p95": 149.550705,
+          "maximum": 174.472746,
+          "minimum": 42.307296
+        },
+        "after_worker_ms": {
+          "count": 16,
+          "sum": 124.873672,
+          "mean": 7.8046045,
+          "median": 8.2289805,
+          "p95": 9.79629675,
+          "maximum": 9.931509,
+          "minimum": 2.722911
+        },
+        "rpc_elapsed_ms": {
+          "count": 16,
+          "sum": 3220.636526,
+          "mean": 201.289782875,
+          "median": 201.9092565,
+          "p95": 209.49373375,
+          "maximum": 212.109187,
+          "minimum": 192.956474
+        }
+      },
+      "serial_ledger_reserve_seconds": 0.016651684,
+      "serial_guard_seconds": 0.019477793,
+      "object_blocks": 2,
+      "peak_arrow_buffer_bytes": 5928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 5528,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "unit": "warm1024",
+      "rows": 1024,
+      "repeat": 0,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          36522,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 10.55466122,
+      "preparation_seconds": 0.013534164,
+      "stream_seconds": 10.541127056,
+      "first_row_seconds": 5.298604114,
+      "fixture_http_peak": 4,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.15353972,
+          "work_seconds": 3.410500918,
+          "resume_seconds": 5.808129251,
+          "elapsed_seconds": 9.372169889,
+          "calls": 100
+        },
+        "object_put": {
+          "queue_seconds": 0.056631513,
+          "work_seconds": 0.448728942,
+          "resume_seconds": 0.228918515,
+          "elapsed_seconds": 0.73427897,
+          "calls": 77
+        },
+        "payload_close": {
+          "queue_seconds": 0.020580669,
+          "work_seconds": 5.1213e-05,
+          "resume_seconds": 0.104750105,
+          "elapsed_seconds": 0.125381987,
+          "calls": 23
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 6.481105,
+          "mean": 0.0063292041015625,
+          "median": 0.0054955,
+          "p95": 0.01060444999999999,
+          "maximum": 0.139383,
+          "minimum": 0.003312
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5236.428191,
+          "mean": 5.1136994052734375,
+          "median": 1.3745645,
+          "p95": 15.27570574999999,
+          "maximum": 32.544937,
+          "minimum": 0.714605
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 173.966613,
+          "mean": 0.1698892705078125,
+          "median": 0.15829149999999997,
+          "p95": 0.23085784999999992,
+          "maximum": 1.011363,
+          "minimum": 0.105688
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5459.751274,
+          "mean": 5.331788353515625,
+          "median": 1.6412695,
+          "p95": 15.518036199999994,
+          "maximum": 32.829125,
+          "minimum": 0.859871
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 557687.512366,
+          "mean": 544.6167112949219,
+          "median": 421.117516,
+          "p95": 2383.9924634,
+          "maximum": 2509.997386,
+          "minimum": 119.315233
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 770.446745,
+          "mean": 0.7523893994140625,
+          "median": 0.503634,
+          "p95": 1.8684357999999999,
+          "maximum": 4.105438,
+          "minimum": 0.348514
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 83926.034367,
+          "mean": 81.95901793652344,
+          "median": 81.485406,
+          "p95": 158.21785809999997,
+          "maximum": 318.258626,
+          "minimum": 4.755364
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 33465.2474,
+          "mean": 32.6809056640625,
+          "median": 43.403037499999996,
+          "p95": 50.73903855,
+          "maximum": 104.779064,
+          "minimum": 1.03021
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 8456.234107,
+          "mean": 8.258041120117188,
+          "median": 3.018249,
+          "p95": 70.52420199999997,
+          "maximum": 97.399955,
+          "minimum": 1.401652
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 42774.999605,
+          "mean": 41.77246055175781,
+          "median": 34.689974,
+          "p95": 98.58181275,
+          "maximum": 267.263665,
+          "minimum": 0.877792
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 84696.481112,
+          "mean": 82.7114073359375,
+          "median": 82.1658755,
+          "p95": 158.874193,
+          "maximum": 319.697193,
+          "minimum": 5.21124
+        }
+      },
+      "serial_ledger_reserve_seconds": 5.236428191,
+      "serial_guard_seconds": 5.459751274,
+      "object_blocks": 77,
+      "peak_arrow_buffer_bytes": 57966,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "unit": "measure1",
+      "rows": 1024,
+      "repeat": 1,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          36699,
+          1
+        ],
+        "gateway_session": 2,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 7.873701222,
+      "preparation_seconds": 0.012115679,
+      "stream_seconds": 7.861585543,
+      "first_row_seconds": 2.74379613,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.181245472,
+          "work_seconds": 1.034547836,
+          "resume_seconds": 5.694905958,
+          "elapsed_seconds": 6.910699266,
+          "calls": 96
+        },
+        "object_put": {
+          "queue_seconds": 0.045129287,
+          "work_seconds": 0.367099313,
+          "resume_seconds": 0.18804482,
+          "elapsed_seconds": 0.60027342,
+          "calls": 74
+        },
+        "payload_close": {
+          "queue_seconds": 0.02360405,
+          "work_seconds": 4.7046e-05,
+          "resume_seconds": 0.083149169,
+          "elapsed_seconds": 0.106800265,
+          "calls": 22
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 6.093669,
+          "mean": 0.0059508486328125,
+          "median": 0.005328,
+          "p95": 0.009939799999999997,
+          "maximum": 0.044851,
+          "minimum": 0.003575
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5171.922313,
+          "mean": 5.0507053837890625,
+          "median": 1.453164,
+          "p95": 14.896762299999999,
+          "maximum": 32.62452,
+          "minimum": 0.754571
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 168.091993,
+          "mean": 0.1641523369140625,
+          "median": 0.1543915,
+          "p95": 0.22467729999999997,
+          "maximum": 0.66609,
+          "minimum": 0.101836
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5387.958007,
+          "mean": 5.261677741210938,
+          "median": 1.7028215,
+          "p95": 15.1885236,
+          "maximum": 32.928422,
+          "minimum": 0.915489
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 397528.799646,
+          "mean": 388.2117184042969,
+          "median": 404.232089,
+          "p95": 494.0281249,
+          "maximum": 586.841168,
+          "minimum": 39.494399
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 728.658195,
+          "mean": 0.7115802685546875,
+          "median": 0.5027845,
+          "p95": 1.713990099999998,
+          "maximum": 3.564927,
+          "minimum": 0.332979
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 75605.693381,
+          "mean": 73.83368494238282,
+          "median": 70.6657225,
+          "p95": 144.3045769999999,
+          "maximum": 187.784635,
+          "minimum": 4.027042
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 31236.120422,
+          "mean": 30.504023849609375,
+          "median": 42.84187,
+          "p95": 46.909041200000004,
+          "maximum": 54.342202,
+          "minimum": 1.044308
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 3098.507135,
+          "mean": 3.0258858740234373,
+          "median": 2.511934,
+          "p95": 6.110483149999995,
+          "maximum": 13.548442,
+          "minimum": 1.308191
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 41999.724019,
+          "mean": 41.01535548730469,
+          "median": 33.2506475,
+          "p95": 100.84560859999998,
+          "maximum": 136.842713,
+          "minimum": 0.819189
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 76334.351576,
+          "mean": 74.5452652109375,
+          "median": 71.64589050000001,
+          "p95": 144.90713164999988,
+          "maximum": 188.17252,
+          "minimum": 4.537749
+        }
+      },
+      "serial_ledger_reserve_seconds": 5.171922313,
+      "serial_guard_seconds": 5.387958007,
+      "object_blocks": 74,
+      "peak_arrow_buffer_bytes": 50928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "unit": "measure2",
+      "rows": 1024,
+      "repeat": 2,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          36787,
+          1
+        ],
+        "gateway_session": 3,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 7.909104732,
+      "preparation_seconds": 0.013415913,
+      "stream_seconds": 7.895688819,
+      "first_row_seconds": 2.811712033,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.176190255,
+          "work_seconds": 1.003266766,
+          "resume_seconds": 5.698432282,
+          "elapsed_seconds": 6.877889303,
+          "calls": 97
+        },
+        "object_put": {
+          "queue_seconds": 0.033811686,
+          "work_seconds": 0.468222433,
+          "resume_seconds": 0.173370916,
+          "elapsed_seconds": 0.675405035,
+          "calls": 73
+        },
+        "payload_close": {
+          "queue_seconds": 0.015034224,
+          "work_seconds": 4.4094e-05,
+          "resume_seconds": 0.07616894,
+          "elapsed_seconds": 0.091247258,
+          "calls": 24
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 5.882546,
+          "mean": 0.005744673828125,
+          "median": 0.005157500000000001,
+          "p95": 0.009334799999999989,
+          "maximum": 0.045957,
+          "minimum": 0.003407
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5211.527793,
+          "mean": 5.089382610351563,
+          "median": 1.419549,
+          "p95": 14.550865749999998,
+          "maximum": 194.031053,
+          "minimum": 0.842369
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 159.029412,
+          "mean": 0.15530216015625,
+          "median": 0.147699,
+          "p95": 0.20569449999999995,
+          "maximum": 0.655802,
+          "minimum": 0.10826
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5415.456164,
+          "mean": 5.28853141015625,
+          "median": 1.6286345,
+          "p95": 14.788241249999997,
+          "maximum": 194.31605,
+          "minimum": 1.001462
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 401655.309961,
+          "mean": 392.24151363378905,
+          "median": 396.12544649999995,
+          "p95": 537.6848244999996,
+          "maximum": 649.405972,
+          "minimum": 40.156751
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 692.568976,
+          "mean": 0.676336890625,
+          "median": 0.4759625,
+          "p95": 1.6733971499999996,
+          "maximum": 5.098212,
+          "minimum": 0.345735
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 76188.979983,
+          "mean": 74.40330076464844,
+          "median": 69.789756,
+          "p95": 142.7015624,
+          "maximum": 319.392454,
+          "minimum": 4.620313
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 31550.049737,
+          "mean": 30.810595446289064,
+          "median": 42.862544,
+          "p95": 47.230367799999996,
+          "maximum": 51.45683,
+          "minimum": 1.013977
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2874.337208,
+          "mean": 2.8069699296875,
+          "median": 2.444495,
+          "p95": 5.087596249999998,
+          "maximum": 9.074941,
+          "minimum": 1.30366
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 42457.162014,
+          "mean": 41.462072279296876,
+          "median": 30.6940635,
+          "p95": 97.34498495,
+          "maximum": 273.686126,
+          "minimum": 0.994208
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 76881.54895899999,
+          "mean": 75.07963765527343,
+          "median": 70.70241949999999,
+          "p95": 143.17183279999998,
+          "maximum": 321.154104,
+          "minimum": 5.087316
+        }
+      },
+      "serial_ledger_reserve_seconds": 5.211527793,
+      "serial_guard_seconds": 5.415456164,
+      "object_blocks": 73,
+      "peak_arrow_buffer_bytes": 50557,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44230,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "unit": "measure3",
+      "rows": 1024,
+      "repeat": 3,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          36872,
+          1
+        ],
+        "gateway_session": 4,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 8.102186786,
+      "preparation_seconds": 0.012027924,
+      "stream_seconds": 8.090158862,
+      "first_row_seconds": 2.709317309,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.162443332,
+          "work_seconds": 1.049922758,
+          "resume_seconds": 5.87444819,
+          "elapsed_seconds": 7.08681428,
+          "calls": 96
+        },
+        "object_put": {
+          "queue_seconds": 0.042772569,
+          "work_seconds": 0.4287298,
+          "resume_seconds": 0.188459602,
+          "elapsed_seconds": 0.659961971,
+          "calls": 72
+        },
+        "payload_close": {
+          "queue_seconds": 0.018942607,
+          "work_seconds": 4.8863e-05,
+          "resume_seconds": 0.072616446,
+          "elapsed_seconds": 0.091607916,
+          "calls": 24
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 6.290472,
+          "mean": 0.0061430390625,
+          "median": 0.0054465,
+          "p95": 0.01001725,
+          "maximum": 0.033584,
+          "minimum": 0.003731
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5286.645888,
+          "mean": 5.162740125,
+          "median": 1.7852999999999999,
+          "p95": 14.979872649999994,
+          "maximum": 31.081313,
+          "minimum": 0.895245
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 166.106767,
+          "mean": 0.1622136396484375,
+          "median": 0.15410249999999998,
+          "p95": 0.22513624999999987,
+          "maximum": 0.585974,
+          "minimum": 0.110351
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5500.199915,
+          "mean": 5.371288979492188,
+          "median": 2.024632,
+          "p95": 15.212430049999998,
+          "maximum": 31.352666,
+          "minimum": 1.049238
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 411101.46646,
+          "mean": 401.4662758398438,
+          "median": 416.4556215,
+          "p95": 504.0652899,
+          "maximum": 565.50905,
+          "minimum": 39.478911
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 743.002484,
+          "mean": 0.72558836328125,
+          "median": 0.499194,
+          "p95": 1.7986971999999997,
+          "maximum": 5.202441,
+          "minimum": 0.340343
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 76969.846053,
+          "mean": 75.16586528613281,
+          "median": 71.11775449999999,
+          "p95": 146.83121359999998,
+          "maximum": 183.026813,
+          "minimum": 4.314973
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 30761.580395,
+          "mean": 30.04060585449219,
+          "median": 42.8156065,
+          "p95": 46.84820455,
+          "maximum": 50.626136,
+          "minimum": 0.99415
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2726.982626,
+          "mean": 2.663068970703125,
+          "median": 2.2844379999999997,
+          "p95": 4.910966949999998,
+          "maximum": 14.736319,
+          "minimum": 1.299243
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 44224.285516,
+          "mean": 43.18777882421875,
+          "median": 35.033234,
+          "p95": 101.29316079999997,
+          "maximum": 133.055266,
+          "minimum": 0.861241
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 77712.848537,
+          "mean": 75.89145364941406,
+          "median": 72.1869025,
+          "p95": 147.80283694999997,
+          "maximum": 183.422461,
+          "minimum": 4.885232
+        }
+      },
+      "serial_ledger_reserve_seconds": 5.286645888,
+      "serial_guard_seconds": 5.500199915,
+      "object_blocks": 72,
+      "peak_arrow_buffer_bytes": 50557,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44230,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    }
+  ],
+  "limitations": [
+    "fixture responses contain no inference; no real-model performance claim",
+    "serial guard durations overlap thread work and RPC waits",
+    "worker duration includes payload extraction and the HTTP client",
+    "submit-call time is nested in RPC and may overlap remote work",
+    "HTTP capacity cannot be inferred from the short-lived fixture server peak",
+    "same-clock identity uses Linux boot, time namespace and clock implementation",
+    "full-model PG node timestamps and actual GPU spans remain unavailable"
+  ],
+  "measured_medians": {
+    "jct_seconds": 7.909104732,
+    "preparation_seconds": 0.012115679,
+    "stream_seconds": 7.895688819,
+    "serial_ledger_reserve_seconds": 5.211527793,
+    "serial_guard_seconds": 5.415456164
+  },
+  "verified_rows": 4112
+}

@@ -27,7 +27,9 @@
 共享gateway完整查询中位数12.428→7.569秒，共享启动单列；PG追踪定位了节点返回之后的首行交付等待。
 最后15条查询、12,336次真实请求通过：新gateway14.626→共享gateway10.131秒，direct7.681秒；
 共享准备约14毫秒，仍慢于direct，输出差0–4行。此前中止11,312次保留，源码与资源回收核对通过。
-下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)解释准备完成后的消费时间。
+[热路径细分](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
+新增5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
+下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)移出记账I/O并保留发送前持久提交，真实收益尚待验证。
 旧容量实验未选点不作为所有系统比较的前置条件。
 
 ## 研究内容
