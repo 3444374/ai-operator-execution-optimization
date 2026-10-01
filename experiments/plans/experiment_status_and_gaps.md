@@ -14,7 +14,10 @@
 1024行三次中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；旧失败和诊断单独保留。
 后续[准备诊断与固定配置真实复测](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
 复用worker后完整查询中位数16.502→14.794秒、准备4.737→2.831秒；仍慢于direct/Daft，配对输出差0–5行。
-下一项细化首批处理和提交开销；LOTUS/Sema等语义系统缺项仍由baseline总表维护。
+后续[gateway复用与首行诊断](../results/postgresql/text_map_gateway_lifecycle_20261001/README.md)完成10,272次fixture请求，
+真实最终15条查询/12,336次通过，另保留中止11,312次。共享gateway完整查询中位数14.626→10.131秒，
+准备约14毫秒；本轮direct7.681秒仍更快，输出差0–4行。启动与清理单列，源码未修改；不是通用优势或质量等价证明。
+下一项细化准备后的消费时间；LOTUS/Sema等语义系统缺项仍由baseline总表维护，当前没有新模型额度。
 [方法设计](data_organization_batching.md#design-hypotheses)继续负责组织和调度收益的检验；
 旧 M1 未找到平台不作为系统比较的统一前置项。工程能力不直接等于论文贡献。
 

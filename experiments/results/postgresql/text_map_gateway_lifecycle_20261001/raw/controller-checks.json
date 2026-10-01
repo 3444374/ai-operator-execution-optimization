@@ -1,0 +1,18 @@
+{
+  "controller_time_tests": 3,
+  "flow_settings_tests": 2,
+  "production_source_changed": false,
+  "sources": {
+    "gateway-real-worker-03.py": "29ee3674eea498b578b7fce32e9136fe3ad628659d1b2a6607a1ed9cc5a16923",
+    "gateway-real-owner-03.py": "8b60bf5b58fbe54864a2ba4051c105412e16d2805fe494eb0000d9873237f8d7",
+    "gateway-real-owner-04.py": "445c50d4919620b2bee4fa873e19bfcaa0d730f80bcb4de524d9b3508e0a352f",
+    "real_time_budget.py": "0a1ac2c53f44cee9a0f999ae23305f2147bc4d974ce4596361f333f4c6da7981",
+    "test_real_time_budget.py": "89402d398994c670e36ab4529bd457c0925aa90dd3b19140263f20f7ef49a05d",
+    "test_flow_settings.py": "07da2b5d03b4fa3d08123029e86a2923e3bb2604d440c746739eb09f02ac3c7a"
+  },
+  "time_test_command": "python3 tmp/text-map-first-row-20261001/test_real_time_budget.py",
+  "time_test_exit_code": 0,
+  "flow_test_command": "python3 tmp/text-map-first-row-20261001/test_flow_settings.py",
+  "flow_test_exit_code": 0,
+  "scope": "finite controller checks; production execution source unchanged"
+}

@@ -29,7 +29,10 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native，比较完�
 1024行中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；质量差异和旧失败保留。
 后续[worker复用真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求；
 固定配置下完整查询16.502→14.794秒、准备4.737→2.831秒，仍慢于direct与Daft，配对输出0–5行不同。
-下一项细化首批处理与提交成本，不证明质量等价、容量平台或通用优势。
+[gateway与首行诊断](../experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)完成10,272次fixture请求，
+共享gateway完整查询12.428→7.569秒，启动单列；PG节点首行0.233秒、客户端2.688秒，与发送缓冲相符。
+后续三路径真实15条查询/12,336次通过，新gateway14.626→共享10.131秒、准备约14毫秒，direct7.681秒仍更快。
+中止11,312次、共享启动2.277秒与输出差0–4行保留；下一项细化消费时间，不证明质量等价、容量平台或通用优势。
 
 - PostgreSQL 18.3 extension 已完成受限 Filter/Map 语义、公共执行接口、Map 有界多在途及可选图像嵌入的
   工程检查。可选 Daft/Ray 文本传输在[受控查询](../experiments/results/postgresql/incremental_transport_20260927/README.md)

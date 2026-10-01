@@ -12,6 +12,15 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[gateway复用与首行交付诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)
+无模型阶段完成10,272次fixture请求、模型0次。现有共享gateway接口的准备约11毫秒，完整查询中位数
+12.428→7.569秒，启动2.951秒单列；它是生命周期工程观察，不更新旧真实排名。
+独立PG阶段追踪记录后续查询节点首行0.233秒、客户端2.688秒，交付字节与8KiB发送缓冲相符。
+后续真实完整清单15条查询、12,336次请求通过，另保留中止11,312次。新gateway14.626→共享gateway10.131秒，
+准备2.785→0.01429秒，启动2.277秒单列；本轮direct7.681秒，仍更快，配对输出差0–4行。
+这是已评价输入上的固定配置工程复测；下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)
+解释准备之后的消费时间，不据旧的不同运行设置更新原生Daft/Ray排名。
+
 2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md)完整清单已完成：
 SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP执行另作内部消融。
 [当前结果](experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，
