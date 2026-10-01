@@ -23,7 +23,11 @@
 [真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
 1024行完整查询16.502→14.794秒、准备4.737→2.831秒，仍慢于direct和Daft，质量差异单列。
 [分支审查](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)已补分段观测、修正配置核对并无损压缩批量证据；
-下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)细化首批处理与提交开销。
+[后续gateway诊断与真实复测](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)的无模型阶段10,272次fixture请求，
+共享gateway完整查询中位数12.428→7.569秒，共享启动单列；PG追踪定位了节点返回之后的首行交付等待。
+最后15条查询、12,336次真实请求通过：新gateway14.626→共享gateway10.131秒，direct7.681秒；
+共享准备约14毫秒，仍慢于direct，输出差0–4行。此前中止11,312次保留，源码与资源回收核对通过。
+下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)解释准备完成后的消费时间。
 旧容量实验未选点不作为所有系统比较的前置条件。
 
 ## 研究内容

@@ -1,0 +1,579 @@
+{
+  "source_revision": "11714bdc55f6cae814f4b19a017b4cd5c8fe89bd",
+  "fixture_posts": 10272,
+  "model_posts": 0,
+  "modes": {
+    "fresh": {
+      "jct_seconds": [
+        12.399569584,
+        13.702418013,
+        12.428422535
+      ],
+      "preparation_seconds": [
+        3.286322348,
+        2.685654189,
+        2.572160681
+      ],
+      "first_row_seconds": [
+        4.200195707,
+        5.612192034,
+        4.710497717
+      ],
+      "stream_seconds": [
+        9.113247236,
+        11.016763824,
+        9.856261854
+      ],
+      "median": {
+        "jct_seconds": 12.428422535,
+        "preparation_seconds": 2.685654189,
+        "first_row_seconds": 4.710497717,
+        "stream_seconds": 9.856261854
+      },
+      "jct_sample_cv_percent": 5.792909844627019,
+      "warmup": 12.872967714
+    },
+    "persistent": {
+      "jct_seconds": [
+        9.221371067,
+        7.317836806,
+        7.568625594
+      ],
+      "preparation_seconds": [
+        0.011279535,
+        0.013510276,
+        0.011267407
+      ],
+      "first_row_seconds": [
+        3.589199843,
+        2.777966904,
+        2.732450898
+      ],
+      "stream_seconds": [
+        9.210091532,
+        7.30432653,
+        7.557358187
+      ],
+      "median": {
+        "jct_seconds": 7.568625594,
+        "preparation_seconds": 0.011279535,
+        "first_row_seconds": 2.777966904,
+        "stream_seconds": 7.557358187
+      },
+      "jct_sample_cv_percent": 12.870164531578938,
+      "warmup": 9.935742728
+    }
+  },
+  "shared_gateway_startup_seconds": 2.9511646684259176,
+  "ray_startup_seconds": 8.348228139802814,
+  "initial_available_cpus": 6.0,
+  "environment": {
+    "DO_NOT_TRACK": "true",
+    "DAFT_NUM_THREADS": "8",
+    "RAY_USAGE_STATS_ENABLED": "0",
+    "CUDA_VISIBLE_DEVICES": ""
+  },
+  "versions": {
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "psycopg": "3.3.4",
+    "httpx": "0.28.1"
+  },
+  "prior_failure_fixture_posts": 32,
+  "remaining_comparison_fixture_posts": 8192,
+  "flow_fixture_posts": 2048,
+  "jct_reduction_percent": 39.102282910918106,
+  "four_query_total_including_startup": {
+    "fresh": 51.403377846,
+    "persistent": 36.99474086342592,
+    "reduction_percent": 28.03052559258088,
+    "cleanup_included": false
+  },
+  "flow_second_query": {
+    "first_input_to_submit_s": 0.14048688,
+    "first_poll_to_submit_s": 0.003289407,
+    "first_node_return_s": 0.233095934,
+    "client_first_row_s": 2.687986022,
+    "query_jct_s": 7.769004139,
+    "first_node_to_client_seconds": 2.454890088
+  },
+  "client_delivery_groups": [
+    {
+      "first_input": 0,
+      "last_input": 315,
+      "rows": 316,
+      "text_datarow_bytes": 8106
+    },
+    {
+      "first_input": 316,
+      "last_input": 630,
+      "rows": 315,
+      "text_datarow_bytes": 8190
+    },
+    {
+      "first_input": 631,
+      "last_input": 946,
+      "rows": 316,
+      "text_datarow_bytes": 8216
+    },
+    {
+      "first_input": 947,
+      "last_input": 1023,
+      "rows": 77,
+      "text_datarow_bytes": 2026
+    }
+  ],
+  "delivery_formula": "text DataRow bytes = 1 message type + 4 length + 2 columns + 4 per-column length + UTF8 value bytes; null contributes no value bytes",
+  "micro_probes": {
+    "02": {
+      "real_model_posts": 0,
+      "http_posts": 0,
+      "first_payload_seconds": [
+        3.268742626,
+        0.004174589,
+        0.003262383
+      ],
+      "limit_seconds": 0.5,
+      "slow_first_payload": true
+    },
+    "03": {
+      "real_model_posts": 0,
+      "http_posts": 0,
+      "first_payload_seconds": [
+        3.613110483,
+        0.006521606,
+        0.006302737
+      ],
+      "limit_seconds": 0.5,
+      "slow_first_payload": true,
+      "preload_seconds": {},
+      "profiler_enabled": true,
+      "profile_top_cumulative": [
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.next>",
+          "primitive_calls": 6,
+          "total_calls": 144,
+          "self_seconds": 0.00034012500000000004,
+          "cumulative_seconds": 7.1618815730000005
+        },
+        {
+          "file": "/root/autodl-tmp/tmf-20261001/s3/code/src/data/materializers/payloads.py",
+          "line": 16,
+          "function": "iter_payload_batches",
+          "primitive_calls": 6,
+          "total_calls": 9,
+          "self_seconds": 0.000864913,
+          "cumulative_seconds": 7.161608156000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/dataframe/dataframe.py",
+          "line": 607,
+          "function": "to_arrow_iter",
+          "primitive_calls": 6,
+          "total_calls": 8,
+          "self_seconds": 0.00020801600000000002,
+          "cumulative_seconds": 7.1307185440000005
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py",
+          "line": 194,
+          "function": "run_iter_tables",
+          "primitive_calls": 6,
+          "total_calls": 8,
+          "self_seconds": 0.00012038700000000001,
+          "cumulative_seconds": 7.128463681
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py",
+          "line": 85,
+          "function": "run_iter",
+          "primitive_calls": 6,
+          "total_calls": 8,
+          "self_seconds": 0.000151222,
+          "cumulative_seconds": 7.081522125
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/runners/heartbeat.py",
+          "line": 43,
+          "function": "stop",
+          "primitive_calls": 3,
+          "total_calls": 3,
+          "self_seconds": 1.5061e-05,
+          "cumulative_seconds": 3.544111297
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/threading.py",
+          "line": 1115,
+          "function": "join",
+          "primitive_calls": 3,
+          "total_calls": 3,
+          "self_seconds": 0.000147699,
+          "cumulative_seconds": 3.544090782
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/runners/native_runner.py",
+          "line": 131,
+          "function": "_optimize_and_execute",
+          "primitive_calls": 6,
+          "total_calls": 6,
+          "self_seconds": 0.000569313,
+          "cumulative_seconds": 3.540000355
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/asyncio/base_events.py",
+          "line": 1910,
+          "function": "_run_once",
+          "primitive_calls": 51,
+          "total_calls": 51,
+          "self_seconds": 0.0006245140000000001,
+          "cumulative_seconds": 3.163817866
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/execution/native_executor.py",
+          "line": 32,
+          "function": "run",
+          "primitive_calls": 6,
+          "total_calls": 6,
+          "self_seconds": 0.000125372,
+          "cumulative_seconds": 2.644303501
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/event_loop.py",
+          "line": 27,
+          "function": "run",
+          "primitive_calls": 9,
+          "total_calls": 9,
+          "self_seconds": 9.161400000000001e-05,
+          "cumulative_seconds": 2.644154253
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/selectors.py",
+          "line": 451,
+          "function": "select",
+          "primitive_calls": 51,
+          "total_calls": 51,
+          "self_seconds": 0.000398426,
+          "cumulative_seconds": 2.63938613
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'poll' of 'select.epoll' objects>",
+          "primitive_calls": 51,
+          "total_calls": 51,
+          "self_seconds": 1.729379462,
+          "cumulative_seconds": 2.6387971230000002
+        },
+        {
+          "file": "<frozen importlib._bootstrap>",
+          "line": 1349,
+          "function": "_find_and_load",
+          "primitive_calls": 10,
+          "total_calls": 1234,
+          "self_seconds": 0.011149235,
+          "cumulative_seconds": 1.8409113090000002
+        },
+        {
+          "file": "<frozen importlib._bootstrap>",
+          "line": 1304,
+          "function": "_find_and_load_unlocked",
+          "primitive_calls": 9,
+          "total_calls": 1233,
+          "self_seconds": 0.00825993,
+          "cumulative_seconds": 1.654949854
+        },
+        {
+          "file": "<frozen importlib._bootstrap>",
+          "line": 911,
+          "function": "_load_unlocked",
+          "primitive_calls": 9,
+          "total_calls": 1192,
+          "self_seconds": 0.006352307000000001,
+          "cumulative_seconds": 1.410830108
+        },
+        {
+          "file": "<frozen importlib._bootstrap_external>",
+          "line": 989,
+          "function": "exec_module",
+          "primitive_calls": 9,
+          "total_calls": 1094,
+          "self_seconds": 0.004958355,
+          "cumulative_seconds": 1.409756081
+        },
+        {
+          "file": "<frozen importlib._bootstrap>",
+          "line": 480,
+          "function": "_call_with_frames_removed",
+          "primitive_calls": 18,
+          "total_calls": 2733,
+          "self_seconds": 0.009329756,
+          "cumulative_seconds": 1.4052286760000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.exec>",
+          "primitive_calls": 9,
+          "total_calls": 1305,
+          "self_seconds": 0.033509332,
+          "cumulative_seconds": 1.4051351840000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 138,
+          "function": "urlopen",
+          "primitive_calls": 3,
+          "total_calls": 6,
+          "self_seconds": 0.00011342000000000001,
+          "cumulative_seconds": 0.953635812
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 496,
+          "function": "open",
+          "primitive_calls": 3,
+          "total_calls": 6,
+          "self_seconds": 0.00012864900000000002,
+          "cumulative_seconds": 0.9514205520000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 525,
+          "function": "_open",
+          "primitive_calls": 3,
+          "total_calls": 6,
+          "self_seconds": 0.00011487200000000001,
+          "cumulative_seconds": 0.950507623
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 485,
+          "function": "_call_chain",
+          "primitive_calls": 6,
+          "total_calls": 12,
+          "self_seconds": 8.4818e-05,
+          "cumulative_seconds": 0.950121439
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 1391,
+          "function": "https_open",
+          "primitive_calls": 3,
+          "total_calls": 6,
+          "self_seconds": 9.3106e-05,
+          "cumulative_seconds": 0.9484849850000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/urllib/request.py",
+          "line": 1303,
+          "function": "do_open",
+          "primitive_calls": 2,
+          "total_calls": 4,
+          "self_seconds": 0.000108541,
+          "cumulative_seconds": 0.936009685
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/scarf_telemetry.py",
+          "line": 75,
+          "function": "send_request",
+          "primitive_calls": 2,
+          "total_calls": 4,
+          "self_seconds": 0.00016251200000000002,
+          "cumulative_seconds": 0.922492021
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<built-in method builtins.__import__>",
+          "primitive_calls": 104,
+          "total_calls": 578,
+          "self_seconds": 0.001398771,
+          "cumulative_seconds": 0.8928079680000001
+        },
+        {
+          "file": "<frozen importlib._bootstrap>",
+          "line": 1390,
+          "function": "_handle_fromlist",
+          "primitive_calls": 872,
+          "total_calls": 1493,
+          "self_seconds": 0.0034349800000000002,
+          "cumulative_seconds": 0.7905257830000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1333,
+          "function": "request",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 4.4808e-05,
+          "cumulative_seconds": 0.722091503
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1338,
+          "function": "_send_request",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 6.725000000000001e-05,
+          "cumulative_seconds": 0.722043957
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1320,
+          "function": "endheaders",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 6.2984e-05,
+          "cumulative_seconds": 0.692582824
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1082,
+          "function": "_send_output",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 2.5200000000000003e-05,
+          "cumulative_seconds": 0.692080185
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1027,
+          "function": "send",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 7.6674e-05,
+          "cumulative_seconds": 0.6918443870000001
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/http/client.py",
+          "line": 1467,
+          "function": "connect",
+          "primitive_calls": 4,
+          "total_calls": 4,
+          "self_seconds": 3.621e-05,
+          "cumulative_seconds": 0.691488239
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/ssl.py",
+          "line": 449,
+          "function": "wrap_socket",
+          "primitive_calls": 2,
+          "total_calls": 2,
+          "self_seconds": 7.013100000000001e-05,
+          "cumulative_seconds": 0.691155547
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/asyncio/events.py",
+          "line": 86,
+          "function": "_run",
+          "primitive_calls": 84,
+          "total_calls": 84,
+          "self_seconds": 0.000177552,
+          "cumulative_seconds": 0.5234480380000001
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'run' of '_contextvars.Context' objects>",
+          "primitive_calls": 84,
+          "total_calls": 84,
+          "self_seconds": 0.000342298,
+          "cumulative_seconds": 0.523220054
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/execution/native_executor.py",
+          "line": 41,
+          "function": "stream_results",
+          "primitive_calls": 21,
+          "total_calls": 21,
+          "self_seconds": 0.000174031,
+          "cumulative_seconds": 0.520736916
+        },
+        {
+          "file": "~",
+          "line": 0,
+          "function": "<method 'run' of 'daft.daft.NativeExecutor' objects>",
+          "primitive_calls": 3,
+          "total_calls": 3,
+          "self_seconds": 0.000664154,
+          "cumulative_seconds": 0.520485979
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/daft/utils.py",
+          "line": 25,
+          "function": "in_notebook",
+          "primitive_calls": 3,
+          "total_calls": 3,
+          "self_seconds": 5.3910000000000004e-05,
+          "cumulative_seconds": 0.519804767
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/IPython/__init__.py",
+          "line": 1,
+          "function": "<module>",
+          "primitive_calls": 1,
+          "total_calls": 1,
+          "self_seconds": 2.4479e-05,
+          "cumulative_seconds": 0.518830659
+        },
+        {
+          "file": "/root/autodl-tmp/venvs/text-baselines/lib/python3.12/site-packages/pandas/__init__.py",
+          "line": 1,
+          "function": "<module>",
+          "primitive_calls": 1,
+          "total_calls": 1,
+          "self_seconds": 6.1949e-05,
+          "cumulative_seconds": 0.462098243
+        },
+        {
+          "file": "/root/autodl-tmp/venvs/text-baselines/lib/python3.12/site-packages/pandas/core/api.py",
+          "line": 1,
+          "function": "<module>",
+          "primitive_calls": 1,
+          "total_calls": 1,
+          "self_seconds": 2.7765000000000003e-05,
+          "cumulative_seconds": 0.37089638500000005
+        },
+        {
+          "file": "/root/miniconda3/lib/python3.12/site-packages/IPython/terminal/embed.py",
+          "line": 1,
+          "function": "<module>",
+          "primitive_calls": 1,
+          "total_calls": 1,
+          "self_seconds": 2.8228e-05,
+          "cumulative_seconds": 0.31219978600000003
+        },
+        {
+          "file": "<frozen importlib._bootstrap_external>",
+          "line": 1295,
+          "function": "exec_module",
+          "primitive_calls": 50,
+          "total_calls": 89,
+          "self_seconds": 0.000186006,
+          "cumulative_seconds": 0.29746689400000004
+        }
+      ]
+    },
+    "04": {
+      "real_model_posts": 0,
+      "http_posts": 0,
+      "first_payload_seconds": [
+        2.89862195,
+        0.003209105,
+        0.002334218
+      ],
+      "limit_seconds": 0.5,
+      "slow_first_payload": true,
+      "preload_seconds": {
+        "daft": 0.205183964,
+        "pyarrow": 0.160977817,
+        "src.data.materializers.text": 0.010667218
+      },
+      "profiler_enabled": false
+    }
+  },
+  "micro_http_scope": "only fixture/model POST counters; third-party telemetry GET calls were not audited in the early probes"
+}

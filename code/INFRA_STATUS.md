@@ -11,6 +11,14 @@ direct7.660、Daft12.307、Ray22.756秒。仍慢于direct/Daft，质量差异、
 控制器的接线、原生Ray观测actor误判及protobuf记录错误分别保留，修订后完成；执行层源码未新增修改。
 89项相关检查、2项记录器检查与实际Ray无模型复现通过，源码及清理核对通过；不是通用性能或质量等价证明。
 
+[gateway与首行诊断](../experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)
+沿用现有`PersistentMapGateway`与Ray worker服务，执行层源码未修改。
+10,272次fixture请求及两项临时记录器检查完成，准备约11毫秒、完整查询12.428→7.569秒；共享启动单列。
+独立`SEMLOOM_FLOW_DIAGNOSTIC=1`库核对PG节点与客户端交付，原安装不修改。
+后续原安装真实15条查询、12,336次通过：新gateway14.626→共享10.131秒，准备2.785→0.01429秒；
+本轮direct7.681秒，仍更快。中止11,312次、0请求准备失败、启动成本及0–4行输出差异单列。
+当前主干接口即可实现该复用配置，默认行为没有改动；源码817份摘要及PG/Ray/模型/worker/ACL回收通过。
+
 2026-09-30：[准备调优与worker复用](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
 完成目标环境无模型分段。可选调用方拥有worker服务，查询独占借用并核对模型/容量，未确认执行保留借用与对象计费；
 默认仍由查询创建worker。目标相关87项及最终worker模块11项通过（89个不同用例），实际Ray的5项所有权检查通过。

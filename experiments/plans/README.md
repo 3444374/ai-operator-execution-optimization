@@ -11,7 +11,9 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data和Daft Native的完整查�
 [新版主表完整运行](../results/postgresql/text_map_main_real_20260930/README.md)已完成68条查询、41,024次请求与独立评价。
 [准备与首批处理调优](text_map_preparation_tuning.md)已完成[无模型分段与worker复用对照](../results/postgresql/text_map_preparation_tuning_20260930/README.md)
 及[固定配置真实复测](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
-剩余首批处理和提交开销细化，旧失败保留，未称容量平台或质量等价。
+[gateway与首行交付诊断](../results/postgresql/text_map_gateway_lifecycle_20261001/README.md)继续完成10,272次fixture请求，
+无模型阶段真实POST0；后续三路径15条查询、12,336次真实请求完成，另保留中止11,312次。
+新gateway14.626→共享10.131秒，本轮direct7.681秒仍更快；下一项细化消费时间，不称容量平台或质量等价。
 [新 M1](data_organization_batching.md#m1-throughput-platform)仍负责供给平台与工作量控制的方法问题；
 原未选点结论保留，不挡住所有系统比较。旧运行额度不复用，新实验需明确环境、预算与停止条件。
 E/F 工程范围已完成；图像已有[151次真实CLIP检查](../results/postgresql/m1_m2_f_real_20260920/README.md)，
@@ -56,7 +58,7 @@ Filter质量/成本资格独立，复杂SQL、方法优化与公司
 
 | 文件 | 当前状态与用途 |
 |---|---|
-| [`text_map_preparation_tuning.md`](text_map_preparation_tuning.md) | 无模型及固定配置真实复测完成；首批处理与提交开销待细化 |
+| [`text_map_preparation_tuning.md`](text_map_preparation_tuning.md) | worker/gateway生命周期无模型及真实复测完成；准备后的消费时间待细化 |
 | [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `research/`，实现与证据回指各自状态入口 |
 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md) | 消息、纯值、PG plan/权限与真实模型功能已验证；新增实际路径继续分别检查 |
 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |

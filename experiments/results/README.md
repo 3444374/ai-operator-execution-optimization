@@ -1,5 +1,12 @@
 # Research Experiment Results
 
+[gateway复用与首行交付诊断](postgresql/text_map_gateway_lifecycle_20261001/README.md)完成：
+无模型阶段10,272次fixture POST、模型0次。共享gateway准备约11毫秒，完整查询中位数12.428→7.569秒，
+共享启动2.951秒单列；PG追踪将后续查询首行的2.455秒等待定位在节点返回之后，交付字节与8KiB发送缓冲相符。
+原始失败、未profile/profile区别及混合生命周期分别保留。
+后续同服务15条查询、12,336次真实请求通过：新gateway14.626→共享10.131秒、准备约14毫秒，direct7.681秒仍更快。
+此前中止11,312次不并入重复；共享启动2.277秒、测量输出差0–4行、原件备份与独立资源核对单列。
+
 2026-10-01：[worker复用后的真实文本Map耗时](postgresql/text_map_worker_reuse_real_20260930/README.md)。
 累计20,688次请求，最后同一服务中的1024行三次中位数：direct7.660、Daft12.307、Ray22.756、
 原SemLoom16.502、复用版14.794秒；准备减少40.24%、完整查询减少10.35%，仍慢于direct与Daft。

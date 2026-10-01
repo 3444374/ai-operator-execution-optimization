@@ -1,0 +1,12 @@
+{
+  "original_backup_sha256": "92b82604a77aee08ac83a9e0361bedc6825bb8a0c9e3c3d76594fe0d8627fc8b",
+  "original_backup_bytes": 5811010,
+  "selected_original_files": 343,
+  "published_text_files": 339,
+  "restored_text_files": 339,
+  "evidence_sha256": "ea64061ddc7220c507d17b28ba8b082b2802be670eff365e3172d2554fc3caa7",
+  "evidence_bytes": 5319608,
+  "original_preserved_outside_git": true,
+  "binary_ledgers_and_profiles_excluded": true,
+  "model_posts": 0
+}

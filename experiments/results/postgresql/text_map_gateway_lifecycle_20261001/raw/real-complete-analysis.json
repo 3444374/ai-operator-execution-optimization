@@ -1,0 +1,438 @@
+{
+  "status": "passed",
+  "source_revision": "11714bdc55f6cae814f4b19a017b4cd5c8fe89bd",
+  "actual_model_posts": 12336,
+  "server_access_posts": 12336,
+  "controller_elapsed_seconds": 363.0377399921417,
+  "errors": [],
+  "elapsed_since_approved_start_seconds": 778.393150806427,
+  "source_after_verified": true,
+  "completed_queries": 15,
+  "complete_matrix": true,
+  "modes": {
+    "pg-source-direct": {
+      "jct_seconds": [
+        7.688845801,
+        7.680798159,
+        7.671876202
+      ],
+      "preparation_seconds": [
+        0.192279693,
+        0.190924833,
+        0.194354879
+      ],
+      "first_row_seconds": [
+        0.21027262,
+        0.209982112,
+        0.195685268
+      ],
+      "stream_seconds": [
+        7.496566108,
+        7.489873326,
+        7.477521323
+      ],
+      "cleanup_seconds": [
+        0.005248194,
+        0.005312856,
+        0.005569694
+      ],
+      "accuracy": [
+        0.8505859375,
+        0.849609375,
+        0.8505859375
+      ],
+      "median": {
+        "jct_seconds": 7.680798159,
+        "preparation_seconds": 0.192279693,
+        "first_row_seconds": 0.209982112,
+        "stream_seconds": 7.489873326,
+        "cleanup_seconds": 0.005312856,
+        "accuracy": 0.8505859375
+      },
+      "repetitions": 3,
+      "median_unavailable_reason": null,
+      "jct_sample_cv_percent": 0.11052073621646973,
+      "warmup": {
+        "unit": "q03",
+        "repeat": 0,
+        "rows": 1024,
+        "summary": {
+          "path": "<task-root>/real04/worker/q03/unit/summary.json",
+          "sha256": "0b6ca5faefe1c5db697798049c8c8a40b74aafe33cbf781be1e5a37648799b96"
+        },
+        "config_sha256": "55a100915d56f8c8cb7aa2012d989d83fbb0d5c3f61bf2634d8f25ffdcb0da2f",
+        "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+        "actual_posts": 1024,
+        "model_success_delta": 1024.0,
+        "jct_seconds": 7.52060299,
+        "preparation_seconds": 0.193978902,
+        "first_row_seconds": 0.208910118,
+        "stream_seconds": 7.326624088,
+        "cleanup_seconds": 0.004945699,
+        "accuracy": 0.8505859375,
+        "quality": {
+          "true_positive": 524,
+          "false_positive": 10,
+          "true_negative": 347,
+          "false_negative": 143,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -133
+        }
+      },
+      "qualification": {
+        "unit": "q00",
+        "repeat": -1,
+        "rows": 16,
+        "summary": {
+          "path": "<task-root>/real04/worker/q00/unit/summary.json",
+          "sha256": "ebeb2848e5f623a98e2d02be55f1324a440210484ff0e08394827d9d96a1b9a2"
+        },
+        "config_sha256": "55a100915d56f8c8cb7aa2012d989d83fbb0d5c3f61bf2634d8f25ffdcb0da2f",
+        "input_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+        "actual_posts": 16,
+        "model_success_delta": 16.0,
+        "jct_seconds": 0.496394026,
+        "preparation_seconds": 0.192425789,
+        "first_row_seconds": 0.261777618,
+        "stream_seconds": 0.303968237,
+        "cleanup_seconds": 0.002570233,
+        "accuracy": 0.9375,
+        "quality": {
+          "true_positive": 10,
+          "false_positive": 0,
+          "true_negative": 5,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 16,
+          "missing_rows": 0,
+          "count_error_from_classifications": -1
+        }
+      }
+    },
+    "semloom-fresh": {
+      "jct_seconds": [
+        14.019296018,
+        14.625728202,
+        15.087893572
+      ],
+      "preparation_seconds": [
+        2.87068963,
+        2.785058716,
+        2.530091054
+      ],
+      "first_row_seconds": [
+        4.06415686,
+        4.639752421,
+        4.832719525
+      ],
+      "stream_seconds": [
+        11.148606388,
+        11.840669486,
+        12.557802518
+      ],
+      "cleanup_seconds": [
+        0.974904858,
+        0.923517779,
+        0.973359113
+      ],
+      "accuracy": [
+        0.8505859375,
+        0.8505859375,
+        0.8515625
+      ],
+      "median": {
+        "jct_seconds": 14.625728202,
+        "preparation_seconds": 2.785058716,
+        "first_row_seconds": 4.639752421,
+        "stream_seconds": 11.840669486,
+        "cleanup_seconds": 0.973359113,
+        "accuracy": 0.8505859375
+      },
+      "repetitions": 3,
+      "median_unavailable_reason": null,
+      "jct_sample_cv_percent": 3.676311234549893,
+      "warmup": {
+        "unit": "q04",
+        "repeat": 0,
+        "rows": 1024,
+        "summary": {
+          "path": "<task-root>/real04/worker/q04/unit/summary.json",
+          "sha256": "98fbe3d9ad215a59adc3a49dc4031b809747f17e34e24fda48e57f56e6f2a5cb"
+        },
+        "config_sha256": "58865239d8660877665e5b5bb8200432e625918982070f85d4716d7447924267",
+        "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+        "actual_posts": 1024,
+        "model_success_delta": 1024.0,
+        "jct_seconds": 14.298129937,
+        "preparation_seconds": 2.468538525,
+        "first_row_seconds": 4.722089068,
+        "stream_seconds": 11.829591412,
+        "cleanup_seconds": 1.07650353,
+        "accuracy": 0.849609375,
+        "quality": {
+          "true_positive": 523,
+          "false_positive": 10,
+          "true_negative": 347,
+          "false_negative": 144,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -134
+        }
+      },
+      "qualification": {
+        "unit": "q01",
+        "repeat": -1,
+        "rows": 16,
+        "summary": {
+          "path": "<task-root>/real04/worker/q01/unit/summary.json",
+          "sha256": "29e6c6774e05e272ae79805b41ddb27b35cd93ddb61d80cbdf46db2c106d1e49"
+        },
+        "config_sha256": "58865239d8660877665e5b5bb8200432e625918982070f85d4716d7447924267",
+        "input_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+        "actual_posts": 16,
+        "model_success_delta": 16.0,
+        "jct_seconds": 5.728302743,
+        "preparation_seconds": 2.667064334,
+        "first_row_seconds": 3.060524693,
+        "stream_seconds": 3.061238409,
+        "cleanup_seconds": 0.769241589,
+        "accuracy": 0.9375,
+        "quality": {
+          "true_positive": 10,
+          "false_positive": 0,
+          "true_negative": 5,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 16,
+          "missing_rows": 0,
+          "count_error_from_classifications": -1
+        }
+      }
+    },
+    "semloom-persistent": {
+      "jct_seconds": [
+        10.131159069,
+        10.161528037,
+        9.572132571
+      ],
+      "preparation_seconds": [
+        0.014225653,
+        0.016599013,
+        0.014290911
+      ],
+      "first_row_seconds": [
+        2.295990215,
+        2.361356726,
+        2.217146039
+      ],
+      "stream_seconds": [
+        10.116933416,
+        10.144929024,
+        9.55784166
+      ],
+      "cleanup_seconds": [
+        0.227003783,
+        0.332255406,
+        0.271292527
+      ],
+      "accuracy": [
+        0.8515625,
+        0.8505859375,
+        0.849609375
+      ],
+      "median": {
+        "jct_seconds": 10.131159069,
+        "preparation_seconds": 0.014290911,
+        "first_row_seconds": 2.295990215,
+        "stream_seconds": 10.116933416,
+        "cleanup_seconds": 0.271292527,
+        "accuracy": 0.8505859375
+      },
+      "repetitions": 3,
+      "median_unavailable_reason": null,
+      "jct_sample_cv_percent": 3.3337059799869277,
+      "warmup": {
+        "unit": "q05",
+        "repeat": 0,
+        "rows": 1024,
+        "summary": {
+          "path": "<task-root>/real04/worker/g1024/q05/summary.json",
+          "sha256": "f618115131e37470a8ded20c452810bd8ab17c206995855d92143bb38f415f41"
+        },
+        "config_sha256": "08f22e59361e4d22fa1fe7b0d7863169f3e6ffdb64ed1f3fd6a0b3c88737bbe2",
+        "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+        "actual_posts": 1024,
+        "model_success_delta": 1024.0,
+        "jct_seconds": 12.484769154,
+        "preparation_seconds": 0.020042294,
+        "first_row_seconds": 4.100238052,
+        "stream_seconds": 12.46472686,
+        "cleanup_seconds": 0.268533983,
+        "accuracy": 0.8486328125,
+        "quality": {
+          "true_positive": 522,
+          "false_positive": 10,
+          "true_negative": 347,
+          "false_negative": 145,
+          "invalid": 0,
+          "evaluated_rows": 1024,
+          "missing_rows": 0,
+          "count_error_from_classifications": -135
+        }
+      },
+      "qualification": {
+        "unit": "p00",
+        "repeat": -1,
+        "rows": 16,
+        "summary": {
+          "path": "<task-root>/real04/worker/g16/p00/summary.json",
+          "sha256": "bf347381cca7188f0a84dd02f5a95905b73d8738487bca7a0c2c6950bc7d4ed5"
+        },
+        "config_sha256": "08f22e59361e4d22fa1fe7b0d7863169f3e6ffdb64ed1f3fd6a0b3c88737bbe2",
+        "input_sha256": "c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4",
+        "actual_posts": 16,
+        "model_success_delta": 16.0,
+        "jct_seconds": 2.475764554,
+        "preparation_seconds": 0.013847809,
+        "first_row_seconds": 2.461642815,
+        "stream_seconds": 2.461916745,
+        "cleanup_seconds": 0.064774856,
+        "accuracy": 0.9375,
+        "quality": {
+          "true_positive": 10,
+          "false_positive": 0,
+          "true_negative": 5,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 16,
+          "missing_rows": 0,
+          "count_error_from_classifications": -1
+        }
+      }
+    }
+  },
+  "service_startup_seconds": 186.8535578250885,
+  "ray_startup_seconds": 9.580953883007169,
+  "initial_available_cpus": 6.0,
+  "persistent_gateway_startup_seconds": 2.277237355709076,
+  "worker_services_startup_seconds": {
+    "semloom-fresh": 0.5626601800322533,
+    "semloom-persistent": 0.2384101115167141
+  },
+  "model_stop": {
+    "returncode": 0,
+    "forced": false
+  },
+  "ray_driver_disconnected": true,
+  "worker_cpu_slots_released": true,
+  "paired_output_differences": [
+    {
+      "repeat": 1,
+      "left": "semloom-fresh",
+      "right": "semloom-persistent",
+      "rows": 1024,
+      "different_rows": 3,
+      "producer_indices": [
+        382,
+        505,
+        653
+      ]
+    },
+    {
+      "repeat": 1,
+      "left": "semloom-fresh",
+      "right": "pg-source-direct",
+      "rows": 1024,
+      "different_rows": 0,
+      "producer_indices": []
+    },
+    {
+      "repeat": 1,
+      "left": "semloom-persistent",
+      "right": "pg-source-direct",
+      "rows": 1024,
+      "different_rows": 3,
+      "producer_indices": [
+        382,
+        505,
+        653
+      ]
+    },
+    {
+      "repeat": 2,
+      "left": "semloom-persistent",
+      "right": "pg-source-direct",
+      "rows": 1024,
+      "different_rows": 1,
+      "producer_indices": [
+        382
+      ]
+    },
+    {
+      "repeat": 2,
+      "left": "semloom-persistent",
+      "right": "semloom-fresh",
+      "rows": 1024,
+      "different_rows": 2,
+      "producer_indices": [
+        382,
+        653
+      ]
+    },
+    {
+      "repeat": 2,
+      "left": "pg-source-direct",
+      "right": "semloom-fresh",
+      "rows": 1024,
+      "different_rows": 1,
+      "producer_indices": [
+        653
+      ]
+    },
+    {
+      "repeat": 3,
+      "left": "pg-source-direct",
+      "right": "semloom-fresh",
+      "rows": 1024,
+      "different_rows": 3,
+      "producer_indices": [
+        382,
+        505,
+        653
+      ]
+    },
+    {
+      "repeat": 3,
+      "left": "pg-source-direct",
+      "right": "semloom-persistent",
+      "rows": 1024,
+      "different_rows": 1,
+      "producer_indices": [
+        447
+      ]
+    },
+    {
+      "repeat": 3,
+      "left": "semloom-fresh",
+      "right": "semloom-persistent",
+      "rows": 1024,
+      "different_rows": 4,
+      "producer_indices": [
+        382,
+        447,
+        505,
+        653
+      ]
+    }
+  ],
+  "jct_reduction_percent": 30.73056651213707,
+  "four_query_total_including_gateway_startup": {
+    "fresh": 58.031047729,
+    "persistent": 44.626826186709074,
+    "reduction_percent": 23.09836211279087,
+    "cleanup_included": false
+  }
+}
