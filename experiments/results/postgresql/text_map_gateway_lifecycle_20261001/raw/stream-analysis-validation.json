@@ -1,0 +1,16 @@
+{
+  "analysis_source_sha256": "52c16b6532e75a6c973c6131aa79bb61a00f2c493e0715624cff1d6a94f47a53",
+  "analysis_source_gzip_sha256": "f7e742f61de31c03cd248fefeb0235f125f553c03de567d6bdfa1d2266ce4e2d",
+  "restored_source_sha256": "52c16b6532e75a6c973c6131aa79bb61a00f2c493e0715624cff1d6a94f47a53",
+  "checked_queries": 3,
+  "checked_rows": 3072,
+  "new_model_requests": 0,
+  "independent_producer_to_client_mappings": 3072,
+  "unique_request_guard_mappings": 3072,
+  "per_row_partition_rows": 3072,
+  "independent_credit_sweep_queries": 3,
+  "server_histogram_cohorts": 18,
+  "source_archive_sha256": "0fab2f0768e64f102457258919c109894d162527ed48c13bb69f96853c4d8ae9",
+  "analysis_json_sha256": "e4a34ddd7fb0aace55d3f01c06fffaa882f17dd996c21f538609cbccf7fb9d4a",
+  "status": "passed"
+}

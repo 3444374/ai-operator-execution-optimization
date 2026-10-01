@@ -19,6 +19,11 @@ direct7.660、Daft12.307、Ray22.756秒。仍慢于direct/Daft，质量差异、
 本轮direct7.681秒，仍更快。中止11,312次、0请求准备失败、启动成本及0–4行输出差异单列。
 当前主干接口即可实现该复用配置，默认行为没有改动；源码817份摘要及PG/Ray/模型/worker/ACL回收通过。
 
+同日[消费分段](../experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)
+只分析既有3,072行，新增模型请求0。每行RPC前176–232、worker外RPC合计94–147、worker内258–279毫秒；
+实验POST记录器仍在测量中，不能将RPC前整个区间归为调度算法。现有记录缺热批次/账本独立计时、
+worker绝对时刻及真实PG节点时刻；需要继续观测而非直接提高名额。执行层没有新增修改。
+
 2026-09-30：[准备调优与worker复用](../experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
 完成目标环境无模型分段。可选调用方拥有worker服务，查询独占借用并核对模型/容量，未确认执行保留借用与对象计费；
 默认仍由查询创建worker。目标相关87项及最终worker模块11项通过（89个不同用例），实际Ray的5项所有权检查通过。

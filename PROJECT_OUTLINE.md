@@ -21,6 +21,11 @@
 这是已评价输入上的固定配置工程复测；下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)
 解释准备之后的消费时间，不据旧的不同运行设置更新原生Daft/Ray排名。
 
+同日继续只分析SemLoom：既有3,072行请求分段核对完成，新增模型请求0；每行RPC前记录176–232毫秒，
+worker外RPC合计94–147毫秒，worker内258–279毫秒。服务内部排队均值不到0.06毫秒，优先细化批次处理、
+实验记账和RPC链路，不能归因某一个函数。首行缓冲等待与推理重叠，结束尾段只需约5–8毫秒，
+分段口径及缺失时刻见[报告](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)。
+
 2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md)完整清单已完成：
 SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP执行另作内部消融。
 [当前结果](experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，

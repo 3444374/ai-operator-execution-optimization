@@ -1,5 +1,9 @@
 # Research Experiment Results
 
+[SemLoom消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)离线核对既有3,072行，新增请求0。
+每行RPC前176–232毫秒、worker外RPC合计94–147毫秒、worker内258–279毫秒；服务内部排队平均不到0.06毫秒。
+末尾Ray回复至消费结束只需5–8毫秒，首行缓冲等待与后续处理重叠；下一项细化提交链路及实验记录器。
+
 [gateway复用与首行交付诊断](postgresql/text_map_gateway_lifecycle_20261001/README.md)完成：
 无模型阶段10,272次fixture POST、模型0次。共享gateway准备约11毫秒，完整查询中位数12.428→7.569秒，
 共享启动2.951秒单列；PG追踪将后续查询首行的2.455秒等待定位在节点返回之后，交付字节与8KiB发送缓冲相符。
