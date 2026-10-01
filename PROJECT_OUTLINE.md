@@ -12,6 +12,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[热路径独立计时](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
+完成5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
+批次next实际执行约1秒、恢复约5.7秒，区间重叠；先将持久记账移出事件循环并保留严格发送前提交，
+再做同条件对照。真实占比和优化收益尚待验证；资源/ACL、4,112行绑定及目标37项核对通过。
+
 [gateway复用与首行交付诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)
 无模型阶段完成10,272次fixture请求、模型0次。现有共享gateway接口的准备约11毫秒，完整查询中位数
 12.428→7.569秒，启动2.951秒单列；它是生命周期工程观察，不更新旧真实排名。

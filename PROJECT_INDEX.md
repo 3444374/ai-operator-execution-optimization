@@ -13,7 +13,7 @@
 | 系统名与领域术语 | [`CONTEXT.md`](CONTEXT.md) | SemLoom、DB-AIEL、AI semantic operator、execution provider 与历史身份的规范含义 |
 | 项目总纲 | [`PROJECT_OUTLINE.md`](PROJECT_OUTLINE.md) | 回答为什么做、研究哪两个问题、核心链路和当前优先级；不保存源码细节或实验原始数字 |
 | 已完成文本系统比较 | [文本 Map 四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md) | SemLoom Daft/Ray、direct、原生Ray与Daft；68查询、41,024次请求及独立评价完成 |
-| 文本Map准备调优 | [计划](experiments/plans/text_map_preparation_tuning.md)、[worker无模型结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)、[worker真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway与首行诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md) | worker/gateway生命周期、PG交付分段与同条件真实复测；源码、失败和重复身份分别保存 |
+| 文本Map准备与消费调优 | [计划](experiments/plans/text_map_preparation_tuning.md)、[worker无模型结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)、[worker真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway与热路径诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md) | worker/gateway生命周期、PG交付、热批次/实验账本/RPC细分与真实复测；源码、失败和重复身份分别保存 |
 | 修订主表真实模型比较 | [记录](experiments/results/postgresql/text_map_main_real_20260930/README.md) | 新评价集、原生Ray/Daft与SemLoom匹配运行；分支审查、批量证据归档与恢复 |
 | 原生候选与baseline补充 | [记录](experiments/results/postgresql/text_map_native_candidates_20260930/README.md) | Ray实际供给、原生Daft执行入口、当前主表与语义系统缺项 |
 | 文本Map服务器验证与比较 | [记录](experiments/results/postgresql/text_map_matched_20260930/README.md) | 共享PG/Ray生命周期、有限执行清单、输入准备、全部失败与真实结果 |

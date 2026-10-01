@@ -8,9 +8,11 @@ from dataclasses import asdict, dataclass, replace
 from functools import partial
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import time
+from typing import NamedTuple
 import uuid
 
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
@@ -53,6 +55,25 @@ class _RemoteFailure:
     reason: dict
 
 
+def _clock_domain():
+    """Identify a shared Linux monotonic clock without exposing host identity."""
+    try:
+        value = (Path('/proc/sys/kernel/random/boot_id').read_bytes()
+                 + os.readlink('/proc/self/ns/time').encode()
+                 + time.get_clock_info('monotonic').implementation.encode())
+    except OSError:
+        return None
+    return hashlib.sha256(value).hexdigest()
+
+
+class _RemoteResult(NamedTuple):
+    key: object
+    result: bytes
+    started_ns: int
+    ended_ns: int
+    clock_domain: str | None
+
+
 def _model_identity(config):
     value = json.dumps(asdict(config), sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(value).hexdigest()
@@ -64,6 +85,7 @@ class _HttpActor:
         self.active = 0
         self.managed, self.owner = managed, None
         self.identity, self.capacity = _model_identity(config), concurrency
+        self.clock_domain = _clock_domain()
 
     async def ready(self):
         return True
@@ -99,7 +121,7 @@ class _HttpActor:
             task = replace(template, task=replace(template.task, payload=table["payload"][index].as_py()))
             stage = "http"
             result = await self.transport.execute(task, "model")
-            return key, result, start, time.monotonic_ns()
+            return _RemoteResult(key, result, start, time.monotonic_ns(), self.clock_domain)
         except Exception as error:
             # Return only safe metadata across Ray; this is not a model receipt.
             return _RemoteFailure(key, stage, exception_details(error))
@@ -179,6 +201,7 @@ class RayMapTransport:
         if physical.workers > capacity:
             raise ValueError("Ray worker count exceeds the active request capacity")
         self.started_ns = time.monotonic_ns()
+        self.clock_domain = _clock_domain()
         self.config, self.physical = config, physical
         self.capacity, self.observer, self.before_request = capacity, observer, before_request
         self.rows, self.pending, self.blocks = {}, deque(), {}
@@ -261,8 +284,31 @@ class RayMapTransport:
         finally:
             self.rows.pop(task.key, None)
 
-    async def _work(self, function, *args):
-        return await asyncio.get_running_loop().run_in_executor(self.pool, function, *args)
+    async def _work(self, function, *args, stage=None, **fields):
+        loop = asyncio.get_running_loop()
+        if self.observer is None or stage is None:
+            return await loop.run_in_executor(self.pool, function, *args)
+        submitted = time.monotonic_ns()
+        times = []
+        def run():
+            times.append(time.monotonic_ns())
+            try:
+                return function(*args)
+            finally:
+                times.append(time.monotonic_ns())
+        status = 'failed'
+        try:
+            value = await loop.run_in_executor(self.pool, run)
+            status = 'completed'
+            return value
+        finally:
+            resumed = time.monotonic_ns()
+            self._observe('ray_work', stage=stage, status=status,
+                          submitted_ns=submitted, resumed_ns=resumed,
+                          queue_ns=times[0]-submitted if times else None,
+                          work_ns=times[1]-times[0] if len(times)==2 else None,
+                          resume_ns=resumed-times[1] if len(times)==2 else None,
+                          elapsed_ns=resumed-submitted, **fields)
 
     async def _flush(self):
         while self.pending:
@@ -276,6 +322,8 @@ class RayMapTransport:
                 selected.append(self.pending.popleft())
                 size += amount
             by_key = {r.task.key: r for r in selected}
+            first_key = dict(session_id=selected[0].task.key.session_id,
+                             sequence=selected[0].task.key.sequence)
             data = tuple((r.task.key.session_id, r.task.key.sequence, r.task.task.payload) for r in selected)
             stream = iter_payload_batches(data, PayloadBatchLimits(self.capacity, self.physical.window_bytes),
                                           batch_rows=self.physical.batch_rows)
@@ -284,7 +332,7 @@ class RayMapTransport:
                     measure = self._startup_stage("first_payload") if self.first_payload else nullcontext()
                     self.first_payload = False
                     with measure:
-                        table = await self._work(next, stream, None)
+                        table = await self._work(next, stream, None, stage='payload_next', key=first_key)
                     if table is None:
                         break
                     # Count backing Arrow buffers, including any shared slice storage.
@@ -311,7 +359,8 @@ class RayMapTransport:
                     self.blocks[block_id] = _Block(None, amount, set(keys))
                     self._observe("ray_block_reserved", block_id=block_id, rows=len(keys), bytes=amount)
                     try:
-                        reference = await self._work(self.ray.put, table)
+                        reference = await self._work(self.ray.put, table, stage='object_put',
+                                                     block_id=block_id, key=first_key)
                     except BaseException:
                         for key in keys:
                             self._release(block_id, key)
@@ -330,7 +379,7 @@ class RayMapTransport:
                     if not row.future.done():
                         row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             finally:
-                await self._work(stream.close)
+                await self._work(stream.close, stage='payload_close', key=first_key)
 
     def _release(self, block_id, key):
         block = self.blocks[block_id]
@@ -349,7 +398,14 @@ class RayMapTransport:
             return
         try:
             if self.before_request:
-                self.before_request(row.task)
+                started = time.monotonic_ns()
+                status = 'failed'
+                try:
+                    self.before_request(row.task)
+                    status = 'completed'
+                finally:
+                    self._observe('ray_request_guard', key=dict(session_id=key.session_id, sequence=key.sequence),
+                                  status=status, elapsed_ns=time.monotonic_ns()-started)
         except Exception:
             self._release(block_id, key)
             row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
@@ -365,20 +421,38 @@ class RayMapTransport:
                 self._observe("ray_first_submit", key=dict(session_id=key.session_id, sequence=key.sequence),
                               elapsed_seconds=(time.monotonic_ns()-self.started_ns)/1e9)
             arguments = (self.blocks[block_id].reference, index, template)
+            rpc_started = time.monotonic_ns()
             call = actor.execute.remote(*arguments, self.worker_owner) if self.worker_owner else actor.execute.remote(*arguments)
+            rpc_returned = time.monotonic_ns()
             stage = "ray_await"
             reply = await call
+            received = time.monotonic_ns()
             stage = "result_validation"
             if isinstance(reply, _RemoteFailure):
                 if reply.key != key or reply.stage not in ("payload", "http"):
                     raise ValueError("Ray failure differs from its row or execution stage")
                 stage, remote_reason = reply.stage, reply.reason
                 raise RuntimeError("remote actor execution failed")
-            actual_key, result, started, ended = reply
+            if isinstance(reply, _RemoteResult):
+                actual_key, result, started, ended, domain = reply
+            else:
+                actual_key, result, started, ended = reply
+                domain = None
             if actual_key != key or type(result) is not bytes or len(result) > row.task.task.max_result_bytes:
                 raise ValueError("Ray result differs from its row or result capacity")
+            if type(started) is not int or type(ended) is not int or not 0 <= started <= ended:
+                raise ValueError('Ray worker duration is invalid')
+            shared_clock = domain is not None and domain == self.clock_domain
+            if shared_clock and not rpc_started <= started <= ended <= received:
+                raise ValueError('Ray shared-clock observations are not causal')
             self._observe("ray_http_completed", key=dict(session_id=key.session_id, sequence=key.sequence),
-                          worker_elapsed_ns=ended-started)
+                          worker_elapsed_ns=ended-started, submit_elapsed_ns=rpc_returned-rpc_started,
+                          await_elapsed_ns=received-rpc_returned, rpc_elapsed_ns=received-rpc_started,
+                          rpc_started_ns=rpc_started, rpc_returned_ns=rpc_returned, received_ns=received,
+                          worker_started_ns=started, worker_ended_ns=ended,
+                          shared_clock=shared_clock,
+                          before_worker_ns=started-rpc_started if shared_clock else None,
+                          after_worker_ns=received-ended if shared_clock else None)
         except Exception as error:
             reason = remote_reason if remote_reason is not None else exception_details(error)
             self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),

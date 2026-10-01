@@ -35,6 +35,8 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native，比较完�
 中止11,312次、共享启动2.277秒与输出差0–4行保留；下一项细化消费时间，不证明质量等价、容量平台或通用优势。
 已离线拆分共享gateway三次既有3,072行，新增模型请求0；每行RPC前176–232、worker外RPC合计94–147毫秒，
 worker内258–279毫秒，服务内部排队均值不到0.06毫秒。先细化热批次、实验账本和RPC链路；首行等待不直接加到查询耗时。
+后续5条查询/4,112次fixture、目标37项通过，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
+批次next执行约1秒、恢复约5.7秒，两者重叠；优先移出记账I/O并保留发送前持久提交，真实收益尚待验证。
 
 - PostgreSQL 18.3 extension 已完成受限 Filter/Map 语义、公共执行接口、Map 有界多在途及可选图像嵌入的
   工程检查。可选 Daft/Ray 文本传输在[受控查询](../experiments/results/postgresql/incremental_transport_20260927/README.md)

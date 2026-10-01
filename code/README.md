@@ -19,6 +19,60 @@
 已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
 本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
+Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
+Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
+实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
+验证安排见[准备调优计划](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+
+## 当前 PostgreSQL 文本 Map 的执行流程
+
+下面描述已接入的增量Map路径，外部runner直接读取数据库的历史流程另见后文。
+
+```mermaid
+flowchart LR
+    SQL[SQL语义调用] --> Plan[PG计划中的SemMap]
+    Plan --> Child[普通子计划读取行]
+    Child --> Task[PG生成带序号的语义任务]
+    Task --> Gateway[外部gateway与共享执行核心]
+    Gateway --> Batch[Arrow与Daft传输批次]
+    Batch --> Worker[Ray HTTP worker]
+    Worker --> Model[外部模型服务]
+    Model --> Result[结果核对与容量归还]
+    Result --> PG[PG解析结果并恢复行序]
+    PG --> Client[SQL结果]
+```
+
+1. PostgreSQL将支持的`ai_semantic.map(text, instruction, options)`调用放入可见的`SemMap`执行节点。
+   版本化语义计划保存instruction、prompt/parser、模型、生成参数及NULL/错误/顺序政策。
+   普通子计划负责数据读取、常规谓词、snapshot和权限；外部执行器消费PG生成的任务。
+2. PG执行节点按有限窗口保留输入与序号，通过本地Unix socket发送任务。无法安全预取的子计划会
+   将有效窗口降为1。提交被拒时保留对应行，接纳前不前移已接受序号。
+3. gateway核对协议、语义与任务身份，注册查询Job和session；共享执行核心限制请求数、输入与结果容量。
+   当前Daft/Ray选择使用Arrow/Daft构建传输批次，Ray对象容量另行记账。
+4. Ray worker取出每行完整payload，通过HTTP调用外部模型服务。一个传输批次可包含多行；每行仍为
+   一个独立请求，Ray worker不负责GPU推理，也不修改数据库拥有的生成语义。
+5. 返回结果核对任务身份、长度和解析规则，再经provider回到PG；PG关联原始行并按输入序号交付。
+   查询结束或取消停止新增任务；已发送调用确认后归还资源，未知远端结果继续保留计费。
+
+| 步骤 | 当前源码入口 |
+|---|---|
+| SQL识别与计划构建 | [sem_map_call.c](postgres/semloom_pg/src/planner/sem_map_call.c)、[sem_map_path.c](postgres/semloom_pg/src/planner/sem_map_path.c) |
+| PG输入绑定、窗口、结果关联 | [sem_pump.c](postgres/semloom_pg/src/executor/sem_pump.c)、[uds_provider.c](postgres/semloom_pg/src/provider/uds_provider.c) |
+| gateway注册及Job/session接入 | [multiplexed_gateway.py](src/execution_provider/multiplexed_gateway.py)、[incremental_session.py](src/execution_provider/adapters/incremental_session.py) |
+| 公共容量、接纳、提交与交付 | [session.py](src/scheduling/core/session.py)、[async_backend.py](src/scheduling/runtime/async_backend.py) |
+| 数据批次、Ray对象和HTTP worker | [payloads.py](src/data/materializers/payloads.py)、[ray_map_transport.py](src/execution_provider/adapters/ray_map_transport.py)、[async_fixed_model.py](src/execution_provider/adapters/async_fixed_model.py) |
+
+本轮使用固定请求计数与单模型endpoint；工作量描述和策略装配入口是
+[incremental_execution.py](src/execution_provider/adapters/incremental_execution.py)。
+Core没有自动改写prompt或拆分单行推理，也没有在本轮执行自适应模型路由或GPU/kernel优化。
+
+HTTP执行路径仍可选；默认Ray worker由查询创建，可选服务由调用方创建并供查询独占借用。
+实验中的共享gateway已经支持顺序多查询，但没有自动替换默认部署方式。
+当前SQL支持形态见[extension说明](postgres/semloom_pg/README.md#supported-query-shapes)：
+单个Filter→单个生成型Map的受限组合已有[绑定验证](../experiments/results/postgresql/filter_map_binding_20260907/README.md)，
+可选`query-job`将受支持的算子流归属同一个查询Job；本次耗时诊断只运行单Map。
+多Map、任意组合、join及更宽SQL接入尚未实现，不以当前文本Map验证代替这些能力。
+
 下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
 
 ## Stopped SAOR native-system implementation record

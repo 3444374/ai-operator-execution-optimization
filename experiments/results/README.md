@@ -1,5 +1,10 @@
 # Research Experiment Results
 
+[热路径独立计时](postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
+5条查询/4,112次fixture通过，模型0次。同步实验账本每1024行占用事件循环约5.2秒；
+批次next实际执行约1秒，恢复约5.7秒，区间重叠，不作真实模型收益结论。目标37项及独立清理通过，
+131份公开文本去重为103份唯一成员且28份精确恢复通过；原件和两次0请求准备失败保留。
+
 [SemLoom消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)离线核对既有3,072行，新增请求0。
 每行RPC前176–232毫秒、worker外RPC合计94–147毫秒、worker内258–279毫秒；服务内部排队平均不到0.06毫秒。
 末尾Ray回复至消费结束只需5–8毫秒，首行缓冲等待与后续处理重叠；下一项细化提交链路及实验记录器。

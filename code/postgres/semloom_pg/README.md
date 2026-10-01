@@ -292,7 +292,8 @@ The current supported query shape is deliberately narrow:
 - one top-level `ai_semantic.map(text,text,jsonb)` in a non-inherited single-table `SELECT` or direct
   `INSERT ... SELECT`, with immutable constant instruction/options and text output. Options are exactly
   `model`, numeric-zero `temperature`, and integer `max_tokens` from 1 to 4096. Whole-Map SQL wrappers,
-  multiple Map calls and Map/Filter combinations are not supported;
+  multiple Map calls and arbitrary nested combinations are not supported. One relational Filter feeding one
+  generated Map is supported through the dedicated binding described above;
 - one or two top-level `ai_semantic.filter(text)` predicates joined by AND in `WHERE`; exact `true` emits the
   tuple, while `false`, `unknown`, and SQL `NULL` drop it without letting the provider create rows;
 - one or two top-level `ai_semantic.filter(text,text,jsonb)` exact-reference predicates joined by AND.
@@ -319,7 +320,9 @@ The current supported query shape is deliberately narrow:
   raw result.
 
 The planner rejects joins, inheritance, subqueries, CTEs, aggregates, grouping, windows, `DISTINCT`,
-set operations, row locks, set-returning targets, nested markers, more than two Filter calls, and combined SemMap/SemFilter.
+set operations, row locks, set-returning targets, nested markers, more than two Filter calls, and arbitrary
+SemMap/SemFilter combinations. The supported single Filter-to-generated-Map case retains raw child inputs;
+it does not support joins or multiple Map outputs. Its existing binding checks are synthetic-model evidence.
 SemMap remains target-list-only and rejects sorting; SemFilter supports up to two top-level `AND` predicates and
 allows ordinary predicates, `ORDER BY`, and `LIMIT`. The executor rejects backward scan, mark/restore,
 rescan, and EPQ. Parallel execution is disabled. The version-2 UDS protocol is deliberately synchronous
