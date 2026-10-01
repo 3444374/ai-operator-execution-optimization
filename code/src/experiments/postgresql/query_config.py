@@ -35,10 +35,15 @@ class QueryConfig:
     daft_num_threads: int = 8
     daft_read_partitions: int = 4
     remote_budget_mode: str = 'synchronous'
+    map_payload_backend: str = 'daft'
 
     def __post_init__(self):
         import math
         import re
+        if self.map_payload_backend not in ('daft', 'arrow'):
+            raise ValueError('unknown Map payload backend')
+        if self.map_payload_backend != 'daft' and self.map_transport_config is None:
+            raise ValueError('Arrow payload batches require Ray Map transport')
         if self.remote_budget_mode not in ('synchronous', 'threaded'):
             raise ValueError('unknown remote budget placement')
         if self.remote_budget_mode == 'threaded' and self.map_transport_config is None:

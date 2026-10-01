@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-02后续：增加显式`RayMapConfig.payload_backend=arrow`，直接将已选有限payload构成独立Arrow批次。
+默认Daft保留；Core选行、完整请求、对象容量及行生命周期保持，原Daft/Ray比较拒绝Arrow/Ray身份。
+本地相关86项中74项通过、12项因缺Daft/Arrow跳过；目标验证与同条件无模型对照尚未完成。
+验证安排见[准备调优计划](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+
 2026-10-02：新增可选单线程持久记账，原事务不变，内容核对和记录仍在事件循环。
 Ray发送前回调可等待异步完成，并在等待后再次检查取消；已提交额度保留，失败不发请求。
 默认同步选择保留，生产未配置回调时不创建记账线程。[目标对照](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)

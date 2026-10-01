@@ -44,6 +44,8 @@ def configuration_identity(config):
 def read_run(reference, expected_role):
     path, summary = checked_json(reference)
     config = QueryConfig(**summary['config'])
+    if config.map_payload_backend != 'daft':
+        raise ValueError('Arrow/Ray diagnostics cannot enter a Daft/Ray comparison')
     role = ('pg-daft-ray' if config.map_transport_config else 'pg-http') if config.arm == 'pg' else config.arm
     if (role != expected_role or config.task != 'map' or config.movie_id is not None
             or config.organization_config is not None or config.event_content != 'full'):

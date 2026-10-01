@@ -13,13 +13,17 @@ class PayloadBatchLimits:
             raise ValueError("payload batch limits must be positive integers")
 
 
-def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int):
-    """Stream Daft partitions of one finite window without collecting its output.
+def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, backend='daft'):
+    """Stream batches of one finite window without collecting its output.
 
     The caller supplies a sealed tuple, not an unbounded producer. The extra
     24 bytes per row cover two int64 keys and large-binary offsets in the Arrow table.
     This counts Arrow data, not the RSS of Python, Daft or Ray processes.
+    The optional Arrow path builds independent batch buffers directly from the
+    already selected rows; it does not create a Daft graph or change selection.
     """
+    if backend not in ('daft', 'arrow'):
+        raise ValueError("unknown payload batch backend")
     if type(rows) is not tuple or not 1 <= len(rows) <= limits.rows:
         raise ValueError("payload window exceeds the declared row count")
     if type(batch_rows) is not int or not 1 <= batch_rows <= limits.rows:
@@ -35,27 +39,32 @@ def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int):
     if size > limits.bytes:
         raise ValueError("payload window exceeds the declared byte count")
 
-    import daft
     import pyarrow as pa
-    from .text import configure_daft_runner
-
-    configure_daft_runner("native")
     schema = pa.schema([("session_id", pa.int64()), ("sequence", pa.int64()), ("payload", pa.large_binary())])
-    table = pa.Table.from_arrays([pa.array(column, type=field.type)
-                                 for column, field in zip(zip(*rows), schema)], schema=schema)
-    stream = daft.from_arrow(table).into_batches(batch_rows).to_arrow_iter(results_buffer_size=1)
+    def table_from(selected):
+        return pa.Table.from_arrays([pa.array(column, type=field.type)
+                                     for column, field in zip(zip(*selected), schema)], schema=schema)
+    if backend == 'arrow':
+        stream = (table_from(rows[start:start + batch_rows])
+                  for start in range(0, len(rows), batch_rows))
+    else:
+        import daft
+        from .text import configure_daft_runner
+        configure_daft_runner("native")
+        stream = daft.from_arrow(table_from(rows)).into_batches(batch_rows).to_arrow_iter(results_buffer_size=1)
     expected = iter(rows)
+    name = 'Daft' if backend == 'daft' else 'Arrow'
     try:
         for batch in stream:
             result = pa.Table.from_batches([batch]) if isinstance(batch, pa.RecordBatch) else batch
             if (result.schema != schema or not 1 <= result.num_rows <= batch_rows
                     or result.nbytes > limits.bytes):
-                raise ValueError("Daft changed the payload representation")
+                raise ValueError(f"{name} changed the payload representation")
             for row in zip(*(result.column(name).to_pylist() for name in schema.names)):
                 if next(expected, None) != row:
-                    raise ValueError("Daft changed a sealed payload or its identity")
+                    raise ValueError(f"{name} changed a sealed payload or its identity")
             yield result
         if next(expected, None) is not None:
-            raise ValueError("Daft omitted a sealed payload")
+            raise ValueError(f"{name} omitted a sealed payload")
     finally:
         stream.close()

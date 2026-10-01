@@ -102,6 +102,12 @@ and performance pending. [Scope, tests and failure history](../../../../experime
 
 ## Matched text Map comparison
 
+`QueryConfig.map_payload_backend` declares the selected finite payload batching backend and must
+match `RayMapConfig.payload_backend` before gateway startup. Both default to `daft` for existing
+configurations. The optional `arrow` path constructs independent Arrow batches from already selected
+rows without a Daft graph. It is identified as an Arrow/Ray diagnostic and is rejected by the
+existing `pg-daft-ray` campaign and comparison reader. Native baseline graphs remain unchanged.
+
 `QueryConfig.ray_address` optionally connects native Ray Data to an existing local single-node Ray 2.56.1
 cluster. Shared mode checks the declared CPU/GPU and object-store totals, includes driver connection and
 query-specific graph/worker creation in query time, and disconnects without stopping the caller-owned

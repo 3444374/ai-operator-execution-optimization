@@ -1,4 +1,4 @@
-"""Optional Daft payload batches and Ray HTTP workers below the shared engine."""
+"""Finite payload batches and Ray HTTP workers below the shared engine."""
 
 import asyncio
 from collections import deque
@@ -28,8 +28,11 @@ class RayMapConfig:
     window_bytes: int
     object_bytes: int
     worker_pool: str | None = None
+    payload_backend: str = 'daft'
 
     def __post_init__(self):
+        if self.payload_backend not in ('daft', 'arrow'):
+            raise ValueError("unknown Ray Map payload backend")
         if type(self.address) is not str or not self.address or self.address in ("auto", "local"):
             raise ValueError("Ray Map requires an explicit existing cluster address")
         if any(type(v) is not int or v < 1 for v in (
@@ -327,7 +330,7 @@ class RayMapTransport:
                              sequence=selected[0].task.key.sequence)
             data = tuple((r.task.key.session_id, r.task.key.sequence, r.task.task.payload) for r in selected)
             stream = iter_payload_batches(data, PayloadBatchLimits(self.capacity, self.physical.window_bytes),
-                                          batch_rows=self.physical.batch_rows)
+                                          batch_rows=self.physical.batch_rows, backend=self.physical.payload_backend)
             try:
                 while True:
                     measure = self._startup_stage("first_payload") if self.first_payload else nullcontext()

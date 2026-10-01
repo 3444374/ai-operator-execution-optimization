@@ -19,6 +19,10 @@
 已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
 本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
+Ray Map新增显式`RayMapConfig.payload_backend=arrow`，直接构建已选有限行的独立Arrow批次，
+用于检查小窗口重复建Daft图的开销；默认`daft`保留，同步记账保持。行身份、完整请求、对象上限与
+取消生命周期不修改；目标验证与完整查询收益尚未完成，不更新原Daft/Ray或原生baseline结论。
+
 Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
 实验配置新增`remote_budget_mode=threaded`，将原持久reserve交给单个I/O线程；默认`synchronous`保留。
 内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。

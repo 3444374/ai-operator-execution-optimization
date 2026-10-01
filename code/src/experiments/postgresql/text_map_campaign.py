@@ -70,6 +70,8 @@ def preflight(spec):
             if file_identity(path)['sha256'] != cfg.map_transport_sha256:
                 raise ValueError('transport file changed before the stage')
             physical = RayMapConfig.load(path)
+            if physical.payload_backend != 'daft' or cfg.map_payload_backend != 'daft':
+                raise ValueError('pg-daft-ray comparison requires Daft payload batches')
             if physical.workers > cfg.concurrency or physical.batch_rows > cfg.concurrency:
                 raise ValueError('Ray Map worker/batch settings exceed the declared request capacity')
             transports.append(physical.address)

@@ -47,6 +47,11 @@ class FakeRay:
 
 
 class RayMapStartupTests(unittest.TestCase):
+    def test_payload_backend_is_explicit_and_old_config_remains_daft(self):
+        self.assertEqual(RayMapConfig('fixture-cluster', 1, 2, 1024, 2048).payload_backend, 'daft')
+        with self.assertRaisesRegex(ValueError, 'payload backend'):
+            RayMapConfig('fixture-cluster', 1, 2, 1024, 2048, payload_backend='unknown')
+
     def test_startup_durations_use_local_clock_and_preserve_connection_ownership(self):
         for borrowed in (False, True):
             with self.subTest(borrowed=borrowed):
@@ -114,10 +119,13 @@ class RayMapStartupTests(unittest.TestCase):
 @unittest.skipUnless(importlib.util.find_spec('daft') and importlib.util.find_spec('pyarrow'),
                      'Daft and Arrow are required for the actual batch adapter')
 class RayMapTransportTests(unittest.IsolatedAsyncioTestCase):
+    payload_backend = 'daft'
+
     def transport(self, execute, events, guard=None, *, window=1024, objects=2048):
         ray = FakeRay(execute)
         transport = RayMapTransport(FixedModelConfig('http://localhost/fixture', 'model', 1000),
-            4, events.append, physical=RayMapConfig('fixture-cluster', 1, 2, window, objects),
+            4, events.append, physical=RayMapConfig('fixture-cluster', 1, 2, window, objects,
+                payload_backend=self.payload_backend),
             before_request=guard, ray_api=ray)
         return transport, ray
 
@@ -216,3 +224,8 @@ class RayMapTransportTests(unittest.IsolatedAsyncioTestCase):
             await transport.close()
         self.assertEqual(ray.puts, [2, 2])
         self.assertTrue(all(e['object_bytes'] <= 70 for e in events))
+
+
+class ArrowMapTransportTests(RayMapTransportTests):
+    """The alternate batches retain the same cancellation and object lifecycle."""
+    payload_backend = 'arrow'
