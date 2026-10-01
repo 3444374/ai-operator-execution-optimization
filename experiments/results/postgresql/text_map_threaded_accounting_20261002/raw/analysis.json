@@ -1,0 +1,1981 @@
+{
+  "schema": "semloom.threaded_map_accounting.v1",
+  "source_revision": "2f49660cf20f1c6fe30ca296d876cb438ea599e0",
+  "source_files": 821,
+  "real_model_requests": 0,
+  "fixture_posts": 8224,
+  "fixture_queries": 10,
+  "controller_elapsed_seconds": 109.84792690724134,
+  "public_archive_sha256": "0849e8cb020ac906ed71162f630df74e05abbef65f53efc4a98b6f576b886818",
+  "ray_startup_seconds": 9.09593984670937,
+  "shared_gateway_startup_seconds": {
+    "synchronous": 2.4584302585572004,
+    "threaded": 2.779518760740757
+  },
+  "initial_available_cpus": 6.0,
+  "versions": {
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "psycopg": "3.3.4",
+    "httpx": "0.28.1"
+  },
+  "failures": [
+    {
+      "stage": "controller duplicate summary filename",
+      "fixture_posts": 32,
+      "qualification_queries_preserved": 2
+    }
+  ],
+  "queries": [
+    {
+      "case": "o3",
+      "mode": "synchronous",
+      "batch_rows": {
+        "count": 2,
+        "sum": 16,
+        "mean": 8,
+        "median": 8.0,
+        "p95": 14.299999999999999,
+        "maximum": 15,
+        "minimum": 1
+      },
+      "unit": "check16",
+      "rows": 16,
+      "repeat": -1,
+      "association": {
+        "matched_rows": 16,
+        "producer_namespace": [
+          41040,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 2.685574806,
+      "preparation_seconds": 0.012449555,
+      "stream_seconds": 2.673125251,
+      "first_row_seconds": 2.672929504,
+      "fixture_http_peak": 7,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.00099484,
+          "work_seconds": 2.37610031,
+          "resume_seconds": 0.027578322,
+          "elapsed_seconds": 2.404673472,
+          "calls": 4
+        },
+        "object_put": {
+          "queue_seconds": 0.000374227,
+          "work_seconds": 0.003370474,
+          "resume_seconds": 0.00031887,
+          "elapsed_seconds": 0.004063571,
+          "calls": 2
+        },
+        "payload_close": {
+          "queue_seconds": 0.000169271,
+          "work_seconds": 3.259e-06,
+          "resume_seconds": 0.000268429,
+          "elapsed_seconds": 0.000440959,
+          "calls": 2
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 16,
+          "sum": 0.090015,
+          "mean": 0.0056259375,
+          "median": 0.00418,
+          "p95": 0.01314675,
+          "maximum": 0.02295,
+          "minimum": 0.003775
+        },
+        "reserve_ms": {
+          "count": 16,
+          "sum": 18.716521,
+          "mean": 1.1697825625,
+          "median": 0.7767744999999999,
+          "p95": 2.61716525,
+          "maximum": 4.411472,
+          "minimum": 0.688677
+        },
+        "request_observe_ms": {
+          "count": 16,
+          "sum": 2.105391,
+          "mean": 0.1315869375,
+          "median": 0.1236765,
+          "p95": 0.163534,
+          "maximum": 0.20362,
+          "minimum": 0.1156
+        },
+        "guard_ms": {
+          "count": 16,
+          "sum": 21.510924,
+          "mean": 1.34443275,
+          "median": 0.9442205,
+          "p95": 2.8487525,
+          "maximum": 4.717439,
+          "minimum": 0.850249
+        },
+        "core_to_rpc_ms": {
+          "count": 16,
+          "sum": 38405.633972,
+          "mean": 2400.35212325,
+          "median": 2401.174837,
+          "p95": 2409.69303775,
+          "maximum": 2411.271889,
+          "minimum": 2382.17119
+        },
+        "submit_elapsed_ms": {
+          "count": 16,
+          "sum": 7.802369,
+          "mean": 0.4876480625,
+          "median": 0.40253799999999995,
+          "p95": 0.8554545,
+          "maximum": 1.265337,
+          "minimum": 0.371927
+        },
+        "await_elapsed_ms": {
+          "count": 16,
+          "sum": 3785.959134,
+          "mean": 236.622445875,
+          "median": 237.033121,
+          "p95": 242.53417025000002,
+          "maximum": 243.372881,
+          "minimum": 227.569538
+        },
+        "worker_elapsed_ms": {
+          "count": 16,
+          "sum": 1293.443192,
+          "mean": 80.8401995,
+          "median": 73.5885205,
+          "p95": 104.47846025,
+          "maximum": 192.112769,
+          "minimum": 71.327744
+        },
+        "before_worker_ms": {
+          "count": 16,
+          "sum": 2373.238118,
+          "mean": 148.327382375,
+          "median": 155.0136675,
+          "p95": 160.885193,
+          "maximum": 161.180807,
+          "minimum": 46.620356
+        },
+        "after_worker_ms": {
+          "count": 16,
+          "sum": 127.080193,
+          "mean": 7.9425120625,
+          "median": 6.7038075,
+          "p95": 11.8814775,
+          "maximum": 13.048428,
+          "minimum": 5.276235
+        },
+        "rpc_elapsed_ms": {
+          "count": 16,
+          "sum": 3793.761503,
+          "mean": 237.1100939375,
+          "median": 237.417355,
+          "p95": 243.0219605,
+          "maximum": 244.091708,
+          "minimum": 227.945924
+        }
+      },
+      "ledger_reserve_seconds": 0.018716521,
+      "guard_overlap_seconds": 0.021510924,
+      "object_blocks": 2,
+      "peak_arrow_buffer_bytes": 5928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 5528,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o3",
+      "mode": "threaded",
+      "batch_rows": {
+        "count": 2,
+        "sum": 16,
+        "mean": 8,
+        "median": 8.0,
+        "p95": 14.299999999999999,
+        "maximum": 15,
+        "minimum": 1
+      },
+      "unit": "check16",
+      "rows": 16,
+      "repeat": -1,
+      "association": {
+        "matched_rows": 16,
+        "producer_namespace": [
+          41262,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 2.427333486,
+      "preparation_seconds": 0.043975009,
+      "stream_seconds": 2.383358477,
+      "first_row_seconds": 2.383053319,
+      "fixture_http_peak": 7,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.001808868,
+          "work_seconds": 2.004247075,
+          "resume_seconds": 0.00072843,
+          "elapsed_seconds": 2.006784373,
+          "calls": 4
+        },
+        "object_put": {
+          "queue_seconds": 0.000331921,
+          "work_seconds": 0.003216951,
+          "resume_seconds": 0.00030528,
+          "elapsed_seconds": 0.003854152,
+          "calls": 2
+        },
+        "payload_close": {
+          "queue_seconds": 0.000284921,
+          "work_seconds": 2.783e-06,
+          "resume_seconds": 0.000278951,
+          "elapsed_seconds": 0.000566655,
+          "calls": 2
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 16,
+          "sum": 0.058525,
+          "mean": 0.0036578125,
+          "median": 0.001894,
+          "p95": 0.0126575,
+          "maximum": 0.022379,
+          "minimum": 0.001119
+        },
+        "reserve_ms": {
+          "count": 16,
+          "sum": 25.189201,
+          "mean": 1.5743250625,
+          "median": 1.3007355,
+          "p95": 2.768791,
+          "maximum": 3.807082,
+          "minimum": 1.224292
+        },
+        "request_observe_ms": {
+          "count": 16,
+          "sum": 1.754138,
+          "mean": 0.109633625,
+          "median": 0.106168,
+          "p95": 0.125881,
+          "maximum": 0.144217,
+          "minimum": 0.099507
+        },
+        "reserve_queue_ms": {
+          "count": 16,
+          "sum": 164.791608,
+          "mean": 10.2994755,
+          "median": 10.3312975,
+          "p95": 19.66970625,
+          "maximum": 20.756796,
+          "minimum": 0.53599
+        },
+        "reserve_resume_ms": {
+          "count": 16,
+          "sum": 2.506601,
+          "mean": 0.1566625625,
+          "median": 0.11956,
+          "p95": 0.36320175,
+          "maximum": 0.384006,
+          "minimum": 0.091006
+        },
+        "guard_ms": {
+          "count": 16,
+          "sum": 194.889241,
+          "mean": 12.1805775625,
+          "median": 11.86864,
+          "p95": 21.317068999999996,
+          "maximum": 22.219913,
+          "minimum": 2.533338
+        },
+        "core_to_rpc_ms": {
+          "count": 16,
+          "sum": 33523.71435,
+          "mean": 2095.232146875,
+          "median": 2108.704459,
+          "p95": 2116.33331875,
+          "maximum": 2117.158018,
+          "minimum": 2032.045266
+        },
+        "submit_elapsed_ms": {
+          "count": 16,
+          "sum": 7.886183,
+          "mean": 0.4928864375,
+          "median": 0.4205255,
+          "p95": 0.8965775,
+          "maximum": 1.18514,
+          "minimum": 0.377743
+        },
+        "await_elapsed_ms": {
+          "count": 16,
+          "sum": 3758.449051,
+          "mean": 234.9030656875,
+          "median": 234.8608605,
+          "p95": 239.92403275,
+          "maximum": 240.32098,
+          "minimum": 229.601067
+        },
+        "worker_elapsed_ms": {
+          "count": 16,
+          "sum": 887.235213,
+          "mean": 55.4522008125,
+          "median": 53.939345,
+          "p95": 87.842468,
+          "maximum": 185.096462,
+          "minimum": 16.998468
+        },
+        "before_worker_ms": {
+          "count": 16,
+          "sum": 2722.661178,
+          "mean": 170.166323625,
+          "median": 172.0047715,
+          "p95": 202.40476225,
+          "maximum": 202.90504,
+          "minimum": 51.439289
+        },
+        "after_worker_ms": {
+          "count": 16,
+          "sum": 156.438843,
+          "mean": 9.7774276875,
+          "median": 10.060114,
+          "p95": 11.24309375,
+          "maximum": 11.458601,
+          "minimum": 4.970369
+        },
+        "rpc_elapsed_ms": {
+          "count": 16,
+          "sum": 3766.335234,
+          "mean": 235.395952125,
+          "median": 235.284144,
+          "p95": 240.82061025000002,
+          "maximum": 241.50612,
+          "minimum": 229.97881
+        }
+      },
+      "ledger_reserve_seconds": 0.025189201,
+      "guard_overlap_seconds": 0.194889241,
+      "object_blocks": 2,
+      "peak_arrow_buffer_bytes": 5928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 5528,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "synchronous",
+      "batch_rows": {
+        "count": 75,
+        "sum": 1024,
+        "mean": 13.653333333333334,
+        "median": 16,
+        "p95": 16.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "warm1024",
+      "rows": 1024,
+      "repeat": 0,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          42702,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 9.310838865,
+      "preparation_seconds": 0.011265431,
+      "stream_seconds": 9.299573434,
+      "first_row_seconds": 3.981907209,
+      "fixture_http_peak": 5,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.246338566,
+          "work_seconds": 1.994697463,
+          "resume_seconds": 5.811968647,
+          "elapsed_seconds": 8.053004676,
+          "calls": 101
+        },
+        "object_put": {
+          "queue_seconds": 0.054400084,
+          "work_seconds": 0.427205887,
+          "resume_seconds": 0.158322889,
+          "elapsed_seconds": 0.63992886,
+          "calls": 75
+        },
+        "payload_close": {
+          "queue_seconds": 0.031215909,
+          "work_seconds": 4.5542e-05,
+          "resume_seconds": 0.093654959,
+          "elapsed_seconds": 0.12491641,
+          "calls": 26
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 5.96373,
+          "mean": 0.005823955078125,
+          "median": 0.005114,
+          "p95": 0.01018005,
+          "maximum": 0.049435,
+          "minimum": 0.002915
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5286.847737,
+          "mean": 5.1629372431640626,
+          "median": 1.3879890000000001,
+          "p95": 15.775705799999997,
+          "maximum": 30.090432,
+          "minimum": 0.700524
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 167.972697,
+          "mean": 0.1640358369140625,
+          "median": 0.1559125,
+          "p95": 0.2272606999999999,
+          "maximum": 0.456399,
+          "minimum": 0.108129
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5509.671918,
+          "mean": 5.380538982421875,
+          "median": 1.634004,
+          "p95": 16.065862349999996,
+          "maximum": 30.467503,
+          "minimum": 0.844107
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 465405.617662,
+          "mean": 454.4976734980469,
+          "median": 434.5266605,
+          "p95": 1014.28224695,
+          "maximum": 1085.333095,
+          "minimum": 42.191125
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 715.115395,
+          "mean": 0.6983548779296875,
+          "median": 0.5004474999999999,
+          "p95": 1.817351949999999,
+          "maximum": 3.031443,
+          "minimum": 0.325408
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 98820.676806,
+          "mean": 96.50456719335938,
+          "median": 76.9820165,
+          "p95": 350.71258409999996,
+          "maximum": 506.059792,
+          "minimum": 3.584862
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 35644.242999,
+          "mean": 34.80883105371094,
+          "median": 43.168202,
+          "p95": 51.31707199999996,
+          "maximum": 291.935312,
+          "minimum": 1.111477
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 21110.194499,
+          "mean": 20.61542431542969,
+          "median": 2.7041535,
+          "p95": 159.24305499999994,
+          "maximum": 334.478881,
+          "minimum": 1.441173
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 42781.354703,
+          "mean": 41.778666702148435,
+          "median": 31.6388055,
+          "p95": 103.0485329,
+          "maximum": 168.550528,
+          "minimum": 1.079881
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 99535.792201,
+          "mean": 97.20292207128907,
+          "median": 77.653288,
+          "p95": 351.13800964999996,
+          "maximum": 506.463312,
+          "minimum": 4.142427
+        }
+      },
+      "ledger_reserve_seconds": 5.286847737,
+      "guard_overlap_seconds": 5.509671918,
+      "object_blocks": 75,
+      "peak_arrow_buffer_bytes": 56856,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44230,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "threaded",
+      "batch_rows": {
+        "count": 436,
+        "sum": 1024,
+        "mean": 2.3486238532110093,
+        "median": 2.0,
+        "p95": 4.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "warm1024",
+      "rows": 1024,
+      "repeat": 0,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          42880,
+          1
+        ],
+        "gateway_session": 1,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 13.409726945,
+      "preparation_seconds": 0.013293036,
+      "stream_seconds": 13.396433909,
+      "first_row_seconds": 6.174531036,
+      "fixture_http_peak": 7,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.51647485,
+          "work_seconds": 8.93748459,
+          "resume_seconds": 0.497336077,
+          "elapsed_seconds": 9.951295517,
+          "calls": 868
+        },
+        "object_put": {
+          "queue_seconds": 0.227707928,
+          "work_seconds": 1.351982451,
+          "resume_seconds": 0.249597508,
+          "elapsed_seconds": 1.829287887,
+          "calls": 436
+        },
+        "payload_close": {
+          "queue_seconds": 0.220031962,
+          "work_seconds": 0.000460813,
+          "resume_seconds": 0.248087266,
+          "elapsed_seconds": 0.468580041,
+          "calls": 432
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 4.722616,
+          "mean": 0.0046119296875,
+          "median": 0.003071,
+          "p95": 0.010330799999999998,
+          "maximum": 0.025224,
+          "minimum": 0.001072
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 10189.096558,
+          "mean": 9.950289607421874,
+          "median": 10.1682585,
+          "p95": 20.5929486,
+          "maximum": 37.311662,
+          "minimum": 1.08178
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 144.852094,
+          "mean": 0.141457123046875,
+          "median": 0.1326775,
+          "p95": 0.21588089999999996,
+          "maximum": 0.858689,
+          "minimum": 0.076196
+        },
+        "reserve_queue_ms": {
+          "count": 1024,
+          "sum": 581859.581998,
+          "mean": 568.2222480449219,
+          "median": 624.4070435,
+          "p95": 746.8345475499998,
+          "maximum": 904.012011,
+          "minimum": 0.399313
+        },
+        "reserve_resume_ms": {
+          "count": 1024,
+          "sum": 672.961634,
+          "mean": 0.657189095703125,
+          "median": 0.35285449999999996,
+          "p95": 2.259657899999999,
+          "maximum": 5.085488,
+          "minimum": 0.093209
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 592924.257982,
+          "mean": 579.0275956855469,
+          "median": 634.718676,
+          "p95": 755.3299811499999,
+          "maximum": 920.050014,
+          "minimum": 10.260816
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 776272.192488,
+          "mean": 758.0783129765625,
+          "median": 678.593865,
+          "p95": 2431.30878605,
+          "maximum": 2491.779109,
+          "minimum": 66.669091
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 974.423953,
+          "mean": 0.9515858916015625,
+          "median": 0.695143,
+          "p95": 2.1863968999999996,
+          "maximum": 5.66317,
+          "minimum": 0.270703
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 60462.008153,
+          "mean": 59.044929836914065,
+          "median": 47.908963,
+          "p95": 295.90797985,
+          "maximum": 401.059372,
+          "minimum": 2.470117
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 39984.130959,
+          "mean": 39.04700288964844,
+          "median": 43.510158000000004,
+          "p95": 53.72777289999967,
+          "maximum": 237.229915,
+          "minimum": 1.193589
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 18254.903657,
+          "mean": 17.82705435253906,
+          "median": 2.4633909999999997,
+          "p95": 182.19554309999864,
+          "maximum": 288.369833,
+          "minimum": 1.528447
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 3197.39749,
+          "mean": 3.122458486328125,
+          "median": 2.48963,
+          "p95": 7.473811449999996,
+          "maximum": 16.557606,
+          "minimum": 0.756524
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 61436.432106,
+          "mean": 59.996515728515625,
+          "median": 48.9222525,
+          "p95": 296.56459205,
+          "maximum": 401.607344,
+          "minimum": 3.613578
+        }
+      },
+      "ledger_reserve_seconds": 10.189096558,
+      "guard_overlap_seconds": 592.924257982,
+      "object_blocks": 436,
+      "peak_arrow_buffer_bytes": 51728,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "threaded",
+      "batch_rows": {
+        "count": 463,
+        "sum": 1024,
+        "mean": 2.2116630669546438,
+        "median": 2,
+        "p95": 4.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "measure1",
+      "rows": 1024,
+      "repeat": 1,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          44295,
+          1
+        ],
+        "gateway_session": 2,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 11.392128992,
+      "preparation_seconds": 0.013783464,
+      "stream_seconds": 11.378345528,
+      "first_row_seconds": 3.632133462,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.534265842,
+          "work_seconds": 6.98828388,
+          "resume_seconds": 0.528412418,
+          "elapsed_seconds": 8.05096214,
+          "calls": 923
+        },
+        "object_put": {
+          "queue_seconds": 0.243977996,
+          "work_seconds": 1.393465222,
+          "resume_seconds": 0.281325236,
+          "elapsed_seconds": 1.918768454,
+          "calls": 463
+        },
+        "payload_close": {
+          "queue_seconds": 0.236541935,
+          "work_seconds": 0.000507321,
+          "resume_seconds": 0.231974467,
+          "elapsed_seconds": 0.469023723,
+          "calls": 460
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 4.791547,
+          "mean": 0.0046792451171875,
+          "median": 0.0033055000000000003,
+          "p95": 0.0095411,
+          "maximum": 0.02401,
+          "minimum": 0.001018
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 10756.773806,
+          "mean": 10.504661919921874,
+          "median": 10.7310555,
+          "p95": 21.116673499999997,
+          "maximum": 32.940826,
+          "minimum": 0.991213
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 153.322625,
+          "mean": 0.1497291259765625,
+          "median": 0.141626,
+          "p95": 0.21699739999999992,
+          "maximum": 0.409111,
+          "minimum": 0.07634
+        },
+        "reserve_queue_ms": {
+          "count": 1024,
+          "sum": 624254.783284,
+          "mean": 609.6238118007813,
+          "median": 649.5328045,
+          "p95": 722.7045904,
+          "maximum": 751.361619,
+          "minimum": 0.586201
+        },
+        "reserve_resume_ms": {
+          "count": 1024,
+          "sum": 793.595625,
+          "mean": 0.7749957275390625,
+          "median": 0.42943549999999997,
+          "p95": 2.6147611499999943,
+          "maximum": 6.13134,
+          "minimum": 0.106181
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 636020.338325,
+          "mean": 621.1136116455078,
+          "median": 662.622837,
+          "p95": 734.6673089999999,
+          "maximum": 763.082998,
+          "minimum": 7.18986
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 666800.925402,
+          "mean": 651.1727787128906,
+          "median": 694.6980974999999,
+          "p95": 765.4731582,
+          "maximum": 793.419177,
+          "minimum": 44.04954
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 1011.310424,
+          "mean": 0.9876078359375,
+          "median": 0.717095,
+          "p95": 2.36820005,
+          "maximum": 5.646702,
+          "minimum": 0.322089
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 41571.731982,
+          "mean": 40.59739451367187,
+          "median": 47.795533500000005,
+          "p95": 52.644344999999994,
+          "maximum": 59.030802,
+          "minimum": 1.35525
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 37133.975255,
+          "mean": 36.263647709960935,
+          "median": 43.713943,
+          "p95": 46.81837545,
+          "maximum": 50.152337,
+          "minimum": 1.245674
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2700.109206,
+          "mean": 2.636825396484375,
+          "median": 2.4387855,
+          "p95": 4.050549699999998,
+          "maximum": 8.272773,
+          "minimum": 1.510224
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 2748.957945,
+          "mean": 2.6845292431640626,
+          "median": 2.3801509999999997,
+          "p95": 5.4348699,
+          "maximum": 10.555029,
+          "minimum": 0.731761
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 42583.042406,
+          "mean": 41.585002349609375,
+          "median": 48.767464,
+          "p95": 53.59071175,
+          "maximum": 60.737371,
+          "minimum": 4.219011
+        }
+      },
+      "ledger_reserve_seconds": 10.756773806,
+      "guard_overlap_seconds": 636.020338325,
+      "object_blocks": 463,
+      "peak_arrow_buffer_bytes": 61709,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "synchronous",
+      "batch_rows": {
+        "count": 78,
+        "sum": 1024,
+        "mean": 13.128205128205128,
+        "median": 16.0,
+        "p95": 16.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "measure1",
+      "rows": 1024,
+      "repeat": 1,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          45703,
+          1
+        ],
+        "gateway_session": 2,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 8.287414416,
+      "preparation_seconds": 0.013546019,
+      "stream_seconds": 8.273868397,
+      "first_row_seconds": 2.840274899,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.217616795,
+          "work_seconds": 1.012802496,
+          "resume_seconds": 5.892904065,
+          "elapsed_seconds": 7.123323356,
+          "calls": 99
+        },
+        "object_put": {
+          "queue_seconds": 0.059246713,
+          "work_seconds": 0.550949077,
+          "resume_seconds": 0.205733205,
+          "elapsed_seconds": 0.815928995,
+          "calls": 78
+        },
+        "payload_close": {
+          "queue_seconds": 0.019168193,
+          "work_seconds": 4.4874e-05,
+          "resume_seconds": 0.079443917,
+          "elapsed_seconds": 0.098656984,
+          "calls": 21
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 5.790929,
+          "mean": 0.0056552041015625,
+          "median": 0.005169,
+          "p95": 0.009924249999999997,
+          "maximum": 0.021081,
+          "minimum": 0.003266
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5384.351962,
+          "mean": 5.258156212890625,
+          "median": 1.531078,
+          "p95": 15.22578675,
+          "maximum": 30.845945,
+          "minimum": 0.767755
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 168.932634,
+          "mean": 0.164973275390625,
+          "median": 0.158329,
+          "p95": 0.21552689999999997,
+          "maximum": 0.575251,
+          "minimum": 0.1079
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5607.937696,
+          "mean": 5.47650165625,
+          "median": 1.8153645,
+          "p95": 15.500731549999996,
+          "maximum": 31.214934,
+          "minimum": 0.923464
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 424530.896297,
+          "mean": 414.58095341503906,
+          "median": 423.0483885,
+          "p95": 543.66106955,
+          "maximum": 575.044288,
+          "minimum": 50.206167
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 750.410194,
+          "mean": 0.732822455078125,
+          "median": 0.507484,
+          "p95": 1.78337445,
+          "maximum": 4.251771,
+          "minimum": 0.347788
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 75317.864556,
+          "mean": 73.55260210546875,
+          "median": 71.132542,
+          "p95": 144.20162514999998,
+          "maximum": 166.671614,
+          "minimum": 4.20809
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 30373.121179,
+          "mean": 29.66125115136719,
+          "median": 42.593948499999996,
+          "p95": 46.17841285,
+          "maximum": 52.54162,
+          "minimum": 1.019979
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2750.279963,
+          "mean": 2.6858202763671875,
+          "median": 2.329576,
+          "p95": 4.8936305999999945,
+          "maximum": 7.29175,
+          "minimum": 1.438377
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 42944.873608,
+          "mean": 41.9383531328125,
+          "median": 32.960383,
+          "p95": 99.6537238,
+          "maximum": 121.272907,
+          "minimum": 0.787831
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 76068.27475,
+          "mean": 74.28542456054687,
+          "median": 72.587424,
+          "p95": 145.17294435,
+          "maximum": 167.265755,
+          "minimum": 4.746716
+        }
+      },
+      "ledger_reserve_seconds": 5.384351962,
+      "guard_overlap_seconds": 5.607937696,
+      "object_blocks": 78,
+      "peak_arrow_buffer_bytes": 47972,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44230,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "synchronous",
+      "batch_rows": {
+        "count": 74,
+        "sum": 1024,
+        "mean": 13.837837837837839,
+        "median": 16.0,
+        "p95": 16.0,
+        "maximum": 16,
+        "minimum": 2
+      },
+      "unit": "measure2",
+      "rows": 1024,
+      "repeat": 2,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          45805,
+          1
+        ],
+        "gateway_session": 3,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 8.144741697,
+      "preparation_seconds": 0.01270154,
+      "stream_seconds": 8.132040157,
+      "first_row_seconds": 2.773637728,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.165119976,
+          "work_seconds": 0.897883219,
+          "resume_seconds": 5.955427716,
+          "elapsed_seconds": 7.018430911,
+          "calls": 95
+        },
+        "object_put": {
+          "queue_seconds": 0.048579458,
+          "work_seconds": 0.57940556,
+          "resume_seconds": 0.189738659,
+          "elapsed_seconds": 0.817723677,
+          "calls": 74
+        },
+        "payload_close": {
+          "queue_seconds": 0.013247871,
+          "work_seconds": 5.172e-05,
+          "resume_seconds": 0.047068664,
+          "elapsed_seconds": 0.060368255,
+          "calls": 21
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 5.60381,
+          "mean": 0.005472470703125,
+          "median": 0.0049045,
+          "p95": 0.008992849999999991,
+          "maximum": 0.02608,
+          "minimum": 0.00319
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5343.246855,
+          "mean": 5.218014506835938,
+          "median": 1.726253,
+          "p95": 14.738736649999998,
+          "maximum": 125.165372,
+          "minimum": 0.922955
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 167.445082,
+          "mean": 0.163520587890625,
+          "median": 0.155583,
+          "p95": 0.21981344999999994,
+          "maximum": 0.429231,
+          "minimum": 0.1147
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5564.527781,
+          "mean": 5.434109161132812,
+          "median": 1.9345755,
+          "p95": 14.978453949999995,
+          "maximum": 125.527646,
+          "minimum": 1.077739
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 417985.567502,
+          "mean": 408.1890307636719,
+          "median": 417.093354,
+          "p95": 537.0847444999999,
+          "maximum": 619.624445,
+          "minimum": 39.409509
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 737.65174,
+          "mean": 0.72036302734375,
+          "median": 0.512543,
+          "p95": 1.6667862499999997,
+          "maximum": 3.327903,
+          "minimum": 0.355176
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 75908.707154,
+          "mean": 74.12959683007813,
+          "median": 68.840033,
+          "p95": 146.50039604999998,
+          "maximum": 249.467025,
+          "minimum": 4.984883
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 30804.984377,
+          "mean": 30.082992555664063,
+          "median": 42.80153,
+          "p95": 45.94409889999999,
+          "maximum": 50.032083,
+          "minimum": 1.143166
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2724.108997,
+          "mean": 2.6602626923828123,
+          "median": 2.3971085,
+          "p95": 4.332338,
+          "maximum": 6.840117,
+          "minimum": 1.433858
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 43117.26552,
+          "mean": 42.106704609375,
+          "median": 31.378124,
+          "p95": 100.89004374999996,
+          "maximum": 203.016995,
+          "minimum": 0.881658
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 76646.358894,
+          "mean": 74.84995985742188,
+          "median": 69.624863,
+          "p95": 147.2034862,
+          "maximum": 250.249655,
+          "minimum": 5.404094
+        }
+      },
+      "ledger_reserve_seconds": 5.343246855,
+      "guard_overlap_seconds": 5.564527781,
+      "object_blocks": 74,
+      "peak_arrow_buffer_bytes": 50928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44230,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "threaded",
+      "batch_rows": {
+        "count": 480,
+        "sum": 1024,
+        "mean": 2.1333333333333333,
+        "median": 2.0,
+        "p95": 4.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "measure2",
+      "rows": 1024,
+      "repeat": 2,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          45891,
+          1
+        ],
+        "gateway_session": 3,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 11.569701096,
+      "preparation_seconds": 0.013956363,
+      "stream_seconds": 11.555744733,
+      "first_row_seconds": 3.934393705,
+      "fixture_http_peak": 3,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.556728474,
+          "work_seconds": 7.16200511,
+          "resume_seconds": 0.498875476,
+          "elapsed_seconds": 8.21760906,
+          "calls": 957
+        },
+        "object_put": {
+          "queue_seconds": 0.226261991,
+          "work_seconds": 1.394816937,
+          "resume_seconds": 0.256162259,
+          "elapsed_seconds": 1.877241187,
+          "calls": 480
+        },
+        "payload_close": {
+          "queue_seconds": 0.257348734,
+          "work_seconds": 0.000508168,
+          "resume_seconds": 0.225304627,
+          "elapsed_seconds": 0.483161529,
+          "calls": 477
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 4.90425,
+          "mean": 0.004789306640625,
+          "median": 0.003538,
+          "p95": 0.009700449999999998,
+          "maximum": 0.069825,
+          "minimum": 0.001238
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 10908.035244,
+          "mean": 10.65237816796875,
+          "median": 11.005989,
+          "p95": 20.009560949999997,
+          "maximum": 33.718144,
+          "minimum": 1.391045
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 150.070836,
+          "mean": 0.14655355078125,
+          "median": 0.1368815,
+          "p95": 0.21461324999999998,
+          "maximum": 0.407644,
+          "minimum": 0.079115
+        },
+        "reserve_queue_ms": {
+          "count": 1024,
+          "sum": 633579.266577,
+          "mean": 618.7297525166016,
+          "median": 654.313486,
+          "p95": 714.9359211,
+          "maximum": 749.82234,
+          "minimum": 0.675927
+        },
+        "reserve_resume_ms": {
+          "count": 1024,
+          "sum": 750.946062,
+          "mean": 0.733345763671875,
+          "median": 0.386882,
+          "p95": 2.228519099999998,
+          "maximum": 6.217311,
+          "minimum": 0.100331
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 645449.586738,
+          "mean": 630.3218620488282,
+          "median": 666.77486,
+          "p95": 727.0147005499999,
+          "maximum": 767.832925,
+          "minimum": 6.438097
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 676367.325011,
+          "mean": 660.5149658310547,
+          "median": 696.8586075000001,
+          "p95": 754.9540372,
+          "maximum": 788.205818,
+          "minimum": 53.50979
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 946.689908,
+          "mean": 0.92450186328125,
+          "median": 0.7086775000000001,
+          "p95": 2.1379654499999985,
+          "maximum": 4.997499,
+          "minimum": 0.311767
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 41670.033136,
+          "mean": 40.693391734375,
+          "median": 47.0910435,
+          "p95": 51.30456409999999,
+          "maximum": 55.004789,
+          "minimum": 0.66994
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 37491.653135,
+          "mean": 36.61294251464844,
+          "median": 43.090563,
+          "p95": 45.842994350000005,
+          "maximum": 49.230059,
+          "minimum": 1.117902
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2588.523574,
+          "mean": 2.527855052734375,
+          "median": 2.3204,
+          "p95": 4.037468049999999,
+          "maximum": 7.522816,
+          "minimum": 1.424175
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 2536.546335,
+          "mean": 2.4770960302734375,
+          "median": 2.16179,
+          "p95": 4.9244710499999975,
+          "maximum": 8.467194,
+          "minimum": 0.621828
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 42616.723044,
+          "mean": 41.61789359765625,
+          "median": 47.9635255,
+          "p95": 52.1834505,
+          "maximum": 55.57626,
+          "minimum": 3.983178
+        }
+      },
+      "ledger_reserve_seconds": 10.908035244,
+      "guard_overlap_seconds": 645.449586738,
+      "object_blocks": 480,
+      "peak_arrow_buffer_bytes": 61426,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "threaded",
+      "batch_rows": {
+        "count": 498,
+        "sum": 1024,
+        "mean": 2.0562248995983934,
+        "median": 2.0,
+        "p95": 4.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "measure3",
+      "rows": 1024,
+      "repeat": 3,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          47359,
+          1
+        ],
+        "gateway_session": 4,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 11.738947921,
+      "preparation_seconds": 0.011222131,
+      "stream_seconds": 11.72772579,
+      "first_row_seconds": 4.029721188,
+      "fixture_http_peak": 1,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.506378084,
+          "work_seconds": 7.062611734,
+          "resume_seconds": 0.542117879,
+          "elapsed_seconds": 8.111107697,
+          "calls": 993
+        },
+        "object_put": {
+          "queue_seconds": 0.248237175,
+          "work_seconds": 1.548701589,
+          "resume_seconds": 0.281521232,
+          "elapsed_seconds": 2.078459996,
+          "calls": 498
+        },
+        "payload_close": {
+          "queue_seconds": 0.243150206,
+          "work_seconds": 0.000536367,
+          "resume_seconds": 0.277823022,
+          "elapsed_seconds": 0.521509595,
+          "calls": 495
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 4.926243,
+          "mean": 0.0048107841796875,
+          "median": 0.0036639999999999997,
+          "p95": 0.009942749999999993,
+          "maximum": 0.018914,
+          "minimum": 0.001259
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 11107.720015,
+          "mean": 10.847382827148438,
+          "median": 11.236911,
+          "p95": 20.492540099999985,
+          "maximum": 29.864069,
+          "minimum": 1.411829
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 153.331843,
+          "mean": 0.1497381279296875,
+          "median": 0.139152,
+          "p95": 0.2307408,
+          "maximum": 0.540093,
+          "minimum": 0.083648
+        },
+        "reserve_queue_ms": {
+          "count": 1024,
+          "sum": 645260.828537,
+          "mean": 630.137527868164,
+          "median": 676.887356,
+          "p95": 732.8629901500001,
+          "maximum": 764.122814,
+          "minimum": 0.234557
+        },
+        "reserve_resume_ms": {
+          "count": 1024,
+          "sum": 690.863868,
+          "mean": 0.67467174609375,
+          "median": 0.3594135,
+          "p95": 2.2672390499999993,
+          "maximum": 4.811078,
+          "minimum": 0.095821
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 657275.191008,
+          "mean": 641.87030371875,
+          "median": 689.8368565,
+          "p95": 746.63782825,
+          "maximum": 777.184187,
+          "minimum": 5.553118
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 687440.55918,
+          "mean": 671.3286710742187,
+          "median": 721.958627,
+          "p95": 776.7457177499999,
+          "maximum": 799.768829,
+          "minimum": 45.132111
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 1008.852841,
+          "mean": 0.9852078525390625,
+          "median": 0.720334,
+          "p95": 2.2983289499999975,
+          "maximum": 4.715066,
+          "minimum": 0.305368
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 41902.345843,
+          "mean": 40.92025961230469,
+          "median": 47.139210000000006,
+          "p95": 51.48152505,
+          "maximum": 56.600104,
+          "minimum": 2.289045
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 37741.467015,
+          "mean": 36.85690138183594,
+          "median": 43.148807,
+          "p95": 46.11643285,
+          "maximum": 48.671866,
+          "minimum": 1.167449
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2646.900797,
+          "mean": 2.5848640595703123,
+          "median": 2.3533014999999997,
+          "p95": 4.287516699999999,
+          "maximum": 8.230326,
+          "minimum": 1.33362
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 2522.830872,
+          "mean": 2.4637020234375,
+          "median": 2.1371135,
+          "p95": 4.841544249999998,
+          "maximum": 10.884013,
+          "minimum": 0.648511
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 42911.198684,
+          "mean": 41.90546746484375,
+          "median": 48.1891465,
+          "p95": 52.84753164999999,
+          "maximum": 57.02507,
+          "minimum": 4.073549
+        }
+      },
+      "ledger_reserve_seconds": 11.107720015,
+      "guard_overlap_seconds": 657.275191008,
+      "object_blocks": 498,
+      "peak_arrow_buffer_bytes": 62469,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44227,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "case": "o4",
+      "mode": "synchronous",
+      "batch_rows": {
+        "count": 73,
+        "sum": 1024,
+        "mean": 14.027397260273972,
+        "median": 16,
+        "p95": 16.0,
+        "maximum": 16,
+        "minimum": 1
+      },
+      "unit": "measure3",
+      "rows": 1024,
+      "repeat": 3,
+      "association": {
+        "matched_rows": 1024,
+        "producer_namespace": [
+          48874,
+          1
+        ],
+        "gateway_session": 4,
+        "binding_source": "PG before-offer row ID plus producer acceptance",
+        "independent_sequence_verified": true
+      },
+      "jct_seconds": 8.704627672,
+      "preparation_seconds": 0.012746315,
+      "stream_seconds": 8.691881357,
+      "first_row_seconds": 2.984089441,
+      "fixture_http_peak": 2,
+      "work": {
+        "payload_next": {
+          "queue_seconds": 0.118268978,
+          "work_seconds": 1.010689135,
+          "resume_seconds": 6.355823216,
+          "elapsed_seconds": 7.484781329,
+          "calls": 94
+        },
+        "object_put": {
+          "queue_seconds": 0.048065377,
+          "work_seconds": 0.672127834,
+          "resume_seconds": 0.132470216,
+          "elapsed_seconds": 0.852663427,
+          "calls": 73
+        },
+        "payload_close": {
+          "queue_seconds": 0.029205129,
+          "work_seconds": 4.3633e-05,
+          "resume_seconds": 0.057077348,
+          "elapsed_seconds": 0.08632611,
+          "calls": 21
+        }
+      },
+      "row_timings": {
+        "hash_ms": {
+          "count": 1024,
+          "sum": 5.830689,
+          "mean": 0.0056940322265625,
+          "median": 0.0051345,
+          "p95": 0.00974024999999999,
+          "maximum": 0.022259,
+          "minimum": 0.003353
+        },
+        "reserve_ms": {
+          "count": 1024,
+          "sum": 5688.571488,
+          "mean": 5.55524559375,
+          "median": 2.0789904999999997,
+          "p95": 14.9053569,
+          "maximum": 30.147079,
+          "minimum": 0.937873
+        },
+        "request_observe_ms": {
+          "count": 1024,
+          "sum": 176.353132,
+          "mean": 0.17221985546875,
+          "median": 0.1631215,
+          "p95": 0.2257478999999999,
+          "maximum": 1.009927,
+          "minimum": 0.112213
+        },
+        "guard_ms": {
+          "count": 1024,
+          "sum": 5920.573395,
+          "mean": 5.781809956054688,
+          "median": 2.3875525,
+          "p95": 15.149206849999997,
+          "maximum": 30.686549,
+          "minimum": 1.091596
+        },
+        "core_to_rpc_ms": {
+          "count": 1024,
+          "sum": 451322.11012800003,
+          "mean": 440.74424817187503,
+          "median": 456.93240449999996,
+          "p95": 546.2752785,
+          "maximum": 649.054693,
+          "minimum": 50.684694
+        },
+        "submit_elapsed_ms": {
+          "count": 1024,
+          "sum": 784.041237,
+          "mean": 0.7656652705078125,
+          "median": 0.5246854999999999,
+          "p95": 1.817774949999999,
+          "maximum": 5.191993,
+          "minimum": 0.35697
+        },
+        "await_elapsed_ms": {
+          "count": 1024,
+          "sum": 75622.114662,
+          "mean": 73.84972134960938,
+          "median": 65.6341,
+          "p95": 148.3141455,
+          "maximum": 170.210728,
+          "minimum": 4.448458
+        },
+        "worker_elapsed_ms": {
+          "count": 1024,
+          "sum": 30460.602819,
+          "mean": 29.746682440429687,
+          "median": 42.66232,
+          "p95": 46.0855892,
+          "maximum": 49.529805,
+          "minimum": 1.176069
+        },
+        "before_worker_ms": {
+          "count": 1024,
+          "sum": 2579.995272,
+          "mean": 2.5195266328125,
+          "median": 2.3177585,
+          "p95": 4.140472099999997,
+          "maximum": 8.008161,
+          "minimum": 1.466523
+        },
+        "after_worker_ms": {
+          "count": 1024,
+          "sum": 43365.557808,
+          "mean": 42.349177546875,
+          "median": 28.259071,
+          "p95": 103.60104799999999,
+          "maximum": 124.498455,
+          "minimum": 1.149368
+        },
+        "rpc_elapsed_ms": {
+          "count": 1024,
+          "sum": 76406.155899,
+          "mean": 74.61538662011719,
+          "median": 66.3815745,
+          "p95": 149.12959789999996,
+          "maximum": 170.680226,
+          "minimum": 5.185007
+        }
+      },
+      "ledger_reserve_seconds": 5.688571488,
+      "guard_overlap_seconds": 5.920573395,
+      "object_blocks": 73,
+      "peak_arrow_buffer_bytes": 50928,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 44233,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    }
+  ],
+  "limitations": [
+    "fixture responses contain no inference; no real-model performance claim",
+    "serial guard durations overlap thread work and RPC waits",
+    "worker duration includes payload extraction and the HTTP client",
+    "submit-call time is nested in RPC and may overlap remote work",
+    "HTTP capacity cannot be inferred from the short-lived fixture server peak",
+    "same-clock identity uses Linux boot, time namespace and clock implementation",
+    "full-model PG node timestamps and actual GPU spans remain unavailable"
+  ],
+  "modes": {
+    "synchronous": {
+      "jct_seconds": [
+        8.287414416,
+        8.144741697,
+        8.704627672
+      ],
+      "preparation_seconds": [
+        0.013546019,
+        0.01270154,
+        0.012746315
+      ],
+      "stream_seconds": [
+        8.273868397,
+        8.132040157,
+        8.691881357
+      ],
+      "ledger_reserve_seconds": [
+        5.384351962,
+        5.343246855,
+        5.688571488
+      ],
+      "median": {
+        "jct_seconds": 8.287414416,
+        "preparation_seconds": 0.012746315,
+        "stream_seconds": 8.273868397,
+        "ledger_reserve_seconds": 5.384351962
+      }
+    },
+    "threaded": {
+      "jct_seconds": [
+        11.392128992,
+        11.569701096,
+        11.738947921
+      ],
+      "preparation_seconds": [
+        0.013783464,
+        0.013956363,
+        0.011222131
+      ],
+      "stream_seconds": [
+        11.378345528,
+        11.555744733,
+        11.72772579
+      ],
+      "ledger_reserve_seconds": [
+        10.756773806,
+        10.908035244,
+        11.107720015
+      ],
+      "median": {
+        "jct_seconds": 11.569701096,
+        "preparation_seconds": 0.013783464,
+        "stream_seconds": 11.555744733,
+        "ledger_reserve_seconds": 10.908035244
+      }
+    }
+  },
+  "jct_slowdown_percent": 39.605678143270964,
+  "verified_rows": 8224
+}

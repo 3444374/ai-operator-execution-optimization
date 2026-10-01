@@ -12,6 +12,10 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。
+线程选择完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但窗口21→460–495、批次构建约1→7秒。
+同步默认保留；后续优先检查小窗口反复创建，真实收益和事务内部成本仍待验证。
+
 [热路径独立计时](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
 完成5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
 批次next实际执行约1秒、恢复约5.7秒，区间重叠；先将持久记账移出事件循环并保留严格发送前提交，
