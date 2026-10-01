@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "original_backup_sha256": "20fc51daaf4249afad5d7ffb577486435b787e5150b9b74f6a22777dfb3925cf",
+  "original_backup_bytes": 7880161,
+  "original_files": 210,
+  "public_restored_files": 209,
+  "archived_unique_files": 162,
+  "reconstructed_files": 47,
+  "original_preserved_outside_git": true,
+  "private_binaries_excluded": true,
+  "public_archive_sha256": "29c09f759a065b860a61c8cfbed3390d7c176523b6dbe8bafabe6f074a5e919d",
+  "public_archive_bytes": 2811170,
+  "public_expanded_bytes": 44571000,
+  "original_text_bytes": 117898686,
+  "caller_logs": [
+    {
+      "path": "caller-caller-helper-generation.log",
+      "sha256": "6177587b5c326cce00aa0c4a4b6e6081b413a635db6a372dc350c5f803d5252c",
+      "bytes": 174
+    },
+    {
+      "path": "caller-cleanup-caller.log",
+      "sha256": "c2baf7a69502281aac40582126dfddbb2d03f85820471888fab5ca6893cf3161",
+      "bytes": 473
+    },
+    {
+      "path": "caller-green-validation.log",
+      "sha256": "a6707d4eff38012da33ddc34bc6dc076a3b17151cfc9aef223c8790cbe64c3da",
+      "bytes": 100
+    },
+    {
+      "path": "caller-local-tests.log",
+      "sha256": "d72a2524b3bad3c3490aaffe2b378b31568eb0a89bda2119102221efba138b2d",
+      "bytes": 1297
+    },
+    {
+      "path": "caller-red-tests.log",
+      "sha256": "292a9fac83d54787b1642ec65e0b122e84c1d72428c3e451b24c0667757e248d",
+      "bytes": 1602
+    }
+  ]
+}
