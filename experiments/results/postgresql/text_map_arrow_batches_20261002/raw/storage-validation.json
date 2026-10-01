@@ -38,5 +38,12 @@
       "sha256": "292a9fac83d54787b1642ec65e0b122e84c1d72428c3e451b24c0667757e248d",
       "bytes": 1602
     }
-  ]
+  ],
+  "derived_analysis": {
+    "published_expanded_copy": false,
+    "recomputed_from_public_evidence": true,
+    "exact_replay_verified": true,
+    "expanded_bytes": 64251,
+    "expanded_sha256": "e3340d52cfc703cdbd37b0bddb1d883a9c02fc8588c338ae4733cb96e58c7353"
+  }
 }

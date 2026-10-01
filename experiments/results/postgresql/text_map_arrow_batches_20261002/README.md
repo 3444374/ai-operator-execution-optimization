@@ -75,12 +75,14 @@ reserve仍累计5.14–5.61秒，其进入至退出包含SQL、持久提交和�
 该失败日志保留，不写成性能失败或重放模型请求。另保留本地辅助脚本生成的0请求错误，修正后继续准备。
 本轮查询没有失败。PG/Ray/HTTP/worker、端口、原PG库、父目录ACL及空闲GPU独立核对通过。
 
-[分析原值](raw/analysis.json)、[存储核对](raw/storage-validation.json)、[恢复清单](raw/storage-manifest.jsonl)
+[存储核对](raw/storage-validation.json)、[恢复清单](raw/storage-manifest.jsonl)
 与[公开唯一归档](raw/evidence.tar.gz)保留来源。210份原件在仓库外备份；1份SQLite仅在私有原件中。
 209份公开文本实际存162份，其余47份按别名、日志切片和事件投影精确恢复，全部字节摘要核对通过。
 公开归档2,811,170字节，原件7,880,161字节；数据库数据目录、模型、Ray运行目录、缓存和连接信息不提交。
 
-[复核脚本](raw/analyze.py.gz)使用对应源码与脱敏归档重算行关联、时间分段和重复中位数：
+2,325行展开分析是可重算副本，已移至仓库外；Git只保留上表、唯一记录与恢复信息。
+[复核脚本](raw/analyze.py.gz)使用对应源码与脱敏归档重算全部行关联、时间分段、分布和重复中位数，
+其输出与移出前的完整分析逐字节一致：
 
 ```bash
 gzip -dc experiments/results/postgresql/text_map_arrow_batches_20261002/raw/analyze.py.gz > /tmp/analyze-arrow-batches.py

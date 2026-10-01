@@ -1,10 +1,7 @@
 # Research Experiment Results
 
-2026-10-02：[直接Arrow分批对照](postgresql/text_map_arrow_batches_20261002/README.md)，源码f89ba28a。
-目标92项及10条查询/8,224次fixture通过，模型0次；同步记账下完整查询8.354→8.149秒，少2.457%。
-批次next执行约1→0.2秒，恢复等待与约5.5秒持久记账重叠；仅保留显式选项，默认Daft保留。
-821源码摘要、原PG库与独立清理通过；源码准备503及辅助脚本0请求错误保留。
-210份原件私有备份，209份公开文本去重为162份、47份精确恢复；SQLite不提交。
+[直接Arrow分批对照](postgresql/text_map_arrow_batches_20261002/README.md)完成目标92项、10条查询/8,224次fixture，模型0次。
+完整查询8.354→8.149秒，仅为小幅观察；默认Daft保留，细节与可重算证据见报告。
 
 [同步/线程记账对照](postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查、累计8,224次fixture，模型0次。
 线程完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但小窗口反复创建增加批次构建成本。
