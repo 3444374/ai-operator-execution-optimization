@@ -8,6 +8,12 @@
 下方真实清单已经完成，见[真实复测结果](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
 serialization/put/RPC与首批处理细化仍属于后续分析。
 
+2026-10-01后续：用户要求只分析SemLoom时间。已离线重建共享gateway三次真实测量的3,072行，新增模型请求0。
+消费9.558–10.145秒主要在并行提交/服务段，末尾Ray回复至结束5.2–7.6毫秒；每行RPC前记录176–232毫秒、
+worker外RPC合计94–147毫秒、worker内258–279毫秒，单行区间不相加为查询时间。
+vLLM内部排队均值0.051–0.056毫秒；先细分热批次、实验记录器与RPC链路，不能直接归因某一函数或外推调参收益。
+当前没有新的运行清单或模型额度，详见[消费分段](../results/postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)。
+
 ## 2026-10-01继续定位与同实现生命周期对照
 
 用户要求继续，目标服务器已开机。本阶段先使用现成driver、PG18.3与本地确定性HTTP服务，

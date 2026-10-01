@@ -1,0 +1,740 @@
+{
+  "schema": "semloom.shared_map_stream_accounting.v1",
+  "analysis_only": true,
+  "new_model_requests": 0,
+  "source_archive": {
+    "path": "real-complete-evidence.tar.gz",
+    "sha256": "0fab2f0768e64f102457258919c109894d162527ed48c13bb69f96853c4d8ae9"
+  },
+  "executed_revision": "11714bdc55f6cae814f4b19a017b4cd5c8fe89bd",
+  "analyzed_units": [
+    "q07",
+    "q09",
+    "q14"
+  ],
+  "queries": [
+    {
+      "unit": "q07",
+      "repeat": 1,
+      "rows": 1024,
+      "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+      "semantic_sha256": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+      "jct_seconds": 10.131159069,
+      "preparation_seconds": 0.014225653,
+      "stream_seconds": 10.116933416,
+      "wall_partition": {
+        "before_first_core_submit": 0.143701085,
+        "parallel_pipeline": 9.966906058,
+        "after_last_ray_reply": 0.006326273
+      },
+      "firsts_seconds": {
+        "core_map_task": 0.017058221,
+        "core_submitted": 0.143701085,
+        "request": 0.189946408,
+        "core_ray_http_completed": 0.360247669,
+        "core_terminal": 0.360935962,
+        "core_map_completion": 0.363466308
+      },
+      "first_client_seconds": 2.295990215,
+      "first_semantic_to_first_client_seconds": 1.754555712,
+      "last_semantic_to_eof_seconds": 0.001797571,
+      "row_intervals": {
+        "accepted_to_core_submit_ms": {
+          "count": 1024,
+          "sum": 560174.002283,
+          "mean": 547.0449241044922,
+          "median": 589.3202355000001,
+          "p95": 778.0409806499999,
+          "maximum": 823.959096,
+          "minimum": 106.234687
+        },
+        "core_to_rpc_guard_ms": {
+          "count": 1024,
+          "sum": 180313.907312,
+          "mean": 176.087800109375,
+          "median": 133.343425,
+          "p95": 449.8575617499999,
+          "maximum": 530.384795,
+          "minimum": 11.328117
+        },
+        "rpc_outside_worker_ms": {
+          "count": 1024,
+          "sum": 150028.20804,
+          "mean": 146.5119219140625,
+          "median": 71.884779,
+          "p95": 453.3369407999999,
+          "maximum": 608.642173,
+          "minimum": 4.102659
+        },
+        "worker_execution_ms": {
+          "count": 1024,
+          "sum": 285853.328375,
+          "mean": 279.1536409912109,
+          "median": 266.881908,
+          "p95": 462.19862539999997,
+          "maximum": 625.203113,
+          "minimum": 82.097784
+        },
+        "core_to_ray_reply_ms": {
+          "count": 1024,
+          "sum": 616195.443727,
+          "mean": 601.7533630146485,
+          "median": 603.6792015,
+          "p95": 845.29639805,
+          "maximum": 1198.905906,
+          "minimum": 185.334475
+        },
+        "ray_reply_to_core_terminal_ms": {
+          "count": 1024,
+          "sum": 5522.055388,
+          "mean": 5.39263221484375,
+          "median": 3.3569265,
+          "p95": 13.932344199999994,
+          "maximum": 122.745746,
+          "minimum": 0.386608
+        },
+        "core_credit_residence_ms": {
+          "count": 1024,
+          "sum": 621717.499115,
+          "mean": 607.1459952294922,
+          "median": 608.90005,
+          "p95": 850.208703,
+          "maximum": 1200.498862,
+          "minimum": 185.860405
+        },
+        "core_terminal_to_semantic_result_ms": {
+          "count": 1024,
+          "sum": 52805.526237,
+          "mean": 51.56789671582031,
+          "median": 34.12724,
+          "p95": 165.70366334999983,
+          "maximum": 255.137025,
+          "minimum": 1.387483
+        },
+        "semantic_result_to_client_ms": {
+          "count": 1024,
+          "sum": 1013360.814005,
+          "mean": 989.6101699267579,
+          "median": 983.3196645,
+          "p95": 2060.6278671999994,
+          "maximum": 2351.130145,
+          "minimum": 1.621645
+        }
+      },
+      "server_cohort": {
+        "e2e_request_latency_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 214.51248812675476,
+          "mean_ms": 209.48485168628395
+        },
+        "request_queue_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 0.05423763580620289,
+          "mean_ms": 0.05296644121699501
+        },
+        "request_inference_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 187.72609995678067,
+          "mean_ms": 183.32626948904363
+        },
+        "request_prefill_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 98.29715803079307,
+          "mean_ms": 95.99331838944636
+        },
+        "request_decode_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 89.4289419259876,
+          "mean_ms": 87.33295109959727
+        },
+        "time_to_first_token_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 125.40060329437256,
+          "mean_ms": 122.4615266546607
+        }
+      },
+      "credit": {
+        "peak": 64,
+        "average": 61.453157152517136,
+        "capacity": 64,
+        "full_seconds": 8.978873561,
+        "below_full_seconds": 1.138059855,
+        "mean_worker_duration_equivalent_concurrency": 28.254938193318637,
+        "mean_model_e2e_duration_equivalent_concurrency": 21.203311251164486
+      },
+      "payload_blocks": {
+        "count": 188,
+        "rows_mean": 5.446808510638298,
+        "rows_histogram": {
+          "1": 65,
+          "2": 24,
+          "3": 20,
+          "4": 11,
+          "5": 2,
+          "6": 7,
+          "7": 4,
+          "8": 5,
+          "9": 3,
+          "10": 9,
+          "11": 2,
+          "12": 4,
+          "13": 2,
+          "14": 2,
+          "15": 2,
+          "16": 26
+        },
+        "put_seconds": {
+          "count": 188,
+          "sum": 0.854928506,
+          "mean": 0.00454749205319149,
+          "median": 0.004499089499999999,
+          "p95": 0.009906379600000001,
+          "maximum": 0.015046569,
+          "minimum": 0.000807324
+        },
+        "peak_charged_bytes": 97391,
+        "object_capacity_bytes": 4194304
+      },
+      "offer_status_counts": {
+        "ACCEPTED": 1024,
+        "BACKPRESSURE": 896
+      },
+      "client_delivery_groups": [
+        {
+          "first_sequence": 0,
+          "last_sequence": 182,
+          "rows": 183,
+          "text_datarow_bytes": 8101,
+          "first_received_seconds": 2.295990215
+        },
+        {
+          "first_sequence": 183,
+          "last_sequence": 367,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 3.821079464
+        },
+        {
+          "first_sequence": 368,
+          "last_sequence": 553,
+          "rows": 186,
+          "text_datarow_bytes": 8212,
+          "first_received_seconds": 6.140862955
+        },
+        {
+          "first_sequence": 554,
+          "last_sequence": 738,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 8.044890034
+        },
+        {
+          "first_sequence": 739,
+          "last_sequence": 923,
+          "rows": 185,
+          "text_datarow_bytes": 8177,
+          "first_received_seconds": 9.664204845
+        },
+        {
+          "first_sequence": 924,
+          "last_sequence": 1023,
+          "rows": 100,
+          "text_datarow_bytes": 4421,
+          "first_received_seconds": 10.115450639
+        }
+      ],
+      "validation": {
+        "independent_producer_binding_rows": 1024,
+        "unique_guard_payloads": 1024,
+        "request_partition_rows": 1024,
+        "credit_area_independently_replayed": true,
+        "server_histogram_cohorts_checked": 6
+      }
+    },
+    {
+      "unit": "q09",
+      "repeat": 2,
+      "rows": 1024,
+      "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+      "semantic_sha256": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+      "jct_seconds": 10.161528037,
+      "preparation_seconds": 0.016599013,
+      "stream_seconds": 10.144929024,
+      "wall_partition": {
+        "before_first_core_submit": 0.13309646,
+        "parallel_pipeline": 10.004237263,
+        "after_last_ray_reply": 0.007595301
+      },
+      "firsts_seconds": {
+        "core_map_task": 0.013233049,
+        "core_submitted": 0.13309646,
+        "request": 0.171167558,
+        "core_ray_http_completed": 0.374117769,
+        "core_terminal": 0.374734907,
+        "core_map_completion": 0.377321541
+      },
+      "first_client_seconds": 2.361356726,
+      "first_semantic_to_first_client_seconds": 1.685854809,
+      "last_semantic_to_eof_seconds": 0.002245288,
+      "row_intervals": {
+        "accepted_to_core_submit_ms": {
+          "count": 1024,
+          "sum": 529058.95788,
+          "mean": 516.6591385546875,
+          "median": 540.6724675,
+          "p95": 801.2482760999999,
+          "maximum": 1036.212237,
+          "minimum": 96.408033
+        },
+        "core_to_rpc_guard_ms": {
+          "count": 1024,
+          "sum": 237161.162113,
+          "mean": 231.60269737597656,
+          "median": 206.631127,
+          "p95": 506.20241819999984,
+          "maximum": 606.764049,
+          "minimum": 9.826111
+        },
+        "rpc_outside_worker_ms": {
+          "count": 1024,
+          "sum": 96148.438436,
+          "mean": 93.89495941015625,
+          "median": 58.3310115,
+          "p95": 327.5552813499998,
+          "maximum": 640.344457,
+          "minimum": 4.725944
+        },
+        "worker_execution_ms": {
+          "count": 1024,
+          "sum": 280762.389115,
+          "mean": 274.1820206201172,
+          "median": 268.74375599999996,
+          "p95": 464.30580215,
+          "maximum": 837.369444,
+          "minimum": 65.199143
+        },
+        "core_to_ray_reply_ms": {
+          "count": 1024,
+          "sum": 614071.989664,
+          "mean": 599.67967740625,
+          "median": 592.6580134999999,
+          "p95": 889.0297139999997,
+          "maximum": 1307.627553,
+          "minimum": 202.9522
+        },
+        "ray_reply_to_core_terminal_ms": {
+          "count": 1024,
+          "sum": 6734.553689,
+          "mean": 6.576712586914063,
+          "median": 3.1641065,
+          "p95": 15.643379849999976,
+          "maximum": 174.216772,
+          "minimum": 0.348625
+        },
+        "core_credit_residence_ms": {
+          "count": 1024,
+          "sum": 620806.543353,
+          "mean": 606.256389993164,
+          "median": 598.344327,
+          "p95": 914.903976249999,
+          "maximum": 1308.213946,
+          "minimum": 210.567887
+        },
+        "core_terminal_to_semantic_result_ms": {
+          "count": 1024,
+          "sum": 71120.571882,
+          "mean": 69.45368347851563,
+          "median": 51.369660499999995,
+          "p95": 199.7944412999999,
+          "maximum": 282.493038,
+          "minimum": 0.713741
+        },
+        "semantic_result_to_client_ms": {
+          "count": 1024,
+          "sum": 896249.696271,
+          "mean": 875.2438440146484,
+          "median": 871.409058,
+          "p95": 1820.1916128499995,
+          "maximum": 2223.166901,
+          "minimum": 2.110786
+        }
+      },
+      "server_cohort": {
+        "e2e_request_latency_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 239.40825057029724,
+          "mean_ms": 233.7971196975559
+        },
+        "request_queue_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 0.05713015794754028,
+          "mean_ms": 0.05579116987064481
+        },
+        "request_inference_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 210.08755968138576,
+          "mean_ms": 205.16363250135328
+        },
+        "request_prefill_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 109.4460124950856,
+          "mean_ms": 106.88087157723203
+        },
+        "request_decode_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 100.64154718630016,
+          "mean_ms": 98.28276092412125
+        },
+        "time_to_first_token_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 138.9971091747284,
+          "mean_ms": 135.7393644284457
+        }
+      },
+      "credit": {
+        "peak": 64,
+        "average": 61.19377887064062,
+        "capacity": 64,
+        "full_seconds": 8.872200167,
+        "below_full_seconds": 1.272728857,
+        "mean_worker_duration_equivalent_concurrency": 27.675145725593204,
+        "mean_model_e2e_duration_equivalent_concurrency": 23.598809809701557
+      },
+      "payload_blocks": {
+        "count": 145,
+        "rows_mean": 7.062068965517241,
+        "rows_histogram": {
+          "1": 46,
+          "2": 10,
+          "3": 8,
+          "4": 8,
+          "5": 5,
+          "6": 9,
+          "7": 4,
+          "8": 3,
+          "9": 2,
+          "10": 1,
+          "11": 5,
+          "12": 1,
+          "13": 1,
+          "14": 3,
+          "15": 3,
+          "16": 36
+        },
+        "put_seconds": {
+          "count": 145,
+          "sum": 0.649522843,
+          "mean": 0.0044794678827586205,
+          "median": 0.004309011,
+          "p95": 0.0102072526,
+          "maximum": 0.01991002,
+          "minimum": 0.000866293
+        },
+        "peak_charged_bytes": 88810,
+        "object_capacity_bytes": 4194304
+      },
+      "offer_status_counts": {
+        "ACCEPTED": 1024,
+        "BACKPRESSURE": 896
+      },
+      "client_delivery_groups": [
+        {
+          "first_sequence": 0,
+          "last_sequence": 182,
+          "rows": 183,
+          "text_datarow_bytes": 8101,
+          "first_received_seconds": 2.361356726
+        },
+        {
+          "first_sequence": 183,
+          "last_sequence": 367,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 4.000801159
+        },
+        {
+          "first_sequence": 368,
+          "last_sequence": 553,
+          "rows": 186,
+          "text_datarow_bytes": 8212,
+          "first_received_seconds": 6.219945674
+        },
+        {
+          "first_sequence": 554,
+          "last_sequence": 738,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 7.82767014
+        },
+        {
+          "first_sequence": 739,
+          "last_sequence": 923,
+          "rows": 185,
+          "text_datarow_bytes": 8177,
+          "first_received_seconds": 9.294184024
+        },
+        {
+          "first_sequence": 924,
+          "last_sequence": 1023,
+          "rows": 100,
+          "text_datarow_bytes": 4421,
+          "first_received_seconds": 10.143075976
+        }
+      ],
+      "validation": {
+        "independent_producer_binding_rows": 1024,
+        "unique_guard_payloads": 1024,
+        "request_partition_rows": 1024,
+        "credit_area_independently_replayed": true,
+        "server_histogram_cohorts_checked": 6
+      }
+    },
+    {
+      "unit": "q14",
+      "repeat": 3,
+      "rows": 1024,
+      "input_sha256": "4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250",
+      "semantic_sha256": "5d6a5981ffdba4097a850621ba5d9f2c0de629bd8fac34e2e703a348a165a8fe",
+      "jct_seconds": 9.572132571,
+      "preparation_seconds": 0.014290911,
+      "stream_seconds": 9.55784166,
+      "wall_partition": {
+        "before_first_core_submit": 0.132571805,
+        "parallel_pipeline": 9.420070249,
+        "after_last_ray_reply": 0.005199606
+      },
+      "firsts_seconds": {
+        "core_map_task": 0.009277657,
+        "core_submitted": 0.132571805,
+        "request": 0.186495274,
+        "core_ray_http_completed": 0.331480077,
+        "core_terminal": 0.332621006,
+        "core_map_completion": 0.335647719
+      },
+      "first_client_seconds": 2.217146039,
+      "first_semantic_to_first_client_seconds": 1.416053106,
+      "last_semantic_to_eof_seconds": 0.001503733,
+      "row_intervals": {
+        "accepted_to_core_submit_ms": {
+          "count": 1024,
+          "sum": 501738.216467,
+          "mean": 489.9787270185547,
+          "median": 502.4707585,
+          "p95": 686.4726774499998,
+          "maximum": 844.15232,
+          "minimum": 109.07965
+        },
+        "core_to_rpc_guard_ms": {
+          "count": 1024,
+          "sum": 206912.5487,
+          "mean": 202.06303583984376,
+          "median": 163.808922,
+          "p95": 421.1206326499999,
+          "maximum": 510.929063,
+          "minimum": 8.613319
+        },
+        "rpc_outside_worker_ms": {
+          "count": 1024,
+          "sum": 105937.519912,
+          "mean": 103.4546092890625,
+          "median": 67.4737345,
+          "p95": 306.0800846999999,
+          "maximum": 458.512184,
+          "minimum": 5.759402
+        },
+        "worker_execution_ms": {
+          "count": 1024,
+          "sum": 263903.41941,
+          "mean": 257.7181830175781,
+          "median": 240.8991395,
+          "p95": 459.1802068499999,
+          "maximum": 564.510104,
+          "minimum": 84.486622
+        },
+        "core_to_ray_reply_ms": {
+          "count": 1024,
+          "sum": 576753.488022,
+          "mean": 563.2358281464843,
+          "median": 562.4289555,
+          "p95": 784.50194935,
+          "maximum": 964.338684,
+          "minimum": 198.458748
+        },
+        "ray_reply_to_core_terminal_ms": {
+          "count": 1024,
+          "sum": 6315.92549,
+          "mean": 6.167895986328125,
+          "median": 3.2542169999999997,
+          "p95": 14.7993227,
+          "maximum": 136.086291,
+          "minimum": 0.266574
+        },
+        "core_credit_residence_ms": {
+          "count": 1024,
+          "sum": 583069.413512,
+          "mean": 569.4037241328125,
+          "median": 573.1209165,
+          "p95": 792.56404695,
+          "maximum": 965.450641,
+          "minimum": 199.599677
+        },
+        "core_terminal_to_semantic_result_ms": {
+          "count": 1024,
+          "sum": 56729.1332,
+          "mean": 55.399544140625,
+          "median": 47.056154500000005,
+          "p95": 142.00098274999996,
+          "maximum": 224.861733,
+          "minimum": 0.59136
+        },
+        "semantic_result_to_client_ms": {
+          "count": 1024,
+          "sum": 801907.031111,
+          "mean": 783.1123350693359,
+          "median": 760.8467435,
+          "p95": 1558.39428605,
+          "maximum": 1881.589113,
+          "minimum": 1.449061
+        }
+      },
+      "server_cohort": {
+        "e2e_request_latency_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 214.94108080863953,
+          "mean_ms": 209.90339922718704
+        },
+        "request_queue_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 0.052239447832107544,
+          "mean_ms": 0.05101508577354252
+        },
+        "request_inference_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 183.15714966878295,
+          "mean_ms": 178.86440397342085
+        },
+        "request_prefill_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 95.33280392736197,
+          "mean_ms": 93.09844133531442
+        },
+        "request_decode_time_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 87.82434574142098,
+          "mean_ms": 85.76596263810643
+        },
+        "time_to_first_token_seconds": {
+          "count": 1024.0,
+          "sum_seconds": 127.27012228965759,
+          "mean_ms": 124.28722879849374
+        }
+      },
+      "credit": {
+        "peak": 64,
+        "average": 61.00429723084574,
+        "capacity": 64,
+        "full_seconds": 8.114839591,
+        "below_full_seconds": 1.443002069,
+        "mean_worker_duration_equivalent_concurrency": 27.61119390734916,
+        "mean_model_e2e_duration_equivalent_concurrency": 22.48845382197298
+      },
+      "payload_blocks": {
+        "count": 127,
+        "rows_mean": 8.062992125984252,
+        "rows_histogram": {
+          "1": 26,
+          "2": 15,
+          "3": 9,
+          "4": 5,
+          "5": 6,
+          "6": 3,
+          "7": 4,
+          "8": 4,
+          "9": 1,
+          "10": 4,
+          "11": 1,
+          "12": 5,
+          "13": 2,
+          "14": 1,
+          "15": 3,
+          "16": 38
+        },
+        "put_seconds": {
+          "count": 127,
+          "sum": 0.692093015,
+          "mean": 0.005449551299212599,
+          "median": 0.004843557,
+          "p95": 0.014175462499999993,
+          "maximum": 0.020103664,
+          "minimum": 0.000884945
+        },
+        "peak_charged_bytes": 81852,
+        "object_capacity_bytes": 4194304
+      },
+      "offer_status_counts": {
+        "ACCEPTED": 1024,
+        "BACKPRESSURE": 896
+      },
+      "client_delivery_groups": [
+        {
+          "first_sequence": 0,
+          "last_sequence": 182,
+          "rows": 183,
+          "text_datarow_bytes": 8101,
+          "first_received_seconds": 2.217146039
+        },
+        {
+          "first_sequence": 183,
+          "last_sequence": 367,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 3.940740639
+        },
+        {
+          "first_sequence": 368,
+          "last_sequence": 553,
+          "rows": 186,
+          "text_datarow_bytes": 8212,
+          "first_received_seconds": 5.495510134
+        },
+        {
+          "first_sequence": 554,
+          "last_sequence": 738,
+          "rows": 185,
+          "text_datarow_bytes": 8181,
+          "first_received_seconds": 7.078959162
+        },
+        {
+          "first_sequence": 739,
+          "last_sequence": 923,
+          "rows": 185,
+          "text_datarow_bytes": 8177,
+          "first_received_seconds": 8.580064139
+        },
+        {
+          "first_sequence": 924,
+          "last_sequence": 1023,
+          "rows": 100,
+          "text_datarow_bytes": 4421,
+          "first_received_seconds": 9.55662208
+        }
+      ],
+      "validation": {
+        "independent_producer_binding_rows": 1024,
+        "unique_guard_payloads": 1024,
+        "request_partition_rows": 1024,
+        "credit_area_independently_replayed": true,
+        "server_histogram_cohorts_checked": 6
+      }
+    }
+  ],
+  "limitations": [
+    "per-row overlapping durations cannot be added to query wall time",
+    "RPC guard is recorded before actor.execute.remote; it is not HTTP start",
+    "remote worker duration includes payload extraction and the HTTP client",
+    "RPC wait before worker entry and result return cannot be separated with retained records",
+    "real-model PG node-return timestamps were not recorded",
+    "server histograms identify the completed cohort; they are not GPU kernel durations",
+    "batch materialization and durable POST accounting lack separate retained spans"
+  ]
+}
