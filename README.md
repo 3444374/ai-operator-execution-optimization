@@ -30,8 +30,9 @@
 [热路径细分](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
 新增5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
 [后续线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)70项及8,224次fixture通过，模型0次。
-线程选择8.287→11.570秒，慢39.606%；默认同步保留，下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)
-检查小窗口反复创建，真实收益尚待验证。
+线程选择8.287→11.570秒，慢39.606%，默认同步保留。
+[直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项及8,224次fixture，模型0次；
+完整查询8.354→8.149秒，少2.457%，批次构建约1→0.2秒与持久记账重叠。默认Daft保留，真实收益尚待验证。
 旧容量实验未选点不作为所有系统比较的前置条件。
 
 ## 研究内容

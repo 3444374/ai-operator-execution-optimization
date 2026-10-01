@@ -39,7 +39,9 @@ def pg_gateway_command(config, plan, model_path, ledger, root):
     if config.map_transport_config is not None:
         from src.execution_provider.adapters.ray_map_transport import RayMapConfig
         path = Path(config.map_transport_config)
-        RayMapConfig.load(path)
+        physical = RayMapConfig.load(path)
+        if physical.payload_backend != config.map_payload_backend:
+            raise ValueError('Map payload backend differs from the declared query path')
         content = path.read_bytes()
         if hashlib.sha256(content).hexdigest() != config.map_transport_sha256:
             raise ValueError('Map transport configuration identity differs')

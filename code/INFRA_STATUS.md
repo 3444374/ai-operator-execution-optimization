@@ -1,8 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-01。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-02。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-02后续：增加显式`RayMapConfig.payload_backend=arrow`，直接将已选有限payload构成独立Arrow批次。
+默认Daft保留；Core选行、完整请求、对象容量及行生命周期保持，原Daft/Ray比较拒绝Arrow/Ray身份。
+本地86项中74项通过、12项缺依赖跳过；目标92项全部通过，10条查询/8,224次fixture通过，模型0次。
+[完整查询对照](../experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)中位数8.354→8.149秒，少2.457%；
+批次next执行约1→0.2秒，但同步记账仍约5.5秒且恢复等待重叠，只保留显式选项，真实收益待验证。
 
 2026-10-02：新增可选单线程持久记账，原事务不变，内容核对和记录仍在事件循环。
 Ray发送前回调可等待异步完成，并在等待后再次检查取消；已提交额度保留，失败不发请求。

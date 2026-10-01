@@ -47,6 +47,20 @@ def write_spec(root,spec):
 
 
 class CampaignTests(unittest.TestCase):
+    def test_arrow_transport_cannot_enter_the_daft_ray_campaign(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            spec = setup(root)
+            path = root/'transport.json'
+            value = json.loads(path.read_text())
+            value['payload_backend'] = 'arrow'
+            path.write_text(json.dumps(value))
+            candidate = next(c for c in spec['candidates'] if c['role'] == 'pg-daft-ray')
+            candidate['config']['map_transport_sha256'] = reference(path)['sha256']
+            candidate['config']['map_payload_backend'] = 'arrow'
+            with self.assertRaisesRegex(ValueError, 'Daft payload'):
+                campaign.preflight(spec)
+
     def test_main_profile_rejects_undersupplied_ray_and_unequal_native_resources(self):
         from src.experiments.postgresql.text_map_candidates import main_candidates
         with tempfile.TemporaryDirectory() as directory:

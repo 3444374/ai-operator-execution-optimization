@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-01
+更新时间：2026-10-02
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -12,9 +12,13 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项目标检查、10条查询/8,224次fixture，模型0次。
+同步记账下完整查询8.354→8.149秒，少2.457%；批次next执行约1→0.2秒，但约5.5秒记账与恢复等待重叠。
+仅保留显式Arrow选项，默认Daft与同步记账保持；下一项细分持久事务步骤，真实模型收益尚待验证。
+
 [同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。
 线程选择完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但窗口21→460–495、批次构建约1→7秒。
-同步默认保留；后续优先检查小窗口反复创建，真实收益和事务内部成本仍待验证。
+同步默认保留；小窗口分批后续已完成上方对照，真实收益和事务内部成本仍待验证。
 
 [热路径独立计时](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
 完成5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。

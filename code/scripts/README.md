@@ -433,6 +433,7 @@ v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同�
 | `batch_rows` | `2`；不得超过活动请求上限，不等待凑满批次 |
 | `window_bytes` | `2097152`；有限输入窗口的Arrow数据字节，至少容纳一个1MiB协议请求和24字节行键/偏移 |
 | `object_bytes` | `4194304`；Ray对象底层Arrow buffer预留，至少大于窗口8字节 |
+| `payload_backend` | 默认`daft`，可显式选`arrow`直接构成已选行的独立批次；只改变物理分批 |
 
 PG仍选择`incremental-map`或已有`query-job`，设置对应输入窗口。网关先接收PG已选择的规范输入，
 Daft Native只处理当前有限窗口；Ray Core actor按对象引用和行位置发出独立HTTP请求。
@@ -440,7 +441,9 @@ Daft Native只处理当前有限窗口；Ray Core actor按对象引用和行位�
 `--job-compute-policy shared`和现有多Job机制可继续使用。它不自动启用PG优化器的backend选择。
 
 `QueryConfig`新增可选`map_transport_config`与`map_transport_sha256`，用于完整观测的PG Map验证。
-查询runner核对文件身份，并把配置副本写入各运行目录。正式请求仍使用已有预算化实验入口；
+查询runner核对文件身份，并把配置副本写入各运行目录。`map_payload_backend`声明分批选择，
+必须与物理配置`payload_backend`一致；默认均为`daft`。Arrow/Ray诊断不进入原Daft/Ray比较。
+正式请求仍使用已有预算化实验入口；
 `choice_gateway_observer`会在Ray RPC前持久预扣，不能只观察gateway进程里的HTTP。
 可选`--remote-budget-mode threaded`仅用于有durable ledger的Ray Map，将原reserve交给单个I/O线程，
 完成后再核对/记录请求并允许RPC；默认`synchronous`保留。查询配置使用`remote_budget_mode`选择，

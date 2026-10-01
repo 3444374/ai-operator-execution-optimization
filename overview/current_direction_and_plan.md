@@ -1,6 +1,6 @@
 # SemLoom 当前方向与计划
 
-更新：2026-10-01。本页用于快速阅读；方向以[项目总纲](../PROJECT_OUTLINE.md)为准，
+更新：2026-10-02。本页用于快速阅读；方向以[项目总纲](../PROJECT_OUTLINE.md)为准，
 实现以[代码状态](../code/INFRA_STATUS.md)和源码为准，数字以[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)
 及原始结果为准。
 
@@ -37,7 +37,9 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native，比较完�
 worker内258–279毫秒，服务内部排队均值不到0.06毫秒。先细化热批次、实验账本和RPC链路；首行等待不直接加到查询耗时。
 后续5条查询/4,112次fixture、目标37项通过，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
 批次next执行约1秒、恢复约5.7秒，两者重叠。后续线程记账对照70项及8,224次fixture通过，模型0次，
-完整查询8.287→11.570秒，慢39.606%；恢复等待减少，但小窗口反复创建增多，默认同步保留，下一项检查该开销。
+完整查询8.287→11.570秒，慢39.606%；恢复等待减少，但小窗口反复创建增多，默认同步保留。
+[直接Arrow分批](../experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项、8,224次fixture，模型0次；
+完整查询8.354→8.149秒，少2.457%，批次next执行约1→0.2秒与同步记账重叠。暂保留显式选项，默认Daft保持，真实收益待验证。
 
 - PostgreSQL 18.3 extension 已完成受限 Filter/Map 语义、公共执行接口、Map 有界多在途及可选图像嵌入的
   工程检查。可选 Daft/Ray 文本传输在[受控查询](../experiments/results/postgresql/incremental_transport_20260927/README.md)

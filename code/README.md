@@ -19,6 +19,11 @@
 已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
 本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
+Ray Map新增显式`RayMapConfig.payload_backend=arrow`，直接构建已选有限行的独立Arrow批次，
+用于检查小窗口重复建Daft图的开销；默认`daft`保留，同步记账保持。行身份、完整请求、对象上限与
+取消生命周期不修改。[目标92项及8,224次fixture](../experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)通过，模型0次；
+完整查询8.354→8.149秒，仅少2.457%，next执行约1→0.2秒与同步记账重叠。暂保留显式选项，不更新真实baseline结论。
+
 Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
 实验配置新增`remote_budget_mode=threaded`，将原持久reserve交给单个I/O线程；默认`synchronous`保留。
 内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。
@@ -39,7 +44,7 @@ flowchart LR
     Plan --> Child[普通子计划读取行]
     Child --> Task[PG生成带序号的语义任务]
     Task --> Gateway[外部gateway与共享执行核心]
-    Gateway --> Batch[Arrow与Daft传输批次]
+    Gateway --> Batch[Arrow批次：Daft或直接分批]
     Batch --> Worker[Ray HTTP worker]
     Worker --> Model[外部模型服务]
     Model --> Result[结果核对与容量归还]
@@ -53,7 +58,7 @@ flowchart LR
 2. PG执行节点按有限窗口保留输入与序号，通过本地Unix socket发送任务。无法安全预取的子计划会
    将有效窗口降为1。提交被拒时保留对应行，接纳前不前移已接受序号。
 3. gateway核对协议、语义与任务身份，注册查询Job和session；共享执行核心限制请求数、输入与结果容量。
-   当前Daft/Ray选择使用Arrow/Daft构建传输批次，Ray对象容量另行记账。
+   当前Ray选择默认经Daft分批，可显式选择直接Arrow批次；Ray对象容量另行记账。
 4. Ray worker取出每行完整payload，通过HTTP调用外部模型服务。一个传输批次可包含多行；每行仍为
    一个独立请求，Ray worker不负责GPU推理，也不修改数据库拥有的生成语义。
 5. 返回结果核对任务身份、长度和解析规则，再经provider回到PG；PG关联原始行并按输入序号交付。

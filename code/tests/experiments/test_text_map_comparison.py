@@ -54,6 +54,16 @@ def specification(root, *, manifest='a'*64):
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_arrow_diagnostic_is_not_reported_as_daft_ray(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ref = recording(Path(directory)/'unit', 'pg-daft-ray', 'unit', 1)
+            path = Path(ref['path'])
+            value = json.loads(path.read_text())
+            value['config']['map_payload_backend'] = 'arrow'
+            path.write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError, 'Arrow/Ray'):
+                read_run(reference(path), 'pg-daft-ray')
+
     def test_unique_best_selects_without_platform_or_quality_equivalence(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)

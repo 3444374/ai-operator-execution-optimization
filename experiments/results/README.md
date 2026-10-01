@@ -1,5 +1,8 @@
 # Research Experiment Results
 
+[直接Arrow分批对照](postgresql/text_map_arrow_batches_20261002/README.md)完成目标92项、10条查询/8,224次fixture，模型0次。
+完整查询8.354→8.149秒，仅为小幅观察；默认Daft保留，细节与可重算证据见报告。
+
 [同步/线程记账对照](postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查、累计8,224次fixture，模型0次。
 线程完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但小窗口反复创建增加批次构建成本。
 同步默认保留，原件、32次失败阶段已完成检查及同账本继续的8,192次分别记录，不更新真实排名。
