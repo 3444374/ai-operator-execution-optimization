@@ -4,12 +4,44 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from src.experiments.choice_gateway_observer import main
+from src.experiments.choice_gateway_observer import main, _guard_remote_request
+from src.experiments.buffered_events import compact_event
+from tests.execution_provider.test_ray_map_transport import task
 
 
 class ChoiceObserverTests(unittest.TestCase):
+    def test_remote_guard_separates_durable_reserve_from_request_recording(self):
+        events = []
+        ledger = Mock()
+        ledger.reserve.return_value = 3
+        observe = Mock()
+        with patch('src.experiments.choice_gateway_observer.time.monotonic_ns',
+                   side_effect=[100, 110, 160, 200, 205]):
+            _guard_remote_request(task(7, b'private input'), ledger, observe, events.append)
+        ledger.reserve.assert_called_once()
+        self.assertEqual(len(ledger.reserve.call_args.args[0]), 64)
+        observe.assert_called_once_with(3, b'private input')
+        event = events[0]
+        self.assertEqual((event['hash_ns'], event['reserve_ns'], event['request_observe_ns']), (10, 50, 40))
+        self.assertEqual(event['elapsed_ns'], 105)
+        self.assertEqual(event['key'], {'session_id': 0, 'sequence': 7})
+        self.assertEqual(compact_event(event)['reserve_ns'], 50)
+        self.assertNotIn('private', json.dumps(event))
+
+    def test_remote_guard_failure_does_not_observe_or_refund_request(self):
+        events = []
+        ledger = Mock()
+        ledger.reserve.side_effect = ValueError('fixture budget exhausted')
+        observe = Mock()
+        with self.assertRaisesRegex(ValueError, 'fixture budget exhausted'):
+            _guard_remote_request(task(0), ledger, observe, events.append)
+        observe.assert_not_called()
+        self.assertEqual(events[0]['status'], 'failed')
+        self.assertIsNone(events[0]['reserve_ns'])
+        self.assertIsNone(events[0]['request_observe_ns'])
+
     def record(self, root, flags, full=False):
         events, summary = root / 'events.jsonl', root / 'summary.json'
         private = root / 'private.jsonl'

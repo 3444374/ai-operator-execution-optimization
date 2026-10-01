@@ -19,6 +19,11 @@
 已通过[无模型及固定配置真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
 本次完整查询减少10.35%，仍慢于direct与Daft，适用范围和质量差异单列。
 
+Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调用、事件循环恢复，以及RPC同步提交和等待。
+Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
+实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
+验证安排见[准备调优计划](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+
 下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
 
 ## Stopped SAOR native-system implementation record

@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-01：SemLoom热路径独立计时
+
+- 按用户继续要求补批次/对象写入的线程池排队、执行和事件循环恢复，以及实验账本、请求观察与RPC时长。
+- Linux时钟来源摘要匹配才拆worker前后时间；不能对齐时保留缺项，未知远端执行继续计费。
+- 本地37项中30项通过、7项Daft/Arrow缺失跳过；目标环境无模型验证pending，新增模型额度0。
+  [运行安排](experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+
 ## 2026-10-01：SemLoom已有真实记录的消费时间拆分
 
 - 用户要求只分析SemLoom；新分支`codex/text-map-stream-decomposition`，执行路径没有改动，模型请求新增0。

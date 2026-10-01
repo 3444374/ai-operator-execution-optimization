@@ -38,6 +38,30 @@ _IMPORT_SECONDS = (time.monotonic_ns()-_IMPORT_STARTED_NS)/1e9
 CHOICE_BUDGET = AttemptBudget("semloom.choice.4c.v1", 100)
 
 
+def _guard_remote_request(task, ledger, observe_request, record):
+    """Measure durable accounting and request recording before dispatch."""
+    started = time.monotonic_ns()
+    hashed = reserved = observed = None
+    status = 'failed'
+    try:
+        body = task.task.payload
+        digest = hashlib.sha256(body).hexdigest()
+        hashed = time.monotonic_ns()
+        attempt = ledger.reserve(digest)
+        reserved = time.monotonic_ns()
+        observe_request(attempt, body)
+        observed = time.monotonic_ns()
+        status = 'completed'
+    finally:
+        ended = time.monotonic_ns()
+        record(dict(event='remote_request_guard',
+                    key=dict(session_id=task.key.session_id, sequence=task.key.sequence),
+                    status=status, hash_ns=hashed-started if hashed is not None else None,
+                    reserve_ns=reserved-hashed if reserved is not None else None,
+                    request_observe_ns=observed-reserved if observed is not None else None,
+                    elapsed_ns=ended-started))
+
+
 def main(argv=None):
     setup_started_ns = time.monotonic_ns()
     setup_seconds = None
@@ -234,9 +258,7 @@ def main(argv=None):
                 # Pass the guard independently of CLI spelling or abbreviations.
                 # The selected remote transport invokes it immediately before RPC.
                 def guard_remote(task):
-                    body = task.task.payload
-                    attempt = ledger.reserve(hashlib.sha256(body).hexdigest())
-                    observe_request(attempt, body)
+                    _guard_remote_request(task, ledger, observe_request, record)
 
                 options["remote_request_guard"] = guard_remote
             setup_seconds = (time.monotonic_ns()-setup_started_ns)/1e9

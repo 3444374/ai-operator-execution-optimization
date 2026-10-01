@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-01：Ray Map增加热批次、对象写入、RPC及同Linux单调时钟下worker前后计时；
+实验记录器增加账本reserve与请求观察时长。容量、请求、取消和未知远端资源记账保持原行为。
+本地37项中30项通过、7项缺Daft/Arrow跳过；目标环境无模型验证pending，
+见[本次安排](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)，新增模型请求0。
+
 [worker复用真实复测](../experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)完成：
 最后29条查询/20,624次POST通过，先前64次不重放，累计20,688次。
 1024行三次中位数旧SemLoom16.502秒、复用版14.794秒，准备4.737→2.831秒；

@@ -22,7 +22,13 @@ def compact_event(event):
                'attempt', 'request_values_sha256', 'request_bytes_sha256', 'key', 'code',
                'elapsed_seconds', 'remaining', 'connection_id', 'job_id',
                'status', 'reason', 'stage', 'remote_outcome',
-               'accepted_prefix_count', 'engine_session_id', 'closed'}
+               'accepted_prefix_count', 'engine_session_id', 'closed',
+               'block_id', 'rows', 'bytes', 'object_bytes', 'object_limit_bytes',
+               'submitted_ns', 'resumed_ns', 'queue_ns', 'work_ns', 'resume_ns', 'elapsed_ns',
+               'hash_ns', 'reserve_ns', 'request_observe_ns',
+               'worker_elapsed_ns', 'submit_elapsed_ns', 'await_elapsed_ns', 'rpc_elapsed_ns',
+               'rpc_started_ns', 'rpc_returned_ns', 'received_ns', 'worker_started_ns', 'worker_ended_ns',
+               'shared_clock', 'before_worker_ns', 'after_worker_ns'}
     result = {key: value for key, value in event.items() if key in allowed}
     if isinstance(event.get('raw_output'), str):
         encoded = event['raw_output'].encode('utf-8')
