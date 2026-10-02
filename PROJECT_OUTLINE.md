@@ -5,7 +5,7 @@
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
-本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `research/knowledge_hub.md`。开题已结束，`opening/` 只供历史回查，不作为现行研究判断的依据。
+本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `docs/research/knowledge_hub.md`。开题已结束，`docs/archive/opening/` 只供历史回查，不作为现行研究判断的依据。
 
 读者说明：本文 §0.3、§5–7 保留历史实验与开题时期的叙述。历史配置、诊断名称和当时的后续建议
 只供追溯，不覆盖当前执行顺序。
@@ -41,7 +41,7 @@ worker外RPC合计94–147毫秒，worker内258–279毫秒。服务内部排队
 
 2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md)完整清单已完成：
 SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP执行另作内部消融。
-[当前结果](experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过，
+[当前结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)68条查询、41,024次请求通过，
 1024行三次时间中位数依次为18.101、7.705、22.849、11.668秒，准确率84.961–85.254%。
 路径配对输出相差1–4行，未证明质量等价、吞吐平台或通用系统优势。
 SemLoom本次慢于direct与Daft，短于Ray；后续[无模型诊断与worker复用](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
@@ -54,7 +54,7 @@ SemLoom本次慢于direct与Daft，短于Ray；后续[无模型诊断与worker�
 direct7.660秒、Daft12.307秒、Ray22.756秒。准备减少40.24%、完整查询减少10.35%，
 配对输出差0–5行；这是本次共用部署与已使用输入的工程观察，不是新的独立评价或通用系统优势。
 准备之外的释放至全部消费仍约12.678秒，不能将完整差距归因于准备。68条配置与查询编号逐项一致，
-批量证据已无损归档，详见[审查与恢复](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)。
+批量证据已无损归档，详见[审查与恢复](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)。
 原生Ray/Daft拥有各自执行与调度；仅代表本次固定语义Map执行层，不替代LOTUS/Sema等语义系统评价。
 此前真实失败、错误观测修订和2,064次诊断均单独保留，旧根因仍未确定；本次源码身份和清理核对通过。
 旧M1平台结论不变；Movie公共查询与图像参照随后按自身条件推进。
@@ -64,16 +64,16 @@ direct7.660秒、Daft12.307秒、Ray22.756秒。准备减少40.24%、完整查�
 受控PG检查后，[真实模型验证](experiments/results/postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求，计数和资源清理通过。
 C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，仅作为本次单机观察；输出配对差异0–2行，多节点及M1容量资格仍待完成。
 
-2026-09-20：[最后一个工程工作包 F](experiments/results/postgresql/image_stages_f_20260920/README.md)
+2026-09-20：[最后一个工程工作包 F](experiments/results/postgresql/image_stage_execution_check_20260920/README.md)
 已完成图像类型、同步 reference、MethodDriver 行结果及 CPU/model 阶段接入的受控检查。
-PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)完成151次CLIP前向，三路径逐维一致，指定错误/取消及恢复通过。
+PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](experiments/results/postgresql/capacity_organization_image_validation_20260920/README.md)完成151次CLIP前向，三路径逐维一致，指定错误/取消及恢复通过。
 GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作为方法贡献。
 
 以下保留 2026-09-20 的方法研究安排；当前系统比较优先级以上述四路径计划为准。
 [设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
 当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
-后续[M1复测](experiments/results/postgresql/m1_supply_followup_20260920/README.md)定位并受控修复了重复容量汇总开销，C64未确认请求推动了异常记录改进。[完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询、16,400次请求；保留原清理告警，随后资源核对通过，工程改动合入main。原故障未复现、根因待确定；PG/direct均未满足持续供给要求，尚无容量选点或方法结论。
+后续[M1复测](experiments/results/postgresql/map_supply_diagnostic_20260920/README.md)定位并受控修复了重复容量汇总开销，C64未确认请求推动了异常记录改进。[完整容量复查](experiments/results/postgresql/map_capacity_recheck_20260920/README.md)完成32个查询、16,400次请求；保留原清理告警，随后资源核对通过，工程改动合入main。原故障未复现、根因待确定；PG/direct均未满足持续供给要求，尚无容量选点或方法结论。
 
 2026-09-14：[等待位置小实验](experiments/results/postgresql/waiting_positions_pilot_20260914/README.md)已测量查询专属准备及提交前后的等待。
 在受控服务中，更紧的工作量限制降低HTTP尾延迟，却使SQL至EOF时间增加约1.81倍；单请求更快没有转化为查询收益。
@@ -82,7 +82,7 @@ GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作�
 紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
 旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施。本轮M1筛查未得到平台候选，后续条件阶段未执行；M2五种PG源信息方式完成固定C4诊断，尚无稳定收益，仍未接入SemMap全局预扫。
 
-2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_e_20260914/README.md)复用统一计算责任表和查询轮转，
+2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；
 63次真实模型请求的执行、关联和回收已完成；其中55次Map都未逐字复述输入，质量负结果保留。
 这项工程验证已完成，随后开展等待位置和全局元数据对照；执行检查通过不代表生成质量或性能改善。
@@ -664,11 +664,11 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
 
 ## 10. 当前入口与历史材料
 
-- 开题历史材料：`opening/README.md`；不再随项目进展同步
-- 当前方向速览：`overview/current_direction_and_plan.md`
+- 开题历史材料：`docs/archive/opening/README.md`；不再随项目进展同步
+- 当前方向速览：`README.md`
 - 实验状态：`experiments/plans/experiment_status_and_gaps.md`
-- 文献与知识：`research/knowledge_hub.md`
-- 十五篇精读方法速览：`research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
+- 文献与知识：`docs/research/knowledge_hub.md`
+- 十五篇精读方法速览：`docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 
 影响方向、实验结论或关键入口的修改必须同步 `PROJECT_LOG.md`、`PROJECT_INDEX.md`、根 README 和受影响目录 README。

@@ -76,4 +76,4 @@ validation/results/fake_ai_embed_outputs_smoke/
 experiments/results/checkpoint_*/
 
 # Full request/trace archives stay on local disk and AutoDL; Git keeps aggregates.
-experiments/results/opening_database_e2e_text_refeed_20260808/raw.tar.gz
+experiments/results/text_db_e2e_duckdb_static_comparison_20260808/raw.tar.gz

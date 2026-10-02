@@ -4,8 +4,8 @@
 
 ## 范围与证据来源
 
-- 使用位置：`research/精读文献笔记/parrot_osdi2024/parrot_osdi2024.md`。
-- 权威来源：`research/reference/parrot_osdi2024.pdf`，题名 *Parrot: Efficient Serving of LLM-based Applications with Semantic Variable*，OSDI 2024，论文印刷页 929–945。
+- 使用位置：`docs/research/精读文献笔记/parrot_osdi2024/parrot_osdi2024.md`。
+- 权威来源：`docs/research/reference/parrot_osdi2024.pdf`，题名 *Parrot: Efficient Serving of LLM-based Applications with Semantic Variable*，OSDI 2024，论文印刷页 929–945。
 - 本地文件共 18 页，其中 PDF p.1 为 USENIX 封面、PDF p.2–18 为 17 页论文正文；SHA256 `CE334DF62516EA037233B77650CD5303C6AE254E0CF7C267F86A92F69F2386FF`。该文件是正式 proceedings PDF，对应预印本为 `arXiv:2405.19888v1`。
 - 使用 Poppler 以 324 DPI 渲染原页，再按 Figure 边界裁切并保留原论文 caption；没有重绘、改色、锐化、拼接或修改图内数据。
 - PNG 只服务 Markdown 精读讲解，不是项目自制图，也不是本项目实验结果。
@@ -60,7 +60,7 @@
 | `fig18_multi_agent_latency_memory.png` | 1228×1260 | `2532FE7CE6F43AB7890A762051F7E4F8034071E73F1663C472343F060F0DC13C` |
 | `fig19_mixed_workloads.png` | 1147×720 | `D46D1AA9C493CD7444D77AF9A663FFEA3B8AFAF84B9E6E2FB8D18D23A318316B` |
 
-所有输出均位于 `research/精读文献笔记/parrot_osdi2024/figures/`。Markdown 共 19 个本地图片引用，逐一解析到同名 PNG。
+所有输出均位于 `docs/research/精读文献笔记/parrot_osdi2024/figures/`。Markdown 共 19 个本地图片引用，逐一解析到同名 PNG。
 
 ## 视觉与论证 QA
 

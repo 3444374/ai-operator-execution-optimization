@@ -59,25 +59,25 @@ worker绝对时刻及真实PG节点时刻；该轮只分析原件，没有修改
 2026-09-30分支审查：阶段执行现核对实际配置摘要及预期查询编号，首次变化即停止并保留额度；
 68条既有真实记录无配置或编号不一致。已补PG/gateway/Ray启动及首批处理观测，74项本地检查中
 69项通过、5项Daft/Arrow依赖缺失跳过；后续目标环境结果见上方调优记录。
-三份批量证据已无损压缩并独立恢复核验；[修订与验证](../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)
+三份批量证据已无损压缩并独立恢复核验；[修订与验证](../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)
 保存旧失败、原摘要和历史状态。本次没有新增模型请求或修改服务生命周期。
 
 | 对象 | 已实现及已检查内容 | 仍需完成 |
 |---|---|---|
-| PostgreSQL 语义算子 | `REL_18_3` extension 拥有受限 Filter/Map 语义、SQL 与查询生命周期；Map 已有有界多在途路径，图像 `embed` 为可选版本。证据分别见[两算子检查](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)、[Map 多在途](../experiments/results/postgresql/async_window_20260908/README.md)及[图像接入](../experiments/results/postgresql/image_stages_f_20260920/README.md)。 | Filter 质量与真实成本校准、第二物理路径、更多组合形态；图像计算中故障与匹配性能。 |
+| PostgreSQL 语义算子 | `REL_18_3` extension 拥有受限 Filter/Map 语义、SQL 与查询生命周期；Map 已有有界多在途路径，图像 `embed` 为可选版本。证据分别见[两算子检查](../experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)、[Map 多在途](../experiments/results/postgresql/async_window_20260908/README.md)及[图像接入](../experiments/results/postgresql/image_stage_execution_check_20260920/README.md)。 | Filter 质量与真实成本校准、第二物理路径、更多组合形态；图像计算中故障与匹配性能。 |
 | 外部执行核心 | 增量 session、任务组织、有界提交、多 Job 资源记账和阶段执行已有源码与受控验证；可选 Daft Native/Ray Core 文本路径保留 HTTP 选择。见[最近工程检查](../experiments/results/postgresql/incremental_transport_20260927/README.md)。 | 多节点运行、持续供给及完整查询收益的独立评价。 |
-| 真实服务检查 | [完整新版主表](../experiments/results/postgresql/text_map_main_real_20260930/README.md)68条查询、41,024次请求通过；worker复用固定配置复测见上方，后者使用已评价输入。 | 首批处理与提交成本；旧异常根因、质量等价与通用收益尚无结论。 |
-| 方法研究 | [容量复查](../experiments/results/postgresql/m1_full_recheck_20260920/README.md)完成 32 个查询和 16,400 次请求；[全局信息与图像检查](../experiments/results/postgresql/m1_m2_f_real_20260920/README.md)保留全部有限结果。 | 持续供给要求未满足，尚无容量参照；全局信息方式未显示稳定收益。 |
+| 真实服务检查 | [完整新版主表](../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)68条查询、41,024次请求通过；worker复用固定配置复测见上方，后者使用已评价输入。 | 首批处理与提交成本；旧异常根因、质量等价与通用收益尚无结论。 |
+| 方法研究 | [容量复查](../experiments/results/postgresql/map_capacity_recheck_20260920/README.md)完成 32 个查询和 16,400 次请求；[全局信息与图像检查](../experiments/results/postgresql/capacity_organization_image_validation_20260920/README.md)保留全部有限结果。 | 持续供给要求未满足，尚无容量参照；全局信息方式未显示稳定收益。 |
 
-2026-09-30：[四路径完整比较](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+2026-09-30：[四路径完整比较](../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)：
 1024行时间中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒。
 四路径各自选点、独立三次测量完成；下列失败、修订和诊断记录保留当时身份，不拼接成当前结果。
 
-2026-09-30：[真实诊断复测](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+2026-09-30：[真实诊断复测](../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)：
 16行核对及容量128的四次512行查询全部通过，2,064次账本/服务计数一致、281.156秒，清理通过。
 原异常未复现，根因仍未确定；这不替代新版四路径的完整调参和独立评价。
 
-2026-09-30：[Ray远程错误记录修订](../experiments/results/postgresql/text_map_main_real_20260930/README.md)：
+2026-09-30：[Ray远程错误记录修订](../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)：
 已修复底层原因丢失与公开事件阶段字段遗漏，保持未确认额度和不重试行为。
 本地9项、Linux21项及实际PG/Ray的7项回归通过，403次合成POST；真实模型未追加。
 断连后错误关联、清理与新查询恢复通过；旧真实异常的根因仍待诊断复测，不能称已根治。

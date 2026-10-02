@@ -39,13 +39,13 @@
 目标环境无模型分段与内部对照完成，准备4.951→2.888秒、完整查询16.263→13.963秒；服务启动单列，真实模型收益待复测。
 失败及成功累计21,079次fixture请求、模型0次；89个不同目标检查通过，原始批量文本脱敏归档，资源及ACL恢复核对通过。
 
-2026-09-30：[分支审查与证据存储](postgresql/text_map_main_real_20260930/README.md#branch-review)。
+2026-09-30：[分支审查与证据存储](postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)。
 批量raw按原字节归档并独立恢复核验，直引大文件使用gzip；配置校验修订和启动分段观测的后续目标环境证据见上方。
 
 本次文本Map导出日志保留终端空白，CSV保留导出时的换行格式；仓库`.gitattributes`仅对对应日志/CSV设置空白检查属性。
 公开副本摘要与服务器导出文本摘要分别保留，不通过重写证据字节来消除格式提示。
 
-2026-09-30：[新版主表完整比较、失败与诊断](postgresql/text_map_main_real_20260930/README.md)。
+2026-09-30：[新版主表完整比较、失败与诊断](postgresql/text_map_four_path_comparison_20260930/README.md)。
 后续独立运行完成68条查询、41,024次请求及1024行评价；三次中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒。
 准确率84.961–85.254%，路径配对输出差1–4行；未证明质量等价或平台。本次请求计数、源码与清理一致。
 前次容量128失败（预扣16,862/服务成功16,861）、错误记录修订和2,064次诊断分别保留，不合并成功样本。
@@ -68,23 +68,23 @@ PG受控查询、行关联、对象占用及多查询生命周期通过；该受
 追加[真实模型验证](postgresql/transport_real_20260927/README.md)完成12条SQL、4144次请求及清理；C64三轮中位数HTTP 10.552秒、Daft/Ray 5.573秒，
 配对输出差异0–2行，未据此判定质量等价或稳定性能优势。旧M1未选点状态保持；工程提交`0df9a86d`与两轮证据已合入main。
 
-2026-09-20：[完整容量复查与工程合并](postgresql/m1_full_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
+2026-09-20：[完整容量复查与工程合并](postgresql/map_capacity_recheck_20260920/README.md)完成32个查询单元，16,400次请求与服务端一致，无未确认请求。
 原控制器记录过一个短暂残留PID并返回失败，随后独立只读清理核对通过；原告警和PID身份缺项保留。
 容量扫描修复与异常诊断改动合入main，原故障未复现、根因仍待确定。PG/direct均为持续供给不足，M1尚未选点。
 Linux provider79项中70通过、9项环境跳过；没有启动第二验证单元或后续方法阶段。
 
-2026-09-20：[C64异常诊断与有限复测](postgresql/m1_c64_errors_20260920/README.md)补齐传输异常类型、原因链类型及代码位置记录；原异常传播与不重试行为保留。
+2026-09-20：[C64异常诊断与有限复测](postgresql/map_c64_request_diagnostic_20260920/README.md)补齐传输异常类型、原因链类型及代码位置记录；原异常传播与不重试行为保留。
 本轮3,088次记账与服务成功一致，C64四次各512条全部完成，无未确认请求；11项聚焦检查通过，Linux provider77项中9项跳过。
 原故障未复现，根因仍待确定；不称已修复连接/模型缺陷，不进行方法选点。测试资源已清理，代码与证据仍在分支。
 
-2026-09-20：[M1供给复查](postgresql/m1_supply_followup_20260920/README.md)已完成容量扫描开销定位和受控修复，真实筛查在C64预热时中止。
+2026-09-20：[M1供给复查](postgresql/map_supply_diagnostic_20260920/README.md)已完成容量扫描开销定位和受控修复，真实筛查在C64预热时中止。
 原128行fixture的PG查询约22–26秒，完整修复后约2.1–2.25秒；派生使用量只在一次只读扫描内复用。
 Linux调度386项、图像81项通过；provider76项中9项环境跳过，另2项实际PG/HTTP集成通过。
 真实账本1,552次尝试、服务端成功1,550次；两项执行异常归为MODEL_UNAVAILABLE，具体异常类型缺失。
 443行保持临时结果；测试服务/端口/GPU进程清理、ACL恢复，无自动重跑。
 修复与证据保存在 `codex/m1-supply-followup`，本次不合入main；M1尚未完成选点及后续条件阶段。
 
-2026-09-20：[M1、M2 与 F 有限真实验证](postgresql/m1_m2_f_real_20260920/README.md)完成本轮清单。
+2026-09-20：[M1、M2 与 F 有限真实验证](postgresql/capacity_organization_image_validation_20260920/README.md)完成本轮清单。
 文本8,248次POST与服务日志/counter一致；M1三种容量均未取得平台候选，后续调参/评价/观测对照未运行。
 M2五种PG源信息方式完成正确性与1+3轮评价，固定C4仅作功能参照，未支持稳定优势；全局规划尚未接入SemMap。
 F真实CLIP151次前向完成，三路径逐维差异0，受控前向后错误/取消及恢复通过；不代表GPU计算中抢占或性能验证。
@@ -93,13 +93,13 @@ F真实CLIP151次前向完成，三路径逐维差异0，受控前向后错误/�
 
 以下为按原运行身份保留的历史记录；当时的暂停或未验证描述由上方新结果补充。
 
-2026-09-20：[M1 研究问题与选点调整](postgresql/m1_platform_revision_20260920/README.md)完成。
+2026-09-20：[M1 研究问题与选点调整](postgresql/map_capacity_selection_check_20260920/README.md)完成。
 旧 M1 作为测量反例结束，44,544 次表撤下；当前按可达性、容量筛查、工作量调参和独立评价分阶段进行。
 v2 编排拒绝旧配置，复用常驻 gateway/direct，保留实际供给、配对吞吐、质量与资源观测；本地 35 项检查通过。
 该次修订没有 PG/HTTP/模型调用；后续真实结果见本页顶部。
 
 
-2026-09-20：[工作包 F 图像类型与阶段执行](postgresql/image_stages_f_20260920/README.md)：
+2026-09-20：[工作包 F 图像类型与阶段执行](postgresql/image_stage_execution_check_20260920/README.md)：
 显式扩展 `0.3.0` 的 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源接入完成。
 PG 回归 1/1、TAP 2,159 项和 9 组实际 PG/Ray/解码检查通过；模型使用 CPU fixture，真实调用 0 次。
 失败与修订记录保留，测试服务和临时权限已清理；真实 CLIP 与 GPU 性能继续待验证。
@@ -120,7 +120,7 @@ token组一次启动约5.5秒，常驻后每查询准备约14–15毫秒；四�
 跟进紧W的HTTP P99降低39.03%，SQL至EOF增加181.29%；当前token臂每查询新gateway/tokenizer准备约5秒。
 840份代码一致，PG/HTTP/进程/端口/ACL已清理。该轮提出的常驻服务/C4-C8检查已由上方新结果完成；两轮原始证据继续保留。
 
-2026-09-14：[查询依赖与共享计算](postgresql/query_sharing_e_20260914/README.md)完成：复用统一责任表与Job/flow轮转，新增可选shared计算策略和query-job Map窗口，存储独立保留。
+2026-09-14：[查询依赖与共享计算](postgresql/query_sharing_lifecycle_check_20260914/README.md)完成：复用统一责任表与Job/flow轮转，新增可选shared计算策略和query-job Map窗口，存储独立保留。
 Linux385/57/116、PG回归1/TAP2138、专项163次与worker预演63次受控HTTP通过。
 首次真实准备0次失败保留；获确认后63次真实POST、19个Job、55条Map关联与8条Filter决定通过，195.917秒内清理。
 Map逐字复述0/55，保留为质量负结果；不据执行与回收通过声称质量或性能通过。838份源文件一致，PG/模型/进程/GPU/ACL已清理。
@@ -532,9 +532,9 @@ training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `2200
 正式优化实验已经开始；本目录保存方法实验。早期 GPU-backed 画像和动机实验仍位于：
 
 ```text
-motivation/results/gpu/
-motivation/results/pg18_4_fake/
-motivation/results/fake_cpu/
+experiments/results/motivation/gpu/
+experiments/results/motivation/pg18_4_fake/
+experiments/results/motivation/fake_cpu/
 ```
 
 新增结果必须对应两项研究内容、共同代价估计或多模态泛化中的明确问题，并同步
@@ -542,3 +542,12 @@ motivation/results/fake_cpu/
 
 保存、命名、共享与精简按 [结果保存规则](AGENTS.md)和[上级实验规则](../AGENTS.md)执行。
 本页维护导航摘要，详细数字与原值以单个结果报告及证据台账为准。
+
+<a id="历史实验解读"></a>
+
+## 历史实验解读
+
+组件检查的读法见[诊断入口](diagnostics/README.md#早期组件检查的读法)，fake/CPU机制分析见
+[原始分析](motivation/fake_cpu/analysis.md)，数据库预演见[系统画像](motivation/pg18_4_fake/system_profile.md)。
+实际GPU模型、CPU模型、fake、PG18.4预演与当前PostgreSQL载体各自保留身份；判断先核对来源与计时。
+多Job实验从真实重叠与独立参照解释干扰，数据组织和提交变化回到完整查询与任务质量中评价。

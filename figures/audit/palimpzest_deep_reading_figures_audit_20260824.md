@@ -4,8 +4,8 @@
 
 ## 范围与版本边界
 
-- 使用位置：`research/精读文献笔记/palimpzest_cidr2025/palimpzest_cidr2025.md`。
-- 本地来源：`research/reference/palimpzest_cidr2025.pdf`，题名 *A Declarative System for Optimizing AI Workloads*，arXiv:2405.14696v2，2024-05-29。
+- 使用位置：`docs/research/精读文献笔记/palimpzest_cidr2025/palimpzest_cidr2025.md`。
+- 本地来源：`docs/research/reference/palimpzest_cidr2025.pdf`，题名 *A Declarative System for Optimizing AI Workloads*，arXiv:2405.14696v2，2024-05-29。
 - 该工作后来以 *Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing* 发表于 CIDR 2025；本笔记的方法、图号、页码和实验结论严格对应附件的 29 页 arXiv 版本，不把正式会议版题名当作附件题名。
 - 本地 PDF SHA256 为 `F853718E273A6330AA4FDE3CE79FBE23BF457D90C18D4D1F009DE2ADACA5DEAF`；已核对首页题名、版本、页数、正文图号和英文 caption。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
@@ -28,13 +28,13 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig1_system_overview.png` | 2142×1188 | `6A6516E1F9C273EC7BE5EE9CE6B89BE9A0B7DC61DE5BCF1887478DFEC77AF1FF` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig2_workload_examples.png` | 2142×2367 | `F867962B5FC7171ED142A9F4D750D1F751F27011A75ECD368FFB59A629520ADD` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig3_legal_discovery_program.png` | 2106×720 | `51ED27C3A0C05832F9F960339BBB5EA79EE11E430D7E49B70647E254A64E47A9` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig4_code_and_relational_algebra.png` | 2124×1359 | `495D448B9823BAD3F64018FF12B4E03BB051EFCEC3080627D33541E49060A72D` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig5_real_estate_program.png` | 2358×1359 | `0D49CB915C7791912850D5951E2996E9DD592FB72FE0720512F9E5BA92FF954E` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig6_plan_tradeoff_frontiers.png` | 2142×1157 | `EF4A10095FD26088A8583DB369DEF35D56E1B0C7B5C66DB8ACC5DCF026742732` |
-| `research/精读文献笔记/palimpzest_cidr2025/figures/fig7_policy_selected_plans.png` | 2142×1359 | `3DAEC227C0AB7573D7C4E0F6A7FE6D750286B8703D6388134468B1F2B2C96F32` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig1_system_overview.png` | 2142×1188 | `6A6516E1F9C273EC7BE5EE9CE6B89BE9A0B7DC61DE5BCF1887478DFEC77AF1FF` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig2_workload_examples.png` | 2142×2367 | `F867962B5FC7171ED142A9F4D750D1F751F27011A75ECD368FFB59A629520ADD` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig3_legal_discovery_program.png` | 2106×720 | `51ED27C3A0C05832F9F960339BBB5EA79EE11E430D7E49B70647E254A64E47A9` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig4_code_and_relational_algebra.png` | 2124×1359 | `495D448B9823BAD3F64018FF12B4E03BB051EFCEC3080627D33541E49060A72D` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig5_real_estate_program.png` | 2358×1359 | `0D49CB915C7791912850D5951E2996E9DD592FB72FE0720512F9E5BA92FF954E` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig6_plan_tradeoff_frontiers.png` | 2142×1157 | `EF4A10095FD26088A8583DB369DEF35D56E1B0C7B5C66DB8ACC5DCF026742732` |
+| `docs/research/精读文献笔记/palimpzest_cidr2025/figures/fig7_policy_selected_plans.png` | 2142×1359 | `3DAEC227C0AB7573D7C4E0F6A7FE6D750286B8703D6388134468B1F2B2C96F32` |
 
 提取方式：使用 PyMuPDF 对相应 PDF 页面作 4.5× raster render，再按 Figure 与英文 caption 的完整边界裁剪。没有重绘、锐化、替换颜色、修改坐标、删除图内元素或拼接不同页面。
 

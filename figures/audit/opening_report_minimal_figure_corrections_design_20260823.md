@@ -93,8 +93,8 @@
 - `figures/opening_figure_set/editable_drawio/` 中图 2、图 3、图 5 的编辑源；
 - `figures/opening_figure_set/main_svg/` 与 `main_png/` 中对应副本；
 - 图 6 的 `figures/data/report_main/` PNG、SVG 和绘图脚本；
-- `opening/report/figures/` 中四张报告专用 PNG；
-- `opening/report/opening_report.md` 的图题和读图说明；
+- `docs/archive/opening/report/figures/` 中四张报告专用 PNG；
+- `docs/archive/opening/report/opening_report.md` 的图题和读图说明；
 - `figures/README.md`、图集清单、报告图片清单和相关审查记录。
 
 ## 8. 验证方法

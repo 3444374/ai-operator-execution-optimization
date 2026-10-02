@@ -11,7 +11,7 @@
 > 4. **证据**：§8 原引用的 `formal.log`/`sweep.log` 未提交（.gitignore），但结构化 raw（`gate.json` + 每片 `summary.json` + `proj_formal_*.csv`）齐全，三臂可完全独立复算（本注订正数字即来自该 raw，非日志）。LB RR 附录（`ADDENDUM_lbrr_collapse.md` 的 72480 tok/s）因 `collapse.log`/`lbrr64_*`/`ps8_collapse` 未提交，**当前不可独立审计**，见该附录订正。
 > 5. **vLLM effective config（诚实）**：本报告/§5 的 `max_num_seqs=256 / max_num_batched_tokens=8192` 是 **adapter 声明值**；vLLM 启动 cmdline 无这些 flag（仅 `--model/--max-model-len 8192/--gpu-memory-utilization 0.90`），实际用 vllm 0.25.1 **默认值**（≠ 声明）；`enable_prefix_caching` 默认 ON（= 声明，巧合）。数据有效（c32<C_total=64<默认 max_num_seqs），但 service config 字段是声明非 effective。
 >
-> 更可复现的同一结论（含 committed 聚合器 `multicard_rich_aggregate.py`）见 [`multicard_rich_metric_2048_20260806/`](../multicard_rich_metric_2048_20260806/README.md)。本报告订正后保留作历史 formal 记录。
+> 更可复现的同一结论（含 committed 聚合器 `multicard_rich_aggregate.py`）见 [`multicard_rich_metric_2048_20260806/`](../text_service_pressure_diagnostic_2048_20260806/README.md)。本报告订正后保留作历史 formal 记录。
 >
 > **范围**：bounded_http 天花板 + **duckdb_ai harness_pre_split_diagnostic** + project_static 2-endpoint，饱和配置 1w+3f 的 vLLM service tokens/s 对比。**duckdb 臂是 harness 诊断，非 DuckDB 产品原生排名**。不是完整矩阵（缺 lb_rr / direct_static_50_50 / project_smart / framework-native，见 §7）。
 

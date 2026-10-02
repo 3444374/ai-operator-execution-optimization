@@ -179,7 +179,7 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
 非阻塞 microbenchmark（可与主路径并行，**不是 SQuAD 的前置门禁**）：
 
 - 句子计数 capability：64 行 screening 的对话外观察尚未归档；2048 行门禁未完成（归档证据目前只到
-  `feasibility/results/duckdb_ai_semantic_gate_20260805/`）。因其 accuracy 在 ShareGPT 对话语料上是噪声，
+  `experiments/results/diagnostics/duckdb_ai_semantic_gate_20260805/`）。因其 accuracy 在 ShareGPT 对话语料上是噪声，
   只作链路开销 microbenchmark；想补完时再补，不阻塞 SQuAD 主路径。
 
 可选扩展：

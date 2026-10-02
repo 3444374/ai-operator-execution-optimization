@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/ray_data_streaming_batch_nsdi2027/ray_data_streaming_batch_nsdi2027.md`。
+- 使用位置：`docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/ray_data_streaming_batch_nsdi2027.md`。
 - 权威来源：用户本地文献目录中的 `ray_data_streaming_batch_nsdi2027.pdf`，题名 *The Streaming Batch Model for Efficient and Fault-Tolerant Heterogeneous Execution*，arXiv:2501.12407v5（2025-10-22）。PDF 首页没有正式 venue，审计不根据文件名把它写成 NSDI 2027。
 - PDF：19 页，SHA256 `2F720B1A040C89DC1E5469DF3A1C77D8ECC8A2C143E7E7B5876F13EA11AE4FD0`；已通过 `%PDF` 签名、题名和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
 ## 选择结果
@@ -27,12 +27,12 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig2_execution_model_comparison.png` | 2382×664 | `5C3B38B75F5D7984878CECD46782AD9ACF10B71080AB74A885F8BC41E93A4F5C` |
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig4_dynamic_repartition.png` | 1063×573 | `F48FBC2CCE28B470629AD1C33E226DAD2ECFABF5E723269310FEF3DEDDDEF77E` |
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig5_memory_aware_scheduling.png` | 1084×460 | `5749BC5B0C6BB42AB746BD4128CD6D2032FBD719738A3EB3FCC91B3B432E1DF9` |
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig6_ray_data_architecture.png` | 1084×501 | `F67782AEA5EB84F93C44954293D651F13BF1FE4C8B76E1F41E450F4767E6873D` |
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig7_end_to_end_evaluation.png` | 2402×746 | `20E45E4CF8EB78E820CD1133BD0FBC4D7BC62B9F188C61C91B4BF1B64F4BE8BC` |
-| `research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig9_memory_aware_pipelining_ablation.png` | 1206×541 | `D442BA65506678FC2D376BEFAE32CC00B1EFB6DB7FB0FAF5208015E41498DA6C` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig2_execution_model_comparison.png` | 2382×664 | `5C3B38B75F5D7984878CECD46782AD9ACF10B71080AB74A885F8BC41E93A4F5C` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig4_dynamic_repartition.png` | 1063×573 | `F48FBC2CCE28B470629AD1C33E226DAD2ECFABF5E723269310FEF3DEDDDEF77E` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig5_memory_aware_scheduling.png` | 1084×460 | `5749BC5B0C6BB42AB746BD4128CD6D2032FBD719738A3EB3FCC91B3B432E1DF9` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig6_ray_data_architecture.png` | 1084×501 | `F67782AEA5EB84F93C44954293D651F13BF1FE4C8B76E1F41E450F4767E6873D` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig7_end_to_end_evaluation.png` | 2402×746 | `20E45E4CF8EB78E820CD1133BD0FBC4D7BC62B9F188C61C91B4BF1B64F4BE8BC` |
+| `docs/research/精读文献笔记/ray_data_streaming_batch_nsdi2027/figures/fig9_memory_aware_pipelining_ablation.png` | 1206×541 | `D442BA65506678FC2D376BEFAE32CC00B1EFB6DB7FB0FAF5208015E41498DA6C` |
 
 提取方式：使用 `pypdfium2` 对 PDF 对应页面作 4.5× raster render，再按原图图形边界裁剪。没有重绘、锐化、替换颜色、修改坐标或删除图内元素；论文英文 caption 不进入裁剪件，由精读正文的中文 alt text 和来源行承担说明。
 

@@ -440,10 +440,10 @@ def figure_motivation_work_state_split() -> None:
 def _organization_data() -> tuple[pd.DataFrame, list[str], list[str]]:
     paths = {
         "Low KV pressure": ROOT
-        / "experiments/results/rc1_data_organization/"
+        / "experiments/results/data_organization_comparison/"
         "dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv",
         "High KV pressure": ROOT
-        / "experiments/results/rc1_data_organization/"
+        / "experiments/results/data_organization_comparison/"
         "dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv",
     }
     frames = []
@@ -673,7 +673,7 @@ def _arm_point_panel(
 def _native_single_job_runs() -> pd.DataFrame:
     runs = pd.read_csv(
         ROOT
-        / "experiments/results/opening_text_native_single_job_formal_20260808/"
+        / "experiments/results/text_native_single_job_comparison_20260808/"
         "formal_runs.csv"
     )
     if set(runs["arm"]) != set(TEXT_ARM_ORDER) or len(runs) != 12:
@@ -934,13 +934,13 @@ def figure_text_baseline_evidence_map() -> None:
 
     database = pd.read_csv(
         ROOT
-        / "experiments/results/opening_database_e2e_text_refeed_20260808/summary/"
+        / "experiments/results/text_db_e2e_duckdb_static_comparison_20260808/summary/"
         "formal_summary.csv"
     )
     squad = database.loc[database["workload"].eq("squad_uniform")].set_index("arm")
     native = pd.read_csv(
         ROOT
-        / "experiments/results/opening_text_native_single_job_formal_20260808/"
+        / "experiments/results/text_native_single_job_comparison_20260808/"
         "formal_summary.csv"
     ).set_index("arm")
 
@@ -1029,7 +1029,7 @@ def figure_text_baseline_evidence_map() -> None:
 def _project_job_scenario_runs() -> tuple[pd.DataFrame, list[tuple[str, str]]]:
     runs = pd.read_csv(
         ROOT
-        / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
+        / "experiments/results/text_four_job_interference_20260809/data/combined/"
         "job_formal_runs.csv"
     )
     project = runs.loc[runs["system"].eq("project")].copy()
@@ -1056,7 +1056,7 @@ def figure_multijob_interference_tradeoff() -> None:
 
     group_runs = pd.read_csv(
         ROOT
-        / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
+        / "experiments/results/text_four_job_interference_20260809/data/combined/"
         "group_formal_runs.csv"
     )
     group_runs = group_runs.loc[
@@ -1067,7 +1067,7 @@ def figure_multijob_interference_tradeoff() -> None:
     ].copy()
     fairness = pd.read_csv(
         ROOT
-        / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
+        / "experiments/results/text_four_job_interference_20260809/data/combined/"
         "isolated_normalized_fairness.csv"
     )
     # Panel c compares the two policies on one shared basis: full-pool isolated
@@ -1080,7 +1080,7 @@ def figure_multijob_interference_tradeoff() -> None:
     ].copy()
     long_spread = pd.read_csv(
         ROOT
-        / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
+        / "experiments/results/text_four_job_interference_20260809/data/combined/"
         "long_job_spread.csv"
     )
     long_spread = long_spread.loc[
@@ -1313,7 +1313,7 @@ def figure_native_fourjob_normalized_impact() -> None:
 
     runs = pd.read_csv(
         ROOT
-        / "experiments/results/opening_fourjob_interference_20260809/data/combined/"
+        / "experiments/results/text_four_job_interference_20260809/data/combined/"
         "job_formal_runs.csv"
     )
     systems = ["daft_native", "daft_ray", "ray_data_http"]
@@ -1426,7 +1426,7 @@ def figure_image_stage_evidence() -> None:
 
     profile = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_clip_preprocess_variants_20260801/"
+        / "experiments/results/motivation/gpu/image_clip_preprocess_variants_20260801/"
         "raw_repeats.csv"
     )
     fast = profile.loc[
@@ -1438,12 +1438,12 @@ def figure_image_stage_evidence() -> None:
     )
     transfer = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_clip_transfer_ceiling_20260803/raw.csv"
+        / "experiments/results/motivation/gpu/image_clip_transfer_ceiling_20260803/raw.csv"
     )
     transfer = transfer.loc[transfer["batch_size"].eq(64)].copy()
     host = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_host_path_screening_20260802/summary.csv"
+        / "experiments/results/motivation/gpu/image_host_path_screening_20260802/summary.csv"
     )
     active = host.loc[host["experiment"].eq("active_batch_screen")].sort_values(
         "max_active_batches"
@@ -1623,7 +1623,7 @@ def figure_image_stage_evidence_split() -> None:
 
     profile = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_clip_preprocess_variants_20260801/"
+        / "experiments/results/motivation/gpu/image_clip_preprocess_variants_20260801/"
         "raw_repeats.csv"
     )
     fast = profile.loc[
@@ -1696,12 +1696,12 @@ def figure_image_stage_evidence_split() -> None:
 
     transfer = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_clip_transfer_ceiling_20260803/raw.csv"
+        / "experiments/results/motivation/gpu/image_clip_transfer_ceiling_20260803/raw.csv"
     )
     transfer = transfer.loc[transfer["batch_size"].eq(64)].copy()
     host = pd.read_csv(
         ROOT
-        / "motivation/results/gpu/image_host_path_screening_20260802/summary.csv"
+        / "experiments/results/motivation/gpu/image_host_path_screening_20260802/summary.csv"
     )
     active = host.loc[host["experiment"].eq("active_batch_screen")].sort_values(
         "max_active_batches"
@@ -1980,10 +1980,10 @@ def figure_image_baseline_evidence_map() -> None:
 def figure_image_fourjob_normalized_impact() -> None:
     """Show within-path image four-job impact without cross-system ranking."""
 
-    native_root = ROOT / "experiments/results/opening_image_native_fourjob_formal_20260810"
+    native_root = ROOT / "experiments/results/image_native_four_job_observation_20260810"
     project_root = (
         ROOT
-        / "experiments/results/opening_image_project_fourjob_observe_only_formal_20260810"
+        / "experiments/results/image_project_four_job_observation_20260810"
     )
     native_audit = json.loads((native_root / "data/audit.json").read_text())
     project_audit = json.loads((project_root / "data/audit.json").read_text())

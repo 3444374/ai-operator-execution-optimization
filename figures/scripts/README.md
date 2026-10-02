@@ -9,7 +9,7 @@ python3 figures/scripts/generate_opening_target_architecture_status.py
 ```
 
 脚本同时生成 `figures/architecture/opening_target_architecture_status.{png,svg}` 和
-`opening/report/figures/target_architecture_status.png`。图中上层是计划实现的 PostgreSQL
+`docs/archive/opening/report/figures/target_architecture_status.png`。图中上层是计划实现的 PostgreSQL
 planner-visible AI 语义算子入口，下层是当前已运行的外部实验执行路径；实线、虚线和文字标签共同表示状态。
 图内不写具体语义运行时名称；`fig05_system_architecture.png` 是同一 PNG 的历史文件名。
 该资产当前只保留为历史 / 内部候选，报告不引用；它不包含实验数据，也不能作为策略性能证据。完整审计见
@@ -70,8 +70,8 @@ python figures\scripts\generate_gpu_experiment_charts.py
 输入数据：
 
 ```text
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv
-motivation/results/gpu/ai_embed_multi_endpoint_20260712.csv
+experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv
+experiments/results/motivation/gpu/ai_embed_multi_endpoint_20260712.csv
 ```
 
 默认输出目录：
@@ -131,7 +131,7 @@ python figures\scripts\make_chain_breakdown_figures.py
 输入数据：
 
 ```text
-motivation/results/gpu/ai_embed_chain_breakdown_20260712.csv
+experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.csv
 ```
 
 默认输出目录：
@@ -151,7 +151,7 @@ python figures\scripts\generate_pgai_integrated_gpu_rerun_charts.py
 Input:
 
 ```text
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+experiments/results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 
 Outputs:
@@ -178,7 +178,7 @@ python figures\scripts\generate_pgvector_writeback_chart.py
 Input:
 
 ```text
-motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv
+experiments/results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv
 ```
 
 Outputs:

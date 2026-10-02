@@ -2,7 +2,7 @@
 
 更新：2026-09-30。状态：新版主表完整清单已完成68条查询、41,024次请求，调参选点与1024行独立评价通过。
 评价时间中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；质量与所有重复值并列报告。
-[完整结果、前次失败及诊断](../../results/postgresql/text_map_main_real_20260930/README.md)分别保留；旧异常未复现，根因仍未确定。
+[完整结果、前次失败及诊断](../../results/postgresql/text_map_four_path_comparison_20260930/README.md)分别保留；旧异常未复现，根因仍未确定。
 本轮不宣称容量平台或质量等价；后续工作以[当前总纲](../../../PROJECT_OUTLINE.md)为准。
 本文件保存已完成比较的任务、配置选择和执行顺序；方法实验继续由
 [数据组织计划](../data_organization_batching.md)负责，长期 baseline 身份与指标见

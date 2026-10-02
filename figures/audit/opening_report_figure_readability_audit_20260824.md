@@ -3,7 +3,7 @@
 ## 1. 范围与结论
 
 本轮处理报告图 1、图 6、图 9、图 10、图 13、图 14，并同步检查
-`opening/report/opening_report.md`；未修改 PPT。结论如下：
+`docs/archive/opening/report/opening_report.md`；未修改 PPT。结论如下：
 
 - 图 1 的对象改为“AI 语义算子的外部物理执行”，不再把外部物理链路称为“外部 AI 算子”，图内不出现具体语义运行时名称。
 - 图 6 将 `running`、`waiting`、`formal`、`graph→gather` 等内部措辞改为自然中文，数据、点位与坐标范围不变。
@@ -16,12 +16,12 @@
 
 | 报告图号 | 报告 PNG | 权威可编辑源 | 生成 / 导出方式 | 本轮处理 |
 |---:|---|---|---|---|
-| 图 1 | `opening/report/figures/fig01_external_ai_operator_assumptions.png` | `figures/architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator.drawio` 与同名 SVG | Draw.io 为结构源；本轮同步修改 SVG，并用本机无头 Chrome 从 SVG 重导 1600×900 PNG | 改术语并同步开题图集副本 |
-| 图 6 | `opening/report/figures/fig07c_state_fingerprint.png` | `figures/data/report_main/opening_native_single_job_state_fingerprint.{png,svg}` | `figures/scripts/generate_opening_story_figures_20260808.py --figures F` | 改轴名与底部说明，不改数据 |
-| 图 9 | `opening/report/figures/fig04_state_aware_scheduling.png` | `figures/architecture/editable/04_state_aware_scheduling.{drawio,svg,png}` | Draw.io / SVG 可编辑源；审计见同目录 `04_state_aware_scheduling.audit.md`；无头 Chrome 重导 PNG | 可见框标题、说明和状态字段中文化 |
-| 图 10 | `opening/report/figures/fig06_text_baseline_boundaries.png` | `figures/scripts/generate_opening_story_figures_20260808.py` 中 `figure_text_baseline_evidence_map` | `--figures T` 生成 `opening_text_baseline_evidence_map.{png,svg,pdf}` | 收紧左图比较说明，不改数据 |
-| 图 13 | `opening/report/figures/fig14a_cost_prediction_time.png`、`fig14b_cost_ranking_decision_loss.png` | `figures/scripts/generate_opening_story_figures_20260808.py` 中 `figure_cost_decision_v4` | `--figures E` 生成原合成图以及两张拆分图 | 原合成图备用，正文使用图 13a / 13b |
-| 图 14 | `opening/report/figures/fig12_image_baseline_boundaries.png` | 同一脚本中的 `figure_image_baseline_evidence_map` | `--figures I` 生成 `opening_image_baseline_evidence_map.{png,svg}` | 只改可见文字，不改数据 |
+| 图 1 | `docs/archive/opening/report/figures/fig01_external_ai_operator_assumptions.png` | `figures/architecture/editable/opening_background_20260812/07_traditional_vs_external_ai_operator.drawio` 与同名 SVG | Draw.io 为结构源；本轮同步修改 SVG，并用本机无头 Chrome 从 SVG 重导 1600×900 PNG | 改术语并同步开题图集副本 |
+| 图 6 | `docs/archive/opening/report/figures/fig07c_state_fingerprint.png` | `figures/data/report_main/opening_native_single_job_state_fingerprint.{png,svg}` | `figures/scripts/generate_opening_story_figures_20260808.py --figures F` | 改轴名与底部说明，不改数据 |
+| 图 9 | `docs/archive/opening/report/figures/fig04_state_aware_scheduling.png` | `figures/architecture/editable/04_state_aware_scheduling.{drawio,svg,png}` | Draw.io / SVG 可编辑源；审计见同目录 `04_state_aware_scheduling.audit.md`；无头 Chrome 重导 PNG | 可见框标题、说明和状态字段中文化 |
+| 图 10 | `docs/archive/opening/report/figures/fig06_text_baseline_boundaries.png` | `figures/scripts/generate_opening_story_figures_20260808.py` 中 `figure_text_baseline_evidence_map` | `--figures T` 生成 `opening_text_baseline_evidence_map.{png,svg,pdf}` | 收紧左图比较说明，不改数据 |
+| 图 13 | `docs/archive/opening/report/figures/fig14a_cost_prediction_time.png`、`fig14b_cost_ranking_decision_loss.png` | `figures/scripts/generate_opening_story_figures_20260808.py` 中 `figure_cost_decision_v4` | `--figures E` 生成原合成图以及两张拆分图 | 原合成图备用，正文使用图 13a / 13b |
+| 图 14 | `docs/archive/opening/report/figures/fig12_image_baseline_boundaries.png` | 同一脚本中的 `figure_image_baseline_evidence_map` | `--figures I` 生成 `opening_image_baseline_evidence_map.{png,svg}` | 只改可见文字，不改数据 |
 
 `opening_target_architecture_status` 与 `fig05_system_architecture.png` 只保留为历史 / 内部候选资产，当前报告不引用，也不纳入本轮报告图输出检查。
 
@@ -74,7 +74,7 @@
 ## 6. 2026-08-25 图 2 报告版清理
 
 - 删除图 2 右上角“开题第 5 页｜研究问题”页码残留；三项跨层能力、左右两侧已有能力、箭头、底部研究问题和全部版式尺寸均保持不变。
-- 同步修改 `figures/architecture/editable/01_research_gap.drawio` 与 `01_research_gap.svg`，并重新导出 `opening/report/figures/fig02_ai_data_execution_gap.png`。报告 PNG 保持 1600×900。
+- 同步修改 `figures/architecture/editable/01_research_gap.drawio` 与 `01_research_gap.svg`，并重新导出 `docs/archive/opening/report/figures/fig02_ai_data_execution_gap.png`。报告 PNG 保持 1600×900。
 - Draw.io 与 SVG 均通过 XML 解析；使用原始分辨率视觉检查确认页码残留已删除，标题、框内文字、箭头和底部研究问题均无裁切或遮挡。
 - SHA-256：SVG `83ae609e05cc1587475be9666061723850b9ca7a91e41f6d21dd4d681b4b7bf7`；Draw.io `5c01be6e11b0366428cc873944bf144723b3cbd945263b786ff4a2cc9039eed6`；报告 PNG `2502122a880cf0fdf9b2cca7aa9d9b764487c448ebaf1dcd0fb878bd9a3770e2`。
 - 图 7 与图 15 按用户要求未修改。

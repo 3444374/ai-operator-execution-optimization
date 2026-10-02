@@ -22,7 +22,7 @@ prefix caching关闭、chunked prefill开启，generation config为vLLM；实际
 `c169ff3a7fffb67f4a126d703f61147b1e3efaded15ac4dc6711ed6dba7814f4`、
 `4e4d7872d239000d4cc631be3c91f711f5a7febbdb5c13c3801d5543fdb27250`。
 输入重新校验并安装独立临时PG表；1024行属于固定配置复测，不是新的未使用评价集。
-参数沿用[旧四路径选点](../text_map_main_real_20260930/README.md)，不按本轮结果重新选择。
+参数沿用[旧四路径选点](../text_map_four_path_comparison_20260930/README.md)，不按本轮结果重新选择。
 
 模型、PG、Ray及worker服务在查询前就绪，每查询新driver/gateway与执行图。
 共享Ray共8个逻辑CPU、256MiB对象存储、0GPU；常驻SemLoom actor保留1个CPU名额，baseline期间空闲，

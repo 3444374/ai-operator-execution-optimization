@@ -4,8 +4,8 @@
 
 ## 范围与来源
 
-- 使用位置：`research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`。
-- 来源文件：`research/reference/kalypso_arxiv2026.pdf`，题名 *Kalypso: Relational LLM Serving*，arXiv:2607.23815v2，2026-08-14。
+- 使用位置：`docs/research/精读文献笔记/kalypso_arxiv2026/kalypso_arxiv2026.md`。
+- 来源文件：`docs/research/reference/kalypso_arxiv2026.pdf`，题名 *Kalypso: Relational LLM Serving*，arXiv:2607.23815v2，2026-08-14。
 - 本地 PDF 共 14 页，SHA256 `C9A8BCEBAF43C771F3C083A77DE523D09AE95AAA815CDE06D174F347859232A7`；首页与 PDF metadata 的题名、作者、版本和日期已经核对。该版本未标注正式会议或期刊，继续按 arXiv 核心补充管理。
 - 使用 Poppler 以 324 DPI 渲染原页，再按 Figure 边界裁切并保留原论文 caption；没有重绘、改色、锐化或修改图内数值。
 - PNG 仅服务 Markdown 精读讲解，不是项目实验结果。
@@ -46,7 +46,7 @@
 | `fig11_virtual_vs_explicit_pinning.png` | 1170×855 | `678058069E774AFCB404FC419A9502919476E343D13A21987AAFB6EF5BA44EBA` |
 | `fig12_token_budget_sensitivity.png` | 1147×801 | `247067A1A8217CF0624E719FC53FE7C721AEBFC9D981ED278D9F71228CF95280` |
 
-所有输出位于 `research/精读文献笔记/kalypso_arxiv2026/figures/`。正文有 12 个本地图片引用，逐一对应同名 PNG。
+所有输出位于 `docs/research/精读文献笔记/kalypso_arxiv2026/figures/`。正文有 12 个本地图片引用，逐一对应同名 PNG。
 
 ## 视觉与论证检查
 

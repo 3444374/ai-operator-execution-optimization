@@ -80,7 +80,7 @@ foreground/background interference, queue balance, and prefix locality.
 
 做图、改图、迁移图或审查图表前，先读 `figures/AGENTS.md`。本文件只维护当前图资产入口、正式图清单和保留规则。
 
-本目录是项目级图资产库，供 learning 材料、开题报告、开题 PPT、中期汇报和毕业论文共同复用。图不再分散在 `opening/assets/charts/` 和 `opening/assets/figures/` 中；后续新增图也优先放在本目录下，并按用途分子目录。
+本目录是项目级图资产库，供 learning 材料、开题报告、开题 PPT、中期汇报和毕业论文共同复用。图不再分散在 `docs/archive/opening/assets/charts/` 和 `docs/archive/opening/assets/figures/` 中；后续新增图也优先放在本目录下，并按用途分子目录。
 
 ## 2026-08-08 开题叙事图（历史入口）
 
@@ -96,9 +96,9 @@ foreground/background interference, queue balance, and prefix locality.
 `data/report_main/`，图集只作为稳定选图入口。
 
 2026-08-20 的开题报告 Markdown 从该图集中选择 11 张图，复制到
-`opening/report/figures/` 以保证报告路径独立、后续转写 Word 方便。报告正文没有继续插入文本
+`docs/archive/opening/report/figures/` 以保证报告路径独立、后续转写 Word 方便。报告正文没有继续插入文本
 原生多作业、图像 baseline 和图像多作业三张配套图，以控制第 4.2 节图量；选择与图号映射见
-`opening/report/figures/README.md`。副本不构成新的事实源。
+`docs/archive/opening/report/figures/README.md`。副本不构成新的事实源。
 
 第一性原理复审后，正文不再从“已有模块”倒推故事，而是先用动机证据分别导出
 WorkDescriptor、运行时感知和有界动态提交，再展示组织、图像与代价估计的先验证据：
@@ -297,29 +297,29 @@ figures/data/backup/
 
 ```text
 figures/
-motivation/results/
-feasibility/results/
+experiments/results/motivation/
+experiments/results/diagnostics/
 ```
 
-其中 `figures/` 保留最终图、绘图脚本和图表审计；`motivation/results/` 与 `feasibility/results/` 保留原始 CSV / 结果报告。生成过程中的中间 PNG / SVG 不长期保留。
+其中 `figures/` 保留最终图、绘图脚本和图表审计；`experiments/results/motivation/` 与 `experiments/results/diagnostics/` 保留原始 CSV / 结果报告。生成过程中的中间 PNG / SVG 不长期保留。
 
 可以删除或不再使用的旧目录包括：
 
 ```text
-opening/assets/charts/python/
-opening/assets/charts/all_meaningful/
-opening/assets/charts/gpu_embed_*.png
-opening/assets/charts/gpu_embed_*.svg
-opening/assets/generate_echarts_experiment_charts.js
-opening/assets/charts/selected/
-opening/assets/figures/system_architecture_ai_data_execution.*
-learning/figures/ 中与本目录重复的正式图副本
+docs/archive/opening/assets/charts/python/
+docs/archive/opening/assets/charts/all_meaningful/
+docs/archive/opening/assets/charts/gpu_embed_*.png
+docs/archive/opening/assets/charts/gpu_embed_*.svg
+docs/archive/opening/assets/generate_echarts_experiment_charts.js
+docs/archive/opening/assets/charts/selected/
+docs/archive/opening/assets/figures/system_architecture_ai_data_execution.*
+PROJECT_INDEX.md#内容与文档职责figures/ 中与本目录重复的正式图副本
 ```
 
 删除前需要确认：
 
-1. `opening/report/opening_report.md` 不再引用旧图路径。
-2. `opening/feishu/opening_report_wiki.md` 不再引用旧图路径。
+1. `docs/archive/opening/report/opening_report.md` 不再引用旧图路径。
+2. `docs/archive/opening/feishu/opening_report_wiki.md` 不再引用旧图路径。
 3. learning、中期汇报、毕业论文草稿不再引用旧图路径。
 4. 开题 PPT 源稿和 PPTX 不再引用旧图路径。
 5. 线上飞书文档中的图片已经重新上传为 `figures/data/report_main/` 对应版本。
@@ -328,7 +328,7 @@ learning/figures/ 中与本目录重复的正式图副本
 ## 2026-07-14 pgai-integrated GPU rerun figures
 
 Latest report-main figures generated from
-`motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv`:
+`experiments/results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv`:
 
 ```text
 figures/data/report_main/06_gpu_pgai_rerun_granularity_20260714.png
@@ -351,7 +351,7 @@ opening report needs the latest local pgai-integrated GPU-backed rerun.
 ## 2026-07-14 pgvector(384) writeback figure
 
 Latest sink-mode comparison generated from
-`motivation/results/gpu/ai_embed_pgvector_writeback_20260714.csv`:
+`experiments/results/motivation/gpu/ai_embed_pgvector_writeback_20260714.csv`:
 
 ```text
 figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png
@@ -388,7 +388,7 @@ bounded in-flight control, endpoint routing, writeback guardrails, and the
 Trigger -> Action -> Guardrail rule table.
 
 `local_reference_figure_reading_notes.md` records figure-design lessons from
-the locally downloaded PDF subset under `research/reference/` and
+the locally downloaded PDF subset under `docs/research/reference/` and
 connects them to the current runtime control-loop figure.
 
 The generated control-loop figure is:
@@ -510,27 +510,27 @@ than larger background inflight. Tuned adaptive does downshift, but it is not
 yet better than static `K_max=8`.
 ## Figure asset updates
 
-- 2026-08-28: 为 IMLane 精读笔记从正式 PVLDB 2026 论文裁剪正文全部 Figure 1–15，以 14 个 PNG 输出到 `research/精读文献笔记/imlane_pvldb2026/figures/`；Figures 9–10 保持原论文同排关系并使用联合裁剪件。配图覆盖 Agent 工作流、物理计划、GIL 竞争、调度耦合、进程并行、增量负载不均、异构资源空闲、Lane 调度、batch-wise 异步执行、系统架构以及端到端时间、利用率、资源扩展和外部系统对比。Listing、Algorithm 与 Table 已在正文转写，不重复截图；版本、页码、SHA256、读图方法和逐图视觉检查见 `audit/imlane_deep_reading_figures_audit_20260828.md`。
-- 2026-08-27: 为 Kalypso 精读笔记从 arXiv:2607.23815v2 PDF 裁剪正文全部 Figure 1–12，输出到 `research/精读文献笔记/kalypso_arxiv2026/figures/`。配图覆盖 filter→map prompt 共享、KV-cache 容量动机、系统架构、query plan 到 stage/task 的展开、depth-first starvation、breadth-first saturation，以及端到端主结果、显存变化、pipelining、stage ratio、pinning 和 token-bound 消融。Table 1–2 与 Algorithm 1 已在正文转写，不重复截图；版本、页码、SHA256、Figure 10 图文不一致和逐图视觉检查见 `audit/kalypso_deep_reading_figures_audit_20260827.md`。
+- 2026-08-28: 为 IMLane 精读笔记从正式 PVLDB 2026 论文裁剪正文全部 Figure 1–15，以 14 个 PNG 输出到 `docs/research/精读文献笔记/imlane_pvldb2026/figures/`；Figures 9–10 保持原论文同排关系并使用联合裁剪件。配图覆盖 Agent 工作流、物理计划、GIL 竞争、调度耦合、进程并行、增量负载不均、异构资源空闲、Lane 调度、batch-wise 异步执行、系统架构以及端到端时间、利用率、资源扩展和外部系统对比。Listing、Algorithm 与 Table 已在正文转写，不重复截图；版本、页码、SHA256、读图方法和逐图视觉检查见 `audit/imlane_deep_reading_figures_audit_20260828.md`。
+- 2026-08-27: 为 Kalypso 精读笔记从 arXiv:2607.23815v2 PDF 裁剪正文全部 Figure 1–12，输出到 `docs/research/精读文献笔记/kalypso_arxiv2026/figures/`。配图覆盖 filter→map prompt 共享、KV-cache 容量动机、系统架构、query plan 到 stage/task 的展开、depth-first starvation、breadth-first saturation，以及端到端主结果、显存变化、pipelining、stage ratio、pinning 和 token-bound 消融。Table 1–2 与 Algorithm 1 已在正文转写，不重复截图；版本、页码、SHA256、Figure 10 图文不一致和逐图视觉检查见 `audit/kalypso_deep_reading_figures_audit_20260827.md`。
 - 2026-08-25: 开题报告图 2 删除右上角“开题第 5 页｜研究问题”幻灯片页码残留，保留三项跨层能力、左右两侧已有能力和底部研究问题的原有内容与布局；同步 `architecture/editable/01_research_gap.{drawio,svg}` 和报告 1600×900 PNG。图 7、图 15 按用户要求保持不变；视觉与源文件检查补记于 `audit/opening_report_figure_readability_audit_20260824.md`。
-- 2026-08-25: 为 Parrot 精读笔记从正式 OSDI 2024 proceedings PDF 裁剪正文全部 Figure 1–19，输出到 `research/精读文献笔记/parrot_osdi2024/figures/`；配图覆盖四类应用工作流、Semantic Variable 依赖、连续请求开销、应用级调度动机、prompt 结构、系统架构、API 与跨请求分析、目标推导、baseline capacity 校准，以及 Chain/Map-Reduce/Bing/GPTs/Multi-agent/Mixed workloads 六类结果。Table、Algorithm 与公式已在正文转写，不重复截图；正式版页码、SHA256、读图方法和视觉 QA 见 `audit/parrot_deep_reading_figures_audit_20260825.md`。
-- 2026-08-24: 为 DLPM/D²LPM 精读笔记从用户本地 arXiv:2501.14312v1 PDF 选择并裁剪正文全部 Figure 1–12，输出到 `research/精读文献笔记/dlpm_2025/figures/`；配图覆盖 Qᵘ 吞吐—公平权衡、LPM/VTC/DLPM 冲突、两层问题空间、centralized overhead、D²LPM 架构、workload graph、synthetic 主结果、真实 trace、公平时间序列以及 Qʷ/client-scaling/mixed-workload 消融。Table 与 Algorithm 已由正文转写，不重复截图；原 Word 转换稿中重复的 Figure 1 只保留一份。版本、页码、SHA256、缺失点/Long-Context 反例与视觉 QA 见 `audit/dlpm_deep_reading_figures_audit_20260824.md`。
-- 2026-08-24: 为 IMBridge 精读笔记从用户本地 4 页 SIGMOD-Companion ’24 PDF 选择并裁剪全部 Figure 1–6，输出到 `research/精读文献笔记/IMBridge_sigmod2024/figures/`；配图覆盖 prediction query 用户接口、系统架构、两类 impedance mismatch、函数生命周期改写及两项机制的演示结果。原文没有编号 Table 或 Algorithm，已转写内容不重复截图；本地文件名 `IMBridge_2026.pdf` 不作为发表年份，Figure 5/6 只按 demo 截图解读。版本、页码、SHA256 与视觉 QA 见 `audit/imbridge_deep_reading_figures_audit_20260824.md`。
+- 2026-08-25: 为 Parrot 精读笔记从正式 OSDI 2024 proceedings PDF 裁剪正文全部 Figure 1–19，输出到 `docs/research/精读文献笔记/parrot_osdi2024/figures/`；配图覆盖四类应用工作流、Semantic Variable 依赖、连续请求开销、应用级调度动机、prompt 结构、系统架构、API 与跨请求分析、目标推导、baseline capacity 校准，以及 Chain/Map-Reduce/Bing/GPTs/Multi-agent/Mixed workloads 六类结果。Table、Algorithm 与公式已在正文转写，不重复截图；正式版页码、SHA256、读图方法和视觉 QA 见 `audit/parrot_deep_reading_figures_audit_20260825.md`。
+- 2026-08-24: 为 DLPM/D²LPM 精读笔记从用户本地 arXiv:2501.14312v1 PDF 选择并裁剪正文全部 Figure 1–12，输出到 `docs/research/精读文献笔记/dlpm_2025/figures/`；配图覆盖 Qᵘ 吞吐—公平权衡、LPM/VTC/DLPM 冲突、两层问题空间、centralized overhead、D²LPM 架构、workload graph、synthetic 主结果、真实 trace、公平时间序列以及 Qʷ/client-scaling/mixed-workload 消融。Table 与 Algorithm 已由正文转写，不重复截图；原 Word 转换稿中重复的 Figure 1 只保留一份。版本、页码、SHA256、缺失点/Long-Context 反例与视觉 QA 见 `audit/dlpm_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 IMBridge 精读笔记从用户本地 4 页 SIGMOD-Companion ’24 PDF 选择并裁剪全部 Figure 1–6，输出到 `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/`；配图覆盖 prediction query 用户接口、系统架构、两类 impedance mismatch、函数生命周期改写及两项机制的演示结果。原文没有编号 Table 或 Algorithm，已转写内容不重复截图；本地文件名 `IMBridge_2026.pdf` 不作为发表年份，Figure 5/6 只按 demo 截图解读。版本、页码、SHA256 与视觉 QA 见 `audit/imbridge_deep_reading_figures_audit_20260824.md`。
 - 2026-08-24: 根据开题报告计时口径复核，更新文本路径对照图 `opening_text_baseline_evidence_map`。左图不再写“SQuAD 结果可直接比较”，改为“质量可核对，性能暂不排名”，并说明项目路径的计时还包含指标采集和记录处理。三条柱形、误差线和原始实验数值均未改变；同步权威 PNG/SVG/PDF、开题图集与报告副本，审计见 `audit/opening_report_figure_readability_audit_20260824.md`。
-- 2026-08-24: 为 Sema 精读笔记从本地 arXiv v1 PDF 裁剪正文全部 Figure 1–8，输出到 `research/精读文献笔记/sema_vldb2026/figures/`，并替换笔记中失效的 `/mnt/data/sema_figures/` 临时路径。配图覆盖系统架构、SemaSQL 示例、端到端 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study；Table 1、Algorithm 1 和附录 Figure 9–40 已有等价文字转写，不重复截图。版本边界、页码、SHA256 与视觉 QA 见 `audit/sema_deep_reading_figures_audit_20260824.md`。
-- 2026-08-24: 为 Abacus 精读笔记核对正式 PVLDB 版全部 Figure 1–8。新增目录中的 8 个 PNG 与论文一致，但正文错误引用不存在的 `assets/fig*.png`；现已统一修复为 `research/精读文献笔记/abacus_pvldb2026/figures/`，并在动机、系统流程、Cascades、三个 benchmark 查询计划、prior、约束响应和消融对应段落补充来源与证据边界。图号、页码、SHA256、视觉一致性和低分辨率边界见 `audit/abacus_deep_reading_figures_audit_20260824.md`。
-- 2026-08-24: 为 Palimpzest 精读笔记从本地 2024 arXiv v2 PDF 选择并裁剪全部 Figure 1–7，输出 7 个裁剪件到 `research/精读文献笔记/palimpzest_cidr2025/figures/`；配图覆盖系统流程、三个 SAPP 工作负载、声明式程序、关系代数、多模态依赖、实测 Pareto frontier 和 Policy 选择结果。附录 Figure 8–9 与已转写的 workload/程序信息重复，不加入正文；选图、CIDR 版本边界、页码、SHA256 与视觉 QA 见 `audit/palimpzest_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Sema 精读笔记从本地 arXiv v1 PDF 裁剪正文全部 Figure 1–8，输出到 `docs/research/精读文献笔记/sema_vldb2026/figures/`，并替换笔记中失效的 `/mnt/data/sema_figures/` 临时路径。配图覆盖系统架构、SemaSQL 示例、端到端 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study；Table 1、Algorithm 1 和附录 Figure 9–40 已有等价文字转写，不重复截图。版本边界、页码、SHA256 与视觉 QA 见 `audit/sema_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Abacus 精读笔记核对正式 PVLDB 版全部 Figure 1–8。新增目录中的 8 个 PNG 与论文一致，但正文错误引用不存在的 `assets/fig*.png`；现已统一修复为 `docs/research/精读文献笔记/abacus_pvldb2026/figures/`，并在动机、系统流程、Cascades、三个 benchmark 查询计划、prior、约束响应和消融对应段落补充来源与证据边界。图号、页码、SHA256、视觉一致性和低分辨率边界见 `audit/abacus_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Palimpzest 精读笔记从本地 2024 arXiv v2 PDF 选择并裁剪全部 Figure 1–7，输出 7 个裁剪件到 `docs/research/精读文献笔记/palimpzest_cidr2025/figures/`；配图覆盖系统流程、三个 SAPP 工作负载、声明式程序、关系代数、多模态依赖、实测 Pareto frontier 和 Policy 选择结果。附录 Figure 8–9 与已转写的 workload/程序信息重复，不加入正文；选图、CIDR 版本边界、页码、SHA256 与视觉 QA 见 `audit/palimpzest_deep_reading_figures_audit_20260824.md`。
 - 2026-08-24: 新增实现状态候选图 `architecture/opening_target_architecture_status.{png,svg}` 及语义命名副本。该资产现只保留作历史 / 内部候选，当前报告不引用；生成脚本为 `scripts/generate_opening_target_architecture_status.py`，视觉与主张审计见 `audit/opening_target_architecture_status_audit_20260824.md`。
 - 2026-08-24: 完成开题报告图 1、图 6、图 9、图 13、图 14 的可读性专项。图 1 改为“AI 语义算子的外部物理执行”；图 6 将运行、排队轴名和底部说明自然中文化；图 9 将容量记录、队列选择、模型执行、补位、释放和运行状态框中文化；代价估计原合成图保留为备用并新增图 13a、13b 两张 A4 大字号拆分图，原合成图与图 13b 均删除散点区域内的统计数字 / 摘要框，以图外六项图例解释点型、颜色和参考线；图 14 保留 `baseline` 并自然化未解释简写。完整源映射、尺寸、哈希和视觉检查见 `audit/opening_report_figure_readability_audit_20260824.md`。
-- 2026-08-24: 为 Galois 精读笔记从本地 SIGMOD 2025 论文 PDF 选择并裁剪 Figure 1–4、7–11，输出 9 个裁剪件到 `research/精读文献笔记/galois_sigmod2025/figures/`；配图覆盖 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query complexity 质量/成本、`τ` 校准和 oracle-optimal gap。Figure 5–6 的 prompt syntax 与 Table/Algorithm 已由正文转写，不重复截图；选择理由、页码、SHA256 与视觉 QA 见 `audit/galois_deep_reading_figures_audit_20260824.md`。
+- 2026-08-24: 为 Galois 精读笔记从本地 SIGMOD 2025 论文 PDF 选择并裁剪 Figure 1–4、7–11，输出 9 个裁剪件到 `docs/research/精读文献笔记/galois_sigmod2025/figures/`；配图覆盖 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query complexity 质量/成本、`τ` 校准和 oracle-optimal gap。Figure 5–6 的 prompt syntax 与 Table/Algorithm 已由正文转写，不重复截图；选择理由、页码、SHA256 与视觉 QA 见 `audit/galois_deep_reading_figures_audit_20260824.md`。
 - 2026-08-23: 修正开题报告图 2、图 3、图 5 和图 6，并同步权威源、开题专用图集与报告副本。图 2 用具体动作说明三项跨层能力；图 3 将 WorkDescriptor 基础字段与可选代价估计结果分开；图 5 将代价估计连接数据库优化器 / 多 SQL 调度，将实际运行状态返回提交与路由模块；图 6 只调整公开组名和说明文字，七个实验数值保持不变。完整路径、SHA256 和视觉检查见 `audit/opening_report_minimal_figure_corrections_audit_20260823.md`。
-- 2026-08-22: 为 Relational LLM Queries 精读笔记选择论文全部 Figure 1–6，并输出 6 个裁剪件到 `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`；配图覆盖 fixed/per-row field ordering 动机、GGR 递归拆分、Filter/Projection/RAG 主结果、Multi-LLM/Aggregation、Llama-3-70B 趋势与 accuracy correctness。Algorithm 1 与 Table 1–7 已由正文转写，不重复截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。
-- 2026-08-22: 为 VTC 精读笔记选择 Figure 1、2、3、4、6、8、9、10、12、15、16、19，并输出 12 个裁剪件到 `research/精读文献笔记/vtc_osdi2024/figures/`；配图覆盖 VTC 调度位置、动态 cost/capacity、公平与 work-conservation、backlog 语义、异构 input/output cost、isolation、Counter Lift、真实 trace、bound sensitivity、weighted fairness 和 length prediction。其余重复图、已转录 Table/Algorithm 与 profiled-cost 扩展不重复截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/vtc_deep_reading_figures_audit_20260822.md`。
-- 2026-08-22: 为 BlendServe 精读笔记选择 Figure 1、2、3、4、5、6、7、9、10、11，并输出 10 个裁剪件到 `research/精读文献笔记/blendserve_asplos2026/figures/`；配图覆盖 batching 动机、trace 分布、资源失衡、compute density、完整设计、dual scanner、端到端结果、prefix locality、resource balance 与 simulated sensitivity。Figure 8/12–15、Table 与 Algorithm 已由正文转写或不承担新的独立机制，未重复截图；选择、页码、SHA256 与视觉 QA 见 `audit/blendserve_deep_reading_figures_audit_20260822.md`。
-- 2026-08-22: 为 Ray OSDI 2018 精读笔记选择 Figure 4、5、6、7、8、10、11、12、14，并输出 10 个裁剪件到 `research/精读文献笔记/ray_osdi2018/figures/`；Figure 10a/10b 因对应 GCS reconfiguration 与 flushing 两个独立小节而分开。其余流程图、代码、已转录 microbenchmark 与 building-block 结果不重复截图；选择、页码、SHA256 与视觉 QA 见 `audit/ray_osdi2018_deep_reading_figures_audit_20260822.md`。
+- 2026-08-22: 为 Relational LLM Queries 精读笔记选择论文全部 Figure 1–6，并输出 6 个裁剪件到 `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`；配图覆盖 fixed/per-row field ordering 动机、GGR 递归拆分、Filter/Projection/RAG 主结果、Multi-LLM/Aggregation、Llama-3-70B 趋势与 accuracy correctness。Algorithm 1 与 Table 1–7 已由正文转写，不重复截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。
+- 2026-08-22: 为 VTC 精读笔记选择 Figure 1、2、3、4、6、8、9、10、12、15、16、19，并输出 12 个裁剪件到 `docs/research/精读文献笔记/vtc_osdi2024/figures/`；配图覆盖 VTC 调度位置、动态 cost/capacity、公平与 work-conservation、backlog 语义、异构 input/output cost、isolation、Counter Lift、真实 trace、bound sensitivity、weighted fairness 和 length prediction。其余重复图、已转录 Table/Algorithm 与 profiled-cost 扩展不重复截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/vtc_deep_reading_figures_audit_20260822.md`。
+- 2026-08-22: 为 BlendServe 精读笔记选择 Figure 1、2、3、4、5、6、7、9、10、11，并输出 10 个裁剪件到 `docs/research/精读文献笔记/blendserve_asplos2026/figures/`；配图覆盖 batching 动机、trace 分布、资源失衡、compute density、完整设计、dual scanner、端到端结果、prefix locality、resource balance 与 simulated sensitivity。Figure 8/12–15、Table 与 Algorithm 已由正文转写或不承担新的独立机制，未重复截图；选择、页码、SHA256 与视觉 QA 见 `audit/blendserve_deep_reading_figures_audit_20260822.md`。
+- 2026-08-22: 为 Ray OSDI 2018 精读笔记选择 Figure 4、5、6、7、8、10、11、12、14，并输出 10 个裁剪件到 `docs/research/精读文献笔记/ray_osdi2018/figures/`；Figure 10a/10b 因对应 GCS reconfiguration 与 flushing 两个独立小节而分开。其余流程图、代码、已转录 microbenchmark 与 building-block 结果不重复截图；选择、页码、SHA256 与视觉 QA 见 `audit/ray_osdi2018_deep_reading_figures_audit_20260822.md`。
 - 2026-08-22: 为 Cortex AISQL 精读笔记选择并裁剪 Figure 1、7、9、10、11、12，为 Ray Data Streaming Batch 精读笔记选择并裁剪 Figure 2、4、5、6、7、9；两组分别输出到对应论文目录的 `figures/`。其余背景图、已转录表格/算法和信息重复图不截图；版本、选择理由、页码、SHA256 与视觉 QA 见 `audit/cortex_aisql_deep_reading_figures_audit_20260822.md` 和 `audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md`。
-- 2026-08-22: 为 AYO 精读笔记从用户提供的 ASPLOS 正式版 PDF 选择并裁剪 Figure 1、3、4、5、6、7、8、9、10、11、12，输出位于 `research/精读文献笔记/ayo_asplos2025/figures/`。Figure 2 与 Algorithm/Table 继续使用正文转写；选择、页码、SHA256 与视觉 QA 见 `audit/ayo_deep_reading_figures_audit_20260822.md`。
-- 2026-08-21: 为 LOTUS 精读笔记从正式 PVLDB PDF 选择并裁剪 Figure 1、4、6、7，输出位于 `research/精读文献笔记/lotus_pvldb2025/figures/`。这些是论文原图的 Markdown 显示副本，不进入项目实验图排名；选择、页码、SHA256 与视觉 QA 见 `audit/lotus_deep_reading_figures_audit_20260821.md`。
+- 2026-08-22: 为 AYO 精读笔记从用户提供的 ASPLOS 正式版 PDF 选择并裁剪 Figure 1、3、4、5、6、7、8、9、10、11、12，输出位于 `docs/research/精读文献笔记/ayo_asplos2025/figures/`。Figure 2 与 Algorithm/Table 继续使用正文转写；选择、页码、SHA256 与视觉 QA 见 `audit/ayo_deep_reading_figures_audit_20260822.md`。
+- 2026-08-21: 为 LOTUS 精读笔记从正式 PVLDB PDF 选择并裁剪 Figure 1、4、6、7，输出位于 `docs/research/精读文献笔记/lotus_pvldb2025/figures/`。这些是论文原图的 Markdown 显示副本，不进入项目实验图排名；选择、页码、SHA256 与视觉 QA 见 `audit/lotus_deep_reading_figures_audit_20260821.md`。
 - 2026-08-11: Rebuilt the Shared Credit region in `architecture/editable/04_state_aware_scheduling` to remove the `Request Credit` overflow, replaced ambiguous coin/gauge icons with editable request-slot/work-budget SVGs, and re-audited adjacent arrows and borders.
 - 2026-08-11: Corrected the two short orange inter-panel arrows and the green refill arrow in figure 04: compact heads now leave visible shafts, and the refill bend is vertically centered in the available gap.
 - 2026-08-11: Rebuilt figure 02's editable Sink SVG so the PostgreSQL cylinder has a complete body and lower closure; the validation badge now sits outside the silhouette instead of visually cutting it away.

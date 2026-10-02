@@ -1,7 +1,7 @@
 # 有界多行方法驱动 V1
 
 2026-09-20：图像工作包 F 已将单个图像语义调用接入本驱动，负责 PG 行关联、固定方法预留和发送后的
-最终结果释放；[具体实现与受控检查](../results/postgresql/image_stages_f_20260920/README.md)。
+最终结果释放；[具体实现与受控检查](../results/postgresql/image_stage_execution_check_20260920/README.md)。
 CPU 准备与 GPU 模型属于该请求的物理阶段；通用 PG 多阶段方法和 LOTUS cascade 仍未接入。
 下列“不修改 PG/wire/gateway”描述原 V1 切片范围。
 

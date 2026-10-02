@@ -5,8 +5,8 @@
 Charts generated from:
 
 ```text
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
+experiments/results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
+experiments/results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
 ```
 
 Script:
@@ -40,7 +40,7 @@ figures/data/report_main/08_gpu_pgai_rerun_endpoint_comparison_20260714.svg
 - Results are GPU-backed job-table profile facts, not pgai SQL performance facts.
 - `8000` and `8001` are two local service replicas on the same RTX 5070, not two GPUs.
 - Current writeback is PostgreSQL JSON text for 384-dim embeddings, not pgvector vector(384).
-- Each setting has one formal run in this rerun. Use as motivation/profile evidence, not final optimization proof.
+- Each setting has one formal run in this rerun. Use as experiments/results/motivation/README.mdprofile evidence, not final optimization proof.
 
 ## Design audit
 

@@ -4,8 +4,8 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/galois_sigmod2025/galois_sigmod2025.md`。
-- 权威来源：`research/reference/galois_sigmod2025.pdf`，题名 *Logical and Physical Optimizations for SQL Query Execution over Large Language Models*，Proceedings of the ACM on Management of Data 3(3)，SIGMOD 2025，Article 181，DOI `10.1145/3725411`。
+- 使用位置：`docs/research/精读文献笔记/galois_sigmod2025/galois_sigmod2025.md`。
+- 权威来源：`docs/research/reference/galois_sigmod2025.pdf`，题名 *Logical and Physical Optimizations for SQL Query Execution over Large Language Models*，Proceedings of the ACM on Management of Data 3(3)，SIGMOD 2025，Article 181，DOI `10.1145/3725411`。
 - 本地 PDF 共 28 页，SHA256 `5C3C57A047AC88633B2BED155528DAE9F070839F8E5D5581D697C1A8E30D3398`；已核对 PDF metadata、首页题名、作者、页数和正文图号。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
@@ -29,15 +29,15 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/galois_sigmod2025/figures/fig1_overview.png` | 1783×774 | `58E38D961D9637E845910CFCFE28AF40931A12460A6BFDB8A9E2D88F9B193EBE` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig2_logical_pushdown.png` | 1783×1359 | `B826E5BFE45B0B8FD903AB07F918C1CD822A38AA50E4AB5D3209662F0DA2B627` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig3_table_vs_key_scan.png` | 1783×779 | `6320EAD4E77CC07DF143AD2C061286D7812767934C11FCD20AE4CA72C933CE99` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig4_logical_plan_enumeration.png` | 1783×1130 | `D6E2E9B2DC54F612D4AFF728BAC28F0DCC69EF8275CDE6A17B83A05589116CA4` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig7_logprob_precision_recall.png` | 1783×527 | `813157E384C98D548BB4DD4929CD66C08A37BB4B75BB9BEFA60188404F958A1D` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig8_quality_vs_query_complexity.png` | 887×617 | `4DC967B33034ECF28731938F5BD3E7E6A8FE31805589116E001392CF5A59A8DB` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig9_cost_vs_query_complexity.png` | 905×617 | `E9ACB394A8A54FB1F7B60BF4FF6AB52E48720473D24BFE2F3E14C01CD7AEB2F0` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig10_tau_selection.png` | 1603×603 | `8F9CD725B6874671A1AAB30C17F1649402CF81532714C67E4AB5482DAD8BB301` |
-| `research/精读文献笔记/galois_sigmod2025/figures/fig11_optimizer_vs_optimal.png` | 1783×729 | `B9AFC42B632D67A7124A648C0D4638D6F6A97F48682D06517672FB28626A7FFE` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig1_overview.png` | 1783×774 | `58E38D961D9637E845910CFCFE28AF40931A12460A6BFDB8A9E2D88F9B193EBE` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig2_logical_pushdown.png` | 1783×1359 | `B826E5BFE45B0B8FD903AB07F918C1CD822A38AA50E4AB5D3209662F0DA2B627` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig3_table_vs_key_scan.png` | 1783×779 | `6320EAD4E77CC07DF143AD2C061286D7812767934C11FCD20AE4CA72C933CE99` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig4_logical_plan_enumeration.png` | 1783×1130 | `D6E2E9B2DC54F612D4AFF728BAC28F0DCC69EF8275CDE6A17B83A05589116CA4` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig7_logprob_precision_recall.png` | 1783×527 | `813157E384C98D548BB4DD4929CD66C08A37BB4B75BB9BEFA60188404F958A1D` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig8_quality_vs_query_complexity.png` | 887×617 | `4DC967B33034ECF28731938F5BD3E7E6A8FE31805589116E001392CF5A59A8DB` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig9_cost_vs_query_complexity.png` | 905×617 | `E9ACB394A8A54FB1F7B60BF4FF6AB52E48720473D24BFE2F3E14C01CD7AEB2F0` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig10_tau_selection.png` | 1603×603 | `8F9CD725B6874671A1AAB30C17F1649402CF81532714C67E4AB5482DAD8BB301` |
+| `docs/research/精读文献笔记/galois_sigmod2025/figures/fig11_optimizer_vs_optimal.png` | 1783×729 | `B9AFC42B632D67A7124A648C0D4638D6F6A97F48682D06517672FB28626A7FFE` |
 
 提取方式：使用 PyMuPDF 对对应 PDF 页面作 4.5× raster render，再按每幅 Figure 与英文 caption 的完整边界裁剪。没有重绘、锐化、替换颜色、修改坐标、删除图内元素或拼接不同页面。
 

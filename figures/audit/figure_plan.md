@@ -1,6 +1,6 @@
 # 项目图资产规划
 
-本文件记录 learning、开题报告、开题 PPT、中期汇报和毕业论文共同复用的核心图。正式图文件统一放在根目录 `figures/`，不再分散维护在 `opening/assets/` 或 `learning/figures/`。
+本文件记录 learning、开题报告、开题 PPT、中期汇报和毕业论文共同复用的核心图。正式图文件统一放在根目录 `figures/`，不再分散维护在 `docs/archive/opening/assets/` 或 `PROJECT_INDEX.md#内容与文档职责figures/`。
 
 ## 必须优先维护的图
 

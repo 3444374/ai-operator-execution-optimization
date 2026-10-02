@@ -1,7 +1,7 @@
 # 开题前统一 database-E2E 文本三臂计划
 
 > 历史开题实验计划。开题已结束；文中条件性补测不再列入当前执行安排。
-> 原始结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`，
+> 原始结果见 `experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md`，
 > 现行研究和实验状态从项目总纲及证据台账核对。以下保留当时的计划原文。
 
 冻结日期：2026-08-07
@@ -10,7 +10,7 @@
 2026-08-08 替换重跑的 24/24 单元均通过 source/sink、identity、exactly-once 和稳定性检查；
 SQuAD 三条静态路径可作均匀短输出的完成性与质量控制；项目路径计时还多含指标采集、记录写入
 和结束处理，因此不到 1% 的时间/吞吐差异不排名。ShareGPT 只保留运行现象、正确性和产品语义
-证据，不作方法性能排名。权威结果见 `experiments/results/opening_database_e2e_text_refeed_20260808/README.md`。
+证据，不作方法性能排名。权威结果见 `experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md`。
 第 9 节仅在 PostgreSQL 中立语义算子/provider 资格项完成且双 RTX 4090 环境恢复后补 direct C128 与 project
 K128/W65,536；不重跑 DuckDB、SQuAD 或已有容量扫描。
 
@@ -83,7 +83,7 @@ timer 之外只允许：runner preflight、endpoint idle、旧 sink 行清理、
 
 ## 7. 输出与停止规则
 
-- 结果目录：`experiments/results/opening_database_e2e_text_20260807/{README.md,raw/}`。
+- 结果目录：`experiments/results/text_db_e2e_static_paths_20260807/{README.md,raw/}`。
 - `raw/` 保存在服务器 artifact root；Git 仅提交去敏、必要、体积受控的正式汇总和重建图表所需证据。
 - 报告按项目八段结构：目的、设置、合规自检、设计、全组件数据、解释、课题含义、下一步。
 - 两组完成后立即停止开题 baseline。小于 5% 的差异是有效结果，不触发第二数据库、更多文本引擎、更多 workload、模型替换或 scale × concurrency 扫描。
@@ -194,4 +194,4 @@ project/direct 的 service ratio **不是本实验有效性的通过条件**，�
 - project 仍快于 direct C128：只能称当前两条完整静态执行路径存在条件性差异；由于 Daft/Ray、token-budget 和 W65,536 同时存在，不能归因于某一数据组织或调度机制。
 - 两臂 database-E2E 差异绝对值小于 5%：按预注册描述为当前签名下近似中性，不追加并发扫描追正。
 
-无论结果方向如何，都不重跑 DuckDB、不增加 C64/C256、不更换 workload/模型/数据库、不调 project K/W/actor，也不把该补测升级为新的开题核心贡献。结果目录名由固定前缀 `opening_sharegpt_c128_database_e2e_` 加实际服务器运行日期组成，目录内保存 `README.md` 与 `raw/`；随后再更新旧结果报告、`opening/claim_matrix.md`、开题正文和 `PROJECT_LOG.md`，并明确旧 116.703 s 仍是有效历史配置结果。
+无论结果方向如何，都不重跑 DuckDB、不增加 C64/C256、不更换 workload/模型/数据库、不调 project K/W/actor，也不把该补测升级为新的开题核心贡献。结果目录名由固定前缀 `opening_sharegpt_c128_database_e2e_` 加实际服务器运行日期组成，目录内保存 `README.md` 与 `raw/`；随后再更新旧结果报告、`docs/archive/opening/claim_matrix.md`、开题正文和 `PROJECT_LOG.md`，并明确旧 116.703 s 仍是有效历史配置结果。

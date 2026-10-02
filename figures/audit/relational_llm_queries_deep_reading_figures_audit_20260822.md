@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/relational_llm_queries_mlsys2025/relational_llm_queries_mlsys2025.md`。
+- 使用位置：`docs/research/精读文献笔记/relational_llm_queries_mlsys2025/relational_llm_queries_mlsys2025.md`。
 - 权威来源：用户本地文献目录中的 `Relational_LLM_Queries_mlsys2025.pdf`，题名 *Optimizing LLM Queries in Relational Data Analytics Workloads*，按论文与精读笔记记录为 MLSys 2025 论文。
 - 本地 PDF：15 页，SHA256 `25E3F3B855A4ACBD12082990E2D76AE958D9776D7523203BDF68A5D91FDCE92B`；已通过 `%PDF` 签名、PDF metadata/首页题名、作者和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。论文优化的是已知 batch relational workload 的 row/field organization，不修改 vLLM 内部 scheduler、continuous batching 或 KV-cache algorithm。
 
 ## 选择结果
@@ -27,12 +27,12 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig1_fixed_vs_per_row_field_ordering.png` | 2205×837 | `99624B83E2CEB48DAC7A15566E4433816A44201403003377C83B49BC0332E7CF` |
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig2_ggr_recursive_split.png` | 1071×729 | `9A79F570328EF1ACC81D535F208D61ECD589904EF1F3BD3AAD7382DDF7E8C725` |
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig3_filter_projection_rag_results.png` | 2205×671 | `938DF5D3D75CE8C2B7A12651B277D2009906176746840F58B7562EEB2DAA8948` |
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig4_multi_llm_aggregation_results.png` | 1071×644 | `760AD597686EA48AEDCB6353D5AC607A08834F2DD6C82AF0B104DA71B0D95A26` |
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig5_llama70b_results.png` | 1071×585 | `F5E5808E25F721228E295BAFDEC544BE8788278564A5E81F3E60473A5044849D` |
-| `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig6_accuracy_impact.png` | 2205×558 | `CAB3D8D7FF36785D8031D00F2D1E1BD717A42AEB3B582C45DF3AC5893DDDF0A4` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig1_fixed_vs_per_row_field_ordering.png` | 2205×837 | `99624B83E2CEB48DAC7A15566E4433816A44201403003377C83B49BC0332E7CF` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig2_ggr_recursive_split.png` | 1071×729 | `9A79F570328EF1ACC81D535F208D61ECD589904EF1F3BD3AAD7382DDF7E8C725` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig3_filter_projection_rag_results.png` | 2205×671 | `938DF5D3D75CE8C2B7A12651B277D2009906176746840F58B7562EEB2DAA8948` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig4_multi_llm_aggregation_results.png` | 1071×644 | `760AD597686EA48AEDCB6353D5AC607A08834F2DD6C82AF0B104DA71B0D95A26` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig5_llama70b_results.png` | 1071×585 | `F5E5808E25F721228E295BAFDEC544BE8788278564A5E81F3E60473A5044849D` |
+| `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/fig6_accuracy_impact.png` | 2205×558 | `CAB3D8D7FF36785D8031D00F2D1E1BD717A42AEB3B582C45DF3AC5893DDDF0A4` |
 
 提取方式：使用 PyMuPDF 对本地 PDF 对应页面作 4.5× raster render，再按每幅 Figure 与英文 caption 的完整边界裁剪。没有重绘、锐化、替换颜色、修改坐标、删除图内元素或拼接不同页面；所有 multi-panel Figure 均保持整体。
 

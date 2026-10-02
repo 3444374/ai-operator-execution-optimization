@@ -10,10 +10,10 @@
 
 | 报告图号 | 报告副本 | 权威源 | 本轮目的 |
 |---:|---|---|---|
-| 图 2 | `opening/report/figures/fig02_ai_data_execution_gap.png` | `figures/architecture/editable/01_research_gap.{drawio,svg,png}` | 用三项具体能力说明数据库与模型服务之间需要补充的联系 |
-| 图 3 | `opening/report/figures/fig03_work_unit_organization.png` | `figures/architecture/editable/03_work_unit.{drawio,svg,png}` | 将运行前已知的工作描述字段与可选代价估计结果分开 |
-| 图 5 | `opening/report/figures/fig05_system_architecture.png` | `figures/architecture/editable/02_system_architecture.{drawio,svg,png}` | 分开数据库计划阶段的代价估计与执行过程中的状态记录 |
-| 图 6 | `opening/report/figures/fig06_text_baseline_boundaries.png` | `figures/data/report_main/opening_text_baseline_evidence_map.{svg,png}` | 用正式中文名称区分两组不可交叉排名的文本执行路径 |
+| 图 2 | `docs/archive/opening/report/figures/fig02_ai_data_execution_gap.png` | `figures/architecture/editable/01_research_gap.{drawio,svg,png}` | 用三项具体能力说明数据库与模型服务之间需要补充的联系 |
+| 图 3 | `docs/archive/opening/report/figures/fig03_work_unit_organization.png` | `figures/architecture/editable/03_work_unit.{drawio,svg,png}` | 将运行前已知的工作描述字段与可选代价估计结果分开 |
+| 图 5 | `docs/archive/opening/report/figures/fig05_system_architecture.png` | `figures/architecture/editable/02_system_architecture.{drawio,svg,png}` | 分开数据库计划阶段的代价估计与执行过程中的状态记录 |
+| 图 6 | `docs/archive/opening/report/figures/fig06_text_baseline_boundaries.png` | `figures/data/report_main/opening_text_baseline_evidence_map.{svg,png}` | 用正式中文名称区分两组不可交叉排名的文本执行路径 |
 
 ## 2. 逐图审查
 

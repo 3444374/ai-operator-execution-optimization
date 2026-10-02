@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/blendserve_asplos2026/blendserve_asplos2026.md`。
+- 使用位置：`docs/research/精读文献笔记/blendserve_asplos2026/blendserve_asplos2026.md`。
 - 权威来源：用户本地文献目录中的 `blendserve_asplos26.pdf`，题名 *BlendServe: Optimizing Offline Inference with Resource-Aware Batching*，ASPLOS ’26 正式版。
 - 正式 PDF：19 页，SHA256 `4BD27DE86137747BA0AC42C2D71AD369AD36BFB004EFC728895A8D0AA4A2CACC`；已通过 `%PDF` 签名、题名元数据和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
 ## 选择结果
@@ -31,16 +31,16 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig1_resource_aware_batching.png` | 1103×572 | `25F50EB814CF73A32844024C657934E379C4EB4A415E28409C55A0A6ECEBB8C4` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig2_trace_length_density.png` | 1126×756 | `51196050FA8F037EC08BF8DB92D1F5CDB45EB97EAE8F0C25D983F679E79C6BDA` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig3_resource_balance_motivation.png` | 1126×482 | `94F71B8503DA7325C2BF61FD2E2427B52241F5B46F052CFFE3A44AC70F1575FE` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig4_compute_density.png` | 1103×608 | `0E73F2597B90066F1E6EC3F7CBB1CB40C29BCE4C6F0893D2623E95670281A3AB` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig5_blendserve_overview.png` | 1949×635 | `0CA8FF70B74C31D471F780C465FECF6C03803D2D603882451AA4EF09F8058B5A` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig6_dual_scanner_memory_partition.png` | 914×486 | `BE5A668CE356E47B33A040AD27CAD4872372FB2FD238630262145530A6F8696E` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig7_end_to_end_throughput.png` | 1126×873 | `295C161C6D5F4F5418CFD75866A41CFD98118E11A43D04D14373EF1B45E36132` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig9_prefix_sharing_ratio.png` | 1126×406 | `18581B572C041B00D2E1584A02D937745DA7CD2A8AF3E8697AE0F2C800CBC256` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig10_resource_usage_over_time.png` | 1126×892 | `535A95FCFE9328A97BCEE79DAF34C617FCD400FB9D362721B4F8FDCCDA63F6A1` |
-| `research/精读文献笔记/blendserve_asplos2026/figures/fig11_sensitivity_heatmap.png` | 1058×806 | `416B7E55E0313F2B8DA33E57649A9FE92BB1D54ECC286CFBF319E51BFA7A86A5` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig1_resource_aware_batching.png` | 1103×572 | `25F50EB814CF73A32844024C657934E379C4EB4A415E28409C55A0A6ECEBB8C4` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig2_trace_length_density.png` | 1126×756 | `51196050FA8F037EC08BF8DB92D1F5CDB45EB97EAE8F0C25D983F679E79C6BDA` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig3_resource_balance_motivation.png` | 1126×482 | `94F71B8503DA7325C2BF61FD2E2427B52241F5B46F052CFFE3A44AC70F1575FE` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig4_compute_density.png` | 1103×608 | `0E73F2597B90066F1E6EC3F7CBB1CB40C29BCE4C6F0893D2623E95670281A3AB` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig5_blendserve_overview.png` | 1949×635 | `0CA8FF70B74C31D471F780C465FECF6C03803D2D603882451AA4EF09F8058B5A` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig6_dual_scanner_memory_partition.png` | 914×486 | `BE5A668CE356E47B33A040AD27CAD4872372FB2FD238630262145530A6F8696E` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig7_end_to_end_throughput.png` | 1126×873 | `295C161C6D5F4F5418CFD75866A41CFD98118E11A43D04D14373EF1B45E36132` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig9_prefix_sharing_ratio.png` | 1126×406 | `18581B572C041B00D2E1584A02D937745DA7CD2A8AF3E8697AE0F2C800CBC256` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig10_resource_usage_over_time.png` | 1126×892 | `535A95FCFE9328A97BCEE79DAF34C617FCD400FB9D362721B4F8FDCCDA63F6A1` |
+| `docs/research/精读文献笔记/blendserve_asplos2026/figures/fig11_sensitivity_heatmap.png` | 1058×806 | `416B7E55E0313F2B8DA33E57649A9FE92BB1D54ECC286CFBF319E51BFA7A86A5` |
 
 提取方式：使用 PyMuPDF 对正式 PDF 对应页面作 4.5× raster render，再按原图边界裁剪。所有 multi-panel Figure 保持为一个整体；没有重绘、锐化、替换颜色、修改坐标或删除图内元素。论文英文 caption 不进入裁剪件，由精读正文的中文 alt text、来源行和证据边界承担说明。
 
