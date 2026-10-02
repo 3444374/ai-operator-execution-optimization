@@ -10,7 +10,7 @@
 | 文件 | 用途 |
 |---|---|
 | [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；含[数据执行与模型服务协同候选](优化方法依据.md#serving-cooperation-candidates)，实施与结果分别引用计划和报告 |
-| `knowledge_hub.md` | 项目知识总汇：机制、文献地图、研究空白与[数据执行迁移条件](knowledge_hub.md#execution-transfer-cards)；不维护当前代码状态或实施顺序 |
+| [研究定位](研究定位.md) | 研究问题、最近邻覆盖范围、[机制采用条件](研究定位.md#execution-transfer-cards)与待证增量；题录、实现、实验和技术细节分别回到所属文档 |
 | `top15_ranked_papers.md` | 开题时期 Top 15 历史选目；当时 15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
 | `inference_pipeline_interaction_literature.md` | 上游数据管线、continuous batching、semantic operator、公平调度和代价估计交互综述 |

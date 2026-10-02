@@ -17,7 +17,7 @@ read_date: 2026-07-23
 
 > **证据级别声明（前置）**：本笔记基于 ASP-DAC 2026 会议归档的**全文幻灯片 PDF**（`aspdac.com/aspdac2026/archive/pdf/4A-1.pdf`），**不是仅基于摘要**。但该 PDF 是会议演示文稿，不是带完整公式与表格的 proceedings 全文——因此**模块的定性设计、关键数字和整体架构来自一手全文**，而**融合公式/权重、消融细节、统计方差在幻灯片中未给出**，相关条目标注为待确认。IEEE Xplore 页面（document/11420717）在抓取时返回 500 错误，无法获取正式 proceedings 版本。
 
-> **重要校正（相对本课题 seed 摘要）**：本课题在 `docs/research/knowledge_hub.md` §5.5 与 `docs/research/ray_actor_dynamic_batching_reference.md` §6.10 中，将 CoLoRA 描述为"GPU 利用率 + 队列深度 + adapter 状态 → 三维信号融合"，并将其作为"我们的 queue-adaptive flush 应感知的（running + waiting + KV cache）三信号"的参考。**精读全文后确认：论文的实际三信号是"排队延迟 + adapter 驻留状态 + SLA 紧急度"（APS 模块），不涉及 KV cache 信号**。"adapter 驻留"指 LoRA 权重是否在 GPU 内存，与 KV cache 是两类资源。本笔记第四层会明确这一校正对课题的影响。
+> **重要校正（相对本课题 seed 摘要）**：本课题在 [原摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/ab125ae4d61da090b4ecf9e02500122a7b4daa8a/docs/research/knowledge_hub.md#55-从-2025-年-llm-serving-新文献提取2026-07-21-新增) 与 `docs/research/ray_actor_dynamic_batching_reference.md` §6.10 中，将 CoLoRA 描述为"GPU 利用率 + 队列深度 + adapter 状态 → 三维信号融合"，并将其作为"我们的 queue-adaptive flush 应感知的（running + waiting + KV cache）三信号"的参考。**精读全文后确认：论文的实际三信号是"排队延迟 + adapter 驻留状态 + SLA 紧急度"（APS 模块），不涉及 KV cache 信号**。"adapter 驻留"指 LoRA 权重是否在 GPU 内存，与 KV cache 是两类资源。本笔记第四层会明确这一校正对课题的影响。
 
 ---
 

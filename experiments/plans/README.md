@@ -24,7 +24,7 @@
 | 对照身份、计时、质量与指标 | [对照规范](reference/对照规范.md) |
 | DuckDB比较用途与有界输出 | [DuckDB对照](reference/DuckDB对照.md) |
 | 报告中的来源与可引用结论 | [报告核对](reference/报告核对.md) |
-| 方法依据、反证与最小实验设计 | [优化方法依据](../../docs/research/优化方法依据.md)、[知识库](../../docs/research/knowledge_hub.md) |
+| 方法依据、反证与最小实验设计 | [优化方法依据](../../docs/research/优化方法依据.md)、[研究定位](../../docs/research/研究定位.md) |
 
 ## 既往方案
 

@@ -5,7 +5,7 @@
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
 
-本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；文献入口见 `docs/research/knowledge_hub.md`。开题已结束，`docs/archive/opening/` 只供历史回查，不作为现行研究判断的依据。
+本文件是项目方向、研究内容、证据等级和近期执行顺序的权威总纲。实验细节以对应结果目录的 README/CSV/JSON 为准；研究论证见[研究定位](docs/research/研究定位.md)，题录与版本见[文献清单](docs/research/ai_operator_literature_inventory.md)。开题已结束，`docs/archive/opening/` 只供历史回查，不作为现行研究判断的依据。
 
 读者说明：本文 §0.3、§5–7 保留历史实验与开题时期的叙述。历史配置、诊断名称和当时的后续建议
 只供追溯，不覆盖当前执行顺序。
@@ -667,7 +667,7 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
 - 开题历史材料：`docs/archive/opening/README.md`；不再随项目进展同步
 - 当前方向速览：`README.md`
 - 实验证据：`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`
-- 文献与知识：`docs/research/knowledge_hub.md`
+- 研究问题与已有工作：[研究定位](docs/research/研究定位.md)；文献题录与版本：[文献清单](docs/research/ai_operator_literature_inventory.md)
 - 十五篇精读方法速览：`docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`
 

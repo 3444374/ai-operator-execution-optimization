@@ -126,7 +126,7 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 ### 2.4 数据执行的基础理论参照（2026-09-14）
 
 以下只完成官方题录/摘要核对，未新增全文精读或调整Top15；用途与迁移条件由
-[知识库条件卡](knowledge_hub.md#execution-transfer-cards)维护。
+[机制采用条件](研究定位.md#execution-transfer-cards)维护。
 
 | 文献 | 核对版本与来源 | 本轮用途 |
 |---|---|---|
@@ -196,3 +196,49 @@ IMLane与DLPM复用已有精读，KEN仍待精读；这些核对不表示artifac
 这些条目在此登记为待核查线索：正式题录、资料版本、源码或全文、数据/请求重排与提交控制的
 实际覆盖范围需分别核对。未经核验的收益数字与新颖性判定不进入当前结论。
 PolarDB/Daft、Kalypso与代价估计的已有分析继续从知识库和对应文献引用，避免并列维护另一份判断。
+
+<a id="early-candidates"></a>
+## 早期跨领域线索
+
+以下仅保留原knowledge_hub.md文献地图中未在上方登记的名称，原始说明来自其2026-10-02快照。
+“原标注”保留检索线索，不表示本次核验了题名、年份、轨道或性能；正式引用前从原文与官方入口核对。
+已登记文献以上方题录、阅读状态及对应笔记为准，旧总数和等级统计不继续维护。
+
+| 早期名称 | 原标注的资料来源 | 原归类用途 |
+|---|---|---|
+| Mooncake | FAST 2025 Best Paper | 模型服务 |
+| S-LoRA | MLSys 2024 | 模型服务 |
+| Nexus | SOSP 2019 | 模型服务 |
+| Triton | NVIDIA | 模型服务 |
+| INFaaS | ATC 2021 | 模型服务 |
+| ChunkAttention | ACL 2024 | 模型服务 |
+| Spark SQL | 官方文档 | 数据管线 |
+| Velox | VLDB 2022 (Meta) | 数据管线 |
+| Arrow DataFusion | SIGMOD 2024 | 数据管线 |
+| Arrow Flight | arXiv 2022 | 数据管线 |
+| Lance | arXiv 2025 | 存储与写回 |
+| ColStorEval | PVLDB 2023 | 存储与写回 |
+| TurboVecDB | PVLDB 2025 | 存储与写回 |
+| Delta Lake | PVLDB 2020 | 存储与写回 |
+| FlexPushdownDB | PVLDB 2021 | 存储与写回 |
+| WiscKey | FAST 2016 | 存储与写回 |
+| DiskANN | NeurIPS 2019 | 存储与写回 |
+| Milvus | SIGMOD 2021 | 存储与写回 |
+| Manu | VLDB 2022 | 存储与写回 |
+| VBASE | OSDI 2023 | 存储与写回 |
+| BigVectorBench | VLDB 2025 | 存储与写回 |
+| AIDB | DEEM@SIGMOD 2024 | 存储与写回 |
+| Rafiki | PVLDB 2018 | 存储与写回 |
+| Trustworthy LLMs Meet Databases | VLDB 2024 Tutorial | 综述 |
+| Vector DBMS Tutorial | VLDB 2024 | 综述 |
+| Learned Query Optimizer | SIGMOD 2024 | 综述 |
+| Learning Database Optimization | FCS 2025 | 综述 |
+| Snowflake Cortex AI | `AI_EMBED`, `AI_COMPLETE`, `AI_FILTER`, `AI_CLASSIFY`, `AI_JOIN`, `AI_AGG` | 工业需求 |
+| BigQuery ML/AI | `ML.GENERATE_TEXT`, `ML.GENERATE_EMBEDDING` | 工业需求 |
+| Oracle AI Vector Search | `VECTOR_EMBEDDING` | 工业需求 |
+| pgai | PostgreSQL + vectorizer worker + embedding endpoint + 写回 | 工业需求 |
+| PostgresML | PostgreSQL 内/近数据库 ML/AI | 工业需求 |
+| pgvector | PostgreSQL 向量相似度检索 | 工业需求 |
+| Neo | SIGMOD 2019 | 代价估计 |
+
+GPipe、PipeDream和Alpa另在原文作为训练流水线线索列出；具体迁移需求出现后再按原文核对，不加入当前执行安排。
