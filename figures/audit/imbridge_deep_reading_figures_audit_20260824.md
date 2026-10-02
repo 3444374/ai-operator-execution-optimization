@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/IMBridge_sigmod2024/IMBridge_sigmod2024.md`。
+- 使用位置：`docs/research/精读文献笔记/IMBridge_sigmod2024/IMBridge_sigmod2024.md`。
 - 权威来源：用户本地文献目录中的 `IMBridge_2026.pdf`，题名 *IMBridge: Impedance Mismatch Mitigation between Database Engine and Prediction Query Execution*。虽然本地文件名含 `2026`，论文首页 ACM Reference Format、页眉和 DOI 均明确对应 SIGMOD-Companion ’24（2024）；本次不由文件名推断发表年份。
 - 本地 PDF：4 页，SHA256 `4E4E358BC0E842858C59F93BBA2329C1D6433FB59C36C07B56C7B90C48BA6B45`；已通过 `%PDF-1.5` 签名、首页题名、作者、ACM Reference Format、DOI `10.1145/3626246.3654754` 和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。IMBridge 面向 OceanBase 内的 Python prediction UDF、函数生命周期改写和独立推理算子，不覆盖本项目的外部分布式模型服务、多 Job 公平或多 endpoint 路由。
 
 ## 选择结果
@@ -27,12 +27,12 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig1_prediction_query_user_language.png` | 1179×468 | `C395A80DF7AF31A0B9443E84D16EE7A637BED18F4775D48D0344E28B3741A00F` |
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig2_system_architecture.png` | 1053×833 | `876CD51ED41F206B9A6F5D656CD3AB60717039E38C19287540A79B5EA0F621DB` |
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig3_impedance_mismatch.png` | 1116×693 | `37EB423A53A34B3F57A95DE6D88D5FC8DE034635C390027537597DD1F9941A94` |
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig4_prediction_function_rewrite.png` | 1116×527 | `9313B970B19BBD5EC00DA9544E3F6636CCFC7A4C04FE75CEDD9D4C5F277500BC` |
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig5_function_rewriter_demo.png` | 1098×1157 | `A07636BE1F7CB330C88433358D338B29B3451F1C72F83C4B7ECF39A1BD3BD349` |
-| `research/精读文献笔记/IMBridge_sigmod2024/figures/fig6_decoupled_prediction_operator_demo.png` | 1094×1634 | `49EBEC5ED24C238E4730C7B84C6FDB81F894C057734FF260A29DE5ED09D2EB5E` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig1_prediction_query_user_language.png` | 1179×468 | `C395A80DF7AF31A0B9443E84D16EE7A637BED18F4775D48D0344E28B3741A00F` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig2_system_architecture.png` | 1053×833 | `876CD51ED41F206B9A6F5D656CD3AB60717039E38C19287540A79B5EA0F621DB` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig3_impedance_mismatch.png` | 1116×693 | `37EB423A53A34B3F57A95DE6D88D5FC8DE034635C390027537597DD1F9941A94` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig4_prediction_function_rewrite.png` | 1116×527 | `9313B970B19BBD5EC00DA9544E3F6636CCFC7A4C04FE75CEDD9D4C5F277500BC` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig5_function_rewriter_demo.png` | 1098×1157 | `A07636BE1F7CB330C88433358D338B29B3451F1C72F83C4B7ECF39A1BD3BD349` |
+| `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/fig6_decoupled_prediction_operator_demo.png` | 1094×1634 | `49EBEC5ED24C238E4730C7B84C6FDB81F894C057734FF260A29DE5ED09D2EB5E` |
 
 提取方式：使用 PyMuPDF 对本地 PDF 对应页面作 4.5× raster render，再按每幅 Figure 与英文 caption 的完整边界裁剪。没有重绘、锐化、替换颜色、修改坐标、删除图内元素或拼接不同页面；Figure 3 的两个 panel、Figure 5/6 的完整演示界面均保持整体。
 

@@ -15,7 +15,7 @@ from matplotlib import font_manager
 
 
 ROOT = Path(__file__).resolve().parents[2]
-GPU_RESULTS = ROOT / "motivation" / "results" / "gpu"
+GPU_RESULTS = ROOT / "experiments" / "results" / "motivation" / "gpu"
 OUT_DIR = ROOT / "figures" / "data" / "generated_gpu"
 
 CHAIN_CSV = GPU_RESULTS / "ai_embed_chain_breakdown_20260712.csv"

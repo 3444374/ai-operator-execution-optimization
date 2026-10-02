@@ -10,7 +10,7 @@
 
 ```sh
 PYTHONPATH=code python3 code/scripts/analysis/restore_result_evidence.py \
-  experiments/results/rc1_data_organization/raw/storage-manifest.jsonl \
+  experiments/results/data_organization_comparison/raw/storage-manifest.jsonl \
   --output /path/to/new-private-result
 ```
 
@@ -355,7 +355,7 @@ PG 显式安装或升级至扩展 `0.3.0` 后，使用 `ai_semantic.embed(image,
 受控集成入口为 `tests.execution_provider.test_image_pg_integration`；只有明确提供隔离环境的
 `SEMLOOM_IMAGE_PG_DSN`、`SEMLOOM_IMAGE_TEST_ROOT` 和短路径 `SEMLOOM_IMAGE_RAY_TEMP` 才执行。
 它启动仅有 CPU 资源的私有 Ray 实例，使用真实 PNG 解码与明确标识的零权重模型；
-不加载真实 CLIP，也不分配 GPU。完整检查及尚未验证项见[结果记录](../../experiments/results/postgresql/image_stages_f_20260920/README.md)。
+不加载真实 CLIP，也不分配 GPU。完整检查及尚未验证项见[结果记录](../../experiments/results/postgresql/image_stage_execution_check_20260920/README.md)。
 
 ### 生成 Map 的增量核心接入
 
@@ -557,7 +557,7 @@ exact reference，不产生第二物理路径。接口和使用条件见
 |---|---|
 | SAOR 机制与原生系统检查 | `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py`、`experiments/run_saor_*.py`；当前状态及各检查的作用见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/experiment_status_and_gaps.md) |
 | 图像与多 Job 画像 | `experiments/run_image_*.py`、`profiling/profile_clip_*.py`、`analysis/summarize_image_*.py`；身份与可比性见[baseline 说明](../src/baselines/README.md)和[图像结果](../../experiments/results/README.md) |
-| 开题实验汇总 | `analysis/summarize_opening_*.py`、`baselines/opening_database_e2e_matrix.py`；按[开题材料](../../opening/README.md)和对应结果报告读取，不从汇总脚本推断新结论 |
+| 开题实验汇总 | `analysis/summarize_opening_*.py`、`baselines/opening_database_e2e_matrix.py`；按[开题材料](../../docs/archive/opening/README.md)和对应结果报告读取，不从汇总脚本推断新结论 |
 
 这些脚本的早期机器命令与当时的完成状态保存在 Git 版本 `d32366de` 的本文件中。
 新的运行参数从目标计划、运行手册和脚本接口重新核对。
@@ -571,10 +571,10 @@ PostgreSQL 内置语义算子的验证结果。
 
 | 用途 | 入口与说明 |
 |---|---|
-| 外部画像、Daft 组织与指标 | `profiling/postgres_ai_operator_profile.py`、`profiling/daft_text_organizer_smoke.py`；模块职责见[观测说明](../src/observability/README.md)，结果见[动机画像](../../motivation/results/README.md) |
+| 外部画像、Daft 组织与指标 | `profiling/postgres_ai_operator_profile.py`、`profiling/daft_text_organizer_smoke.py`；模块职责见[观测说明](../src/observability/README.md)，结果见[动机画像](../../experiments/results/motivation/README.md) |
 | 单作业场景编排 | `experiments/run_ai_operator_scenarios.py`；按固定种子保存次序、成功记录和失败事件，恢复时重新核对配置与既有记录 |
 | 共享服务多 Job | `experiments/run_shared_vllm_experiment.py`；配置与运行步骤见[AutoDL 手册](../../deploy/autodl/README.md)，模块职责见[共享服务说明](../src/experiments/shared_vllm/README.md) |
-| 官方 baseline 与 SQuAD 能力检查 | `baselines/run_official_baseline.py`、`baselines/squad_capability_gate.py`、`baselines/squad_database_e2e_runner.py`；系统职责见[baseline 说明](../src/baselines/README.md)，每次结果见[可行性记录](../../feasibility/results/README.md) |
+| 官方 baseline 与 SQuAD 能力检查 | `baselines/run_official_baseline.py`、`baselines/squad_capability_gate.py`、`baselines/squad_database_e2e_runner.py`；系统职责见[baseline 说明](../src/baselines/README.md)，每次结果见[可行性记录](../../experiments/results/diagnostics/README.md) |
 | 工作量准备与代价分析 | `data/import_ai_complete_workload.py`、`analysis/estimate_operator_cost.py`；输入筛选、模型与机器身份以目标计划和结果报告为准 |
 | 状态变化实验 | `data/prepare_phase_change_workload.py`、`experiments/run_phase_change.py`、`analysis/audit_phase_change.py`；只从[目标手册](../../deploy/autodl/phase_change_state_aware_RUNBOOK.md)选择步骤，历史实现见[SAOR 说明](../src/experiments/saor/README.md) |
 

@@ -866,3 +866,12 @@ Use this baseline as the control for the first data-organization experiments:
 - compare fixed row batches against token-budget batching;
 - keep the same vLLM endpoint and model;
 - add latency distribution metrics before making P99 or queueing claims.
+
+<a id="链路与图表解读"></a>
+
+## 链路与图表解读
+
+本地参照用于理解数据库读取、批次组织、Ray提交、模型请求和结果返回的完整路径，解释时保留
+原机器与模型身份。稳定输入顺序下的离线批次比较和到达过程重放分别记录，避免混用输入条件。
+图表以原CSV与实际配置为准，区分完整查询与服务阶段、预热与重复、执行完成与正确结果。
+这份本地记录为后续目标环境比较提供检查入口，实际系统判断引用对应环境的独立结果。

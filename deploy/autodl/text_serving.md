@@ -100,7 +100,7 @@ nohup /root/miniconda3/bin/python code/scripts/experiments/run_ai_operator_scena
   `code/scripts/analysis/summarize_formal_repeats.py` 生成 CI/CV/regression 统计。
 
 ### 5.2 feeding-saturation 门禁（bounded baseline）
-文本侧的"喂饱 vLLM"参照 = 同协议 bounded HTTP client（`run_official_baseline_gate.py`，batched cells b16/b32）。2-ep/0.9 bounded 真上限 ~79,488 tok/s。注意：bounded gate 原硬限 2 endpoint，现已放宽 ≥2（`gate_runner.py` `!= 2` → `< 2`）。详见 `AGENTS.md` §7.5.C + `experiments/results/rc1_data_organization/`。
+文本侧的"喂饱 vLLM"参照 = 同协议 bounded HTTP client（`run_official_baseline_gate.py`，batched cells b16/b32）。2-ep/0.9 bounded 真上限 ~79,488 tok/s。注意：bounded gate 原硬限 2 endpoint，现已放宽 ≥2（`gate_runner.py` `!= 2` → `< 2`）。详见 `AGENTS.md` §7.5.C + `experiments/results/data_organization_comparison/`。
 
 ### 5.3 完整流程
 全新/开机恢复/正式启动/gate 的**逐步命令**在 `deploy/autodl/README.md`（"全新实例从零准备" / "开机后完整恢复流程" / "实验 gate 与正式启动"）——本篇只到引擎层。

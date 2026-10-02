@@ -1,6 +1,6 @@
 # 开题可编辑概念图
 
-本目录保存 2026-08-11 按当前开题答辩主线重构的 Draw.io 概念图。参考图只作为版式和图形语言来源；可见文字、机制层次和证据口径以 `opening/claim_matrix.md` 与 `opening/opening_defense_outline_20260808.md` 为准。面向听众的图面只保留解释研究问题和方案所需的信息，内部边界清单留在项目文档中。
+本目录保存 2026-08-11 按当前开题答辩主线重构的 Draw.io 概念图。参考图只作为版式和图形语言来源；可见文字、机制层次和证据口径以 `docs/archive/opening/claim_matrix.md` 与 `docs/archive/opening/opening_defense_outline_20260808.md` 为准。面向听众的图面只保留解释研究问题和方案所需的信息，内部边界清单留在项目文档中。
 
 ## 图集
 

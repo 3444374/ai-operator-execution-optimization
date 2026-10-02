@@ -17,8 +17,8 @@ from matplotlib import font_manager
 ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = ROOT / "figures" / "data" / "generated_all_meaningful"
 
-MOTIVATION = ROOT / "motivation" / "results"
-FEASIBILITY = ROOT / "feasibility" / "results"
+MOTIVATION = ROOT / "experiments" / "results" / "motivation"
+FEASIBILITY = ROOT / "experiments" / "results" / "diagnostics"
 
 COLORS = {
     "blue": "#2563EB",

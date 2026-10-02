@@ -2,9 +2,9 @@
 
 生成日期：2026-07-15
 
-> **2026-07-17 口径更新**：本文中的"三层策略""RC3"等旧术语已统一。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。本文保留原始方案评估矩阵作为设计历史参考。
+> **2026-07-17 口径更新**：本文中的"三层策略""RC3"等旧术语已统一。最新研究内容定义（两项策略 + 多模态泛化验证 + 算子代价估计补充）和优先级以 `AGENTS.md` §1、`PROJECT_OUTLINE.md` 和 `docs/research/knowledge_hub.md` 为准。本文保留原始方案评估矩阵作为设计历史参考。
 用途：为三个研究内容和跨层协同优化提供可供选择的方案目录，支撑后续实验设计和代码实现决策
-方法：基于 57 篇文献（`research/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
+方法：基于 57 篇文献（`docs/research/ai_operator_literature_inventory.md`）和 2026 年 7 月前沿检索，结合 idea-evaluator 五维评分、deep-research 证据纪律和 vibe-research-workflow 工程可行性约束
 
 ---
 
@@ -107,8 +107,8 @@
 - `object_merge ∈ {none, coalesce_input, coalesce_output}`
 
 **已有实验基础**：
-- `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`：coalesced vs fine = 13.4×
-- `motivation/results/fake_cpu/analysis.md`：fine/coalesced e2e 比值约 4.01-4.37×
+- `experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md`：coalesced vs fine = 13.4×
+- `experiments/results/motivation/fake_cpu/analysis.md`：fine/coalesced e2e 比值约 4.01-4.37×
 
 | 维度 | 评分 | 说明 |
 |---|---|---|
@@ -667,8 +667,8 @@ Preemption 策略（简化版）：
 **方案描述**：当前方式——所有 Ray task/actor 结果经 `ray.get` 汇聚到 driver 进程，再用 `psycopg2 execute_values()` 逐批 UPSERT。
 
 **已有实验基础**：
-- `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`：16384 行下 `writeback_s = 6.586s`（占总时间 50%）
-- `motivation/results/gpu/pgvector_writeback_20260714.md`：JSON text (1.567s) vs pgvector(384) (0.897s) 的对比
+- `experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md`：16384 行下 `writeback_s = 6.586s`（占总时间 50%）
+- `experiments/results/motivation/gpu/pgvector_writeback_20260714.md`：JSON text (1.567s) vs pgvector(384) (0.897s) 的对比
 
 | 维度 | 评分 | 说明 |
 |---|---|---|

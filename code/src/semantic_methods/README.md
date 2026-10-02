@@ -4,7 +4,7 @@ The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` e
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through
 network send. Its service-wide `MethodBudgetPool` remains separate from core task/result storage.
-The [image verification](../../../experiments/results/postgresql/image_stages_f_20260920/README.md)
+The [image verification](../../../experiments/results/postgresql/image_stage_execution_check_20260920/README.md)
 covers that specific PG consumer. The broader method programs discussed below still require their
 own PG integration and semantic verification.
 

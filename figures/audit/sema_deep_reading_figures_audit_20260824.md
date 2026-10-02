@@ -4,12 +4,12 @@
 
 ## 1. 来源与版本边界
 
-- 来源文件：`research/reference/sema_vldb2026.pdf`
+- 来源文件：`docs/research/reference/sema_vldb2026.pdf`
 - 题名：*Sema: A High-performance System for LLM-based Semantic Query Processing*
 - 本地版本：arXiv:2603.11622v1，2026-03-12，27 页
 - PDF SHA256：`b57530d5f873dd57eeb39aeed244749fb9a499fd2d18f52b3d269b4fdc83bda1`
 - 版本边界：本地 PDF 首页、页眉和元数据均未给出正式会议、期刊、卷期或 DOI，因此图号、查询数和分项实验仍按 arXiv v1 解读。VLDB 2026 官方程序已经独立确认该工作被 Research Track 录用；截至 2026-08-24，PVLDB 卷期、页码和 DOI 尚未发布。
-- 主笔记：`research/精读文献笔记/sema_vldb2026/sema_vldb2026.md`
+- 主笔记：`docs/research/精读文献笔记/sema_vldb2026/sema_vldb2026.md`
 
 ## 2. 选图原则与结果
 

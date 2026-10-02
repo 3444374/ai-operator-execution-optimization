@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/cortex_aisql_sigmod2026/cortex_aisql_sigmod2026.md`。
+- 使用位置：`docs/research/精读文献笔记/cortex_aisql_sigmod2026/cortex_aisql_sigmod2026.md`。
 - 权威来源：用户本地文献目录中的 `cortex_aisql_sigmod2026.pdf`，题名 *Cortex AISQL: A Production SQL Engine for Unstructured Data*，SIGMOD Companion ’26 正式版。
 - 正式 PDF：13 页，SHA256 `DE533CC29FD9B6B8F573E66B26878BD4943ECDFE67AF51A2DE2C6941D4EC6059`；已通过 `%PDF` 签名、题名和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
 ## 选择结果
@@ -27,12 +27,12 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig1_cortex_platform_architecture.png` | 1155×562 | `680FD7E9CB5CA937F735D402863116D1CD32BE18344E127CA0FC2A58DD68B2A6` |
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig7_ai_aware_execution_plans.png` | 1134×726 | `A4302F4060FF534F5B1225961556AD7EA9A09C63CECC37584C80A35F98433A3B` |
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig9_predicate_reordering.png` | 1145×695 | `AC475945A49BAA548EFC30B1AB9AB58976979C5174BB330CFAF0D21820DA8814` |
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig10_ai_predicate_join_placement.png` | 1134×695 | `800CA4E020C452CFE9921DA967927CC6995082564C59E5735C199B9051DA7145` |
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig11_adaptive_model_cascades.png` | 2341×808 | `55DD4156134DBF7997FB740B503736D47E4B563A5F4CECCA5348E0902E3AD300` |
-| `research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig12_semantic_join_rewrite.png` | 2341×859 | `B46A0270B349FA8DF87E7B927DD1235FD3986D91B2DB21BE8AFA49B204316087` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig1_cortex_platform_architecture.png` | 1155×562 | `680FD7E9CB5CA937F735D402863116D1CD32BE18344E127CA0FC2A58DD68B2A6` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig7_ai_aware_execution_plans.png` | 1134×726 | `A4302F4060FF534F5B1225961556AD7EA9A09C63CECC37584C80A35F98433A3B` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig9_predicate_reordering.png` | 1145×695 | `AC475945A49BAA548EFC30B1AB9AB58976979C5174BB330CFAF0D21820DA8814` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig10_ai_predicate_join_placement.png` | 1134×695 | `800CA4E020C452CFE9921DA967927CC6995082564C59E5735C199B9051DA7145` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig11_adaptive_model_cascades.png` | 2341×808 | `55DD4156134DBF7997FB740B503736D47E4B563A5F4CECCA5348E0902E3AD300` |
+| `docs/research/精读文献笔记/cortex_aisql_sigmod2026/figures/fig12_semantic_join_rewrite.png` | 2341×859 | `B46A0270B349FA8DF87E7B927DD1235FD3986D91B2DB21BE8AFA49B204316087` |
 
 提取方式：使用 `pypdfium2` 对正式 PDF 对应页面作 4.5× raster render，再按原图图形边界裁剪。没有重绘、锐化、替换颜色、修改坐标或删除图内元素；论文英文 caption 不进入裁剪件，由精读正文的中文 alt text 和来源行承担说明。
 

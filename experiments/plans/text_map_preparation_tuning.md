@@ -175,9 +175,9 @@ Job和socket session归还；第一次失败即停，新增额度不用于重放
 
 ## 问题与已有依据
 
-[主表结果](../results/postgresql/text_map_main_real_20260930/README.md)中，SemLoom准备中位数5.303秒，
+[主表结果](../results/postgresql/text_map_four_path_comparison_20260930/README.md)中，SemLoom准备中位数5.303秒，
 释放至全部消费中位数12.678秒；准备不是全部差距。起点`07a8cfd9`已补分段观测，
-旧68份查询的配置与编号一致；[分支审查](../results/postgresql/text_map_main_real_20260930/README.md#branch-review)
+旧68份查询的配置与编号一致；[分支审查](../results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)
 记录该工程修订。现有导出不能还原首条提交时刻，不从总时间猜内部函数成本。
 
 待逐项检验的解释：查询新建gateway的库加载及Ray连接/actor就绪；首批Daft/Arrow加载与图创建；

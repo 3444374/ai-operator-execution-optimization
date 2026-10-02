@@ -175,8 +175,8 @@ def _formal_runs(path: Path) -> pd.DataFrame:
 
 def figure_work_organization() -> None:
     paths = {
-        "2 endpoints / large KV pool": ROOT / "experiments/results/rc1_data_organization/dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv",
-        "4 endpoints / small KV pool": ROOT / "experiments/results/rc1_data_organization/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv",
+        "2 endpoints / large KV pool": ROOT / "experiments/results/data_organization_comparison/dataorg_2ep_1.5b_cacheON_20260731/raw/runs.csv",
+        "4 endpoints / small KV pool": ROOT / "experiments/results/data_organization_comparison/dataorg_4ep_1.5b_cacheON_20260731/raw/runs.csv",
     }
     frames = []
     for topology, path in paths.items():

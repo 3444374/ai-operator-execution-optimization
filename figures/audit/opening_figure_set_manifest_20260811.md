@@ -3,7 +3,7 @@
 ## 1. 目的
 
 解决 `figures/data/report_main/` 图过多、文件名无法直接映射到开题页面的问题。依据
-`opening/opening_defense_outline_20260808.md` 与
+`docs/archive/opening/opening_defense_outline_20260808.md` 与
 `figures/audit/opening_required_data_figures_20260810.md`，建立
 `figures/opening_figure_set/` 作为开题材料的单一选图入口。
 
@@ -13,7 +13,7 @@
 2026-08-20 报告正文重新按论证需要选图，共引用其中 11 张：P03、P05、P06、P07、P08、P11、
 P12、P13、P14、P15 和 P16。P09、P17、P18 作为配套候选复制到报告专用目录但不插入正文，
 避免可行性分析重新变成实验结果图集。报告副本及图号映射见
-`opening/report/figures/README.md`，权威图源和原审计结论不变。
+`docs/archive/opening/report/figures/README.md`，权威图源和原审计结论不变。
 
 2026-08-23 将 P16 的权威源更新为 `opening_cost_model_decision_quality_v4`。图 a 将六种估计方法
 分别绘制为统一坐标的小图，用空心真实点、实心预测点和竖向差值线展示 80 组候选均值；图 b、c

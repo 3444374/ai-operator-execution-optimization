@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/ray_osdi2018/ray_osdi2018.md`。
+- 使用位置：`docs/research/精读文献笔记/ray_osdi2018/ray_osdi2018.md`。
 - 权威来源：用户本地文献目录中的 `ray_osdi2018.pdf`，题名 *Ray: A Distributed Framework for Emerging AI Applications*，13th USENIX Symposium on Operating Systems Design and Implementation（OSDI ’18）正式版。
 - 正式 PDF：18 页，SHA256 `066FECEE9604CA232B5FBAEAA7DD260C88149A1BE6DD4357EF16705986B99290`；已通过 `%PDF` 签名、首页题名和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
 ## 选择结果
@@ -30,16 +30,16 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/ray_osdi2018/figures/fig4_dynamic_task_graph.png` | 1145×961 | `91500185613D20200A5E759BF8AB2D43DA43871BCCBF9636EDC35863A5D04AC8` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig5_ray_architecture.png` | 1156×675 | `AA5C82277FB0BBBE2947B969E1227FAA33C159E92AAEF41A796091AC4610BEE7` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig6_bottom_up_scheduler.png` | 1156×685 | `2A942EF1CEE5F18F819855D61A2A9CD656E346B89ACC1AC7523DC3E25D155220` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig7_end_to_end_execution.png` | 1156×1268 | `2C63C01686CD91217528FC0E5AA422D33B28236FCE2D8876F1FA12AEB7E3B5A2` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig8_locality_and_scalability.png` | 1165×583 | `E74DC0325500BAD7B0B0E25F073919C3F665577F4546548CB16F6F18E7EE4024` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig10a_gcs_reconfiguration.png` | 1155×614 | `444A97CAF74FDECE6F611207C540E89FF5DC63A6B622503C783CAC57DBBF487B` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig10b_gcs_flushing.png` | 1155×593 | `CA1749647F1CB3D16B8959DE8DBFBA16F2AB956D52EC3D93A3C1E7936C4C1396` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig11_fault_tolerance.png` | 1176×1340 | `CB9718A537B9F0C2234790474D7E33C658E68BB8C2D44CD972003A749A501D7E` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig12_allreduce_scheduler_ablation.png` | 1175×573 | `A73C2675F980A76BE4E5810A3BE0851DF676B6CFB59CB99C0491002ACC3FC34A` |
-| `research/精读文献笔记/ray_osdi2018/figures/fig14_rl_applications.png` | 1175×634 | `34CD2996C97DB077C698982138C2C12254214AFFDF6DDB5261EDA6D63C657148` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig4_dynamic_task_graph.png` | 1145×961 | `91500185613D20200A5E759BF8AB2D43DA43871BCCBF9636EDC35863A5D04AC8` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig5_ray_architecture.png` | 1156×675 | `AA5C82277FB0BBBE2947B969E1227FAA33C159E92AAEF41A796091AC4610BEE7` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig6_bottom_up_scheduler.png` | 1156×685 | `2A942EF1CEE5F18F819855D61A2A9CD656E346B89ACC1AC7523DC3E25D155220` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig7_end_to_end_execution.png` | 1156×1268 | `2C63C01686CD91217528FC0E5AA422D33B28236FCE2D8876F1FA12AEB7E3B5A2` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig8_locality_and_scalability.png` | 1165×583 | `E74DC0325500BAD7B0B0E25F073919C3F665577F4546548CB16F6F18E7EE4024` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig10a_gcs_reconfiguration.png` | 1155×614 | `444A97CAF74FDECE6F611207C540E89FF5DC63A6B622503C783CAC57DBBF487B` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig10b_gcs_flushing.png` | 1155×593 | `CA1749647F1CB3D16B8959DE8DBFBA16F2AB956D52EC3D93A3C1E7936C4C1396` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig11_fault_tolerance.png` | 1176×1340 | `CB9718A537B9F0C2234790474D7E33C658E68BB8C2D44CD972003A749A501D7E` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig12_allreduce_scheduler_ablation.png` | 1175×573 | `A73C2675F980A76BE4E5810A3BE0851DF676B6CFB59CB99C0491002ACC3FC34A` |
+| `docs/research/精读文献笔记/ray_osdi2018/figures/fig14_rl_applications.png` | 1175×634 | `34CD2996C97DB077C698982138C2C12254214AFFDF6DDB5261EDA6D63C657148` |
 
 提取方式：使用 `pypdfium2` 对正式 PDF 对应页面作 4.5× raster render，再按原图图形边界裁剪。Figure 10 的两个 panel 因垂直分布且对应两个独立正文小节，分别输出；其余 multi-panel Figure 保持为一个整体。没有重绘、锐化、替换颜色、修改坐标或删除图内元素；论文英文 caption 不进入裁剪件，由精读正文的中文 alt text 和来源行承担说明。
 

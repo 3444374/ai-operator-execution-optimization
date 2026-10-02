@@ -2,7 +2,7 @@
 
 > **归档状态（2026-08-27）**：双 endpoint 低压力对照、四 endpoint KV 压力重测和 routing
 > 补充均已完成。结论是数据组织收益依赖运行条件，而不是统一排名；结果见
-> [`../../results/rc1_data_organization/`](../../results/rc1_data_organization/)。下文保留预注册合同，
+> [`../../results/rc1_data_organization/`](../../results/data_organization_comparison)。下文保留预注册合同，
 > 不再代表待运行任务。
 
 > 关联：执行流程遵循根 `AGENTS.md` §7.5（pre-flight / 干净合同 / 合规自检 / 全数据 README / 存储）。本 doc 只定 RC1 特定的合同、策略清单、拓扑、取代范围。
@@ -50,7 +50,7 @@
 
 ## 5. 存储 + 写up
 
-- **存储**：`experiments/results/rc1_data_organization/<strategy>_<topology>_<date>/{README.md, raw/}`（根 AGENTS §7.5.E）。
+- **存储**：`experiments/results/data_organization_comparison/<strategy>_<topology>_<date>/{README.md, raw/}`（根 AGENTS §7.5.E）。
 - **README**：根 AGENTS §7.5.D 顺序（目的/设置/合规自检/设计/全组件数据表/解释/含义/下一步）。
 - **最终连贯报告**：一个 RC1 总报告（所有策略 × 两拓扑对比）+ registry + PROJECT_LOG + experiment_status §1.1 更新（标旧 RC1 为 superseded）。
 

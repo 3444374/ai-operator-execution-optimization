@@ -74,7 +74,7 @@ HTTP/Python UDF 臂；LOTUS 确实实测名为 `AI UDF` 的 baseline，其中部
 并非 PostgreSQL 逐行同步 HTTP。因此本项目使用名称
 `PostgreSQL row-wise HTTP AI UDF (literature-motivated lower-bound control)`，不称 Cortex/LOTUS
 原样 baseline。细节与一手链接见
-[`research/lotus_postgresql_execution_layer_fit_20260821.md`](../../../research/lotus_postgresql_execution_layer_fit_20260821.md)
+[`docs/research/lotus_postgresql_execution_layer_fit_20260821.md`](../../../docs/research/lotus_postgresql_execution_layer_fit_20260821.md)
 §10。
 
 首版不修改 PostgreSQL core source，不 fork PostgreSQL；优先使用 PostgreSQL extension、

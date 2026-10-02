@@ -259,7 +259,7 @@ SHA、archive SHA、matrix-index SHA、matrix instance、commit 和 config finge
 五臂不全或任一 cell 非 exactly-once 都不能进入 formal；archive 必须是 root 全部文件的逐字节镜像，
 只放一个空 snapshot/单个伪 cell 的 tar 会被拒绝。
 
-本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`motivation/results/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
+本指南沉淀 2026-07-27 把项目部署到 AutoDL(2× GPU 云服务器)的全流程经验,目标是可在云上复现本机实验并补"多 endpoint / 多 GPU"真实验证缺口(见根 `AGENTS.md` §3、`experiments/results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md` 第 83 行)。
 
 指南面向"从零起一台 AutoDL 实例到跑通首个多 endpoint 实验"。所有命令均为 Linux bash(远端)。
 

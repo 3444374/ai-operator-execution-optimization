@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-10-02：目录职责收敛与实验命名整理
+
+- 顶层内容统一为code、deploy、data、experiments、docs与figures；研究材料进入docs/research，历史工程、开题与旧PPT工程进入docs/archive。
+- 组件检查和动机结果进入统一实验目录，12个Python入口集中到code/scripts/benchmarks；修正默认输出位置和对应CSV文件名。
+- 24个实验目录按对象和用途调整名称，报告明确实际验证类型，旧名从项目导航定位；原始实验、运行、系统臂与配置身份保留。
+- 学习讲解进入对应代码、研究和实验文档；沟通中的待核对项进入实际计划与文献清单，独立沟通记录和速览入口收敛。
+- 目录修改前6890份受Git管理文件的独立备份逐项核对通过；本次为离线存放与文档调整，模型调用0。
+- 暂存版本独立恢复108个目录、9422个文件和309474691字节；4525个直接科学文件摘要一致，218份报告正文与结论保留。恢复工具8项、默认路径回归1项、11个CLI入口及离线分析通过；本地链接2785条、隐私与diff检查通过。
+
+
 ## 2026-10-02：合并前核对证据与实验结论
 
 - 用户确认关键证据、数据和实验结论保留后可合并PR #8；结果规则补充实验结论及其适用条件、数据和计算来源。
@@ -145,7 +155,7 @@
 - 复现并修正实际配置及查询编号未与下发候选核对的问题；68份真实记录重新核对，差异0，不撤销本轮结果。
 - 新增PG准备、gateway加载、Ray连接/actor就绪及首批处理观测；74项本地检查中69通过、5项Daft/Arrow依赖缺失跳过，真实模型请求0次。
 - 准备之外仍有执行差距，旧导出不能恢复首条请求时刻；目标环境无模型分段采集待执行，不改服务生命周期或追加模型额度。
-- [审查、失败复现、验证与恢复](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)保存本轮依据；旧成功、失败与输出差异均保留。
+- [审查、失败复现、验证与恢复](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)保存本轮依据；旧成功、失败与输出差异均保留。
 
 ## 2026-09-30：文本Map比较提交整理
 
@@ -159,7 +169,7 @@
 - 4条正确性、48条调参、16条独立评价全部通过，用时1113.430秒；账本/访问日志/vLLM成功计数一致，输入/输出token2,959,588／123,072。
 - 选点容量SemLoom64、direct64、Ray128、Daft64；1024行三次时间中位数18.101、7.705、22.849、11.668秒，准确率84.961–85.254%。
 - 762份源码运行前后一致，68单元未发现未确认或Ray/HTTP错误，247个采样后代PID及20处ACL清理核对通过。
-- [当前结果与全部历史尝试](experiments/results/postgresql/text_map_main_real_20260930/README.md)保留所有重复、质量差异与原异常；不能因本次成功确认旧根因或质量等价。
+- [当前结果与全部历史尝试](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)保留所有重复、质量差异与原异常；不能因本次成功确认旧根因或质量等价。
 - 下一项定位约5.3秒的查询专属准备成本；比较计划移入completed并更新入口，本轮未追加优化实验，未提交或推送。
 
 ## 2026-09-30：SemLoom真实诊断复测通过
@@ -168,7 +178,7 @@
 - 16行核对及容量128的四次512行查询全部通过；账本、访问日志与vLLM成功增量均2,064，输入/输出token150,305／6,192。
 - 用时281.156秒，原未确认异常没有复现；只能报告有限复测通过，不据此认定旧根因或完整性能优势。
 - 模型、PG、Ray、28个采样后代PID及15处ACL清理核对通过。没有续跑原失败清单、没有额外模型请求、未提交或推送。
-- [诊断原值与清理](experiments/results/postgresql/text_map_main_real_20260930/README.md)已保存；四路径调参选点和独立评价仍需完整的新运行。
+- [诊断原值与清理](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)已保存；四路径调参选点和独立评价仍需完整的新运行。
 
 ## 2026-09-30：Ray远程错误记录与断连恢复
 
@@ -176,7 +186,7 @@
 - actor以安全元数据传递原因，传输层区分HTTP、RPC与返回值检查阶段，保留任务关联和未确认状态；没有重试或释放未知额度。
 - 本地9项、Linux21项、实际PG/Ray的7项回归通过；403次合成POST，含4次断连，随后同服务查询恢复；资源与ACL核对通过。
 - 更新服务器前归档旧761份执行源码；当前762份源码一致。修复的是观测缺陷，原真实故障原因仍不能由旧日志恢复。
-- [修订与证据](experiments/results/postgresql/text_map_main_real_20260930/README.md)保存完整结果；另准备2,064次/15分钟真实诊断清单，等待确认。未追加模型请求、未提交或推送。
+- [修订与证据](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)保存完整结果；另准备2,064次/15分钟真实诊断清单，等待确认。未追加模型请求、未提交或推送。
 
 ## 2026-09-30：修订主表真实运行与异常停止
 
@@ -185,7 +195,7 @@
 - 四条正确性与32条调参通过；Ray/Daft三档真实HTTP峰值达16/64/128。SemLoom容量128第二次测量出现1条未确认远程执行后停止。
 - 账本预扣16,862次、服务成功16,861次，用时681.053秒；未选点、未进入评价、未重试或追加模型请求。
 - 底层异常详情未记录，通用SQL错误不能证明模型服务故障；保留232行临时结果、核心未确认状态及gateway强制终止记录。
-- [失败与部分原值](experiments/results/postgresql/text_map_main_real_20260930/README.md)已保存，独立核对模型/PG/Ray停止与ACL恢复；当前先定位可靠性问题。未提交或推送。
+- [失败与部分原值](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)已保存，独立核对模型/PG/Ray停止与ACL恢复；当前先定位可靠性问题。未提交或推送。
 
 ## 2026-09-30：补齐原生Daft并验证Ray/Daft候选
 
@@ -218,17 +228,17 @@
 
 ## 2026-09-28：开题结束并转为原位归档
 
-- 用户确认开题已经结束。`opening/`、开题专用图集和既有答辩工程保留原路径及文件，只用于回查；后续研究、实现、实验和图表变化不再自动同步这些材料。
-- 根规则、实验和图资产规则移除例行开题同步；`opening/AGENTS.md` 仅处理明确提出的历史材料任务。
+- 用户确认开题已经结束。`docs/archive/opening/`、开题专用图集和既有答辩工程保留原路径及文件，只用于回查；后续研究、实现、实验和图表变化不再自动同步这些材料。
+- 根规则、实验和图资产规则移除例行开题同步；`docs/archive/opening/AGENTS.md` 仅处理明确提出的历史材料任务。
 - 根 README、项目导航、总纲、`docs/` 入口和图资产入口改为历史状态说明；总纲中的开题时期结果与图件段落保留原文并标明历史用途。
-- 开题文本三臂计划移入 `experiments/plans/archive/`，旧条件性补测退出当前计划；原始结果仍在 `experiments/results/` 保留原身份。`research/top15_ranked_papers.md` 标为开题时期选目，现行文献仍从知识库和文献清单查。
+- 开题文本三臂计划移入 `experiments/plans/archive/`，旧条件性补测退出当前计划；原始结果仍在 `experiments/results/` 保留原身份。`docs/research/top15_ranked_papers.md` 标为开题时期选目，现行文献仍从知识库和文献清单查。
 - 本轮没有模型请求、正式实验、PPT 生成或远端文档写入；现行事实仍以源码、实验原始结果、证据台账与项目总纲为准。
 
 ## 2026-09-28：按职责整理历史设计、脚本说明与旧答辩文件
 
-- 原 `code_doc/` 的设计与实施正文连同既有 `docs/` 内容，按用途归入 `docs/designs/`（15 份）和 `docs/plans/`（23 份）；移动前后逐文件 SHA-256 相同，未发现完全相同的正文文件。移除重复目录与导航，现行规则和计划入口改指新位置。
+- 原 `code_doc/` 的设计与实施正文连同既有 `docs/` 内容，按用途归入 `docs/archive/engineering/designs/`（15 份）和 `docs/archive/engineering/plans/`（23 份）；移动前后逐文件 SHA-256 相同，未发现完全相同的正文文件。移除重复目录与导航，现行规则和计划入口改指新位置。
 - `code/scripts/README.md` 从 1,937 行收为 524 行：现行 PostgreSQL/provider 命令保留，早期机器示例和逐次参数说明改为脚本、runbook、结果报告的用途导航；旧文仍可从 `d32366de` 恢复。移除一个仅转调现有核心、无现行调用方的 SAOR 控制开销 CLI；带独立汇总逻辑的轨迹回放工具、其他汇总器与有运行证据的请求等价工具保留。
-- v9 构建器确认直接读取学校模板。v4–v8 五份旧 PPTX、三个旧构建器、更早的 `build_ppt.py` 与 `opening_ppt.md`，连同旧版 QA、图文审查和 v6 设计记录移入 `opening/slides/archive/`；全部 16 份文件与 `d32366de` 的 Git blob 核对一致。v9 文件与构建器保留原路径。
+- v9 构建器确认直接读取学校模板。v4–v8 五份旧 PPTX、三个旧构建器、更早的 `build_ppt.py` 与 `opening_ppt.md`，连同旧版 QA、图文审查和 v6 设计记录移入 `docs/archive/opening/slides/archive/`；全部 16 份文件与 `d32366de` 的 Git blob 核对一致。v9 文件与构建器保留原路径。
 - 早期实验 raw 虽有历史镜像核验记录，本机未取得可重新核对的镜像，因此本轮不移动或删除；2026-07-12 独立 PPT 工程及其验证材料也保留。
 - 本轮没有模型请求、正式实验或 PPT 生成；移动文件与原 Git blob 一致，受影响文档的本地链接均存在，四项 SAOR 核心测试通过，文字检查及 `git diff --check` 通过。
 
@@ -265,7 +275,7 @@
 - 原控制器因最后扫描记录PID301008而返回失败，耗时505.869秒。该PID未保存命令信息；随后只读核对时已不存在，服务/PG/gateway/端口/GPU均已清理，原告警不覆盖。
 - PG/direct均为持续供给不足，未选出平台候选；没有启动第二验证单元、W调参、评价或图像阶段。
 - 本轮Linux provider79项中70通过、9项环境跳过。生产源码保持7d585615；容量扫描和异常记录已有的受控证据保留，本轮只新增复查结果与状态同步。
-- [完整记录](experiments/results/postgresql/m1_full_recheck_20260920/README.md)及7份gzip/字节SHA清单；通过提交检查后，将容量扫描修复、诊断改动和完整证据合入main并推送；现行状态表同步为本轮结果。
+- [完整记录](experiments/results/postgresql/map_capacity_recheck_20260920/README.md)及7份gzip/字节SHA清单；通过提交检查后，将容量扫描修复、诊断改动和完整证据合入main并推送；现行状态表同步为本轮结果。
 
 ## 2026-09-20：C64异常记录与有限复测
 
@@ -274,7 +284,7 @@
 - 预先限定3,088次/20分钟：PG/direct各8条，PG C4/C16各512条，再C64四次512条；实际全部完成，服务访问与success counter均3,088，耗时262.458秒。
 - C64无未确认项，四次JCT11.751/11.531/11.171/11.364秒；两次各有一条分类输出变化，均记录。原故障未复现，不能称已定位或修复原故障。
 - 自有服务、PG、gateway、端口、GPU进程清理，ACL恢复；7份gzip证据逐字节与SHA核对。未追加模型请求，未运行方法选点，代码与证据继续保存在分支。
-- [完整记录](experiments/results/postgresql/m1_c64_errors_20260920/README.md)。
+- [完整记录](experiments/results/postgresql/map_c64_request_diagnostic_20260920/README.md)。
 
 ## 2026-09-20：M1供给定位与中止的真实复测
 
@@ -286,7 +296,7 @@
 - PG/direct各8行正确性及PG C4/C16两次512行预热完成；C64因两项MODEL_UNAVAILABLE未确认执行失败。账本1552次尝试、服务端1550次成功；443条临时结果不评分。
 - 原具体异常类型未保留，不能仅凭PG消息断定模型崩溃。gateway强制停止和模型正常停止分别记录；自有进程/端口/GPU/ACL全部清理，无自动重试或追加。
 - 证据沿用既有gzip与manifest归档，63份内容压缩前后逐字节和SHA一致；压缩前另行隐私扫描，完整私有记录保留。
-- [完整证据](experiments/results/postgresql/m1_supply_followup_20260920/README.md)。代码与报告提交到 `codex/m1-supply-followup`；C64尚未复核，本次不合入main。
+- [完整证据](experiments/results/postgresql/map_supply_diagnostic_20260920/README.md)。代码与报告提交到 `codex/m1-supply-followup`；C64尚未复核，本次不合入main。
 
 ## 2026-09-20：M1、M2 与 F 有限真实验证
 
@@ -298,7 +308,7 @@
 - F真实CLIP完成151次前向，三路径逐维差异0，15个Job回收，指定前向后错误/取消和共享worker恢复通过；不声称计算中抢占、硬件故障或匹配性能通过。
 - 列表释放修复后本地/Linux各26项通过、2项专用PG跳过；另外2项实际PG/受控HTTP集成通过。原始准备失败和本地环境选择错误分别保留。
 - 自有模型/PG/Ray/任务进程、端口清理，两GPU空闲，ACL恢复。原始材料私有保留，脱敏配置、全部重复、审计与脚本快照入仓库。
-- [完整报告](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)。本轮不追加调用，下一步先定位gateway CPU和供给问题。
+- [完整报告](experiments/results/postgresql/capacity_organization_image_validation_20260920/README.md)。本轮不追加调用，下一步先定位gateway CPU和供给问题。
 
 ## 2026-09-20：M1 改为吞吐平台附近的供给与资源研究
 
@@ -308,7 +318,7 @@
 - 选择依据改为完整有效吞吐、持续供给和全部配对重复；明确平台未观察到、供给不足和波动过大的结果。
 - 标签判断错误保留，输出值摘要与真实 token、各资源域的占用积分并列；不能用 HTTP P99 或预算数代替查询收益。
 - 本地 35 项相关检查通过；新现场编排未运行，真实 PG/HTTP/模型调用均 0 次，原暂停要求保持有效。
-- [修改与验证记录](experiments/results/postgresql/m1_platform_revision_20260920/README.md)；全局信息归 M2，多查询按自身资格推进。
+- [修改与验证记录](experiments/results/postgresql/map_capacity_selection_check_20260920/README.md)；全局信息归 M2，多查询按自身资格推进。
 
 
 ## 2026-09-20：工作包 F 图像类型与阶段执行
@@ -320,7 +330,7 @@
   本地/Linux 各完成 provider 76、图像 81、PG 116、方法/阶段 18 项检查；跳过项与服务器单独集成在报告中区分。
 - 修复方法已关闭会话后的重复 `fail`，并验证慢发送保持方法预留、其他查询仍可执行；启动和 fixture 失败记录保留。
 - 真实模型 0 次、Ray GPU 资源 0；测试 PG/Ray/任务进程已停止，临时 ACL 恢复，两张 GPU 均空闲。
-- [完整实现、证据与未验证范围](experiments/results/postgresql/image_stages_f_20260920/README.md)。真实 CLIP 数值、GPU 故障与性能仍需后续独立验证。
+- [完整实现、证据与未验证范围](experiments/results/postgresql/image_stage_execution_check_20260920/README.md)。真实 CLIP 数值、GPU 故障与性能仍需后续独立验证。
 
 ## 2026-09-14：暂缓M1真实模型调用
 
@@ -380,7 +390,7 @@
 - Linux调度385/网关57/PG合同116、PG回归1/TAP2138及163次受控HTTP通过；25个Job结清，838份源文件核对一致。
 - 真实worker另用63次受控请求通过。首次真实准备实际0次请求，路径类型错误修正并获继续确认后，63次真实POST/19个Job执行、关联与资源回收通过，195.917秒清理。
 - 真实Filter8/8为TRUE，Map55条关联通过但逐字复述0/55；保持质量负结果，未改提示或重跑。两份真实账本合计126预留/63实际，旧失败保留。
-- 详细记录与失败说明见[查询共享报告](experiments/results/postgresql/query_sharing_e_20260914/README.md)。
+- 详细记录与失败说明见[查询共享报告](experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)。
 
 ## 2026-09-14：从工程工作包转向设计假设与证据论证
 
@@ -894,7 +904,7 @@
 - `code/AGENTS.md`、`deploy/AGENTS.md` 和 `deploy/runtime/AGENTS.md` 按行为影响选择验证，保留
   共享协议/执行层旧路径回归与环境 preflight；纯文字或资产元数据变更复用对应检查。
   超长输入处理明确服从算子语义，生成型 SemMap 不由批处理策略自行截断。
-- `code_doc/AGENTS.md` 仅在判断当前实现时追加代码规则；`learning/AGENTS.md` 按当前疑问组织
+- `code_doc/AGENTS.md` 仅在判断当前实现时追加代码规则；`AGENTS.md#规则层级与读取顺序` 按当前疑问组织
   讲解，移除重复的通用 skill 依赖和库 API 示例；`figures/AGENTS.md` 沿用已确定的绘图链，
   专门方法按需参考。数据来源、图形可复现性、实际导出检查和人工编辑保护继续保留。
 - 在原 SAOR bounded-priority 实现段落旁标明历史执行身份，保留原文；其中的指定 skill、行数
@@ -950,7 +960,7 @@
 
 ## 2026-09-03 登记 SPEAR 精读笔记
 
-- 按用户要求提交新增的 [SPEAR 精读笔记](research/精读文献笔记/spear_cidr2026/spear_cidr2026.md)，
+- 按用户要求提交新增的 [SPEAR 精读笔记](docs/research/精读文献笔记/spear_cidr2026/spear_cidr2026.md)，
   保留用户对 Prompt View、Prompt Algebra、Refinement Policy、初步实验及项目关系的阅读分析。
 - 按目录约定将主笔记文件名统一为 `spear_cidr2026.md`，补官方论文与当前项目设计入口，修正少量
   措辞和空白；不将个人分析登记为既定实现方案，不改生产代码、四 D 合同或工程顺序。
@@ -966,7 +976,7 @@
 
 - 以 main c7b1e9e6 对照用户两份讨论、当前 machine/writer/pump/runtime、同步 wire v5、外部 session、
   调度 work/HRW 与 Filter cost；只改研究/工程/实验说明，不改生产或测试代码、四 D 合同及预算。
-- 新增[专项研究审查](research/semantic_prefix_reuse_design_audit_20260903.md)，角色是理论候选与证据分析，
+- 新增[专项研究审查](docs/research/semantic_prefix_reuse_design_audit_20260903.md)，角色是理论候选与证据分析，
   不另建架构主计划。Kalypso 已有依赖内存计账和默认 virtual pinning；MLSys 2025 不是仅单算子/
   全局固定字段序，也评估准确率；SPEAR 与 KVFlow 进一步限制多表示、共享前缀与依赖组合的宽泛新颖性。
   SPEAR 增入核心补充线索，不改变 Top 15、精读数量或开题已完成贡献。
@@ -1811,7 +1821,7 @@
 ## 2026-08-30 文档职责与 PostgreSQL 工程实施路线收敛
 
 - 按实际问题而非目录名称重新确定当前入口职责：`PROJECT_OUTLINE.md` 只回答为什么做、
-  研究什么和当前优先级；`research/` 保存文献机制、可迁移策略与研究缺口；
+  研究什么和当前优先级；`docs/research/` 保存文献机制、可迁移策略与研究缺口；
   `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 是唯一 PostgreSQL
   工程架构与实施计划；`code/INFRA_STATUS.md` 只记录源码事实；证据台账只记录验证强度。
 - 工程计划补全实际调用链、模块所有权、当前未完成切片和 Adapter/Factory/Strategy/State
@@ -1974,7 +1984,7 @@
 
 - 对照正式 PVLDB 19(12): 4223–4236 论文，确认 IMLane 正文 Figure 1–15 均能独立支撑笔记中的应用工作流、执行瓶颈、调度机制、系统架构或实验讲解；以 14 个原图裁剪件插入对应段落，Figures 9–10 按论文同排布局联合裁切。
 - 每张图均补充来源页码、读图顺序、指标口径和不能外推的结论；Figure 5 的故障隔离未作定量验证，Figure 12/14 的双轴或不同量级比较、Figure 13 的平均利用率范围、Figure 15 的外部数据搬运口径均在正文说明。版本、输出 SHA256 和逐图视觉检查见 `figures/audit/imlane_deep_reading_figures_audit_20260828.md`。
-- 精读目录按小写 snake_case 约定登记为 `research/精读文献笔记/imlane_pvldb2026/`。当前精读库为 17 篇主笔记、160 张论文原图裁剪件，本地参考目录为 7 份可解析 PDF；同步更新研究入口、文献清单、参考索引、图资产说明和项目索引，未修改开题正文、PPT 或实验结论。
+- 精读目录按小写 snake_case 约定登记为 `docs/research/精读文献笔记/imlane_pvldb2026/`。当前精读库为 17 篇主笔记、160 张论文原图裁剪件，本地参考目录为 7 份可解析 PDF；同步更新研究入口、文献清单、参考索引、图资产说明和项目索引，未修改开题正文、PPT 或实验结论。
 
 ## 2026-08-28 PostgreSQL semantic carrier 与外部执行代码架构复审
 
@@ -2016,7 +2026,7 @@
 - 将 2026-08-21 的 PostgreSQL+LOTUS 主计划和 LOTUS frontend 子计划移入
   `experiments/plans/archive/`；旧 Q1–Q23 决策、v1.2.4 源码审计与错误测试仍保留，但 LOTUS 改为
   可选 compatibility profile、算子算法/reference behavior 来源和 native full-system baseline。
-- 新增 `research/sema_native_semantic_operator_architecture_reference_20260827.md`，使用 Sema 论文与
+- 新增 `docs/research/sema_native_semantic_operator_architecture_reference_20260827.md`，使用 Sema 论文与
   官方 artifact、VLDB 2026 官方程序、PostgreSQL 官方扩展文档、LOTUS 固定版本源码，以及
   Palimpzest、DocETL、Abacus 一手论文/仓库核对架构角色与当前未实现能力；同步研究知识库入口。
 - 同步根规则、总纲、根/代码/实验/overview 入口、实现状态、证据台账和条件性实验计划。现有
@@ -2084,8 +2094,8 @@
 - 按用户要求删除根 `AGENTS.md` 的 Wiki 同步规则，后续修改知识文件时不再自动同步、检查平级
   Wiki 仓库或在会话结束时提醒同步。
 - 删除 `experiments/plans/AGENTS.md`、`PROJECT_INDEX.md`、`PROJECT_OUTLINE.md`和两个文献笔记入口中的
-  同步指针，并删除不再使用的 `research/knowledge_sync_guide.md`。历史日志和历史发布面中的 Wiki 记录保留为当时事实。
-- 本次只停用与 `../ai-operator-wiki/` 之间的同步；`research/`、实验计划/结果、总纲、索引和 README 的项目内知识源及权威关系不变。
+  同步指针，并删除不再使用的 `docs/research/knowledge_sync_guide.md`。历史日志和历史发布面中的 Wiki 记录保留为当时事实。
+- 本次只停用与 `../ai-operator-wiki/` 之间的同步；`docs/research/`、实验计划/结果、总纲、索引和 README 的项目内知识源及权威关系不变。
 
 ## 2026-08-27 全项目规则层级梳理
 
@@ -2102,12 +2112,12 @@
   版本条件、比较条件和验证动作，复扫为 0 个命中。
 - `CLAUDE.md` 从无条件导入全部顶层目录规则改为只导入根 `AGENTS.md`，进入具体路径时再读取沿途
   规则；删除与根文件重复的环境、同步和隐私副本，Codex/Claude Code 共用同一事实源。
-- 重写 `code/`、`experiments/`、`figures/`、`opening/`、`motivation/` 的规则，分别保留模块边界、
+- 重写 `code/`、`experiments/`、`figures/`、`docs/archive/opening/`、`experiments/results/motivation/README.md` 的规则，分别保留模块边界、
   实验授权/落盘、图源/视觉 QA、开题论证/发布、动机证据边界；历史经验和当前状态改为指向现有
   README、audit、计划和结果入口。其余顶层/嵌套规则统一声明继承关系，不再重复父规则。
-- 额外发现 `opening/work_rules.md` 与 `opening/ppt_rules.md` 两份文件名为 rules 的文档；保留路径以
+- 额外发现 `docs/archive/opening/work_rules.md` 与 `docs/archive/opening/ppt_rules.md` 两份文件名为 rules 的文档；保留路径以
   避免破坏历史引用，但降为按任务触发的跨材料路由清单和 PPT 专项检查清单，由
-  `opening/AGENTS.md` 明确触发条件，不再作为可覆盖父规则的并列规范。
+  `docs/archive/opening/AGENTS.md` 明确触发条件，不再作为可覆盖父规则的并列规范。
 - 修正规则中的失效或漂移项：删除不可用的 `academic-research-suite` 固定指针和过期“49 篇精读”
   计数；沟通表述统一为当前 PostgreSQL/LOTUS 课题定位；根 evidence 脱敏路径修正为
   `code/src/baselines/common/redact.py`；部署版本从规则下沉到 runtime profile/runbook。
@@ -2116,7 +2126,7 @@
   `AGENTS.md` 均在文件开头声明继承关系，当前规则 Markdown 引用无缺失目标。旧结果/日志中的
   章节号由根兼容表解释，新文档改用章节名称。
 - 可执行性复核发现当前工作区不存在规则假定的 `../ai-operator-wiki/`，且同步指南已注明精读两级
-  目录尚未映射。根规则和 `research/knowledge_sync_guide.md` 改为先检查 sibling、脚本与路径映射；
+  目录尚未映射。根规则和 `docs/research/knowledge_sync_guide.md` 改为先检查 sibling、脚本与路径映射；
   任一缺失即报告 `pending`，不创建平级项目或手工复制绕过同步脚本。
 - 最终规则审计：30 份 `AGENTS.md` 均有同目录 README，29 份子规则全部显式继承；含 CLAUDE 与两份 opening 专项
   清单共 33 个入口，189 个 Markdown 指针和 4 个具体代码/SQL/config 指针均存在，长句重复规则为
@@ -2128,7 +2138,7 @@
 
 ## 2026-08-27 全项目文档、实验计划与目录层级整理
 
-- 重写根 `README.md`、`PROJECT_INDEX.md`、`overview/current_direction_and_plan.md` 和
+- 重写根 `README.md`、`PROJECT_INDEX.md`、`README.md` 和
   `experiments/README.md`，把 LOTUS v1.2.4 语义迁移 → PostgreSQL planner/query-lifecycle
   资格验证明确为当前最短路径；`PROJECT_OUTLINE.md` 新增当前优先级与历史记录边界，并重写
   执行顺序，旧 SAOR/readiness/rehearsal 细节保留为历史证据而非隐含待办。
@@ -2136,7 +2146,7 @@
   `archive/` 历史方案；按文档内容而不是文件日期归类 12 份计划/参考文件，逐份补充完成范围、
   结果入口、剩余工作和运行授权状态，并更新全仓引用。实验 raw、manifest、失败运行和结果目录
   均未删除或移动。
-- 新增 `docs/`、`code_doc/`、`data/` 的目录规则，收紧 `projects/` 为旧 PPT 工程归档；重写相应
+- 新增 `docs/`、`code_doc/`、`data/` 的目录规则，收紧 `docs/archive/opening/ppt_generation_20260712/` 为旧 PPT 工程归档；重写相应
   README，明确一次性设计记录、当前源码、原始数据合同和历史产物之间的权威关系。
 - 合并 `code/scripts/serving/` 与 `code/scripts/services/` 的重复职责：vLLM identity launcher 移到
   `services/`，同步部署脚本、测试和脚本导航；只删除移动后为空的目录，不以静态 import 数量猜测
@@ -2145,10 +2155,10 @@
   为二级标题，保留唯一内容和 Git 历史。整理后没有重复标题字符串。
 - 根目录旧 `validation/` 已不在工作区，`tmp/legacy-validation-output-20260827/` 当前为空；因此本轮
   无法复核此前记录的约 807 MB 内容或“可恢复”状态，不能把该目录当作备份。当前仍存在被忽略的
-  `__pycache__`/`.pyc`、空 `.test-tmp`、空 `.worktrees` 和空 `opening/slides/.build`，统一保留为
+  `__pycache__`/`.pyc`、空 `.test-tmp`、空 `.worktrees` 和空 `docs/archive/opening/slides/.build`，统一保留为
   清场候选，等待用户看完收尾报告后确认；`.gitignore` 已登记 `validation/` 与 `.test-tmp/`。
 - 校准 `code/README.md`、`code/INFRA_STATUS.md`、
-  `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` 与 `research/knowledge_hub.md`：明确现有代码
+  `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` 与 `docs/research/knowledge_hub.md`：明确现有代码
   是外部物理执行基座，LOTUS adapter 与 PostgreSQL CustomScan 尚不存在；修正重构后的 batching、
   admission、flush、UCB、shared-vLLM 和 vLLM probe 路径，并将 2026-07 的已完成/负结果从当前知识
   缺口中移出。当前执行顺序统一为 LOTUS 语义 parity → PostgreSQL query-lifecycle 资格验证。
@@ -2171,33 +2181,33 @@
 
 ## 2026-08-25 两份 LaTeX 文档按同名目录归档
 
-- 将精读速览的 `.tex/.pdf` 收纳到 `research/精读文献笔记/paper_deep_reading_digest/`，将答辩 QA 的 `.tex/.pdf` 和设计说明收纳到 `opening/report/opening_defense_qa/`；两个上层目录不再散落同名生成文件。
+- 将精读速览的 `.tex/.pdf` 收纳到 `docs/research/精读文献笔记/paper_deep_reading_digest/`，将答辩 QA 的 `.tex/.pdf` 和设计说明收纳到 `docs/archive/opening/report/opening_defense_qa/`；两个上层目录不再散落同名生成文件。
 - 删除两次编译留下的 9 个可再生成中间文件（`.aux/.log/.out/.toc/.synctex.gz`），每份文档目录只保留可编辑源、最终 PDF，以及答辩 QA 已有的设计说明。
-- 同步根 README、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、opening/research 入口和两级日志；不修改两份 LaTeX 正文、PDF 内容、开题报告、PPT 或实验材料。
+- 同步根 README、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、docs/archive/opening/research 入口和两级日志；不修改两份 LaTeX 正文、PDF 内容、开题报告、PPT 或实验材料。
 
 ## 2026-08-25 新增开题答辩 QA LaTeX/PDF
 
-- 新增 `opening/report/opening_defense_qa/opening_defense_qa.tex`，以 83 道双层问答覆盖课题定位、总体方案、两项研究内容、PostgreSQL/LOTUS 系统资格、实验设计和风险；方案与研究内容 Q15--Q53 共 39 题，并有 44 道回答提供逐步讲解。
+- 新增 `docs/archive/opening/report/opening_defense_qa/opening_defense_qa.tex`，以 83 道双层问答覆盖课题定位、总体方案、两项研究内容、PostgreSQL/LOTUS 系统资格、实验设计和风险；方案与研究内容 Q15--Q53 共 39 题，并有 44 道回答提供逐步讲解。
 - 文末增加 7 条连续追问链、两项研究内容输入—决策—输出表、已有工作差异表和 23 项术语白话解释；特别说明 `sim-filter` / `project-sim-filter` 通过预先过滤候选记录对来减少语义 join 的昂贵两两 LLM 比较，而本课题研究剩余模型调用怎样被组织、提交和路由。
 - 使用 XeLaTeX 实际生成同目录本地 `opening_defense_qa.pdf`（25 页），三次编译后无 LaTeX warning、overfull/underfull 或未定义引用；已检查全页缩略图和关键正文/表格页。PDF 及 LaTeX 中间文件继续按仓库规则忽略，权威可编辑源为 `.tex`。
-- 只对 `opening/README.md`、`PROJECT_INDEX.md` 与两级日志做新增文件登记；未改开题报告正文、Word、PPTX、飞书材料或实验结果。
+- 只对 `docs/archive/opening/README.md`、`PROJECT_INDEX.md` 与两级日志做新增文件登记；未改开题报告正文、Word、PPTX、飞书材料或实验结果。
 
 ## 2026-08-25 新增 15 篇论文精读方法速览 LaTeX 文档
 
-- 新增 `research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`，将当前 15 篇权威精读笔记统一压缩为“背景与问题—核心思路—关键词解释—具体做法—实验结果—与本课题的区别”的总—分结构；每篇以方法链路为主体，目标篇幅为半页至一页 A4。
+- 新增 `docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`，将当前 15 篇权威精读笔记统一压缩为“背景与问题—核心思路—关键词解释—具体做法—实验结果—与本课题的区别”的总—分结构；每篇以方法链路为主体，目标篇幅为半页至一页 A4。
 - 为每篇补充“关键词解释”和“与本课题的区别”：前者只解释理解方法必需的缩写、系统术语与指标，后者统一对照 PostgreSQL 内置 LOTUS 语义算子、外部物理执行链、数据组织、服务状态感知提交与单租户多 Job 调度，明确哪些方法是语义/计划层、serving 内部或通用运行时工作。
 - LOTUS 的 Semantic Join 补充 `sim-filter` 与 `project-sim-filter` 如何分别通过直接 embedding 候选过滤、先语义投影再过滤来减少笛卡尔积上的 Oracle 调用；其余论文同样明确写出计划枚举、调用消减、请求重排、batch 形成、资源调度或公平记账的实际步骤。
 - 文档采用紧凑 A4 `ctexart` 版式，首行声明 XeLaTeX 编译器，并用最小剩余空间规则防止论文标题孤立在页尾。已将 MiKTeX 主程序和宏包安装到 `D:\Programs\MiKTeX`，更新包数据库后实际编译为 6 页 PDF，并完成分页与页面检查；本地 PDF 可再生成且被 `*.pdf` 规则忽略，`.gitignore` 同步忽略 `aux/out/synctex` 等 LaTeX 中间产物。未修改各篇权威主笔记、论文配图、开题报告正文或实验结论。
 
 ## 2026-08-25 开题报告参考文献顺序编码修正
 
-- 将 `opening/report/opening_report.md` 的正文引文和文末 53 条参考文献统一改为按正文首次出现顺序编号；58 处引文组全部重新映射，题录内容不变。
+- 将 `docs/archive/opening/report/opening_report.md` 的正文引文和文末 53 条参考文献统一改为按正文首次出现顺序编号；58 处引文组全部重新映射，题录内容不变。
 - 校验确认全部题录均被正文引用、编号连续且引用与题录一一对应，并重新生成学校模板 Word 版。
-- 在 `opening/AGENTS.md` 增加顺序编码规则，后续定稿需同时检查首次出现顺序、重复引用复用、题录连续性和未引用条目。
+- 在 `docs/archive/opening/AGENTS.md` 增加顺序编码规则，后续定稿需同时检查首次出现顺序、重复引用复用、题录连续性和未引用条目。
 
 ## 2026-08-25 开题报告 Word 模板版生成
 
-- 以 `opening/templates/硕士生开题报告模板0604.docx` 为母版，将当前 `opening/report/opening_report.md` 转换为 `opening/report/数据库_AI_负载的执行优化与调度研究_开题报告.docx`。
+- 以 `docs/archive/opening/templates/硕士生开题报告模板0604.docx` 为母版，将当前 `docs/archive/opening/report/opening_report.md` 转换为 `docs/archive/opening/report/数据库_AI_负载的执行优化与调度研究_开题报告.docx`。
 - 成品保留学校封面、A4 版面、页边距、页脚页码和签字页，并按模板统一正文、三级标题、图注、表格与 16 张正文图片；学号、专业和指导教师保持空白，供后续在 Windows Word 中填写。
 - 完成 OOXML 结构、字体、字号、1.5 倍行距、图片对象、表格边界和页码域检查，并同步开题入口说明与项目索引。
 
@@ -2209,7 +2219,7 @@
 
 ## 2026-08-24 Parrot 与 DLPM 精读纳入开题研究现状
 
-- 依据 `research/精读文献笔记/parrot_osdi2024/` 与 `research/精读文献笔记/dlpm_2025/`，在开题报告第 2.3 节补充两篇论文的研究问题、方法、实验条件、代表性结果和局限，并在第 2.4 节说明它们与本课题上游数据准备、请求释放和多作业调度问题的联系。
+- 依据 `docs/research/精读文献笔记/parrot_osdi2024/` 与 `docs/research/精读文献笔记/dlpm_2025/`，在开题报告第 2.3 节补充两篇论文的研究问题、方法、实验条件、代表性结果和局限，并在第 2.4 节说明它们与本课题上游数据准备、请求释放和多作业调度问题的联系。
 - Parrot 段落说明语义变量如何保留多次模型调用的依赖、共享提示词和最终性能目标，并把 1.70～2.37 倍结果限定在论文的单 A100、LLaMA 13B 长文档摘要实验。DLPM 段落说明公平服务与前缀复用之间的冲突、D²LPM 的多副本扩展和长文档反例，并明确其公平性分析不能直接用于无法修改内部调度的模型服务。
 - 本轮只扩充第二章研究现状，不改第一章、两项研究内容、当前实验和 PPT。参考文献仍为 53 条；精读库现登记 15 篇主笔记和 115 张论文原图。
 
@@ -2217,7 +2227,7 @@
 
 - 根据当前精读正文加入论文全部 Figure 1–12，共 12 个裁剪件；配图形成“Qᵘ 权衡—LPM/VTC/DLPM 核心冲突—两层问题空间—centralized strawman 开销—D²LPM 两级架构—workload 结构—synthetic/real-trace 主结果—公平时间序列—Qʷ、client 数与 mixed workload 消融”的完整证据链。
 - 使用用户本地 `D:\开题\文献\dlpm_arxiv2025.pdf`：17 页 arXiv:2501.14312v1，SHA256 `440269188E4163E15FECCA730A2C91D4E8078F61118FC2DF3D60B5A191187A2B`。截至 2026-08-24，官方 arXiv 页面仍只有 2025-01-24 的 v1，未核验到正式会议/期刊 proceedings；继续按 arXiv preprint 记录，不由目录名推断 venue。
-- 原 Word 转换稿的 15 个 `assets/image*.png` 引用均无对应文件。本轮用 12 个真实 Figure 裁剪件替换；Table 1、Algorithm 1/2 已被逐项转写而不重复截图，Figure 1 的重复嵌入改为后文回指。Figure 7 的缺失点和 Long-Context worst-case、Figure 8 的 trace 重放、Figure 9 的不同横轴终点等边界已随图写入正文。选择、输出哈希与视觉 QA 见 `figures/audit/dlpm_deep_reading_figures_audit_20260824.md`；源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- 原 Word 转换稿的 15 个 `assets/image*.png` 引用均无对应文件。本轮用 12 个真实 Figure 裁剪件替换；Table 1、Algorithm 1/2 已被逐项转写而不重复截图，Figure 1 的重复嵌入改为后文回指。Figure 7 的缺失点和 Long-Context worst-case、Figure 8 的 trace 重放、Figure 9 的不同横轴终点等边界已随图写入正文。选择、输出哈希与视觉 QA 见 `figures/audit/dlpm_deep_reading_figures_audit_20260824.md`；源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-24 新增精读文献纳入开题研究现状
 
@@ -2229,58 +2239,58 @@
 
 - 根据当前精读正文加入论文全部 Figure 1–6，共 6 个裁剪件；配图形成“prediction query 用户接口—系统架构—两类 impedance mismatch—函数生命周期改写—Function Rewriter 演示—Decoupled Prediction Operator 演示”的完整机制与证据链。
 - 使用用户本地 `D:\开题\文献\IMBridge_2026.pdf`：4 页 SIGMOD-Companion ’24 demonstration paper，SHA256 `4E4E358BC0E842858C59F93BBA2329C1D6433FB59C36C07B56C7B90C48BA6B45`。发表年份按首页 ACM Reference Format、页眉和 DOI `10.1145/3626246.3654754` 记录为 2024，不由本地文件名中的 `2026` 推断。
-- Figure 3 右图只按 Q2 采样解读，Figure 5/6 只按 demo 截图解读；原文没有编号 Table 或 Algorithm，已转写的 automatic hoisting、buffer/slice 与 AIMD 描述不重复截图。裁剪件位于 `research/精读文献笔记/IMBridge_sigmod2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/imbridge_deep_reading_figures_audit_20260824.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- Figure 3 右图只按 Q2 采样解读，Figure 5/6 只按 demo 截图解读；原文没有编号 Table 或 Algorithm，已转写的 automatic hoisting、buffer/slice 与 AIMD 描述不重复截图。裁剪件位于 `docs/research/精读文献笔记/IMBridge_sigmod2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/imbridge_deep_reading_figures_audit_20260824.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 Relational LLM Queries 精读笔记配图补齐
 
 - 根据当前精读正文加入论文全部 Figure 1–6，共 6 个裁剪件；配图形成“fixed field ordering 反例—GGR 递归机制—Filter/Projection/RAG 主结果—Multi-LLM/Aggregation—70B 模型规模验证—accuracy correctness”的完整证据链。
 - 使用用户本地 `D:\开题\文献\Relational_LLM_Queries_mlsys2025.pdf` 的 15 页 MLSys 2025 论文，SHA256 `25E3F3B855A4ACBD12082990E2D76AE958D9776D7523203BDF68A5D91FDCE92B`。Algorithm 1 和 Table 1–7 已由正文逐行、逐表转写，不为增加图量重复截图；Appendix 没有额外 Figure。
-- Figure 1 只作 worst-case 构造，Figure 5 只验证 70B Filter，Figure 6 不外推到任意 open-ended task，并保留 Beer −6% 与正文“5% 内”的轻微冲突。裁剪件位于 `research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- Figure 1 只作 worst-case 构造，Figure 5 只验证 70B Filter，Figure 6 不外推到任意 open-ended task，并保留 Beer −6% 与正文“5% 内”的轻微冲突。裁剪件位于 `docs/research/精读文献笔记/relational_llm_queries_mlsys2025/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/relational_llm_queries_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 VTC 精读笔记配图补齐
 
 - 根据 VTC 当前精读正文加入 Figure 1、2、3、4、6、8、9、10、12、15、16、19，共 12 个裁剪件；配图形成“调度位置—动态 cost/capacity—公平与 work-conservation—backlog 与异构 token cost—isolation/Counter Lift—真实 trace—理论量级消融—weighted fairness/length prediction”的证据链。
 - 使用用户本地 `D:\开题\文献\vtc_osdi2024.pdf`：24 页 arXiv v2（2024-06-05），对应 OSDI ’24 正式论文，SHA256 `2FA74F1E7FF787BDF4CE7702AC0C28BE0A4D627ECD08DAB19DF5B65F530060DA`。Figure 5/7/11/13/14/17/18/20 与 Table 1–6、Algorithm 1–4 已由入选图或正文转写覆盖，未为增加图量重复截图。
-- Figure 2 非精确示意、Figure 3 不是理论证明、Figure 9 题注到达率文字冲突、Figure 19 不改变 worst-case bound 等限制已随图写入正文；VTC 继续作为引擎内多 client 调度相关工作，本项目 external VTC-style 仍是 Project internal control。裁剪件位于 `research/精读文献笔记/vtc_osdi2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/vtc_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- Figure 2 非精确示意、Figure 3 不是理论证明、Figure 9 题注到达率文字冲突、Figure 19 不改变 worst-case bound 等限制已随图写入正文；VTC 继续作为引擎内多 client 调度相关工作，本项目 external VTC-style 仍是 Project internal control。裁剪件位于 `docs/research/精读文献笔记/vtc_osdi2024/figures/`，选择、输出哈希与视觉 QA 见 `figures/audit/vtc_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 BlendServe 精读笔记配图补齐
 
 - 根据 BlendServe 当前精读正文加入 Figure 1、2、3、4、5、6、7、9、10、11，共 10 个裁剪件；配图形成“batching 直觉—trace 异质性—顺序失衡—compute-density 模型—resource-aware prefix tree/dual scanner—主结果—locality 与 balance 机制证据—sensitivity”的完整链条。
 - 使用用户本地 `D:\开题\文献\blendserve_asplos26.pdf` 的 19 页 ASPLOS ’26 正式版，SHA256 `4BD27DE86137747BA0AC42C2D71AD369AD36BFB004EFC728895A8D0AA4A2CACC`。Figure 8/12–15、Table 1–4 与 Algorithm 1–3 已由正文数字、表格、公式和步骤覆盖，未为增加图量而重复截图；Figure 11 明确保留 simulated GPU backend 边界。
-- 发现论文目录原有空 `figure/` 占位目录后，按精读目录合同更名为 `figures/` 并写入裁剪件；选择、输出哈希与视觉 QA 见 `figures/audit/blendserve_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- 发现论文目录原有空 `figure/` 占位目录后，按精读目录合同更名为 `figures/` 并写入裁剪件；选择、输出哈希与视觉 QA 见 `figures/audit/blendserve_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 开题报告第一章业务语境与章节分工精修
 
-- 基于用户关于“项目中的行”与真实数据库 AI 场景的进一步澄清，重写 `opening/report/opening_report.md` 第一章部分段落：加入电商评论业务表、普通筛选 SQL、概念性 AI SQL 和结果表，并用新闻摘要、工单分类补充说明数据库业务记录、AI 执行请求与数据库作业之间的关系。
+- 基于用户关于“项目中的行”与真实数据库 AI 场景的进一步澄清，重写 `docs/archive/opening/report/opening_report.md` 第一章部分段落：加入电商评论业务表、普通筛选 SQL、概念性 AI SQL 和结果表，并用新闻摘要、工单分类补充说明数据库业务记录、AI 执行请求与数据库作业之间的关系。
 - 第一章仅保留业务背景、记录处理需求、容量与状态、请求与作业三类基本问题，以及课题目的和边界；将按工作量组批、算子兼容性和数据库批次与模型服务连续批处理的区别放入第 3.2 节，具体策略与验证继续留在第 4 部分。
 - 第 3.2 节补充 `3.2.1` 至 `3.2.3` 三级标题，明确两项正式研究内容以及共同支撑与跨模态验证的层次；代价估计仍只作为共同使能组件。
-- 本轮不改变项目方向、研究内容和实验结论，不生成 Word/PPTX，不同步飞书或 Wiki；相应分层检查已补入 `opening/report/opening_report_20260820_qa.md` 和 `opening/logs/project_log.md`。
+- 本轮不改变项目方向、研究内容和实验结论，不生成 Word/PPTX，不同步飞书或 Wiki；相应分层检查已补入 `docs/archive/opening/report/opening_report_20260820_qa.md` 和 `docs/archive/opening/logs/project_log.md`。
 
 ## 2026-08-22 Ray OSDI 2018 精读笔记配图补齐
 
 - 根据 Ray 当前精读正文加入 Figure 4、5、6、7、8、10、11、12、14，共 10 个裁剪件；Figure 10a/10b 分别放到 GCS reconfiguration 与 flushing 小节。配图覆盖 dynamic task graph、两层架构、bottom-up scheduler、完整 task/object 路径、locality/scalability、GCS 与 task/actor 容错、scheduler latency 消融和完整 RL 应用结果。
 - 使用用户本地 `D:\开题\文献\ray_osdi2018.pdf` 的 18 页 OSDI ’18 正式版，SHA256 `066FECEE9604CA232B5FBAEAA7DD260C88149A1BE6DD4357EF16705986B99290`。Figure 1–3 已由正文流程/代码覆盖，Figure 9/13 与 Table 1–4 的必要数据已转写，未为增加图量而重复截图。
-- 裁剪件放入 `research/精读文献笔记/ray_osdi2018/figures/`；选择、输出哈希与视觉 QA 见 `figures/audit/ray_osdi2018_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- 裁剪件放入 `docs/research/精读文献笔记/ray_osdi2018/figures/`；选择、输出哈希与视觉 QA 见 `figures/audit/ray_osdi2018_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 Cortex AISQL 与 Ray Data 精读笔记配图补齐
 
 - 根据两篇当前精读正文筛选必要配图：Cortex AISQL 加入 Figure 1、7、9、10、11、12，覆盖系统架构、AI-aware 计划选择、predicate reordering、join placement、model cascade 与 semantic join rewrite；Ray Data 加入 Figure 2、4、5、6、7、9，覆盖执行模型、动态分区、内存感知调度、系统架构、端到端结果与机制消融。
 - 两篇均优先使用用户本地 `D:\开题\文献` 中的 PDF；Cortex 使用 13 页 SIGMOD Companion ’26 正式版（SHA256 `DE533CC29FD9B6B8F573E66B26878BD4943ECDFE67AF51A2DE2C6941D4EC6059`），Ray Data 使用 19 页 arXiv:2501.12407v5（SHA256 `2F720B1A040C89DC1E5469DF3A1C77D8ECC8A2C143E7E7B5876F13EA11AE4FD0`）。Ray Data PDF 首页没有正式 venue，未根据文件名外推 NSDI 2027。
-- 12 张裁剪件分别放入两篇论文目录的 `figures/`；未选图均由正文文字/表格充分覆盖或与入选图重复。选择、输出哈希与视觉 QA 见 `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` 和 `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `research/reference/`，不改变参考 PDF 计数。
+- 12 张裁剪件分别放入两篇论文目录的 `figures/`；未选图均由正文文字/表格充分覆盖或与入选图重复。选择、输出哈希与视觉 QA 见 `figures/audit/cortex_aisql_deep_reading_figures_audit_20260822.md` 和 `figures/audit/ray_data_streaming_batch_deep_reading_figures_audit_20260822.md`。源 PDF 未复制进 `docs/research/reference/`，不改变参考 PDF 计数。
 
 ## 2026-08-22 AYO 精读笔记配图补齐
 
 - 根据 AYO 当前精读正文筛选必要配图，最终加入 ASPLOS 正式版 Figure 1、3、4、5、6、7、8、9、10、11、12，覆盖 non-LLM latency 动机、表示转换、application-aware batching、系统架构、优化 e-graph、topology-aware batching、主实验、共置场景、两项消融和 overhead 分解。
-- 用户提供 `D:\开题\文献\ayo_asplos25.pdf` 后，以该 15 页正式版（SHA256 `98C93EC0804FCA7D549A1EF7430AC77BF71849884CD41BF764CF62FEA181AF7B`）替换同轮早期的 Teola 预印本裁剪与说明；最终笔记不再混用预印本图。源 PDF 未复制进项目参考子集，因此不改 `research/reference/` 计数。
-- Figure 2 已被正文 ASCII 流程完整转述；Algorithm 1/2 与 Table 2/3 已转写为可检索文字或 Markdown。11 张正式原图裁剪件放入 `research/精读文献笔记/ayo_asplos2025/figures/`，选择、SHA256 与视觉 QA 记录在 `figures/audit/ayo_deep_reading_figures_audit_20260822.md`。
+- 用户提供 `D:\开题\文献\ayo_asplos25.pdf` 后，以该 15 页正式版（SHA256 `98C93EC0804FCA7D549A1EF7430AC77BF71849884CD41BF764CF62FEA181AF7B`）替换同轮早期的 Teola 预印本裁剪与说明；最终笔记不再混用预印本图。源 PDF 未复制进项目参考子集，因此不改 `docs/research/reference/` 计数。
+- Figure 2 已被正文 ASCII 流程完整转述；Algorithm 1/2 与 Table 2/3 已转写为可检索文字或 Markdown。11 张正式原图裁剪件放入 `docs/research/精读文献笔记/ayo_asplos2025/figures/`，选择、SHA256 与视觉 QA 记录在 `figures/audit/ayo_deep_reading_figures_audit_20260822.md`。
 
 ## 2026-08-21 文献笔记分层规则收口
 
-- 按用户确认将 `research/reading_notes/` 重新定位为泛读、筛选和快速回顾库；现有 49 篇历史笔记不搬迁、不改写，深度不一但不再作为精读权威来源。
-- 将用户新增的 `research/精读文献笔记/` 定为精读笔记唯一权威库，冻结“一篇论文一个独立目录 + 同名主笔记 + 可选 `figures/`”合同；用户随后确认精读库不使用统一模板。
+- 按用户确认将 `docs/research/reading_notes/` 重新定位为泛读、筛选和快速回顾库；现有 49 篇历史笔记不搬迁、不改写，深度不一但不再作为精读权威来源。
+- 将用户新增的 `docs/research/精读文献笔记/` 定为精读笔记唯一权威库，冻结“一篇论文一个独立目录 + 同名主笔记 + 可选 `figures/`”合同；用户随后确认精读库不使用统一模板。
 - 修正首篇目录名 `Lotus_plvd2025` 为 `lotus_pvldb2025`，为 LOTUS 主笔记补充来源和泛读互链；检测到用户同期更新正文后未覆盖其内容。用户明确不维护精读状态，已从目录合同和笔记元数据中移除状态字段。
 - 同步更新根/研究/开题入口、`PROJECT_INDEX.md` 和文献清单口径；既有开题 Top 15 目录保留为历史快照，不自动冒充新精读库内容。
-- 当前 Wiki 同步脚本只覆盖平铺的 `research/reading_notes/*.md`，尚未覆盖新精读库的两级路径；因项目当前暂停 Wiki 同步，本轮不修改 Wiki 仓库脚本，恢复同步前需补映射。
+- 当前 Wiki 同步脚本只覆盖平铺的 `docs/research/reading_notes/*.md`，尚未覆盖新精读库的两级路径；因项目当前暂停 Wiki 同步，本轮不修改 Wiki 仓库脚本，恢复同步前需补映射。
 - 根据 LOTUS 当前精读正文和正式 PVLDB PDF 选择 Figure 1、4、6、7：分别支撑算子组合程序、事实核验 trade-off、group-by trade-off 与统计保证验证。4 张原图以 4× PDF 裁剪件放入论文目录的 `figures/`，正文补充图号与双页码来源；Figure 2/3/5 因与现有文字重复未加入。选择与视觉 QA 记录在 `figures/audit/lotus_deep_reading_figures_audit_20260821.md`。
 
 ## 2026-08-21 PostgreSQL 内置 LOTUS AI 语义算子边界冻结（本地设计）
@@ -2542,14 +2552,14 @@
   未运行 native-system/rehearsal/formal；服务器 PG row-window 只读确认仍是后续 runtime preflight。
 ## 2026-08-20 开题报告正文精修与报告专用图集落位
 
-- 将用户确认的七部分开题报告底稿落实到 `opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
+- 将用户确认的七部分开题报告底稿落实到 `docs/archive/opening/report/opening_report.md`，在不改变题目与两项研究内容的前提下完成针对性精修。
 - 第一章移除平台清单和过强宏观判断；第 2 至第 6 部分补充 DuckDB 与数据库公平调度引用，解释首次出现的英文术语，明确轻量代价估计仅为共同支撑组件，并解决前期实验与 2026 年 9 月计划重复的问题。
 - 第 4 部分补齐机制归因、数据库端到端产品轨和框架原生执行轨三类实验边界；明确 SQuAD 可比、ShareGPT 中 DuckDB 输出限制语义不完全对齐而不可混排；把图像链路收紧为算子级端到端，保留 pgvector 写回与检索质量闭环待补边界。
 - 将 29% 口径限定为运行期间在途工作峰值，将图像准备与 GPU 执行时间比统一为当前证据中的约 13.9 至 31.0 倍；不把共享额度、状态感知或图像动态策略表述为全面胜出。
-- 从已审计开题图集中复制 14 张图片到 `opening/report/figures/`，正文选择引用其中 11 张并逐图补充可比边界与证据说明；其余 3 张保留为候选，不继续增加正文图量。
-- 新增 `opening/report/opening_report_20260820_qa.md`，完成七部分结构、术语、图片路径、证据边界和 46/46 引文覆盖检查；同步更新 `opening/README.md` 与 `PROJECT_INDEX.md`。本轮未生成 Word、DOCX、PPTX，也未同步飞书或 Wiki。
-- 根据 `research/reading_notes/` 和 `research/reference/REFERENCE_INDEX.md` 增补 9 篇文献：InferDB、SmartLite、Database Perspective on LLM Inference Systems、Splitwise、Clockwork、FairServe、DLPM、Autellix 与 CONCERTO。正文分别在数据库内推理路线、推理阶段与容量管理、多作业公平和代价估计论点处引用；四篇预印本保持 arXiv 身份，不冒充正式会议或期刊论文。
-- 同步更新 `opening/slides/opening_ppt.md` 的文献基线分类表，仅维护 Markdown 内容源，不生成或覆盖 PPTX。
+- 从已审计开题图集中复制 14 张图片到 `docs/archive/opening/report/figures/`，正文选择引用其中 11 张并逐图补充可比边界与证据说明；其余 3 张保留为候选，不继续增加正文图量。
+- 新增 `docs/archive/opening/report/opening_report_20260820_qa.md`，完成七部分结构、术语、图片路径、证据边界和 46/46 引文覆盖检查；同步更新 `docs/archive/opening/README.md` 与 `PROJECT_INDEX.md`。本轮未生成 Word、DOCX、PPTX，也未同步飞书或 Wiki。
+- 根据 `docs/research/reading_notes/` 和 `docs/research/reference/REFERENCE_INDEX.md` 增补 9 篇文献：InferDB、SmartLite、Database Perspective on LLM Inference Systems、Splitwise、Clockwork、FairServe、DLPM、Autellix 与 CONCERTO。正文分别在数据库内推理路线、推理阶段与容量管理、多作业公平和代价估计论点处引用；四篇预印本保持 arXiv 身份，不冒充正式会议或期刊论文。
+- 同步更新 `docs/archive/opening/slides/opening_ppt.md` 的文献基线分类表，仅维护 Markdown 内容源，不生成或覆盖 PPTX。
 
 ## 2026-08-17 native-system 可搬迁证据与数据库身份 follow-up（本地）
 
@@ -2706,7 +2716,7 @@
 
 ## 2026-08-13 SAOR 文档状态收口与下一步统一
 
-- 清理根 `README.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、
+- 清理根 `README.md`、`PROJECT_OUTLINE.md`、`README.md`、
   `experiments/plans/README.md`、`code/INFRA_STATUS.md` 和 `PROJECT_INDEX.md` 中停留在
   single-head observation gap、matched-selector 待运行或图像 four-job formal 未启动的过期状态。
 - 当前统一口径为：bounded-ready $0.125W_e$ 已通过双轮开发门，$0.25W_e$ 被 bulk guard 拒绝；
@@ -2718,9 +2728,9 @@
   或 bounded-ready。selector 1+3 formal、cap 扩展、4-Job、reservation 和 dynamic K 继续后置。
 - 将 SAOR v0.5.1 Task 1–7 的历史实施复现清单统一勾选，并补齐 Task 8/9 的真实 GPU 判决；保留
   旧 decision-log 中“当时尚未运行”的时间点事实，不改写失败证据或审计历史。
-- 同步 `research/saor_model_scenario_audit_20260811.md`：保留 bounded-ready 事前归因门，并新增
+- 同步 `docs/research/saor_model_scenario_audit_20260811.md`：保留 bounded-ready 事前归因门，并新增
   §12.9 记录同窗口 selector 与 observation bridge 的事后判决，收紧 formal、原生 baseline、
-  reservation 和理论保证边界；更新 `research/README.md` 入口说明。
+  reservation 和理论保证边界；更新 `docs/research/README.md` 入口说明。
 - 图像状态同步为：Daft built-in/Ray Data 原生 four-job 40/40、Project observe-only 24/24 已完成；
   当前缺口是 HSE static GPU 非劣门、两级 stage controller/CE5 在线接线与小规模 pgvector 质量闭环，
   不再把 native gate、host-path 或 four-job formal 写成待运行。
@@ -2829,7 +2839,7 @@
   work conservation；Themis/Tiresias/Pollux 的 finish-time、attained service、starvation 与
   useful progress；VTC/DLPM/Agentix 的服务量、locality 和程序级上下文；Sarathi-Serve/
   DistServe/Llumnix 的 SLO goodput、tail 与 priority isolation。
-- 在 `research/evaluation_metrics_survey_20260731.md`、`research/knowledge_hub.md` 和
+- 在 `docs/research/evaluation_metrics_survey_20260731.md`、`docs/research/knowledge_hub.md` 和
   `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 冻结约束下多目标合同：每个
   Job 同时报 `multi/full-solo`、`multi/reserved-solo`、`policy-multi/static-multi` 三种反事实；
   共同积压窗口另报 empirical GPS lag、最长连续无服务和 avoidable idle；Jain 只作均匀度描述，
@@ -2842,7 +2852,7 @@
 - 历史 Git compact CSV 只能计算三个 JCT 反事实、worst Job 和 normalized progress，不能无损
   重建动态 active set 的 event-level lag/starvation。新 formal 增加 completion event、ready/
   backlogged interval、active-set/weight 和 actual-work ledger 门禁；不从三阶段均值插值补造。
-- 同步更新 `PROJECT_OUTLINE.md`、`opening/claim_matrix.md`、开题报告/答辩提纲/问答库及结果
+- 同步更新 `PROJECT_OUTLINE.md`、`docs/archive/opening/claim_matrix.md`、开题报告/答辩提纲/问答库及结果
   索引。此次只修改文献、实验合同和既有结果表述，不改代码、不新增实验、不提升 SAOR 当前
   `formal-valid/not-promoted` 状态。
 
@@ -3145,7 +3155,7 @@
   virtual debt 和 actual completion 做 ordered Job-head release；动态 K 降为可选
   Safe-Capacity Governor，需要 hard safe set、反事实区间、pipeline debt、hysteresis 和独立
   offline oracle gate。
-- 新增 `research/saor_model_scenario_audit_20260811.md`，给出 capacity region、oracle theorem
+- 新增 `docs/research/saor_model_scenario_audit_20260811.md`，给出 capacity region、oracle theorem
   陈述、quadratic drift 证明骨架、估计误差不可直接写成常数的边界，以及 service Jain、GPS
   lag、matched-solo slowdown、starvation/avoidable-idle 的公平合同。
 - benchmark 分轨：多 Job fixed-envelope 是主验证，依次比较 FIFO/static partition/DRR/
@@ -3215,7 +3225,7 @@
 ## 2026-08-10 开题二十页内容大纲收口
 
 - 当前工作面收敛为开题内容大纲，暂停报告正文与 PPT 成品；权威入口为
-  `opening/opening_defense_outline_20260808.md`。
+  `docs/archive/opening/opening_defense_outline_20260808.md`。
 - 20 页逐页卡片已统一标题、页码、页面结论和转场，并建立背景、动机证据、两项研究内容、
   共同代价估计、多模态验证之间的映射；新增 18--20 分钟主讲预算与 15 分钟删减合同。
 - 本轮没有新增实验、图片、PPT、云文档或 Wiki。
@@ -3363,7 +3373,7 @@
   重建 2×4090 Ray cluster 并保存只读 preflight；raw COCO ZIP 仍缺，但数据库 image workload
   与 CLIP 模型资产存在。原生图像四 Job 1+3 矩阵 40/40 passed，30 formal group、48 formal
   Job、exactly-once、manifest SHA 与真实 overlap 门禁全部通过；完整 5.1 MiB raw 已下载复核，
-  紧凑结果归档到 `experiments/results/opening_image_native_fourjob_formal_20260810/`。
+  紧凑结果归档到 `experiments/results/image_native_four_job_observation_20260810/`。
 - 图像 project path 将旧 `rows×224×224` 标量扩成 source/prepare/model/result staged
   `WorkDescriptor`；主 credit 仍严格取 legacy-equivalent model pixels。新增 observe-only
   `RuntimeStateSnapshot` 只记录 ready/active prepare/model work、容量、freshness 与 calibration
@@ -3489,12 +3499,12 @@
 
 ## 2026-08-09 旧PPT/飞书底稿误用护栏
 
-- 审计发现`opening/slides/opening_defense_v6_design.md`仍引用2026-08-07首轮三臂与旧
-  四图合同，`opening/feishu/opening_report_wiki.md`仍保留failed-feeding数字。按用户暂停
+- 审计发现`docs/archive/opening/slides/opening_defense_v6_design.md`仍引用2026-08-07首轮三臂与旧
+  四图合同，`docs/archive/opening/feishu/opening_report_wiki.md`仍保留failed-feeding数字。按用户暂停
   PPT/云文档/Wiki的要求，不重写或同步这些历史稿，只在文件顶部加fail-closed状态护栏。
 - 两份旧稿现在明确禁止作为当前内容合同、数据源、生成输入或云端覆盖源，并统一指向
   `opening_defense_outline_20260808.md`、`claim_matrix.md`、当前本地报告和待画图合同。
-- 同步修正`opening/README.md`、`opening/feishu/README.md`、`opening/navigation.md`与
+- 同步修正`docs/archive/opening/README.md`、`docs/archive/opening/feishu/README.md`、`docs/archive/opening/navigation.md`与
   `PROJECT_OUTLINE.md`入口：线上revision 289和本地飞书Markdown均为历史发布面，当前
   不存在云端同步目标；恢复后必须从权威本地报告重新生成并差异审计。
 - 未生成PPT、图片或云文档，也未修改任何远端Wiki。
@@ -3585,7 +3595,7 @@
   不称动态全面胜出。
 - Daft Native/Ray/Ray Data 的 short JCT 相对各自 single 增加 82.42%/104.84%/32.76%，
   三者均有实际 overlap；只标为同系统外部观察，不归因内部算法。
-- 新增 `experiments/results/opening_multijob_interference_20260809/`，Git 保存 13 个紧凑
+- 新增 `experiments/results/text_multi_job_interference_20260809/`，Git 保存 13 个紧凑
   CSV/audit 与七步报告/待画图清单。服务器保留全量 raw；project/native/unified 归档
   SHA256 分别为 `f766faf7...14cfa`、`515b33a5...095a7`、`b7aa4c8b...17e6d`；
   2026-08-09 已从仓库外只增不删归档重新回读核对。
@@ -3695,7 +3705,7 @@
 
 - 同一 256-row Chat manifest 上完成 bounded HTTP、Daft Native、Daft Ray、Ray Data 四入口 gate；6/6 点均 256/256、0 failed、exactly-once、双 endpoint、service counter 与 provenance 门通过。
 - Ray Data B16 的 C4/C8/C16 单次 service throughput 为 789.64/813.10/764.28 tok/s；正式矩阵冻结三个已测点的 measured peak C8，但 n=1 只称筛选点，不称稳定最优或最小饱和。
-- 原始 gate、shard log、逐请求 CSV 和 service counter 保留在服务器独立目录，并额外归档为 `opening_text_native_scans_20260808.tar.gz`（SHA256 `0bfe22fec0f477a70e805b0237efdf09b6cc7d4d80640ddd2ba8e5d4a7c8c7e7`）。仓库新增 `experiments/results/opening_text_native_gate_20260808/` 汇总，不提交 raw request trace。
+- 原始 gate、shard log、逐请求 CSV 和 service counter 保留在服务器独立目录，并额外归档为 `opening_text_native_scans_20260808.tar.gz`（SHA256 `0bfe22fec0f477a70e805b0237efdf09b6cc7d4d80640ddd2ba8e5d4a7c8c7e7`）。仓库新增 `experiments/results/text_native_framework_capability_check_20260808/` 汇总，不提交 raw request trace。
 
 ## 2026-08-08 统一文本 database-E2E replacement correctness 护栏通过（性能口径后续降级）
 
@@ -3740,21 +3750,21 @@
 ## 2026-08-08 冻结内容大纲、实验与数据图，暂停 PPT 成品
 
 - 按用户最新要求暂停新的 PPTX 生成、排版、渲染和云端幻灯片同步；此前仅用于临时版式检查的 v7 构建器已移除，不将旧 failed-feeding headline 写入任何新成品。
-- 新增 `opening/opening_defense_outline_20260808.md` 作为当前权威答辩内容大纲与证据合同，逐项规定 19 个 take-away、所需数据、可声称边界、开题前 replacement 数据、开题后 static–dynamic/multi-job/image/cost 实验及八张结果图的数据合同。
+- 新增 `docs/archive/opening/opening_defense_outline_20260808.md` 作为当前权威答辩内容大纲与证据合同，逐项规定 19 个 take-away、所需数据、可声称边界、开题前 replacement 数据、开题后 static–dynamic/multi-job/image/cost 实验及八张结果图的数据合同。
 - 算子代价估计在大纲中作为两项研究内容的共同使能门禁：它向 organization 提供 staged work/uncertainty，向 admission/routing/fair sharing 提供 service/remaining work 与 SLO slack；预测误差和 decision regret 分开评价。
 - 当前交付范围仅为内容大纲、必要实验、合规实验数据与数据图；不同步 Wiki，也不覆盖普通飞书云文档或制作 PPT 成品。
 
 ## 2026-08-08 开题实验、work-unit、动态图像与图表第一性原理复审
 
 - 结论：开题前不需要完成整套动态方法，但动机必须分别证明固定行隐藏 work、运行状态随负载变化、active work 存在欠供给/近饱和/过载区间，并分别导出 work-unit、状态感知和有界动态提交的研究必要性；动态超过同上限静态仍是开题后待验证 claim。
-- 新增 `opening/first_principles_reassessment_20260808.md`，从目标函数反推开题完成边界、方法接口、图像缺口、正文四图职责与 19 项主讲内容。旧 28 页 v6 和四张双 panel 图降级为待替换底稿，历史 PowerPoint/overflow QA 只证明文件可打开，不代表新内容已冻结。
+- 新增 `docs/archive/opening/first_principles_reassessment_20260808.md`，从目标函数反推开题完成边界、方法接口、图像缺口、正文四图职责与 19 项主讲内容。旧 28 页 v6 和四张双 panel 图降级为待替换底稿，历史 PowerPoint/overflow QA 只证明文件可打开，不代表新内容已冻结。
 - 新增 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 作为文档增殖纪律的一次明确例外：它统一跨研究内容一、研究内容二和图像泛化的因果矩阵，避免旧计划分别定义不兼容的 work/credit/state 合同。计划固定同上限 frozen-static vs dynamic、steady→phase-change/burst→多 job 的顺序和图像强 baseline/质量/状态指标。
 - 方法调整：公共 work-unit 从单个 `work_units + work_unit` 标量收紧为分阶段 `WorkDescriptor`，至少表达 source/prepare/model/result work、locality、deadline/SLO、uncertainty 和 calibration signature。当前瓶颈在模型服务时用 model work credit；图像 CPU prepare 主导时分别约束 prepare work、ready tensor work 和 buffer bytes，不能只把 token 改名为 frame。
 - 代码基础已以兼容方式落地：新增 `planning/work.py` 的 staged work/runtime state 合同，`BatchRequest` 与 `ImageEmbeddingBatch` 可选携带 descriptor，旧标量调用保持不变；新增 `BoundedStageWorkController`，只在离线离散安全点间单步移动，stale/signature mismatch 回退静态点。新增 7 个测试，相关 25 个定向测试均通过；完整 scheduling suite 的 5 个错误来自本机缺 Daft 与 Ray `sysctl` 沙箱权限，不是本次改动回归。
 - 图像边界：现有 exact-path 画像与 matched-resource 静态结果足以支持可行性，不足以支持 proposed 完成。仍需当前 commit 下 Daft built-in、Ray Data native、typed Ray actor 的统一 PostgreSQL/pgvector E2E 正式排名、检索质量、stage-aware organization、state-aware 动态和多 job。
 - 新增六张可复现叙事图：work/state/control 动机三联图、AI Data Execution Layer 边界、work→schedule 总览、组织 regime、图像 stage-aware 证据和 cost decision quality；旧四张双 panel 图保留历史引用但不再作为新报告/PPT 首选。每张图均输出 PNG/SVG，并完成文字重叠、图例、数值来源和 claim 边界的渲染后审计。
 - 根据主线要求进一步把算子代价估计画成两项研究内容的共同使能部件：它同时输出 stage/service/remaining work、SLO slack、uncertainty 与 residual correction，供 WorkDescriptor/Organizer 和 admission/routing/multi-job 消费；单独的 regret 页只承担可行性证据，不把 cost 扩张为第三项研究内容。
-- 同步更新 Claim Matrix、opening/README、experiments/plans/README、实验状态与 PROJECT_INDEX；用户已明确豁免 Wiki 同步。
+- 同步更新 Claim Matrix、docs/archive/opening/README、experiments/plans/README、实验状态与 PROJECT_INDEX；用户已明确豁免 Wiki 同步。
 
 ## 2026-08-08 开题文本 feeder 重校准前修复项目臂 manifest 透传
 
@@ -3774,10 +3784,10 @@
 
 ## 2026-08-08 v6 通过 Microsoft PowerPoint 真实打开检查
 
-- `opening/slides/opening_defense_20260807_v6.pptx` 已由 Microsoft PowerPoint
+- `docs/archive/opening/slides/opening_defense_20260807_v6.pptx` 已由 Microsoft PowerPoint
   实际打开并识别为 28 页；首页与缩略图正常，未出现文件修复或页面损坏提示。
 - WPS Office 进程虽启动但未出现文档窗口，不计为通过；PowerPoint 的直接证据满足
-  `opening/AGENTS.md` 的应用级检查门禁。
+  `docs/archive/opening/AGENTS.md` 的应用级检查门禁。
 - 当前只剩飞书在线覆盖/图片插入/回读、平级 Wiki 镜像和 Git 发布收尾；不因此扩大
   开题实验或 baseline 范围。
 - 飞书用户明确批准后，目标 docx 已从 revision 277 覆盖到 revision 289；八章目录、SQuAD
@@ -3793,7 +3803,7 @@
   95% feeding 门；正确结论是冻结静态项目路径没有优势，只作为负结果与瓶颈诊断。
   DuckDB AI ShareGPT service tok/s≈direct，但三次 formal 有 4,936/6,144 行 fixed-cap
   产品语义失败；性能与语义代价分开报告。
-- 新增正式结果目录 `experiments/results/opening_database_e2e_text_20260807/` 和独立汇总器；
+- 新增正式结果目录 `experiments/results/text_db_e2e_static_paths_20260807/` 和独立汇总器；
   服务器保留全量 raw，Git 范围只含去敏配置、状态、聚合 CSV/JSON 与报告。
 - 开题证据压缩为四张可复现核心图：serving capacity、work organization regime、image
   matched-resource、cost-model decision quality；每图有 claim/input/视觉 QA 合同。
@@ -3810,7 +3820,7 @@
 - 用户修订政策：**raw 实验数据存本地磁盘 + AutoDL 服务器，不进 git；git 只放 aggregated CSV / summary / README / 代码 / 计划**。
   此前同日早些提交的 7 个 `<exp>_raw.tar.gz`（commit 40471bf，43.6M）按新政策**从 git 撤回**：reset 回 c250e19
   并 force-push（raw 已先全量下载到本地，无丢失；commit 是 <1h 前的 tip，仅本机本地库有，codex 仍在 c250e19）。
-- **raw 全量下载**到开发者机 `C:\Users\ays\Desktop\results\`：experiments/results 917M + motivation/results 2.5M
+- **raw 全量下载**到开发者机 `C:\Users\ays\Desktop\results\`：experiments/results 917M + experiments/results/motivation 2.5M
   + experiment-artifacts 308M（去 retired-worktrees 代码快照）。3 个 transport tar.gz 的 sha256 与服务器逐一校验一致
   （见 `experiments/results/RAW_ARCHIVAL_20260807.md`）。git 远程因此不再承载 raw。
 - **订正早先错误**：同日早些曾称"320-run per-request raw 已被服务器清理"——**错误**。该 raw 实际在
@@ -3960,7 +3970,7 @@
   **不削弱 zero-error validity gate**，不得冒充其 headline。
 - **登记新文件**：`squad_truncation_diagnostic.py` 进 `code/scripts/README.md`；新结果目录
   （request_equivalence_gate / squad importer / capability_256_v4 / full_10570 / truncation_diag）
-  进 `feasibility/results/README.md` 阅读顺序 + `PROJECT_INDEX.md`。
+  进 `experiments/results/diagnostics/README.md` 阅读顺序 + `PROJECT_INDEX.md`。
 - **下一步**：database-E2E runner 开工，边界 = 统一 PG source/prompt/cap=64/服务配置/sink；顶层只做静态
   分片/计时/审计/写回；DuckDB 扩展继续拥有 batching/concurrency；不引入项目 credit/actor pool/动态 backpressure。
 
@@ -4011,7 +4021,7 @@
   256 行门禁，产出去 v4（取代 v3 的 canonical 样本）。
 - **服务器同步**：`fd4f8bf..735751b` 的 ff-only pull 被服务器上未跟踪的 v3 证据目录（生成后未在服务器提交）
   阻塞；精确移除冲突的未跟踪 v3（已由 `4dca4fa` 提交 canonical 版）+ 废弃 v4（旧码首跑）后拉取成功。
-- **结果**（`feasibility/results/squad_capability_256_v4_20260805/`，gate @ `735751b`）：256/256 成功、
+- **结果**（`experiments/results/diagnostics/squad_capability_256_v4_20260805/`，gate @ `735751b`）：256/256 成功、
   0 error/NULL/max_tokens；EM **81.640625%** / F1 **89.82133685%**（209/256）。sample_hash
   `d0e0e987…` **≠ v3** `b154c46a…`（SQuAD-normalize 分桶改变样本）。workload_integrity=verified、
   attribution=attributable（运行前后 idle，request_success_delta==256）、vLLM **0.25.1**（/version 修复后
@@ -4056,7 +4066,7 @@
   + `.githooks/pre-commit`（一次性 `git config core.hooksPath .githooks` 启用）+ 10 个单测。
 - **历史 `postgres:postgres@localhost`（60+ 处）不批量改写**：公开 PostgreSQL 默认、只连 localhost、非外部凭据，
   按"没泄漏就不动"原则保留；scanner 放行该本地默认。新文件仍优先用 `$DATABASE_URL` 引用。
-- 唯一非默认发现：`experiments/results/rc1_data_organization/**/raw/**/requests.csv` 里 4 处
+- 唯一非默认发现：`experiments/results/data_organization_comparison/**/raw/**/requests.csv` 里 4 处
   LLM 生成的 YAML 示例 `user:password@ips-backend-db-...ondigitalocean.com`（占位符凭据 + 第三方 host，
   非我们的基础设施、非真实口令）→ 记入 baseline 放行，不修改证据。
 - 全仓验证：3310 文件 0 violation（4 baseline-suppressed）。
@@ -4193,12 +4203,12 @@
   LOTUS、VTC、Llumnix、Abacus、Palimpzest、SemBench、FairServe、DLPM、Autellix、Chiron、
   TIE、Past-Future Scheduler、JITServe、Beyond Prediction (UniBoost)、FastServe (NSDI 2026)
 - 全部通过 arXiv OA 渠道下载，经过 `%PDF` 签名 + pypdf 页数验证
-- 更新 `research/reference/REFERENCE_INDEX.md`：PDF 总数 88（去重 87），精读笔记 49
+- 更新 `docs/research/reference/REFERENCE_INDEX.md`：PDF 总数 88（去重 87），精读笔记 49
 - 仍缺失：Learned Query Optimizer (Zhu et al.) SIGMOD 2024（ACM 付费墙）
 
 ## 2026-08-04 AI 算子论文与数据库产品场景矩阵补全
 
-- 在 `research/evaluation_metrics_survey_20260731.md` §9.1 为 LOTUS、Galois、
+- 在 `docs/research/evaluation_metrics_survey_20260731.md` §9.1 为 LOTUS、Galois、
   GaussML、Smart、SmartLite、InferDB、LEADS、NeurDB、Cortex AISQL、Palimpzest、
   Abacus 与 SemBench 补充论文实际数据集、数据模态、算子执行方式和优化对象，避免脱离
   workload 只罗列指标或迁移 speedup。
@@ -4240,7 +4250,7 @@
 
 ## 2026-08-04 输出长度不确定性与决策导向代价估计文献补充
 
-- 将 SFS、TIE、Past-Future、JITServe、Beyond Prediction 与 FastServe 按“动态 TTFT 估计、重尾输出长度分布、未来显存/SLA、渐进式 remaining-work 修正、prediction-free tail 风险、prediction-light 对照”补入 `research/knowledge_hub.md` 和 `research/ai_operator_literature_inventory.md`；FastServe 题录从旧 arXiv 状态更新为 NSDI 2026。
+- 将 SFS、TIE、Past-Future、JITServe、Beyond Prediction 与 FastServe 按“动态 TTFT 估计、重尾输出长度分布、未来显存/SLA、渐进式 remaining-work 修正、prediction-free tail 风险、prediction-light 对照”补入 `docs/research/knowledge_hub.md` 和 `docs/research/ai_operator_literature_inventory.md`；FastServe 题录从旧 arXiv 状态更新为 NSDI 2026。
 - 将 μ-Serve 按正式 USENIX ATC 2024 定位补入 GPU serving 能耗/资源成本文献，而非误归为输出长度预测；它支撑 GPU frequency scaling、功耗与 SLO attainment 的评价口径。
 - 明确这些 serving 工作多数需要修改内部 scheduler，本项目固定 vLLM 为黑盒，只迁移 admission-time 估计、不确定性表示、评价指标与静态回退合同；不得把它们写成已经实现的直接 baseline。
 - 在 `experiments/plans/baseline_reference.md` 增补代价估计七级 baseline 和三层晋级指标：点预测/区间、配置排序、下游 decision regret/SLO goodput；要求配置组、时间、workload、长度漂移和 burst 留出。
@@ -4248,7 +4258,7 @@
 
 ## 2026-08-04 AI 算子评价指标与决策导向代价估计调研补充
 
-- 在 `research/evaluation_metrics_survey_20260731.md` 增补按论文与数据库/厂商系统拆分的指标矩阵，覆盖语义算子质量、端到端性能、服务侧 TTFT/TPOT、资源成本、调用次数、可复现性与多 job 公平性，并给出本项目三层公平对比合同。
+- 在 `docs/research/evaluation_metrics_survey_20260731.md` 增补按论文与数据库/厂商系统拆分的指标矩阵，覆盖语义算子质量、端到端性能、服务侧 TTFT/TPOT、资源成本、调用次数、可复现性与多 job 公平性，并给出本项目三层公平对比合同。
 - 明确跨系统比较必须先对齐算子语义、模型质量、硬件资源、source/sink 和计时边界；闭源厂商仅作方法学与指标覆盖对照，不引用其 wall-time 倍数作性能排名。
 - 补充 AI 算子代价估计的四层评价：点预测、不确定性、配置排序和下游决策；把 configuration ranking、oracle regret、SLO goodput 和性能回退率设为比单一 MAPE/R² 更接近研究目标的指标。
 - 使用 `idea-evaluator` 审计“Daft+Ray 队列可控使代价估计更方便”的设想。结论为 Accept with Revisions：队列可控提高 pre-submit work 的可观测性、决策可辨识性和干预能力，但不消除自然 EOS、continuous batching、KV/cache、共享负载造成的 endpoint service 不确定性；代价模型应改写为带预测区间的 state-action conditional decision model。
@@ -4259,7 +4269,7 @@
 - 审阅 `opening_defense_20260720_v5.pptx` 后，确认下一版以 v5 的章节和
   页面为骨架，正文聚焦动机测试、两项策略设计和实验设计；大量阶段性正式
   结果进入答辩备份或讲稿。
-- 新增并按用户反馈修订 `opening/slides/opening_defense_v6_design.md`，规划约 31 页正文、
+- 新增并按用户反馈修订 `docs/archive/opening/slides/opening_defense_v6_design.md`，规划约 31 页正文、
   6 页备份的页面结构、核心架构图语义、内容修正项、同步范围和 QA 门禁。
 - official baseline 正文页先讲实验设计；结果只有通过 row/tokenization/
   资源等价、exactly-once、计量口径、规模校准和正式重复门禁后，才模块化
@@ -4345,7 +4355,7 @@
 - 本轮 host-path screening 的报告按“实验设置→实验设计→严谨性自检→原始数据→
   事实/推断/不能声称→课题含义→下一步”七步结构归档；5 组扫描/诊断的 `runs.csv`
   与 16 个逐臂 manifest JSON 已从服务器临时目录复制到
-  `motivation/results/gpu/image_host_path_screening_20260802/raw/` 并纳入 Git。
+  `experiments/results/motivation/gpu/image_host_path_screening_20260802/raw/` 并纳入 Git。
   原始文件归档不提升证据等级：各点仍只有一次，继续标记为 screening。
 - 为把 screening 升级为 formal，新增 `run_image_clip_matrix.py` 与 60K project
   静态矩阵模板：固定 seed 交错 8/16 preprocess actors × active16/32，执行每点
@@ -4378,18 +4388,18 @@
   逻辑24.0GB/s；R2 pageable FP32 ownership copy 20.87ms、H2D/转换4.14ms、
   逻辑9.3GB/s。结果支持“纯 PCIe capacity 暂非首要木桶、host ownership/dtype
   边界需继续做 E2E 消融”，但仍不构成 PCIe NO-GO，七步报告与 raw 已归档到
-  `motivation/results/gpu/image_clip_transfer_ceiling_20260802/`。
+  `experiments/results/motivation/gpu/image_clip_transfer_ceiling_20260802/`。
 
 - 新增 Daft-on-Ray staged 与 Ray Data staged 两个强 baseline；先过 32-row smoke，
   随后在 `c0b5733` 完成 256-row 双卡 resource/correctness gate。两臂均通过
   exactly-once、512d、L2 norm，完整 embedding digest 一致且两卡激活；Ray Data
   记录 4 preprocess + 4 predictor tasks。单次冷启动吞吐不能作为性能排名，下一步才是
   两个 baseline 各自独立校准/formal。紧凑证据见
-  `feasibility/results/image_staged_resource_gate_20260802/`。
+  `experiments/results/diagnostics/image_staged_resource_gate_20260802/`。
 - Ray Data 第二次门禁复现资源死锁：4 preprocess actor + 2 GPU actor 占满错误声明的
   6 CPU 后，SQL reader 无 slot，0 rows 无法推进。该次运行已中止并标记无效。
 - staged resource gate 的 `runs.csv`、Daft manifest 与 Ray Data manifest 已从服务器
-  临时目录归档到 `feasibility/results/image_staged_resource_gate_20260802/raw/`；
+  临时目录归档到 `experiments/results/diagnostics/image_staged_resource_gate_20260802/raw/`；
   45 列 `runs_summary.csv` 仅为读表摘要，原始证据现已随 Git 保存。
 - 资源修复升级为通用合同：Ray Data、Daft staged、fused Daft Ray 均显式计算
   source + preprocess（如有）+ model actor CPU；在 `ray.init` 前按进程 CPU affinity
@@ -4452,7 +4462,7 @@
   image 切片 + ANN-benchmarks。
 - 同步翻转所有索引：scope §5/§10、image_clip plan（解冻回升）、msmarco plan
   （降级对照）、experiments/README、experiments/plans/README §〇、data/README、
-  overview/current_direction_and_plan、PROJECT_INDEX。题目/官方方向不变。
+  README.mdcurrent_direction_and_plan、PROJECT_INDEX。题目/官方方向不变。
 
 ## 2026-07-31 MS MARCO workload 设计 + 执行计划（首个锁定 workload）
 
@@ -4476,8 +4486,8 @@
 
 - 学长完整反馈把场景 reframe 成"数据库↔GPU 经 Daft 桥接、GPU 侧算子多样
   （不止 vLLM）、大数据量、流式 pipeline"，明确不能用 ShareGPT 这种对话式
-  workload。记录到 `notes/communication_notes.md` §5.1.1。
-- 新增 `research/daft_db_gpu_bridge_direction_scope_20260731.md`（academic-pipeline
+  workload。记录到 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-integration-questions` §5.1.1。
+- 新增 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`（academic-pipeline
   Stage 1 scoped 输出）：工作流 `w6xclfb0g` 用 Daft 源码一手核实学长三痛点
   全部真实——① `@daft.cls(gpus=N)` 写死（`daft/udf/__init__.py` L360-410）、
   ② 多算子冷启动 Daft 完全不做（无 model garden/swap/LRU）、③ 流式 dynamic
@@ -4501,10 +4511,10 @@
 
 ## 2026-07-31 评估指标体系调研（文献 + 数据库厂商）
 
-- 新增 `research/evaluation_metrics_survey_20260731.md`：以
+- 新增 `docs/research/evaluation_metrics_survey_20260731.md`：以
   `nature-academic-search` + `deep-research` 工作流调研 AI 算子/推理服务文献
   与数据库厂商/标准基准的评估指标，按 10 类归目并对照项目现有指标做 gap
-  分析。同步更新 `research/README.md`、`research/knowledge_hub.md` §9、
+  分析。同步更新 `docs/research/README.md`、`docs/research/knowledge_hub.md` §9、
   `PROJECT_INDEX.md` 入口。
 - 结论：throughput / 尾延迟 / SLO attainment / MFU+KV 利用率 / 能耗 /
   Jain+max-JCT 公平 / exactly-once 审计 / 控制 trace 八大类项目已覆盖或优于
@@ -5368,8 +5378,8 @@
 - **重排标准（用户定）**：从 66 篇按**学术研究标准**（基础工作/核心技术/相关工作）选前 15，CCF-A 优先，极重要 arXiv 可破例，正好 15 篇。
 - **新 Top 15**（CCF-A/顶会 12 + 重要 arXiv 3）：基础 4——vLLM、**Orca**、Ray、Clipper；核心 7——Sarathi-Serve、SGLang、**DistServe**、Splitwise、CONCUR、Ray Data Streaming、BucketServe；相关 4——Cortex AISQL、NeurDB、Galois、DB Perspective。
 - **与旧版差异**：进 Orca（iteration-scheduling 开山）、DistServe（goodput/prefill-decode，CCF-A）；出 SABER（USL 理论，AIMD 已被 Clipper+CONCUR 覆盖）、Multi-Bin（length-align 理论，已被 BucketServe 工程代表）。arXiv 由 5 降至 3，保留的每篇都是某核心策略无 CCF-A 替代的唯一来源。
-- **Clockwork**：补入 `research/ai_operator_literature_inventory.md`（v5，65→66 篇，OSDI×6→7、CCF-A 37→38），归入推理服务系统组；knowledge_hub §5.2 已引其为 queue-adaptive flush 的调度思想来源。精确题录待用户放入 `research/reference/clockwork_osdi2020.pdf` 后以扉页核实并登记 REFERENCE_INDEX（67→68）。
-- **更新文件**：`research/top15_ranked_papers.md`（按新标准重写）、`research/ai_operator_literature_inventory.md`（v5+计数+CCF 统计）、`opening/literature/top15_reading_notes/`（拷贝集删 saber/multibin、加 orca/distserve）+ 其 README 清单。
+- **Clockwork**：补入 `docs/research/ai_operator_literature_inventory.md`（v5，65→66 篇，OSDI×6→7、CCF-A 37→38），归入推理服务系统组；knowledge_hub §5.2 已引其为 queue-adaptive flush 的调度思想来源。精确题录待用户放入 `docs/research/reference/clockwork_osdi2020.pdf` 后以扉页核实并登记 REFERENCE_INDEX（67→68）。
+- **更新文件**：`docs/research/top15_ranked_papers.md`（按新标准重写）、`docs/research/ai_operator_literature_inventory.md`（v5+计数+CCF 统计）、`docs/archive/opening/literature/top15_reading_notes/`（拷贝集删 saber/multibin、加 orca/distserve）+ 其 README 清单。
 - **未做**：未 `git commit`；Clockwork PDF 未登记（待用户提供）。
 
 ## 2026-07-24 机制优先级并入 experiment_status_and_gaps §4（撤回新建文件）+ plans/ 文档维护纪律
@@ -5383,28 +5393,28 @@
 - **触发**：用户指出文献归位只是个例，要求检查全部规则/说明文档是否反映当前状态。
 - **方法**：4 个并行审计 agent（索引文档 / 26 个 AGENTS.md / 断链机械扫描 / 数值版本漂移）+ 主线逐条复核，只报核实过的出入。
 - **修正（全部 P0/P1/P2）**：
-  - **P0**：根 `README.md` 状态冻结在 07-18 前（把已完成的 vLLM baseline 写成"下一步"、运行命令指向已弃用 fake 管道）→ 重写"当前证据/近期目标/运行命令"对齐 `PROJECT_OUTLINE.md`；目录树修 6 处断链 + 补 `code_doc/`、`data/`、扩 `research/` 子树。
-  - **P1 篇数漂移**：inventory 已升 v4=65 篇、精读 33 篇，下游未跟随——修 9 处"57→65"（research/README、knowledge_hub ×3、current_direction_and_plan、PROJECT_INDEX、baseline_reference、code/AGENTS）、4 处"16/19→33"（inventory header、code/AGENTS、reference/README、strategy_design_implementation_reference）；top15"立即行动项"过期块重写；4 处"待精读→已精读"（Lance、SABER、vLLM×2：orca/serverlessllm）。
-  - **P1 方向/状态**：`motivation/AGENTS.md` 当前状态/下一步从 fake/"方向未定"更新为 GPU-backed 已完成 + 方向已收敛；`experiments/AGENTS.md` 第三项从"写回瓶颈判定"改为"多模态泛化验证"；根 `AGENTS.md` §3"下一步①建立 baseline"过期 → 改为当前缺口。
-  - **P1 断链（共 12 处）**：`overview/project_outline.md`（README 树 + overview/README + overview/AGENTS，按"删引用"处理）、`feasibility/guide.md`/`analysis.md`、`feasibility/results/feasibility_report.md`/`current_direction_analysis.md`、`opening/outline.md`、`opening/navigation.md` echarts_rules.md、`opening/slides`+`projects`+`templates` 旧 pptx 名、`code/README`+`deploy/postgres18.4` feasibility 旧文件名（→ pg18_4_connection_*）、`learning/experiment_walkthrough` 图路径缺 `../`。
-  - **P2**：根 `AGENTS.md` §4 目录表补 `deploy/`/`projects/`/`code_doc/`/`data/`；`motivation/results/AGENTS` 补 `cpu/`；headline 37.5×（operator 阶段）与 13.4×（端到端）口径标注统一。
+  - **P0**：根 `README.md` 状态冻结在 07-18 前（把已完成的 vLLM baseline 写成"下一步"、运行命令指向已弃用 fake 管道）→ 重写"当前证据/近期目标/运行命令"对齐 `PROJECT_OUTLINE.md`；目录树修 6 处断链 + 补 `code_doc/`、`data/`、扩 `docs/research/` 子树。
+  - **P1 篇数漂移**：inventory 已升 v4=65 篇、精读 33 篇，下游未跟随——修 9 处"57→65"（docs/research/README、knowledge_hub ×3、current_direction_and_plan、PROJECT_INDEX、baseline_reference、code/AGENTS）、4 处"16/19→33"（inventory header、code/AGENTS、reference/README、strategy_design_implementation_reference）；top15"立即行动项"过期块重写；4 处"待精读→已精读"（Lance、SABER、vLLM×2：orca/serverlessllm）。
+  - **P1 方向/状态**：`experiments/results/motivation/AGENTS.md` 当前状态/下一步从 fake/"方向未定"更新为 GPU-backed 已完成 + 方向已收敛；`experiments/AGENTS.md` 第三项从"写回瓶颈判定"改为"多模态泛化验证"；根 `AGENTS.md` §3"下一步①建立 baseline"过期 → 改为当前缺口。
+  - **P1 断链（共 12 处）**：`README.mdproject_outline.md`（README 树 + README.mdREADME + README.mdAGENTS，按"删引用"处理）、`experiments/results/diagnostics/README.mdguide.md`/`analysis.md`、`experiments/results/diagnostics/feasibility_report.md`/`current_direction_analysis.md`、`docs/archive/opening/outline.md`、`docs/archive/opening/navigation.md` echarts_rules.md、`docs/archive/opening/slides`+`projects`+`templates` 旧 pptx 名、`code/README`+`deploy/postgres18.4` feasibility 旧文件名（→ pg18_4_connection_*）、`PROJECT_INDEX.md#内容与文档职责experiment_walkthrough` 图路径缺 `../`。
+  - **P2**：根 `AGENTS.md` §4 目录表补 `deploy/`/`docs/archive/opening/ppt_generation_20260712/`/`code_doc/`/`data/`；`experiments/results/motivation/AGENTS` 补 `cpu/`；headline 37.5×（operator 阶段）与 13.4×（端到端）口径标注统一。
 - **审计中 agent 漏报、由复核揪出的 2 处**：`code/README.md` bash 示例里第二处旧 CSV 名（L169）、`serverlessllm_osdi2024.md` 也有"vllm(待精读)"——已补修。
 - **未改（历史/边界，正确保留）**：`PROJECT_LOG.md` 与 `archive/` 内的"57/16/19/44/69 篇"为当时真值；inventory L3 v3=57 版本史；PG 18.3/18.4 区分、模型版本——审计确认全部无矛盾。
 - **未做**：未 `git commit`（等用户确认）。
 
-## 2026-07-24 文献精读语料从 opening/ 迁至 research/；开题 Top 15 拷贝留 opening/
+## 2026-07-24 文献精读语料从 docs/archive/opening/ 迁至 docs/research/；开题 Top 15 拷贝留 docs/archive/opening/
 
-- **触发**：用户指出 opening/ 是开题（阶段性）工作区，但全部文献精读笔记（44 篇）、PDF（69 个）、文献清单与评估都放在 `opening/literature/`，与 `research/`（项目级"背景调研、文献依据"目录）职责错位——opening 自己的 README/navigation 都写着"文献参考 research/"，research/README 却要标注"扩展文献不在本目录"打补丁。
-- **迁移**（`git mv`，保留历史）：`opening/literature/{reading_notes,reference}` → `research/{reading_notes,reference}`；`opening/literature/{ai_operator_literature_inventory,top15_ranked_papers,gpu_scheduler_data_placement_supplement_20260715,direction_assessment_20260715}.md` → `research/`。`research/` 成为文献唯一归属，knowledge_hub 与原料同目录。
-- **opening 保留**：`opening/literature/reading_list.md`（开题精读优先级清单）+ 新增 `opening/literature/top15_reading_notes/`（开题要求精读的 15 篇笔记拷贝 + figs，自包含快照，权威版在 `research/reading_notes/`）。
-- **链接/索引同步**：全仓库批量替换 6 类已搬走路径（`opening/literature/{reference,reading_notes}/` + 4 个 md）；手动修索引文档——`research/README.md`（"扩展文献不在本目录"段改为"本目录内"并补 reading_notes/reference 条目）、`research/knowledge_sync_guide.md`（手动映射表头 + 触发规则）、根 `AGENTS.md` §11 触发规则中的知识目录列表、`opening/README.md` 与 `opening/AGENTS.md` 的 `literature/` 职责、`figures/audit/strategy_figure_micro_design_points.md`、`PROJECT_INDEX.md`（补 `research/reading_notes/`、`research/reference/`、inventory、top15 等条目）。
-- **连带影响（重要）**：同级 wiki 仓库 `../ai-operator-wiki/sync-wiki.sh` 的 reverse-sync 路由与 `[2/5]`、`[3/5]` 段全部耦合 `opening/literature/`，已同步改为 `research/`（`raw/inventory` 分流：`reading_list` 回 opening、其余回 research；`raw/analysis` 的 direction/gpu_scheduler 并入 research/ 分支）；否则下次同步会静默丢笔记/PDF。
+- **触发**：用户指出 docs/archive/opening/ 是开题（阶段性）工作区，但全部文献精读笔记（44 篇）、PDF（69 个）、文献清单与评估都放在 `docs/archive/opening/literature/`，与 `docs/research/`（项目级"背景调研、文献依据"目录）职责错位——opening 自己的 README/navigation 都写着"文献参考 docs/research/"，docs/research/README 却要标注"扩展文献不在本目录"打补丁。
+- **迁移**（`git mv`，保留历史）：`docs/archive/opening/literature/{reading_notes,reference}` → `docs/research/{reading_notes,reference}`；`docs/archive/opening/literature/{ai_operator_literature_inventory,top15_ranked_papers,gpu_scheduler_data_placement_supplement_20260715,direction_assessment_20260715}.md` → `docs/research/`。`docs/research/` 成为文献唯一归属，knowledge_hub 与原料同目录。
+- **opening 保留**：`docs/archive/opening/literature/reading_list.md`（开题精读优先级清单）+ 新增 `docs/archive/opening/literature/top15_reading_notes/`（开题要求精读的 15 篇笔记拷贝 + figs，自包含快照，权威版在 `docs/research/reading_notes/`）。
+- **链接/索引同步**：全仓库批量替换 6 类已搬走路径（`docs/archive/opening/literature/{reference,reading_notes}/` + 4 个 md）；手动修索引文档——`docs/research/README.md`（"扩展文献不在本目录"段改为"本目录内"并补 reading_notes/reference 条目）、`docs/research/knowledge_sync_guide.md`（手动映射表头 + 触发规则）、根 `AGENTS.md` §11 触发规则中的知识目录列表、`docs/archive/opening/README.md` 与 `docs/archive/opening/AGENTS.md` 的 `literature/` 职责、`figures/audit/strategy_figure_micro_design_points.md`、`PROJECT_INDEX.md`（补 `docs/research/reading_notes/`、`docs/research/reference/`、inventory、top15 等条目）。
+- **连带影响（重要）**：同级 wiki 仓库 `../ai-operator-wiki/sync-wiki.sh` 的 reverse-sync 路由与 `[2/5]`、`[3/5]` 段全部耦合 `docs/archive/opening/literature/`，已同步改为 `docs/research/`（`raw/inventory` 分流：`reading_list` 回 opening、其余回 research；`raw/analysis` 的 direction/gpu_scheduler 并入 docs/research/ 分支）；否则下次同步会静默丢笔记/PDF。
 - **未做**：未 `git commit`（等用户确认）；未改笔记内容语义（仅改路径）；笔记中指向项目外 `raw/papers/` 的 paper 库引用不动。
 
 ## 2026-07-23（第四次）PDF 全量规范化改名 + 误下载/重复清理 + 精读推荐 15 篇
 
 - **触发**：用户要求精读下一批论文前，先把 `reference/` 下 69 个混乱命名的 PDF（arXiv 号、`pxxxx-author`、`osdi24-xxx`、中文标题混存）统一改名，并清理误下载/重复。
-- **改名规范**：全部统一为 `短名_会议年份.pdf`，与 `research/reading_notes/` 精读笔记一一对应（如 `vllm_sosp2023.pdf` ↔ `vllm_sosp2023.md`）。15 个 git 跟踪文件用 `git mv` 暂存为 rename（保留历史），其余本地 `mv`。
+- **改名规范**：全部统一为 `短名_会议年份.pdf`，与 `docs/research/reading_notes/` 精读笔记一一对应（如 `vllm_sosp2023.pdf` ↔ `vllm_sosp2023.md`）。15 个 git 跟踪文件用 `git mv` 暂存为 rename（保留历史），其余本地 `mv`。
 - **清理误下载 3 篇**（arXiv ID 被重新分配导致内容错位）：`diskann_neurips2019.pdf`（实为凝聚态物理）、`milvus_sigmod2021.pdf`（实为 IR 词典翻译）、`dostoevsky_sigmod2018.pdf`（实为代数几何）。真 DiskANN/真 Milvus 已重新获取；Dostoevsky 暂不补（写回 LSM 背景，优先级低）。
 - **清理重复 2 篇**：FlashAttention、FlexGen 各保留正式会议命名副本（NeurIPS/ICML），删除 arXiv 号重复副本。
 - **补齐 3 篇**：真 Milvus（SIGMOD 2021, DOI:10.1145/3448016.3457550）、Clipper（NSDI 2017）、CoLoRA（ASP-DAC 2026, DOI:10.1109/ASP-DAC66049.2026.11420717）。
@@ -5412,7 +5422,7 @@
 - **索引同步**：`REFERENCE_INDEX.md` 重写（67 篇按 7 类重组、计数 52→67、未下载清单修正、新增规范化记录附录）；`reference/README.md` 计数修正；全项目 `.md` 中旧 PDF 文件名引用经 sed 批量替换为新名（仅替换 `.pdf` 后缀的文件引用，纯 arXiv/DOI 文献引用不动）。
 - **库现状**：67 个 PDF，全部规范命名，无错误/重复。
 - **精读推荐**：用户要求按"全部未读"假设推荐 15 篇，应用 T1(综述)→T2(最近前人工作)→T3(核心技术) 排序；判断不可外包的 ⭐8 篇需用户亲自精读（Cortex AISQL、Galois、Ray Data Streaming Batch、vLLM、DB Perspective、Splitwise、Clipper、SGLang），其余交 agents 批量精读。
-- **更新文件**：`research/reference/*.pdf`（改名）、`REFERENCE_INDEX.md`（重写）、`reference/README.md`、`PROJECT_LOG.md`、以及含旧文件名引用的若干 `.md`。
+- **更新文件**：`docs/research/reference/*.pdf`（改名）、`REFERENCE_INDEX.md`（重写）、`reference/README.md`、`PROJECT_LOG.md`、以及含旧文件名引用的若干 `.md`。
 
 ## 2026-07-23（第三次）编码规范与代码架构文档落地
 
@@ -5420,7 +5430,7 @@
 - **更新文件**：
   - `experiments/plans/strategy_design_implementation_reference.md` — 新增 §8 "目标代码架构与模块接口规范"，定义 4 个新模块（admission/routing/request_pool/pipeline）的接口规范、文献来源、实现优先级。每个设计决策标注文献出处（Clipper NSDI'17、CONCUR 2025、SABER 2025、CoLoRA 2026、SGLang NeurIPS'24、Parrot OSDI'24 等）。
   - `code/AGENTS.md` — 新增"编码规范"节，6 条规则：① 保持简单 <100 行（Ray ConcurrencyCap 废弃教训）；② 每行=独立完整请求（vLLM chunked prefill 语义安全）；③ 策略层不依赖引擎层（DataOrganizer 抽象）；④ 多模态复用文本代码路径；⑤ 文献优先——新机制从精读笔记提取；⑥ 新实验指标完整性（tokens/s + service_p99 + 时间序列）。每条规则标注文献来源。
-- **设计原则重申**：所有机制设计、策略选择、基线对比，优先从项目 57 篇 CCF-A 文献 + 16 篇精读笔记中提取设计模式和候选方案，不凭空设计。方法论见 `research/README.md` §文献优先设计方法论 和 Wiki `设计方法论` MOC。
+- **设计原则重申**：所有机制设计、策略选择、基线对比，优先从项目 57 篇 CCF-A 文献 + 16 篇精读笔记中提取设计模式和候选方案，不凭空设计。方法论见 `docs/research/README.md` §文献优先设计方法论 和 Wiki `设计方法论` MOC。
 
 ## 2026-07-23（第二次）全维度综合评估：Wiki 知识库 + 文献精读 + 代码架构 + 后续路线图
 
@@ -5464,7 +5474,7 @@
 
 ## 2026-07-22 文献精读笔记批量完成（12 篇新增）
 
-- **触发**：用户要求对 `research/reference/` 中的文献按 `tpl-文献精读-深度版.md` 模板做精读。
+- **触发**：用户要求对 `docs/research/reference/` 中的文献按 `tpl-文献精读-深度版.md` 模板做精读。
 - **操作**：使用 12 个并行 Agent 同时阅读 PDF 并生成精读笔记，每篇严格遵循四层模板（基本信息 → 论文结构分析 → 批判性评估 → 与课题连接）。
 - **新增笔记**：
   - DB4AI 组：`neurdb_cidr2025.md`、`leads_pvldb2024.md`、`inferdb_pvldb2024.md`、`smartlite_pvldb2024.md`
@@ -5487,15 +5497,15 @@
 ## 2026-07-21 开题报告图位优化与正文分析强化
 
 - **触发**：用户要求将图放到正文合适位置，在正文中提及并讲解分析每张图，报告可以比 PPT 图多、讲解更清晰。同时注意图文一致性。submission_control 的三张新图暂不写入报告。
-- **操作**：对 `opening/report/opening_report.md` 中所有 9 张图进行了系统性的图位优化和正文分析强化（详见上一版记录）。随后将更新后的报告覆盖同步到飞书 docx（revision 244），上传 9 张图后在 XML 层获取 block ID，逐张移动到对应图注段落之后（revision 263–271），使每张图紧跟在正文中对应的图注文字下方。
+- **操作**：对 `docs/archive/opening/report/opening_report.md` 中所有 9 张图进行了系统性的图位优化和正文分析强化（详见上一版记录）。随后将更新后的报告覆盖同步到飞书 docx（revision 244），上传 9 张图后在 XML 层获取 block ID，逐张移动到对应图注段落之后（revision 263–271），使每张图紧跟在正文中对应的图注文字下方。
 - **飞书同步**：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`，revision 271，文本+图片均已到位。图片位于对应图注之后（"图注文字 → 图片"顺序，可读）。
-- **更新文件**：`opening/report/opening_report.md`、`opening/feishu/opening_report_wiki.md`、`PROJECT_LOG.md`
+- **更新文件**：`docs/archive/opening/report/opening_report.md`、`docs/archive/opening/feishu/opening_report_wiki.md`、`PROJECT_LOG.md`
 
 ## 2026-07-21 开题报告飞书 docx 同步
 
 - **触发**：用户要求将开题报告最新修改同步到飞书，与答辩 PPT 内容一致。
 - **操作**：
-  - 将 `opening/report/opening_report.md` 的最新内容复制到本地源稿 `opening/feishu/opening_report_wiki.md`。
+  - 将 `docs/archive/opening/report/opening_report.md` 的最新内容复制到本地源稿 `docs/archive/opening/feishu/opening_report_wiki.md`。
   - 使用 `lark-cli docs +update --command overwrite`（user 身份）覆盖写入飞书 docx：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`，飞书返回 `partial_success`（本地图片路径无法直接导入，预期行为），文档 revision 更新为 `221`。
   - 逐一上传 9 张图到飞书 docx（research_gap_three_islands / system_architecture_ai_data_execution / cross_layer_method_framework / runtime_strategy_control_loop / 10_e2e_operator_writeback_breakdown / 07_gpu_pgai_rerun_stage_writeback_20260714 / 08_gpu_pgai_rerun_endpoint_comparison_20260714 / 09_gpu_pgvector_writeback_comparison_20260714 / b26_arrow_vs_daft_stage_breakdown），均带中文图注。
 - **本次同步的主要变更**（与旧版飞书内容相比）：
@@ -5518,14 +5528,14 @@
   3. Ray Data 曾有一个几乎就是"自适应并发控制"的 `ConcurrencyCapBackpressurePolicy`（EWMA + deadband），但**已被废弃**——~400 行控制逻辑，性能反而不如简单方案。这是重要的 cautionary tale：我们的自适应策略必须保持简单。
   4. 发现 6 篇 2025-2026 年新论文与本课题直接相关——最相关的是 CONCUR（AIMD-based agent-level admission control, 4.09× throughput）和 BucketServe（按序列长度分组，3.58×，与我们的 length-aligned grouping 同构）。
 - **更新文件**：
-  - `research/ray_actor_dynamic_batching_reference.md`：
+  - `docs/research/ray_actor_dynamic_batching_reference.md`：
     - 新增 §1.6 `max_queued_requests` 准入控制
     - 新增 §1.7 Queue-Based Autoscaling（PRs #59430, #59548, #59351）
     - 新增 §1.8 Custom Autoscaling Policies（Ray 2.51+）
     - §3.7 大幅扩展：ConcurrencyCapBackpressurePolicy 废弃详情（EWMA/deadband/废弃原因）→ DownstreamCapacityBackpressurePolicy 替代方案 → `max_pending_calls` → `max_tasks_in_flight` + `should_add_input()` + `num_free_slots()` → `_actor_generator_backpressure_num_objects`
     - 新增 §6.7 CONCUR (2025)、§6.8 Scorpio (2025)、§6.9 SABER (2025)、§6.10 CoLoRA (2026)、§6.11 BucketServe (2025)、§6.12 ProServe (2025)
     - 附录 URL 清单扩充 15 条
-  - `research/knowledge_hub.md`：
+  - `docs/research/knowledge_hub.md`：
     - 新增 §5.5 从 6 篇新论文提取的设计原则
     - 新增 §5.6 Ray 现存机制的能力边界（building blocks vs 需自建）
     - §8 知识缺口新增 3 项（CONCUR 迁移可行性、USL 建模、ConcurrencyCap 教训）
@@ -5542,12 +5552,12 @@
   - `README.md`
   - `PROJECT_OUTLINE.md`
   - `PROJECT_INDEX.md`
-  - `opening/report/opening_report.md`
-  - `opening/feishu/opening_report_wiki.md`
-  - `opening/slides/opening_ppt.md`
-  - `opening/practice_plan.md`
-  - `research/literature_and_evidence_review.md`
-- **未更新**：`PROJECT_LOG.md` 和 `opening/logs/project_log.md` 中历史条目保留旧题目（历史记录不应修改）。
+  - `docs/archive/opening/report/opening_report.md`
+  - `docs/archive/opening/feishu/opening_report_wiki.md`
+  - `docs/archive/opening/slides/opening_ppt.md`
+  - `docs/archive/opening/practice_plan.md`
+  - `docs/research/literature_and_evidence_review.md`
+- **未更新**：`PROJECT_LOG.md` 和 `docs/archive/opening/logs/project_log.md` 中历史条目保留旧题目（历史记录不应修改）。
 
 ## 2026-07-20 实验状态全面审计与缺口分析
 
@@ -5561,11 +5571,11 @@
   5. **指标盲区**：缺 `tokens/s`（比 rows/s 更公平的 AI_COMPLETE 效率指标）、缺 inflight/queue 时间序列、缺 per-request latency 分布、缺系统性 `service_p99`。
 - **新建文件**：
   - `experiments/plans/experiment_status_and_gaps.md`：完整的状态-缺口-路线图文档，包含已完成/未完成实验表、证据链评估、指标盲区、P0/P1/P2 实验路线图、审稿人视角的拒绝风险。
-  - `learning/metric_selection_methodology.md`：AI_EMBED vs AI_COMPLETE 观察变量选择方法论，解释为什么从"阶段时延拆分"转向"请求形状 + 服务端压力 + 端到端分布"的四层变量体系。
+  - `docs/research/evaluation_metrics_survey_20260731.md#观察变量选择`：AI_EMBED vs AI_COMPLETE 观察变量选择方法论，解释为什么从"阶段时延拆分"转向"请求形状 + 服务端压力 + 端到端分布"的四层变量体系。
 - **更新文件**：
   - `PROJECT_OUTLINE.md`：§当前最重要证据 重写为以本地 vLLM baseline 为首要证据；§近期优先级 重写为已完成项 + P0/P1/P2 缺口 + 指标盲区 + 新增 adaptive 放弃条件。
   - `experiments/plans/README.md`：新增状态审计文档入口。
-  - `learning/README.md`：新增指标方法论文档入口。
+  - `PROJECT_INDEX.md#内容与文档职责`：新增指标方法论文档入口。
   - `experiments/results/local_vllm_qwen15b_baseline/README.md`：§Remaining Formal Experiments 重写为结构化的下一步清单。
 - **idea-evaluator 裁决**：Accept with Revisions。Higher 6, Faster 7, Stronger 8, Cheaper 5, Broader 6。Paradigm-shift potential possible（3.5/4）。两个 MAJOR flaw（adaptive < static、单 GPU 限制），均有明确修复路径。
 - **ars-reviewer 共识**：动机实验扎实，但 adaptive < static 和缺乏联合消融是两个 MAJOR concern，如不修复在 VLDB/SIGMOD 级会议上大概率被拒。
@@ -5674,7 +5684,7 @@
 - Updated `code/tests/data/test_sources.py`, `code/scripts/README.md`,
   `experiments/results/local_vllm_qwen15b_baseline/README.md`,
   `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md`,
-  `learning/local_vllm_ray_baseline_walkthrough.md`, and `PROJECT_INDEX.md`.
+  `experiments/results/local_vllm_qwen15b_baseline/README.md#链路与图表解读`, and `PROJECT_INDEX.md`.
 - Boundary: existing 2026-07-18/2026-07-19 local baseline CSVs should be read
   as `doc_id` offline-throughput runs. Future K_max, queue-adaptive flush, and
   backpressure experiments should use `--source-order arrival_time` when the
@@ -5714,7 +5724,7 @@
   `b11_local_vllm_token_tail_performance.*`, and
   `b12_local_vllm_latency_probe_breakdown.*`.
 - Added `figures/audit/local_vllm_ray_baseline_charts_audit_20260718.md` and
-  `learning/local_vllm_ray_baseline_walkthrough.md`.
+  `experiments/results/local_vllm_qwen15b_baseline/README.md#链路与图表解读`.
 - Boundary: these are local PG18.4 fixed row-batch baseline and metric
   observability support figures. They are not token-aware batching,
   queue-adaptive scheduling, writeback-inclusive, or PostgreSQL 18.3 internal
@@ -5860,25 +5870,25 @@
 - **更新文件**：
   - `AGENTS.md` §1/§2/§3 — 新增 Daft + 多模态 + 算子代价估计 + scope 缩减条件
   - `PROJECT_OUTLINE.md` — 研究内容扩展为 5 项、近期优先级重排、新增 scope 缩减条件
-  - `research/knowledge_hub.md` §10.5.1 — 重写为"Daft 文本阶段直接接入 + 优化空间三层框架 + 完整实验清单"
+  - `docs/research/knowledge_hub.md` §10.5.1 — 重写为"Daft 文本阶段直接接入 + 优化空间三层框架 + 完整实验清单"
   - `experiments/plans/strategy_design_implementation_reference.md` — 此前已完成口径统一（三层策略 → 两项策略 + 验证），§4.2 已更新 Daft 引擎抽象
-- **涉及文件**：`AGENTS.md`, `PROJECT_OUTLINE.md`, `research/knowledge_hub.md`, `experiments/plans/strategy_design_implementation_reference.md`
+- **涉及文件**：`AGENTS.md`, `PROJECT_OUTLINE.md`, `docs/research/knowledge_hub.md`, `experiments/plans/strategy_design_implementation_reference.md`
 
 ## 2026-07-17 Daft+Ray 多模态与具身智能调研
 
-- **新建** `research/daft_ray_multimodal_reference.md`：Daft+Ray 多模态执行引擎技术手册，涵盖 Swordfish 流式引擎、Flotilla 分布式架构、@daft.cls GPU UDF 机制、与具身智能的连接、及与本课题的关系分析。
-- **更新** `research/knowledge_hub.md`：新增 §10 "Daft+Ray 多模态执行引擎与具身智能负载"，含架构对比、Snowflake Cortex 多模态 AI 算子、具身智能管线、及与本课题的互补关系论证。
-- **更新** `research/ai_operator_literature_inventory.md`：新增 8 篇文献（Daft SciPy Talk、Ray Data Streaming Batch、Flotilla、@daft.cls、Snowflake Cortex Multimodal、阿里云 EMR Daft 具身智能、IBM 具身数据缺口、HeteroHub），总数 57→65 篇。
+- **新建** `docs/research/daft_ray_multimodal_reference.md`：Daft+Ray 多模态执行引擎技术手册，涵盖 Swordfish 流式引擎、Flotilla 分布式架构、@daft.cls GPU UDF 机制、与具身智能的连接、及与本课题的关系分析。
+- **更新** `docs/research/knowledge_hub.md`：新增 §10 "Daft+Ray 多模态执行引擎与具身智能负载"，含架构对比、Snowflake Cortex 多模态 AI 算子、具身智能管线、及与本课题的互补关系论证。
+- **更新** `docs/research/ai_operator_literature_inventory.md`：新增 8 篇文献（Daft SciPy Talk、Ray Data Streaming Batch、Flotilla、@daft.cls、Snowflake Cortex Multimodal、阿里云 EMR Daft 具身智能、IBM 具身数据缺口、HeteroHub），总数 57→65 篇。
 - **核心结论**：
   1. Daft+Ray 优化引擎层的物理资源调度（CPU/GPU 重叠、内存管理），本课题优化策略层的调度决策（按什么规则组 batch、按什么节奏发请求）——两者互补而非竞争。
   2. Snowflake Cortex 已 GA 多模态 AI SQL 算子，数据库 AI 算子处理多模态数据是工业现实。
   3. 本课题的调度策略框架（token-budget→frame-budget、queue-adaptive flush、actor pool 路由）对多模态负载具有自然泛化能力。
   4. 建议在论文 Discussion (§6) 中以具身智能为 generalization case，不做主实验。
-- **涉及文件**：`research/knowledge_hub.md`, `research/daft_ray_multimodal_reference.md`, `research/ai_operator_literature_inventory.md`
+- **涉及文件**：`docs/research/knowledge_hub.md`, `docs/research/daft_ray_multimodal_reference.md`, `docs/research/ai_operator_literature_inventory.md`
 
 ## 2026-07-16 推理管线交互文献系统性收集
 
-- **新建** `research/inference_pipeline_interaction_literature.md`：系统性搜索和收集 28 篇 CCF-A 论文、技术报告和工业系统文档。
+- **新建** `docs/research/inference_pipeline_interaction_literature.md`：系统性搜索和收集 28 篇 CCF-A 论文、技术报告和工业系统文档。
 - **覆盖五个方向**：
   1. LLM 推理服务与连续批处理（vLLM, Orca, Sarathi-Serve, FastServe, DistServe, Splitwise, Mooncake, S-LoRA）
   2. 自适应批处理与推理服务调度（Clipper, Nexus, Clockwork, Triton）
@@ -5887,7 +5897,7 @@
   5. Ray-Specific 推理服务模式（Ray Serve LLM, Ray Compiled Graphs）
 - **核心发现**：确认存在研究空白——无任何已有工作系统性研究"上游数据管线 batch 参数（batch_size, partition_count, concurrency, token-aware/prefix-aware 分组）如何影响下游推理引擎 continuous batching 效率及最优协调策略"。
 - **最新 2026 论文**：收录 BatchLLM (MLSys 2026)、PKAS (HPDC 2026)、PLA-Serve (MLSys 2026)、Load-Aware Prefill Deflection、PEACE 等。
-- `research/README.md` 和 `PROJECT_INDEX.md` 已在先前 session 预添加了该文件的索引条目。
+- `docs/research/README.md` 和 `PROJECT_INDEX.md` 已在先前 session 预添加了该文件的索引条目。
 
 ## 2026-07-16 方向重大调整：AI_COMPLETE 为主线 + 上游动态 Batching + Ray 架构设计空间
 
@@ -5902,19 +5912,19 @@
   7. **耦合验证前置**：独立最优拼接 vs 联合 grid search 作为第一个关键消融实验；无交互效应时 fallback 为"分层独立优化框架"，仍为合格硕士论文
 - **文献确认**：多源检索确认无 CCF-A 论文研究"上游数据管道 batch 参数 × 下游 continuous batching 性能"这一交叉点，研究空白判断成立。
 - **用户三层划分**：模型结构层（GQA/MQA）→ 计算执行层（Flash-Attention）→ 服务部署层（PagedAttention + In-Flight-Batching）。课题聚焦层级 3，前两层为模型/实现选型，不进入优化范围。
-- **需同步更新**：`AGENTS.md` §1/§2/§3/§5、`experiments/plans/strategy_design_literature_basis.md` §7、`motivation/plans/workloads.md`、`opening/report/opening_report.md`、`PROJECT_OUTLINE.md`
+- **需同步更新**：`AGENTS.md` §1/§2/§3/§5、`experiments/plans/strategy_design_literature_basis.md` §7、`experiments/plans/motivation/workloads.md`、`docs/archive/opening/report/opening_report.md`、`PROJECT_OUTLINE.md`
 - **注意**：同期三个评估 skill（idea-evaluator / ars-reviewer / nature-reviewer）接收的是旧 framing（AI_EMBED + 静态 batch）；新 framing（AI_COMPLETE + 动态 batch + Ray 架构）更强。评估结果到达后应做 framing 对比再最终确认。
 
 ## 2026-07-15 开题报告移除 fake/CPU 主文证据
 
-- 根据当前已经完成 pgai SQL 触发面集成和真实 GPU-backed `AI_EMBED` 完整链路复测的事实，更新 `opening/report/opening_report.md` 和 `opening/feishu/opening_report_wiki.md`。
+- 根据当前已经完成 pgai SQL 触发面集成和真实 GPU-backed `AI_EMBED` 完整链路复测的事实，更新 `docs/archive/opening/report/opening_report.md` 和 `docs/archive/opening/feishu/opening_report_wiki.md`。
 - 删除 4.2 中历史 fake/CPU 预研图、表和相关表述，避免读者误解课题仍停留在 toy/fake benchmark 阶段。
 - 4.2 可行性证据现在只保留 PG18.4 + pgvector 环境、GPU-backed `AI_EMBED` 链路和双 endpoint Ray 动机测试；调优变量依据改为文献机制 + 当前真实 GPU-backed 复测。
 - 已覆盖同步新版开题报告飞书 docx，并重新插入 8 张正式 PNG；回读确认 revision 更新到 `72`，未检出 fake/CPU、图 4-7、表 4-4、Mermaid 旧图或本地 `figures/` 路径残留。
 
 ## 2026-07-15 开题报告飞书新版 docx 同步
 
-- 使用 user 身份将 `opening/feishu/opening_report_wiki.md` 覆盖同步到新版开题报告飞书 docx：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`。
+- 使用 user 身份将 `docs/archive/opening/feishu/opening_report_wiki.md` 覆盖同步到新版开题报告飞书 docx：`https://my.feishu.cn/docx/CRgXdyTlToXpgjxo3otcf3kInGb`。
 - 覆盖写入后飞书返回 `partial_success`，原因是 Markdown 中的本地图片路径不能直接导入为图片资源；随后逐张上传并插入 8 张 PNG：研究缺口图、总体研究框架图、三层上游执行策略图、运行时策略闭环图、粒度对比图、阶段时延图、endpoint 对比图、pgvector 写回对比图。
 - 回读线上文档确认 revision 更新到 `51`，关键图注附近为真实飞书图片 URL；关键词检查未发现本地 `figures/` 路径和旧的“三岛/Killer/联合最优/边界确认/阶段画像/Ours-v0”等表述残留。
 
@@ -5928,9 +5938,9 @@
 
 ## 2026-07-15 GPU 调度与数据放置补充调研
 
-- 新增 `research/gpu_scheduler_data_placement_supplement_20260715.md`，补充 GPU / LLM 推理调度、异构数据管线、GPU 数据库算子、GPU-resident 数据放置和数据库 AI 算子几条文献线索。
+- 新增 `docs/research/gpu_scheduler_data_placement_supplement_20260715.md`，补充 GPU / LLM 推理调度、异构数据管线、GPU 数据库算子、GPU-resident 数据放置和数据库 AI 算子几条文献线索。
 - 明确当前策略不应写成“重新发明 GPU scheduler”或“改造 Ray 调度器”，而是位于数据库外部执行链路和模型服务入口之间的轻量级 runtime strategy controller。
-- 同步 `opening/README.md`、`opening/literature/reading_list.md` 和 `PROJECT_INDEX.md`，将该补充调研纳入开题文献入口。
+- 同步 `docs/archive/opening/README.md`、`docs/archive/opening/literature/reading_list.md` 和 `PROJECT_INDEX.md`，将该补充调研纳入开题文献入口。
 
 ## 2026-07-15 策略设计重新评判与三层收窄
 
@@ -5995,11 +6005,11 @@
 
 ## 2026-07-16 写回文献调研 + Baseline 矩阵 + 文献优先设计规则
 
-- **文献清单 v3**：`research/ai_operator_literature_inventory.md` 从 45 篇扩充至 57 篇，新增写回/持久化方向 12 篇 CCF-A 文献（第六组精读 + E 组补充）。
+- **文献清单 v3**：`docs/research/ai_operator_literature_inventory.md` 从 45 篇扩充至 57 篇，新增写回/持久化方向 12 篇 CCF-A 文献（第六组精读 + E 组补充）。
 - **新增实验 Baseline 参考矩阵**：`experiments/plans/baseline_reference.md`，覆盖 GPU 调度侧（6 个）、写回侧（7 个）、数据组织侧（4 个）、跨层决策侧（3 个），所有 baseline 标注来源论文/系统。
-- **新增文献优先设计规则（§6.5）**：根 `AGENTS.md` 加入"系统/算法/实验方案设计时，优先从 CCF-A 文献提取设计模式"的规则。完整方法论写入 `research/README.md` §文献优先设计方法论。
+- **新增文献优先设计规则（§6.5）**：根 `AGENTS.md` 加入"系统/算法/实验方案设计时，优先从 CCF-A 文献提取设计模式"的规则。完整方法论写入 `docs/research/README.md` §文献优先设计方法论。
 - **idea-evaluator 评估**：课题方向 Accept with Revisions，无 CRITICAL 缺陷，paradigm-shift probe 4/4 yes。五项调整建议已记录在对话中。
-- 同步更新：`AGENTS.md` §6.5、`research/README.md`、`experiments/plans/README.md`、`experiments/plans/baseline_reference.md`（新建）。
+- 同步更新：`AGENTS.md` §6.5、`docs/research/README.md`、`experiments/plans/README.md`、`experiments/plans/baseline_reference.md`（新建）。
 
 ## 2026-07-13 制图脚本目录归位
 
@@ -6017,20 +6027,20 @@
 
 ## 2026-07-13 项目目录一致性复核
 
-- 复核根目录、`overview/`、`research/`、`motivation/`、`learning/`、`opening/` 和 `figures/` 中与当前开题方向相关的入口文件。
-- 将 `overview/project_outline.md` 从旧的“数据库内置 AI 算子外部执行链路”口径重写为“数据库驱动 AI 工作负载的分布式数据执行与存储协同优化”口径。
-- 同步更新 `AGENTS.md`、`PROJECT_INDEX.md`、`research/literature_and_evidence_review.md`、`research/existing_ai_operator_execution_chains.md`、`motivation/plans/integration.md` 和 `motivation/results/README.md` 中的旧表述。
-- 对 `motivation/results/pg18_4_fake/system_profile.md` 与 `motivation/results/fake_cpu/analysis.md` 增加当前口径说明，保留历史实验语境，但明确真实瓶颈归因应优先引用 GPU-backed 结果。
+- 复核根目录、`README.md`、`docs/research/`、`experiments/results/motivation/README.md`、`PROJECT_INDEX.md#内容与文档职责`、`docs/archive/opening/` 和 `figures/` 中与当前开题方向相关的入口文件。
+- 将 `README.mdproject_outline.md` 从旧的“数据库内置 AI 算子外部执行链路”口径重写为“数据库驱动 AI 工作负载的分布式数据执行与存储协同优化”口径。
+- 同步更新 `AGENTS.md`、`PROJECT_INDEX.md`、`docs/research/literature_and_evidence_review.md`、`docs/research/existing_ai_operator_execution_chains.md`、`experiments/plans/motivation/integration.md` 和 `experiments/results/motivation/README.md` 中的旧表述。
+- 对 `experiments/results/motivation/pg18_4_fake/system_profile.md` 与 `experiments/results/motivation/fake_cpu/analysis.md` 增加当前口径说明，保留历史实验语境，但明确真实瓶颈归因应优先引用 GPU-backed 结果。
 - 本次复核只调整会影响项目规划、阅读入口和方向判断的文件；历史日志和旧实验过程记录不做大面积改写。
 
-本文件记录项目级简要操作，便于日后复盘方向、入口和关键材料调整。详细实验日志仍放在对应结果目录；开题材料的详细修改记录见 `opening/logs/project_log.md`。
+本文件记录项目级简要操作，便于日后复盘方向、入口和关键材料调整。详细实验日志仍放在对应结果目录；开题材料的详细修改记录见 `docs/archive/opening/logs/project_log.md`。
 
 ## 2026-07-13 开题主线调整为数据库驱动 AI workload
 
 - 根据用户确认的判断，将开题题目从“面向数据库 AI 算子的模型服务感知批处理执行与写回协同优化研究”调整为“面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究”。
 - 同步更新项目级方向口径：数据库 AI 算子主要作为 workload 入口和验证场景，研究主体调整为 Daft/Arrow 数据组织、Ray 执行调度、GPU 模型服务和 Lance / pgvector / PostgreSQL sink 之间的数据执行与存储协同。
-- 同步修改 `README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`overview/current_direction_and_plan.md`、`motivation/plans/integration.md` 以及 opening 相关源稿，避免项目规划与开题报告割裂。
-- 已生成新的本地飞书源稿 `opening/feishu/opening_report_wiki.md`；飞书写入时 `lark-cli` 在用户目录刷新锁文件处返回 `Access is denied`，提升权限重试被自动审批拒绝，需后续获得权限后再同步线上 wiki。
+- 同步修改 `README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`README.md`、`experiments/plans/motivation/integration.md` 以及 opening 相关源稿，避免项目规划与开题报告割裂。
+- 已生成新的本地飞书源稿 `docs/archive/opening/feishu/opening_report_wiki.md`；飞书写入时 `lark-cli` 在用户目录刷新锁文件处返回 `Access is denied`，提升权限重试被自动审批拒绝，需后续获得权限后再同步线上 wiki。
 
 ## 2026-07-12 根目录总纲与项目日志
 
@@ -6040,57 +6050,57 @@
 
 ## 2026-07-12 实验主线入口调整
 
-- 将项目实验主线入口从 `feasibility/guide.md` 调整到 `motivation/README.md`、`motivation/plans/workloads.md`、`motivation/plans/integration.md`、`motivation/results/README.md` 和 `motivation/results/gpu/README.md`。
-- 明确 `feasibility/` 只负责组件、环境和脚本可用性验证，不承担当前实验大纲、开题主线或 GPU-backed 性能结论职责。
+- 将项目实验主线入口从 `experiments/results/diagnostics/README.mdguide.md` 调整到 `experiments/results/motivation/README.md`、`experiments/plans/motivation/workloads.md`、`experiments/plans/motivation/integration.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md`。
+- 明确 `experiments/results/diagnostics/README.md` 只负责组件、环境和脚本可用性验证，不承担当前实验大纲、开题主线或 GPU-backed 性能结论职责。
 
 ## 2026-07-12 开题与项目规划双向同步
 
 - 明确开题报告和项目规划不是单向关系：开题报告基于项目进展撰写；开题题目、研究内容、技术路线或侧重点调整后，也会反向影响项目规划、实验优先级和对外口径。
-- 项目入口文档需要与 `opening/report/opening_report.md` 保持一致，不能长期出现不同方向。
+- 项目入口文档需要与 `docs/archive/opening/report/opening_report.md` 保持一致，不能长期出现不同方向。
 
 ## 2026-07-12 开题报告与飞书内容复核
 
-- 按当前 `PROJECT_OUTLINE.md`、`motivation/results/README.md` 和 `motivation/results/gpu/README.md` 复核开题报告与飞书源稿。
-- 确认 `opening/report/opening_report.md` 当前主线基本合适：正式证据优先引用真实 GPU-backed 结果，PG18.4 / fake / CPU 结果有边界说明。
-- 清理 `opening/feishu/opening_report_wiki.md` 的本地源稿说明，避免发布到飞书后出现工作流元话语。
+- 按当前 `PROJECT_OUTLINE.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md` 复核开题报告与飞书源稿。
+- 确认 `docs/archive/opening/report/opening_report.md` 当前主线基本合适：正式证据优先引用真实 GPU-backed 结果，PG18.4 / fake / CPU 结果有边界说明。
+- 清理 `docs/archive/opening/feishu/opening_report_wiki.md` 的本地源稿说明，避免发布到飞书后出现工作流元话语。
 - 补充飞书后续计划：后续进入 PostgreSQL 18.3 内部平台复测，避免把 PG18.4 本地同构预演写成正式平台结论。
-- 修正 `motivation/results/README.md` 中 GPU-backed 结果入口的过时措辞。
+- 修正 `experiments/results/motivation/README.md` 中 GPU-backed 结果入口的过时措辞。
 
 ## 2026-07-12 实验结论写作标准
 
-- 根据用户反馈，将 `learning/AGENTS.md` 的实验讲解标准提升为项目级实验结论写作参照。
-- 更新 `PROJECT_OUTLINE.md`、`PROJECT_INDEX.md` 和 `opening/work_rules.md`，要求实验结论、数据分析、开题可行性分析和飞书实验摘要都说明实验目的、链路流程、参数含义、数据来源、结果读法、不能证明什么、结论类型和下一步验证。
-- 后续正式报告可以比学习材料更凝练，但结论边界和分析精细程度不能低于 `learning/AGENTS.md` 的要求。
+- 根据用户反馈，将 `AGENTS.md#规则层级与读取顺序` 的实验讲解标准提升为项目级实验结论写作参照。
+- 更新 `PROJECT_OUTLINE.md`、`PROJECT_INDEX.md` 和 `docs/archive/opening/work_rules.md`，要求实验结论、数据分析、开题可行性分析和飞书实验摘要都说明实验目的、链路流程、参数含义、数据来源、结果读法、不能证明什么、结论类型和下一步验证。
+- 后续正式报告可以比学习材料更凝练，但结论边界和分析精细程度不能低于 `AGENTS.md#规则层级与读取顺序` 的要求。
 
 ## 2026-07-12 开题实验飞书页与 PPT 生成
 
-- 新增 `opening/feishu/motivation_feasibility_wiki.md`，按真实 GPU-backed 证据、fake/CPU 历史预研、可行性验证边界和下一步实验组织动机测试与可行性测试内容。
+- 新增 `docs/archive/opening/feishu/motivation_feasibility_wiki.md`，按真实 GPU-backed 证据、fake/CPU 历史预研、可行性验证边界和下一步实验组织动机测试与可行性测试内容。
 - 使用 user 身份覆盖写入动机测试与可行性测试飞书 wiki：`https://my.feishu.cn/wiki/R2MywYu12i2PtWk84Vzcbp9Lnme?from=from_copylink`，飞书返回成功并生成 5 个 Mermaid whiteboard。
-- 基于学校 PPT 模板生成开题汇报 PPTX：`opening/slides/opening_defense_20260712.pptx`，内容来自开题报告、GPU-backed 动机实验和当前项目总纲。
+- 基于学校 PPT 模板生成开题汇报 PPTX：`docs/archive/opening/slides/opening_defense_20260712.pptx`，内容来自开题报告、GPU-backed 动机实验和当前项目总纲。
 - 已将 PPTX 以 user 身份导入为飞书在线幻灯片：`https://my.feishu.cn/slides/NXsJsm2FRlZAAgdSfAmcqk9rnCg`。
 ## 2026-07-14 pgvector(384) writeback comparison
 
 - Updated `code/scripts/profiling/postgres_ai_operator_profile.py` so `--setup --embedding-dim 384` creates `document_embeddings.embedding_vector` as `vector(384)`.
 - Ran the same GPU-backed Ray actor chain for no writeback, JSON text writeback, and pgvector `vector(384)` writeback.
-- Added result report and CSV under `motivation/results/gpu/`.
+- Added result report and CSV under `experiments/results/motivation/gpu/`.
 - Added report-main figure `figures/data/report_main/09_gpu_pgvector_writeback_comparison_20260714.png`.
 - Updated opening report, learning walkthrough, figure indexes, and result indexes. Boundary: PG18.4 local rehearsal, not PostgreSQL 18.3 internal platform.
 
 ## 2026-07-14 合并 agent/postgres18-local-profile 分支并全项目校准
 
-- 将 `origin/agent/postgres18-local-profile` 合并到 `main`，恢复 `opening/` 开题材料目录。
-- 分支带来的重构：`validation/` → `feasibility/`，`motivation/` 脚本 → `benchmarks/`、设计文档 → `plans/`、结果按 `fake_cpu/cpu/gpu/pg18_4_fake` 分类。
-- 新增目录：`deploy/`、`experiments/`、`figures/`、`learning/`、`opening/`、`projects/`。
+- 将 `origin/agent/postgres18-local-profile` 合并到 `main`，恢复 `docs/archive/opening/` 开题材料目录。
+- 分支带来的重构：`validation/` → `experiments/results/diagnostics/README.md`，`experiments/results/motivation/README.md` 脚本 → `benchmarks/`、设计文档 → `plans/`、结果按 `fake_cpu/cpu/gpu/pg18_4_fake` 分类。
+- 新增目录：`deploy/`、`experiments/`、`figures/`、`PROJECT_INDEX.md#内容与文档职责`、`docs/archive/opening/`、`docs/archive/opening/ppt_generation_20260712/`。
 - 创建 `CLAUDE.md` 作为 Claude Code 环境规则入口，导入全部 `AGENTS.md`。
 - 全项目文档路径校准（12 个文件）：
   - 根 `AGENTS.md`：§3 证据更新为 GPU-backed 结果，§4 目录加新结构，§5 实验规则更新。
   - 根 `README.md`：目录树重写、标题对齐 `PROJECT_OUTLINE.md`、证据和运行命令更新。
   - `PROJECT_INDEX.md`：全文重写，所有路径更新，新目录入口，当前证据优先级。
-  - `overview/current_direction_and_plan.md`、`overview/project_outline.md`：加弃用声明，指向根 `PROJECT_OUTLINE.md`。
-  - `motivation/results/README.md`：从扁平文件列表重写为子目录结构。
-  - `feasibility/benchmarks/README.md`：命令路径和脚本引用全部更新。
-  - `opening/ppt_rules.md`：图表规则重写，引用 `figures/` 为权威来源，Python+Matplotlib 优先于 ECharts。
-  - `opening/work_rules.md`：过期引用更新。
+  - `README.md`、`README.mdproject_outline.md`：加弃用声明，指向根 `PROJECT_OUTLINE.md`。
+  - `experiments/results/motivation/README.md`：从扁平文件列表重写为子目录结构。
+  - `code/scripts/benchmarks/README.md`：命令路径和脚本引用全部更新。
+  - `docs/archive/opening/ppt_rules.md`：图表规则重写，引用 `figures/` 为权威来源，Python+Matplotlib 优先于 ECharts。
+  - `docs/archive/opening/work_rules.md`：过期引用更新。
   - `experiments/AGENTS.md`：新增 `karpathy-guidelines` 和图表 skill 引用。
 - 镜像同步规则：`CLAUDE.md` 和 `AGENTS.md` §9 包含相同的 6 行变更→更新清单，互相指向对方。
 
@@ -6098,7 +6108,7 @@
 
 - 将 `figures/architecture/cross_layer_method_framework.png` / `.svg` 调整为研究方案图，明确三类数据库 AI 算子、阶段画像、数据组织策略、模型服务调度策略、联合调优验证和写回瓶颈判定实验。
 - 重绘 workload 区块为三张卡片：场景名、SQL 算子名、调度压力三行排版；图中移除 `RC` / `BL` 缩写、`Workload 入口`、`边界确认` 和未解释的 `vs` 表达。
-- 在 `opening/report/opening_report.md` 与 `opening/feishu/opening_report_wiki.md` 的 Killer Experiment 段落后插入该图作为图 4-1，并顺延后续第 4 章图号。
+- 在 `docs/archive/opening/report/opening_report.md` 与 `docs/archive/opening/feishu/opening_report_wiki.md` 的 Killer Experiment 段落后插入该图作为图 4-1，并顺延后续第 4 章图号。
 - 新增 `figures/audit/cross_layer_method_framework_audit.md`，并更新 `figures/README.md` 的正式图资产说明。
 
 ## 2026-07-15 研究方案图作图规则同步
@@ -6106,12 +6116,12 @@
 - 将研究方案图的版式和审查经验同步到 `figures/AGENTS.md`：方案图必须回答“我要做什么”，并按 workload、阶段画像、策略设计、联合验证和写回瓶颈判定组织。
 - 明确禁止在正式可见图中使用 `RC/BL` 内部缩写、未解释的 `vs`、`边界确认` 等模糊标签；workload 区块优先使用“三行卡片”排版。
 - 补充遮挡和越界检查要求：卡片边框必须完整可见，文字不得裁切，生成后同时执行程序化像素/关键词残留检查和人工 PNG 预览。
-- 同步更新 `opening/ppt_rules.md`，要求 PPT 中的研究方案图也遵守同一套语义和排版规则。
+- 同步更新 `docs/archive/opening/ppt_rules.md`，要求 PPT 中的研究方案图也遵守同一套语义和排版规则。
 
 ## 2026-07-15 开题主线调整为上游链路调优与端到端效果评估
 
 - 根据用户确认，将开题主叙事从“独立最优组合 vs 跨层联合最优”调整为“上游执行链路调优 + 端到端效果评估”：优化侧重点在数据组织与模型服务调度，尤其是模型服务状态感知调度；写回纳入端到端效果评价。
-- 更新 `opening/report/opening_report.md` 和 `opening/feishu/opening_report_wiki.md`：研究路线改为“分阶段性能剖析 -> 上游执行链路调优 -> 加入写回的全链路验证 -> 多 workload 验证”，并将独立最优拼装对照降级为阶段间耦合明显时的增强对照。
+- 更新 `docs/archive/opening/report/opening_report.md` 和 `docs/archive/opening/feishu/opening_report_wiki.md`：研究路线改为“分阶段性能剖析 -> 上游执行链路调优 -> 加入写回的全链路验证 -> 多 workload 验证”，并将独立最优拼装对照降级为阶段间耦合明显时的增强对照。
 - 更新 `figures/architecture/cross_layer_method_framework.*`：中心卡片改为“上游执行链路调优”，评价标准改为加入写回后的端到端耗时、吞吐、排队和写回占比整体改善。
 - 同步调整 `PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`experiments/plans/` 和 `figures/audit/` 中的入口说明，避免把跨层联合优化写成当前唯一核心 claim。
 
@@ -6148,9 +6158,9 @@
 
 ## 2026-07-15 本地参考文献 PDF 子集登记与图形阅读
 
-- 新增 `research/reference/README.md`，登记用户已下载的 14 篇本地 PDF 子集，包括 Ray Data、vLLM、Ray、Sarathi-Serve、ServerlessLLM、GaussML、Galois、LEADS、NeurDB、Lance 等；明确该目录只是部分文献，不替代完整文献清单。
+- 新增 `docs/research/reference/README.md`，登记用户已下载的 14 篇本地 PDF 子集，包括 Ray Data、vLLM、Ray、Sarathi-Serve、ServerlessLLM、GaussML、Galois、LEADS、NeurDB、Lance 等；明确该目录只是部分文献，不替代完整文献清单。
 - 新增 `figures/audit/local_reference_figure_reading_notes.md`，记录从本地 PDF 图中提取的图形经验：用 `AI_EMBED` running example 锚定主图、把策略动作贴到执行位置、区分数据/控制/反馈流、用规则表或 mini timeline 补充机制。
-- 更新 `opening/README.md`、`opening/literature/reading_list.md`、`figures/README.md` 和 `PROJECT_INDEX.md`，将本地 PDF 子集和图形阅读笔记纳入项目入口。
+- 更新 `docs/archive/opening/README.md`、`docs/archive/opening/literature/reading_list.md`、`figures/README.md` 和 `PROJECT_INDEX.md`，将本地 PDF 子集和图形阅读笔记纳入项目入口。
 
 ## 2026-07-15 Ours-v0 运行时策略闭环图
 
@@ -6174,7 +6184,7 @@
 
 - 重绘 `figures/architecture/system_architecture_ai_data_execution.*`，将总体架构图同步为计划层数据组织、运行层入口调度、服务端 dynamic micro-batch 与写回瓶颈判定的当前口径。
 - 重绘 `figures/architecture/cross_layer_method_framework.*`，将研究方案图从“上游链路调优”进一步明确为“三层上游执行策略与端到端评价”。
-- 将 `figures/architecture/runtime_strategy_control_loop.*` 补入 `opening/report/opening_report.md` 与 `opening/feishu/opening_report_wiki.md` 作为图 4-2，替代原 Mermaid 链路示意，用于解释策略机制。
+- 将 `figures/architecture/runtime_strategy_control_loop.*` 补入 `docs/archive/opening/report/opening_report.md` 与 `docs/archive/opening/feishu/opening_report_wiki.md` 作为图 4-2，替代原 Mermaid 链路示意，用于解释策略机制。
 - 同步更新 `figures/README.md`、`figures/audit/*` 和 `PROJECT_INDEX.md`，去除当前主图入口中的 `Ours-v0`、`下一轮配置`、`边界确认` 等旧表述。
 
 ## 2026-07-15 architecture 图颜色语义修正
@@ -6191,7 +6201,7 @@
 
 ## 2026-07-15 开题报告正文同步三层策略口径
 
-- 更新 `opening/report/opening_report.md` 和 `opening/feishu/opening_report_wiki.md`，将文献综述、研究目标、研究内容、研究方案、进度安排和预期成果同步到当前方向。
+- 更新 `docs/archive/opening/report/opening_report.md` 和 `docs/archive/opening/feishu/opening_report_wiki.md`，将文献综述、研究目标、研究内容、研究方案、进度安排和预期成果同步到当前方向。
 - 研究内容二统一表述为“运行层调度与服务端批处理协同方法”，覆盖 `K_max`、endpoint routing、actor pool、backpressure 和服务端 `micro-batch`。
 - 将方向三改为“写回瓶颈判定与端到端收益检查”，避免把写回写成当前独立主贡献。
 - 清理旧的“岛”“GPU 调度优化”“联合最优/Killer Experiment”等主叙事表述，保留其作为后续增强对照的可能性。
@@ -6205,10 +6215,10 @@
 - 根据 PPT 预览反馈修正 `data_organization_length_align_mechanism.*` 的标题字体混排问题，将含 `batch` 的粗体混排标签改为更稳定的纯中文机制标签，并同步替换 v5 PPT 中的对应图片。
 ## 2026-07-20 开题 PPT v5 增量版
 
-- 新增 `opening/slides/opening_defense_20260720_v5.pptx`，由 v4 拷贝后增量修改生成，未重跑 `opening/slides/build_ppt.py`。
+- 新增 `docs/archive/opening/slides/opening_defense_20260720_v5.pptx`，由 v4 拷贝后增量修改生成，未重跑 `docs/archive/opening/slides/build_ppt.py`。
 - 在研究内容一后新增三页数据组织机制图（token-budget、length-align、prefix-aware），图源来自 `figures/architecture/data_organization_*_mechanism.png`。
 - 将原研究内容一中的 prefix-aware 表述收紧为候选验证口径，避免提前声称 KV-cache / APC 收益。
-- 更新 `opening/README.md`、`opening/slides/README.md`、`opening/logs/project_log.md` 和 `PROJECT_INDEX.md`。
+- 更新 `docs/archive/opening/README.md`、`docs/archive/opening/slides/README.md`、`docs/archive/opening/logs/project_log.md` 和 `PROJECT_INDEX.md`。
 
 ## 2026-07-21 提交控制策略机制图正式化
 
@@ -6235,17 +6245,17 @@
 ## 2026-07-23 P1/P2 文献精读批量完成（8 篇）+ 知识库同步
 
 - 按用户给定的 P0/P1/P2 优先级清单，完成 **P1 四篇 + P2 四篇**深度精读（沿用 `tpl-文献精读-深度版` 四层模板），连同此前完成的 P0 四篇（Clipper / CONCUR / CoLoRA / SABER），精读笔记总数由 16 增至 **28 篇**。
-- 新增笔记（`research/reading_notes/`）：
+- 新增笔记（`docs/research/reading_notes/`）：
   - P1：`scorpio_llm_serving_2025`、`bucketserve_2025`、`sglang_neurips2024`、`splitwise_isca2024`
   - P2：`proserve_2025`、`distserve_osdi2024`、`flashattention_neurips2022`（自读全文）、`flexgen_icml2023`（自读全文）
 - 全部笔记已两次同步至知识库 `../ai-operator-wiki/raw/papers/`（每完成四篇同步一次）。
-- FlashAttention、FlexGen 两篇 PDF 此前未下载，本次补下到 `research/reference/`（arXiv 2205.14135 / 2303.06865，已校验 `%PDF` + `%%EOF`）。
+- FlashAttention、FlexGen 两篇 PDF 此前未下载，本次补下到 `docs/research/reference/`（arXiv 2205.14135 / 2303.06865，已校验 `%PDF` + `%%EOF`）。
 - **精读勘误（重要，已写入 `reading_list.md`）**：原始任务描述两处与论文实际内容不符，精读代理据原文修正——(1) DistServe 全文用 simple FCFS，**无** AFGM fairness 与 prediction-based pairing（已 pdftotext 全文核实，§4.3 原文）；(2) ProServe 真实主题是**多优先级请求调度**（TDG + SlideBatching + GoRouting），**非** "预测式 prefill/decode 分离调度"。笔记均按论文真实内容撰写。
 - **对课题的含义（策略补强方向，详见各笔记第四层）**：
   - RC2 自适应控制器形成三候选对比：Clipper AIMD（整体 batch size）/ Scorpio TRP+Credit（per-request 频率）/ CONCUR EWMA；Scorpio 的解析 ITL 模型同时是研究内容四（算子代价估计）的直接模板。
   - RC1 数据组织：BucketServe 的 padding 形式化（Eq.2/3）+ length 分桶、SGLang RadixAttention（Theorem 3.1 DFS 最优排序）+ 与 vLLM APC 互补、Splitwise/DistServe 的 Lm 饱和阈值（512 token 饱和 A100）共同支撑 token-budget / length-align / prefix-aware 分组。
   - 背景与对照：FlashAttention 提供理解 vLLM 内部 memory-bound 行为的底层理论链（→ Sarathi-Serve → 本课题 token-budget），并把 database join 与 GPU attention 并列于 IO-aware 谱系；FlexGen 作为"离线吞吐优先"对照锚点，明确本课题 online serving 定位。
-- 更新 `opening/literature/reading_list.md` 精读笔记索引（16→28，新增 P0/P1/P2 三组 + 勘误说明）。
+- 更新 `docs/archive/opening/literature/reading_list.md` 精读笔记索引（16→28，新增 P0/P1/P2 三组 + 勘误说明）。
 - 环境备注：本环境 Read 工具无法渲染 PDF（缺 pdftoppm），精读改用 `pdftotext`（xpdf 4.06）提取全文；已确认 `reference/` 与 `reading_notes/` 无 `.txt` 中间文件残留。
 
 ## 2026-07-24 提交控制（K_max/flush）与自回归生成特性：厘清与合并进现有文档
@@ -6263,15 +6273,15 @@
   - 重写 `experiments/plans/README.md`，按性质分三组（一、实验计划；二、设计参考；三、状态审计），并在设计参考组点明两个 strategy_design 的分工（`literature_basis`=边界论证 / `implementation_reference`=工程映射）。
   - 两个 `strategy_design_*.md` 开头各加"与对方分工"的交叉说明。
   - 不移动文件路径、不改名、不合并——避免破坏全项目引用路径（surgical changes）。
-- 明确：不在 plans/ 再建技术文档层；技术基础（decode memory-bound / AIMD / continuous batching）单一来源在 `research/` 与 `research/reading_notes/`，plans/ 只引用、不重复。
+- 明确：不在 plans/ 再建技术文档层；技术基础（decode memory-bound / AIMD / continuous batching）单一来源在 `docs/research/` 与 `docs/research/reading_notes/`，plans/ 只引用、不重复。
 
 ## 2026-07-24 精读笔记配图重做（9 张，确定性抽取 + 完整性验证）
 
 - 背景：`reading_notes` 引用的 9 张论文配图此前裁剪有问题（内容错位、切边、带正文、留白不均/歪斜）。本环境 Read 无法直接看小图、vision MCP 不可靠（对彩色图假报"文字"、坐标估计失准），改用**确定性像素分析**。
 - 方法：①嵌入栅格图直抽（cortex_fig1/fig7，像素级精确）；②矢量图按"图题锚定底部 + 列/页面文本宽度定左右 + 彩色像素/水平墨线定图框"裁剪；③每张用墨迹 bbox 验证四周白边≥22px 确认不切边；④最后统一收紧到 ~28px 均匀留白（只裁白边，不动图内容）。
-- 结果（9 张，三处一致：`research/reading_notes/figs/`、`opening/literature/top15_reading_notes/figs/`、wiki `raw/papers/figs/`）：cortex_fig1/fig7、galois_fig3、neurdb_fig2、orca_fig11、ray_fig8、sarathi_fig4/fig9、vllm_fig12——每张内容对应笔记引用的 Figure N，完整未切边。
+- 结果（9 张，三处一致：`docs/research/reading_notes/figs/`、`docs/archive/opening/literature/top15_reading_notes/figs/`、wiki `raw/papers/figs/`）：cortex_fig1/fig7、galois_fig3、neurdb_fig2、orca_fig11、ray_fig8、sarathi_fig4/fig9、vllm_fig12——每张内容对应笔记引用的 Figure N，完整未切边。
 - **orca 更正**：top15 清单已更新（orca/distserve 进，saber/multibin 出），orca 是 top15 成员，其 fig11 须保留——核实为**单栏左图**（plot 框仅在左栏 y72-220，右栏为正文），按左栏裁剪即完整。中途曾误删，已恢复。
-- 修正 `opening/literature/top15_reading_notes/README.md` #10-15 顺序与权威源 `research/top15_ranked_papers.md` 一致（原 README 误把 Cortex/NeurDB/Galois/DB-Perspective 排在 Ray-Data/BucketServe 之前）。
+- 修正 `docs/archive/opening/literature/top15_reading_notes/README.md` #10-15 顺序与权威源 `docs/research/top15_ranked_papers.md` 一致（原 README 误把 Cortex/NeurDB/Galois/DB-Perspective 排在 Ray-Data/BucketServe 之前）。
 
 ## 2026-07-24 为 14 篇精读笔记补充论文配图（架构图/支撑图）
 
@@ -6279,16 +6289,16 @@
 - 抽取方法（矢量图，无嵌入栅格）：图题锚定底部 + **彩色范围 ∪ 矢量范围**定图框（彩色覆盖 plot/栅格插图，矢量覆盖灰度架构图，单独用任一会漏）+ 列/页面宽度定左右 + 智能底部（图与图题间隙>40pt 则按矢量底，否则按图题）+ getbbox 收紧 + 28px 留白。
 - 关键修正：图题查找器最初返回**正文里的"Figure N 引用"**（非真图题）——改用"上方 280pt 内有>5 个矢量对象"判定真图题，排除正文引用。此 bug 曾导致 sglang（误用 p3 正文引用，真图题在 p4）、concur 裁错。
 - 验证：7 张墨迹 bbox 四周均 28px（完整不切）；逐张视觉确认内容与笔记讲解一致。
-- 嵌入：7 篇笔记（权威版 `research/reading_notes/` + 快照 `opening/literature/top15_reading_notes/`）各加"## ▎配图（辅助讲解）"区块，嵌图 + 1-2 句说明 tying 到核心论点。同步 wiki `raw/papers/figs/`。
+- 嵌入：7 篇笔记（权威版 `docs/research/reading_notes/` + 快照 `docs/archive/opening/literature/top15_reading_notes/`）各加"## ▎配图（辅助讲解）"区块，嵌图 + 1-2 句说明 tying 到核心论点。同步 wiki `raw/papers/figs/`。
 - 结果：15 篇中 14 篇有配图（仅 db_perspective 无）；三处一致 16 张图（原 9 + 新 7）。
 
 ## 2026-07-24 补 top15 精读的来源说明（provenance）
 
 - 用户反馈："开题的 top15 文献精读来自 research 全量文献排名前 15，但项目内无文档说明此关系。"
-- 核查：`research/top15_ranked_papers.md` 第 4 行已写"候选池：`ai_operator_literature_inventory.md`（66 篇）"，但开题交付面 `opening/literature/top15_reading_notes/README.md` 未说明选取链路，故用户在 opening/ 侧看不到来源。
-- 处理（合并进现有 README，不新建文件）：在 `top15_reading_notes/README.md` 加"来源与选取链路（provenance）"段，显式写出三步链路：候选池 `ai_operator_literature_inventory.md`（66 篇，v5）→ `top15_ranked_papers.md` 学术排名选前 15 → `research/reading_notes/`（33 篇精读含此 15）权威版 / 本目录为快照拷贝。
+- 核查：`docs/research/top15_ranked_papers.md` 第 4 行已写"候选池：`ai_operator_literature_inventory.md`（66 篇）"，但开题交付面 `docs/archive/opening/literature/top15_reading_notes/README.md` 未说明选取链路，故用户在 docs/archive/opening/ 侧看不到来源。
+- 处理（合并进现有 README，不新建文件）：在 `top15_reading_notes/README.md` 加"来源与选取链路（provenance）"段，显式写出三步链路：候选池 `ai_operator_literature_inventory.md`（66 篇，v5）→ `top15_ranked_papers.md` 学术排名选前 15 → `docs/research/reading_notes/`（33 篇精读含此 15）权威版 / 本目录为快照拷贝。
 - 文档链路现状：`reading_list.md` → 指向 `top15_ranked_papers.md` + 本目录；`top15_ranked_papers.md` → 标候选池；本 README → 完整 provenance。
-- 用户进一步指出"`research/reading_notes/`（Top 15 的权威来源库）本身无 README"：新建 `research/reading_notes/README.md`，说明本目录作用（33 篇精读笔记 + `figs/` + 模板）、provenance 链路（inventory 66 → 精读 33 → Top 15 → 开题快照）、与 top15 快照及 wiki 的关系、配图与编辑规则；同步更新 `PROJECT_INDEX.md` 该目录条目。
+- 用户进一步指出"`docs/research/reading_notes/`（Top 15 的权威来源库）本身无 README"：新建 `docs/research/reading_notes/README.md`，说明本目录作用（33 篇精读笔记 + `figs/` + 模板）、provenance 链路（inventory 66 → 精读 33 → Top 15 → 开题快照）、与 top15 快照及 wiki 的关系、配图与编辑规则；同步更新 `PROJECT_INDEX.md` 该目录条目。
 
 ## 2026-07-25 RC2 adaptive admission controller 设计确认
 
@@ -6835,9 +6845,9 @@
   two-level baseline，不是 Clipper/Clockwork/CONCUR 等文献机制的完整复现；
   vLLM 内部已有 continuous batching，不代表 Ray 上游已经按逐请求完成补位。
 - 更新 `AGENTS.md`、`README.md`、`PROJECT_OUTLINE.md`、
-  `overview/current_direction_and_plan.md`、`code/INFRA_STATUS.md`、
+  `README.md`、`code/INFRA_STATUS.md`、
   `experiments/plans/README.md`、`experiment_status_and_gaps.md`、
-  `service_scheduling_backpressure.md`、`research/knowledge_hub.md` 和
+  `service_scheduling_backpressure.md`、`docs/research/knowledge_hub.md` 和
   `PROJECT_INDEX.md` 的缺口、实验入口和导航。
 - 修正两处过时状态：根 README 不再把已经完成的 adaptive/联合实验写成下一步；
   缺口表不再把跨 arrival-rate 和 2048 held-out 写成未完成。
@@ -7148,11 +7158,11 @@
   预注册固定 manifest、双 endpoint 等价性、独立 calibration、32–256
   瞬态与 2,048 held-out、time-to-ceiling/ramp-regret/minimum-saturating-work
   指标，以及 5%/2-of-3 晋级门槛。
-- 同步更新 `PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、
+- 同步更新 `PROJECT_OUTLINE.md`、`README.md`、
   `experiments/README.md`、`experiments/plans/README.md`、
   `experiments/plans/baseline_reference.md`、
   `experiments/plans/experiment_status_and_gaps.md`、`code/INFRA_STATUS.md`、
-  `research/existing_ai_operator_execution_chains.md` 与 `PROJECT_INDEX.md`。
+  `docs/research/existing_ai_operator_execution_chains.md` 与 `PROJECT_INDEX.md`。
   按用户要求不执行 Wiki 同步。
 
 ## 2026-07-29 同条件 baseline 执行基础设施
@@ -7573,7 +7583,7 @@
 
 - **回答上一条待办**：「4-ep/1.5B +5.9% 需 2-ep/1.5B 隔离 model×endpoint×cache」。固定 2 endpoint（1/GPU），扫
   `gpu_mem_util ∈ {0.3,0.45,0.6,0.9}`（+ 复用 2-ep/0.9 ablation 点），每点 `least_queued` vs `prefix_affinity`，
-  sharegpt_multiturn 2048。结果存**新存储约定** `experiments/results/rc1_prefix_routing/kv_budget_sweep_20260731/{README.md, raw/}`。
+  sharegpt_multiturn 2048。结果存**新存储约定** `experiments/results/prefix_routing/kv_budget_sweep_20260731/{README.md, raw/}`。
 - **结果**：2-ep 全 KV 范围 prefix_affinity **中性**（Δ ∈ [−0.1%, +1.0%]，含 util 0.3–0.6 的 13–15% SLO 抖动点）；
   util 0.9（~22.8GB、working set 全放下、0% SLO）吞吐回升到 ~64.8k（vs 抖动点 ~54.2k）。32 run、0 incident、CV≤1.0%。
 - **matched-KV 对比（关键）**：2-ep/0.45（~12GB 显存、~7–8GB KV）= **−0.1%** vs 4-ep/0.43（~7GB KV/端）= **+5.9%**——
@@ -7594,7 +7604,7 @@
 - **动机**：07-18/19/25/26 早期 RC1 数据组织实验在旧数据集/rows(s)/单 5070/未喂饱（07-30 cache-OFF run GPU 67.7%）下，
   策略结论不可比。在干净平台（2×4090 + sharegpt_multiturn 2048 + tokens/s + httpx_async + token-IDs + **P0 指标**
   prefix_cache_hit_rate/TTFT/TBT，#27 新增采集）系统重测 5 策略 × {2-ep/0.9, 4-ep/0.43}。结果存新存储约定
-  `experiments/results/rc1_data_organization/{README.md, dataorg_2ep_1.5b_cacheON_20260731/raw/(102),
+  `experiments/results/data_organization_comparison/{README.md, dataorg_2ep_1.5b_cacheON_20260731/raw/(102),
   dataorg_4ep_1.5b_cacheON_20260731/raw/(102), bounded_2ep_1.5b_cacheON_20260731/raw/}`。
 - **主结论（regime-dependent）**：
   - **2-ep（KV max 7–10%，无压力）**：5 策略 E2E 50–56k 紧凑，排名 fixed≈seq>bestfit>rowcap>lenalign；prefix 命中 0.60–0.76。
@@ -7644,22 +7654,22 @@
 
 - **动机**：image-CLIP 锁为首个 workload 后、建 runner 前的 fatal-flaw go/no-go 门禁（`image_clip_workload_lock_20260731.md` §6）——CPU 数据准备相对 GPU CLIP forward 有多重？ratio > 0.3 才有异构调度舞台。
 - **脚本**：`code/scripts/profiling/profile_image_clip_bottleneck.py`（~330 LOC，单进程、走 PG bytea、分阶段计时；按新「代码质量总则」写成可复用 stage 函数 `load_clip/pil_decode/cpu_preprocess/clip_encode`，path-B runner 后续直接复用）。
-- **结果（GO）**（`motivation/results/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = (decode+preprocess)/embed，实用 batch（≥16）**13–17**，远超 0.3。
+- **结果（GO）**（`experiments/results/motivation/gpu/image_clip_bottleneck_profile_20260801.{md,csv}`）：ratio = (decode+preprocess)/embed，实用 batch（≥16）**13–17**，远超 0.3。
   - 瓶颈 = **CLIPProcessor resize+normalize（cpu_preprocess ~5.2 ms/img）**，不是 JPEG decode（0.04 ms）、不是 CPU→GPU transfer（0.07–0.19 ms）、不是 pg_read（0.83 ms/img bulk 摊销）。
   - B=128 单 batch：CPU preprocess 655 ms vs GPU embed 38 ms → 串行下 GPU 忙 ~5.5%、空转 ~94%。量化了 path-B（分离 CPU preprocess 与 GPU embed 并 overlap）的必要性。
 - **口径澄清**：ratio 分子不含 pg_read（pg_read 单独一列）；不算 DB 读 ratio 仍 13–17，结论不变。"数据搬运瓶颈"更准确是 **CPU 预处理计算瓶颈**。
 - **更正上条 #32 记录**：transformers 5.x `get_image_features` 取 **`.pooler_output`**（512d），非 `.image_embeds`（5.x 无此属性）；脚本与 `image_serving.md §3.3` 均已用对。
 - **规模边界 + redo（已完成 5K 规范跑）**：首跑 1024×50 iters 后，按用户要求加大规模重做——新增 `code/scripts/data/import_coco_images.py`（TRUNCATE+INSERT 单事务原子、记版本、path-B 可复用）载入完整 COCO val **5K**（815MB/33.8s），重跑 `--limit 5000 --iters 100 --batch-sizes 1,16,32,64,128,256`（~5min）。5K 结果 ratio **13.8–18.3**（B=256 渐近 ~18），p95 紧贴 p50，与 1024 首跑完全一致——结论（GO、CPU preprocess 主导）确认。pg_read 0.755ms/img（5K bulk 摊销）。
-- **同步**：`experiment_status_and_gaps.md` §0/§1.4 已统一为 5K canonical GO；`image_clip_workload_lock §0`「暂停 build」→ 解除；`motivation/results/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
+- **同步**：`experiment_status_and_gaps.md` §0/§1.4 已统一为 5K canonical GO；`image_clip_workload_lock §0`「暂停 build」→ 解除；`experiments/results/motivation/gpu/README.md` 索引；`code/AGENTS.md` 新增「代码质量总则（模块清晰 / 框架分明 / 低耦合 / 目标清晰）」。
 
 ## 2026-08-01 文档状态对账：统一 image-first、5K canonical 与 prefix 归因
 
 - **权威关系**：明确 `experiments/plans/experiment_status_and_gaps.md` §0 记录内部执行顺序；内部已锁 A+B image-first，外部“DB↔GPU 经 Daft 桥接”scope/题目仍待导师和学长确认，二者不再混写。
-- **5K 状态**：`AGENTS.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`code/INFRA_STATUS.md` 和证据台账统一为 COCO val 5K × 100 iterations 已通过 GO；当前进入 path-B runner + image 强 baseline，不再保留 redo pending。
+- **5K 状态**：`AGENTS.md`、`PROJECT_OUTLINE.md`、`README.md`、`code/INFRA_STATUS.md` 和证据台账统一为 COCO val 5K × 100 iterations 已通过 GO；当前进入 path-B runner + image 强 baseline，不再保留 redo pending。
 - **文本轨道**：遗留 feeding/static-credit/prefix/multi-job/runtime baseline 统一标为 `parked-conditional`，不再阻塞 image build；文本历史证据保留。
 - **prefix 归因修正**：证据台账与总纲移除“cache 淘汰压力是开关”的过时确定表述。matched-KV 结果更支持 endpoint consolidation 是驱动；4-ep 饱和深度仍是残余混淆。
-- **代码边界**：`code/INFRA_STATUS.md` 明确区分“5K motivation/profile 已完成”和“image source/frame-cost、CLIP endpoint、path-B runner、正式方法对照尚未实现”，避免把画像写成系统完成。
-- **快速入口**：`overview/current_direction_and_plan.md` 收缩为一页式当前状态卡片，删除被 pivot 取代的旧文本 P0/P1 执行清单。
+- **代码边界**：`code/INFRA_STATUS.md` 明确区分“5K experiments/results/motivation/README.mdprofile 已完成”和“image source/frame-cost、CLIP endpoint、path-B runner、正式方法对照尚未实现”，避免把画像写成系统完成。
+- **快速入口**：`README.md` 收缩为一页式当前状态卡片，删除被 pivot 取代的旧文本 P0/P1 执行清单。
 
 ## 2026-08-01 图像代码架构审阅与 serving 选型校正
 
@@ -7725,7 +7735,7 @@
 - **证据边界**：结果只支持继续建设 E2E overlap runner；不能声称胜过 Daft Native、
   Ray Data 或 vLLM pooling，也不能把 profile speedup 写成调度策略收益。
 - **同步**：raw CSV、manifest、run log 和七步报告纳入
-  `motivation/results/gpu/image_clip_preprocess_variants_20260801/`。
+  `experiments/results/motivation/gpu/image_clip_preprocess_variants_20260801/`。
 
 ## 2026-08-01 图像 operator-E2E 强 baseline runner
 
@@ -7768,7 +7778,7 @@
   当前静态 bounded stage separation 也不是状态感知策略。pgvector system-E2E、
   bounded direct ceiling、CPU-budget-normalized curve 与 Ray Data baseline 仍待补。
 - **归档**：原始 CSV、逐 run manifest、派生 summary 与七步报告纳入
-  `motivation/results/gpu/image_clip_native_baseline_20260801/`。
+  `experiments/results/motivation/gpu/image_clip_project_udf_diagnostic_20260801/`。
 
 ## 2026-08-01 图像 baseline 指标审计与 host data path 动机实验预注册
 
@@ -7784,7 +7794,7 @@
   功耗/时钟/估算能耗、PCIe current/max link、pending peak/未归因 wait、各阶段
   逻辑 bytes、全维 sum 与按 doc_id 的 rounded digest。CUDA 分段同步只允许
   diagnostic 模式；MFU 仅在显式输入经校准 FLOP 口径时估算。
-- **新动机计划**：新增 `motivation/plans/image_host_data_path_bottleneck.md`。
+- **新动机计划**：新增 `experiments/plans/motivation/image_host_data_path_bottleneck.md`。
   用 R0 GPU-resident compute ceiling → R1 pinned H2D → R2 pageable/Ray tensor →
   R3 in-memory JPEG → R4 PostgreSQL/Daft 的表示阶梯，按预注册门槛判定
   CPU-preprocess、framework/host-copy、PCIe/H2D、GPU compute 或 mixed。
@@ -7844,7 +7854,7 @@
 - **规则同步**：`code/AGENTS.md` 的“所有实验必须 tokens/s”旧规则改为按算子语义
   采集文本、分类和 embedding 指标；`code/INFRA_STATUS.md` 同步 staged gate 状态，
   文本 baseline matrix 增加历史阅读范围提示。
-- **研究口径纠错**：`research/daft_db_gpu_bridge_direction_scope_20260731.md` 删除
+- **研究口径纠错**：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` 删除
   “执行优化空白”“厂商全闭源”“统一 BigVectorBench”和 OceanBase 文本 embedding
   冒充图像 CLIP baseline 的旧表述，改为公开 benchmark + 同机 DB track 双轨协议。
 
@@ -7889,7 +7899,7 @@
 - **执行边界**：旧 64/256 行数据继续作为 gate/screening；因缺少长稳态、交错三重复和
   新 provenance 字段，不进入正式排名。用户已关闭 AutoDL，本次只完成本地代码/文档/
   测试准备，远端重测等待开机。
-- **学习材料**：新增 `learning/text_native_baseline_guide.md`，用数据链路解释
+- **学习材料**：新增 `experiments/plans/baseline_reference.md#执行者与计时的读法`，用数据链路解释
   ceiling/control/native/project、Chat/Completions 分轨、64→512→4096 流程和双 endpoint
   group throughput，避免后续只看单个 tokens/s 或把 barrier 当逐请求 P99。
 
@@ -7961,7 +7971,7 @@
   的 E2E，并保留 vendor raw 辅助结果。capture timing 与 256 图冷启动 gate 均不进入性能
   排名；两条默认无 capture 路径也已在远端通过。
 - 报告与派生摘要保存于
-  `motivation/results/gpu/image_embedding_parity_20260803/`；原始 `.npz`、逐行 CSV 与
+  `experiments/results/motivation/gpu/image_embedding_parity_20260803/`；原始 `.npz`、逐行 CSV 与
   manifest 保留在 AutoDL experiment-artifacts，不提交大矩阵。
 
 ## 2026-08-03 baseline / benchmark 文档收敛
@@ -8009,8 +8019,8 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 - **③ 不排名**：统一 L2-normalized contract 是 ②（codex），未推送前不做 ④ formal ranking。
   Daft raw vs Ray Data/project normalized 的正式横向比较待 ②。
 
-报告与派生摘要：`motivation/results/gpu/daft_builtin_calibration_20260803/`、
-`motivation/results/gpu/ray_data_calibration_20260803/`（七步 README + summary + raw runs.csv）。
+报告与派生摘要：`experiments/results/motivation/gpu/daft_builtin_calibration_20260803/`、
+`experiments/results/motivation/gpu/ray_data_calibration_20260803/`（七步 README + summary + raw runs.csv）。
 原始 per-run manifest + calibration.log 保留在 AutoDL experiment-artifacts。
 
 ## 2026-08-03 图像 embedding 统一输出合同
@@ -8043,7 +8053,7 @@ formal ⏸（gated on ②）→ ⑤ system E2E + 方法消融 ⏸（gated on ④
 ## 2026-08-03 project_ray 静态配置选择证据归档 + 状态修正
 
 - 把只在服务器的两轮 project-static 矩阵归档进 Git：
-  `motivation/results/gpu/image_project_static_60k_x2_20260803/`（两轮 runs.csv + matrix_manifest
+  `experiments/results/motivation/gpu/image_project_static_60k_x2_20260803/`（两轮 runs.csv + matrix_manifest
   + summary + 七步报告）。两轮 commit `1f2e4fe`(08-02) + `29b256b`(08-03)，4 配置 cpu{8,16}×active{16,32}×3 formal @60K×2。
 - **冻结 project 静态点 `cpu16/active32/batch64`**：两轮 formal 中位 **1701.0 / 1681.0 img/s**（~1.2% 差）、
   exactly-once、120000/60000、max_norm_error=0。cpu16 是主杠杆（cpu8→16 +45–60%），active32 在 cpu16 时再 +15%。
@@ -8163,7 +8173,7 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
 - 可证明 vLLM 0.25.1 能解析 `CLIPModel`/pooling 配置，但当前
   PyTorch 2.11.0+cu130/容器组合未通过可运行门禁；禁止继续在线、5K 和 60K 性能实验。
 - 原始命令、完整日志、退出状态、环境/资产 SHA256 和七步报告归档至
-  `feasibility/results/vllm_clip_pooling_gate_20260804/`。禁用 sampler 仍超时，只能排除
+  `experiments/results/diagnostics/vllm_clip_pooling_gate_20260804/`。禁用 sampler 仍超时，只能排除
   单一 sampler 开关，不能把根因写成 FlashInfer JIT、权重加载或其它具体步骤。
 - direct vLLM pooling 继续定位为服务 ceiling 候选，不是数据库 AI 算子系统 baseline；
   当前状态为 `blocked/unavailable`，Daft built-in 与 Ray Data native graph 不受影响。
@@ -8257,10 +8267,10 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   文本历史用 pgvector；细节在进入写回实现阶段再定。
 - 证据精度勘误：fine vs coalesced **37.5×（推理执行阶段）/ 13.4×（端到端）是 2026-07-12 文本
   AI_EMBED 预研的数字，不是图像 CLIP 的**（图像动机是 GPU 利用率 1–4%、CPU 预处理瓶颈，另见
-  `motivation/results/gpu/image_*`）。已纠正根 `AGENTS.md` §3、`motivation/AGENTS.md`、开题报告
+  `experiments/results/motivation/gpu/image_*`）。已纠正根 `AGENTS.md` §3、`experiments/results/motivation/AGENTS.md`、开题报告
   正文+飞书镜像第 71 行（"37.5× 的端到端差异"→"推理执行阶段差异 37.5×，端到端约 13.4×"）、
-  报告/飞书第 270/279 行结论句、`opening/slides/build_ppt.py` 第 524 行 PPT 源（只改源、不重生成
-  .pptx，保护手动调整）。来源 `motivation/results/gpu/ai_embed_chain_breakdown_20260712.md`。
+  报告/飞书第 270/279 行结论句、`docs/archive/opening/slides/build_ppt.py` 第 524 行 PPT 源（只改源、不重生成
+  .pptx，保护手动调整）。来源 `experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md`。
 
 ## 2026-08-05 文本数据库原生 baseline fail-closed 修订
 
@@ -8287,14 +8297,14 @@ step-6 的 45.7% 只能作"Ray Data 低估配时的伪差距"旁证。
   `code/scripts/run_official_baseline.py`，现统一解析并验证实际
   `code/scripts/baselines/run_official_baseline.py`；新增文件存在性回归测试。
 - 三次短门禁的最小证据已归档到
-  `feasibility/results/duckdb_ai_semantic_gate_20260805/`：不保存原始 prompt/输出文本，
+  `experiments/results/diagnostics/duckdb_ai_semantic_gate_20260805/`：不保存原始 prompt/输出文本，
   只保存 resolved config、退出状态、服务计数、逐分片摘要与失败日志；七步报告明确
   capability 数据不进入正式性能排名。
 
 ## 2026-08-05 bounded-output 产品对比轨方法论（DuckDB-ai 兼容性三轨）
 
 DuckDB `ai` 把 `finish_reason=length` 当行级 error，与 ShareGPT fixed-cap 主轨（接受截断）
-语义不兼容。归档证据（`feasibility/results/duckdb_ai_semantic_gate_20260805/`）只证明：ShareGPT
+语义不兼容。归档证据（`experiments/results/diagnostics/duckdb_ai_semantic_gate_20260805/`）只证明：ShareGPT
 cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 成功；**句子计数 64 行零错误、
 ≤10 词摘要 ~9% 失败仅为服务器临时 screening，尚未归档，2048 行门禁未完成**。据此确定 DuckDB
 对比走**独立 bounded-output 轨**，
@@ -8337,7 +8347,7 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - **无隐藏 system prompt**（messages 仅 `{role:user, content:prompt}`）。
 - **默认 temperature=0.1（非 0）**：不显式传时 DuckDB-ai 发 0.1；adapter 显式 `temperature => 0.0`
   才发 0。故请求等价门禁**必须校验 temperature 被显式设成 0.0**，否则与项目路径不一致。
-- 门禁已在 `feasibility/results/request_equivalence_gate_20260805/` 完成并归档：canonical、
+- 门禁已在 `experiments/results/diagnostics/request_equivalence_gate_20260805/` 完成并归档：canonical、
   DuckDB `ai_completion_request_json` 与项目生产 `build_completion_request_body` 逐字段相等；
   隔离单请求 vLLM prompt-token delta 为 37=37，`passed=True`。这只证明请求语义等价，
   不构成吞吐或 database-E2E 结果。
@@ -8374,8 +8384,8 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
   只可用于 AI_EMBED 写回后的 retrieval closure。
 - OceanBase 官方 publications 已登记 PVLDB 2026 accepted 的 IMLane，但本次检索未找到公开正文；
   只列为 `pending-publication` watchlist，不杜撰其 workload、baseline、指标或结果。
-- 同步更新 `research/evaluation_metrics_survey_20260731.md`、
-  `research/existing_ai_operator_execution_chains.md` 与 baseline 唯一入口。
+- 同步更新 `docs/research/evaluation_metrics_survey_20260731.md`、
+  `docs/research/existing_ai_operator_execution_chains.md` 与 baseline 唯一入口。
 
 ## 2026-08-05 IMLane vendor paper summary 补证与新颖性边界修正
 
@@ -8421,8 +8431,8 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 ## 2026-08-05 direct_client 审计收尾：文档登记 + 正文措辞订正
 
 - 完成 direct_client 复核（DA）剩余两项：① 登记 `code/src/baselines/text/products/direct_client.py`、
-  `code/tests/baselines/text/test_direct_client.py` 与证据目录 `feasibility/results/squad_database_e2e_direct_client_20260805/`
-  进 PROJECT_INDEX / code/scripts/README / feasibility/results/README；② 按 codex 要求直接修 direct_client 证据
+  `code/tests/baselines/text/test_direct_client.py` 与证据目录 `experiments/results/diagnostics/squad_database_e2e_direct_client_20260805/`
+  进 PROJECT_INDEX / code/scripts/README / experiments/results/diagnostics/README；② 按 codex 要求直接修 direct_client 证据
   README §2/§6/§7 正文措辞（不只 §8 审计节）。
 - 订正的 4 处措辞：「同一种截断事件」→「同一 source row（`572700c8…`）在两次独立 full 中都触顶 cap=64」；
   「E2E wall direct 稍快（~2s，无扩展 barrier 开销）」→「约 2s（单次观察，不能归因为没有扩展 barrier 开销）」；
@@ -8431,7 +8441,7 @@ cap=256 → 43/64 行失败、cap=1024 仍 1/64 失败、4 行 capability 4/4 �
 - 顺带修正同源陈旧口径：code/scripts/README 与 protocol spec（`bounded_output_duckdb_comparison_protocol_20260805.md`）
   的状态字段名 `capability_gate_status` → `single_run_valid`（H 系列已改 runner 输出，文档遗留），并把两处
   「direct_client/project_static 臂留 stub」更新为「direct_client 臂已实现，project_static 臂留 stub」。
-  feasibility/results/README 第 14 条同步去掉「模型调用独占 99%」与耦合状态字段。
+  experiments/results/diagnostics/README 第 14 条同步去掉「模型调用独占 99%」与耦合状态字段。
 - 订正上一条 PROJECT_LOG 的措辞：「**同一事件不同结论**」应读作「**同一 source row 在两次独立 full 中触顶**，
   给出不同可靠性结论」（两次独立运行，非同一次事件）。结论不变：差异在截断的产品语义（NULL vs partial text），非吞吐。
 - 纯文档提交，无代码改动、无重跑；机器原始 report.json/per_row_evidence.csv 全部保持不变。下一步：`project_static` 臂 → 三臂齐全。
@@ -8631,10 +8641,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 归档：`multicard_scale_ramp_enhanced_20260807/` + `multicard_lbrr_scale_ramp_enhanced_20260807/`（ramp_run+aggregate）+ proj re-aggregate + 4-path ramp README §9（完整 §7.5D 4 臂表）。**正式 raw 归档已于 2026-08-12 闭环**：只纳入配置/门禁/身份/状态/资源/gauge/失败证据，排除逐请求输出和日志；见项目日志顶部服务器审计记录。
 ## 2026-08-07 开题 framing 与 Claim Matrix 冻结
 
-- 新增 `opening/claim_matrix.md`，冻结题目、AI Data Execution Layer 系统抽象、两项研究内容、共同使能组件、跨模态边界和四级 claim 状态。
+- 新增 `docs/archive/opening/claim_matrix.md`，冻结题目、AI Data Execution Layer 系统抽象、两项研究内容、共同使能组件、跨模态边界和四级 claim 状态。
 - 开题前新增数据收敛为两组统一 database-E2E 文本三臂：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。两组完成后停止增加开题 baseline。
 - 明确现有 scale-ramp 的 request/query-barrier timing granularity 不一致，只用于 serving capacity 与 overload 证据，不能替代三臂统一 per-row database-E2E 排名。
-- 同步 `AGENTS.md`、根 `README.md`、`PROJECT_OUTLINE.md`、`overview/current_direction_and_plan.md`、`experiments/plans/experiment_status_and_gaps.md`、`opening/README.md`、`opening/navigation.md` 和 `PROJECT_INDEX.md`。
+- 同步 `AGENTS.md`、根 `README.md`、`PROJECT_OUTLINE.md`、`README.md`、`experiments/plans/experiment_status_and_gaps.md`、`docs/archive/opening/README.md`、`docs/archive/opening/navigation.md` 和 `PROJECT_INDEX.md`。
 - cost-model 最新口径更新为 429 formal；CE5 pooled/macro/max regret 为 1.67%/2.90%/14.72%，candidate pairwise 0.808，定性为 marginal pass。
 
 ## 2026-08-07 开题统一 database-E2E 合同与 runner
@@ -8742,7 +8752,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 ## 2026-08-09 开题材料冻结 readiness 收口
 
-- 在 `opening/claim_matrix.md` 新增材料 readiness 表，严格区分
+- 在 `docs/archive/opening/claim_matrix.md` 新增材料 readiness 表，严格区分
   `content-frozen`、`evidence-frozen`、`render-pending`、
   `data-ready-not-generated`、`historical-not-current-paused` 与
   `not-yet-frozen`，避免把数据就绪误写为最终材料已经冻结。
@@ -8824,7 +8834,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   +25.48%、+67.57%，三个 long 也全部退化；Daft 两臂表现为 high waiting/KV，Ray Data
   为 low running/zero waiting/low MFU。只作轨内外部状态观察，不归因内部算法或跨框架
   绝对排名。
-- 新增 `experiments/results/opening_fourjob_interference_20260809/` 七步报告、紧凑 CSV 和
+- 新增 `experiments/results/text_four_job_interference_20260809/` 七步报告、紧凑 CSV 和
   六项待画图合同；本轮未画图、未改 PPT、未同步 Wiki。
 - 服务器完整 archive 为
   仓库外归档 `opening_fourjob_full_archive_20260809_v1.tar.gz`
@@ -9074,7 +9084,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 ## 2026-08-12 完成 20 页中文开题 PPT v7 本地验收
 
 - 在独立 worktree `/private/tmp/gpu-opening-report-ppt`、分支 `codex/opening-report-ppt` 中完成
-  `opening/slides/opening_defense_20260812_v7.pptx`；未切换或修改主工作区的 `main`。
+  `docs/archive/opening/slides/opening_defense_20260812_v7.pptx`；未切换或修改主工作区的 `main`。
 - PPT 继承 v6 学校模板，按冻结叙事重组为 20 页：背景与相关工作 → 文本/图像 baseline 与
   动机 → 四项设计要求 → AI Data Execution Layer → 两项研究内容与共同代价估计 → 图像泛化
   → 研究基础、计划和预期贡献。
@@ -9096,7 +9106,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   无缺号、无未引用条目，参考文献末尾无标点。
 - 更新最新实现边界：固定总上限有序释放已经接入 Ray 运行时与 trace，但没有正式 GPU 对照，
   不将实现状态写成方法收益。
-- 新增 `opening/report/opening_report_20260812_qa.md` 并更新 opening/项目索引。当前没有阻塞
+- 新增 `docs/archive/opening/report/opening_report_20260812_qa.md` 并更新 docs/archive/opening/项目索引。当前没有阻塞
   开题的实验数据图；仅保留第 2、3 页背景结构图为可选视觉增强。
 - 飞书普通云文档 revision 289 已只读核对；16 张正式图的公开 URL 与整篇 Markdown 覆盖
   dry-run 均通过。最终覆盖因外部写入门禁等待用户对指定文档 URL 的再次明确确认；未同步 Wiki。
@@ -9121,13 +9131,13 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   内部说明，不把模型服务内部 batching 写成研究内容，相关工作缺口只称“仍需系统验证”。
 - 开题专用图集扩为 17 张 PPT 主讲 PNG/SVG、8 张 Draw.io 和 2 张备份图；P02–P04 用中文页码
   命名，SVG icon 已内嵌。报告正文仍使用 P05–P19 的 14 张研究/证据图，不因背景图增补而改写。
-- 从 v7 学校模板原位替换第 2–4 页，生成 `opening/slides/opening_defense_20260812_v8.pptx`；
+- 从 v7 学校模板原位替换第 2–4 页，生成 `docs/archive/opening/slides/opening_defense_20260812_v8.pptx`；
   删除旧正文对象后插入正式图，没有遮罩或叠层修补。20/20 页渲染、overflow、20/20 notes、
   template fidelity 0 issue 和逐页视觉复核均通过，其余 17 页内容与 notes 保持不变。
 ## 2026-08-12 按对外叙事重构开题 PPT v9（历史初版）
 
 - 在新分支 `codex/opening-ppt-template-v9` 生成 31 页
-  `opening/slides/opening_defense_20260812_v9.pptx`；学校模板只提供页眉、配色和基本身份识别，
+  `docs/archive/opening/slides/opening_defense_20260812_v9.pptx`；学校模板只提供页眉、配色和基本身份识别，
   不再逐框仿制，页数服从“入口变化—执行假设—四层研究现状—研究空白—动机—方法”的叙事。
 - 背景先解释数据库为何成为 AI 任务入口，再区分传统算子与外部 AI 算子的执行假设，随后分别
   讲数据库 AI、数据执行、模型服务与代价决策，最后收敛到数据库与模型服务之间的跨层执行闭环。
@@ -9136,7 +9146,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 全稿面向外部评审清理 `Project/W65K/RC/P0` 及“门禁、冻结、晋升、正式点、失效边界”等
   内部表达；图中对外替换版本在构建时生成并栅格化，未改写权威源图。
 - 31/31 页讲稿与来源、0 空占位符、`slides_test.py` 画布溢出检查和关键页逐页视觉复核通过；
-  记录见 `opening/slides/opening_defense_20260812_v9_qa.md`。
+  记录见 `docs/archive/opening/slides/opening_defense_20260812_v9_qa.md`。
 
 ## 2026-08-12 v9 收敛为 26 页并恢复模板式结尾
 
@@ -9152,7 +9162,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 根据 fixed-envelope formal 与 strict-priority 两轮 GPU 短测，把 SAOR 效果有限的根因收紧为
   三个断点：formal `slo_weight=0`、request 剩余 SLO 预算未进入 coordinator，以及 hard
   priority 缺 actual-work anti-starvation cap 且可能为不 fit 的高优先级 Job 留空。
-- 在 `research/saor_model_scenario_audit_20260811.md` §12 与
+- 在 `docs/research/saor_model_scenario_audit_20260811.md` §12 与
   `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.2.4 冻结
   `saor-v0.5-bounded-priority-design`：显式 per-Job priority/remaining SLO budget，
   completion-corrected actual-work debt guard 高于 priority，普通状态回退原 SAOR；每 Job 至多
@@ -9279,7 +9289,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 多租户保留为兼容的后续层次化扩展：外层增加 tenant entitlement/debt 与 per-tenant ready/
   buffer cap，内层复用当前 Job-level observation、priority/SLO、service debt 和 borrowing/reclaim。
   若未来仍让所有 `job_id` 平铺竞争，或让跨租户 strict priority 绕过 tenant floor，才构成冲突。
-- 同步修正 `research/knowledge_hub.md` 和 `research/README.md` 的入口口径：当前算法架构可复用，
+- 同步修正 `docs/research/knowledge_hub.md` 和 `docs/research/README.md` 的入口口径：当前算法架构可复用，
   但未来仍需重验 tenant floor、anti-splitting、双层 debt/reclaim、work conservation 与恢复时间。
 
 ## 2026-08-13 冻结 SAOR 系统价值与机制归因的两层证据矩阵
@@ -9661,7 +9671,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 ## 2026-08-22 正式对外材料语言规则
 
-- 在根 `AGENTS.md` 与 `opening/AGENTS.md` 增加正式对外材料语言规则：不得把内部项目管理词和缩写直接写入开题报告、论文、PPT、图表、答辩讲稿或对外同步稿。
+- 在根 `AGENTS.md` 与 `docs/archive/opening/AGENTS.md` 增加正式对外材料语言规则：不得把内部项目管理词和缩写直接写入开题报告、论文、PPT、图表、答辩讲稿或对外同步稿。
 - 要求将“冻结、门禁、闭环、边界、合同、轨”等抽象说法改写为具体对象、条件和动作；确属学术术语时必须在首次出现处解释。
 - 要求定稿前搜索高风险词、未解释英文和连续抽象名词，并检查图题、图下注释是否能让不熟悉项目的读者独立读懂。
 
@@ -9704,16 +9714,16 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 ## 2026-08-23 开题报告两项基础方法与代价信息增强修订
 
-- 按确认后的设计修改 `opening/report/opening_report.md`：研究内容一、二分别建立不依赖代价预测的基础数据组织和基础调度方法，代价估计主要支持数据库执行计划与多 SQL 编排，并作为前两项研究的可选增强信息。
+- 按确认后的设计修改 `docs/archive/opening/report/opening_report.md`：研究内容一、二分别建立不依赖代价预测的基础数据组织和基础调度方法，代价估计主要支持数据库执行计划与多 SQL 编排，并作为前两项研究的可选增强信息。
 - 已有系统依据集中放在第 2.2、2.3 节，第 2.4 节只归纳尚未覆盖的问题，第 3.2 节只简要承接；新增 Ray Data `map_batches` 和 vLLM 调度配置两条官方资料，参考文献增至 48 条。
 - 第 4.1 节说明基础方法与代价信息增强的后续对照，第 4.2.5 节继续把 429 条运行记录限定为当前文本环境中的离线估计实验，不将其解释为数据库优化、数据组织或多作业调度收益。
 - 同步更新报告审查记录、开题工作区状态和开题日志；报告图片、PPT、Word 文档和实验数据未修改。
 
 ## 2026-08-23 精读文献主线与当前工作区统一提交
 
-- 将 `research/精读文献笔记/` 中八篇全文精读材料作为开题相关工作的主要文献来源：Cortex AISQL、LOTUS、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 分别支撑数据库 AI 查询、异构执行、数据组织和多作业调度论述。
-- `opening/report/opening_report.md` 第二章按上述八篇文献重组，新增 AYO、关系型 LLM 查询优化和 BlendServe 三条参考文献，当前共 51 条；同时依据正式论文页面修正 Cortex AISQL 和 Ray Data Streaming Batch 题录。
-- `research/ai_operator_literature_inventory.md`、`opening/literature/reading_list.md` 和 `research/knowledge_hub.md` 同步增加八篇精读主线，原有“缺少相关研究”的概括收窄为数据库跨模态工作描述、模型服务实际状态与上游多作业提交之间的衔接问题。
+- 将 `docs/research/精读文献笔记/` 中八篇全文精读材料作为开题相关工作的主要文献来源：Cortex AISQL、LOTUS、关系型 LLM 查询优化、Ray、Ray Data Streaming Batch、AYO、VTC 和 BlendServe 分别支撑数据库 AI 查询、异构执行、数据组织和多作业调度论述。
+- `docs/archive/opening/report/opening_report.md` 第二章按上述八篇文献重组，新增 AYO、关系型 LLM 查询优化和 BlendServe 三条参考文献，当前共 51 条；同时依据正式论文页面修正 Cortex AISQL 和 Ray Data Streaming Batch 题录。
+- `docs/research/ai_operator_literature_inventory.md`、`docs/archive/opening/literature/reading_list.md` 和 `docs/research/knowledge_hub.md` 同步增加八篇精读主线，原有“缺少相关研究”的概括收窄为数据库跨模态工作描述、模型服务实际状态与上游多作业提交之间的衔接问题。
 - 五个精读主笔记文件名改为与论文目录同名，并同步五份配图审计中的引用路径；本次统一提交还包含用户此前新增的 65 张论文原图、八份配图审计以及工作区中其他待提交修改。
 ## 2026-08-21 SAOR 五臂远端 correctness smoke 适配层修复
 
@@ -9786,17 +9796,17 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 ## 2026-08-24 Galois 精读笔记配图补全
 
-- 从 `research/reference/galois_sigmod2025.pdf` 核对 Galois SIGMOD 2025 正式版的 11 张 Figure，按精读正文的独立论证需求选择 Figure 1–4 和 Figure 7–11。
+- 从 `docs/research/reference/galois_sigmod2025.pdf` 核对 Galois SIGMOD 2025 正式版的 11 张 Figure，按精读正文的独立论证需求选择 Figure 1–4 和 Figure 7–11。
 - 新增 9 个原图裁剪件，分别放在 DB-first 动机、predicate pushdown、Table-Scan/Key-Scan、logical-plan 枚举、logprob 过滤、query-complexity 质量/成本、`τ` 校准与 oracle-optimal gap 对应的正文位置；每图补充来源页码和不能外推的边界。
 - Figure 5–6 是已在笔记中完整转写的 prompt syntax，Table 1–10 和 Algorithm 1–2 也已转录，因此不重复截图。版本、选图、页码、SHA256、裁剪方式和视觉 QA 记录在 `figures/audit/galois_deep_reading_figures_audit_20260824.md`。
 - 精读配图索引已同步为 9 篇主笔记、74 张论文原图裁剪件；本次未修改论文 PDF、实验数据、开题报告或 PPT。
 
 ## 2026-08-24 开题报告研究结构与目标架构修订
 
-- 按外部评审意见重构 `opening/report/opening_report.md`：研究内容固定为数据组织和提交/路由/多 Job 调度两项，代价估计作为共同使能组件，图像作为跨模态验证；未改变项目总纲已经确定的研究方向。
+- 按外部评审意见重构 `docs/archive/opening/report/opening_report.md`：研究内容固定为数据组织和提交/路由/多 Job 调度两项，代价估计作为共同使能组件，图像作为跨模态验证；未改变项目总纲已经确定的研究方向。
 - 报告补入 IMBridge/IMLane 直接对照，收窄对进程解耦、数据交换、异步分批和 Ray 集成的创新声称；统一请求、批次、Job、准入工作量、实际服务量和预测时间术语，并把 `CustomPath` 成本映射、当前模块状态、实验计时范围和风险替代方案写入正文。
 - 新增目标架构与当前证据链双层状态图及生成脚本，明确现有外部路径只提供有界算子接口的实验依据，不表示 PostgreSQL planner-visible 算子、child plan 生命周期或 LOTUS 语义迁移已经完成。正文图片由 11 张压缩为 6 张，参考文献由 51 条增至 60 条。
-- `PROJECT_INDEX.md`、`figures/README.md`、`opening/README.md`、报告图片映射、图件审计和新报告 QA 已同步。实验数据、Word、PPT、飞书和 Wiki 未修改。
+- `PROJECT_INDEX.md`、`figures/README.md`、`docs/archive/opening/README.md`、报告图片映射、图件审计和新报告 QA 已同步。实验数据、Word、PPT、飞书和 Wiki 未修改。
 
 ## 2026-08-24 开题报告前置内容收缩与动机映射修订
 
@@ -9808,7 +9818,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 ## 2026-08-24 Palimpzest 精读笔记配图与目录名修正
 
 - 将用户误写的精读目录 `palimpsest_cidr2025/` 及主笔记名统一更正为 `palimpzest_cidr2025/palimpzest_cidr2025.md`；系统名、附件题名和 CIDR 2025 正式发表题名继续分开记录。
-- 从 `research/reference/palimpzest_cidr2025.pdf` 的 2024 arXiv v2 附件核对并裁剪全部正文 Figure 1–7，在工作负载、声明式程序、关系算子、优化流程、多模态依赖、候选计划 Pareto frontier 和 Policy 选择对应段落插入 7 张原图；每张图补充来源页码、读图方法和不能外推的结论。
+- 从 `docs/research/reference/palimpzest_cidr2025.pdf` 的 2024 arXiv v2 附件核对并裁剪全部正文 Figure 1–7，在工作负载、声明式程序、关系算子、优化流程、多模态依赖、候选计划 Pareto frontier 和 Policy 选择对应段落插入 7 张原图；每张图补充来源页码、读图方法和不能外推的结论。
 - 附录 Figure 8–9 与正文已转写的负例和 Medical Schema Matching 程序重复，不再截图；图号、版本边界、SHA256、裁剪方式和视觉 QA 记录在 `figures/audit/palimpzest_deep_reading_figures_audit_20260824.md`。
 - 当前精读索引同步为 10 篇主笔记、81 张论文原图裁剪件；未修改源 PDF、开题报告正文、PPT、Word、飞书或 Wiki。
 
@@ -9817,19 +9827,19 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 对外叙事由四条平级证据链和三类并列问题统一为两条总动机：记录数不能代表分阶段 AI 工作量；单一静态量或局部指标不能代表当前可调度状态。两者分别对应数据组织与上游调度两项研究内容。
 - 动机二按配置层、模型服务层和 Job 层组织。状态观测属于信息层，动态调度属于使用状态采取动作的方法层，代价估计属于共同使能组件，图像属于跨模态验证，不再作为平级动机。
 - 报告第 4.4 节把核心动机证据与静态基线、候选方法、代价估计等可行性证据分开。工作量与状态图同步增加父子标题，多 Job 图承担 Job 层证据；实验数值和统计口径保持不变。
-- `AGENTS.md`、`opening/AGENTS.md` 和 `opening/work_rules.md` 新增论证层级规则，要求同级项目同类同粒度，并执行父项覆盖、兄弟同类和证据收敛检查。
+- `AGENTS.md`、`docs/archive/opening/AGENTS.md` 和 `docs/archive/opening/work_rules.md` 新增论证层级规则，要求同级项目同类同粒度，并执行父项覆盖、兄弟同类和证据收敛检查。
 - 同步更新 Claim Matrix、答辩内容大纲、图资产说明、报告 QA、项目索引和审计记录。PPTX、Word、飞书与 Wiki 未修改。
 
 ## 2026-08-24 Abacus 精读笔记配图接入与路径修复
 
-- 核对 `research/reference/abacus_pvldb2026.pdf` 的 PVLDB 19(5) 正式版，确认正文共有 Figure 1–8，分别承担多目标动机、系统流程、Cascades 结构、BioDEX/CUAD/MMQA 查询计划、prior、约束响应和消融证据，八图均有独立讲解价值。
+- 核对 `docs/research/reference/abacus_pvldb2026.pdf` 的 PVLDB 19(5) 正式版，确认正文共有 Figure 1–8，分别承担多目标动机、系统流程、Cascades 结构、BioDEX/CUAD/MMQA 查询计划、prior、约束响应和消融证据，八图均有独立讲解价值。
 - 新增笔记自带的 8 个 PNG 与正式 PDF 视觉一致，但原 Markdown 全部错误引用不存在的 `assets/fig*.png`；现已修复为实际 `figures/` 路径，并逐图补充来源页码、读图顺序和不能外推的结论。
 - 精读目录与主笔记按目录合同统一为小写 `abacus_pvldb2026/abacus_pvldb2026.md`；裁剪件 SHA256、来源页码、分辨率和视觉 QA 记录在 `figures/audit/abacus_deep_reading_figures_audit_20260824.md`。
 - 当前精读索引同步为 11 篇主笔记、89 张论文原图裁剪件；未修改源 PDF、开题报告正文、实验数据、PPT、Word、飞书或 Wiki。
 
 ## 2026-08-24 Sema 精读笔记配图补全与来源登记
 
-- 核对 `research/reference/sema_vldb2026.pdf` 的 arXiv:2603.11622v1 全文，确认正文 Figure 1–8 分别承担架构、SemaSQL 示例、系统 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study，均有独立讲解价值。
+- 核对 `docs/research/reference/sema_vldb2026.pdf` 的 arXiv:2603.11622v1 全文，确认正文 Figure 1–8 分别承担架构、SemaSQL 示例、系统 workflow、总体 latency/quality、execution optimization、AQE breakdown 与 Q6 case study，均有独立讲解价值。
 - 从本地 PDF 裁剪 8 张正文原图并插入对应章节，替换全部失效的 `/mnt/data/sema_figures/` 临时路径；每张图补充来源页码、读图顺序与不能外推的结论。Table 1、Algorithm 1 和附录 Figure 9–40 因已有等价文字转写而不重复截图。
 - 精读主笔记按目录合同统一为小写 `sema_vldb2026/sema_vldb2026.md`；来源版本、PDF/PNG SHA256、分辨率、选择理由和视觉 QA 记录在 `figures/audit/sema_deep_reading_figures_audit_20260824.md`。文件名中的 `vldb2026` 不作为正式录用证据，当前仅按 arXiv v1 记录。
 - 当前精读索引同步为 12 篇主笔记、97 张论文原图裁剪件；参考目录当前 4 个可解析实体也已按实际工作区状态登记。本次未修改源 PDF、开题报告正文、实验数据、PPT、Word、飞书或 Wiki。
@@ -9845,7 +9855,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 - 将报告第 1.2 节改名为“研究动机与核心问题”，负责提出两条总动机；将第 4.4.1 节改名为“动机实验：两条核心动机的前期证据”，负责集中呈现实验数据和观察结论。
 - 进度安排改为约 18 个月的六个相对时间段，每段只保留一个阶段目标；删除具体年月、开题材料、学位论文撰写和答辩准备事项。
-- `opening/AGENTS.md` 与 `opening/work_rules.md` 增加进度写作规则。本轮未改变研究问题、研究内容、实验结论、图片、PPTX、Word、飞书或 Wiki。
+- `docs/archive/opening/AGENTS.md` 与 `docs/archive/opening/work_rules.md` 增加进度写作规则。本轮未改变研究问题、研究内容、实验结论、图片、PPTX、Word、飞书或 Wiki。
 
 ## 2026-08-24 开题报告实验角色与叙事层次定稿
 
@@ -9864,10 +9874,10 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 ## 2026-08-24 开题报告 52 条参考文献正式版本复核
 
-- 逐条核对 `opening/report/opening_report.md` 的 52 条参考文献，优先采用会议/期刊官网、正式 proceedings、DOI 和官方技术文档；修正 GaussML、Galois、NeuStream 和多租户数据库论文的作者或题名错误，并补齐可核实的页码、文章号和 DOI。
+- 逐条核对 `docs/archive/opening/report/opening_report.md` 的 52 条参考文献，优先采用会议/期刊官网、正式 proceedings、DOI 和官方技术文档；修正 GaussML、Galois、NeuStream 和多租户数据库论文的作者或题名错误，并补齐可核实的页码、文章号和 DOI。
 - Sema 已由 VLDB 2026 官方程序确认为 Research Track 常规研究论文。报告、精读笔记、参考索引和图件审计把“录用状态”与“当前本地 arXiv v1 全文”分开记录；正式摘要的 26 个查询不再与 arXiv v1 的 20 个查询混用。PVLDB 卷期、页码和 DOI 尚未公开，未提前补造。
 - Autellix 的正式版本已更名为 Agentix，并发表于 NSDI 2026（2443—2459）；当前报告与文献地图改用正式名称和 venue，历史 arXiv 笔记保留旧名并增加版本提示。FairServe、DLPM、Ray Data Streaming Batch Model 和 CONCERTO 仍按预印本引用。
-- `opening/AGENTS.md`、`opening/work_rules.md` 与 `research/AGENTS.md` 增加正式版本优先和版本证据分离规则。参考文献总数、研究内容、实验数据、图片、PPTX、Word、飞书和 Wiki 均未改变。
+- `docs/archive/opening/AGENTS.md`、`docs/archive/opening/work_rules.md` 与 `docs/research/AGENTS.md` 增加正式版本优先和版本证据分离规则。参考文献总数、研究内容、实验数据、图片、PPTX、Word、飞书和 Wiki 均未改变。
 
 ## 2026-08-24 开题报告模板、实验来源与图件可读性精修
 

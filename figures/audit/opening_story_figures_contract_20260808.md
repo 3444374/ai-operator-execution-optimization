@@ -291,7 +291,7 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 
 ## 7. Replacement 文本三臂（附录 correctness/语义表）
 
-数据：`experiments/results/opening_database_e2e_text_refeed_20260808/summary/formal_summary.csv`
+数据：`experiments/results/text_db_e2e_duckdb_static_comparison_20260808/summary/formal_summary.csv`
 与 `summary/audit.json`。旧 `opening_database_e2e_text_20260807` 只作 failed-feeding 诊断，
 不得回填。
 
@@ -332,7 +332,7 @@ A/T/N/C/H/D/I/J/E/F-main/F-state 已逐张打开复核，均无缺字方框、�
 - `data/report_main/opening_native_single_job_state_fingerprint.{png,svg}`。
 
 - 类型：experimental results；数据为
-  `experiments/results/opening_text_native_single_job_formal_20260808/formal_summary.csv`，
+  `experiments/results/text_native_single_job_comparison_20260808/formal_summary.csv`，
   4 arms × 3 formal，warm-up 不进统计。
 - F-main 按相同行顺序展示 Job JCT、vLLM waiting、单请求 queue time 与 TTFT；它承担
   “相近 makespan 掩盖请求级排队”的主结论。Job JCT 明确采用

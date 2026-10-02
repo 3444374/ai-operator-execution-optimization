@@ -18,7 +18,7 @@ PNG_PATH = OUT_DIR / "10_e2e_operator_writeback_breakdown.png"
 SVG_PATH = OUT_DIR / "10_e2e_operator_writeback_breakdown.svg"
 CSV_PATH = (
     Path(__file__).resolve().parents[2]
-    / "motivation" / "results" / "gpu" / "ai_embed_pgai_integrated_key_20260714.csv"
+    / "experiments" / "results" / "motivation" / "gpu" / "ai_embed_pgai_integrated_key_20260714.csv"
 )
 
 # ── Font setup ──

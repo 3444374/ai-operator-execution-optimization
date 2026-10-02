@@ -374,7 +374,7 @@ reference 行数来自普通 child，Map 不再施加 Filter 选择率。保留�
 公开源码：[pgml api.rs](https://github.com/postgresml/postgresml/blob/caf2b6ccdf0d6efc2c1910cbc06725a34320181a/pgml-extension/src/api.rs#L675-L708)；
 生命周期依据：[PG Executing Custom Scans](https://www.postgresql.org/docs/18/custom-scan-execution.html)。
 未安装或运行 pgml/公司实现，不能据此宣称其 PG18.3 兼容性或性能。
-Sema/Cortex 的数据库语义所有权和 LOTUS 算法定位沿用[研究依据](../../research/sema_native_semantic_operator_architecture_reference_20260827.md)；
+Sema/Cortex 的数据库语义所有权和 LOTUS 算法定位沿用[研究依据](../../docs/research/sema_native_semantic_operator_architecture_reference_20260827.md)；
 本工作包只建 reference，不以已有工程模式声称新增研究贡献。
 
 未来向公司移植时，优先复用纯值 prompt/输出 policy、任务身份与执行核心；

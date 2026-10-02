@@ -14,7 +14,7 @@
 > host-scope lease、非空共享 Ray 门禁和 cache-on 最小复跑已在提交 `2b7da6c` 上通过；
 > 远端 agent 可在完成本页全部 preflight 后，于单一新目录重跑。不得从无效目录 resume
 > 或挑选部分结果。门禁证据见
-> [`../../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md`](../../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md)。
+> [`../../../feasibility/results/cost_profile_cacheon_gate_20260805/README.md`](../../results/diagnostics/cost_profile_cacheon_gate_20260805/README.md)。
 > 2026-08-05 按真实部署口径把 v2 主合同冻结为 **prefix cache on**；cache-off 只作
 > 单独机制消融，不进入主性能排名，也不与 cache-on 行混合训练。
 

@@ -4,7 +4,7 @@
 
 - 角色：开题答辩第 11 页的 Solution Overview / 总体技术路线图。
 - 参考：`figures/audit/reference_opening_editable_20260811/02_system_architecture.png`。
-- 当前口径来源：`opening/claim_matrix.md`、`opening/opening_defense_outline_20260808.md` 第 11 页及多模态段落、`figures/audit/opening_editable_diagrams_manifest_20260811.md`。
+- 当前口径来源：`docs/archive/opening/claim_matrix.md`、`docs/archive/opening/opening_defense_outline_20260808.md` 第 11 页及多模态段落、`figures/audit/opening_editable_diagrams_manifest_20260811.md`。
 - 一句话结论：数据库记录先被转成可估计、可组织的 work，再由安全容量和新鲜运行状态约束准入、路由与多 Job 分配；文本与图像仅替换 adapter/backend，公共 work/state/credit/routing/trace 契约复用。
 - 研究边界：不修改 vLLM continuous batching、Ray 调度器、模型结构或 GPU kernel；动态动作标为候选，必须与同上限 frozen-static 做因果 A/B。
 

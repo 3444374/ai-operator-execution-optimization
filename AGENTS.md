@@ -4,6 +4,8 @@
 `code/INFRA_STATUS.md`、`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`、平台 runbook 和
 `PROJECT_LOG.md`，不在规则文件中复制。
 
+<a id="规则层级与读取顺序"></a>
+
 ## 1. 规则层级与读取顺序
 
 从根到目标路径逐级加载 `AGENTS.md`；已提供或已读且未变化的内容直接复用。首次进入目录、
@@ -18,18 +20,13 @@
 | 工作范围 | 追加规则入口 |
 |---|---|
 | 可复用代码、脚本、测试 | `code/AGENTS.md` |
-| 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 与目标平台的 `AGENTS.md`/runbook |
+| 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md`与目标平台规则/runbook |
 | 数据资产与导入 | `data/AGENTS.md` |
-| 正式方法实验 | `experiments/AGENTS.md`，再读 `plans/` 或 `results/` 的局部规则 |
-| 动机画像 | `motivation/AGENTS.md` 及目标子目录规则 |
-| 可行性与 smoke | `feasibility/AGENTS.md` 及目标子目录规则 |
-| 文献和知识文件 | `research/AGENTS.md` |
+| 实验计划与结果 | `experiments/AGENTS.md`，再读目标计划或结果目录规则 |
+| 动机画像、组件与能力检查 | `experiments/plans/motivation/AGENTS.md`、`experiments/results/motivation/AGENTS.md`或`experiments/results/diagnostics/AGENTS.md` |
+| 文献与研究依据 | `docs/AGENTS.md`、`docs/research/AGENTS.md` |
+| 历史工程与开题材料 | `docs/AGENTS.md`，再读对应`docs/archive/`规则 |
 | 图资产 | `figures/AGENTS.md` |
-| 已归档开题材料 | `opening/AGENTS.md` |
-| 学习讲解 | `learning/AGENTS.md` |
-| 快速方向卡片 | `overview/AGENTS.md` |
-| 导师/企业沟通记录 | `notes/AGENTS.md` |
-| 历史设计/工程归档 | `docs/AGENTS.md`、`projects/AGENTS.md` |
 
 ## 2. 项目范围
 
@@ -92,7 +89,7 @@ GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多�
   本次改动引起的失败并重跑受影响项；无需逐步确认。失败输出保留，环境与正式实验要求仍适用。
 - skill 按具体工作流、协议或工具需要选用；仅有相同关键词不触发加载。多流程 skill 只读取当前
   分支所需材料，已有用户选择与项目规则优先于通用模板。
-- 设计新系统机制前，先查 `research/knowledge_hub.md`、文献清单和
+- 设计新系统机制前，先查 `docs/research/knowledge_hub.md`、文献清单和
   `experiments/plans/baseline_reference.md`；新增候选记录到知识库，不把工程直觉伪装成研究空白。
 - 代码、计划、结果和对外材料分层保存。历史文件可以保留原始叙事，但必须指向当前替代入口。
 - 原始实验数据、失败运行和审计证据默认保留；移动或删除前先检查引用、唯一性与恢复路径。
@@ -134,12 +131,14 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 - 英文缩写、内部结构和指标首次出现时说明中文作用；文献使用正式英文题名，系统名保留英文。
 - 初步结果写“可行性依据、观察信号或待扩大验证”，不写成已经完成的贡献。
 
-仅在明确回查或修改开题历史文件时读取 `opening/AGENTS.md`；图资产任务读取 `figures/AGENTS.md`。
+仅在明确回查或修改开题历史文件时读取 `docs/archive/opening/AGENTS.md`；图资产任务读取 `figures/AGENTS.md`。
+
+<a id="目录与变更同步"></a>
 
 ## 7. 目录与变更同步
 
-项目内的 `research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
-`opening/` 已归档；普通研究、代码和实验变更不触发该目录或开题专用图集的同步。
+项目内的 `docs/research/`、实验计划/结果、总纲和各级 README 继续按现有权威关系作为知识来源。
+`docs/archive/opening/` 已归档；普通研究、代码和实验变更不触发该目录或开题专用图集的同步。
 
 | 变更 | 必须同步 |
 |---|---|
@@ -182,6 +181,6 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 |---|---|
 | 根 §1–3（方向、范围、状态） | 本文件 §2–3；当前事实再查 `PROJECT_OUTLINE.md` 和证据台账 |
 | 根 §5、§7.5（实验与运行） | 本文件 §5、`experiments/AGENTS.md`、baseline reference 与目标计划 |
-| 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `research/AGENTS.md` |
-| 根 §8（沟通） | 本文件 §2、§6 与 `notes/AGENTS.md` |
+| 根 §6、§6.5（严谨性、文献） | 本文件 §4、§6 与 `docs/research/AGENTS.md` |
+| 根 §8（沟通） | 本文件 §2、§6 与 `AGENTS.md#目录与变更同步` |
 | 根 §9–10（变更同步、Git） | 本文件 §7–8 |

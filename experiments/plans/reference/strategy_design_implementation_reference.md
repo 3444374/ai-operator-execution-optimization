@@ -482,7 +482,7 @@ PostgreSQL / table scan
 > 整理日期：2026-07-23
 > 来源：全维度综合评估（分级文献基线 + 49 篇精读论文 + 现有代码审计）
 
-以下架构基于现有 6 模块（`sources.py` / `organizers.py` / `model_backends.py` / `sinks.py` / `metrics.py` / `workloads.py`），新增 4 个核心模块。每个模块的设计决策标注文献来源，遵循 `research/README.md` §文献优先设计方法论。
+以下架构基于现有 6 模块（`sources.py` / `organizers.py` / `model_backends.py` / `sinks.py` / `metrics.py` / `workloads.py`），新增 4 个核心模块。每个模块的设计决策标注文献来源，遵循 `docs/research/README.md` §文献优先设计方法论。
 
 ### 8.1 目标模块全景
 
@@ -712,7 +712,7 @@ class GlobalRequestPool:
 | 设计决策 | 文献/系统来源 |
 |---|---|
 | 单一入口覆盖文本+图像 | Daft DataFrame 统一 API（`df["prompt"]` / `df["image"]`） |
-| 阶段拆分计时（DB fetch → organize → request wall → writeback） | 本项目 AI_EMBED 预研方法论（`motivation/results/gpu/`） |
+| 阶段拆分计时（DB fetch → organize → request wall → writeback） | 本项目 AI_EMBED 预研方法论（`experiments/results/motivation/gpu/`） |
 | 策略层不依赖引擎层 | DataOrganizer 抽象接口 — 策略代码只依赖 BatchRequest 元数据 |
 
 **接口规范**：

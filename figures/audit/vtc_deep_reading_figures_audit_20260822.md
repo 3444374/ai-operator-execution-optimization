@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/vtc_osdi2024/vtc_osdi2024.md`。
+- 使用位置：`docs/research/精读文献笔记/vtc_osdi2024/vtc_osdi2024.md`。
 - 权威来源：用户本地文献目录中的 `vtc_osdi2024.pdf`，题名 *Fairness in Serving Large Language Models*。该文件是 arXiv v2（2024-06-05），对应 18th USENIX Symposium on Operating Systems Design and Implementation（OSDI ’24）正式论文；精读笔记按正式发表信息记录，但不把本地文件伪称为 USENIX 版式 PDF。
 - 本地 PDF：24 页，SHA256 `2FA74F1E7FF787BDF4CE7702AC0C28BE0A4D627ECD08DAB19DF5B65F530060DA`；已通过 `%PDF` 签名、首页题名和页数解析检查。
-- 源文件没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是论文原图的局部裁剪，只服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。VTC 是引擎内多 client 公平调度相关工作，本项目的 external VTC-style 实现仍只能作为 Project internal control，不能冒充原生 VTC baseline。
 
 ## 选择结果
@@ -33,18 +33,18 @@
 
 | 文件 | 像素尺寸 | SHA256 |
 |---|---:|---|
-| `research/精读文献笔记/vtc_osdi2024/figures/fig1_vtc_architecture.png` | 1094×1306 | `EF7CF84D7928188C4B07D2943DDD2DEE03BE30A9A0ABB2E34047F832AF1B2F0A` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig2_length_cost_capacity.png` | 1094×599 | `578DC4088E07713CE37A419510CE4CC07686A0CBEF45281FAF08CB1DFA92DD94` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig3_backlogged_fairness.png` | 1094×1080 | `354D77EEA3DFEC97C7DA8869607048D4EF7C73FE16478DB4A0C96516C0B345EB` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig4_work_conservation.png` | 1094×775 | `DF4D597F898322146D13C37CA40EB6315BFCC6CC932946356225AD3FA513FBE7` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig6_off_but_backlogged.png` | 1099×783 | `941F1EB85F9815B7C63EB9708FF4FB45361E41C4FC290C8A5B08C8F3C02AE926` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig8_input_output_cost.png` | 1094×968 | `E205AA48952D9FA847903C1B57D9540D856747BAF1B1CC47C88F9B2B6B8A033B` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig9_isolation.png` | 1099×833 | `AA2E3A8DE1066A5E86CFC74DE5E4F561E40996278E2DC17B449B63A01EB01404` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig10_counter_lift_ablation.png` | 1099×1107 | `AA0D8515FFF3DFFB6F3098F0B83F542EEB156BCD1B40929073C8ECA1EFCADC79` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig12_real_trace_isolation.png` | 1094×698 | `D311AB2A20A8C95B5EF83E39AA113A7EA9323058541DE954A886F69406D0E41B` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig15_bound_sensitivity.png` | 1099×824 | `A86919EABD42135043D9D9B90E53100BBC7B4D7B6B569C38BBD49244BCDD161E` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig16_weighted_vtc.png` | 1094×909 | `6768BADDE7B7E8E72A6DAF4214FF15FCDCCAC6D45D81CE289F9F81295D952335` |
-| `research/精读文献笔记/vtc_osdi2024/figures/fig19_length_prediction.png` | 1094×972 | `C280561A1069F99E020675EC3853FF4BB3171021693D59D220D9E560E1C242CC` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig1_vtc_architecture.png` | 1094×1306 | `EF7CF84D7928188C4B07D2943DDD2DEE03BE30A9A0ABB2E34047F832AF1B2F0A` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig2_length_cost_capacity.png` | 1094×599 | `578DC4088E07713CE37A419510CE4CC07686A0CBEF45281FAF08CB1DFA92DD94` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig3_backlogged_fairness.png` | 1094×1080 | `354D77EEA3DFEC97C7DA8869607048D4EF7C73FE16478DB4A0C96516C0B345EB` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig4_work_conservation.png` | 1094×775 | `DF4D597F898322146D13C37CA40EB6315BFCC6CC932946356225AD3FA513FBE7` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig6_off_but_backlogged.png` | 1099×783 | `941F1EB85F9815B7C63EB9708FF4FB45361E41C4FC290C8A5B08C8F3C02AE926` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig8_input_output_cost.png` | 1094×968 | `E205AA48952D9FA847903C1B57D9540D856747BAF1B1CC47C88F9B2B6B8A033B` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig9_isolation.png` | 1099×833 | `AA2E3A8DE1066A5E86CFC74DE5E4F561E40996278E2DC17B449B63A01EB01404` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig10_counter_lift_ablation.png` | 1099×1107 | `AA0D8515FFF3DFFB6F3098F0B83F542EEB156BCD1B40929073C8ECA1EFCADC79` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig12_real_trace_isolation.png` | 1094×698 | `D311AB2A20A8C95B5EF83E39AA113A7EA9323058541DE954A886F69406D0E41B` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig15_bound_sensitivity.png` | 1099×824 | `A86919EABD42135043D9D9B90E53100BBC7B4D7B6B569C38BBD49244BCDD161E` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig16_weighted_vtc.png` | 1094×909 | `6768BADDE7B7E8E72A6DAF4214FF15FCDCCAC6D45D81CE289F9F81295D952335` |
+| `docs/research/精读文献笔记/vtc_osdi2024/figures/fig19_length_prediction.png` | 1094×972 | `C280561A1069F99E020675EC3853FF4BB3171021693D59D220D9E560E1C242CC` |
 
 提取方式：使用 PyMuPDF 对本地 PDF 对应页面作 4.5× raster render，再按原图与英文 caption 的完整边界裁剪。没有重绘、锐化、替换颜色、修改坐标、删除图内元素或拼接不同页面；所有 multi-panel Figure 均保持整体。
 

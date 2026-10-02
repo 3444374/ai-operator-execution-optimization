@@ -10,7 +10,7 @@
 
 已完成[文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)，后续按观测差距定位查询准备成本。
 四路径查询入口已存在；共享 Ray 连接与离线有限选点已有[本地检查](../results/postgresql/text_map_comparison_preparation_20260928/README.md)。
-[新版四路径完整比较](../results/postgresql/text_map_main_real_20260930/README.md)完成68条查询、41,024次请求与独立评价。
+[新版四路径完整比较](../results/postgresql/text_map_four_path_comparison_20260930/README.md)完成68条查询、41,024次请求与独立评价。
 1024行三次中位数SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒；旧失败和诊断单独保留。
 后续[准备诊断与固定配置真实复测](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
 复用worker后完整查询中位数16.502→14.794秒、准备4.737→2.831秒；仍慢于direct/Daft，配对输出差0–5行。
@@ -24,8 +24,8 @@
 | 已有能力或证据 | 当前能说明什么 | 尚缺什么 |
 |---|---|---|
 | [增量执行与可选Daft/Ray](../results/postgresql/incremental_transport_20260927/README.md) | 保留HTTP，新增有限二进制批次与Ray worker；受控PG及取消/多查询通过；[真实4144次](../results/postgresql/transport_real_20260927/README.md)计数与清理一致 | 跨机器传输、全进程内存和持续供给评价；结果持久写表暂不扩展 |
-| [M1完整容量复查](../results/postgresql/m1_full_recheck_20260920/README.md) | 32个查询、16400次请求完成；原清理扫描告警保留，随后资源核对通过 | 容量扫描修复和异常诊断已合入main；原故障未复现、根因待确定，PG/direct持续供给不足、尚未选点 |
-| [M1/M2/F有限真实验证](../results/postgresql/m1_m2_f_real_20260920/README.md) | 文本8248次；M1未选点；M2五组信息成本；F151次前向数值与指定生命周期通过 | M1供给原因与新校准；M2实际SemMap接入及独立方法证据；F计算中GPU故障和匹配性能 |
+| [M1完整容量复查](../results/postgresql/map_capacity_recheck_20260920/README.md) | 32个查询、16400次请求完成；原清理扫描告警保留，随后资源核对通过 | 容量扫描修复和异常诊断已合入main；原故障未复现、根因待确定，PG/direct持续供给不足、尚未选点 |
+| [M1/M2/F有限真实验证](../results/postgresql/capacity_organization_image_validation_20260920/README.md) | 文本8248次；M1未选点；M2五组信息成本；F151次前向数值与指定生命周期通过 | M1供给原因与新校准；M2实际SemMap接入及独立方法证据；F计算中GPU故障和匹配性能 |
 | [M1常驻等待位置检查](../results/postgresql/waiting_positions_persistent_20260914/README.md) | 新增24查询/768受控HTTP及120次旧入口回归；常驻后紧W仍增加完整查询时间，C8五次快于C4 | 旧测量反例结束；输入/观测开关保留，44,544 次表已撤下；新M1真实筛查未得候选，见上行 |
 | [期限与输入/交付诊断](../results/postgresql/async_deadline_flow_20260914/README.md) | 实现0274b121及验证3f1f5540已合入main；PG TAP2138、96次fixture，真实24+33共57次；一次真实结果跨期限正确保留失败，全部资源清理 | 四次真实暂停均未遇到就绪队首，不能归因ready-first收益；无稳定性能结论 |
 | [C/D真实预算](../results/postgresql/cd_validation_20260911/README.md) | 总留存可用性和work提交限制可检验；紧work三组均更慢，保留一行模型输出差异 | 强请求数FIFO、token表征成本、独立重复；不是token控制天然更好 |
@@ -45,7 +45,7 @@ M1旧常驻实验、输入划分及本轮真实筛查已完成，未取得平台
 
 以下保留当时判断和原证据链接，其中“待实现”“下一步”不代表当前执行顺序。
 
-2026-09-03 [前缀/表示设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
+2026-09-03 [前缀/表示设计审查](../../docs/research/semantic_prefix_reuse_design_audit_20260903.md)已完成，
 没有新增模型、tokenizer、缓存、PG 或性能运行。same-message 组织/提交和新表示质量分别作为候选；
 实际 token 机会、质量、收益与新颖性均待验证，不恢复旧校准/SAOR，也不阻塞 Map 和独立增量核心。
 工程切片与对照分别见主计划 §7、baseline reference §0.3；此处不把方案存在登记为实验完成。
@@ -351,8 +351,8 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
   exactly-once。3,114 个正式 snapshot 全部 fresh，构建均值 0.141 ms；static/proposed
   group JCT 差 0.98%。因此当前只证明 production 观测面已接入，不证明 state-aware 控制
   有收益，也不允许把 shared-credit 份额变化归因于 snapshot。
-- 权威结果分别归档在 `experiments/results/opening_image_native_fourjob_formal_20260810/`
-  与 `experiments/results/opening_image_project_fourjob_observe_only_formal_20260810/`。
+- 权威结果分别归档在 `experiments/results/image_native_four_job_observation_20260810/`
+  与 `experiments/results/image_project_four_job_observation_20260810/`。
 
 ## 状态增量（2026-08-04，历史快照；当前执行以其后的开题冻结段与 §0 为准）
 
@@ -393,7 +393,7 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
 
 ## 开题时期的实验安排（历史；2026-08-07 至 2026-08-08）
 
-开题题目与研究内容按 `opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
+开题题目与研究内容按 `docs/archive/opening/claim_matrix.md` 冻结。以下两个开题范围的首轮结果因
 项目臂 feeding 未过门而只作历史诊断；2026-08-08 已按
 `archive/opening_database_e2e_p0_20260807.md` 完成校准、选定 K128 并整体 replacement：
 
@@ -402,13 +402,13 @@ comparison。`single-head + shared FIFO` bridge 已完成；若完整 Project �
 2. 一个冻结 short/medium/long histogram 的 ShareGPT controlled-skew 三臂实验，复用
    同一 source/sink、模型、endpoint、质量、计时和资源合同。
 
-当前 correctness 护栏目录为 `experiments/results/opening_database_e2e_text_refeed_20260808/`：
+当前 correctness 护栏目录为 `experiments/results/text_db_e2e_duckdb_static_comparison_20260808/`：
 24/24 单元、18 formal 的 GPU、exactly-once、sink、identity 与稳定性门通过；SQuAD 三静态
 路径可核对完成性与答案质量，但 Project 计时额外包含指标采集、记录写入和结束处理，不按不到
 1% 的时间/吞吐差异排名。DuckDB AI ShareGPT 的 4,921/6,144 cap 语义失败结论有效。后续同 manifest
 bounded C32/C64/C128/C256 扫描证明 C32 只有已测峰值 52.07%，因此旧 ShareGPT
 project/C32-direct=1.5457 不作性能排名。正式原生矩阵使用达到峰值 98.22% 的最小点 C128；
-校准见 `experiments/results/opening_bounded_saturation_calibration_20260808/`。
+校准见 `experiments/results/sharegpt_http_saturation_calibration_20260808/`。
 
 仍停止增加不在冻结矩阵内的开题 baseline。现有 scale-ramp 因 request 与 query-barrier timing
 granularity 不同，只用于 serving capacity/overload 证据，不替代上述统一 database-E2E。
@@ -438,7 +438,7 @@ Daft Native 约 11 s 不得解释为框架性能排名。同 manifest 的 Projec
 
 ## 0. 工程优先级（2026-08-01 方向 pivot，开题冻结后恢复）
 
-**方向决定（2026-08-01；本节为该决定的历史记录——锁定 `research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `completed/image_clip_workload_lock_20260731.md` §0 当时的「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
+**方向决定（2026-08-01；本节为该决定的历史记录——锁定 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md` §8 此前「贡献未锁 / 待确认」状态、并解除 `completed/image_clip_workload_lock_20260731.md` §0 当时的「build 暂停」）**：**A（模型服务状态感知的请求成形/提交）+ B（算子代价估计）一起做，image AI_EMBED (CLIP) 为首个 workload**，换 workload 暂缓。文本 vLLM 轨道（研究内容一 RC1 数据组织 + 研究内容二 RC2 提交控制）已完成 regime-dependent 闭合（见 §1.1 / §1.2），其遗留实验改为 **parked-conditional**（仅在论文收录文本结果时恢复），**不是被废弃**。
 
 **✅ §6 go/no-go 与实现边界复测均已通过（GO）**（2026-08-01）：历史 slow-pt
 路径 CPU 准备/GPU embed=**13.8–18.3**；随后在 `f3d17af` 上用 5000 图、四变体、
@@ -459,9 +459,9 @@ E2E。后续正式结果已取代本段的“下一步”措辞：Daft built-in 
 185 img/s，但60K×2因其物化结构触发object-store容量门禁；Ray Data native与project在
 60K×2、cpu8/16 matched-resource完成1+3，project JCT同向改善10.0%/18.5%。这些只构成
 静态阶段拆分的preliminary signal，不证明动态或图像proposed已胜出。
-实现边界复测见 `motivation/results/gpu/image_clip_preprocess_variants_20260801/`，
+实现边界复测见 `experiments/results/motivation/gpu/image_clip_preprocess_variants_20260801/`，
 operator-E2E 原始数据和七步报告见
-`motivation/results/gpu/image_clip_native_baseline_20260801/`。
+`experiments/results/motivation/gpu/image_clip_project_udf_diagnostic_20260801/`。
 
 **image build 当前状态**：① ✅ 中性 work-unit + lazy image source + typed CLIP tensor actor；
 ② ✅ Daft built-in、Ray Data native 与 project frozen-static 的 provenance、语义、exactly-once
@@ -695,7 +695,7 @@ AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为
 - **服务端压力指标**：queue time、running/waiting requests
 - **控制器行为指标**：K_max 时间序列、upshift/downshift 时间戳
 
-详细分析见 `learning/metric_selection_methodology.md`。
+详细分析见 `docs/research/evaluation_metrics_survey_20260731.md#观察变量选择`。
 
 ---
 
@@ -715,7 +715,7 @@ AI_COMPLETE 的直接证据更明显：固定 16 行 batch 的 token min/max 为
 
 ### 候选机制优先级（跨论文，2026-07-24）
 
-设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `research/knowledge_hub.md` §5；fatal flaw 见 `reference/strategy_design_literature_basis.md` §3.1，不在此重复。
+设计各阶段实验时，"先试哪个机制"见下表。深度（控制律/旋钮/反馈信号）见对应精读笔记与 `docs/research/knowledge_hub.md` §5；fatal flaw 见 `reference/strategy_design_literature_basis.md` §3.1，不在此重复。
 
 | 阶段 | 候选机制 | 来源指针 | 先试? | 隔离实验 |
 |---|---|---|---|---|
@@ -991,7 +991,7 @@ service P99 均值降低 8.010%。每轮 512 个文档 exactly-once。
 - `PROJECT_OUTLINE.md` §当前最重要证据、§近期优先级
 - `PROJECT_LOG.md`
 - `figures/README.md`（如有新增图）
-- `learning/local_vllm_ray_baseline_walkthrough.md`（如实验结果影响讲解）
+- `experiments/results/local_vllm_qwen15b_baseline/README.md#链路与图表解读`（如实验结果影响讲解）
 - 本文件 §6 完整问题审计（标记已修复的问题）
 
 ## 8. 2026-07-25 Request lifecycle 基础设施门禁
@@ -1202,7 +1202,7 @@ vLLM Prometheus `vllm:num_requests_waiting` 做决策——但请求在 Ray acto
 以下从新精读的 SFS (arXiv 2026) 及其他 5 篇代价估计论文中提取的
 提交策略备选技术方案。每个方案标注来源、落地难度、和与当前 K_max +
 queue-adaptive flush 的关系。设计模式全文见
-`research/knowledge_hub.md` §5.7。
+`docs/research/knowledge_hub.md` §5.7。
 
 ### 方案 A：SFS What-If 预演（模式 10）
 

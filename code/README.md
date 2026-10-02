@@ -156,7 +156,7 @@ tested but has not been run on the powered-off GPU server.
 文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
 shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已合入 `main`。
 
-本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `feasibility/benchmarks/` 或 `motivation/benchmarks/`。
+本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `code/scripts/benchmarks/` 或 `code/scripts/benchmarks/`。
 
 绘图、图表复现和素材筛选脚本统一放在 `figures/scripts/`；本目录优先保留实验主体代码、服务入口和 profiling 驱动。
 
@@ -767,7 +767,7 @@ Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload re
 当前 Daft 接入的项目代码在 `code/src/data/materializers/text.py`：`ArrowOrganizer`
 是 baseline 后端，`DaftOrganizer` 是文本阶段 Daft DataFrame 后端。独立 smoke 入口只负责验证
 `rows -> Arrow Table -> organizer -> batches`，并可显式切换 Ray runner 验证
-`into_partitions`。这不是正式性能实验，不写入 `motivation/results/gpu/`。
+`into_partitions`。这不是正式性能实验，不写入 `experiments/results/motivation/gpu/`。
 
 ```powershell
 .conda\pg-ai-profile\python.exe code\scripts\profiling\daft_text_organizer_smoke.py `
@@ -805,8 +805,8 @@ PostgreSQL documents/job table
 数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
 和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
 -> PostgreSQL 写回冒烟运行。CSV 位于
-`feasibility/results/pg18_4_connection_smoke_256_rows.csv`（及 `pg18_4_connection_smoke_runs.csv`），完整记录见
-`feasibility/results/pg18_4_connection_validation.md`。
+`experiments/results/diagnostics/pg18_4_connection_smoke_256_rows.csv`（及 `pg18_4_connection_smoke_runs.csv`），完整记录见
+`experiments/results/diagnostics/pg18_4_connection_validation.md`。
 脚本内部连接、读取、Ray 执行和写回函数的对应关系见 `scripts/README.md`。
 
 最小 dry-run：
@@ -814,7 +814,7 @@ PostgreSQL documents/job table
 ```bash
 .venv/bin/python code/scripts/profiling/postgres_ai_operator_profile.py \
   --dry-run \
-  --output feasibility/results/postgres_ai_operator_profile_dry_run.csv
+  --output experiments/results/diagnostics/postgres_ai_operator_profile_dry_run.csv
 ```
 
 连接当前本地同构 PostgreSQL 实例：
@@ -831,7 +831,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \
   --max-inflight 8 \
   --strategy coalesced \
   --organizer arrow \
-  --output feasibility/results/pg18_4_connection_smoke_256_rows.csv
+  --output experiments/results/diagnostics/pg18_4_connection_smoke_256_rows.csv
 ```
 
 Daft organizer dry-run:
@@ -905,3 +905,15 @@ actor shape 保持每 endpoint 总 slots 不变，并选择达到峰值 97% 的�
 actor 数；Chat 结果不能用来确定 Completions 主线配置。
 Shared-vLLM 的 4-job 数据面必须使用有界 persistent async actor pool；显式
 4-job `ray_task` 配置会在外部请求前失败，防止数百 worker 再次耗尽容器 VMA。
+
+<a id="代码组织的读法"></a>
+
+## 代码组织的读法
+
+代码按执行职责和输入模态组织。数据库载体拥有语义与查询生命周期，provider负责传输，
+数据源与物化负责准备输入，组织与调度使用工作量描述，外部服务执行模型，观测模块记录过程。
+文本token与图像frame、像素、字节的换算放在模态适配中；公共调度消费明确的工作量。
+
+阅读当前路径先核对源码与实现状态，再沿任务生成、提交、外部执行、返回和写回定位耗时。
+SQL、Ray任务、模型服务与结果消费具有各自的生命周期，不能把一个阶段的完成当成完整查询完成。
+原生候选由被测执行引擎拥有执行与调度；项目内部策略对照从原始身份和来源记录解释。

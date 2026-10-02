@@ -4,8 +4,8 @@
 
 ## 范围与来源
 
-- 使用位置：`research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md`。
-- 来源文件：`research/reference/IMLane_PVLDB2026.pdf`，题名 *IMLane: Composable Framework for Efficient AI Function Execution in Database Engine*，PVLDB 19(12): 4223–4236，2026，DOI `10.14778/3827998.3828028`。
+- 使用位置：`docs/research/精读文献笔记/imlane_pvldb2026/imlane_pvldb2026.md`。
+- 来源文件：`docs/research/reference/IMLane_PVLDB2026.pdf`，题名 *IMLane: Composable Framework for Efficient AI Function Execution in Database Engine*，PVLDB 19(12): 4223–4236，2026，DOI `10.14778/3827998.3828028`。
 - 本地 PDF 共 14 页，SHA256 `C2E5334D532385384F5DF85033F302BFC7F1493B272757998110621AEB248A8A`；首页题名、作者、PVLDB reference format、页码和 DOI 已核对。
 - 使用 Poppler 以 324 DPI 渲染原页，再按 Figure 边缘裁切并保留原论文 caption；没有重绘、改色、锐化或修改图内数值。
 - Figures 9–10 在论文中同排且由同一段落联合解释，因此保留为一个联合裁剪件；其余 Figure 各使用一个 PNG。PNG 只服务 Markdown 精读讲解，不是项目实验结果。
@@ -51,7 +51,7 @@
 | `fig14_resource_scalability.png` | 2325×1145 | `AE035B8285F01B1F129F1EBB7E6EA440134A78755757EF6BA767553CE919B605` |
 | `fig15_external_system_comparison.png` | 1120×515 | `5228B0D4FE9066A5A0A40105A42A69875BF8EEACEE9431AB41802FBB2C8B0339` |
 
-所有输出位于 `research/精读文献笔记/imlane_pvldb2026/figures/`。正文有 14 个本地图片引用，覆盖论文 15 个 Figure；Figures 9–10 共用一个联合裁剪件。
+所有输出位于 `docs/research/精读文献笔记/imlane_pvldb2026/figures/`。正文有 14 个本地图片引用，覆盖论文 15 个 Figure；Figures 9–10 共用一个联合裁剪件。
 
 ## 视觉与论证检查
 

@@ -9,7 +9,7 @@ from src.baselines.common.private_artifacts import new_private_directory
 
 
 SCHEMA = 'semloom.evidence_storage.v2'
-RESULT_ROOTS = ('experiments/results/', 'motivation/results/', 'feasibility/results/')
+RESULT_ROOTS = ('experiments/results/',)
 
 
 def _relative(value):

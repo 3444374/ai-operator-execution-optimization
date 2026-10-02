@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCH_DIR = ROOT / "figures" / "architecture"
-REPORT_DIR = ROOT / "opening" / "report" / "figures"
+REPORT_DIR = ROOT / "docs" / "archive" / "opening" / "report" / "figures"
 SVG_PATH = ARCH_DIR / "opening_target_architecture_status.svg"
 PNG_PATH = ARCH_DIR / "opening_target_architecture_status.png"
 REPORT_PATH = REPORT_DIR / "target_architecture_status.png"

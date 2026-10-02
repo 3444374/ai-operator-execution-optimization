@@ -4,10 +4,10 @@
 
 ## 范围与证据边界
 
-- 使用位置：`research/精读文献笔记/ayo_asplos2025/ayo_asplos2025.md`。
+- 使用位置：`docs/research/精读文献笔记/ayo_asplos2025/ayo_asplos2025.md`。
 - 权威来源：用户提供的 ASPLOS ’25 正式版 `ayo_asplos25.pdf`，题名 *Towards End-to-End Optimization of LLM-based Applications with Ayo*，DOI `10.1145/3676641.3716278`。
 - 正式 PDF：15 页，SHA256 `98C93EC0804FCA7D549A1EF7430AC77BF71849884CD41BF764CF62FEA181AF7B`；已通过 `%PDF` 签名、题名和页数解析检查。
-- 源文件位于用户的本地文献目录，本轮没有复制进 `research/reference/`，因此不改变项目参考 PDF 子集及其计数。
+- 源文件位于用户的本地文献目录，本轮没有复制进 `docs/research/reference/`，因此不改变项目参考 PDF 子集及其计数。
 - 这些 PNG 是 AYO 正式论文原图的局部裁剪，仅服务 Markdown 精读讲解；不是项目自制图，也不是本项目实验结果。
 
 ## 选择结果
@@ -32,17 +32,17 @@
 
 | 文件 | SHA256 |
 |---|---|
-| `research/精读文献笔记/ayo_asplos2025/figures/fig1_latency_breakdown.png` | `B7B9ED98FAB6F2B295C74B77923AEE0A21DC19EF76B1E7B856863DA481FE6A1A` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig3_workflow_to_optimized_graph.png` | `70AC82B0550D6C68BBE9948853FD82734F19E85394CAEBC35284039D307FCAC0` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig4_application_aware_batching.png` | `A42A7DE34C402907F03AF63F1433ADD5E24F6EDE477BD9E480A3E06474BDBBE7` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig5_system_overview.png` | `17AA424AB01AAA9950A0C3D188ECF64FC49FB0D6F5E90AD2D12A03F03A633B4B` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig6_advanced_rag_optimized_egraph.png` | `4E7A2DD0DAEE1DA08BB8BAB31FFA65B616EFC58DD14286C5544D02A6917B4F72` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig7_topology_aware_batching.png` | `5E296C87D775BDBCF54DF3B5C20D2A1687858608209272CC9F2657CDD86256AB` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig8_end_to_end_performance.png` | `BFA1845CB5EB6C16A8F36E73E8EAC62D81939C53BF14EF251E4C19E6416A8E77` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig9_colocated_applications.png` | `410E2AFD5ADE0A581D60D6D9436AD583BCAF9DE10D475EBA631BBB1AAD63C395` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig10_graph_optimization_ablation.png` | `8B3017FCB557C989D8C8E93B7817E1CF2E6AAABB6B9AB9CCB741E8F136F11CB0` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig11_topology_batching_ablation.png` | `398F1DF6041844CA3E7B0C0688F413B484CF317E9A63B2F74BC8986D14061246` |
-| `research/精读文献笔记/ayo_asplos2025/figures/fig12_latency_breakdown.png` | `DE7E08AB60869021E3BEAA2481A7A1582AC7DE8933BFFE8991D454E1680F9964` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig1_latency_breakdown.png` | `B7B9ED98FAB6F2B295C74B77923AEE0A21DC19EF76B1E7B856863DA481FE6A1A` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig3_workflow_to_optimized_graph.png` | `70AC82B0550D6C68BBE9948853FD82734F19E85394CAEBC35284039D307FCAC0` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig4_application_aware_batching.png` | `A42A7DE34C402907F03AF63F1433ADD5E24F6EDE477BD9E480A3E06474BDBBE7` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig5_system_overview.png` | `17AA424AB01AAA9950A0C3D188ECF64FC49FB0D6F5E90AD2D12A03F03A633B4B` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig6_advanced_rag_optimized_egraph.png` | `4E7A2DD0DAEE1DA08BB8BAB31FFA65B616EFC58DD14286C5544D02A6917B4F72` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig7_topology_aware_batching.png` | `5E296C87D775BDBCF54DF3B5C20D2A1687858608209272CC9F2657CDD86256AB` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig8_end_to_end_performance.png` | `BFA1845CB5EB6C16A8F36E73E8EAC62D81939C53BF14EF251E4C19E6416A8E77` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig9_colocated_applications.png` | `410E2AFD5ADE0A581D60D6D9436AD583BCAF9DE10D475EBA631BBB1AAD63C395` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig10_graph_optimization_ablation.png` | `8B3017FCB557C989D8C8E93B7817E1CF2E6AAABB6B9AB9CCB741E8F136F11CB0` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig11_topology_batching_ablation.png` | `398F1DF6041844CA3E7B0C0688F413B484CF317E9A63B2F74BC8986D14061246` |
+| `docs/research/精读文献笔记/ayo_asplos2025/figures/fig12_latency_breakdown.png` | `DE7E08AB60869021E3BEAA2481A7A1582AC7DE8933BFFE8991D454E1680F9964` |
 
 提取方式：使用 `pypdfium2` 从正式 PDF 对对应页面作高分辨率 raster render，再按原图图形边界裁剪。Figure 1/3/4/5/6/7/8 使用 4×，Figure 9 使用 5×，Figure 10/11 使用 6×，Figure 12 因原图较小使用 7×。没有重绘、锐化、替换颜色、修改坐标或删除图内元素；论文英文 caption 不进入裁剪件，改由精读正文的中文 alt text 和来源行承担说明。
 

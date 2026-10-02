@@ -144,7 +144,7 @@ is outside that import span. Ray Map emits `core_ray_startup` for library import
 actor creation/readiness and first payload materialization, including lazy Daft/Arrow loading.
 `core_ray_first_submit` records the first attempted RPC after its POST guard, not remote HTTP start.
 Durations use one local process clock; nested spans must not be added. The existing preparation-to-EOF
-measurement still includes startup. [Review](../../../../experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review).
+measurement still includes startup. [Review](../../../../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review).
 
 Native Ray 2.56.1 HTTP requests are awaited sequentially within one batch. Batch row count is not
 HTTP concurrency. `ray_async_batches_per_actor` separately controls the native asynchronous batch
@@ -167,7 +167,7 @@ disk result sink, restoring source order for every arm. Scan, tokenization, sort
 are included in invocation-to-EOF; reused metadata names its separately measured producer.
 These are `direct_client_control` experiments, not new SemMap planner or carrier capabilities.
 The callable entry is `run_information_query`; the finite experiment schedule is retained with
-the [real trial evidence](../../../../experiments/results/postgresql/m1_m2_f_real_20260920/README.md).
+the [real trial evidence](../../../../experiments/results/postgresql/capacity_organization_image_validation_20260920/README.md).
 
 ## Resource collectors
 
@@ -219,4 +219,4 @@ lifetime; no native instantaneous model cancellation is claimed.
 Ray Map遇到payload准备、HTTP、RPC提交/等待或返回值检查异常时，记录`core_ray_execution_error`。
 事件保留任务key、阶段、安全异常类型/原因链和代码位置；不包含异常消息、请求正文或服务凭据。
 公开事件也保留阶段与`remote_outcome=unconfirmed`；诊断信息不是完成回执，不改变未确认额度或不重试行为。
-实际断连与后续查询恢复记录见[诊断修订](../../../../experiments/results/postgresql/text_map_main_real_20260930/README.md)。
+实际断连与后续查询恢复记录见[诊断修订](../../../../experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)。

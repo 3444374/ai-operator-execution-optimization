@@ -5,7 +5,7 @@
 - **Slide role:** audience-facing research-gap figure for opening-defense page 5.
 - **Core question:** database-side task semantics and model-service runtime information are not naturally connected, and multi-job external execution lacks common efficiency, isolation and fairness constraints.
 - **Narrative boundary:** this page states the gap only. It does not preview the project's Work-unit/Packing, Admission/Routing, Shared Credit or other proposed mechanisms, and it does not contain the internal “research boundary” lock band.
-- **Authority checked:** `opening/claim_matrix.md` and the project-level scope in `AGENTS.md`.
+- **Authority checked:** `docs/archive/opening/claim_matrix.md` and the project-level scope in `AGENTS.md`.
 
 ## Reference and style tokens
 

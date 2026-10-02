@@ -16,7 +16,7 @@ from matplotlib import font_manager
 
 
 ROOT = Path(__file__).resolve().parents[2]
-INPUT_CSV = ROOT / "motivation" / "results" / "gpu" / "ai_embed_pgvector_writeback_20260714.csv"
+INPUT_CSV = ROOT / "experiments" / "results" / "motivation" / "gpu" / "ai_embed_pgvector_writeback_20260714.csv"
 OUT_DIR = ROOT / "figures" / "data" / "report_main"
 
 FIGSIZE = (12.8, 7.2)

@@ -27,7 +27,7 @@
 `local-ablation` 只含两种SemLoom执行方式；`legacy-four-paths` 保留原运行身份。
 数据、消息/生成/解析、请求数、查询起止、输入历史、CPU/GPU与服务设置须各自配平，
 配置存在或受控并发达到目标均不代表真实性能比较已完成。
-[新版完整运行](../results/postgresql/text_map_main_real_20260930/README.md)完成有限选点与独立评价；全部原值、前次失败及诊断分别保留，不据此声明质量等价或通用系统优势。
+[新版完整运行](../results/postgresql/text_map_four_path_comparison_20260930/README.md)完成有限选点与独立评价；全部原值、前次失败及诊断分别保留，不据此声明质量等价或通用系统优势。
 
 来源：当前源码与[受控结果](../results/postgresql/text_map_native_candidates_20260930/README.md)；
 [Daft官方SQL读取](https://docs.daft.ai/en/stable/connectors/sql/)及[UDF接口](https://docs.daft.ai/en/stable/custom-code/func/)；
@@ -39,9 +39,9 @@
 2026-09-03 增补：§0.2 定义 PG semantic gateway 的分层开销对照，§0.3 定义前缀/表示候选的因果对照；
 仅为设计，未运行或恢复旧矩阵。
 
-> **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `research/knowledge_hub.md` 为准。
+> **2026-07-17 口径更新**：本文中的"跨层决策""写回瓶颈""RC3"等旧术语已统一。最新 baseline 分级、研究内容定义和优先级以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `docs/research/knowledge_hub.md` 为准。
 用途：正式实验设计时，从正式论文、官方系统和可审计工程默认中提取 baseline，避免使用 strawman 对照
-来源：`research/ai_operator_literature_inventory.md` 与 `research/top15_ranked_papers.md`
+来源：`docs/research/ai_operator_literature_inventory.md` 与 `docs/research/top15_ranked_papers.md`
 
 > **2026-08-20 SAOR 对照冻结**：当前 database-E2E 主矩阵只含五个完整系统：Daft
 > Native + vLLM FCFS、Daft Native/Ray + vLLM FCFS、Ray Data native API graph +
@@ -65,7 +65,7 @@
 > SHA、Daft→Request Job identity 与 custom-FCFS parity 均未验证，故 `blocked`，不能运行 GPU 或
 > 发布性能表。详细合同见 `saor_cross_layer_scheduler_capability_20260820.md`。
 
-> **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `research/knowledge_hub.md`。
+> **2026-07-16 方向更新**：vLLM 已定位为部署平台（非竞争对手），其 continuous batching 是 S 级 baseline——课题研究上游调度优化，不修改 vLLM 内部。新增 baseline 候选：Ray 2.49+ PrefixCacheAffinityRouter、Ray Serve batch_size_fn 等。详细背景见 `docs/research/knowledge_hub.md`。
 
 ---
 
@@ -273,7 +273,7 @@ fake/golden 先验证关联、并发进展、停止与资源上限，不能据�
 
 ### 0.3 前缀与表示候选：先证明损失，再证明方法（设计，待执行）
 
-研究问题与最近邻限制见[设计审查](../../research/semantic_prefix_reuse_design_audit_20260903.md)，
+研究问题与最近邻限制见[设计审查](../../docs/research/semantic_prefix_reuse_design_audit_20260903.md)，
 工程位置见[主计划 §7](postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)。
 本节定义可复用对照，不决定具体模型、数据、参数或运行预算；每个实验仍须另有当前切片计划。
 
@@ -400,7 +400,7 @@ survivor 真值不能作为线上输入。报告 pairwise ordering、top-1、实
 推荐检索式至少覆盖 `operator + database + benchmark`、`system + workload + metrics`、
 `AI_CLASSIFY/AI_EMBED + performance`、`multimodal inference + data pipeline`，并检查
 论文/页面发布日期、软件版本和后续更新。项目已有精读材料优先复用
-`research/reading_notes/`，但性能数字仍回查原文或官方结果页。
+`docs/research/reading_notes/`，但性能数字仍回查原文或官方结果页。
 
 ### 3. 每个候选的来源卡片
 
@@ -739,7 +739,7 @@ endpoint。只有三项都通过且完成同机 capability gate 的系统，才�
 
 各论文与数据库产品的**具体 workload 场景、数据模态、输入→算子→输出链路、论文实际
 指标及可比边界**统一维护在
-[`research/evaluation_metrics_survey_20260731.md` §9](../../research/evaluation_metrics_survey_20260731.md#9-按论文与数据库系统拆分的指标矩阵及本项目对比合同2026-08-04)。
+[`docs/research/evaluation_metrics_survey_20260731.md` §9](../../docs/research/evaluation_metrics_survey_20260731.md#9-按论文与数据库系统拆分的指标矩阵及本项目对比合同2026-08-04)。
 本文件只维护 baseline 身份、可安装性、准入和运行合同，避免在两处复制会随产品版本
 变化的场景说明。
 
@@ -864,7 +864,7 @@ LOTUS 是语义算子 SDK，政策上不进 chat-track 吞吐榜，
 | **自写 External Function/Lambda/Python UDF** | 技术上可把任意数据库连到 vLLM | scheduler owner 是项目 glue，不是厂商 AI 算子，只能作 generic UDF control |
 
 排除依据：[PolarDB-X RPM 部署](https://doc.polardbx.com/deployment/topics/deploy-by-rpm-std.html)、
-[TiDB Self-Managed Vector Search](https://docs.pingcap.com/tidb/stable/vector-search-integration-overview/)、
+[TiDB Self-Managed Vector Search](https://docs.pingcap.com/tidb/stable/vector-search-integration-README.md)、
 [MariaDB Vector](https://mariadb.com/docs/server/reference/sql-structure/vectors/vector-overview)、
 [MatrixOne RAG example](https://docs.matrixorigin.cn/v25.3.0.0/MatrixOne/Tutorial/rag-demo/)、
 [openGauss DB4AI](https://docs.opengauss.org/en/docs/7.0.0-RC3/characteristic_description/aifeature_guide/native_db4ai_engine.html)。
@@ -1020,7 +1020,7 @@ absolute JCT 排名。
 
 ### 当前状态
 
-项目写回 baseline 为 PostgreSQL + pgvector 的 COPY + 延迟建索引（先 COPY 到 unlogged table，再 `CREATE INDEX HNSW`），已在动机 GPU 实验中建立（pgvector writeback 0.897s vs JSON 1.567s，见 `motivation/results/gpu/`）。按根 `AGENTS.md`“项目范围”和 `PROJECT_OUTLINE.md`，写回作为工程 baseline 处理，不作为独立实验阶段；本节 W1 仅作 baseline 出处登记，不再设为待跑门禁实验。
+项目写回 baseline 为 PostgreSQL + pgvector 的 COPY + 延迟建索引（先 COPY 到 unlogged table，再 `CREATE INDEX HNSW`），已在动机 GPU 实验中建立（pgvector writeback 0.897s vs JSON 1.567s，见 `experiments/results/motivation/gpu/`）。按根 `AGENTS.md`“项目范围”和 `PROJECT_OUTLINE.md`，写回作为工程 baseline 处理，不作为独立实验阶段；本节 W1 仅作 baseline 出处登记，不再设为待跑门禁实验。
 
 ---
 
@@ -1114,3 +1114,14 @@ selected/oracle JCT 与 plan regret。完整启动条件、语义等价门禁和
 - [ ] 单租户多 Job 是否包含 VTC-style/shared-credit，并同时报告聚合吞吐、每 Job JCT/P99、
       weighted service/empirical lag、最长无服务和 idle borrowing？Jain 只作描述量。
 - [ ] 代价估计是否用 ranking/regret 验证了决策价值，而不只报告 MAPE？
+
+<a id="执行者与计时的读法"></a>
+
+## 执行者与计时的读法
+
+服务测量回答模型服务能处理多少工作，有界HTTP客户端用于解释提交路径，原生执行引擎候选
+由其自身拥有数据执行与调度，项目内部策略用于归因。报告从来源和实际执行者解释每条路径。
+
+同一模型服务并不足以形成可比较结果：还须核对请求协议、指令与解析、样本、资源配置、
+实际并发及生命周期。Chat与Completions的请求结构和计时分别解释；原始工作量与正确结果吞吐并列。
+请求完成、分片结束和数据库完整查询完成各有定义，报告保留其起止事件和适用条件。

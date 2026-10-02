@@ -7,7 +7,7 @@
 2026-09-30存储修订：原55份raw文件按原字节保存在[完整归档](raw/evidence.tar.gz)，
 报告直引的大文件改为gzip链接；[原路径与摘要](raw/storage-manifest.jsonl)、
 [独立恢复核验](raw/storage-verification.json)全部通过，包含全部未采用方案与失败。
-恢复方法及本地/远端状态见[分支审查](../text_map_main_real_20260930/README.md#branch-review)。
+恢复方法及本地/远端状态见[分支审查](../text_map_four_path_comparison_20260930/README.md#branch-review)。
 
 ## 当前补齐了什么
 
@@ -89,4 +89,4 @@ Daft超时先关闭进一步POST分配；未完成请求由外层监督器和客
 
 新增文字、本地链接、隐私与差异空白检查通过，见[交付检查](raw/final-checks.json)。
 
-后续用户已授权并执行[新版真实比较](../text_map_main_real_20260930/README.md)，该轮因SemLoom远程异常停止；本报告的合成验证身份保持原值。
+后续用户已授权并执行[新版真实比较](../text_map_four_path_comparison_20260930/README.md)，该轮因SemLoom远程异常停止；本报告的合成验证身份保持原值。

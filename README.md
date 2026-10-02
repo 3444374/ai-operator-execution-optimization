@@ -1,61 +1,26 @@
 # SemLoom
 
-本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。PostgreSQL
-负责 SQL、计划、snapshot、权限及查询的取消、错误和结果生命周期；SemLoom 在数据库管理下
-组织任务，并调用可替换的外部执行服务。DB-AIEL（Database-Aware AI Execution Layer）
-是架构层名称。
+本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
+PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
 
-## 当前状态
+研究内容包括按token、frame、阶段工作量与局部性组织数据，以及固定容量下的提交、路由和多Job调度。
+算子代价估计为两项内容提供信息。文本`AI_COMPLETE`是首版主场景，图像用于跨模态验证。
+方向与近期顺序见[项目总纲](PROJECT_OUTLINE.md)，实际能力与待完成项见[代码状态](code/INFRA_STATUS.md)。
 
-- PostgreSQL 18.3 extension 已接入 SemFilter 与 SemMap 的受限真实语义、公共 provider 接口、
-  Map 有界多在途执行和可选图像嵌入路径。实现范围见[代码状态](code/INFRA_STATUS.md)。
-- [可选 Daft/Ray 文本传输](experiments/results/postgresql/incremental_transport_20260927/README.md)
-  已完成受控 PostgreSQL 检查。[后续真实模型检查](experiments/results/postgresql/transport_real_20260927/README.md)
-  完成 12 条 SQL、4,144 次请求；配对结果有 0–2 行输出差异，尚不能认定质量等价或稳定性能收益。
-- [完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)中，两条路径均未满足持续供给要求，
-  尚未选定容量参照。[全局信息方式与图像检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)
-  分别留下无稳定优势的结果和有限的真实 CLIP 验证。具体数字及未完成项以各结果报告为准。
-
-[新版文本Map主表](experiments/results/postgresql/text_map_main_real_20260930/README.md)已完成68条查询、41,024次真实请求及独立评价。
-1024行三次时间中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒，质量与全部原值并列报告。
-前次失败与诊断保留；[准备调优](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
-已定位重复查询的新Ray worker启动成本并验证可选worker服务；
-[真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
-1024行完整查询16.502→14.794秒、准备4.737→2.831秒，仍慢于direct和Daft，质量差异单列。
-[分支审查](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)已补分段观测、修正配置核对并无损压缩批量证据；
-[后续gateway诊断与真实复测](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)的无模型阶段10,272次fixture请求，
-共享gateway完整查询中位数12.428→7.569秒，共享启动单列；PG追踪定位了节点返回之后的首行交付等待。
-最后15条查询、12,336次真实请求通过：新gateway14.626→共享gateway10.131秒，direct7.681秒；
-共享准备约14毫秒，仍慢于direct，输出差0–4行。此前中止11,312次保留，源码与资源回收核对通过。
-[热路径细分](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
-新增5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
-[后续线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)70项及8,224次fixture通过，模型0次。
-线程选择8.287→11.570秒，慢39.606%，默认同步保留。
-[直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项及8,224次fixture，模型0次；
-完整查询8.354→8.149秒，少2.457%，批次构建约1→0.2秒与持久记账重叠。默认Daft保留，真实收益尚待验证。
-旧容量实验未选点不作为所有系统比较的前置条件。
-
-## 研究内容
-
-1. 按 token、frame、阶段 work 与局部性组织数据，比较不同组织方式对完整查询和资源使用的影响。
-2. 在固定 request/work capacity 下研究提交、服务实例路由及单租户多 Job 调度。
-
-算子代价估计为两项研究内容提供信息，并支持数据库计划比较。文本 `AI_COMPLETE` 是首版主场景；
-图像 `AI_EMBED/AI_CLASSIFY` 用于跨模态验证。研究问题与执行顺序见[项目总纲](PROJECT_OUTLINE.md)。
-
-## 阅读入口
-
-| 需求 | 文件 |
+| 需求 | 入口 |
 |---|---|
-| 两分钟了解方向和近期工作 | [当前方向速览](overview/current_direction_and_plan.md) |
-| 查文件、目录职责与历史材料 | [项目导航](PROJECT_INDEX.md) |
-| 查项目长期规则与术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
-| 核对实现与运行入口 | [代码状态](code/INFRA_STATUS.md)、[代码目录](code/README.md)、[脚本说明](code/scripts/README.md) |
-| 查实验计划、证据和失败记录 | [实验计划](experiments/plans/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)、[结果保存规则](experiments/results/AGENTS.md) |
-| 理解相关系统与论文 | [知识库](research/knowledge_hub.md) |
-| 追溯历史设计与实施计划 | [历史设计记录](docs/README.md) |
-| 准备机器 | [运行手册](deploy/runtime/README.md) |
-| 追溯已结束的开题材料 | [归档入口](opening/README.md) |
+| 查长期规则与领域术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
+| 查内容归属、目录与旧路径 | [项目导航](PROJECT_INDEX.md) |
+| 查实现与命令 | [代码](code/README.md)、[脚本](code/scripts/README.md) |
+| 查研究依据与文献 | [研究入口](docs/research/README.md)、[知识库](docs/research/knowledge_hub.md) |
+| 查计划、结论和失败证据 | [实验](experiments/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 准备机器和数据 | [运行手册](deploy/runtime/README.md)、[数据来源](data/README.md) |
+| 查图表与历史材料 | [图资产](figures/README.md)、[项目文档](docs/README.md) |
+| 追溯项目变更 | [项目日志](PROJECT_LOG.md) |
 
-原始结果和失败记录保留在各实验目录。运行条件与结论以结果报告为准；机器准备和真实实验分别遵守
-[运行手册](deploy/runtime/README.md)及目标计划。
+[文本Map四路径比较](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)与
+[worker复用](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、
+[gateway诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、
+[线程记账](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、
+[Arrow分批](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)分别保留实际重复值、负结果和适用条件。
+完整查询、质量与资源结论以各报告为准。

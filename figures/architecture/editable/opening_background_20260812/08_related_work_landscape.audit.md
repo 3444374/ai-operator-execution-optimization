@@ -5,10 +5,10 @@
 - Reference: `figures/audit/reference_opening_background_20260812/08_related_work_landscape.png` (1672 × 941).
 - Output canvas: 1600 × 900, white background, 16:9.
 - Local evidence checked before wording changes:
-  - `research/ai_operator_literature_inventory.md`
-  - `research/inference_pipeline_interaction_literature.md`
-  - `opening/literature/top15_reading_notes/` and `research/精读文献笔记/` notes for LOTUS, Galois, IMBridge, Ray Data, Daft, AYO, Parrot, VTC, DLPM, BlendServe, GRACEFUL, COSTREAM and Abacus
-  - `research/reading_notes/cortex_aisql_sigmod2026.md`
+  - `docs/research/ai_operator_literature_inventory.md`
+  - `docs/research/inference_pipeline_interaction_literature.md`
+  - `docs/archive/opening/literature/top15_reading_notes/` and `docs/research/精读文献笔记/` notes for LOTUS, Galois, IMBridge, Ray Data, Daft, AYO, Parrot, VTC, DLPM, BlendServe, GRACEFUL, COSTREAM and Abacus
+  - `docs/research/reading_notes/cortex_aisql_sigmod2026.md`
 - Ray Data 的发表状态另以作者 Yile Gu 与 Ziming Mao 的公开论文列表交叉核对，两处均列为 NSDI 2027；其余会议与年份按本地正式论文、精读笔记和参考索引核对。图中不使用商业 Logo。
 - Intentional content correction: VTC is described as service-counter fairness; GRACEFUL as UDF execution-time estimation; COSTREAM as streaming operator-placement cost estimation; Abacus as multi-objective Pareto plan search. These replace unsupported admission/routing-like labels in the reference.
 

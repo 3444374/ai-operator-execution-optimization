@@ -2,8 +2,8 @@
 
 日期：2026-08-02
 归档状态（2026-08-27）：当前开题范围内的 capability、原生单 Job 与多 Job 观察已经完成，
-对应结果见 [`../../results/opening_text_native_gate_20260808/`](../../results/opening_text_native_gate_20260808/)
-和 [`../../results/opening_text_native_single_job_formal_20260808/`](../../results/opening_text_native_single_job_formal_20260808/)。
+对应结果见 [`../../results/opening_text_native_gate_20260808/`](../../results/text_native_framework_capability_check_20260808)
+和 [`../../results/opening_text_native_single_job_formal_20260808/`](../../results/text_native_single_job_comparison_20260808)。
 下文保留 2026-08-02 的复测合同和当时准备状态，不再作为当前执行指令；新增文本 formal 必须重新
 建立当前版本、provenance 和资源合同。
 

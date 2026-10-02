@@ -8,7 +8,7 @@
 2026-09-30存储修订：原587份raw文件按原字节保存在[完整归档](raw/evidence.tar.gz)，
 报告直引的大文件改为gzip链接；[原路径与摘要](raw/storage-manifest.jsonl)、
 [独立恢复核验](raw/storage-verification.json)全部通过，全部失败与输出原值可恢复。
-恢复方法及本地/远端状态见[分支审查](../text_map_main_real_20260930/README.md#branch-review)。
+恢复方法及本地/远端状态见[分支审查](../text_map_four_path_comparison_20260930/README.md#branch-review)。
 
 ## 环境、输入与执行身份
 

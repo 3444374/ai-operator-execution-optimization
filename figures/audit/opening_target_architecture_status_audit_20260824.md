@@ -6,13 +6,13 @@
 
 - 权威矢量图：`figures/architecture/opening_target_architecture_status.svg`
 - 权威位图：`figures/architecture/opening_target_architecture_status.png`
-- 历史 / 内部候选副本：`opening/report/figures/target_architecture_status.png`、`opening/report/figures/fig05_system_architecture.png`
+- 历史 / 内部候选副本：`docs/archive/opening/report/figures/target_architecture_status.png`、`docs/archive/opening/report/figures/fig05_system_architecture.png`
 - 生成脚本：`figures/scripts/generate_opening_target_architecture_status.py`
 - 画布：1600 × 900，PNG 为 RGB、300 DPI；SVG 已通过 XML 解析检查。
 - 权威 PNG 与两个历史 / 内部候选副本保持同一内容，SHA256 为 `21155135d301c1bc1f8a17614354f1579f52c085894dbd2c9efe9c69aabbfc19`；当前报告不引用这两个副本。
 - SVG SHA256：`97686e7383f10b8472df30a8dd0c3b670141dc2a527d61e5dbac27b3218726f9`。
 
-该图为概念架构与实现状态候选图，不包含新增实验数据。内容来源是项目总纲、`opening/claim_matrix.md` 和现有实现记录。2026-08-24 的候选修订不在图内写具体语义运行时名称，只区分计划中的数据库内 AI 语义算子入口与当前已经运行的外部实验执行路径。用户复核后决定当前报告不引用该图，资产仅作历史 / 内部候选保留。
+该图为概念架构与实现状态候选图，不包含新增实验数据。内容来源是项目总纲、`docs/archive/opening/claim_matrix.md` 和现有实现记录。2026-08-24 的候选修订不在图内写具体语义运行时名称，只区分计划中的数据库内 AI 语义算子入口与当前已经运行的外部实验执行路径。用户复核后决定当前报告不引用该图，资产仅作历史 / 内部候选保留。
 
 ## 2. 主张审计
 

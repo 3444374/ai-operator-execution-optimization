@@ -41,7 +41,7 @@
 
 当前建议：PPT 正文只放 A 层；开题报告正文以 A 层为主，可在可行性分析中补 1-2 张 B 层；飞书可以比报告多放 B 层，用于透明展示实验来源和边界。
 
-后续维护资产时，以根目录 `figures/` 为正式图资产库。旧的 `opening/assets/charts/python/`、`opening/assets/charts/all_meaningful/` 和 ECharts 根目录图已经不再作为正式材料引用；如需重新生成候选图，使用 `figures/scripts/` 中的 Python 脚本和原始 CSV。
+后续维护资产时，以根目录 `figures/` 为正式图资产库。旧的 `docs/archive/opening/assets/charts/python/`、`docs/archive/opening/assets/charts/all_meaningful/` 和 ECharts 根目录图已经不再作为正式材料引用；如需重新生成候选图，使用 `figures/scripts/` 中的 Python 脚本和原始 CSV。
 
 ## A 层：正文主线图组
 
@@ -268,8 +268,8 @@ For the latest opening-report update, prefer these figures over the older
 Source:
 
 ```text
-motivation/results/gpu/pgai_integrated_key_rerun_20260714.md
-motivation/results/gpu/ai_embed_pgai_integrated_key_20260714.csv
+experiments/results/motivation/gpu/pgai_integrated_key_rerun_20260714.md
+experiments/results/motivation/gpu/ai_embed_pgai_integrated_key_20260714.csv
 ```
 # 2026-07-14 Current Opening-Report Preference
 

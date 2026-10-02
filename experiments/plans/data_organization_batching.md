@@ -1,7 +1,7 @@
 # 研究内容一：动态数据组织与批处理构造策略实验计划
 
 当前优先级（2026-09-30）：[文本Map四路径比较](completed/text_map_matched_comparison.md)已完成全部调参与独立评价。
-[当前结果](../results/postgresql/text_map_main_real_20260930/README.md)显示SemLoom尚无整体执行效率优势；先定位约5.3秒的查询专属准备成本，再决定是否进入组织方法切片。
+[当前结果](../results/postgresql/text_map_four_path_comparison_20260930/README.md)显示SemLoom尚无整体执行效率优势；先定位约5.3秒的查询专属准备成本，再决定是否进入组织方法切片。
 本文件继续维护组织与调度方法实验；
 M1 平台未选点的结果及原要求保持不变，不作为所有系统比较的前置项。
 下方增量工程清单已经完成，原服务器状态和运行授权只属于当时的记录。
@@ -89,7 +89,7 @@ Daft承担所选数据变换与批次组织，Ray承担所选worker及对象执�
 <a id="m1-full-recheck"></a>
 ## M1 完整容量清单复查与代码合并（2026-09-20）
 
-状态：[本轮记录](../results/postgresql/m1_full_recheck_20260920/README.md)完成32个查询和16,400次请求。原清理扫描告警保留，随后资源核对通过；工程已合入main，原故障根因仍待确定，PG/direct均未选点。下文保留执行前声明。
+状态：[本轮记录](../results/postgresql/map_capacity_recheck_20260920/README.md)完成32个查询和16,400次请求。原清理扫描告警保留，随后资源核对通过；工程已合入main，原故障根因仍待确定，PG/direct均未选点。下文保留执行前声明。
 
 用户要求再次尝试复现原故障，检查后提交、合并并推送。本轮恢复原失败运行的四个常驻PG gateway，
 沿用原C4/C16/C64/C128 × PG/direct的512行、1次预热＋3轮交错顺序，使用已增加异常诊断的源码。
@@ -107,7 +107,7 @@ PG/direct各8行正确性加完整容量清单共 **16,400次请求尝试、20�
 <a id="m1-c64-errors"></a>
 ## C64 异常诊断（2026-09-20）
 
-状态：[本轮结果](../results/postgresql/m1_c64_errors_20260920/README.md)为3,088次全部完成，C64四次通过；原故障未复现、根因仍待确定。下文保留执行前声明。
+状态：[本轮结果](../results/postgresql/map_c64_request_diagnostic_20260920/README.md)为3,088次全部完成，C64四次通过；原故障未复现、根因仍待确定。下文保留执行前声明。
 
 用户要求继续定位并处理上次两条未确认请求。原记录只能看到 `MODEL_UNAVAILABLE`，
 不能区分底层连接、HTTP 客户端或观察器异常；先增加只含异常类型、原因链类型和代码位置的诊断。
@@ -124,11 +124,11 @@ C64 表示客户端最多64条在途请求。C4/C16 用于复现此前运行顺�
 <a id="m1-supply-followup"></a>
 ## M1供给复测（2026-09-20）
 
-状态：[本次结果](../results/postgresql/m1_supply_followup_20260920/README.md)保留容量扫描修复和失败。
+状态：[本次结果](../results/postgresql/map_supply_diagnostic_20260920/README.md)保留容量扫描修复和失败。
 真实C64预热时停止，账本1,552次尝试、服务端成功1,550次；未进入选点、测量重复或后续条件阶段。
 测试资源已清理，不自动追加，修复与证据留在分支。下表保留运行前声明。
 
-2026-09-20：用户再次授权进行M1测试。先按[上一轮结果](../results/postgresql/m1_m2_f_real_20260920/README.md)
+2026-09-20：用户再次授权进行M1测试。先按[上一轮结果](../results/postgresql/capacity_organization_image_validation_20260920/README.md)
 定位PG路径的CPU与供给问题：零真实模型、固定25毫秒HTTP fixture、128行、并发4，常驻PG/direct各两次。
 诊断信号为PG耗时同时超过direct的3倍和1秒额外时间；这是复现信号，不是方法选点条件。
 随后按证据缩小复现、逐项核对并修复；真实复测的输入、服务、确切请求数和停止条件在启动前另列，
@@ -163,7 +163,7 @@ W524288等于128×context4096；只有调参中确实触发work限制且所有�
 
 2026-09-20：按用户选择完成[工作包 F 的工程与受控检查](#work-package-f)。
 用户于 2026-09-20 要求尝试完成 M1、M2 与 F 的真实测试；下节小规模清单已执行，不沿用旧额度。
-[结果](../results/postgresql/m1_m2_f_real_20260920/README.md)：文本8,248次、图像151次。M1未选出平台候选，后续条件阶段未运行；M2五组与F指定检查完成，测试资源已清理。
+[结果](../results/postgresql/capacity_organization_image_validation_20260920/README.md)：文本8,248次、图像151次。M1未选出平台候选，后续条件阶段未运行；M2五组与F指定检查完成，测试资源已清理。
 2026-09-20 按新审查意见调整 M1：旧等待位置实验作为
 已完成的测量反例保留；当前问题、比较对象与选点规则以下节为准，旧 44,544 次运行表不再执行。
 
@@ -363,7 +363,7 @@ M1 不新增长度排序、全局信息策略、公平算法或 vLLM 调度修�
 新机器和真实 PG/模型验证尚未执行，已准备数据保留；旧 44,544 次/30 分钟组合退出当前方案。
 新的调用量由每阶段实际输入行数×组数×显式轮次（含预热）计算；先审阅少量筛查点，再确定后续点、重复数、
 机器/模型/服务签名、具体请求与时间额度以及停止/清理条件。阶段不自动接续、不重试、不退款或复用旧额度。
-[代码与验证记录](../results/postgresql/m1_platform_revision_20260920/README.md)。
+[代码与验证记录](../results/postgresql/map_capacity_selection_check_20260920/README.md)。
 
 <a id="m1-pilot"></a>
 ## 历史 M1：已完成的等待位置测量反例（2026-09-14）
@@ -473,7 +473,7 @@ Job预算策略只声明存储保留和计算上限；SessionCapacity/Engine拥�
 
 当前状态：共享策略、PG窗口与受控集成已完成；Linux调度385/provider57/PG合同116、PG回归1与TAP2138通过。
 共享查询163次受控HTTP验证25个Job结清；真实模型准备脚本另用63次受控请求通过。
-以下真实模型范围已完成：[完整记录](../results/postgresql/query_sharing_e_20260914/README.md)。首次准备实际0次失败，获继续确认后63次真实请求/19个Job关联与回收通过；
+以下真实模型范围已完成：[完整记录](../results/postgresql/query_sharing_lifecycle_check_20260914/README.md)。首次准备实际0次失败，获继续确认后63次真实请求/19个Job关联与回收通过；
 Map逐字复述0/55是质量负结果。PG/模型/进程/GPU/ACL已清理；不将工程完成解释为质量或性能通过。
 
 ### E真实模型验证（2026-09-14，独立新额度）
@@ -503,7 +503,7 @@ BF16/TP1/context4096、FCFS、max-num-seqs128/max-num-batched-tokens8192、显�
 
 当前问题是：提前准备与提交增加并行和局部性机会，也增加数据留存、已提交不可重新分配的工作及查询间干扰。
 需要检验何时这些机会抵得过代价，再决定读取、组织和推进方式。有限窗口、token配额与长度排序都是可比较的控制量，
-不预设它们必然优于强静态或全局信息。理论与论文迁移条件见本节及[知识库条件卡](../../research/knowledge_hub.md#execution-transfer-cards)。
+不预设它们必然优于强静态或全局信息。理论与论文迁移条件见本节及[知识库条件卡](../../docs/research/knowledge_hub.md#execution-transfer-cards)。
 
 **执行状态**：`3f1f5540` 已包含本轮期限修订及完整验证记录。96次受控请求与57次真实生成请求均已登记，
 其中1条真实结果用于预期超时检查，不计成功查询。M1已完成顶部两轮受控观测/机制小实验，其余设计假设尚未运行；本文不新增模型额度。
@@ -520,7 +520,7 @@ E已按执行/资源范围完成，M1 旧测量反例已完成；真实输入划
 | 准备深度与交付次序 | [新时序诊断](../results/postgresql/async_deadline_flow_20260914/README.md)，源码0274b121：fixture就绪行可交付后等待82.093/82.692ms，ready-first为0.038/0.026ms；但客户端首行未改善；四次真实对照均未遇到就绪队首 | 同观测、同存储/计算预算下的准备深度与交付次序；分开节点和客户端终点 | 若只移动等待位置或延迟下一轮供给，不认定更早节点交付是用户收益 | IMLane/Ray Data已有异步流水；需测数据库消费进度能否带来增量，不能据测试分支名称判断 |
 | 查询级机会分配 | QueryRegistry/Engine已有归属和共享能力；[历史容量实验](../results/saor_capacity_development_20260811/README.md)中更高吞吐伴随某Job更差P99，属于旧外部执行线索 | 同到达、同信息、同共享容量，调优FIFO与已有公平控制；两条matched solo分别定义slowdown | 共享强静态已足够或不可抢占工作不是后到查询的主要代价时，不新增复杂控制器 | Agentix关注程序JCT，VTC/DLPM关注服务机会；需说明SQL消费/已提交工作提供的新决策价值 |
 
-历史图像[active-batch筛查](../../motivation/results/gpu/image_host_path_screening_20260802/README.md#43-active-window-有最小饱和点继续排队会伤害延迟)
+历史图像[active-batch筛查](../results/motivation/gpu/image_host_path_screening_20260802/README.md#43-active-window-有最小饱和点继续排队会伤害延迟)
 提供供给深度的动机线索：活跃批次数8/16/32/64，查询阶段吞吐786/995/1015/945 images/s，
 批次完成时间中位数0.47/0.79/1.35/1.81s。这里是P50而非P99，是 `c1484f2`、PG18.4、双4090、Daft/Ray/CLIP的单次筛查。
 本次核对历史报告，不重算其CSV、不据此为当前文本选并发；16→32收益递减和64回落说明“准备越多越好”需要检验。
@@ -614,7 +614,7 @@ $$
 证明候选不会永久饿死某项，至少需要有限或受约束到达、每项可容纳、消费最终继续、资源释放被观察、后端最终给出权威终态、
 选择器具有公平机会等前提；未知终态可能合法保持计费，此时应有限地失败/隔离而不是编造完成。
 尚未证明当前端到端执行在任意黑盒服务下均可推进。Neely有限缓冲研究中的丢包条件与SQL不能丢弃必要行冲突，
-有限重排缓冲的颜色切换成本也不等于KV生命周期；见[理论迁移条件](../../research/knowledge_hub.md#execution-transfer-cards)。
+有限重排缓冲的颜色切换成本也不等于KV生命周期；见[理论迁移条件](../../docs/research/knowledge_hub.md#execution-transfer-cards)。
 
 ### 4. 四项设计假设实验（M1 已调整研究问题）
 
@@ -871,7 +871,7 @@ Ray2.56.1、LOTUS1.2.4 adapter，不访问或复制公司私有材料，不改�
 | PG 窗口预算 | `sem_pump.c` 的 B/L 等份与分配后检查；改为总量与一个有界待接纳行，独立报告暂存/转换分配 | 同 B 的合法大行不随 L 改变合法性；宽行/超限/取消与内存责任检查 | 待实现 |
 | 数据库驻留比较 | PG-source direct、实际 WHERE→Map、原始列构造消息；内存 direct 继续是诊断 | 相同源快照/不可变表、计时含读取转换；安全谓词扩大窗口，其他形状明确回退 | 代码及受控验证完成；真实比较待新额度 |
 | 公共任务与原生执行 | SemBench Movie Q3→Q1/Q2、Movie-derived Map；Ray Data SQL/processor、LOTUS 原生程序 | 原任务/evaluator 固定版本；COUNT/LIMIT/Map 各自评价；未注入 SemLoom 调度 | 代码及受控验证完成；真实比较待新额度 |
-| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../results/postgresql/query_sharing_e_20260914/README.md)保留 |
+| 依赖与多 Job | 复用 Filter→Map、查询归属和共享 Engine；计算工作守恒轮转、存储独立保留 | 2/4 查询、错峰/暂停/慢消费/失败、累计 Job 超过并发上限 | 实现、受控与真实执行/资源检查完成；[质量负结果](../results/postgresql/query_sharing_lifecycle_check_20260914/README.md)保留 |
 | 图像 PG→Ray | CLIP encoded bytea→CPU prepare→GPU actor→real[]；同步 reference 与增量接入复用 typed image/method/stage 组件 | PG/真实解码/零权重模型集成通过；真实 CLIP 另验 | 代码与受控验证完成；本轮真实清单已执行，结果见本文顶部 |
 | 文献与解释 | KEN 核心补充待精读；IMLane artifact 可用性；修正 direct 日志和非单变量对照解释 | 文献/知识库/状态/结果/日志同步，历史数据不改写 | KEN/历史解释完成；IMLane 源码已核查、构建待验证 |
 
@@ -887,7 +887,7 @@ PG pump 等到对应 receive 释放责任后再探测。真实 PG 受控 32 行�
 该次工程工作包只完成工程与受控验证，当时真实模型暂停；后续151次真实前向见本文顶部结果。
 不继承文本实验请求额度，不启动旧图像性能矩阵。源码起点为 `2554f94b`。
 
-**代码与受控验证已完成**：[完整记录](../results/postgresql/image_stages_f_20260920/README.md)。
+**代码与受控验证已完成**：[完整记录](../results/postgresql/image_stage_execution_check_20260920/README.md)。
 扩展 `0.3.0` 显式提供 `ai_semantic.embed(bytea,jsonb)→real[]`，默认安装仍为 `0.2.0`。
 schema 5 / wire 7 分别保存图像语义和传输；`MethodDriver` 负责行与最终向量，Ray backend 负责两段物理执行。
 PG 回归 1/1、19 个 TAP 文件共 2,159 项及 9 组 PG/Ray/真实解码检查通过；真实模型 0 次。
@@ -1069,7 +1069,7 @@ direct 使用有界客户端和相同 HTTP transport，不使用 SessionEngine �
 | 请求/事件观测 | 容量模式使用有上限的后台写入与紧凑哈希事件；队列满或写盘失败不得静默丢记录；资格模式保留完整私有事件 | 无网络扰动检查及匹配模式对照；执行、消费者、评价 RSS/逻辑预留分别报告 |
 | `squad_map.py` 与官方 SQuAD v1.1 dev | 保留既有短答案语义；按完整消息 token 画像生成确定性自然/分层子集，context 不跨 tuning/evaluation；不得按模型答案选样 | 原始 SHA、完整覆盖画像、原文、分组隔离、种子/样本身份、context 数及长度分布 |
 
-已复核[知识库](../../research/knowledge_hub.md)的 Sema/服务观测及
+已复核[知识库](../../docs/research/knowledge_hub.md)的 Sema/服务观测及
 [baseline reference §0.2](baseline_reference.md#gateway-layered-controls)的 matched direct/PG 分层比较，
 沿用[主架构 §8.7–8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
 中数据库行绑定与客户端复用的职责；未读取或分发公司材料。预算存储参考
@@ -1272,7 +1272,7 @@ ShareGPT 当次摘要配置维持暂停：发现任务执行代替摘要、输�
 对应研究内容：研究内容一
 方法候选编号：A1.1-A1.6（详见 `archive/research_design_catalog.md` §3，已归档）
 
-> **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `research/knowledge_hub.md`。
+> **2026-07-16 方向更新**：主场景从 AI_EMBED 转向 AI_COMPLETE（生成式 LLM 推理）。具体优化方法尚未锁定——动态 batching（token-budget / length-align / prefix-aware grouping）是当前重点探索方向，但静态 batch_size 参数穷举的结果仍作为 baseline 对照保留。以下内容中的实验骨架和参数矩阵为候选方案，最终消融设计将在 vLLM baseline 建立后根据实际数据确定。详细背景见 `docs/research/knowledge_hub.md`。
 
 ---
 

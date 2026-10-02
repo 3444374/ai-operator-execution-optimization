@@ -5,7 +5,7 @@
 ## 1. 放置与入口
 
 可复用实现、脚本和测试按 README 的目录职责放置；原始数据、临时 CSV、一次性 notebook 和运行
-产物留在对应数据、结果或临时目录。历史设计见 `docs/designs/` 和 `docs/plans/`；当前接口从源码和代码 README 核对。
+产物留在对应数据、结果或临时目录。历史设计见 `docs/archive/engineering/designs/` 和 `docs/archive/engineering/plans/`；当前接口从源码和代码 README 核对。
 
 ## 2. 模块职责
 
@@ -87,4 +87,4 @@ data source/materializer
   缺依赖时记录 `pending` 并按 runtime 规则处理，不在当前环境混装依赖。
 - 实现状态变化时同步 `INFRA_STATUS.md` 和实验证据台账；CLI/路径变化时同步
   `scripts/README.md`、目录 README、测试和调用方。
-- 代码或实验事实变化若影响教学材料，再同步 `learning/`；不因单纯格式修改机械改写学习文档。
+- 代码或实验事实变化若影响教学材料，再同步 `PROJECT_INDEX.md#内容与文档职责`；不因单纯格式修改机械改写学习文档。
