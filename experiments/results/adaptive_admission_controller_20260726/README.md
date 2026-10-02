@@ -1,5 +1,8 @@
 # AIMD、EWMA-AIMD 与 PID 准入控制实验（2026-07-26）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 1. 实验设置
 
 问题是：在当前单 GPU、单 endpoint、单 workload 链路上，动态 K_max 控制是否比静态并发上限更有效。

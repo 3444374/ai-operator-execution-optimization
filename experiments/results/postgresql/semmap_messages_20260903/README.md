@@ -1,5 +1,8 @@
 # SemMap 规范消息编译验证（2026-09-03）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 内部工程验证，对应[四 D 合同 §8.0](../../../plans/postgresql_semmap_generation_contract.md#80-本次源码复核与首个子切片2026-09-03)。
 目的只是在新增 Map 消息编译时保留现有算子行为，不是模型质量、成本或调度性能实验。
 验收时使用研发分支 `codex/semmap-message-contract`，起点 `63d86c0e`；本记录的原始数字保持下方提交身份。

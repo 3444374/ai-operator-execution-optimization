@@ -1,5 +1,8 @@
 # PostgreSQL 函数对象身份检查（2026-09-02）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 内部工程验证；对应[主计划工作包六](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#carrier-audit-work-package)。
 这是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化的 carrier 正确性检查，不是模型、
 调度或性能实验。原独立分支 `codex/pg-function-identity`，起点 `c494e1b2`；实现与证据已随
@@ -51,7 +54,7 @@ ADD、DROP 的刷新前行为，并验证读会话 `DISCARD PLANS` 后计划正�
 | 独立 PG18.3 `-O2 -Werror` 构建、安装 | 通过，无 warning | [build.log](raw/refresh/server/build.log)、[qualification.json](raw/refresh/server/qualification.json) |
 | PGXS regression | 1/1；服务器原始 actual/expected 字节一致，公开副本另做空白规范化 | [regression.log](raw/refresh/server/regression.log)、[公开 actual](raw/refresh/server/regression-actual.out) |
 | 完整 TAP | 5 文件，1022/1022，含新增身份 103 项 | [tap.log](raw/refresh/server/tap.log)、[身份 SQL 日志](raw/refresh/server/tap-005_function_identity_function_identity.log) |
-| 本地与服务器 Python | 各 94/94：PG/protocol 68、gateway 5、calibration 10、choice 工具 11 | [本地](raw/refresh/local/)、[服务器](raw/refresh/server/tests-postgres.log)、[分类数量](raw/refresh/server/qualification.json) |
+| 本地与服务器 Python | 各 94/94：PG/protocol 68、gateway 5、calibration 10、choice 工具 11 | [本地](raw/storage-manifest.jsonl)、[服务器](raw/refresh/server/tests-postgres.log)、[分类数量](raw/refresh/server/qualification.json) |
 | 中立 C11 | profile、operator/filter/map machine、provider header 均通过 | [构建步骤与退出码](raw/refresh/server/qualification.json) |
 | 初始额外缓存诊断 | 3 个检查通过；观察到自动成员变更失效缺口，不纳入完整 TAP 分母 | [observations.json](raw/membership-cache/observations.json)、[完整日志](raw/membership-cache/regress_log_membership-cache) |
 | 哈希 | 两轮各 48 个服务器公开文件及各自 82 个源码文件匹配；总清单覆盖本地和诊断记录 | [最终 verification](raw/refresh/verification.json)、[SHA256SUMS](raw/SHA256SUMS) |

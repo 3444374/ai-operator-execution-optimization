@@ -1,5 +1,8 @@
 # RC1 数据组织策略系统重测（2-ep + 4-ep，Qwen2.5-1.5B，prefix-cache ON）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## TL;DR
 
 5 种数据组织策略（fixed_rows / sequential token_budget / length_align / best_fit-BFD / row_cap_aware）的优劣**取决于 KV 压力 regime**：

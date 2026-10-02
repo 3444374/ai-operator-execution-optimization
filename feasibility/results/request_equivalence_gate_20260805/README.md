@@ -1,5 +1,8 @@
 # 请求等价门禁（2026-08-05）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 证明 DuckDB `ai` 路径与项目 completion 路径对同一 bounded-output 请求发出**相同的 HTTP body**
 （model / messages role+content / temperature=0.0 / max_tokens，无多余语义字段、无隐藏 system
 prompt），使后续 bounded-output 性能对比的差异**不能归因于 prompt 或设置不同**。这是单请求门禁，

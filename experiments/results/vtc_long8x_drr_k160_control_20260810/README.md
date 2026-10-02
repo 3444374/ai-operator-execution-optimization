@@ -1,5 +1,8 @@
 # frozen-K160 DRR 对照：上限 vs 动态适应（2026-08-10）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **性质**：`vtc_long8x_formal_4arm_20260810` 的 follow-up 控制实验。隔离"adaptive 过喂饱门"是 **K160 上限**的功劳还是**动态适应**的增量——把 frozen DRR 从 K128 提到 K160（与 adaptive 最高候选同 bound），其余全同。
 
 ## provenance

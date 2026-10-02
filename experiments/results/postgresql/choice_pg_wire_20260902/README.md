@@ -1,5 +1,8 @@
 # 四 C：PG choice SELECT 的 open spec 与 wire v4 接线
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 内部工程验证记录，2026-09-02。来源为自有生产源码、固定向量、实际 PostgreSQL 18.3 测试和
 旧/新扩展二进制对照。对应[choice 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，
 不作为模型质量、成本或 GPU 性能实验。最终源码为 `80bb7fc508d42a44f2ca485944d800131fa59df3`；

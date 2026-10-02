@@ -1,5 +1,12 @@
 # Research Experiment Results
 
+结果、日志的保留与去重见[保存规则](AGENTS.md)；2026-10-02的全目录检查、导出修复和剩余存储问题见
+[证据台账中的存储检查](EXPERIMENT_EVIDENCE_REGISTRY.md#storage-review-20261002)。
+
+历史结果已按这些要求分类和整理，[处理与恢复核验记录](EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-retention-20261002)
+说明范围与来源。报告直接引用的数据、复算脚本和原始运行身份继续保留；归档数据与脚本从各结果的
+`raw/storage-manifest.jsonl`按[文件恢复说明](../../code/scripts/README.md#实验结果恢复)恢复。
+
 [直接Arrow分批对照](postgresql/text_map_arrow_batches_20261002/README.md)完成目标92项、10条查询/8,224次fixture，模型0次。
 完整查询8.354→8.149秒，仅为小幅观察；默认Daft保留，细节与可重算证据见报告。
 
@@ -533,25 +540,5 @@ motivation/results/fake_cpu/
 新增结果必须对应两项研究内容、共同代价估计或多模态泛化中的明确问题，并同步
 `EXPERIMENT_EVIDENCE_REGISTRY.md`；不要从本目录列表推断当前执行优先级。
 
-## 结果命名建议
-
-```text
-YYYYMMDD_<research_area>_<short_name>.md
-YYYYMMDD_<research_area>_<short_name>.csv
-```
-
-示例：
-
-```text
-20260720_sink_pgvector_writeback.md
-20260720_scheduling_bounded_inflight.md
-20260720_batching_partition_ablation.md
-```
-
-## 记录要求
-
-- 明确对应研究内容。
-- 明确 baseline 和优化方案。
-- 明确运行命令、参数、CSV 和日志。
-- 明确结论边界，不把局部调优写成完整论文贡献。
-- 如需图表，放入 `figures/` 并在结果报告中引用。
+保存、命名、共享与精简按 [结果保存规则](AGENTS.md)和[上级实验规则](../AGENTS.md)执行。
+本页维护导航摘要，详细数字与原值以单个结果报告及证据台账为准。

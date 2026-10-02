@@ -1,5 +1,8 @@
 # SAOR fixed-envelope active-set 2-Job formal（2026-08-12，commit 69affc7e）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **性质**：project-derived SAOR `saor_release` 状态感知准入 vs 5 个 baseline（direct / static / FIFO / DRR / external VTC），2×4090 + Qwen2.5-7B，2-Job（bulk 后台 + foreground@5s）guaranteed-overlap。固定包络（K128/W65536/actors8/concurrency32/token_budget6144/credit_quantum2048），同 request window 比。**非** 4-Job（未跑）。
 >
 > **最终结论**：formal 40/40 cell 完成、0 incident、exactly-once。原始 `69affc7e` summarizer 因 DRR/VTC rep2 的完成间隔只有 5.83/4.83 ms、低于 250 ms trace 周期且没有 post-drain 样本，产生机制门假阴性；`ed168d8` 在服务器完整 artifact 上执行默认 resolution-aware summarizer 后，正式 validation 为 `passed`、四个 credit 臂 effective 12/12。性能排序不变：SAOR 是 credit 臂中 foreground 最好的一臂，但仍未越过 static，不能声称 SAOR 胜出。

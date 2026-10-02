@@ -1,5 +1,24 @@
 # SemLoom 脚本入口
 
+## 实验结果恢复
+
+历史结果的`raw/storage-manifest.jsonl`使用`semloom.evidence_storage.v2`时，清单把每个原始路径
+映射到直接保留的文件或共享归档成员。相同字节只存一份，原始运行身份和目录关系仍由路径及原元数据记录。
+归档可能被其他结果引用，取用时保留完整仓库；原有可直接阅读的数据和脚本仍留在报告所列位置。
+
+读取归档数据或运行依赖原始路径的旧分析脚本前，先把清单登记的数据与脚本恢复到新建的仓库外目录：
+
+```sh
+PYTHONPATH=code python3 code/scripts/analysis/restore_result_evidence.py \
+  experiments/results/rc1_data_organization/raw/storage-manifest.jsonl \
+  --output /path/to/new-private-result
+```
+
+该入口使用Python标准库；输出原始路径、权限及字节，逐项核对字节数、SHA-256和清单总数。
+持续维护的Markdown报告与说明保留在仓库阅读，不复制为第二套报告。
+输出必须尚不存在且位于Git目录外；坏归档、校验不符、重复或跨目录写入路径会在创建输出前拒绝。
+这项操作只恢复已有文件，模型请求为0；其他存储版本继续使用对应报告的恢复方式。
+
 跨机器环境入口：`environment/manage_environment.py`。它按
 `deploy/runtime/profiles/*.json` 与 `deploy/runtime/assets.json` 只读检查机器、Python
 能力、模型和数据；安装/下载是独立显式子命令。它不导入 PostgreSQL workload，也不

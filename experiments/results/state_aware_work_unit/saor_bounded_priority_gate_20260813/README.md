@@ -1,4 +1,7 @@
 ---
+
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 experiment_id: saor-bounded-priority-gate-20260813
 date: 2026-08-13
 status: completed-development-gate-not-promoted

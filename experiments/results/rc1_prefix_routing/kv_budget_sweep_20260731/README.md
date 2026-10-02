@@ -1,5 +1,8 @@
 # KV-budget × prefix_affinity routing 扫描实验（2-ep/1.5B）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > 存储约定：`experiments/results/<方向>/<exp>_<date>/{README.md, raw/}`。本 README 是全数据范本（所有组件的指标 + 说明）；流程固化在 `AGENTS.md`。
 
 ## 1. 实验目的

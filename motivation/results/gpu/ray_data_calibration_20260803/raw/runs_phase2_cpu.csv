@@ -7,3 +7,451 @@ ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ra
 * Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
 * Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
 * Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 798.8303402203637 rows/s
+	* Estimated single task throughput: 806.7704562991097 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 15.98s
+* Remote wall time: 190.19ms min, 1.73s max, 1.18s mean, 28.2s total
+* Remote cpu time: 190.51ms min, 1.73s max, 1.18s mean, 28.31s total
+* UDF time: 180.97ms min, 1.71s max, 1.17s mean, 28.0s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 312.89395871327105 rows/s
+	* Estimated single task throughput: 177.29121036839817 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 21 tasks executed, 21 blocks produced in 14.23s
+* Remote wall time: 32.54ms min, 648.19ms max, 145.52ms mean, 3.06s total
+* Remote cpu time: 32.91ms min, 650.71ms max, 146.38ms mean, 3.07s total
+* UDF time: 31.45ms min, 645.47ms max, 144.27ms mean, 3.03s total
+* Output num rows per block: 39 min, 312 max, 238 mean, 5000 total
+* Output size bytes per block: 80496 min, 643968 max, 491428 mean, 10320000 total
+* Output rows per task: 39 min, 312 max, 238 mean, 21 tasks used
+* Tasks per node: 21 min, 21 max, 21 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 351.29068571427405 rows/s
+	* Estimated single task throughput: 1636.127948144218 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168192697298877 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,2,coco_train2017_60k,5000,5000,1,64,2,2,2,1.0,4,2,,8,128,0,4,2,2,8,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,24.844110561534762,10.593530684709549,cold_setup_to_first_complete_arrow_record_batch,201.2549407883138,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57228385204371,-1154.7000908016366,80dad51a947d707cd5025abe5b9aa632,1.1920928955078125e-07,8.182286352040817,14.41640625,10.473326530612244,18.453,100.0,128,98,260.20048227358586,0.052040096454717175,4.032653061224489,4.2,988367.95703125,0,18787328,1669742293,1669743340,606248,416413,1.3977272727272727,42.0,1.3977272727272727,42.0,2,"[0, 1]",113.37022727272728,136.06,2823.5879562280643,2199.034090909091,8830.170454545454,4.0,16.0,4.0,16.0,930.0,88,"{""0"": {""memory_clock_mean_mhz"": 8940.295454545454, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 60.03727272727272, ""samples"": 44, ""sm_clock_mean_mhz"": 2225.7954545454545, ""util_mean_pct"": 0.1590909090909091, ""util_peak_pct"": 6.0}, ""1"": {""memory_clock_mean_mhz"": 8720.045454545454, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 53.33295454545455, ""samples"": 44, ""sm_clock_mean_mhz"": 2172.2727272727275, ""util_mean_pct"": 2.6363636363636362, ""util_peak_pct"": 42.0}}",49.688221123069525,100.6274703941569,1.7707966167554174,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.56s
+* Remote wall time: 461.4us min, 1.54s max, 772.04ms mean, 1.54s total
+* Remote cpu time: 917.17us min, 1.46s max, 730.61ms mean, 1.46s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 800.5384347322706 rows/s
+	* Estimated single task throughput: 809.5473700367463 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 17.77s
+* Remote wall time: 222.43ms min, 1.79s max, 1.29s mean, 30.91s total
+* Remote cpu time: 224.45ms min, 1.8s max, 1.29s mean, 31.05s total
+* UDF time: 210.61ms min, 1.79s max, 1.28s mean, 30.64s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 281.42150987757026 rows/s
+	* Estimated single task throughput: 161.75286814864702 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 21 tasks executed, 21 blocks produced in 16.03s
+* Remote wall time: 36.03ms min, 660.89ms max, 146.41ms mean, 3.07s total
+* Remote cpu time: 36.28ms min, 660.78ms max, 147.17ms mean, 3.09s total
+* UDF time: 34.87ms min, 659.02ms max, 145.39ms mean, 3.05s total
+* Output num rows per block: 39 min, 312 max, 238 mean, 5000 total
+* Output size bytes per block: 80496 min, 643968 max, 491428 mean, 10320000 total
+* Output rows per task: 39 min, 312 max, 238 mean, 21 tasks used
+* Tasks per node: 21 min, 21 max, 21 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 311.9257907216062 rows/s
+	* Estimated single task throughput: 1626.2254217937896 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168168584317469 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,1,coco_train2017_60k,5000,5000,1,64,4,2,2,1.0,4,4,,10,128,0,4,4,2,10,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,15.73759545199573,9.536117864772677,cold_setup_to_first_complete_arrow_record_batch,317.7105432180833,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57214680076913,-1154.6825699254057,65f2de9e64b87ad67c92576df0fa64ed,1.1920928955078125e-07,10.001297883064517,20.12421875,12.80166129032258,25.759,100.0,128,62,201.46736650057042,0.04029347330011408,4.096774193548387,4.4,986226.73046875,4608,7852032,1669351643,1669351775,408968,281716,2.0535714285714284,30.0,2.0535714285714284,30.0,2,"[0, 1]",109.8157142857143,150.49,1736.6410956039786,1933.392857142857,7685.553571428572,4.0,16.0,4.0,16.0,930.0,56,"{""0"": {""memory_clock_mean_mhz"": 7868.607142857143, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 58.239285714285714, ""samples"": 28, ""sm_clock_mean_mhz"": 1980.0, ""util_mean_pct"": 1.0, ""util_peak_pct"": 17.0}, ""1"": {""memory_clock_mean_mhz"": 7502.5, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 51.57642857142857, ""samples"": 28, ""sm_clock_mean_mhz"": 1886.7857142857142, ""util_mean_pct"": 3.107142857142857, ""util_peak_pct"": 30.0}}",31.47519090399146,158.85527160904164,2.8791210876309896,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.64s
+* Remote wall time: 422.34us min, 1.62s max, 808.25ms mean, 1.62s total
+* Remote cpu time: 994.98us min, 1.49s max, 747.91ms mean, 1.5s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 764.0339820926165 rows/s
+	* Estimated single task throughput: 773.2711681772181 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 9.13s
+* Remote wall time: 195.47ms min, 1.99s max, 1.28s mean, 30.75s total
+* Remote cpu time: 197.07ms min, 2.0s max, 1.29s mean, 30.88s total
+* UDF time: 184.9ms min, 1.99s max, 1.27s mean, 30.52s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 547.8248962859652 rows/s
+	* Estimated single task throughput: 162.5911773678618 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 20 tasks executed, 20 blocks produced in 7.32s
+* Remote wall time: 61.97ms min, 654.83ms max, 148.4ms mean, 2.97s total
+* Remote cpu time: 62.53ms min, 658.54ms max, 149.4ms mean, 2.99s total
+* UDF time: 61.24ms min, 653.47ms max, 147.45ms mean, 2.95s total
+* Output num rows per block: 170 min, 312 max, 250 mean, 5000 total
+* Output size bytes per block: 350880 min, 643968 max, 516000 mean, 10320000 total
+* Output rows per task: 170 min, 312 max, 250 mean, 20 tasks used
+* Tasks per node: 20 min, 20 max, 20 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 683.0089898010348 rows/s
+	* Estimated single task throughput: 1684.5988230813355 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168147953258564 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,2,coco_train2017_60k,5000,5000,1,64,4,2,2,1.0,4,4,,10,128,0,4,4,2,10,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,14.667161524295807,9.012571059167385,cold_setup_to_first_complete_arrow_record_batch,340.8975889245931,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57133160139574,-1154.7220718380104,6215dc1f82f7462cd7beb55d72fc776e,1.1920928955078125e-07,7.22139528508772,14.29375,9.243385964912282,18.296,100.0,128,57,135.5742349787773,0.02711484699575546,4.091228070175439,4.4,986024.44921875,0,9560064,1668762947,1668762947,358178,207899,3.1923076923076925,60.0,3.1923076923076925,60.0,2,"[0, 1]",109.01115384615385,152.56,1601.2221850598373,1935.2884615384614,7664.961538461538,4.0,16.0,4.0,16.0,930.0,52,"{""0"": {""memory_clock_mean_mhz"": 7281.461538461538, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 56.70153846153846, ""samples"": 26, ""sm_clock_mean_mhz"": 1851.923076923077, ""util_mean_pct"": 3.269230769230769, ""util_peak_pct"": 60.0}, ""1"": {""memory_clock_mean_mhz"": 8048.461538461538, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 52.309615384615384, ""samples"": 26, ""sm_clock_mean_mhz"": 2018.6538461538462, ""util_mean_pct"": 3.1153846153846154, ""util_peak_pct"": 30.0}}",29.334323048591614,170.44879446229655,3.1226147418218235,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.62s
+* Remote wall time: 338.65us min, 1.6s max, 801.51ms mean, 1.6s total
+* Remote cpu time: 714.68us min, 1.48s max, 740.5ms mean, 1.48s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 772.906451099013 rows/s
+	* Estimated single task throughput: 779.7752007500517 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 8.38s
+* Remote wall time: 193.36ms min, 1.62s max, 1.16s mean, 27.75s total
+* Remote cpu time: 193.77ms min, 1.62s max, 1.16s mean, 27.86s total
+* UDF time: 182.05ms min, 1.61s max, 1.15s mean, 27.56s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 596.7457215890372 rows/s
+	* Estimated single task throughput: 180.15879297965446 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 21 tasks executed, 21 blocks produced in 6.57s
+* Remote wall time: 46.45ms min, 662.53ms max, 146.63ms mean, 3.08s total
+* Remote cpu time: 48.11ms min, 665.81ms max, 147.51ms mean, 3.1s total
+* UDF time: 45.45ms min, 658.77ms max, 145.5ms mean, 3.06s total
+* Output num rows per block: 79 min, 312 max, 238 mean, 5000 total
+* Output size bytes per block: 163056 min, 643968 max, 491428 mean, 10320000 total
+* Output rows per task: 79 min, 312 max, 238 mean, 21 tasks used
+* Tasks per node: 21 min, 21 max, 21 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 761.5972415545465 rows/s
+	* Estimated single task throughput: 1623.7916678738393 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.000516812943609475 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,1,coco_train2017_60k,5000,5000,1,64,8,2,2,1.0,4,8,,14,128,0,4,8,2,14,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,14.606124244630337,9.335480188950896,cold_setup_to_first_complete_arrow_record_batch,342.3221599554827,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57172498630325,-1154.7303876390934,74b4a9bfcc364f27794fba02267a57d7,1.1920928955078125e-07,9.53861019736842,17.046875,12.20942105263158,21.82,100.0,128,57,178.33232084974216,0.03566646416994843,4.171929824561404,4.5,985203.125,0,9495552,1668580924,1668599576,348287,229756,3.8846153846153846,34.0,3.8846153846153846,34.0,2,"[0, 1]",107.84346153846153,163.26999999999998,1578.6277090189747,1885.3846153846155,7472.634615384615,4.0,16.0,4.0,16.0,930.0,52,"{""0"": {""memory_clock_mean_mhz"": 7654.192307692308, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 56.97692307692308, ""samples"": 26, ""sm_clock_mean_mhz"": 1922.3076923076924, ""util_mean_pct"": 2.730769230769231, ""util_peak_pct"": 27.0}, ""1"": {""memory_clock_mean_mhz"": 7291.076923076923, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 50.86653846153846, ""samples"": 26, ""sm_clock_mean_mhz"": 1848.4615384615386, ""util_mean_pct"": 5.038461538461538, ""util_peak_pct"": 34.0}}",29.212248489260674,171.16107997774134,3.167307891172903,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.5s
+* Remote wall time: 642.79us min, 1.49s max, 743.17ms mean, 1.49s total
+* Remote cpu time: 834.72us min, 1.43s max, 717.07ms mean, 1.43s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 832.0207934578924 rows/s
+	* Estimated single task throughput: 840.9919197792763 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 7.91s
+* Remote wall time: 205.12ms min, 1.74s max, 1.22s mean, 29.25s total
+* Remote cpu time: 205.82ms min, 1.75s max, 1.22s mean, 29.36s total
+* UDF time: 189.84ms min, 1.74s max, 1.21s mean, 29.01s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 632.0469093209163 rows/s
+	* Estimated single task throughput: 170.94644579051158 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 21 tasks executed, 21 blocks produced in 6.18s
+* Remote wall time: 40.79ms min, 659.62ms max, 143.29ms mean, 3.01s total
+* Remote cpu time: 41.56ms min, 664.31ms max, 144.33ms mean, 3.03s total
+* UDF time: 39.6ms min, 656.82ms max, 142.23ms mean, 2.99s total
+* Output num rows per block: 95 min, 291 max, 238 mean, 5000 total
+* Output size bytes per block: 196080 min, 600624 max, 491428 mean, 10320000 total
+* Output rows per task: 95 min, 291 max, 238 mean, 21 tasks used
+* Tasks per node: 21 min, 21 max, 21 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 808.5721250762692 rows/s
+	* Estimated single task throughput: 1661.6742581438675 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168110769546416 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,2,coco_train2017_60k,5000,5000,1,64,8,2,2,1.0,4,8,,14,128,0,4,8,2,14,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,14.261066932231188,9.25973860733211,cold_setup_to_first_complete_arrow_record_batch,350.6049038097975,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57238617480698,-1154.6956574570495,ac7a5235cb1e510c3d59139909ae5356,1.1920928955078125e-07,13.758468191964285,20.634375,17.610839285714285,26.412,100.0,128,56,251.1493577863379,0.05022987155726758,4.167857142857143,4.5,984875.94140625,25624576,81643520,1669116884,1669117016,426255,354579,1.12,23.0,1.12,23.0,2,"[0, 1]",107.9464,156.26999999999998,1541.5254382610783,1865.4,7356.5,4.0,16.0,4.0,16.0,930.0,50,"{""0"": {""memory_clock_mean_mhz"": 7550.32, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 59.4608, ""samples"": 25, ""sm_clock_mean_mhz"": 1899.0, ""util_mean_pct"": 1.8, ""util_peak_pct"": 23.0}, ""1"": {""memory_clock_mean_mhz"": 7162.68, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 48.485600000000005, ""samples"": 25, ""sm_clock_mean_mhz"": 1831.8, ""util_mean_pct"": 0.44, ""util_peak_pct"": 6.0}}",28.522133864462376,175.30245190489876,3.2435403762394364,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.63s
+* Remote wall time: 459.14us min, 1.62s max, 808.23ms mean, 1.62s total
+* Remote cpu time: 549.87us min, 1.44s max, 721.24ms mean, 1.44s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 764.6448532277757 rows/s
+	* Estimated single task throughput: 773.2909277731028 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 7.76s
+* Remote wall time: 191.65ms min, 1.85s max, 1.24s mean, 29.71s total
+* Remote cpu time: 193.0ms min, 1.85s max, 1.24s mean, 29.82s total
+* UDF time: 182.86ms min, 1.84s max, 1.23s mean, 29.53s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 644.4554528057128 rows/s
+	* Estimated single task throughput: 168.31737368945406 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 20 tasks executed, 20 blocks produced in 5.92s
+* Remote wall time: 59.15ms min, 660.71ms max, 149.92ms mean, 3.0s total
+* Remote cpu time: 59.62ms min, 663.81ms max, 151.3ms mean, 3.03s total
+* UDF time: 58.17ms min, 658.98ms max, 148.84ms mean, 2.98s total
+* Output num rows per block: 170 min, 312 max, 250 mean, 5000 total
+* Output size bytes per block: 350880 min, 643968 max, 516000 mean, 10320000 total
+* Output rows per task: 170 min, 312 max, 250 mean, 20 tasks used
+* Tasks per node: 20 min, 20 max, 20 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 843.9780748542157 rows/s
+	* Estimated single task throughput: 1667.5421918689094 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168091167979296 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,1,coco_train2017_60k,5000,5000,1,64,12,2,2,1.0,4,12,,18,128,0,4,12,2,18,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,15.016156123951077,9.99698194488883,cold_setup_to_first_complete_arrow_record_batch,332.97469463739105,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57172498630325,-1154.7303876390936,74b4a9bfcc364f27794fba02267a57d7,1.1920928955078125e-07,10.996716101694915,21.4546875,14.07579661016949,27.462,100.0,128,59,211.36435946728642,0.042272871893457284,4.2322033898305085,4.6,984066.8984375,0,186183680,1669003961,1669004159,369382,255202,1.5384615384615385,28.0,1.5384615384615385,28.0,2,"[0, 1]",101.43692307692308,156.35,1525.1669526654482,1758.75,6902.7692307692305,4.0,16.0,4.0,16.0,930.0,52,"{""0"": {""memory_clock_mean_mhz"": 6902.7692307692305, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 53.03730769230769, ""samples"": 26, ""sm_clock_mean_mhz"": 1757.8846153846155, ""util_mean_pct"": 0.038461538461538464, ""util_peak_pct"": 1.0}, ""1"": {""memory_clock_mean_mhz"": 6902.7692307692305, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 48.39961538461539, ""samples"": 26, ""sm_clock_mean_mhz"": 1759.6153846153845, ""util_mean_pct"": 3.0384615384615383, ""util_peak_pct"": 28.0}}",30.032312247902155,166.48734731869553,3.278329622381197,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.43s
+* Remote wall time: 456.31us min, 1.42s max, 709.41ms mean, 1.42s total
+* Remote cpu time: 870.64us min, 1.4s max, 701.74ms mean, 1.4s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 872.0754380088624 rows/s
+	* Estimated single task throughput: 881.0168679514462 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 7.95s
+* Remote wall time: 194.21ms min, 1.69s max, 1.2s mean, 28.73s total
+* Remote cpu time: 194.81ms min, 1.7s max, 1.2s mean, 28.84s total
+* UDF time: 181.38ms min, 1.69s max, 1.19s mean, 28.49s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 629.0564051094188 rows/s
+	* Estimated single task throughput: 174.05656945495141 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 21 tasks executed, 21 blocks produced in 5.83s
+* Remote wall time: 42.6ms min, 683.11ms max, 146.36ms mean, 3.07s total
+* Remote cpu time: 42.84ms min, 686.95ms max, 147.4ms mean, 3.1s total
+* UDF time: 41.8ms min, 681.5ms max, 145.21ms mean, 3.05s total
+* Output num rows per block: 95 min, 291 max, 238 mean, 5000 total
+* Output size bytes per block: 196080 min, 600624 max, 491428 mean, 10320000 total
+* Output rows per task: 95 min, 291 max, 238 mean, 21 tasks used
+* Tasks per node: 21 min, 21 max, 21 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 857.6050334249887 rows/s
+	* Estimated single task throughput: 1626.7248229867666 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168071373891184 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1
+ray_data_staged,framework_native_api_baseline,official_api_with_workload_udfs,ray_data,False,True,https://docs.ray.io/en/latest/data/batch_inference.html,formal,2,coco_train2017_60k,5000,5000,1,64,12,2,2,1.0,4,12,,18,128,0,4,12,2,18,ray_reserved_slots_includes_sql_readers_and_both_actor_stages,1,1,,folded_into_timed_framework_query_wall,15.202632628381252,9.69541254453361,cold_setup_to_first_complete_arrow_record_batch,328.8904048543328,,,,unavailable_engine_internal,,,,,,,,,,,,,,,,,,,,,,,,,,,0,,,0,,,0,False,828300679,165660.1358,,,,,,,,,5000,True,-33.57122242130072,-1154.7243813098485,6f77b343de50aafad2631250d084e930,1.1920928955078125e-07,10.884648437500001,23.2078125,13.932350000000001,29.706,100.0,128,60,211.80839870002757,0.042361679740005515,4.253333333333334,4.6,983907.8984375,32768,9290752,1669167264,1669168833,388866,255926,2.2222222222222223,29.0,2.2222222222222223,29.0,2,"[0, 1]",103.82037037037037,158.49,1581.1638242531258,1861.9444444444443,7393.2037037037035,4.0,16.0,4.0,16.0,930.0,54,"{""0"": {""memory_clock_mean_mhz"": 7400.7037037037035, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 53.22296296296296, ""samples"": 27, ""sm_clock_mean_mhz"": 1863.3333333333333, ""util_mean_pct"": 1.7407407407407407, ""util_peak_pct"": 22.0}, ""1"": {""memory_clock_mean_mhz"": 7385.7037037037035, ""memory_peak_mib"": 930.0, ""pcie_generation"": 4.0, ""pcie_generation_max"": 4.0, ""pcie_width"": 16.0, ""pcie_width_max"": 16.0, ""power_mean_w"": 50.5974074074074, ""samples"": 27, ""sm_clock_mean_mhz"": 1860.5555555555557, ""util_mean_pct"": 2.7037037037037037, ""util_peak_pct"": 29.0}}",30.405265256762505,164.4452024271664,3.1622276726206953,"Operator 1 ReadSQL: 1 tasks executed, 2 blocks produced in 1.53s
+* Remote wall time: 273.66us min, 1.51s max, 753.96ms mean, 1.51s total
+* Remote cpu time: 300.12us min, 1.4s max, 699.43ms mean, 1.4s total
+* UDF time: 0us min, 0us max, 0.0us mean, 0us total
+* Output num rows per block: 447 min, 803 max, 625 mean, 1250 total
+* Output size bytes per block: 76203546 min, 132939419 max, 104571482 mean, 209142965 total
+* Output rows per task: 1250 min, 1250 max, 1250 mean, 1 tasks used
+* Tasks per node: 1 min, 1 max, 1 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 1250 rows
+	* Ray Data throughput: 818.436363505848 rows/s
+	* Estimated single task throughput: 828.9535748210221 rows/s
+
+Operator 2 ReadSQL: [execution cached]
+
+Operator 3 UnionOperator(ReadSQL, ReadSQL): 
+
+Operator 4 ReadSQL: [execution cached]
+
+Operator 5 UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL): 
+
+Operator 6 ReadSQL: [execution cached]
+
+Operator 7 UnionOperator(UnionOperator(UnionOperator(ReadSQL, ReadSQL), ReadSQL), ReadSQL): 
+
+Operator 8 MapBatches(RayDataClipPreprocessor): 8 tasks executed, 24 blocks produced in 8.53s
+* Remote wall time: 198.92ms min, 1.62s max, 1.18s mean, 28.24s total
+* Remote cpu time: 200.12ms min, 1.62s max, 1.18s mean, 28.36s total
+* UDF time: 184.83ms min, 1.62s max, 1.17s mean, 27.99s total
+* Output num rows per block: 35 min, 256 max, 208 mean, 5000 total
+* Output size bytes per block: 21074480 min, 154144768 max, 125443333 mean, 3010640000 total
+* Output rows per task: 426 min, 824 max, 625 mean, 8 tasks used
+* Tasks per node: 8 min, 8 max, 8 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 0 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 586.2755517787351 rows/s
+	* Estimated single task throughput: 177.02612955904036 rows/s
+
+Operator 9 MapBatches(RayDataClipPredictor): 20 tasks executed, 20 blocks produced in 6.21s
+* Remote wall time: 73.48ms min, 622.91ms max, 150.66ms mean, 3.01s total
+* Remote cpu time: 73.84ms min, 627.11ms max, 151.83ms mean, 3.04s total
+* UDF time: 72.37ms min, 621.05ms max, 149.62ms mean, 2.99s total
+* Output num rows per block: 170 min, 312 max, 250 mean, 5000 total
+* Output size bytes per block: 350880 min, 643968 max, 516000 mean, 10320000 total
+* Output rows per task: 170 min, 312 max, 250 mean, 20 tasks used
+* Tasks per node: 20 min, 20 max, 20 mean; 1 nodes used
+* Operator throughput:
+	* Total input num rows: 5000 rows
+	* Total output num rows: 5000 rows
+	* Ray Data throughput: 804.9975088902818 rows/s
+	* Estimated single task throughput: 1659.371672743218 rows/s
+
+Dataset throughput:
+	* Ray Data throughput: 0.0005168051570559574 rows/s
+",ray_data_operator_stats,/root/autodl-tmp/models/clip-vit-base-patch32,/root/autodl-tmp/models/clip-vit-base-patch32,float16,512,0.7.21,2.56.1,2.11.0+cu130,5.14.1,NVIDIA GeForce RTX 4090,,,,18.4 (Ubuntu 18.4-1.pgdg22.04+1),0.8.5,29b256be94bbae72d51fcce8801d342c80ee84a1

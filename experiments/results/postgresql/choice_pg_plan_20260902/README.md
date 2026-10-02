@@ -1,5 +1,8 @@
 # 四 C：choice profile 的 PostgreSQL plan 接入
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 内部工程验证记录；来源为生产源码、独立编码向量及实际 PG18.3 测试。
 对应[四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，不是质量或性能实验。
 生产实现为 `00cc6bbf0eba5f57ec0d9bbfed99b0dbdc8a0c0c`；最终测试修订和验收源码为

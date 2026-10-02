@@ -1,5 +1,8 @@
 # lb_rr 规模爬坡（2×4090，SQuAD dev，C_total=64，64→10570，warmup_per_cell=false）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **定位**：lb_rr（1 DuckDB → nginx:8500 round-robin → 2 vLLM backend）规模爬坡，C_total=64 固定，扫 64→10570，看 lb_rr 吞吐随规模形态、是否与三臂（bounded/project/duckdb）同形态。
 >
 > **⚠️ 状态**：`diagnostic_observation_pending_evidence_fix`——本次 lb_rr run 有效（9/9、0 error、均衡分流、2048 观察峰值），但**不引用"跨四臂 clean cache-thrash finding"**（4 臂 cache 控制不统一；见 §5）。

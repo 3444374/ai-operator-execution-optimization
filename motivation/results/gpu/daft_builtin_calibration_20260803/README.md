@@ -1,5 +1,8 @@
 # Daft built-in `embed_image` batch 校准（2026-08-03）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > 性质：**原生 baseline 独立校准**（campaign step 4 的前半）。只扫 Daft 官方 `embed_image`
 > 暴露的唯一参数 `batch_size`，找吞吐平台点。Daft 自管并发、GPU 放置、backpressure 与
 > 调度（`scheduler_owner=daft`，`custom_scheduling_code=false`）。**这不是 baseline 排名**——

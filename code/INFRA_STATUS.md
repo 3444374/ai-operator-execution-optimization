@@ -4,6 +4,10 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-02：增加版本化历史证据恢复入口，按清单恢复共享归档及保留文件的原始路径并逐项校验。
+8项临时fixture检查通过，真实旧结果9,422个文件的字节恢复核对通过；该能力只处理文件，模型请求为0。
+入口与适用存储版本见[文件恢复说明](scripts/README.md#实验结果恢复)，整理事实见[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#legacy-retention-20261002)。
+
 2026-10-02后续：增加显式`RayMapConfig.payload_backend=arrow`，直接将已选有限payload构成独立Arrow批次。
 默认Daft保留；Core选行、完整请求、对象容量及行生命周期保持，原Daft/Ray比较拒绝Arrow/Ray身份。
 本地86项中74项通过、12项缺依赖跳过；目标92项全部通过，10条查询/8,224次fixture通过，模型0次。

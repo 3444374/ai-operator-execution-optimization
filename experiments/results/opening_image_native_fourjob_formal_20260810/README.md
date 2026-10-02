@@ -1,5 +1,8 @@
 # 图像原生 single→four-job 正式观察（2026-08-10）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > 结论先行：服务器重启后按 cold-start 合同恢复 PostgreSQL/Ray，Daft built-in 与
 > Ray Data native 图像矩阵 40/40 runs 全部通过。四 Job 下，Daft built-in 的 short
 > JCT 相对自身 single 仅 +1.76%，但三个 long 分别 +214.92%/+218.77%/+112.73%；

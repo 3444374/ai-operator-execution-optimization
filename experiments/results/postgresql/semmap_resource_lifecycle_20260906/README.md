@@ -1,5 +1,8 @@
 # SemMap 资源测量工具修复与验证（2026-09-06）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 本文件是内部工程验收记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 当前实施入口仍是 [Map 合同 §8.4.3](../../../plans/postgresql_semmap_generation_contract.md)，本文件记录实际执行证据。
 

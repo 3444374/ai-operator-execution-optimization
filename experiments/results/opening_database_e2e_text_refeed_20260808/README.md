@@ -1,5 +1,8 @@
 # 统一文本 database-E2E correctness 护栏与静态配置诊断
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 日期：2026-08-08
 状态：**correctness / database-E2E 护栏通过；ShareGPT 性能排名被后续 C32–C256 饱和校准降级**
 

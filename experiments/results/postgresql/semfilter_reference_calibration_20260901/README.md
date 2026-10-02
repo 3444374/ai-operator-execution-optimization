@@ -1,5 +1,8 @@
 # exact SemFilter 首轮真实 reference calibration：输出格式失败
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 本报告是内部实验记录。对应两项研究内容的共同支撑——语义算子代价估计；不比较调度策略。
 来源为 PostgreSQL 18.3 / Qwen2.5-1.5B-Instruct 的本次真实观测，不是 golden fixture。
 
@@ -66,7 +69,7 @@ training 行是**失败查询的已观测前缀**；其输入/输出行数估计
 SemFilter model completion must be TRUE, FALSE, or UNKNOWN
 ```
 
-全部 87 条响应见 [逐请求 raw](raw/runs/)，逐次汇总和停止状态见
+全部 87 条响应见 [逐请求 raw](raw/storage-manifest.jsonl)，逐次汇总和停止状态见
 [held_out_report.json](raw/held_out_report.json)，错误见 [collect-failure.json](raw/collect-failure.json)。
 本次 observed prefix 的 output usage 都是每调用 2 tokens；这提示后续需要检查 calls/output 共线性，
 但没有完整 training 数据，本次未做 rank 检验或系数拟合，也不据此推断未运行数据的 rank。
@@ -78,7 +81,7 @@ SemFilter model completion must be TRUE, FALSE, or UNKNOWN
 savepoint 测试；后者仍由既有 TAP 支持。
 
 本次重新运行 PostgreSQL Python 合同 45/45、gateway migration 5/5、calibration contract 5/5，以及
-采集脚本合成数据检查 6/6；[日志](raw/logs/)和[资格摘要](raw/qualification.json)已保存。
+采集脚本合成数据检查 6/6；[日志](raw/storage-manifest.jsonl)和[资格摘要](raw/qualification.json)已保存。
 没有重新运行完整 PGXS regression/TAP，历史 1/1、437/437 仍绑定 `dcde2be5`，不冒充本次结果。
 
 仓库外持久化证据包为 `postgresql_semfilter_real_calibration_777f0382_20260901_r1`，保存完整采集脚本、

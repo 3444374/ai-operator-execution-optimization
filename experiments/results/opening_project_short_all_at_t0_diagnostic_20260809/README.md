@@ -1,5 +1,8 @@
 # Project 单 short all-at-t0 计时对齐诊断（2026-08-09）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 1. 实验目的
 
 本诊断回答：Project single-short 的 71.24 s 是否意味着其执行路径比 Daft Native 的

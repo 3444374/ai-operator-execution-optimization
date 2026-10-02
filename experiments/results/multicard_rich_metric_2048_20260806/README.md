@@ -1,5 +1,8 @@
 # 多卡 rich-metric 饱和 screening（2×4090，SQuAD 2048，1w+3f）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **定位**：3 臂（bounded_http 天花板 + **duckdb_ai 2×1 sharded〔身份订正：`harness_pre_split_diagnostic`——harness 预切 manifest + 2 独立 DuckDB 进程，DuckDB `ai` 单 BASE_URL，按协议 §2.6 不算产品原生多 endpoint、不进产品主排名〕** + project_static 2-endpoint）在饱和配置（c=32/K=32）下的 cache-hot 饱和 screening/gate 证据。
 
 > **vLLM effective config（诚实）**：`max_num_seqs=256/max_num_batched_tokens=8192` 是 adapter 声明；vLLM cmdline 无这些 flag，用 vllm 0.25.1 默认；`enable_prefix_caching` 默认 ON（= 声明，巧合）。数据有效，service config 字段是声明非 effective。**不是项目定义的 formal ranking**（gate 代码拒绝 `formal=true`）。本报告由**已提交的可复现聚合器** `code/scripts/analysis/multicard_rich_aggregate.py` 从原始证据重算，**取代** ad-hoc `rich_results.json`（后者未提交、且含三处报告错误，见 §6 修订记录）。

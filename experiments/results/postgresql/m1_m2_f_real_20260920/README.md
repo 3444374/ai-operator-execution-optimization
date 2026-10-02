@@ -1,5 +1,8 @@
 # M1、M2 与 F 的有限真实验证（2026-09-20）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 后续：[M1供给复查](../m1_supply_followup_20260920/README.md)完成受控CPU修复，但新一轮真实C64筛查失败并中止；下文保留前次身份和全部结果。
 
 本轮执行[预先声明的清单](../../../plans/data_organization_batching.md#m1-m2-f-real-trial)，

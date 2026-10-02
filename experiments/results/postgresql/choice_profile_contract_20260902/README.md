@@ -1,5 +1,8 @@
 # 四 C 首个切片：profile 值与规范编码
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 内部工程验证记录；来源为源码、独立字节向量及本地/Linux 测试，对应
 [四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)。
 源码提交：`d26e210db2391fc4d69032e317488bbef2008028`，基于 `3636e6f8`，仅在独立分支保存。

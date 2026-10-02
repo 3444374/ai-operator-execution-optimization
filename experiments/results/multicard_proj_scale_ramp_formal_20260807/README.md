@@ -1,5 +1,8 @@
 # project_static 峰值并发规模 ramp（formal, reps=3, 2026-08-07）+ 4 路径对比
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **性质（experiments/AGENTS.md §结果边界）**：本目录补全 **4 条系统路径 scale/calibration sweep 的第 4 臂（project_static）**。与前序 bounded/duckdb（`../multicard_scale_ramp_formal_20260806/`）+ lb_rr（`../multicard_lbrr_scale_ramp_formal_20260806/`）拼成同一冻结服务合同下的 **4 路径峰值并发（C_total=64）规模 ramp**。这是 `full_grid_sweep_plan.md` §4.4 Tier C（完整规模轴、峰值并发、无并发扫），回答"4 路径容量曲线/拐点/稳态 ordering"。**project_static 是 project_scheduled_method（非 baseline）**：对比是**同 offered-load 下的 ordering**，**非**"项目方法优于 baseline"的系统性主张（§3.5 #2，须分轨）。
 
 ## 1. 实验目的
