@@ -24,3 +24,5 @@ PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom�
 [线程记账](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、
 [Arrow分批](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)分别保留实际重复值、负结果和适用条件。
 完整查询、质量与资源结论以各报告为准。
+
+[批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留组件、无模型改善与真实模型回退结果，默认同步保持。

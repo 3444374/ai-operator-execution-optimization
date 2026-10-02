@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-02
+更新时间：2026-10-03
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -11,6 +11,11 @@
 只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
+
+[批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)已完成组件、替身与真实模型对照。
+原真实对照与审查修订后复测分别慢7.31%和40.52%，各自三次重复均变慢；候选仅保留诊断，默认同步保持。
+修订后83项服务器检查和独立8,224次真实请求、关联及清理核对通过，原负结果和0请求启动失败分别保留。
+下一项按[查询调优](experiments/plans/查询调优.md)处理就绪窗口的重复构建，不从替身改善推算真实收益。
 
 [直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项目标检查、10条查询/8,224次fixture，模型0次。
 同步记账下完整查询8.354→8.149秒，少2.457%；批次next执行约1→0.2秒，但约5.5秒记账与恢复等待重叠。

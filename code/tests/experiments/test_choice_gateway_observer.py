@@ -18,6 +18,12 @@ from src.experiments.postgresql.query_config import QueryConfig
 
 class ChoiceObserverTests(unittest.TestCase):
     def test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode(self):
+        self.check_accounting_cli("threaded")
+
+    def test_batched_cli_accounts_with_real_ledger_and_reports_selected_mode(self):
+        self.check_accounting_cli("batched")
+
+    def check_accounting_cli(self, mode):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             budget = AttemptBudget('fixture.threaded.cli.v1', 2)
@@ -33,17 +39,22 @@ class ChoiceObserverTests(unittest.TestCase):
                 self.assertEqual(main(['--events', str(root/'events'), '--observer-summary', str(root/'summary'),
                     '--event-content', 'compact', '--event-write-mode', 'buffered',
                     '--cell-budget', str(ledger.path), '--shared-unit-budget', '--unit-id', 'unit',
-                    '--budget-id', budget.budget_id, '--max-attempts', '2', '--remote-budget-mode', 'threaded',
+                    '--budget-id', budget.budget_id, '--max-attempts', '2', '--remote-budget-mode', mode,
                     '--', '--socket', str(root/'socket'), '--fixed-model-config', str(root/'model'),
                     '--incremental-map', '--map-transport-config', str(root/'transport')]), 0)
             summary = json.loads((root/'summary').read_text())
-            self.assertEqual(summary['remote_budget_mode'], 'threaded')
+            self.assertEqual(summary['remote_budget_mode'], mode)
             self.assertEqual(summary['observed_attempts'], 2)
             events = [json.loads(line) for line in (root/'events').read_text().splitlines()]
             self.assertEqual(sum(e['event']=='request' for e in events), 2)
             guards = [e for e in events if e['event']=='remote_request_guard']
             self.assertEqual([e['attempt'] for e in guards], [1, 2])
             self.assertTrue(all(e['status']=='completed' for e in guards))
+            if mode == 'batched':
+                batches = [e for e in events if e['event']=='remote_request_batch']
+                self.assertEqual([(e['first_attempt'], e['last_attempt'], e['rows']) for e in batches],
+                                 [(1,2,2)])
+                self.assertTrue(all(e['accounting_mode']=='batched' for e in guards))
 
     def test_threaded_config_requires_the_remote_map_path(self):
         with self.assertRaisesRegex(ValueError, 'Ray Map'):

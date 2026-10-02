@@ -1,0 +1,33 @@
+{
+  "status": "failed-before-model-requests",
+  "model_requests": 0,
+  "server_access_posts": 0,
+  "elapsed_seconds": 193.66275000572205,
+  "failure_stage": "Ray initialization before query",
+  "cause": "temporary Unix socket path exceeded Ray 107-byte limit",
+  "worker_errors": [
+    {
+      "type": "OSError",
+      "message": "validate_socket_filename failed: AF_UNIX path length cannot exceed 107 bytes: <failed-run-root>/real01/r/session_2026-10-03_03-42-01_962452_478939/sockets/plasma_store"
+    }
+  ],
+  "cleanup": {
+    "status": "passed",
+    "model_requests": 0,
+    "ports_closed": {
+      "18095": true,
+      "55495": true
+    },
+    "gpu_used_mib": [
+      "0, 1",
+      "1, 1"
+    ],
+    "acl_restored": true,
+    "old_pg_library_preserved": true
+  },
+  "private_archive_sha256": "a2be1371bdc8c00c318282c528a3a2b99164d8ec90342ed972b4fe120e731e55",
+  "private_archive_bytes": 6508866,
+  "source_after_verified": true,
+  "restarted_automatically": false,
+  "followup": "new short-path run separately authorized after model-free Ray startup and shutdown check"
+}

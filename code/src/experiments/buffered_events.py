@@ -19,7 +19,8 @@ def compact_event(event):
     """Retain correlation and counters, hashing output instead of retaining its text."""
     allowed = {'event', 'session_id', 'task', 'monotonic_ns', 'sequence', 'payload_digest',
                'response_model_id', 'finish_reason', 'prompt_tokens', 'output_tokens', 'usage',
-               'attempt', 'request_values_sha256', 'request_bytes_sha256', 'key', 'code',
+               'attempt', 'first_attempt', 'last_attempt', 'accounting_mode',
+               'request_values_sha256', 'request_bytes_sha256', 'key', 'code',
                'elapsed_seconds', 'remaining', 'connection_id', 'job_id',
                'status', 'reason', 'stage', 'remote_outcome',
                'accepted_prefix_count', 'engine_session_id', 'closed',

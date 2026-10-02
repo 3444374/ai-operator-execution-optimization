@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "private_archive_sha256": "06b20f03fd36c4fb7fe95f22f13693adde047da3d023447dc02beb76432cf360",
+  "private_archive_bytes": 21278709,
+  "public_files": 229,
+  "unique_objects": 175,
+  "public_archive_bytes": 5164140,
+  "restoration": {
+    "schema": "semloom.evidence_storage.v2",
+    "result": "experiments/results/diagnostics/request_budget_batch_20261003",
+    "files_verified": 229,
+    "bytes_verified": 48262807,
+    "model_requests": 0
+  },
+  "private_original_preserved": true,
+  "request_content_not_published": true,
+  "compacted_query_event_files": 10
+}

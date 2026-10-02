@@ -44,10 +44,10 @@ class QueryConfig:
             raise ValueError('unknown Map payload backend')
         if self.map_payload_backend != 'daft' and self.map_transport_config is None:
             raise ValueError('Arrow payload batches require Ray Map transport')
-        if self.remote_budget_mode not in ('synchronous', 'threaded'):
+        if self.remote_budget_mode not in ('synchronous', 'threaded', 'batched'):
             raise ValueError('unknown remote budget placement')
-        if self.remote_budget_mode == 'threaded' and self.map_transport_config is None:
-            raise ValueError('threaded accounting requires Ray Map transport')
+        if self.remote_budget_mode != 'synchronous' and self.map_transport_config is None:
+            raise ValueError('async accounting requires Ray Map transport')
         if self.event_content not in ('full', 'compact') or (self.event_content == 'compact' and (self.arm != 'pg' or self.task != 'map')):
             raise ValueError('compact query observation requires PG Map')
         if self.arm not in ('pg','pg-source-direct','ray-data','daft-native','lotus') or self.task not in ('map','movie-q1','movie-q2','movie-q3'):

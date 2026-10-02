@@ -1,5 +1,17 @@
 # SemLoom 脚本入口
 
+## 本地持久记账组件对照
+
+`profiling/request_budget_batch_probe.py --output /path/to/new-private-probe`比较逐行与4/16/64条每事务。
+使用现有Python标准库及新建仓库外SQLite，固定16,384条组件预留、每次60秒及整体5分钟；
+无HTTP、PG或模型调用，原件与首次失败保留，已有目录拒绝覆盖。运行时设置`PYTHONPATH=code`。
+身份、全部重复和限制见[结果报告](../../experiments/results/diagnostics/request_budget_batch_20261003/README.md)。
+
+`QueryConfig.remote_budget_mode=batched`及observer的`--remote-budget-mode batched`仅用于已声明Ray Map传输的实验查询。
+CLI同时要求shared cell budget；批量事务最多16条已就绪记录，默认同步保持。`remote_request_batch`单列事务时间，
+逐行`remote_request_guard`只报告等待与完成身份，不能将同一个批量事务重复累加到各行。
+真实模型对照未取得完整查询收益，该参数仅作显式诊断，不替换同步默认。
+
 ## 实验结果恢复
 
 历史结果的`raw/storage-manifest.jsonl`使用`semloom.evidence_storage.v2`时，清单把每个原始路径

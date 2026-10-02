@@ -1,0 +1,635 @@
+{
+  "experiment_id": "request_budget_batch_20261003",
+  "runs": [
+    {
+      "run_id": "local-component-20261003",
+      "artifact_id": "GPU-budget-batch-20261003",
+      "status": "passed",
+      "source": "raw/summary.json",
+      "timing": {
+        "start": null,
+        "ready": null,
+        "end": null,
+        "unavailable_reason": "Absolute start/end were not captured; component has no service readiness event. Per-run measured durations are retained."
+      },
+      "units": [
+        {
+          "unit_id": "local-component-b1-r0",
+          "batch_size": 1,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.350167416,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b4-r0",
+          "batch_size": 4,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.099376417,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b16-r0",
+          "batch_size": 16,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.022491292,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b64-r0",
+          "batch_size": 64,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.016031542,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b1-r1",
+          "batch_size": 1,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.330640583,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b4-r1",
+          "batch_size": 4,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.079759292,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b16-r1",
+          "batch_size": 16,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.022562958,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b64-r1",
+          "batch_size": 64,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.006973459,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b4-r2",
+          "batch_size": 4,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.223249667,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b16-r2",
+          "batch_size": 16,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.019844416,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b64-r2",
+          "batch_size": 64,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.005986917,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b1-r2",
+          "batch_size": 1,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.83834575,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b16-r3",
+          "batch_size": 16,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.02002075,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b64-r3",
+          "batch_size": 64,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.045622708,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b1-r3",
+          "batch_size": 1,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 1.273180125,
+          "status": "passed"
+        },
+        {
+          "unit_id": "local-component-b4-r3",
+          "batch_size": 4,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.166335334,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "run_id": "server-component-20261003",
+      "artifact_id": "request-budget-batching-20261003",
+      "status": "passed",
+      "source": "raw/server-component-summary.json",
+      "timing": {
+        "start": null,
+        "ready": null,
+        "end": null,
+        "unavailable_reason": "Absolute start/end were not captured; component has no service readiness event. Per-run measured durations are retained."
+      },
+      "units": [
+        {
+          "unit_id": "server-component-b1-r0",
+          "batch_size": 1,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.710689986,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b4-r0",
+          "batch_size": 4,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.168687353,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b16-r0",
+          "batch_size": 16,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.044593734,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b64-r0",
+          "batch_size": 64,
+          "repeat": 0,
+          "warmup": true,
+          "elapsed_seconds": 0.015729126,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b1-r1",
+          "batch_size": 1,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.611851153,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b4-r1",
+          "batch_size": 4,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.160194889,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b16-r1",
+          "batch_size": 16,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.045139419,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b64-r1",
+          "batch_size": 64,
+          "repeat": 1,
+          "warmup": false,
+          "elapsed_seconds": 0.013868533,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b4-r2",
+          "batch_size": 4,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.161850435,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b16-r2",
+          "batch_size": 16,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.045449816,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b64-r2",
+          "batch_size": 64,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.014055982,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b1-r2",
+          "batch_size": 1,
+          "repeat": 2,
+          "warmup": false,
+          "elapsed_seconds": 0.613263881,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b16-r3",
+          "batch_size": 16,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.045545366,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b64-r3",
+          "batch_size": 64,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.014180166,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b1-r3",
+          "batch_size": 1,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.707887034,
+          "status": "passed"
+        },
+        {
+          "unit_id": "server-component-b4-r3",
+          "batch_size": 4,
+          "repeat": 3,
+          "warmup": false,
+          "elapsed_seconds": 0.182121164,
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "run_id": "fixture-query-20261003",
+      "artifact_id": "qb03",
+      "status": "passed",
+      "timing": {
+        "start_utc": null,
+        "ready_utc": null,
+        "end_utc": null,
+        "unavailable_reason": "Controller absolute start/end were not recorded; per-query and gateway monotonic events are retained."
+      },
+      "units": [
+        {
+          "unit_id": "synchronous-16-check16",
+          "mode": "synchronous",
+          "rows": 16,
+          "repeat": -1,
+          "status": "passed",
+          "source_member": "o3/r/synchronous16/check16/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113296068092958,
+            "gateway_ready": 2113296064510542,
+            "query_released": 2113296080195988,
+            "query_ended": 2113299801288061
+          }
+        },
+        {
+          "unit_id": "batched-16-check16",
+          "mode": "batched",
+          "rows": 16,
+          "repeat": -1,
+          "status": "passed",
+          "source_member": "o3/r/batched16/check16/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113302932180777,
+            "gateway_ready": 2113302930080398,
+            "query_released": 2113302946014614,
+            "query_ended": 2113306536281820
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-warm1024",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 0,
+          "status": "passed",
+          "source_member": "o3/r/synchronous1024/warm1024/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113312744304367,
+            "gateway_ready": 2113310284989615,
+            "query_released": 2113312757872803,
+            "query_ended": 2113324653437141
+          }
+        },
+        {
+          "unit_id": "batched-1024-warm1024",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 0,
+          "status": "passed",
+          "source_member": "o3/r/batched1024/warm1024/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113325337534755,
+            "gateway_ready": 2113312742364620,
+            "query_released": 2113325351502112,
+            "query_ended": 2113336065987933
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure1",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 1,
+          "status": "passed",
+          "source_member": "o3/r/batched1024/measure1/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113336573610410,
+            "gateway_ready": 2113312742364620,
+            "query_released": 2113336585294937,
+            "query_ended": 2113343415452760
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure1",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 1,
+          "status": "passed",
+          "source_member": "o3/r/synchronous1024/measure1/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113344012852175,
+            "gateway_ready": 2113310284989615,
+            "query_released": 2113344025646251,
+            "query_ended": 2113352531082129
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure2",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 2,
+          "status": "passed",
+          "source_member": "o3/r/synchronous1024/measure2/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113353040671137,
+            "gateway_ready": 2113310284989615,
+            "query_released": 2113353052014272,
+            "query_ended": 2113362757521901
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure2",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 2,
+          "status": "passed",
+          "source_member": "o3/r/batched1024/measure2/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113363393823341,
+            "gateway_ready": 2113312742364620,
+            "query_released": 2113363412608062,
+            "query_ended": 2113370872347800
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure3",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 3,
+          "status": "passed",
+          "source_member": "o3/r/batched1024/measure3/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113371413162515,
+            "gateway_ready": 2113312742364620,
+            "query_released": 2113371425495508,
+            "query_ended": 2113378884239796
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure3",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 3,
+          "status": "passed",
+          "source_member": "o3/r/synchronous1024/measure3/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2113379499186285,
+            "gateway_ready": 2113310284989615,
+            "query_released": 2113379511155439,
+            "query_ended": 2113389120403738
+          }
+        }
+      ],
+      "private_archive_sha256": "3d531f59d28cceafb8e3697e069fb210af42ade3bdfe91919047a6228da25aa2"
+    },
+    {
+      "run_id": "real-query-20261003",
+      "artifact_id": "qbr03/real01",
+      "status": "passed",
+      "timing": {
+        "start_utc": 1790966163.637548,
+        "ready_utc": 1790966344.79316,
+        "end_utc": 1790966479.4344184,
+        "end_derivation": "recorded started_utc plus elapsed_seconds; report completion, not a separate sampled timestamp"
+      },
+      "units": [
+        {
+          "unit_id": "synchronous-16-check16",
+          "mode": "synchronous",
+          "rows": 16,
+          "repeat": -1,
+          "status": "passed",
+          "source_member": "real01/worker/synchronous16/check16/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114885717475416,
+            "gateway_ready": 2114885672706706,
+            "query_released": 2114885734733252,
+            "query_ended": 2114889323013574
+          }
+        },
+        {
+          "unit_id": "batched-16-check16",
+          "mode": "batched",
+          "rows": 16,
+          "repeat": -1,
+          "status": "passed",
+          "source_member": "real01/worker/batched16/check16/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114892940528551,
+            "gateway_ready": 2114892926287567,
+            "query_released": 2114892955820033,
+            "query_ended": 2114896493139153
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-warm1024",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 0,
+          "status": "passed",
+          "source_member": "real01/worker/synchronous1024/warm1024/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114902908659920,
+            "gateway_ready": 2114900317625903,
+            "query_released": 2114902922725222,
+            "query_ended": 2114916101415186
+          }
+        },
+        {
+          "unit_id": "batched-1024-warm1024",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 0,
+          "status": "passed",
+          "source_member": "real01/worker/batched1024/warm1024/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114916853186208,
+            "gateway_ready": 2114902895009943,
+            "query_released": 2114916866619785,
+            "query_ended": 2114929451885127
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure1",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 1,
+          "status": "passed",
+          "source_member": "real01/worker/batched1024/measure1/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114930088341038,
+            "gateway_ready": 2114902895009943,
+            "query_released": 2114930103044338,
+            "query_ended": 2114940650723479
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure1",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 1,
+          "status": "passed",
+          "source_member": "real01/worker/synchronous1024/measure1/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114941413843906,
+            "gateway_ready": 2114900317625903,
+            "query_released": 2114941429132633,
+            "query_ended": 2114951251270496
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure2",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 2,
+          "status": "passed",
+          "source_member": "real01/worker/synchronous1024/measure2/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114952142829783,
+            "gateway_ready": 2114900317625903,
+            "query_released": 2114952162301187,
+            "query_ended": 2114962660336882
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure2",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 2,
+          "status": "passed",
+          "source_member": "real01/worker/batched1024/measure2/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114963263676917,
+            "gateway_ready": 2114902895009943,
+            "query_released": 2114963277885147,
+            "query_ended": 2114973962759040
+          }
+        },
+        {
+          "unit_id": "batched-1024-measure3",
+          "mode": "batched",
+          "rows": 1024,
+          "repeat": 3,
+          "status": "passed",
+          "source_member": "real01/worker/batched1024/measure3/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114974683786871,
+            "gateway_ready": 2114902895009943,
+            "query_released": 2114974698800021,
+            "query_ended": 2114987205087451
+          }
+        },
+        {
+          "unit_id": "synchronous-1024-measure3",
+          "mode": "synchronous",
+          "rows": 1024,
+          "repeat": 3,
+          "status": "passed",
+          "source_member": "real01/worker/synchronous1024/measure3/summary.json",
+          "timing": {
+            "clock": "same-host monotonic nanoseconds",
+            "query_started": 2114988034551889,
+            "gateway_ready": 2114900317625903,
+            "query_released": 2114988050398263,
+            "query_ended": 2114998004781590
+          }
+        }
+      ],
+      "private_archive_sha256": "51e729461440ed9abb4b12e12f3cdc18d3eb2f2e338f785add580fcc5e4927c2"
+    }
+  ],
+  "preparation_failures": [
+    {
+      "run_id": "server-component-setup-01",
+      "status": "failed",
+      "source": "raw/server-component-setup-failure.txt",
+      "reason": "temporary ledger directory was inside a Git checkout",
+      "benchmark_started": false,
+      "model_requests": 0
+    },
+    {
+      "run_id": "fixture-source-upload-01",
+      "status": "failed",
+      "source_member": "preparation-failure.json",
+      "reason": "source manifest upload incomplete",
+      "benchmark_started": false,
+      "model_requests": 0
+    }
+  ]
+}

@@ -31,7 +31,20 @@ class SharedClaimedUnit:
         return row[0], row[1], count
 
     def reserve(self, request_sha256):
-        if not isinstance(request_sha256, str) or not re.fullmatch('[0-9a-f]{64}', request_sha256):
+        return self.reserve_many((request_sha256,))[0]
+
+    def reserve_many(self, request_sha256s):
+        """Commit a finite, nonempty list/tuple of ready requests atomically.
+
+        Attempt numbers are returned only after commit. Every entry is charged,
+        including identical digests and requests never sent after this returns.
+        This method does not collect requests or wait for a batch to fill.
+        """
+        if not isinstance(request_sha256s, (list, tuple)) or not request_sha256s:
+            raise BudgetError('a nonempty request digest list or tuple is required')
+        digests = tuple(request_sha256s)
+        if any(not isinstance(digest, str) or not re.fullmatch('[0-9a-f]{64}', digest)
+               for digest in digests):
             raise BudgetError('invalid request digest')
         ledger = self._ledger
         with ledger._transaction() as connection:
@@ -39,11 +52,14 @@ class SharedClaimedUnit:
             if connection.execute('SELECT 1 FROM closed_shared_units WHERE unit_id=?',(self.unit_id,)).fetchone():
                 raise BudgetExhausted('shared query unit has been closed')
             first, maximum, used = self._state(connection, allocated)
-            if used == maximum:
+            if len(digests) > maximum - used:
                 raise BudgetExhausted('shared unit budget exhausted')
-            connection.execute('INSERT INTO shared_requests VALUES(?,?,?)',
-                               (self.unit_id, used+1, request_sha256))
-        return first+used
+            rows = [(self.unit_id, used+index, digest) for index, digest in enumerate(digests, 1)]
+            if len(rows) == 1:
+                connection.execute('INSERT INTO shared_requests VALUES(?,?,?)', rows[0])
+            else:
+                connection.executemany('INSERT INTO shared_requests VALUES(?,?,?)', rows)
+        return tuple(range(first+used, first+used+len(digests)))
 
     @property
     def attempts(self):
