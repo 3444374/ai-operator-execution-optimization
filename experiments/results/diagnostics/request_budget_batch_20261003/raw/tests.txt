@@ -1,0 +1,74 @@
+budget-tests-01.log
+test_concurrent_requests_share_one_unit_limit (test_cell_budget.CellBudgetTests.test_concurrent_requests_share_one_unit_limit) ... ok
+test_crash_before_first_send_does_not_refund_or_restore_claim (test_cell_budget.CellBudgetTests.test_crash_before_first_send_does_not_refund_or_restore_claim) ... ok
+test_full_reservation_counts_even_when_only_partially_consumed (test_cell_budget.CellBudgetTests.test_full_reservation_counts_even_when_only_partially_consumed) ... ok
+test_invalid_digest_or_expiry_never_authorizes_a_send (test_cell_budget.CellBudgetTests.test_invalid_digest_or_expiry_never_authorizes_a_send) ... ok
+test_missing_corrupt_alias_wrong_budget_and_overwrite_rejected (test_cell_budget.CellBudgetTests.test_missing_corrupt_alias_wrong_budget_and_overwrite_rejected) ... ok
+test_one_claim_wins_and_restart_cannot_claim_again (test_cell_budget.CellBudgetTests.test_one_claim_wins_and_restart_cannot_claim_again) ... ok
+test_one_hundred_thousand_sends_have_no_history_io (test_cell_budget.CellBudgetTests.test_one_hundred_thousand_sends_have_no_history_io) ... ok
+test_unit_cannot_be_copied_or_used_in_another_process (test_cell_budget.CellBudgetTests.test_unit_cannot_be_copied_or_used_in_another_process) ... ok
+test_bad_or_unbounded_input_never_partially_charges (test_shared_request_budget.BatchRequestBudgetTests.test_bad_or_unbounded_input_never_partially_charges) ... ok
+test_close_and_deadline_stop_new_batches_without_refund (test_shared_request_budget.BatchRequestBudgetTests.test_close_and_deadline_stop_new_batches_without_refund) ... ok
+test_commit_failure_returns_no_permission_and_preserves_actual_commit (test_shared_request_budget.BatchRequestBudgetTests.test_commit_failure_returns_no_permission_and_preserves_actual_commit) ... ok
+test_crash_after_commit_does_not_reissue_attempts (test_shared_request_budget.BatchRequestBudgetTests.test_crash_after_commit_does_not_reissue_attempts) ... ok
+test_insert_failure_rolls_back_entire_batch (test_shared_request_budget.BatchRequestBudgetTests.test_insert_failure_rolls_back_entire_batch) ... ok
+test_insufficient_quota_rejects_whole_batch_and_tail_can_spend (test_shared_request_budget.BatchRequestBudgetTests.test_insufficient_quota_rejects_whole_batch_and_tail_can_spend) ... ok
+test_order_duplicate_bodies_and_single_tail_survive_reopen (test_shared_request_budget.BatchRequestBudgetTests.test_order_duplicate_bodies_and_single_tail_survive_reopen) ... ok
+test_parallel_single_and_batch_calls_have_unique_numbers_and_finite_total (test_shared_request_budget.BatchRequestBudgetTests.test_parallel_single_and_batch_calls_have_unique_numbers_and_finite_total) ... ok
+test_cancelled_unit_cannot_send_queued_worker_requests (test_shared_request_budget.SharedRequestBudgetTests.test_cancelled_unit_cannot_send_queued_worker_requests) ... ok
+test_deadline_no_refund_and_missing_file_fail_closed (test_shared_request_budget.SharedRequestBudgetTests.test_deadline_no_refund_and_missing_file_fail_closed) ... ok
+test_existing_process_claim_is_not_shareable (test_shared_request_budget.SharedRequestBudgetTests.test_existing_process_claim_is_not_shareable) ... ok
+test_processes_cannot_overspend_or_reclaim (test_shared_request_budget.SharedRequestBudgetTests.test_processes_cannot_overspend_or_reclaim) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.538s
+
+OK
+
+observer-tests-01.log
+test_concurrent_runners_cannot_overspend (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_concurrent_runners_cannot_overspend) ... ok
+test_corrupt_or_missing_history_fails_closed (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_corrupt_or_missing_history_fails_closed) ... ok
+test_existing_history_is_never_reinitialized (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_existing_history_is_never_reinitialized) ... ok
+test_failed_persistence_or_http_does_not_refund_attempt (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_failed_persistence_or_http_does_not_refund_attempt) ... ok
+test_invalid_budget_configuration_is_rejected (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_invalid_budget_configuration_is_rejected) ... ok
+test_invalid_digest_consumes_nothing (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_invalid_digest_consumes_nothing) ... ok
+test_legacy_large_declaration_cannot_make_history_unreadable (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_legacy_large_declaration_cannot_make_history_unreadable) ... ok
+test_operator_budgets_share_storage_without_sharing_authorization (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_operator_budgets_share_storage_without_sharing_authorization) ... ok
+test_oversized_declared_budget_rejected_before_file_creation (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_oversized_declared_budget_rejected_before_file_creation) ... ok
+test_reopen_does_not_restore_spent_attempts (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_reopen_does_not_restore_spent_attempts) ... ok
+test_size_preflight_matches_written_history_across_digit_widths (tests.experiments.test_choice_attempt_ledger.AttemptLedgerTests.test_size_preflight_matches_written_history_across_digit_widths) ... ok
+test_content_and_write_modes_are_independent (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_content_and_write_modes_are_independent) ... ok
+test_full_without_private_destination_is_rejected_before_writing (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_full_without_private_destination_is_rejected_before_writing) ... usage: python3 -m unittest [-h] --events EVENTS
+                           [--private-events PRIVATE_EVENTS]
+                           [--expected-request-hashes EXPECTED_REQUEST_HASHES]
+                           [--ledger LEDGER] [--cell-budget CELL_BUDGET]
+                           [--shared-unit-budget] [--fixture-only]
+                           [--unit-id UNIT_ID]
+                           [--event-mode {qualification,compact-buffered}]
+                           [--event-content {compact,full}]
+                           [--event-write-mode {synchronous,buffered}]
+                           [--observer-summary OBSERVER_SUMMARY]
+                           [--event-buffer-bytes EVENT_BUFFER_BYTES]
+                           [--remote-budget-mode {synchronous,threaded}]
+                           [--dns-release-file DNS_RELEASE_FILE]
+                           [--budget-id BUDGET_ID]
+                           [--max-attempts MAX_ATTEMPTS]
+                           [--session-events SESSION_EVENTS]
+python3 -m unittest: error: full events require --private-events outside Git
+ok
+test_legacy_flags_report_actual_content_and_write_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_legacy_flags_report_actual_content_and_write_mode) ... ok
+test_remote_guard_failure_does_not_observe_or_refund_request (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_remote_guard_failure_does_not_observe_or_refund_request) ... ok
+test_remote_guard_separates_durable_reserve_from_request_recording (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_remote_guard_separates_durable_reserve_from_request_recording) ... ok
+test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode) ... ok
+test_threaded_config_requires_the_remote_map_path (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_threaded_config_requires_the_remote_map_path) ... ok
+test_recording_error_does_not_replace_transport_failure (tests.experiments.test_native_http_observer.NativeHttpObserverTests.test_recording_error_does_not_replace_transport_failure) ... ok
+test_sync_async_body_and_effective_deadline (tests.experiments.test_native_http_observer.NativeHttpObserverTests.test_sync_async_body_and_effective_deadline) ... ok
+test_unexpected_destination_and_expired_deadline_do_not_spend (tests.experiments.test_native_http_observer.NativeHttpObserverTests.test_unexpected_destination_and_expired_deadline_do_not_spend) ... ok
+test_async_budget_failure_does_not_dispatch_or_leave_objects (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_async_budget_failure_does_not_dispatch_or_leave_objects) ... ok
+test_async_guard_finishes_before_rpc_and_cancelled_row_never_dispatches (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_async_guard_finishes_before_rpc_and_cancelled_row_never_dispatches) ... ok
+test_cancelled_delivery_future_suppresses_pending_rpc (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_cancelled_delivery_future_suppresses_pending_rpc) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.100s
+
+OK

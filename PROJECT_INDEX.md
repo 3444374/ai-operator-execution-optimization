@@ -30,6 +30,7 @@
 
 | 主题 | 入口 |
 |---|---|
+| 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
 | 同步/增量生成Map | [语义规格](experiments/plans/生成算子.md)、[增量设计](experiments/plans/增量执行.md#session) |
 | 多Job与查询归属 | [多会话设计](experiments/plans/增量执行.md#multi-query)、[查询Job设计](experiments/plans/数据库接入.md#query-job) |
 | 调用与绑定 | [详细设计](experiments/plans/数据库接入.md#calls) |

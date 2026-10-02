@@ -1,5 +1,12 @@
 # SemLoom Code
 
+实验账本支持显式[`SharedClaimedUnit.reserve_many`](src/experiments/shared_request_budget.py)：
+对已准备的有限摘要列表或元组一次持久提交，返回对应计费编号，整批额度不足时全部拒绝。
+实验查询可显式选择`remote_budget_mode=batched`，在下一次事件循环推进时合并最多16条已就绪记录，
+提交及内容观察完成后才允许RPC，取消继续由传输检查；不等未来请求凑满，默认仍逐行同步。
+[组件与服务器查询结果](../experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留实际范围和负面开销。
+真实模型复测中批量方式慢7.31%，因此该选项仅保留用于诊断，不作为推荐优化。
+
 `src/` 保存数据源、工作量描述、组织、调度、外部执行、观测和 baseline 适配；
 `postgres/semloom_pg/` 保存 PostgreSQL extension。目录关系见下方[目录结构](#目录结构)，
 现行模块职责见[extension 模块说明](postgres/semloom_pg/README.md#module-layout)。

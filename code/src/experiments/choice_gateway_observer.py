@@ -83,7 +83,7 @@ def main(argv=None):
     parser.add_argument("--event-write-mode", choices=("synchronous", "buffered"))
     parser.add_argument("--observer-summary", type=Path)
     parser.add_argument("--event-buffer-bytes", type=int, default=8 * 1024 * 1024)
-    parser.add_argument('--remote-budget-mode', choices=('synchronous', 'threaded'), default='synchronous',
+    parser.add_argument('--remote-budget-mode', choices=('synchronous', 'threaded', 'batched'), default='synchronous',
                         help='durable accounting placement for Ray Map requests')
     parser.add_argument("--dns-release-file", type=Path)
     parser.add_argument("--budget-id", help="expected identity of the existing ledger")
@@ -94,10 +94,12 @@ def main(argv=None):
         "--session-events", type=Path, help="optional passive socket/session event stream"
     )
     args, gateway_args = parser.parse_known_args(argv)
-    if args.remote_budget_mode == 'threaded':
+    if args.remote_budget_mode != 'synchronous':
         selected = gateway_args[1:] if gateway_args[:1] == ['--'] else gateway_args
         if args.fixture_only or not server.parse_args(selected).map_transport_config:
-            parser.error('threaded accounting requires a durable ledger and Ray Map transport')
+            parser.error('async accounting requires a durable ledger and Ray Map transport')
+    if args.remote_budget_mode == 'batched' and not (args.cell_budget and args.shared_unit_budget):
+        parser.error('batched accounting requires a shared cell budget')
     if args.dns_release_file and not args.fixture_only:
         parser.error("resolver faults require fixture mode")
     if (args.budget_id is None) != (args.max_attempts is None):
@@ -270,6 +272,9 @@ def main(argv=None):
                     from src.experiments.async_request_guard import ThreadedRequestGuard
                     options['remote_request_guard'] = stack.enter_context(
                         ThreadedRequestGuard(ledger, observe_request, record))
+                elif args.remote_budget_mode == 'batched':
+                    from src.experiments.batched_request_guard import BatchedRequestGuard
+                    options['remote_request_guard'] = BatchedRequestGuard(ledger, observe_request, record)
                 else:
                     options["remote_request_guard"] = guard_remote
             setup_seconds = (time.monotonic_ns()-setup_started_ns)/1e9

@@ -7,3 +7,4 @@ experiments/results/postgresql/text_map_four_path_comparison_20260930/raw/**/*.c
 # Ray's exported statistics contain terminal padding inside CSV fields.
 experiments/results/motivation/gpu/ray_data_calibration_20260803/raw/runs_phase1_batch.csv -text whitespace=-blank-at-eol
 experiments/results/motivation/gpu/ray_data_calibration_20260803/raw/runs_phase2_cpu.csv -text whitespace=-blank-at-eol
+experiments/results/diagnostics/request_budget_batch_20261003/raw/server-component-setup-failure.txt whitespace=-blank-at-eol

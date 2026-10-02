@@ -1,0 +1,468 @@
+{
+  "real_model_requests": 8224,
+  "verified_rows": 8224,
+  "source_files_verified": 709,
+  "owner_seconds": 315.796870470047,
+  "worker_seconds": 132.5361849302426,
+  "queries": [
+    {
+      "mode": "synchronous",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 3.605538158,
+      "preparation_seconds": 0.017257836,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 16,
+      "reserve_seconds": 0.019179447,
+      "windows": 2,
+      "ray_blocks": 2,
+      "batch_sizes": {},
+      "next_work_seconds": 3.024409847,
+      "next_resume_seconds": 0.030765477,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "batched",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 3.552610602,
+      "preparation_seconds": 0.015291482,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 2,
+      "reserve_seconds": 0.006083895,
+      "windows": 2,
+      "ray_blocks": 2,
+      "batch_sizes": {
+        "1": 1,
+        "15": 1
+      },
+      "next_work_seconds": 3.008471437,
+      "next_resume_seconds": 0.003945188,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "synchronous",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 13.192755266,
+      "preparation_seconds": 0.014065302,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 1024,
+      "reserve_seconds": 4.633688915,
+      "windows": 91,
+      "ray_blocks": 126,
+      "batch_sizes": {},
+      "next_work_seconds": 5.493187906,
+      "next_resume_seconds": 5.113228068,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60236,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "batched",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 12.598698919,
+      "preparation_seconds": 0.013433577,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 147,
+      "reserve_seconds": 2.030836883,
+      "windows": 131,
+      "ray_blocks": 147,
+      "batch_sizes": {
+        "1": 29,
+        "16": 18,
+        "15": 4,
+        "2": 7,
+        "3": 10,
+        "6": 13,
+        "7": 7,
+        "12": 10,
+        "11": 3,
+        "5": 10,
+        "4": 9,
+        "8": 17,
+        "10": 2,
+        "9": 6,
+        "13": 1,
+        "14": 1
+      },
+      "next_work_seconds": 6.656623847,
+      "next_resume_seconds": 1.507842637,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 59815,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "batched",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 10.562382441,
+      "preparation_seconds": 0.0147033,
+      "accuracy": 0.8525390625,
+      "correct_rows": 873,
+      "transactions": 280,
+      "reserve_seconds": 2.188567827,
+      "windows": 266,
+      "ray_blocks": 280,
+      "batch_sizes": {
+        "1": 164,
+        "16": 18,
+        "15": 1,
+        "2": 28,
+        "3": 12,
+        "4": 9,
+        "7": 5,
+        "8": 3,
+        "5": 8,
+        "11": 6,
+        "12": 6,
+        "9": 4,
+        "10": 4,
+        "6": 6,
+        "13": 4,
+        "14": 2
+      },
+      "next_work_seconds": 3.956730875,
+      "next_resume_seconds": 1.301817924,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60092,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4879,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "synchronous",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 9.83742659,
+      "preparation_seconds": 0.015288727,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 1024,
+      "reserve_seconds": 4.916719407,
+      "windows": 69,
+      "ray_blocks": 104,
+      "batch_sizes": {},
+      "next_work_seconds": 1.803814705,
+      "next_resume_seconds": 5.444928973,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60387,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "synchronous",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 10.517507099,
+      "preparation_seconds": 0.019471404,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 5.479522854,
+      "windows": 75,
+      "ray_blocks": 110,
+      "batch_sizes": {},
+      "next_work_seconds": 1.951766259,
+      "next_resume_seconds": 5.911374137,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60218,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "batched",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 10.699082123,
+      "preparation_seconds": 0.01420823,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 232,
+      "reserve_seconds": 2.146699907,
+      "windows": 210,
+      "ray_blocks": 232,
+      "batch_sizes": {
+        "1": 102,
+        "16": 24,
+        "15": 2,
+        "2": 26,
+        "3": 25,
+        "12": 3,
+        "4": 15,
+        "5": 8,
+        "6": 5,
+        "9": 3,
+        "7": 6,
+        "11": 5,
+        "13": 3,
+        "14": 2,
+        "8": 3
+      },
+      "next_work_seconds": 3.663337114,
+      "next_resume_seconds": 1.423592579,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60095,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "batched",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 12.52130058,
+      "preparation_seconds": 0.01501315,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 362,
+      "reserve_seconds": 2.368261554,
+      "windows": 348,
+      "ray_blocks": 362,
+      "batch_sizes": {
+        "1": 221,
+        "16": 17,
+        "15": 2,
+        "2": 43,
+        "3": 30,
+        "4": 13,
+        "7": 8,
+        "11": 2,
+        "12": 1,
+        "8": 4,
+        "6": 10,
+        "5": 5,
+        "9": 2,
+        "10": 2,
+        "14": 2
+      },
+      "next_work_seconds": 4.951531687,
+      "next_resume_seconds": 1.524079386,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60239,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4976,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "synchronous",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 9.970229701,
+      "preparation_seconds": 0.015846374,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 5.127059161,
+      "windows": 70,
+      "ray_blocks": 107,
+      "batch_sizes": {},
+      "next_work_seconds": 1.895387554,
+      "next_resume_seconds": 5.514970254,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60439,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    }
+  ],
+  "medians_seconds": {
+    "synchronous": 9.970229701,
+    "batched": 10.699082123
+  },
+  "slowdown_percent": 7.310287163463225,
+  "paired_output_differences": [
+    3,
+    2,
+    3
+  ]
+}

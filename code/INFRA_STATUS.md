@@ -1,8 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-02。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-03。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-03：实验账本新增`SharedClaimedUnit.reserve_many`及显式`remote_budget_mode=batched`，
+整批持久提交后返回逐行编号，保留取消与计费语义。行为检查与实际查询核对通过，但真实模型对照没有净收益，
+因此仅保留诊断选项，默认同步保持。[主报告](../experiments/results/diagnostics/request_budget_batch_20261003/README.md)保存各阶段条件、重复值与失败。
 
 2026-10-02：增加版本化历史证据恢复入口，按清单恢复共享归档及保留文件的原始路径并逐项校验。
 8项临时fixture检查通过，真实旧结果9,422个文件的字节恢复核对通过；该能力只处理文件，模型请求为0。
