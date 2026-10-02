@@ -59,6 +59,18 @@ class BufferedEventTests(unittest.TestCase):
         self.assertNotIn('body', value)
         self.assertEqual(len(value['raw_output_sha256']), 64)
 
+    def test_compact_batch_and_guard_events_preserve_accounting_identity(self):
+        value = compact_event({'event':'remote_request_batch', 'rows':3,
+                               'first_attempt':7, 'last_attempt':9, 'reserve_ns':11,
+                               'status':'failed', 'stage':'request_observe', 'body':'private input'})
+        self.assertEqual((value['first_attempt'], value['last_attempt'], value['rows']), (7,9,3))
+        self.assertEqual((value['status'], value['stage']), ('failed','request_observe'))
+        self.assertNotIn('body', value)
+        guard = compact_event({'event':'remote_request_guard', 'attempt':7,
+                               'accounting_mode':'batched', 'status':'cancelled'})
+        self.assertEqual(guard['accounting_mode'], 'batched')
+        self.assertEqual((guard['attempt'], guard['status']), (7,'cancelled'))
+
 
 if __name__ == '__main__':
     unittest.main()

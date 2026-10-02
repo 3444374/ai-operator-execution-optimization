@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "scope": "local temporary-ledger behavior checks and offline historical evidence verification",
+  "source_base_commit": "69f0c849d561b4bf87b071f2d1c7400e733ed790",
+  "python": "3.12.6",
+  "test_count": 83,
+  "passed": 73,
+  "skipped": 10,
+  "skip_reason": "Daft and Arrow unavailable in the local interpreter",
+  "model_requests": 0,
+  "source_sha256": {
+    "code/src/experiments/batched_request_guard.py": "3596b70e501e4738979e1f6e5ef6e4f9c5f8fef5eb74aecfb96b75c8dc57c4a2",
+    "code/src/experiments/buffered_events.py": "f92017a9a82afbd9d717a6728dbe1df77b8d3ee61fc7b8298389c510d57db820"
+  },
+  "historical_restoration": {
+    "server-query": {
+      "schema": "semloom.evidence_storage.v2",
+      "result": "experiments/results/diagnostics/request_budget_batch_20261003",
+      "files_verified": 170,
+      "bytes_verified": 47522997,
+      "model_requests": 0
+    },
+    "real-query": {
+      "schema": "semloom.evidence_storage.v2",
+      "result": "experiments/results/diagnostics/request_budget_batch_20261003",
+      "files_verified": 179,
+      "bytes_verified": 47007569,
+      "model_requests": 0
+    }
+  },
+  "historical_fixture_analysis": {
+    "synchronous": 9.621217453,
+    "batched": 7.471077281
+  },
+  "historical_real_analysis": {
+    "synchronous": 9.970229701,
+    "batched": 10.699082123
+  }
+}

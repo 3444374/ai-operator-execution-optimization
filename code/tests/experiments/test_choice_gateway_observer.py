@@ -50,6 +50,11 @@ class ChoiceObserverTests(unittest.TestCase):
             guards = [e for e in events if e['event']=='remote_request_guard']
             self.assertEqual([e['attempt'] for e in guards], [1, 2])
             self.assertTrue(all(e['status']=='completed' for e in guards))
+            if mode == 'batched':
+                batches = [e for e in events if e['event']=='remote_request_batch']
+                self.assertEqual([(e['first_attempt'], e['last_attempt'], e['rows']) for e in batches],
+                                 [(1,2,2)])
+                self.assertTrue(all(e['accounting_mode']=='batched' for e in guards))
 
     def test_threaded_config_requires_the_remote_map_path(self):
         with self.assertRaisesRegex(ValueError, 'Ray Map'):
