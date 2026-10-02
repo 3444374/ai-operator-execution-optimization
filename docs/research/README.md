@@ -9,7 +9,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；含[数据执行与模型服务协同候选](优化方法依据.md#serving-cooperation-candidates)，实施与结果分别引用计划和报告 |
+| [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；含[模型服务协同](优化方法依据.md#serving-cooperation-candidates)与[多粒度/链路准入评估](优化方法依据.md#granularity-admission-assessment)，实施与结果分别引用计划和报告 |
 | [研究定位](研究定位.md) | 研究问题、最近邻覆盖范围、[机制采用条件](研究定位.md#execution-transfer-cards)与待证增量；题录、实现、实验和技术细节分别回到所属文档 |
 | `top15_ranked_papers.md` | 开题时期 Top 15 历史选目；当时 15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
