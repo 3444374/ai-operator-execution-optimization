@@ -78,7 +78,7 @@ scale ramp @ 冻结峰值并发 C_total=64；project_static × 9 scales × reps=
 ## 8. 下一步
 
 - **核心 unfinished 已完成**：4 路径峰值并发规模 ramp 闭环。
-- 并发扫掠（切片 A，`experiments/plans/full_grid_sweep_plan.md` §2.4）为**可选扩展**（回答饱和/过载点），非"未完成"补全；当时后续的 320-run 算子代价合同现已归档于 `experiments/plans/completed/operator_cost_profile_dual4090_formal_20260804.md`。
+- 并发扫掠（切片 A，`experiments/plans/archive/扩展参数矩阵.md` §2.4）为**可选扩展**（回答饱和/过载点），非"未完成"补全；当时后续的 320-run 算子代价合同现已归档于 `experiments/plans/completed/代价估计双卡采集_20260804.md`。
 - duckdb_ai 8192/10570 崩溃根因（§3.5 + `full_grid_sweep_plan.md` §5.2）仍待单独诊断（DuckDB-ai 扩展限）。
 
 ## provenance
@@ -114,3 +114,35 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` during-cell 
 - **能耗 J/1k-tok 8→21**（2048→10570，随 prefix-hit 降而升，更多真实 prefill FLOP/token）。
 
 **不能声称**：project vs bounded 的 running 横比（caliber 不同）；MFU 绝对值跨论文比（vLLM estimated_flops 启发式，保守）。
+
+本节合并原独立补充报告，数值、全部重复、失败说明与结论按原记录保留。
+
+<a id="scale-aggregate"></a>
+<a id="scale-aggregate-多卡-ramp-聚合规模-6410570mean-across-passed-reps"></a>
+## 规模聚合表
+| scale | arm | conc | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 64 | project_static | c32 | passed | 49934.6667 | 20.95% | 37.9267 | 71.0ms | 1.7807 | 0.95 | 32.8 | — | 3/3 |
+| 128 | project_static | c32 | passed | 47952.1 | 1.15% | 56.7967 | 63.7ms | 2.004 | 0.94 | 19.2 | — | 3/3 |
+| 256 | project_static | c32 | passed | 91407.4 | 2.08% | 103.92 | 52.6ms | 2.3487 | 0.96 | 24.3 | — | 3/3 |
+| 512 | project_static | c32 | passed | 86897.2333 | 0.87% | 136.2633 | 54.0ms | 3.0277 | 0.95 | 29.4 | — | 3/3 |
+| 1024 | project_static | c32 | passed | 83957.7333 | 1.94% | 242.7167 | 53.3ms | 2.4453 | 0.95 | 52.2 | — | 3/3 |
+| 2048 | project_static | c32 | passed | 76463.6667 | 2.15% | 238.0333 | 53.0ms | 5.2513 | 0.94 | 60.9 | — | 3/3 |
+| 4096 | project_static | c32 | passed | 42402.9 | 0.78% | 170.2367 | 141.1ms | 11.7727 | 0.66 | 88.2 | — | 3/3 |
+| 8192 | project_static | c32 | passed | 42287.5 | 0.31% | 161.2833 | 153.9ms | 23.5927 | 0.65 | 86.8 | — | 3/3 |
+| 10570 | project_static | c32 | passed | 41146.0 | 0.26% | 160.4033 | 155.1ms | 31.435 | 0.64 | 88.6 | — | 3/3 |
+
+<a id="scale-aggregate-效率与尾延迟75d-补齐mfu01-分数非-vllm-estimated_flops-保守估计"></a>
+### 效率与尾延迟（§7.5D 补齐；MFU=[0,1] 分数，非 %；vLLM estimated_flops 保守估计）
+
+| scale | arm | conc | MFU(frac) | ITL p95 | ITL p99 | TTFT p99 | decode | prefill | J/1k-tok |
+|---|---|---|---|---|---|---|---|---|---|
+| 64 | project_static | c32 | 0.134 | — | — | 98.9ms | 50.5ms | 41ms | 2.5433 |
+| 128 | project_static | c32 | 0.155 | — | — | 98.3ms | 54ms | 41.1ms | 2.7467 |
+| 256 | project_static | c32 | 0.222 | — | — | 81.7ms | 59.3ms | 38.7ms | 1.64 |
+| 512 | project_static | c32 | 0.245 | — | — | 79.4ms | 60ms | 39.7ms | 2.6833 |
+| 1024 | project_static | c32 | 0.242 | — | — | 82.8ms | 71.8ms | 39.7ms | 5.53 |
+| 2048 | project_static | c32 | 0.244 | — | — | 82.9ms | 78ms | 39.7ms | 6.5067 |
+| 4096 | project_static | c32 | 0.611 | — | — | 340.6ms | 158.5ms | 87.1ms | 17.7167 |
+| 8192 | project_static | c32 | 0.624 | — | — | 413.9ms | 182.2ms | 94.7ms | 18.6367 |
+| 10570 | project_static | c32 | 0.618 | — | — | 414.5ms | 187.7ms | 94.8ms | 19.45 |

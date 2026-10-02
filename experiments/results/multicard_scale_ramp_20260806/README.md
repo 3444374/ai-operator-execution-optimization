@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 > **⚠️ 订正注（2026-08-06，codex 审计）**：
-> 1. **身份**：duckdb_ai 是 harness 预切 + 2 独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），应标 **`harness_pre_split_diagnostic`**（[协议 §2.6](../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md)，非产品原生多 endpoint、不进产品主排名）。
+> 1. **身份**：duckdb_ai 是 harness 预切 + 2 独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），应标 **`harness_pre_split_diagnostic`**（[协议 §2.6](../../plans/reference/DuckDB对照.md)，非产品原生多 endpoint、不进产品主排名）。
 > 2. **8192/10570 归因收紧**：原 §5 称"某行答案 >64 token / 不是系统 bug / 不可用"过强——cap=64 门禁已证模型最大输出 57<64，故不能声称该行必然超长；单次观察不能声称确定性/非 bug/不可用。可声称"本次 cap=64 合同下未满足零错误门禁"；更像并发批处理偶发生成尾部风险。
 > 3. **aggregate 证据（已修正）**：aggregator 已加 rows_per_s fallback（summary.completed_count → requests.csv → gate.json result_rows）+ status 从 ramp_run.json；`ramp_aggregate.json` 已重新生成——duckdb 8192/10570 现正确标 **failed**，rows_per_s 恢复（87.76 / 86.07，不再 0）。本 README §4 的 failed 标注与之一致。
 > 4. **措辞**："统计等价"→"未检出显著差异"（1 rep/cell，无 TOST）。

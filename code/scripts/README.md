@@ -63,7 +63,7 @@ raw manifest 保留执行时旧路径作为不可变证据，README 中的复现
 
 ## 数据库原始输入与公共查询
 
-当前系统比较见[四路径计划](../../experiments/plans/completed/text_map_matched_comparison.md)。
+当前系统比较见[四路径计划](../../experiments/plans/completed/文本Map对比_20260930.md)。
 主表选择 `profile=main`（SemLoom Daft/Ray、direct、原生Ray、原生Daft），
 本地执行消融选择 `local-ablation`；旧记录默认 `legacy-four-paths`，评价不能更换profile。
 `python3 -m src.experiments.postgresql.text_map_candidates --table TABLE --rows 512
@@ -124,7 +124,7 @@ token 组另提供 `work_limit`；顶层提供固定 `context_tokens`、`model_r
 真实恢复时才去掉 `--preflight`。调用者提供已运行的隔离 PG/模型、已有且未使用的阶段账本、有限期限和外部进程监督；
 本模块不启动服务、不初始化额度。它检查账本剩余期限不超过声明阶段时长，每查询仍有期限；
 外部监督负责卡在准备或清理中的进程。阶段结束不启动下一阶段，失败保留证据且不重试。
-[研究问题、选点与解释规则](../../experiments/plans/data_organization_batching.md#m1-throughput-platform)。
+[研究问题、选点与解释规则](../../experiments/plans/数据组织.md#m1-throughput-platform)。
 
 
 `experiments/database_queries.py`提供`prepare-movie`、`prepare-squad`、`install`、`run`。
@@ -167,7 +167,7 @@ Movie schema v2分别存执行行号与原始reviewId，重复原始ID不去重�
 复用原 SQuAD importer 的官方文件哈希/行数检查与解析器，保留旧 workload 的单消息语义；
 新身份 `squad_v11_pg_map_v1` 明确采用 Map 的 system/user 双消息。按完整 context 分组后，
 生成互不重叠的 tuning/evaluation 子集、`manifest.json` 与只有 ID/input_text 的两份 CSV。
-真实 source/model/SQL 资格与额度见[当前计划](../../experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)。
+真实 source/model/SQL 资格与额度见[当前计划](../../experiments/plans/archive/数据组织历史方案_20260927.md#当前-pg-单-map-数据执行切片)。
 
 ```sh
 python3 code/scripts/baselines/squad_pg_map_pilot.py prepare \
@@ -420,16 +420,16 @@ PG按字节预算检查窗口存储，不再限定为64项。该路径使用v6�
 --max-connections 16`；默认输入/结果字节配置按这32行预留。PG管理员可开启
 `semloom_pg.enable_query_job_window=on`并设`provider_window_tasks=4`，使query-job生成Map使用窗口4；
 两flow查询各分得4行，Filter→Map仍遵守原有child安全预读判断。当前token组织配置仍限单Job Map。
-实施与验证范围见[工作包E](../../experiments/plans/data_organization_batching.md#work-package-e)。
+实施与验证范围见[工作包E](../../experiments/plans/archive/数据组织历史方案_20260927.md#work-package-e)。
 查询登记还在总连接上限内保留一个有期限的握手入口：双流查询至少需要4个socket名额。
 `ConnectionCapacity`统一记录查询承诺与standalone占用，未打开的流名额不能借给其它工作。
 帧期限从已登记流的首字节开始计算；帧间空闲由PG查询寿命管理。未登记与语义open仍有期限，
 控制连接仅等待EOF，额外数据直接拒绝。
-见[详细设计](../../experiments/plans/postgresql_query_job_design.md)及
+见[详细设计](../../experiments/plans/数据库接入.md#query-job)及
 [验证记录](../../experiments/results/scheduling/query_job_20260909/README.md)。
 独立生产器可用`engine.register_job(label, budget)`取得能力句柄，并以`engine.open(..., job=handle)`
 打开多个流；由控制线程调用`engine.advance()`，各流`advance()`只交付结果。字符串标签不能加入Job。
-[多Job设计](../../experiments/plans/semloom_multisession_design.md)说明资源归属、错误范围和待实现项。
+[多Job设计](../../experiments/plans/增量执行.md#multi-query)说明资源归属、错误范围和待实现项。
 
 v5过渡桥接 `--incremental-map-window-one` 已移除。单行窗口使用同一条v6路径：
 `--incremental-map --max-held-tasks 1 --max-active-requests 1`，数据库同时设置
@@ -498,7 +498,7 @@ Formal results use exit 0 for all required phases/cases passing, 1 for valid fai
 measurement, and 3 for runner/preflight failure. Interrupts preserve available evidence and propagate.
 Fault/recovery connections use the observer's optional fixture barrier that waits up to five seconds for both endpoints
 to be observed before releasing the handshake. Pressure timing is unchanged; these fault timings are not performance evidence.
-See the [Map contract](../../experiments/plans/postgresql_semmap_generation_contract.md) for thresholds and
+See the [Map contract](../../experiments/plans/生成算子.md) for thresholds and
 current authorization. Formal 3×2000 remains unavailable until a valid current diagnostic and separate authorization.
 
 The fixed-model observer can serve Filter or Map using the same implementation:
@@ -522,7 +522,7 @@ only to explain their original runs; future checks must not import their machine
 `experiments/run_choice_resource_checks.py` 是内部、仅限 Linux 的 fixture 资源验证入口。它使用指定的
 PG18.3 安装创建独立集群，测旧/新配置、取消恢复和阻塞 DNS；不启动或调用真实模型。
 运行前遵循 runtime preflight，并使用新的仓库外产物目录，采样与判定条件见
-[choice 专项计划 C.5](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)。
+[choice 专项计划 C.5](../../experiments/plans/completed/选择算子接入_20260902.md#c5-对照请求预算与资源保证)。
 
 ```bash
 python code/scripts/experiments/run_choice_resource_checks.py \
@@ -540,7 +540,7 @@ choice 入口显式提供默认的 100 次预算，其他运行由外部配置�
 两个 NULL 对照。它要求已有持久 ledger；真实模式核对 live service、模型文件及继承参数，fixture 模式
 必须显式指定。记录实际 HTTP JSON、raw completion、SQLSTATE、EXPLAIN 行数/usage，以及前后身份；
 仅删除 choice 字段后仍有值或类型差异则拒绝通过。程序不启动模型、不创建真实预算、不读取 held-out，
-也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)
+也不评定标签质量；先按同一 [C.5 计划](../../experiments/plans/completed/选择算子接入_20260902.md#c5-对照请求预算与资源保证)
 完成 preflight、模型服务与账本核验，再使用 `--help` 中的路径参数运行。
 
 ## Exact SemFilter reference calibration
@@ -555,7 +555,7 @@ exact reference，不产生第二物理路径。接口和使用条件见
 
 | 工作 | 主要脚本与事实入口 |
 |---|---|
-| SAOR 机制与原生系统检查 | `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py`、`experiments/run_saor_*.py`；当前状态及各检查的作用见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/experiment_status_and_gaps.md) |
+| SAOR 机制与原生系统检查 | `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py`、`experiments/run_saor_*.py`；当前状态及各检查的作用见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/archive/进度汇总_20261001.md) |
 | 图像与多 Job 画像 | `experiments/run_image_*.py`、`profiling/profile_clip_*.py`、`analysis/summarize_image_*.py`；身份与可比性见[baseline 说明](../src/baselines/README.md)和[图像结果](../../experiments/results/README.md) |
 | 开题实验汇总 | `analysis/summarize_opening_*.py`、`baselines/opening_database_e2e_matrix.py`；按[开题材料](../../docs/archive/opening/README.md)和对应结果报告读取，不从汇总脚本推断新结论 |
 

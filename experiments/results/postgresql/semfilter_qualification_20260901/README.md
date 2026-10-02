@@ -21,7 +21,7 @@
 
 ## 1. 目的、配置与实验设计
 
-唯一实施来源为[架构计划工作包五的小切片](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md)。
+唯一实施来源为[架构计划工作包五的小切片](../../../plans/系统架构.md)。
 代码与请求前登记的样例/要求均绑定 `6c111b24`；原失败采集 `c77c1441` 和原始证据保持不变。
 
 - 秩检查走公开 `build_reference_calibration()`，以旧提交与修复提交处理同一四行合成输入，不写 artifact。
@@ -149,3 +149,14 @@ Python 60/60（45+5+10）；见 [最终资格](raw/final-rank/qualification.json
 组合为何在明确反例上仍输出 UNKNOWN，并用独立样例检验任何改进。不得放宽严格 parser、改写预期标签
 来通过测试、偷偷换模型重跑原校准，或用这 9 条工程样例宣称真实语料准确率。三项全部具备资格前，
 不恢复整轮采集，不发布真实 artifact，不开始第二 physical path。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL exact SemFilter reference calibration（2026-09-01）。
+
+[校准前独立小切片](README.md)：builder 拒绝共线观测，
+PG18.3 多列统计将普通谓词估计从 8 修正为 64；choice 格式 30/30，但两种配置的语义预期均只符合
+12/27。reference 资格未通过，整轮采集继续暂停；PG18.3 回归 1/1、TAP 437/437、Python 59/59 通过。

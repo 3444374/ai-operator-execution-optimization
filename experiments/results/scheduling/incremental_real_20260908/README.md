@@ -7,7 +7,7 @@
 
 This verifies the execution context that will host data organization and scheduling policies. It extends
 [the controlled-core checks](../incremental_session_20260908/README.md) according to
-[the current design](../../../plans/semloom_incremental_session_design.md#12-有界异步传输与真实核心验证).
+[the current design](../../../plans/增量执行.md#session-12-有界异步传输与真实核心验证).
 Source is `e84d308d` plus the two file hashes in [source provenance](raw/source-identity.json).
 The Linux test source, real-run source and final local candidate match across all
 [618 non-Markdown source/test files](raw/source-hashes.json).

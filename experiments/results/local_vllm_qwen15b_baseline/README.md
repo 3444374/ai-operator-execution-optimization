@@ -745,7 +745,7 @@ figures/data/backup/b25_local_vllm_interference_sweep_bulk_tradeoff.svg
 
 ## Remaining Formal Experiments
 
-Status after 2026-07-20 audit (see `experiments/plans/experiment_status_and_gaps.md` for full analysis):
+Status after 2026-07-20 audit (see `experiments/plans/archive/进度汇总_20261001.md` for full analysis):
 
 ### Completed
 

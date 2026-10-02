@@ -465,7 +465,7 @@ worker 仍不能被当作多个 GPU endpoint。上述文本遗留项在 image-fi
    deterministic golden 接线、共享 fixed-endpoint adapter 已实现；Map 的真实模型验收仍待完成。accepted-prefix、多在途、乱序 completion、
    增量 SemLoom session 和 SemLoom scheduling adapter 尚未实现；
 9. 以上缺口的实施顺序和完成标准见
-   [`../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
+   [系统架构](../experiments/plans/系统架构.md)，
    本文不复制未来设计。
 
 ### 条件性恢复：image path-B + A+B
@@ -655,11 +655,11 @@ start、response headers、body complete、headers wait 和 body read。校准�
   不返回 output usage 时不同 arm 的吞吐口径不一致；Daft barrier 仍不能冒充 request P99。
 - 新复测按 64 行 validity → 512 行独立 calibration → 4,096 held-out、至少 60 秒、
   1 warmup + 3 interleaved repeats 执行。完整合同见
-  `experiments/plans/completed/text_native_baseline_rerun_20260802.md`。后续 capability、单 Job 1+3 和多 Job
+  `experiments/plans/completed/文本原生对照_20260802.md`。后续 capability、单 Job 1+3 和多 Job
   观察矩阵均已完成；真实状态以 `experiments/results/README.md` 和 evidence registry 为准。
 
 完整顺序与放弃条件见
-`experiments/plans/reference/literature_driven_pipeline_optimization_guide.md`。
+`docs/research/优化方法依据.md#workflow`。
 
 ### Image-first pivot 后的多 GPU、多模态与代价估计
 

@@ -115,4 +115,4 @@ runtime env `/root/autodl-tmp/4ep-1.5b.env`：`MODEL_PATH=Qwen2.5-1.5B-Instruct`
 1. **隔离消融**：4-endpoint/7B 或 2-endpoint/1.5B，把 endpoint 数与 model size 解耦，确认 +5.9% 中有多少来自「更多 endpoint」、多少来自「更小 KV」。
 2. **补 per-arm APC 命中率指标**：在 runner resources 采样中增加 vLLM `prefix_cache_hit_rate`（Prometheus 或 engine log 解析），使 cache 相关实验能直接归因。
 3. **连接受 Mooncake/共享 KV cache 方向**：本实验的高淘汰 regime 是该方向的价值验证场景（待用户决定是否启动 Phase 0 设计）。
-4. 同步 `experiments/plans/experiment_status_and_gaps.md` 与 `PROJECT_OUTLINE.md`：prefix 方向状态从「收口/中性」改为「2-ep/7B 中性、4-ep/1.5B 有条件 +5.9%，待隔离消融」。
+4. 同步 `experiments/plans/archive/进度汇总_20261001.md` 与 `PROJECT_OUTLINE.md`：prefix 方向状态从「收口/中性」改为「2-ep/7B 中性、4-ep/1.5B 有条件 +5.9%，待隔离消融」。

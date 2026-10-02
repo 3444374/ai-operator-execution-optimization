@@ -2,7 +2,7 @@
 
 > 本项目按**数据模态**分部署文档：文本（`text_serving.md`）、**图像（本篇）**，后续 video/audio 各起一篇。各模态共享同一套"调度策略模态无关"框架（见 `deploy/autodl/README.md` 总览），本篇只写图像独有部分。
 > **共享平台 setup**（实例/venv/network_turbo/代码同步/模型下载方法/PG）在 `deploy/autodl/README.md` §1–§7，本篇不重复。
-> 历史实验合同在 `experiments/plans/completed/image_clip_workload_lock_20260731.md`；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
+> 历史实验合同在 `experiments/plans/completed/图像工作负载_20260731.md`；本篇只讲"引擎是什么 + 在服务器上怎么部署/跑"。
 
 ## 1. 这个"模态"是什么
 
@@ -397,7 +397,7 @@ serialization 的硬件级 attribution。
 `batch_service` 也不是纯 GPU service。因此“分阶段瓶颈画像已完成”的说法撤回。
 
 正式判定按
-`experiments/plans/motivation/image_host_data_path_bottleneck.md` 执行 R0→R4 表示阶梯：
+`experiments/plans/archive/图像链路诊断.md` 执行 R0→R4 表示阶梯：
 GPU-resident compute ceiling → pinned H2D → pageable/Ray tensor → in-memory JPEG
 preprocess → PostgreSQL/Daft operator E2E。先跑无 CUDA 同步的正式曲线，再只对
 代表点启用 `--detailed-stage-timing` 并用 CUDA events/Nsight 短窗口复核。
@@ -525,7 +525,7 @@ Daft fused、Daft staged、Ray Data staged 分别独立校准，再在相同物�
 做同一 workload、同一随机块顺序的正式比较。
 
 完整的长任务阶段、选择规则、formal 对照和 stop conditions 只在
-`experiments/plans/completed/image_clip_workload_lock_20260731.md` §10 维护；本节只负责服务器
+`experiments/plans/completed/图像工作负载_20260731.md` §10 维护；本节只负责服务器
 启动、监控和恢复命令。
 
 Ray Data 初始 5K screening 找到 `cpu_workers=8, batch=64` 后，使用下面的原生图交叉
@@ -561,7 +561,7 @@ unique×2 logical passes。batch512 相对 batch64 formal 中位数改善不足 
 | scoop 边界 | prefix/state-aware 有强先验，Daft/PolarDB/Ray Data 已覆盖 staged overlap | 不预设“数据搬运空白”；先以 staged baseline 和 R0→R4 证据决定剩余增量 |
 
 ## 7. 关联文档
-- 历史实验 design + go/no-go 门禁：`experiments/plans/completed/image_clip_workload_lock_20260731.md`
+- 历史实验 design + go/no-go 门禁：`experiments/plans/completed/图像工作负载_20260731.md`
 - 方向 scope（DB↔GPU Daft bridge，提案）：`docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`
 - 评估方法（recall@10、baseline 矩阵）：`docs/research/evaluation_metrics_survey_20260731.md`
 - 文本 track（vLLM）部署：`deploy/autodl/README.md` §8

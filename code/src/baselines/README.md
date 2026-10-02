@@ -8,7 +8,7 @@
 `text/frameworks/daft_pg_http.py`使用Daft0.7.21原生SQL reader与单行异步batch UDF，
 由Daft拥有执行并行；它只复用同语义HTTP工作函数与观测，不接SemLoom执行核心。
 该路径不是旧`daft_prompt.py`的内置prompt结果。主表、消融及语义系统缺项见
-[当前覆盖审计](../../../experiments/plans/baseline_reference.md#current-map-coverage)。
+[当前覆盖审计](../../../experiments/plans/reference/对照规范.md#current-map-coverage)。
 原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
 [受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
 
@@ -42,4 +42,4 @@ router、flush、shared credit 或自定义 actor pool 的代码属于项目方�
 `src/scheduling/` / `src/observability/profiling/`，不能倒流进 native baseline。
 
 复测合同见
-`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。
+`experiments/plans/completed/文本原生对照_20260802.md`。

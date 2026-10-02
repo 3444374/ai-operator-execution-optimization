@@ -5,7 +5,7 @@
 
 ## 目的与范围
 
-按[四 C 专项 C.5](../../../plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)检查新 profile
+按[四 C 专项 C.5](../../../plans/completed/选择算子接入_20260902.md#c5-对照请求预算与资源保证)检查新 profile
 是否在已声明规模下回收本地资源，为后续受限真实服务检查准备持久预算工具。它是执行基础的工程验证，
 不是语义质量、模型性能、成本校准或多算子优化实验。
 
@@ -110,3 +110,14 @@ PYTHONPATH=code <driver-python> code/scripts/experiments/run_choice_resource_che
 后续工作以主计划为准：完整工程对照后先做
 真实 Map 与必要公共整理，再扩展可组合执行/有界多会话（含 Filter → Map）。没有实现这些能力，也没有通过
 Filter 质量、真实成本校准或第二 physical path；现有分层不需要因此重做。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL choice profile（2026-09-02）。
+
+[资源与预算工具验证](README.md)：`4464fe9b` 的受控 PG18.3
+fixture 检查通过，含 v3/v4 各 5,164 次、取消/阻塞 DNS 各 10 次与恢复；本地 91/91。
+复用旧已验证二进制，未重跑 TAP，真实模型请求为 0；多会话仍是待实现能力。失败和完整时间序列保留。

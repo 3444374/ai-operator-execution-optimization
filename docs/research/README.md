@@ -9,6 +9,7 @@
 
 | 文件 | 用途 |
 |---|---|
+| [优化方法依据](优化方法依据.md) | 策略选择、反证条件与从文献到最小实验的流程；实施与结果分别引用计划和报告 |
 | `knowledge_hub.md` | 项目知识总汇：机制、文献地图、研究空白与[数据执行迁移条件](knowledge_hub.md#execution-transfer-cards)；不维护当前代码状态或实施顺序 |
 | `top15_ranked_papers.md` | 开题时期 Top 15 历史选目；当时 15/15 为严格 CCF-A 正式 research paper |
 | `ai_operator_literature_inventory.md` | Top 15、核心补充、题录勘误、baseline 与代价估计文献清单；KEN 已加入待精读，题录与摘要已核验，全文及 artifact 分别待核查 |
@@ -17,7 +18,7 @@
 | `精读文献笔记/` | 精读笔记权威库；当前有十八篇主笔记、160 张论文原图裁剪件。新增 [SPEAR 精读](精读文献笔记/spear_cidr2026/spear_cidr2026.md)，按 CIDR 2026 vision/early-design paper 解读，未新增论文原图裁剪件。IMLane 使用正式 PVLDB 2026 版本，正文 Figure 1–15 已加入对应讲解位置；Kalypso 继续按 arXiv 核心补充管理。这三篇均未并入原十五篇横向速览或已定稿开题正文。各篇选图与版本说明见目录 README 和 `figures/audit/` |
 | `reference/REFERENCE_INDEX.md` | 历史题录与用途索引；当前工作区可解析实体为 Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane 七份 |
 | `existing_ai_operator_execution_chains.md` | 现有数据库 AI 算子执行链路对比 |
-| `sema_native_semantic_operator_architecture_reference_20260827.md` | PostgreSQL 语义算子的理论与迁移审计：Sema/Cortex 说明数据库语义所有权，LOTUS 提供 reference/optimized algorithms，IMLane/Kalypso 提供后续执行参照；工程实施另看 `../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` |
+| `sema_native_semantic_operator_architecture_reference_20260827.md` | PostgreSQL 语义算子的理论与迁移审计：Sema/Cortex 说明数据库语义所有权，LOTUS 提供 reference/optimized algorithms，IMLane/Kalypso 提供后续执行参照；工程实施另看 [系统架构](../../experiments/plans/系统架构.md) |
 | [语义前缀候选审查](semantic_prefix_reuse_design_audit_20260903.md) | 专项研究辅助材料：前缀/表示的源码事实、最近邻反例、瓶颈推导、质量条件与创新性验证；不是新的架构主计划或已运行实验 |
 | `lotus_postgresql_execution_layer_fit_20260821.md` | PG、LOTUS 与 SAOR 的分层审计：LOTUS 作语义前端候选/独立系统 baseline，不作为当前方法的强制执行依赖 |
 | `vllm_continuous_batching_reference.md` | vLLM continuous batching、KV/cache、metrics 和集成边界 |
@@ -70,7 +71,7 @@
   Llumnix 是动态负载表征参考。
 - 每个 arm 独立 calibration；不要求无限调优，但必须合理强并进入平台期。
 
-完整 baseline 矩阵见 `../experiments/plans/baseline_reference.md`。
+完整对照要求见[对照规范](../../experiments/plans/reference/对照规范.md)。
 
 ## 维护规则
 

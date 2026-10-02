@@ -1,7 +1,7 @@
 # Consumer deadline fix and v5 incremental bridge retirement
 
 Status: deadline regression fixed; v5 incremental window-one bridge retired after qualification.
-Baseline: `e803e659`; the [plan](../../../plans/semloom_incremental_session_design.md#20-consumer-deadline-publication-and-window-one-bridge-retirement-2026-09-08)
+Baseline: `e803e659`; the [plan](../../../plans/增量执行.md#session-20-consumer-deadline-publication-and-window-one-bridge-retirement-2026-09-08)
 records the ordered checks. Synchronous semantic references and wire v5 remain supported.
 
 ## Deadline correction

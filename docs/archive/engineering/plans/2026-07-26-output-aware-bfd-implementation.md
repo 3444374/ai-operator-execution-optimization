@@ -1660,7 +1660,7 @@ git commit -m "test: validate output-aware BFD contracts"
 - Create: `experiments/results/output_aware_bfd_20260726/*.csv`
 - Create: `experiments/results/output_aware_bfd_20260726/README.md`
 - Modify: `experiments/results/README.md`
-- Modify: `experiments/plans/data_organization_batching.md`
+- Modify: `experiments/plans/数据组织.md`
 - Modify: `code/README.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_OUTLINE.md` only if the repeated evidence changes a project conclusion
@@ -1869,7 +1869,7 @@ runs and the reported metrics support that statement. Do not call
 - [ ] **Step 7: Update project records and run final verification**
 
 Update the listed project files and register every new artifact. Because
-`experiments/plans/data_organization_batching.md` is a knowledge file, remind
+`experiments/plans/数据组织.md` is a knowledge file, remind
 the user about Wiki synchronization at session close; do not sync
 automatically.
 

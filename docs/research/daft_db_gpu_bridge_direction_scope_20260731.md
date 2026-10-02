@@ -2,14 +2,14 @@
 
 日期：2026-07-31
 状态：**方向已 validate，贡献角度未锁**（冷启动 parked）——待导师/学长确认后定。
-来源：学长反馈（`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-integration-questions` §5）+ 工作流 `w6xclfb0g`（Daft 内部核实 + 三痛点先验 + workload fit）+ 之前 scoop（`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-integration-questions` §5.5）。
+来源：学长反馈（`experiments/plans/系统架构.md#company-integration-questions` §5）+ 工作流 `w6xclfb0g`（Daft 内部核实 + 三痛点先验 + workload fit）+ 之前 scoop（`experiments/plans/系统架构.md#company-integration-questions` §5.5）。
 不改题目；本文是 academic-pipeline Stage 1 (RESEARCH) 的 scoped 输出。
 
 > **2026-08-01 证据边界修正**：图像 workload 已锁，但“数据搬运是主瓶颈”和
 > “执行优化是结构性空白”均未被证明。PolarDB/Daft 官方已提供按算子声明资源的
 > staged CPU→GPU 流水线；当前 1.296×/1.138× 只相对 fused UDF。本文的历史 scope
-> 讨论保留，但实验判决以 `experiments/plans/motivation/image_host_data_path_bottleneck.md` 和
-> `experiments/plans/completed/image_clip_workload_lock_20260731.md` 的历史 fused/staged 矩阵为准。
+> 讨论保留，但实验判决以 `experiments/plans/archive/图像链路诊断.md` 和
+> `experiments/plans/completed/图像工作负载_20260731.md` 的历史 fused/staged 矩阵为准。
 
 ---
 
@@ -156,7 +156,7 @@ DB bytes、CPU processor、host copy/H2D 和 GPU forward stage，而不是预注
 baseline 之上，work-aware/state-aware/multi-job 上游调度仍有可复现增量，不能再写
 “执行优化是空白”。
 
-**性能节报什么（摘要；完整合同见 `experiments/plans/baseline_reference.md`）**：
+**性能节报什么（摘要；完整合同见 `experiments/plans/reference/对照规范.md`）**：
 
 | 项 | 指标 | 角色 |
 |---|---|---|

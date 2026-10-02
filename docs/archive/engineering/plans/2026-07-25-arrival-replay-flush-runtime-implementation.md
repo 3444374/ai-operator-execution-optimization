@@ -269,7 +269,7 @@ git commit -m "test: validate arrival replay through daft and ray"
 - Modify: relevant `PROJECT_INDEX.md#内容与文档职责` walkthrough
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 
 - [ ] **Step 1: Document semantics and claim boundary**
 
@@ -308,7 +308,7 @@ git diff --stat main...HEAD
 - [ ] **Step 5: Commit Task 5**
 
 ```powershell
-git add code/README.md code/scripts/README.md learning PROJECT_INDEX.md PROJECT_LOG.md experiments/plans/experiment_status_and_gaps.md
+git add code/README.md code/scripts/README.md learning PROJECT_INDEX.md PROJECT_LOG.md experiments/plans/archive/进度汇总_20261001.md
 git commit -m "docs: define arrival replay experiment gate"
 ```
 

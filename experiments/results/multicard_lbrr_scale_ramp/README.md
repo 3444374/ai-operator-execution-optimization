@@ -75,3 +75,20 @@
 - 代码：`multicard_scale_ramp.py`（lb_rr cell + identity sidecar）。
 
 > **诚实边界**：**1 rep/cell diagnostic**（非 formal）；**身份** `comparison_role=gateway_system_diagnostic`（**主字段=系统角色**，协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx → 2 vLLM；`component_comparison_role=database_product_native_baseline`；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm）；**uncontrolled-cache**（`warmup_per_cell=false` + 规模嵌套 + 前跑 Phase 2 → 缓存继承，**不能 vs bounded ramp 直接比、非 cache-controlled scale curve、不引用跨四臂 cache-thrash**）；**ttft 口径**（shard summary 无 service counter，用 ttft 两后端 Σ delta）；**raw 已提交裁剪版**（6f6ef75，summary/ramp_run/ttft，requests.csv 排除）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**坍塌归因未证实**（疑似，无 service-counter）；**身份机器闭环**：identity sidecar 由新 driver（本轮 commit）写 `comparison_role`（系统主）+ `component_comparison_role`，历史 raw（6f6ef75）无 sidecar → aggregate `comparison_role=null`，报告层身份标注 standalone，重跑才机器闭环。
+
+本节合并原独立补充报告，数值、全部重复、失败说明与结论按原记录保留。
+
+<a id="scale-aggregate"></a>
+<a id="scale-aggregate-多卡-ramp-聚合规模-6410570mean-across-passed-reps"></a>
+## 规模聚合表
+| scale | arm | conc | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 64 | lb_rr | c64 | passed | 17452.2 | 0.0% | 81.19 | 67.9ms | — | 0.95 | — | 12.5 | 1/1 |
+| 128 | lb_rr | c64 | passed | 26773.9 | 0.0% | 150.28 | 52.8ms | — | 0.94 | 28.5 | 25.0 | 1/1 |
+| 256 | lb_rr | c64 | passed | 50186.4 | 0.0% | 225.93 | 54.6ms | — | 0.96 | 26.6 | 29.8 | 1/1 |
+| 512 | lb_rr | c64 | passed | 61657.8 | 0.0% | 282.47 | 52.3ms | — | 0.96 | 31.6 | 38.3 | 1/1 |
+| 1024 | lb_rr | c64 | passed | 68938.5 | 0.0% | 303.96 | 51.1ms | — | 0.96 | 54.5 | 57.5 | 1/1 |
+| 2048 | lb_rr | c64 | passed | 72934.4 | 0.0% | 344.7 | 51.0ms | — | 0.96 | 70.6 | 70.6 | 1/1 |
+| 4096 | lb_rr | c64 | passed | 50013.4 | 0.0% | 228.93 | 75.7ms | — | 0.76 | 84.8 | 83.6 | 1/1 |
+| 8192 | lb_rr | c64 | passed | 39898.0 | 0.0% | 165.41 | 158.4ms | — | 0.61 | 91.3 | 90.9 | 1/1 |
+| 10570 | lb_rr | c64 | passed | 37966.4 | 0.0% | 157.85 | 162.0ms | — | 0.60 | 90.1 | 88.8 | 1/1 |

@@ -5,7 +5,7 @@
 2026-09-20：按用户附件完成研究设计及本地实验编排修改。研究对象保持为
 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 本轮真实模型、HTTP、PG 查询均为 **0 次**；没有连接服务器或恢复暂停的模型运行。
-当前设计以[吞吐平台附近的在途工作与资源代价](../../../plans/data_organization_batching.md#m1-throughput-platform)为准。
+当前设计以[吞吐平台附近的在途工作与资源代价](../../../plans/数据组织.md#m1-throughput-platform)为准。
 
 ## 为什么调整
 

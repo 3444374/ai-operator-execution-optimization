@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-02：实验方案与报告收敛
+
+- 现行顶层方案16份收敛为系统架构、生成算子、数据库接入、增量执行、数据组织与查询调优6份；方案名称使用简明中文，历史方案按用途与原日期定位。
+- 合并调用绑定与查询归属、会话与多查询及多行方法设计；数据组织的现行假设与已结束运行清单分开，旧矩阵与进度汇总进入历史区。方案目录Markdown从47份减到38份。
+- 对照规范与报告核对归reference，优化方法依据归docs/research，历史工程映射与写回推演归docs/archive；现行状态从代码与结果核对，不继续维护平行进度汇总。
+- 11份独立聚合表、逐场景审计、输出审阅和旧存放说明归入对应主报告或证据台账；结果首页由553行缩为102行，36段已有内容直接引用，63段独有说明归回事实文档。
+- 文档独立备份565份逐项核对；51份迁移或合并材料的17,563条正文要求、220份结果文档正文、99段原首页内容及4,633份科学文件保留。14处源码变更仅更新说明中的方案路径，Python语法树与C非注释内容一致。
+- 本地链接及章节定位2,953条、用词、208份变更内容的隐私与diff检查通过；本次只整理已有材料，模型调用0。规则分别补充方案命名与归属、单一主报告及导航职责。
+
 ## 2026-10-02：目录职责收敛与实验命名整理
 
 - 顶层内容统一为code、deploy、data、experiments、docs与figures；研究材料进入docs/research，历史工程、开题与旧PPT工程进入docs/archive。
@@ -105,7 +114,7 @@
 - 公开339份文本脱敏压缩并恢复核验，343份原始材料留仓库外备份；源码准备失败与控制器失败保留。
   PG/Ray/HTTP、worker及原ACL清理核对通过，模型POST0。
 - [结果](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)和
-  [计划](experiments/plans/text_map_preparation_tuning.md)按阶段区分诊断与真实复测。
+  [计划](experiments/plans/查询调优.md)按阶段区分诊断与真实复测。
 - 后续真实清单14条查询/11,312次后因控制器提前检查剩余时间停止，缺失重复不补造，失败原件单独保留。
   修订时间检查，3项通过；用户新授权完整12,336次与20分钟。启动模块导入失败为0POST且尚无账本，
   修订准备先以实际运行用户验证导入，沿用该授权的原截止时间。
@@ -128,7 +137,7 @@
 - 817份源码前后SHA一致，89项相关及2项记录器检查通过；126个记录PID与创建时间核对无活动残留，
   四次模型进程组正常结束，PG/Ray/GPU空闲与两处父目录ACL恢复原值核对通过。
 - 8,224份小事件与合并记录逐字节一致，公开归档只保留合并版；缓存、数据库数据、runtime env和连接信息不提交。
-  [计划](experiments/plans/text_map_preparation_tuning.md)与[完整结果](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)保存失败、原值及范围。
+  [计划](experiments/plans/查询调优.md)与[完整结果](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)保存失败、原值及范围。
 
 ## 2026-09-30：准备诊断、worker复用与推送恢复
 
@@ -144,7 +153,7 @@
   修订诊断HTTP队列后独立清单通过，不认定旧模型故障根因。全部诊断累计21079次fixture，真实模型0次。
 - 201个采样PID及创建时间核对，活动残留0；PG/Ray/HTTP结束，两处父目录ACL恢复原值，GPU计算进程为空。
   1733份选择文本脱敏后压缩为约6.56MB并逐项恢复核验；可重建数据库二进制与runtime文件留在仓库外完整原始归档。
-- [计划](experiments/plans/text_map_preparation_tuning.md)与[结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
+- [计划](experiments/plans/查询调优.md)与[结果](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
   登记全部重复、失败、源码身份及适用范围；剩余首批处理观测与真实模型复测清单。
 
 ## 2026-09-30：文本Map分支审查与证据压缩
@@ -220,7 +229,7 @@
 
 ## 2026-09-28：转入文本 Map 四路径匹配比较
 
-- 新增[当前比较计划](experiments/plans/completed/text_map_matched_comparison.md)，明确两种 SemLoom 后端、PG-source direct 与原生 Ray Data 的角色、输入、计时、有限选点和独立评价要求。
+- 新增[当前比较计划](experiments/plans/completed/文本Map对比_20260930.md)，明确两种 SemLoom 后端、PG-source direct 与原生 Ray Data 的角色、输入、计时、有限选点和独立评价要求。
 - 统一总纲、计划入口、状态摘要、导航和方向速览；旧 M1 平台未选点及原始证据保持不变，原方法实验不再作为所有系统比较的前置项。
 - 更正计划入口中真实 CLIP 尚未运行的旧说法，指向已有 151 次前向检查；不改写旧报告。
 - 已发现原生 Ray 单查询启动与常驻 PG 测量不能直接混排；在新分支 `codex/text-map-matched-comparison` 增加显式共享 Ray 连接和离线有限选点，复用既有查询、记录与评价。
@@ -577,7 +586,7 @@
 - ShareGPT 暂停当次摘要配置，SQuAD 继续作为后续主输入，SemBench Movie 原始/派生任务已明确写入计划。
 - 独立分支 `codex/data-evaluation-harness`，未合入 main；实际 PG/tokenizer/控制器接入和质量/性能仍待验证。
 - 证据：[本地工具修复](experiments/results/postgresql/data_evaluation_harness_20260910/README.md)；
-  计划：[数据执行切片](experiments/plans/data_organization_batching.md#首次尝试后的决定)。
+  计划：[数据执行切片](experiments/plans/archive/数据组织历史方案_20260927.md#首次尝试后的决定)。
 
 ## 2026-09-09 收敛数据执行实验并完成首次真实数据尝试
 
@@ -592,7 +601,7 @@
 - 83份私有原始材料已核验并备份回本机；公开证据剔除消息/输出正文和连接身份，模型/PG/gateway均清理。
 - 根入口、导航、总纲、主计划、状态、脚本说明和证据台账已同步；下一步SQuAD容量画像，双卡性能前验证
   两个TP1副本的endpoint接入和路由。更改在工作分支维护，尚未合入 main，也未修改项目长期规则。
-- [当前切片](experiments/plans/data_organization_batching.md#当前-pg-单-map-数据执行切片)、
+- [当前切片](experiments/plans/archive/数据组织历史方案_20260927.md#当前-pg-单-map-数据执行切片)、
   [真实尝试与全部限制](experiments/results/postgresql/data_execution_pilot_20260909/README.md)。
 
 ## 2026-09-09 有界多行方法驱动合入main
@@ -608,7 +617,7 @@
 - 完整调度361项、最终专项55项（有重叠）通过。首次真实检查0POST失败，缺TaskInfo；补齐typed身份/工作量及组织回归。失败诊断文本改为有界类型名。
 - 两轮成功真实检查分别10与2次POST，累计12次，模型/方法/核心资源已回收；保留失败与独立账本。
 - ShareGPT切片已确定选样、SQL、评价与静态对照，尚未运行。代码尚未合并main。
-- [设计](experiments/plans/bounded_method_driver.md)、[验证与限制](experiments/results/scheduling/method_driver_20260909/README.md)。
+- [设计](experiments/plans/增量执行.md#method-driver)、[验证与限制](experiments/results/scheduling/method_driver_20260909/README.md)。
 
 
 ## 2026-09-09 查询归属与生命周期加固合入main
@@ -633,7 +642,7 @@
 - 复用原UDS非阻塞建连/释放，分开流关闭与查询关闭；ResourceOwner与查询内存回调覆盖错误和退出。
 - Linux517项、PG回归1项/TAP2005项通过，新增PG专项42项；652份源码/测试与最终模型运行一致。
 - 真实首轮4次出现非空条件UNKNOWN，严格停止并保留；修订为重复明确条件的工程用例后，独立24次POST通过。该修改不构成Filter语义质量修复。
-- 模型、PG、网关、Raylet和端口清理已核对。实现范围、失败原因与原始材料见[结果](experiments/results/scheduling/query_job_20260909/README.md)，现行接口见[设计](experiments/plans/postgresql_query_job_design.md)。
+- 模型、PG、网关、Raylet和端口清理已核对。实现范围、失败原因与原始材料见[结果](experiments/results/scheduling/query_job_20260909/README.md)，现行接口见[设计](experiments/plans/数据库接入.md#query-job)。
 
 ## 2026-09-09 澄清后续接入基础与执行研究分工
 
@@ -721,7 +730,7 @@
 
 - 确认当前port仍为阻塞drive，v5与增量桥接仅允许窗口1；新增发送下一帧的受控反例，本地/Linux各7项桥接测试通过。
 - 反例同时核对迟到响应回收与后续连接恢复；未改生产行为，未启动PG/模型，没有新增真实请求。
-- 在[PG绑定规格§13](experiments/plans/postgresql_call_binding_design.md#pg-async-readiness)记录新协议、PG行槽寿命、流控和提前求值的必要工作；当前不能直接调大窗口。
+- 在[PG绑定规格§13](experiments/plans/数据库接入.md#calls-pg-async-readiness)记录新协议、PG行槽寿命、流控和提前求值的必要工作；当前不能直接调大窗口。
 - [检查记录](experiments/results/postgresql/incremental_window_one_20260908/README.md#async-readiness)与此前窗口1真实结果分别标记。
 
 ## 2026-09-08 PG生成Map接入增量核心（窗口1）
@@ -818,8 +827,8 @@
 ## 2026-09-07 近期模块详细设计
 
 - 吸收用户对微观设计缺口的评审，保留总体主文并增加两份下级权威规格：
-  [PG调用与绑定](experiments/plans/postgresql_call_binding_design.md)、
-  [单流增量session](experiments/plans/semloom_incremental_session_design.md)，由主文§13和现有索引统一登记。
+  [PG调用与绑定](experiments/plans/数据库接入.md#calls)、
+  [单流增量session](experiments/plans/增量执行.md#session)，由主文§13和现有索引统一登记。
 - 基于66887463静态复核，明确pump的同列数/覆盖输入假设与scheduler的全历史结果积累，
   分别选定新路径独立结果绑定、单流step/完成lease和Engine残余资源账本，保留legacy兼容方式。
 - PG首批限定A1行为保持及A2a一个Filter→一个生成Map；多个/依赖Map后续单列。
@@ -880,7 +889,7 @@
 ## 2026-09-07 PostgreSQL 扩展职责目录整理
 
 - 基于 `41e103f2` 在 `codex/pg-module-layout` 直接整理现有代码，依据
-  [主计划§8.1.1](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)。用户提供的
+  [主计划§8.1.1](experiments/plans/系统架构.md)。用户提供的
   `x_semantic` 仅浅看目录/Makefile，借鉴职责分类；来源版本与采用决定记录于主计划，未复制源码。
 - 45个C/头文件迁移至planner、semantics、executor、provider/wire，`sem_path.c`改为
   `sem_map_path.c`。总头文件拆为配置、marker身份、路径构造与scan接口；marker函数体原样提取，
@@ -982,10 +991,10 @@
   SPEAR 增入核心补充线索，不改变 Top 15、精读数量或开题已完成贡献。
 - 保留实际 token 机会与 2×2 因果设计，补充横纵前缀可嵌套而非必然冲突、最长命中不可重复求和、
   sum(service) 不等于并行 JCT、opaque text 无任意字段布局，以及总 kv_usage 不证明前缀驻留。
-- [主计划 §7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)
+- [主计划 §7](experiments/plans/系统架构.md#research-mechanism-slices)
   分开 same-message 组织/提交和新表示质量；写清真实消费者、代码落点与完成条件。Map、独立核心、
   多会话与相应 PG 接入不等待前缀候选成功；保留薄 adapter 与现有 runtime，不预建复合 pump/布局 registry。
-- [baseline reference §0.3](experiments/plans/baseline_reference.md#semantic-prefix-causal-controls)
+- [baseline reference §0.3](experiments/plans/reference/对照规范.md#semantic-prefix-causal-controls)
   增加强对照、同窗口/容量、自然质量结果与固定任务图诊断、cache-off、预定压力/反例和选择 regret；
   不用不同 survivor/calls/output work 或事后缩 KV 制造收益，不借用旧校准或 Map 模型预算。
 - 按 research skill 分派一个有界一手文献核验；主线程独立核对源码与关键原文。idea-evaluator 将方案
@@ -1003,10 +1012,10 @@
 - 对照 `server.py`、fixed HTTP Adapter、`wire_semantic.c`/Python v5 与 calibration：确认单固定
   配置/串行 session、五项可用配置字段、300,000 ms 超时上限与逐请求新连接。token 由环境变量
   读入 gateway 内存/认证头；provider 摘要是执行实现身份，不是部署或模型执行的认证证明。
-- [主计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)
+- [主计划](experiments/plans/系统架构.md#execution-deployment-identity)
   增补显式服务选择、部署快照、query-fixed 路由 policy/候选集和逐任务记录的职责与验收；禁止静默
   扩目的地或换模型。保留现有摘要、已有 service/workload signature 与校准要求，不立即新造 registry。
-- [baseline reference](experiments/plans/baseline_reference.md#gateway-layered-controls)增加无 PG 的 B 臂，
+- [baseline reference](experiments/plans/reference/对照规范.md#gateway-layered-controls)增加无 PG 的 B 臂，
   定义 A/B/C/D 的匹配条件、冷启动/稳态与连接策略、同容量和同路径消融；差值不是天然可加的组件成本，
   fixture 资源或人工延迟不证明真实性能。实验与预算仍须单独批准。
 - 修正参考建议中的确定性过强表述：v5 已用于同步 Map；多会话不必先做连接池；异步不等于近似，
@@ -1105,7 +1114,7 @@
 
 ## 2026-09-03 四 D 有限真实服务上限确认
 
-- 将[专项 §8.4.1](experiments/plans/postgresql_semmap_generation_contract.md#841-本轮有限服务资源配置2026-09-03固定验收值尚未运行)
+- 将[专项 §8.4.1](experiments/plans/生成算子.md#841-本轮有限服务资源配置2026-09-03固定验收值尚未运行)
   记为本次固定验收值：单 GPU、BF16、实际缓存模型完整身份/revision 和 vLLM 0.25.1 须在运行前核对，
   不下载、不自动更换模型/精度/卡数；显存与 BF16 支持仍要预检。
 - 32 次按本轮逻辑推理请求全程累计，包含直接探测、主动预热、失败/超时/取消及结果不明；先记账后派发，
@@ -1151,7 +1160,7 @@
 
 ## 2026-09-03 四 D 合同定稿前的类型与执行时机复核
 
-- 基于 main `7a2b0d99`，只调整[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)
+- 基于 main `7a2b0d99`，只调整[生成型 Map 合同](experiments/plans/生成算子.md)
   及状态入口。语义与工程验收定义已定稿，下一步仍是研发对照源码登记落点/反例，再按失败测试实施；
   不表示 SQL 重载、schema 4、wire v5 或资源资格已完成。
 - 源码核对发现上一轮独立计算共同采用了错误的 wire usage 类型：现有 session writer 和 C reader
@@ -1170,7 +1179,7 @@
 
 ## 2026-09-03 四 D 生成型 Map 合同与复核修订
 
-- 基于干净 main `a3199bd9`，新增[生成型 Map 合同](experiments/plans/postgresql_semmap_generation_contract.md)，
+- 基于干净 main `a3199bd9`，新增[生成型 Map 合同](experiments/plans/生成算子.md)，
   作为四 D 具体行为与验收的唯一说明；主架构保留依赖与分工，目录、根入口、导航和源码状态只增加指向。
   已按复核意见收紧可观察要求，待研发核对代码落点，不能把设计完成写成算子实现或服务器验证通过。
 - 对照当前 Map planner/machine、PG runtime、provider factory、v3/v4 codec、golden/fixed Adapter，
@@ -1379,7 +1388,7 @@
 
 ## 2026-09-02 将 pgml 接入经验落实到现有工程计划
 
-- 按用户确认，在[主计划 §8.8](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
+- 按用户确认，在[主计划 §8.8](experiments/plans/系统架构.md#pgml-engineering-reference)
   保存公开源码参照、采用理由、自有落点和验证要求；只读核对固定 PostgresML 提交的四份文件，
   没有将源码复制进项目，也没有安装、构建或运行 pgml。
 - 保留自有 PG18.3 语义算子与 PG 外 SemLoom 执行路线。SQL 入口/属性检查进入已有 PG 基础检查，
@@ -1394,7 +1403,7 @@
 
 ## 2026-09-02 将公司参照扩为完整算子工程对照，保持自有研究目标
 
-- 按用户要求，将[主计划 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+- 按用户要求，将[主计划 §8.7](experiments/plans/系统架构.md#frontend-adapter-strategy)
   从若干生成/request 参考扩为完整 SQL 注册、PG 接入方式、算子语义、请求编译、取数/结果、生命周期
   和外部执行对照；多算子/gateway 只是其中一项。每项给出源码定位、自有差异、采用/保留/延期条件、
   改动位置与可观察用例，不复制公司源码、prompt 或私有测试数据。
@@ -1430,7 +1439,7 @@
 
 - 按用户澄清，当前参考公司 demo 是为了减少自有算子工程的重复探索；未来可能移植的是自有
   语义算子定义、处理/优化方法和 SemLoom 执行/调度，而不只是让公司算子调用一个外部 provider。
-  [主计划 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+  [主计划 §8.7](experiments/plans/系统架构.md#frontend-adapter-strategy)
   分别说明算子方法进入目标 planner/executor、执行能力通过 Adapter 接入的要求。
 - 对用户提供的公司工作副本只读核对，新增具体参考文件/函数、自有落点、采用/保留条件和测试清单。
   只保存定位与行为摘要，没有复制公司源码、prompt 原文、内部测试数据或日志。该工作副本有未提交
@@ -1456,7 +1465,7 @@
 - 将外部评审作为参考而非逐项照搬。源码确认三处文档偏差：model/generation 属于 query-fixed
   `AiOpenSpec`；逐项 `AiPreparedTask` 不重复保存这些字段；当前 PG→gateway 依靠 session/sequence/摘要，
   没有跨进程 query/operator/task ID 组合或 provider.cancel，查询取消走 close/disconnect 与 PG cleanup。
-- 调整根规则和[主架构计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
+- 调整根规则和[主架构计划](experiments/plans/系统架构.md)：
   SemLoom 可用公开任务/fixture 独立表征增量核心、组织和有界调度，不再等待 Filter 质量、真实校准或
   第二路径。真实 PG 接入、资源/生命周期、新协议与匹配 E2E 仍按相应路径验证；未恢复旧 GPU/SAOR/formal。
 - 增加四 D 真实生成型 SemMap 工作包，放在 PG 的四 C 之后；仅定义目标、首个合同切片和完成条件，
@@ -1464,8 +1473,8 @@
 - 公司 fork 定位为工业前端接入与获批环境验证，保留早期只读映射；内网代码复用、公开发布与 AutoDL
   部署分别确认授权。附件中的方法名/ID 仍为候选，不因讨论直接进入 ABI 或代码。
 - 按 `writing-for-agents` 分离阅读路径：主计划只保留架构、Interface、依赖和完成条件；
-  [四 C 专项](experiments/plans/completed/postgresql_choice_profile_engineering.md)维护详细字段、预算和验收；
-  [历史快照](experiments/plans/archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)保留
+  [四 C 专项](experiments/plans/completed/选择算子接入_20260902.md)维护详细字段、预算和验收；
+  [历史快照](experiments/plans/archive/串行架构快照_20260901.md)保留
   `31e2432b` 的旧正文与完整资格尝试条件，仅机械调整相对链接并标明不可作为当前执行指令。
   原始结果、失败和证据台账未删除、未重新绑定；当前状态仍由 INFRA_STATUS 维护。
 - 已同步总纲、导航、相关 README 与状态说明。验证范围仅为文档一致性、历史正文保留、Markdown
@@ -1475,12 +1484,12 @@
 ## 2026-09-01 明确自有主实现与后续公司适配，分开 choice 接入和质量验证
 
 - 只更新设计相关文档。详细设计统一进入
-  [架构实施计划的工作包四 C](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#choice-profile-engineering)，
+  [架构实施计划的工作包四 C](experiments/plans/系统架构.md#choice-profile-engineering)，
   总纲、源码状态、计划导航、代码 README 与方向速览只同步实际状态和下一步，不另建平行设计入口。
 - 根据用户补充，主实现继续完成 PostgreSQL 18.3 自有语义算子和 SemLoom 执行/调度两部分；公司 demo
   用作工程参考，后续在公司 fork 中用 adapter 接入同一核心。主实验不依赖公司私有仓库；有明确来源和
   存放权限时仍可复用代码。本轮没有复制源码或修改公司仓库。
-- 同一计划[§8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)
+- 同一计划[§8.7](experiments/plans/系统架构.md#frontend-adapter-strategy)
   增加 Module 分工、待核对映射、传输块与 work unit 区别，以及先接口对照、后最小 spike、再正式适配的
   条件。按 `codebase-design` 将变化留在 Adapter，不照搬附件中的候选类型/ID，不重复组织或调度策略；
   新增映射清单不是公司兼容已通过的证据，数据库主线仍按既定顺序推进。
@@ -1822,7 +1831,7 @@
 
 - 按实际问题而非目录名称重新确定当前入口职责：`PROJECT_OUTLINE.md` 只回答为什么做、
   研究什么和当前优先级；`docs/research/` 保存文献机制、可迁移策略与研究缺口；
-  `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 是唯一 PostgreSQL
+  `experiments/plans/系统架构.md` 是唯一 PostgreSQL
   工程架构与实施计划；`code/INFRA_STATUS.md` 只记录源码事实；证据台账只记录验证强度。
 - 工程计划补全实际调用链、模块所有权、当前未完成切片和 Adapter/Factory/Strategy/State
   Machine 的使用条件，明确 CustomPath/CustomScan、thin scan/pump、operator machine、
@@ -2019,7 +2028,7 @@
   PostgreSQL extension 拥有 SQL、ordinary child plan、semantic plan、task compilation、result parser
   和 query lifecycle；外部 execution provider 只负责不改变语义的 work organization、admission、
   multi-Job scheduling、endpoint routing 与 Ray/vLLM execution。
-- 新增 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md` 作为唯一当前实施
+- 新增 `experiments/plans/系统架构.md` 作为唯一当前实施
   入口，明确 `SemanticOperatorPlan → PreparedSemanticTask → CompletionRecord`、query-scoped provider
   interface、semantic prompt batching 与独立 task grouping 的区别、模块 seam、八个工作包、反例测试、
   实验分层和不能声称的能力。
@@ -2840,7 +2849,7 @@
   useful progress；VTC/DLPM/Agentix 的服务量、locality 和程序级上下文；Sarathi-Serve/
   DistServe/Llumnix 的 SLO goodput、tail 与 priority isolation。
 - 在 `docs/research/evaluation_metrics_survey_20260731.md`、`docs/research/knowledge_hub.md` 和
-  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 冻结约束下多目标合同：每个
+  `experiments/plans/archive/状态感知实验_20260808.md` 冻结约束下多目标合同：每个
   Job 同时报 `multi/full-solo`、`multi/reserved-solo`、`policy-multi/static-multi` 三种反事实；
   共同积压窗口另报 empirical GPS lag、最长连续无服务和 avoidable idle；Jain 只作均匀度描述，
   理论 fairness/Pareto 性质没有证明即保持 unavailable。
@@ -3455,7 +3464,7 @@
 
 ## 2026-08-09 大众多 Job benchmark 的组合接入合同
 
-- 在 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §7.6 将现有
+- 在 `experiments/plans/archive/状态感知实验_20260808.md` §7.6 将现有
   1-short+3-long 定位为最小因果控制轨，并增加公开 benchmark 泛化轨；两者不互相替代。
 - 首轮 VTC-compatible synthetic 只复用官方 artifact 的 `on_off_overload`（状态切换）与
   `overload-multi`（8 clients）两个 suite；冻结 artifact commit、许可、到达率、时长、
@@ -3758,7 +3767,7 @@
 
 - 结论：开题前不需要完成整套动态方法，但动机必须分别证明固定行隐藏 work、运行状态随负载变化、active work 存在欠供给/近饱和/过载区间，并分别导出 work-unit、状态感知和有界动态提交的研究必要性；动态超过同上限静态仍是开题后待验证 claim。
 - 新增 `docs/archive/opening/first_principles_reassessment_20260808.md`，从目标函数反推开题完成边界、方法接口、图像缺口、正文四图职责与 19 项主讲内容。旧 28 页 v6 和四张双 panel 图降级为待替换底稿，历史 PowerPoint/overflow QA 只证明文件可打开，不代表新内容已冻结。
-- 新增 `experiments/plans/state_aware_work_unit_evaluation_20260808.md` 作为文档增殖纪律的一次明确例外：它统一跨研究内容一、研究内容二和图像泛化的因果矩阵，避免旧计划分别定义不兼容的 work/credit/state 合同。计划固定同上限 frozen-static vs dynamic、steady→phase-change/burst→多 job 的顺序和图像强 baseline/质量/状态指标。
+- 新增 `experiments/plans/archive/状态感知实验_20260808.md` 作为文档增殖纪律的一次明确例外：它统一跨研究内容一、研究内容二和图像泛化的因果矩阵，避免旧计划分别定义不兼容的 work/credit/state 合同。计划固定同上限 frozen-static vs dynamic、steady→phase-change/burst→多 job 的顺序和图像强 baseline/质量/状态指标。
 - 方法调整：公共 work-unit 从单个 `work_units + work_unit` 标量收紧为分阶段 `WorkDescriptor`，至少表达 source/prepare/model/result work、locality、deadline/SLO、uncertainty 和 calibration signature。当前瓶颈在模型服务时用 model work credit；图像 CPU prepare 主导时分别约束 prepare work、ready tensor work 和 buffer bytes，不能只把 token 改名为 frame。
 - 代码基础已以兼容方式落地：新增 `planning/work.py` 的 staged work/runtime state 合同，`BatchRequest` 与 `ImageEmbeddingBatch` 可选携带 descriptor，旧标量调用保持不变；新增 `BoundedStageWorkController`，只在离线离散安全点间单步移动，stale/signature mismatch 回退静态点。新增 7 个测试，相关 25 个定向测试均通过；完整 scheduling suite 的 5 个错误来自本机缺 Daft 与 Ray `sysctl` 沙箱权限，不是本次改动回归。
 - 图像边界：现有 exact-path 画像与 matched-resource 静态结果足以支持可行性，不足以支持 proposed 完成。仍需当前 commit 下 Daft built-in、Ray Data native、typed Ray actor 的统一 PostgreSQL/pgvector E2E 正式排名、检索质量、stage-aware organization、state-aware 动态和多 job。
@@ -3822,7 +3831,7 @@
   并 force-push（raw 已先全量下载到本地，无丢失；commit 是 <1h 前的 tip，仅本机本地库有，codex 仍在 c250e19）。
 - **raw 全量下载**到开发者机 `C:\Users\ays\Desktop\results\`：experiments/results 917M + experiments/results/motivation 2.5M
   + experiment-artifacts 308M（去 retired-worktrees 代码快照）。3 个 transport tar.gz 的 sha256 与服务器逐一校验一致
-  （见 `experiments/results/RAW_ARCHIVAL_20260807.md`）。git 远程因此不再承载 raw。
+  （见 `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md#storage-history-20260807`）。git 远程因此不再承载 raw。
 - **订正早先错误**：同日早些曾称"320-run per-request raw 已被服务器清理"——**错误**。该 raw 实际在
   `experiment-artifacts/dual_gpu_cost_profile_formal_v2_cache_on_20260807/`（67M），已随 experiment_artifacts.tar.gz 落本地。
 - **仍保留在 git 的 aggregated summary**（属"整理汇总"，符合新政策）：enhanced ramps 的 ramp_aggregate.{json,md} +
@@ -4223,7 +4232,7 @@
 - 明确向量 ANN benchmark 只评价 embedding 生成后的检索链路；云厂商产品只比较可观察
   的质量—成本—时间、失败和配额；只有同机同模型同 source/sink 的自托管系统才进入
   raw performance 主排名。
-- `experiments/plans/baseline_reference.md` 保持 baseline 身份、可安装性和运行合同的
+- `experiments/plans/reference/对照规范.md` 保持 baseline 身份、可安装性和运行合同的
   权威入口，并新增到上述场景矩阵的导航，避免两处重复维护易漂移的产品描述。
 
 ## 2026-08-04 数据库厂商 AI 算子可安装性与 baseline 扩展
@@ -4231,7 +4240,7 @@
 - 使用厂商官方文档、官方仓库和 release notes 复核本地/云端数据库 AI 算子，按
   “数据库执行器是否拥有模型调用调度、能否本地安装、能否复用同一 OpenAI-compatible
   vLLM endpoint”三项拆分，而不是把向量类型、客户端 SDK 或自写 UDF 混称 AI 算子。
-- 将可本地候选补入 `experiments/plans/baseline_reference.md`：首批为 Apache Doris
+- 将可本地候选补入 `experiments/plans/reference/对照规范.md`：首批为 Apache Doris
   4.1.3、ClickHouse 26.6、StarRocks 4.1.1+；Oracle AI Database 26ai Free、Db2
   12.1.5 Community 和 SQL Server 2025 分别补充文本生成/embedding 对照；OceanBase
   保留为需要 systemd VM 或特权容器的正式文本候选。
@@ -4253,7 +4262,7 @@
 - 将 SFS、TIE、Past-Future、JITServe、Beyond Prediction 与 FastServe 按“动态 TTFT 估计、重尾输出长度分布、未来显存/SLA、渐进式 remaining-work 修正、prediction-free tail 风险、prediction-light 对照”补入 `docs/research/knowledge_hub.md` 和 `docs/research/ai_operator_literature_inventory.md`；FastServe 题录从旧 arXiv 状态更新为 NSDI 2026。
 - 将 μ-Serve 按正式 USENIX ATC 2024 定位补入 GPU serving 能耗/资源成本文献，而非误归为输出长度预测；它支撑 GPU frequency scaling、功耗与 SLO attainment 的评价口径。
 - 明确这些 serving 工作多数需要修改内部 scheduler，本项目固定 vLLM 为黑盒，只迁移 admission-time 估计、不确定性表示、评价指标与静态回退合同；不得把它们写成已经实现的直接 baseline。
-- 在 `experiments/plans/baseline_reference.md` 增补代价估计七级 baseline 和三层晋级指标：点预测/区间、配置排序、下游 decision regret/SLO goodput；要求配置组、时间、workload、长度漂移和 burst 留出。
+- 在 `experiments/plans/reference/对照规范.md` 增补代价估计七级 baseline 和三层晋级指标：点预测/区间、配置排序、下游 decision regret/SLO goodput；要求配置组、时间、workload、长度漂移和 burst 留出。
 - 收紧“Daft+Ray 队列可控”的表述：它提高 pre-submit held work 和动作的可观测性，但不消除自然 EOS、continuous batching、KV/cache 与共享负载造成的 service 不确定性；低置信度或 OOD 时必须回退到同上限强静态策略。
 
 ## 2026-08-04 AI 算子评价指标与决策导向代价估计调研补充
@@ -4486,7 +4495,7 @@
 
 - 学长完整反馈把场景 reframe 成"数据库↔GPU 经 Daft 桥接、GPU 侧算子多样
   （不止 vLLM）、大数据量、流式 pipeline"，明确不能用 ShareGPT 这种对话式
-  workload。记录到 `experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-integration-questions` §5.1.1。
+  workload。记录到 `experiments/plans/系统架构.md#company-integration-questions` §5.1.1。
 - 新增 `docs/research/daft_db_gpu_bridge_direction_scope_20260731.md`（academic-pipeline
   Stage 1 scoped 输出）：工作流 `w6xclfb0g` 用 Daft 源码一手核实学长三痛点
   全部真实——① `@daft.cls(gpus=N)` 写死（`daft/udf/__init__.py` L360-410）、
@@ -4526,7 +4535,7 @@
   成单条 e2e。补采改动集中在 metrics.py 与 vllm_bench.py，不触策略代码。
 - 落点：prefix cache hit rate 直接服务当前 prefix 路由结论的隔离消融；
   TTFT/ITL 分位使 service_p99 的 prefill/decode 可解释；登记到
-  `experiments/plans/experiment_status_and_gaps.md` 指标缺口区（待补）。
+  `experiments/plans/archive/进度汇总_20261001.md` 指标缺口区（待补）。
 - 文档扩展（同日）：该调研文件追加**附录 A**（workload/数据集五类清单 +
   AI_COMPLETE 可用性判定——多数 SemBench/LOTUS 任务是 filter/classify 短输出，
   非 AI_COMPLETE；只有 `map` 形态匹配）和**附录 B**（7 家数据库厂商 AI 算子
@@ -4981,7 +4990,7 @@
 ## 2026-07-29 固定 active-work 的 token-budget 曲线启动口径
 
 - 消除 `PROJECT_OUTLINE.md` 与
-  `experiments/plans/experiment_status_and_gaps.md` §10.3 的执行顺序冲突：
+  `experiments/plans/archive/进度汇总_20261001.md` §10.3 的执行顺序冲突：
   双 GPU 下一轮先关闭 arrival replay 扫 token budget，再以最佳已测预算隔离
   whole-submission 与 request-credit；不直接进入 submission-policy 联合消融。
 - 复核发现 `49K active work × 65K token budget` 会触发 oversized admission，
@@ -5445,7 +5454,7 @@
 - **风险最高项**：Adaptive 3 轮后仍不如 static（概率 40%）。后备路径已准备。
 - **认知债务**：6 篇 2025-2026 新论文未精读、baseline_reference 20 个 baseline 仅 <5 运行、设计决策日志为空、Daft 引擎参数未探索、开题报告与实验状态不同步。
 - **关键结论**：(1) 课题定位成立（四岛空白双重确认 + 57 篇 CCF-A 文献支撑）；(2) 最高优先级只有让 adaptive 工作，不成功则 4 周后切换后备路径；(3) 跨查询请求池 + 算子路由是多模态前置依赖，不是 afterthought；(4) 文献基础扎实但未充分利用，投稿前需补齐新论文精读笔记和精确的 Related Work 区分度论证。
-- **文件**：`experiments/plans/experiment_status_and_gaps.md` §6（已有审计，可考虑补充代码架构部分）
+- **文件**：`experiments/plans/archive/进度汇总_20261001.md` §6（已有审计，可考虑补充代码架构部分）
 
 ## 2026-07-23 完整问题审计：P0/P1/P2 分级 + 认知债务清单
 
@@ -5470,7 +5479,7 @@
   12. 跨查询 batching 是隐含效果而非显式策略（见上）。
 - **认知债务**：文档承诺 vs 实际交付存在系统性差距——baseline 矩阵、引擎级参数表征、实验五阶段计划、actor pool 分池路由均存在文档写了但实验未做的情况。投稿前必须清理。
 - **最短可交付路径**：第 1 周修 adaptive 控制器（≥90% static 或立即降级）+ 联合消融 + 补齐 `tokens/s`/`service_p99`；第 2 周后 prefix 受控 workload + 2048 行 scale-out。
-- **更新文件**：`experiments/plans/experiment_status_and_gaps.md`（新增 §6 完整问题审计，含 P0/P1/P2 分级 + 认知债务清单）、`PROJECT_LOG.md`
+- **更新文件**：`experiments/plans/archive/进度汇总_20261001.md`（新增 §6 完整问题审计，含 P0/P1/P2 分级 + 认知债务清单）、`PROJECT_LOG.md`
 
 ## 2026-07-22 文献精读笔记批量完成（12 篇新增）
 
@@ -5490,7 +5499,7 @@
 
 - **触发**：导师追问 token-aware batching 中“每行 token 怎么获取、怎么用于分组”，用户要求把这类技术细节记录到合适文档，并明确后续代码完成时同步记录实现细节。
 - **决策**：不新建单独技术细节文档；当前内容归入既有实验计划和实现参考，避免入口分散。
-  - `experiments/plans/data_organization_batching.md` 记录每行 `prompt_tokens` 的来源、tokenizer 一致性要求、`prompt_tokens + completion_max_tokens` 组批公式、超长行边界和实验必须记录字段。
+  - `experiments/plans/数据组织.md` 记录每行 `prompt_tokens` 的来源、tokenizer 一致性要求、`prompt_tokens + completion_max_tokens` 组批公式、超长行边界和实验必须记录字段。
   - `experiments/plans/strategy_design_implementation_reference.md` 记录 Workload Profiler / DataOrganizer / `BatchRequest` 需要携带的 token 元数据，以及 CSV/审计指标口径。
 - **后续规则**：以后完成涉及调度策略、workload 导入、DataOrganizer、CSV 字段或 vLLM 指标采集的代码时，同步检查上述两个文档；若新增字段、公式、fallback 或边界条件，必须在对应文档和具体结果 README 中记录。
 
@@ -5570,7 +5579,7 @@
   4. **两项策略联合消融缺失**：完全没跑过独立拼接 vs 联合 grid search。
   5. **指标盲区**：缺 `tokens/s`（比 rows/s 更公平的 AI_COMPLETE 效率指标）、缺 inflight/queue 时间序列、缺 per-request latency 分布、缺系统性 `service_p99`。
 - **新建文件**：
-  - `experiments/plans/experiment_status_and_gaps.md`：完整的状态-缺口-路线图文档，包含已完成/未完成实验表、证据链评估、指标盲区、P0/P1/P2 实验路线图、审稿人视角的拒绝风险。
+  - `experiments/plans/archive/进度汇总_20261001.md`：完整的状态-缺口-路线图文档，包含已完成/未完成实验表、证据链评估、指标盲区、P0/P1/P2 实验路线图、审稿人视角的拒绝风险。
   - `docs/research/evaluation_metrics_survey_20260731.md#观察变量选择`：AI_EMBED vs AI_COMPLETE 观察变量选择方法论，解释为什么从"阶段时延拆分"转向"请求形状 + 服务端压力 + 端到端分布"的四层变量体系。
 - **更新文件**：
   - `PROJECT_OUTLINE.md`：§当前最重要证据 重写为以本地 vLLM baseline 为首要证据；§近期优先级 重写为已完成项 + P0/P1/P2 缺口 + 指标盲区 + 新增 adaptive 放弃条件。
@@ -5912,7 +5921,7 @@
   7. **耦合验证前置**：独立最优拼接 vs 联合 grid search 作为第一个关键消融实验；无交互效应时 fallback 为"分层独立优化框架"，仍为合格硕士论文
 - **文献确认**：多源检索确认无 CCF-A 论文研究"上游数据管道 batch 参数 × 下游 continuous batching 性能"这一交叉点，研究空白判断成立。
 - **用户三层划分**：模型结构层（GQA/MQA）→ 计算执行层（Flash-Attention）→ 服务部署层（PagedAttention + In-Flight-Batching）。课题聚焦层级 3，前两层为模型/实现选型，不进入优化范围。
-- **需同步更新**：`AGENTS.md` §1/§2/§3/§5、`experiments/plans/strategy_design_literature_basis.md` §7、`experiments/plans/motivation/workloads.md`、`docs/archive/opening/report/opening_report.md`、`PROJECT_OUTLINE.md`
+- **需同步更新**：`AGENTS.md` §1/§2/§3/§5、`experiments/plans/strategy_design_literature_basis.md` §7、`experiments/plans/archive/场景探索_20260710.md#workloads`、`docs/archive/opening/report/opening_report.md`、`PROJECT_OUTLINE.md`
 - **注意**：同期三个评估 skill（idea-evaluator / ars-reviewer / nature-reviewer）接收的是旧 framing（AI_EMBED + 静态 batch）；新 framing（AI_COMPLETE + 动态 batch + Ray 架构）更强。评估结果到达后应做 framing 对比再最终确认。
 
 ## 2026-07-15 开题报告移除 fake/CPU 主文证据
@@ -6006,10 +6015,10 @@
 ## 2026-07-16 写回文献调研 + Baseline 矩阵 + 文献优先设计规则
 
 - **文献清单 v3**：`docs/research/ai_operator_literature_inventory.md` 从 45 篇扩充至 57 篇，新增写回/持久化方向 12 篇 CCF-A 文献（第六组精读 + E 组补充）。
-- **新增实验 Baseline 参考矩阵**：`experiments/plans/baseline_reference.md`，覆盖 GPU 调度侧（6 个）、写回侧（7 个）、数据组织侧（4 个）、跨层决策侧（3 个），所有 baseline 标注来源论文/系统。
+- **新增实验 Baseline 参考矩阵**：`experiments/plans/reference/对照规范.md`，覆盖 GPU 调度侧（6 个）、写回侧（7 个）、数据组织侧（4 个）、跨层决策侧（3 个），所有 baseline 标注来源论文/系统。
 - **新增文献优先设计规则（§6.5）**：根 `AGENTS.md` 加入"系统/算法/实验方案设计时，优先从 CCF-A 文献提取设计模式"的规则。完整方法论写入 `docs/research/README.md` §文献优先设计方法论。
 - **idea-evaluator 评估**：课题方向 Accept with Revisions，无 CRITICAL 缺陷，paradigm-shift probe 4/4 yes。五项调整建议已记录在对话中。
-- 同步更新：`AGENTS.md` §6.5、`docs/research/README.md`、`experiments/plans/README.md`、`experiments/plans/baseline_reference.md`（新建）。
+- 同步更新：`AGENTS.md` §6.5、`docs/research/README.md`、`experiments/plans/README.md`、`experiments/plans/reference/对照规范.md`（新建）。
 
 ## 2026-07-13 制图脚本目录归位
 
@@ -6029,7 +6038,7 @@
 
 - 复核根目录、`README.md`、`docs/research/`、`experiments/results/motivation/README.md`、`PROJECT_INDEX.md#内容与文档职责`、`docs/archive/opening/` 和 `figures/` 中与当前开题方向相关的入口文件。
 - 将 `README.mdproject_outline.md` 从旧的“数据库内置 AI 算子外部执行链路”口径重写为“数据库驱动 AI 工作负载的分布式数据执行与存储协同优化”口径。
-- 同步更新 `AGENTS.md`、`PROJECT_INDEX.md`、`docs/research/literature_and_evidence_review.md`、`docs/research/existing_ai_operator_execution_chains.md`、`experiments/plans/motivation/integration.md` 和 `experiments/results/motivation/README.md` 中的旧表述。
+- 同步更新 `AGENTS.md`、`PROJECT_INDEX.md`、`docs/research/literature_and_evidence_review.md`、`docs/research/existing_ai_operator_execution_chains.md`、`experiments/plans/archive/早期接入方案_20260710.md` 和 `experiments/results/motivation/README.md` 中的旧表述。
 - 对 `experiments/results/motivation/pg18_4_fake/system_profile.md` 与 `experiments/results/motivation/fake_cpu/analysis.md` 增加当前口径说明，保留历史实验语境，但明确真实瓶颈归因应优先引用 GPU-backed 结果。
 - 本次复核只调整会影响项目规划、阅读入口和方向判断的文件；历史日志和旧实验过程记录不做大面积改写。
 
@@ -6039,7 +6048,7 @@
 
 - 根据用户确认的判断，将开题题目从“面向数据库 AI 算子的模型服务感知批处理执行与写回协同优化研究”调整为“面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究”。
 - 同步更新项目级方向口径：数据库 AI 算子主要作为 workload 入口和验证场景，研究主体调整为 Daft/Arrow 数据组织、Ray 执行调度、GPU 模型服务和 Lance / pgvector / PostgreSQL sink 之间的数据执行与存储协同。
-- 同步修改 `README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`README.md`、`experiments/plans/motivation/integration.md` 以及 opening 相关源稿，避免项目规划与开题报告割裂。
+- 同步修改 `README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`README.md`、`experiments/plans/archive/早期接入方案_20260710.md` 以及 opening 相关源稿，避免项目规划与开题报告割裂。
 - 已生成新的本地飞书源稿 `docs/archive/opening/feishu/opening_report_wiki.md`；飞书写入时 `lark-cli` 在用户目录刷新锁文件处返回 `Access is denied`，提升权限重试被自动审批拒绝，需后续获得权限后再同步线上 wiki。
 
 ## 2026-07-12 根目录总纲与项目日志
@@ -6050,7 +6059,7 @@
 
 ## 2026-07-12 实验主线入口调整
 
-- 将项目实验主线入口从 `experiments/results/diagnostics/README.mdguide.md` 调整到 `experiments/results/motivation/README.md`、`experiments/plans/motivation/workloads.md`、`experiments/plans/motivation/integration.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md`。
+- 将项目实验主线入口从 `experiments/results/diagnostics/README.mdguide.md` 调整到 `experiments/results/motivation/README.md`、`experiments/plans/archive/场景探索_20260710.md#workloads`、`experiments/plans/archive/早期接入方案_20260710.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md`。
 - 明确 `experiments/results/diagnostics/README.md` 只负责组件、环境和脚本可用性验证，不承担当前实验大纲、开题主线或 GPU-backed 性能结论职责。
 
 ## 2026-07-12 开题与项目规划双向同步
@@ -7028,7 +7037,7 @@
 - 复审旧 interference runner 后确认其不能直接承担正式矩阵：只支持两个前后台
   job、每个并发 profiler 都携带 `--setup`、全局 vLLM token delta 会重叠，
   且缺少 coordinator 精确峰值与按 job 服务量证据。
-- 在 `experiments/plans/service_scheduling_backpressure.md` §13 预注册
+- 在 `experiments/plans/archive/提交与调度方案.md` §13 预注册
   `independent_full`、`static_partition`、`shared_drr` 三臂的 1/2/4-job
   矩阵、fatal-flaw audit、双 GPU gate、exactly-once/容量/公平性硬门槛和
   5% 晋升条件。
@@ -7152,7 +7161,7 @@
   `/v1/chat/completions`；旧 `/v1/completions` 结果只保留为历史机制证据，
   禁止直接横比。
 - 新增
-  `experiments/plans/archive/database_ai_operator_baseline_matrix_20260729.md`（后于
+  `experiments/plans/archive/文本对照矩阵_20260729.md`（后于
   2026-08-03 归档）和
   `code_doc/superpowers/plans/2026-07-29-same-condition-official-baselines-design.md`，
   预注册固定 manifest、双 endpoint 等价性、独立 calibration、32–256
@@ -7160,8 +7169,8 @@
   指标，以及 5%/2-of-3 晋级门槛。
 - 同步更新 `PROJECT_OUTLINE.md`、`README.md`、
   `experiments/README.md`、`experiments/plans/README.md`、
-  `experiments/plans/baseline_reference.md`、
-  `experiments/plans/experiment_status_and_gaps.md`、`code/INFRA_STATUS.md`、
+  `experiments/plans/reference/对照规范.md`、
+  `experiments/plans/archive/进度汇总_20261001.md`、`code/INFRA_STATUS.md`、
   `docs/research/existing_ai_operator_execution_chains.md` 与 `PROJECT_INDEX.md`。
   按用户要求不执行 Wiki 同步。
 
@@ -7566,7 +7575,7 @@
   2. 新写 Tier 2 跨数据集报告：`prefix_routing_agent_20260730/README.md`（agent + concentrated 合并分析，
      七步结构）+ `prefix_routing_concentrated_20260730/README.md`（自包含简表 + 指回 agent 报告）。
   3. 同步 `EXPERIMENT_EVIDENCE_REGISTRY.md`（§2 Prefix-aware 行、§3 新增两目录行、§6 item 5）、
-     `experiments/plans/experiment_status_and_gaps.md`（§1 表 + P1 段）、`PROJECT_OUTLINE.md`（P1-4）：
+     `experiments/plans/archive/进度汇总_20261001.md`（§1 表 + P1 段）、`PROJECT_OUTLINE.md`（P1-4）：
      prefix 状态从「2-ep/7B 收口」细化为「2-ep/7B 跨三数据集吞吐中性 + 高淘汰压力 regime 双数据点（4-ep/1.5B +5.9%、agent-trace pala P50 −7.8%）有条件重开」。
 - **新发现（agent-trace pala 信号）**：2-ep/7B、lmcache_agent（851 行、高 cache 压力 workload）下 pala
   相对 least_queued：吞吐 −1.9%（**未过门禁、负向**），但 **P50 64.2 vs 69.6s = −7.8%、SLO 78% vs 82% = −3.8pp、
@@ -7664,7 +7673,7 @@
 
 ## 2026-08-01 文档状态对账：统一 image-first、5K canonical 与 prefix 归因
 
-- **权威关系**：明确 `experiments/plans/experiment_status_and_gaps.md` §0 记录内部执行顺序；内部已锁 A+B image-first，外部“DB↔GPU 经 Daft 桥接”scope/题目仍待导师和学长确认，二者不再混写。
+- **权威关系**：明确 `experiments/plans/archive/进度汇总_20261001.md` §0 记录内部执行顺序；内部已锁 A+B image-first，外部“DB↔GPU 经 Daft 桥接”scope/题目仍待导师和学长确认，二者不再混写。
 - **5K 状态**：`AGENTS.md`、`PROJECT_OUTLINE.md`、`README.md`、`code/INFRA_STATUS.md` 和证据台账统一为 COCO val 5K × 100 iterations 已通过 GO；当前进入 path-B runner + image 强 baseline，不再保留 redo pending。
 - **文本轨道**：遗留 feeding/static-credit/prefix/multi-job/runtime baseline 统一标为 `parked-conditional`，不再阻塞 image build；文本历史证据保留。
 - **prefix 归因修正**：证据台账与总纲移除“cache 淘汰压力是开关”的过时确定表述。matched-KV 结果更支持 endpoint consolidation 是驱动；4-ep 饱和深度仍是残余混淆。
@@ -7794,7 +7803,7 @@
   功耗/时钟/估算能耗、PCIe current/max link、pending peak/未归因 wait、各阶段
   逻辑 bytes、全维 sum 与按 doc_id 的 rounded digest。CUDA 分段同步只允许
   diagnostic 模式；MFU 仅在显式输入经校准 FLOP 口径时估算。
-- **新动机计划**：新增 `experiments/plans/motivation/image_host_data_path_bottleneck.md`。
+- **新动机计划**：新增 `experiments/plans/archive/图像链路诊断.md`。
   用 R0 GPU-resident compute ceiling → R1 pinned H2D → R2 pageable/Ray tensor →
   R3 in-memory JPEG → R4 PostgreSQL/Daft 的表示阶梯，按预注册门槛判定
   CPU-preprocess、framework/host-copy、PCIe/H2D、GPU compute 或 mixed。
@@ -7832,7 +7841,7 @@
 - **外部口径审计**：综合 SemBench、LOTUS、Palimpzest、Cortex AISQL、vLLM serving、
   Ray Data 与 PolarDB 多模态 benchmark，确认正式评价不能只报告吞吐；最低证据链为
   质量、JCT/E2E、容量、尾延迟/SLO、成本/work、内存、失败与扩展性。
-- **指标合同**：在 `experiments/plans/baseline_reference.md` 固化每个正式 run 的身份、
+- **指标合同**：在 `experiments/plans/reference/对照规范.md` 固化每个正式 run 的身份、
   工作量、正确性、任务质量、时间、容量、成本、资源、调度、扩展和统计字段，并区分
   managed product 可观察指标与同机开源 baseline 的内部诊断指标。
 - **图像缺口**：schema v9 已覆盖 stage timing、CPU/GPU/能耗/传输与执行正确性，
@@ -7899,7 +7908,7 @@
 - **执行边界**：旧 64/256 行数据继续作为 gate/screening；因缺少长稳态、交错三重复和
   新 provenance 字段，不进入正式排名。用户已关闭 AutoDL，本次只完成本地代码/文档/
   测试准备，远端重测等待开机。
-- **学习材料**：新增 `experiments/plans/baseline_reference.md#执行者与计时的读法`，用数据链路解释
+- **学习材料**：新增 `experiments/plans/reference/对照规范.md#执行者与计时的读法`，用数据链路解释
   ceiling/control/native/project、Chat/Completions 分轨、64→512→4096 流程和双 endpoint
   group throughput，避免后续只看单个 tokens/s 或把 barrier 当逐请求 P99。
 
@@ -7953,7 +7962,7 @@
   身份、已完成 gate、当前证据边界和近期执行顺序，移除重构前扁平脚本树与过期目标。
 ## 2026-08-03 baseline 总入口收敛与 embedding parity 诊断修复
 
-- 将 `experiments/plans/baseline_reference.md` 收敛为 AI_COMPLETE、AI_EMBED、
+- 将 `experiments/plans/reference/对照规范.md` 收敛为 AI_COMPLETE、AI_EMBED、
   AI_CLASSIFY 三类算子的统一 baseline/benchmark 入口；专项文件继续分别承担文本执行、
   图像 workload、状态审计和厂商/论文证据，避免物理合并造成重复与过期。
 - 修复 `282e09f` 中 `--save-embeddings` 误读 `ExecutionResult.embeddings` 的问题：
@@ -7976,7 +7985,7 @@
 
 ## 2026-08-03 baseline / benchmark 文档收敛
 
-- 冻结 `experiments/plans/baseline_reference.md` 为三类算子的唯一 baseline 总入口；
+- 冻结 `experiments/plans/reference/对照规范.md` 为三类算子的唯一 baseline 总入口；
   文本执行、图像 workload、状态审计、外部指标证据、学习讲解和结果目录各自只保留
   单一职责，不再复制总表或“当前下一步”。
 - 将混有旧预注册、逐日结果和过期执行顺序的
@@ -8580,7 +8589,7 @@ codex 第四轮只读复审确认 a22cdf6 六项核心修复大体正确、27/27
 
 ## 2026-08-07 全网格扫掠 DESIGN 计划（含 project_static hang 根因/修复）——纯规划未执行
 
-用户要求规划 4 臂（bounded/duckdb/lb_rr/project）× 规模 × 并发全网格（含先修 project_static 2-endpoint hang），但**先不执行**，待本轮 3-path scale-ramp 收尾取有效数据。起 workflow（5 agent：hang 根因 / 网格矩阵 / 校准合同 / 成本排序 / 综合，~12 min）产出 `experiments/plans/full_grid_sweep_plan.md`（已审、已注册）。
+用户要求规划 4 臂（bounded/duckdb/lb_rr/project）× 规模 × 并发全网格（含先修 project_static 2-endpoint hang），但**先不执行**，待本轮 3-path scale-ramp 收尾取有效数据。起 workflow（5 agent：hang 根因 / 网格矩阵 / 校准合同 / 成本排序 / 综合，~12 min）产出 `experiments/plans/archive/扩展参数矩阵.md`（已审、已注册）。
 
 **project_static hang 根因（已亲自 Read 验证 crux 两点）**：
 - F1 `code/src/scheduling/runtime/ray_adapter.py:273` `wait_until_ready` 的 `ray.get(ready_refs)` **无 timeout**（任一 actor ready 不返回 → 无限挂）；
@@ -8644,7 +8653,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 - 新增 `docs/archive/opening/claim_matrix.md`，冻结题目、AI Data Execution Layer 系统抽象、两项研究内容、共同使能组件、跨模态边界和四级 claim 状态。
 - 开题前新增数据收敛为两组统一 database-E2E 文本三臂：SQuAD short-answer 均匀控制组和 ShareGPT controlled-skew 异质组。两组完成后停止增加开题 baseline。
 - 明确现有 scale-ramp 的 request/query-barrier timing granularity 不一致，只用于 serving capacity 与 overload 证据，不能替代三臂统一 per-row database-E2E 排名。
-- 同步 `AGENTS.md`、根 `README.md`、`PROJECT_OUTLINE.md`、`README.md`、`experiments/plans/experiment_status_and_gaps.md`、`docs/archive/opening/README.md`、`docs/archive/opening/navigation.md` 和 `PROJECT_INDEX.md`。
+- 同步 `AGENTS.md`、根 `README.md`、`PROJECT_OUTLINE.md`、`README.md`、`experiments/plans/archive/进度汇总_20261001.md`、`docs/archive/opening/README.md`、`docs/archive/opening/navigation.md` 和 `PROJECT_INDEX.md`。
 - cost-model 最新口径更新为 429 formal；CE5 pooled/macro/max regret 为 1.67%/2.90%/14.72%，candidate pairwise 0.808，定性为 marginal pass。
 
 ## 2026-08-07 开题统一 database-E2E 合同与 runner
@@ -8991,7 +9000,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
 
 - 按用户要求把本轮关于“利用未修改 vLLM FCFS/continuous batching 的动态多 Job 调度、
   严格数学建模、公平评价和 token 组织边界”的讨论集中写入
-  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2。
+  `experiments/plans/archive/状态感知实验_20260808.md` §5.2。
 - 遵循 `experiments/plans/README.md` 的文档维护纪律，没有新建重复计划；该现有跨研究内容总
   合同成为 SAOR 的唯一维护入口。同步更新 `experiments/plans/README.md` 和 `PROJECT_INDEX.md`。
 - SAOR 当前冻结为 `saor-v0.1-design` / `design-candidate`：主臂使用 FCFS ordered release，
@@ -9163,7 +9172,7 @@ bounded/duckdb/lb_rr 用增强 instrumentation（`VllmGaugeSampler` 每 0.5s dur
   三个断点：formal `slo_weight=0`、request 剩余 SLO 预算未进入 coordinator，以及 hard
   priority 缺 actual-work anti-starvation cap 且可能为不 fit 的高优先级 Job 留空。
 - 在 `docs/research/saor_model_scenario_audit_20260811.md` §12 与
-  `experiments/plans/state_aware_work_unit_evaluation_20260808.md` §5.2.2.4 冻结
+  `experiments/plans/archive/状态感知实验_20260808.md` §5.2.2.4 冻结
   `saor-v0.5-bounded-priority-design`：显式 per-Job priority/remaining SLO budget，
   completion-corrected actual-work debt guard 高于 priority，普通状态回退原 SAOR；每 Job 至多
   一个 guard-recovery lease 在途，debt-critical head 不 fit 时显式 drain，普通 priority head

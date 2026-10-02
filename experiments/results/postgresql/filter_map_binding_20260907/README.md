@@ -8,7 +8,7 @@
 This engineering check supports the shared PostgreSQL foundation for data organization and execution
 scheduling research. On baseline `19326609`, the development branch `codex/semantic-call-binding`
 now accepts one top-level relational Filter followed by one generated Map, as specified in the
-[call/binding design](../../../plans/postgresql_call_binding_design.md). Existing single operators and
+[call/binding design](../../../plans/数据库接入.md#calls). Existing single operators and
 two-Filter AND remain controls. No new scheduling method or model-quality claim is evaluated.
 
 The new internal carrier separates semantic fields, function identity and tuple routing. The Map node

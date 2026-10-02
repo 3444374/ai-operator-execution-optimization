@@ -3,7 +3,7 @@
 本页保留9月28日本地准备时的状态。后续实际PG/Ray、41,024次真实请求及原生供给诊断见
 [9月30日记录](../text_map_matched_20260930/README.md)。
 
-2026-09-28。计划见[文本 Map 四路径匹配比较](../../../plans/completed/text_map_matched_comparison.md)。
+2026-09-28。计划见[文本 Map 四路径匹配比较](../../../plans/completed/文本Map对比_20260930.md)。
 工作分支为 `codex/text-map-matched-comparison`，基于 `14806276`，本记录对应实验当时尚未提交的文件摘要。
 本次研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 
@@ -45,3 +45,13 @@ PYTHONPATH=code python3 -m unittest discover -s code/tests/experiments -p PATTER
 
 尚需确定目标环境、资产与划分、有限候选、交错顺序、确切 POST 预算和停止条件。
 离线选择报告始终保留性能与质量等价未获证明的标记；旧容量未选点和方法负结果不改写。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：原结果入口。
+
+2026-09-28：[文本 Map 四路径比较准备](README.md)完成文档和本地工具，
+82 项本地检查通过；没有真实 PG/Ray 或模型运行，不产生系统排名或容量结论。

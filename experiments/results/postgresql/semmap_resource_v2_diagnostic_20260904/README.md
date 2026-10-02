@@ -26,7 +26,7 @@
 ## 2. metric schema / 旧结论边界
 
 - 本轮 metric schema `semloom.pg.resource.v2`（含 pre-run static-review correction，见
-  `experiments/plans/postgresql_semmap_generation_contract.md` §8.4.2）
+  `experiments/plans/生成算子.md` §8.4.2）
 - 2026-09-04 v1 运行维持 `failed` 判定不追溯修改：v1 的 `uds_peak_delta` 实测进程总 FD，
   93 次 attempt 为同一不可逆峰值的重判；归档证据不变
 - 本轮 `supersedes measurement implementation: v1`；阈值未放宽（provider UDS client/accepted 各 ≤1、
@@ -100,7 +100,7 @@ combined peak = 2（阈值内）、unknown = 0、end 全归零；三个实质 se
 ## 10. 是否允许进入正式资格（决策规则对照）
 
 2026-09-06 更新：旧建议已被后续源码审查撤回。本目录只保留 `a4119e73` 的历史诊断记录；
-当前工具须按 [Map 资源生命周期修复计划](../../../plans/postgresql_semmap_generation_contract.md)
+当前工具须按 [Map 资源生命周期修复计划](../../../plans/生成算子.md)
 重新通过受控行为测试及有效的小规模诊断。旧记录存在不完整采样和工作量身份更正，不能为当前源码
 提供正式运行依据。[修复后的完整小规模诊断](../semmap_resource_lifecycle_20260906/README.md)现已通过；
 正式运行仍需独立授权。旧 raw/verdict 不修改。

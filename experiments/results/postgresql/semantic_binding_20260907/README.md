@@ -7,7 +7,7 @@
 
 This is an engineering correctness check for the PostgreSQL execution foundation, supporting both
 data organization and scheduling research. It implements the common-call and tuple-routing parts of
-[the database design](../../../plans/postgresql_call_binding_design.md). It does not enable Filter→Map
+[the database design](../../../plans/数据库接入.md#calls). It does not enable Filter→Map
 or establish model quality, performance, or an asynchronous provider.
 
 The baseline is `11e89b08` on `codex/semantic-call-binding`. Both collectors now create independently
@@ -100,3 +100,13 @@ Next implement the versioned outer carrier and the actual Filter→Map consumer,
 input evaluation, ordinary-expression behavior, function permissions, NULL/LIMIT and cancellation.
 Shared-call keys are planner-local; binding tests do not qualify image models or arbitrary SQL shapes.
 Incremental session implementation and its PG bridge remain separate work.
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：共同调用与tuple绑定（2026-09-07）。
+
+[验证记录](README.md)：本地115、Linux138项、PG18.3回归1及
+1848项TAP通过；605项源码哈希一致。原型纠正OFFSET求值预期，组合仍未开放，模型请求0。

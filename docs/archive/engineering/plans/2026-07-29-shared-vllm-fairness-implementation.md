@@ -1,7 +1,7 @@
 # Shared-vLLM 1/2/4-Job Fairness Implementation Plan
 
 > Scope: implement and gate the preregistered experiment in
-> `experiments/plans/service_scheduling_backpressure.md` §13. Do not tune the
+> `experiments/plans/archive/提交与调度方案.md` §13. Do not tune the
 > completed SLO-EWMA controller and do not start a formal matrix before the
 > real dual-GPU gate passes.
 
@@ -109,7 +109,7 @@ Files:
 - Modify `code/scripts/README.md`
 - Modify `code/README.md`
 - Modify `code/INFRA_STATUS.md`
-- Modify `experiments/plans/experiment_status_and_gaps.md`
+- Modify `experiments/plans/archive/进度汇总_20261001.md`
 - Modify `PROJECT_LOG.md`
 
 Steps:

@@ -44,7 +44,7 @@ includes monotonic stage traces and bounded input-pull pauses. Superuser-only `t
 The ready-first comparison returns an already-ready head before replenishing the input window;
 it adds no group-completion wait. These fields, settings, trace calls and alternative policy are absent
 from the normal build. Use separate prefixes/build directories when comparing profiles.
-The [current diagnostic plan](../../../experiments/plans/data_organization_batching.md) owns the finite cases;
+The [current diagnostic plan](../../../experiments/plans/数据组织.md) owns the finite cases;
 this test build is not qualified as a production strategy.
 
 Opt-in `semloom_pg.enable_predicate_prefetch` allows only inspected built-in predicates on supported
@@ -70,7 +70,7 @@ observation, not a wire or scheduling change. Strict PG18.3 build, regression 1/
 real capacity observations and their limitations are in the [capacity report](../../../experiments/results/postgresql/map_capacity_20260910/README.md).
 
 `semloom_pg` is the current `REL_18_3` reference capability slice from
-`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`. It proves that a
+`experiments/plans/系统架构.md`. It proves that a
 fail-closed SQL marker can be lowered to a planner-visible `CustomPath`/`CustomScan` with an ordinary
 PostgreSQL child plan. It includes a deterministic exact-SemFilter semantic contract and a gateway-side fixed
 OpenAI-compatible model adapter. HTTP remains outside the PostgreSQL backend. Generated Map can now
@@ -91,7 +91,7 @@ Plain column/constant inputs on an ordinary child without quals use the configur
 other expressions show an effective window of 1 in EXPLAIN. Input order is the current Map
 contract, restored by sequence association without a Sort node. This profile currently serves
 one generated Map per connection. Multiple independent queries share the same Engine;
-see the [multi-Job design](../../../experiments/plans/semloom_multisession_design.md). [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
+see the [multi-Job design](../../../experiments/plans/增量执行.md#multi-query). [Validation](../../../experiments/results/postgresql/async_window_20260908/README.md)
 passes 1958 PG TAP checks and 12 actual model requests, including two overlapping HTTP requests
 from one PG query. Existing synchronous profiles remain available.
 
@@ -112,7 +112,7 @@ streams and one bounded handshake slot. Reserved stream slots cannot be granted 
 Authenticated streams may idle between frames; once a frame starts it must finish within the frame
 deadline. PG runtimes own explicit, idempotently ended flow handles; the provider only borrows them. Adding operators does not increase the Job grant. Query errors and resource-owner cleanup
 close the control connection; ending one stream does not end the Job. See the
-[query attribution design](../../../experiments/plans/postgresql_query_job_design.md) and
+[query attribution design](../../../experiments/plans/数据库接入.md#query-job) and
 [checks](../../../experiments/results/scheduling/query_job_20260909/README.md).
 
 The task window is a retained-row budget, independent of backend concurrency. Row slots and
@@ -142,7 +142,7 @@ at `5771cef1` pass PG18.3 strict build, regression 1/1, all seven TAP files (175
 Python/C message tests. Nine real-model requests verify separate Filter v3/v4 and Map v5 SELECT/INSERT
 paths, including NULL controls, results, usage and writeback. The supported shapes below remain unchanged.
 
-The [opt-in choice generation profile](../../../experiments/plans/completed/postgresql_choice_profile_engineering.md)
+The [opt-in choice generation profile](../../../experiments/plans/completed/选择算子接入_20260902.md)
 now has PostgreSQL plan support (`00cc6bbf`). Adding the fourth option
 `"generation_profile":"semloom.generation.choice.tristate.v1"` saves a complete ordered profile in schema 3.
 Ordinary EXPLAIN displays its ID, version, choices, digest and unqualified status; prepared/generic plans retain
@@ -218,7 +218,7 @@ may be transferred into the company system. Planner/executor adaptation and prov
 tasks, neither completed. The current tristate profile does not require all future filters to expose UNKNOWN;
 binary semantics and legacy error handling need explicit identities and tests. Concrete reference lookups,
 adoption decisions and preservation of this extension's shared layers belong to the
-[engineering-reference and transfer plan](../../../experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy).
+[engineering-reference and transfer plan](../../../experiments/plans/系统架构.md#frontend-adapter-strategy).
 That comparison covers SQL registration, choice of PG integration, operator semantics, task construction,
 tuple/result binding, lifecycle and external execution, not just multiple operators or gateway concurrency.
 The current thin scan, PG-private runtime and neutral provider interface remain the implementation base.

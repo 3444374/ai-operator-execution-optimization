@@ -103,7 +103,7 @@ a second, incompatible row type to `src/workloads.py`.
 
 **Files:**
 - Modify: `code/INFRA_STATUS.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`

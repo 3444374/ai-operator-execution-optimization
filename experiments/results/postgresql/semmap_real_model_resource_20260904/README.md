@@ -79,7 +79,7 @@ summary/log 已落盘。采样显示 93 次均记录
 本次运行按实际执行的 metric schema v1 判定失败。后续审计确认 v1 的 `uds_peak_delta`
 实际采集的是 backend 与 gateway 的**进程总 FD** 峰值增量，与 `uds_peak_delta` 名称和冻结合同
 所称的 provider UDS FD 不是同一对象；93 个 attempt 均为对同一不可逆峰值的重复判定。
-诊断运行（metric schema v2，`experiments/plans/postgresql_semmap_generation_contract.md` §8.4.2）
+诊断运行（metric schema v2，`experiments/plans/生成算子.md` §8.4.2）
 进一步把 v1 观察到的 +3 分解为：backend 新增 provider UDS client socket ×1（connected 端无绑定路径，
 不在 `/proc/net/unix`）、backend `anon_inode:[eventpoll]` ×1（PostgreSQL WaitEventSet 正常瞬态）、
 gateway accepted provider 会话 ×1，三类均于查询结束后释放。原始失败结果和全部采样继续保留；
@@ -100,3 +100,20 @@ INSERT、NULL/空串、取消、模型拒绝和恢复的纵向执行。不能声
 `semmap_4d_b19486a1_20260904`；下载包 SHA-256 为
 `c1cd42182f16b6f607909128b8eb39cbd660e20014b31433c37c1d4c42f78a30`。公开文件不包含服务器地址、
 账号、凭据、绝对运行路径或模型 payload。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL 生成型 Map 真实模型与资源检查（2026-09-04）。
+
+[真实链路与资源记录](README.md)绑定
+`main@b19486a1`。PostgreSQL 18.3 → wire v5 → gateway → Qwen2.5-7B/vLLM → PostgreSQL
+完成 25/32 个有持久账本的请求：SELECT、INSERT、NULL 零调用、空串、取消、模型 4xx 拒绝和两类恢复通过；
+真实 gateway 的 FD/线程回到基线，服务身份前后一致并正常关闭。这证明受限生成型 Map 的真实纵向链路，
+不证明生成质量或性能。
+
+同轮 fixture-only 资源运行完成 3×2,000 个 100,000-byte 输入和 65,536-byte 输出，但 60 秒内至少
+一项预定 RSS/FD 条件未满足；采集器又未在断言前保存逐点数据，无法判断具体超限项。按停止条件没有
+重跑，也没有继续取消/断连/gateway-exit 资源子项。因此资源资格失败，四 D 仍未全部完成。

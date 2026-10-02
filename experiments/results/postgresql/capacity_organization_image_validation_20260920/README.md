@@ -5,7 +5,7 @@
 
 后续：[M1供给复查](../map_supply_diagnostic_20260920/README.md)完成受控CPU修复，但新一轮真实C64筛查失败并中止；下文保留前次身份和全部结果。
 
-本轮执行[预先声明的清单](../../../plans/data_organization_batching.md#m1-m2-f-real-trial)，
+本轮执行[预先声明的清单](../../../plans/archive/数据组织历史方案_20260927.md#m1-m2-f-real-trial)，
 研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 **文本实际 8,248 次 POST，图像实际 151 次前向；全部调用按账本完成，无真实失败重跑。**
 M1 未得到吞吐平台候选，后续三个条件阶段未运行；M2 完成实验层五组对照；F 完成真实 CLIP 数值和指定生命周期检查。

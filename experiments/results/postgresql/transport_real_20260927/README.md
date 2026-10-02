@@ -1,6 +1,6 @@
 # PG文本HTTP与可选Daft/Ray的真实模型验证
 
-2026-09-27。执行前范围见[追加真实模型清单](../../../plans/data_organization_batching.md#incremental-multimodal-delivery)，
+2026-09-27。执行前范围见[追加真实模型清单](../../../plans/archive/数据组织历史方案_20260927.md#incremental-multimodal-delivery)，
 工程修改与受控生命周期检查见[前序报告](../incremental_transport_20260927/README.md)。
 工程及两轮证据提交为`0df9a86d`，已按用户授权合入main；下文源码身份继续保留实际运行时的状态。
 本轮研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化，属于接入工程验证。

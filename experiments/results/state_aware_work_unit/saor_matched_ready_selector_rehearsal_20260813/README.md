@@ -246,7 +246,7 @@ correct service throughput、MFU、服务压力和资源指标作跨系统主比
 
 ## 8. 原始材料与完整归档
 
-仓库内 [`raw/`](raw/) 保存：两轮 manifest/group runs、新版 preflight、completion-accounted
+仓库内 [`raw/`](raw) 保存：两轮 manifest/group runs、新版 preflight、completion-accounted
 ablation summary 与 validation。完整逐请求、submission、credit、release event 和 resource traces
 保留在服务器仓库外归档：
 

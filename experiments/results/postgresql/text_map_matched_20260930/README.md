@@ -2,7 +2,7 @@
 
 2026-09-30。研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 本轮延续 `codex/text-map-matched-comparison`，没有切换分支、提交、推送或合并。
-执行依据为[四路径计划](../../../plans/completed/text_map_matched_comparison.md)；此前的
+执行依据为[四路径计划](../../../plans/completed/文本Map对比_20260930.md)；此前的
 [本地准备记录](../text_map_comparison_preparation_20260928/README.md)保留当时的82项检查。
 
 2026-09-30存储修订：原587份raw文件按原字节保存在[完整归档](raw/evidence.tar.gz)，

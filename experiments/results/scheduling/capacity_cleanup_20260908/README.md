@@ -2,7 +2,7 @@
 
 Status: controlled checks, PG18.3 tests and two independent 12-request real-model runs passed.
 This is engineering correctness evidence from `21909415` plus the archived source manifests.
-The [plan](../../../plans/semloom_incremental_session_design.md#18-capacity-separation-and-completion-cleanup-2026-09-08)
+The [plan](../../../plans/增量执行.md#session-18-capacity-separation-and-completion-cleanup-2026-09-08)
 records scope and source decisions; no performance or quality improvement is claimed.
 
 ## Changes and behavior

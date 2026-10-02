@@ -300,7 +300,7 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 1. 根 `AGENTS.md`：项目边界与实验规则；
 2. `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md` 和本目录 `AGENTS.md`：部署、运行时、网络与存储规则；
 3. 根 `PROJECT_OUTLINE.md` 和
-   `experiments/plans/experiment_status_and_gaps.md`：当前唯一实验顺序；
+   `experiments/plans/archive/进度汇总_20261001.md`：当前唯一实验顺序；
 4. 本节：判断是“全新实例准备”还是“已配置实例开机恢复”；
 5. 本文件对应的详细章节；实验参数只从 `deploy/autodl/*.example.json`
    模板读取。
@@ -2064,7 +2064,7 @@ DuckDB `ai` community extension 必须先用
 `dual_gpu_duckdb_ai_capability_gate.example.json` 跑 bounded-output 独立轨；不得写成
 DuckDB core 或官方 benchmark，也不得因 ShareGPT length error 放宽失败规则。正式 held-out
 合同在 `dual_gpu_text_native_baseline_formal.example.json`，详细解释见
-`experiments/plans/completed/text_native_baseline_rerun_20260802.md`。
+`experiments/plans/completed/文本原生对照_20260802.md`。
 
 开机后仍先完整执行 §10.5。随后按本节顺序操作：
 

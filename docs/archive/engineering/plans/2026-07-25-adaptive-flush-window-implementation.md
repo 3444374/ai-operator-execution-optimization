@@ -318,7 +318,7 @@ git commit -m "feat: wire adaptive flush window traces"
 - Create: `experiments/results/adaptive_flush_window_20260725/README.md`
 - Create: `experiments/results/adaptive_flush_window_20260725/*.csv`
 - Modify: `experiments/results/README.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 - Modify if conclusions change: `PROJECT_OUTLINE.md`

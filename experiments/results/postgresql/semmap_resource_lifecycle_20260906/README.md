@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 本文件是内部工程验收记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-当前实施入口仍是 [Map 合同 §8.4.3](../../../plans/postgresql_semmap_generation_contract.md)，本文件记录实际执行证据。
+当前实施入口仍是 [Map 合同 §8.4.3](../../../plans/生成算子.md)，本文件记录实际执行证据。
 
 历史验证/审计驱动已从工作树退役，源码链接指向已推送的 `d93e3f9b`；[退役源码索引](../retired_sources.json)
 保存原文件 SHA-256 和 Git blob。原始审计、失败记录和历史测试数量保留，`PUBLIC_SHA256SUMS.json`
@@ -209,7 +209,7 @@ schema v2.1 / phase-lifecycle-3，实际使用新端口55499。1×100、100000/6
 
 ## 7. 合并前退役代码清理（2026-09-06）
 
-依据 [Map 合同 §8.4.7](../../../plans/postgresql_semmap_generation_contract.md)，从已推送的
+依据 [Map 合同 §8.4.7](../../../plans/生成算子.md)，从已推送的
 `d93e3f9b` 清理 19 个退役文件：5 个兼容入口、1 个仅重放旧错误的测试、13 个历史实验驱动。
 删除文件原有 2208 行；另外删除 golden session 转发与 adapter 旧身份属性 fallback。
 四个 TAP 直接启动公共 gateway CLI；Python 调用方使用公共协议、session 和明确预算的通用账本。
@@ -239,7 +239,7 @@ SQL recording/reference、wire v2/v3/v4/v5、当前 Filter 校准/质量代码�
 
 ## 8. 两算子完整回归与 main 合并验证（2026-09-06）
 
-用户在清理后要求确认两个算子可完整运行，并授权验证无误后合并。计划见 [Map 合同 §8.4.8](../../../plans/postgresql_semmap_generation_contract.md)。
+用户在清理后要求确认两个算子可完整运行，并授权验证无误后合并。计划见 [Map 合同 §8.4.8](../../../plans/生成算子.md)。
 被测提交 `5771cef1305fb5c95b372319e249deaa3d0c0be7`，运行时代码与 `fcd12373` 一致；
 合并起点为 `main@d3fb71a0`。本次只补验证和状态文档，代码无需再次修正。main 采用快进合并，
 让经过验证的源码原样进入主分支；合并后的 Git 身份另由分支引用核对，不倒填进原测试记录。
@@ -290,3 +290,22 @@ Filter以明确的蓝色/非蓝色陈述检查TRUE/FALSE和实际保留行；Map
 这证明当前同步单算子在已声明SQL形状下的执行与合并兼容性。真实取消/拒绝证据保持原来各次
 运行身份，本次通过全TAP检查对应行为；正式资源3×2000、Filter质量/校准、性能、同一SQL的
 Filter→Map组合及异步多在途仍未完成，不因main合并而改变状态。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：SemMap resource measurement repair (2026-09-06)。
+
+最新[两算子合并验证](README.md#main-integration)通过
+完整PG18.3 regression/TAP与247项相关测试，并完成Filter v3/v4、Map v5六个真实SELECT/INSERT
+场景，共9次模型请求。仅确认现有同步单算子能力，不改变组合、异步、正式资源或质量/性能状态。
+
+[退役源码索引](../retired_sources.json)登记本次清理的 19 个文件及已推送 `d93e3f9b` 的
+源码 URL、Git blob 和 SHA-256。历史采样、失败结果和报告保留；旧脚本只从对应版本恢复，
+后续实验使用 `code/` 中的公共入口。清理验证记录在[工具记录](README.md#retirement)。
+
+[Lifecycle repair evidence](README.md) records the completed
+tool repair, controlled tests and isolated PG18.3 fixture diagnostic at `77a123de`: actual 1×100, all nine
+required phases valid/passed, zero model requests. Formal 3×2000 remains unrun and requires separate authorization.

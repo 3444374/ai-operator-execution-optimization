@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 Status: real-model run and final-source checks passed; owned services stopped.
-This is the [window-one PG connection](../../../plans/semloom_incremental_session_design.md#pg-map-window-one),
+This is the [window-one PG connection](../../../plans/增量执行.md#session-pg-map-window-one),
 not PG multi-in-flight execution or a performance experiment.
 
 ## Implementation and ownership
@@ -151,4 +151,4 @@ the corrected invocation is `PYTHONPATH=code python3 -m unittest tests.execution
 A standalone `ruff` executable was unavailable on the server, so that check was not completed.
 No PG or model service was started in this follow-up, and there were zero new model requests.
 The earlier nine requests prove window one only. The required PG work is recorded in
-[the binding design](../../../plans/postgresql_call_binding_design.md#pg-async-readiness).
+[the binding design](../../../plans/数据库接入.md#calls-pg-async-readiness).

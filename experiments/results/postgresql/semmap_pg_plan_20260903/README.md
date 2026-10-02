@@ -12,7 +12,7 @@
 
 ## 目的与范围
 
-按[四 D 合同 §3、§8](../../../plans/postgresql_semmap_generation_contract.md)完成 SQL 注册、schema 4
+按[四 D 合同 §3、§8](../../../plans/生成算子.md)完成 SQL 注册、schema 4
 计划保存、严格解码、PG 权限和初始化检查，为后续 C v5 接线提供已验证入口。保留现有 scan、pump、
 runtime/provider 分工；本次没有实现生成型 Map 的逐行执行，也没有修改 core、gateway、wire 或调度。
 
@@ -153,3 +153,18 @@ PG18.3 custom plan 接受并生成 schema 4 CustomScan；generic plan 拒绝。
 不对服务器其他工作负载作全局清理声明。[两路只读复核](raw/inline_20260903/review.json)分别为
 Standards 0 项、Spec 0 项；复核者未重跑服务器或模型，运行证据由上述原始日志支持。
 新 Map 仍处于 plan-only，C v5、PG＋golden 与真实模型尚未接通；本次修复不能改写为整个四 D 完成。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL 生成型 Map PG plan/权限（2026-09-03）。
+
+[PG plan 与权限验证](README.md)：独立分支 `2205ccbb`，
+新 SQL 0.2.0/schema 4、固定参数、复制/严格解码、原生 EXECUTE ACL/hook 与缓存计划检查；
+PG18.3 `-O2 -Werror`、regression 1/1、TAP 1260/1260、本地/服务器各 136/136 与 C11 通过。
+该次只验证 plan，实际生成执行明确拒绝；后续执行实现已随上方切片纳入 main。没有新 Map 模型或资源验收，失败与中间结果单独保留。
+后续 [SQL wrapper 修复](README.md#sql-wrapper-source-check) `676615fa`
+关闭内联后的参数来源旁路，重新通过 PG18.3 TAP 1283/1283、regression 1/1 和两端各 136/136；
+只接管显式 Map，普通 SQL 内联保留；该历史切片没有 C v5 执行或模型资格，后续执行见上方记录。

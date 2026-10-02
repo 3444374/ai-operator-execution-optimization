@@ -6,7 +6,7 @@
 Status: implementation, controlled PG checks and one 12-request real-model run passed.
 Scope: one generated Map using the version-six provider; this is not Filter async execution,
 multiple active gateway sessions, or a performance/quality comparison.
-Design and source decisions: [PG binding design §13](../../../plans/postgresql_call_binding_design.md#pg-async-readiness).
+Design and source decisions: [PG binding design §13](../../../plans/数据库接入.md#calls-pg-async-readiness).
 
 ## What runs
 

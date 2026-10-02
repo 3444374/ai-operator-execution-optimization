@@ -2,7 +2,7 @@
 
 Status: controlled checks and one 12-request real-model regression passed.
 This is a behavior-preserving refactor from `bf327649`, not a new scheduling method or SQL capability.
-The [implementation plan](../../../plans/semloom_incremental_session_design.md#shared-module-cleanup)
+The [implementation plan](../../../plans/增量执行.md#session-shared-module-cleanup)
 records scope and source decisions. No historical result or active execution path was deleted.
 
 ## Changes

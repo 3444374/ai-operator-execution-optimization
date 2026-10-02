@@ -56,7 +56,7 @@ behavior against that revision. No LOTUS source has been copied in this slice.
 
 The [two-stage controlled test](../../tests/scheduling/test_method_continuation.py) demonstrates the
 same session with one held-task slot and two declared capabilities. The design and remaining work are
-recorded in [the incremental design](../../../experiments/plans/semloom_incremental_session_design.md).
+recorded in [the incremental design](../../../experiments/plans/增量执行.md#session).
 
 
 To enter the organized path, the producer adds `TaskInfo` to each offered request after the semantic
@@ -117,7 +117,7 @@ closing all drivers the service owner still drains the Engine and closes its Job
 
 The [driver tests](../../tests/scheduling/test_method_driver.py) cover aggregate reservations,
 consumer backpressure, multiple Jobs and late completions. The
-[V1 plan](../../../experiments/plans/bounded_method_driver.md) separates this engineering work from
+[V1 plan](../../../experiments/plans/增量执行.md#method-driver) separates this engineering work from
 the first real-data Map experiment. General PG method programs and LOTUS cascades remain pending.
 
 The driver adds `TaskInfo` for row/call/stage association on the organized path. Optional

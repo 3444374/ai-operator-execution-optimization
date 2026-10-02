@@ -3,7 +3,7 @@
 2026-09-30。**后续完整运行已完成四路径调参和1024行独立评价，68条查询、41,024次请求通过。**
 前次失败、错误记录修订及2,064次诊断均单独保留。
 研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-按[当前计划](../../../plans/completed/text_map_matched_comparison.md)运行SemLoom Daft/Ray、PG-source direct、
+按[当前计划](../../../plans/completed/文本Map对比_20260930.md)运行SemLoom Daft/Ray、PG-source direct、
 原生Ray Data SQL→HTTP与Daft Native SQL→HTTP工作函数执行图。
 [候选供给与生命周期检查](../text_map_native_candidates_20260930/README.md)已完成；
 [旧配置结果](../text_map_matched_20260930/README.md)保留原值，与本轮单独报告。
@@ -282,7 +282,7 @@ Ray actor现在将安全的异常类型、最多四层原因类型及代码位�
 [独立清理](raw/fix/cleanup.json)确认测试PG停止、自有进程为空、GPU0计算进程为空、会话ACL保持原样。
 762份当前执行源码与服务器相同，见[当前摘要](raw/fix/source.json.gz)；旧失败的761份源文件在更新前独立归档，
 见[原源码归档摘要](raw/fix/real02-source-archive.json)。原失败数据和身份不被修订后代码覆盖。
-新诊断清单为16行核对＋容量128的4×512行，共2,064次请求、15分钟，见[计划](../../../plans/completed/text_map_matched_comparison.md)。
+新诊断清单为16行核对＋容量128的4×512行，共2,064次请求、15分钟，见[计划](../../../plans/completed/文本Map对比_20260930.md)。
 用户随后确认独立诊断清单，执行结果见下节，没有自动续跑旧账本。修订后的[交付检查](raw/fix/final-checks.json)通过；该修订阶段没有执行提交或推送。
 
 ## 已授权的2,064次真实诊断复测
@@ -320,3 +320,16 @@ Ray actor现在将安全的异常类型、最多四层原因类型及代码位�
 模型请求的成功证据与发送前计数分别报告。运行记录不以提交日期代替实际执行日期；发布状态以Git历史为准。
 
 交付检查覆盖新增文字、本地链接、隐私与差异空白，结果见[检查记录](raw/final-checks.json)。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：原结果入口。
+
+2026-09-30：[分支审查与证据存储](README.md#branch-review)。
+批量raw按原字节归档并独立恢复核验，直引大文件使用gzip；配置校验修订和启动分段观测的后续目标环境证据见上方。
+
+本次文本Map导出日志保留终端空白，CSV保留导出时的换行格式；仓库`.gitattributes`仅对对应日志/CSV设置空白检查属性。
+公开副本摘要与服务器导出文本摘要分别保留，不通过重写证据字节来消除格式提示。

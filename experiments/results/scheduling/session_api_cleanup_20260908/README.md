@@ -1,7 +1,7 @@
 # 会话公共接口、Job选择与旧适配器清理
 
 2026-09-08，内部工程验证；基线`2ad67c06`，实现于`codex/session-api-cleanup`。
-对应[三项整理设计](../../../plans/semloom_multisession_design.md)。本轮不新增PG算子或GPU调度算法，
+对应[三项整理设计](../../../plans/增量执行.md#multi-query)。本轮不新增PG算子或GPU调度算法，
 只收敛既有执行框架，保持同步Filter/Map参考、v6协议及资源归属规则。
 
 ## 三项改动

@@ -6,7 +6,7 @@
 ## Purpose and setup
 
 This verifies the PostgreSQL execution foundation for subsequent data organization and scheduling work,
-using the [composition design](../../../plans/postgresql_call_binding_design.md#12-2026-09-08真实组合小规模验证).
+using the [composition design](../../../plans/数据库接入.md#calls-12-2026-09-08真实组合小规模验证).
 Source `e84d308d` contains the previously verified Filter→Map implementation; its PG library SHA-256
 was checked against the earlier strict-build artifact. No production PG code changed in this run.
 

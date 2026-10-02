@@ -10,7 +10,7 @@ are recorded [separately](../incremental_real_20260908/README.md).
 
 This is an engineering correctness check for the common execution context used by data organization
 and scheduling research. Baseline: `2d2dee35`; implementation branch: `codex/incremental-session`.
-The [detailed design](../../../plans/semloom_incremental_session_design.md) owns the interface and the
+The [detailed design](../../../plans/增量执行.md#session) owns the interface and the
 future data-organization integration. No model-quality, throughput, fairness or GPU-memory claim is made.
 
 SessionEngine/SchedulingSession now accept an explicit prefix of immutable tasks, advance without
@@ -87,3 +87,14 @@ Real nonblocking backends, staged preparation buffers, multi-task submission, dy
 full legacy-driver migration, multi-Job fairness and PG async/wire integration remain pending. Passing
 these tests does not expand the prior PostgreSQL or real-model evidence. No active legacy implementation
 was removed merely because a new interface exists.
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：原结果入口。
+
+[单流增量执行验证](README.md)记录2d2dee35之后的受控核心实现：
+接受前缀、结果lease、取消与跨session额度；任务选择复用/适配已有策略，FIFO可替换。
+旧同步入口保持；真实Backend、批处理与PG接入未由本轮完成。

@@ -32,7 +32,7 @@ Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调
 恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，下一项检查小窗口反复创建。
 Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
 实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
-验证安排见[准备调优计划](../experiments/plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)。
+验证安排见[准备调优计划](../experiments/plans/查询调优.md#热路径独立计时与无模型验证)。
 
 ## 当前 PostgreSQL 文本 Map 的执行流程
 
@@ -430,7 +430,7 @@ This is where later data organization and submission strategies cooperate, rathe
 submitter outside the execution layer. The current reference submits one task at a time. Multi-member
 submissions and prepare-stage buffers need explicit member/result mapping and shared budgets before
 integration. Existing staged block descriptors and brokers remain reusable inputs to that work.
-The [design](../experiments/plans/semloom_incremental_session_design.md) and
+The [design](../experiments/plans/增量执行.md#session) and
 [verification](../experiments/results/scheduling/incremental_session_20260908/README.md) distinguish this tested core from pending real backend/PG integration.
 `scheduling/runtime/async_backend.py` now supplies a bounded coroutine transport. It uses one async I/O
 thread, retains uncertain outcomes and only releases a slot after poll transfers the terminal event.
@@ -444,14 +444,14 @@ and predeclared per-task capabilities. It supports a method returning another re
 while the existing session retains scheduling and lease ownership. The opt-in `MethodDriver` now
 bounds multiple rows and retained payloads using fixed grants from a shared `MethodBudgetPool`.
 Cascade algorithms, dynamic method budget allocation, production model capability routing, and
-PG method integration remain pending. See the [V1 plan](../experiments/plans/bounded_method_driver.md).
+PG method integration remain pending. See the [V1 plan](../experiments/plans/增量执行.md#method-driver).
 
 The opt-in `WorkWindowOrganizer` now connects the existing complete-task work slicing to accepted
 session tasks. `TaskInfo` carries row/call/stage identity and `WorkDescriptor`; `BatchMember` preserves
 organization membership through backend submission and delivery. The current backend expands a group
 into independent one-member requests, each charged separately. A pending group retains only task keys
 across backpressure. Unconfigured callers keep their existing single-task behavior. See
-[the organized-window design](../experiments/plans/semloom_incremental_session_design.md#organized-window).
+[the organized-window design](../experiments/plans/增量执行.md#session-organized-window).
 
 ## Scheduling foundation
 
@@ -877,7 +877,7 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 它只运行 direct static sharded、DuckDB AI static sharded 和 project fixed static
 三臂，统一 PostgreSQL source、immutable manifest、双 endpoint、数据库 sink、质量与
 资源口径，并按确定性随机顺序执行 1 warmup + 3 formal；当时的实验条件记录在
-`../experiments/plans/archive/opening_database_e2e_p0_20260807.md`。该 runner 不作为新增
+`../experiments/plans/archive/开题三路径对照_20260807.md`。该 runner 不作为新增
 通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
 
 `src/baselines/text/orchestration/native_matrix.py` 在运行前记录并固定每臂校准指纹后，

@@ -68,4 +68,4 @@
 
 1. **隔离 cache 压力变量**：在 2-ep/7B 上人为缩 `gpu_memory_utilization` 制造可控淘汰率，复测 pala P50 改善是否随淘汰率单调增强——若是，则「cache 压力开关」可定量刻画，concentrated（低淘汰）与 agent-trace（高淘汰）的差异可归因。
 2. **补 per-arm APC 命中率**（`prefix_cache_hit_rate`），使 pala 的 P50 改善能干净归因到命中率差异。
-3. 与 4-ep/1.5B、agent-trace 联动，把「cache 淘汰压力开关」作为 prefix 方向的总判定框架（见 `experiments/plans/experiment_status_and_gaps.md` P1 段）。
+3. 与 4-ep/1.5B、agent-trace 联动，把「cache 淘汰压力开关」作为 prefix 方向的总判定框架（见 `experiments/plans/archive/进度汇总_20261001.md` P1 段）。

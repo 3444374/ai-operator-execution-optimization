@@ -132,7 +132,7 @@
 
 ### 1.7 下一步实验
 
-按 `experiments/plans/experiment_status_and_gaps.md` §10.3:
+按 `experiments/plans/archive/进度汇总_20261001.md` §10.3:
 
 1. **Prefix cache-on 独立机制门禁**(P1)。当前所有 prefix 实验都在 cache-off 下,必须在 cache-on 时同时报告命中率证据,才能给出 prefix-aware 的最终结论。
 2. **Length-align × token-budget 正式独立重复**(P1)。补做 length-only vs length+token-budget vs length+prefix 三因素显式联合消融。
@@ -232,7 +232,7 @@
 
 ### 2.7 下一步实验
 
-按 `experiments/plans/experiment_status_and_gaps.md` §10.3:
+按 `experiments/plans/archive/进度汇总_20261001.md` §10.3:
 
 1. **SLO-aware EWMA flush**(P1)。当前 25/50ms 只是 baseline;完整控制律 = oldest-request slack + token backlog + arrival/service-rate EWMA + hard deadline + 滞回。预期在突发到达下能击败 fixed-50。
 2. **Request-level continuous replenishment**(P1)。当前 Ray 上游仍按 submission 整批回收 credit;逐请求完成释放 credit 可能减少 HOL 并放大 vLLM continuous batching 收益。这是 §10.2 的关键缺口,与批次 3 的软拥塞信号盲区直接相关。
@@ -350,11 +350,11 @@ AIMD 的拥塞信号是 vLLM Prometheus `waiting > 0` 或 `KV cache usage` 超�
 
 - **RC2 admission 的论文叙事收敛为**:"在共享 vLLM endpoint 下,静态 K_max=8 是必要的前台延迟 guardrail(强证据);动态自适应控制器(AIMD/EWMA/PID)在稳态 workload 下与同上限 static 策略不可分辨,根因是当前观测信号无法识别 Ray 侧软拥塞(诊断证据)"。
 - **这是诚实但有力的贡献**:不是"我们发明了更好的控制器",而是"我们诊断出动态控制在 LLM serving 链路里的观测信号盲区,并指出三条绕行路线"。负结果 + 机制诊断 > 强行包装的正面结果。
-- **批次 3 的诊断直接驱动 `experiments/plans/experiment_status_and_gaps.md` §10.4 的三条绕行路线**(SFS 模拟 / LPS+USL 解析 / 客户端 lifecycle 推断),把 request-level replenishment 从"工程改进"提升为"可能解锁动态控制价值的必要前置"。
+- **批次 3 的诊断直接驱动 `experiments/plans/archive/进度汇总_20261001.md` §10.4 的三条绕行路线**(SFS 模拟 / LPS+USL 解析 / 客户端 lifecycle 推断),把 request-level replenishment 从"工程改进"提升为"可能解锁动态控制价值的必要前置"。
 
 ### 3.7 下一步实验
 
-按 `experiments/plans/experiment_status_and_gaps.md` §10.3:
+按 `experiments/plans/archive/进度汇总_20261001.md` §10.3:
 
 1. **Request-level continuous replenishment**(P1,最高优先)。逐请求完成释放 credit,副产品"逐请求完成时间"提供软拥塞信号。
 2. **客户端 lifecycle 推断作为软拥塞信号**(P1)。~50 行 EWMA 状态,零新依赖,直接用现有 request trace。
@@ -450,7 +450,7 @@ AGENTS.md §1 写死的核心验证:**"两项策略分别独立搜索最优配�
 
 ### 4.7 下一步实验
 
-按 `experiments/plans/experiment_status_and_gaps.md` §10.3:
+按 `experiments/plans/archive/进度汇总_20261001.md` §10.3:
 
 1. **多 endpoint/多 GPU 联合搜索**(P2)。K_max 上限可能在多 endpoint 下不再受 SLO 约束,届时联合空间扩大。
 2. **不同 arrival rate 下的 SLO guardrail**(P2)。当前只测了一个加速到达率;真实生产到达率下 K=16 是否仍违反 SLO?
@@ -552,7 +552,7 @@ AGENTS.md §1 写死的核心验证:**"两项策略分别独立搜索最优配�
 
 ### 5.7 下一步实验
 
-按 `experiments/plans/experiment_status_and_gaps.md` §1.5 + `operator_cost_estimation_20260726/README.md` §后续工作:
+按 `experiments/plans/archive/进度汇总_20261001.md` §1.5 + `operator_cost_estimation_20260726/README.md` §后续工作:
 
 1. **排序指标补充**(第一批 #1)。在 `estimate_operator_cost.py` 中增加 Spearman 秩相关、pairwise accuracy、Top-K precision。Heinrich SIGMOD 2025 R2 的核心论点——编排关心排序而非点估计精度。
 2. **Hybrid 架构**(第一批 #2)。增加 `E2E_base = total_prompt_tokens / estimated_throughput + fixed_overhead` 作为第 16 特征;让 Ridge 学"传统公式无法解释的偏差"。
