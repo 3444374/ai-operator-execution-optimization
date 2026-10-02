@@ -93,7 +93,10 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 | Splitwise | ISCA 2024 | prefill/decode 分池 |
 | μ-Serve | USENIX ATC 2024 | GPU frequency scaling + model multiplexing；作为功耗、能耗与 SLO attainment 参考，不归入输出长度代价估计 |
 | Clockwork | OSDI 2020 | predictable serving |
-| CONCUR、SABER、BucketServe、Scorpio、ProServe | arXiv | 候选 admission/length/SLO/priority 机制 |
+| [Preble: Efficient Distributed Prompt Scheduling for LLM Serving](https://proceedings.iclr.cc/paper_files/paper/2025/hash/5bc342f48de8264779952fac378f96dc-Abstract-Conference.html) | ICLR 2025 | 缓存与负载联合实例选择；完整机制还涉及引擎调度及缓存事件 |
+| [BatchLLM: Optimizing Large Batched LLM Inference with Global Prefix Sharing and Throughput-oriented Token Batching](https://proceedings.mlsys.org/paper_files/paper/2026/hash/5b7ae1758452854dee4e962207d38304-Abstract-Conference.html) | MLSys 2026 | 全局前缀组与引擎 token 调度；共享状态寿命和客户端完成分别核对 |
+| [CONCUR: High-Throughput Agentic Batch Inference of LLM via Congestion-Based Concurrency Control](https://proceedings.mlr.press/v306/chen26fs.html) | ICML 2026，PMLR 306:17881–17891 | KV 占用/命中反馈控制 agent 后续生成；不能直接搬用为单轮 SQL 或远端取消机制 |
+| SABER、BucketServe、Scorpio、ProServe | arXiv | 候选 admission/length/SLO/priority 机制 |
 | Ray Data Streaming Batch | arXiv 2025 | 数据引擎 streaming batch 模型 |
 
 ### 2.3 代价估计扩展
@@ -192,10 +195,17 @@ IMLane与DLPM复用已有精读，KEN仍待精读；这些核对不表示artifac
 
 ## 上游调度与前缀复用的待核查线索
 
-既有材料提到Preble、SOLO、llm-d及OpenReview标识`VSY1nFjumI`、`R7bK9yycHp`。
+<a id="serving-literature-20261003"></a>
+2026-10-03：Preble、BatchLLM 与 CONCUR 的正式题录、相关算法及部分作者源码已核验，分别登记到上表。
+BatchLLM 的作者实现为[MixLLM 的 batchllm_vllm_064 分支](https://github.com/microsoft/MixLLM/tree/batchllm_vllm_064)，
+与同名 HTTP 包分开；正式版还含长尾输出评价，不能沿用“未考虑长尾”的旧批评。
+CONCUR 的早期笔记和 arXiv v1 PDF 使用旧题名；arXiv 摘要改名不表示存在新 v2，当前采用正式 PMLR 题名。
+上述为本轮专项核验，未新建完成式精读笔记、调整 Top 15 或在本项目运行作者实现。
+
+既有材料还提到SOLO、llm-d及OpenReview标识`VSY1nFjumI`、`R7bK9yycHp`。
 这些条目在此登记为待核查线索：正式题录、资料版本、源码或全文、数据/请求重排与提交控制的
 实际覆盖范围需分别核对。未经核验的收益数字与新颖性判定不进入当前结论。
-PolarDB/Daft、Kalypso与代价估计的已有分析继续从知识库和对应文献引用，避免并列维护另一份判断。
+PolarDB/Daft、Kalypso与代价估计的已有分析继续从研究定位和对应文献引用，避免并列维护另一份判断。
 
 <a id="early-candidates"></a>
 ## 早期跨领域线索
