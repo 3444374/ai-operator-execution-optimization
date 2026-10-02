@@ -400,7 +400,7 @@ for this supplement.
 **Files:**
 - Create: `experiments/results/dual_gpu_same_condition_baseline_formal_<id>/`
 - Modify: `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `README.md`

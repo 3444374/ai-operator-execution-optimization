@@ -7,7 +7,7 @@
 
 ## 目的与范围
 
-按[四 D 合同](../../../plans/postgresql_semmap_generation_contract.md)实现 Map 的 C/Python 纯值、
+按[四 D 合同](../../../plans/生成算子.md)实现 Map 的 C/Python 纯值、
 规范身份、原始完成值及 Python v5；复用公共 framing、同步 session 和 fixed HTTP Adapter。
 为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化提供生成型请求基础，
 本轮没有测试优化方法、训练模型或进行成本校准。
@@ -116,3 +116,19 @@ RecursionError；本轮以 20,012 字节、10,000 层嵌套的合成帧复现，
 C port/wire 接线、PG＋golden、真实模型及资源验收仍未完成。原 SQL Map 仍是 recording。
 本轮没有新增质量、真实成本、性能、组合/多会话、异步或 SemLoom PG 增量接口结论。
 下一步按合同接 PG plan/常量/权限，再接 C v5 与完整 PG golden；通过后才使用已确认的真实服务预算。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL 生成型 Map 纯值与 Python v5（2026-09-03）。
+
+[纯值与 gateway 验证](README.md)：独立分支源码 `425d2b1c`，
+C/Python 身份/完成值和严格 Python v5 复用旧 session/HTTP；本地/服务器各 135/135，重新运行
+PG18.3 `-Werror`、regression 1/1、TAP 1022/1022。该次尚未接 PG Map plan/C v5/SQL；未运行真实模型或资源验收。
+独立复核发现的数字输入错误、记录器脱敏和测试标签问题已处理，失败与历史结果保留。
+后续[深层 JSON 输入隔离](README.md#json-depth-repair)在 `a1bbdd30`
+通过本地 136/136 和 C11；仅修 gateway 读帧，未重跑服务器 PG 或真实模型，原验收身份不变。
+上述消息、纯值/v5 与修复已随 `b0400944` 合入本地 main；[合并复查](README.md#main-integration)
+重新通过本地 136/136 与 C11，不新增 PG 或真实模型资格。

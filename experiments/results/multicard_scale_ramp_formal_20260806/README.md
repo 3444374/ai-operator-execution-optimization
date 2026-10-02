@@ -3,7 +3,7 @@
 2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
 原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
-> **命名边界（experiments/AGENTS.md §结果边界）**：本轮是 **bounded_http（ceiling）/ duckdb_ai（harness 预切 2-proc）/ lb_rr（nginx gateway 1-proc）三条系统路径的 scale/calibration sweep**，**非**完整三臂正式排名——**不含 project_static**（2-endpoint hang 未修，见 `experiments/plans/full_grid_sweep_plan.md` §1）。只答：同冻结服务配置下三条路径的容量曲线/稳定性/规模拐点差异。**不能**答"项目方法是否优于 baseline"（须先修 hang + 同合同重跑 project_static）。
+> **命名边界（experiments/AGENTS.md §结果边界）**：本轮是 **bounded_http（ceiling）/ duckdb_ai（harness 预切 2-proc）/ lb_rr（nginx gateway 1-proc）三条系统路径的 scale/calibration sweep**，**非**完整三臂正式排名——**不含 project_static**（2-endpoint hang 未修，见 `experiments/plans/archive/扩展参数矩阵.md` §1）。只答：同冻结服务配置下三条路径的容量曲线/稳定性/规模拐点差异。**不能**答"项目方法是否优于 baseline"（须先修 hang + 同合同重跑 project_static）。
 
 本目录（`multicard_scale_ramp_formal_20260806`）= bounded_http + duckdb_ai；lb_rr 单独在 `multicard_lbrr_scale_ramp_formal_20260806/`（单进程经 nginx gateway，manifest/scheduler 不同，分轨）。
 
@@ -27,7 +27,7 @@
 - **0 error / 未观察到 max_tokens truncation error**（passed cells；finish_reason 字段空 ≠ 审计非 length，DuckDB-ai v0.4.14）。
 
 ## 4. 实验设计
-scale ramp @ frozen concurrency C_total=64；3 路径 × 9 scale × 3 reps。duckdb_ai 与 bounded_http 共用 2-shard `squad_dev` manifest（manifest 预分）；lb_rr 用 endpoint_count=1 `lbrr_dev` manifest（全行→nginx 分），分轨。详见 `experiments/plans/full_grid_sweep_plan.md` §3 校准合同。
+scale ramp @ frozen concurrency C_total=64；3 路径 × 9 scale × 3 reps。duckdb_ai 与 bounded_http 共用 2-shard `squad_dev` manifest（manifest 预分）；lb_rr 用 endpoint_count=1 `lbrr_dev` manifest（全行→nginx 分），分轨。详见 `experiments/plans/archive/扩展参数矩阵.md` §3 校准合同。
 
 ## 5. 实验数据（tokens/s，vLLM counter 口径 = 唯一三路径同口径可比量；sample CV n-1）
 
@@ -65,3 +65,29 @@ scale ramp @ frozen concurrency C_total=64；3 路径 × 9 scale × 3 reps。duc
 - `ramp_aggregate.{json,md}`：全指标聚合（per-cell identity / query_jct vs model_serving_wall / sample CV / reps 单次值）。
 - 每 cell `identity.json`（comparison_role 主字段=系统角色：bounded=direct_client_control / duckdb=harness_pre_split_diagnostic / lb_rr=gateway_system_diagnostic）。
 - driver commit 5878d51；raw 排 requests.csv（含 output_text）已排除。
+
+本节合并原独立补充报告，数值、全部重复、失败说明与结论按原记录保留。
+
+<a id="scale-aggregate"></a>
+<a id="scale-aggregate-多卡-ramp-聚合规模-6410570mean-across-passed-reps"></a>
+## 规模聚合表
+| scale | arm | conc | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 64 | bounded_http | c32 | passed | 45513.2333 | 13.3% | 211.8667 | 71.2ms | 0.1623 | 0.95 | — | 0.0 | 3/3 |
+| 64 | duckdb_ai | c32 | passed | 15563.3333 | 12.8% | 72.4233 | 71.2ms | — | 0.95 | 0.2 | 25.0 | 3/3 |
+| 128 | bounded_http | c32 | passed | 43503.0 | 7.78% | 244.31 | 61.1ms | 0.221 | 0.94 | 33.3 | 8.3 | 3/3 |
+| 128 | duckdb_ai | c32 | passed | 22887.8667 | 12.16% | 128.54 | 60.0ms | — | 0.94 | 25.0 | 25.0 | 3/3 |
+| 256 | bounded_http | c32 | passed | 84530.1333 | 4.19% | 380.5933 | 56.7ms | 0.352 | 0.96 | 29.2 | 26.8 | 3/3 |
+| 256 | duckdb_ai | c32 | passed | 45071.9333 | 2.25% | 202.92 | 57.2ms | — | 0.96 | 43.2 | 29.0 | 3/3 |
+| 512 | bounded_http | c32 | passed | 89506.3667 | 0.9% | 410.0867 | 56.7ms | 0.647 | 0.96 | 60.0 | 51.2 | 3/3 |
+| 512 | duckdb_ai | c32 | passed | 60612.9667 | 12.25% | 277.7067 | 53.7ms | — | 0.96 | 45.1 | 40.7 | 3/3 |
+| 1024 | bounded_http | c32 | passed | 85950.3 | 2.66% | 378.9633 | 56.2ms | 1.157 | 0.96 | 66.7 | 68.7 | 3/3 |
+| 1024 | duckdb_ai | c32 | passed | 68755.9667 | 4.21% | 303.1533 | 52.4ms | — | 0.96 | 69.6 | 70.0 | 3/3 |
+| 2048 | bounded_http | c32 | passed | 88117.9 | 1.31% | 416.48 | 55.8ms | 2.3763 | 0.96 | 85.7 | 85.7 | 3/3 |
+| 2048 | duckdb_ai | c32 | passed | 76831.8667 | 0.72% | 363.1367 | 51.7ms | — | 0.96 | 70.6 | 71.0 | 3/3 |
+| 4096 | bounded_http | c32 | passed | 43265.5333 | 0.8% | 198.04 | 154.3ms | 9.323 | 0.63 | 94.5 | 94.5 | 3/3 |
+| 4096 | duckdb_ai | c32 | passed | 41694.7333 | 0.38% | 190.85 | 149.1ms | — | 0.63 | 89.1 | 89.6 | 3/3 |
+| 8192 | bounded_http | c32 | passed | 43280.9333 | 0.55% | 179.4367 | 161.5ms | 20.705 | 0.62 | 96.7 | 95.7 | 3/3 |
+| 8192 | duckdb_ai | c32 | partial | 42029.6 | 0.01% | 174.245 | 156.2ms | — | 0.62 | 91.1 | 91.2 | 2/3 |
+| 10570 | bounded_http | c32 | passed | 42282.6333 | 0.48% | 175.8033 | 162.2ms | 28.4727 | 0.61 | 95.9 | 96.9 | 3/3 |
+| 10570 | duckdb_ai | c32 | failed | — | —% | — | — | — | — | — | — | 0/3 |

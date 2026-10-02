@@ -7,7 +7,7 @@
 
 This engineering check supports the PostgreSQL execution foundation for the project's data organization
 and scheduling research. It checks the first preparation step in the
-[call binding design](../../../plans/postgresql_call_binding_design.md#8-a1首个实现步骤分离map调用分析).
+[call binding design](../../../plans/数据库接入.md#calls-8-a1首个实现步骤分离map调用分析).
 It does not compare scheduling methods or model quality.
 
 The behavior baseline is `main@b4b93b2e`; the working branch is `codex/semantic-call-binding`.
@@ -85,3 +85,13 @@ They do not establish A1's shared SemanticCall/V1 binding, Filter→Map, asynchr
 resource qualification or performance. The next database step is the common call/binding implementation;
 A2a still needs the explicit permission and FINAL/OFFSET projection prototype before enabling composition.
 The separate incremental-session design still needs B1 characterization and B2 implementation.
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：Map调用分析提取（2026-09-07）。
+
+[验证记录](README.md)：15个函数体等价，本地115项、
+Linux138项、PG18.3严格编译及regression1项、TAP1808项通过。只调整模块职责，模型请求0。

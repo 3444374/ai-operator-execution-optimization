@@ -4,14 +4,14 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 2026-09-20 状态说明：本轮作为**已完成的测量反例**保留。后续研究按
-[有效吞吐平台附近的在途工作与资源代价](../../../plans/data_organization_batching.md#m1-throughput-platform)，
+[有效吞吐平台附近的在途工作与资源代价](../../../plans/数据组织.md#m1-throughput-platform)，
 不继续把欠供给下的 HTTP 延迟下降作为优化目标。以下运行设计、结果和当时建议保留历史原文。
 
 
 后续[常驻服务与C4/C8重复检查](../waiting_positions_persistent_20260914/README.md)已完成；本文保留前两轮每查询新gateway的条件与原始结果。
 
 状态：2026-09-14。M1已开始并完成第一轮观测/机制检查，**尚未取得真实模型性能结论**。受众：内部研究记录。
-[运行合同](../../../plans/data_organization_batching.md#m1-pilot)。研究对象为
+[运行合同](../../../plans/archive/数据组织历史方案_20260927.md#m1-pilot)。研究对象为
 **PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 
 ## 问题与实现

@@ -1,7 +1,7 @@
 # SemMap 有限真实模型复查（2026-09-06）
 
 内部工程验证记录，研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
-实施依据为 [Map 合同 §8.4.4](../../../plans/postgresql_semmap_generation_contract.md)。
+实施依据为 [Map 合同 §8.4.4](../../../plans/生成算子.md)。
 
 上述三次运行的一次性 Python 驱动已从工作树退役，源码链接指向已推送的 `d93e3f9b`。
 [退役源码索引](../retired_sources.json)保存原文件 SHA-256 和 Git blob，可在该提交恢复完整运行版本。
@@ -115,3 +115,14 @@ baseline/operation/cleanup统计、原始文件SHA与原地哈希核验结果。
 
 本轮授权工作已执行并保留了失败。尚未完成：修正后的真实INSERT资源复查、正式fixture3×2000、
 完整四D资格、模型质量/成本及性能验证。它们不能从本轮功能通过或不同run的片段推导出来。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：SemMap resource measurement repair (2026-09-06)。
+
+[有限真实模型复查](README.md)实际增加7次请求，账本25→32。
+SELECT/INSERT输出与usage、NULL、取消/拒绝及恢复功能核对完成；SELECT与四个故障/恢复资源检查通过。
+INSERT原测量受验收JOIN的系统目录FD污染，已修正审计连接，但真实资源复查未重复；不代表完整资源资格。

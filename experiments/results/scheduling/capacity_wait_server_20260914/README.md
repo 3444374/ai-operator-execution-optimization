@@ -10,7 +10,7 @@
 ## 目的与设置
 
 本轮为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化补齐基础执行验证，
-对应[当前计划](../../../plans/data_organization_batching.md)和[本地修订记录](../capacity_wait_empty_map_20260912/README.md)。
+对应[当前计划](../../../plans/数据组织.md)和[本地修订记录](../capacity_wait_empty_map_20260912/README.md)。
 验证容量恢复后的推进、组织开启时的零任务查询、受影响旧入口，以及客户端首行延迟的发送缓冲假设。
 不运行性能排名，不调整工作量上限，不调用真实模型。
 

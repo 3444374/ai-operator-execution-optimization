@@ -223,7 +223,7 @@ bounded starvation/non-inferiority，不要求两类延迟相等。bulk 30s miss
 
 ## 原始材料与完整归档
 
-仓库内 compact evidence 位于 [`raw/`](raw/)：preflight、readiness、首次失败 manifest、两轮
+仓库内 compact evidence 位于 [`raw/`](raw)：preflight、readiness、首次失败 manifest、两轮
 manifest/group runs、gate/mechanism summary 与 validation。服务器仓库外完整归档包含所有
 per-request/submission/credit/state/resource/release-event 文件：
 

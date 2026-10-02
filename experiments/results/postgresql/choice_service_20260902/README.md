@@ -5,7 +5,7 @@
 
 ## 目的与结论
 
-按[四 C 专项计划 C.5](../../../plans/completed/postgresql_choice_profile_engineering.md#c5-对照请求预算与资源保证)，
+按[四 C 专项计划 C.5](../../../plans/completed/选择算子接入_20260902.md#c5-对照请求预算与资源保证)，
 验证数据库保存的 choice 配置能进入真实模型请求，原始结果由 PG 严格解析并决定行是否保留。
 这是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化所需的执行基础检查，
 不是质量、性能或调度策略比较。
@@ -131,6 +131,18 @@ PYTHONPATH=code <driver-python> code/scripts/experiments/run_choice_service_chec
 ```
 
 已有 ledger 不重新初始化；启动与清理脚本、实际命令、脱敏环境分别见 `raw/server/` 与 `raw/local/`。
-这不是自动重跑许可。下一项由[主架构计划](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md)
+这不是自动重跑许可。下一项由[主架构计划](../../../plans/系统架构.md)
 定义：真实生成型 SemMap 驱动必要公共任务/结果整理，再扩展自有 PG 的多算子组合与有界多会话。
 公司系统移植单独验证；本次未开发公司代码。Filter reference 的质量、成本校准和第二路径仍独立待做。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL choice profile（2026-09-02）。
+
+[真实 choice 服务验证](README.md)：`0a1c12d3` 的 PG18.3 → gateway
+→ Qwen2.5-1.5B/vLLM 完成 14 次 old/choice 请求及两个 NULL 对照；累计 15/100，含首轮工具失败的 1 次。
+本地/服务器各 94/94。四 C 工程验证完成，质量与校准未通过；启动及计数工具失败、原始输出全部保留，
+无新 TAP/构建；源码与证据已进入当前集成版本。

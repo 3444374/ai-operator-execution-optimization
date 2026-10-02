@@ -960,7 +960,7 @@ git commit -m "feat: run seeded scheduling scenarios"
 - Create: `experiments/results/request_lifecycle_gate_20260725/*.csv`
 - Modify: `code/README.md`
 - Modify: `experiments/results/README.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
 
@@ -1034,7 +1034,7 @@ The report follows the seven-step experiment explanation structure. State:
 - [ ] **Step 5: Update project records**
 
 Update the listed READMEs, experiment status, index, and log. Because
-`experiments/plans/experiment_status_and_gaps.md` is a knowledge file, follow
+`experiments/plans/archive/进度汇总_20261001.md` is a knowledge file, follow
 the current user instruction regarding Wiki synchronization at session
 close; do not silently sync.
 

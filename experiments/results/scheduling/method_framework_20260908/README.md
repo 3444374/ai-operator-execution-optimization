@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 This engineering slice prepares per-row multistage methods for the existing execution context.
-It implements no cascade algorithm. The [design](../../../plans/semloom_incremental_session_design.md#13-多阶段方法接入准备工程决策2026-09-08)
+It implements no cascade algorithm. The [design](../../../plans/增量执行.md#session-13-多阶段方法接入准备工程决策2026-09-08)
 and [module guide](../../../../code/src/semantic_methods/README.md) define ownership and remaining work.
 
 ## Source and controlled checks

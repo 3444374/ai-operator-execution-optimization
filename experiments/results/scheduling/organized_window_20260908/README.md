@@ -5,7 +5,7 @@
 
 Status: final source passes controlled checks and real-model confirmation; services stopped.
 
-This implements the next single-flow connection in the [incremental design](../../../plans/semloom_incremental_session_design.md#organized-window).
+This implements the next single-flow connection in the [incremental design](../../../plans/增量执行.md#session-organized-window).
 An independent finite producer supplies already authorized tasks; the organizer operates only on
 accepted tasks, and the existing session owns their buffers, submissions, completions and release.
 No PG code or wire protocol changed. This is an engineering correctness check, not a performance study.

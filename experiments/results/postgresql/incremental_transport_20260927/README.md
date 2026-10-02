@@ -1,6 +1,6 @@
 # 增量执行精简与可选Daft/Ray文本路径
 
-2026-09-27。按[执行计划](../../../plans/data_organization_batching.md#incremental-multimodal-delivery)，
+2026-09-27。按[执行计划](../../../plans/archive/数据组织历史方案_20260927.md#incremental-multimodal-delivery)，
 保留HTTP路径，新增可选Daft Native分批与Ray Core worker执行。PostgreSQL（PG）继续选择输入、拥有快照、关联行结果、
 处理查询取消，并将结果返回SQL客户端。本轮没有增加结果写入PG表的工作。
 研究对象为 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。

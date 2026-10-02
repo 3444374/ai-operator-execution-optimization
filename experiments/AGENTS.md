@@ -1,8 +1,8 @@
 # experiments/AGENTS.md
 
-继承根规则。设计/运行查 `plans/baseline_reference.md` 与目标计划；撰写/审查结果查
-`plans/reference/experiment_report_honesty_checklist.md` 与原始证据；确定进度查
-`plans/experiment_status_and_gaps.md`。局部文字修订只读受影响内容，入口不明时查 [README.md](README.md)。
+继承根规则。设计/运行查 `plans/reference/对照规范.md` 与目标计划；撰写/审查结果查
+`plans/reference/报告核对.md` 与原始证据；确定进度查
+`results/EXPERIMENT_EVIDENCE_REGISTRY.md`与对应报告。局部文字修订只读受影响内容，入口不明时查 [README.md](README.md)。
 
 ## 1. 实验设计与授权
 

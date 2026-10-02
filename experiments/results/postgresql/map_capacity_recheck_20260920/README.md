@@ -8,7 +8,7 @@
 
 ## 本轮范围与执行身份
 
-按[运行前声明](../../../plans/data_organization_batching.md#m1-full-recheck)，恢复原失败清单的四个常驻
+按[运行前声明](../../../plans/archive/数据组织历史方案_20260927.md#m1-full-recheck)，恢复原失败清单的四个常驻
 PG gateway：C4、C16、C64、C128；每个容量均有PG与PG-source-direct对照。
 每组512行，一次预热和三次交错测量；组列表为p4/p16/p64/p128/d4/d16/d64/d128，
 四轮依次为原序、左移一位、倒序、左移两位，与原清单一致。

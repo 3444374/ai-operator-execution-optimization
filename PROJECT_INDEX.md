@@ -25,18 +25,18 @@
 
 1. [总纲](PROJECT_OUTLINE.md)确定问题与当前顺序。
 2. [代码状态](code/INFRA_STATUS.md)核对实际能力，再读对应源码。
-3. [主架构计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)核对设计与实施要求。
+3. [主架构计划](experiments/plans/系统架构.md)核对设计与实施要求。
 4. [实验台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位原始报告与失败记录。
 
 | 主题 | 入口 |
 |---|---|
-| 同步/增量生成Map | [语义规格](experiments/plans/postgresql_semmap_generation_contract.md)、[增量设计](experiments/plans/semloom_incremental_session_design.md) |
-| 多Job与查询归属 | [多会话设计](experiments/plans/semloom_multisession_design.md)、[查询Job设计](experiments/plans/postgresql_query_job_design.md) |
-| 调用与绑定 | [详细设计](experiments/plans/postgresql_call_binding_design.md) |
-| baseline与计时角色 | [参照要求](experiments/plans/baseline_reference.md#执行者与计时的读法) |
+| 同步/增量生成Map | [语义规格](experiments/plans/生成算子.md)、[增量设计](experiments/plans/增量执行.md#session) |
+| 多Job与查询归属 | [多会话设计](experiments/plans/增量执行.md#multi-query)、[查询Job设计](experiments/plans/数据库接入.md#query-job) |
+| 调用与绑定 | [详细设计](experiments/plans/数据库接入.md#calls) |
+| baseline与计时角色 | [参照要求](experiments/plans/reference/对照规范.md#执行者与计时的读法) |
 | 观测指标 | [模块说明](code/src/observability/README.md#运行指标的读法)、[选择依据](docs/research/evaluation_metrics_survey_20260731.md#观察变量选择) |
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
-| worker与gateway调优 | [计划](experiments/plans/text_map_preparation_tuning.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md) |
+| worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |
 | DuckDB历史比较 | [静态路径](experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md)、[规模诊断](experiments/results/duckdb_direct_scale_diagnostic_20260807/README.md) |
 | 动机与组件检查 | [动机](experiments/results/motivation/README.md)、[组件与能力](experiments/results/diagnostics/README.md) |
@@ -52,14 +52,14 @@
 | `research/` | [docs/research/](docs/research/README.md) |
 | `feasibility/results/` | [组件与能力检查](experiments/results/diagnostics/README.md) |
 | `motivation/results/` | [动机结果](experiments/results/motivation/README.md) |
-| `motivation/plans/` | [动机计划](experiments/plans/motivation/README.md) |
+| `motivation/plans/` | [动机计划](experiments/plans/archive/README.md#动机与画像方案) |
 | 两处`benchmarks/` | [统一脚本](code/scripts/benchmarks/README.md) |
 | `overview/` | [根入口](README.md) |
 | `docs/designs/`、`docs/plans/` | [历史工程](docs/archive/engineering/README.md) |
 | `opening/`、旧`projects/` | [历史开题](docs/archive/opening/README.md) |
 | 代码与指标讲解 | [代码组织](code/README.md#代码组织的读法)、[观测](code/src/observability/README.md#运行指标的读法)、[指标依据](docs/research/evaluation_metrics_survey_20260731.md#观察变量选择) |
 | 实验讲解 | [对应结果](experiments/results/README.md#历史实验解读) |
-| 沟通中的待核对问题 | [实际接入计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-integration-questions)、[文献清单](docs/research/ai_operator_literature_inventory.md) |
+| 沟通中的待核对问题 | [实际接入计划](experiments/plans/系统架构.md#company-integration-questions)、[文献清单](docs/research/ai_operator_literature_inventory.md) |
 
 ## 实验旧名定位
 
@@ -89,8 +89,58 @@
 | `image_stages_f_20260920` | [image_stage_execution_check_20260920](experiments/results/postgresql/image_stage_execution_check_20260920/README.md) |
 | `query_sharing_e_20260914` | [query_sharing_lifecycle_check_20260914](experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md) |
 | `rc1_data_organization` | [data_organization_comparison](experiments/results/data_organization_comparison/README.md) |
-| `rc1_prefix_routing` | [prefix_routing](experiments/results/prefix_routing/) |
+| `rc1_prefix_routing` | [prefix_routing](experiments/results/prefix_routing) |
 | `image_clip_native_baseline_20260801` | [image_clip_project_udf_diagnostic_20260801](experiments/results/motivation/gpu/image_clip_project_udf_diagnostic_20260801/README.md) |
 
 历史运行命令和来源摘要可通过原提交追溯，迁移后的数据定位由各结果的`raw/storage-manifest.jsonl`说明。
 共享归档按当前清单取用并核对摘要，持续维护的报告从仓库阅读。
+
+## 方案旧名定位
+
+2026-10-02按内容职责收敛方案。现行六个入口见[实验方案](experiments/plans/README.md)，同一实验的补充报告已经并入主报告章节。
+下表以原`experiments/plans/`下的相对路径定位；历史实验标识、配置版本、接口要求与来源提交继续按原材料解释。
+
+| 旧方案 | 当前入口 |
+|---|---|
+| `postgresql_ai_semantic_operator_architecture_20260827.md` | [系统架构](experiments/plans/系统架构.md) |
+| `postgresql_semmap_generation_contract.md` | [生成算子](experiments/plans/生成算子.md) |
+| `text_map_preparation_tuning.md` | [查询调优](experiments/plans/查询调优.md) |
+| `baseline_reference.md` | [对照规范](experiments/plans/reference/对照规范.md) |
+| `experiment_status_and_gaps.md` | [进度汇总_20261001](experiments/plans/archive/进度汇总_20261001.md) |
+| `cross_layer_killer_experiment.md` | [组织与调度联合对照](experiments/plans/archive/组织与调度联合对照.md) |
+| `full_grid_sweep_plan.md` | [扩展参数矩阵](experiments/plans/archive/扩展参数矩阵.md) |
+| `saor_cross_layer_scheduler_capability_20260820.md` | [调度器能力对照_20260820](experiments/plans/archive/调度器能力对照_20260820.md) |
+| `state_aware_work_unit_evaluation_20260808.md` | [状态感知实验_20260808](experiments/plans/archive/状态感知实验_20260808.md) |
+| `service_scheduling_backpressure.md` | [提交与调度方案](experiments/plans/archive/提交与调度方案.md) |
+| `completed/image_clip_workload_lock_20260731.md` | [图像工作负载_20260731](experiments/plans/completed/图像工作负载_20260731.md) |
+| `completed/operator_cost_profile_dual4090_formal_20260804.md` | [代价估计双卡采集_20260804](experiments/plans/completed/代价估计双卡采集_20260804.md) |
+| `completed/operator_cost_profile_pilot_20260804.md` | [代价估计预实验_20260804](experiments/plans/completed/代价估计预实验_20260804.md) |
+| `completed/postgresql_choice_profile_engineering.md` | [选择算子接入_20260902](experiments/plans/completed/选择算子接入_20260902.md) |
+| `completed/rc1_data_organization_rerun_20260731.md` | [数据组织重测_20260731](experiments/plans/completed/数据组织重测_20260731.md) |
+| `completed/text_map_matched_comparison.md` | [文本Map对比_20260930](experiments/plans/completed/文本Map对比_20260930.md) |
+| `completed/text_native_baseline_rerun_20260802.md` | [文本原生对照_20260802](experiments/plans/completed/文本原生对照_20260802.md) |
+| `archive/database_ai_operator_baseline_matrix_20260729.md` | [文本对照矩阵_20260729](experiments/plans/archive/文本对照矩阵_20260729.md) |
+| `archive/lotus_semantic_frontend_execution_integration_20260821.md` | [LOTUS接入设计_20260821](experiments/plans/archive/LOTUS接入设计_20260821.md) |
+| `archive/msmarco_embedding_workload_20260731.md` | [文本嵌入对照_20260731](experiments/plans/archive/文本嵌入对照_20260731.md) |
+| `archive/opening_database_e2e_p0_20260807.md` | [开题三路径对照_20260807](experiments/plans/archive/开题三路径对照_20260807.md) |
+| `archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md` | [串行架构快照_20260901](experiments/plans/archive/串行架构快照_20260901.md) |
+| `archive/postgresql_lotus_ai_semantic_operator_implementation_20260821.md` | [LOTUS语义算子方案_20260821](experiments/plans/archive/LOTUS语义算子方案_20260821.md) |
+| `archive/research_design_catalog.md` | [候选方案评估_20260715](experiments/plans/archive/候选方案评估_20260715.md) |
+| `reference/bounded_output_duckdb_comparison_protocol_20260805.md` | [DuckDB对照](experiments/plans/reference/DuckDB对照.md) |
+| `reference/experiment_report_honesty_checklist.md` | [报告核对](experiments/plans/reference/报告核对.md) |
+| `reference/sink_writeback_coordination.md` | [写回协调方案](docs/archive/engineering/designs/写回协调方案.md) |
+| `reference/strategy_design_implementation_reference.md` | [策略工程映射](docs/archive/engineering/designs/策略工程映射.md) |
+| `motivation/integration.md` | [早期接入方案_20260710](experiments/plans/archive/早期接入方案_20260710.md) |
+| `motivation/image_host_data_path_bottleneck.md` | [图像链路诊断](experiments/plans/archive/图像链路诊断.md) |
+| `postgresql_call_binding_design.md` | [数据库接入](experiments/plans/数据库接入.md#calls) |
+| `postgresql_query_job_design.md` | [数据库接入](experiments/plans/数据库接入.md#query-job) |
+| `semloom_incremental_session_design.md` | [增量执行](experiments/plans/增量执行.md#session) |
+| `semloom_multisession_design.md` | [增量执行](experiments/plans/增量执行.md#multi-query) |
+| `bounded_method_driver.md` | [增量执行](experiments/plans/增量执行.md#method-driver) |
+| `reference/strategy_design_literature_basis.md` | [优化方法依据](docs/research/优化方法依据.md#basis) |
+| `reference/literature_driven_pipeline_optimization_guide.md` | [优化方法依据](docs/research/优化方法依据.md#workflow) |
+| `motivation/ai_sql_surface.md` | [场景探索_20260710](experiments/plans/archive/场景探索_20260710.md#sql-scenes) |
+| `motivation/workloads.md` | [场景探索_20260710](experiments/plans/archive/场景探索_20260710.md#workloads) |
+| `data_organization_batching.md` | [数据组织](experiments/plans/数据组织.md) |
+
+数据组织旧方案中的已执行清单见[历史方案](experiments/plans/archive/数据组织历史方案_20260927.md)，现行假设与容量设计见[数据组织](experiments/plans/数据组织.md)。

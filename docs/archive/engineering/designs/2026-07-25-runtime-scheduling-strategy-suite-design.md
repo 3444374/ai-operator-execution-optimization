@@ -440,7 +440,7 @@ resource contention only.
 ### 8.3 Independent versus joint optimization
 
 The required core comparison follows
-`experiments/plans/experiment_status_and_gaps.md` P0-2:
+`experiments/plans/archive/进度汇总_20261001.md` P0-2:
 
 ```text
 token_budget in {4096, 6144, 8192}

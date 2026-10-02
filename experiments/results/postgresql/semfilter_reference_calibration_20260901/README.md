@@ -13,7 +13,7 @@ held-out 未运行，没有拟合、没有校准 artifact，也没有执行 plan
 ## 1. 目的与设置
 
 检验当前固定 reference 模型、语义和 workload 能否产生可独立验证的成本校准数据。
-唯一实施来源为[架构计划工作包五](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md)，
+唯一实施来源为[架构计划工作包五](../../../plans/系统架构.md)，
 首次请求前的采集合同提交为 `2feab7d4`、`7042132e`；后者只修正等长 cell 导致固定项与 calls 必然
 共线的设计问题，没有根据模型观测改变条件。运行源码为 `7042132e`，生产实现与 `dcde2be5` 相同。
 
@@ -108,3 +108,15 @@ raw 中的 Python 文件是本次一次性 observer/audit 的精确快照，不�
   新 semantic identity，而非悄悄修补本次。
   输出合同通过后再检查 training 的可辨识性、普通谓词输入行估计和 held-out 误差，仍不放宽本轮 20%
   要求或引入第二路径。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL exact SemFilter reference calibration（2026-09-01）。
+
+[首轮真实采集](README.md)：64 条预热完成，但首个
+training 查询第 23 个模型响应违反严格输出格式，PG18.3 以 `22000` 终止语句。held-out 未运行，
+没有拟合或 artifact；脱敏逐请求数据、错误、构建/测试日志和 SHA 清单已归档。机制资格不变，
+真实成本校准仍未通过。

@@ -7,12 +7,12 @@
 
 2026-09-20 状态说明：**数据准备仍有效，本文的 44,544 次固定运行表已撤下**。
 旧 Core 结果 32 MiB 每项预留 1 MiB，使 C64 实际接纳不超过 32；原表不能承担该档供给扫描。
-当前代码拒绝旧配置，后续按[新 M1](../../../plans/data_organization_batching.md#m1-throughput-platform)逐阶段设计与另定额度。
+当前代码拒绝旧配置，后续按[新 M1](../../../plans/数据组织.md#m1-throughput-platform)逐阶段设计与另定额度。
 以下数字、运行脚本和 raw 文件保留为当时准备记录，不是现行执行指令；真实调用继续暂停。
 
 
 状态：2026-09-14，**准备与受控验证完成，按用户要求暂缓真实模型调用**。
-本文为内部实验记录；[历史准备定位](../../../plans/data_organization_batching.md#m1-real-preparation)。
+本文为内部实验记录；[历史准备定位](../../../plans/archive/数据组织历史方案_20260927.md#m1-real-preparation)。
 研究对象为**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 
 ## 本轮完成的准备

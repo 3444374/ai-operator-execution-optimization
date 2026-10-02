@@ -5,7 +5,7 @@
 
 > **定位**：bounded_http / duckdb_ai / project_static 三臂在固定规模 2048 下，从 **C_total=2（c/K=1）到 C_total=128（c=64）的完整并发曲线**，回答"上游并发如何喂饱 GPU、各臂形态如何"。**这是 1 rep/cell 的 diagnostic screening，不是 formal ranking**（无 TOST/equivalence margin/CV，"未检出差异"≠"证明等价"）。
 >
-> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md) 标 **`harness_pre_split_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
+> **身份（订正）**：`duckdb_ai` 是测试 harness 预切 manifest + 2 个独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），按 [协议 §2.6](../../../plans/reference/DuckDB对照.md) 标 **`harness_pre_split_diagnostic`**，scheduler owner = 实验 harness，**不进 DuckDB 产品原生主排名**。lb_rr 臂（单进程经 nginx）未纳入本跑，见 §7。
 >
 > **duckdb 修复验证**：首跑（base conda，DuckDB 1.5.5）duckdb 全 7 格失败（ai extension 在 v1.5.4 路径不匹配）；本跑切 **text-baselines venv（DuckDB 1.5.4 + ai extension 0.4.14）** 后 duckdb 全 passed。deploy README:1175 规定 duckdb 必须用固定 1.5.4 的独立解释器。
 
@@ -48,7 +48,7 @@
 
 > **group 口径**（复审 #2）：bounded/duckdb = gate.json `group_service_total_tokens / group_service_wall_s`；project = profiler `model_request_tokens_per_s`（本身 group 语义）。旧 `total_tokens/max_jct` 口径高估 gate 臂（bounded 88493 / duckdb 79070 → group 87393 / 76449），且把 duckdb 排在 project 之前（误）；group 口径下 **project 77,381 > duckdb 76,449**。
 
-TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GPU util / rows/s / E2E 见 `ramp_aggregate.md`。
+TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GPU util / rows/s / E2E 见 [规模聚合表](#scale-aggregate)。
 
 ## 5. 结果解释（事实 / 推断 / 不能声称）
 
@@ -88,3 +88,31 @@ TTFT P50：c/K=1 约 30ms → c/K=32 约 52-57ms（随并发轻微恶化）。GP
 - 代码：`multicard_scale_ramp.py`（concurrency-sweep + warmup fail-closed + 单端点 warmup + 原子 ramp_run + clean-Ray + vLLM config preflight + lb_rr backend-balance gate）。
 
 > **诚实边界**：**1 rep/cell diagnostic**（非 formal，无 TOST/CV）；**duckdb/lb_rr = harness_pre_split_diagnostic**（非产品原生排名）；**group 口径**（gate 臂 gate.json group_service_wall_s；旧 total/max_jct 已弃）；**project prefix-hit 随 K 升温**（K1 0.91→K32 0.96，非全 0.96，project 路由独立于 manifest）；**vLLM effective config = 默认**（cmdline 无 max_num_seqs/8192 flag）；**bounded c64 failed**（C_total=128 过载）；**未达 feeding-parity ≥95% 门禁**（duckdb/project ~87-89%）。
+
+本节合并原独立补充报告，数值、全部重复、失败说明与结论按原记录保留。
+
+<a id="scale-aggregate"></a>
+<a id="scale-aggregate-多卡-ramp-聚合规模-20482048mean-across-passed-reps"></a>
+## 规模聚合表
+| scale | arm | conc | status | tok/s mean | tok/s CV | rows/s | TTFT P50 | E2E P50 | prefix-hit | GPU0 util | GPU1 util | n_passed/n |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2048 | bounded_http | c1 | passed | 4276.6 | 0.0% | 20.21 | 30.0ms | 48.419 | 0.96 | 94.9 | 93.7 | 1/1 |
+| 2048 | bounded_http | c2 | passed | 7641.8 | 0.0% | 36.12 | 48.4ms | 27.161 | 0.96 | 97.5 | 96.2 | 1/1 |
+| 2048 | bounded_http | c4 | passed | 14838.0 | 0.0% | 70.13 | 49.6ms | 14.038 | 0.96 | 96.3 | 95.1 | 1/1 |
+| 2048 | bounded_http | c8 | passed | 28409.6 | 0.0% | 134.27 | 49.8ms | 7.361 | 0.96 | 95.0 | 92.9 | 1/1 |
+| 2048 | bounded_http | c16 | passed | 51287.0 | 0.0% | 242.4 | 50.7ms | 4.027 | 0.96 | 87.0 | 89.2 | 1/1 |
+| 2048 | bounded_http | c32 | passed | 87392.7 | 0.0% | 413.04 | 57.3ms | 2.397 | 0.96 | 80.0 | 80.0 | 1/1 |
+| 2048 | bounded_http | c64 | failed | — | —% | — | — | — | — | — | — | 0/1 |
+| 2048 | duckdb_ai | c1 | passed | 77861.9 | 0.0% | 368.0 | 51.9ms | — | 0.96 | 69.0 | 70.5 | 1/1 |
+| 2048 | duckdb_ai | c2 | passed | 79087.7 | 0.0% | 373.79 | 51.5ms | — | 0.96 | 66.7 | 66.7 | 1/1 |
+| 2048 | duckdb_ai | c4 | passed | 77032.3 | 0.0% | 364.07 | 51.8ms | — | 0.96 | 68.1 | 70.6 | 1/1 |
+| 2048 | duckdb_ai | c8 | passed | 79160.8 | 0.0% | 374.13 | 51.4ms | — | 0.96 | 70.7 | 70.6 | 1/1 |
+| 2048 | duckdb_ai | c16 | passed | 78933.3 | 0.0% | 373.06 | 51.3ms | — | 0.96 | 68.8 | 68.8 | 1/1 |
+| 2048 | duckdb_ai | c32 | passed | 76449.2 | 0.0% | 361.32 | 51.5ms | — | 0.96 | 68.0 | 70.6 | 1/1 |
+| 2048 | duckdb_ai | c64 | passed | 78816.5 | 0.0% | 372.51 | 51.6ms | — | 0.96 | 72.9 | 69.8 | 1/1 |
+| 2048 | project_static | c1 | passed | 4225.7 | 0.0% | 19.38 | 30.0ms | 51.399 | 0.91 | 91.7 | — | 1/1 |
+| 2048 | project_static | c2 | passed | 7371.3 | 0.0% | 33.25 | 35.2ms | 30.52 | 0.94 | 93.7 | — | 1/1 |
+| 2048 | project_static | c4 | passed | 14071.9 | 0.0% | 63.79 | 41.8ms | 15.498 | 0.95 | 94.6 | — | 1/1 |
+| 2048 | project_static | c8 | passed | 27023.2 | 0.0% | 107.09 | 47.0ms | 10.304 | 0.95 | 81.5 | — | 1/1 |
+| 2048 | project_static | c16 | passed | 48163.7 | 0.0% | 172.44 | 49.8ms | 6.828 | 0.96 | 72.0 | — | 1/1 |
+| 2048 | project_static | c32 | passed | 77381.5 | 0.0% | 246.35 | 52.1ms | 4.964 | 0.96 | 60.0 | — | 1/1 |

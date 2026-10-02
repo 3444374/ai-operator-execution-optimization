@@ -67,7 +67,7 @@ model-reported token usage and output-value differences without counting reserve
 Screening reuses `PersistentMapGateway` and the existing PG-source direct runner, then stops;
 work tuning and independent evaluation require separate explicit schedules. Direct includes SQL reading
 and client setup, so it is not a pure service ceiling. Evaluation settings must match a SHA-identified
-tuning decision. [Current M1 design](../../../../experiments/plans/data_organization_batching.md#m1-throughput-platform).
+tuning decision. [Current M1 design](../../../../experiments/plans/数据组织.md#m1-throughput-platform).
 
 For PG Map, `pg_total_budget=true` selects total retained bytes instead of equal per-row reservations;
 `pg_staging_bytes` controls the separate single-row preparation area. `window_memory.py` checks the
@@ -122,7 +122,7 @@ Evaluation references the tuning report SHA, matches selected configurations and
 input manifest. Different manifests do not establish sample independence. Hardware/service provenance,
 data overlap/history, complete resource accounting and predeclared run budgets remain separate checks.
 Old records missing these identities are not silently upgraded. The offline comparator calls no model and
-does not change `m1_selection`. [Plan](../../../../experiments/plans/completed/text_map_matched_comparison.md),
+does not change `m1_selection`. [Plan](../../../../experiments/plans/completed/文本Map对比_20260930.md),
 [local checks](../../../../experiments/results/postgresql/text_map_comparison_preparation_20260928/README.md).
 
 `text_map_campaign` executes one explicitly declared qualification, tuning or evaluation stage through
@@ -172,7 +172,7 @@ the [real trial evidence](../../../../experiments/results/postgresql/capacity_or
 ## Resource collectors
 
 These tools observe the existing synchronous SemMap fixture path. Production SQL, planner, provider and
-wire semantics remain in their existing modules. The [Map engineering contract](../../../../experiments/plans/postgresql_semmap_generation_contract.md)
+wire semantics remain in their existing modules. The [Map engineering contract](../../../../experiments/plans/生成算子.md)
 owns the implementation and verification plan.
 
 | Module | Responsibility |

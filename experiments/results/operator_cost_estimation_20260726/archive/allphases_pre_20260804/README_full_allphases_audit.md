@@ -293,7 +293,7 @@ pooled regret 0.62%、7/13 pick）；但沿用预注册的行级 pairwise 只有
 
 - **SFS What-If 预演**和 **LPS K_max 选择**（模式 10/11）属于
   提交策略（RC2）范畴，不是代价估计（RC4）的直接工作。列入
-  `experiments/plans/experiment_status_and_gaps.md` 的 RC2 缺口。
+  `experiments/plans/archive/进度汇总_20261001.md` 的 RC2 缺口。
 - **Token-Batch 处理时间回归**（模式 12）依赖 per-iteration vLLM
   batch composition 信号，当前 vLLM Prometheus 粒度不足以支持，列入
   RC2 远期探索。

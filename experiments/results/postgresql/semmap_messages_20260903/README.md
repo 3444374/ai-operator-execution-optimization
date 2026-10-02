@@ -3,7 +3,7 @@
 2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
-内部工程验证，对应[四 D 合同 §8.0](../../../plans/postgresql_semmap_generation_contract.md#80-本次源码复核与首个子切片2026-09-03)。
+内部工程验证，对应[四 D 合同 §8.0](../../../plans/生成算子.md#80-本次源码复核与首个子切片2026-09-03)。
 目的只是在新增 Map 消息编译时保留现有算子行为，不是模型质量、成本或调度性能实验。
 验收时使用研发分支 `codex/semmap-message-contract`，起点 `63d86c0e`；本记录的原始数字保持下方提交身份。
 后续包含本切片的 `b0400944` 已合入本地 main，见[合并检查](../semmap_values_20260903/README.md#main-integration)。
@@ -18,7 +18,7 @@ UTF-8/NUL、4096/163840 字节上限和目标容量，失败不修改目标。Py
 自有 JSON escaping 移入共用 writer；Filter 的 directive/分隔符回到 Filter machine。
 Python Filter 只委托共用 JSON 编码，旧验证、消息、摘要和错误行为保持。未修改 scan/pump/runtime/port，
 没有新增 SQL、schema 4 或 wire v5；recording Map 没有被提前切换为生成执行。
-来源和采用理由只保留在上述专项与[主工程对照](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#company-engineering-reference)，
+来源和采用理由只保留在上述专项与[主工程对照](../../../plans/系统架构.md#company-engineering-reference)，
 未复制、修改或上传公司 demo。
 
 ## 验证设计与数据
@@ -31,7 +31,7 @@ Python Filter 只委托共用 JSON 编码，旧验证、消息、摘要和错误
 
 | 检查 | 本轮实际结果 | 原始记录 |
 |---|---|---|
-| 本地/服务器合同 | 各 107/107：PG/protocol/static/message 81、gateway 5、calibration 10、choice 工具 11 | [本地](raw/local/)、[服务器](raw/server/)、[数量及源码核验](raw/verification.json) |
+| 本地/服务器合同 | 各 107/107：PG/protocol/static/message 81、gateway 5、calibration 10、choice 工具 11 | [本地](raw/local)、[服务器](raw/server)、[数量及源码核验](raw/verification.json) |
 | PG18.3 构建 | 独立 prefix，`-O2 -Werror`，无 warning | [build.log](raw/server/build.log)、[qualification.json](raw/server/qualification.json) |
 | PG18.3 完整 TAP | 实际重跑 5 文件、1022/1022；本子切片未新增 TAP 项 | [tap.log](raw/server/tap.log) |
 | PGXS regression | 1/1；actual/expected 在脱敏前逐字节相同 | [regression.log](raw/server/regression.log)、[公开 actual](raw/server/regression-actual.out) |
@@ -74,3 +74,15 @@ commit `62d6c7d3df6287f1bd83199c1a746e50d31571a0`，先保存仓库外 runtime e
 schema 4、执行权限与参数前置检查、v5、PG＋golden、真实模型及资源验收仍未完成。
 用户已同意继续自主研发；真实运行之前仍需确认具体模型/服务、样例、请求预算、停止条件、gateway
 RSS 和清理时限。没有恢复 Filter 质量实验或成本校准。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL 生成型 Map 消息编译（2026-09-03）。
+
+[规范消息与旧路径兼容](README.md)：独立分支源码 `6903cf46`，
+C/Python 共享两消息编码，Map 原样文本、Filter 字节不变；本地/服务器各 107/107，重新执行 PG18.3
+`-Werror`、regression 1/1、TAP 1022/1022。只完成消息子切片，不表示完整值/摘要、生成型 SQL/v5、
+golden/真实模型或资源验证通过；后续已随上方修改合入本地 main，原证据范围不变。

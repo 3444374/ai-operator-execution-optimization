@@ -558,7 +558,7 @@
 - 根据用户确认，将开题报告题目调整为“面向数据库驱动 AI 工作负载的分布式数据执行与存储协同优化研究”。
 - 重写 `docs/archive/opening/report/opening_report.md` 的背景、研究目标、研究内容、总体框架和预期创新点：数据库 AI 算子降为 workload 入口和验证场景，Daft/Arrow、Ray、GPU 模型服务、Lance / pgvector / PostgreSQL sink 成为数据执行与存储协同的研究主体。
 - 同步更新 `docs/archive/opening/feishu/opening_report_wiki.md`、`docs/archive/opening/slides/opening_ppt.md`、`docs/archive/opening/outline.md`、`docs/archive/opening/qa_bank.md`、`docs/archive/opening/README.md` 和 `docs/archive/opening/AGENTS.md`。
-- 同步检查并修改项目级规划文档：`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`README.md` 和 `experiments/plans/motivation/integration.md`。
+- 同步检查并修改项目级规划文档：`README.md`、`PROJECT_OUTLINE.md`、`PROJECT_INDEX.md`、`AGENTS.md`、`README.md` 和 `experiments/plans/archive/早期接入方案_20260710.md`。
 - 尝试使用 user 身份覆盖写入开题飞书 wiki 时，`lark-cli` 因用户目录刷新锁文件权限返回 `Access is denied`；提升权限重试被自动审批拒绝。本地源稿已准备好，线上飞书 wiki 需要后续有权限后再同步。
 
 ## 2026-07-12
@@ -692,7 +692,7 @@
 ## 2026-07-12 调整实验主线入口
 
 - 根据用户反馈，降级 `experiments/results/diagnostics/README.mdguide.md` 在项目索引中的地位：该文件只作为早期组件可行性验证指南，不再承担当前实验大纲职责。
-- 重写 `PROJECT_INDEX.md` 第 3 节为“实验主线与证据入口在哪里”，将主入口调整为 `experiments/results/motivation/README.md`、`experiments/plans/motivation/workloads.md`、`experiments/plans/motivation/integration.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md`。
+- 重写 `PROJECT_INDEX.md` 第 3 节为“实验主线与证据入口在哪里”，将主入口调整为 `experiments/results/motivation/README.md`、`experiments/plans/archive/场景探索_20260710.md#workloads`、`experiments/plans/archive/早期接入方案_20260710.md`、`experiments/results/motivation/README.md` 和 `experiments/results/motivation/gpu/README.md`。
 - 更新 `experiments/results/motivation/README.md`，移除 GPU-backed 结果“待补”的过时表述。
 - 更新 `experiments/results/diagnostics/README.md` 和 `experiments/results/diagnostics/README.mdguide.md`，明确 feasibility 只负责组件、环境和脚本可用性，不承载开题主线或 GPU-backed 性能结论。
 
@@ -869,7 +869,7 @@
 - Work Unit、状态感知、动态调度和共同使能代价估计改为同等严格的动机证据链，每条均需由实验现象导出设计字段/信号/动作。
 - 当前实验增加 ShareGPT Chat 原生单 job 矩阵，以及 Daft Native/Ray、Ray Data 原生两 job 错峰观察；项目另作 static-partition vs shared-work 同上限 A/B。
 - DuckDB 保持为 SQuAD/cap=64 有界输出产品轨，不与语义不兼容的 ShareGPT 框架轨混排。
-- 同步更新 `docs/archive/opening/claim_matrix.md`、`docs/archive/opening/opening_defense_outline_20260808.md`、`experiments/plans/state_aware_work_unit_evaluation_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。
+- 同步更新 `docs/archive/opening/claim_matrix.md`、`docs/archive/opening/opening_defense_outline_20260808.md`、`experiments/plans/archive/状态感知实验_20260808.md`、`PROJECT_OUTLINE.md` 和根规则的当前顺序。
 # 2026-08-09 两作业证据与四部件实现边界审计
 
 - 把 5s guaranteed-overlap 的原生观察和项目 static/shared A/B 从“待运行”更新为已完成，

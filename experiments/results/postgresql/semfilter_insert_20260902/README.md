@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 内部工程验证，2026-09-02。来源为自有源码、官方 PG18.3 源码及实际回归输出。
-对应[专项计划的 INSERT 切片](../../../plans/completed/postgresql_choice_profile_engineering.md#filter-insert-的独立修复切片已完成)。
+对应[专项计划的 INSERT 切片](../../../plans/completed/选择算子接入_20260902.md#filter-insert-的独立修复切片已完成)。
 生产修复为 `8e50addf`，最终测试源码为 `39007150d5d0f84904fcd0c36b7bab87de7c07c1`。
 本切片支持数据库语义算子的正确执行，不是数据组织、调度或模型质量实验。
 
@@ -82,3 +82,14 @@ RLS、目标写权限、取消与新会话恢复。RETURNING、ON CONFLICT、OVE
 当前受限单表 Filter INSERT 已有真正的规划、执行和事务验证；不能外推到任意 SQL 形状、真实模型
 质量或资源不增长。下一步仍是 C.5 预先定义的 RSS/FD/线程与取消恢复检查，再在累计最多 100 次
 尝试内核验真实服务 choice。四 C 未全部完成，校准继续暂停，不启动第二 physical path。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL choice profile（2026-09-02）。
+
+[Filter INSERT 修复](README.md)：`39007150` 的 PG18.3 regression 1/1、
+TAP 919/919、本地/服务器各 83/83 通过。生产只修改 Filter planner，新增 171 项验证真正的写入、
+事务和限制；该次未做资源/真实模型验证，后续结果见上方记录。此前 SELECT 接线与 INSERT 失败证据保持原提交身份。

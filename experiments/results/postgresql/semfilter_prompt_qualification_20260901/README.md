@@ -27,7 +27,7 @@
 
 ## 2. 请求前设计与实际配置
 
-唯一计划为[工作包五的单一 prompt 对照](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md)。
+唯一计划为[工作包五的单一 prompt 对照](../../../plans/系统架构.md)。
 初始登记提交 `b861d697`；同条件 7B 修正登记为 `2527f2d2`。两者相对 `5cd64d29` 均只修改计划。
 
 - 同一 instruction：`The input asks for writing, explaining, or debugging computer code.`
@@ -120,3 +120,15 @@ parser 并通过七个合法/非法标签控制。**本轮没有重跑 PG18.3 re
 API 解释依据：[vLLM 0.25.1 structured outputs](https://docs.vllm.ai/en/v0.25.1/features/structured_outputs/)
 与本机已安装同版本的 tokenize/chat completion 源码；模型默认值由各自 `generation_config.json`
 实查，相关文件 SHA 见两组 model-files 清单。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL exact SemFilter reference calibration（2026-09-01）。
+
+[单一分类 prompt 对照](README.md)：实际消息与
+chat template 核对一致。1.5B 唯一新 prompt 的旧/新样例各 5/9，matched 7B 为 7/9、6/9；每例
+三次重复，全部格式合法但没有配置满足全部正确要求。生产配置不变，校准继续暂停。保留中止的
+默认参数失配尝试；两个完整尝试和部分尝试合计 321 次 completion 请求。

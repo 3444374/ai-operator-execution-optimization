@@ -159,7 +159,7 @@ Daft→CLIP operator E2E 中，项目自写 Daft fused GPU UDF 即使独立调�
 
 ## 7. 下一步
 
-1. 先按 `experiments/plans/motivation/image_host_data_path_bottleneck.md` 运行 R0→R4 表示阶梯，
+1. 先按 `experiments/plans/archive/图像链路诊断.md` 运行 R0→R4 表示阶梯，
    以 schema v2 低扰动 headline + 短窗口侵入式诊断判定 CPU/Ray/PCIe/GPU 瓶颈。
 2. 在同一复测中补 bounded direct CLIP ceiling和 CPU-budget-normalized actor curve；
    同时报告最佳可达性能与资源效率。

@@ -11,7 +11,7 @@
 
 验证同一次PG查询执行的普通Filter/Map流确实进入同一Engine Job并共用预算；
 另一个查询拥有不同Job。对应外部多Job执行的数据库接入基础，不是调度算法或性能实验。
-[设计与请求预算](../../../plans/postgresql_query_job_design.md)给出范围、来源和停止条件。
+[设计与请求预算](../../../plans/数据库接入.md#query-job)给出范围、来源和停止条件。
 
 PG继续拥有SQL、表达式和事务；新增query-job模式通过Linux内核peer核验和活控制连接登记归属。
 Job预算由外部执行层分割，Filter保持逐项等待，Map窗口1。旧同步路径及独立增量Map保留。

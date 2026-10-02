@@ -3,7 +3,7 @@
 2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
-内部工程验证；对应[主计划工作包六](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#carrier-audit-work-package)。
+内部工程验证；对应[主计划工作包六](../../../plans/系统架构.md#carrier-audit-work-package)。
 这是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化的 carrier 正确性检查，不是模型、
 调度或性能实验。原独立分支 `codex/pg-function-identity`，起点 `c494e1b2`；实现与证据已随
 `390f666a` 合入 main，服务器验收仍绑定下方测试源码，不重新归属于文档提交。
@@ -35,7 +35,7 @@ ADD、DROP 的刷新前行为，并验证读会话 `DISCARD PLANS` 后计划正�
 | 中间验收 | `5f144cecd73491f72f288efc09a7f040ee3cae19` | 保留参数名后身份 TAP 71/71；完整 990/990，原始记录保留 |
 | 最终测试源码 | `934f4f614c7fcef980c0a6af81dfd62d3979cc5c` | 加入双会话仅成员 ADD/DROP 刷新；身份 103/103，完整验收见下表 |
 
-工程参照的来源、采用理由与不采用项只记录在[主计划的函数身份切片](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#function-identity-slice)。
+工程参照的来源、采用理由与不采用项只记录在[主计划的函数身份切片](../../../plans/系统架构.md#function-identity-slice)。
 采用 PG catalog 成员关系检查原则，没有复制公司代码、修改公司工作副本或上传公司内容。
 官方 `REL_18_3` 源码身份核对为 `62d6c7d3df6287f1bd83199c1a746e50d31571a0`；
 `getExtensionOfObject` 查询扩展依赖，准备计划依赖收集由 PG 管理。源码定位：
@@ -104,3 +104,15 @@ python <qualify.py> --repo <clean-checkout> --root <fresh-artifact-root> \
 
 下一步按主计划定义四 D 最小生成型 Map 语义；上述管理 DDL 要求已确认，自动刷新仍单列待实现。
 本次没有实现真实 Map、planner 组合、多会话或增量 SemLoom session；Filter 质量与真实校准仍暂停。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL 函数对象身份（2026-09-02）。
+
+[身份加固与准备计划验证](README.md)：测试源码 `934f4f61`
+修复同签名非成员误接管，生产仅修改函数查找。最终 PG18.3 `-Werror`、regression 1/1、TAP 1022/1022
+通过，新增身份 103 项包含两个物理连接的仅成员 ADD/DROP 手动刷新。实现与证据已合入 main；仅成员变更的
+跨会话自动失效仍 pending，须按记录刷新所有相关连接。不涉及新模型、Map 生成或多会话执行。

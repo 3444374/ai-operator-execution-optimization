@@ -94,7 +94,7 @@ the exact formal pressure. Keep direct/official baselines in the independent
 **Files:**
 
 - Modify `experiments/plans/database_ai_operator_baseline_matrix_20260729.md`
-- Modify `experiments/plans/experiment_status_and_gaps.md`
+- Modify `experiments/plans/archive/进度汇总_20261001.md`
 - Modify `code/INFRA_STATUS.md`
 - Modify `code/scripts/README.md`
 - Modify `PROJECT_OUTLINE.md`

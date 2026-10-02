@@ -1,7 +1,7 @@
 # Independent phase deadlines and execution assembly
 
 Status: implemented and checked against baseline `2462c76d`. The
-[plan](../../../plans/semloom_incremental_session_design.md#19-phase-deadlines-and-execution-assembly-2026-09-08)
+[plan](../../../plans/增量执行.md#session-19-phase-deadlines-and-execution-assembly-2026-09-08)
 records the source decisions. This is correctness and ownership cleanup, not a scheduling
 performance or model-quality experiment.
 

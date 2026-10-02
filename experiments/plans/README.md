@@ -1,136 +1,36 @@
-# 实验计划与设计文档
+# 实验方案
 
-查询级Job身份与最小接入见[详细设计](postgresql_query_job_design.md)；这是现有多Job核心的PG归属扩展。
+本目录维护实施要求与实验设计。[代码状态](../../code/INFRA_STATUS.md)说明已经实现什么，
+[证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)与原始报告说明实际执行和结论；本页只负责导航。
 
-当前增量多流实施见 [多Job/session设计](semloom_multisession_design.md)：共享 Engine、查询归属与生命周期已验证；动态资源策略仍需适配。
+## 现行方案
 
-更新日期：2026-10-01
-
-已完成[文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)：以有限调参与独立评价比较
-SemLoom Daft/Ray、PG-source direct、原生Ray Data和Daft Native的完整查询时间及质量。
-[新版主表完整运行](../results/postgresql/text_map_four_path_comparison_20260930/README.md)已完成68条查询、41,024次请求与独立评价。
-[准备与首批处理调优](text_map_preparation_tuning.md)已完成[无模型分段与worker复用对照](../results/postgresql/text_map_preparation_tuning_20260930/README.md)
-及[固定配置真实复测](../results/postgresql/text_map_worker_reuse_real_20260930/README.md)；
-[gateway与首行交付诊断](../results/postgresql/text_map_gateway_lifecycle_20261001/README.md)继续完成10,272次fixture请求，
-无模型阶段真实POST0；后续三路径15条查询、12,336次真实请求完成，另保留中止11,312次。
-新gateway14.626→共享10.131秒，本轮direct7.681秒仍更快；下一项细化消费时间，不称容量平台或质量等价。
-[新 M1](data_organization_batching.md#m1-throughput-platform)仍负责供给平台与工作量控制的方法问题；
-原未选点结论保留，不挡住所有系统比较。旧运行额度不复用，新实验需明确环境、预算与停止条件。
-E/F 工程范围已完成；图像已有[151次真实CLIP检查](../results/postgresql/capacity_organization_image_validation_20260920/README.md)，
-计算中故障与匹配性能仍待验证。Movie 公共查询和图像批量参照随后按自身条件推进。
-
-本目录只承担三件事：维护当前实验合同、记录完成度、保存可复用的设计依据。实验数据与结论必须落在
-`../results/`；动机实验落在 `../../motivation/results/`。不要从历史计划推断当前优先级。
-
-## 1. 权威入口
-
-| 问题 | 入口 |
-|---|---|
-| 已完成文本系统比较 | [文本 Map 四路径匹配比较](completed/text_map_matched_comparison.md)：范围、选点、生命周期与真实运行清单 |
-| 当前实验完成度、证据缺口与运行条件 | [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md) |
-| 当前系统架构与实现顺序 | [主设计](postgresql_ai_semantic_operator_architecture_20260827.md)：长期能力、PG/方法/Core职责、调用与任务关系、资源所有权；[实施与验收](postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence) |
-| PG公共调用/绑定与首个组合的设计 | [PG调用与绑定详细设计](postgresql_call_binding_design.md)：共同绑定与一个同步 Filter→生成 Map 已验证；更广组合另行验证 |
-| 增量session如何接纳、推进、取消和回收 | [增量session详细设计](semloom_incremental_session_design.md)：单流、多 Job 与受限 Map 桥接已有证据；具体未接入策略以当前源码/状态为准 |
-| 生成型 Map 的具体行为、数据表示与验收 | [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md)：消息、纯值、PG plan/权限及真实模型功能已有证据；资源与性能主张分别核对 |
-| 回查 choice 已完成的字段、协议、请求预算与实施验收要求 | [`completed/postgresql_choice_profile_engineering.md`](completed/postgresql_choice_profile_engineering.md) |
-| 全链路算子工程如何对比、采用及向公司移植 | [主计划 §8.7](postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)：SQL/PG 接入、语义与请求、取数/结果、资源/外部执行的具体对照、改动位置和验证 |
-| 从 pgml 借鉴哪些模型接入做法 | [主计划 §8.8](postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)：SQL 入口、公共模型调用、资源复用与单项/批量接口的采用时机和验证；保持 PG 外执行，不增加四 C 任务 |
-| LOTUS 历史源码审计与兼容设计 | [`archive/lotus_semantic_frontend_execution_integration_20260821.md`](archive/lotus_semantic_frontend_execution_integration_20260821.md) |
-| baseline 身份、准入和指标合同 | [`baseline_reference.md`](baseline_reference.md) |
-| 固定服务如何扩到可审计的多 endpoint | [主计划 §6.5](postgresql_ai_semantic_operator_architecture_20260827.md#execution-deployment-identity)：显式选择、部署快照、query-fixed 身份与逐任务记录；待实现，不修改四 D v5 |
-| 怎样区分 gateway、PG 接入和 SemLoom 的开销 | [baseline reference §0.2](baseline_reference.md#gateway-layered-controls)：A/B/C/D 匹配诊断与方法消融；待执行，不是运行授权或原生排名 |
-| 前缀/表示候选为何值得做、怎样进入代码 | [研究审查](../../docs/research/semantic_prefix_reuse_design_audit_20260903.md)说明依据与待证命题；[主计划 §7](postgresql_ai_semantic_operator_architecture_20260827.md#research-mechanism-slices)规定 Module 落点；[对照 §0.3](baseline_reference.md#semantic-prefix-causal-controls)区分质量、任务量与执行收益。均不改变四 D 或授权实验 |
-| work-unit、状态感知和图像动态实验 | [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) |
-| 真实数字与结论 | [`../results/EXPERIMENT_EVIDENCE_REGISTRY.md`](../results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-
-主设计已按项目长期能力重写，choice与生成型Map具体语义仍由专项维护，实际代码/实验状态只看
-INFRA_STATUS和证据台账。当前双 Filter、同步 Filter→Map、增量 Core 与受限单 Map 桥接已实现；
-Filter质量/成本资格独立，复杂SQL、方法优化与公司
-移植按实际需求验证。全部工程依赖统一见主设计§9；上述两份下级规格只拥有近期细节，不另定义总体方向。
-设计本身不代表新增实现、模型运行或实验资格，实际运行结果另行登记。
-后续A1首步已完成Map调用分析的行为保持提取，见[PG规格§8](postgresql_call_binding_design.md)
-及[提取记录](../results/postgresql/semantic_call_extraction_20260907/README.md)。后续[共同调用/tuple绑定](../results/postgresql/semantic_binding_20260907/README.md)
-已通过验证，后续[同步组合验证](../results/postgresql/filter_map_binding_20260907/README.md)已完成；更广异步流水仍待验证。
-
-## 2. 状态分层
-
-### 当前计划（本目录顶层）
-
-| 文件 | 当前状态与用途 |
-|---|---|
-| [`text_map_preparation_tuning.md`](text_map_preparation_tuning.md) | worker/gateway生命周期无模型及真实复测完成；准备后的消费时间待细化 |
-| [`postgresql_ai_semantic_operator_architecture_20260827.md`](postgresql_ai_semantic_operator_architecture_20260827.md) | PostgreSQL 工程架构与实施顺序的唯一主计划；理论依据回指 `docs/research/`，实现与证据回指各自状态入口 |
-| [`postgresql_semmap_generation_contract.md`](postgresql_semmap_generation_contract.md) | 消息、纯值、PG plan/权限与真实模型功能已验证；新增实际路径继续分别检查 |
-| [`state_aware_work_unit_evaluation_20260808.md`](state_aware_work_unit_evaluation_20260808.md) | 已含项目内部机制与五臂共同观测 rehearsal；剩余图像动态、五臂 formal/隔离补测等待上游资格项 |
-| [`saor_cross_layer_scheduler_capability_20260820.md`](saor_cross_layer_scheduler_capability_20260820.md) | `blocked`；formal 未授权，不是当前执行项 |
-| [`data_organization_batching.md`](data_organization_batching.md) | 当前设计主张/证据表、有限模型、等待位置与全局元数据强对照；保留工程工作包与历史外部矩阵 |
-| [`service_scheduling_backpressure.md`](service_scheduling_backpressure.md) | 静态/shared credit 主证据已完成；动态候选未证明普遍胜出 |
-| [`cross_layer_killer_experiment.md`](cross_layer_killer_experiment.md) | 独立最优拼接与联合搜索的条件性耦合验证 |
-| [`full_grid_sweep_plan.md`](full_grid_sweep_plan.md) | 暂停的可选扩展矩阵；无当前运行授权 |
-
-顶层另保留两份横向入口：
-
-- [`baseline_reference.md`](baseline_reference.md)：baseline 唯一总入口；
-- [`experiment_status_and_gaps.md`](experiment_status_and_gaps.md)：完成度、证据强度与缺口的唯一状态入口。
-
-### 已完成计划
-
-[四 C choice 专项](completed/postgresql_choice_profile_engineering.md)已完成工程验证，保存字段/预算/验收条件，
-结果见[真实服务记录](../results/postgresql/choice_service_20260902/README.md)。不表示质量合格或完成整个优化系统。
-
-[`completed/`](completed/) 保存已执行完成、已被结果替代，或其当前范围已经闭合的合同。正文不删除，
-以便追溯预注册变量与执行边界；不得把正文中的“下一步”自动视为当前任务。
-
-### 设计参考
-
-[`reference/`](reference/) 保存跨实验复用的协议、检查清单、文献边界和历史工程映射。它们不是待执行计划，
-也不单独产生实验结论。
-
-### 历史归档
-
-[`archive/`](archive/) 保存被当前方向替代、暂停且没有运行授权的候选方案与旧矩阵。归档不等于删除，
-只表示它们不能覆盖当前总纲和状态文件。
-
-开题已结束；[当时的文本三臂计划](archive/opening_database_e2e_p0_20260807.md)只供回查，
-其中的条件性纠正补测不再列为当前任务。
-
-2026-08-21 的 PostgreSQL+LOTUS 主计划与 LOTUS frontend 子计划已进入归档；其中的 v1.2.4 源码
-审计、Q1–Q23 决策和反例测试仍可追溯，但当前架构不再以 LOTUS 为语义所有者或前置依赖。
-2026-09-01 的[串行架构历史快照](archive/postgresql_ai_semantic_operator_architecture_serial_20260901.md)
-保留原有完整资格尝试条件、接口原文与历史数字；其中的“当前/下一步”不覆盖现行工作包依赖。
-
-## 3. 当前研究内容与实验对应
-
-| 研究内容 | 当前证据 | 剩余工作 |
+| 方案 | 负责的内容 | 继续工作前核对 |
 |---|---|---|
-| 数据组织策略 | 文本 cache-on 双/四 endpoint 重测已完成，效果随 KV 压力 regime 变化 | 在资格项完成后，用同一抽象验证图像 frame/work budget；不重复无目的文本扫描 |
-| 调度与提交控制 | static/shared credit、1/2/4 Job、重叠作业与五臂共同观测 rehearsal 已完成；呈现效率、隔离与公平权衡 | 五臂 formal 尚未运行；动态策略必须与同上限、预先选定的静态配置对比，并补所需 isolation control |
-| 多模态泛化 | 图像画像、原生静态 baseline、多 Job 观察和 descriptor/observe-only 已归档 | HSE/static 非劣验证后再接受控动态动作，并核对写回、读回和结果质量 |
-| 算子代价估计 | 双 4090 v2 cache-on 320/320 有效，首次无效运行独立保留 | 新时间段或新 workload 校准；是否用于在线决策由 regret/区间结果决定 |
+| [系统架构](系统架构.md) | 总体职责、模块关系与实施顺序 | 公共能力、实际接入路径及依赖 |
+| [生成算子](生成算子.md) | 生成Map的消息、数据表示、NULL、错误和输出处理 | 新路径自己的语义与资源检查 |
+| [数据库接入](数据库接入.md) | PG调用绑定、查询身份与算子流归属 | SQL形状、关联、顺序、取消和生命周期 |
+| [增量执行](增量执行.md) | 会话操作、共享执行、多查询及多行方法推进 | 总预算、未知任务、结果释放和跨进程责任 |
+| [数据组织](数据组织.md) | 信息成本、准备深度、在途工作和查询间机会的实验对照 | 强静态与全局信息参照、独立评价及实际供给 |
+| [查询调优](查询调优.md) | 文本Map准备、消费、worker/gateway与记录器成本 | 同配置完整查询收益、失败与质量差异 |
 
-写回固定使用 PostgreSQL + pgvector 的 COPY + deferred index 工程 baseline，不作为独立研究内容。
+生成Map的完整比较与后续调优已有结果；方法收益、跨机器执行和新增SQL形状分别按自身证据判断。
+现行方案不是模型运行授权，历史请求额度不继承。具体剩余工作从方案中的要求及代码、结果事实核对。
 
-## 4. 新实验的最低要求
+## 共同参考
 
-每个正式实验必须：
+| 内容 | 入口 |
+|---|---|
+| 对照身份、计时、质量与指标 | [对照规范](reference/对照规范.md) |
+| DuckDB比较用途与有界输出 | [DuckDB对照](reference/DuckDB对照.md) |
+| 报告中的来源与可引用结论 | [报告核对](reference/报告核对.md) |
+| 方法依据、反证与最小实验设计 | [优化方法依据](../../docs/research/优化方法依据.md)、[知识库](../../docs/research/knowledge_hub.md) |
 
-1. 指向一个明确研究问题和当前计划；
-2. 记录平台、模型、协议、workload、资源上限、重复和随机化方式；
-3. 先通过 correctness、provenance、feeding-saturation 与稳定性检查；
-4. 区分服务上限、直接客户端、框架原生、数据库产品原生和项目方法；
-5. 把完整配置、命令、CSV/manifest、异常与结论边界写入对应结果目录；
-6. 更新本目录状态入口、证据注册表与 `PROJECT_LOG.md`。
+## 既往方案
 
-详细执行规则以本目录 [`AGENTS.md`](AGENTS.md) 和根 `AGENTS.md` 为准；报告前使用
-[`reference/experiment_report_honesty_checklist.md`](reference/experiment_report_honesty_checklist.md)。
+[completed/](completed/README.md)保存已执行方案与原要求；实际结论从对应结果报告读取。
+[archive/](archive/README.md)保存已替代或暂停的候选、旧矩阵和早期画像方案。
+旧文件名与合并章节从[项目导航](../../PROJECT_INDEX.md#方案旧名定位)定位，具体状态从原日期解释。
 
-## 5. 维护纪律
-
-- 新信息优先并入已有权威文件，只有不存在自然归属时才新增文档。
-- 计划完成后移动到 `completed/`，并在文件首部写明完成范围、结果入口和仍未覆盖的事项。
-- 仅供方法复用的材料进入 `reference/`；被方向替代或暂停的方案进入 `archive/`。
-- 历史正文可保留当时术语，但文件首部必须说明其历史身份；当前术语以根总纲为准。
-- 不在计划首页复制易漂移的详细参数或实验数字；数字只从结果报告和证据注册表读取。
-- 不删除 raw、manifest、失败运行或事故证据；无效结果必须与有效结果分开并明确排除原因。
-
-- [有界多行方法驱动 V1](bounded_method_driver.md)：固定共享存储预算、阶段推进与独立真实数据切片。
+同一主题维护一个方案正文，设计细节放在其所属章节。实验主报告在结果目录维护，补充分析并入该报告；
+文献依据在docs/research维护，代码讲解在模块README维护，历史工程记录在docs/archive维护。

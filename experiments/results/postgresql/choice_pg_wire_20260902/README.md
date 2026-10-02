@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 内部工程验证记录，2026-09-02。来源为自有生产源码、固定向量、实际 PostgreSQL 18.3 测试和
-旧/新扩展二进制对照。对应[choice 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，
+旧/新扩展二进制对照。对应[choice 专项计划](../../../plans/completed/选择算子接入_20260902.md)，
 不作为模型质量、成本或 GPU 性能实验。最终源码为 `80bb7fc508d42a44f2ca485944d800131fa59df3`；
 保存在独立研发分支，未合并或推送，主工作区用户文档未覆盖。
 
@@ -86,3 +86,15 @@ Filter INSERT 可用；该问题须独立修复并验证，不能以本报告宣
 
 剩余工作：单独修复 Filter INSERT carrier；按专项计划预先定义采样再做新 profile 的 RSS/FD/线程检查；
 在总预算内验证真实服务的 choice 能力。模型质量、整轮校准、第二 physical path 均未推进。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL choice profile（2026-09-02）。
+
+[PG C/wire v4 接线](README.md)：`80bb7fc5` 的 choice SELECT 共用
+现有 runtime 与严格 parser。本地/服务器各 83/83、PG18.3 regression 1/1、TAP 748/748；实际新旧
+HTTP 请求仅差 choice 字段。该次另用旧/新二进制复现 Filter INSERT 未 lowering，未做资源与真实模型验证；
+后续修复及验收见上方记录。

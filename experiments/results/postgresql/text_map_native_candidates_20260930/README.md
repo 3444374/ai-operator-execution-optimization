@@ -17,7 +17,7 @@ SemLoom本地执行（此前叫PG＋SemLoom HTTP）另用 `local-ablation` 作�
 
 这补充的是固定语义单Map的执行层对照。LOTUS当前原始Movie查询入口不等于匹配Map已测；
 Sema作者artifact的环境和语义适配也未验证。内置Daft prompt、数据库AI函数、跨模态和多Job另列，
-详见[baseline覆盖审计](../../../plans/baseline_reference.md#current-map-coverage)。不能称整篇研究的baseline已全部完成。
+详见[baseline覆盖审计](../../../plans/reference/对照规范.md#current-map-coverage)。不能称整篇研究的baseline已全部完成。
 
 ## 修订后的候选
 

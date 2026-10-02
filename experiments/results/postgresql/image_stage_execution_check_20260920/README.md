@@ -7,7 +7,7 @@
 
 状态：**工程代码与受控验证完成，真实 CLIP 验证尚未执行**。研究对象为 PostgreSQL 内置 AI 语义算子的
 外部分布式物理执行与调度优化。本轮新增真实模型调用 **0 次**，Ray 测试实例声明 **0 个 GPU 资源**。
-计划见[工作包 F](../../../plans/data_organization_batching.md#work-package-f)。
+计划见[工作包 F](../../../plans/archive/数据组织历史方案_20260927.md#work-package-f)。
 
 下文用 PG 指 PostgreSQL。CPU 负责图像准备，GPU 是模型计划使用的加速设备；
 MethodDriver 是方法行驱动，stage broker 是阶段资源管理器。
@@ -108,7 +108,7 @@ PG、Ray、任务进程已停止，临时根目录 ACL 已恢复；没有本任�
 
 ## 来源与尚未验证项
 
-工程参照沿用[主架构 §8.7–8.8](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#pgml-engineering-reference)
+工程参照沿用[主架构 §8.7–8.8](../../../plans/系统架构.md#pgml-engineering-reference)
 已核对的类型入口、共享模型准备和查询独立清理职责，没有访问或复制公司源码。Ray 的
 [取消说明](https://docs.ray.io/en/latest/ray-core/api/doc/ray.cancel.html)与
 [actor 故障说明](https://docs.ray.io/en/latest/ray-core/fault_tolerance/actors.html)用于核对请求与终态的区别；
@@ -117,3 +117,15 @@ PG、Ray、任务进程已停止，临时根目录 ACL 已恢复；没有本任�
 真实 CLIP 数值误差、真实 GPU 正常/故障清理、吞吐、模型算力利用率（MFU）、跨机器及原生系统比较均未验证。
 下一步真实运行须先核对缓存模型/processor、软件与服务配置，按 dtype 写明数值容差，并另行确定
 运行资源、调用额度与停止条件。M1 的真实模型暂停要求继续有效。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：原结果入口。
+
+2026-09-20：[工作包 F 图像类型与阶段执行](README.md)：
+显式扩展 `0.3.0` 的 `bytea→real[]`、MethodDriver 行结果与 Ray 阶段资源接入完成。
+PG 回归 1/1、TAP 2,159 项和 9 组实际 PG/Ray/解码检查通过；模型使用 CPU fixture，真实调用 0 次。
+失败与修订记录保留，测试服务和临时权限已清理；真实 CLIP 与 GPU 性能继续待验证。

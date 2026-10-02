@@ -1,6 +1,6 @@
 # 同步与线程记账的无模型对照
 
-2026-10-02。按[调优计划](../../../plans/text_map_preparation_tuning.md#热路径独立计时与无模型验证)，
+2026-10-02。按[调优计划](../../../plans/查询调优.md#热路径独立计时与无模型验证)，
 将持久记账移出gateway事件循环，检验恢复等待能否减少完整查询时间。
 研究对象是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 **本轮结果为负：线程选择中位数11.570秒，同步8.287秒，慢39.606%；默认同步保留。**
@@ -87,3 +87,14 @@ PG日志切片、事件投影和compact转换精确恢复，全部字节摘要�
 gzip -dc experiments/results/postgresql/text_map_threaded_accounting_20261002/raw/analyze.py.gz > /tmp/analyze-accounting.py
 python /tmp/analyze-accounting.py --repo . --raw experiments/results/postgresql/text_map_threaded_accounting_20261002/raw --output /tmp/accounting-analysis.json
 ```
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：原结果入口。
+
+[同步/线程记账对照](README.md)完成70项目标检查、累计8,224次fixture，模型0次。
+线程完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但小窗口反复创建增加批次构建成本。
+同步默认保留，原件、32次失败阶段已完成检查及同账本继续的8,192次分别记录，不更新真实排名。

@@ -8,7 +8,7 @@
 This is an engineering correctness check for PostgreSQL-native semantic operators and their external
 execution service, supporting the execution foundation for the project's two scheduling research topics.
 It is not a scheduling or model-performance experiment. The specification is the
-[AND implementation slice](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md#semfilter-and-slice).
+[AND implementation slice](../../../plans/系统架构.md#semfilter-and-slice).
 
 The branch is `codex/semfilter-and`, based on `1d83c975`. Validation used working snapshots rather than
 claiming an uncommitted tree was a Git commit. The final [source manifest](raw/source-manifest.json)
@@ -111,3 +111,15 @@ All test clusters and owned gateways have stopped. Filter→Map, per-session bat
 out-of-order completion and the incremental SemLoom scheduling interface remain separate work.
 The next composition can reuse this gateway and the existing node lifecycle; it still needs its own
 input/output binding and cancellation checks. No merge, push or real-model run occurred in this task.
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：Two Filter AND and bounded gateway sessions (2026-09-07)。
+
+[Implementation checks](README.md) cover two Filter nodes through one
+gateway, independent input evaluation, native permissions and lifecycle. Linux138/138 and PG18.3
+regression1/1 plus TAP1808/1808 pass; seven PG attempts are retained. No real model was used.
+The implementation is now included in main; Filter→Map and per-session asynchronous work remain pending.

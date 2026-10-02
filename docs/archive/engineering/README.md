@@ -24,7 +24,7 @@
 | [2026-07-29-daft-ray-baseline-advantage-validation-design.md](designs/2026-07-29-daft-ray-baseline-advantage-validation-design.md) | [证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-same-condition-official-baselines-design.md](designs/2026-07-29-same-condition-official-baselines-design.md) | [证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-saturated-ray-actor-pool-replenishment-design.md](designs/2026-07-29-saturated-ray-actor-pool-replenishment-design.md) | [代码状态](../../../code/INFRA_STATUS.md) |
-| [2026-08-13-saor-native-system-matched-comparison-design.md](designs/2026-08-13-saor-native-system-matched-comparison-design.md) | [实验状态](../../../experiments/plans/experiment_status_and_gaps.md) |
+| [2026-08-13-saor-native-system-matched-comparison-design.md](designs/2026-08-13-saor-native-system-matched-comparison-design.md) | [实验状态](../../../experiments/plans/archive/进度汇总_20261001.md) |
 | [2026-08-23-opening-report-cost-estimation-enhancement-design.md](designs/2026-08-23-opening-report-cost-estimation-enhancement-design.md) | [开题归档](../opening/README.md) |
 
 ### 实施记录
@@ -51,7 +51,7 @@
 | [2026-07-29-saturated-ray-execution-foundation-implementation.md](plans/2026-07-29-saturated-ray-execution-foundation-implementation.md) | [证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-shared-vllm-fairness-implementation.md](plans/2026-07-29-shared-vllm-fairness-implementation.md) | [证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | [2026-07-29-slo-aware-ewma-flush-implementation.md](plans/2026-07-29-slo-aware-ewma-flush-implementation.md) | [代码状态](../../../code/INFRA_STATUS.md) |
-| [2026-08-13-saor-native-system-matched-comparison-implementation.md](plans/2026-08-13-saor-native-system-matched-comparison-implementation.md) | [实验状态](../../../experiments/plans/experiment_status_and_gaps.md) |
+| [2026-08-13-saor-native-system-matched-comparison-implementation.md](plans/2026-08-13-saor-native-system-matched-comparison-implementation.md) | [实验状态](../../../experiments/plans/archive/进度汇总_20261001.md) |
 | [2026-08-23-opening-report-cost-estimation-enhancement-plan.md](plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md) | [开题归档](../opening/README.md) |
 | [2026-08-23-opening-report-minimal-figure-corrections.md](plans/2026-08-23-opening-report-minimal-figure-corrections.md) | [开题归档](../opening/README.md) |
 
@@ -61,3 +61,8 @@
 因此继续留在 `code/`；当前结构看[代码说明](../../../code/README.md)。
 
 当前研究方向看[项目总纲](../../../PROJECT_OUTLINE.md)，实验结果看[证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+
+## 历史方法工程参考
+
+- [策略工程映射](designs/策略工程映射.md)：原信号、变量与接口设计；当前实现从源码核对。
+- [写回协调方案](designs/写回协调方案.md)：早期写回推演与对照要求，按原日期解释。

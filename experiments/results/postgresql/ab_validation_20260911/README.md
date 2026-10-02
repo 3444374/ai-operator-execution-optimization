@@ -86,4 +86,4 @@ PYTHONPATH=code python -m unittest tests.experiments.test_database_query_runner_
 - 本次不执行E/F，不建立新框架、不回滚main；不将受控正确性结果登记为研究性能贡献。
 
 历史依据：[A原记录](../execution_repairs_20260910/README.md)、[B原记录](../database_queries_20260910/README.md)；
-当前工作顺序仍以[组织实验计划](../../../plans/data_organization_batching.md)为准。
+当前工作顺序仍以[组织实验计划](../../../plans/数据组织.md)为准。

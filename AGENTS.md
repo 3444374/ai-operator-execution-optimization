@@ -23,7 +23,7 @@
 | 环境、容器、跨机器运行 | `deploy/AGENTS.md`、`deploy/runtime/AGENTS.md`与目标平台规则/runbook |
 | 数据资产与导入 | `data/AGENTS.md` |
 | 实验计划与结果 | `experiments/AGENTS.md`，再读目标计划或结果目录规则 |
-| 动机画像、组件与能力检查 | `experiments/plans/motivation/AGENTS.md`、`experiments/results/motivation/AGENTS.md`或`experiments/results/diagnostics/AGENTS.md` |
+| 动机画像、组件与能力检查 | `experiments/plans/AGENTS.md`、`experiments/results/motivation/AGENTS.md`或`experiments/results/diagnostics/AGENTS.md` |
 | 文献与研究依据 | `docs/AGENTS.md`、`docs/research/AGENTS.md` |
 | 历史工程与开题材料 | `docs/AGENTS.md`，再读对应`docs/archive/`规则 |
 | 图资产 | `figures/AGENTS.md` |
@@ -90,7 +90,7 @@ GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多�
 - skill 按具体工作流、协议或工具需要选用；仅有相同关键词不触发加载。多流程 skill 只读取当前
   分支所需材料，已有用户选择与项目规则优先于通用模板。
 - 设计新系统机制前，先查 `docs/research/knowledge_hub.md`、文献清单和
-  `experiments/plans/baseline_reference.md`；新增候选记录到知识库，不把工程直觉伪装成研究空白。
+  `experiments/plans/reference/对照规范.md`；新增候选记录到知识库，不把工程直觉伪装成研究空白。
 - 代码、计划、结果和对外材料分层保存。历史文件可以保留原始叙事，但必须指向当前替代入口。
 - 原始实验数据、失败运行和审计证据默认保留；移动或删除前先检查引用、唯一性与恢复路径。
 - 结论标注来源类型：源码、原始实验、论文、官方文档、模拟、推断或待验证。microbenchmark、
@@ -117,8 +117,8 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 - 记录 upstream URL/commit、实现来源、scheduler owner、适配 diff、server/pgvector 版本、配置签名、
   warm-up、全部重复值、失败/重试和 exactly-once；
 - 区分 source、organization、serialization/put、queue/admission、model、fan-in 与 writeback 阶段；
-- 运行条件、指标定义和报告模板以 `experiments/plans/baseline_reference.md`、
-  `experiments/plans/reference/experiment_report_honesty_checklist.md` 和目标计划为准；根规则不缓存具体
+- 运行条件、指标定义和报告模板以 `experiments/plans/reference/对照规范.md`、
+  `experiments/plans/reference/报告核对.md` 和目标计划为准；根规则不缓存具体
   K/W、endpoint 拓扑或阈值。
 
 ## 6. 文字表达

@@ -169,7 +169,7 @@ service throughput、MFU、服务压力和资源作跨系统比较。
 
 ## 8. 原始材料与归档
 
-仓库内 [`raw/`](raw/) 保存两轮 manifest/group evidence、bridge metrics/effects、preflight、
+仓库内 [`raw/`](raw) 保存两轮 manifest/group evidence、bridge metrics/effects、preflight、
 readiness 和 validation。完整 request/submission/resource/credit/event traces 保存在服务器仓库外：
 
 ```text

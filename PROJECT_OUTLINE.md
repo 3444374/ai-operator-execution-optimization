@@ -31,7 +31,7 @@
 独立PG阶段追踪记录后续查询节点首行0.233秒、客户端2.688秒，交付字节与8KiB发送缓冲相符。
 后续真实完整清单15条查询、12,336次请求通过，另保留中止11,312次。新gateway14.626→共享gateway10.131秒，
 准备2.785→0.01429秒，启动2.277秒单列；本轮direct7.681秒，仍更快，配对输出差0–4行。
-这是已评价输入上的固定配置工程复测；下一项按[调优计划](experiments/plans/text_map_preparation_tuning.md)
+这是已评价输入上的固定配置工程复测；下一项按[调优计划](experiments/plans/查询调优.md)
 解释准备之后的消费时间，不据旧的不同运行设置更新原生Daft/Ray排名。
 
 同日继续只分析SemLoom：既有3,072行请求分段核对完成，新增模型请求0；每行RPC前记录176–232毫秒，
@@ -39,7 +39,7 @@ worker外RPC合计94–147毫秒，worker内258–279毫秒。服务内部排队
 实验记账和RPC链路，不能归因某一个函数。首行缓冲等待与推理重叠，结束尾段只需约5–8毫秒，
 分段口径及缺失时刻见[报告](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#semloom消费时间的已有记录拆分)。
 
-2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/text_map_matched_comparison.md)完整清单已完成：
+2026-09-30：[文本Map四路径匹配比较](experiments/plans/completed/文本Map对比_20260930.md)完整清单已完成：
 SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP执行另作内部消融。
 [当前结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)68条查询、41,024次请求通过，
 1024行三次时间中位数依次为18.101、7.705、22.849、11.668秒，准确率84.961–85.254%。
@@ -47,7 +47,7 @@ SemLoom Daft/Ray、PG-source direct、原生Ray Data与Daft Native；本地HTTP�
 SemLoom本次慢于direct与Daft，短于Ray；后续[无模型诊断与worker复用](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
 定位了重复查询的新Ray worker启动成本。可选服务拥有worker的内部对照中，准备4.951→2.888秒，
 完整查询16.263→13.963秒；仅为有限fixture工程观察，不能更新上述真实排名。
-分支审查已补分段观测并修正阶段配置核对；后续按[计划](experiments/plans/text_map_preparation_tuning.md)
+分支审查已补分段观测并修正阶段配置核对；后续按[计划](experiments/plans/查询调优.md)
 细化首批处理与提交开销，旧真实异常根因仍未确定。
 后续[固定配置真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
 最后同一服务中完成五种身份的1024行重复；复用版SemLoom14.794秒、旧方式16.502秒，
@@ -70,7 +70,7 @@ PG18.3 回归与实际 Ray/解码验证通过；后续[有限真实验证](exper
 GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作为方法贡献。
 
 以下保留 2026-09-20 的方法研究安排；当前系统比较优先级以上述四路径计划为准。
-[设计主张与证据表](experiments/plans/data_organization_batching.md#design-hypotheses)将已有实现分成待检验的设计选择：
+[设计主张与证据表](experiments/plans/数据组织.md#design-hypotheses)将已有实现分成待检验的设计选择：
 当前 M1 先识别有效吞吐平台附近的供给与资源代价，以调优请求数为工作量控制的参照；局部/全局信息归 M2，多查询策略按自身资格推进。有限窗口不是预先认定的最佳方法。
 资源安全、有限模型中的数学结论和真实系统收益分别论证；现有工程工作包不直接等于论文贡献。
 后续[M1复测](experiments/results/postgresql/map_supply_diagnostic_20260920/README.md)定位并受控修复了重复容量汇总开销，C64未确认请求推动了异常记录改进。[完整容量复查](experiments/results/postgresql/map_capacity_recheck_20260920/README.md)完成32个查询、16,400次请求；保留原清理告警，随后资源核对通过，工程改动合入main。原故障未复现、根因待确定；PG/direct均未满足持续供给要求，尚无容量选点或方法结论。
@@ -80,7 +80,7 @@ GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作�
 后续[常驻服务对照](experiments/results/postgresql/waiting_positions_persistent_20260914/README.md)已完成：
 一次启动约5.5秒与每查询约14–15毫秒准备分别报告；C8五次都比对应轮次C4快。
 紧工作量限制仍降低HTTP尾延迟，却使完整查询时间升至同并发宽限制的约3.33倍。
-旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/data_organization_batching.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施。本轮M1筛查未得到平台候选，后续条件阶段未执行；M2五种PG源信息方式完成固定C4诊断，尚无稳定收益，仍未接入SemMap全局预扫。
+旧 M1 至此作为测量反例结束，不证明 work 控制优于合理请求数。[真实输入](experiments/results/postgresql/waiting_positions_real_preparation_20260914/README.md)保留，旧 44,544 次运行表撤下；[新设计](experiments/plans/数据组织.md#m1-throughput-platform)按可达性、容量筛查、独立评价分阶段实施。本轮M1筛查未得到平台候选，后续条件阶段未执行；M2五种PG源信息方式完成固定C4诊断，尚无稳定收益，仍未接入SemMap全局预扫。
 
 2026-09-14：[查询共享实现](experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)复用统一计算责任表和查询轮转，
 让活跃查询使用空闲计算容量，同时独立保留每个查询的存储。真实PG与受控HTTP已覆盖依赖、2/4查询及暂停/取消后的恢复；
@@ -127,8 +127,8 @@ GPU计算中故障和匹配性能仍待验证，已有工程能力不直接作�
 
 2026-09-09：当前主线转为围绕具体数据执行问题完成测量、对照、机制改进和验证。
 先做真实单 Map 任务与静态容量画像，再比较有限窗口中的数据组织，随后进入多 Job。
-近期合同见[数据执行切片](experiments/plans/data_organization_batching.md#design-hypotheses)，
-实际完成情况见[实现状态](code/INFRA_STATUS.md)与[实验状态](experiments/plans/experiment_status_and_gaps.md)。
+近期合同见[数据执行切片](experiments/plans/数据组织.md#design-hypotheses)，
+实际完成情况见[实现状态](code/INFRA_STATUS.md)与[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 研究对象和两项研究内容保持不变；框架开发优先解决这条实验链暴露的缺口。
 
 以下为截至 2026-09-04 的接入背景，不覆盖上述顺序。目标锁定 `REL_18_3`；受限 PostgreSQL extension / planner-visible recording `SemMap`/`SemFilter`
@@ -170,7 +170,7 @@ deterministic fixture 验证合同。[2026-09-01 首轮真实采集](experiments
 [单一 prompt 后续对照](experiments/results/postgresql/semfilter_prompt_qualification_20260901/README.md)
 未发现实际 messages/template 不一致；新 prompt 在 1.5B 的旧/新样例各 5/9，matched 7B 上为
 7/9、6/9，均未通过。生产配置不变，整轮采集继续暂停。下一工程切片独立接入
-[显式选择的 choice 生成配置](experiments/plans/completed/postgresql_choice_profile_engineering.md)，
+[显式选择的 choice 生成配置](experiments/plans/completed/选择算子接入_20260902.md)，
 让数据库保存并传递三值输出要求。
 首个[值与编码切片](experiments/results/postgresql/choice_profile_contract_20260902/README.md)已通过
 C/Python 对照及本地/服务器 68/68 测试，另有 PG18.3 仅构建记录。
@@ -186,7 +186,7 @@ profile 校验及固定 HTTP choice 映射，本地/服务器各 83/83，PG18.3 
 fixture 调用、取消/阻塞 DNS 各 10 次与恢复；随后[真实 choice 检查](experiments/results/postgresql/choice_service_20260902/README.md)
 完成 14 次 old/choice 请求与两个 NULL 对照，累计 15/100 含首轮工具失败；当前集成版本已包含实现和归档。
 这些只验证接入与本规模资源使用，不表示模型质量通过，也不更换默认 reference 或恢复真实校准。
-[总体设计与实施安排](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#implementation-sequence)
+[总体设计与实施安排](experiments/plans/系统架构.md#implementation-sequence)
 现按长期能力组织：PG拥有SQL和关系执行，算子方法产生具体任务，SemLoom承担有界组织与多作业调度。
 数据库公共调用/绑定、独立增量Core和共同资源/观测可以协同推进；两个Filter AND与有界多会话已有
 [工程验证](experiments/results/postgresql/semfilter_and_20260907/README.md)，现已合并main。
@@ -218,7 +218,7 @@ SemLoom 核心可以先用公开任务、可控时钟和执行替身验证增量
 ### 0.1 PostgreSQL AI 语义算子实施入口
 
 数据库内 AI 语义算子的权威实施入口为
-[`experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md`](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md)：
+[系统架构](experiments/plans/系统架构.md)：
 参考 Sema/Cortex 的数据库语义所有权、LOTUS 的 reference/optimized algorithms、IMLane 的 DB-runtime
 batch pump，并把 Kalypso 的 dependency/KV admission 仅保留为后续架构参考。PostgreSQL 进程内 semantic
 module 拥有 SQL、child plan、snapshot、semantic plan/result parsing 和 query lifecycle；其载体先用
@@ -229,7 +229,7 @@ extension 验证，是否升级最小 core patch 由反例审查决定。executi
 结果映射、生命周期和外部执行，采用能服务本项目的经验；多算子只是其中一项。未来可把自有算子语义、处理/优化方法与
 SemLoom 执行能力移植到公司系统。目标 planner/executor 承接算子方法，provider 适配复用同一执行
 核心；一次执行连通不能证明算子优化已移植。参考文件、采用条件和已有部分的保留/调整方式见
-[工程参照与成果移植计划](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy)。
+[工程参照与成果移植计划](experiments/plans/系统架构.md#frontend-adapter-strategy)。
 Filter 首先服务于自然语言条件筛行，当前三值输出可以保留；二值/三值的结果承接与 NULL/error
 差异需分别定义和验证。可移植不等于完全相同的 SQL 表面；公司移植不阻塞自有主线，内网复用与
 外部发布/部署分别确认权限。
@@ -627,7 +627,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 先回答“数据库逐步提供的输入怎样组织和提交，才能及时完成查询并减少不必要的数据留存”。
 复用已实现的受限单 Map 多在途、共享执行核心和组织器；真实质量、性能与可比性分别核对。
-具体参数、额度和停止条件只在[数据执行计划](experiments/plans/data_organization_batching.md#design-hypotheses)维护。
+具体参数、额度和停止条件只在[数据执行计划](experiments/plans/数据组织.md#design-hypotheses)维护。
 
 | 工作对象 | 近期工作 | 与其他工作的依赖 |
 |---|---|---|
@@ -666,7 +666,7 @@ rehearsal/compatibility evidence，不能冒充已经验证 `REL_18_3` planner-v
 
 - 开题历史材料：`docs/archive/opening/README.md`；不再随项目进展同步
 - 当前方向速览：`README.md`
-- 实验状态：`experiments/plans/experiment_status_and_gaps.md`
+- 实验证据：`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`
 - 文献与知识：`docs/research/knowledge_hub.md`
 - 十五篇精读方法速览：`docs/research/精读文献笔记/paper_deep_reading_digest/paper_deep_reading_digest.tex`（同目录本地 PDF）
 - 变更日志：`PROJECT_LOG.md`

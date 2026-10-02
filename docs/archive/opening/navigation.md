@@ -29,7 +29,7 @@ AGENTS.md
 |---|---|
 | 项目总方向、边界、目录职责 | `AGENTS.md`、`README.md`、`PROJECT_INDEX.md` |
 | 当前研究路线和阶段计划 | `README.md` |
-| 数据库 AI 算子场景和 workload | `experiments/plans/motivation/workloads.md`、`experiments/plans/motivation/ai_sql_surface.md` |
+| 数据库 AI 算子场景和 workload | `experiments/plans/archive/场景探索_20260710.md#workloads`、`experiments/plans/archive/场景探索_20260710.md#sql-scenes` |
 | 真实 GPU-backed 动机实验结果 | `experiments/results/motivation/gpu/README.md` |
 | 阶段拆分和链路画像结果 | `experiments/results/motivation/gpu/ai_embed_chain_breakdown_20260712.md` |
 | Ray 多 endpoint 结果 | `experiments/results/motivation/gpu/multi_endpoint_ray_motivation_20260712.md` |

@@ -464,7 +464,7 @@ git commit -m "results: select vLLM scheduling capacity"
 - Modify: `code/INFRA_STATUS.md`
 - Modify: `code/README.md`
 - Modify: `code/scripts/README.md`
-- Modify: `experiments/plans/experiment_status_and_gaps.md`
+- Modify: `experiments/plans/archive/进度汇总_20261001.md`
 - Modify: `PROJECT_OUTLINE.md`
 - Modify: `PROJECT_INDEX.md`
 - Modify: `PROJECT_LOG.md`
@@ -525,6 +525,6 @@ tracked; `.superpowers/` remains untouched.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add code/INFRA_STATUS.md code/README.md code/scripts/README.md experiments/plans/experiment_status_and_gaps.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
+git add code/INFRA_STATUS.md code/README.md code/scripts/README.md experiments/plans/archive/进度汇总_20261001.md PROJECT_OUTLINE.md PROJECT_INDEX.md PROJECT_LOG.md
 git commit -m "docs: record execution tuning decision"
 ```

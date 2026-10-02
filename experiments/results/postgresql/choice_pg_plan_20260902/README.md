@@ -4,7 +4,7 @@
 原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 
 内部工程验证记录；来源为生产源码、独立编码向量及实际 PG18.3 测试。
-对应[四 C 专项计划](../../../plans/completed/postgresql_choice_profile_engineering.md)，不是质量或性能实验。
+对应[四 C 专项计划](../../../plans/completed/选择算子接入_20260902.md)，不是质量或性能实验。
 生产实现为 `00cc6bbf0eba5f57ec0d9bbfed99b0dbdc8a0c0c`；最终测试修订和验收源码为
 `134447dd324fe1fbb47c15bc7dbf97fe0b948be0`。独立分支保存，未合并或推送。
 
@@ -63,3 +63,14 @@ digest 包含完整 114-byte profile 编码；旧 schema 2 的字段、摘要和
 
 下一步只需沿当前分层接入 query-fixed 中立 open spec、严格 wire v4 和 gateway profile 映射；
 不继续拆公共 runtime，不恢复质量/成本校准，也不提前进入第二 physical path。
+
+<a id="result-index-notes"></a>
+## 原结果入口的补充说明
+
+以下合并原结果首页截至2026-10-02的独有说明，原日期、失败与数据来源继续保留；较早的未完成描述由本报告后续记录补充。
+
+来源章节：PostgreSQL choice profile（2026-09-02）。
+
+[PG plan 接入](README.md)：第四个 option 与 schema 3 已实现，
+保存完整 profile，支持计划复制、prepared plan 和 EXPLAIN；该切片实际执行明确拒绝，未接 wire v4。
+最终 PG18.3 regression 1/1、TAP 537/537、本地/服务器各 68/68 测试通过；没有真实模型调用。

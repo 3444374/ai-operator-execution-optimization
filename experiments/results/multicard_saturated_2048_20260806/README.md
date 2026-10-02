@@ -5,10 +5,10 @@
 
 > **⚠️ 订正注（2026-08-06，codex 审计 + raw 独立复算）**：本报告原版有四处分歧，已订正：
 >
-> 1. **身份**：`duckdb_ai 2×1 static-sharded` 是测试 harness 预切 manifest + 启动 2 个独立 DuckDB 进程，而 DuckDB `ai` 扩展只拥有单一 `BASE_URL`。按 [bounded_output_duckdb_comparison_protocol_20260805.md](../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md) §2.6（line 114-117），这只能标 **`harness_pre_split_diagnostic`**（scheduler owner = 实验 harness，不是 DuckDB），**不进 DuckDB 产品原生主排名**，也不能称"DuckDB-ai 数据库产品 baseline"。**层级注**：raw `summary.json::comparison_role=database_product_native_baseline` 与 `resolved_config.json::formal_baseline_eligible=true` 是 runner **单 shard 层**声明（duckdb 单 endpoint 的 product 语义，单 shard 正确）；ramp 层（本报告）2-shard harness 预切才使其变 `harness_pre_split_diagnostic`、不进 formal native——两者不同层级，非矛盾。任务 #8 将加 ramp 层 identity sidecar 做权威 override（recompute 以 sidecar 为准，而非单 shard 角色）。
+> 1. **身份**：`duckdb_ai 2×1 static-sharded` 是测试 harness 预切 manifest + 启动 2 个独立 DuckDB 进程，而 DuckDB `ai` 扩展只拥有单一 `BASE_URL`。按 [bounded_output_duckdb_comparison_protocol_20260805.md](../../plans/reference/DuckDB对照.md) §2.6（line 114-117），这只能标 **`harness_pre_split_diagnostic`**（scheduler owner = 实验 harness，不是 DuckDB），**不进 DuckDB 产品原生主排名**，也不能称"DuckDB-ai 数据库产品 baseline"。**层级注**：raw `summary.json::comparison_role=database_product_native_baseline` 与 `resolved_config.json::formal_baseline_eligible=true` 是 runner **单 shard 层**声明（duckdb 单 endpoint 的 product 语义，单 shard 正确）；ramp 层（本报告）2-shard harness 预切才使其变 `harness_pre_split_diagnostic`、不进 formal native——两者不同层级，非矛盾。任务 #8 将加 ramp 层 identity sidecar 做权威 override（recompute 以 sidecar 为准，而非单 shard 角色）。
 > 2. **数据口径**：原 §5/§6 对 gate 臂用"分片速率求和"（`tok₀/wall₀ + tok₁/wall₁`，duckdb=78112），但 project 臂只有"group 总 tokens / group wall"一种测法。跨臂同口径要求 gate 臂也用 group 口径（`(tok₀+tok₁)/group_wall`）。按 group 口径独立复算 raw：**duckdb 76780 tok/s（86.4% 天花板）、project 78739 tok/s（88.6%）、project 高 +2.55%**（原 +0.8% 是跨口径比较）。**定性结论仍成立**：饱和下 project 不输 duckdb、两者 ~88% 天花板、reps 完全无重叠（project [78186,78463,79567] vs duckdb-group [76042,76868,77429]）。
 > 3. **措辞 + 统计**：原"统计等价"无 TOST/equivalence margin。按 group reps 重算 Welch t=3.36 df≈4 **p≈0.0284**（**非**早前误引的 0.127——0.127 属 rich 实验）→ project **统计显著高于** duckdb harness diagnostic（+2.55%, reps 不重叠）；但 duckdb 是 harness 非产品，"显著高 vs harness"≠"优于产品"。"质量等价"见 rich EM/F1 复核。
-> 4. **证据**：§8 原引用的 `formal.log`/`sweep.log` 未提交（.gitignore），但结构化 raw（`gate.json` + 每片 `summary.json` + `proj_formal_*.csv`）齐全，三臂可完全独立复算（本注订正数字即来自该 raw，非日志）。LB RR 附录（`ADDENDUM_lbrr_collapse.md` 的 72480 tok/s）因 `collapse.log`/`lbrr64_*`/`ps8_collapse` 未提交，**当前不可独立审计**，见该附录订正。
+> 4. **证据**：§8 原引用的 `formal.log`/`sweep.log` 未提交（.gitignore），但结构化 raw（`gate.json` + 每片 `summary.json` + `proj_formal_*.csv`）齐全，三臂可完全独立复算（本注订正数字即来自该 raw，非日志）。LB RR 附录（[轮询与过量提交补充](#lbrr-supplement) 的 72480 tok/s）因 `collapse.log`/`lbrr64_*`/`ps8_collapse` 未提交，**当前不可独立审计**，见该附录订正。
 > 5. **vLLM effective config（诚实）**：本报告/§5 的 `max_num_seqs=256 / max_num_batched_tokens=8192` 是 **adapter 声明值**；vLLM 启动 cmdline 无这些 flag（仅 `--model/--max-model-len 8192/--gpu-memory-utilization 0.90`），实际用 vllm 0.25.1 **默认值**（≠ 声明）；`enable_prefix_caching` 默认 ON（= 声明，巧合）。数据有效（c32<C_total=64<默认 max_num_seqs），但 service config 字段是声明非 effective。
 >
 > 更可复现的同一结论（含 committed 聚合器 `multicard_rich_aggregate.py`）见 [`multicard_rich_metric_2048_20260806/`](../text_service_pressure_diagnostic_2048_20260806/README.md)。本报告订正后保留作历史 formal 记录。
@@ -101,3 +101,65 @@
 - 代码：饱和校准 driver `42cfc9a`。
 
 > **诚实边界**：饱和配置下 3 臂（bounded 天花板 + **duckdb_ai harness_pre_split_diagnostic** + project_static）1w+3f，CV<1%，group 口径数据可独立复算。**身份**：duckdb 臂是 harness 诊断，非 DuckDB 产品原生排名。**未达 feeding-parity ≥95% 门禁**（duckdb/project 86–89%）。**不是完整多卡矩阵**（缺 lb_rr/direct_static/project_smart/framework-native），**不是倾斜 workload**（SQuAD 均匀），**不用 wall 跨臂排名**（用 service tokens/s）。
+
+本节合并原独立补充报告，数值、全部重复、失败说明与结论按原记录保留。
+
+<a id="lbrr-supplement"></a>
+<a id="lbrr-supplement-addendumlb_rr-单入口数据点--过订阅塌陷曲线raw-证据未提交数字当前不可独立审计"></a>
+## 轮询与过量提交补充
+> **⚠️ 订正注（2026-08-06，codex 审计 + raw 复算）**：
+> - **`ps8_collapse/`（bounded c=64/128/256）已提交**（114 files，raw 可复算）→ bounded 过订阅塌陷曲线**可独立审计**。group 口径复算：c64=**36560**（n=2）/ c128=**24836**（n=1）/ c256=**N/A**（0/3 完整 2-shard rep，每 formal ≥1 shard 失败）；正文旧的 37341/25026 是 sum-of-per-shard 不同公式（已订正，见 §B）。
+> - **`collapse.log` + `lbrr64_*/`（lb_rr @64 per-run）仍未提交** → **duckdb_ai_lb_rr @64 = 72480 tok/s 仍无法独立审计**（仅 collapse.log 汇总数字，无 per-run 证据）。
+> - **塌陷归因**：c64_f0 shard_1 是 `ValueError ReadError`（网络/读取层，非 vLLM 崩溃）；机制归因 vLLM KV/调度**疑似、无 service-counter 证据、未证实**。
+> - lb_rr 身份 = `comparison_role=gateway_system_diagnostic`（**主字段=系统角色**，协议 §2.6 gateway 完整系统轨：DuckDB 单 BASE_URL 经 nginx；`component_comparison_role=database_product_native_baseline`；scheduler_owner=duckdb_ai_extension+nginx_round_robin+vllm），非 DuckDB 产品原生多 endpoint。
+
+> 补充主 README 的饱和三臂 formal。两块数据：(1) **duckdb_ai_lb_rr @64**（`lbrr64_*/` + `collapse.log` **未提交** → 72480 **不可独立审计**）；(2) **bounded_http 过订阅塌陷曲线**（`ps8_collapse/` **已提交** → group 口径可复算）。同设置：2048 SQuAD，2×4090，cap=64，temp=0，prefix-on。§A（lb_rr）数字基于 collapse.log 汇总、per-run 未审计；§B（bounded）已按 group 口径复算。
+
+<a id="lbrr-supplement-a-duckdb_ai_lb_rr-64现实单入口推断欠喂待证"></a>
+### A. duckdb_ai_lb_rr @64（现实单入口，推断欠喂待证）
+
+| 臂 | mean tok/s | CV | n | % of ceiling（group 88847） |
+|---|---|---|---|---|
+| duckdb_ai_lb_rr c=64 | **72480**† | 0.6% | 3/3 | **81.5%** |
+
+† 72480 来自 `collapse.log` 汇总；`lbrr64_*/` per-run 证据**未提交**，数字**当前不可独立审计**。
+
+**配置理由**：lb_rr 是单 DuckDB 进程经 nginx round-robin 到 2 backend。要每 backend ~32（饱和点），单进程需总并发 64（nginx 各分 ~32）。实测：峰值 backend running ~27，但**平均 ~10/backend**——DuckDB-ai 扩展**单进程的持续 in-flight 只有 ~20**（不是配置的 64），突发不持续。
+
+**观察（非审计结论）**：lb_rr @64 collapse.log 汇总 = 72480（group ceiling 88847 的 81.5%）。比饱和三臂（sharded/project ~88%）低 ~7pp。**推断**（per-run 未审计、机制待证）：单进程 nginx 路由下 DuckDB-ai 持续 in-flight ~20 → 每 backend ~10，欠喂（<< 32 饱和点）。**不能声称**"单入口固有极限"为已证结论（lbrr64 per-run 未审计；sharded 旧分片求和口径也需 group 重算后才同基线可比）。
+
+**不能声称**：lb_rr 是"饱和竞争臂"——**推断**单进程持续并发有限（per-run lbrr64 未审计，机制待证），与饱和三臂不在同一基线。它的价值是**对照线索**（非已证结论）：现实单入口部署在多卡上**可能**喂不饱。
+
+**sharded > lb_rr 的推断**（per-run 未审计）：sharded 用 2 个 DuckDB 进程（每 backend ~32，饱和）；lb_rr 用 1 进程（持续 in-flight ~20 → 每 backend ~10，欠喂）。**"多进程是喂饱多卡的必要条件"是推断，非已证结论**（需 lbrr64 per-run 审计 + sharded group 口径同基线对比）。
+
+<a id="lbrr-supplement-b-bounded_http-过订阅塌陷曲线c64128256"></a>
+### B. bounded_http 过订阅塌陷曲线（c=64/128/256）
+
+c=32 是饱和峰值（89287，主 formal）。越过饱和点（更高并发）的塌陷：
+
+| concurrency/endpoint | mean tok/s（**group 口径**） | n 完整 2-shard/3 formal | % of c=32 峰值（group 88847） |
+|---|---|---|---|
+| 32（饱和峰值，group） | 88847 | 3/3 | 100% |
+| **64（过订阅）** | **36560** | **2/3**（formal0 shard_1 ValueError ReadError） | **41.1%** |
+| **128（过订阅）** | **24836** | **1/3**（仅 formal1 完整） | **28.0%** |
+| **256（过订阅）** | **N/A** | **0/3**（每 formal ≥1 shard 失败；非"全 shard 崩溃"，部分 shard 完成） | — |
+
+> **口径订正**：旧的 37341/25026 是 **sum-of-per-shard**（`tps_shard0 + tps_shard1`，两 shard jct 不等时高估）；group 口径 `group_service_total_tokens/group_service_wall_s` 才是系统级吞吐。c256 "0/3 全失败" 是 rep 级（每 formal 无完整 2-shard），shard 级有完成（formal1 shard_0、formal2 shard_1）。c64 formal0 shard_1 是 `ValueError ReadError`（网络/读取，非 vLLM 崩溃）。
+
+**事实（group 口径，ps8_collapse 可审计）**：越过饱和点后，吞吐**单调塌陷**（100%→41%→28%→N/A），**完整 2-shard rep 率下降**（3/3→2/3→1/3→0/3）。c=256 每 formal ≥1 shard 失败（非"全 shard 崩溃"，部分 shard 完成：formal1 shard_0、formal2 shard_1）。
+
+**机制（疑似，无 service-counter 证据，未证实）**：2×4090 + Qwen2.5-7B + SQuAD（max_model_len 8192），vLLM 在 ~64 总并发（32/endpoint）达饱和；更高并发 → 吞吐塌陷 + 不稳定（部分 run 崩溃）。**疑似** vLLM KV/调度过载，但无 service-counter 证据，未证实（见订正注：不能直接归因 vLLM KV/调度）。
+
+**对课题含义**：
+- **饱和点是真实约束**：多卡 baseline 必须**校准到饱和点**（~32/endpoint），不能盲目堆并发——越过即塌陷。这印证 AGENTS §7.5C 的 feeding-saturation 门禁（先找饱和点，固定，不在线调参）。
+- **过订阅塌陷是系统属性**，不是某个臂的 bug——bounded_http（最 lean 的客户端）也塌陷，说明是服务侧过载（**疑似 vLLM，无 service-counter 证据，未证实**），与上游臂无关。
+
+<a id="lbrr-supplement-c-证据"></a>
+### C. 证据
+
+- `collapse.log`：lb_rr@64 + 塌陷曲线 1w+3f driver 输出（mean/CV/n/reps）。
+- `ps8_collapse/`：bounded c=64/128/256 每 repeat 的 gate shard summaries（成功的）。
+- `lbrr64_*/`：lb_rr 每 repeat 的 runner report。
+- 主 formal（饱和三臂）见上一级 README + `ps8_formal/`。
+
+> **诚实边界**：lb_rr@64 是现实单入口的**推断欠喂**数据点（81% ceiling，单进程限制**机制待证**，per-run lbrr64 未审计），不进饱和排名；塌陷曲线是系统过订阅行为（c≥64 塌陷 + 失败率升），c=256 全失败。lb_rr@64 数字基于 collapse.log 汇总（lbrr64 per-run 未提交，**不可独立审计**）。
