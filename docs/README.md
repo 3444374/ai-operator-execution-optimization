@@ -10,3 +10,5 @@
 
 代码讲解进入对应模块README，实验解读进入对应结果报告，实施与待核对问题进入现行计划。
 文献依据从`research/`引用，运行数据从`experiments/results/`引用；同一内容维护一份正文。
+
+研究论证从[研究定位](research/研究定位.md)进入，机制与候选采用条件从[优化方法依据](research/优化方法依据.md)进入；题录与资料定位从[文献清单](research/ai_operator_literature_inventory.md)和研究目录核对。

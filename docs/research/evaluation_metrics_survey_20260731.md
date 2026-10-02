@@ -277,7 +277,7 @@ Recall/nDCG 需要显式 relevance 真值；P2 由 SLO-scale 字段和 formal-re
 ## 8. 下一步与落点
 
 1. **P0 三条优先**——TTFT 分位、ITL 分布、prefix cache hit rate。改动集中在 `code/src/metrics.py` + `code/src/baselines/ceilings/vllm_bench.py`，不触策略代码；先在 cache-ON 路由实验上补采，**直接服务当前 prefix 结论的隔离消融**（4-ep/7B 或 2-ep/1.5B、人为缩 KV 制造可控淘汰率）。登记到 `experiments/plans/archive/进度汇总_20261001.md` 指标缺口区。
-2. **P1 与代价模型/多 Job 正式计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 `docs/research/knowledge_hub.md` §5.7 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、三个 JCT 反事实、empirical service lag/starvation 和 recall@k 作为对应研究内容实验的附加报告项。
+2. **P1 与代价模型/多 Job 正式计划合并**——Q-Error/Spearman/Pick Rate 已在代价估计计划清单（见 [对应材料](优化方法依据.md#submission-candidates) 模式 2），与本调研一致，按既定批次推进；Goodput-as-tokens、padding waste、三个 JCT 反事实、empirical service lag/starvation 和 recall@k 作为对应研究内容实验的附加报告项。
 3. **P2 作为报告期统一处理**——Variance/CI、SLO Scale、CV、regression count、调度开销% 在正式结果报告与 `figures/` 绘图阶段一次性补齐。
 4. 本文件作为 `docs/research/` 的指标体系参考入口；后续新实验设计指标时先查本目录 §3，避免重复造指标或漏报文献标准项。
 

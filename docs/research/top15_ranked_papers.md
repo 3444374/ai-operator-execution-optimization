@@ -1,7 +1,7 @@
 # 开题时期 Top 15 论文（归档）
 
 本表保留开题时的选目，不再随项目后续文献工作更新，也不代表当前阅读优先级。
-现行文献依据从 [knowledge_hub.md](knowledge_hub.md) 与
+现行文献依据从 [knowledge_hub.md](研究定位.md) 与
 [ai_operator_literature_inventory.md](ai_operator_literature_inventory.md) 核对。
 
 更新日期：2026-07-29

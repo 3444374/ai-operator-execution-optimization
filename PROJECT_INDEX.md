@@ -12,7 +12,7 @@
 | 机器、服务与数据库准备 | `deploy/` | [运行手册](deploy/runtime/README.md) |
 | 数据来源、哈希与导入说明 | `data/` | [数据入口](data/README.md) |
 | 实验设计、实际结果与失败 | `experiments/` | [计划](experiments/plans/README.md)、[结果](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 文献、研究分析与方法依据 | `docs/research/` | [研究入口](docs/research/README.md)、[知识库](docs/research/knowledge_hub.md) |
+| 文献、研究分析与方法依据 | `docs/research/` | [研究入口](docs/research/README.md)、[研究定位](docs/research/研究定位.md) |
 | 历史工程与已结束的开题材料 | `docs/archive/` | [工程](docs/archive/engineering/README.md)、[开题](docs/archive/opening/README.md) |
 | 图源、输入、导出与审查 | `figures/` | [图资产](figures/README.md) |
 | 结构与关键事实变更 | 根文件 | [项目日志](PROJECT_LOG.md) |
@@ -144,3 +144,26 @@
 | `data_organization_batching.md` | [数据组织](experiments/plans/数据组织.md) |
 
 数据组织旧方案中的已执行清单见[历史方案](experiments/plans/archive/数据组织历史方案_20260927.md)，现行假设与容量设计见[数据组织](experiments/plans/数据组织.md)。
+
+## 知识总汇旧章节定位
+
+原`docs/research/knowledge_hub.md`改为[研究定位](docs/research/研究定位.md)，集中维护研究问题、最近邻、机制采用条件和待证增量。
+原机制说明、题录、实验摘要与工程记录按内容归回既有文档；历史状态按原日期解释，原全文可从来源提交`ab125ae4`查阅。
+
+| 原章节 | 当前维护位置 |
+|---|---|
+| 阅读指南 | [研究定位](docs/research/研究定位.md)；当前职责与问题导航 |
+| §1 vLLM机制 | [vllm_continuous_batching_reference](docs/research/vllm_continuous_batching_reference.md)；专篇维护版本、参数和机制；不复制默认值 |
+| §2 Ray模式 | [ray_actor_dynamic_batching_reference](docs/research/ray_actor_dynamic_batching_reference.md)；专篇维护接口与批处理，示意伪代码不作为实现 |
+| §3 文献地图 | [ai_operator_literature_inventory](docs/research/ai_operator_literature_inventory.md#early-candidates)；已登记题录优先；未登记名称保留为待核对线索；旧总数删除 |
+| §4 最近邻与采用条件 | [研究定位](docs/research/研究定位.md)；取消绝对空白概括，保持核对版本与来源类型 |
+| §5 方法模式 | [优化方法依据](docs/research/优化方法依据.md#cost-candidates)；按信息、动作、对照和否定条件组织；旧参数、误差与进度回到事实来源 |
+| §5.7.4/§5.10 图像阶段 | [heterogeneous_ai_dataflow_execution_model_20260811](docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md)；已有专题拥有模型、阶段和验证要求 |
+| §5.7.5 SAOR观察 | [saor_model_scenario_audit_20260811](docs/research/saor_model_scenario_audit_20260811.md)；模型、实验失败和数字由专题及原始报告维护 |
+| §5.7.6 公平评价 | [evaluation_metrics_survey_20260731](docs/research/evaluation_metrics_survey_20260731.md#93-本项目的公平对比合同)；指标定义及适用条件已由指标专题维护 |
+| §5.7.7/§5.8/§7.1/§10.5.1 | [策略工程映射](docs/archive/engineering/designs/策略工程映射.md#knowledge-hub-history)；保留原优先级、能力映射和工程设想；不覆盖当前状态 |
+| §6 实验摘要 | [README](experiments/results/motivation/README.md)；避免把旧摘要计时或版本当成当前结论 |
+| §7 实施与对照分级 | [README](experiments/plans/README.md)；架构、状态和对照分别引用各自唯一入口 |
+| §8 缺口表 | [研究定位](docs/research/研究定位.md#open-questions)；研究问题与已实现工程条件分开，去除旧优先级 |
+| §9 文件清单 | [README](docs/research/README.md)；目录清单与变化沿革分别由README与PROJECT_LOG维护 |
+| §10 Daft及多模态 | [daft_ray_multimodal_reference](docs/research/daft_ray_multimodal_reference.md)；技术和厂商资料已有专篇；本地结论回到报告 |

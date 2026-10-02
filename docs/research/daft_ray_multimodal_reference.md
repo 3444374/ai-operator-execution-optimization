@@ -2,7 +2,7 @@
 
 生成日期：2026-07-17
 用途：记录 Daft+Ray 架构、Flotilla 分布式引擎、与具身智能的关联、及与本课题的关系分析。
-关联：`docs/research/knowledge_hub.md` §10
+关联：[对应材料](daft_ray_multimodal_reference.md)
 
 ---
 
