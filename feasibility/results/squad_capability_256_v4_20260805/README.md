@@ -1,5 +1,8 @@
 # SQuAD v1.1 dev capability gate v4 — DuckDB-ai arm（2026-08-05，canonical sample）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **角色：能力门禁，不是正式排名。** 单臂（DuckDB community `ai`）、operator-only 计时边界。
 > database-E2E 顶层 runner 尚未实现，不产生数据库系统级排名。
 > **v4 是 codex 第七轮修复（SQuAD-normalize 分桶 + sample_manifest.jsonl + /version 修复）后的 canonical 256 行样本，取代 v3。**

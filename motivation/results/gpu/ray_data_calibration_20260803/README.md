@@ -1,5 +1,16 @@
 # Ray Data native `map_batches` 校准（2026-08-03）
 
+2026-10-02导出检查：原批次扫描和CPU池扫描CSV均在含换行的`engine_stats_text`字段中途截断。
+已从本页记录的服务器原件恢复[批次扫描](raw/runs_phase1_batch.csv)10条和
+[CPU池扫描](raw/runs_phase2_cpu.csv)8条完整记录，每条147列；两份旧副本均为原件的字节前缀。
+严格CSV解析、5000行输出与`exactly_once=True`检查通过，按配置复算的吞吐中位数与下文表一致。
+这是导出修复，没有重新运行实验；截断副本保留于本地忽略目录及修改前Git版本。
+
+| 完整副本 | 字节数 | 与服务器原件一致的SHA-256 |
+|---|---:|---|
+| `runs_phase1_batch.csv` | 50,123 | `d98038313b4413e0fb8c019c98a4fea8b065f9ed8132cc296811221846e25a63` |
+| `runs_phase2_cpu.csv` | 40,556 | `4fd1c18f5069a35c9d195467f740f3471ff45946bdc8ff5f90b836e1ad2b0a31` |
+
 > 性质：**原生 baseline 独立校准**（campaign step 4 的后半）。只动 Ray Data 官方
 > `map_batches` 暴露的原生参数 `batch_size` 与 actor pool 大小（`cpu_workers` 预处理池、
 > `gpu_workers` GPU 池），Ray Data 自管 backpressure、task dispatch、actor scheduling

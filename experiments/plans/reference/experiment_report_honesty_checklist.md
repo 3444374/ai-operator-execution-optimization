@@ -44,10 +44,11 @@
 
 ## 5. 证据状态 —— 提交了才声称
 
-- **raw git tracked** 才声称"可复现/可审计"。写报告前 `git ls-files <dir>` 确认。
+- 按 [结果保存规则](../../results/AGENTS.md)核对证据是否可定位、可恢复及足以支持结论。
+  公开核验依赖的材料必须已跟踪，或能从已跟踪的归档、清单与复算入口恢复；仅有服务器或私有原件时说明获取方式与公开核验缺项。
 - 引用文件前确认提交状态（`formal.log/sweep.log` 被 .gitignore；`ps8_collapse` 实际已跟踪——别说"未提交"）。
-- raw 裁剪版（summary/gate/ttft/ramp_run/agg，**排 requests.csv**）提交到仓库 output_root + ramp_aggregate 重生成入仓库。
-- nginx config / 实际运行 config 是 provenance，提交快照或 README 内联。
+- summary/gate/ttft/ramp_run/agg与汇总计算引用单一来源；逐请求数据按核验需要保存和脱敏，不统一排除。
+- 适用的nginx配置与实际运行配置注明版本及校验值，引用已有可核验副本或保存一次脱敏快照。
 - **反例**：Phase 2 只 README（raw 在服务器）→ 不可复现；ADDENDUM 说 ps8_collapse 未提交（实已提交 114 files）。
 
 ## 6. 文档（写报告前必读，不凭记忆）
@@ -74,7 +75,7 @@
 
 - **8.1 缺臂命名**：sweep 未含全部对照臂 → 称"N 条系统路径的 scale/calibration sweep"，**非**"完整 N 臂正式排名"。只答所含路径的容量曲线/稳定性/规模拐点；"项目方法是否优于 baseline"须补齐缺臂（如 project_static）同合同重跑后才能答。
 - **8.2 指标附公式+行号**（复审第四轮）：派生指标必写代码精确公式与行号，不给裸数字——否则分母/口径模糊，自己与读者都无法核对。后端平衡 skew = `_backend_skew` = `abs(a-b)/max(a,b)` = (max-min)/max（`code/scripts/baselines/multicard_scale_ramp.py:366`），127:129 = 1.55%；gate 阈值 10% 也对 /max。**不**用 (max-min)/sum（=0.781%，代码不用）。
-- **8.3 跑完归档清单**（每次正式 run 必落盘到 results 目录）：
+- **8.3 跑完归档清单**（每次正式运行从结果入口定位适用证据，按结果保存规则引用单一副本或归档成员）：
   - 两 vLLM 进程的**完整 cmdline** + strict-preflight 输出（证 declared==effective：`--max-num-seqs/--max-num-batched-tokens/--enable-prefix-caching` 实际在 cmdline 上）；
   - vLLM/model revision、dtype、tensor-parallel、gpu-memory-utilization；
   - nginx conf SHA（gateway 轨）；
@@ -89,7 +90,7 @@
 2. ☐ 身份：ComparisonRole Literal 内的值（含 harness_pre_split/gateway_system）？协议 §2.6 哪轨？comparison_role（主=系统角色）+ component_comparison_role（单分片组件）+ scheduler_owner 全？identity sidecar 真实存在（非"未来支持"）？
 3. ☐ 结论：cache 统一才 regime？finish 空≠审计？n+TOST？根因有 service-counter 证据？
 4. ☐ 统计：sample stdev(n-1)？p 用对 reps（不跨实验）？
-5. ☐ 证据：raw `git ls-files` tracked + actual_run_config + gateway version/sha + identity sidecar 真实存在？
+5. ☐ 证据：公开核验材料已跟踪或可从已跟踪归档与复算入口恢复，actual_run_config、适用的gateway版本/sha与identity sidecar真实存在？私有原件的获取方式及缺项已说明？
 6. ☐ 计时粒度：timing_granularity 输出？query_barrier JCT ≠ request_e2e？
 7. ☐ 同源传播：改后 grep 全局残留（README + INDEX + LOG + OUTLINE）= 0？
 8. ☐ 文档：读了 §7.5/§6/协议/provenance/deploy + 本 checklist 才下笔？

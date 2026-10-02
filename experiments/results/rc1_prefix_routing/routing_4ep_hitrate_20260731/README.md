@@ -1,5 +1,8 @@
 # 4-ep prefix-affinity routing 重跑（带 prefix_cache_hit_rate）——归因闭合
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 1. 实验目的
 
 闭合 4-ep/1.5B prefix_affinity 相对 least_queued 收益（原始 run +5.9%）的**机制归因**：到底是 prefix cache 命中率提升（→ KV/prefix 复用故事）还是 endpoint 数驱动的并行度（→ 非 KV）？为此给 runner 补了 `vllm_prefix_cache_hit_rate` 采集（P0 指标，见 `research/evaluation_metrics_survey_20260731.md` §P0#3），重跑同一 4-ep/0.43 配置、同 workload，直接读命中率。

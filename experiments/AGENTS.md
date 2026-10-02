@@ -20,17 +20,18 @@
 ## 2. 运行与记录
 
 - 按目标计划执行 warm-up、交错重复和健康/饱和/稳定性检查；强制条件失败时保留失败或诊断结果，停止策略结论。
-- 每次运行保存 resolved config、manifest、upstream/provenance、command、环境报告、request/submission/
-  resource trace 及成功/失败记录；按根 §8 脱敏。
+- 每次运行关联实际配置、数据与源码来源、命令、环境及成功/失败记录；保留支持所报告指标的
+  request/submission/resource 原始观测。保存、共享与精简按 [结果保存规则](results/AGENTS.md)执行，按根 §8 脱敏。
 - 区分 database/source、organization、serialization/put、admission/queue、submit、model、fan-in、sink
   与完整 JCT；优先用 time-series 聚合，单次 snapshot 不代表稳态。
 - 质量、成本、能耗和 fairness 仅在适用且测量定义完整时报告；缺项写 `unavailable + reason`，不填零或猜测。
-- 结果保存到 `results/<方向>/<实验>_<日期>/{README.md,raw/}`；长期图表放 `figures/`，结果目录只引用。
+- 结果入口放 `results/<方向>/<实验>_<日期>/`，按需使用 `README.md` 与 `raw/`；已有证据可引用单一副本。
+  长期图表放 `figures/`，结果目录只引用。
 
 ## 3. 报告与结论
 
-- README 覆盖目的、设置、运行要求检查、设计、全组件数据、事实/推断/不能声称、课题含义和下一步；
-  主数字有单位、公式或来源及全部重复值，按内容组织，不要求机械套用顺序。
+- 报告说明问题、实际设置、运行与证据状态、结果及不能声称的结论；按问题补充所需阶段与组件数据，
+  主数字有单位、公式或来源及全部重复值。简短检查可直接记录在已有入口，不逐次复制整套报告或摘要。
 - 按实际对照路径命名比较；缺臂不称完整排名，`NULL`、未采集和“未观察到错误”不写成审计为零。
 - microbenchmark、单次 rehearsal 或不同 workload/签名的结果不合并为统一性能结论；负结果同样登记证据台账。
 - 结论变化后按根 §7 同步证据台账、总纲及实际仍维护的图、材料和日志。

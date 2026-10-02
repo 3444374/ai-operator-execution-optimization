@@ -1,5 +1,8 @@
 # PostgreSQL 扩展目录重构验证（2026-09-07）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 本文件为内部工程验证记录，对应 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 目的为在保持 SemMap/SemFilter 已有同步行为的条件下整理扩展职责与依赖，依据
 [主计划§8.1.1](../../../plans/postgresql_ai_semantic_operator_architecture_20260827.md)。

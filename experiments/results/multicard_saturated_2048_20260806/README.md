@@ -1,5 +1,8 @@
 # 多卡饱和配置对比（2×4090，SQuAD 2048，1w+3f）——已订正
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **⚠️ 订正注（2026-08-06，codex 审计 + raw 独立复算）**：本报告原版有四处分歧，已订正：
 >
 > 1. **身份**：`duckdb_ai 2×1 static-sharded` 是测试 harness 预切 manifest + 启动 2 个独立 DuckDB 进程，而 DuckDB `ai` 扩展只拥有单一 `BASE_URL`。按 [bounded_output_duckdb_comparison_protocol_20260805.md](../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md) §2.6（line 114-117），这只能标 **`harness_pre_split_diagnostic`**（scheduler owner = 实验 harness，不是 DuckDB），**不进 DuckDB 产品原生主排名**，也不能称"DuckDB-ai 数据库产品 baseline"。**层级注**：raw `summary.json::comparison_role=database_product_native_baseline` 与 `resolved_config.json::formal_baseline_eligible=true` 是 runner **单 shard 层**声明（duckdb 单 endpoint 的 product 语义，单 shard 正确）；ramp 层（本报告）2-shard harness 预切才使其变 `harness_pre_split_diagnostic`、不进 formal native——两者不同层级，非矛盾。任务 #8 将加 ramp 层 identity sidecar 做权威 override（recompute 以 sidecar 为准，而非单 shard 角色）。

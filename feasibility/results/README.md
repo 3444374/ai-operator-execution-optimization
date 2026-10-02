@@ -2,6 +2,9 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+2026-10-02格式检查：[历史dry-run CSV](pg18_4_script_dryrun.csv)的表头为12列，末尾两条写回记录为14列。
+原始输出保留；读取时按输出版本处理附加字段，不能按单一12列结构直接聚合。这份记录只说明脚本预演。
+
 规则：
 
 - 系统组件 microbenchmark 放在这里。
@@ -18,7 +21,7 @@
 2. `pgai_sql_smoke_20260714.md`：确认 pgai SQL embedding 触发面和 pgvector 写回可用。
 3. `pg18_4_connection_smoke_*.csv`、`pg18_4_script_dryrun.csv`：确认脚本和小规模 smoke run 可用。
 4. `ray_*`、`arrow_serialization.csv`、`shuffle_simulation.csv`：组件级 benchmark，只用于判断是否存在可观测系统信号。
-5. 组件级 benchmark（`ray_*`、`arrow_serialization.csv`、`shuffle_simulation.csv`）：只用于判断是否存在可观测系统信号，作为历史组件参考。
+5. 上述历史dry-run文件的附加字段按本页格式说明读取。
 6. `vllm_clip_pooling_gate_20260804/`：当前 AutoDL 软件组合上的 CLIP pooling
    capability blocker；两次 600 秒门禁均未返回 embedding，不含性能结果。
 7. `cost_profile_cacheon_gate_20260805/`：已提交 main 上的双 4090 cache-on + shared-Ray

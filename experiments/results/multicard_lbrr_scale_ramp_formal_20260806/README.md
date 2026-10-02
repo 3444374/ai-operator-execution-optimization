@@ -1,5 +1,8 @@
 # lb_rr（nginx gateway 1-proc）scale-ramp（formal, reps=3, 2026-08-07）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 lb_rr 单臂规模爬坡：1 个 DuckDB 进程（单 BASE_URL）→ nginx 8500 round-robin → 2 vLLM backend（8000/8001）。endpoint_count=1 `lbrr_dev` manifest（全行→LB→nginx 分），`concurrency=64`（单进程 TOTAL ≈32/backend，C_total=64）。reps=3，warmup_per_cell（单 endpoint manifest 用 endpoint_index=0 把全集暖两 backend，两 vLLM prefix cache 独立不共享）。driver 5878d51。
 
 **完整三路径对比（bounded / duckdb / lb_rr）、合规自检、数据表、边界、下一步** 见 `../multicard_scale_ramp_formal_20260806/README.md`（本 lb_rr run 是其中 gateway 轨）。

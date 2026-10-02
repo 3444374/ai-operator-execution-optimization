@@ -1,5 +1,8 @@
 # SAOR feeding-gap diagnostic D0/D1/P0 重跑完成——work_envelope_primary 判决（2026-08-18，commit 345bee2f + 2e4c2723 观测补丁）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **性质**：冻结诊断实验（feeding-gap 归因专用），非 baseline 正式排名、非 native-system 实验、非 SAOR formal。
 > **最终判决（官方 summarizer）**：`status=valid_diagnostic`、`evidence_valid=True`、**`classification=work_envelope_primary`**——D1/D0=0.9238（<0.95）且 P0/D1=0.9982（≥0.95）。**W（65536）work envelope 是项目路径与 direct 天花板之间差距的主要来源；Project 执行路径（bounded-ready FIFO + credit + Daft/Ray）几乎无额外损失（0.18%）。**
 > **前序 incident 闭环**：08-17 运行的 D0 rep3 `ReadError` 已由独立 transport reliability gate 定位为 HTTP/1.1 持久连接竞态（`BrokenPipeError`），三轮 gate 中 1 轮复现（1/1024），非系统性故障；本次重跑 12/12 cell、0 incident。

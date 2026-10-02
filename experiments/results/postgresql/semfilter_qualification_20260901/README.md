@@ -1,5 +1,8 @@
 # 校准前小切片：秩检查与普通统计通过，reference 语义资格未通过
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 本文件是内部实验与修复记录，来源为源码、PG18.3 实测和真实模型响应。对应语义算子代价估计的
 前置验证，不是整轮校准、质量基准测试或第二 physical path 的结果。
 
@@ -130,7 +133,7 @@ Python 60/60（45+5+10）；见 [最终资格](raw/final-rank/qualification.json
 [补充清单](raw/final-rank/SHA256SUMS)。该补充没有真实模型调用，其 `model_calls=0` 不包括 TAP 中的
 测试 provider，也不抹去上文已完成的 62 次模型请求。两次 PG 测试与对应源码分别绑定，不混用数量。
 
-来源见 [qualification.json](raw/qualification.json)、[日志](raw/logs/)和 [SHA256SUMS](raw/SHA256SUMS)。
+来源见 [qualification.json](raw/qualification.json)、[日志](raw/storage-manifest.jsonl)和 [SHA256SUMS](raw/SHA256SUMS)。
 公开日志只做路径/敏感信息脱敏和行尾空白规范化；仓库外包
 `semfilter_reference_qualification_c77c1441_20260901_r1` 保留原始日志、二进制、原始响应、服务身份和
 停止后的 PGDATA。raw 中的脚本是本次一次性验证快照，不是新生产 CLI 或并列实施计划。

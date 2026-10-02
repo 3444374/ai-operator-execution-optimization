@@ -1,5 +1,8 @@
 # CLIP preprocessing implementation-boundary profile, 2026-08-01
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 1. 实验设置
 
 - 代码：`f3d17af`；AutoDL 2×RTX 4090，单次实验仅暴露 GPU 0。

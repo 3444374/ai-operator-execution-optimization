@@ -51,7 +51,7 @@
 | 查文件、目录职责与历史材料 | [项目导航](PROJECT_INDEX.md) |
 | 查项目长期规则与术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
 | 核对实现与运行入口 | [代码状态](code/INFRA_STATUS.md)、[代码目录](code/README.md)、[脚本说明](code/scripts/README.md) |
-| 查实验计划、证据和失败记录 | [实验计划](experiments/plans/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 查实验计划、证据和失败记录 | [实验计划](experiments/plans/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)、[结果保存规则](experiments/results/AGENTS.md) |
 | 理解相关系统与论文 | [知识库](research/knowledge_hub.md) |
 | 追溯历史设计与实施计划 | [历史设计记录](docs/README.md) |
 | 准备机器 | [运行手册](deploy/runtime/README.md) |

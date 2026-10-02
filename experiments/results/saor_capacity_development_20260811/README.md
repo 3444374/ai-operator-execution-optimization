@@ -1,5 +1,8 @@
 # SAOR capacity-only development gate（2026-08-11）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 结论
 
 本轮证明了 SAOR 的最小真实执行路径可以在 PostgreSQL→Daft→Ray→未经修改的 vLLM 上安全

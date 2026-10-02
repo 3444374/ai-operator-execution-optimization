@@ -1,5 +1,8 @@
 # 多卡 scale-ramp（2×4090，SQuAD dev，c=32/K=32 固定，规模 4096→8192→10570）——已订正
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **⚠️ 订正注（2026-08-06，codex 审计）**：
 > 1. **身份**：duckdb_ai 是 harness 预切 + 2 独立 DuckDB 进程（DuckDB `ai` 单 BASE_URL），应标 **`harness_pre_split_diagnostic`**（[协议 §2.6](../../plans/reference/bounded_output_duckdb_comparison_protocol_20260805.md)，非产品原生多 endpoint、不进产品主排名）。
 > 2. **8192/10570 归因收紧**：原 §5 称"某行答案 >64 token / 不是系统 bug / 不可用"过强——cap=64 门禁已证模型最大输出 57<64，故不能声称该行必然超长；单次观察不能声称确定性/非 bug/不可用。可声称"本次 cap=64 合同下未满足零错误门禁"；更像并发批处理偶发生成尾部风险。

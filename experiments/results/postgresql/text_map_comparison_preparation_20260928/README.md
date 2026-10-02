@@ -23,7 +23,7 @@ macOS/Python 的 **82 项本地检查全部通过，无跳过**。新增 9 项�
 其余检查覆盖原查询评价、工作负载、子进程监督、原生 HTTP/入口、完整结果记录、异步期限、旧 M1 及 Ray 传输观察。
 测试使用临时合成记录、本地 fixture 和 Ray 接口替身，没有启动真实 PG、Ray 集群或模型。
 
-[测试日志](raw/unittest.log)保留完整用例和原值；[验证清单](raw/validation.json)记录基础提交、平台、
+[测试日志](raw/unittest.log.gz)保留完整用例和原值；[验证清单](raw/validation.json)记录基础提交、平台、
 文件 SHA 和测试模式。以下命令中的 PATTERN 依次取清单 patterns 的每一项，运行相同相关测试集：
 
 ```sh
@@ -32,6 +32,9 @@ PYTHONPATH=code python3 -m unittest discover -s code/tests/experiments -p PATTER
 
 首次新增 9 项检查通过，随后运行包含它们的 82 项相关测试集通过；两次没有失败。
 结果保存前经过仓库脱敏函数处理。没有提交、推送或合并，也没有新增真实模型调用。
+
+2026-10-02存储检查补充上述gzip日志副本；解压后13,976字节，SHA-256与原验证清单一致。
+本次只修复原来指向忽略文件的引用，没有重新运行测试。
 
 ## 结论和剩余项
 

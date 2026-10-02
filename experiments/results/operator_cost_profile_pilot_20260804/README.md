@@ -111,6 +111,9 @@ formal-only 加载规则和独立 held-out 设计。本目录不会用 pilot 结
 
 ## 原始证据
 
+2026-10-02逐成员整理两份tar：移出88份macOS附加元数据，保留的42/44个科学记录逐字节一致。
+当前归档SHA-256已更新至`MANIFEST.sha256`；原归档另有独立备份，历史运行与全部观测继续保留。
+
 - `v1_diagnostic_raw.tar.gz`：第一轮诊断，SHA256 见 `MANIFEST.sha256`；
 - `v2_raw.tar.gz`：修订合同后的完整 manifest、runs、request/submission/resource trace、
   stdout/stderr、GPU 与服务进程快照；

@@ -1,5 +1,8 @@
 # project_static 2-endpoint 挂死修复 — 256 go/no-go 验证门（2026-08-07）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **性质（experiments/AGENTS.md §结果边界）**：这是一个**修复验证门（fix-validation gate）**，不是正式性能排名。它只回答一个问题：commit `e49ac53`（bound actor-ready `ray.wait` 90s + bound profiler `subprocess.run` 900s）是否让原本 2-endpoint 无限挂死的 `project_static` 臂**能完成**。**不能**从此门禁的 256 行 wall 时间推断 project_static 相对 baseline 的吞吐优劣（256 行未饱和、operator 工作量极小、db_fetch 主导，见 §4）。
 
 ## 1. 实验目的

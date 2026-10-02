@@ -1,5 +1,8 @@
 # CLIP R0/R1/R2 H2D ceiling 诊断（2026-08-02）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > 性质：单张 RTX 4090、CLIP ViT-B/32 的 synthetic mechanism diagnostic。
 > 本实验解释 GPU-resident、pinned H2D 和 pageable tensor 边界，不是数据库/Daft/
 > Ray Data 系统 baseline，也不是论文 headline。

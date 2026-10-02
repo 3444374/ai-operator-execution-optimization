@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-10-01
+更新时间：2026-10-02
 
 本文件只回答“应该从哪里读、到哪里改”。它不复制实验数字，不承担项目日志或历史资产清单。
 精确结果以对应结果目录的原始文件为准。
@@ -37,6 +37,7 @@
 | 公司工程参考与自有成果移植 | [主架构 §8.7](experiments/plans/postgresql_ai_semantic_operator_architecture_20260827.md#frontend-adapter-strategy) | SQL/PG 接入到结果与外部执行的完整对照、自有改动位置与验证；未来算子方法与 SemLoom 分别移植 |
 | 实现状态 | [`code/INFRA_STATUS.md`](code/INFRA_STATUS.md) | 只记录源码实际模块、已接线能力和未完成项；未来设计回指工程计划 |
 | 实验证据台账 | [`experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md`](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) | 只回答机制是否实现、通过何种验证及证据强度；不决定后续架构 |
+| 实验结果保存与恢复 | [保存规则](experiments/results/AGENTS.md)、[文件恢复入口](code/scripts/README.md#实验结果恢复) | 必要原始观测与日志、单一存储及原目录恢复；整理记录从证据台账查阅 |
 | 开题历史叙事 | [`opening/README.md`](opening/README.md) | 开题已结束，报告、主张、PPT 与发布快照仅供回查 |
 | 变更历史 | [`PROJECT_LOG.md`](PROJECT_LOG.md) | 结构、方向、结论和关键入口变更记录 |
 

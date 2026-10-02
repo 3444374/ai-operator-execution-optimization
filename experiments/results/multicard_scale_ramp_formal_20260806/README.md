@@ -1,5 +1,8 @@
 # 三条系统路径 scale/calibration sweep（formal, reps=3, 2026-08-07）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > **命名边界（experiments/AGENTS.md §结果边界）**：本轮是 **bounded_http（ceiling）/ duckdb_ai（harness 预切 2-proc）/ lb_rr（nginx gateway 1-proc）三条系统路径的 scale/calibration sweep**，**非**完整三臂正式排名——**不含 project_static**（2-endpoint hang 未修，见 `experiments/plans/full_grid_sweep_plan.md` §1）。只答：同冻结服务配置下三条路径的容量曲线/稳定性/规模拐点差异。**不能**答"项目方法是否优于 baseline"（须先修 hang + 同合同重跑 project_static）。
 
 本目录（`multicard_scale_ramp_formal_20260806`）= bounded_http + duckdb_ai；lb_rr 单独在 `multicard_lbrr_scale_ramp_formal_20260806/`（单进程经 nginx gateway，manifest/scheduler 不同，分轨）。

@@ -1,5 +1,8 @@
 # SAOR Project mechanism 六臂 rehearsal（2026-08-14）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 ## 1. 实验目的
 
 本次只验证最终 Project mechanism 合同是否具备可执行、可复算、fail-closed 的证据链，
@@ -249,7 +252,7 @@ SLO、隔离、公平和机制证据。
 
 - [group_runs.csv](raw/group_runs.csv)
 - [manifest.json](raw/manifest.json)
-- [six per-cell records](raw/records/)
+- [six per-cell records](raw/storage-manifest.jsonl)
 - [work_cost_audit.json](raw/work_cost_audit.json)，SHA256
   `602dfc28e7b3f1dbbf1b1ad5c3d72bf559ef1aa481b2b871d332d2de28a2bb5e`
 - [independent CLI re-audit](raw/work_cost_cli_reaudit.json)，与 wrapper audit 哈希相同

@@ -1,5 +1,8 @@
 # AI_EMBED operator 正式对比：project vs Ray Data native（2026-08-03）
 
+2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
+原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
+
 > 性质：**同机正式系统对比**（campaign step 6 + step 8）。回答：在同一 PostgreSQL 图像输入、
 > CLIP 模型、L2-normalized 输出质量和双 4090 上，**项目静态执行路径是否优于最强 native baseline
 > （Ray Data），以及增益来自执行结构还是单纯更多 CPU**。
