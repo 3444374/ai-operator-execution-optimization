@@ -17,11 +17,13 @@
 修订后83项服务器检查和独立8,224次真实请求、关联及清理核对通过，原负结果和0请求启动失败分别保留。
 就绪窗口重复构建已有[本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)：
 短暂聚合能减少准备次数，但模拟完整时间没有支持启用，默认即时提交保持。
-下一项按[查询调优](experiments/plans/查询调优.md)核对实际每窗成本、现有Arrow与供给时序，不从替身结果推算真实收益。
+现有Arrow的真实复核见下方；就绪窗口聚合继续归档，不因服务器可用而自动启用。
 
 [直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项目标检查、10条查询/8,224次fixture，模型0次。
 同步记账下完整查询8.354→8.149秒，少2.457%；批次next执行约1→0.2秒，但约5.5秒记账与恢复等待重叠。
-仅保留显式Arrow选项，默认Daft与同步记账保持；下一项细分持久事务步骤，真实模型收益尚待验证。
+后续[真实分批复核](experiments/results/postgresql/text_map_arrow_real_20261003/README.md)完成10条查询／8,224次请求，
+中位数10.060→9.779秒，少2.793%；完整查询仅有小幅工程信号，输出差1/2/3行。
+默认Daft与同步记账保持，Arrow保留显式选项；不更新原生排名或多模态结论。
 
 [同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。
 线程选择完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但窗口21→460–495、批次构建约1→7秒。

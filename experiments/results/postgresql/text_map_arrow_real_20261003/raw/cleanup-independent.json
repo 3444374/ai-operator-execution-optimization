@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "checks": {
+    "owner_passed": true,
+    "worker_passed": true,
+    "request_counts_agree": true,
+    "workers_cpu_released": true,
+    "ray_disconnected": true,
+    "acl_restored": true,
+    "owned_processes_absent": true,
+    "gpu_compute_processes_absent": true,
+    "ports_closed": true,
+    "pg_stopped": true,
+    "cached_extension_unchanged": true
+  },
+  "ports": {
+    "18096": true,
+    "55496": true
+  },
+  "owned_pids": [],
+  "gpu": "0, 1, 0\n1, 1, 0",
+  "remaining_semaphore_files": 0,
+  "model_stop": {
+    "returncode": 0,
+    "forced": false
+  }
+}

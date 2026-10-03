@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-03：[Daft／Arrow真实模型分批复核](../experiments/results/postgresql/text_map_arrow_real_20261003/README.md)
+完成10条查询、8,224次请求和独立行／资源核对。1024行中位数10.060→9.779秒，少2.793%；
+分批构建累计明显减少，但完整查询收益小，配对输出差1/2/3行。默认Daft保留，Arrow仍为显式选项；
+不更新原生排名或多模态结论。旧观察测试fixture补齐任务键与计时事件预期，生产代码未改。
+
 2026-10-03：Ray Map就绪窗口聚合仅作本地原型，模拟完整完成时间没有支持采用，未并入运行代码。
 候选实现与12项检查以可恢复源码补丁保存，恢复后摘要与原运行记录一致；main继续即时提交。
 实际Daft/Arrow、PG生命周期与模型收益仍待验证；原运行HTTP及模型请求0，详情见[本地主报告](../experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)。
@@ -23,7 +28,7 @@
 默认Daft保留；Core选行、完整请求、对象容量及行生命周期保持，原Daft/Ray比较拒绝Arrow/Ray身份。
 本地86项中74项通过、12项缺依赖跳过；目标92项全部通过，10条查询/8,224次fixture通过，模型0次。
 [完整查询对照](../experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)中位数8.354→8.149秒，少2.457%；
-批次next执行约1→0.2秒，但同步记账仍约5.5秒且恢复等待重叠，只保留显式选项，真实收益待验证。
+批次next执行约1→0.2秒，但同步记账仍约5.5秒且恢复等待重叠；该阶段仅保留显式选项，后续真实复核见开头记录。
 
 2026-10-02：新增可选单线程持久记账，原事务不变，内容核对和记录仍在事件循环。
 Ray发送前回调可等待异步完成，并在等待后再次检查取消；已提交额度保留，失败不发请求。

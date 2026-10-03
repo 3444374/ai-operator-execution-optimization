@@ -7,7 +7,7 @@
 |---|---|
 | 文本Map完整系统比较 | [四路径匹配比较](postgresql/text_map_four_path_comparison_20260930/README.md) |
 | 查询准备与消费调优 | [worker复用](postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway与消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md) |
-| 实验记录与分批的受控对照 | [线程记账](postgresql/text_map_threaded_accounting_20261002/README.md)、[Arrow分批](postgresql/text_map_arrow_batches_20261002/README.md) |
+| 实验记录与分批的受控对照 | [线程记账](postgresql/text_map_threaded_accounting_20261002/README.md)、[Arrow分批fixture](postgresql/text_map_arrow_batches_20261002/README.md)、[Daft／Arrow真实对照](postgresql/text_map_arrow_real_20261003/README.md) |
 | 生成算子、数据库接入与共享查询 | [生成算子验证](postgresql/semmap_real_model_resource_20260904/README.md)、[查询归属](scheduling/query_job_20260909/README.md)、[多查询执行](scheduling/multijob_20260908/README.md) |
 | 数据组织与容量 | [历史组织比较](data_organization_comparison/README.md)、[容量复查](postgresql/map_capacity_recheck_20260920/README.md)、[有限真实检查](postgresql/capacity_organization_image_validation_20260920/README.md) |
 | DuckDB比较与规模诊断 | [静态路径比较](text_db_e2e_duckdb_static_comparison_20260808/README.md)、[直接客户端规模诊断](duckdb_direct_scale_diagnostic_20260807/README.md)、[gateway规模诊断](duckdb_gateway_scale_diagnostic_20260807/README.md) |

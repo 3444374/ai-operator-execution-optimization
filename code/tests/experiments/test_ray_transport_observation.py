@@ -14,6 +14,7 @@ from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.choice_gateway_observer import main
 from src.experiments.postgresql.query_config import QueryConfig
 from src.experiments.postgresql.query_evaluation import ray_transport_accounting
+from src.scheduling.core.session_contract import TaskKey
 
 
 class RayObservationTests(unittest.TestCase):
@@ -23,7 +24,8 @@ class RayObservationTests(unittest.TestCase):
             budget = AttemptBudget('ray-fixture', 2)
             owner = CellBudgetLedger.create(root/'budget.sqlite', budget, deadline_utc=time.time()+60)
             owner.reserve_unit('query', 2)
-            request = SimpleNamespace(task=SimpleNamespace(payload=b'{"model":"fixture"}'))
+            request = SimpleNamespace(key=TaskKey(0, 0),
+                                      task=SimpleNamespace(payload=b'{"model":"fixture"}'))
             def serve(argv, **options):
                 options['remote_request_guard'](request)
                 owner.close_shared_unit('query')
@@ -37,7 +39,12 @@ class RayObservationTests(unittest.TestCase):
                     '--incremental-map', '--map-transport-config=fixture.json'])
             self.assertEqual(code, 0)
             self.assertEqual(json.loads((root/'observer.json').read_text())['observed_attempts'], 1)
-            self.assertEqual(len((root/'events.jsonl').read_text().splitlines()), 1)
+            events = [json.loads(line) for line in (root/'events.jsonl').read_text().splitlines()]
+            self.assertEqual(sum(event['event'] == 'request' for event in events), 1)
+            guards = [event for event in events if event['event'] == 'remote_request_guard']
+            self.assertEqual([event['status'] for event in guards], ['completed', 'failed'])
+            self.assertEqual([event['key'] for event in guards],
+                             [dict(session_id=0, sequence=0)] * 2)
             self.assertEqual(owner.snapshot()['allocated_requests'], 2)
 
     def test_transport_identity_is_required_and_native_arms_remain_native(self):

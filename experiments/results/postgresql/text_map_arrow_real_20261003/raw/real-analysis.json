@@ -1,0 +1,399 @@
+{
+  "real_model_requests": 8224,
+  "verified_rows": 8224,
+  "source_files_verified": 830,
+  "owner_seconds": 299.91357684135437,
+  "worker_seconds": 118.46552739292383,
+  "queries": [
+    {
+      "mode": "daft",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 2.038108426,
+      "preparation_seconds": 0.013416761,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 16,
+      "reserve_seconds": 0.01757709,
+      "windows": 2,
+      "ray_blocks": 2,
+      "batch_sizes": {},
+      "next_work_seconds": 1.520125128,
+      "next_resume_seconds": 0.02836954,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "arrow",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 0.803775621,
+      "preparation_seconds": 0.014267506,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 16,
+      "reserve_seconds": 0.020880099,
+      "windows": 2,
+      "ray_blocks": 2,
+      "batch_sizes": {},
+      "next_work_seconds": 0.248577351,
+      "next_resume_seconds": 0.033675799,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "daft",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 13.215005947,
+      "preparation_seconds": 0.012797951,
+      "accuracy": 0.8515625,
+      "correct_rows": 872,
+      "transactions": 1024,
+      "reserve_seconds": 4.838721644,
+      "windows": 85,
+      "ray_blocks": 117,
+      "batch_sizes": {},
+      "next_work_seconds": 5.219003099,
+      "next_resume_seconds": 5.381271613,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60164,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "arrow",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 9.669719475,
+      "preparation_seconds": 0.013230911,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 4.927210228,
+      "windows": 85,
+      "ray_blocks": 116,
+      "batch_sizes": {},
+      "next_work_seconds": 0.614508245,
+      "next_resume_seconds": 6.085350686,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60200,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "arrow",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 9.734589413,
+      "preparation_seconds": 0.012112936,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 4.92695413,
+      "windows": 114,
+      "ray_blocks": 145,
+      "batch_sizes": {},
+      "next_work_seconds": 0.281797125,
+      "next_resume_seconds": 6.066833407,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60144,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "daft",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 10.076468532,
+      "preparation_seconds": 0.011887731,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 1024,
+      "reserve_seconds": 4.934249898,
+      "windows": 80,
+      "ray_blocks": 117,
+      "batch_sizes": {},
+      "next_work_seconds": 1.855549554,
+      "next_resume_seconds": 5.398985772,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60303,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "daft",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 10.06005244,
+      "preparation_seconds": 0.012593056,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 1024,
+      "reserve_seconds": 4.703321734,
+      "windows": 142,
+      "ray_blocks": 169,
+      "batch_sizes": {},
+      "next_work_seconds": 2.443022557,
+      "next_resume_seconds": 5.153901558,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60187,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "arrow",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 9.779081436,
+      "preparation_seconds": 0.016397616,
+      "accuracy": 0.8515625,
+      "correct_rows": 872,
+      "transactions": 1024,
+      "reserve_seconds": 5.221322782,
+      "windows": 88,
+      "ray_blocks": 123,
+      "batch_sizes": {},
+      "next_work_seconds": 0.277514667,
+      "next_resume_seconds": 6.371366797,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60294,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "arrow",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 9.886773317,
+      "preparation_seconds": 0.012737459,
+      "accuracy": 0.8515625,
+      "correct_rows": 872,
+      "transactions": 1024,
+      "reserve_seconds": 5.130364196,
+      "windows": 120,
+      "ray_blocks": 148,
+      "batch_sizes": {},
+      "next_work_seconds": 0.330407148,
+      "next_resume_seconds": 6.322757309,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60274,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    },
+    {
+      "mode": "daft",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 9.932773757,
+      "preparation_seconds": 0.014822251,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 4.751698485,
+      "windows": 85,
+      "ray_blocks": 119,
+      "batch_sizes": {},
+      "next_work_seconds": 1.781201286,
+      "next_resume_seconds": 5.213223699,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60252,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      }
+    }
+  ],
+  "medians_seconds": {
+    "daft": 10.06005244,
+    "arrow": 9.779081436
+  },
+  "slowdown_percent": -2.792937767230963,
+  "paired_output_differences": [
+    1,
+    2,
+    3
+  ]
+}

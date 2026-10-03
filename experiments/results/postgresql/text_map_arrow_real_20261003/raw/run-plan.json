@@ -1,0 +1,81 @@
+{
+  "experiment_id": "text-map-arrow-diagnostic-20261003-ar0k303njj",
+  "status": "authorized",
+  "source_commit": "1be050a0a6258794a63acb67bace0693b921e647",
+  "question": "Does replacing only finite payload batching with direct Arrow reduce full PG SemMap completion time on a real model?",
+  "baseline": "SemLoom Daft/Ray with synchronous request accounting",
+  "candidate": "SemLoom Arrow/Ray with identical synchronous request accounting",
+  "arms": [
+    "daft",
+    "arrow"
+  ],
+  "qualification_rows": 16,
+  "evaluation_rows": 1024,
+  "warmups_per_arm": 1,
+  "measured_repeats": 3,
+  "max_model_requests": 8224,
+  "max_seconds": 1200,
+  "query_seconds": 120,
+  "cleanup_seconds": 120,
+  "gpu": "0",
+  "model": "Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "service": {
+    "dtype": "bfloat16",
+    "tensor_parallel_size": 1,
+    "max_model_len": 4096,
+    "gpu_memory_utilization": 0.8,
+    "max_num_seqs": 128,
+    "max_num_batched_tokens": 8192,
+    "scheduling_policy": "fcfs",
+    "prefix_caching": false,
+    "chunked_prefill": true
+  },
+  "execution": {
+    "pg_version": "18.3",
+    "concurrency": 64,
+    "pg_window_rows": 256,
+    "ray_cpu_slots": 8,
+    "ray_gpu_slots": 0,
+    "ray_object_store_bytes": 268435456,
+    "batch_rows": 16,
+    "input_window_bytes": 2097152,
+    "ray_active_object_bytes": 4194304,
+    "pg_input_bytes": 134217728,
+    "pg_result_bytes": 134217728,
+    "pg_total_window_bytes": 268435456,
+    "pg_staging_bytes": 4194304,
+    "daft_threads": 8,
+    "gateway_lifecycle": "caller-owned persistent",
+    "worker_lifecycle": "caller-owned service"
+  },
+  "metrics": [
+    "full JCT including per-query preparation",
+    "shared startup separately",
+    "first row",
+    "batch construction/put/RPC/worker intervals",
+    "all repeated timings",
+    "quality and output differences",
+    "exact request accounting",
+    "logical resource peaks and terminal release",
+    "GPU occupancy and service success counts"
+  ],
+  "stop": "First request, query, binding, result association/order, ledger, resource, identity or time error; no inference retries, budget reset or automatic restart.",
+  "scope": "Engineering comparison on reused Movie inputs. Does not establish multimodal performance, native Daft/Ray ranking, semantic quality equivalence or optimal capacity.",
+  "owned_cleanup": [
+    "temporary PG cluster",
+    "model process group",
+    "Ray workers and local cluster",
+    "temporary parent ACL changes"
+  ],
+  "model_requests_so_far": 0,
+  "controller_sha256": {
+    "real-owner.py": "d0feeab865d315a9884a98bc983640faae8e59d4534005424e02ba63e03b1ffb",
+    "real-worker.py": "7b0482741405f63528506b472510f20f5b24fa21e77830c5df4a2ae93e65193d",
+    "real_time_budget.py": "0a1ac2c53f44cee9a0f999ae23305f2147bc4d974ce4596361f333f4c6da7981"
+  },
+  "test_fixture_patch_sha256": "2e051994a2c01451421779492a988ec311551a22697243944d71a9e5b0db616b",
+  "runtime_source_changes": [],
+  "authorized_max_model_requests": 8224,
+  "authorized_max_seconds": 1200
+}

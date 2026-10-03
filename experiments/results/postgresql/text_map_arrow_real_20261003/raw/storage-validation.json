@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "public_files_verified": 120,
+  "public_bytes_verified": 45147395,
+  "private_original_files_verified": 239,
+  "public_archive_bytes": 4942450,
+  "public_private_analysis_equal": true,
+  "verified_rows": 8224,
+  "verification_model_requests": 0
+}
