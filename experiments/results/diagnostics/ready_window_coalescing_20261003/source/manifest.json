@@ -1,0 +1,13 @@
+{
+  "reference_commit": "7cbc888c8bb8adbcc33f47baf67fe4da225413be",
+  "patch_sha256": "4325aa57ff6a7139ed15bf7b8318876ed313a76be6ce27378b0ea46129d368c5",
+  "base_transport_sha256": "22748c11c291d507b99a3810f667b321b4728beb423552cbe1773aadff549303",
+  "restored_sha256": {
+    "code/src/execution_provider/adapters/ray_map_transport.py": "45196698d3f425d2d198348c5b96047593b9c0403a58f528d1384c0ae7a26a03",
+    "code/tests/execution_provider/test_ready_window_coalescing.py": "37de4f4a1a1d05f0293f8e43f6a995b09e1bb9f43a4e696dfb4c2e7f8c6265f7"
+  },
+  "verification": "apply-check and apply with --unidiff-zero, exact recorded source hashes, Python syntax",
+  "experiment_rerun": false,
+  "http_requests": 0,
+  "model_requests": 0
+}

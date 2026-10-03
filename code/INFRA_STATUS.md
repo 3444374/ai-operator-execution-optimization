@@ -4,6 +4,10 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-03：Ray Map就绪窗口聚合仅作本地原型，模拟完整完成时间没有支持采用，未并入运行代码。
+候选实现与12项检查以可恢复源码补丁保存，恢复后摘要与原运行记录一致；main继续即时提交。
+实际Daft/Arrow、PG生命周期与模型收益仍待验证；原运行HTTP及模型请求0，详情见[本地主报告](../experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)。
+
 2026-10-03：实验账本新增`SharedClaimedUnit.reserve_many`及显式`remote_budget_mode=batched`，
 整批持久提交后返回逐行编号，保留取消与计费语义。行为检查与实际查询核对通过，但真实模型对照没有净收益，
 因此仅保留诊断选项，默认同步保持。[主报告](../experiments/results/diagnostics/request_budget_batch_20261003/README.md)保存各阶段条件、重复值与失败。

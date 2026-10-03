@@ -1,5 +1,37 @@
 # 项目日志
 
+## 2026-10-03：研究补充与负结果证据发布
+
+- 按用户授权提交研究/架构/对照文档和必要的就绪窗口负结果证据，运行代码保持原状。
+- 聚合候选及12项检查仅归档为可恢复源码补丁；恢复后的两个源码摘要与原运行一致，语法核对通过。原测量、失败及全部重复保持。
+- 未提交临时文献核查和调试副本，未重跑模型或性能实验；原型未并入main运行接口。
+
+## 2026-10-03：执行层分工与强原生对照补充
+
+- 根据用户建议与main 7cbc888c源码，[方法评估](docs/research/优化方法依据.md#engine-ownership-assessment)区分文本有限Daft物化、Ray Core worker、原生Data/Daft数据流及模型服务。需求/准备/消费三个决策问题仍归原两项研究内容，训练保持后续适用问题。
+- 固定Daft0.7.21源码已有批内同shard解码；episode逻辑筛选不证明物理少读。将这些能力及滚动文档版本差异登记为强对照，[资料范围](docs/research/ai_operator_literature_inventory.md#backend-ownership-sources-20261003)单独维护。
+- [架构落点](experiments/plans/系统架构.md#engine-extension-placement)与[分层对照](experiments/plans/reference/对照规范.md#execution-comparison-levels)同步。没有改代码/默认值、启动新provider、连接服务器、运行模型或提交推送。
+
+## 2026-10-03：物理需求、表示与异构资源补充
+
+- 核查用户补充与Scanner、VStore、cedar、Plumber及官方接口，将SSD、内存、CPU、GPU和网络按计算服务、移动、驻留与位置分别表达，不增加通用异构调度研究内容。
+- [方法补充](docs/research/优化方法依据.md#heterogeneous-demand-supplement)加入目标帧与解码依赖、合法表示/展开位置、筛选未知时的准备、延迟错误及退出等待；资源率式仅作必要条件，投机准备推导仅作声明模型下的反例。
+- [实施对照](experiments/plans/数据组织.md#heterogeneous-preparation-controls)与[题录/阅读范围](docs/research/ai_operator_literature_inventory.md#heterogeneous-data-sources-20261003)同步。当前没有通用资产读取、PG窗口、投机错误或训练接口，未启动服务器/模型/实验、未改代码或默认配置。
+
+## 2026-10-03：完整流程与场景分层分析
+
+- 依据main `7cbc888c`源码，按应用、工程、理论三层拆分SQL、任务形成、准备、提交、服务、消费和释放，文本与typed单图现有能力及新窗口/训练/具身接口分别说明。
+- 一手论文和作者代码核对多传感器、history/action窗口、混洗与确定性准备；记录Octo采样、OpenVLA更新视觉编码器及IMLane额外Ray开销的反例。
+- [方法文档](docs/research/优化方法依据.md#query-specific-execution-opportunities)集中维护分析，候选收窄到合法窗口/共享资产/消费需求参与准备和留存；[工程切片](experiments/plans/数据组织.md#scene-preparation-pilot)与[题录](docs/research/ai_operator_literature_inventory.md#scenario-input-sources-20261003)同步。
+- 当前不新增算子、训练或机器人控制实现，不启动服务器/模型/实验；主工作区保持原状。
+
+## 2026-10-03：就绪窗口聚合的本地尝试
+
+- 沿main `7cbc888c`核对已有实现、负结果及Ray Data论文/官方文档，在独立工作区实现显式有时限聚合；服务器关闭，无外部服务或模型访问。
+- 同一受控复现将三次`[1,1,3]`准备窗口变为`[1,4]`；72项相关检查中60项通过、12项缺依赖跳过。
+- 固定模拟成本的突发输入虽少建窗口，完整完成时间却慢4.55%；稀疏输入无窗口节省且行响应更慢。默认0保留，原型不启用。
+- [主报告](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)保留全部重复、失败与来源，原始调试已在仓库外独立备份；实际库、PG与模型收益待验证。
+
 ## 2026-10-03：批量记账分支审查修订
 
 - 审查已推送的`69f0c849`，补齐观察失败或取消后的逐行计费状态、失败批次事务及公开精简事件的首尾编号。

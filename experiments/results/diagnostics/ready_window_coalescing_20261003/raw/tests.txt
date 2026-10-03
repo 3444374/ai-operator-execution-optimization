@@ -1,0 +1,94 @@
+test_missing_field_keeps_old_default_and_invalid_wait_is_rejected (tests.execution_provider.test_ready_window_coalescing.ReadyConfigTests.test_missing_field_keeps_old_default_and_invalid_wait_is_rejected) ... ok
+test_unconfirmed_remote_outcome_remains_charged_with_ready_wait_enabled (tests.execution_provider.test_ready_window_coalescing.ReadyUnknownOutcomeTests.test_unconfirmed_remote_outcome_remains_charged_with_ready_wait_enabled) ... ok
+test_byte_limit_flushes_before_reaching_target_rows (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_byte_limit_flushes_before_reaching_target_rows) ... ok
+test_cancelled_delivery_future_wakes_waiter_and_never_dispatches (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_cancelled_delivery_future_wakes_waiter_and_never_dispatches) ... ok
+test_cancelling_queued_row_does_not_dispatch_it (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_cancelling_queued_row_does_not_dispatch_it) ... ok
+test_different_job_is_not_held_for_another_jobs_batch (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_different_job_is_not_held_for_another_jobs_batch) ... ok
+test_exact_byte_limit_does_not_wait_for_impossible_extra_row (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_exact_byte_limit_does_not_wait_for_impossible_extra_row) ... ok
+test_first_row_never_waits_for_more_rows (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_first_row_never_waits_for_more_rows) ... ok
+test_full_ready_group_reduces_preparation_without_changing_requests (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_full_ready_group_reduces_preparation_without_changing_requests) ... ok
+test_last_issued_result_wakes_partial_group_before_wait_expires (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_last_issued_result_wakes_partial_group_before_wait_expires) ... ok
+test_old_default_preserves_immediate_three_window_path (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_old_default_preserves_immediate_three_window_path) ... ok
+test_sparse_tail_flushes_at_deadline_with_issued_work_still_pending (tests.execution_provider.test_ready_window_coalescing.ReadyWindowTests.test_sparse_tail_flushes_at_deadline_with_issued_work_still_pending) ... ok
+test_noncausal_same_clock_reply_remains_unknown_and_charged (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_noncausal_same_clock_reply_remains_unknown_and_charged) ... ok
+test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_thread_work_separates_queue_execution_and_loop_resume_even_on_failure) ... ok
+test_unavailable_linux_clock_is_reported_without_guessing_identity (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_unavailable_linux_clock_is_reported_without_guessing_identity) ... ok
+test_without_observer_work_uses_no_timing_wrapper (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_without_observer_work_uses_no_timing_wrapper) ... ok
+test_worker_before_and_after_require_matching_clock_and_sum_to_rpc (tests.execution_provider.test_ray_map_timing.RayTimingTests.test_worker_before_and_after_require_matching_clock_and_sum_to_rpc) ... ok
+test_first_payload_and_submit_are_recorded_once_without_loading_daft (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_first_payload_and_submit_are_recorded_once_without_loading_daft) ... ok
+test_remote_http_failure_keeps_cause_key_and_unknown_charge (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_remote_http_failure_keeps_cause_key_and_unknown_charge) ... ok
+test_rpc_and_result_errors_keep_their_distinct_stages (tests.execution_provider.test_ray_map_errors.RayMapErrorTests.test_rpc_and_result_errors_keep_their_distinct_stages) ... ok
+test_sent_cancel_holds_lease_until_confirmed_result (tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerCancelTests.test_sent_cancel_holds_lease_until_confirmed_result) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_unsent_cancel_and_budget_failure_release_lease_without_http (tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerCancelTests.test_unsent_cancel_and_budget_failure_release_lease_without_http) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_sequential_queries_reuse_worker_without_closing_or_killing_it (tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerTests.test_sequential_queries_reuse_worker_without_closing_or_killing_it) ... ok
+test_unknown_execution_keeps_lease_and_payload_charge_for_service_owner (tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerTests.test_unknown_execution_keeps_lease_and_payload_charge_for_service_owner) ... ok
+test_partial_borrow_releases_confirmed_claims_and_disconnects_owned_driver (tests.execution_provider.test_ray_map_worker_pool.PoolStartupTests.test_partial_borrow_releases_confirmed_claims_and_disconnects_owned_driver) ... ok
+test_service_cleanup_attempts_all_workers_even_when_one_kill_fails (tests.execution_provider.test_ray_map_worker_pool.PoolStartupTests.test_service_cleanup_attempts_all_workers_even_when_one_kill_fails) ... ok
+test_service_partial_creation_only_reclaims_its_own_actor (tests.execution_provider.test_ray_map_worker_pool.PoolStartupTests.test_service_partial_creation_only_reclaims_its_own_actor) ... ok
+test_service_requires_declared_cluster_and_valid_worker_pool_name (tests.execution_provider.test_ray_map_worker_pool.PoolStartupTests.test_service_requires_declared_cluster_and_valid_worker_pool_name) ... ok
+test_wrong_model_or_capacity_cannot_reconfigure_existing_workers (tests.execution_provider.test_ray_map_worker_pool.PoolStartupTests.test_wrong_model_or_capacity_cannot_reconfigure_existing_workers) ... ok
+test_model_capacity_and_query_identity_are_checked_before_claim (tests.execution_provider.test_ray_map_worker_pool.WorkerOwnershipTests.test_model_capacity_and_query_identity_are_checked_before_claim) ... ok
+test_wrong_owner_spends_no_http_and_active_owner_cannot_be_released (tests.execution_provider.test_ray_map_worker_pool.WorkerOwnershipTests.test_wrong_owner_spends_no_http_and_active_owner_cannot_be_released) ... ok
+test_async_budget_failure_does_not_dispatch_or_leave_objects (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_async_budget_failure_does_not_dispatch_or_leave_objects) ... ok
+test_async_guard_finishes_before_rpc_and_cancelled_row_never_dispatches (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_async_guard_finishes_before_rpc_and_cancelled_row_never_dispatches) ... ok
+test_cancelled_delivery_future_suppresses_pending_rpc (tests.execution_provider.test_async_request_guard.AsyncGuardTransportTests.test_cancelled_delivery_future_suppresses_pending_rpc) ... ok
+test_one_guard_supports_sequential_gateway_event_loops (tests.execution_provider.test_batched_request_guard.BatchLoopLifetimeTests.test_one_guard_supports_sequential_gateway_event_loops) ... ok
+test_all_recording_failures_preserve_cancellation (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_all_recording_failures_preserve_cancellation) ... ok
+test_all_recording_failures_preserve_observation_error (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_all_recording_failures_preserve_observation_error) ... ok
+test_batch_recording_error_does_not_replace_observation_failure (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_batch_recording_error_does_not_replace_observation_failure) ... ok
+test_cancel_waits_for_queued_commit_and_never_sends (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_cancel_waits_for_queued_commit_and_never_sends) ... ok
+test_closed_budget_rejects_whole_ready_group (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_closed_budget_rejects_whole_ready_group) ... ok
+test_failed_batch_recording_keeps_charge_and_permits_no_send (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_failed_batch_recording_keeps_charge_and_permits_no_send) ... ok
+test_observation_failure_keeps_charge_and_permits_no_send (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_observation_failure_keeps_charge_and_permits_no_send) ... ok
+test_ready_rows_commit_in_bounded_batches_before_send (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_ready_rows_commit_in_bounded_batches_before_send) ... ok
+test_single_ready_row_does_not_wait_for_a_full_batch (tests.execution_provider.test_batched_request_guard.BatchedGuardTests.test_single_ready_row_does_not_wait_for_a_full_batch) ... ok
+test_cancel_after_send_waits_for_the_actual_result (tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_cancel_after_send_waits_for_the_actual_result) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_cancel_before_remote_send_and_guard_failure_spend_no_http (tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_cancel_before_remote_send_and_guard_failure_spend_no_http) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_fast_row_returns_while_same_batch_slow_row_holds_object (tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_fast_row_returns_while_same_batch_slow_row_holds_object) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_object_limit_waits_for_release_without_overspending (tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_object_limit_waits_for_release_without_overspending) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_remote_error_retains_unknown_object_and_fails_clean_close (tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_remote_error_retains_unknown_object_and_fails_clean_close) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_backend_start_failure_releases_already_created_transport (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_backend_start_failure_releases_already_created_transport) ... ok
+test_different_borrowed_cluster_is_rejected_before_actor_creation (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_different_borrowed_cluster_is_rejected_before_actor_creation) ... ok
+test_partial_actor_pool_creation_reclaims_the_first_actor (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_partial_actor_pool_creation_reclaims_the_first_actor) ... ok
+test_payload_backend_is_explicit_and_old_config_remains_daft (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_payload_backend_is_explicit_and_old_config_remains_daft) ... ok
+test_startup_durations_use_local_clock_and_preserve_connection_ownership (tests.execution_provider.test_ray_map_transport.RayMapStartupTests.test_startup_durations_use_local_clock_and_preserve_connection_ownership) ... ok
+test_cancel_after_send_waits_for_the_actual_result (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_after_send_waits_for_the_actual_result) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_cancel_before_remote_send_and_guard_failure_spend_no_http (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_before_remote_send_and_guard_failure_spend_no_http) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_fast_row_returns_while_same_batch_slow_row_holds_object (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_fast_row_returns_while_same_batch_slow_row_holds_object) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_object_limit_waits_for_release_without_overspending (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_object_limit_waits_for_release_without_overspending) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_remote_error_retains_unknown_object_and_fails_clean_close (tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_remote_error_retains_unknown_object_and_fails_clean_close) ... skipped 'Daft and Arrow are required for the actual batch adapter'
+test_batched_cli_accounts_with_real_ledger_and_reports_selected_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_batched_cli_accounts_with_real_ledger_and_reports_selected_mode) ... ok
+test_content_and_write_modes_are_independent (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_content_and_write_modes_are_independent) ... ok
+test_full_without_private_destination_is_rejected_before_writing (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_full_without_private_destination_is_rejected_before_writing) ... usage: python3 -m unittest [-h] --events EVENTS
+                           [--private-events PRIVATE_EVENTS]
+                           [--expected-request-hashes EXPECTED_REQUEST_HASHES]
+                           [--ledger LEDGER] [--cell-budget CELL_BUDGET]
+                           [--shared-unit-budget] [--fixture-only]
+                           [--unit-id UNIT_ID]
+                           [--event-mode {qualification,compact-buffered}]
+                           [--event-content {compact,full}]
+                           [--event-write-mode {synchronous,buffered}]
+                           [--observer-summary OBSERVER_SUMMARY]
+                           [--event-buffer-bytes EVENT_BUFFER_BYTES]
+                           [--remote-budget-mode {synchronous,threaded,batched}]
+                           [--dns-release-file DNS_RELEASE_FILE]
+                           [--budget-id BUDGET_ID]
+                           [--max-attempts MAX_ATTEMPTS]
+                           [--session-events SESSION_EVENTS]
+python3 -m unittest: error: full events require --private-events outside Git
+ok
+test_legacy_flags_report_actual_content_and_write_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_legacy_flags_report_actual_content_and_write_mode) ... ok
+test_remote_guard_failure_does_not_observe_or_refund_request (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_remote_guard_failure_does_not_observe_or_refund_request) ... ok
+test_remote_guard_separates_durable_reserve_from_request_recording (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_remote_guard_separates_durable_reserve_from_request_recording) ... ok
+test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_threaded_cli_accounts_with_real_ledger_and_reports_selected_mode) ... ok
+test_threaded_config_requires_the_remote_map_path (tests.experiments.test_choice_gateway_observer.ChoiceObserverTests.test_threaded_config_requires_the_remote_map_path) ... ok
+test_compact_batch_and_guard_events_preserve_accounting_identity (tests.experiments.test_buffered_events.BufferedEventTests.test_compact_batch_and_guard_events_preserve_accounting_identity) ... ok
+test_compact_events_retain_hashes_without_input_or_output_text (tests.experiments.test_buffered_events.BufferedEventTests.test_compact_events_retain_hashes_without_input_or_output_text) ... ok
+test_order_durability_and_no_writes_on_callback_thread (tests.experiments.test_buffered_events.BufferedEventTests.test_order_durability_and_no_writes_on_callback_thread) ... ok
+test_overflow_is_explicit_and_does_not_append_a_partial_event (tests.experiments.test_buffered_events.BufferedEventTests.test_overflow_is_explicit_and_does_not_append_a_partial_event) ... ok
+test_write_failure_is_not_reported_as_a_successful_close (tests.experiments.test_buffered_events.BufferedEventTests.test_write_failure_is_not_reported_as_a_successful_close) ... ok
+
+----------------------------------------------------------------------
+Ran 72 tests in 0.157s
+
+OK (skipped=12)

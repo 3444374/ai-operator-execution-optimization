@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-09-14
+更新日期：2026-10-03；历史选目与精读状态沿各节原日期解释。
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -206,6 +206,65 @@ CONCUR 的早期笔记和 arXiv v1 PDF 使用旧题名；arXiv 摘要改名不�
 这些条目在此登记为待核查线索：正式题录、资料版本、源码或全文、数据/请求重排与提交控制的
 实际覆盖范围需分别核对。未经核验的收益数字与新颖性判定不进入当前结论。
 PolarDB/Daft、Kalypso与代价估计的已有分析继续从研究定位和对应文献引用，避免并列维护另一份判断。
+
+<a id="scenario-input-sources-20261003"></a>
+## 多模态、具身输入与有限观察理论补充（2026-10-03）
+
+用途为[完整流程与场景分析](优化方法依据.md#query-specific-execution-opportunities)的输入语义、工程参照与理论核查，
+没有新增完成式精读笔记、Top15排名或可运行baseline。作者main/滚动文档仅按本次读取解释，运行前另固定commit。
+
+| 一手资料与核对版本 | 核对内容及用途 |
+|---|---|
+| [DROID: A Large-Scale In-The-Wild Robot Manipulation Dataset，arXiv:2403.12945v2](https://arxiv.org/pdf/2403.12945v2)；[作者数据页](https://droid-dataset.github.io/) | §III-A/Appendix B的多传感器与校准，TFDS episode/steps读取入口；不概括所有公开版本的存储格式 |
+| [Octo: An Open-Source Generalist Robot Policy，arXiv:2405.12213v2](https://arxiv.org/html/2405.12213v2)；[dataset.py](https://raw.githubusercontent.com/octo-models/octo/main/octo/data/dataset.py)、[traj_transforms.py](https://raw.githubusercontent.com/octo-models/octo/main/octo/data/traj_transforms.py) | history/action与mask、按权重采样和先混洗后decode；用于排除任意逐帧Map和为局部性改变训练采样 |
+| [OpenVLA: An Open-Source Vision-Language-Action Model，arXiv:2406.09246v3](https://arxiv.org/html/2406.09246v3) | §3.2–3.5/§5.2/§6的输入、训练视觉编码器及控制适用范围；不从特定频率推出动作时限保证 |
+| [Open X-Embodiment官方仓库](https://github.com/google-deepmind/open_x_embodiment)、[RLDS官方格式](https://github.com/google-research/rlds) | episode/step与终止标记；作为合法窗口和缺失/末步语义参照，尚无本项目接入 |
+| [LeRobotDataset v3.0官方说明](https://huggingface.co/docs/lerobot/en/lerobot-dataset-v3) | Parquet状态/action、MP4视频、episode偏移与delta_timestamps；已有读取/窗口方法作为强原生参照 |
+| [tf.data: A Machine Learning Data Processing Framework，arXiv:2101.12127v1](https://arxiv.org/pdf/2101.12127v1) | §2.2/§3.2–3.3.2/§5.2的采样、流水、预算和消费者速率；训练供给的已有直接机制 |
+| [Little's Law as Viewed on Its 50th Anniversary，Operations Research59(3):536–549，2011；DOI10.1287/opre.1110.0940](https://pubsonline.informs.org/doi/10.1287/opre.1110.0940)；[作者原文全文](https://people.cs.umass.edu/~emery/classes/cmpsci691st/readings/OS/Littles-Law-50-Years-Later.pdf) | §2.1.2/§2.2/§3.1核对完整有限观察段的均值恒等式；不用于证明最优容量、查询完成或动作尾延迟 |
+
+IMLane、Ray Streaming Batch、Preble与关系LLM查询仍复用上方题录及已核验原文。
+MaxWeight的原始定理本次未核验，不用于这次分析的保证性结论。
+
+<a id="heterogeneous-data-sources-20261003"></a>
+## 物理需求、表示与异构资源补充（2026-10-03）
+
+用于[异构需求分析](优化方法依据.md#heterogeneous-demand-supplement)。以下为题录和指定章节核查，
+没有新增完成式精读笔记、Top15排名或已运行baseline；正式版本与实际阅读版本分别记录。
+
+| 正式题录 / 核对资料 | 阅读范围、覆盖与迁移限制 |
+|---|---|
+| [Scanner: Efficient Video Analysis at Scale，ACM TOG37(4)，Article138，2018；DOI10.1145/3197517.3201394](https://graphics.stanford.edu/papers/scanner/)；[arXiv:1805.07339v1](https://arxiv.org/html/1805.07339) | §3.2/§4.1–4.3/Appendix A：增量需求反推、读取/解码/计算粒度与关键帧依赖；数据相关sequence长度变化与每帧可变长列表分开，有状态warmup不能当逐元素等价 |
+| [VStore: A Data Store for Analytics on Large Videos，EuroSys2019，Article16，17页；DOI10.1145/3302424.3303971](https://thexsel.github.io/p/vstore/)；[arXiv:1810.01794v3](https://arxiv.org/html/1810.01794v3) | §2.2–2.4/§4.1–4.3：消费者保真度、存储配置与周期profile；未联合建模query cascade依赖，允许的采样/分辨率取舍不等于固定输入；[作者README](https://github.com/tiantuxu/VStore)说明配置推导等未公开，完整artifact运行待核对 |
+| [cedar: Optimized and Unified Machine Learning Input Data Pipelines，PVLDB18(2):488–502，2024；DOI10.14778/3705829.3705861](https://www.vldb.org/pvldb/vol18/p488-zhao.pdf)；[arXiv:2401.08895v4](https://arxiv.org/html/2401.08895v4) | 机制按v4的§3.2/§5.1/§6.2及Table3核对：缓存/重排/融合/offload组合、随机语义、表示膨胀及ASR不缓存反例；正式PDF本次获取超时，未重新逐字比对两个版本 |
+| [Plumber: Diagnosing and Removing Performance Bottlenecks in Machine Learning Data Pipelines，MLSys2022，Proceedings of Machine Learning and Systems4](https://proceedings.mlsys.org/paper_files/paper/2022/hash/d0e90e9a9310570dfa643aa3b2da6e89-Abstract.html)；[正式全文](https://proceedings.mlsys.org/paper_files/paper/2022/file/d0e90e9a9310570dfa643aa3b2da6e89-Paper.pdf) | §4.1–4.4/§5.1及Appendix：访问比例、CPU/I/O/物化画像及资源选择；网络/GPU传输观测当时列为扩展，RCNN预测高估不能当可达吞吐保证 |
+| [FlexGen: High-Throughput Generative Inference of Large Language Models with a Single GPU，ICML2023，PMLR202:31094–31116](https://proceedings.mlr.press/v202/sheng23a.html)；[正式全文](https://proceedings.mlr.press/v202/sheng23a/sheng23a.pdf) | §4核对weights/KV/activations的GPU/CPU/disk放置和移动；用来区分模型内部卸载与输入/派生缓存，不纳入当前外部HTTP动作 |
+
+工程资料单独解释为接口事实：
+[Ray2.56.1 object spilling](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/ray-core/objects/object-spilling.rst)与
+[同版本Object Restore说明](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/ray-core/internals/object-spilling.rst)
+用于对象临时I/O；[DALI image decoder](https://docs.nvidia.com/deeplearning/dali/main-user-guide/docs/operations/nvidia.dali.fn.decoders.image.html)
+用于格式、执行位置与已有cache的核对；
+[PyTorch锁页与异步复制教程](https://docs.pytorch.org/tutorials/intermediate/pinmem_nonblock.html)用于复制开销、重叠条件与缓冲寿命；
+[GPUDirect Storage Overview](https://docs.nvidia.com/gpudirect-storage/overview-guide/)§1.1–1.3用于文件字节移动和兼容模式。
+DALI/PyTorch/GDS为本次读取的滚动官方资料，未固定实际安装版本，未验证本项目接入或性能。
+StarPU/HetExchange、红蓝pebble原始定理与MaxWeight本次未新增核验，不用于本次保证性结论。
+
+<a id="backend-ownership-sources-20261003"></a>
+## 数据引擎职责与原生媒体接口补充（2026-10-03）
+
+用于[执行层分工评估](优化方法依据.md#engine-ownership-assessment)，本轮只核对官方文档/源码，
+不增加论文题录等级或可运行baseline。Sema与SemBench继续引用已有题录；摘要核对不代替全文。
+
+| 一手资料 / 版本 | 核对内容及使用范围 |
+|---|---|
+| [Daft Architecture，滚动stable](https://docs.daft.ai/en/stable/architecture/) | Planning/Optimization/Execution：独立计划与runner，昂贵projection延后；未将全部规则归属于已测0.7.21 |
+| [Daft LeRobot，滚动stable](https://docs.daft.ai/en/stable/datasets/lerobot/)；[固定v0.7.21源码](https://raw.githubusercontent.com/Eventual-Inc/Daft/v0.7.21/daft/datasets/lerobot.py) | read_episodes/load_episode_frames/read真实入口；固定版严格检查v3.0，data/**读后关联与视频解码分开；批内按shard/timestamp复用解码已存在，实际少读及筛选后解码接法待验证 |
+| [Ray2.56.1 Data internals](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/data/data-internals.rst)、[资源说明](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/ray-core/scheduling/resources.rst) | 数据流组批/背压及Core逻辑资源；CPU线程、进程堆、对象存储与显存物理使用分别核对 |
+| [Ray2.56.1公开LLM API](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/llm.py)、[Serve](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/serve/index.md)、[Train](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/train/train.rst) | HTTP/内嵌vLLM/Serve processor配置及服务/训练所有者分开；API当时为beta，部署路径不能用同一个框架名替代 |
+
+上述源码证明提供何种接口与逻辑处理，不证明本项目物理I/O、decoder性能或完整查询收益。
+没有在本项目运行这些新增媒体/部署对照，滚动资料在运行前另固定实际版本。
 
 <a id="early-candidates"></a>
 ## 早期跨领域线索
