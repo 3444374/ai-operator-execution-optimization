@@ -77,6 +77,37 @@ JCT（完整查询时间）为 `(t_query_terminal_ns − query_preparation_start
 通用媒体引用、视频／episode 窗口、设备内张量的完整 PG 执行路径尚未实现，不能由这次文本结果推导其性能。
 执行层分工与准备粒度的候选继续由[方法评估](../../../../docs/research/优化方法依据.md#engine-ownership-assessment)维护。
 
+<a id="submission-followup"></a>
+## 已有提交记录的离线补充
+
+2026-10-03，根据项目文档继续读取三次测量的6,144行，不连接服务器、不增加模型请求。
+[计算输出](raw/submission-analysis.json)与[计算脚本](raw/analyze_submission.py)复用上方公开恢复材料。
+每行关联Core提交、Ray调用、worker方法及Core终态；全部键、时钟顺序和资源起止核对通过。
+
+| 已记录量 | 六次测量范围 | 含义 |
+|---|---:|---|
+| 每查询Ray逐行调用 | 1024次 | Arrow对象分批没有减少逐行远程调用 |
+| Core提交→Ray调用，中位数 | 141.843–218.120毫秒 | 包含准备、排队和发送前检查，不能全归为调度 |
+| Ray调用→worker方法开始，中位数 | 2.887–5.346毫秒 | 不是全部提交前等待 |
+| worker方法内，中位数 | 264.231–313.482毫秒 | 包含取payload、HTTP及其等待，不是独立GPU kernel时间 |
+| worker方法结束→driver收到，中位数 | 31.861–41.907毫秒 | 包含Ray返回及事件循环推进 |
+| driver收到→Core终态，中位数 | 3.543–4.734毫秒 | 不是PG客户端最后收到结果的时间 |
+| 每查询Ray调用返回前累计执行 | 0.687–0.822秒 | 可能存在减少调用次数的工程空间，不等于可直接减少的JCT |
+| 平均逻辑请求占用 | 60.495–62.216 | 按记录的usage分段常数积分，记录段两端为0 |
+| 平均worker方法占用 | 30.492–32.605 | 方法开始／结束区间的面积除以首次Ray调用至末次收到的时段 |
+
+两个平均量各用明确记录段，且Core在transport接纳任务后就记录提交，尚未意味着已到模型服务。
+不能把逻辑名额近满解读为模型已充分供给，也不能从worker平均占用推导GPU利用率或最优并发。
+worker完全没有方法在执行的空档仅累计10.770–21.207毫秒；这一小样本不支持长时间完全断供的说法。
+下一项优先拆开提交前等待和观察成本，再评估实际已有任务的成组RPC；不改变发送前持久计费，不增加人为等待。
+具体对照与多模态研究切片进入[现行调优安排](../../../plans/查询调优.md#next-submission-work)。
+
+复算方式：先按下方命令恢复公开材料，再执行以下离线命令；不需要原始评论或模型服务。
+
+```sh
+python3 experiments/results/postgresql/text_map_arrow_real_20261003/raw/analyze_submission.py --evidence /path/to/new-private-arrow-evidence --output /path/to/submission-analysis.json
+```
+
 ## 独立核对与证据
 
 从原始输入与全部结果重算 8,224 行：PG 发送前绑定、请求多重集、结果关联与顺序、逐行 guard、服务成功增量、

@@ -24,6 +24,8 @@
 后续[真实分批复核](experiments/results/postgresql/text_map_arrow_real_20261003/README.md)完成10条查询／8,224次请求，
 中位数10.060→9.779秒，少2.793%；完整查询仅有小幅工程信号，输出差1/2/3行。
 默认Daft与同步记账保持，Arrow保留显式选项；不更新原生排名或多模态结论。
+后续按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)先隔离观察成本与提交前等待，再评估自然就绪组的RPC接入；
+多模态研究沿[单Job共享准备](experiments/plans/数据组织.md#scene-preparation-pilot)检验数据库需求和消费信息，保留原生已有能力作对照。
 
 [同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。
 线程选择完整查询11.570秒，同步8.287秒，慢39.606%；恢复等待减少，但窗口21→460–495、批次构建约1→7秒。
