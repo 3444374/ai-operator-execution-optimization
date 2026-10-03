@@ -1,5 +1,14 @@
 # SemLoom 脚本入口
 
+## 同机共享预付计数原型
+
+`profiling/mapped_request_probe.py --output /path/to/new-private-probe`用现有SQLite单元预付与本地共享映射，
+比较1／4进程逐条领取；固定16,384次组件领取、每次30秒及整体5分钟，首次错误保存并停。
+`profiling/mapped_core_probe.py`以同样的`--output`参数比较真实Core／Map循环中的观察方式，
+厂商表和worker仍为替身，固定8,224次模拟调用、每次60秒及整体5分钟。两者HTTP／模型／PG均为0。
+设置`PYTHONPATH=code`，输出在Git外且尚不存在；不安装依赖、不运行厂商SDK。
+候选仅接本地诊断API，正式查询配置与计费不变，实际范围及后续服务器条件见[报告](../../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
+
 ## 本地Core／Map观察成本诊断
 
 `profiling/map_observation_probe.py --output /path/to/new-private-probe`运行真实Core、异步backend和Map传输循环，

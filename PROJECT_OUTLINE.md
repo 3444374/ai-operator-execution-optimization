@@ -28,6 +28,8 @@
 说明观察方式会改变提交等待和准备窗口，不支持将逻辑名额等同服务活动或直接扣除guard时间。
 真实Ray调用成本仍未核验，生产默认与真实计费保持；按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)
 先设计正式对照的统一有限观察，再评估自然就绪组RPC；本地替身改善不作为数据库或GPU性能证据。
+[同机共享预付计数](experiments/results/diagnostics/mapped_request_budget_20261003/README.md)已完成本地组件与Core替身检查，
+总额预付与跨进程领取可继续准备；正式观察器／监督器、Linux和厂商SDK接入尚未完成，不能直接替换现行计费。
 多模态研究沿[单Job共享准备](experiments/plans/数据组织.md#scene-preparation-pilot)检验数据库需求和消费信息，保留原生已有能力作对照。
 
 [同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。

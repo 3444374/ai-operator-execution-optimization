@@ -17,6 +17,48 @@ from tests.execution_provider.test_ray_map_transport import task
 
 
 class ObservationProbeTests(unittest.TestCase):
+    def test_unknown_mapped_registration_closes_handles_during_failed_core_cleanup(self):
+        from src.experiments.attempt_ledger import BudgetError
+        from src.experiments.mapped_request_budget import _DIRTY
+        def dirty_guard(task, client, *args):
+            with client._locked():
+                client._write_header(client._header()[4], _DIRTY)
+            raise BudgetError('fixture registration outcome unknown')
+        with tempfile.TemporaryDirectory() as root:
+            output = Path(root) / 'mapped-unknown'
+            with patch('src.experiments.map_observation_probe._guard_remote_request', dirty_guard):
+                with self.assertRaisesRegex(RuntimeError, 'evidence retained'):
+                    run_case(output, 'mapped', 'buffered', rows=8, capacity=4, batch_rows=2)
+            result = json.loads((output / 'result.json').read_text())
+            self.assertEqual(result['status'], 'failed')
+            self.assertTrue(result['mapped_handles_closed'])
+            self.assertTrue(result['transport_drained'] and result['synthetic_worker_stopped'])
+            self.assertIsNone(result['accounted_calls'])
+
+    def test_guard_without_confirmed_registration_keeps_uncertain_transport_records(self):
+        from src.experiments.mapped_request_budget import _DIRTY
+        def invalid_guard(task, client, *args):
+            with client._locked():
+                client._write_header(client._header()[4], _DIRTY)
+            # Deliberately broken guard: returns before a confirmed registration.
+        with tempfile.TemporaryDirectory() as root:
+            output = Path(root) / 'invalid-guard'
+            with patch('src.experiments.map_observation_probe._guard_remote_request', invalid_guard):
+                with self.assertRaisesRegex(RuntimeError, 'evidence retained'):
+                    run_case(output, 'mapped', 'buffered', rows=8, capacity=4, batch_rows=2)
+            result = json.loads((output / 'result.json').read_text())
+            self.assertTrue(result['mapped_handles_closed'] and result['synthetic_worker_stopped'])
+            self.assertFalse(result['transport_drained'])
+            self.assertEqual(result['synthetic_calls'], 0)
+
+    def test_mapped_fixture_counter_preserves_row_and_resource_lifecycle(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = run_case(Path(root) / 'mapped', 'mapped', 'buffered', rows=8, capacity=4, batch_rows=2)
+            self.assertEqual((result['synthetic_calls'], result['accounted_calls']), (8, 8))
+            self.assertTrue(result['mapped_handles_closed'] and result['transport_drained'])
+            self.assertTrue(result['resources_drained'] and result['exactly_once'])
+            self.assertFalse(result['cleanup_errors'])
+
     def test_both_guards_and_recorders_complete_each_row_and_dispose_resources(self):
         with tempfile.TemporaryDirectory() as root:
             for accounting in ('durable', 'memory'):

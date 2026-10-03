@@ -1,5 +1,8 @@
 # SemLoom Code
 
+[同机共享预付计数](scripts/README.md#同机共享预付计数原型)复用持久单元预付，多个进程在本地共享状态逐条领取。
+已做组件与Core替身检查，正式观察器／监督器、Linux及厂商SDK接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
+
 新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
 它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
 

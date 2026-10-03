@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-03：新增[同机共享预付计数组件与Core替身对照](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)，
+总额先持久预付，各进程逐条登记，所有者结束／不确定登记后不再领取，禁止重建或退款。
+16,384次组件领取、8,224次Core模拟调用及104项检查通过，HTTP／模型／PG均为0，准备和退出成本单列。
+只接本地诊断API，正式观察器／监督器、Linux／Ray／Daft／PG接入仍pending，默认及真实计费保持；生产执行代码未改。
+
 2026-10-03：新增[Core／Map观察成本的本地隔离](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)工具，
 真实Core、异步backend、传输循环及实验guard运行，厂商表／调用与worker服务使用替身；主清单16,448次模拟调用通过，HTTP／模型／PG均为0。
 103项检查通过，20次原始事件复算一致；修正诊断驱动自唤醒和失败排空后的计数，生产源码未改。

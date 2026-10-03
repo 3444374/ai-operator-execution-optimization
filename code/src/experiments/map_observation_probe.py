@@ -229,7 +229,8 @@ def analyze(events, rows, began, ended, worker_peak):
 
 
 def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, batch_rows=BATCH_ROWS):
-    if (accounting, recording) not in ARMS or not 0 < rows <= ROWS or not 0 < batch_rows <= capacity <= CAPACITY:
+    allowed = ARMS + (('mapped', 'memory'), ('mapped', 'buffered'))
+    if (accounting, recording) not in allowed or not 0 < rows <= ROWS or not 0 < batch_rows <= capacity <= CAPACITY:
         raise ValueError('unsupported finite diagnostic configuration')
     output = Path(output)
     new_private_directory(output)
@@ -238,10 +239,19 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
     report = dict(accounting=accounting, recording=recording, rows=rows, capacity=capacity,
                   batch_rows=batch_rows, status='running', http_requests=0, model_requests=0, pg_queries=0)
     write_private_json(output / 'manifest.json', report)
+    accounting_started = time.monotonic_ns()
     budget = AttemptBudget('fixture.observation', rows)
     ledger = CellBudgetLedger.create(output / 'ledger.sqlite', budget, deadline_utc=time.time() + 60)
     ledger.reserve_unit('case', rows)
-    charged_unit = ledger.claim_shared_unit('case') if accounting == 'durable' else ledger.claim_unit('case')
+    mapped_owner = None
+    if accounting == 'mapped':
+        from .mapped_request_budget import MappedUnitClient, MappedUnitOwner
+        mapped_owner = MappedUnitOwner.prepare(ledger, 'case',
+            tuple(hashlib.sha256(payload(i)).hexdigest() for i in range(rows)), output / 'mapped')
+        charged_unit = MappedUnitClient(mapped_owner.descriptor)
+    else:
+        charged_unit = ledger.claim_shared_unit('case') if accounting == 'durable' else ledger.claim_unit('case')
+    report['accounting_setup_seconds'] = (time.monotonic_ns() - accounting_started) / 1e9
     expected = {payload(i): i for i in range(rows)}
     charged = {}
 
@@ -389,6 +399,17 @@ def run_case(output, accounting, recording, *, rows=ROWS, capacity=CAPACITY, bat
                 report['accounted_calls'] = None
                 cleanup_errors.append(dict(resource='accounting_snapshot', error_type=type(error).__name__))
                 failure = failure or error
+            if mapped_owner is not None:
+                try:
+                    try:
+                        mapped_owner.close()
+                    finally:
+                        charged_unit.close()
+                except BaseException as error:
+                    cleanup_errors.append(dict(resource='mapped_budget', error_type=type(error).__name__))
+                    failure = failure or error
+                report['mapped_handles_closed'] = (mapped_owner._lease_fd is None
+                                                   and charged_unit._mapping is None)
             report.update(teardown_seconds=(time.monotonic_ns() - teardown) / 1e9,
                           case_seconds=(time.monotonic_ns() - case_started) / 1e9,
                           projection_seconds=capture.projection_ns / 1e9,
