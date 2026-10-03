@@ -1,7 +1,14 @@
 # SemLoom Code
 
+[共享预付观察API](src/experiments/request_budget_client.py)由HTTPX观察器及原生Ray的session factory显式使用：
+descriptor在调用进程打开/归还，普通budget保持原所有权；[Linux/Ray检查及负结果](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+正式查询仍同步计数，Core/PG默认未改，真实模型收益pending。
+
+[gateway多查询干扰诊断](scripts/README.md#gateway多查询干扰诊断)运行真实UDS与共享执行循环，厂商调用和worker为替身。
+区分状态线程、分批准备、慢消费和同步观察的影响，生产执行与默认保持；[结果与来源](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)保留实际范围。
+
 [同机共享预付计数](scripts/README.md#同机共享预付计数原型)复用持久单元预付，多个进程在本地共享状态逐条领取。
-已做组件与Core替身检查，正式观察器／监督器、Linux及厂商SDK接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
+已做组件/Core替身与Linux/真实Ray SDK检查，正式runner及PG/模型接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
 
 新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
 它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。

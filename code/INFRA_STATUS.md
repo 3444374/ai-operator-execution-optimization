@@ -1,8 +1,21 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-03。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-04。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-04：补入[Linux/真实Ray平台与观察器核对](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+`observe_native_httpx`及`NativeSessionFactory`可接收共享映射descriptor，在调用进程内打开/归还；普通budget保持原所有权。
+27项在macOS和Linux各通过，另外Linux凭据/跨进程UDS/gateway16项通过；两个SDK的真实Ray接入与1,040次本机HTTP完成。
+计数每行中位数明显减少，但完整消费2.613→2.631秒，没有净收益；只保留实验API，正式query CLI与同步默认保持。
+独立gateway直接HTTP/Ray HTTP 272次、失败、全部重复、实际Ray RPC与准备成本、资源退出和可恢复压缩证据归主报告。
+模型/GPU/PG查询均0，数据库生命周期、真实模型与多机仍pending；不能把接入检查当作GPU或原生系统结论。
+
+2026-10-04：新增[gateway多查询干扰诊断](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)，
+真实UDS、查询登记、共享Core和Map循环运行，厂商与服务为替身，kernel peer也为fixture。
+40个case、1,088次模拟调用及原始事件复算通过，相关30项中29通过、1项Linux检查跳过；HTTP／模型／PG均为0。
+状态线程与同步observer的等待会拖延其他查询接纳/排空；payload准备则出现接纳快、派发慢的信号，慢消费未传递同等等待。
+保留首次0调用装配失败与全部重复；生产执行和默认保持，逻辑占用不当模型活动；平台身份另由服务器补充，SQL/GPU结论仍pending。
 
 2026-10-03：新增[同机共享预付计数组件与Core替身对照](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)，
 总额先持久预付，各进程逐条登记，所有者结束／不确定登记后不再领取，禁止重建或退款。

@@ -27,3 +27,6 @@ PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom�
 完整查询、质量与资源结论以各报告为准。
 
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留组件、无模型改善与真实模型回退结果，默认同步保持。
+
+[gateway共享执行干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md)区分本地组件行为，另有Linux/真实Ray/本机HTTP核对，实际SQL和GPU验证另列。
+[共享预付观察API](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)完成有限服务器接入，完整消费未获净收益，正式同步默认保持。

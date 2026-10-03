@@ -2,7 +2,9 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
-[同机共享预付计数](mapped_request_budget_20261003/README.md)：预付总额、跨进程领取与生命周期的本地组件／Core替身核对，正式路径尚待接入。
+[gateway多查询干扰](gateway_isolation_20261004/README.md)：本地干扰隔离与服务器Linux/真实Ray/本机HTTP检查；源码、失败、紧凑共享证据和复算入口归该报告，不作为SQL或GPU结果。
+
+[同机共享预付计数](mapped_request_budget_20261003/README.md)：本地组件及Linux/真实Ray SDK观察API核对；完整消费未获净收益，正式默认保持，PG/模型仍pending。
 
 [Core／Map观察成本隔离](map_observation_isolation_20261003/README.md)：真实执行循环与厂商／服务替身的有限控制，区分观察引起的时序变化与真实执行优化。
 

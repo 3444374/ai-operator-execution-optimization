@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-10-04：服务器平台与共享预付观察API核对
+
+- 按用户授权将必要工具、测试、报告与2,030,130字节压缩证据保存到`codex/gateway-isolation-diagnostics`实验分支，正式默认及main保持。
+- 用户允许服务器并要求继续减少实验记录对供给的干扰；独立源码、只读环境检查与来源摘要通过，未改现存仓库/数据库/模型/依赖。
+- Linux凭据、跨进程UDS与gateway16项通过；共享预付观察API在macOS/Linux各27项通过，真实Ray SDK完成两次37条检查，保留首轮一方0领取的样本。
+- 平台直接HTTP/Ray HTTP 272次，Core SQLite/共享映射1,040次本机HTTP；模型与PG0。共享映射每行计数减少，完整消费略慢，未启用正式runner或默认。
+- 保留启动器/容量/进度写入/检查器/JSON字节预览失败；已完成调用不重放，错误字节单元8条预付不退款，原始信息与全部重复均可复算。
+- [共享计数报告](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)记录判断；[gateway报告](experiments/results/diagnostics/gateway_isolation_20261004/README.md#server-platform)拥有唯一服务器公共归档及恢复入口。
+- 公共173成员、178私有原件恢复/摘要通过，独立本机备份与服务器原件保留；本轮服务退出，真实模型/PG资格及物理内存峰值仍pending。
+
+## 2026-10-04：gateway多查询干扰的本地诊断
+
+- 按用户认可的[gateway诊断计划](experiments/plans/查询调优.md#gateway-isolation-probe)实现本地工具；真实UDS/登记/Core/Map循环运行，厂商、服务和kernel peer为fixture。
+- 完成40个新进程case、1,088次模拟调用，相关30项中29通过、1项Linux检查跳过；HTTP／模型／PG为0，未连接服务器或安装依赖。
+- 原始事件、行身份、资源归还及阶段等待复算通过；共享observer会传播阻塞，准备等待还涉及逻辑活动名额，慢消费按本次条件保留隔离信号。
+- 首次0调用不可变装配对象接线错误和未正常排空状态保留；修复后完成清单。生产执行/默认未改，不据模拟采用新线程、RPC或等待窗口。
+- [主报告](experiments/results/diagnostics/gateway_isolation_20261004/README.md)保存全部重复、来源及170成员压缩证据，原件仍在Git外；真实平台/HTTP与模型比较另用有限计划。
+
 ## 2026-10-03：同机共享预付计数的本地验证
 
 - 用户要求推进下一步并询问服务器需求；本轮未连接服务器，新建实验组件与本地Core诊断接入，正式路径和默认保持。

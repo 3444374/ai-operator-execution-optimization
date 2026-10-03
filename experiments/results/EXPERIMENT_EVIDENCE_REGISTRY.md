@@ -1,5 +1,19 @@
 # 实验与机制证据台账
 
+2026-10-04：[共享预付观察API与服务器核对](diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+`f4646daa`加明确摘要的观察API与诊断来源；macOS/Linux各27项、Linux平台16项通过，真实Ray/Daft/Arrow与本机HTTP运行。
+SDK先保留37/0的耗尽样本，再完成19/18的双调用方检查；Core累计1,040次HTTP、两个SDK检查74次Mock POST，模型及PG0。
+每行计数明显减少，但完整消费略慢，正式默认保持；实际RPC、准备、全部重复、错误、未知与引用/句柄检查归主报告。
+平台另完成直接HTTP/Ray HTTP 272次；公共173成员压缩证据与178私有原件独立恢复核对通过，唯一保存位置由[gateway报告](diagnostics/gateway_isolation_20261004/README.md#server-platform)管理。
+这些是有限CPU/替身接入与成本信号，不更新数据库、模型、GPU或原生系统结论。
+
+2026-10-04：[gateway多查询干扰](diagnostics/gateway_isolation_20261004/README.md)。
+基于main `f4646daa`与明确SHA的诊断入口，真实UDS/登记/共享Core/Map循环运行，厂商API、表、服务和kernel peer为fixture。
+40个新进程case、1,088次模拟调用、逐键/容量/退出及主指标和阶段等待复算通过；HTTP／模型／PG均为0。
+相关30项中29通过，1项Linux凭据检查跳过；首次0调用装配错误及其未正常排空状态另存，不并入成功清单。
+支持继续核对同步观察耦合与准备/活动名额含义，不证明实际Ray、PG取消、重启恢复或GPU收益；生产默认和执行未改。
+主报告定位全部重复、来源、失败与170成员的压缩证据，恢复映射含唯一summary共171份核对；原件继续保留Git外。
+
 2026-10-03：[同机共享预付计数](diagnostics/mapped_request_budget_20261003/README.md)。
 基于main `53155f8c`，新增实验组件及本地诊断接入，生产执行与正式配置未改。
 16,384次组件领取、8,224次Core模拟调用及104项检查通过，HTTP／模型／PG均为0，原始逐条编号／摘要／时间复算通过。

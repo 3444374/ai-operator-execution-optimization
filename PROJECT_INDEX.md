@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-10-02。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
+更新时间：2026-10-04。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
 
 ## 内容与文档职责
 
@@ -23,6 +23,9 @@
 
 ## 实现与实验的阅读入口
 
+共享预付观察API与Linux/真实Ray接入从[主报告](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)进入；
+服务器源、原始事件、失败及共享恢复入口由[gateway报告](experiments/results/diagnostics/gateway_isolation_20261004/README.md#server-platform)拥有。
+
 1. [总纲](PROJECT_OUTLINE.md)确定问题与当前顺序。
 2. [代码状态](code/INFRA_STATUS.md)核对实际能力，再读对应源码。
 3. [主架构计划](experiments/plans/系统架构.md)核对设计与实施要求。
@@ -39,7 +42,7 @@
 | baseline与计时角色 | [参照要求](experiments/plans/reference/对照规范.md#执行者与计时的读法) |
 | 观测指标 | [模块说明](code/src/observability/README.md#运行指标的读法)、[选择依据](docs/research/evaluation_metrics_survey_20260731.md#观察变量选择) |
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
-| worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md) |
+| worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |
 | DuckDB历史比较 | [静态路径](experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md)、[规模诊断](experiments/results/duckdb_direct_scale_diagnostic_20260807/README.md) |
 | 动机与组件检查 | [动机](experiments/results/motivation/README.md)、[组件与能力](experiments/results/diagnostics/README.md) |
