@@ -1,0 +1,80 @@
+{
+  "runs": [
+    {
+      "run_id": "main-replay",
+      "started_utc": "2026-10-02T20:28:12.389242+00:00",
+      "ended_utc": "2026-10-02T20:28:12.464375+00:00",
+      "reference_commit": "7cbc888c8bb8adbcc33f47baf67fe4da225413be",
+      "adapter_sha256": "22748c11c291d507b99a3810f667b321b4728beb423552cbe1773aadff549303",
+      "repro_sha256": "0e2fc55daf350d264f65211fa8771e9b541e3319963adc380c55f1ef98bf5fd6",
+      "exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "run_id": "candidate-replay",
+      "started_utc": "2026-10-02T20:28:12.474357+00:00",
+      "ended_utc": "2026-10-02T20:28:12.538544+00:00",
+      "reference_commit": "7cbc888c8bb8adbcc33f47baf67fe4da225413be",
+      "adapter_sha256": "45196698d3f425d2d198348c5b96047593b9c0403a58f528d1384c0ae7a26a03",
+      "repro_sha256": "0e2fc55daf350d264f65211fa8771e9b541e3319963adc380c55f1ef98bf5fd6",
+      "exit_code": 0,
+      "expected_exit_code": 0
+    },
+    {
+      "run_id": "local-behavior-checks",
+      "started_utc": "2026-10-02T20:28:12.548506+00:00",
+      "ended_utc": "2026-10-02T20:28:12.890534+00:00",
+      "exit_code": 0,
+      "modules": [
+        "tests.execution_provider.test_ready_window_coalescing",
+        "tests.execution_provider.test_ray_map_timing",
+        "tests.execution_provider.test_ray_map_errors",
+        "tests.execution_provider.test_ray_map_worker_pool",
+        "tests.execution_provider.test_async_request_guard",
+        "tests.execution_provider.test_batched_request_guard",
+        "tests.execution_provider.test_ray_map_transport",
+        "tests.experiments.test_choice_gateway_observer",
+        "tests.experiments.test_buffered_events"
+      ]
+    }
+  ],
+  "debugging_records": [
+    {
+      "run_id": "baseline-minimized",
+      "sha256": "575b13dcbd3966b58ee96bf602834ed32c2414d9614744215f13058c765eeca9",
+      "bytes": 1137,
+      "timestamps": "not_collected",
+      "retention": "private_backup",
+      "http_requests": 0,
+      "model_requests": 0
+    },
+    {
+      "run_id": "baseline",
+      "sha256": "13d8ba3ffb9428b9cf0d29f51d8fbd850a7819784f767a1df7df2e53596b0211",
+      "bytes": 106,
+      "timestamps": "not_collected",
+      "retention": "private_backup",
+      "http_requests": 0,
+      "model_requests": 0
+    },
+    {
+      "run_id": "candidate-first",
+      "sha256": "4972b2bda5de8562b340e9c42e7be7f6bee7a87441e1ffa46d9f2cdcb7c065f8",
+      "bytes": 1239,
+      "timestamps": "not_collected",
+      "retention": "private_backup",
+      "http_requests": 0,
+      "model_requests": 0
+    },
+    {
+      "run_id": "candidate-fixed-repro",
+      "sha256": "13d8ba3ffb9428b9cf0d29f51d8fbd850a7819784f767a1df7df2e53596b0211",
+      "bytes": 106,
+      "timestamps": "not_collected",
+      "retention": "private_backup",
+      "http_requests": 0,
+      "model_requests": 0
+    }
+  ],
+  "raw_backup_id": "GPU-ready-window-20261003"
+}

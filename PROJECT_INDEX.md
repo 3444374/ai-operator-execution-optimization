@@ -31,6 +31,8 @@
 | 主题 | 入口 |
 |---|---|
 | 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
+| 就绪窗口的准备粒度 | [本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)、[实施计划](experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03) |
+| 完整流程与场景分层 | [应用/工程/理论分析](docs/research/优化方法依据.md#query-specific-execution-opportunities)、[物理需求与准备时机](docs/research/优化方法依据.md#heterogeneous-demand-supplement)、[共享准备切片](experiments/plans/数据组织.md#scene-preparation-pilot) |
 | 同步/增量生成Map | [语义规格](experiments/plans/生成算子.md)、[增量设计](experiments/plans/增量执行.md#session) |
 | 多Job与查询归属 | [多会话设计](experiments/plans/增量执行.md#multi-query)、[查询Job设计](experiments/plans/数据库接入.md#query-job) |
 | 调用与绑定 | [详细设计](experiments/plans/数据库接入.md#calls) |
