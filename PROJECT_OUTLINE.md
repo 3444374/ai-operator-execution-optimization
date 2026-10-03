@@ -24,7 +24,10 @@
 后续[真实分批复核](experiments/results/postgresql/text_map_arrow_real_20261003/README.md)完成10条查询／8,224次请求，
 中位数10.060→9.779秒，少2.793%；完整查询仅有小幅工程信号，输出差1/2/3行。
 默认Daft与同步记账保持，Arrow保留显式选项；不更新原生排名或多模态结论。
-后续按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)先隔离观察成本与提交前等待，再评估自然就绪组的RPC接入；
+[本地观察成本隔离](experiments/results/diagnostics/map_observation_isolation_20261003/README.md)已完成真实Core／传输循环加厂商与服务替身的有限控制，
+说明观察方式会改变提交等待和准备窗口，不支持将逻辑名额等同服务活动或直接扣除guard时间。
+真实Ray调用成本仍未核验，生产默认与真实计费保持；按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)
+先设计正式对照的统一有限观察，再评估自然就绪组RPC；本地替身改善不作为数据库或GPU性能证据。
 多模态研究沿[单Job共享准备](experiments/plans/数据组织.md#scene-preparation-pilot)检验数据库需求和消费信息，保留原生已有能力作对照。
 
 [同步/线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)完成70项目标检查与累计8,224次fixture，模型0次。

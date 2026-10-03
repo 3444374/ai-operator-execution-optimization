@@ -1,5 +1,8 @@
 # SemLoom Code
 
+新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
+它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
+
 实验账本支持显式[`SharedClaimedUnit.reserve_many`](src/experiments/shared_request_budget.py)：
 对已准备的有限摘要列表或元组一次持久提交，返回对应计费编号，整批额度不足时全部拒绝。
 实验查询可显式选择`remote_budget_mode=batched`，在下一次事件循环推进时合并最多16条已就绪记录，

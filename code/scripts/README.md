@@ -1,5 +1,14 @@
 # SemLoom 脚本入口
 
+## 本地Core／Map观察成本诊断
+
+`profiling/map_observation_probe.py --output /path/to/new-private-probe`运行真实Core、异步backend和Map传输循环，
+用有限表与独立线程worker替身比较持久／内存计数和内存事件／`BufferedEvents`投影写入。
+固定20次执行、16,448次模拟调用、每次60秒与整体5分钟，首次错误保存后停止；HTTP、PG与模型均为0。
+只用现有Python标准库，不运行Ray/Daft/Arrow、不安装依赖；设置`PYTHONPATH=code`，输出须在Git外且尚不存在。
+最终计数、全部事件与原始账本保留，范围和取舍见[主报告](../../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
+内存臂仅作诊断，真实计费与生产默认保持。
+
 ## 本地持久记账组件对照
 
 `profiling/request_budget_batch_probe.py --output /path/to/new-private-probe`比较逐行与4/16/64条每事务。

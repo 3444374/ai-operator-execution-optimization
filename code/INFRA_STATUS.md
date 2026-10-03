@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-03：新增[Core／Map观察成本的本地隔离](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)工具，
+真实Core、异步backend、传输循环及实验guard运行，厂商表／调用与worker服务使用替身；主清单16,448次模拟调用通过，HTTP／模型／PG均为0。
+103项检查通过，20次原始事件复算一致；修正诊断驱动自唤醒和失败排空后的计数，生产源码未改。
+观察方式改变等待与窗口，内存控制仅作无模型诊断；真实Ray RPC、SQL、GPU与多模态收益pending，默认和真实计费保持。
+
 2026-10-03：[Daft／Arrow真实模型分批复核](../experiments/results/postgresql/text_map_arrow_real_20261003/README.md)
 完成10条查询、8,224次请求和独立行／资源核对。1024行中位数10.060→9.779秒，少2.793%；
 分批构建累计明显减少，但完整查询收益小，配对输出差1/2/3行。默认Daft保留，Arrow仍为显式选项；

@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-03：[Core／Map观察成本隔离](diagnostics/map_observation_isolation_20261003/README.md)。
+基于main `2b1ea713`的真实Core、异步backend和Map传输循环，有限表、厂商API和独立worker使用明确替身；生产源码未改。
+主清单20次执行／16,448次模拟调用通过，HTTP／模型／PG均为0，103项检查及全部原始字段复算通过。
+同观察条件下guard改变提交等待、worker活动与准备窗口；支持完善对照观察设施，不证明SQL、GPU、原生排名或成组RPC收益。
+原始失败、排空计数更正、运行身份、源码、全部重复和99成员的压缩公开证据归主报告；其他展开原件按清单保留仓库外。
+
 2026-10-03：[SemLoom Daft／Arrow真实分批对照](postgresql/text_map_arrow_real_20261003/README.md)。
 main 1be050a0生产源码及独立测试fixture修订，830份来源摘要核对；10条查询／8,224次真实请求通过。
 复用输入和固定资源下观察到完整查询中位数少2.793%，配对输出差1/2/3行；支持保留直接Arrow显式选项，

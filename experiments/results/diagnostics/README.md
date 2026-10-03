@@ -2,6 +2,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[Core／Map观察成本隔离](map_observation_isolation_20261003/README.md)：真实执行循环与厂商／服务替身的有限控制，区分观察引起的时序变化与真实执行优化。
+
 [批量持久记账](request_budget_batch_20261003/README.md)：组件、无模型查询及真实模型对照；真实负结果保留，默认同步保持。
 [就绪窗口聚合](ready_window_coalescing_20261003/README.md)：本地受控原型、同脚本复现及模拟取舍；当前不启用，实际库与PG/GPU收益待验证。
 
