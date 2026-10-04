@@ -47,7 +47,9 @@ class MapInputPreparation:
         self.model_signature = model_signature
         self.broker = BoundedStageBroker(physical.preparation)
         self.rows, self.blocks = {}, {}
-        self.lock = threading.Lock()
+        # Object transitions and their observations share one order. The
+        # transport observer reads snapshot() while this lock is held.
+        self.lock = threading.RLock()
         self.ordinal = 0
         self.running = False
         self.worker = None
@@ -157,9 +159,11 @@ class MapInputPreparation:
                 payload_ns = time.monotonic_ns() - started
                 with self.lock:
                     cancelled = all(self.rows[t.key].cancelled for t in tasks)
+                    if not cancelled:
+                        block.amount = amount
+                        self.observe('ray_block_reserved', block_id=block.descriptor.block_id,
+                                     rows=len(tasks), bytes=amount)
                 if not cancelled:
-                    self.observe('ray_block_reserved', block_id=block.descriptor.block_id,
-                                 rows=len(tasks), bytes=amount)
                     stage = 'object_put'
                     put_started = time.monotonic_ns()
                     reference = self.ray.put(table)
@@ -181,6 +185,8 @@ class MapInputPreparation:
                     self.broker.fail_prepare(lease.lease_id, requeue=False)
                     self.broker.release_terminal(block.descriptor.block_id)
                     del self.blocks[block.descriptor.block_id]
+                    if block.amount:
+                        self.observe('ray_block_released', block_id=block.descriptor.block_id)
                     for key in keys:
                         row = self.rows[key]
                         row.state = 'done' if row.cancelled else 'failed'
@@ -193,17 +199,17 @@ class MapInputPreparation:
                     self.broker.complete_prepare(lease.lease_id, prepared, now_s=time.monotonic())
                     for key in keys:
                         self.rows[key].state = 'ready'
+                self.observe('ray_preparation_completed', block_id=block.descriptor.block_id,
+                             rows=len(keys), bytes=amount, failed=failed,
+                             stage=stage, reason=reason, payload_ns=payload_ns, put_ns=put_ns,
+                             elapsed_ns=time.monotonic_ns() - started, preparation=self.snapshot())
+                if put_done:
+                    self.observe('ray_block_put', block_id=block.descriptor.block_id,
+                                 rows=len(keys), bytes=amount)
                     for key in keys:
                         if self.rows[key].cancelled:
                             self._settle(key, failed=True)
-            self.observe('ray_preparation_completed', block_id=block.descriptor.block_id,
-                         rows=len(keys), bytes=amount, failed=failed,
-                         stage=stage, reason=reason, payload_ns=payload_ns, put_ns=put_ns,
-                         elapsed_ns=time.monotonic_ns() - started, preparation=self.snapshot())
             reference = None
-            if put_done:
-                self.observe('ray_block_put', block_id=block.descriptor.block_id,
-                             rows=len(keys), bytes=amount)
             self.notify()
 
     def is_ready(self, key):
@@ -264,15 +270,13 @@ class MapInputPreparation:
         self.broker.release_terminal(row.block_id)
         block.reference = None
         del self.blocks[row.block_id]
+        self.observe('ray_block_released', block_id=row.block_id)
         return True
 
     def confirm(self, key, *, failed=False):
         with self.lock:
-            block_id = self.rows[key].block_id
-            released = self._settle(key, failed=failed)
+            self._settle(key, failed=failed)
             self._schedule()
-        if released:
-            self.observe('ray_block_released', block_id=block_id)
         self.notify()
 
     def release(self, key):
@@ -310,7 +314,7 @@ class MapInputPreparation:
     def snapshot(self):
         with self.lock:
             return dict(held_tasks=len(self.rows), task_limit=self.maximum,
-                        object_bytes=sum(b.amount for b in self.blocks.values() if b.reference is not None),
+                        object_bytes=sum(b.amount for b in self.blocks.values()),
                         stages=asdict(self.broker.snapshot()))
 
     def close(self):

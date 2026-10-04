@@ -7,9 +7,14 @@
 2026-10-04：加入[单Job文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)。
 `SessionEngine`可借用已接纳输入并在准备就绪后取得模型名额；默认无准备接口，旧路由、请求/work与逐行结果政策保留。
 取消和关闭后的输入持续记账至明确归还，结果未知时保留阶段数据；`RayMapConfig.preparation`是显式选项，多Job组合暂拒绝。
-当前检查、失败、服务器实际库和后续资格由[同题报告](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)维护；PG/真实模型与跨Job适用性pending。
+原型组件与服务器替身检查由[同题报告](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)维护。
+[后续PG/模型验证](../experiments/results/postgresql/text_map_preparation_validation_20261004/README.md)保留main `380824f2`的32次模型停止记录。
+准备对象现从生成起计数，预留/put/释放事件与状态共用顺序，取消或put失败也归还；检查器及默认保持。
+修订版 `12ec50de`在Linux236项全部通过，另16项PG检查/26次本机HTTP及10查询/8224次真实请求通过。
+完整查询中位数10.107→18.859秒，准备分段慢86.597%，每1024行形成928块且896块为单行；暂不推荐开启，跨Job仍pending。
+RSS/PSS及全部行/计费/对象记录独立复算通过，原默认保持；本地236项中225通过/11缺库或平台跳过。
 合并审查修正准备归还拖住取消通知及同Job后方flow归还的问题；先通知取消，再全局轮转本地归还，原动作额度与未知结果记账保持。
-[新增取消回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)仅为本地fixture，服务器样本仍归此前源码。
+[新增取消回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)的原始记录为本地fixture；后续修订版服务器资格由上方独立报告维护。
 
 2026-10-04：[实际准备与供给形态检查](../experiments/results/diagnostics/map_preparation_shape_20261004/README.md)完成24项、3,632行有限准备及2,080次本机HTTP，模型／PG0。
 单／双Job自然窗口有明显差异，Arrow准备更快未形成一致的完整case收益；生产源码、同步记账及即时提交默认保持，尚未实现新的组织或RPC机制。

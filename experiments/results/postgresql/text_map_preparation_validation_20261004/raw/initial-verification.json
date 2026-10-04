@@ -1,0 +1,306 @@
+{
+  "source_commit": "380824f2951f6843bb7f326c3f65c95b7cd4352a",
+  "pg_lifecycle": {
+    "unique_checks": 16,
+    "loopback_http_requests": 26,
+    "model_requests": 0,
+    "runs": [
+      {
+        "run": "pm4l",
+        "status": "failed",
+        "http_requests": 0,
+        "checks": 0,
+        "errors": [
+          {
+            "type": "RuntimeError",
+            "message": "lifecycle failed; no automatic restart"
+          }
+        ]
+      },
+      {
+        "run": "pm4b",
+        "status": "failed",
+        "http_requests": 3,
+        "checks": 2,
+        "errors": [
+          {
+            "type": "FileExistsError",
+            "message": "[Errno 17] File exists: '/root/autodl-tmp/pm4b/worker/progress.json'"
+          }
+        ]
+      },
+      {
+        "run": "pm4c",
+        "status": "failed",
+        "http_requests": 4,
+        "checks": 3,
+        "errors": [
+          {
+            "type": "AssertionError",
+            "message": "known model rejection differs"
+          }
+        ]
+      },
+      {
+        "run": "pm4d",
+        "status": "passed",
+        "http_requests": 19,
+        "checks": 11,
+        "errors": []
+      }
+    ],
+    "checks": [
+      {
+        "mode": "immediate",
+        "name": "null_and_limit_zero",
+        "value": {
+          "http_delta": 0
+        },
+        "elapsed_ns": 868153
+      },
+      {
+        "mode": "immediate",
+        "name": "out_of_order_and_empty_input",
+        "value": {
+          "rows": 4,
+          "http_delta": 3,
+          "completion_order": [
+            "fast",
+            "",
+            "slow"
+          ]
+        },
+        "elapsed_ns": 2404466600
+      },
+      {
+        "mode": "immediate",
+        "name": "repeatable_read_snapshot",
+        "value": {
+          "snapshot_rows": 4,
+          "rows_after_commit": 5
+        },
+        "elapsed_ns": 3455425134
+      },
+      {
+        "mode": "immediate",
+        "name": "row_security",
+        "value": {
+          "rows": 1,
+          "http_delta": 1
+        },
+        "elapsed_ns": 27883189
+      },
+      {
+        "mode": "immediate",
+        "name": "function_permission_before_work",
+        "value": {
+          "sqlstate": "42501",
+          "message": "permission denied for function map"
+        },
+        "elapsed_ns": 1412196
+      },
+      {
+        "mode": "immediate",
+        "name": "known_rejection_and_recovery",
+        "value": {
+          "sqlstate": "38000",
+          "message": "SemLoom model request was rejected"
+        },
+        "elapsed_ns": 1017316085
+      },
+      {
+        "mode": "immediate",
+        "name": "cancel_before_rpc",
+        "value": {
+          "sqlstate": "57014",
+          "cancelled_query_http_delta": 0
+        },
+        "elapsed_ns": 199289879
+      },
+      {
+        "mode": "immediate",
+        "name": "cancel_after_http_started",
+        "value": {
+          "sqlstate": "57014",
+          "cancelled_query_http_delta": 1
+        },
+        "elapsed_ns": 214237907
+      },
+      {
+        "mode": "prepared",
+        "name": "null_and_limit_zero",
+        "value": {
+          "http_delta": 0
+        },
+        "elapsed_ns": 775424
+      },
+      {
+        "mode": "prepared",
+        "name": "out_of_order_and_empty_input",
+        "value": {
+          "rows": 4,
+          "http_delta": 3,
+          "completion_order": [
+            "fast",
+            "",
+            "slow"
+          ]
+        },
+        "elapsed_ns": 231432272
+      },
+      {
+        "mode": "prepared",
+        "name": "repeatable_read_snapshot",
+        "value": {
+          "snapshot_rows": 4,
+          "rows_after_commit": 5
+        },
+        "elapsed_ns": 76916736
+      },
+      {
+        "mode": "prepared",
+        "name": "row_security",
+        "value": {
+          "rows": 1,
+          "http_delta": 1
+        },
+        "elapsed_ns": 30776863
+      },
+      {
+        "mode": "prepared",
+        "name": "function_permission_before_work",
+        "value": {
+          "sqlstate": "42501",
+          "message": "permission denied for function map"
+        },
+        "elapsed_ns": 1836221
+      },
+      {
+        "mode": "prepared",
+        "name": "known_rejection_and_recovery",
+        "value": {
+          "sqlstate": "38000",
+          "message": "SemLoom model request was rejected"
+        },
+        "elapsed_ns": 58621407
+      },
+      {
+        "mode": "prepared",
+        "name": "cancel_before_rpc",
+        "value": {
+          "sqlstate": "57014",
+          "cancelled_query_http_delta": 0
+        },
+        "elapsed_ns": 208982767
+      },
+      {
+        "mode": "prepared",
+        "name": "cancel_after_http_started",
+        "value": {
+          "sqlstate": "57014",
+          "cancelled_query_http_delta": 1
+        },
+        "elapsed_ns": 210791492
+      }
+    ]
+  },
+  "real_model": {
+    "status": "failed",
+    "actual_requests": 32,
+    "queries": [
+      {
+        "mode": "immediate",
+        "rows": 16,
+        "status": "passed",
+        "independently_matched_rows": 16,
+        "durable_guards": 16,
+        "logical_resources": {
+          "logical_peaks": {
+            "held_tasks": 16,
+            "input_bytes": 7419,
+            "result_bytes": 16777216,
+            "active_requests": 16,
+            "active_work": 16
+          },
+          "limits": {
+            "held_tasks": 256,
+            "input_bytes": 134217728,
+            "result_bytes": 134217728,
+            "active_requests": 64,
+            "active_work": 64
+          },
+          "observations": 66,
+          "drained_jobs": 1,
+          "result_bytes_kind": "reserved capacity",
+          "scope": "all recorded responsibility transitions; physical RSS reported separately"
+        },
+        "object_observation_mismatches": [],
+        "samples": 14,
+        "sampled_total_pss_peak_bytes": 1638842368,
+        "pss_unavailable": {}
+      },
+      {
+        "mode": "prepared",
+        "rows": 16,
+        "status": "failed",
+        "independently_matched_rows": 16,
+        "durable_guards": 16,
+        "logical_resources": {
+          "logical_peaks": {
+            "held_tasks": 16,
+            "input_bytes": 7419,
+            "result_bytes": 16777216,
+            "active_requests": 16,
+            "active_work": 16
+          },
+          "limits": {
+            "held_tasks": 256,
+            "input_bytes": 134217728,
+            "result_bytes": 134217728,
+            "active_requests": 64,
+            "active_work": 64
+          },
+          "observations": 98,
+          "drained_jobs": 1,
+          "result_bytes_kind": "reserved capacity",
+          "scope": "all recorded responsibility transitions; physical RSS reported separately"
+        },
+        "object_observation_mismatches": [
+          {
+            "event_index": 52,
+            "event": "core_ray_block_reserved",
+            "block_id": "map-prepared-0",
+            "reconstructed_bytes": 1939,
+            "observed_bytes": 0
+          },
+          {
+            "event_index": 59,
+            "event": "core_ray_block_reserved",
+            "block_id": "map-prepared-1",
+            "reconstructed_bytes": 4015,
+            "observed_bytes": 1939
+          },
+          {
+            "event_index": 73,
+            "event": "core_ray_block_reserved",
+            "block_id": "map-prepared-2",
+            "reconstructed_bytes": 5888,
+            "observed_bytes": 4015
+          },
+          {
+            "event_index": 86,
+            "event": "core_ray_block_reserved",
+            "block_id": "map-prepared-3",
+            "reconstructed_bytes": 7835,
+            "observed_bytes": 5888
+          }
+        ],
+        "samples": 15,
+        "sampled_total_pss_peak_bytes": 1658802176,
+        "pss_unavailable": {}
+      }
+    ],
+    "measurements_1024": 0,
+    "owner_seconds": 211.53240180015564
+  }
+}
