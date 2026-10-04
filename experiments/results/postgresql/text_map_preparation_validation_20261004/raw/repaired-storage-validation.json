@@ -1,0 +1,10 @@
+{
+  "schema": "semloom.evidence_storage.v2",
+  "result": "experiments/results/postgresql/text_map_preparation_validation_20261004",
+  "files_verified": 240,
+  "bytes_verified": 63599050,
+  "model_requests": 0,
+  "archives_bytes": 5483962,
+  "unique_objects": 213,
+  "private_backup_files": 252
+}

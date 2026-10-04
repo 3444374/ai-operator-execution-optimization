@@ -29,7 +29,9 @@
 选取前快照已补：双Job同Job零等待合并机会少，暂不开发重排，观察干扰按实际重复解释。
 后续已加入[单Job准备分段原型](experiments/results/diagnostics/map_input_preparation_20261004/README.md)，复用阶段管理，模型提交上限保持。
 默认即时路径保留；[后续验证](experiments/results/postgresql/text_map_preparation_validation_20261004/README.md)在main `380824f2`通过16项PG生命周期检查。
-真实模型32次后因put前对象观测少记而停止，已修订观测与事件顺序；完整耗时、修订后的PG及多Job仍待验证，成组RPC与等待无采用依据。
+真实模型32次停止后修订观测与事件顺序，新源码 `12ec50de`通过236项Linux、16项PG检查及8224次真实请求。
+准备分段完整查询中位数10.107→18.859秒，慢86.597%；每1024行有896个单行块，首行更慢，PSS没有一致改善。
+暂不推荐开启，跨Job、成组RPC与等待仍无采用依据；旧失败与新的有效聚合分别保留。
 [本地观察成本隔离](experiments/results/diagnostics/map_observation_isolation_20261003/README.md)已完成真实Core／传输循环加厂商与服务替身的有限控制，
 说明观察方式会改变提交等待和准备窗口，不支持将逻辑名额等同服务活动或直接扣除guard时间。
 真实Ray调用已在[有限服务器替身对照](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)核验，模型及PG查询0；生产默认与真实计费保持，按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)

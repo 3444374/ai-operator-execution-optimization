@@ -1,0 +1,81 @@
+{
+  "private_backup_id": "GPU-map-preparation-real-20261004",
+  "records": [
+    {
+      "path": "pg-repaired/private-manifest.json",
+      "reason": "private original retained; no public raw ledger"
+    },
+    {
+      "path": "pg-repaired/lifecycle/pm4e/worker/budget.sqlite",
+      "reason": "private original retained; no public raw ledger"
+    },
+    {
+      "path": "model-repaired/private-manifest.json",
+      "reason": "private original retained; no public raw ledger"
+    },
+    {
+      "path": "model-repaired/model-owner.pid",
+      "reason": "private original retained; no public raw ledger"
+    },
+    {
+      "path": "model-repaired/real01/worker-tree-rss.jsonl",
+      "reason": "mixed-user whole-run RSS duplicates query coverage and has unavailable PSS; original retained"
+    },
+    {
+      "path": "model-repaired/real01/pg/postgres.log",
+      "reason": "PG per-query producer logs retain binding and memory traces; startup/shutdown separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/budget.sqlite",
+      "reason": "private original retained; no public raw ledger"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared1024/sessions.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared1024/events.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared1024/public-events.jsonl",
+      "reason": "duplicate compact group export; each query retained once"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared16/sessions.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared16/events.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/prepared16/public-events.jsonl",
+      "reason": "duplicate compact group export; each query retained once"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate1024/sessions.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate1024/events.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate1024/public-events.jsonl",
+      "reason": "duplicate compact group export; each query retained once"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate16/sessions.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate16/events.jsonl",
+      "reason": "query projections retain the same records once; unique lifecycle tail separately retained"
+    },
+    {
+      "path": "model-repaired/real01/worker/immediate16/public-events.jsonl",
+      "reason": "duplicate compact group export; each query retained once"
+    }
+  ]
+}
