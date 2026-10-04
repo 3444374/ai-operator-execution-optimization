@@ -24,6 +24,7 @@ class TaskRecord:
     lease: int | None = None
     ready_order: int = 0
     member: BatchMember | None = None
+    preparation_held: bool = False
 
 
 class SessionCapacity:

@@ -188,6 +188,21 @@ class BackendTask:
     member: BatchMember | None = None
 
 
+class TaskPreparation(Protocol):
+    """Optional, nonblocking borrowing of already accepted immutable inputs.
+
+    try_prepare accepts a prefix of the supplied finite tuple. It cannot send
+    model requests. is_ready includes locally failed preparation, so execution
+    can report that failure through the ordinary backend. release returns true
+    only when this row no longer has a local preparation or buffer owner.
+    Implementations notify the engine when readiness or release changes.
+    """
+
+    def try_prepare(self, tasks: tuple[BackendTask, ...]) -> int: ...
+    def is_ready(self, key: TaskKey) -> bool: ...
+    def release(self, key: TaskKey) -> bool: ...
+
+
 @dataclass(frozen=True)
 class Submission:
     acceptance: Acceptance

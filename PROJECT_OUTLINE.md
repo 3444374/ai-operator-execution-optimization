@@ -27,7 +27,8 @@
 [真实分批成本与供给形态](experiments/results/diagnostics/map_preparation_shape_20261004/README.md)补入固定窗口实际库回放与单／双Job内部对照。
 模型／PG0；小窗口重复执行成本明显，双Job更接近逐行，但完整消费改善小、包含准备的结果不一致。
 选取前快照已补：双Job同Job零等待合并机会少，暂不开发重排，观察干扰按实际重复解释。
-下一项核对准备与Core在途名额的联动，复用单Job阶段管理检查；默认即时提交保持，成组RPC与等待仍无采用依据。
+后续已加入[单Job准备分段原型](experiments/results/diagnostics/map_input_preparation_20261004/README.md)，复用阶段管理，模型提交上限保持。
+默认即时路径保留；原型的本地/服务器资格与PG/真实模型待测部分分别记录，成组RPC与等待仍无采用依据。
 [本地观察成本隔离](experiments/results/diagnostics/map_observation_isolation_20261003/README.md)已完成真实Core／传输循环加厂商与服务替身的有限控制，
 说明观察方式会改变提交等待和准备窗口，不支持将逻辑名额等同服务活动或直接扣除guard时间。
 真实Ray调用已在[有限服务器替身对照](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)核验，模型及PG查询0；生产默认与真实计费保持，按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)

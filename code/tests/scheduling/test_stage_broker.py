@@ -44,6 +44,30 @@ def _descriptor(
 
 
 class BoundedStageBrokerTest(unittest.TestCase):
+    def test_explicit_ready_block_preserves_fifo_for_the_remaining_blocks(self):
+        for i in range(2):
+            descriptor = _descriptor(i)
+            self.broker.enqueue_encoded(descriptor)
+            lease = self.broker.lease_prepare(now_s=2)
+            self.broker.complete_prepare(lease.lease_id,
+                replace(descriptor, representation='ready'), now_s=2)
+        model = self.broker.lease_model(now_s=3, block_id='block-1')
+        self.assertEqual(model.descriptor.block_id, 'block-1')
+        self.broker.complete_model(model.lease_id, output_row_ids=('row-1',))
+        self.assertEqual(self.broker.lease_model(now_s=3).descriptor.block_id, 'block-0')
+
+    def test_explicit_model_selection_rejects_unprepared_or_other_job_block(self):
+        descriptor = _descriptor(0)
+        self.broker.enqueue_encoded(descriptor)
+        with self.assertRaisesRegex(ValueError, 'not ready'):
+            self.broker.lease_model(now_s=1, block_id=descriptor.block_id)
+        prepare = self.broker.lease_prepare(now_s=1)
+        self.broker.complete_prepare(prepare.lease_id,
+            replace(descriptor, representation='ready'), now_s=1)
+        with self.assertRaisesRegex(ValueError, 'this Job'):
+            self.broker.lease_model(now_s=1, block_id=descriptor.block_id, preferred_job_id='other')
+        self.assertEqual(self.broker.snapshot().ready_queued, 1)
+
     def setUp(self) -> None:
         self.broker = BoundedStageBroker(
             StageBrokerLimits(

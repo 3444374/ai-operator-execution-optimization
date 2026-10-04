@@ -31,6 +31,7 @@ from .session_contract import (
     State,
     Submission,
     TaskKey,
+    TaskPreparation,
     Terminal,
     Uncertain,
     Usage,
@@ -89,6 +90,7 @@ class SessionEngine:
         sink: Callable[[str, TaskKey], None] | None = None,
         max_jobs: int = 1,
         observe_capacity_blocks: bool = False,
+        preparation: TaskPreparation | None = None,
         choose_flow: Callable[
             [tuple[ReadyJob, ...], JobSelectionHistory], FlowChoice
         ] = round_robin_flow,
@@ -100,6 +102,7 @@ class SessionEngine:
         self.observe_capacity_blocks = observe_capacity_blocks
         self.capacity = SessionCapacity(limits)
         self.backend, self.policies, self.clock = backend, policies, clock
+        self.preparation = preparation
         self.credit, self.sink = credit, sink
         self.wake = WakeSignal()
         self.error: str | None = None
@@ -163,6 +166,13 @@ class SessionEngine:
             for session in tuple(self._sessions.values()):
                 if session.state in TERMINAL_STATES:
                     used += session._cleanup(max(0, maximum - used))
+            if self.preparation is not None:
+                for session in tuple(self._sessions.values()):
+                    remaining = max(0, maximum - used)
+                    prepare_actions = remaining // 2
+                    if remaining == 1 and not self._prepared_candidates(session):
+                        prepare_actions = 1
+                    used += self._prepare_inputs(session, prepare_actions)
             while used < maximum and not self.error:
                 try:
                     selected = self._select_job_flow(now)
@@ -176,7 +186,7 @@ class SessionEngine:
                 self._last_job = job_id
                 self._last_flow[job_id] = session.session_id
                 try:
-                    queued = tuple(r for r in session._records() if r.phase == "QUEUED")
+                    queued = self._prepared_candidates(session)
                     session._capacity_waiting = None
                     record = session._next_record(queued)
                     if record is None or not session._dispatch(record, now):
@@ -198,7 +208,9 @@ class SessionEngine:
             terminal = session.state in TERMINAL_STATES
             if terminal:
                 immediate |= any(
-                    r.phase != "LEASED" and (not r.compute or not r.cancel_sent)
+                    r.phase != "LEASED" and (
+                        (not r.compute and not r.preparation_held)
+                        or (r.compute and not r.cancel_sent))
                     for r in records
                 )
                 continue
@@ -211,7 +223,8 @@ class SessionEngine:
                 if record.phase != "QUEUED":
                     continue
                 queued = True
-                candidates.append(record)
+                if self._is_prepared(record):
+                    candidates.append(record)
             if candidates and session._dispatch_enabled:
                 if now < session._retry_at:
                     deadlines.append(session._retry_at)
@@ -219,7 +232,7 @@ class SessionEngine:
                       and self.capacity.any_dispatchable(candidates, session.limits)):
                     immediate = True
         remote = any(r.compute for r in self.capacity.records.values())
-        if remote or queued:
+        if remote or queued or any(r.preparation_held for r in self.capacity.records.values()):
             deadlines.append(now + self.capacity.limits.poll_interval_s)
         reason = None if immediate else (
             "WAIT_BACKEND" if remote else "WAIT_CAPACITY" if queued
@@ -241,7 +254,7 @@ class SessionEngine:
                 continue
             records = session._records()
             if self.capacity.any_dispatchable(
-                (r for r in records if r.phase == "QUEUED"), session.limits
+                (r for r in records if r.phase == 'QUEUED' and self._is_prepared(r)), session.limits
             ):
                 ready.setdefault(session.spec.job_id, []).append(session.session_id)
             elif self.observe_capacity_blocks:
@@ -262,6 +275,65 @@ class SessionEngine:
         ):
             raise ValueError("Job policy selected an ineligible flow")
         return choice.job_id, self._sessions[choice.session_id]
+
+    def _prepared_candidates(self, session):
+        return tuple(r for r in session._records() if r.phase == "QUEUED" and self._is_prepared(r))
+
+    def _is_prepared(self, record):
+        if self.preparation is None:
+            return True
+        if not record.preparation_held:
+            return False
+        try:
+            ready = self.preparation.is_ready(record.key)
+            if type(ready) is not bool:
+                raise ValueError('invalid preparation readiness')
+            return ready
+        except Exception:
+            self._fault('preparation readiness unknown')
+            return False
+
+    def _prepare_inputs(self, session, maximum):
+        if (self.preparation is None or not maximum or self.error
+                or session.state in TERMINAL_STATES or session._cancel.is_set()
+                or not session._dispatch_enabled):
+            return 0
+        records = tuple(r for r in session._records()
+                        if r.phase == "QUEUED" and not r.preparation_held)[:maximum]
+        if not records:
+            return 0
+        # Borrowing happens before compute admission. Keep the input reservation
+        # if the preparation port raises or returns an ambiguous acceptance.
+        for record in records:
+            record.preparation_held = True
+        try:
+            accepted = self.preparation.try_prepare(tuple(
+                BackendTask(r.key, r.spec, r.task, r.member) for r in records))
+            if type(accepted) is not int or not 0 <= accepted <= len(records):
+                raise ValueError("invalid preparation acceptance prefix")
+        except Exception:
+            session._fail("preparation acceptance unknown")
+            return len(records)
+        for record in records[accepted:]:
+            record.preparation_held = False
+        for record in records[:accepted]:
+            self._emit("preparation_borrowed", record.key)
+        return accepted
+
+    def _release_preparation(self, record):
+        if not record.preparation_held:
+            return True
+        try:
+            released = self.preparation.release(record.key)
+            if type(released) is not bool:
+                raise ValueError("invalid preparation release")
+        except Exception:
+            self._fault("preparation release unknown")
+            return False
+        if released:
+            record.preparation_held = False
+            self._emit("preparation_released", record.key)
+        return released
 
     def open(
         self,
@@ -357,6 +429,7 @@ class SessionEngine:
                 self.credit.release(self._request_id(record), job_id=record.spec.job_id)
             except Exception:
                 self._fault("credit release failed")
+        preparation_released = self._release_preparation(record)
         valid = (
             type(event.result) is bytes
             and type(event.metadata) is bytes
@@ -378,14 +451,16 @@ class SessionEngine:
             else:
                 self._fault("backend result violates bounds")
         if owned and session.state not in TERMINAL_STATES and valid and event.status == "completed":
-            record.task = replace(record.task, payload=b"", metadata=b"")
+            if preparation_released:
+                record.task = replace(record.task, payload=b"", metadata=b"")
             record.result, record.result_metadata = event.result, event.metadata
             record.phase = "READY"
             record.ready_order = self._next_ready
             self._next_ready += 1
             record.since = self.clock()
         else:
-            del self.capacity.records[event.key]
+            if preparation_released:
+                del self.capacity.records[event.key]
             if owned and session.state not in TERMINAL_STATES:
                 session._fail("backend task failed")
         self._emit("terminal", event.key)
@@ -438,8 +513,23 @@ class SessionEngine:
                 self._uncertain(event)
             else:
                 self._terminal(event)
+        count = len(events)
+        # Closed consumers may leave local preparation borrowing an input,
+        # just as accepted remote work can outlive its session handle.
+        for record in tuple(self.capacity.records.values()) if self.preparation is not None else ():
+            if count >= maximum:
+                break
+            session = self._sessions.get(record.key.session_id)
+            if (not record.compute and record.preparation_held and (
+                    session is None or session.state in TERMINAL_STATES or record.phase == 'READY')):
+                count += 1
+                if self._release_preparation(record):
+                    if session is None or session.state in TERMINAL_STATES:
+                        del self.capacity.records[record.key]
+                    else:
+                        record.task = replace(record.task, payload=b'', metadata=b'')
         self._finish_retired()
-        return len(events)
+        return count
 
     def reap(self, max_events: int) -> CleanupReport:
         with self._operation():
@@ -610,7 +700,8 @@ class SchedulingSession:
             if record.phase == "LEASED":
                 continue
             if not record.compute:
-                del self.engine.capacity.records[record.key]
+                if self.engine._release_preparation(record):
+                    del self.engine.capacity.records[record.key]
                 used += 1
             elif not record.cancel_sent:
                 record.cancel_sent = True
@@ -752,9 +843,15 @@ class SchedulingSession:
                 if self.state in (State.CANCELLED, State.FAILED):
                     self._pending_members = ()
                     self._cleanup(budget)
-                elif now >= self._retry_at and self._capacity_ready():
+                elif self.engine.preparation is not None:
+                    prepare_actions = budget // 2
+                    if budget == 1 and not self.engine._prepared_candidates(self):
+                        prepare_actions = 1
+                    budget -= self.engine._prepare_inputs(self, prepare_actions)
+                if (self.state not in TERMINAL_STATES and now >= self._retry_at
+                        and self._capacity_ready()):
                     while budget and self.state not in TERMINAL_STATES:
-                        queued = tuple(r for r in self._records() if r.phase == "QUEUED")
+                        queued = self.engine._prepared_candidates(self)
                         if not queued:
                             break
                         budget -= 1
@@ -777,7 +874,8 @@ class SchedulingSession:
         if self._cancel.is_set() and self.state not in TERMINAL_STATES:
             self.state = State.CANCELLED
         ready = (
-            tuple(sorted((r for r in records if r.phase == "READY"), key=lambda r: r.ready_order))
+            tuple(sorted((r for r in records if r.phase == "READY" and not r.preparation_held),
+                         key=lambda r: r.ready_order))
             if self.state not in TERMINAL_STATES
             else ()
         )
@@ -795,7 +893,9 @@ class SchedulingSession:
         )
         queued = tuple(r for r in records if r.phase == "QUEUED")
         cleanup = self.state in (State.CANCELLED, State.FAILED) and any(
-            r.phase != "LEASED" and (not r.compute or not r.cancel_sent) for r in records
+            r.phase != "LEASED" and (
+                (not r.compute and not r.preparation_held) or (r.compute and not r.cancel_sent))
+            for r in records
         )
         immediate = bool(
             len(ready) > len(selected)
@@ -805,7 +905,8 @@ class SchedulingSession:
                 and now >= self._retry_at
                 and self._capacity_ready()
                 # A reordered member can fit even when the input-order head cannot.
-                and self.engine.capacity.any_dispatchable(queued, self.limits)
+                and self.engine.capacity.any_dispatchable(
+                    queued if self.engine.preparation is None else self.engine._prepared_candidates(self), self.limits)
             )
         )
         if self.state == State.DRAINING and not records:
@@ -814,7 +915,7 @@ class SchedulingSession:
         if not immediate and not deliveries:
             reason = (
                 "WAIT_BACKEND"
-                if any(r.compute for r in records)
+                if any(r.compute or r.preparation_held for r in records)
                 else "WAIT_RELEASE"
                 if any(r.phase == "LEASED" for r in records)
                 else "WAIT_CAPACITY"
@@ -833,7 +934,7 @@ class SchedulingSession:
         if selected and consumer_timeout is not None:
             # Include the leases about to transfer, without publishing ownership early.
             deadlines.append(now + consumer_timeout)
-        if any(r.compute for r in self.engine.capacity.records.values()) or queued:
+        if any(r.compute or r.preparation_held for r in self.engine.capacity.records.values()) or queued:
             deadlines.append(now + self.limits.poll_interval_s)
         result = AdvanceResult(
             deliveries,
