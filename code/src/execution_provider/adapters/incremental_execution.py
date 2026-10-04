@@ -128,10 +128,13 @@ def build_fixed_model_execution(
     allocate_job=equal_share_job_budget,
     choose_flow=round_robin_flow,
     transport_factory=None,
+    preparation_factory=None,
 ):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
     if policies is not None and organize is not None:
         raise ValueError("provide policies or an organizer, not both")
+    if preparation_factory is not None and (max_jobs != 1 or execute is not None):
+        raise ValueError('input preparation currently requires one Job and its owned transport')
     if type(max_tasks) is not int or not 1 <= max_tasks <= MAX_INCREMENTAL_TASKS:
         raise ValueError("invalid incremental task capacity")
     if max_active_requests is None:
@@ -209,18 +212,28 @@ def build_fixed_model_execution(
             abort()
         raise
     try:
+        preparation = (preparation_factory(transport, limits, lambda: engine.wake.notify())
+                       if preparation_factory is not None else None)
         engine = SessionEngine(
             limits, backend, policies, sink=observe, max_jobs=max_jobs, choose_flow=choose_flow,
-            observe_capacity_blocks=organize is not None and observer is not None
+            observe_capacity_blocks=organize is not None and observer is not None,
+            preparation=preparation,
         )
         allocate_job(engine)  # Reject impossible resource policies before accepting sockets.
     except BaseException:
         backend.close()
         raise
+
+    def close(timeout=5.0):
+        # A closed consumer can still have local input borrowing; reap it before
+        # stopping the I/O loop or its payload worker.
+        if preparation is not None and preparation.snapshot()['held_tasks']:
+            return False
+        return backend.close(timeout)
     return IncrementalExecution(
         engine,
         partial(prepare_map_task, describe_work=describe_work),
-        backend.close,
+        close if preparation is not None else backend.close,
         drain_timeout_s,
         work_unit,
         allocate_job,

@@ -219,11 +219,17 @@ class BoundedStageBroker:
         *,
         now_s: float,
         preferred_job_id: str | None = None,
+        block_id: str | None = None,
     ) -> StageLease | None:
         """Issue model work only for a fully prepared ready block."""
         if len(self._model_leases) >= self._limits.model_inflight:
             return None
-        block_id = self._eligible_ready_block(preferred_job_id)
+        if block_id is None:
+            block_id = self._eligible_ready_block(preferred_job_id)
+        elif (self.state_of(block_id) != "ready" or (
+                preferred_job_id is not None
+                and self._descriptors[block_id].job_id != preferred_job_id)):
+            raise ValueError("requested model block is not ready for this Job")
         if block_id is None:
             return None
         self._ready_queue.remove(block_id)

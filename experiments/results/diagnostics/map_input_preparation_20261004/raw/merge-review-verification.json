@@ -1,0 +1,64 @@
+{
+  "status": "passed",
+  "source_base": "e9de01c7a17930a17740f51772bb41fbcd4f16cd",
+  "original_core_sha256": "5a1ed9f66b6e880c3c234aabc1c635a5f5146ef2a6b090223a9459a1a44e442b",
+  "sources": {
+    "code/src/scheduling/core/session.py": "1d2379d6e1be42612baf45148e73b61f666c071dfa43f5fc12691cbfbf4836d9",
+    "code/tests/scheduling/test_input_preparation.py": "de1884dc0d22cda814e676d80bf64ba3c2f3dcc8880db7830a856f079b94ec44",
+    "code/tests/execution_provider/test_map_preparation.py": "4965404448dc95806e1f62a8c722f2d5eda8c4c45e09cbc668b667d64ef6af93"
+  },
+  "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "platform": "Darwin",
+  "original_core_regressions": {
+    "methods": 5,
+    "failures": 11
+  },
+  "local_regression": {
+    "methods": 230,
+    "passed": 219,
+    "skipped": 11,
+    "failures": 0
+  },
+  "new_http_requests": 0,
+  "new_model_requests": 0,
+  "new_pg_queries": 0,
+  "archive": {
+    "path": "merge-review-public.tar.gz",
+    "bytes": 12642,
+    "sha256": "05d415c8bf5cc13030a19ab7946893b79d50f397a59affd806ed1643976f9217",
+    "members": [
+      {
+        "path": "original-core-regressions.txt.gz",
+        "bytes": 1649,
+        "sha256": "a217162a59b617cae78d88755da03b196f96e54ff883776e7bc0ab447d8822a3"
+      },
+      {
+        "path": "regression-tests.txt.gz",
+        "bytes": 6742,
+        "sha256": "4f5d9893f4f24a81be5bf79653c1f4446e8eaa75fbcc43d03489fdb2f80d833d"
+      },
+      {
+        "path": "regression-command.json",
+        "bytes": 1453,
+        "sha256": "af17943ad46822a4e902035fca5a350e6aa5d98c14814f6bc59cfc074af05be3"
+      },
+      {
+        "path": "run_original_core.py",
+        "bytes": 1101,
+        "sha256": "94ec88c42def7d135a929664914386a7a28c8a7ac2b646a184c8628190605aef"
+      },
+      {
+        "path": "intermediate-cross-flow-failure.txt.gz",
+        "bytes": 852,
+        "sha256": "82d2214561a57f1d13bc60810918d7a019ac21b10a78260647dbdfc18e610eab"
+      },
+      {
+        "path": "intermediate-fairness-fix.patch",
+        "bytes": 6912,
+        "sha256": "608431562991987aadb564394271f482ace76b9f56a00f6c74efe68ad51d4128"
+      }
+    ]
+  },
+  "server_measurements_unchanged": true,
+  "server_covers_pre_review_source": true
+}

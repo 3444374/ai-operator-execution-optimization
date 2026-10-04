@@ -1,7 +1,8 @@
 """Observe native aiohttp worker POSTs without adding a scheduler or retries.
 
-Each worker session gets a private bounded event writer. Shared budget spending
-is durable before network I/O; its measured cost remains inside query time.
+Each worker session gets a private bounded event writer. Ordinary accounting
+commits before sends; mapped descriptors register inside a durably prepaid unit.
+Preparation, send-time accounting and cleanup are measured separately.
 """
 from dataclasses import dataclass
 from contextlib import contextmanager
@@ -13,12 +14,20 @@ import uuid
 
 from .buffered_events import BufferedEvents
 from .request_identity import RAY_IDENTITY_FIELD
+from .request_budget_client import open_request_budget
 from src.baselines.common.private_artifacts import content_digest
 
 
 @contextmanager
 def observe_native_httpx(budget, record, endpoint, *, timeout_s=None):
     """Account native SDK worker sends in an isolated process, including retries."""
+    with open_request_budget(budget) as client:
+        with _observe_native_httpx_client(client, record, endpoint, timeout_s=timeout_s):
+            yield
+
+
+@contextmanager
+def _observe_native_httpx_client(budget, record, endpoint, *, timeout_s=None):
     import httpx
     sync_send, async_send = httpx.Client.send, httpx.AsyncClient.send
     deadline = time.monotonic()+timeout_s if timeout_s is not None else None
@@ -125,22 +134,44 @@ class ObservedSession:
     def __init__(self, config):
         self.config = config
         self.session = self.events = None
+        self.budget = self._budget_scope = None
 
     async def __aenter__(self):
         import aiohttp
         self.events = BufferedEvents(Path(self.config.events_directory) / (uuid.uuid4().hex + '.jsonl'))
         try:
+            scope = open_request_budget(self.config.budget)
+            self.budget = scope.__enter__()
+            self._budget_scope = scope
             self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.config.timeout_s))
-        except BaseException:
-            self.events.close()
+        except BaseException as error:
+            try:
+                self.events.close()
+            except BaseException as failure:
+                error.add_note('Native event cleanup also failed: ' + type(failure).__name__)
+            if self._budget_scope is not None:
+                self._budget_scope.__exit__(type(error), error, error.__traceback__)
             raise
         return self
 
-    async def __aexit__(self, *_):
+    async def __aexit__(self, *error):
+        failure = error[1]
         try:
             await self.session.close()
-        finally:
+        except BaseException as closing:
+            failure = closing if failure is None else failure
+            if failure is not closing:
+                failure.add_note('Native session cleanup also failed: ' + type(closing).__name__)
+        try:
             self.events.close()
+        except BaseException as closing:
+            failure = closing if failure is None else failure
+            if failure is not closing:
+                failure.add_note('Native event cleanup also failed: ' + type(closing).__name__)
+        self._budget_scope.__exit__(type(failure) if failure else None, failure,
+                                   failure.__traceback__ if failure else None)
+        if failure is not None and failure is not error[1]:
+            raise failure
 
     async def post(self, url, *, data, headers):
         if url != self.config.endpoint or not isinstance(data, str):
@@ -152,7 +183,7 @@ class ObservedSession:
         data = json.dumps(values, ensure_ascii=False, separators=(',', ':'))
         payload = data.encode('utf-8')
         before = time.monotonic_ns()
-        attempt = self.config.budget.reserve(hashlib.sha256(payload).hexdigest())
+        attempt = self.budget.reserve(hashlib.sha256(payload).hexdigest())
         reserved = time.monotonic_ns()
         self.events.record(dict(event='request', attempt=attempt, identity=identity, monotonic_ns=reserved,
             budget_reserve_ns=reserved-before, request_bytes_sha256=hashlib.sha256(payload).hexdigest(),

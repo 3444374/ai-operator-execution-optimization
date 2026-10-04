@@ -30,6 +30,7 @@ def compact_event(event):
                'worker_elapsed_ns', 'submit_elapsed_ns', 'await_elapsed_ns', 'rpc_elapsed_ns',
                'rpc_started_ns', 'rpc_returned_ns', 'received_ns', 'worker_started_ns', 'worker_ended_ns',
                'shared_clock', 'before_worker_ns', 'after_worker_ns'}
+    allowed.update(('preparation', 'failed', 'payload_ns', 'put_ns'))
     result = {key: value for key, value in event.items() if key in allowed}
     if isinstance(event.get('raw_output'), str):
         encoded = event['raw_output'].encode('utf-8')

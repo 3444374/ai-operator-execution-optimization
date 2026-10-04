@@ -1,0 +1,156 @@
+{
+  "status": "passed",
+  "cases": 20,
+  "http_requests": 2112,
+  "model_requests": 0,
+  "metrics": {
+    "daft-False": {
+      "query_seconds": {
+        "values": [
+          2.39320553,
+          2.401507177,
+          2.399182036
+        ],
+        "median": 2.399182036
+      },
+      "first_result_seconds": {
+        "values": [
+          0.200678522,
+          0.214726062,
+          0.198737519
+        ],
+        "median": 0.200678522
+      },
+      "case_seconds": {
+        "values": [
+          6.250293741,
+          6.640862879,
+          6.694122159
+        ],
+        "median": 6.640862879
+      },
+      "object_batches": {
+        "values": [
+          93,
+          108,
+          96
+        ],
+        "median": 96
+      }
+    },
+    "daft-True": {
+      "query_seconds": {
+        "values": [
+          2.288908328,
+          2.345705479,
+          2.288126323
+        ],
+        "median": 2.288908328
+      },
+      "first_result_seconds": {
+        "values": [
+          0.217023006,
+          0.216793733,
+          0.204234938
+        ],
+        "median": 0.216793733
+      },
+      "case_seconds": {
+        "values": [
+          6.512205402,
+          6.573637637,
+          6.132522109
+        ],
+        "median": 6.512205402
+      },
+      "object_batches": {
+        "values": [
+          32,
+          32,
+          32
+        ],
+        "median": 32
+      }
+    },
+    "arrow-False": {
+      "query_seconds": {
+        "values": [
+          2.380086567,
+          2.324737792,
+          2.298106302
+        ],
+        "median": 2.324737792
+      },
+      "first_result_seconds": {
+        "values": [
+          0.197139861,
+          0.20236743,
+          0.201745538
+        ],
+        "median": 0.201745538
+      },
+      "case_seconds": {
+        "values": [
+          6.644810365,
+          6.546897112,
+          6.207585097
+        ],
+        "median": 6.546897112
+      },
+      "object_batches": {
+        "values": [
+          73,
+          93,
+          89
+        ],
+        "median": 89
+      }
+    },
+    "arrow-True": {
+      "query_seconds": {
+        "values": [
+          2.287286298,
+          2.256119807,
+          2.266105355
+        ],
+        "median": 2.266105355
+      },
+      "first_result_seconds": {
+        "values": [
+          0.207751443,
+          0.208078495,
+          0.17810756
+        ],
+        "median": 0.207751443
+      },
+      "case_seconds": {
+        "values": [
+          6.492902944,
+          6.43225722,
+          6.018869794
+        ],
+        "median": 6.43225722
+      },
+      "object_batches": {
+        "values": [
+          32,
+          32,
+          32
+        ],
+        "median": 32
+      }
+    }
+  },
+  "percent_changes": {
+    "daft": {
+      "query_seconds": -4.59630433811733,
+      "first_result_seconds": 8.03036161488173,
+      "case_seconds": -1.9373608421707655
+    },
+    "arrow": {
+      "query_seconds": -2.5221096848758062,
+      "first_result_seconds": 2.9769704249914986,
+      "case_seconds": -1.7510568753230094
+    }
+  }
+}

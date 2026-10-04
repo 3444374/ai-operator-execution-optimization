@@ -1,5 +1,14 @@
 # SemLoom 脚本入口
 
+## gateway多查询干扰诊断
+
+`profiling/gateway_isolation_probe.py --output /path/to/new-private-probe`运行真实UDS登记/消息槽、共享Core与Map循环，
+用厂商表、API和独立worker替身检查状态准备、payload准备、慢消费与同步observer干扰。
+固定40个case、1,088次模拟调用，单次20秒、整体5分钟，首次错误保留并停；HTTP、模型与PG均为0。
+使用现有Python标准库，设置`PYTHONPATH=code`；输出在Git外且尚不存在，不安装依赖。
+`--replay /path/to/restored-suite --output /path/to/new-private-analysis`从原始事件复算主指标。
+kernel peer为fixture，真实平台/SQL收益不据此推断；[主报告](../../experiments/results/diagnostics/gateway_isolation_20261004/README.md)保存完整设置和取舍。
+
 ## 同机共享预付计数原型
 
 `profiling/mapped_request_probe.py --output /path/to/new-private-probe`用现有SQLite单元预付与本地共享映射，
@@ -8,6 +17,10 @@
 厂商表和worker仍为替身，固定8,224次模拟调用、每次60秒及整体5分钟。两者HTTP／模型／PG均为0。
 设置`PYTHONPATH=code`，输出在Git外且尚不存在；不安装依赖、不运行厂商SDK。
 候选仅接本地诊断API，正式查询配置与计费不变，实际范围及后续服务器条件见[报告](../../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
+2026-10-04已补观察器的descriptor调用范围与Linux/Ray无模型检查；这是程序API，没有新增正式CLI计数模式。
+实际命令、原始源码及有限配置保存在[服务器补充](../../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)，
+完整消费未获净收益，默认保持。共享服务器归档的只读复算入口为
+`experiments/results/diagnostics/gateway_isolation_20261004/raw/analyze_server.py <archive> <new-output>`。
 
 ## 本地Core／Map观察成本诊断
 

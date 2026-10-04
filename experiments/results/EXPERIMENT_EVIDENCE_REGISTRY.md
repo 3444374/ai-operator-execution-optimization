@@ -1,5 +1,36 @@
 # 实验与机制证据台账
 
+2026-10-04：[单Job文本Map准备分段原型](diagnostics/map_input_preparation_20261004/README.md)。
+`18e3e97a`加明确原型源码，Core只借用已接纳输入，阶段broker持有编码/准备数据，实际请求/work保持原值；默认无准备接口。
+本地替身两轮各544次，相关旧路径与取消/未知结果检查通过，实际库跳过单列；Linux144项及修正探针2项全部通过。
+服务器首次0HTTP失败和4次登记保留；新授权补测20个case/2,112次HTTP通过，模型/PG0。
+消费小幅改善伴随首结果更慢和留存增多，默认保持；紧凑证据/复算归同一报告，不支持GPU、SQL、原生排名或多Job结论。
+[合并审查补充](diagnostics/map_input_preparation_20261004/README.md#merge-review)修正取消通知与同Job归还推进；
+新增5方法在原Core产生11个子用例失败，修订后230项中219通过/11跳过，HTTP/模型/PG均0，服务器原样本与新本地资格分列。
+
+2026-10-04：[真实分批成本与单／双Job供给](diagnostics/map_preparation_shape_20261004/README.md)。
+`d4edc803`独立Git副本、857份源码摘要匹配；24项检查、3,632行实际Daft／Arrow准备和2,080次本机HTTP通过，模型／PG0。
+双Job约99%窗口为单行；Arrow大幅减少准备调用，但完整消费收益小，包含新建actor的完整case方向也不一致，生产默认保持。
+原始事件、请求字节／计费／结果和资源复算通过；初次地址属性误调用0HTTP失败保留，修订后按新授权完成，组件未重放。
+公共131成员、私有155原件独立恢复核对通过；两份公共归档1,849,603字节，服务器与独立本机原件保留，不更新真实数据库／模型或原生排名。
+同题[就绪队列补充](diagnostics/map_preparation_shape_20261004/README.md#ready-queue-snapshots)完成40个case／4,160次HTTP、1,821个快照和12方法在本地／Linux的检查；模型／PG0。
+双Job749个测量窗口仅17个有同Job零等待合并机会，当前不开发重排，观察开关的供给差异单列。
+新增157公共成员／202私有原件独立恢复，3,412,027字节压缩公开证据归同一报告；生产源码和默认保持，准备／在途分段接入pending。
+
+2026-10-04：[共享预付观察API与服务器核对](diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+`f4646daa`加明确摘要的观察API与诊断来源；macOS/Linux各27项、Linux平台16项通过，真实Ray/Daft/Arrow与本机HTTP运行。
+SDK先保留37/0的耗尽样本，再完成19/18的双调用方检查；Core累计1,040次HTTP、两个SDK检查74次Mock POST，模型及PG0。
+每行计数明显减少，但完整消费略慢，正式默认保持；实际RPC、准备、全部重复、错误、未知与引用/句柄检查归主报告。
+平台另完成直接HTTP/Ray HTTP 272次；公共173成员压缩证据与178私有原件独立恢复核对通过，唯一保存位置由[gateway报告](diagnostics/gateway_isolation_20261004/README.md#server-platform)管理。
+这些是有限CPU/替身接入与成本信号，不更新数据库、模型、GPU或原生系统结论。
+
+2026-10-04：[gateway多查询干扰](diagnostics/gateway_isolation_20261004/README.md)。
+基于main `f4646daa`与明确SHA的诊断入口，真实UDS/登记/共享Core/Map循环运行，厂商API、表、服务和kernel peer为fixture。
+40个新进程case、1,088次模拟调用、逐键/容量/退出及主指标和阶段等待复算通过；HTTP／模型／PG均为0。
+相关30项中29通过，1项Linux凭据检查跳过；首次0调用装配错误及其未正常排空状态另存，不并入成功清单。
+支持继续核对同步观察耦合与准备/活动名额含义，不证明实际Ray、PG取消、重启恢复或GPU收益；生产默认和执行未改。
+主报告定位全部重复、来源、失败与170成员的压缩证据，恢复映射含唯一summary共171份核对；原件继续保留Git外。
+
 2026-10-03：[同机共享预付计数](diagnostics/mapped_request_budget_20261003/README.md)。
 基于main `53155f8c`，新增实验组件及本地诊断接入，生产执行与正式配置未改。
 16,384次组件领取、8,224次Core模拟调用及104项检查通过，HTTP／模型／PG均为0，原始逐条编号／摘要／时间复算通过。

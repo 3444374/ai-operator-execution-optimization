@@ -1,7 +1,25 @@
 # SemLoom Code
 
+[文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
+借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
+`RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。
+编码字节、准备复制和ready字节由阶段broker管理；取消中的线程和未知远端结果继续持有记录，关闭consumer后可reap归还。
+`ready_work`是准备数据所含的预计模型工作量，`model_inflight`在此表示共享块的持有数量，不能当作HTTP或GPU活动数。
+后一额度须容纳全部可能的借用块，实际请求/work仍按Core原值；ready字节不超过同一`object_bytes`，先预留两份表示的复制空间。
+[计划与资格](../experiments/plans/查询调优.md#map-input-preparation)、[本地及服务器记录](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)
+区分替身、实际库与待测PG/模型路径；该选项尚不推荐作为默认。
+启用准备时，Core先推进所有终止任务流的取消通知，再轮转本地输入归还；未确认的借用继续保留。
+[合并审查回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)补查小动作额度和同Job多任务流，不替代PG或模型验证。
+
+[共享预付观察API](src/experiments/request_budget_client.py)由HTTPX观察器及原生Ray的session factory显式使用：
+descriptor在调用进程打开/归还，普通budget保持原所有权；[Linux/Ray检查及负结果](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+正式查询仍同步计数，Core/PG默认未改，真实模型收益pending。
+
+[gateway多查询干扰诊断](scripts/README.md#gateway多查询干扰诊断)运行真实UDS与共享执行循环，厂商调用和worker为替身。
+区分状态线程、分批准备、慢消费和同步观察的影响，生产执行与默认保持；[结果与来源](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)保留实际范围。
+
 [同机共享预付计数](scripts/README.md#同机共享预付计数原型)复用持久单元预付，多个进程在本地共享状态逐条领取。
-已做组件与Core替身检查，正式观察器／监督器、Linux及厂商SDK接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
+已做组件/Core替身与Linux/真实Ray SDK检查，正式runner及PG/模型接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
 
 新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
 它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。

@@ -17,6 +17,7 @@ from typing import NamedTuple
 import uuid
 
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
+from ...scheduling.runtime.stage_broker import StageBrokerLimits
 from .async_fixed_model import AsyncFixedModelTransport, exception_details
 
 
@@ -29,10 +30,16 @@ class RayMapConfig:
     object_bytes: int
     worker_pool: str | None = None
     payload_backend: str = 'daft'
+    preparation: StageBrokerLimits | None = None
 
     def __post_init__(self):
         if self.payload_backend not in ('daft', 'arrow'):
             raise ValueError("unknown Ray Map payload backend")
+        if self.preparation is not None and (
+                type(self.preparation) is not StageBrokerLimits
+                or self.preparation.prepare_inflight != 1
+                or self.preparation.ready_bytes > self.object_bytes):
+            raise ValueError("Map preparation needs one prepare worker within the object byte capacity")
         if type(self.address) is not str or not self.address or self.address in ("auto", "local"):
             raise ValueError("Ray Map requires an explicit existing cluster address")
         if any(type(v) is not int or v < 1 for v in (
@@ -49,7 +56,10 @@ class RayMapConfig:
         path = Path(path)
         if path.stat().st_size > 4096:
             raise ValueError("Ray Map configuration is too large")
-        return cls(**json.loads(path.read_text()))
+        value = json.loads(path.read_text())
+        if value.get('preparation') is not None:
+            value['preparation'] = StageBrokerLimits(**value['preparation'])
+        return cls(**value)
 
 
 @dataclass(frozen=True)
@@ -209,7 +219,8 @@ class RayMapTransport:
         self.config, self.physical = config, physical
         self.capacity, self.observer, self.before_request = capacity, observer, before_request
         self.rows, self.pending, self.blocks = {}, deque(), {}
-        self.used_bytes = self.ordinal = self.actor_index = 0
+        self._used_bytes = self.ordinal = self.actor_index = 0
+        self.preparation = None
         self.observation_failed = False
         self.changed = asyncio.Event()
         self.flusher, self.running, self.unknown = None, set(), set()
@@ -268,10 +279,39 @@ class RayMapTransport:
                 self.observation_failed = True
 
     def cancel_pending(self, key):
+        if self.preparation is not None:
+            self.preparation.cancel(key)
         row = self.rows.get(key)
         if row is not None and not row.sent:
             row.cancelled = True
             self.changed.set()
+
+    @property
+    def used_bytes(self):
+        return (self.preparation.snapshot()['object_bytes']
+                if self.preparation is not None else self._used_bytes)
+
+    @used_bytes.setter
+    def used_bytes(self, value):
+        if self.preparation is not None:
+            raise RuntimeError('prepared object accounting belongs to its broker')
+        self._used_bytes = value
+
+    def prepare_inputs(self, limits, notify):
+        """Opt-in single-Job composition; model admission stays with the Core."""
+        from .map_preparation import MapInputPreparation
+        stage = self.physical.preparation
+        if stage is None or self.preparation is not None:
+            raise ValueError('Map input preparation requires one explicit setup')
+        if (stage.encoded_bytes < limits.item_input_bytes + 24
+                or stage.ready_bytes < 2 * (limits.item_input_bytes + 32)
+                or stage.ready_work < limits.active_work
+                or stage.model_inflight < limits.held_tasks):
+            raise ValueError('Map preparation capacities cannot hold one legal input and all borrowed blocks')
+        self.preparation = MapInputPreparation(self.ray, self.pool, self.physical,
+            max_tasks=limits.held_tasks, notify=notify, observe=self._observe,
+            model_signature=_model_identity(self.config))
+        return self.preparation
 
     async def execute(self, task, endpoint):
         if endpoint != "model" or task.key in self.rows or len(self.rows) >= self.capacity:
@@ -280,6 +320,18 @@ class RayMapTransport:
             return b'{"bridge_error":"MODEL_REQUEST_REJECTED"}'
         row = _Row(task, asyncio.get_running_loop().create_future())
         self.rows[task.key] = row
+        if self.preparation is not None:
+            try:
+                prepared = self.preparation.claim(task)
+                if prepared is None:
+                    return b''
+                if prepared is False:
+                    return b'{"bridge_error":"MODEL_UNAVAILABLE"}'
+                block_id, index = prepared
+                await self._run_row(row, block_id, index)
+                return await row.future
+            finally:
+                self.rows.pop(task.key, None)
         self.pending.append(row)
         if self.flusher is None or self.flusher.done():
             self.flusher = asyncio.create_task(self._flush())
@@ -359,7 +411,7 @@ class RayMapTransport:
                     keys = [TaskKey(*key) for key in keys]
                     block_id = self.ordinal
                     self.ordinal += 1
-                    self.used_bytes += amount
+                    self._used_bytes += amount
                     self.blocks[block_id] = _Block(None, amount, set(keys))
                     self._observe("ray_block_reserved", block_id=block_id, rows=len(keys), bytes=amount)
                     try:
@@ -385,11 +437,14 @@ class RayMapTransport:
             finally:
                 await self._work(stream.close, stage='payload_close', key=first_key)
 
-    def _release(self, block_id, key):
+    def _release(self, block_id, key, *, failed=False):
+        if self.preparation is not None:
+            self.preparation.confirm(key, failed=failed)
+            return
         block = self.blocks[block_id]
         block.members.remove(key)
         if not block.members:
-            self.used_bytes -= block.bytes
+            self._used_bytes -= block.bytes
             del self.blocks[block_id]
             self.changed.set()
             self._observe("ray_block_released", block_id=block_id)
@@ -397,7 +452,7 @@ class RayMapTransport:
     async def _run_row(self, row, block_id, index):
         key = row.task.key
         if row.cancelled or self.observation_failed or row.future.cancelled():
-            self._release(block_id, key)
+            self._release(block_id, key, failed=True)
             if not row.future.done():
                 row.future.set_result(b"" if row.cancelled else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
@@ -414,18 +469,18 @@ class RayMapTransport:
                     self._observe('ray_request_guard', key=dict(session_id=key.session_id, sequence=key.sequence),
                                   status=status, elapsed_ns=time.monotonic_ns()-started)
         except asyncio.CancelledError:
-            self._release(block_id, key)
+            self._release(block_id, key, failed=True)
             if not row.future.done():
                 row.future.set_result(b'')
             raise
         except Exception:
-            self._release(block_id, key)
+            self._release(block_id, key, failed=True)
             if not row.future.done():
                 row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
         # Accounting may have yielded while the database cancelled this row.
         if row.cancelled or self.observation_failed or row.future.cancelled():
-            self._release(block_id, key)
+            self._release(block_id, key, failed=True)
             if not row.future.done():
                 row.future.set_result(b'' if row.cancelled else b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
@@ -439,7 +494,9 @@ class RayMapTransport:
                 self.first_submit = False
                 self._observe("ray_first_submit", key=dict(session_id=key.session_id, sequence=key.sequence),
                               elapsed_seconds=(time.monotonic_ns()-self.started_ns)/1e9)
-            arguments = (self.blocks[block_id].reference, index, template)
+            reference = (self.preparation.reference(block_id) if self.preparation is not None
+                         else self.blocks[block_id].reference)
+            arguments = (reference, index, template)
             rpc_started = time.monotonic_ns()
             call = actor.execute.remote(*arguments, self.worker_owner) if self.worker_owner else actor.execute.remote(*arguments)
             rpc_returned = time.monotonic_ns()
@@ -517,6 +574,8 @@ class RayMapTransport:
                 await asyncio.gather(*self.running)
             if self.unknown:
                 raise RuntimeError("Ray model executions remain unconfirmed")
+            if self.preparation is not None:
+                self.preparation.close()
             if not self.worker_owner:
                 for actor in self.actors:
                     await actor.close.remote()
@@ -535,4 +594,6 @@ def ray_map_factory(physical, before_request=None):
     if physical.window_bytes < MAX_FRAME_BYTES + 24:
         raise ValueError("Ray payload window must fit one legal protocol request and its keys")
     return partial(build_fixed_model_execution,
+                   preparation_factory=(lambda transport, limits, notify:
+                       transport.prepare_inputs(limits, notify)) if physical.preparation is not None else None,
                    transport_factory=partial(RayMapTransport, physical=physical, before_request=before_request))

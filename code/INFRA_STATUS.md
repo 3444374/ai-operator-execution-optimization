@@ -1,8 +1,33 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-03。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-04。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-04：加入[单Job文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)。
+`SessionEngine`可借用已接纳输入并在准备就绪后取得模型名额；默认无准备接口，旧路由、请求/work与逐行结果政策保留。
+取消和关闭后的输入持续记账至明确归还，结果未知时保留阶段数据；`RayMapConfig.preparation`是显式选项，多Job组合暂拒绝。
+当前检查、失败、服务器实际库和后续资格由[同题报告](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)维护；PG/真实模型与跨Job适用性pending。
+合并审查修正准备归还拖住取消通知及同Job后方flow归还的问题；先通知取消，再全局轮转本地归还，原动作额度与未知结果记账保持。
+[新增取消回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)仅为本地fixture，服务器样本仍归此前源码。
+
+2026-10-04：[实际准备与供给形态检查](../experiments/results/diagnostics/map_preparation_shape_20261004/README.md)完成24项、3,632行有限准备及2,080次本机HTTP，模型／PG0。
+单／双Job自然窗口有明显差异，Arrow准备更快未形成一致的完整case收益；生产源码、同步记账及即时提交默认保持，尚未实现新的组织或RPC机制。
+同报告的就绪队列补充用诊断包装完成4,160次HTTP／1,821个快照；同Job合并机会少，暂不开发重排。
+12方法在本地／Linux各通过，该轮生产接口未改；后续文本Map阶段broker接入见上方原型及其独立记录。
+
+2026-10-04：补入[Linux/真实Ray平台与观察器核对](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
+`observe_native_httpx`及`NativeSessionFactory`可接收共享映射descriptor，在调用进程内打开/归还；普通budget保持原所有权。
+27项在macOS和Linux各通过，另外Linux凭据/跨进程UDS/gateway16项通过；两个SDK的真实Ray接入与1,040次本机HTTP完成。
+计数每行中位数明显减少，但完整消费2.613→2.631秒，没有净收益；只保留实验API，正式query CLI与同步默认保持。
+独立gateway直接HTTP/Ray HTTP 272次、失败、全部重复、实际Ray RPC与准备成本、资源退出和可恢复压缩证据归主报告。
+模型/GPU/PG查询均0，数据库生命周期、真实模型与多机仍pending；不能把接入检查当作GPU或原生系统结论。
+
+2026-10-04：新增[gateway多查询干扰诊断](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)，
+真实UDS、查询登记、共享Core和Map循环运行，厂商与服务为替身，kernel peer也为fixture。
+40个case、1,088次模拟调用及原始事件复算通过，相关30项中29通过、1项Linux检查跳过；HTTP／模型／PG均为0。
+状态线程与同步observer的等待会拖延其他查询接纳/排空；payload准备则出现接纳快、派发慢的信号，慢消费未传递同等等待。
+保留首次0调用装配失败与全部重复；生产执行和默认保持，逻辑占用不当模型活动；平台身份另由服务器补充，SQL/GPU结论仍pending。
 
 2026-10-03：新增[同机共享预付计数组件与Core替身对照](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)，
 总额先持久预付，各进程逐条登记，所有者结束／不确定登记后不再领取，禁止重建或退款。

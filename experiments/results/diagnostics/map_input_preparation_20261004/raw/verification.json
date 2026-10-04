@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "model_requests": 0,
+  "http_requests": 2112,
+  "archives": {
+    "server-public.tar.gz": {
+      "bytes": 1005667,
+      "sha256": "145963223148e097f61374d0dfc58d269834a08c3c3be920d2d1a6509a59ecd0",
+      "members": 61
+    },
+    "local-public.tar.gz": {
+      "bytes": 344208,
+      "sha256": "7c29a64f94d5a18454fdccd48c1f470ee8b72c2b1e77afd8c95447654b008269",
+      "members": 33
+    }
+  },
+  "private_backup": {
+    "bytes": 1169209,
+    "sha256": "7f0598e803440ef034f2447c4f1fd6563c65986dce25969c1238ceae4daa9e0f",
+    "members": 81,
+    "restores_verified": 2,
+    "server_originals_retained": true
+  },
+  "source_files_verified": 860,
+  "linux_checks": 144,
+  "linux_probe_checks": 2,
+  "analysis_projection_correction": {
+    "before_sha256": "79ae7d9fb4a66d3d178ae1a3794811781b697f99380016123b2b6c7449cb06ef",
+    "before_archive_retained_outside_git": true,
+    "measurements_unchanged": true
+  }
+}
