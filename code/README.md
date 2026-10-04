@@ -6,8 +6,10 @@
 编码字节、准备复制和ready字节由阶段broker管理；取消中的线程和未知远端结果继续持有记录，关闭consumer后可reap归还。
 `ready_work`是准备数据所含的预计模型工作量，`model_inflight`在此表示共享块的持有数量，不能当作HTTP或GPU活动数。
 后一额度须容纳全部可能的借用块，实际请求/work仍按Core原值；ready字节不超过同一`object_bytes`，先预留两份表示的复制空间。
-[计划与资格](../experiments/plans/查询调优.md#map-input-preparation)、[本地及服务器记录](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)
-区分替身、实际库与待测PG/模型路径；该选项尚不推荐作为默认。
+[计划与资格](../experiments/plans/查询调优.md#map-input-preparation)、[原型检查记录](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)
+区分替身与实际库；后续[PG／真实模型验证](../experiments/results/postgresql/text_map_preparation_validation_20261004/README.md)
+完成16项PG检查、8,224次真实请求及RSS/PSS采样，1024行完整查询中位数慢86.597%，继续保持旧默认。
+多Job准备接入仍pending，该选项暂不推荐启用。
 启用准备时，Core先推进所有终止任务流的取消通知，再轮转本地输入归还；未确认的借用继续保留。
 [合并审查回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)补查小动作额度和同Job多任务流，不替代PG或模型验证。
 
