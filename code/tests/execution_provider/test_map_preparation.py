@@ -206,6 +206,78 @@ class MapPreparationTests(unittest.IsolatedAsyncioTestCase):
 
 
 class MapPreparationCompositionTests(unittest.TestCase):
+    def test_core_cancel_during_next_preparation_suppresses_guarded_rpc(self):
+        guard_entered, guard_release = threading.Event(), threading.Event()
+        prepare_entered, prepare_release = threading.Event(), threading.Event()
+        calls, transports = [], []
+
+        async def guard(_):
+            guard_entered.set()
+            while not guard_release.is_set():
+                await asyncio.sleep(.001)
+
+        async def execute(table, index, template):
+            calls.append(template.key)
+            return template.key, b'fixture', 1, 2
+
+        def blocked_batches(rows, limits, **kwargs):
+            rows = tuple(rows)
+            if rows[0][1] == 1:
+                prepare_entered.set()
+                if not prepare_release.wait(3):
+                    raise AssertionError('fixture preparation was not released')
+            yield SyntheticTable(rows)
+
+        physical = RayMapConfig('fixture-cluster', 1, 1, 2**21, 2**22,
+            payload_backend='arrow', preparation=StageBrokerLimits(2**21, 2**22, 4, 1, 4))
+        ray = FakeRay(execute)
+
+        def transport_factory(*args):
+            transport = RayMapTransport(*args, physical=physical, ray_api=ray, before_request=guard)
+            transports.append(transport)
+            return transport
+
+        with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked_batches):
+            execution = build_fixed_model_execution(
+                FixedModelConfig('http://localhost/fixture', 'model', 1000), max_tasks=4,
+                max_active_requests=1, transport_factory=transport_factory,
+                preparation_factory=lambda transport, limits, notify: transport.prepare_inputs(limits, notify))
+            engine = execution.engine
+            session = engine.open(SessionSpec('fixture', 'flow', 'fixture'),
+                                  replace(engine.capacity.limits, step_actions=1))
+            session.offer([replace(task(i).task, info=TaskInfo('fixture', i, 'model', WORK))
+                           for i in range(4)])
+            try:
+                deadline = time.monotonic() + 2
+                while not (guard_entered.is_set() and prepare_entered.is_set()):
+                    self.assertLess(time.monotonic(), deadline, 'fixture stages did not enter')
+                    session.advance(4)
+                    time.sleep(.001)
+                key = task(0).key
+                session.request_cancel()
+                session.advance(4)
+                wait_until(lambda: transports[0].rows[key].cancelled, timeout=1)
+                guard_release.set()
+                deadline = time.monotonic() + 2
+                while engine.capacity.usage().active_requests:
+                    self.assertLess(time.monotonic(), deadline, 'guarded row did not settle')
+                    session.advance(4)
+                    time.sleep(.001)
+                self.assertFalse(calls)
+                self.assertGreater(engine.capacity.usage().held_tasks, 0)
+            finally:
+                guard_release.set()
+                prepare_release.set()
+                session.close_consumer()
+                deadline = time.monotonic() + 3
+                while True:
+                    engine.reap(8)
+                    if execution.close():
+                        break
+                    self.assertLess(time.monotonic(), deadline, 'fixture execution did not close')
+                    time.sleep(.001)
+            self.assertEqual(engine.capacity.usage().held_tasks, 0)
+
     def test_real_core_and_async_backend_keep_requests_work_results_and_references_bounded(self):
         calls, active, peak = [], [0], [0]
         async def execute(table, index, template):

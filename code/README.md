@@ -8,6 +8,8 @@
 后一额度须容纳全部可能的借用块，实际请求/work仍按Core原值；ready字节不超过同一`object_bytes`，先预留两份表示的复制空间。
 [计划与资格](../experiments/plans/查询调优.md#map-input-preparation)、[本地及服务器记录](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)
 区分替身、实际库与待测PG/模型路径；该选项尚不推荐作为默认。
+启用准备时，Core先推进所有终止任务流的取消通知，再轮转本地输入归还；未确认的借用继续保留。
+[合并审查回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)补查小动作额度和同Job多任务流，不替代PG或模型验证。
 
 [共享预付观察API](src/experiments/request_budget_client.py)由HTTPX观察器及原生Ray的session factory显式使用：
 descriptor在调用进程打开/归还，普通budget保持原所有权；[Linux/Ray检查及负结果](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。

@@ -33,14 +33,16 @@ class Preparation:
         return True
 
 
-def prepared_setup(*, registered=False, step_actions=8):
-    template, _, backend, clock = setup(held_tasks=4, input_bytes=16, result_bytes=16,
-                                       offer_tasks=4, step_actions=step_actions)
-    preparation = Preparation()
+def prepared_setup(*, registered=False, step_actions=8, held_tasks=4, flows=1):
+    template, _, backend, clock = setup(held_tasks=held_tasks, input_bytes=4*held_tasks,
+                                       result_bytes=4*held_tasks, offer_tasks=held_tasks,
+                                       step_actions=step_actions)
+    preparation = Preparation(maximum=held_tasks)
     engine = SessionEngine(template.capacity.limits, backend, template.policies,
                            clock=clock, preparation=preparation)
     if registered:
-        job = engine.register_job('fixture', JobBudget(4, 16, 16, 1, 2))
+        job = engine.register_job('fixture', JobBudget(held_tasks, 4*held_tasks, 4*held_tasks,
+                                                      1, 2, max_sessions=flows))
         session = engine.open(SessionSpec(job.job_id, 'flow', 'fixture'), job=job)
     else:
         session = engine.open(SessionSpec('job', 'flow', 'fixture'))
@@ -48,6 +50,93 @@ def prepared_setup(*, registered=False, step_actions=8):
 
 
 class InputPreparationTests(unittest.TestCase):
+    def test_cancel_notification_precedes_retained_input_retries(self):
+        for registered in (False, True):
+            for actions in (1, 8):
+                with self.subTest(registered=registered, actions=actions):
+                    engine, session, backend, preparation = prepared_setup(
+                        registered=registered, step_actions=actions, held_tasks=12)
+                    session.offer([task(i) for i in range(12)])
+                    tick = engine.advance if registered else lambda: session.advance(12)
+                    for _ in range(12):
+                        tick()
+                    key = TaskKey(session.session_id, 11)
+                    preparation.ready.add(key)
+                    tick()
+                    self.assertEqual(set(backend.pending), {key})
+                    session.request_cancel()
+                    tick()
+                    self.assertEqual(backend.cancelled, [key])
+                    self.assertEqual(engine.capacity.usage().held_tasks, 12)
+                    self.assertEqual(engine.capacity.usage().active_requests, 1)
+                    preparation.releasable.add(key)
+                    backend.complete(key)
+                    tick()
+                    self.assertNotIn(key, engine.capacity.records)
+                    self.assertEqual(engine.capacity.usage().held_tasks, 11)
+
+    def test_job_cancel_notifies_later_flow_before_earlier_input_retries(self):
+        for actions in (1, 8):
+            with self.subTest(actions=actions):
+                engine, first, backend, preparation = prepared_setup(
+                    registered=True, step_actions=actions, held_tasks=12, flows=2)
+                second = engine.open(SessionSpec(first.spec.job_id, 'second', 'fixture'), job=first.job)
+                first.offer([task(i) for i in range(10)])
+                second.offer([task(0)])
+                for _ in range(12):
+                    engine.advance()
+                key = TaskKey(second.session_id, 0)
+                preparation.ready.add(key)
+                engine.advance()
+                self.assertEqual(set(backend.pending), {key})
+                engine.close_job(first.job)
+                progress = engine.advance()
+                self.assertLessEqual(progress.events, actions)
+                self.assertEqual(backend.cancelled, [key])
+                self.assertEqual(engine.capacity.usage().active_requests, 1)
+                self.assertEqual(engine.capacity.usage().held_tasks, 11)
+
+    def test_local_reap_reaches_later_input_when_earlier_release_is_unknown(self):
+        for close_consumer in (False, True):
+            with self.subTest(close_consumer=close_consumer):
+                engine, session, _, preparation = prepared_setup(step_actions=1, held_tasks=12)
+                session.offer([task(i) for i in range(12)])
+                for _ in range(12):
+                    session.advance(12)
+                key = TaskKey(session.session_id, 11)
+                if close_consumer:
+                    session.close_consumer()
+                    tick = lambda: engine.reap(1)
+                else:
+                    session.request_cancel()
+                    tick = lambda: session.advance(12)
+                preparation.releasable.add(key)
+                for _ in range(12):
+                    tick()
+                self.assertNotIn(key, engine.capacity.records)
+                self.assertEqual(engine.capacity.usage().held_tasks, 11)
+                self.assertEqual(engine.capacity.usage().input_bytes, 44)
+
+    def test_retained_input_in_one_flow_does_not_hide_later_releasable_flow(self):
+        for actions in (1, 8):
+            with self.subTest(actions=actions):
+                engine, first, _, preparation = prepared_setup(
+                    registered=True, step_actions=actions, held_tasks=12, flows=2)
+                second = engine.open(SessionSpec(first.spec.job_id, 'second', 'fixture'), job=first.job)
+                first.offer([task(i) for i in range(10)])
+                second.offer([task(0)])
+                for _ in range(12):
+                    engine.advance()
+                key = TaskKey(second.session_id, 0)
+                engine.close_job(first.job)
+                preparation.releasable.add(key)
+                for _ in range(12):
+                    progress = engine.advance()
+                    self.assertLessEqual(progress.events, actions)
+                self.assertNotIn(key, engine.capacity.records)
+                self.assertEqual(engine.capacity.usage().held_tasks, 10)
+                self.assertEqual(engine.capacity.usage().input_bytes, 40)
+
     def test_only_accepted_prefix_can_be_borrowed_without_compute(self):
         engine, session, backend, preparation = prepared_setup()
         offered = [task(i) for i in range(6)]

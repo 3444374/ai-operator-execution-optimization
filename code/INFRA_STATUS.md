@@ -8,6 +8,8 @@
 `SessionEngine`可借用已接纳输入并在准备就绪后取得模型名额；默认无准备接口，旧路由、请求/work与逐行结果政策保留。
 取消和关闭后的输入持续记账至明确归还，结果未知时保留阶段数据；`RayMapConfig.preparation`是显式选项，多Job组合暂拒绝。
 当前检查、失败、服务器实际库和后续资格由[同题报告](../experiments/results/diagnostics/map_input_preparation_20261004/README.md)维护；PG/真实模型与跨Job适用性pending。
+合并审查修正准备归还拖住取消通知及同Job后方flow归还的问题；先通知取消，再全局轮转本地归还，原动作额度与未知结果记账保持。
+[新增取消回归](../experiments/results/diagnostics/map_input_preparation_20261004/README.md#merge-review)仅为本地fixture，服务器样本仍归此前源码。
 
 2026-10-04：[实际准备与供给形态检查](../experiments/results/diagnostics/map_preparation_shape_20261004/README.md)完成24项、3,632行有限准备及2,080次本机HTTP，模型／PG0。
 单／双Job自然窗口有明显差异，Arrow准备更快未形成一致的完整case收益；生产源码、同步记账及即时提交默认保持，尚未实现新的组织或RPC机制。

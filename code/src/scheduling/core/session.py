@@ -103,6 +103,7 @@ class SessionEngine:
         self.capacity = SessionCapacity(limits)
         self.backend, self.policies, self.clock = backend, policies, clock
         self.preparation = preparation
+        self._last_preparation_reap = None
         self.credit, self.sink = credit, sink
         self.wake = WakeSignal()
         self.error: str | None = None
@@ -162,11 +163,15 @@ class SessionEngine:
                     session.state = State.CANCELLED
                 if session.state not in TERMINAL_STATES:
                     session._expired(now)
-            used = self._poll(maximum)
+            used = self._poll(maximum, reap_preparation=False)
             for session in tuple(self._sessions.values()):
                 if session.state in TERMINAL_STATES:
-                    used += session._cleanup(max(0, maximum - used))
+                    # With preparation, notify every retiring flow before
+                    # retrying local inputs through the shared reap cursor.
+                    used += session._cleanup(max(0, maximum - used),
+                                             cancel_only=self.preparation is not None)
             if self.preparation is not None:
+                used += self._reap_preparation(maximum - used)
                 for session in tuple(self._sessions.values()):
                     remaining = max(0, maximum - used)
                     prepare_actions = remaining // 2
@@ -487,7 +492,7 @@ class SessionEngine:
     def _request_id(record: TaskRecord) -> str:
         return f"{record.key.session_id}:{record.key.sequence}"
 
-    def _poll(self, maximum: int) -> int:
+    def _poll(self, maximum: int, *, reap_preparation: bool = True) -> int:
         handles = tuple((r.key, r.handle) for r in self.capacity.records.values() if r.compute)
         if maximum <= 0:
             return 0
@@ -514,22 +519,37 @@ class SessionEngine:
             else:
                 self._terminal(event)
         count = len(events)
-        # Closed consumers may leave local preparation borrowing an input,
-        # just as accepted remote work can outlive its session handle.
-        for record in tuple(self.capacity.records.values()) if self.preparation is not None else ():
-            if count >= maximum:
-                break
-            session = self._sessions.get(record.key.session_id)
-            if (not record.compute and record.preparation_held and (
-                    session is None or session.state in TERMINAL_STATES or record.phase == 'READY')):
-                count += 1
-                if self._release_preparation(record):
-                    if session is None or session.state in TERMINAL_STATES:
-                        del self.capacity.records[record.key]
-                    else:
-                        record.task = replace(record.task, payload=b'', metadata=b'')
+        if reap_preparation:
+            count += self._reap_preparation(maximum - count)
         self._finish_retired()
         return count
+
+    def _reap_preparation(self, maximum: int) -> int:
+        if self.preparation is None or maximum <= 0:
+            return 0
+        # Closed consumers may leave local preparation borrowing an input,
+        # just as accepted remote work can outlive its session handle.
+        candidates = []
+        for record in self.capacity.records.values():
+            session = self._sessions.get(record.key.session_id)
+            if (not record.compute and record.phase != 'LEASED' and (
+                    session is None or session.state in TERMINAL_STATES
+                    or (record.phase == 'READY' and record.preparation_held))):
+                candidates.append(record)
+        # A retained early input must not repeatedly hide later confirmed ones.
+        start = next((i + 1 for i, r in enumerate(candidates)
+                      if r.key == self._last_preparation_reap), 0)
+        selected = (candidates[start:] + candidates[:start])[:maximum]
+        for record in selected:
+            self._last_preparation_reap = record.key
+            session = self._sessions.get(record.key.session_id)
+            if self._release_preparation(record):
+                if session is None or session.state in TERMINAL_STATES:
+                    del self.capacity.records[record.key]
+                else:
+                    record.task = replace(record.task, payload=b'', metadata=b'')
+        self._finish_retired()
+        return len(selected)
 
     def reap(self, max_events: int) -> CleanupReport:
         with self._operation():
@@ -691,15 +711,27 @@ class SchedulingSession:
                 self.state = State.CANCELLED
             self.request_cancel()
 
-    def _cleanup(self, budget: int) -> int:
+    def _cleanup(self, budget: int, *, cancel_only: bool = False) -> int:
         self._pending_members = ()
         used = 0
-        for record in self._records():
+        records = self._records()
+        if cancel_only:
+            records = tuple(r for r in records if r.compute and not r.cancel_sent)
+        elif self.engine.preparation is not None:
+            # Notify unsent transports before retrying local input borrowing.
+            cancellations = tuple(r for r in records if r.compute and not r.cancel_sent)
+            local = tuple(r for r in records if not r.compute and r.phase != "LEASED")
+            start = next((i + 1 for i, r in enumerate(local)
+                          if r.key == self.engine._last_preparation_reap), 0)
+            records = cancellations + local[start:] + local[:start]
+        for record in records:
             if used >= budget:
                 break
             if record.phase == "LEASED":
                 continue
             if not record.compute:
+                if record.preparation_held:
+                    self.engine._last_preparation_reap = record.key
                 if self.engine._release_preparation(record):
                     del self.engine.capacity.records[record.key]
                 used += 1
@@ -839,11 +871,12 @@ class SchedulingSession:
                     self._expired(now)
                 # One bounded poll per call; terminal, dispatch and delivery actions
                 # share the step budget. Empty polls never consume local progress.
-                budget -= self.engine._poll(budget)
+                budget -= self.engine._poll(budget, reap_preparation=False)
                 if self.state in (State.CANCELLED, State.FAILED):
                     self._pending_members = ()
-                    self._cleanup(budget)
-                elif self.engine.preparation is not None:
+                    budget -= self._cleanup(budget)
+                if self.engine.preparation is not None:
+                    budget -= self.engine._reap_preparation(budget)
                     prepare_actions = budget // 2
                     if budget == 1 and not self.engine._prepared_candidates(self):
                         prepare_actions = 1

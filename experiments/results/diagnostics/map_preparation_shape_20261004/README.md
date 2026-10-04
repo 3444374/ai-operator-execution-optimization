@@ -176,9 +176,9 @@ Core提交观察至RPC开始的逐行中位数为15.550／12.796／21.403／10.5
 [`BoundedAsyncBackend`](../../../../code/src/scheduling/runtime/async_backend.py)再交给异步transport，之后才发生本次payload准备。
 Core在途名额覆盖准备、put、guard和HTTP，不等于GPU正在执行。快照时已接纳而尚未记录后端提交的行数，
 各case中位数约53–65.5；这是观察量，受跨线程提交记录时机影响，不保证任意SQL行都可提前准备。
-下一步核对合法已接纳任务的准备借用、独立ready字节上限、取消和引用归还，再决定是否做一个Job的准备／提交分段原型。
-现有[`BoundedStageBroker`](../../../../code/src/scheduling/runtime/stage_broker.py)已有prepare／model与ready字节管理，
-尚未将它接入此文本Map路径。具体准备和多模态共享仍归[现行准备切片](../../../plans/数据组织.md#scene-preparation-pilot)，不放宽实际请求/work上限。
+该轮结束时尚未将[`BoundedStageBroker`](../../../../code/src/scheduling/runtime/stage_broker.py)接入文本Map。
+后续已完成[单Job准备／提交分段原型](../map_input_preparation_20261004/README.md)，独立核对输入借用、ready字节、取消与引用归还，默认保持。
+本轮窗口样本仍归原接法；具体准备和多模态共享继续由[现行准备切片](../../../plans/数据组织.md#scene-preparation-pilot)管理，不放宽实际请求/work上限。
 
 该轮服务已退出，两张GPU检查为0%／1MiB；物理RSS和GPU性能仍未测。
 公开157成员、私有202原件独立恢复核对通过；原件包含过程与可重生成bytecode，未进入公共Git候选。

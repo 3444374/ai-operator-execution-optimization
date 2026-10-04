@@ -5,6 +5,8 @@
 本地替身两轮各544次，相关旧路径与取消/未知结果检查通过，实际库跳过单列；Linux144项及修正探针2项全部通过。
 服务器首次0HTTP失败和4次登记保留；新授权补测20个case/2,112次HTTP通过，模型/PG0。
 消费小幅改善伴随首结果更慢和留存增多，默认保持；紧凑证据/复算归同一报告，不支持GPU、SQL、原生排名或多Job结论。
+[合并审查补充](diagnostics/map_input_preparation_20261004/README.md#merge-review)修正取消通知与同Job归还推进；
+新增5方法在原Core产生11个子用例失败，修订后230项中219通过/11跳过，HTTP/模型/PG均0，服务器原样本与新本地资格分列。
 
 2026-10-04：[真实分批成本与单／双Job供给](diagnostics/map_preparation_shape_20261004/README.md)。
 `d4edc803`独立Git副本、857份源码摘要匹配；24项检查、3,632行实际Daft／Arrow准备和2,080次本机HTTP通过，模型／PG0。
