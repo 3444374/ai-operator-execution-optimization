@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-04：[实际准备与供给形态检查](../experiments/results/diagnostics/map_preparation_shape_20261004/README.md)完成24项、3,632行有限准备及2,080次本机HTTP，模型／PG0。
+单／双Job自然窗口有明显差异，Arrow准备更快未形成一致的完整case收益；生产源码、同步记账及即时提交默认保持，尚未实现新的组织或RPC机制。
+同报告的就绪队列补充用诊断包装完成4,160次HTTP／1,821个快照；同Job合并机会少，暂不开发重排。
+12方法在本地／Linux各通过，生产接口未改；准备与Core在途分段及文本Map的阶段broker接入仍pending。
+
 2026-10-04：补入[Linux/真实Ray平台与观察器核对](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
 `observe_native_httpx`及`NativeSessionFactory`可接收共享映射descriptor，在调用进程内打开/归还；普通budget保持原所有权。
 27项在macOS和Linux各通过，另外Linux凭据/跨进程UDS/gateway16项通过；两个SDK的真实Ray接入与1,040次本机HTTP完成。

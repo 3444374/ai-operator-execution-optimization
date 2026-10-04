@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+2026-10-04：[真实分批成本与单／双Job供给](diagnostics/map_preparation_shape_20261004/README.md)。
+`d4edc803`独立Git副本、857份源码摘要匹配；24项检查、3,632行实际Daft／Arrow准备和2,080次本机HTTP通过，模型／PG0。
+双Job约99%窗口为单行；Arrow大幅减少准备调用，但完整消费收益小，包含新建actor的完整case方向也不一致，生产默认保持。
+原始事件、请求字节／计费／结果和资源复算通过；初次地址属性误调用0HTTP失败保留，修订后按新授权完成，组件未重放。
+公共131成员、私有155原件独立恢复核对通过；两份公共归档1,849,603字节，服务器与独立本机原件保留，不更新真实数据库／模型或原生排名。
+同题[就绪队列补充](diagnostics/map_preparation_shape_20261004/README.md#ready-queue-snapshots)完成40个case／4,160次HTTP、1,821个快照和12方法在本地／Linux的检查；模型／PG0。
+双Job749个测量窗口仅17个有同Job零等待合并机会，当前不开发重排，观察开关的供给差异单列。
+新增157公共成员／202私有原件独立恢复，3,412,027字节压缩公开证据归同一报告；生产源码和默认保持，准备／在途分段接入pending。
+
 2026-10-04：[共享预付观察API与服务器核对](diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
 `f4646daa`加明确摘要的观察API与诊断来源；macOS/Linux各27项、Linux平台16项通过，真实Ray/Daft/Arrow与本机HTTP运行。
 SDK先保留37/0的耗尽样本，再完成19/18的双调用方检查；Core累计1,040次HTTP、两个SDK检查74次Mock POST，模型及PG0。

@@ -2,6 +2,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[真实分批成本与供给形态](map_preparation_shape_20261004/README.md)：固定窗口回放、单／双Job内部对照及选取前就绪快照，模型及PG0；重复、观察干扰、失败和恢复来源归同一报告。
+
 [gateway多查询干扰](gateway_isolation_20261004/README.md)：本地干扰隔离与服务器Linux/真实Ray/本机HTTP检查；源码、失败、紧凑共享证据和复算入口归该报告，不作为SQL或GPU结果。
 
 [同机共享预付计数](mapped_request_budget_20261003/README.md)：本地组件及Linux/真实Ray SDK观察API核对；完整消费未获净收益，正式默认保持，PG/模型仍pending。

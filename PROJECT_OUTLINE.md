@@ -24,6 +24,10 @@
 后续[真实分批复核](experiments/results/postgresql/text_map_arrow_real_20261003/README.md)完成10条查询／8,224次请求，
 中位数10.060→9.779秒，少2.793%；完整查询仅有小幅工程信号，输出差1/2/3行。
 默认Daft与同步记账保持，Arrow保留显式选项；不更新原生排名或多模态结论。
+[真实分批成本与供给形态](experiments/results/diagnostics/map_preparation_shape_20261004/README.md)补入固定窗口实际库回放与单／双Job内部对照。
+模型／PG0；小窗口重复执行成本明显，双Job更接近逐行，但完整消费改善小、包含准备的结果不一致。
+选取前快照已补：双Job同Job零等待合并机会少，暂不开发重排，观察干扰按实际重复解释。
+下一项核对准备与Core在途名额的联动，复用单Job阶段管理检查；默认即时提交保持，成组RPC与等待仍无采用依据。
 [本地观察成本隔离](experiments/results/diagnostics/map_observation_isolation_20261003/README.md)已完成真实Core／传输循环加厂商与服务替身的有限控制，
 说明观察方式会改变提交等待和准备窗口，不支持将逻辑名额等同服务活动或直接扣除guard时间。
 真实Ray调用已在[有限服务器替身对照](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)核验，模型及PG查询0；生产默认与真实计费保持，按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)
