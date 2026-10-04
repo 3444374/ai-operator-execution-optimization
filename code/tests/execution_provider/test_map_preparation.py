@@ -11,6 +11,7 @@ from src.execution_provider.adapters.incremental_execution import build_fixed_mo
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayMapTransport
 from src.experiments.map_observation_probe import SyntheticTable, WORK
+from src.experiments.postgresql.query_evaluation import ray_transport_accounting
 from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo
 from src.scheduling.runtime.stage_broker import StageBrokerLimits
 from tests.execution_provider.test_ray_map_transport import FakeRay, task
@@ -42,6 +43,87 @@ def make_transport(execute, *, max_tasks=8, ready_bytes=1024, encoded_bytes=1024
 
 
 class MapPreparationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_put_in_progress_stays_observed_when_an_older_block_returns(self):
+        put_entered, put_release = threading.Event(), threading.Event()
+        model_entered, model_release = asyncio.Event(), asyncio.Event()
+        events = []
+        async def execute(table, index, template):
+            if template.key.sequence == 0:
+                model_entered.set()
+                await model_release.wait()
+            return template.key, table['payload'][index].as_py(), 1, 2
+        transport, preparation, ray = make_transport(execute, events=events)
+        original_put = ray.put
+        def put(table):
+            if ray.puts:
+                put_entered.set()
+                if not put_release.wait(3):
+                    raise AssertionError('fixture put not released')
+            return original_put(table)
+        ray.put = put
+        operation = None
+        try:
+            with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', batches):
+                preparation.try_prepare((task(0),))
+                await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(0).key))
+                operation = asyncio.create_task(transport.execute(task(0), 'model'))
+                await asyncio.wait_for(model_entered.wait(), 2)
+                preparation.try_prepare((task(1),))
+                self.assertTrue(await asyncio.to_thread(put_entered.wait, 2))
+                amount = SyntheticTable([(0, 1, b'payload')]).get_total_buffer_size()
+                self.assertEqual(transport.used_bytes, amount * 2)
+                model_release.set()
+                await asyncio.wait_for(asyncio.shield(operation), 2)
+                self.assertTrue(preparation.release(task(0).key))
+                self.assertEqual(transport.used_bytes, amount)
+                put_release.set()
+                await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(1).key))
+            await transport.execute(task(1), 'model')
+            self.assertTrue(preparation.release(task(1).key))
+        finally:
+            model_release.set();put_release.set()
+            if operation is not None:
+                await asyncio.gather(operation, return_exceptions=True)
+            await asyncio.to_thread(wait_until, lambda: not preparation.running)
+            for key in tuple(preparation.rows):
+                preparation.release(key)
+            await transport.close()
+        projected = [dict(event, event='core_' + event['event']) for event in events]
+        self.assertEqual(ray_transport_accounting(projected, 2)['peak_arrow_buffer_bytes'], amount * 2)
+
+    async def test_ready_cancellation_records_the_last_object_release(self):
+        events = []
+        transport, preparation, _ = make_transport(None, events=events)
+        with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', batches):
+            preparation.try_prepare((task(0), task(1)))
+            await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(0).key))
+        self.assertTrue(preparation.release(task(0).key))
+        self.assertTrue(preparation.release(task(1).key))
+        await transport.close()
+        projected = [dict(event, event='core_' + event['event']) for event in events]
+        self.assertEqual(ray_transport_accounting(projected, 0)['object_blocks'], 1)
+
+    async def test_failed_put_returns_observed_buffers_without_rpc(self):
+        events, calls = [], []
+        async def execute(*args):
+            calls.append(args)
+        transport, preparation, ray = make_transport(execute, events=events)
+        def reject_put(_):
+            raise RuntimeError('fixture object put failed')
+        ray.put = reject_put
+        with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', batches):
+            preparation.try_prepare((task(0),))
+            await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(0).key))
+        self.assertIn(b'MODEL_UNAVAILABLE', await transport.execute(task(0), 'model'))
+        self.assertTrue(preparation.release(task(0).key))
+        await transport.close()
+        objects = [event for event in events if event['event'] in ('ray_block_reserved', 'ray_block_released')]
+        self.assertEqual([event['event'] for event in objects], ['ray_block_reserved', 'ray_block_released'])
+        self.assertGreater(objects[0]['object_bytes'], 0)
+        self.assertEqual(objects[1]['object_bytes'], 0)
+        self.assertFalse(calls)
+        self.assertTrue(any(event['event']=='ray_preparation_completed' and event['failed'] for event in events))
+
     async def test_shared_prepared_object_keeps_slow_row_after_fast_result_and_ack(self):
         started, release = asyncio.Event(), asyncio.Event()
         async def execute(table, index, template):
