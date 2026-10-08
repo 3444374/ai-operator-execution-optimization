@@ -12,6 +12,20 @@
 
 ## 0. 当前优先级与历史记录范围
 
+2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
+已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，
+以及PG／LOTUS原始Movie Q3和同后端三控制的模型工程检查。用户确认可运行后授权真实模型，
+新清单62条查询／14,408次调用完整通过，单张RTX4090、缓存Qwen2.5-7B，全部计数与关联核对通过。
+Sema格式与Daft文件容量修订通过扩大规模验证，原32次及8,009次停止、LOTUS旧联网等待分别保留。
+相同应用的原生提示、解析、实际并发与token工作量不同，不据此归因纯调度或声称质量等价。
+既有Daft／Ray四路径主实现评价保持；PG供给条件未满足，方法性能、多Job、图像和Filter成本校准仍待完成。
+完整重复、质量、资源、私有备份及余项由同一[方案](experiments/plans/语义系统对照.md)与报告维护。
+同日已离线补出单行交付与完整查询尾延迟；现有3查询／8行检查不足以认定总体P99.99。
+用户已批准8路径各200条512行查询的扩测，最多823,424次／6小时，先检查受影响路径和环境。
+扩测已在请求数FIFO第137轮的HTTP读取错误后停止，五系统各137轮、三控制各136轮；
+原失败与无模型诊断归[同题报告](experiments/results/postgresql/semantic_system_comparison_20261008/README.md#tail-transport-failure)，未完成各200轮。
+[完整应用分析](experiments/results/postgresql/semantic_system_comparison_20261008/README.md#tail-comparison)已核验全部完成样本；不建议为凑满200轮重跑，数据就绪后的SQL／API比较由独立计时工作补充。
+
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)已完成组件、替身与真实模型对照。
 原真实对照与审查修订后复测分别慢7.31%和40.52%，各自三次重复均变慢；候选仅保留诊断，默认同步保持。
 修订后83项服务器检查和独立8,224次真实请求、关联及清理核对通过，原负结果和0请求启动失败分别保留。
@@ -86,6 +100,8 @@ direct7.660秒、Daft12.307秒、Ray22.756秒。准备减少40.24%、完整查�
 准备之外的释放至全部消费仍约12.678秒，不能将完整差距归因于准备。68条配置与查询编号逐项一致，
 批量证据已无损归档，详见[审查与恢复](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md#branch-review)。
 原生Ray/Daft拥有各自执行与调度；仅代表本次固定语义Map执行层，不替代LOTUS/Sema等语义系统评价。
+另有[数据就绪后的SQL／原生API比较](experiments/results/postgresql/query_ready_timing_20261008/README.md)，
+分开装载、可复用准备与实际提交至消费结束；本次PG本地HTTP仍为内部参照，主Daft／Ray另按自身证据判断。
 此前真实失败、错误观测修订和2,064次诊断均单独保留，旧根因仍未确定；本次源码身份和清理核对通过。
 旧M1平台结论不变；Movie公共查询与图像参照随后按自身条件推进。
 

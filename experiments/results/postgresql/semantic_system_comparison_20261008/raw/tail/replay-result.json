@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "complete_queries": 1109,
+  "measured_queries": 1093,
+  "recorded_request_attempts": 564150,
+  "service_success": 564149,
+  "failed_queries": 1,
+  "new_model_requests": 0,
+  "independent_full_replay": "passed after restoring32originalfiles",
+  "public_copy_sha256": "passed"
+}

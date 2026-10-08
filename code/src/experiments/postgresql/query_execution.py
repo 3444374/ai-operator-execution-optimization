@@ -85,7 +85,8 @@ def prepare_pg_query(config, inputs, plan, connection, socket, root):
     return statement
 
 
-def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors):
+def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, errors,
+           *, timing_mode='application'):
     started = time.monotonic_ns()
     preparation = {}
     command, socket = pg_gateway_command(config, plan, model_path, ledger, root)
@@ -113,7 +114,11 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
             offset=pg_log.stat().st_size
             try:
                 with errors.capture('query'):
-                    result=record_pg_query(connection,statement,root/'q0',max_rows=inputs.max_rows,
+                    recorder = record_pg_query
+                    if timing_mode == 'ready':
+                        from .ready_query_recording import record_prepared_pg_query
+                        recorder = record_prepared_pg_query
+                    result=recorder(connection,statement,root/'q0',max_rows=inputs.max_rows,
                         max_result_bytes=inputs.max_rows*70000,flush_rows=64,query_timeout_s=config.query_timeout_s)
             finally:
                 def capture():

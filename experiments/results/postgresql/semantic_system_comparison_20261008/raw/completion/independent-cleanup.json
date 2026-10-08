@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "remaining_owned_processes": [],
+  "ports": [
+    {
+      "port": 18097,
+      "bind_passed": true
+    },
+    {
+      "port": 55761,
+      "bind_passed": true
+    },
+    {
+      "port": 55762,
+      "bind_passed": true
+    }
+  ],
+  "acl_restored": true,
+  "pg_shutdown": true,
+  "gpu_after": "0, 1, 0\n1, 1, 0",
+  "observed_pids": 6,
+  "real_model_requests": 0
+}

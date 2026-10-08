@@ -1,0 +1,9 @@
+{
+  "schema": "semloom.failure_backup_verification.v1",
+  "scope": "failed query, model log, run metadata and CPU-only probes",
+  "cross_machine_verification_passed": true,
+  "archive_sha256": "b05862328e8d60d2590643d1a1d1979f461cc7bac12df2090cba254db23492ba",
+  "archive_bytes": 1651343,
+  "verified_members": 36,
+  "originals_retained": true
+}

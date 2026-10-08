@@ -4,6 +4,21 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-08：整合[数据就绪后的查询计时](../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
+PG及四种原生系统提供准备／提交入口，统一代理记录单调阶段时刻；原始响应与首错保存修订同时保留。
+273项本地相关检查通过；真实预演与整合源码按各自身份核验，主Daft／Ray和总体P99.99继续按自身证据判断。
+
+2026-10-08：新增[原生语义系统单查询](scripts/README.md#原生语义系统单查询)，
+LOTUS `sem_map`、Daft内置`prompt`、DuckDB社区AI扩展和Sema作者二进制保留自身提示、解析与执行；
+观察器支持发送前持久计数与原始协议观察，默认转发行为保持。
+单查询入口拒绝非法标签并在预留前只读检查文件容量；Sema原生SQL明确JSON字符串编码，
+作者二进制、schema与解析保持，LOTUS使用本地价格元数据。
+失败响应的观察修订保留原始状态、用量和解析失败字节，发送与回调错误分别记录；170项baseline与6项观察器检查通过。
+五系统各512行及原始Q3模拟验证后，用户授权的新真实清单62条查询／14,408次调用完整通过：
+五系统Map重复评价、PG／LOTUS Q3及同后端三控制工程检查完成；Daft文件容量修订通过扩大规模验证。
+[主报告](../experiments/results/postgresql/semantic_system_comparison_20261008/README.md)保留原32次与8,009次停止、
+所有重复、质量、调用、实际来源、独立备份与清理。PG持续供给未满足条件，方法性能仍待完成，既有Daft／Ray排名保持。
+
 2026-10-08：补充[查询归属、请求发送与计数范围](README.md#query-accounting-scopes)。
 当前单个gateway/Engine内的查询共享、Ray worker发送与跨进程实验预算分别有实现；累计预算、在途容量和观察事件使用不同口径。
 多个gateway的服务总容量协调、同一查询跨PG并行执行进程登记及故障下模型实际执行次数核对仍需对应接入和证据。

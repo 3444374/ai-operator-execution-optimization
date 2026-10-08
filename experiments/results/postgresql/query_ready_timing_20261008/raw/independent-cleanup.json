@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checked_owned_child_pids": [
+    788664,
+    788665
+  ],
+  "live_owned_children": [],
+  "owned_processes": [],
+  "pg_stopped": true,
+  "ports_free": true,
+  "acl_restored": true,
+  "gpu0_idle": true,
+  "gpu0_memory_and_utilization": "1, 0",
+  "new_model_requests": 0
+}

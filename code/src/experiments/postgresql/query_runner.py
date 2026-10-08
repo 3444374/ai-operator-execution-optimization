@@ -27,7 +27,10 @@ from .cell_evidence import CellErrors,collect_cell_evidence
 
 
 def run_query(config, *, manifest_path, model_path, budget_path, budget, root, dsn,
-              pg_log=None, checkout=None, tokenizer_path=None, ray_temp_root=None):
+              pg_log=None, checkout=None, tokenizer_path=None, ray_temp_root=None,
+              timing_mode='application'):
+    if timing_mode not in ('application', 'ready') or (timing_mode == 'ready' and config.arm != 'pg'):
+        raise ValueError('ready timing in this runner requires the PG query entry')
     preparation_started_ns = time.monotonic_ns()
     manifest_path,model_path,root=Path(manifest_path),Path(model_path),Path(root)
     manifest=load_manifest(manifest_path)
@@ -78,7 +81,8 @@ def run_query(config, *, manifest_path, model_path, budget_path, budget, root, d
                 import psycopg
                 with psycopg.connect(dsn,autocommit=True) as connection:
                     if config.arm=='pg':
-                        execution,resources=run_pg(config,inputs,plan,connection,Path(pg_log),model_path,ledger,root,errors)
+                        timing_options = {'timing_mode':'ready'} if timing_mode == 'ready' else {}
+                        execution,resources=run_pg(config,inputs,plan,connection,Path(pg_log),model_path,ledger,root,errors,**timing_options)
                     else:
                         execution,resources=run_lotus(config,inputs,connection,model,ledger,root,errors,checkout,tokenizer_path)
         errors.raise_if_failed()

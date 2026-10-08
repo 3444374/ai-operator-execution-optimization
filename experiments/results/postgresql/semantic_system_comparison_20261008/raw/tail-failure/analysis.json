@@ -1,0 +1,226 @@
+{
+  "schema": "semloom.tail_transport_failure.v2",
+  "run_id": "semantic-eight-path-tail-real-20261008",
+  "run_status": "failed",
+  "ended_cst": "2026-10-08T19:03:27.871721+08:00",
+  "runtime_seconds": 14115.18085885048,
+  "accepted_queries_including_checks_and_warmup": 1109,
+  "measured_queries_by_role": {
+    "pg-map": 137,
+    "lotus-map": 137,
+    "duckdb-ai": 137,
+    "daft-prompt": 137,
+    "sema-map": 137,
+    "pg-request": 136,
+    "pg-token-wide": 136,
+    "pg-work-limited": 136
+  },
+  "accepted_successful_model_calls": 563840,
+  "recorded_request_attempts": 564150,
+  "service_success_count": 564149.0,
+  "failed_unit": "tail-evaluation.pg-request.p64.r137",
+  "failed_request_key": {
+    "session_id": 0,
+    "sequence": 302
+  },
+  "transport_error": {
+    "exception_type": "httpx.ReadError",
+    "cause_types": [
+      "httpcore.ReadError",
+      "anyio.BrokenResourceError",
+      "builtins.BrokenPipeError"
+    ],
+    "origin": {
+      "file": "default.py",
+      "function": "map_httpcore_exceptions",
+      "line": 118
+    }
+  },
+  "failed_query_status": "failed",
+  "failed_query_received_rows": 246,
+  "partial_results_are_provisional": true,
+  "http_duration_ms": 961.148993,
+  "pre_send_prefix_ms": 1.45899,
+  "pre_send_scope": "HTTP begin to request accounting event; checking/reservation/observation combined",
+  "http_error_from_release_ms": 5873.088662,
+  "query_terminal_from_release_ms": 5876.638842,
+  "cancel_triggered_ns": null,
+  "configured_http_deadline_ms": 30000,
+  "unit_errors": {
+    "query": {
+      "type": "ConnectionFailure",
+      "sqlstate": "08006",
+      "message": "SemLoom model endpoint is unavailable",
+      "observed_ns": 2605918176111967
+    },
+    "execution": {
+      "type": "RuntimeError",
+      "sqlstate": null,
+      "message": "owned test process required forced termination",
+      "observed_ns": 2605923185336643
+    },
+    "unit": {
+      "type": "RuntimeError",
+      "sqlstate": null,
+      "message": "owned test process required forced termination",
+      "observed_ns": 2605923185380952
+    }
+  },
+  "model_error_log_lines": 0,
+  "model_exit": 0,
+  "driver_versions": {
+    "httpx": "0.28.1",
+    "httpcore": "1.0.9",
+    "anyio": "4.14.0"
+  },
+  "client_default_keepalive_seconds": 5.0,
+  "installed_server_source_default_keepalive_seconds": 5,
+  "retained_server_resolved_keepalive_seconds": null,
+  "retained_server_resolved_keepalive_reason": "Runtime value was not saved; installed source default is not an observed runtime value",
+  "transport_source_sha256": "fdbed85310edd685dfc85caa5b209890db44059a02af854400587f3a5c03d1fb",
+  "diagnostic_local_http_requests": 30,
+  "diagnostic_real_model_requests": 0,
+  "probes": {
+    "reset": {
+      "status": "failed",
+      "repeats": 5,
+      "errors": [
+        {
+          "exception_type": "httpx.ReadError",
+          "cause_types": [
+            "httpcore.ReadError",
+            "anyio.BrokenResourceError",
+            "builtins.ConnectionResetError"
+          ],
+          "origin": {
+            "file": "default.py",
+            "function": "map_httpcore_exceptions",
+            "line": 118
+          }
+        },
+        {
+          "exception_type": "httpx.ReadError",
+          "cause_types": [
+            "httpcore.ReadError",
+            "anyio.BrokenResourceError",
+            "builtins.ConnectionResetError"
+          ],
+          "origin": {
+            "file": "default.py",
+            "function": "map_httpcore_exceptions",
+            "line": 118
+          }
+        },
+        {
+          "exception_type": "httpx.ReadError",
+          "cause_types": [
+            "httpcore.ReadError",
+            "anyio.BrokenResourceError",
+            "builtins.ConnectionResetError"
+          ],
+          "origin": {
+            "file": "default.py",
+            "function": "map_httpcore_exceptions",
+            "line": 118
+          }
+        },
+        {
+          "exception_type": "httpx.ReadError",
+          "cause_types": [
+            "httpcore.ReadError",
+            "anyio.BrokenResourceError",
+            "builtins.ConnectionResetError"
+          ],
+          "origin": {
+            "file": "default.py",
+            "function": "map_httpcore_exceptions",
+            "line": 118
+          }
+        },
+        {
+          "exception_type": "httpx.ReadError",
+          "cause_types": [
+            "httpcore.ReadError",
+            "anyio.BrokenResourceError",
+            "builtins.ConnectionResetError"
+          ],
+          "origin": {
+            "file": "default.py",
+            "function": "map_httpcore_exceptions",
+            "line": 118
+          }
+        }
+      ],
+      "cleanup_passed": true
+    },
+    "plain": {
+      "status": "passed",
+      "repeats": 5,
+      "errors": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "cleanup_passed": true
+    },
+    "fresh": {
+      "status": "passed",
+      "repeats": 5,
+      "errors": [
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "cleanup_passed": true
+    }
+  },
+  "confirmed": "Original socket read failure preceded SQL failure and cleanup; a controlled idle close plus client pause reproduces the exact original BrokenPipeError chain in five trials",
+  "precise_socket_close_trigger": null,
+  "unavailable_evidence": [
+    "per-request connection ID",
+    "idle socket timestamps",
+    "packet trace at the original failure"
+  ],
+  "probe_limitation": "The controlled five-second server timer and 0.3-second pause are fixture inputs. Original connection IDs, idle lifetimes and runtime server timeout were not retained, so the original trigger remains unproven",
+  "production_code_changed": false,
+  "original_run_retried": false,
+  "diagnostic_local_request_attempts": 72,
+  "idle_fixture": {
+    "cases": 15,
+    "status": "passed",
+    "local_request_attempts": 30,
+    "baseline_client_expiry_seconds": 5,
+    "fixture_server_idle_seconds": 5,
+    "wait_before_reuse_seconds": 4.85,
+    "injected_client_pause_seconds": 0.3,
+    "retire_client_expiry_seconds": 4,
+    "modes": {
+      "current": {
+        "trials": 5,
+        "failed_second_requests": 5
+      },
+      "retire": {
+        "trials": 5,
+        "failed_second_requests": 0
+      },
+      "no_pause": {
+        "trials": 5,
+        "failed_second_requests": 0
+      }
+    }
+  },
+  "constant_pause_control": {
+    "status": "passed",
+    "repeats": 5,
+    "client_expiry_seconds": 4,
+    "server_idle_seconds": 5,
+    "wait_before_reuse_seconds": 4.85,
+    "injected_header_pause_seconds": 0.3,
+    "local_request_attempts": 10,
+    "second_request_new_connection": true
+  }
+}

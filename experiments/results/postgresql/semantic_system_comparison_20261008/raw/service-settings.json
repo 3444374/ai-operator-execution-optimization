@@ -1,0 +1,13 @@
+{
+  "--dtype": "bfloat16",
+  "--max-model-len": "4096",
+  "--gpu-memory-utilization": "0.8",
+  "--scheduling-policy": "fcfs",
+  "--max-num-seqs": "128",
+  "--max-num-batched-tokens": "8192",
+  "--tensor-parallel-size": "1",
+  "--generation-config": "vllm",
+  "--override-generation-config": "{\"max_new_tokens\":128}",
+  "--no-enable-prefix-caching": true,
+  "--enable-chunked-prefill": true
+}

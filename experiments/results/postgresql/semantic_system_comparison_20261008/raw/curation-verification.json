@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "before_untracked_text_lines": 183999,
+  "archived_expanded_text_lines": 180837,
+  "original_public_paths": 144,
+  "original_public_bytes": 108014225,
+  "archived_paths": 76,
+  "unique_archived_objects": 73,
+  "duplicate_aliases": 4,
+  "shared_archive_bytes": 1163031,
+  "offline_checks": 6,
+  "model_requests": 0,
+  "local_recovery_backup": {
+    "files": 166,
+    "bytes": 96271416,
+    "sha256": "7012f478c3828b1fa2b9504a327649828af8fb37de3488ad1e60f6633d27456c"
+  },
+  "restoration": "exact bytes, hashes, paths and permissions; existing semloom.evidence_storage.v2"
+}

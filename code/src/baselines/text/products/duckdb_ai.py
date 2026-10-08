@@ -24,6 +24,7 @@ Results must be labelled "community extension" baseline, not DuckDB-core native.
 from __future__ import annotations
 
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Callable, Iterable
 
@@ -301,3 +302,117 @@ def run_duckdb_ai_complete(
         )
 
     return tuple(build_result(request) for request in materialized)
+
+
+def build_ai_projection_query(
+    source_table: str, *, instruction: str, max_tokens: int
+) -> str:
+    """Build the native query over ready raw text, including prompt assembly."""
+
+    if not source_table.replace("_", "").isalnum():
+        raise ValueError(f"invalid source table identifier: {source_table!r}")
+    prefix = _sql_literal(instruction + "\n\nInput:\n")
+    return (
+        "WITH completed AS MATERIALIZED ("
+        f"SELECT doc_id, ai_try_complete({prefix} || raw_text, "
+        f"max_tokens => {int(max_tokens)}, temperature => 0.0) AS result "
+        f"FROM {source_table}) "
+        "SELECT doc_id, result.response AS output_text, result.error AS output_error "
+        "FROM completed ORDER BY doc_id"
+    )
+
+
+class PreparedDuckDBAiProjection:
+    """A loaded raw relation whose native AI query has not yet been submitted."""
+
+    def __init__(self, connection, ids, instruction, config, runtime_identity):
+        self._connection = connection
+        self._ids = ids
+        self._instruction = instruction
+        self._config = config
+        self.runtime_identity = runtime_identity
+        self._closed = False
+
+    def execute(self):
+        if self._closed:
+            raise RuntimeError("prepared DuckDB AI relation is closed")
+        query = build_ai_projection_query(
+            "duckdb_ai_raw_source", instruction=self._instruction,
+            max_tokens=self._config.max_tokens,
+        )
+        rows = self._connection.execute(query).fetchall()
+        observed = [int(row[0]) for row in rows]
+        if (len(observed) != len(self._ids) or len(set(observed)) != len(observed)
+                or set(observed) != set(self._ids)):
+            raise ValueError("DuckDB-ai result failed exactly-once validation")
+        by_id = {int(row[0]): (row[1], row[2]) for row in rows}
+        for identity in self._ids:
+            output, error = by_id[identity]
+            if output is None or error is not None:
+                raise ValueError("native DuckDB AI returned a failed row")
+            yield identity, str(output)
+
+    def close(self):
+        if not self._closed:
+            self._closed = True
+            self._connection.close()
+
+
+@contextmanager
+def prepare_duckdb_ai_projection(
+    rows: Iterable[tuple[int, str]],
+    instruction: str,
+    config: DuckDBAiConfig,
+    connection_factory: ConnectionFactory | None = None,
+):
+    """Load raw text and configure an extension-owned, execute-later query."""
+
+    materialized = tuple(rows)
+    ids = tuple(row[0] for row in materialized)
+    if not materialized or len(set(ids)) != len(ids):
+        raise ValueError("prepared DuckDB-ai source is empty or repeats row IDs")
+    if any(type(identity) is not int or not isinstance(text, str)
+           for identity, text in materialized):
+        raise ValueError("prepared DuckDB-ai source requires integer IDs and raw text")
+    # The loaded connection must also be owned if extension loading fails.
+    if connection_factory is None:
+        try:
+            import duckdb
+        except ImportError as exc:
+            raise RuntimeError("prepared DuckDB AI requires duckdb==1.5.4") from exc
+        connection = duckdb.connect(config.database_path)
+    else:
+        connection = connection_factory(config)
+    prepared = None
+    try:
+        if connection_factory is None:
+            connection.execute("LOAD ai")
+        version = str(connection.execute("SELECT version()").fetchone()[0])
+        extension = connection.execute(
+            "SELECT extension_version, installed_from FROM duckdb_extensions() "
+            "WHERE extension_name = 'ai' AND loaded"
+        ).fetchone()
+        if extension is None:
+            raise RuntimeError("DuckDB ai extension is not loaded in the selected runtime")
+        identity = {
+            "duckdb_version": version,
+            "duckdb_ai_extension_version": str(extension[0]),
+            "duckdb_ai_extension_source": str(extension[1]),
+        }
+        configure_ai_endpoint(connection, config)
+        connection.execute(
+            "CREATE OR REPLACE TABLE duckdb_ai_raw_source "
+            "(doc_id BIGINT, raw_text VARCHAR)"
+        )
+        connection.executemany(
+            "INSERT INTO duckdb_ai_raw_source VALUES (?, ?)", materialized
+        )
+        prepared = PreparedDuckDBAiProjection(
+            connection, ids, instruction, config, identity
+        )
+        yield prepared
+    finally:
+        if prepared is None:
+            connection.close()
+        else:
+            prepared.close()

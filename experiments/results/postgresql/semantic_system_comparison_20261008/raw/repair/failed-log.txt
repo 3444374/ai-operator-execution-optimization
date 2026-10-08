@@ -1,0 +1,4 @@
+OSError: [Errno 24] Too many open files
+Exception in callback BaseSelectorEventLoop._start_serving(<object>, <object>, None, <object>, 128, None, None)
+ValueError: Invalid file descriptor: -1
+OSError: [Errno 24] Too many open files: '/proc/41263/stat'

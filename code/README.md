@@ -1,5 +1,12 @@
 # SemLoom Code
 
+[原生语义系统入口](scripts/README.md#原生语义系统单查询)补充LOTUS `sem_map`、Daft内置`prompt`、
+DuckDB社区AI扩展与Sema作者SQL产物；它们保留自己的提示、解析和执行。
+PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系统方案](../experiments/plans/语义系统对照.md)。
+原生协议在解析错误前保存响应字节，观察器分别记录真实上游状态、消费端错误及回调错误。
+[就绪后计时入口](src/experiments/postgresql/README.md#ready-query-timing)先准备原始输入和运行组件，
+再记录SQL／API提交、统一消费结束与代理HTTP区间；实际记录见[独立报告](../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
+
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
 `RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。

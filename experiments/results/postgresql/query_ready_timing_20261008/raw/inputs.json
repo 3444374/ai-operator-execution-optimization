@@ -1,0 +1,17 @@
+{
+  "qualification": {
+    "rows": 16,
+    "sha256": "832923660d9361df25611fd4d58c63ca1541b645b1cfefa9ed6b5749d57379d9",
+    "table": "ready_qualification"
+  },
+  "scale": {
+    "rows": 128,
+    "sha256": "8fad19931b1c21d61c6e3cd346181525ff59ca512c78da43904cfd150a121690",
+    "table": "ready_scale"
+  },
+  "evaluation": {
+    "rows": 512,
+    "sha256": "3eb3f2852bd192dec93fba4e44152edb4dff0948b033257f91257088fae44e96",
+    "table": "ready_evaluation"
+  }
+}

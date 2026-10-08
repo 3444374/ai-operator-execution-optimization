@@ -1,0 +1,48 @@
+{
+  "schema": "semloom.ready_query_integration.v1",
+  "base_commit": "1cdd94f8196892d436f9d43564de68a54a090695",
+  "handoff_sha256": "c68f958b9abe1aac8861bcb69401a52521ac547a7c278ca3173bf76f842f2244",
+  "model_run_source": "ready-source04",
+  "validation_scope": "Local fixtures on integrated code; retained model run keeps its original source and service configuration.",
+  "local_runtime": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "python": "3.12.6",
+    "aiohttp": "3.14.1"
+  },
+  "tests": {
+    "text_baselines": 195,
+    "observation_gateway": 14,
+    "query_recording_and_lifecycle": 64,
+    "total": 273,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "checks": {
+    "new_public_paths_restored": 26,
+    "new_public_bytes_restored": 18093067,
+    "original_export_files": 21,
+    "exact_analysis_replay": true,
+    "previous_public_paths_restored": 144,
+    "previous_offline_replays": 6
+  },
+  "model_requests": 0,
+  "integrated_source_sha256": {
+    "code/src/baselines/text/frameworks/semantic_map.py": "45a96908cf5a809176a8af827dd3790a5e7a9c8e97b03ee2be01060d0f2b3bea",
+    "code/src/baselines/text/products/duckdb_ai.py": "c2436f7196565b1a06ebbe317799707876561f218941c1a0fa425ff5757197a7",
+    "code/src/baselines/text/products/sema.py": "33ab9b0309b77f41e0d08488874a3fbe2553fa4cbb03d4de7910342d0b708ed2",
+    "code/src/experiments/postgresql/query_execution.py": "7776a359d463afe227f694de2a0c0dd3b6469fec2a1e780d25c7db25644f5978",
+    "code/src/experiments/postgresql/query_runner.py": "deeeb87e9adaa8e45558fe4718e5c15c7f6ab8d575772cdedba792da54ccdb64",
+    "code/src/experiments/postgresql/ready_query_recording.py": "ef23bb8eabe154c22b5c6f72a3905d5504590ac6287c8c9a979a88eb968c1947",
+    "code/src/experiments/postgresql/ready_semantic_query.py": "4da41ab18e639db038e61d5dedd679dc6f4e7e0032f2211fbf424cac6619a009",
+    "code/src/experiments/postgresql/semantic_system_query.py": "803e32a8089f320d1ff06aad1a7c2ee2b194c5a00cf911445f5d3237c154b469",
+    "code/src/observability/request_gateway.py": "9eb73296190879511e7af20046771ca912a61bfd0230a0f16744c107d47d4bfb",
+    "code/tests/baselines/text/test_native_prepared.py": "a3f66559a3b5aa44ff8fd6bd1b2873deabeefc10cce6d4aa5591049120fca8e4",
+    "code/tests/baselines/text/test_sema_prepared.py": "ea0d372e9997a3e959246aafea06ba6a395e6d8eee0acc06c4b3b61b8bd3e3f0",
+    "code/tests/experiments/test_ready_native_lifecycle.py": "be14fc09af09525309935e5870600595ecee518b3cf6975e539d15ece68fc9bb",
+    "code/tests/experiments/test_ready_pg_lifecycle.py": "9ce5fc17ff20ea069fa57735df7b5f0e9f541841203338cbd8c48f610eb59cbc",
+    "code/tests/experiments/test_ready_query_recording.py": "cb393efe6efa21e27339494200cd8cb6f48e570c7f215bb0d20ea8f0a1480e7b",
+    "code/tests/observability/test_request_gateway.py": "09082b11cf146d995d745f228cb39c85760b2535a0e12477b8afd6bbfaaeb7bf"
+  }
+}

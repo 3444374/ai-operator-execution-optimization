@@ -12,6 +12,16 @@
 原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
 [受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
 
+`text/frameworks/semantic_map.py`提供同应用Movie Map的LOTUS1.2.4 `sem_map`、
+Daft0.7.21内置`prompt`、DuckDB1.5.4社区`ai`0.4.14与Sema作者二进制入口。
+同模块的`prepare_rows`先装载原始输入与可复用组件，`execute()`执行原生算子；DuckDB在SQL内装配提示，
+Sema持续SQL会话支持自有进程取消。[就绪计时报告](../../../experiments/results/postgresql/query_ready_timing_20261008/README.md)说明计时与验证。
+`text/products/sema.py`核对作者产物摘要，以原生SQL语义投影执行；输入读取、CSV装配和完整消费计时。
+Sema的应用指令明确把分类标签编码为带双引号的JSON字符串，配合作者原生scalar解析；
+格式提示只进入SQL指令，不在HTTP转发或结果处理时修改值。原始非法输出与修订验证分别保存。
+原生系统保留提示、解析和并行执行，使用唯一行出现编号关联重复文本与原始ID。
+这些路径与固定消息的Ray／Daft HTTP比较分别报告，具体清单见[语义系统方案](../../../experiments/plans/语义系统对照.md)。
+
 `text/squad_map.py` 负责当前 PG Map 的 SQuAD 双消息输入身份、context 分组划分和预测关联，
 复用既有答案评分；离线入口见 `code/scripts/baselines/squad_pg_map_pilot.py`。它不拥有执行或调度。
 

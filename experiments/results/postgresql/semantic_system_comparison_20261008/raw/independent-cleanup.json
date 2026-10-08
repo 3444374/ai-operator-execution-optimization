@@ -1,0 +1,8 @@
+{
+  "remaining_owned_processes": [],
+  "ports": {
+    "18097": "available",
+    "55762": "available"
+  },
+  "gpu": "0, 1, 0\n1, 1, 0"
+}

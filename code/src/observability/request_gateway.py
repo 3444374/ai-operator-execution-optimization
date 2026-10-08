@@ -4,6 +4,14 @@ The gateway adds no admission limit, application queue, retry, cache, routing, o
 payload rewrite.  It records arrival/completion clocks and endpoint-reported token
 usage so otherwise framework-owned execution paths share one passive observation
 contract.
+
+The original epoch fields retain their meanings, including
+``response_completed_epoch_s`` (response ready, before writing). The additional
+monotonic fields start at handler entry after HTTP headers have been parsed and
+end only when aiohttp Response.write_eof returns successfully. This is a proxy
+HTTP interval; it excludes earlier SDK work, client receipt and client parsing.
+write_eof completion means local transport writing/flow control completed, not a
+peer acknowledgement. Missing stages remain None after failure.
 """
 
 from __future__ import annotations
@@ -16,7 +24,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from urllib.parse import quote
 
 
@@ -32,6 +40,36 @@ _HOP_BY_HOP_HEADERS = {
     "host",
     "content-length",
 }
+
+_MONOTONIC_FIELDS = (
+    "request_body_read_completed_monotonic_ns",
+    "before_forward_started_monotonic_ns",
+    "before_forward_completed_monotonic_ns",
+    "upstream_dispatch_started_monotonic_ns",
+    "upstream_headers_send_started_monotonic_ns",
+    "upstream_response_body_read_completed_monotonic_ns",
+    "upstream_attempt_finished_monotonic_ns",
+    "after_forward_started_monotonic_ns",
+    "after_forward_completed_monotonic_ns",
+    "response_ready_monotonic_ns",
+    "response_write_started_monotonic_ns",
+    "response_write_completed_monotonic_ns",
+    "request_terminal_monotonic_ns",
+)
+
+
+def _record_failure(row: dict[str, Any], error: BaseException, phase: str) -> None:
+    """Retain error identity without persisting exception text or credentials."""
+
+    row["status"] = "failed"
+    if not row["error_type"]:
+        row["error_type"] = type(error).__name__
+        row["error_phase"] = phase
+    row["errors"].append({
+        "phase": phase,
+        "error_type": type(error).__name__,
+        "observed_monotonic_ns": time.monotonic_ns(),
+    })
 
 
 @dataclass(frozen=True)
@@ -54,6 +92,8 @@ class ObservationGateway:
         bind_host: str = "127.0.0.1",
         bind_port: int = 0,
         request_timeout_s: float = 600.0,
+        before_forward: Callable[[GatewayRoute, bytes], None] | None = None,
+        after_forward: Callable[[GatewayRoute, bytes, bytes, int], None] | None = None,
     ) -> None:
         if not routes:
             raise ValueError("observation gateway requires at least one route")
@@ -69,6 +109,8 @@ class ObservationGateway:
         self._bind_host = bind_host
         self._bind_port = bind_port
         self._request_timeout_s = request_timeout_s
+        self._before_forward = before_forward
+        self._after_forward = after_forward
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._ready = threading.Event()
@@ -144,85 +186,200 @@ class ObservationGateway:
         trace_stream = None
         trace_rows: list[dict[str, object]] = []
         try:
-            from aiohttp import ClientSession, ClientTimeout, TCPConnector, web
+            from aiohttp import ClientSession, ClientTimeout, TCPConnector, TraceConfig, web
 
             trace_stream = self._trace_path.open("x", encoding="utf-8")
             session: Any = None
             sequence = iter(range(2**63))
 
+            class ObservedResponse(web.Response):
+                """Observe the framework's existing writer without replacing it."""
+
+                def __init__(self, row: dict[str, Any], **kwargs: Any) -> None:
+                    super().__init__(**kwargs)
+                    self._observation_row = row
+
+                async def prepare(self, request: Any) -> Any:
+                    try:
+                        return await super().prepare(request)
+                    except BaseException as error:
+                        row = self._observation_row
+                        _record_failure(row, error, "response_prepare")
+                        row["response_write_status"] = "failed"
+                        row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        raise
+
+                async def write_eof(self, data: bytes = b"") -> None:
+                    row = self._observation_row
+                    if row["response_write_completed_monotonic_ns"] is not None:
+                        # aiohttp may call this again after an already sent response.
+                        await super().write_eof(data)
+                        return
+                    row["response_write_started_monotonic_ns"] = time.monotonic_ns()
+                    try:
+                        await super().write_eof(data)
+                    except BaseException as error:
+                        _record_failure(row, error, "response_write")
+                        row["response_write_status"] = "failed"
+                        row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        raise
+                    completed = time.monotonic_ns()
+                    row["response_write_completed_monotonic_ns"] = completed
+                    row["request_terminal_monotonic_ns"] = completed
+                    row["response_write_status"] = "completed"
+
+            async def headers_send_started(_session: Any, context: Any, _params: Any) -> None:
+                row = context.trace_request_ctx
+                # aiohttp's documented headers-sent signal runs at entry to its
+                # header writer. It is not evidence of remote receipt.
+                row["upstream_headers_send_count"] += 1
+                if row["upstream_headers_send_started_monotonic_ns"] is None:
+                    row["upstream_headers_send_started_monotonic_ns"] = time.monotonic_ns()
+
             async def observe(request: Any) -> Any:
                 request_id = next(sequence)
+                received_monotonic_ns = time.monotonic_ns()
                 received_epoch_s = time.time()
                 job_id = str(request.match_info["job_id"])
                 endpoint_id = str(request.match_info["endpoint_id"])
                 route = self._routes.get((job_id, endpoint_id))
                 if route is None:
                     return web.json_response({"error": "unknown route"}, status=404)
-                body = await request.read()
+                row: dict[str, Any] = {
+                    "schema_version": 1,
+                    "timing_schema_version": 1,
+                    "timing_clock": "time.monotonic_ns",
+                    "timing_scope": "proxy_handler_entry_to_response_write_eof_return",
+                    "gateway_request_id": request_id,
+                    "job_id": job_id,
+                    "endpoint_id": endpoint_id,
+                    "received_epoch_s": received_epoch_s,
+                    "received_monotonic_ns": received_monotonic_ns,
+                    "upstream_start_epoch_s": None,
+                    "upstream_response_epoch_s": None,
+                    "response_completed_epoch_s": None,
+                    "dispatch_delay_s": None,
+                    "upstream_status": 0,
+                    "client_status": 0,
+                    "callback_error_type": "",
+                    "upstream_response_status": None,
+                    "retry_count": 0,
+                    "request_body_sha256": None,
+                    "forwarded_body_sha256": None,
+                    "forwarded": False,
+                    "status": "incomplete",
+                    "error_type": "",
+                    "error_phase": "",
+                    "errors": [],
+                    "response_write_status": "not_started",
+                    "upstream_headers_send_count": 0,
+                    **dict.fromkeys(_MONOTONIC_FIELDS),
+                    **_response_usage(b""),
+                }
+                # The evidence buffer also retains failures during body reading.
+                # No synchronous disk I/O is added to request handling.
+                trace_rows.append(row)
+                try:
+                    body = await request.read()
+                    row["request_body_read_completed_monotonic_ns"] = time.monotonic_ns()
+                except BaseException as error:
+                    _record_failure(row, error, "request_body_read")
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    raise
                 body_sha256 = hashlib.sha256(body).hexdigest()
+                row["request_body_sha256"] = body_sha256
                 headers = {
                     name: value
                     for name, value in request.headers.items()
                     if name.lower() not in _HOP_BY_HOP_HEADERS
                 }
                 upstream_start_epoch_s = time.time()
+                row["upstream_start_epoch_s"] = upstream_start_epoch_s
+                row["dispatch_delay_s"] = max(0.0, upstream_start_epoch_s - received_epoch_s)
                 upstream_status = 0
                 response_body = b""
                 response_headers: dict[str, str] = {}
-                error_type = ""
+                phase = "before_forward"
                 try:
+                    row["before_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._before_forward is not None:
+                        self._before_forward(route, body)
+                    row["before_forward_completed_monotonic_ns"] = time.monotonic_ns()
+                    row["forwarded"] = True
+                    row["forwarded_body_sha256"] = body_sha256
+                    phase = "upstream_request"
+                    row["upstream_dispatch_started_monotonic_ns"] = time.monotonic_ns()
                     async with session.post(
                         route.upstream_url,
                         data=body,
                         headers=headers,
+                        trace_request_ctx=row,
                     ) as response:
                         upstream_status = int(response.status)
+                        row["upstream_response_status"] = upstream_status
+                        phase = "upstream_response_read"
                         response_body = await response.read()
+                        row["upstream_response_body_read_completed_monotonic_ns"] = time.monotonic_ns()
                         response_headers = {
                             name: value
                             for name, value in response.headers.items()
                             if name.lower() not in _HOP_BY_HOP_HEADERS
                         }
+                        phase = "upstream_response_release"
+                except asyncio.CancelledError as error:
+                    _record_failure(row, error, phase)
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    raise
                 except Exception as error:  # third-party transport boundary
-                    error_type = type(error).__name__
+                    _record_failure(row, error, phase)
                     upstream_status = 502
                     response_body = json.dumps(
                         {"error": "observation gateway upstream request failed"}
                     ).encode("utf-8")
                     response_headers = {"Content-Type": "application/json"}
+                finally:
+                    if row["upstream_dispatch_started_monotonic_ns"] is not None:
+                        row["upstream_attempt_finished_monotonic_ns"] = time.monotonic_ns()
+                        if row["request_terminal_monotonic_ns"] is not None:
+                            row["request_terminal_monotonic_ns"] = time.monotonic_ns()
                 upstream_response_epoch_s = time.time()
+                row["upstream_response_epoch_s"] = upstream_response_epoch_s
+                client_status = upstream_status
+                client_body = response_body
+                client_headers = response_headers
+                try:
+                    row["after_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._after_forward is not None:
+                        self._after_forward(route, body, response_body, upstream_status)
+                    row["after_forward_completed_monotonic_ns"] = time.monotonic_ns()
+                except asyncio.CancelledError as error:
+                    _record_failure(row, error, "after_forward")
+                    row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    raise
+                except Exception as error:
+                    row["callback_error_type"] = type(error).__name__
+                    _record_failure(row, error, "after_forward")
+                    client_status = 502
+                    client_body = b'{"error":"observation callback failed"}'
+                    client_headers = {"Content-Type": "application/json"}
                 usage = _response_usage(response_body)
-                row = {
-                    "schema_version": 1,
-                    "gateway_request_id": request_id,
-                    "job_id": job_id,
-                    "endpoint_id": endpoint_id,
-                    "received_epoch_s": received_epoch_s,
-                    "upstream_start_epoch_s": upstream_start_epoch_s,
-                    "upstream_response_epoch_s": upstream_response_epoch_s,
+                row.update({
+                    "response_ready_monotonic_ns": time.monotonic_ns(),
                     "response_completed_epoch_s": time.time(),
-                    "dispatch_delay_s": max(
-                        0.0, upstream_start_epoch_s - received_epoch_s
-                    ),
                     "upstream_status": upstream_status,
-                    "retry_count": 0,
-                    "request_body_sha256": body_sha256,
-                    "forwarded_body_sha256": hashlib.sha256(body).hexdigest(),
+                    "client_status": client_status,
                     **usage,
                     "status": (
                         "completed"
-                        if 200 <= upstream_status < 300 and not error_type
+                        if 200 <= upstream_status < 300 and not row["error_type"]
                         else "failed"
                     ),
-                    "error_type": error_type,
-                }
-                # Keep the observation hot path free of synchronous disk I/O.
-                # This is an evidence buffer, not a request/admission queue.
-                trace_rows.append(row)
-                return web.Response(
-                    status=upstream_status,
-                    body=response_body,
-                    headers=response_headers,
+                })
+                return ObservedResponse(
+                    row,
+                    status=client_status,
+                    body=client_body,
+                    headers=client_headers,
                 )
 
             async def health(_request: Any) -> Any:
@@ -237,9 +394,12 @@ class ObservationGateway:
             async def initialize() -> Any:
                 nonlocal session
                 connector = TCPConnector(limit=0, limit_per_host=0)
+                trace_config = TraceConfig()
+                trace_config.on_request_headers_sent.append(headers_send_started)
                 session = ClientSession(
                     connector=connector,
                     timeout=ClientTimeout(total=self._request_timeout_s),
+                    trace_configs=[trace_config],
                 )
                 app = web.Application(client_max_size=64 * 1024 * 1024)
 

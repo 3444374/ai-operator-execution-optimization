@@ -1,6 +1,6 @@
 # 项目导航
 
-更新时间：2026-10-04。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
+更新时间：2026-10-08。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
 
 ## 内容与文档职责
 
@@ -42,6 +42,8 @@
 | baseline与计时角色 | [参照要求](experiments/plans/reference/对照规范.md#执行者与计时的读法) |
 | 观测指标 | [模块说明](code/src/observability/README.md#运行指标的读法)、[选择依据](docs/research/evaluation_metrics_survey_20260731.md#观察变量选择) |
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
+| 同应用原生语义系统 | [清单与剩余方法要求](experiments/plans/语义系统对照.md)、[完整补测与失败记录](experiments/results/postgresql/semantic_system_comparison_20261008/README.md) |
+| 数据就绪后的查询计时 | [SQL／API方案](experiments/plans/SQL就绪计时.md)、[比较结果与恢复](experiments/results/postgresql/query_ready_timing_20261008/README.md) |
 | worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |
 | DuckDB历史比较 | [静态路径](experiments/results/text_db_e2e_duckdb_static_comparison_20260808/README.md)、[规模诊断](experiments/results/duckdb_direct_scale_diagnostic_20260807/README.md) |

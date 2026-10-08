@@ -1,5 +1,36 @@
 # SemLoom 脚本入口
 
+## 原生语义系统单查询
+
+`baselines/run_semantic_system_query.py`调用LOTUS原生`sem_map`、Daft内置`prompt`、
+DuckDB社区AI函数或Sema作者二进制；先核对[具体方案](../../experiments/plans/语义系统对照.md)、环境与已授权清单。
+原始输入关系由既有数据库输入工具预先安装，连接串来自`SEMLOOM_QUERY_DSN`。
+示例中的文件均为仓库外已准备资产，预算须已创建，输出目录须尚不存在：
+
+```sh
+PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
+  --role lotus-map --manifest /path/to/private/manifest.json --table semantic_inputs \
+  --model /path/to/private/model.json --budget /path/to/private/budget.sqlite \
+  --budget-id authorized-comparison --max-attempts 100 --unit-id unique-query \
+  --concurrency 4 --tokenizer /path/to/model/tokenizer.json \
+  --output /path/to/new-private-query
+```
+
+其他`--role`值为`daft-prompt`、`duckdb-ai`、`sema-map`；Sema另需`--sema-binary`，
+`--num-threads`控制其原生线程或Daft runner，实际HTTP峰值单独记录。
+本入口只执行一个查询；模型服务、PG、共享累计预算、CPU设置与重复清单由调用方管理。
+原生SDK与透明代理可能同时保留多组连接，入口先检查`3×源行数+128`的保守文件描述符额度。
+检查只读，额度由调用方为所属进程准备；512行补测使用8192，具体环境与失败见[主报告](../../experiments/results/postgresql/semantic_system_comparison_20261008/README.md)。
+完整执行耗时含原生库准备及输入装配；模型启动和事后质量评价另列，不自动开始下一查询。
+
+## 数据就绪后的查询计时
+
+PG使用`PYTHONPATH=code python -m src.experiments.postgresql.ready_semantic_query`，接收原PG入口的
+`--config --manifest --model --budget --budget-id --max-attempts --pg-log --output`；连接串仍从环境变量读取。
+它要求已安装输入表和新输出目录，先准备连接、语义配置、网关与cursor，再记录SELECT入口至消费结束。
+原生系统在上方单查询命令中增加`--timing-mode ready`，先加载原始输入并准备组件，默认仍为`application`。
+调用方负责单元进程期限与模型服务；原生API的请求超时、取消和停止范围见[接口说明](../src/experiments/postgresql/README.md#ready-query-timing)。
+
 ## gateway多查询干扰诊断
 
 `profiling/gateway_isolation_probe.py --output /path/to/new-private-probe`运行真实UDS登记/消息槽、共享Core与Map循环，

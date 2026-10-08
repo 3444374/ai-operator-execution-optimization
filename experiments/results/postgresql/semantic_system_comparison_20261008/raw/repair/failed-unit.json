@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "schema": "semloom.semantic_system_query.v1",
+    "status": "failed",
+    "role": "daft-prompt",
+    "unit_id": "evaluation.daft-prompt.p64.r0",
+    "manifest_sha256": "492c10eacc3ffc4d151a9077e2c72726da0f5dd76de1dbb2ae12c67cd7b6fb1f",
+    "model_config_sha256": "923cc6b39d957095bd70472e5047cc4d2a24bb74c3da6062c2c5a6d3d477dcbc",
+    "concurrency": 64,
+    "num_threads": 8,
+    "rows": 512,
+    "query_preparation_started_ns": 2581725571943226,
+    "performance_qualified": false,
+    "generation_limit_owner": "explicit request cap128",
+    "comparison": "same application; native prompts/parsers; no message-equivalence claim",
+    "error": {
+      "type": "OSError",
+      "message": "[Errno 24] Too many open files: '/proc/41263/stat'"
+    },
+    "actual_posts": 249,
+    "ended_ns": 2581734741402132
+  },
+  "controller_failure": {
+    "type": "RuntimeError",
+    "message": "query failed; retained unit evaluation.daft-prompt.p64.r0",
+    "elapsed_seconds": 9.732758045196533,
+    "summary_exists": true,
+    "model_counter_delta": {
+      "vllm:request_success_total": 249.0,
+      "vllm:prompt_tokens_total": 22037.0,
+      "vllm:generation_tokens_total": 747.0
+    }
+  },
+  "execution": {
+    "schema": "semloom.query_execution.v1",
+    "timing_schema": "semloom.query_timing.v3",
+    "status": "failed",
+    "started_ns": 2581725832728906,
+    "ended_ns": 2581731115111313,
+    "elapsed_seconds": 5.282382407,
+    "recorded_rows": 0,
+    "received_rows": 0,
+    "recorded_bytes": 0,
+    "results_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "error_phase": "execute_or_stream",
+    "error": {
+      "type": "APIConnectionError",
+      "sqlstate": null,
+      "message": "Connection error.",
+      "observed_ns": 2581731114623524
+    },
+    "query_error": {
+      "type": "APIConnectionError",
+      "sqlstate": null,
+      "message": "Connection error.",
+      "observed_ns": 2581731114623524
+    },
+    "cleanup_error": null,
+    "recording_error": null,
+    "query_status": "failed",
+    "t_release_ns": 2581725834754458,
+    "t_first_row_ns": null,
+    "t_last_row_ns": null,
+    "t_query_terminal_ns": 2581731114641305,
+    "t_results_durable_ns": 2581731115109633,
+    "t_stream_cleanup_ns": 2581731115007633,
+    "t_stream_entered_ns": 2581725835063467,
+    "entry_observation_scope": "context entry return/error; adapters report first failures before internal cleanup",
+    "t_cancel_triggered_ns": null,
+    "query_jct_seconds": 5.279886847,
+    "inline_recording_seconds": 0.0,
+    "timing_scope": "before dispatch through stream consumption and recorder flush",
+    "query_timing_scope": "application release through observed EOF/error; includes inline recording interference",
+    "cleanup_scope": "cursor/iterator only; runner records external resource cleanup separately",
+    "partial_results_are_provisional": true
+  }
+}

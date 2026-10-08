@@ -1,0 +1,45 @@
+{
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "daft": "0.7.21",
+    "duckdb": "1.5.4",
+    "aiohttp": "3.14.3",
+    "httpx": "0.28.1",
+    "openai": "2.50.0",
+    "tokenizers": "0.22.2",
+    "transformers": "4.57.6",
+    "psycopg": "3.3.4",
+    "litellm": "1.95.0"
+  },
+  "sema_binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+  "sema_version": "v0.0.1 8c2d3bd2",
+  "postgres_version": "postgres (PostgreSQL) 18.3",
+  "pg_extension_sha256": "c1e7f8289bdb9cd2e208dd4a539624aee0e91188a99fc68154502f3a2b0dccd9",
+  "upstream_sources": {
+    "lotus": {
+      "url": "https://pypi.org/project/lotus-ai/1.2.4/",
+      "revision": "installed release1.2.4; VCScommit unavailable from wheel metadata"
+    },
+    "daft": {
+      "url": "https://github.com/Eventual-Inc/Daft",
+      "revision": "installed release0.7.21; VCScommit unavailable from wheel metadata"
+    },
+    "duckdb": {
+      "url": "https://github.com/duckdb/duckdb-python",
+      "revision": "installed release1.5.4; ai extension0.4.14 as checked by every prepared query"
+    },
+    "sema": {
+      "url": "https://github.com/BITQiKangK/SemaSystem/tree/3f2c7182bdaa26c1e8925f486585da25337e687e",
+      "source_revision": "3f2c7182bdaa26c1e8925f486585da25337e687e",
+      "implementation": "unchanged author binary; source repo revision and binary build version are distinct"
+    }
+  },
+  "scheduler_owners": {
+    "pg-map": "PostgreSQL query lifecycle + SemLoom local HTTP + vLLM",
+    "lotus-map": "LOTUS + LiteLLM/OpenAI client + vLLM",
+    "duckdb-ai": "DuckDB ai community extension + vLLM",
+    "daft-prompt": "Daft Native runner + native OpenAI prompter + vLLM",
+    "sema-map": "Sema author binary + vLLM",
+    "controls": "SemLoom fixed request/work control + vLLM"
+  }
+}

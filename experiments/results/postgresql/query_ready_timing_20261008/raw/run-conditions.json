@@ -1,0 +1,48 @@
+{
+  "mode": "model",
+  "model_id": "Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "signature": "ac15f5970f347e69417d275157c06868d378ee3ff66b7ce53cb74b5235b90040",
+  "model_keepalive_seconds": 60,
+  "proxy_default_keepalive_seconds": 75,
+  "driver_cpu_ids": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "model_cpu_ids": [
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39
+  ],
+  "gpu_ids": [
+    0
+  ],
+  "generation": {
+    "temperature": 0,
+    "max_new_tokens": 128,
+    "prefix_cache": false
+  },
+  "max_model_requests": 46208,
+  "max_seconds": 1800,
+  "source_base_commit": "1cdd94f8196892d436f9d43564de68a54a090695",
+  "source_snapshot": "ready-source04"
+}

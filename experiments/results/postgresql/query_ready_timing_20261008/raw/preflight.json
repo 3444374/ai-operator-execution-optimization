@@ -1,0 +1,27 @@
+{
+  "status": "ok",
+  "machine": {
+    "cpu_slots": 128,
+    "gpu_driver_versions": [
+      "595.71.05",
+      "595.71.05"
+    ],
+    "gpu_memory_mib": [
+      24564,
+      24564
+    ],
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4090",
+      "NVIDIA GeForce RTX 4090"
+    ],
+    "machine_id": "machine-a634305e0dbe556e",
+    "platform": "Linux",
+    "python": "3.12.3"
+  },
+  "groups": [
+    "core",
+    "text",
+    "semantic-benchmarks"
+  ],
+  "profile_selection": "automatic"
+}

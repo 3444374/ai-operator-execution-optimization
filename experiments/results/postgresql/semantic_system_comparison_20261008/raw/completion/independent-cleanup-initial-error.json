@@ -1,0 +1,15 @@
+{
+  "status": "failed",
+  "stage": "independent post-run bind probe",
+  "error_type": "OSError",
+  "errno": 98,
+  "message": "Address already in use",
+  "checked_port_set": [
+    18097,
+    55761,
+    55762
+  ],
+  "first_failing_port": "unavailable; initial probe did not record it",
+  "subsequent_socket_inventory": "no matching TCP sockets observed",
+  "real_model_requests": 0
+}

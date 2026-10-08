@@ -1,0 +1,76 @@
+{
+  "status": "passed",
+  "actual_posts": 14408,
+  "accepted_posts": 14408,
+  "queries": 62,
+  "method_status": "conditional_stages_not_started:inconclusive_supply",
+  "driver_soft_nofile": 8192,
+  "local_model_cost_map": true,
+  "budget_id": "semantic-systems-file-capacity-real-20261008",
+  "serving_signature": "80491eec7f2ec8b98cb5e79d594d06518be1512af6dd8665b9a26e63b0725c42",
+  "preflight_sha256": "8811dbfa627c9e0a5e53ccfcb302709972d7d2c7f13e803dd288c7c7e426b486",
+  "owner_sha256": "7300e7a0084317f3541d576eef588bdc5dce9cc71a7147652df2872c476e8a3f",
+  "worker_sha256": "08dfbe4530a28f5e626731fcefa312c5683e27e45200252d8f46337d8de217cc",
+  "max_posts": 14408,
+  "max_seconds": 2700,
+  "selected": {
+    "pg-map": 16,
+    "duckdb-ai": 64,
+    "daft-prompt": 64,
+    "lotus-map": 16,
+    "sema-map": 4
+  },
+  "source_identity": "a851110b78c6efc1a8ae569ab74a513adc2f9df44c39f3e5f866b54cfcc0dd3e",
+  "base_commit": "1cdd94f8",
+  "model": {
+    "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "files": {
+      "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "model-00001-of-00004.safetensors": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "model-00002-of-00004.safetensors": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "model-00003-of-00004.safetensors": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "model-00004-of-00004.safetensors": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "model.safetensors.index.json": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+    },
+    "versions": {
+      "vllm": "0.25.1",
+      "torch": "2.11.0",
+      "transformers": "5.14.1"
+    }
+  },
+  "pg_library_sha256": "c1e7f8289bdb9cd2e208dd4a539624aee0e91188a99fc68154502f3a2b0dccd9",
+  "sema_binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+  "model_counter": {
+    "vllm:request_success_total": 14408.0,
+    "vllm:prompt_tokens_total": 1536741.0,
+    "vllm:generation_tokens_total": 50424.0,
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0
+  },
+  "error": null,
+  "elapsed_seconds": 776.0250196456909,
+  "started_utc": 1791435415.855135,
+  "ended_utc": 1791436191.8801546,
+  "preparation_requests": 0,
+  "original_deadline_utc": 1791438115.855135,
+  "cleanup": {
+    "model_stop": {
+      "returncode": 0,
+      "observed_children": [
+        106021,
+        106022
+      ]
+    },
+    "worker_stop": {
+      "returncode": 0,
+      "observed_children": []
+    },
+    "acl_restored": true,
+    "gpu_after": "0, 1, 0\n1, 1, 0",
+    "pg_shutdown": true
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "owner.json": {
+    "bytes": 571,
+    "sha256": "58eb56264301d6109f3dab19ca7a43f47756ef9915ae295c0ecf4abb50b05bcf"
+  },
+  "records.json": {
+    "bytes": 364207,
+    "sha256": "02999a109ab7773bf0b8feaed8d4fd91631f490e267b3083dd5f2860917df576"
+  },
+  "source-files.json": {
+    "bytes": 118905,
+    "sha256": "60c62899e8b752078c6a51a784f79b50ce6e33d51ad958997858e5e012d0807f"
+  },
+  "rows.jsonl.gz": {
+    "bytes": 466585,
+    "sha256": "616749635ff8fc202172bbf0ef2c802c1e32a7fb10703270b4559c2b5f17df28"
+  },
+  "http.jsonl.gz": {
+    "bytes": 8633491,
+    "sha256": "c22e9a86f3aafc971b193ff6afd04ec7c323451b0b0e40d3d4fe65a9080fb634"
+  },
+  "events.jsonl.gz": {
+    "bytes": 4666910,
+    "sha256": "44996ace8a9e7e5010c29172d91dce289b4f0b801d364e71a1b0e9924124a6da"
+  },
+  "timings.json": {
+    "bytes": 287990,
+    "sha256": "661578a28d69ce6419c881eb5b3cf5d3667af536e370c221780310951aadac78"
+  },
+  "row-provenance.json": {
+    "bytes": 18888,
+    "sha256": "4d07c31512055a63de0a1cefed9748eaf4c56ba014765c9e37c307b2a739b14a"
+  },
+  "protocols.jsonl.gz": {
+    "bytes": 1061174,
+    "sha256": "8d6fa8c0b92ef7fb3c37f9449bd72e03c907b81f7dc23aeb87a10b9fcb8558a9"
+  },
+  "charges.jsonl.gz": {
+    "bytes": 1979347,
+    "sha256": "d344ccd7981465e2729db2c6de5467f129d153f116712e6ede721c3a6bd64c1c"
+  },
+  "ledger.json": {
+    "bytes": 11563,
+    "sha256": "b546d836e77b6537eded305e79f0addbc52c154317063a4c08474a400af9aa63"
+  },
+  "inputs.json": {
+    "bytes": 460,
+    "sha256": "09152810d68c2800459576bcf80cfdad63dfad2f3fec21ec42a2f34472ac0e98"
+  },
+  "run-conditions.json": {
+    "bytes": 808,
+    "sha256": "c75c4a8fab7d139e80412d039eb73f0fc850fd8457682aa84d25e460f33c8b68"
+  },
+  "service-before.json": {
+    "bytes": 22300,
+    "sha256": "9f25f4b8bde8689ddb6e42f07ead1139b95b9a022069fa3da3a6fba94aebc0b8"
+  },
+  "service-after.json": {
+    "bytes": 24338,
+    "sha256": "a86aef38c279ad2312fd7f8314fe04596cfa708bef6c1b3bc3f296a79ae795a6"
+  },
+  "service-final.json": {
+    "bytes": 24326,
+    "sha256": "dfc4208a7c79fe35267c99354a37260847c56a65a71b7b81cca0f2aa9078c20c"
+  },
+  "service-identity.json": {
+    "bytes": 51,
+    "sha256": "d1ce899ae19b42707a057d6cae17f2ca0a1cc3995ccc66758e6234f89a76e0a7"
+  },
+  "cpu-fixtures.json": {
+    "bytes": 4427,
+    "sha256": "86748599467530ddd3845b84a78e8fa36f05a8f1596bd411d83f200990ff66c0"
+  },
+  "preflight.json": {
+    "bytes": 482,
+    "sha256": "2a7731f6459fde3650a1df919bae631009085ccbe29e8076fb73172898a8588a"
+  },
+  "failures.json": {
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "independent-cleanup.json": {
+    "bytes": 296,
+    "sha256": "106e45b1ac8dff53099ead7d4ad7cc431d508de4cb7731f988726d70f630ee7f"
+  }
+}

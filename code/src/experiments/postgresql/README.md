@@ -2,6 +2,25 @@
 
 ## Database-source queries
 
+`semantic_system_query.py`执行有期限、逐条持久计数的原生Movie Map查询。
+PG只提供原始只读关系；LOTUS、Daft、DuckDB社区AI扩展及Sema分别拥有提示、解析和执行。
+透明HTTP观察器核对原始正文未改、模型身份、生成长度、结束原因、实际调用和token用量；
+不增加原生并发控制或重试。输出关联与真假审计在完整消费后进行。
+PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](../../../../experiments/plans/语义系统对照.md)。
+`native_file_capacity`在单元预留和实际POST之前只读核对文件描述符额度，估计包含同进程的SDK、代理入站与上游连接。
+额度由调用方准备，不以检查替代原生执行或施加HTTP并发限制。
+
+<a id="ready-query-timing"></a>
+
+### 数据就绪后的SQL／原生API计时
+
+`ready_query_recording.py`分开组件就绪、实际提交和统一消费结束；新`ready-timing.json`用SHA-256关联原`execution.json`。
+`ready_semantic_query.py`让PG经同一HTTP观察代理执行，PG仍只在既有guard中计数。
+`semantic_system_query.py --timing-mode ready`先读原始输入并进入`prepare_rows`，再执行原生SQL／API；默认`application`保持。
+HTTP新增单调的接收、转发、上游响应与本地写出时刻，分别保留真实上游状态和回调导致的客户端错误。
+Sema支持取消自有进程；其他原生API通过SDK请求超时和调用方单元进程期限处理在途工作。
+就绪后的超时或HTTP首错停止继续转发，完整计时口径与验证见[方案](../../../../experiments/plans/SQL就绪计时.md)和[报告](../../../../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
+
 `query_workloads.py` prepares separate raw/reference files; `query_tables.py` installs and verifies
 an immutable PG relation. `query_inputs.py` constructs messages from raw columns, preserving original
 Movie review IDs separately from unique row occurrences. `query_config.py` declares one arm/task;

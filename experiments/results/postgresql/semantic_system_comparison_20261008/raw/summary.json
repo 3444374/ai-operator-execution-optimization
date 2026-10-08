@@ -1,0 +1,61 @@
+{
+  "status": "stopped_at_first_error",
+  "real_requests": 32,
+  "accepted_units": 1,
+  "model_counter": {
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0,
+    "vllm:prompt_tokens_total": 2735.0,
+    "vllm:generation_tokens_total": 104.0,
+    "vllm:request_success_total": 32.0
+  },
+  "elapsed_seconds": 173.84547090530396,
+  "started_utc": 1791429792.610851,
+  "ended_utc": 1791429966.456322,
+  "errors": {
+    "type": "ValueError",
+    "message": "request, illegal-output or occurrence audit failed"
+  },
+  "cleanup": {
+    "model_stop": {
+      "returncode": 0,
+      "observed_children": [
+        18708,
+        18709
+      ]
+    },
+    "worker_stop": {
+      "returncode": 1,
+      "observed_children": []
+    },
+    "acl_restored": true,
+    "gpu_after": "0, 1, 0\n1, 1, 0",
+    "pg_shutdown": true
+  },
+  "remaining_stages": "not_started",
+  "source_identity": "ef5f28cb215cf554563d0248235a5621618881c389cee70aadfcf15fadb52728",
+  "base_commit": "1cdd94f8",
+  "model": {
+    "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "files": {
+      "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "model-00001-of-00004.safetensors": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "model-00002-of-00004.safetensors": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "model-00003-of-00004.safetensors": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "model-00004-of-00004.safetensors": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "model.safetensors.index.json": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+    },
+    "versions": {
+      "vllm": "0.25.1",
+      "torch": "2.11.0",
+      "transformers": "5.14.1"
+    }
+  },
+  "pg_library_sha256": "c1e7f8289bdb9cd2e208dd4a539624aee0e91188a99fc68154502f3a2b0dccd9",
+  "sema_binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+  "environment_report_sha256": "e1c4596617940400eb9c0727cefbed4db4f889e04ce630c1f74b870b5926f650"
+}

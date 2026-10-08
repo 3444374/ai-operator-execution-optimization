@@ -26,6 +26,13 @@ PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom�
 [Arrow分批](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)分别保留实际重复值、负结果和适用条件。
 完整查询、质量与资源结论以各报告为准。
 
+[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)已完成五系统512行重复评价、
+PG／LOTUS原始Movie Q3及三种同后端控制的模型工程检查，共62条查询／14,408次真实请求。
+Sema格式与Daft文件容量修订通过，原32次和8,009次停止保留；方法性能、多Job及图像仍按自身计划。
+
+[数据就绪后的SQL／原生API比较](experiments/results/postgresql/query_ready_timing_20261008/README.md)
+补充分离准备后的查询、单行交付和统一HTTP计时，保留独立运行及全部重复值。
+
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留组件、无模型改善与真实模型回退结果，默认同步保持。
 
 [gateway共享执行干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md)区分本地组件行为，另有Linux/真实Ray/本机HTTP核对，实际SQL和GPU验证另列。

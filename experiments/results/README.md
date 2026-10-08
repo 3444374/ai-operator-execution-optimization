@@ -6,6 +6,8 @@
 | 内容 | 报告入口 |
 |---|---|
 | 文本Map完整系统比较 | [四路径匹配比较](postgresql/text_map_four_path_comparison_20260930/README.md) |
+| 同应用原生语义系统 | [五系统重复评价、Movie Q3与失败记录](postgresql/semantic_system_comparison_20261008/README.md) |
+| 数据就绪后的查询与HTTP计时 | [SQL／原生API比较](postgresql/query_ready_timing_20261008/README.md) |
 | 查询准备与消费调优 | [worker复用](postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway与消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md) |
 | 准备分段的数据库与模型验证 | [PG生命周期、模型停止及物理内存](postgresql/text_map_preparation_validation_20261004/README.md) |
 | 实验记录与分批的受控对照 | [线程记账](postgresql/text_map_threaded_accounting_20261002/README.md)、[Arrow分批fixture](postgresql/text_map_arrow_batches_20261002/README.md)、[Daft／Arrow真实对照](postgresql/text_map_arrow_real_20261003/README.md) |

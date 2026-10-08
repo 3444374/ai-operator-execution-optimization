@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "archive_bytes": 422600161,
+  "archive_sha256": "8a830d875bd13ce4e95391996375f277c286f9a96a02c4aba5c8a5abe3a7cc1b",
+  "scientific_members": 21628,
+  "scientific_bytes": 3913343067,
+  "inventory_member_verified": true,
+  "independent_copy": true,
+  "unsafe_members": 0,
+  "new_model_requests": 0
+}

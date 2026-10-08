@@ -1,0 +1,43 @@
+{
+  "schema": "semloom.query_execution.v1",
+  "timing_schema": "semloom.query_timing.v3",
+  "status": "failed",
+  "started_ns": 2605912296071877,
+  "ended_ns": 2605918175390260,
+  "elapsed_seconds": 5.879318383,
+  "recorded_rows": 246,
+  "received_rows": 246,
+  "recorded_bytes": 19738,
+  "results_sha256": "48cfbc884beb9bf4cea66ba145b48d457b9edc965203d16343ff3890bb936408",
+  "error_phase": "execute_or_stream",
+  "error": {
+    "type": "ConnectionFailure",
+    "sqlstate": "08006",
+    "message": "SemLoom model endpoint is unavailable",
+    "observed_ns": 2605918174705086
+  },
+  "query_error": {
+    "type": "ConnectionFailure",
+    "sqlstate": "08006",
+    "message": "SemLoom model endpoint is unavailable",
+    "observed_ns": 2605918174705086
+  },
+  "cleanup_error": null,
+  "recording_error": null,
+  "query_status": "failed",
+  "t_release_ns": 2605912298073091,
+  "t_first_row_ns": 2605916839850063,
+  "t_last_row_ns": 2605918172872989,
+  "t_query_terminal_ns": 2605918174711933,
+  "t_results_durable_ns": 2605918175389851,
+  "t_stream_cleanup_ns": 2605918174817780,
+  "t_stream_entered_ns": 2605912298437816,
+  "entry_observation_scope": "context entry return/error; adapters report first failures before internal cleanup",
+  "t_cancel_triggered_ns": null,
+  "query_jct_seconds": 5.876638842,
+  "inline_recording_seconds": 0.001207859,
+  "timing_scope": "before dispatch through stream consumption and recorder flush",
+  "query_timing_scope": "application release through observed EOF/error; includes inline recording interference",
+  "cleanup_scope": "cursor/iterator only; runner records external resource cleanup separately",
+  "partial_results_are_provisional": true
+}

@@ -1,0 +1,276 @@
+[
+  {
+    "status": "failed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 8,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [
+      {
+        "type": "RuntimeError",
+        "message": "finite ready schedule stopped at its first error"
+      }
+    ],
+    "started_utc": 1791464718.54589,
+    "deadline_utc": 1791465318.54589,
+    "fixture_http_posts": 8,
+    "acl_restored": true,
+    "ended_utc": 1791464739.5215485
+  },
+  {
+    "status": "failed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 14,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [
+      {
+        "type": "RuntimeError",
+        "message": "finite ready schedule stopped at its first error"
+      }
+    ],
+    "started_utc": 1791464852.0312502,
+    "deadline_utc": 1791465452.0312502,
+    "fixture_http_posts": 14,
+    "acl_restored": true,
+    "ended_utc": 1791464881.7248888
+  },
+  {
+    "status": "failed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 2,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [
+      {
+        "type": "RuntimeError",
+        "message": "finite ready schedule stopped at its first error"
+      }
+    ],
+    "started_utc": 1791465017.4145262,
+    "deadline_utc": 1791465617.4145262,
+    "fixture_http_posts": 2,
+    "acl_restored": true,
+    "ended_utc": 1791465026.2091143
+  },
+  {
+    "status": "failed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 8,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [
+      {
+        "type": "RuntimeError",
+        "message": "finite ready schedule stopped at its first error"
+      }
+    ],
+    "started_utc": 1791465199.1501493,
+    "deadline_utc": 1791465799.1501493,
+    "fixture_http_posts": 8,
+    "acl_restored": true,
+    "ended_utc": 1791465225.1262708
+  },
+  {
+    "status": "passed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 16,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [],
+    "started_utc": 1791465437.9675357,
+    "deadline_utc": 1791466037.9675357,
+    "fixture_http_posts": 16,
+    "actual_posts": 16,
+    "acl_restored": true,
+    "ended_utc": 1791465480.6884727
+  },
+  {
+    "status": "passed",
+    "mode": "fixture",
+    "max_posts": 16,
+    "max_seconds": 600,
+    "request_attempts": 16,
+    "model_service_success": 0,
+    "driver_cpu_ids": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "model_cpu_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "errors": [],
+    "started_utc": 1791466955.3562565,
+    "deadline_utc": 1791467555.3562565,
+    "fixture_http_posts": 16,
+    "actual_posts": 16,
+    "acl_restored": true,
+    "ended_utc": 1791466999.5092528
+  }
+]

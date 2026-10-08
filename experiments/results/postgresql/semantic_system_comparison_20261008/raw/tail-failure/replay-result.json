@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "retained_http_attempts": 310,
+  "original_read_errors": 1,
+  "measured_queries": 1093,
+  "local_fixture_request_attempts": 72,
+  "matched_broken_pipe_trials": 5,
+  "retirement_with_constant_pause_trials": 5,
+  "replay_model_requests": 0,
+  "exact_idle_expiry_cause": "unavailable"
+}

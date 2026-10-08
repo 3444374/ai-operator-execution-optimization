@@ -1,0 +1,25 @@
+{
+  "worker_error": {
+    "type": "RuntimeError",
+    "message": "query failed; retained unit tail-evaluation.pg-request.p64.r137"
+  },
+  "units": [
+    {
+      "unit_id": "tail-evaluation.pg-request.p64.r137",
+      "role": "pg-request",
+      "expected_rows": 512,
+      "received_rows": 246,
+      "attempted_requests": 310,
+      "partial_results_are_provisional": true,
+      "type": "RuntimeError",
+      "message": "query failed; retained unit tail-evaluation.pg-request.p64.r137",
+      "elapsed_seconds": 11.933959245681763,
+      "summary_exists": true,
+      "model_counter_delta": {
+        "vllm:request_success_total": 309.0,
+        "vllm:prompt_tokens_total": 22087.0,
+        "vllm:generation_tokens_total": 927.0
+      }
+    }
+  ]
+}
