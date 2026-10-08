@@ -4,6 +4,20 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-08：[返回等待隔离](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)新增离线分析和有限fixture，生产源码未改。
+原6144行复算、本地71个case/4107次模拟及实际Ray/Daft/SQLite的20个case/16,448次模拟actor调用核对通过。
+接收循环中的同步实验guard是已复现干扰来源，实际Ray的回调至读取已补齐；线程控制缩短等待却使完整消费更慢，既有ThreadedRequestGuard仍为显式选项。
+原件备份、时序、持久计费、逻辑/对象容量及关闭核对归[同题分段](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)；新增HTTP/PG/模型/GPU调用0，默认保持。
+
+2026-10-08：新增显式`RayMapConfig.coalesce_queued_preparation=False`，只向同session/Job、尚未取准备lease的尾块追加已到达输入。
+阶段broker可原子扩展编码行前段与字节/work登记，开始准备后描述不再扩展；Core动作、逐行请求、取消/未知结果责任及即时默认保持。
+[同题诊断](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)核对原3,072行借用：后续三段各896次均只有一行可借。
+本地24,672次模拟调用完成，高准备成本下改善、低成本下仍慢于即时12.638%；不据块数减少推荐启用。
+最终本地147项中136通过/11缺库跳过，Linux147项全过，实际Daft/Arrow的追加与原阶段/session/图像用例核对；Ray调用仍是替身。
+随后新的PG16项/26次本机HTTP及10查询/8224次真实请求全部通过，实际Ray、行结果、持久计费、对象归还及RSS/PSS独立核对。
+即时与追加完整查询中位数10.069/12.686秒，追加慢25.987%；每1024行准备块中位数319，首行更慢、worker方法平均活动数下降。
+不推荐启用，默认不改；多模态、跨Job与多机收益仍pending。全部重复、失败和可恢复证据归同题报告。
+
 2026-10-08：补充[查询归属、请求发送与计数范围](README.md#query-accounting-scopes)。
 当前单个gateway/Engine内的查询共享、Ray worker发送与跨进程实验预算分别有实现；累计预算、在途容量和观察事件使用不同口径。
 多个gateway的服务总容量协调、同一查询跨PG并行执行进程登记及故障下模型实际执行次数核对仍需对应接入和证据。

@@ -1,0 +1,1600 @@
+{
+  "private_backup_id": "map-preparation-block-granularity-20261008",
+  "files": [
+    {
+      "path": "model/source.json",
+      "bytes": 104766,
+      "sha256": "28648a43bc10b6f32b7bc7e9a4d147de2351ece1efefd69d56ae783902fcbf3f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/preflight.json",
+      "bytes": 4524,
+      "sha256": "e15db2ba2e6bf875d47c338504e861e150a84547ebb8f2ca6dfc45283ca714c7",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real-owner.py",
+      "bytes": 15144,
+      "sha256": "0d3a68ced511d3b15feae446a7fbf7bf277a2b6f663a4053c0914f44e3906df8",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real-worker.py",
+      "bytes": 11412,
+      "sha256": "1b6a92360891bd0ff1ec6d58f2e1322d610d17b09668c7d95ff71bc246cefd5a",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/physical_memory.py",
+      "bytes": 5889,
+      "sha256": "32b23d1ded7fe81aa83eb906d68d2bde5041671218095621ff335d377a940c79",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real_time_budget.py",
+      "bytes": 264,
+      "sha256": "0a1ac2c53f44cee9a0f999ae23305f2147bc4d974ce4596361f333f4c6da7981",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/inputs-record.json",
+      "bytes": 455,
+      "sha256": "be6a028a577dcb7b60832119f7812cac658242f2ed5b8f88b62490776f9a9af7",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/model-reference.json",
+      "bytes": 1122,
+      "sha256": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/preparation-failure01.json",
+      "bytes": 223,
+      "sha256": "62deead8f072c896b94eb5125d2b9c4ee1d41399fc268c77f4c997e9cb6aab4f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/no-service-ready.json",
+      "bytes": 79,
+      "sha256": "8565acef41165ba67cd18f267a2f454b111eb7365051cbb99a9a6ae5ba4c94e6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/pg-owner.log",
+      "bytes": 116,
+      "sha256": "9b398ad3d3058d2ff99b2be34d01a70d4f2fd4181f8ba7423de14a4b6cbf5bf3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/model-owner.log",
+      "bytes": 235,
+      "sha256": "a5f4c4456511c84d0065304a378d7db4d52bbd548483c822817ff601f78f981f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/cleanup-independent.json",
+      "bytes": 263,
+      "sha256": "267f514a434aba2e1803ed6052b9cff50e98bafb74efbb17f1c92dea7c3c0f4c",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real-analysis.json",
+      "bytes": 101945,
+      "sha256": "6076143c34ceedffa529b55eb913c1f5741fbd2ab2c5fe92efcfdb11f97c1e0a",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/tools/pg_lifecycle_owner.py",
+      "bytes": 3580,
+      "sha256": "c6140d8fa3b1f7562828c1577866d29466d9f867519bf014991749e7abd12821",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/pg_lifecycle_worker.py",
+      "bytes": 16838,
+      "sha256": "9f66328b61df14316b849d1029c3bd56d995f6a7825dfddd9d040b7930876c8f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/physical_memory.py",
+      "bytes": 5889,
+      "sha256": "32b23d1ded7fe81aa83eb906d68d2bde5041671218095621ff335d377a940c79",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/real-owner.py",
+      "bytes": 15144,
+      "sha256": "0d3a68ced511d3b15feae446a7fbf7bf277a2b6f663a4053c0914f44e3906df8",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/real-worker.py",
+      "bytes": 11412,
+      "sha256": "1b6a92360891bd0ff1ec6d58f2e1322d610d17b09668c7d95ff71bc246cefd5a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/real_time_budget.py",
+      "bytes": 264,
+      "sha256": "0a1ac2c53f44cee9a0f999ae23305f2147bc4d974ce4596361f333f4c6da7981",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/tools.json",
+      "bytes": 554,
+      "sha256": "7e1a1261ee4fb8699859101c89c384479b0c0f9b261fac8eb92415a1cf360f4a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/analyze-candidate.py",
+      "bytes": 10835,
+      "sha256": "8bb3e96f1b3fc4c62572601871b21980721a688e88f9f451de2108d42df99bf6",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/tools/analyze-original.py",
+      "bytes": 12198,
+      "sha256": "7d52bb358e1305cb30011630f803b8cc5cbe3487843fd626578e844fe5403951",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/tools/analyze-candidate01.py",
+      "bytes": 8982,
+      "sha256": "ffd7291bb50b202cb625d7812abd05f51955cdfb54375e6c3fd4dec59a128765",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/tools/analyze-candidate02.py",
+      "bytes": 9013,
+      "sha256": "dd47898e04734e88973f4be413893204315b0e2d43696e5c8907817291c1236d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real-inputs/qualification/manifest.json",
+      "bytes": 709,
+      "sha256": "63c02763369f68fc1a14c5c6ae68c7c04ca7d655180bb4e30e088af75c17aff6",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real-inputs/qualification/raw.jsonl",
+      "bytes": 3097,
+      "sha256": "5b7e1b3a9e19c5a98de56688b0ec91f4482e74bce01aaea3f82ac7a4d9569e12",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real-inputs/qualification/references.jsonl",
+      "bytes": 1912,
+      "sha256": "feafea7ca75c8842d16ca25e07d7b1e026aaa6e9b89e22a7788cfdab7ba8d978",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real-inputs/evaluation/manifest.json",
+      "bytes": 887,
+      "sha256": "44181b265bac61eb6cca5301fc87d86ea1c4b2a8cb0079ad15b1ae151047103f",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real-inputs/evaluation/raw.jsonl",
+      "bytes": 196580,
+      "sha256": "dd248cdb3ff2ba5aa831c049d86b4736282c7bc7848c92b979b5a7a3c84baec3",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real-inputs/evaluation/references.jsonl",
+      "bytes": 120620,
+      "sha256": "81fc62bc164f1aba3ff2f1dd137480fe3c7c4c88bc5e1db1fba121dbdae0bac6",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real01/acl-before.json",
+      "bytes": 348,
+      "sha256": "d71d5f28bab1b70759b4a46efcfffa1b033dbbe551f906abea5f7cdb56c296fa",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/identity.json",
+      "bytes": 107952,
+      "sha256": "98c55397f7d5db5cf3df5e6ba2eb9b040da2144118a8c38df84534a9d4214c68",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/service-command.json",
+      "bytes": 800,
+      "sha256": "1f6b386a67216cbefc8bb35ca3b90dcf05258cedbaa02289db171598c8ddc109",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/model.log",
+      "bytes": 797582,
+      "sha256": "fb5d982c344d60b0c4ddf021473932d29b516b2f8d68055ec5453dbd2fabd537",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/vllm-identity.json",
+      "bytes": 348,
+      "sha256": "d682f3bf07c66e807693fe8ae1b7c34540cad6bc67758796e8c684544e31520a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/service-ready.json",
+      "bytes": 809,
+      "sha256": "6bcd394492e7def4870a4aec32b4a4fa07f80587d7f119dafa036e343abdde8b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/model-rss.jsonl",
+      "bytes": 397270,
+      "sha256": "de6797fab34ecad7984708c7b04f0c447e58a55489a8cf2c7a18213e09cb832b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/service-before.json",
+      "bytes": 279,
+      "sha256": "8b300457f2c276010265aba7429ee7392aa5447ed3b441ccd22e7e3e569581e5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/model.json",
+      "bytes": 127,
+      "sha256": "c2deeb9e225e3fd5a803fe35f1d650d6e942619116105116134386768f4ef06e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker-config.json",
+      "bytes": 1041,
+      "sha256": "280ccc1a27e1dda2679acc5e4b5a5dd324aca54400a35440e82ba0c2a4a5930b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker.log",
+      "bytes": 1641,
+      "sha256": "481aa73f244f15c5003f99f0b56467a8e8343b944a6423db4baab15d6323ea77",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker-tree-rss.jsonl",
+      "bytes": 2305067,
+      "sha256": "2462f17b333da83b47cb8985c9fb637fe00c2fec1a49ae132abf3dcadd2adf07",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/service-after.json",
+      "bytes": 291,
+      "sha256": "0dc294376439be4972e69dcc100408f7877ae4b07fb093f21bf6dc646e709331",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/service-samples.json",
+      "bytes": 46665,
+      "sha256": "8fd842b943c6cac5cda1f430d505773cdc244eb28642befa1381dc1ad221de13",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/model-stop.json",
+      "bytes": 41,
+      "sha256": "511a7afbe89f9dfa7125d51391d36c146c284f20a1ddfd072d019dc7bd8a3f5d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/controller-summary.json",
+      "bytes": 707,
+      "sha256": "0368317e111f7820ac31b513c957c46621b7b0eda6bc0407d8f8b63716484525",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/driver-home/real_time_budget.py",
+      "bytes": 264,
+      "sha256": "0a1ac2c53f44cee9a0f999ae23305f2147bc4d974ce4596361f333f4c6da7981",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/driver-home/physical_memory.py",
+      "bytes": 5889,
+      "sha256": "32b23d1ded7fe81aa83eb906d68d2bde5041671218095621ff335d377a940c79",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/pg/cluster.log",
+      "bytes": 1199,
+      "sha256": "25209bad7cebb76eb75007130a535a370b2bbbb7c6a57875e940f67a2cc723ff",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/pg/postgres.log",
+      "bytes": 13951203,
+      "sha256": "1fc563b19dee854813603120ef9771230196d3f8d8f7bda83aa8ad1357024b23",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/qualification-installation.json",
+      "bytes": 393,
+      "sha256": "e82f53fc3ea5b171bb5464b1f3a980bef5b9fc436e723ccea798d265b63fd681",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/evaluation-installation.json",
+      "bytes": 392,
+      "sha256": "22d8220d84b5bf8dc99655221fd9a6c3b830cec7b786c5ccf524e8605f705d3e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/budget.sqlite",
+      "bytes": 1003520,
+      "sha256": "b4d67213e2d253b24a6a2e51413721268b544c18d50fe9112e70461a31c28e62",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "model/real01/worker/schedule.json",
+      "bytes": 857,
+      "sha256": "3e0268321f5acb98096b3b25cacd5e3a8f4d1ddb44ea3d997d9802999b3a3f4b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/completed-immediate-check16.json",
+      "bytes": 50927,
+      "sha256": "00a51ca7cbfe1e1a93a968cf1eb27c5f2ffac5c78665b7d1639277b306d96b5b",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-prepared-check16.json",
+      "bytes": 51042,
+      "sha256": "46e63441800908826c78568dd1bd0772bb4ae0f3d2446b33644b62b308559eb7",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-immediate-warm1024.json",
+      "bytes": 60976,
+      "sha256": "9fd48ad219d510a5e92488e06d733a1d3b39e79fd39640eaf5c02152b221d56e",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-prepared-warm1024.json",
+      "bytes": 61212,
+      "sha256": "cb62c8a2e83b0e5be64bf847caf34daca4f6452a46113f33fc255e284418500e",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-prepared-measure1.json",
+      "bytes": 60043,
+      "sha256": "739d41efcabe290107070896c25c24076e2cad523fdbadc93e6d42b47c323f25",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-immediate-measure1.json",
+      "bytes": 60069,
+      "sha256": "dde7b06b17bba71b5d8cd7adc71341b4f2d19994c52c2e1e83a6615dd00bbe70",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-immediate-measure2.json",
+      "bytes": 60079,
+      "sha256": "4b0b52486f658df385632dfb115cc9edb610ab97fa5c8a785ea7b0e107ceb90d",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-prepared-measure2.json",
+      "bytes": 60102,
+      "sha256": "0b2f47292fbd6dfd70a5239781aacaf4c107eed1b2d71e5c953c9297269d1878",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-prepared-measure3.json",
+      "bytes": 60117,
+      "sha256": "1aaeed6529276a3ed13b875c8602b4b4557a5d5021f58da64ae1fd132012af4b",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/completed-immediate-measure3.json",
+      "bytes": 60128,
+      "sha256": "45c11ff322e98e0ffbd72ea0a08f282861038c53ff658d7f9cdda2ffa22c8f38",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/summary.json",
+      "bytes": 652324,
+      "sha256": "afd5bc2138ac36c1866a1b410cb0b594ccb887895be3b3b8c8ab113f8311fc90",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/gateway-command.json",
+      "bytes": 1252,
+      "sha256": "c45fe0d975fdab1df62b02d016b1fb1c7abb0602a146a0c42610ea02c9dfaace",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/gateway.log",
+      "bytes": 187,
+      "sha256": "4268d7b282f9afe4b18f583a75e38df685940b97bc451af4809f141bf427d3bf",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/public-events.jsonl",
+      "bytes": 52647,
+      "sha256": "32098a5c9a2bff3941b7325fb5e6d4fdb67d364eae939e59b283194c338e98b5",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/immediate16/events.jsonl",
+      "bytes": 59037,
+      "sha256": "c2c82596899b636fe2580d7a03c98f7f9d5f887576d86eff7ac5573d61bf47cf",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/immediate16/sessions.jsonl",
+      "bytes": 310,
+      "sha256": "b6f3d53c35f2a422404f4f7efc7e4adda358f8a9a5df9c6175497a54b384f7f1",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/startup.json",
+      "bytes": 1499,
+      "sha256": "283c2d992532302ca8c4e99451d3a2e8944d67a1ed896b88f7870394ad9e629d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/observer.json",
+      "bytes": 1105,
+      "sha256": "62f4b2be80b4640286ee2a8d7dd71093ffb3c2e015efaaac1145f81c69d0d49b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/summary.json",
+      "bytes": 2010,
+      "sha256": "d1dcc70b16f7ba3bdd6bc180cf6e5a787e632bc7f6a338b2f2e694f3d88c86cf",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/plan.json",
+      "bytes": 1602,
+      "sha256": "7c5bbe99dea4550b187b4c20444026e7067371164e195ee65414704d1c12a880",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/pg-backend.json",
+      "bytes": 26,
+      "sha256": "31e6fbb199eda1bc7adc55c4d9ebcc0836a4814480a0f3d81f5fe3f7b8267a61",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/query-rss.jsonl",
+      "bytes": 37631,
+      "sha256": "04e37ea594508d990e1ca99340fdc160da50be9e4366bcb2660e02a811e078f4",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/q0-producer.log",
+      "bytes": 18589,
+      "sha256": "0be69cccd3e94a2046a4f7e87117484b562eda3af70db4f7c88e9123c1379fe6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/events.jsonl",
+      "bytes": 63290,
+      "sha256": "0a88ba9b3d9a16e80d331470242e04aff5ac0b2d8935ccf78ed39bf2da78508a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/sessions.jsonl",
+      "bytes": 336,
+      "sha256": "70f40fa7b8f7631ef87511fdad764793f47977d3451b7ee6101e69eb09ec66f5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/event-projection.json",
+      "bytes": 335,
+      "sha256": "823756bca8a93775ffb65f9f7df0a221a4c747caca532a48d16adebb1105846f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/summary.json",
+      "bytes": 13404,
+      "sha256": "25c37ed6ebc918dd76fa4f4eb78dddfa55b761bd6b358fb2bc93076746beeb25",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/q0/started.json",
+      "bytes": 168,
+      "sha256": "d9fcb9c63787d943aa8bd1071ab2561db901de76214a3c7e18473e5e3ada5bf8",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/q0/results.jsonl",
+      "bytes": 1283,
+      "sha256": "948ab35d6b4d83c8bc23076455fd768ec0fd868230aa51f8df3dcb717b66b28f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/q0/execution.json",
+      "bytes": 1369,
+      "sha256": "a1608516772ff5a04f5d50fa5e474ac1dee9dd5cb0e649a367d6d0aba38a7993",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate16/check16/q0/evaluation.json",
+      "bytes": 3518,
+      "sha256": "6599fa3c43e5ca3b6818dc793590596fffed0799715ba8d71a26b206d49ccef5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/gateway-command.json",
+      "bytes": 1245,
+      "sha256": "981bec8b5f4d5a40f2c4a46c7e1760d6fadd1d1226c92560084fab710f715ca2",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/gateway.log",
+      "bytes": 187,
+      "sha256": "5a25d7465d3bed1dd447ed9156c080e4515a0e1df1187b3bc81168f816bbfed6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/public-events.jsonl",
+      "bytes": 58722,
+      "sha256": "a6ea224a80e6b8a3614af56e8bfa9d5e140775f71f5b0989ebae2be4d94c1fe1",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/prepared16/events.jsonl",
+      "bytes": 65112,
+      "sha256": "fb030499073579fe099edc6246153df7a6b5e2b5025122d80332f350610f0dea",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/prepared16/sessions.jsonl",
+      "bytes": 310,
+      "sha256": "210a4a3fb5ad9ef9ca1f63687f5955d31b99a4298bb84bc332e66d401c1d5d15",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/startup.json",
+      "bytes": 1497,
+      "sha256": "4ad3099cc516f44ccece930ea10b5956908b8a2fca0fb6bddb1065b5319a8b82",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/observer.json",
+      "bytes": 1106,
+      "sha256": "6a1d9eba4bd601167b99c7fb98d262d2e9363a11ca4a6dcffa106b5f94400df7",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/summary.json",
+      "bytes": 2008,
+      "sha256": "6dffc37b5f610de9b38bd2836836a1159a9c04b9b95f099e26fa750b3f98a78a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/plan.json",
+      "bytes": 1602,
+      "sha256": "7c5bbe99dea4550b187b4c20444026e7067371164e195ee65414704d1c12a880",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/pg-backend.json",
+      "bytes": 26,
+      "sha256": "c618acc991e392ac2fd881772f49366e4f6f7c3c02d4f4c31d863bbec76ea280",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/query-rss.jsonl",
+      "bytes": 64962,
+      "sha256": "a61411e41077dfc07757654bb09c88018dd439174ae37d305938820f9d6e2d4d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/q0-producer.log",
+      "bytes": 18589,
+      "sha256": "b81d094184eb5bdffa38edaeec5c0342c61ae4197a9ce0a6dce63bdf88026dfe",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/events.jsonl",
+      "bytes": 69946,
+      "sha256": "3c10f8413c16ed07a04e248a557c82bce872b13b71468e0d70c9495b422948bc",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/sessions.jsonl",
+      "bytes": 336,
+      "sha256": "515de9bc9009bae4acc5de0bebfccdec9649eca25c72c9221e13c404fc50897a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/event-projection.json",
+      "bytes": 334,
+      "sha256": "7a7b299bc89e4b303cb14cb34d00af3a5122cb502b2dfd636d7c3950ed7548db",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/summary.json",
+      "bytes": 13404,
+      "sha256": "75dd406c3caa40a7b1eefb10db7e28d07dd5adb785c48ae489ce148ebf5abf04",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/q0/started.json",
+      "bytes": 168,
+      "sha256": "ad17db91d351eb8b19df96060723b870a133e3c7459140761baeb61fcd0e97c3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/q0/results.jsonl",
+      "bytes": 1283,
+      "sha256": "b200c5730eab86ce1c400d8aa142f3f999b4b6fc1359e440d0afae2922589ffe",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/q0/execution.json",
+      "bytes": 1370,
+      "sha256": "2df8688f51925fbf8df2a2a8ac841d1e1312a354f8bf2a64ea67e58ca3d0987b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared16/check16/q0/evaluation.json",
+      "bytes": 3518,
+      "sha256": "dec00eec6cc78948873447848ebe508a7f976b2d2f973b8e749fa3937826ac0e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/gateway-command.json",
+      "bytes": 1266,
+      "sha256": "4cf935ba78188325c5f05db08caa18590a064b73a3afe5688d004f2d6805a32f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/gateway.log",
+      "bytes": 187,
+      "sha256": "47ec58d0eb5ca2d502a4ad8e78e5856f8aaaefe677d40d0b18fb8507a90132cd",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/public-events.jsonl",
+      "bytes": 14067290,
+      "sha256": "9fc6560f7346a174791adc2559d1c99bd485dce6c2973a13176190583e128f37",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/events.jsonl",
+      "bytes": 15650123,
+      "sha256": "5da7e8c40e9b2f94c8bfab1675fc6590ab9689b2c46bcd2cebc369617f15e4e7",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/sessions.jsonl",
+      "bytes": 1243,
+      "sha256": "fcb0669fa7ea8ca81caed3305bfef7880312aba20234d315c3f7a8b347d9c5b3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/startup.json",
+      "bytes": 1500,
+      "sha256": "ae4ba5263ddfe69024d023c2b3fdc89eb989f4e5398ca1d1435b0ec4e88818a0",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/observer.json",
+      "bytes": 1119,
+      "sha256": "ecb5a6dd6e9bb02ac840a57442c3b70554e600953ff5ff613ad4f051f050d755",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/summary.json",
+      "bytes": 2060,
+      "sha256": "fafb824f71a8cfad320ba7ff734c1bb4c36613a4761099d4132e95a6088120d3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/pg-backend.json",
+      "bytes": 26,
+      "sha256": "91ecbf4a8474df1a16d676a9b8f7d300fdd92afcba5b4b79c2c600666f075a62",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/query-rss.jsonl",
+      "bytes": 271625,
+      "sha256": "f51d64ef004677e748612ccf2796d40606856b128ec3600499a8372a20a22475",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/q0-producer.log",
+      "bytes": 1732605,
+      "sha256": "5868295ec51356b30b537596ce427c93dc73d2b696f4703b852b2dbb87452bab",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/events.jsonl",
+      "bytes": 4212782,
+      "sha256": "ff2843ca1e0e19c00e00ddb884fc32d63050ca40d852f160eae01c91c1683a0e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/sessions.jsonl",
+      "bytes": 336,
+      "sha256": "a46e086c1cf8eb21b3579029da9d7319bb50bb0b6f919fade7ce927f377d33f6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/event-projection.json",
+      "bytes": 339,
+      "sha256": "3a4596df29171ca8e43b781cff30537f4af523e110d80db2057c4d34e49ab80a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/summary.json",
+      "bytes": 24768,
+      "sha256": "97b1d21c3db7a1598c58aff8f9f3467473c746120cf81cc7d31112d6dc6c3e32",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/q0/started.json",
+      "bytes": 171,
+      "sha256": "aa0a66d600ffe8bf73b3fc406b4459786d92b8b0ef3fa7480cbb9ea906586c06",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "a8ba1282c7e61248145116c6f1dff81a713a92de23e0cf8f57f1cdba82976ee5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "84f2883f8bfdc60801f46cfd038b9751508b9ee0125b43007862b0db29555c67",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/warm1024/q0/evaluation.json",
+      "bytes": 14638,
+      "sha256": "c014b679840dbf267497f30fd22bc4a2ad2bc4f9375b7cfd5d8e6aa725c3a24a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/pg-backend.json",
+      "bytes": 27,
+      "sha256": "7f8300c096d3c405e40c2e9cd916ccdecea09d0ee9a5daf71889c681b77836c5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/query-rss.jsonl",
+      "bytes": 217039,
+      "sha256": "01493cbb5e92c4e7e6e77af3dbd4556b67a01fca8f05cb90accd0f70b3d2398b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/q0-producer.log",
+      "bytes": 1741439,
+      "sha256": "3590460d0d3fad6a5f137684a799a8b3b32b51b29136afbc68905015325a9e76",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/events.jsonl",
+      "bytes": 4206331,
+      "sha256": "d741ad54aae79f0b515d81662c78b71a7dfb9a97d63a471c466d01d21d7b4824",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/sessions.jsonl",
+      "bytes": 337,
+      "sha256": "3977575821d4c07ad35d3613d4a6913be4ce47ca11e79b637303d6bda9896e0e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/event-projection.json",
+      "bytes": 347,
+      "sha256": "cb602c15d8b4762963c3307bbad8cd4096f67ce2038a0d01aad67bbe7ef088fe",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/summary.json",
+      "bytes": 24771,
+      "sha256": "c2e567b3d2703de8ae334ea3d67cc35224286080806ac7937835aca580f76386",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/q0/started.json",
+      "bytes": 171,
+      "sha256": "024a4c33a6b86e367f443f36fec71c5e0b221310e4a351cce51d49d32c16acad",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "aa7dae59a374147b66ddac087a9c1b4becd7ef31e27eb54898bd015d49f1efc6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "89ca75fc1b288488b5506404cdbc684bca2fb88dc9cf9636e6ebfb10d8fce70c",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure1/q0/evaluation.json",
+      "bytes": 14639,
+      "sha256": "8eb4ec15bbca8856d7292ba39385d323d7f91831757dc8b68682a5833eeb125d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/pg-backend.json",
+      "bytes": 27,
+      "sha256": "480469233a65fae8ddf1dd8decc490c6b03ef6b3aab44b551cfdb097a734c064",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/query-rss.jsonl",
+      "bytes": 212144,
+      "sha256": "10490629fb9d1d73cc2367723daff946537e2ee6c09871b4317ff3551be36648",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/q0-producer.log",
+      "bytes": 1741439,
+      "sha256": "196f38418042b8c29fcc9c251e88b555a04098ec8e27e77a68b5032e541b8240",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/events.jsonl",
+      "bytes": 4253950,
+      "sha256": "086cc9e36893ae107af95ec0970f15f27aa7f4651064ab995d2eb92a08f3b3d4",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/sessions.jsonl",
+      "bytes": 337,
+      "sha256": "b04b88d66c60919203e0c9e0008e79ec4e25fd1fdeaac4f5b7c1831eaa78bc54",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/event-projection.json",
+      "bytes": 348,
+      "sha256": "b0d57fc357f12b1be404ea1e8ab7cbb827cfa149eaee5a78d00a9e5fd7a69e1e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/summary.json",
+      "bytes": 24770,
+      "sha256": "7a38ac2a6d9a3f40367a6489424f5185a8bb2301cb27173a7a8b00035bc3fd2e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/q0/started.json",
+      "bytes": 171,
+      "sha256": "2d2d677964647c7b7bf1086eb833cb4275413271de3caec7609d097e6e754f17",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "8154cd30a96aac5187e2e40fa64013ca03b65cf9871470fff93c782d813280b9",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/q0/execution.json",
+      "bytes": 1376,
+      "sha256": "d040e187b4adc680fe4dd418f065b54cad4f7b72eede739175de91552b688d0f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure2/q0/evaluation.json",
+      "bytes": 14639,
+      "sha256": "cdc970eeceb50a434199f7248831185437cf62634bf022475bf224c9db8b66af",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/map-transport.json",
+      "bytes": 251,
+      "sha256": "ff7fb449cc1e520e4592c743cf59ca7f3a0eafdadae03e9fdceb75c03e49d35b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/pg-backend.json",
+      "bytes": 27,
+      "sha256": "c59546db681718d752b323841e4aa2e67ba9e66d1cf660e045c909150a9ec243",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/query-rss.jsonl",
+      "bytes": 217674,
+      "sha256": "956e2ce266ab5f18187f3277ab949d7ff2aae0f27cb8081b27fb626c51f03aff",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/q0-producer.log",
+      "bytes": 1741439,
+      "sha256": "0bffc72aceaadffd55dc08eafbde32d967006660927637e29d1b2757bc06afd9",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/events.jsonl",
+      "bytes": 4205626,
+      "sha256": "3baf78cf45166786b55697db15aa1b093a3ef648c676bf52ddcd91b803c2d701",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/sessions.jsonl",
+      "bytes": 337,
+      "sha256": "14b6bd262ea42ad94716429630fe4562b97dedea57f341b27b51e38b98c2b818",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/event-projection.json",
+      "bytes": 350,
+      "sha256": "b9fe56f6edd92a6a24a2be352f48ba79042b9a1c0d4e5ced8295ac65f937db24",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/summary.json",
+      "bytes": 24772,
+      "sha256": "dba6ae76450d7a61d78ebef71685d925ab72eb874a79fda0f5769460e5bcdfe1",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/q0/started.json",
+      "bytes": 171,
+      "sha256": "50e819bbbdc38b16eb699daf80d7e246e079f5df9d3663dc4a99ff1580dc25ef",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "23e49a0804ab2c83479499858b181000c349bd8e9c2c61aad5d725e3a24db1bd",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "01f574dba3c9b4e0f92c64a990b685e5c2915c9d931ab5e1003debb2fed87b71",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/immediate1024/measure3/q0/evaluation.json",
+      "bytes": 14640,
+      "sha256": "097602aa1147cfd4cc8e4567798bbfee2e9fdddbb66379d16380917871beaa0a",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/gateway-command.json",
+      "bytes": 1259,
+      "sha256": "011724124b86ecb4caf1f270c6c55bd176c1102a6d928b9808ee0136272712a9",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/gateway.log",
+      "bytes": 187,
+      "sha256": "e75e6afa3904d452c24724dd40263b550b6d657ebf2d69d3da4856676fb48b94",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/public-events.jsonl",
+      "bytes": 16894953,
+      "sha256": "9b5398b411a06a695ebc646526c326dbb655da0a335b3727d43fa7cd8defa410",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/events.jsonl",
+      "bytes": 18477786,
+      "sha256": "f781f9dfdf80e9d7b0e74fa5f13e81b6727b212438b41982797cb6508355c77b",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/sessions.jsonl",
+      "bytes": 1242,
+      "sha256": "d2523b6800db960a2712d6edce0449c051e46802fe72859a5c84418a8c82b71e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/startup.json",
+      "bytes": 1498,
+      "sha256": "524aeced813fa564f1b725debb35c829855e5370a8fd71016a2ab2629e5c0c0f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/observer.json",
+      "bytes": 1118,
+      "sha256": "5965ca89509561d0e434a0bceee2edbbdda08382ab16e6e069087649d3ebdf12",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/summary.json",
+      "bytes": 2058,
+      "sha256": "488abdbad2fcc99add773a8579b187e8afa72d39973f06040b6dbfdc63463311",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/pg-backend.json",
+      "bytes": 26,
+      "sha256": "c858e4d984ae9cfa38932533f57ff280e12e92325a258975e5f9908cb8267ac0",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/query-rss.jsonl",
+      "bytes": 315685,
+      "sha256": "86c935180b6afda8d34c6ea302c483d999867ee9e7ce537febce6e4ffd935261",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/q0-producer.log",
+      "bytes": 1732605,
+      "sha256": "cb18005b5ce1b4d240b30cc8801d60e6d423e0be0b0246ffa8862ecbec759837",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/events.jsonl",
+      "bytes": 4997707,
+      "sha256": "e13c54a8941f2588de4b3690e1cf5168de2b9484c6727a8391df8ac4c5b7e5fb",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/sessions.jsonl",
+      "bytes": 336,
+      "sha256": "1e2b3dee393933bf1cc4d7a9392499bb97c0be2c5b11c2433bcacbb7768143e1",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/event-projection.json",
+      "bytes": 338,
+      "sha256": "e3d6f77b77946c2b60465e0c41e30290c0f125ef8705453ac75db5d09d5d7b43",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/summary.json",
+      "bytes": 24765,
+      "sha256": "141d1fcca08b093dde90e543c56e27d7baddf1f29fcae4fa1cf854a672dc6e2e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/q0/started.json",
+      "bytes": 171,
+      "sha256": "8564b896d20f8382683c3016df1767ed3f7b4d68e04ad3e393de641d7586a863",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "1724a9449a25c010eb2f452d1ada2a6ba41107dc3e442f568680e8c4b9febd1f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "c61089a71c87315f8bfe53f81bd517f1d7db93ed9aa217f22b0721736bcffe87",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/warm1024/q0/evaluation.json",
+      "bytes": 14638,
+      "sha256": "a204a160b30d152f6e0e06b4b9fa2940aaa0dffcdf4c28ac7dd17541a81bfe5f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/pg-backend.json",
+      "bytes": 26,
+      "sha256": "4d9e2ceecb4603cdd0e893ebaadc6a633caa228d0aee8d496ac23a4e2ebebb64",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/query-rss.jsonl",
+      "bytes": 272428,
+      "sha256": "a65ed6f920fe1737cb6cd09e38b5f1be5dc7ba7420e580cb0a3461f0b746ba4e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/q0-producer.log",
+      "bytes": 1732605,
+      "sha256": "39e975ad1fb1b0b5e67619dc97c96e93eff16de6dabd1d948590fe8ebeb46c24",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/events.jsonl",
+      "bytes": 4998702,
+      "sha256": "96ffd353de4d885b951ddc69980b6ab289269892e09a0842c5805072ab98a2b7",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/sessions.jsonl",
+      "bytes": 336,
+      "sha256": "301df36ea796d5d659f43de544dacd81185926eca730516eecfc1c0550cc6697",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/event-projection.json",
+      "bytes": 346,
+      "sha256": "517121f89a9af7804e5079cc15b4841058b60d3de34ce29feae251a6e8adc084",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/summary.json",
+      "bytes": 24765,
+      "sha256": "cf4ac1c5f8c912360fa5f8cd2883af18c0c55e619072854f88887d3e9b8dc27b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/q0/started.json",
+      "bytes": 171,
+      "sha256": "f02f591e1cea232b2c55ee1750ccd37b9d938975e630422c871e7f509a524cd2",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "201c4596085919149a94098e417b90646920be1862ea5db2b394de0bb505724b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "13c72ade1fb047f450a5558b7485e0deede8475c22af3de6204c7f22e0199998",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure1/q0/evaluation.json",
+      "bytes": 14638,
+      "sha256": "92eef7587fd22b8242ac1051643d1b5cf763607bc18c002a7705c31c354785bb",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/pg-backend.json",
+      "bytes": 27,
+      "sha256": "63836f6c6899f467a9bef1acaff8e1f30c8c204833d28ee6af166f510abe8ee7",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/query-rss.jsonl",
+      "bytes": 267374,
+      "sha256": "f881033e84102636985134d29591d6f187af57024aad48c5c8f086300d6480c4",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/q0-producer.log",
+      "bytes": 1741439,
+      "sha256": "1fcb6522dfc42488d1aa851ef8ed259199f0886951fbed7a37731f0f84ce22a7",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/events.jsonl",
+      "bytes": 4981445,
+      "sha256": "9795abf2ad3008e400ef96f1bdb48ec5d2eea185b5bb0230a73dd4f2c5e5aebc",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/sessions.jsonl",
+      "bytes": 337,
+      "sha256": "b97fda7424779dd5f326f68cafe72b1154b68f9b89f042daf763117c46f003f3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/event-projection.json",
+      "bytes": 347,
+      "sha256": "547c04a8e2efdf5812b294360822a7a964b928cb239565b9d2789d597b7264a5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/summary.json",
+      "bytes": 24768,
+      "sha256": "e639056e2c4541d71ef9f1722bc19bcbd0223aa2c63ea851b259811603962813",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/q0/started.json",
+      "bytes": 171,
+      "sha256": "0dcb9a962b77cdf2d4d98438ae76bc1b089985e87e775b8470ab9b41a9a360df",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "e54c5026dbd6322153aebc14ce74c92d9f25a3c1fc34d58b5d0d4970d0b85351",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/q0/execution.json",
+      "bytes": 1377,
+      "sha256": "3787478040ab0f6c7c7aef9888e86ba58f95e431947c0877d8b9343ecb3b926d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure2/q0/evaluation.json",
+      "bytes": 14639,
+      "sha256": "1918db448d4d4fb1e75cb4fe9a33f30d18681ce4bd868c9e02daf937c1b69ad6",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/map-transport.json",
+      "bytes": 384,
+      "sha256": "c2da8e8163d8e042256c54b633a468a50c8ac261edcab32696ce405a8131ac18",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/plan.json",
+      "bytes": 1602,
+      "sha256": "559025405cb58d38d4331a1213b0294caeca08ea14d4a6590f5ed7cdc8c75789",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/pg-backend.json",
+      "bytes": 27,
+      "sha256": "72b81ce2b992267a7c906b671ab4c2c45666270196362fc3a1e5bbc69b30711d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/query-rss.jsonl",
+      "bytes": 245295,
+      "sha256": "75e3336a06113024e4e4deb0fa7de8fd06ef69bef869a771142356753637d71e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/q0-producer.log",
+      "bytes": 1741439,
+      "sha256": "7cc98d12991a7fd1e3680ca58816639208d7f166596401962109818a43a82ea4",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/events.jsonl",
+      "bytes": 4985310,
+      "sha256": "7fbf752d6f972429477a0f519aaaa0f22ce5dc89170f8f301e4f16b0dd5b3fe4",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/sessions.jsonl",
+      "bytes": 337,
+      "sha256": "92addb1346371836b6d6558c4c733a8171c9d56a45be5d46d18611a83b75cb61",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/event-projection.json",
+      "bytes": 349,
+      "sha256": "495d60e5a6596c1a900377d937e03d5b729d2ef17bd0e364ba3674a3f7524c9f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/summary.json",
+      "bytes": 24767,
+      "sha256": "f4d23f2bf6fe5559de4873b9766624c6a67567dafa8ae631d5bec9d9e29915d5",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/q0/started.json",
+      "bytes": 171,
+      "sha256": "adf2cd02fd2a500cb65902e920a6489b64c13d84fd005dc4fcd5ea5f7081cb4b",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/q0/results.jsonl",
+      "bytes": 82137,
+      "sha256": "327aabf0d89a3bffed5b7f213729d6f426d125c5031c909993b9a35887fb5353",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/q0/execution.json",
+      "bytes": 1376,
+      "sha256": "c666119225bb38a2dc271b745d768807b2fae248d287f13f79a004046210257f",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "model/real01/worker/prepared1024/measure3/q0/evaluation.json",
+      "bytes": 14639,
+      "sha256": "1e2f6403e5ffc54f1b675540de48231f4af7bbfb1a2e4b191db6f6505ae73e20",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker-config.json",
+      "bytes": 204,
+      "sha256": "599bb4f886d72b0c1feaf300d752d18ab8d98098d8b22229ffdc20b347174c8e",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker.log",
+      "bytes": 209,
+      "sha256": "1499605143699c5eeba0680bc999d74d1deba5e09c4490b2bd656e4309ef4fd3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/controller-summary.json",
+      "bytes": 4383,
+      "sha256": "f1557d35f3c5d195a7008a4a0dc0242bc2512fe70bcf01e7fc9308bb7bf2908d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/independent.json",
+      "bytes": 254,
+      "sha256": "03193b81dce475d97a904fffa828845cfa5a28a08f2d15187e01f5aa12baa08d",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/pg/cluster.log",
+      "bytes": 1187,
+      "sha256": "7c018084b86bfaab533883b40351ec6f32ff436a739ec9448cee2b6921741094",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/pg/postgres.log",
+      "bytes": 3307,
+      "sha256": "844982de83aaf96664df6c9c78515e99bcef55a2f4e60eb145ab2587fe8faaa3",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/budget.sqlite",
+      "bytes": 40960,
+      "sha256": "409bad1a5ef201427742f38539e2f27969423cd6010c964340e6f4111faae35b",
+      "retention": "private request/input or ledger evidence"
+    },
+    {
+      "path": "pg/worker/progress-immediate-null_and_limit_zero.json",
+      "bytes": 258,
+      "sha256": "b1c6d06fb136dee961b60b3633558376b55b77f6d7fd0fb1bf570cb92f595d94",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-out_of_order_and_empty_input.json",
+      "bytes": 534,
+      "sha256": "2b938451ccbfed3c6e04a61b28a06f2e84f6c935bdf7ce3c1ce1a6801f87dd4f",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-repeatable_read_snapshot.json",
+      "bytes": 730,
+      "sha256": "a660d7717433d8a2f3a0f3bd5797f81d9b03bba229719cc885ac63c206938545",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-row_security.json",
+      "bytes": 898,
+      "sha256": "2acc70b3456c994768e5939d3e37073d513e78658b11033b2b8b8d23a07088da",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-function_permission_before_work.json",
+      "bytes": 1126,
+      "sha256": "1b3165409584799849a55f0c30b09f323eb4270f6ac76938b194d7917faa30c5",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-known_rejection_and_recovery.json",
+      "bytes": 1352,
+      "sha256": "db55fb62e8998a2ae9fe77276fee6eb0f858d8cf51f65578b582265af3514b2e",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-cancel_before_rpc.json",
+      "bytes": 1552,
+      "sha256": "c7909c0e654f1b830adb6e1844c64998087a8e3da2e6063b8bd6326d8515b0fa",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-immediate-cancel_after_http_started.json",
+      "bytes": 1760,
+      "sha256": "a56da1020e4f1b8c503b2f2346a8f08ed8e472b5fb53ef04f4d3fc87136fde96",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-null_and_limit_zero.json",
+      "bytes": 1913,
+      "sha256": "9c46d355dd4edba7102578cb6aff977ed25b5b8e261b8564667d02a6c3a3572c",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-out_of_order_and_empty_input.json",
+      "bytes": 2187,
+      "sha256": "65fe0d324edd3805437e1e6e05dd6cbacf9aeabfe922fb1bcbeba02b69e85630",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-repeatable_read_snapshot.json",
+      "bytes": 2382,
+      "sha256": "a8d6fdd41f33c555843dca1f355e8ec3a3c8c5bb167994660e00e2b8d9496dd1",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-row_security.json",
+      "bytes": 2549,
+      "sha256": "b05228d2cbe8dc84c202234fb6e2aad50188fb7c534bcd81e4f4ddf24f481c63",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-function_permission_before_work.json",
+      "bytes": 2776,
+      "sha256": "a2939e5747aaa63f445ad0a133d6f9374c54e418517f0500c4677738db143a5b",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-known_rejection_and_recovery.json",
+      "bytes": 3001,
+      "sha256": "2342c6c10e832e153fdea4d3335aa27584b05fecae1c102bdb72c3235297e8fe",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-cancel_before_rpc.json",
+      "bytes": 3200,
+      "sha256": "9b03247de58ae0bc735e660a87c49c0d06f8b554f905c013ae20b4ecc8148449",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/progress-prepared-cancel_after_http_started.json",
+      "bytes": 3407,
+      "sha256": "a03cbf995cb32c4d8f6a87b74a1027ade5cf4b9589e6aeacbf65cd9ab9b104b5",
+      "retention": "public replacement or duplicate whole-group/progress/derived output"
+    },
+    {
+      "path": "pg/worker/events.jsonl",
+      "bytes": 131968,
+      "sha256": "207efbf1808a694a9c000f726c5fdc2c14e08993f167298cb8be64a07ad79627",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/summary.json",
+      "bytes": 3842,
+      "sha256": "4d6062237dfefc6a03afa69350782dbe8ea1d15c3ca9f365f2b43c955dfe0920",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/immediate/transport.json",
+      "bytes": 240,
+      "sha256": "26737957c7149294d502d8c95e063a6b582eb31c0e930d17bda97699db8255f2",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/immediate/memory.jsonl",
+      "bytes": 5238,
+      "sha256": "f62d8a4d965623a48340eceff225ac9a873f85f7d7d17ca0055a3b5b5dfbaad2",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/immediate/memory-summary.json",
+      "bytes": 3062,
+      "sha256": "e7600473930992ba2868965f1b052ea628decc753f83766d99176763f9d973ac",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/prepared/transport.json",
+      "bytes": 372,
+      "sha256": "e4907453d50956ff272ce246a43c1fe59d092a31c1f71a9c56072bce899d4124",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/prepared/memory.jsonl",
+      "bytes": 4898,
+      "sha256": "d69f0e6eacfac2e592bab698dd02311d6e6a35a0d8f14d507da1f39df23da4b9",
+      "retention": "original retained with public copy"
+    },
+    {
+      "path": "pg/worker/prepared/memory-summary.json",
+      "bytes": 2861,
+      "sha256": "fc7082b563403a09d8ea2a38b261c2326740db98fef22b288aa2fd47ae5bd84b",
+      "retention": "original retained with public copy"
+    }
+  ],
+  "backup_archive": {
+    "bytes": 16049899,
+    "sha256": "ccc71dcdc2523d38589dce7af28d3b31492957e21f272afc28b2990f7fe866ff"
+  },
+  "scope": "all 265 originals preserved on server and in independent local archive; public derivatives are mapped separately"
+}

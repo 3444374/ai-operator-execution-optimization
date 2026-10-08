@@ -12,6 +12,17 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[返回等待隔离](experiments/results/diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)已完成原记录复算及本地71个case/4107次模拟。
+追加的等待与同步实验guard时段约78%–80%重叠；两行最小复现确认同步等待能拖住已就绪结果，零等待的线程控制负例保留。
+实际Ray/Daft与SQLite新增20个case/16,448次模拟actor调用通过，HTTP/PG/模型/GPU调用0；等待缩短却使线程控制完整消费更慢，默认保持。
+[实际Ray分段](experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)拥有时序、供给变化及资源复算；下一步核对实验I/O与既有共享预付计数，不自动追加模型额度。
+
+[逐行补充输入与待准备尾块](experiments/results/diagnostics/map_queued_preparation_20261008/README.md)已完成原事件核对、可关闭原型及实际库检查。
+原三次1024行测量的后续896次借用均只有一行候选；新接法只追加尚未开始准备的同session/Job尾块，Core动作与每行完整请求保持。
+本地24,672次模拟调用中，高准备成本出现改善、低准备成本仍慢于即时12.638%；最终服务器147项检查通过。
+新PG16项/26次本机HTTP及10查询/8224次真实请求通过，行/计费/资源与RSS/PSS独立复算；真实完整查询10.069→12.686秒，追加慢25.987%。
+即时默认与追加选项的False默认均保持，不推荐启用；多模态、跨Job与通用收益仍待验证，实施与结果见[查询调优](experiments/plans/查询调优.md#queued-preparation-coalescing)。
+
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)已完成组件、替身与真实模型对照。
 原真实对照与审查修订后复测分别慢7.31%和40.52%，各自三次重复均变慢；候选仅保留诊断，默认同步保持。
 修订后83项服务器检查和独立8,224次真实请求、关联及清理核对通过，原负结果和0请求启动失败分别保留。

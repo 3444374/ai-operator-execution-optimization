@@ -1,0 +1,1744 @@
+{
+  "status": "passed",
+  "scope": "real single-node Ray/Daft and durable accounting; synthetic sleep service; no PG/HTTP/model/GPU work",
+  "analyzer_sha256": "9ceeb11a92a5364585f16957ed42e9555fcf9919c46ed5c252b26d56e8651cc6",
+  "verified_cases": 20,
+  "verified_actor_calls": 16448,
+  "private_sqlite_verified": true,
+  "cases": [
+    {
+      "run_id": "check-0-immediate-sync",
+      "phase": "check",
+      "repeat": 0,
+      "rows": 16,
+      "path": "immediate",
+      "guard_kind": "sync",
+      "query_seconds": 3.062809173,
+      "first_result_seconds": 3.051549256,
+      "worker_end_to_callback": {
+        "count": 16,
+        "mean_ms": 3.008379125,
+        "median_ms": 2.669966,
+        "p95_ms": 5.568106,
+        "sum_seconds": 0.048134066
+      },
+      "callback_to_receive": {
+        "count": 16,
+        "mean_ms": 0.9253575625,
+        "median_ms": 0.922625,
+        "p95_ms": 1.599164,
+        "sum_seconds": 0.014805721
+      },
+      "worker_end_to_receive": {
+        "count": 16,
+        "mean_ms": 3.9337366875,
+        "median_ms": 3.7935935,
+        "p95_ms": 6.331799,
+        "sum_seconds": 0.062939787
+      },
+      "guard": {
+        "count": 16,
+        "mean_ms": 1.0247601875,
+        "median_ms": 0.8302045,
+        "p95_ms": 3.018751,
+        "sum_seconds": 0.016396163
+      },
+      "prepared_blocks": 0,
+      "object_batches": 1,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 16,
+          "mean_ms": 1.002595125,
+          "median_ms": 0.811316,
+          "p95_ms": 2.963553,
+          "sum_seconds": 0.016041522
+        },
+        "hash_ns": {
+          "count": 16,
+          "mean_ms": 0.006982375,
+          "median_ms": 0.0052765,
+          "p95_ms": 0.029879,
+          "sum_seconds": 0.000111718
+        },
+        "request_observe_ns": {
+          "count": 16,
+          "mean_ms": 0.0149158125,
+          "median_ms": 0.0134545,
+          "p95_ms": 0.024807,
+          "sum_seconds": 0.000238653
+        }
+      },
+      "core_active_mean": 15.957775902220728,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 2.967563175,
+        "object_put": 0.001492876,
+        "payload_close": 2.684e-06
+      },
+      "object_peak_bytes": 2702,
+      "actor_active_peak": 16,
+      "actor_active_mean": 0.11821112467329024,
+      "events_sha256": "21cc13988a1f30fd4fc15f8c2f4ba21164e28eac0ea013c2bc8ee688cfd06064",
+      "result_sha256": "249ae743b7ca3b21d2d15d0501e12f68e29d692964e4166fecb0bb5226482cb1"
+    },
+    {
+      "run_id": "check-0-coalesced-sync",
+      "phase": "check",
+      "repeat": 0,
+      "rows": 16,
+      "path": "coalesced",
+      "guard_kind": "sync",
+      "query_seconds": 0.102384882,
+      "first_result_seconds": 0.092682972,
+      "worker_end_to_callback": {
+        "count": 16,
+        "mean_ms": 2.6883755625,
+        "median_ms": 2.407175,
+        "p95_ms": 3.617908,
+        "sum_seconds": 0.043014009
+      },
+      "callback_to_receive": {
+        "count": 16,
+        "mean_ms": 0.8148328125,
+        "median_ms": 0.929966,
+        "p95_ms": 1.402627,
+        "sum_seconds": 0.013037325
+      },
+      "worker_end_to_receive": {
+        "count": 16,
+        "mean_ms": 3.503208375,
+        "median_ms": 3.5286715,
+        "p95_ms": 4.694758,
+        "sum_seconds": 0.056051334
+      },
+      "guard": {
+        "count": 16,
+        "mean_ms": 2.4500616875,
+        "median_ms": 0.9495895,
+        "p95_ms": 11.481677,
+        "sum_seconds": 0.039200987
+      },
+      "prepared_blocks": 4,
+      "object_batches": 4,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 16,
+          "mean_ms": 2.425248625,
+          "median_ms": 0.930163,
+          "p95_ms": 11.410676,
+          "sum_seconds": 0.038803978
+        },
+        "hash_ns": {
+          "count": 16,
+          "mean_ms": 0.00678425,
+          "median_ms": 0.004951,
+          "p95_ms": 0.025675,
+          "sum_seconds": 0.000108548
+        },
+        "request_observe_ns": {
+          "count": 16,
+          "mean_ms": 0.0177114375,
+          "median_ms": 0.014336,
+          "p95_ms": 0.044466,
+          "sum_seconds": 0.000283383
+        }
+      },
+      "core_active_mean": 9.723986144751333,
+      "preparation_payload_sum_seconds": 0.04149498,
+      "preparation_put_sum_seconds": 0.005384072,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 2726,
+      "actor_active_peak": 16,
+      "actor_active_mean": 3.558629026890904,
+      "events_sha256": "a9b0f2bc903e05e1f862d2022bcbbb8c1299cf1ec67c65a43c79edd14bbfefc4",
+      "result_sha256": "6952ab776ed0b659649fe6fe515a9227dd516ba55f5ca3f157265d83bd698154"
+    },
+    {
+      "run_id": "check-0-immediate-threaded",
+      "phase": "check",
+      "repeat": 0,
+      "rows": 16,
+      "path": "immediate",
+      "guard_kind": "threaded",
+      "query_seconds": 0.096583871,
+      "first_result_seconds": 0.088742415,
+      "worker_end_to_callback": {
+        "count": 16,
+        "mean_ms": 1.9202368125,
+        "median_ms": 1.978157,
+        "p95_ms": 3.430047,
+        "sum_seconds": 0.030723789
+      },
+      "callback_to_receive": {
+        "count": 16,
+        "mean_ms": 0.8005565,
+        "median_ms": 0.6302095,
+        "p95_ms": 1.752955,
+        "sum_seconds": 0.012808904
+      },
+      "worker_end_to_receive": {
+        "count": 16,
+        "mean_ms": 2.7207933125,
+        "median_ms": 2.781844,
+        "p95_ms": 3.987346,
+        "sum_seconds": 0.043532693
+      },
+      "guard": {
+        "count": 16,
+        "mean_ms": 15.3356513125,
+        "median_ms": 15.3313565,
+        "p95_ms": 20.8711,
+        "sum_seconds": 0.245370421
+      },
+      "prepared_blocks": 0,
+      "object_batches": 2,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 16,
+          "mean_ms": 1.82933125,
+          "median_ms": 1.0348465,
+          "p95_ms": 6.635951,
+          "sum_seconds": 0.0292693
+        },
+        "hash_ns": {
+          "count": 16,
+          "mean_ms": 0.0046695625,
+          "median_ms": 0.00201,
+          "p95_ms": 0.023229,
+          "sum_seconds": 7.4713e-05
+        },
+        "request_observe_ns": {
+          "count": 16,
+          "mean_ms": 0.00822875,
+          "median_ms": 0.008117,
+          "p95_ms": 0.011702,
+          "sum_seconds": 0.00013166
+        },
+        "reserve_queue_ns": {
+          "count": 16,
+          "mean_ms": 13.2389980625,
+          "median_ms": 13.643777,
+          "p95_ms": 19.760794,
+          "sum_seconds": 0.211823969
+        },
+        "reserve_resume_ns": {
+          "count": 16,
+          "mean_ms": 0.252130125,
+          "median_ms": 0.14241,
+          "p95_ms": 1.658574,
+          "sum_seconds": 0.004034082
+        }
+      },
+      "core_active_mean": 14.766325942765329,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.017385559,
+        "object_put": 0.002212605,
+        "payload_close": 2.102e-06
+      },
+      "object_peak_bytes": 2710,
+      "actor_active_peak": 16,
+      "actor_active_mean": 3.7752633770497765,
+      "events_sha256": "ed1779eb8080bd5303c53321ddfb24f7a99dd64a14b76b3f8b1200061e78f081",
+      "result_sha256": "810e08847060dfcccde477dcbb9452d2d8c44852d00ae366d7e4ccfa88c49739"
+    },
+    {
+      "run_id": "check-0-coalesced-threaded",
+      "phase": "check",
+      "repeat": 0,
+      "rows": 16,
+      "path": "coalesced",
+      "guard_kind": "threaded",
+      "query_seconds": 0.09855974,
+      "first_result_seconds": 0.087180016,
+      "worker_end_to_callback": {
+        "count": 16,
+        "mean_ms": 2.18128325,
+        "median_ms": 2.185688,
+        "p95_ms": 3.453144,
+        "sum_seconds": 0.034900532
+      },
+      "callback_to_receive": {
+        "count": 16,
+        "mean_ms": 0.8297155,
+        "median_ms": 0.9286095,
+        "p95_ms": 1.541078,
+        "sum_seconds": 0.013275448
+      },
+      "worker_end_to_receive": {
+        "count": 16,
+        "mean_ms": 3.01099875,
+        "median_ms": 3.239728,
+        "p95_ms": 4.463451,
+        "sum_seconds": 0.04817598
+      },
+      "guard": {
+        "count": 16,
+        "mean_ms": 15.521489,
+        "median_ms": 15.5533705,
+        "p95_ms": 24.231106,
+        "sum_seconds": 0.248343824
+      },
+      "prepared_blocks": 4,
+      "object_batches": 4,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 16,
+          "mean_ms": 2.7996535,
+          "median_ms": 1.505763,
+          "p95_ms": 6.530963,
+          "sum_seconds": 0.044794456
+        },
+        "hash_ns": {
+          "count": 16,
+          "mean_ms": 0.003899875,
+          "median_ms": 0.0028025,
+          "p95_ms": 0.015858,
+          "sum_seconds": 6.2398e-05
+        },
+        "request_observe_ns": {
+          "count": 16,
+          "mean_ms": 0.015674625,
+          "median_ms": 0.010664,
+          "p95_ms": 0.036739,
+          "sum_seconds": 0.000250794
+        },
+        "reserve_queue_ns": {
+          "count": 16,
+          "mean_ms": 12.4549364375,
+          "median_ms": 12.40189,
+          "p95_ms": 22.994162,
+          "sum_seconds": 0.199278983
+        },
+        "reserve_resume_ns": {
+          "count": 16,
+          "mean_ms": 0.246074625,
+          "median_ms": 0.1441235,
+          "p95_ms": 1.008833,
+          "sum_seconds": 0.003937194
+        }
+      },
+      "core_active_mean": 10.337386137585183,
+      "preparation_payload_sum_seconds": 0.030966401,
+      "preparation_put_sum_seconds": 0.004883839,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 2726,
+      "actor_active_peak": 16,
+      "actor_active_mean": 3.7223821308781857,
+      "events_sha256": "0195999964a5023bd97e1adc94695246df8974e237a6230755758157a64f2829",
+      "result_sha256": "c0d0e85511e8a95d6de394f5125c06fce3884978e2b4f2c31a015e8edafe6023"
+    },
+    {
+      "run_id": "warmup-0-immediate-sync",
+      "phase": "warmup",
+      "repeat": 0,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "sync",
+      "query_seconds": 3.419611371,
+      "first_result_seconds": 0.144537389,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 4.564647274414063,
+        "median_ms": 2.354413,
+        "p95_ms": 14.641774,
+        "sum_seconds": 4.674198809
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 14.985075405273438,
+        "median_ms": 12.4878745,
+        "p95_ms": 31.653958,
+        "sum_seconds": 15.344717215
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 19.5497226796875,
+        "median_ms": 16.397677,
+        "p95_ms": 40.849602,
+        "sum_seconds": 20.018916024
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 1.3704272138671876,
+        "median_ms": 0.9381665,
+        "p95_ms": 2.776948,
+        "sum_seconds": 1.403317467
+      },
+      "prepared_blocks": 0,
+      "object_batches": 77,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 1.34989183203125,
+          "median_ms": 0.9176805,
+          "p95_ms": 2.756465,
+          "sum_seconds": 1.382289236
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0056183388671875,
+          "median_ms": 0.0050435,
+          "p95_ms": 0.009479,
+          "sum_seconds": 0.005753179
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0146865869140625,
+          "median_ms": 0.013502,
+          "p95_ms": 0.020377,
+          "sum_seconds": 0.015039065
+        }
+      },
+      "core_active_mean": 60.97626938233737,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.560650057,
+        "object_put": 0.499859146,
+        "payload_close": 4.167e-05
+      },
+      "object_peak_bytes": 24728,
+      "actor_active_peak": 36,
+      "actor_active_mean": 7.0745070267810855,
+      "events_sha256": "1af66406b80828c7ca1448eea5eec4e58c17945d05c91dc9a0c8d524ed63c0fa",
+      "result_sha256": "9b3355e7ff7862893006001e86f1dd672733891a59c28e9b6a3a57219900238a"
+    },
+    {
+      "run_id": "warmup-0-coalesced-sync",
+      "phase": "warmup",
+      "repeat": 0,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "sync",
+      "query_seconds": 4.38241398,
+      "first_result_seconds": 0.241581838,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 7.343086953125,
+        "median_ms": 1.6822555,
+        "p95_ms": 28.836997,
+        "sum_seconds": 7.51932104
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 91.58897923730468,
+        "median_ms": 88.5314185,
+        "p95_ms": 135.880501,
+        "sum_seconds": 93.787114739
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 98.9320661904297,
+        "median_ms": 92.4192955,
+        "p95_ms": 164.640225,
+        "sum_seconds": 101.306435779
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 2.9050647021484375,
+        "median_ms": 1.045768,
+        "p95_ms": 8.087383,
+        "sum_seconds": 2.974786255
+      },
+      "prepared_blocks": 90,
+      "object_batches": 90,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 2.883642177734375,
+          "median_ms": 1.02672,
+          "p95_ms": 8.05657,
+          "sum_seconds": 2.95284959
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0055322099609375,
+          "median_ms": 0.0050235,
+          "p95_ms": 0.008835,
+          "sum_seconds": 0.005664983
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.015657529296875,
+          "median_ms": 0.013982,
+          "p95_ms": 0.025078,
+          "sum_seconds": 0.01603331
+        }
+      },
+      "core_active_mean": 58.6635206850084,
+      "preparation_payload_sum_seconds": 1.96517435,
+      "preparation_put_sum_seconds": 0.16490971,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21848,
+      "actor_active_peak": 29,
+      "actor_active_mean": 5.509035017043278,
+      "events_sha256": "8642a24b4996ec161de0f8c48f21b740a39318193a9e59978582b8629fcadbb6",
+      "result_sha256": "c04c47c25a4b9bec7107bd017814bb8e243c0ab221adf92a9141cf710040cdc4"
+    },
+    {
+      "run_id": "warmup-0-immediate-threaded",
+      "phase": "warmup",
+      "repeat": 0,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "threaded",
+      "query_seconds": 6.544470636,
+      "first_result_seconds": 0.123345999,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 3.301162603515625,
+        "median_ms": 1.604857,
+        "p95_ms": 9.59327,
+        "sum_seconds": 3.380390506
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 0.95822924609375,
+        "median_ms": 0.3286545,
+        "p95_ms": 5.27715,
+        "sum_seconds": 0.981226748
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 4.259391849609375,
+        "median_ms": 2.121437,
+        "p95_ms": 15.303632,
+        "sum_seconds": 4.361617254
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 348.6340934970703,
+        "median_ms": 359.884589,
+        "p95_ms": 541.988848,
+        "sum_seconds": 357.001311741
+      },
+      "prepared_blocks": 0,
+      "object_batches": 354,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 6.085543982421875,
+          "median_ms": 4.1761025,
+          "p95_ms": 15.007052,
+          "sum_seconds": 6.231597038
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0037423037109375,
+          "median_ms": 0.0023315,
+          "p95_ms": 0.009098,
+          "sum_seconds": 0.003832119
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0129808994140625,
+          "median_ms": 0.011311,
+          "p95_ms": 0.022116,
+          "sum_seconds": 0.013292441
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 342.1318985341797,
+          "median_ms": 351.864232,
+          "p95_ms": 532.316486,
+          "sum_seconds": 350.343064099
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.398876146484375,
+          "median_ms": 0.228012,
+          "p95_ms": 1.009398,
+          "sum_seconds": 0.408449174
+        }
+      },
+      "core_active_mean": 62.9971353548602,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 4.000754102,
+        "object_put": 0.706867373,
+        "payload_close": 0.000325709
+      },
+      "object_peak_bytes": 26680,
+      "actor_active_peak": 47,
+      "actor_active_mean": 3.6060875075488688,
+      "events_sha256": "d9460a07eaf17a9e8617e0c3c14e4fdc604e48722e06d28eb76f79450befb62a",
+      "result_sha256": "04672a46ca060ba40936530cf6d7484df079d1fdd465f12dca30414e56bf3931"
+    },
+    {
+      "run_id": "warmup-0-coalesced-threaded",
+      "phase": "warmup",
+      "repeat": 0,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "threaded",
+      "query_seconds": 5.097517374,
+      "first_result_seconds": 0.11541985,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 7.3633088046875,
+        "median_ms": 3.3379655,
+        "p95_ms": 23.702452,
+        "sum_seconds": 7.540028216
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 3.7783954482421875,
+        "median_ms": 1.88964,
+        "p95_ms": 11.959983,
+        "sum_seconds": 3.869076939
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 11.141704252929687,
+        "median_ms": 7.045649,
+        "p95_ms": 26.955064,
+        "sum_seconds": 11.409105155
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 258.23937665429685,
+        "median_ms": 261.516894,
+        "p95_ms": 422.401838,
+        "sum_seconds": 264.437121694
+      },
+      "prepared_blocks": 71,
+      "object_batches": 71,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 4.800061530273437,
+          "median_ms": 1.290578,
+          "p95_ms": 25.428755,
+          "sum_seconds": 4.915263007
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.004057333984375,
+          "median_ms": 0.0035845,
+          "p95_ms": 0.008132,
+          "sum_seconds": 0.00415471
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.01057315234375,
+          "median_ms": 0.009427,
+          "p95_ms": 0.017228,
+          "sum_seconds": 0.010826908
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 252.97358774902344,
+          "median_ms": 257.4091695,
+          "p95_ms": 417.619952,
+          "sum_seconds": 259.044953855
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.44990853515625,
+          "median_ms": 0.1508175,
+          "p95_ms": 1.43356,
+          "sum_seconds": 0.46070634
+        }
+      },
+      "core_active_mean": 61.20929804367941,
+      "preparation_payload_sum_seconds": 1.979407912,
+      "preparation_put_sum_seconds": 0.157067957,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21832,
+      "actor_active_peak": 52,
+      "actor_active_mean": 4.730995484783609,
+      "events_sha256": "753874b1ef4f308eb73ad913dfc17c4c7b6eb9ed92c6c6e14dc708ac28b947e9",
+      "result_sha256": "83292f354f48b3c72c0f0de354a569390e2edf74a4c28ddc47d6fd5192f07322"
+    },
+    {
+      "run_id": "measurement-1-coalesced-sync",
+      "phase": "measurement",
+      "repeat": 1,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "sync",
+      "query_seconds": 4.782994178,
+      "first_result_seconds": 0.224200105,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 3.9330274853515625,
+        "median_ms": 1.6743855,
+        "p95_ms": 15.973222,
+        "sum_seconds": 4.027420145
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 104.55788949609375,
+        "median_ms": 108.852449,
+        "p95_ms": 142.730176,
+        "sum_seconds": 107.067278844
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 108.49091698144531,
+        "median_ms": 112.8659485,
+        "p95_ms": 149.296498,
+        "sum_seconds": 111.094698989
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 3.1955056728515623,
+        "median_ms": 1.0574725,
+        "p95_ms": 14.45173,
+        "sum_seconds": 3.272197809
+      },
+      "prepared_blocks": 140,
+      "object_batches": 140,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 3.1732974560546876,
+          "median_ms": 1.037785,
+          "p95_ms": 14.415185,
+          "sum_seconds": 3.249456595
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.00554667578125,
+          "median_ms": 0.005104,
+          "p95_ms": 0.007798,
+          "sum_seconds": 0.005679796
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.016411701171875,
+          "median_ms": 0.0146655,
+          "p95_ms": 0.028162,
+          "sum_seconds": 0.016805582
+        }
+      },
+      "core_active_mean": 60.11373582253187,
+      "preparation_payload_sum_seconds": 1.922261892,
+      "preparation_put_sum_seconds": 0.246703924,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21944,
+      "actor_active_peak": 22,
+      "actor_active_mean": 5.043017160034686,
+      "events_sha256": "30688db5fc26ece1525864271890761ad99d7f67344f2162c1ec4e29f116a3a1",
+      "result_sha256": "d1afc42bf090b0b0b41f6c45b2913e74e65a8da4ccc733628f7deef502781f44"
+    },
+    {
+      "run_id": "measurement-1-immediate-threaded",
+      "phase": "measurement",
+      "repeat": 1,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "threaded",
+      "query_seconds": 6.228903663,
+      "first_result_seconds": 0.122397002,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 3.4915544052734373,
+        "median_ms": 1.534556,
+        "p95_ms": 6.696282,
+        "sum_seconds": 3.575351711
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 0.844931654296875,
+        "median_ms": 0.356891,
+        "p95_ms": 3.008359,
+        "sum_seconds": 0.865210014
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 4.336486059570312,
+        "median_ms": 2.075615,
+        "p95_ms": 8.109354,
+        "sum_seconds": 4.440561725
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 329.11200504589846,
+        "median_ms": 343.519547,
+        "p95_ms": 538.712307,
+        "sum_seconds": 337.010693167
+      },
+      "prepared_blocks": 0,
+      "object_batches": 337,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 5.804777834960937,
+          "median_ms": 3.67523,
+          "p95_ms": 15.895223,
+          "sum_seconds": 5.944092503
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0033120224609375,
+          "median_ms": 0.0021365,
+          "p95_ms": 0.007739,
+          "sum_seconds": 0.003391511
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.011755076171875,
+          "median_ms": 0.0108535,
+          "p95_ms": 0.017337,
+          "sum_seconds": 0.012037198
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 322.9207582148438,
+          "median_ms": 337.0419905,
+          "p95_ms": 533.293543,
+          "sum_seconds": 330.670856412
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.3704036005859375,
+          "median_ms": 0.214176,
+          "p95_ms": 1.082009,
+          "sum_seconds": 0.379293287
+        }
+      },
+      "core_active_mean": 62.96952532688417,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 4.075545917,
+        "object_put": 0.694967598,
+        "payload_close": 0.000321163
+      },
+      "object_peak_bytes": 31618,
+      "actor_active_peak": 41,
+      "actor_active_mean": 3.7925635412094834,
+      "events_sha256": "0d6cd50190ec349709932e96762bdbf6f8417fb032e56ab4a744f710f11e5bff",
+      "result_sha256": "0309fd9ecbdd837b5b98b1b936f0009c95969c7b1b71de352cdecd2896cd43a1"
+    },
+    {
+      "run_id": "measurement-1-coalesced-threaded",
+      "phase": "measurement",
+      "repeat": 1,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "threaded",
+      "query_seconds": 5.129364274,
+      "first_result_seconds": 0.109475309,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 6.073268201171875,
+        "median_ms": 3.7632705,
+        "p95_ms": 15.845825,
+        "sum_seconds": 6.219026638
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 4.443838478515625,
+        "median_ms": 2.737499,
+        "p95_ms": 15.596119,
+        "sum_seconds": 4.550490602
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 10.5171066796875,
+        "median_ms": 7.4523555,
+        "p95_ms": 25.796685,
+        "sum_seconds": 10.76951724
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 259.62166136621096,
+        "median_ms": 267.4602445,
+        "p95_ms": 350.362392,
+        "sum_seconds": 265.852581239
+      },
+      "prepared_blocks": 74,
+      "object_batches": 74,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 4.821913515625,
+          "median_ms": 1.306186,
+          "p95_ms": 24.410486,
+          "sum_seconds": 4.93763944
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.00397692578125,
+          "median_ms": 0.003417,
+          "p95_ms": 0.007922,
+          "sum_seconds": 0.004072372
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.010892931640625,
+          "median_ms": 0.0098795,
+          "p95_ms": 0.017811,
+          "sum_seconds": 0.011154362
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 254.3091797294922,
+          "median_ms": 264.123247,
+          "p95_ms": 348.761218,
+          "sum_seconds": 260.412600043
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.474559994140625,
+          "median_ms": 0.154307,
+          "p95_ms": 1.687487,
+          "sum_seconds": 0.485949434
+        }
+      },
+      "core_active_mean": 61.019253131913544,
+      "preparation_payload_sum_seconds": 2.00544813,
+      "preparation_put_sum_seconds": 0.152386013,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21840,
+      "actor_active_peak": 46,
+      "actor_active_mean": 4.744618149145708,
+      "events_sha256": "e2c4cd30cd5600b85a31ddf6756e3a76e7374355a993bf680bd1c0946b4c1f10",
+      "result_sha256": "daf8c208da913f8e9e940ad98cb2cf07efa8c57cc3f832e4d97ee8c9e6601ab3"
+    },
+    {
+      "run_id": "measurement-1-immediate-sync",
+      "phase": "measurement",
+      "repeat": 1,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "sync",
+      "query_seconds": 3.464850017,
+      "first_result_seconds": 0.147032677,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 4.504908665039062,
+        "median_ms": 2.261213,
+        "p95_ms": 14.329806,
+        "sum_seconds": 4.613026473
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 14.025229745117187,
+        "median_ms": 11.6643145,
+        "p95_ms": 33.502935,
+        "sum_seconds": 14.361835259
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 18.53013841015625,
+        "median_ms": 16.40084,
+        "p95_ms": 39.798082,
+        "sum_seconds": 18.974861732
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 1.308759720703125,
+        "median_ms": 0.9675635,
+        "p95_ms": 2.659395,
+        "sum_seconds": 1.340169954
+      },
+      "prepared_blocks": 0,
+      "object_batches": 75,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 1.28801790625,
+          "median_ms": 0.948602,
+          "p95_ms": 2.635269,
+          "sum_seconds": 1.318930336
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0057534384765625,
+          "median_ms": 0.00525,
+          "p95_ms": 0.009141,
+          "sum_seconds": 0.005891521
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.01474695703125,
+          "median_ms": 0.0138265,
+          "p95_ms": 0.019813,
+          "sum_seconds": 0.015100884
+        }
+      },
+      "core_active_mean": 61.06038418372324,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.56680205,
+        "object_put": 0.543583834,
+        "payload_close": 4.3787e-05
+      },
+      "object_peak_bytes": 24728,
+      "actor_active_peak": 37,
+      "actor_active_mean": 6.926959979866858,
+      "events_sha256": "b17dbd0ee818ed4538c58392bad38e807f6b28cfdb94eb3e46f6590747fd348e",
+      "result_sha256": "31f296f9e19e6db1535718dd31a50178f27998ebffbe52c82a43535f7ab38842"
+    },
+    {
+      "run_id": "measurement-2-immediate-threaded",
+      "phase": "measurement",
+      "repeat": 2,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "threaded",
+      "query_seconds": 6.132275123,
+      "first_result_seconds": 0.125798498,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 2.9639829404296876,
+        "median_ms": 1.5407025,
+        "p95_ms": 7.219061,
+        "sum_seconds": 3.035118531
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 1.1822930322265626,
+        "median_ms": 0.362254,
+        "p95_ms": 4.166519,
+        "sum_seconds": 1.210668065
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 4.14627597265625,
+        "median_ms": 2.1087585,
+        "p95_ms": 10.603704,
+        "sum_seconds": 4.245786596
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 321.7464216708984,
+        "median_ms": 345.0278165,
+        "p95_ms": 451.697039,
+        "sum_seconds": 329.468335791
+      },
+      "prepared_blocks": 0,
+      "object_batches": 347,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 5.717429057617188,
+          "median_ms": 4.2027015,
+          "p95_ms": 14.375809,
+          "sum_seconds": 5.854647355
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.003494552734375,
+          "median_ms": 0.0022315,
+          "p95_ms": 0.008128,
+          "sum_seconds": 0.003578422
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.012828044921875,
+          "median_ms": 0.0107,
+          "p95_ms": 0.024019,
+          "sum_seconds": 0.013135918
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 315.6011162138672,
+          "median_ms": 338.258967,
+          "p95_ms": 447.347543,
+          "sum_seconds": 323.175543003
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.4105813779296875,
+          "median_ms": 0.2325505,
+          "p95_ms": 1.532487,
+          "sum_seconds": 0.420435331
+        }
+      },
+      "core_active_mean": 62.95647163008084,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 4.101504445,
+        "object_put": 0.699052221,
+        "payload_close": 0.00034131
+      },
+      "object_peak_bytes": 32957,
+      "actor_active_peak": 49,
+      "actor_active_mean": 3.852393053011428,
+      "events_sha256": "dbbeba4f99687f9f3ec7710dcbfba49adc3a88070f03db02eef964935bd2b9d0",
+      "result_sha256": "f525ec75ec0196ad40619f9442394a5b2f188313e7855cdac532900cf9a4a615"
+    },
+    {
+      "run_id": "measurement-2-coalesced-threaded",
+      "phase": "measurement",
+      "repeat": 2,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "threaded",
+      "query_seconds": 5.203645321,
+      "first_result_seconds": 0.103417653,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 7.056075665039063,
+        "median_ms": 3.6858995,
+        "p95_ms": 19.228232,
+        "sum_seconds": 7.225421481
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 3.6085332177734375,
+        "median_ms": 2.27096,
+        "p95_ms": 10.984425,
+        "sum_seconds": 3.695138015
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 10.6646088828125,
+        "median_ms": 7.5046755,
+        "p95_ms": 24.875576,
+        "sum_seconds": 10.920559496
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 264.45084963867185,
+        "median_ms": 266.8315435,
+        "p95_ms": 467.242616,
+        "sum_seconds": 270.79767003
+      },
+      "prepared_blocks": 74,
+      "object_batches": 74,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 4.848842354492188,
+          "median_ms": 1.38116,
+          "p95_ms": 24.16122,
+          "sum_seconds": 4.965214571
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.004240494140625,
+          "median_ms": 0.003837,
+          "p95_ms": 0.008173,
+          "sum_seconds": 0.004342266
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0120171015625,
+          "median_ms": 0.0102185,
+          "p95_ms": 0.020756,
+          "sum_seconds": 0.012305512
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 259.0308056230469,
+          "median_ms": 262.271338,
+          "p95_ms": 464.254057,
+          "sum_seconds": 265.247544958
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.5537403662109375,
+          "median_ms": 0.1471485,
+          "p95_ms": 1.687505,
+          "sum_seconds": 0.567030135
+        }
+      },
+      "core_active_mean": 61.10161321984535,
+      "preparation_payload_sum_seconds": 2.036346599,
+      "preparation_put_sum_seconds": 0.145912985,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21864,
+      "actor_active_peak": 48,
+      "actor_active_mean": 4.746331166793219,
+      "events_sha256": "ee65f61916f2a6826e1ad587fc644b6702edf0b24e6a39414b42a094a837cab6",
+      "result_sha256": "e7e12afbfba60b7f148b4765ecbe411be85cc84191fc3b0498ee7ad7f88b6700"
+    },
+    {
+      "run_id": "measurement-2-immediate-sync",
+      "phase": "measurement",
+      "repeat": 2,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "sync",
+      "query_seconds": 3.412123018,
+      "first_result_seconds": 0.14163936,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 3.9310797958984374,
+        "median_ms": 1.9669845,
+        "p95_ms": 13.680005,
+        "sum_seconds": 4.025425711
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 13.506174364257813,
+        "median_ms": 11.6039385,
+        "p95_ms": 32.673608,
+        "sum_seconds": 13.830322549
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 17.43725416015625,
+        "median_ms": 15.495303,
+        "p95_ms": 37.762833,
+        "sum_seconds": 17.85574826
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 1.3223627626953125,
+        "median_ms": 0.937495,
+        "p95_ms": 2.760455,
+        "sum_seconds": 1.354099469
+      },
+      "prepared_blocks": 0,
+      "object_batches": 75,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 1.300636408203125,
+          "median_ms": 0.917319,
+          "p95_ms": 2.737515,
+          "sum_seconds": 1.331851682
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.00577351953125,
+          "median_ms": 0.0050595,
+          "p95_ms": 0.00939,
+          "sum_seconds": 0.005912084
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.015706939453125,
+          "median_ms": 0.014181,
+          "p95_ms": 0.023134,
+          "sum_seconds": 0.016083906
+        }
+      },
+      "core_active_mean": 60.89116644562902,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.612422856,
+        "object_put": 0.461749532,
+        "payload_close": 3.8033e-05
+      },
+      "object_peak_bytes": 24728,
+      "actor_active_peak": 38,
+      "actor_active_mean": 7.004878532195993,
+      "events_sha256": "a72016ef74ebc15044f047a60ba25dcb31e2db37279041525a09b9b5bf7ed1de",
+      "result_sha256": "d1baeb8aa9559ff227fd6aadb96061c80844ffa109146e4c75d0cfac1bb8af9f"
+    },
+    {
+      "run_id": "measurement-2-coalesced-sync",
+      "phase": "measurement",
+      "repeat": 2,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "sync",
+      "query_seconds": 4.633876965,
+      "first_result_seconds": 0.324449849,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 6.6630937373046875,
+        "median_ms": 1.7390085,
+        "p95_ms": 24.212833,
+        "sum_seconds": 6.823007987
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 98.64096114941407,
+        "median_ms": 95.027705,
+        "p95_ms": 139.256059,
+        "sum_seconds": 101.008344217
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 105.30405488671875,
+        "median_ms": 97.473103,
+        "p95_ms": 162.952037,
+        "sum_seconds": 107.831352204
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 2.970959224609375,
+        "median_ms": 1.1017755,
+        "p95_ms": 8.442439,
+        "sum_seconds": 3.042262246
+      },
+      "prepared_blocks": 103,
+      "object_batches": 103,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 2.94833959375,
+          "median_ms": 1.077984,
+          "p95_ms": 8.416712,
+          "sum_seconds": 3.019099744
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.005852986328125,
+          "median_ms": 0.0052155,
+          "p95_ms": 0.008952,
+          "sum_seconds": 0.005993458
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0165050615234375,
+          "median_ms": 0.014886,
+          "p95_ms": 0.025832,
+          "sum_seconds": 0.016901183
+        }
+      },
+      "core_active_mean": 59.289870201376836,
+      "preparation_payload_sum_seconds": 2.038123824,
+      "preparation_put_sum_seconds": 0.153258469,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21888,
+      "actor_active_peak": 31,
+      "actor_active_mean": 5.167260892089741,
+      "events_sha256": "959aabd42ab8a4ca164fa3df37fc7cdea657d74b515916dc8cd17657f1410a55",
+      "result_sha256": "1b0c76829755e31104765713f7dbc5ff5490310d6e5de41b06a196ab488e9239"
+    },
+    {
+      "run_id": "measurement-3-coalesced-threaded",
+      "phase": "measurement",
+      "repeat": 3,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "threaded",
+      "query_seconds": 4.995182571,
+      "first_result_seconds": 0.100308461,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 5.89477791015625,
+        "median_ms": 3.6163515,
+        "p95_ms": 16.456668,
+        "sum_seconds": 6.03625258
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 4.168268364257813,
+        "median_ms": 2.1361455,
+        "p95_ms": 12.17514,
+        "sum_seconds": 4.268306805
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 10.063046274414063,
+        "median_ms": 7.20816,
+        "p95_ms": 26.759424,
+        "sum_seconds": 10.304559385
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 251.56273136425781,
+        "median_ms": 259.3347725,
+        "p95_ms": 409.838384,
+        "sum_seconds": 257.600236917
+      },
+      "prepared_blocks": 77,
+      "object_batches": 77,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 4.6397844921875,
+          "median_ms": 1.3374575,
+          "p95_ms": 25.048474,
+          "sum_seconds": 4.75113932
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0041843818359375,
+          "median_ms": 0.0036615,
+          "p95_ms": 0.008663,
+          "sum_seconds": 0.004284807
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0114081904296875,
+          "median_ms": 0.0099635,
+          "p95_ms": 0.018835,
+          "sum_seconds": 0.011681987
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 246.33757759375,
+          "median_ms": 255.161652,
+          "p95_ms": 405.641639,
+          "sum_seconds": 252.249679456
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.568554748046875,
+          "median_ms": 0.154253,
+          "p95_ms": 2.322541,
+          "sum_seconds": 0.582200062
+        }
+      },
+      "core_active_mean": 60.99513371300158,
+      "preparation_payload_sum_seconds": 2.015450151,
+      "preparation_put_sum_seconds": 0.15738647,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21848,
+      "actor_active_peak": 43,
+      "actor_active_mean": 4.863979995857492,
+      "events_sha256": "89a73d68b1c257fd4cd22b2eab21270f7607bdfe1e8355e70d508a170c405bac",
+      "result_sha256": "44c3d6feac15cbc45948e238a49171acaa98955fa215512748f13409ad81625a"
+    },
+    {
+      "run_id": "measurement-3-immediate-sync",
+      "phase": "measurement",
+      "repeat": 3,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "sync",
+      "query_seconds": 3.495848816,
+      "first_result_seconds": 0.141690466,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 4.0842701416015625,
+        "median_ms": 2.0891185,
+        "p95_ms": 13.155949,
+        "sum_seconds": 4.182292625
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 13.351077537109376,
+        "median_ms": 11.7170315,
+        "p95_ms": 31.187841,
+        "sum_seconds": 13.671503398
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 17.435347678710936,
+        "median_ms": 15.499936,
+        "p95_ms": 38.654958,
+        "sum_seconds": 17.853796023
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 1.3042226435546875,
+        "median_ms": 0.959458,
+        "p95_ms": 2.729959,
+        "sum_seconds": 1.335523987
+      },
+      "prepared_blocks": 0,
+      "object_batches": 73,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 1.282212697265625,
+          "median_ms": 0.938314,
+          "p95_ms": 2.700252,
+          "sum_seconds": 1.312985802
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0058865751953125,
+          "median_ms": 0.0051935,
+          "p95_ms": 0.009455,
+          "sum_seconds": 0.006027853
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0158761962890625,
+          "median_ms": 0.014203,
+          "p95_ms": 0.023119,
+          "sum_seconds": 0.016257225
+        }
+      },
+      "core_active_mean": 60.97929087302956,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.680767668,
+        "object_put": 0.445193322,
+        "payload_close": 5.1663e-05
+      },
+      "object_peak_bytes": 24728,
+      "actor_active_peak": 49,
+      "actor_active_mean": 6.894560431700317,
+      "events_sha256": "79255c1182e37ecbf7450378a0a5a5f4ba256a4e1ec6e017a3f82b9b7dee5f9e",
+      "result_sha256": "710ec7459ec79fc0192cc59b8772787088e560c696476f2874f14978a6a63e57"
+    },
+    {
+      "run_id": "measurement-3-coalesced-sync",
+      "phase": "measurement",
+      "repeat": 3,
+      "rows": 1024,
+      "path": "coalesced",
+      "guard_kind": "sync",
+      "query_seconds": 4.710076082,
+      "first_result_seconds": 0.331484961,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 5.832499641601562,
+        "median_ms": 1.8925345,
+        "p95_ms": 19.81353,
+        "sum_seconds": 5.972479633
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 106.11080855761719,
+        "median_ms": 105.8218145,
+        "p95_ms": 149.73985,
+        "sum_seconds": 108.657467963
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 111.94330819921875,
+        "median_ms": 111.176736,
+        "p95_ms": 158.109841,
+        "sum_seconds": 114.629947596
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 3.19780711328125,
+        "median_ms": 1.0502705,
+        "p95_ms": 13.498174,
+        "sum_seconds": 3.274554484
+      },
+      "prepared_blocks": 149,
+      "object_batches": 149,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 3.1761701904296875,
+          "median_ms": 1.029506,
+          "p95_ms": 13.466509,
+          "sum_seconds": 3.252398275
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0055425810546875,
+          "median_ms": 0.005066,
+          "p95_ms": 0.007811,
+          "sum_seconds": 0.005675603
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.0158543828125,
+          "median_ms": 0.0143795,
+          "p95_ms": 0.022959,
+          "sum_seconds": 0.016234888
+        }
+      },
+      "core_active_mean": 60.321807965436605,
+      "preparation_payload_sum_seconds": 1.772004351,
+      "preparation_put_sum_seconds": 0.263294268,
+      "transport_work_sum_seconds": {
+        "payload_next": 0.0,
+        "object_put": 0.0,
+        "payload_close": 0.0
+      },
+      "object_peak_bytes": 21952,
+      "actor_active_peak": 24,
+      "actor_active_mean": 5.107834586354353,
+      "events_sha256": "a727ff994bf42b12e126167df79d67e63d8eeba84299cc798238ce7f3ccd0c20",
+      "result_sha256": "81bcbc42236210ba163294f229bebfda1ad25cf6b761ae2db810040b6975de5b"
+    },
+    {
+      "run_id": "measurement-3-immediate-threaded",
+      "phase": "measurement",
+      "repeat": 3,
+      "rows": 1024,
+      "path": "immediate",
+      "guard_kind": "threaded",
+      "query_seconds": 6.38323878,
+      "first_result_seconds": 0.128270971,
+      "worker_end_to_callback": {
+        "count": 1024,
+        "mean_ms": 3.076695248046875,
+        "median_ms": 1.439759,
+        "p95_ms": 6.689064,
+        "sum_seconds": 3.150535934
+      },
+      "callback_to_receive": {
+        "count": 1024,
+        "mean_ms": 0.880455787109375,
+        "median_ms": 0.359518,
+        "p95_ms": 3.36512,
+        "sum_seconds": 0.901586726
+      },
+      "worker_end_to_receive": {
+        "count": 1024,
+        "mean_ms": 3.95715103515625,
+        "median_ms": 1.9838985,
+        "p95_ms": 8.24156,
+        "sum_seconds": 4.05212266
+      },
+      "guard": {
+        "count": 1024,
+        "mean_ms": 338.50941402246093,
+        "median_ms": 362.789033,
+        "p95_ms": 494.637802,
+        "sum_seconds": 346.633639959
+      },
+      "prepared_blocks": 0,
+      "object_batches": 367,
+      "guard_parts": {
+        "reserve_ns": {
+          "count": 1024,
+          "mean_ms": 5.919403950195313,
+          "median_ms": 4.4249015,
+          "p95_ms": 14.677513,
+          "sum_seconds": 6.061469645
+        },
+        "hash_ns": {
+          "count": 1024,
+          "mean_ms": 0.0037123681640625,
+          "median_ms": 0.002445,
+          "p95_ms": 0.008605,
+          "sum_seconds": 0.003801465
+        },
+        "request_observe_ns": {
+          "count": 1024,
+          "mean_ms": 0.012332583984375,
+          "median_ms": 0.010937,
+          "p95_ms": 0.020334,
+          "sum_seconds": 0.012628566
+        },
+        "reserve_queue_ns": {
+          "count": 1024,
+          "mean_ms": 332.142698421875,
+          "median_ms": 355.3252185,
+          "p95_ms": 487.323414,
+          "sum_seconds": 340.114123184
+        },
+        "reserve_resume_ns": {
+          "count": 1024,
+          "mean_ms": 0.4302223525390625,
+          "median_ms": 0.2309505,
+          "p95_ms": 1.579521,
+          "sum_seconds": 0.440547689
+        }
+      },
+      "core_active_mean": 62.96440903359094,
+      "preparation_payload_sum_seconds": null,
+      "preparation_put_sum_seconds": null,
+      "transport_work_sum_seconds": {
+        "payload_next": 4.218102561,
+        "object_put": 0.736600315,
+        "payload_close": 0.000341869
+      },
+      "object_peak_bytes": 34163,
+      "actor_active_peak": 49,
+      "actor_active_mean": 3.697743244065202,
+      "events_sha256": "0f3830efba8383482f8a55bd5ecd67ebbac432b8ef0138929599738e430e5df9",
+      "result_sha256": "29985a598fc038cc5b868dd548cd092b3d0f124d3e7b12b8f447c8f1eaaee8ba"
+    }
+  ],
+  "medians": {
+    "immediate-sync": {
+      "query_seconds": 3.464850017,
+      "first_result_seconds": 0.141690466,
+      "prepared_blocks": 0,
+      "object_batches": 75,
+      "core_active_mean": 60.97929087302956,
+      "actor_active_mean": 6.926959979866858,
+      "worker_end_to_callback_mean_ms": 4.0842701416015625,
+      "callback_to_receive_mean_ms": 13.506174364257813,
+      "worker_end_to_receive_mean_ms": 17.43725416015625,
+      "guard_mean_ms": 1.308759720703125,
+      "reserve_ns_mean_ms": 1.28801790625,
+      "hash_ns_mean_ms": 0.00577351953125,
+      "request_observe_ns_mean_ms": 0.015706939453125
+    },
+    "immediate-threaded": {
+      "query_seconds": 6.228903663,
+      "first_result_seconds": 0.125798498,
+      "prepared_blocks": 0,
+      "object_batches": 347,
+      "core_active_mean": 62.96440903359094,
+      "actor_active_mean": 3.7925635412094834,
+      "worker_end_to_callback_mean_ms": 3.076695248046875,
+      "callback_to_receive_mean_ms": 0.880455787109375,
+      "worker_end_to_receive_mean_ms": 4.14627597265625,
+      "guard_mean_ms": 329.11200504589846,
+      "reserve_ns_mean_ms": 5.804777834960937,
+      "hash_ns_mean_ms": 0.003494552734375,
+      "request_observe_ns_mean_ms": 0.012332583984375,
+      "reserve_queue_ns_mean_ms": 322.9207582148438,
+      "reserve_resume_ns_mean_ms": 0.4105813779296875
+    },
+    "coalesced-sync": {
+      "query_seconds": 4.710076082,
+      "first_result_seconds": 0.324449849,
+      "prepared_blocks": 140,
+      "object_batches": 140,
+      "core_active_mean": 60.11373582253187,
+      "actor_active_mean": 5.107834586354353,
+      "worker_end_to_callback_mean_ms": 5.832499641601562,
+      "callback_to_receive_mean_ms": 104.55788949609375,
+      "worker_end_to_receive_mean_ms": 108.49091698144531,
+      "guard_mean_ms": 3.1955056728515623,
+      "reserve_ns_mean_ms": 3.1732974560546876,
+      "hash_ns_mean_ms": 0.00554667578125,
+      "request_observe_ns_mean_ms": 0.016411701171875
+    },
+    "coalesced-threaded": {
+      "query_seconds": 5.129364274,
+      "first_result_seconds": 0.103417653,
+      "prepared_blocks": 74,
+      "object_batches": 74,
+      "core_active_mean": 61.019253131913544,
+      "actor_active_mean": 4.746331166793219,
+      "worker_end_to_callback_mean_ms": 6.073268201171875,
+      "callback_to_receive_mean_ms": 4.168268364257813,
+      "worker_end_to_receive_mean_ms": 10.5171066796875,
+      "guard_mean_ms": 259.62166136621096,
+      "reserve_ns_mean_ms": 4.821913515625,
+      "hash_ns_mean_ms": 0.0041843818359375,
+      "request_observe_ns_mean_ms": 0.0114081904296875,
+      "reserve_queue_ns_mean_ms": 254.3091797294922,
+      "reserve_resume_ns_mean_ms": 0.5537403662109375
+    }
+  },
+  "limitations": [
+    "Python callback observation includes GIL/scheduling, not physical data arrival",
+    "Core consumption time is not SQL or model E2E",
+    "small deterministic text payload, single node and Job"
+  ],
+  "http_requests": 0,
+  "model_requests": 0,
+  "pg_queries": 0
+}

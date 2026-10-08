@@ -59,6 +59,18 @@ class MapInputPreparation:
         work = task.task.info.work if task.task.info is not None else None
         return (work.calibration_signature, work.primary.unit) if work else ('request-count', 'work_units')
 
+    def _queued_tail(self, tasks):
+        if not tasks or not self.physical.coalesce_queued_preparation or not self.blocks:
+            return None
+        block = self.blocks[next(reversed(self.blocks))]
+        if (self.broker.state_of(block.descriptor.block_id) != 'encoded'
+                or not block.tasks or any(self.rows[t.key].cancelled for t in block.tasks)
+                or block.tasks[0].key.session_id != tasks[0].key.session_id
+                or block.tasks[0].spec != tasks[0].spec
+                or self._work_identity(block.tasks[0]) != self._work_identity(tasks[0])):
+            return None
+        return block
+
     def try_prepare(self, tasks):
         if not self.lock.acquire(blocking=False):
             return 0
@@ -67,24 +79,35 @@ class MapInputPreparation:
                     or any(t.key in self.rows for t in tasks)):
                 raise ValueError('invalid or duplicate prepared Map row')
             available = self.maximum - len(self.rows)
-            selected, size, work = [], 0, 0
             held = self.broker.snapshot().encoded_held_bytes
-            for task in tasks[:min(available, self.physical.batch_rows)]:
-                if task.key in self.rows:
-                    raise ValueError('duplicate prepared Map row')
-                if selected and (task.spec.job_id != selected[0].spec.job_id
-                        or self._work_identity(task) != self._work_identity(selected[0])):
+            tail = self._queued_tail(tasks)
+            added = ()
+            for candidate in ((tail, None) if tail is not None else (None,)):
+                prefix = candidate.tasks if candidate is not None else ()
+                selected = list(prefix)
+                size = base_size = sum(len(t.task.payload) + 24 for t in prefix)
+                work = sum(t.task.estimated_work for t in prefix)
+                for task in tasks[:min(available, self.physical.batch_rows - len(prefix))]:
+                    if selected and (task.spec.job_id != selected[0].spec.job_id
+                            or self._work_identity(task) != self._work_identity(selected[0])):
+                        break
+                    if candidate is not None and (task.key.session_id != prefix[0].key.session_id
+                            or task.spec != prefix[0].spec):
+                        break
+                    amount = len(task.task.payload) + 24
+                    if (size + amount > self.physical.window_bytes
+                            or held + size + amount - base_size > self.broker.limits.encoded_bytes
+                            or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
+                            or work + task.task.estimated_work > self.broker.limits.ready_work):
+                        break
+                    selected.append(task)
+                    size += amount
+                    work += task.task.estimated_work
+                added = selected[len(prefix):]
+                if added:
+                    tail = candidate
                     break
-                amount = len(task.task.payload) + 24
-                if (size + amount > self.physical.window_bytes
-                        or held + size + amount > self.broker.limits.encoded_bytes
-                        or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
-                        or work + task.task.estimated_work > self.broker.limits.ready_work):
-                    break
-                selected.append(task)
-                size += amount
-                work += task.task.estimated_work
-            if not selected:
+            if not added:
                 return 0
             signature, unit = self._work_identity(selected[0])
             digest = hashlib.sha256()
@@ -92,24 +115,30 @@ class MapInputPreparation:
                 digest.update(struct.pack('!QQQ', task.key.session_id, task.key.sequence,
                                           len(task.task.payload)))
                 digest.update(task.task.payload)
-            block_id = f'map-prepared-{self.ordinal}'
+            block_id = tail.descriptor.block_id if tail is not None else f'map-prepared-{self.ordinal}'
             descriptor = StageBlockDescriptor(
-                block_id, selected[0].spec.job_id, self.ordinal,
+                block_id, selected[0].spec.job_id,
+                tail.descriptor.ordered_sequence if tail is not None else self.ordinal,
                 tuple(f'{t.key.session_id}:{t.key.sequence}' for t in selected),
                 'encoded', (len(selected),), 'variable_binary', 'uint8_bytes',
                 size, size, 2 * (size + 8), digest.hexdigest(),
                 f'map-payload-v1-{self.physical.payload_backend}', self.model_signature,
                 WorkDescriptor((StageWork('prepare', len(selected), 'rows'),
                                 StageWork('model', work, unit)), 'model', signature),
-                time.monotonic())
-            self.broker.enqueue_encoded(descriptor)
-            self.ordinal += 1
-            self.blocks[block_id] = _PreparedBlock(
-                descriptor, tuple(selected), {t.key for t in selected})
-            for index, task in enumerate(selected):
+                tail.descriptor.created_at_s if tail is not None else time.monotonic())
+            if tail is not None:
+                self.broker.extend_encoded(descriptor)
+                tail.descriptor, tail.tasks = descriptor, tuple(selected)
+                tail.members.update(t.key for t in added)
+            else:
+                self.broker.enqueue_encoded(descriptor)
+                self.ordinal += 1
+                self.blocks[block_id] = _PreparedBlock(
+                    descriptor, tuple(selected), {t.key for t in selected})
+            for index, task in enumerate(added, start=len(selected) - len(added)):
                 self.rows[task.key] = _PreparedRow(task, block_id, index)
             self._schedule()
-            return len(selected)
+            return len(added)
         finally:
             self.lock.release()
 

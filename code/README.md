@@ -1,5 +1,15 @@
 # SemLoom Code
 
+[待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
+`RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
+不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。
+阶段broker原子登记追加字节和行前段；最终147项库检查、16项PG检查及8224次真实模型请求通过。
+1024行完整查询中位数10.069→12.686秒，追加慢25.987%；全部行/计费/资源及RSS/PSS核对，暂不推荐启用，默认保持。
+
+[返回等待隔离](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)补齐真实Ray结果future回调及Map恢复读取时刻。
+71个本地fixture/4107次模拟与20次实际Ray/Daft运行/16,448次模拟行处理通过；本项没有HTTP、PG或模型请求。
+同步实验记账会影响接收与供给；线程选择缩短等待却使完整消费更慢，默认继续保持。
+
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
 `RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。
@@ -64,7 +74,7 @@ Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调
 内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。
 实现位于[线程记账回调](src/experiments/async_request_guard.py)。[目标同条件对照](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)
 70项及累计8,224次fixture通过，模型0次；线程选择8.287→11.570秒，慢39.606%，仅保留为显式诊断。
-恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，下一项检查小窗口反复创建。
+恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，后续[实际Ray分段](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)另核对返回等待、登记排队和分批变化。
 Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
 实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
 验证安排见[准备调优计划](../experiments/plans/查询调优.md#热路径独立计时与无模型验证)。

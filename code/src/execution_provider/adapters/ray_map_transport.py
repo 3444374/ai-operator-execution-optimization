@@ -31,8 +31,12 @@ class RayMapConfig:
     worker_pool: str | None = None
     payload_backend: str = 'daft'
     preparation: StageBrokerLimits | None = None
+    coalesce_queued_preparation: bool = False
 
     def __post_init__(self):
+        if type(self.coalesce_queued_preparation) is not bool or (
+                self.coalesce_queued_preparation and self.preparation is None):
+            raise ValueError("queued preparation coalescing requires explicit preparation")
         if self.payload_backend not in ('daft', 'arrow'):
             raise ValueError("unknown Ray Map payload backend")
         if self.preparation is not None and (
