@@ -1,8 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-04。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-08。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-08：补充[查询归属、请求发送与计数范围](README.md#query-accounting-scopes)。
+当前单个gateway/Engine内的查询共享、Ray worker发送与跨进程实验预算分别有实现；累计预算、在途容量和观察事件使用不同口径。
+多个gateway的服务总容量协调、同一查询跨PG并行执行进程登记及故障下模型实际执行次数核对仍需对应接入和证据。
+已有[PG查询共享检查](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)不替代共享映射候选的PG/模型资格；本次仅修订文档。
 
 2026-10-04：加入[单Job文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)。
 `SessionEngine`可借用已接纳输入并在准备就绪后取得模型名额；默认无准备接口，旧路由、请求/work与逐行结果政策保留。
@@ -26,7 +31,7 @@ RSS/PSS及全部行/计费/对象记录独立复算通过，原默认保持；�
 27项在macOS和Linux各通过，另外Linux凭据/跨进程UDS/gateway16项通过；两个SDK的真实Ray接入与1,040次本机HTTP完成。
 计数每行中位数明显减少，但完整消费2.613→2.631秒，没有净收益；只保留实验API，正式query CLI与同步默认保持。
 独立gateway直接HTTP/Ray HTTP 272次、失败、全部重复、实际Ray RPC与准备成本、资源退出和可恢复压缩证据归主报告。
-模型/GPU/PG查询均0，数据库生命周期、真实模型与多机仍pending；不能把接入检查当作GPU或原生系统结论。
+模型/GPU/PG查询均0，该共享映射候选的PG生命周期、真实模型与多机检查仍pending；不能把接入检查当作GPU或原生系统结论。
 
 2026-10-04：新增[gateway多查询干扰诊断](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)，
 真实UDS、查询登记、共享Core和Map循环运行，厂商与服务为替身，kernel peer也为fixture。
@@ -37,7 +42,7 @@ RSS/PSS及全部行/计费/对象记录独立复算通过，原默认保持；�
 2026-10-03：新增[同机共享预付计数组件与Core替身对照](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)，
 总额先持久预付，各进程逐条登记，所有者结束／不确定登记后不再领取，禁止重建或退款。
 16,384次组件领取、8,224次Core模拟调用及104项检查通过，HTTP／模型／PG均为0，准备和退出成本单列。
-只接本地诊断API，正式观察器／监督器、Linux／Ray／Daft／PG接入仍pending，默认及真实计费保持；生产执行代码未改。
+该日仅接本地诊断API；后续Linux、真实Ray SDK及观察API检查见上方2026-10-04记录。该候选的正式查询入口及PG/模型检查仍pending，默认及真实计费保持。
 
 2026-10-03：新增[Core／Map观察成本的本地隔离](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)工具，
 真实Core、异步backend、传输循环及实验guard运行，厂商表／调用与worker服务使用替身；主清单16,448次模拟调用通过，HTTP／模型／PG均为0。

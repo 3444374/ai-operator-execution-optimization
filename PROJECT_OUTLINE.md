@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-04
+更新时间：2026-10-08
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -37,8 +37,9 @@
 真实Ray调用已在[有限服务器替身对照](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)核验，模型及PG查询0；生产默认与真实计费保持，按[提交阶段安排](experiments/plans/查询调优.md#next-submission-work)
 先设计正式对照的统一有限观察，再评估自然就绪组RPC；本地替身改善不作为数据库或GPU性能证据。
 [同机共享预付计数](experiments/results/diagnostics/mapped_request_budget_20261003/README.md)已完成本地组件与Core替身检查，
-总额预付与跨进程领取已补Linux、真实Ray SDK和观察API检查；准备单元由唯一owner管理，正式runner及PG/模型接入仍pending。
+总额预付与跨进程领取已补Linux、真实Ray SDK和观察API检查；准备单元由唯一owner管理，该候选的正式查询入口及PG/模型检查仍pending。
 同容量替身对照每行计数明显减少，但完整消费略慢，继续保持同步默认，不能直接替换现行计费。
+现有PG查询共享与该计数候选分别解释；查询、worker发送与计数设施的作用范围见[代码说明](code/README.md#query-accounting-scopes)。
 多模态研究沿[单Job共享准备](experiments/plans/数据组织.md#scene-preparation-pilot)检验数据库需求和消费信息，保留原生已有能力作对照。
 
 [gateway多查询干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md)完成真实UDS/Core加明确替身的有限诊断，

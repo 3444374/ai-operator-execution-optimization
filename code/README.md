@@ -15,13 +15,14 @@
 
 [共享预付观察API](src/experiments/request_budget_client.py)由HTTPX观察器及原生Ray的session factory显式使用：
 descriptor在调用进程打开/归还，普通budget保持原所有权；[Linux/Ray检查及负结果](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)。
-正式查询仍同步计数，Core/PG默认未改，真实模型收益pending。
+该共享映射候选尚未接入正式查询入口，其PG生命周期与真实模型检查仍pending；默认仍同步计数。
 
 [gateway多查询干扰诊断](scripts/README.md#gateway多查询干扰诊断)运行真实UDS与共享执行循环，厂商调用和worker为替身。
 区分状态线程、分批准备、慢消费和同步观察的影响，生产执行与默认保持；[结果与来源](../experiments/results/diagnostics/gateway_isolation_20261004/README.md)保留实际范围。
 
 [同机共享预付计数](scripts/README.md#同机共享预付计数原型)复用持久单元预付，多个进程在本地共享状态逐条领取。
-已做组件/Core替身与Linux/真实Ray SDK检查，正式runner及PG/模型接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
+已完成组件/Core替身、Linux/真实Ray SDK及真实Ray/Daft/Arrow与本机HTTP检查；该候选的正式查询入口及PG/模型检查仍pending。
+它与现有PG多查询共享使用不同的验证记录，详见下方[查询归属、请求发送与计数范围](#query-accounting-scopes)及[计数报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
 
 新增[本地观察成本诊断](scripts/README.md#本地coremap观察成本诊断)：真实Core与Map传输循环运行，厂商调用和服务使用明确替身。
 它只比较观察方式对提交时序的影响，不增加真实请求模式或修改生产默认，结果与源身份见[主报告](../experiments/results/diagnostics/map_observation_isolation_20261003/README.md)。
@@ -111,11 +112,43 @@ flowchart LR
 Core没有自动改写prompt或拆分单行推理，也没有在本轮执行自适应模型路由或GPU/kernel优化。
 
 HTTP执行路径仍可选；默认Ray worker由查询创建，可选服务由调用方创建并供查询独占借用。
-实验中的共享gateway已经支持顺序多查询，但没有自动替换默认部署方式。
+实验中的共享gateway已验证顺序查询复用；query-job模式的并发查询另见[查询共享检查](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)，两者不自动替换默认部署方式。
 当前SQL支持形态见[extension说明](postgres/semloom_pg/README.md#supported-query-shapes)：
 单个Filter→单个生成型Map的受限组合已有[绑定验证](../experiments/results/postgresql/filter_map_binding_20260907/README.md)，
 可选`query-job`将受支持的算子流归属同一个查询Job；本次耗时诊断只运行单Map。
 多Map、任意组合、join及更宽SQL接入尚未实现，不以当前文本Map验证代替这些能力。
+
+<a id="query-accounting-scopes"></a>
+### 查询归属、请求发送与计数范围
+
+多个PG backend进程可以分别登记查询，共享同一个gateway/Engine；同一查询的多个受支持算子流归属一份Job预算。
+查询、算子流和任务分别由Job（查询调度组）、session/flow（算子任务流）与任务key（流内关联键）关联，worker进程数量不增加查询份额。
+当前[PG登记协议](../experiments/plans/数据库接入.md#query-job-版本化登记层)要求各流与控制连接来自同一可信`uid/pid`（用户号/进程号）；
+同一查询的PG并行执行进程共用登记、PG算子流的网络登记与查询身份跨机传递仍pending。
+
+当前gateway由一个控制线程推进一个Engine，[异步backend](src/scheduling/runtime/async_backend.py)维护独立输入输出（I/O）循环，
+[Ray HTTP actor](src/execution_provider/adapters/ray_map_transport.py)在worker进程取payload并发送请求。
+统一维护资源责任与分布式发送可以同时成立。当前SemLoom文本Map的Ray实验路径在远程调用（RPC）前记账，原生Ray/Daft从各自HTTP调用进程记账；
+计数设施需要支持这些进程共享同一额度。这一差异不表示并行能力不同，也不决定生产服务进程数或payload传输拓扑。
+
+| 类型 | 当前实现与作用范围 | 完成或取消后的处理 |
+|---|---|---|
+| 累计实验请求预算 | [SharedClaimedUnit](src/experiments/shared_request_budget.py)用SQLite事务统一领取编号；[共享映射候选](src/experiments/mapped_request_budget.py)先持久预付有限单元，再供同机进程共享领取 | 同摘要的独立调用分别计费；已领取但未发送仍消费预算，不因完成、取消或失败退还 |
+| 在途请求与工作量容量 | [SessionCapacity](src/scheduling/core/session_capacity.py)依据任务记录检查同一Engine内的总量、Job和session上限；工作量单位由执行组装声明 | 权威终态结清后归还计算名额；未知远端结果继续保留占用，记录的活动数不等于实际GPU活动 |
+| 统计与观测 | [HTTP观察器](src/experiments/native_http_observer.py)记录获准编号、调用开始、响应和错误，Core及PG另记录提交、终态与结果交付 | 事件用于核对调用和结果，不发放额外执行容量；客户端调用开始不能证明服务端已接收或模型只执行一次 |
+
+[Ray actor配置](src/execution_provider/adapters/ray_map_transport.py)明确禁用自动重启及任务重试；远端错误按未确认结果保留记录。
+这不构成故障条件下模型执行恰好一次的保证。获准调用、客户端发送、服务端接收、确认完成与结果交付须按实际证据分别核对，
+不能要求取消或未知结果时所有计数相等。记账与记录会改变提交节奏和准备窗口，不能直接从完整时间扣除其累计耗时。
+
+[服务级协调分析](../docs/research/优化方法依据.md#workflow-621-多-job-共享服务必须使用服务级协调)已说明局部容量之和的问题；
+[通用Ray共享协调器](src/scheduling/runtime/shared_credit_ray.py)保留在既有外部执行路径，但[当前PG增量组装](src/execution_provider/adapters/incremental_execution.py)未接入它。
+多个gateway使用同一模型服务时，单实例上限不代表整个部署的总上限；该接入及故障验证仍pending。
+原生Ray/Daft从各自调用进程接入共同实验预算和观测，执行与调度仍由原生系统拥有，不经过SemLoom任务选择和容量策略。
+
+现有PG查询共享的受控与有限真实模型检查由[查询共享报告](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)维护，
+其中执行、关联和回收检查与复述质量负结果分别解释。共享映射候选的Linux/真实Ray SDK及本机HTTP检查由
+[计数接入报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)维护，其PG/真实模型检查尚未完成，不能混用两项资格。
 
 下节保存已停止的 SAOR 实现说明，供历史代码和证据追溯；它不表示可以重新运行模型实验。
 
