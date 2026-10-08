@@ -1,5 +1,11 @@
 # SemLoom Code
 
+[待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
+`RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
+不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。
+阶段broker原子登记追加字节和行前段；最终147项库检查、16项PG检查及8224次真实模型请求通过。
+1024行完整查询中位数10.069→12.686秒，追加慢25.987%；全部行/计费/资源及RSS/PSS核对，暂不推荐启用，默认保持。
+
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
 `RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。

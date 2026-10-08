@@ -141,6 +141,44 @@ class BoundedStageBroker:
         self._encoded_held_bytes += descriptor.physical_bytes
         self._assert_invariants()
 
+    def extend_encoded(self, descriptor: StageBlockDescriptor) -> None:
+        """Append rows to the unleased FIFO tail, preserving its existing prefix."""
+        previous = self._descriptors[descriptor.block_id]
+        if (self.state_of(descriptor.block_id) != "encoded"
+                or not self._encoded_queue or self._encoded_queue[-1] != descriptor.block_id):
+            raise ValueError("only the unleased encoded tail can grow")
+        fixed = ("job_id", "ordered_sequence", "representation", "layout", "dtype",
+                 "transform_signature", "model_signature", "created_at_s", "ready_at_s", "retry_count")
+        prefix = len(previous.row_ids)
+        if (any(getattr(previous, name) != getattr(descriptor, name) for name in fixed)
+                or len(descriptor.row_ids) <= prefix
+                or descriptor.row_ids[:prefix] != previous.row_ids
+                or previous.shape[0] != prefix
+                or descriptor.shape != (len(descriptor.row_ids), *previous.shape[1:])):
+            raise ValueError("encoded extension changed the existing row prefix or identity")
+        old_work, new_work = previous.work, descriptor.work
+        work_identity = ("primary_stage", "calibration_signature", "locality_key", "deadline_s",
+                         "lower_primary_units", "upper_primary_units")
+        if (any(getattr(old_work, name) != getattr(new_work, name) for name in work_identity)
+                or len(old_work.stages) != len(new_work.stages)
+                or any(a.stage != b.stage or a.unit != b.unit or b.units < a.units
+                       for a, b in zip(old_work.stages, new_work.stages))
+                or any(getattr(descriptor, name) < getattr(previous, name)
+                       for name in ("logical_bytes", "physical_bytes", "ready_bytes_estimate"))):
+            raise ValueError("encoded extension changed work identity or reduced reservations")
+        appended = descriptor.row_ids[prefix:]
+        if self._admitted_rows.intersection(appended):
+            raise ValueError("extension row_ids already admitted")
+        delta = descriptor.physical_bytes - previous.physical_bytes
+        if (self._encoded_held_bytes + delta > self._limits.encoded_bytes
+                or descriptor.ready_bytes_estimate > self._limits.ready_bytes
+                or descriptor.model_work_units > self._limits.ready_work):
+            raise BufferError("encoded extension exceeds stage capacity")
+        self._descriptors[descriptor.block_id] = descriptor
+        self._admitted_rows.update(appended)
+        self._encoded_held_bytes += delta
+        self._assert_invariants()
+
     def lease_prepare(
         self,
         *,

@@ -2,6 +2,7 @@
 
 import asyncio
 from dataclasses import replace
+import importlib.util
 import threading
 import time
 import unittest
@@ -12,7 +13,7 @@ from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig, RayMapTransport
 from src.experiments.map_observation_probe import SyntheticTable, WORK
 from src.experiments.postgresql.query_evaluation import ray_transport_accounting
-from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo
+from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo, TaskKey
 from src.scheduling.runtime.stage_broker import StageBrokerLimits
 from tests.execution_provider.test_ray_map_transport import FakeRay, task
 
@@ -30,19 +31,224 @@ def wait_until(predicate, timeout=3):
 
 
 def make_transport(execute, *, max_tasks=8, ready_bytes=1024, encoded_bytes=1024,
-                   item_bytes=64, guard=None, events=None):
+                   item_bytes=64, guard=None, events=None, coalesce_queued=False, batch_rows=2):
     ray = FakeRay(execute)
-    physical = RayMapConfig('fixture-cluster', 1, 2, 128, 1024,
-        payload_backend='arrow', preparation=StageBrokerLimits(encoded_bytes, ready_bytes, 8, 1, max_tasks))
+    physical = RayMapConfig('fixture-cluster', 1, batch_rows, 128, 1024,
+        payload_backend='arrow', preparation=StageBrokerLimits(encoded_bytes, ready_bytes, 8, 1, max_tasks),
+        coalesce_queued_preparation=coalesce_queued)
     transport = RayMapTransport(FixedModelConfig('http://localhost/fixture', 'model', 1000),
-        2, events.append if events is not None else None, physical=physical,
+        max(2, batch_rows), events.append if events is not None else None, physical=physical,
         before_request=guard, ray_api=ray)
-    limits = SessionLimits(max_tasks, 1024, 1024, 2, 2, max_tasks, item_bytes, 100, 64, 8, 2, .01)
+    limits = SessionLimits(max_tasks, 1024, 1024, max(2, batch_rows), max(2, batch_rows),
+                           max_tasks, item_bytes, 100, 64, 8, 2, .01)
     preparation = transport.prepare_inputs(limits, lambda: None)
     return transport, preparation, ray
 
 
 class MapPreparationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_sparse_input_starts_without_waiting_and_ready_blocks_do_not_grow(self):
+        transport, preparation, ray = make_transport(None, coalesce_queued=True)
+        try:
+            with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', batches):
+                for sequence in range(3):
+                    self.assertEqual(preparation.try_prepare((task(sequence),)), 1)
+                    await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(sequence).key))
+            self.assertEqual(ray.puts, [1, 1, 1])
+        finally:
+            for key in tuple(preparation.rows):
+                preparation.release(key)
+            await transport.close()
+
+    async def test_coalesced_tail_cancellation_preserves_the_other_complete_request(self):
+        entered, release = threading.Event(), threading.Event()
+        calls, events = [], []
+        def blocked(rows, limits, **kwargs):
+            rows = tuple(rows)
+            if rows[0][1] == 0:
+                entered.set()
+                if not release.wait(3):
+                    raise AssertionError('fixture preparation was not released')
+            yield SyntheticTable(rows)
+        async def execute(table, index, template):
+            calls.append((template.key.sequence, table['payload'][index].as_py()))
+            return template.key, table['payload'][index].as_py(), 1, 2
+        transport, preparation, ray = make_transport(execute, coalesce_queued=True, events=events)
+        try:
+            with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
+                preparation.try_prepare((task(0),))
+                self.assertTrue(await asyncio.to_thread(entered.wait, 2))
+                preparation.try_prepare((task(1, b'cancelled'),))
+                preparation.try_prepare((task(2, b'complete'),))
+                self.assertFalse(preparation.release(task(1).key))
+                release.set()
+                await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key))
+            self.assertEqual(await transport.execute(task(2, b'complete'), 'model'), b'complete')
+            self.assertTrue(preparation.release(task(1).key))
+            self.assertTrue(preparation.release(task(2).key))
+            self.assertEqual(calls, [(2, b'complete')])
+            self.assertEqual(ray.puts, [1, 2])
+        finally:
+            release.set()
+            await asyncio.to_thread(wait_until, lambda: not preparation.running)
+            for key in tuple(preparation.rows):
+                preparation.release(key)
+            await transport.close()
+        projected = [dict(event, event='core_' + event['event']) for event in events]
+        self.assertEqual(ray_transport_accounting(projected, 1)['object_blocks'], 2)
+
+    async def test_queued_tail_respects_row_limit_and_separates_sessions(self):
+        for different_session in (False, True):
+            with self.subTest(different_session=different_session):
+                entered, release = threading.Event(), threading.Event()
+                def blocked(rows, limits, **kwargs):
+                    rows = tuple(rows)
+                    if rows[0][1] == 0:
+                        entered.set()
+                        if not release.wait(3):
+                            raise AssertionError('fixture preparation was not released')
+                    yield SyntheticTable(rows)
+                transport, preparation, ray = make_transport(None, coalesce_queued=True)
+                last = replace(task(2), key=TaskKey(9, 2)) if different_session else task(2)
+                try:
+                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
+                        preparation.try_prepare((task(0),))
+                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
+                        preparation.try_prepare((task(1),))
+                        preparation.try_prepare((last,))
+                        preparation.try_prepare((task(3),))
+                        self.assertEqual(preparation.snapshot()['held_tasks'], 4)
+                        release.set()
+                        await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(3).key))
+                    self.assertEqual(ray.puts, [1, 1, 1, 1] if different_session else [1, 2, 1])
+                finally:
+                    release.set()
+                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
+                    for key in tuple(preparation.rows):
+                        preparation.release(key)
+                    await transport.close()
+
+    def test_queued_coalescing_is_explicit_and_requires_preparation(self):
+        self.assertFalse(RayMapConfig('fixture-cluster', 1, 2, 128, 1024).coalesce_queued_preparation)
+        for value in (True, 1, 'true'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RayMapConfig('fixture-cluster', 1, 2, 128, 1024, coalesce_queued_preparation=value)
+
+    async def test_a_row_that_cannot_extend_the_tail_can_start_its_own_block(self):
+        for limit in ('bytes', 'work'):
+            with self.subTest(limit=limit):
+                entered, release = threading.Event(), threading.Event()
+                def blocked(rows, limits, **kwargs):
+                    rows = tuple(rows)
+                    if rows[0][1] == 0:
+                        entered.set()
+                        if not release.wait(3):
+                            raise AssertionError('fixture preparation was not released')
+                    yield SyntheticTable(rows)
+                transport, preparation, ray = make_transport(None, coalesce_queued=True)
+                large = task(1, b'x'*100) if limit == 'bytes' else replace(
+                    task(1), task=replace(task(1).task, estimated_work=6))
+                last = task(2) if limit == 'bytes' else replace(
+                    task(2), task=replace(task(2).task, estimated_work=3))
+                try:
+                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
+                        preparation.try_prepare((task(0),))
+                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
+                        self.assertEqual(preparation.try_prepare((large,)), 1)
+                        self.assertEqual(preparation.try_prepare((last,)), 1)
+                        self.assertEqual(preparation.snapshot()['stages']['encoded_queued'], 2)
+                        self.assertTrue(preparation.release(large.key))
+                        self.assertTrue(preparation.release(last.key))
+                        self.assertFalse(preparation.release(task(0).key))
+                        release.set()
+                        await asyncio.to_thread(wait_until, lambda: not preparation.running)
+                        self.assertTrue(preparation.release(task(0).key))
+                    self.assertFalse(ray.puts)
+                    self.assertEqual(preparation.snapshot()['held_tasks'], 0)
+                finally:
+                    release.set()
+                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
+                    for key in tuple(preparation.rows):
+                        preparation.release(key)
+                    await transport.close()
+
+    @unittest.skipUnless(importlib.util.find_spec('daft') and importlib.util.find_spec('pyarrow'),
+                         'Daft and Arrow are required for actual prepared batches')
+    async def test_actual_batch_adapters_keep_merged_row_identity_and_buffers(self):
+        for backend in ('daft', 'arrow'):
+            with self.subTest(backend=backend):
+                entered, release = threading.Event(), threading.Event()
+                calls, events = [], []
+                async def execute(table, index, template):
+                    identity = (table['session_id'][index].as_py(), table['sequence'][index].as_py())
+                    self.assertEqual(identity, (template.key.session_id, template.key.sequence))
+                    body = table['payload'][index].as_py()
+                    calls.append((template.key.sequence, body))
+                    return template.key, body, 1, 2
+                transport, _, ray = make_transport(execute, coalesce_queued=True, events=events)
+                transport.physical = replace(transport.physical, payload_backend=backend)
+                transport.preparation.physical = transport.physical
+                preparation = transport.preparation
+                original_put = ray.put
+                def blocked_put(table):
+                    if table['sequence'][0].as_py() == 0:
+                        entered.set()
+                        if not release.wait(10):
+                            raise AssertionError('fixture put was not released')
+                    return original_put(table)
+                ray.put = blocked_put
+                try:
+                    preparation.try_prepare((task(0),))
+                    self.assertTrue(await asyncio.to_thread(entered.wait, 10))
+                    preparation.try_prepare((task(1, b'first'),))
+                    preparation.try_prepare((task(2, b'second'),))
+                    release.set()
+                    await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key), 10)
+                    for sequence, body in ((0, b'payload'), (1, b'first'), (2, b'second')):
+                        self.assertEqual(await transport.execute(task(sequence, body), 'model'), body)
+                        self.assertTrue(preparation.release(task(sequence).key))
+                    self.assertEqual(ray.puts, [1, 2])
+                    self.assertEqual(calls, [(0, b'payload'), (1, b'first'), (2, b'second')])
+                    self.assertEqual(transport.used_bytes, 0)
+                finally:
+                    release.set()
+                    await asyncio.to_thread(wait_until, lambda: not preparation.running, 10)
+                    for key in tuple(preparation.rows):
+                        preparation.release(key)
+                    await transport.close()
+                projected = [dict(event, event='core_' + event['event']) for event in events]
+                self.assertEqual(ray_transport_accounting(projected, 3)['object_blocks'], 2)
+
+    async def test_rows_arriving_during_preparation_share_only_the_unstarted_tail(self):
+        for coalesce in (False, True):
+            with self.subTest(coalesce=coalesce):
+                entered, release = threading.Event(), threading.Event()
+                def blocked(rows, limits, **kwargs):
+                    rows = tuple(rows)
+                    if rows[0][1] == 0:
+                        entered.set()
+                        if not release.wait(3):
+                            raise AssertionError('fixture preparation was not released')
+                    yield SyntheticTable(rows)
+                transport, preparation, ray = make_transport(
+                    None, coalesce_queued=coalesce)
+                try:
+                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
+                        preparation.try_prepare((task(0),))
+                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
+                        for sequence in range(1, 3):
+                            self.assertEqual(preparation.try_prepare((task(sequence),)), 1)
+                        queued = preparation.snapshot()['stages']['encoded_queued']
+                        release.set()
+                        await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key))
+                    self.assertEqual(queued, 1 if coalesce else 2)
+                    self.assertEqual(ray.puts, [1, 2] if coalesce else [1, 1, 1])
+                finally:
+                    release.set()
+                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
+                    for key in tuple(preparation.rows):
+                        preparation.release(key)
+                    await transport.close()
+
     async def test_put_in_progress_stays_observed_when_an_older_block_returns(self):
         put_entered, put_release = threading.Event(), threading.Event()
         model_entered, model_release = asyncio.Event(), asyncio.Event()
