@@ -4,6 +4,11 @@
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
+2026-10-08：[返回等待隔离](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)新增离线分析和有限fixture，生产源码未改。
+原6144行复算、本地71个case/4107次模拟及实际Ray/Daft/SQLite的20个case/16,448次模拟actor调用核对通过。
+接收循环中的同步实验guard是已复现干扰来源，实际Ray的回调至读取已补齐；线程控制缩短等待却使完整消费更慢，既有ThreadedRequestGuard仍为显式选项。
+原件备份、时序、持久计费、逻辑/对象容量及关闭核对归[同题分段](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)；新增HTTP/PG/模型/GPU调用0，默认保持。
+
 2026-10-08：新增显式`RayMapConfig.coalesce_queued_preparation=False`，只向同session/Job、尚未取准备lease的尾块追加已到达输入。
 阶段broker可原子扩展编码行前段与字节/work登记，开始准备后描述不再扩展；Core动作、逐行请求、取消/未知结果责任及即时默认保持。
 [同题诊断](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)核对原3,072行借用：后续三段各896次均只有一行可借。
