@@ -11,6 +11,7 @@ from src.execution_provider.adapters.full_response import (
 )
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.completion_response import decode_backend_completion
+from src.execution_provider.adapters.ray_map_transport import _HttpActor
 from src.execution_provider.completion import CompletionAdapterError
 from src.scheduling.core.session_contract import BackendTask, OfferedTask, SessionSpec, TaskKey
 
@@ -84,3 +85,18 @@ class FullResponseTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(CompletionAdapterError) as raised:
             decode_full_response(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
         self.assertEqual(raised.exception.code, 'MODEL_UNAVAILABLE')
+
+    async def test_worker_pool_identity_includes_response_mode(self):
+        config = FixedModelConfig('http://localhost/fixture', 'fixture', 1000)
+        old = _HttpActor(config, 2, managed=True)
+        full = _HttpActor(config, 2, managed=True, response_mode='full')
+        try:
+            self.assertNotEqual(old.identity, full.identity)
+            with self.assertRaisesRegex(ValueError, 'differs'):
+                await old.claim('a' * 32, full.identity, 2)
+            with self.assertRaisesRegex(ValueError, 'differs'):
+                await full.claim('b' * 32, old.identity, 2)
+            self.assertTrue(await full.claim('c' * 32, full.identity, 2))
+            await full.release('c' * 32)
+        finally:
+            await old.close();await full.close()
