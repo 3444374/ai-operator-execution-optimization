@@ -1543,5 +1543,209 @@
     },
     "corrected_http_values_comparison": "all three DuckDB pairs have equal full HTTP request-value multisets; these observations do not supply native call readiness or HTTP-to-row identity",
     "two_map_comparison": "first-stage request values equal; actual predecessor summaries and second-stage requests differ; this is a separate observed difference"
+  },
+  "lotus_prepare_diagnosis": {
+    "source": "preserved source07 method-events.jsonl; read-only post-run analysis; no additional model POST",
+    "observations": [
+      {
+        "arm": "fixed-map-semloom",
+        "repeat": 0,
+        "unit_member": "model-rehearsal03/fixed-map-semloom.r0/",
+        "ready_query_seconds": 3.058868154,
+        "first_payload_next": {
+          "queue_ns": 0.000198,
+          "work_ns": 2.694129081,
+          "resume_ns": 0.000298279,
+          "elapsed_ns": 2.69462536
+        },
+        "actor_ready_seconds": 3.837950598
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "repeat": 0,
+        "unit_member": "model-rehearsal03/lotus-method-semloom.r0/",
+        "ready_query_seconds": 31.325873124,
+        "first_payload_next": {
+          "queue_ns": 0.015564769,
+          "work_ns": 28.725123123,
+          "resume_ns": 0.015867561,
+          "elapsed_ns": 28.756555453
+        },
+        "actor_ready_seconds": 3.675482936
+      },
+      {
+        "arm": "duckdb-method-semloom",
+        "repeat": 0,
+        "unit_member": "model-rehearsal03/duckdb-method-semloom.r0/",
+        "ready_query_seconds": 2.807979137,
+        "first_payload_next": {
+          "queue_ns": 0.000427618,
+          "work_ns": 2.423370584,
+          "resume_ns": 0.000372438,
+          "elapsed_ns": 2.42417064
+        },
+        "actor_ready_seconds": 3.711998653
+      },
+      {
+        "arm": "lotus-two-map-semloom-staged",
+        "repeat": 0,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-staged.r0/",
+        "ready_query_seconds": 37.378301259,
+        "first_payload_next": {
+          "queue_ns": 0.005490781,
+          "work_ns": 31.449962246,
+          "resume_ns": 0.028175711,
+          "elapsed_ns": 31.483628738
+        },
+        "actor_ready_seconds": 3.921071829
+      },
+      {
+        "arm": "lotus-two-map-semloom-incremental",
+        "repeat": 0,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-incremental.r0/",
+        "ready_query_seconds": 36.993592223,
+        "first_payload_next": {
+          "queue_ns": 0.010594074,
+          "work_ns": 31.564052032,
+          "resume_ns": 0.020729708,
+          "elapsed_ns": 31.595375814
+        },
+        "actor_ready_seconds": 3.823318899
+      },
+      {
+        "arm": "fixed-map-semloom",
+        "repeat": 1,
+        "unit_member": "model-rehearsal03/fixed-map-semloom.r1/",
+        "ready_query_seconds": 3.160874559,
+        "first_payload_next": {
+          "queue_ns": 0.00020888,
+          "work_ns": 2.780854483,
+          "resume_ns": 0.000239274,
+          "elapsed_ns": 2.781302637
+        },
+        "actor_ready_seconds": 3.629627924
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "repeat": 1,
+        "unit_member": "model-rehearsal03/lotus-method-semloom.r1/",
+        "ready_query_seconds": 33.541553042,
+        "first_payload_next": {
+          "queue_ns": 0.005559952,
+          "work_ns": 30.232486825,
+          "resume_ns": 0.051931644,
+          "elapsed_ns": 30.289978421
+        },
+        "actor_ready_seconds": 3.765504792
+      },
+      {
+        "arm": "duckdb-method-semloom",
+        "repeat": 1,
+        "unit_member": "model-rehearsal03/duckdb-method-semloom.r1/",
+        "ready_query_seconds": 3.060675109,
+        "first_payload_next": {
+          "queue_ns": 0.000453901,
+          "work_ns": 2.681692568,
+          "resume_ns": 0.000378255,
+          "elapsed_ns": 2.682524724
+        },
+        "actor_ready_seconds": 3.668455963
+      },
+      {
+        "arm": "lotus-two-map-semloom-staged",
+        "repeat": 1,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-staged.r1/",
+        "ready_query_seconds": 32.25639371,
+        "first_payload_next": {
+          "queue_ns": 0.005458474,
+          "work_ns": 26.648081218,
+          "resume_ns": 0.041327588,
+          "elapsed_ns": 26.69486728
+        },
+        "actor_ready_seconds": 3.857701904
+      },
+      {
+        "arm": "lotus-two-map-semloom-incremental",
+        "repeat": 1,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-incremental.r1/",
+        "ready_query_seconds": 36.955609359,
+        "first_payload_next": {
+          "queue_ns": 0.005569449,
+          "work_ns": 31.252051615,
+          "resume_ns": 0.010569851,
+          "elapsed_ns": 31.268190915
+        },
+        "actor_ready_seconds": 3.666787175
+      },
+      {
+        "arm": "fixed-map-semloom",
+        "repeat": 2,
+        "unit_member": "model-rehearsal03/fixed-map-semloom.r2/",
+        "ready_query_seconds": 2.918928561,
+        "first_payload_next": {
+          "queue_ns": 0.000199649,
+          "work_ns": 2.535490839,
+          "resume_ns": 0.000200496,
+          "elapsed_ns": 2.535890984
+        },
+        "actor_ready_seconds": 3.708805894
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "repeat": 2,
+        "unit_member": "model-rehearsal03/lotus-method-semloom.r2/",
+        "ready_query_seconds": 32.131151605,
+        "first_payload_next": {
+          "queue_ns": 0.020831242,
+          "work_ns": 28.93027054,
+          "resume_ns": 0.015840679,
+          "elapsed_ns": 28.966942461
+        },
+        "actor_ready_seconds": 3.814263242
+      },
+      {
+        "arm": "duckdb-method-semloom",
+        "repeat": 2,
+        "unit_member": "model-rehearsal03/duckdb-method-semloom.r2/",
+        "ready_query_seconds": 3.182769247,
+        "first_payload_next": {
+          "queue_ns": 0.000256731,
+          "work_ns": 2.792187658,
+          "resume_ns": 0.000364472,
+          "elapsed_ns": 2.792808861
+        },
+        "actor_ready_seconds": 3.8537037
+      },
+      {
+        "arm": "lotus-two-map-semloom-staged",
+        "repeat": 2,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-staged.r2/",
+        "ready_query_seconds": 34.893393074,
+        "first_payload_next": {
+          "queue_ns": 0.00553991,
+          "work_ns": 29.297555595,
+          "resume_ns": 0.010533103,
+          "elapsed_ns": 29.313628608
+        },
+        "actor_ready_seconds": 3.703352686
+      },
+      {
+        "arm": "lotus-two-map-semloom-incremental",
+        "repeat": 2,
+        "unit_member": "model-rehearsal03/lotus-two-map-semloom-incremental.r2/",
+        "ready_query_seconds": 37.820086231,
+        "first_payload_next": {
+          "queue_ns": 0.010621666,
+          "work_ns": 32.205908321,
+          "resume_ns": 0.026017244,
+          "elapsed_ns": 32.242547231
+        },
+        "actor_ready_seconds": 3.883890369
+      }
+    ],
+    "measured_location": "first payload_next action in the existing thread executor; includes Arrow/Daft imports, native runner setup, graph construction, first batch materialization and validation",
+    "actor_scope": "actor-ready occurs during preparation before backend-ready and query submission; approximately3.7s across these paths",
+    "interpretation": "LOTUS extra approximately30s is inside first payload construction/next wall time, rather than recorded pool queue, event-loop resume, or actor-ready; deeper cause unavailable without inner timing",
+    "aggregation": "single first-payload span only; do not add nested startup and work spans or subtract them as pure CPU/model time"
   }
 }
