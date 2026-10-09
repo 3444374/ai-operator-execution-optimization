@@ -90,6 +90,27 @@ def setup(**changes):
 
 
 class IncrementalSessionTests(unittest.TestCase):
+    def test_empty_release_preserves_progress_but_keeps_schema_and_closed_checks(self):
+        engine, session, backend, _clock = setup()
+        session.offer((task(0),))
+        progress = session.advance(1)
+        self.assertEqual(progress.deliveries, ())
+        usage = engine.capacity.usage()
+        session.release(())
+        session.release([])
+        self.assertEqual(engine.capacity.usage(), usage)
+        self.assertEqual(engine.wake.generation, progress.generation)
+        with self.assertRaises(ValueError): session.release(None)
+        with self.assertRaises(ValueError): session.release(set())
+        backend.complete(next(iter(backend.pending)))
+        delivery = session.advance(1).deliveries[0]
+        before = engine.wake.generation
+        session.release((delivery.lease_id,))
+        self.assertGreater(engine.wake.generation, before)
+        self.assertEqual(engine.capacity.usage().held_tasks, 0)
+        session.close()
+        with self.assertRaises(RuntimeError): session.release(())
+
     def test_delivery_reports_new_consumer_deadline(self):
         for policy, expected in (
             (SessionTimeouts(consumer_s=3), 5.0),
