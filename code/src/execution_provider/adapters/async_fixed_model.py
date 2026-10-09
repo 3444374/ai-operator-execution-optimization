@@ -74,24 +74,32 @@ class AsyncFixedModelTransport:
                 async with self._client.stream(
                     "POST", self.config.endpoint_url, content=request.task.payload
                 ) as response:
-                    buffer = bytearray()
+                    buffer = bytearray(self.response_prefix(response))
+                    if len(buffer) > request.task.max_result_bytes:
+                        raise ValueError("response exceeds bound")
                     async for chunk in response.aiter_raw(chunk_size=4096):
                         if len(buffer) + len(chunk) > request.task.max_result_bytes:
                             raise ValueError("response exceeds bound")
                         buffer.extend(chunk)
-                    if not 200 <= response.status_code < 300:
-                        code = (
-                            "MODEL_REQUEST_REJECTED"
-                            if 400 <= response.status_code < 500
-                            else "MODEL_UNAVAILABLE"
-                            if response.status_code >= 500
-                            else "MODEL_RESPONSE_INVALID"
-                        )
-                        return json.dumps({"bridge_error": code}).encode()
-                    return bytes(buffer)
+                    return self.response_result(response, bytes(buffer))
         finally:
             if self._observer:
                 self._observer({"event": "http_finished", "key": asdict(request.key)})
+
+    def response_prefix(self, response):
+        return b""
+
+    def response_result(self, response, buffer):
+        if not 200 <= response.status_code < 300:
+            code = (
+                "MODEL_REQUEST_REJECTED"
+                if 400 <= response.status_code < 500
+                else "MODEL_UNAVAILABLE"
+                if response.status_code >= 500
+                else "MODEL_RESPONSE_INVALID"
+            )
+            return json.dumps({"bridge_error": code}).encode()
+        return buffer
 
     async def close(self):
         if self._client is not None:
