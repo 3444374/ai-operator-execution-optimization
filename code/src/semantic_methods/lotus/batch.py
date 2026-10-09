@@ -30,12 +30,14 @@ class LotusBatchExecutor:
         self.max_batch_rows, self.max_batch_result_bytes = max_batch_rows, max_batch_result_bytes
         self.on_response, self.on_batch, self.cancelled = on_response, on_batch, cancelled
         self.timeout_s, self.last_responses = timeout_s, ()
+        self.last_cleanup_errors = ()
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
         from openai import OpenAIError
         if len(uncached_data) > self.max_batch_rows:
             raise ValueError("LOTUS uncached batch exceeds declared row limit")
         self.last_responses = ()
+        self.last_cleanup_errors = ()
         if not uncached_data:
             return []
         # Observe the original whole uncached batch before any physical offer or wait.
@@ -49,6 +51,7 @@ class LotusBatchExecutor:
         sealed = False
         clean = False
         started = time.monotonic()
+        primary = None
         try:
             while True:
                 if self.cancelled and self.cancelled():
@@ -77,6 +80,7 @@ class LotusBatchExecutor:
                     flow.end_input()
                     sealed = True
                 progress = flow.advance(flow.limits.held_tasks)
+                delivery_error = None
                 try:
                     for delivery in progress.deliveries:
                         index = delivery.key.sequence
@@ -98,9 +102,18 @@ class LotusBatchExecutor:
                         except OpenAIError as error:
                             responses[index] = error
                         completed += 1
+                except BaseException as error:
+                    delivery_error = error
+                    raise
                 finally:
                     if progress.deliveries:
-                        flow.release(tuple(d.lease_id for d in progress.deliveries))
+                        try:
+                            flow.release(tuple(d.lease_id for d in progress.deliveries))
+                        except BaseException as error:
+                            self.last_cleanup_errors += (("release", error),)
+                            if delivery_error is None:
+                                raise
+                            delivery_error.add_note("LOTUS result release also failed: " + type(error).__name__)
                 if progress.state in (State.FAILED, State.CANCELLED):
                     raise RuntimeError(progress.error or "LOTUS execution stopped")
                 if progress.state == State.FINISHED:
@@ -109,9 +122,18 @@ class LotusBatchExecutor:
                     clean = True
                     return responses
                 flow.wait(progress)
+        except BaseException as error:
+            primary = error
+            raise
         finally:
             self.last_responses = tuple(full)
-            flow.close(clean=clean)
+            try:
+                flow.close(clean=clean)
+            except BaseException as error:
+                self.last_cleanup_errors += (("close", error),)
+                if primary is None:
+                    raise
+                primary.add_note("LOTUS flow close also failed: " + type(error).__name__)
 
 
 @contextmanager
