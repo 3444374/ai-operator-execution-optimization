@@ -215,7 +215,7 @@ def _drain_execution(execution, *, close=True):
         raise RuntimeError('supplier execution retains unresolved model resources')
 
 
-def prepare_duckdb_connection(stack,plan,model,options,library):
+def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=False):
     import ctypes
     import duckdb
     import _duckdb
@@ -229,8 +229,10 @@ def prepare_duckdb_connection(stack,plan,model,options,library):
     if duckdb.__version__!='1.5.4' or version!='0.4.14-semloom1':
         raise ValueError('DuckDB adapter binary does not match its compiled source identity')
     token=model.bearer_token or 'EMPTY'
+    # The whole-vector callback bypasses ProviderExecutorState and its native pool.
+    native_capacity=min(options.concurrency,64) if semloom_batch else options.concurrency
     configure_ai_endpoint(connection,DuckDBAiConfig(model.endpoint_url.removesuffix('/chat/completions'),
-        model.model_id,token,max_tokens=plan.max_tokens,max_concurrent_requests=options.concurrency,
+        model.model_id,token,max_tokens=plan.max_tokens,max_concurrent_requests=native_capacity,
         timeout_seconds=model.timeout_ms//1000))
     environment_name='DUCKDB_AI_CONNECT_TIMEOUT_SECONDS'
     previous=os.environ.get(environment_name)
@@ -254,7 +256,7 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
     from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
     token=model.bearer_token or 'EMPTY'
     if connection is None:
-        connection=prepare_duckdb_connection(stack,plan,model,options,library)
+        connection=prepare_duckdb_connection(stack,plan,model,options,library,semloom_batch=execution is not None)
         replace_duckdb_inputs(connection,values,plan)
     if execution is not None:
         native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token))
@@ -298,6 +300,8 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
             if error is not None or value is None:raise ValueError('native DuckDB parser reported a failed complete call')
             yield row_id,value
     identity=dict(supplier='DuckDB1.5.4/ai0.4.14-semloom1',source_commit='9b7b16a5d5bfa97180b8be48d69bd9a4a4106419',
+        native_provider_capacity=min(options.concurrency,64) if execution is not None else options.concurrency,
+        native_provider_pool_used=execution is None,
         sql_threads=1,method_roles=['main'],request_cache=False,retry_count=0,
         caller_scope='complete body returned by native batch callback immediately before C++ response consumer',
         native_supply='current SQL vector only; SQL results wait for complete vector return')

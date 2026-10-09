@@ -160,7 +160,8 @@ class _ArmOwner:
         if self.connection is None:
             self._capture_component_close('owner_duckdb_close')
             self.connection = prepare_duckdb_connection(self.stack, self.group.plan, self.model,
-                                                       self.group.options, self.group.duckdb_library)
+                                                       self.group.options, self.group.duckdb_library,
+                                                       semloom_batch=self.execution is not None)
         replace_duckdb_inputs(self.connection, values, self.group.plan)
         return self.connection
 
