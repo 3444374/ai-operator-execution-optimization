@@ -99,7 +99,8 @@ class LotusBatchExecutor:
                             responses[index] = error
                         completed += 1
                 finally:
-                    flow.release(tuple(d.lease_id for d in progress.deliveries))
+                    if progress.deliveries:
+                        flow.release(tuple(d.lease_id for d in progress.deliveries))
                 if progress.state in (State.FAILED, State.CANCELLED):
                     raise RuntimeError(progress.error or "LOTUS execution stopped")
                 if progress.state == State.FINISHED:
