@@ -36,35 +36,54 @@ class _ArmOwner:
         self.root = group.root / 'owners' / arm
         new_private_directory(self.root)
         self.stack = ExitStack()
-        self.events = self.stack.enter_context(BufferedEvents(self.root / 'owner-events.jsonl'))
+        self._close_errors = CellErrors()
+        self._closed = False
+        self.queries = 0
         self.binding = self.service = None
         self.execution = self.lm = self.connection = self.native = None
         self.physical = group.physical if 'semloom' in arm and not arm.endswith('diagnostic') else None
-        self.gateway = self.stack.enter_context(ObservationGateway(
-            routes=(GatewayRoute(self.identity, 'model', group.model.endpoint_url),),
-            trace_path=self.root / 'http-trace.jsonl',
-            request_timeout_s=min(group.query_timeout_s, group.model.timeout_ms/1000),
-            before_forward=self.before, after_forward=self.after,
-            query_identity=lambda: self.binding['unit_id'] if self.binding else None))
-        token = group.model.bearer_token
-        if arm.startswith('lotus-'):
-            token = token or 'local-fixture'
-        elif arm.startswith('duckdb-'):
-            token = token or 'EMPTY'
-        self.model = replace(group.model, endpoint_url=self.gateway.endpoint_url(self.identity, 'model'),
-                             bearer_token=token)
         try:
+            self.events = self._enter_component(BufferedEvents(self.root / 'owner-events.jsonl'), 'owner_events_close')
+            self.gateway = self._enter_component(ObservationGateway(
+                routes=(GatewayRoute(self.identity, 'model', group.model.endpoint_url),),
+                trace_path=self.root / 'http-trace.jsonl',
+                request_timeout_s=min(group.query_timeout_s, group.model.timeout_ms/1000),
+                before_forward=self.before, after_forward=self.after,
+                query_identity=lambda: self.binding['unit_id'] if self.binding else None), 'owner_gateway_close')
+            token = group.model.bearer_token
+            if arm.startswith('lotus-'):
+                token = token or 'local-fixture'
+            elif arm.startswith('duckdb-'):
+                token = token or 'EMPTY'
+            self.model = replace(group.model, endpoint_url=self.gateway.endpoint_url(self.identity, 'model'),
+                                 bearer_token=token)
             if 'semloom' in arm and not arm.startswith('sema-'):
                 self.execution = build_native_execution(self.model, physical=self.physical,
                     max_tasks=group.options.concurrency, max_active_requests=group.options.concurrency,
                     observer=self.observe, timeouts=SessionTimeouts(backend_s=max(45, group.query_timeout_s)))
+                self.stack.callback(self._close_errors.attempt, 'owner_execution_close',
+                                    lambda: _drain_execution(self.execution))
             if arm.startswith('lotus-'):
                 self.lotus_lm()
-        except BaseException:
-            self.stack.close()
+        except BaseException as failure:
+            self._close_errors.attempt('owner_components_close', self.stack.close)
+            if self._close_errors.first is not None:
+                failure.add_note('Persistent owner initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
         self.started_ns = time.monotonic_ns()
-        self.queries = 0
+
+    def _capture_component_close(self, phase):
+        def collect(_error_type, error, _traceback):
+            if error is not None:
+                self._close_errors.record(phase, error)
+                return True
+            return False
+        self.stack.push(collect)
+
+    def _enter_component(self, component, phase):
+        # Each exit is collected before another component can replace its error.
+        self._capture_component_close(phase)
+        return self.stack.enter_context(component)
 
     def before(self, route, body):
         if self.binding is None:
@@ -139,6 +158,7 @@ class _ArmOwner:
 
     def duckdb_connection(self, values):
         if self.connection is None:
+            self._capture_component_close('owner_duckdb_close')
             self.connection = prepare_duckdb_connection(self.stack, self.group.plan, self.model,
                                                        self.group.options, self.group.duckdb_library)
         replace_duckdb_inputs(self.connection, values, self.group.plan)
@@ -149,18 +169,20 @@ class _ArmOwner:
             from src.baselines.text.products.sema import prepare_projection
             root = self.root / 'native'
             new_private_directory(root)
-            self.native = self.stack.enter_context(prepare_projection(values, self.group.plan, self.model,
-                binary=self.group.sema_binary, root=root, num_threads=self.group.options.concurrency))
+            self.native = self._enter_component(prepare_projection(values, self.group.plan, self.model,
+                binary=self.group.sema_binary, root=root, num_threads=self.group.options.concurrency), 'owner_sema_close')
         return self.native
 
     def close(self):
-        errors = CellErrors()
-        if self.execution is not None:
-            errors.attempt('owner_execution_close', lambda: _drain_execution(self.execution))
+        if self._closed:
+            return
+        errors = self._close_errors
         errors.attempt('owner_components_close', self.stack.close)
-        write_private_json(self.root / 'owner-summary.json', redact_json_values(dict(
-            lifecycle=self.lifecycle(), cleanup_errors=errors.details, closed_ns=time.monotonic_ns())))
+        lifecycle = errors.attempt('owner_lifecycle', self.lifecycle)
+        errors.attempt('owner_summary', lambda: write_private_json(self.root / 'owner-summary.json',
+            redact_json_values(dict(lifecycle=lifecycle, cleanup_errors=errors.details, closed_ns=time.monotonic_ns()))))
         errors.raise_if_failed()
+        self._closed = True
 
 
 class PersistentAdapterGroup:
@@ -183,6 +205,7 @@ class PersistentAdapterGroup:
         self.stages, self.tokenizer_path = stages, tokenizer_path
         self.duckdb_library, self.sema_binary = duckdb_library, sema_binary
         self.stack = ExitStack()
+        self._close_errors = CellErrors()
         self.owners, self.used_units = {}, set()
         self.poisoned = False
         self.ray_session_id = None
@@ -207,7 +230,7 @@ class PersistentAdapterGroup:
             for arm in self.arms:
                 owner = _ArmOwner(self, arm)
                 self.owners[arm] = owner
-                self.stack.callback(owner.close)
+                self.stack.callback(self._close_errors.attempt, 'group_owner_close.'+arm, owner.close)
             self.ready_ns = time.monotonic_ns()
             write_private_json(self.root/'startup.json', redact_json_values(dict(
                 schema='semloom.persistent_adapter_group.v1', arms=self.arms, started_ns=self.started_ns,
@@ -216,8 +239,10 @@ class PersistentAdapterGroup:
                 owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
                 hard_timeout_owner='calling process supervisor', result_cache=False)))
             return self
-        except BaseException:
-            self.stack.close()
+        except BaseException as failure:
+            self._close_errors.attempt('group_close', self.stack.close)
+            if self._close_errors.first is not None:
+                failure.add_note('Persistent group initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
 
     def run(self, arm, *, unit_id, root, load_source, phase, reference_outputs=None, allowed_outputs=None):
@@ -290,13 +315,14 @@ class PersistentAdapterGroup:
                         for arm,owner in self.owners.items() if owner.physical is not None and owner.execution is not None])
 
     def __exit__(self, error_type, error, traceback):
-        errors = CellErrors()
+        errors = self._close_errors
         errors.attempt('group_close', self.stack.close)
-        write_private_json(self.root/'group-summary.json', redact_json_values(dict(
+        owners = {arm:errors.attempt('group_lifecycle.'+arm, owner.lifecycle) for arm,owner in self.owners.items()}
+        errors.attempt('group_summary', lambda: write_private_json(self.root/'group-summary.json', redact_json_values(dict(
             status='failed' if error is not None or self.poisoned or errors.first is not None else 'passed',
             queries=len(self.used_units), poisoned=self.poisoned,
             ended_ns=time.monotonic_ns(), cleanup_errors=errors.details,
-            owners={arm:owner.lifecycle() for arm,owner in self.owners.items()})))
+            owners=owners))))
         if errors.first is not None:
             if error is not None:
                 error.add_note('Persistent group cleanup also failed: '+type(errors.first).__name__)
