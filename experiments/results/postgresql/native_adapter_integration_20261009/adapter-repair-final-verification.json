@@ -1,0 +1,118 @@
+{
+  "source": "adapter-repair-source02",
+  "source_commit": "aef350b29727b2ddcf82f0734f8905d16edb3a13",
+  "source_files": 1028,
+  "source_archive_sha256": "054d93250d2415a984deae4d19420338d268f15c4065b4b1f89c463c55c2cc9b",
+  "fixture_queries": 26,
+  "fixture_posts": 1154,
+  "real_model_posts": 0,
+  "regressions": [
+    {
+      "label": "integrated-regression",
+      "modules": [
+        "tests.execution_provider.test_native_tasks",
+        "tests.scheduling.test_incremental_session",
+        "tests.execution_provider.test_sema_service",
+        "tests.execution_provider.test_sema_service_cleanup",
+        "tests.execution_provider.test_sema_semloom",
+        "tests.baselines.text.test_sema_prepared",
+        "tests.experiments.test_persistent_adapter_cleanup",
+        "tests.experiments.test_persistent_native_adapter_query",
+        "tests.semantic_methods.test_lotus_adapter",
+        "tests.semantic_methods.test_lotus_cleanup",
+        "tests.semantic_methods.test_lotus_wait"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 49.04053461784497,
+      "real_model_posts": 0,
+      "total": 153,
+      "passed": 150,
+      "skipped": 3
+    },
+    {
+      "label": "duckdb-actual-regression",
+      "modules": [
+        "tests.semantic_methods.test_duckdb_ai"
+      ],
+      "exit_code": 0,
+      "elapsed_s": 8.040435621980578,
+      "real_model_posts": 0,
+      "total": 20,
+      "passed": 20,
+      "skipped": 0
+    }
+  ],
+  "private_archive": {
+    "members": 487,
+    "bytes": 1405463,
+    "sha256": "d4e77a0d102344cfa1beb58d60130142133651b898ddbb77b9ac7d037e086a41"
+  },
+  "public_archive": {
+    "path": "raw/adapter-repair-final-fixtures.jsonl.gz",
+    "members": 487,
+    "bytes": 2159412,
+    "sha256": "700921c8cb346b4537314c61d1c63006acb06274353bb819097c126e1799db9d"
+  },
+  "domain_repairs": {
+    "lotus": {
+      "commit": "60c45593b8d837684c24f6f29375c15af3495f76",
+      "integrated_commit": "5e0c83248eb4bab067503d79f752d26253ab4873",
+      "new_cleanup_tests": 11,
+      "independent_tests": 57,
+      "shared_combination_tests": 59,
+      "original_archive_sha256": "8b0e511fb90aa345f9709379f5a8420fe0c7d2cefcbde6ad8c8f89ef1b6fe0fd",
+      "caller_empty_release_guard_integrated": false
+    },
+    "duckdb": {
+      "commit": "8ab8e3e7405f9639cdad8d74e34c748f4ccc552c",
+      "integrated_commit": "d145eba03f91c2bb8c5ed51a8c70c54af298be3e",
+      "abi_tests": 9,
+      "compiled_tests": 11,
+      "original_archive_sha256": "bf7aad892971d1848c52c5b80188acceddda3772e877bb176adc724d56de07e1"
+    },
+    "sema": {
+      "commit": "7663ab525f0133769dc37114e4059c7d65c396f2",
+      "integrated_commit": "aef350b29727b2ddcf82f0734f8905d16edb3a13",
+      "new_cleanup_tests": 14,
+      "independent_regression_tests": 136,
+      "actual_http_counterexamples": 4,
+      "original_archive_sha256": "b922681eb6307f2e359a7b21c3d272fbd24873363df114e866d317fe74fe2232"
+    }
+  },
+  "qualification_scope": "Actual CPU library regressions and bounded localhost fixtures; no model-performance claim",
+  "omitted_in_generic_suite": {
+    "interleaved_persistent_actual_libraries": "already qualified at prior source; current changes limited to supplier failure handling",
+    "supplier_input_replacement_and_endpoint_tests": "executed separately for all eight arms after the generic suite"
+  },
+  "verified_cleanup_cases": {
+    "code/tests/semantic_methods/test_lotus_cleanup.py": [
+      "test_input_error_survives_close_failure",
+      "test_decode_error_survives_release_and_close_failures",
+      "test_observation_error_keeps_previous_full_response_and_closes_all_deliveries",
+      "test_sdk_error_keeps_full_response_and_survives_cleanup_failures",
+      "test_release_failure_without_execution_error_propagates_and_close_runs",
+      "test_first_cleanup_error_survives_later_close_failure",
+      "test_close_failure_after_success_propagates",
+      "test_response_limit_error_keeps_full_response_and_survives_cleanup_failures",
+      "test_normal_success_retains_full_response_sdk_usage_and_returns_core_resources",
+      "test_cleanup_diagnostics_reset_for_next_batch",
+      "test_cleanup_error_in_callers_except_block_is_not_suppressed"
+    ],
+    "code/tests/execution_provider/test_sema_service_cleanup.py": [
+      "test_runner_failure_still_closes_executor_client_and_loop",
+      "test_multiple_close_failures_keep_all_stages_and_first_exception",
+      "test_query_first_error_survives_thread_timeout_and_keeps_failure_artifact",
+      "test_thread_timeout_without_query_error_is_reported",
+      "test_trace_failures_are_all_recorded_without_replacing_query_error",
+      "test_cancel_failure_keeps_query_error_and_continues_trace_close",
+      "test_cancel_failure_without_query_error_propagates_after_trace_close",
+      "test_http_error_arriving_during_join_remains_primary_with_cleanup_failure",
+      "test_http_error_arriving_during_join_without_cleanup_failure_is_reported",
+      "test_actual_http_runner_failure_drains_core_on_io_thread",
+      "test_actual_http_keeps_query_error_when_runner_cleanup_fails",
+      "test_startup_failure_survives_executor_close_failure",
+      "test_site_failure_before_close_waits_for_http_writer_before_core_close",
+      "test_persistent_site_stop_failure_retains_unconfirmed_listener"
+    ]
+  }
+}

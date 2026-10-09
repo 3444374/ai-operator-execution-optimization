@@ -25,6 +25,7 @@
 通过五条实际库路径和URL替换，17查询／722次fixture POST只核对工程接入；执行节奏修复与模型复核分别处理。
 随后[接入持续成本修复](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
 分别消除空释放造成的反复推进、DuckDB重复封装和Sema重复通知，保留同步保护与方法统计；CPU诊断只支持此次工程原因，真实模型与方法采用仍分别判断。
+三家异常释放／退出修复在新的`adapter-repair-source02`共同核对，170项相关检查及八路径26查询／1,154 fixture POST通过，真实模型0；旧来源与模型负结果保留。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，

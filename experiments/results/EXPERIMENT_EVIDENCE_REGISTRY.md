@@ -4,6 +4,8 @@
 公共空释放、DuckDB重复封装和Sema重复通知分别复现与修订；独立字段、原生完整响应、同步记账和统计保持。
 整合24查询／1,632次fixture POST的618成员投影由[离线复算](postgresql/native_adapter_integration_20261009/observation_replay.py)核对相同请求、原响应字节、函数墙钟／线程CPU和Q0／H0／H1／B1／Q1。
 十个初始故障回归旧版2失败／6错误，修复后13项通过；真实模型0，重启中断及原探针上限失败分别保留，旧模型负结果不改数字。
+三家异常退出修复由`adapter-repair-source02`／`aef350b2`共同核对，1,028份文件一致；173项回归170通过／3项实际入口通用suite未启用，编译扩展20项全通过。
+八路径26正常查询／1,154 fixture POST、输入／URL更新、完整返回及资源退出由[487成员复算](postgresql/native_adapter_integration_20261009/adapter_repair_final_replay.py)核对，真实模型0；三家失败原件与旧来源均保留。
 
 2026-10-09：[同题报告的DuckDB／Sema常驻检查](postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)。
 `resident-supplier-source01`在`3a5f7bc9`上只新增测试，五条各`8 → 8 → 128`行及两次Sema更换URL探针，17查询／722 fixture POST、模型0。

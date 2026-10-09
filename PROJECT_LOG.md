@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-09：供应商异常处理与最终共同源码检查
+
+- 整合LOTUS`60c45593`、DuckDB`8ab8e3e`、Sema`7663ab52`的窄范围修复，公共空释放处理保持；执行第一错误、批次退出失败和服务清理分别核对。
+- 新建`adapter-repair-source02`／`aef350b2`并核对1,028份文件；173项相关检查170通过／3项实际入口在通用suite未启用，编译扩展20项全通过。
+- 八路径连续不同输入共26正常查询／1,154 fixture POST通过，真实模型0；旧来源、旧模型负结果、三家失败原件和原统计保持。
+- 原件已下载，487成员公开投影、离线复核及解码隐私检查通过；[同题报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)、实现状态、方案和入口同步，模型结论另由独立原件判断。
+
 ## 2026-10-09：登记常驻修复后的模型复核清单
 
 - 从主会话现有计划仅同步[常驻查询小节](experiments/plans/语义系统对照.md#resident-native-semloom-test)，保留已完成90查询／5,760 POST与新的八路径120查询／7,680 POST、30分钟和首错停止要求。

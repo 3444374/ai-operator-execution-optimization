@@ -17,6 +17,8 @@ Sema服务Core的线程限制、原生Ray每图actor及其他常驻接入的待�
 补上五条实际库路径与URL替换探针，17查询／722次fixture POST；同连接／作者进程复用已核对，Sema后置Core仍按查询创建，执行节奏修复另测。
 [持续成本修复](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
 分别处理空释放、DuckDB反压重复封装与Sema反复通知，常驻初始化／退出也保留第一错误；原保护与SDK统计保持，CPU诊断不替代模型复核。
+三家供应商另处理release／producer close／HTTP服务退出异常；错误传播和附加诊断分别保存。
+[最终同一源码检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)通过实际扩展、常驻输入更新与资源归还，原来源和模型负结果保持。
 
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。

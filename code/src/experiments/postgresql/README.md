@@ -50,6 +50,7 @@ DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema
 LOTUS额外记录完整SDK响应列表返回时刻，先于观察序列化与原方法统计；原提交、HTTP和消费时刻保持。
 常驻owner从组件取得开始统一清理，已建执行器立即登记原drain动作；退出及摘要读取／写入通过现有CellErrors保存，
 原查询异常保持顶层。修复前后诊断与三个独立供给问题见[同题修复记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)。
+供应商release、producer退出和Sema服务关闭的第一错误分别处理；最终同一源码的真实库回归与八路径输入替换见[共同检查](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)。
 
 <a id="ready-query-timing"></a>
 
