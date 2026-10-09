@@ -91,6 +91,24 @@ DuckDB整批返回与Sema完成标记保持原生特点；统一代理区间排�
 组合回归确认损坏响应先保存字节，再取消原生执行并拒绝继续转发。真实数据仍对应`ready-source04`；
 整合修订单独记录本地验证，新增模型请求0。
 
+<a id="unified-entry-preparation"></a>
+
+## 十二路径统一比较的新增入口（2026-10-09）
+
+当前[统一方案](../../../plans/语义系统对照.md#unified-map-comparison)补入SemLoom Daft＋Ray、direct、原生Ray Data和Daft Native，
+与LOTUS、Sema、DuckDB AI、Daft prompt及本地HTTP四配置同轮比较；原八路径真实预演保持上方原始身份。
+新增入口保留旧PG接口和默认应用计时，补异步提交／EOF、一次Native runtime准备及direct零请求客户端准备。
+统一代理保存协议原值，HTTP或格式首错后拒绝后续转发；原生执行仍由各系统拥有，退出按原错误传播、查询期限与单元监督处理。
+
+[本地核验](raw/unified-entry-verification.json)登记`a0bf5cf3`后的源码摘要、测试范围和清单模拟。
+相关测试327项中315通过、12项因本机缺少Daft／Arrow实际适配依赖而跳过；实际库与Linux接入待服务器验证。
+调参顺序已轮换；276单元／最多84,672次的清单只作编排模拟核对，模拟未执行SQL、SDK、HTTP或模型。
+指定服务器的连接在认证前关闭，新增真实模型请求0；此节不更新旧排名，也不说明十二路径已在真实模型上全部通过。
+
+指标的起止、资源采样和缺项解释统一见[计时方案](../../../plans/SQL就绪计时.md#实现与观测)。
+新清单每路径十条独立查询和5120行／HTTP测量样本，查询及行／HTTP的P99.99仍选最大值，不能当作可靠的总体估计。
+源输入为既有Movie工程复测，提示、解析、原生实际并发与准备工作分别登记；多Job、图像、Filter、写回和多机性能不由此推出。
+
 ## 证据、恢复与复算
 
 [原始行时刻](raw/rows.jsonl.gz)、[统一HTTP阶段](raw/http.jsonl.gz)和[账本条目](raw/charges.jsonl.gz)按单元身份关联。

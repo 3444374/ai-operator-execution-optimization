@@ -131,7 +131,8 @@ def run_pg(config, inputs, plan, connection, pg_log, model_path, ledger, root, e
     return result,dict(processes=sampler.summary(),gateway_exit=gateway.returncode,pg_preparation=preparation)
 
 
-async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors):
+async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors,
+                     *, timing_mode='application'):
     import psycopg
     shared=ledger.claim_shared_unit(config.unit_id)
     async with await psycopg.AsyncConnection.connect(dsn,autocommit=True) as connection:
@@ -149,10 +150,16 @@ async def run_direct(config, inputs, plan, dsn, model, ledger, root, errors):
                     with ProcessSampler(root/'query-rss.jsonl',{'consumer_direct':os.getpid(),
                                                               'pg_backend':connection.info.backend_pid}) as sampler:
                         with errors.capture('query'):
-                            result=await record_async_execution(root/'q0',
+                            recorder, timing = record_async_execution, {}
+                            if timing_mode == 'ready':
+                                direct.transport.prepare()
+                                from .ready_query_recording import record_prepared_async_execution
+                                recorder = record_prepared_async_execution
+                                timing = dict(backend_ready_ns=time.monotonic_ns())
+                            result=await recorder(root/'q0',
                                 lambda:direct.query(connection,inputs,1,result_order=config.result_order),
                                 max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
-                                flush_rows=64,query_timeout_s=config.query_timeout_s)
+                                flush_rows=64,query_timeout_s=config.query_timeout_s,**timing)
                 finally:
                     await direct.close()
     return result,dict(processes=sampler.summary(),source=direct.source_metrics)
@@ -223,7 +230,8 @@ def native_ray_runtime(ray, config, ray_temp_root):
             report['driver_disconnected'] = not ray.is_initialized()
 
 
-def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_root):
+def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_root,
+            *, timing_mode='application'):
     # Ray reads this native async-batch setting at module import, including in
     # workers. Actor max_concurrency alone does not limit batches within a task.
     os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(config.ray_async_batches_per_actor)
@@ -264,10 +272,15 @@ def run_ray(config, inputs, plan, dsn, model, ledger, root, errors, ray_temp_roo
                 def record_stats(value):
                     with open_private_text(root/'ray-stats.txt') as out:out.write(value)
                 with errors.capture('query'):
-                    result=record_execution(root/'q0',lambda:open_rows(inputs,plan,
+                    recorder, timing = record_execution, {}
+                    if timing_mode == 'ready':
+                        from .ready_query_recording import record_prepared_execution
+                        recorder = record_prepared_execution
+                        timing = dict(backend_ready_ns=time.monotonic_ns())
+                    result=recorder(root/'q0',lambda:open_rows(inputs,plan,
                         RaySqlHttpConfig(config.ray_read_blocks,config.ray_read_concurrency,config.ray_actors,config.ray_batch_rows),
                         connect,factory,headers=headers,record_stats=record_stats),max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
-                        flush_rows=64,query_timeout_s=config.query_timeout_s,cancel_query=ray.shutdown)
+                        flush_rows=64,query_timeout_s=config.query_timeout_s,cancel_query=ray.shutdown,**timing)
     finally:
         def collect():
             with open_private_text(root/'events.jsonl') as out:

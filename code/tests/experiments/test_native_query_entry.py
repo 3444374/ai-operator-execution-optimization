@@ -72,3 +72,33 @@ class NativeEntryTests(unittest.TestCase):
                 read.assert_not_called()
                 with self.assertRaisesRegex(ValueError,'SQL support probe'):next(rows)
                 read.assert_called_once()
+
+    def test_daft_prepared_runtime_does_not_scan_or_initialize_twice(self):
+        from src.baselines.text.frameworks.daft_pg_http import open_rows,prepare_runtime
+        setup=Mock()
+        read=Mock(side_effect=ValueError('query-owned SQL reader failed'))
+        daft=SimpleNamespace(__version__='0.7.21',set_runner_native=setup,read_sql=read)
+        inputs=SimpleNamespace(movie_id=None,select_sql=lambda **_:('SELECT fixture',[]))
+        with patch.dict(sys.modules,{'daft':daft}):
+            prepare_runtime(8)
+            setup.assert_called_once_with(num_threads=8)
+            read.assert_not_called()
+            with open_rows(inputs,None,None,None,concurrency=16,partitions=4,
+                           runtime_prepared=True) as rows:
+                read.assert_not_called()
+                with self.assertRaisesRegex(ValueError,'SQL reader failed'):
+                    next(rows)
+            setup.assert_called_once()
+
+    def test_daft_default_still_initializes_during_query_iteration(self):
+        from src.baselines.text.frameworks.daft_pg_http import open_rows
+        setup=Mock()
+        read=Mock(side_effect=ValueError('query-owned SQL reader failed'))
+        daft=SimpleNamespace(__version__='0.7.21',set_runner_native=setup,read_sql=read)
+        inputs=SimpleNamespace(movie_id=None,select_sql=lambda **_:('SELECT fixture',[]))
+        with patch.dict(sys.modules,{'daft':daft}):
+            with open_rows(inputs,None,None,None,concurrency=16,partitions=4) as rows:
+                setup.assert_not_called()
+                with self.assertRaisesRegex(ValueError,'SQL reader failed'):
+                    next(rows)
+            setup.assert_called_once_with(num_threads=8)

@@ -1,6 +1,7 @@
 """Model transport failures retain diagnostic type without private request data."""
 import json
 import unittest
+from unittest.mock import patch
 
 import httpx
 
@@ -10,6 +11,26 @@ from src.scheduling.core.session_contract import BackendTask, OfferedTask, Sessi
 
 
 class AsyncTransportTests(unittest.IsolatedAsyncioTestCase):
+    async def test_client_preparation_is_zero_request_and_reused_by_execution(self):
+        attempts=[];events=[]
+        async def reply(request):
+            attempts.append(request)
+            return httpx.Response(200,stream=httpx.ByteStream(b'fixture reply'))
+        client=httpx.AsyncClient(transport=httpx.MockTransport(reply))
+        transport=AsyncFixedModelTransport(FixedModelConfig('http://localhost/model','fixture',1000),2,events.append)
+        task=BackendTask(TaskKey(0,1),SessionSpec('job','flow','fixture'),OfferedTask(1,b'input',1,1024))
+        try:
+            self.assertIsNone(transport._client)
+            with patch('httpx.AsyncClient',return_value=client) as create:
+                transport.prepare();transport.prepare()
+                create.assert_called_once()
+                self.assertEqual(attempts,[])
+                self.assertEqual(events,[])
+                self.assertEqual(await transport.execute(task,'model'),b'fixture reply')
+                create.assert_called_once()
+            self.assertEqual(len(attempts),1)
+        finally:await transport.close()
+
     async def test_http_failure_reports_type_once_without_message_or_body(self):
         events = []
         attempts = []

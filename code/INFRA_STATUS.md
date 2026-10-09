@@ -1,8 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
-更新：2026-10-08。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-09。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
+
+2026-10-09：就绪计时扩展至PG-source direct、原生Ray Data和Daft Native，旧PG入口与默认应用计时保留。
+新增异步提交记录与原生runtime准备接口；327项相关本地检查中315通过、12项因缺少Daft／Arrow实际适配依赖跳过；实际库接入仍待完成。
+[统一十二路径方案](../experiments/plans/语义系统对照.md#unified-map-comparison)覆盖SemLoom Daft＋Ray、原生系统及同后端控制；
+新服务器接入和模型比较尚未执行，证据与原因见[同题报告](../experiments/results/postgresql/query_ready_timing_20261008/README.md#unified-entry-preparation)。
 
 2026-10-08：整合[数据就绪后的查询计时](../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
 PG及四种原生系统提供准备／提交入口，统一代理记录单调阶段时刻；原始响应与首错保存修订同时保留。

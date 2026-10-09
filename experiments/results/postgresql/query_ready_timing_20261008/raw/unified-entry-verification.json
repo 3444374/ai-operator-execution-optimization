@@ -1,0 +1,97 @@
+{
+  "schema": "semloom.unified_entry_preparation.v1",
+  "date": "2026-10-09",
+  "base_commit": "a0bf5cf330e64762cfb6bd1ecd770d23a903be51",
+  "scope": "Local fixture and compatibility checks; new server integration and model comparison not launched",
+  "status": "local_checks_passed_server_connection_pending",
+  "real_model_posts": 0,
+  "environment": {
+    "python": "3.12.6",
+    "os": "Darwin",
+    "architecture": "arm64"
+  },
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/daft_pg_http.py": "fff913f66a34798245548dae531efd6ea617145326f6281eeb6f7a24ab1bd0b6",
+    "code/src/execution_provider/adapters/async_fixed_model.py": "304627aa99c26a840a3036fb792c95659455104a3d4aa8e9d12a000b934c3bac",
+    "code/src/experiments/postgresql/query_daft.py": "93ae352c9d5e0402a746f4a25e957fb60701a120e43f49c889cf12f72044a2a4",
+    "code/src/experiments/postgresql/query_execution.py": "26398241251d3f25e8c1305c3a84cb085c5fbc222a541cb944478193e9127d5a",
+    "code/src/experiments/postgresql/query_runner.py": "c289c736adec664aee813e9802c23e14a088de8e3e131e8f66699fa028a79f04",
+    "code/src/experiments/postgresql/ready_query_recording.py": "0c74cc0aa1321b67256e770c1501fc25d5f6bef714bbc8c37a86c89d96536997",
+    "code/src/experiments/postgresql/ready_semantic_query.py": "b1a7b6e21e991807a5f5c816c5ef205fdd5fa6b40c0e961fa26fc1cd9e29ce7b",
+    "code/src/experiments/postgresql/semantic_system_query.py": "4901e5b54ce5fe545bb23fb85dfc5bf302f567df1918927a7652de5ec6a22f02",
+    "code/tests/execution_provider/test_async_transport.py": "96b512bf3d80972b9c0fad5b60f4624c5a0bdd9a6fd4203cb143e4c78ff0af42",
+    "code/tests/experiments/test_native_query_entry.py": "9d600b9e162c82c0b31b3059bacb1d1406b7ba47c9673a87e3873f33e20eec62",
+    "code/tests/experiments/test_ready_pg_lifecycle.py": "d4609d713af4cd32f4807644f4d44c5121be6ac17c07685130f6a6ec5639718c",
+    "code/tests/experiments/test_ready_query_recording.py": "49a5c9580cf3e98fd9a8e64e924eb5d9a69d4fbd9270d1220ea26c9ce2133100"
+  },
+  "tests": {
+    "total": 327,
+    "passed": 315,
+    "skipped": 12,
+    "failures": 0,
+    "errors": 0,
+    "groups": [
+      {
+        "log": "query-provider-tests04.log",
+        "total": 118,
+        "passed": 106,
+        "skipped": 12
+      },
+      {
+        "log": "text-tests02.log",
+        "total": 195,
+        "passed": 195,
+        "skipped": 0
+      },
+      {
+        "log": "gateway-tests01.log",
+        "total": 14,
+        "passed": 14,
+        "skipped": 0
+      }
+    ],
+    "skipped_reason": "Daft and Arrow are required for the actual batch adapter; runtime qualification remains pending",
+    "log_archive": "unified-entry-tests.txt.gz",
+    "log_archive_sha256": "0530392ce79e8ef3ca5f49c6ea053e7595b83ea8f066ea37ba29ce98dae96d38",
+    "original_log_sha256": {
+      "query-provider-tests04.log": "dbdb7aecb70a68d808525c59c60347d2935610e0ae540a35dc744ec0016453bf",
+      "text-tests02.log": "9b0382ae9a43059644284987ae84aa0d684f87f4d399187624cf340982a78aa0",
+      "gateway-tests01.log": "08418c522b1e283827d5d1e28c9cfe9ffbd9503ddf7a75e16c237930b0659928"
+    }
+  },
+  "schedule": {
+    "scope": "Schedule-only simulation; run executor replaced; no model, SQL, Ray, SDK or HTTP execution",
+    "planned_units": 276,
+    "planned_model_posts": 84672,
+    "evaluation_units": 120,
+    "roles": 12,
+    "calibration_order_rotated": true,
+    "observed_model_posts": 0,
+    "passed": true,
+    "worker_sha256": "004ea59916fa9385bf12cd506ff7dbcc5ada3bacd8ace3490ea0e332a4a84584"
+  },
+  "controllers": {
+    "placement": "retained outside Git; source identities below do not assert runtime execution",
+    "sha256": {
+      "unified-owner01.py": "eaf9a146d97c1574aaac29c17b2a8064decf8d728ce6ee5ee7783adacb180bbc",
+      "unified-worker01.py": "004ea59916fa9385bf12cd506ff7dbcc5ada3bacd8ace3490ea0e332a4a84584",
+      "run-plan01.json": "f8f9fbec19a5acc062f5132dda4d02cdffb27e05564f71c38890b756473e6a2d"
+    }
+  },
+  "server": {
+    "status": "SSH connections closed before authentication",
+    "connection_attempts": 4,
+    "live_gpu_and_process_state": "unavailable",
+    "new_query_runs": 0
+  },
+  "pending": [
+    "Readonly server preflight and idle/resource checks",
+    "Actual Linux/PG/Daft/Ray correctness and lifecycle checks",
+    "New twelve-path model campaign and result table"
+  ],
+  "review": {
+    "standards": "document synchronization and primary error preservation repaired; ACL mismatch now fails",
+    "spec": "zero-request client preparation, first-error forwarding stop, and rotated calibration repaired"
+  },
+  "evidence_type": "local tests and schedule simulation; not a GPU performance result"
+}

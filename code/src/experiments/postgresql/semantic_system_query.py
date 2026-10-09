@@ -156,7 +156,7 @@ def run_native_query(role, *, manifest_path, table, model_path, ledger, unit_id,
                                     rows.append(row)
                                 return rows
                     with ProcessSampler(root/'query-rss.jsonl', {'native_driver': os.getpid(),
-                            'pg_backend': connection.info.backend_pid}) as sampler:
+                            'pg_backend': connection.info.backend_pid},include_children=True) as sampler:
                         options = dict(max_rows=manifest['rows'],
                             max_result_bytes=manifest['rows']*70000, flush_rows=64,
                             query_timeout_s=query_timeout_s,

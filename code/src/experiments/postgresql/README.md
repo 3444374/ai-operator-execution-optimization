@@ -15,7 +15,10 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 ### 数据就绪后的SQL／原生API计时
 
 `ready_query_recording.py`分开组件就绪、实际提交和统一消费结束；新`ready-timing.json`用SHA-256关联原`execution.json`。
-`ready_semantic_query.py`让PG经同一HTTP观察代理执行，PG仍只在既有guard中计数。
+`ready_semantic_query.py`支持PG、PG-source direct、原生Ray Data和Daft Native Map，经同一HTTP观察代理执行；各入口仍只在既有guard中计数。
+`run_ready_pg_query`保留原PG接口与schema；新增`run_ready_database_query`及异步记录器共用提交／EOF口径。
+direct先准备连接与客户端，原生Ray先连接调用方集群，Daft先设置一次Native线程；SQL扫描、原生reader连接、提示与查询图仍计入查询。
+本次新增入口通过72项查询相关本地检查，服务器接入与模型比较待执行；十二路径范围见[统一方案](../../../../experiments/plans/语义系统对照.md#unified-map-comparison)。
 `semantic_system_query.py --timing-mode ready`先读原始输入并进入`prepare_rows`，再执行原生SQL／API；默认`application`保持。
 HTTP新增单调的接收、转发、上游响应与本地写出时刻，分别保留真实上游状态和回调导致的客户端错误。
 Sema支持取消自有进程；其他原生API通过SDK请求超时和调用方单元进程期限处理在途工作。

@@ -25,9 +25,12 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 
 ## 数据就绪后的查询计时
 
-PG使用`PYTHONPATH=code python -m src.experiments.postgresql.ready_semantic_query`，接收原PG入口的
-`--config --manifest --model --budget --budget-id --max-attempts --pg-log --output`；连接串仍从环境变量读取。
-它要求已安装输入表和新输出目录，先准备连接、语义配置、网关与cursor，再记录SELECT入口至消费结束。
+`PYTHONPATH=code python -m src.experiments.postgresql.ready_semantic_query`接收
+`--config --manifest --model --budget --budget-id --max-attempts --output`；连接串仍从环境变量读取。
+配置支持PG、PG-source direct、原生Ray Data和Daft Native Map；PG还必须提供`--pg-log`。
+调用方拥有Ray集群时在配置中给出`ray_address`；自建原生Ray运行时可提供仓库外`--ray-temp-root`。
+入口要求已安装原始输入表和新输出目录，准备可复用组件后记录SELECT／原生API入口至消费结束。
+SQL扫描、原生reader连接、提示与查询图构造保留在查询内；准备零模型调用由统一代理核对。
 原生系统在上方单查询命令中增加`--timing-mode ready`，先加载原始输入并准备组件，默认仍为`application`。
 调用方负责单元进程期限与模型服务；原生API的请求超时、取消和停止范围见[接口说明](../src/experiments/postgresql/README.md#ready-query-timing)。
 

@@ -29,8 +29,9 @@ from .cell_evidence import CellErrors,collect_cell_evidence
 def run_query(config, *, manifest_path, model_path, budget_path, budget, root, dsn,
               pg_log=None, checkout=None, tokenizer_path=None, ray_temp_root=None,
               timing_mode='application'):
-    if timing_mode not in ('application', 'ready') or (timing_mode == 'ready' and config.arm != 'pg'):
-        raise ValueError('ready timing in this runner requires the PG query entry')
+    if timing_mode not in ('application', 'ready') or (timing_mode == 'ready' and (
+            config.arm not in ('pg', 'pg-source-direct', 'ray-data', 'daft-native') or config.task != 'map')):
+        raise ValueError('ready timing requires a supported Map query entry')
     preparation_started_ns = time.monotonic_ns()
     manifest_path,model_path,root=Path(manifest_path),Path(model_path),Path(root)
     manifest=load_manifest(manifest_path)
@@ -69,19 +70,19 @@ def run_query(config, *, manifest_path, model_path, budget_path, budget, root, d
         ledger.reserve_unit(config.unit_id,config.max_posts or manifest['rows'])
         reserved=True
         write_private_json(root/'unit-reserved.json',dict(unit_id=config.unit_id))
+        timing_options = {'timing_mode':'ready'} if timing_mode == 'ready' else {}
         with errors.capture('execution'):
             if config.arm=='pg-source-direct':
-                execution,resources=asyncio.run(run_direct(config,inputs,plan,dsn,model,ledger,root,errors))
+                execution,resources=asyncio.run(run_direct(config,inputs,plan,dsn,model,ledger,root,errors,**timing_options))
             elif config.arm=='ray-data':
-                execution,resources=run_ray(config,inputs,plan,dsn,model,ledger,root,errors,ray_temp_root)
+                execution,resources=run_ray(config,inputs,plan,dsn,model,ledger,root,errors,ray_temp_root,**timing_options)
             elif config.arm=='daft-native':
                 from .query_daft import run_daft
-                execution,resources=run_daft(config,inputs,plan,dsn,model,ledger,root,errors)
+                execution,resources=run_daft(config,inputs,plan,dsn,model,ledger,root,errors,**timing_options)
             else:
                 import psycopg
                 with psycopg.connect(dsn,autocommit=True) as connection:
                     if config.arm=='pg':
-                        timing_options = {'timing_mode':'ready'} if timing_mode == 'ready' else {}
                         execution,resources=run_pg(config,inputs,plan,connection,Path(pg_log),model_path,ledger,root,errors,**timing_options)
                     else:
                         execution,resources=run_lotus(config,inputs,connection,model,ledger,root,errors,checkout,tokenizer_path)

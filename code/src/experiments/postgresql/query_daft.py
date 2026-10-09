@@ -1,5 +1,6 @@
 """Query recording and observation around the Daft-owned native SQL/HTTP graph."""
 import os
+import time
 from pathlib import Path
 
 from src.baselines.common.private_artifacts import open_private_text
@@ -8,14 +9,15 @@ from src.experiments.process_sampling import ProcessSampler
 from .map_query_recording import record_execution
 
 
-def run_daft(config, inputs, plan, dsn, model, ledger, root, errors):
+def run_daft(config, inputs, plan, dsn, model, ledger, root, errors,
+             *, timing_mode='application'):
     # A fresh supervised query process sets these before loading Daft.
     import sys
     if 'daft' in sys.modules:
         raise RuntimeError('native Daft query requires a fresh process')
     import psycopg
     import daft
-    from src.baselines.text.frameworks.daft_pg_http import open_rows
+    from src.baselines.text.frameworks.daft_pg_http import open_rows, prepare_runtime
     shared = ledger.claim_shared_unit(config.unit_id)
     event_root = root/'worker-events'; event_root.mkdir()
     factory = NativeSessionFactory(shared,str(event_root),model.endpoint_url,model.timeout_ms/1000)
@@ -28,14 +30,23 @@ def run_daft(config, inputs, plan, dsn, model, ledger, root, errors):
         return create_engine('postgresql+psycopg://',creator=raw_connection,poolclass=NullPool).connect()
 
     try:
+        native_options, timing = {}, {}
+        recorder = record_execution
+        if timing_mode == 'ready':
+            prepare_runtime(config.daft_num_threads)
+            native_options['runtime_prepared'] = True
+            from .ready_query_recording import record_prepared_execution
+            recorder = record_prepared_execution
         with ProcessSampler(root/'query-rss.jsonl',{'consumer_daft':os.getpid()},include_children=True) as sampler:
             headers = {'Authorization':'Bearer '+model.bearer_token} if model.bearer_token else None
             with errors.capture('query'):
-                result = record_execution(root/'q0',lambda:open_rows(inputs,plan,connect,factory,
-                    concurrency=config.concurrency,partitions=config.daft_read_partitions,num_threads=config.daft_num_threads,headers=headers),
+                if timing_mode == 'ready':
+                    timing['backend_ready_ns'] = time.monotonic_ns()
+                result = recorder(root/'q0',lambda:open_rows(inputs,plan,connect,factory,
+                    concurrency=config.concurrency,partitions=config.daft_read_partitions,num_threads=config.daft_num_threads,headers=headers,**native_options),
                     max_rows=inputs.max_rows,max_result_bytes=inputs.max_rows*70000,
                     flush_rows=64,query_timeout_s=config.query_timeout_s,
-                    cancel_query=lambda:ledger.close_shared_unit(config.unit_id))
+                    cancel_query=lambda:ledger.close_shared_unit(config.unit_id),**timing)
     finally:
         def collect():
             with open_private_text(root/'events.jsonl') as out:

@@ -1,12 +1,12 @@
 """Record a query submitted after its source and reusable runtime are ready."""
-from contextlib import closing, contextmanager, ExitStack
+from contextlib import closing, contextmanager, asynccontextmanager, ExitStack
 import json
 import hashlib
 from pathlib import Path
 import time
 
 from src.baselines.common.private_artifacts import write_private_json
-from .map_query_recording import record_execution
+from .map_query_recording import record_execution, record_async_execution
 from .cell_evidence import CellErrors
 
 
@@ -30,34 +30,18 @@ def proxy_http_peak(traces):
     return peak
 
 
-def record_prepared_execution(directory, open_rows, *, backend_ready_ns,
-                              preparation_started_ns=None, clock=time.monotonic_ns,
-                              **options):
-    """Keep the actual API entry distinct from recorder setup and result EOF.
-
-    The caller completes preparation before calling this function. The supplied
-    context manager must enter the native query API without loading source data
-    or initializing a reusable runtime. Query-owned work remains in that API.
-    """
+def _validate_preparation(directory, backend_ready_ns, preparation_started_ns):
     if type(backend_ready_ns) is not int or backend_ready_ns <= 0:
         raise ValueError('a positive prepared-runtime timestamp is required')
     if preparation_started_ns is not None and (
             type(preparation_started_ns) is not int or
             not 0 < preparation_started_ns <= backend_ready_ns):
         raise ValueError('preparation start must precede prepared-runtime readiness')
-    directory = Path(directory)
-    submitted = None
-    execution = None
+    return Path(directory)
 
-    @contextmanager
-    def submit():
-        nonlocal submitted
-        submitted = clock()
-        with open_rows() as rows:
-            yield rows
 
-    errors = CellErrors()
-    execution = errors.attempt('query', lambda:record_execution(directory, submit, clock=clock, **options))
+def _save_ready_timing(directory, execution, submitted, backend_ready_ns,
+                       preparation_started_ns, errors):
     saved = directory / 'execution.json'
     if execution is None and saved.is_file():
         execution = errors.attempt('timing_read', lambda:json.loads(saved.read_text()))
@@ -82,6 +66,58 @@ def record_prepared_execution(directory, open_rows, *, backend_ready_ns,
     if execution is not None:
         execution.update(timing)
     errors.attempt('timing_write', lambda:write_private_json(directory/'ready-timing.json', timing))
+    return execution
+
+
+def record_prepared_execution(directory, open_rows, *, backend_ready_ns,
+                              preparation_started_ns=None, clock=time.monotonic_ns,
+                              **options):
+    """Record native API entry after reusable setup, retaining query-owned work.
+
+    The raw source relation and reusable runtime must be ready. Native SQL
+    readers may scan that relation and create query-owned readers after entry;
+    prompt assembly, query graphs and model work remain in the timed API.
+    """
+    directory = _validate_preparation(directory, backend_ready_ns, preparation_started_ns)
+    submitted = None
+
+    @contextmanager
+    def submit():
+        nonlocal submitted
+        submitted = clock()
+        with open_rows() as rows:
+            yield rows
+
+    errors = CellErrors()
+    execution = errors.attempt('query', lambda:record_execution(directory, submit, clock=clock, **options))
+    execution = _save_ready_timing(directory, execution, submitted, backend_ready_ns,
+                                  preparation_started_ns, errors)
+    errors.raise_if_failed()
+    return execution
+
+
+async def record_prepared_async_execution(directory, open_rows, *, backend_ready_ns,
+                                         preparation_started_ns=None, clock=time.monotonic_ns,
+                                         **options):
+    """Apply the same submission/EOF clocks to an async query-owned SQL reader."""
+    directory = _validate_preparation(directory, backend_ready_ns, preparation_started_ns)
+    submitted = None
+
+    @asynccontextmanager
+    async def submit():
+        nonlocal submitted
+        submitted = clock()
+        async with open_rows() as rows:
+            yield rows
+
+    errors = CellErrors()
+    execution = None
+    try:
+        execution = await record_async_execution(directory, submit, clock=clock, **options)
+    except BaseException as error:
+        errors.record('query', error)
+    execution = _save_ready_timing(directory, execution, submitted, backend_ready_ns,
+                                  preparation_started_ns, errors)
     errors.raise_if_failed()
     return execution
 

@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-09：[统一比较的新增就绪入口](postgresql/query_ready_timing_20261008/README.md#unified-entry-preparation)。
+基于`a0bf5cf3`及独立源码摘要，PG-source direct、原生Ray Data与Daft Native完成本地提交／EOF及兼容回归；
+327项相关检查中315通过、12项缺Daft／Arrow依赖跳过。服务器连接在认证前关闭，新的实际库接入、PG与模型比较尚未运行；不更新既有性能排名。
+
 2026-10-08：[数据就绪后的SQL／原生API与统一HTTP计时](postgresql/query_ready_timing_20261008/README.md)独立保留八路径真实预演。
 准备零调用、原生职责、行关联、账本和模型增量核对通过；每路径10条测量查询仅作有限样本观察，PG为本地HTTP内部参照。
 整合保留原始响应与首错修订，273项本地检查、26个原路径恢复和逐字节分析复算通过；真实运行对应原源码快照，模型0次新增。

@@ -44,11 +44,10 @@ class AsyncFixedModelTransport:
                     pass  # A failed diagnostic must not replace the execution error.
             raise
 
-    async def _execute(self, request, endpoint):
+    def prepare(self):
+        """Create the reusable client without connecting or sending a request."""
         import httpx
 
-        if endpoint != "model":
-            raise ValueError("unknown endpoint")
         if self._client is None:
             headers = {"Content-Type": "application/json", "Accept-Encoding": "identity"}
             if self.config.bearer_token:
@@ -63,6 +62,10 @@ class AsyncFixedModelTransport:
                     max_keepalive_connections=self.max_active_requests,
                 ),
             )
+    async def _execute(self, request, endpoint):
+        if endpoint != "model":
+            raise ValueError("unknown endpoint")
+        self.prepare()
         if self._observer:
             self._observer({"event": "http_started", "key": asdict(request.key)})
         try:

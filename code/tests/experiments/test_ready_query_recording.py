@@ -1,4 +1,5 @@
-from contextlib import contextmanager
+from contextlib import contextmanager, asynccontextmanager
+import asyncio
 import json
 from pathlib import Path
 import tempfile
@@ -6,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from src.experiments.postgresql.ready_query_recording import (
-    record_prepared_execution, record_prepared_pg_query)
+    record_prepared_execution, record_prepared_pg_query, record_prepared_async_execution)
 
 
 class ReadyQueryRecordingTests(unittest.TestCase):
@@ -142,6 +143,78 @@ class ReadyQueryRecordingTests(unittest.TestCase):
         saved=json.loads((self.root/'pg-errors/execution.json').read_text())
         self.assertEqual(saved['query_error']['message'],'original SQL error')
         self.assertEqual(saved['cleanup_error']['message'],'cursor cleanup failed')
+
+
+class ReadyAsyncRecordingTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.now = 1000
+
+    def clock(self):
+        self.now += 100
+        return self.now
+
+    async def test_async_submission_precedes_rows_and_cleanup_follows_eof(self):
+        events = []
+        @asynccontextmanager
+        async def query():
+            events.append(('entry',self.clock()))
+            async def rows():
+                yield 'a','POSITIVE'
+                await asyncio.sleep(0)
+                yield 'b','NEGATIVE'
+            try:
+                yield rows()
+            finally:
+                events.append(('cleanup',self.clock()))
+        result = await record_prepared_async_execution(self.root/'success',query,
+            backend_ready_ns=1000,preparation_started_ns=100,
+            clock=self.clock,max_rows=2,max_result_bytes=4096)
+        self.assertLess(result['t_submit_ns'],events[0][1])
+        self.assertLessEqual(events[0][1],result['t_first_row_ns'])
+        self.assertLess(result['t_query_terminal_ns'],events[-1][1])
+        self.assertEqual(result['ready_query_seconds'],
+            (result['t_query_terminal_ns']-result['t_submit_ns'])/1e9)
+        execution=json.loads((self.root/'success/execution.json').read_text())
+        self.assertNotIn('t_submit_ns',execution)
+        execution.update(json.loads((self.root/'success/ready-timing.json').read_text()))
+        self.assertEqual(execution,result)
+
+    async def test_async_failure_retains_partial_rows_and_first_error_when_timing_write_fails(self):
+        @asynccontextmanager
+        async def query():
+            async def rows():
+                yield 'a','POSITIVE'
+                raise RuntimeError('original async query failure')
+            yield rows()
+        with patch('src.experiments.postgresql.ready_query_recording.write_private_json',
+                   side_effect=OSError('timing write failed')):
+            with self.assertRaisesRegex(RuntimeError,'original async query failure'):
+                await record_prepared_async_execution(self.root/'failure',query,
+                    backend_ready_ns=1000,clock=self.clock,max_rows=2,max_result_bytes=4096)
+        value=json.loads((self.root/'failure/execution.json').read_text())
+        self.assertEqual(value['recorded_rows'],1)
+        self.assertTrue(value['partial_results_are_provisional'])
+        self.assertEqual(value['query_error']['message'],'original async query failure')
+
+    async def test_async_deadline_retains_submission_and_refuses_success(self):
+        @asynccontextmanager
+        async def query():
+            async def rows():
+                yield 'a','POSITIVE'
+                await asyncio.sleep(1)
+            yield rows()
+        with self.assertRaises(TimeoutError):
+            await record_prepared_async_execution(self.root/'deadline',query,
+                backend_ready_ns=1000,clock=self.clock,max_rows=2,
+                max_result_bytes=4096,query_timeout_s=.02)
+        timing=json.loads((self.root/'deadline/ready-timing.json').read_text())
+        value=json.loads((self.root/'deadline/execution.json').read_text())
+        self.assertIsNotNone(timing['t_submit_ns'])
+        self.assertEqual(value['status'],'failed')
+        self.assertEqual(value['recorded_rows'],1)
 
 
 if __name__ == '__main__':

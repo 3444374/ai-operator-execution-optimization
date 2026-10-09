@@ -9,9 +9,19 @@ import json
 from .ray_data_pg_http import preprocess, postprocess
 
 
+def prepare_runtime(num_threads):
+    """Initialize the native runtime once in the query's fresh driver process."""
+    import daft
+    if daft.__version__ != '0.7.21':
+        raise RuntimeError('native Daft Map requires pinned Daft 0.7.21')
+    if type(num_threads) is not int or num_threads < 1:
+        raise ValueError('native Daft runtime needs positive threads')
+    daft.set_runner_native(num_threads=num_threads)
+
+
 @contextmanager
 def open_rows(inputs, plan, connection_factory, session_factory, *, concurrency,
-              partitions, num_threads=8, headers=None):
+              partitions, num_threads=8, headers=None, runtime_prepared=False):
     import daft
     if daft.__version__ != '0.7.21':
         raise RuntimeError('native Daft Map requires pinned Daft 0.7.21')
@@ -21,7 +31,8 @@ def open_rows(inputs, plan, connection_factory, session_factory, *, concurrency,
 
     def rows():
         nonlocal iterator
-        daft.set_runner_native(num_threads=num_threads)
+        if not runtime_prepared:
+            daft.set_runner_native(num_threads=num_threads)
         statement, parameters = inputs.select_sql(ordered=False)
         if parameters:
             raise ValueError('native Daft Map does not interpolate SQL parameters')
