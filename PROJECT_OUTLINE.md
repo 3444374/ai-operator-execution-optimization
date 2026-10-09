@@ -21,6 +21,8 @@
 常驻真实模型比较按现行[语义系统方案](experiments/plans/语义系统对照.md)及后续原件判断，首次慢样本和未完成的供应商资格保持。
 随后六臂常驻90查询／5,760 POST通过独立核验；固定Map SemLoom接近原生Daft，LOTUS接入更慢，
 完整诊断观察及按臂分块条件由[同题模型章节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存，默认与其他资格保持。
+补充[DuckDB与Sema常驻输入更新](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
+通过五条实际库路径和URL替换，17查询／722次fixture POST只核对工程接入；执行节奏修复与模型复核分别处理。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，

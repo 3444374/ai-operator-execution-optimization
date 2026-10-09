@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-09：[同题报告的DuckDB／Sema常驻检查](postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)。
+`resident-supplier-source01`在`3a5f7bc9`上只新增测试，五条各`8 → 8 → 128`行及两次Sema更换URL探针，17查询／722 fixture POST、模型0。
+340份公开成员与[离线复核](postgresql/native_adapter_integration_20261009/supplier_resident_replay.py)核对当前输入、实际请求、结果、native owner、调用ID和原失败。
+显式CPU-only预检通过但当前GPU不可访问；Sema后置Core／worker按查询创建，性能接入问题仍由后续具体修复与回归判断。
+
 2026-10-09：[同一适配主报告的常驻fixture](postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
 `resident-source02`以`2a7ab18a`及13份逐文件摘要定位，固定Map与LOTUS六条各连续3次，18查询／96测试POST、真实模型0。
 旧DuckDB两入口共8次测试POST通过，原加载失败实际POST0；93项Linux检查92通过，1项独立库检查另在六臂运行。

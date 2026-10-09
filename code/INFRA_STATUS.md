@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-09：[DuckDB与Sema常驻输入更新检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
+完成五条实际库路径各`8 → 8 → 128`行及同Sema进程更换URL探针，17查询／722次fixture POST、真实模型0。
+同连接／作者进程、当前输入与结果、DuckDB调用ID、逐查询计数和退出核对通过；Sema后置Core／worker仍按查询创建。
+当前GPU访问不可用，成功预检明确只覆盖CPU fixture；三次零POST准备失败保留，执行节奏修复仍另行核验。
+LOTUS观测直接记录完整响应列表返回，区分HTTP区间与后续序列化／统计，原保护与方法统计保持。
+
 2026-10-09：[常驻原生／SemLoom工程检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)
 新增明确清单与启动记录，固定Map三条及LOTUS原生／本地Core诊断／Daft＋Ray三条分别在同一owner中连续执行。
 六条实际库fixture共18查询／96次测试POST，Core与LM身份、逐查询计数、独立归还和release／submit／EOF核对通过；本次fixture真实模型POST0。

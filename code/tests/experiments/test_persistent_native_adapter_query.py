@@ -1,11 +1,13 @@
 """Query identity, resource release and repeated native-library fixture calls."""
 import hashlib
+from collections import Counter
 import json
 import os
 from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.model_config import FixedModelConfig
@@ -123,6 +125,135 @@ class PersistentActualLibraries(unittest.TestCase):
                         self.assertEqual(len({v[key] for v in values}),1,(arm,key))
                 self.assertEqual(len(requests),posts)
             self.assertEqual(json.loads((root/'group/group-summary.json').read_text())['status'],'passed')
+
+
+@unittest.skipUnless(os.environ.get('SEMLOOM_PERSISTENT_SUPPLIER'),
+                     'requires a pinned supplier binary in an isolated process')
+class PersistentSupplierLibraries(unittest.TestCase):
+    def test_changed_inputs_and_scale_keep_the_native_owner_and_reset_query_state(self):
+        arm=os.environ['SEMLOOM_PERSISTENT_SUPPLIER']
+        self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom',
+            'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service'))
+        root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT'])
+        root.mkdir(mode=0o700,parents=True,exist_ok=False)
+        inputs=[tuple(dict(row_id='query-'+str(number)+'-row-'+str(i),
+            text='fixture-query-'+str(number)+'-item-'+str(i).zfill(4)+'-end') for i in range(count))
+            for number,count in enumerate((8,8,128))]
+        (root/'fixture-inputs.json').write_text(json.dumps(inputs,indent=2)+'\n')
+        identities=[];vectors=[];replacements=[];bridges=[]
+        from src.semantic_methods import duckdb_ai
+        from src.baselines.text.products import sema
+        original_bridge=duckdb_ai.DuckDBSemLoomBridge
+        original_replace=sema._PreparedProjection.replace_source
+        current_query=None
+        class ObservedBridge(original_bridge):
+            def __init__(self,extension,execute):
+                def observed(calls,cancelled):
+                    vectors.append(dict(query=current_query,rows=[call.row for call in calls],
+                        native_query_ids=[call.query_id for call in calls],
+                        native_call_ids=[call.call_id for call in calls]))
+                    yield from execute(calls,cancelled)
+                super().__init__(extension,observed)
+                bridges.append(self)
+        def observed_replace(native,values,source_root,endpoint):
+            values=tuple(values)
+            original_replace(native,values,source_root,endpoint)
+            replacements.append(dict(query=current_query,pid=native.pid,rows=len(values),
+                endpoint=endpoint,source_sha256=hashlib.sha256(
+                    (Path(source_root)/'sema-source.csv').read_bytes()).hexdigest()))
+        with fixture_server(content='"ok"' if arm.startswith('sema-') else 'ok') as (url,requests):
+            ledger=CellBudgetLedger.create(root/'budget.sqlite',AttemptBudget('supplier-persistent',144),
+                deadline_utc=time.time()+900)
+            with mock.patch.object(duckdb_ai,'DuckDBSemLoomBridge',ObservedBridge), \
+                    mock.patch.object(sema._PreparedProjection,'replace_source',observed_replace), \
+                    PersistentAdapterGroup((arm,),plan=SemanticMapPlan('Return ok.','fixture',16),
+                    model=FixedModelConfig(url,'fixture',60000),ledger=ledger,root=root/'group',
+                    options=NativeGraphOptions(concurrency=4,num_threads=8),
+                    physical=RayMapConfig('unused',2,2,2**21+24,2**23),
+                    ray_temp_root=Path(os.environ['SEMLOOM_PERSISTENT_RAY_ROOT']),
+                    duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
+                    sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY'])) as group:
+                for number,values in enumerate(inputs):
+                    current_query='supplier-query-'+str(number)
+                    before=len(requests)
+                    result=group.run(arm,unit_id=current_query,root=root/current_query,
+                        load_source=lambda:iter(values),phase='qualification',allowed_outputs=('ok',))
+                    self.assertEqual(result['status'],'passed')
+                    self.assertEqual(result['rows'],len(values))
+                    self.assertEqual(result['actual_posts'],len(values))
+                    self.assertEqual(len(requests)-before,len(values))
+                    expected=Counter(value['text'] for value in values)
+                    observed=Counter()
+                    for request in requests[before:]:
+                        payload=json.dumps(request)
+                        matches=[text for text in expected if text in payload]
+                        self.assertEqual(len(matches),1,(current_query,matches))
+                        observed.update(matches)
+                    self.assertEqual(observed,expected)
+                    identities.append(result['persistent_lifecycle'])
+                    if arm.startswith('duckdb-'):
+                        connection=group.owners[arm].connection
+                        stored=connection.execute('SELECT source_position,row_id FROM adapter_inputs ORDER BY source_position').fetchall()
+                        self.assertEqual(stored,[(i,value['row_id']) for i,value in enumerate(values)])
+                    if group.owners[arm].execution is not None:
+                        self.assertFalse(group.owners[arm].execution.engine.capacity.records)
+                        self.assertFalse(group.owners[arm].execution.engine.jobs.jobs)
+                for key in ('owner_id','execution_id','duckdb_connection_id','sema_pid','ray_session_id'):
+                    self.assertEqual(len({value[key] for value in identities}),1,(arm,key))
+                self.assertEqual(len(requests),144)
+            if arm=='duckdb-method-semloom':
+                self.assertEqual([value['rows'] for value in vectors],[list(range(n)) for n in (8,8,128)])
+                calls=[call for value in vectors for call in value['native_call_ids']]
+                self.assertEqual(len(set(calls)),144)
+                self.assertEqual(len(bridges),3)
+                self.assertTrue(all(bridge._closed and bridge.retained_batches==0 for bridge in bridges))
+            if arm.startswith('sema-'):
+                self.assertEqual([value['rows'] for value in replacements],[8,8,128])
+                self.assertEqual(len({value['pid'] for value in replacements}),1)
+                self.assertEqual(len({value['source_sha256'] for value in replacements}),3)
+                if arm!='sema-native-direct':
+                    self.assertEqual(len({value['endpoint'] for value in replacements}),3)
+                    for value in replacements:
+                        self.assertIn('/sema/'+value['query']+'/',value['endpoint'])
+                with self.assertRaises(ProcessLookupError):
+                    os.kill(identities[0]['sema_pid'],0)
+            (root/'native-vectors.json').write_text(json.dumps(vectors,indent=2)+'\n')
+            (root/'source-replacements.json').write_text(json.dumps(replacements,indent=2)+'\n')
+            (root/'fixture-requests.jsonl').write_text(''.join(json.dumps(value)+'\n' for value in requests))
+            (root/'fixture-verification.json').write_text(json.dumps(dict(
+                arm=arm,query_rows=[8,8,128],fixture_posts=144,real_model_posts=0,
+                lifecycles=identities,native_owner_reused=True,input_text_and_row_ids_replaced=True,
+                query_state_released=True),indent=2)+'\n')
+            self.assertEqual(json.loads((root/'group/group-summary.json').read_text())['status'],'passed')
+
+    @unittest.skipUnless(os.environ.get('SEMLOOM_PERSISTENT_SUPPLIER')=='sema-native-direct',
+                         'one actual author-process endpoint replacement probe')
+    def test_actual_author_session_changes_the_endpoint_before_its_next_select(self):
+        from src.baselines.text.products.sema import prepare_projection
+        root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT']+'-endpoint')
+        root.mkdir(mode=0o700,parents=True,exist_ok=False)
+        values=[dict(source_example_id='endpoint-first',input_text='first-endpoint-input')]
+        changed=[dict(source_example_id='endpoint-second',input_text='second-endpoint-input')]
+        with fixture_server(content='"ok"') as (first_url,first), \
+                fixture_server(content='"ok"') as (second_url,second):
+            with prepare_projection(values,SemanticMapPlan('Return ok.','fixture',16),
+                    FixedModelConfig(first_url,'fixture',60000),
+                    binary=Path(os.environ['SEMLOOM_SEMA_BINARY']),root=root,num_threads=4) as native:
+                pid=native.pid
+                self.assertEqual(list(native.execute()),[('endpoint-first','ok')])
+                replacement=root/'next'
+                replacement.mkdir()
+                native.replace_source(changed,replacement,second_url)
+                self.assertEqual(list(native.execute()),[('endpoint-second','ok')])
+                self.assertEqual(native.pid,pid)
+                self.assertEqual(len(first),1)
+                self.assertEqual(len(second),1)
+                self.assertIn(values[0]['input_text'],json.dumps(first[0]))
+                self.assertIn(changed[0]['input_text'],json.dumps(second[0]))
+            with self.assertRaises(ProcessLookupError):os.kill(pid,0)
+        (root/'endpoint-verification.json').write_text(json.dumps(dict(
+            same_author_pid=True,endpoint_changed=True,input_changed=True,
+            fixture_posts=2,real_model_posts=0,process_closed=True),indent=2)+'\n')
 
 
 if __name__=='__main__':

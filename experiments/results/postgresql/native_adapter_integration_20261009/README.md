@@ -260,6 +260,45 @@ payload内部探针只有墙钟，没有thread／process CPU；完整进程树�
 [resident_replay.py](resident_replay.py)复核全部成员、90查询、5,760响应、质量／请求集合／actor复用和全部测量中位数。
 旧首次结果、零POST失败及本轮负结果保持原身份；这项观察不替代PG接入、多Job、低扰动、跨分布或总体尾部资格。
 
+<a id="persistent-supplier-fixture"></a>
+
+## DuckDB与Sema常驻输入更新检查
+
+`resident-supplier-source01`来自`3a5f7bc9`，只增加整合方的实际库测试；运行实现仍是该提交的供应商入口。
+`supplier-resident-fixture04`使用独立driver、CPU64–71、无GPU的本机HTTP fixture和独立Ray集群。
+只对DuckDB driver选用系统`libstdc++.so.6`，不修改模型环境；DuckDB1.5.4／ai0.4.14-semloom1、
+Daft0.7.21、Ray2.56.1、Arrow24.0.0及Sema作者二进制的来源摘要均保留。
+查询期限120秒、每arm进程期限300秒、owner期限1800秒，账本按每条路径144次测试POST创建；没有模型POST。
+
+五条路径各在同一个owner中执行`8 → 8 → 128`行。每查询使用不同的行ID与逐行文本标记，
+实际请求集合、当前结果ID和返回值逐项核对，防止反复执行第一份输入。
+DuckDB原生与SemLoom两条保持同连接，`DELETE`／重装输入后读取当前关系与行序；
+SemLoom批次的vector行号分别从0重新编号，C ABI调用ID共144个不同值，原生query ID依次更新。
+Sema三条保持同作者进程，当前CSV摘要与行数均改变；透明和SemLoom服务各查询使用新的`llm_url`。
+另用两个不同fixture URL核对同作者进程的两次1行SELECT，确认第二次请求到达新URL并返回新行ID。
+合计17查询／722次fixture POST，完整响应、独立观察、计数、输入替换和正常退出通过。
+
+Sema保持“作者SQL常驻，后置Core按查询创建”：三个查询的六个实际worker ID不同，
+服务启动仍计入当前查询准备与执行，不能据此称全部组件已经预热。
+本轮只提供常驻接入的可行性依据，不说明执行节奏已修好，不作性能排名。
+空结果释放、DuckDB反压重复封装与Sema重复推进的诊断和修复另按各自来源核验。
+
+当前容器GPU访问不可用，NVML检查报`Unknown Error`。
+最初两次自动硬件选择因此停止，第三次私有启动器把profile参数放在错误位置，也在POST前停止；三份原件保留。
+本次成功检查显式选用仓库外CPU-only profile，只检查CPU fixture所需的`core,text,semantic-benchmarks`，
+机器报告仍记GPU列表为空。旧GPU预检不作当前GPU通过证明，没有调整设备权限或GPU驱动。
+
+[supplier-resident-verification.json](supplier-resident-verification.json)登记源码、原件与公开归档身份。
+原私有归档340成员、923,739字节，SHA-256为`94547d96c21e91947911e01e690f660526395fb1079551b4f068f0c795c3cbf3`。
+[公开fixture观察](raw/supplier-resident-fixtures.jsonl.gz)保留请求／完整响应、逐查询输出、
+原生批次与输入替换记录、各次失败及显式CPU预检，服务器路径以占位符代替；原件与公开字节分别登记摘要。
+[supplier_resident_replay.py](supplier_resident_replay.py)离线复核全部成员、17查询／722 POST、
+同连接／同作者PID、输入与URL更新、DuckDB调用ID及Sema按查询创建worker的事实。
+
+LOTUS观测新增`lotus_batch_return`事件，直接记录完整SDK响应列表返回的B1时刻，
+发生在观察序列化与LOTUS统计之前；实际提交Q0、首个上游请求H0、最后响应体H1和消费结束Q1仍各自记录。
+新事件不改变请求、统计、费用或结果行为；旧运行没有该显式事件，保留原证据身份。
+
 ## 保存与复核
 
 公开工程证据由verification.json及其归档成员定位，包含合成请求／响应、原始阶段事件和全部运行结果。

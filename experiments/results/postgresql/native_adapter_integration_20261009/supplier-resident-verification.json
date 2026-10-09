@@ -1,0 +1,28 @@
+{
+  "schema": "semloom.supplier_resident_fixture.v1",
+  "public_archive": {
+    "path": "raw/supplier-resident-fixtures.jsonl.gz",
+    "members": 340,
+    "bytes": 1410620,
+    "sha256": "b4ba265aee1d5c3d58bff598ed756098d4aa1a38ac9890a03811c8aba0ac3453"
+  },
+  "private_archive": {
+    "members": 340,
+    "bytes": 923739,
+    "sha256": "94547d96c21e91947911e01e690f660526395fb1079551b4f068f0c795c3cbf3",
+    "fixture_posts": 722,
+    "real_model_posts": 0
+  },
+  "source": "resident-supplier-source01",
+  "base_commit": "3a5f7bc9d637dc11ef6beca4b2a1a69106841b38",
+  "arms": 5,
+  "queries": 17,
+  "fixture_posts": 722,
+  "real_model_posts": 0,
+  "gpu_readiness": "unavailable; explicit CPU-only profile",
+  "retained_failures": [
+    "fixture01/02 NVML unavailable before GPU profile selection",
+    "fixture03 private launcher profile flag before check"
+  ],
+  "projection": "Source and data-disk paths replaced by placeholders; local fixture HTTP values and full responses retained; original and public digests recorded separately"
+}

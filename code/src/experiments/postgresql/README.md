@@ -43,8 +43,11 @@ Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端�
 实际API提交仍归原`ready-timing.json`；新的`persistent-query.json`另记当前输入读取前的release、EOF及原摘要SHA-256。
 固定Map三条与LOTUS原生／本地诊断／Daft＋Ray三条通过实际库重复fixture；启动另列，当前原生Ray仍每图创建自身actor。
 单arm独立集群与共享部署的实际Ray额度分别保存；Sema作者进程可保留，服务Core因控制线程不同仍按查询创建。
-DuckDB、Sema及两Map的新增常驻接入不借用这六条资格，未完成实际库常驻检查的部分继续pending。
+DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema进程更换URL检查；
+同连接／作者进程复用、输入替换和当前结果关联分别核对，后置Core按查询创建的事实保留。
+两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。
 调用方式见[脚本入口](../../../scripts/README.md#native-adapter-query)，原始事件与适用范围见[同题报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
+LOTUS额外记录完整SDK响应列表返回时刻，先于观察序列化与原方法统计；原提交、HTTP和消费时刻保持。
 
 <a id="ready-query-timing"></a>
 

@@ -93,6 +93,10 @@ class _LotusBatchObservation:
         if len(results)!=len(self.rows):
             raise ValueError('LOTUS native batch returned an incomplete response list')
         returned=time.monotonic_ns()
+        self.observations.record(dict(event='lotus_batch_return',monotonic_ns=returned,
+            stage_id=str(stage),response_count=len(results),
+            executor='native' if self.executor is None else 'semloom',
+            scope='complete SDK response list returned before observation serialization and LOTUS statistics'))
         for row,response in zip(self.rows,results):
             if not callable(getattr(response,'model_dump',None)):
                 raise ValueError('LOTUS returned a failed complete SDK response')

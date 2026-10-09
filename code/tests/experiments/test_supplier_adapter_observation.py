@@ -44,6 +44,11 @@ class SupplierObservationTests(unittest.TestCase):
         self.assertEqual(len(calls),1)
         receipts=[e for e in writer.events if e['event']=='caller_response']
         self.assertEqual(receipts[0]['monotonic_ns'],receipts[1]['monotonic_ns'])
+        batches=[e for e in writer.events if e['event']=='lotus_batch_return']
+        self.assertEqual(len(batches),1)
+        self.assertEqual(batches[0]['monotonic_ns'],receipts[0]['monotonic_ns'])
+        self.assertEqual(batches[0]['response_count'],2)
+        self.assertEqual(batches[0]['executor'],'native')
         saved=[json.loads(line) for line in raw.getvalue().splitlines()]
         self.assertEqual(len(saved),2)
         body=json.dumps(saved[0]['response_values'],sort_keys=True,ensure_ascii=False,allow_nan=False).encode()
