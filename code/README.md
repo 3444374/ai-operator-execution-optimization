@@ -9,6 +9,10 @@ PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系
 
 [原生方法成对查询](scripts/README.md#native-adapter-query)整合公共完整任务、LOTUS、DuckDB和Sema请求服务，
 共同固定Map分别使用原生Daft、原生Ray与SemLoom执行。工程检查和适用范围归[整合报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+同入口新增常驻清单，跨查询保留Core、Ray连接和LOTUS LM，逐查询关消费流与记账；
+固定Map三条和LOTUS三条重复fixture通过，启动、当前查询读取及实际API提交分别记录。
+Sema服务Core的线程限制、原生Ray每图actor及其他常驻接入的待验证项见[常驻检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
+同一源码的[常驻模型记录](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存90查询／5,760 POST、全部重复和负结果；源码、观察成本与统计用途分别说明。
 
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。

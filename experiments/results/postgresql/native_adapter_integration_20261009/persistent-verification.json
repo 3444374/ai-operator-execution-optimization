@@ -1,0 +1,75 @@
+{
+  "schema": "semloom.persistent_adapter_fixture.v1",
+  "source": "resident-source02",
+  "source_base_commit": "2a7ab18ad46604881d3f41fcb2c5fb5bb46bfa31",
+  "source_identity_sha256": "34b2b2f573b91d3c03e07e176a2a1479d1677f1eed4dda6a62afd340d7fb28c9",
+  "source_overlay_sha256": "80ac75f311ff2955c1aa83c2c561fd771f588d0978c6fc67bf82daf303188d43",
+  "archive_members": 350,
+  "archive_sha256": "7ef17c657f848fa91c490226ecba656e62dea804ef6783b65fb8058be5497fd2",
+  "six_arms": [
+    "fixed-map-native-daft",
+    "fixed-map-native-ray",
+    "fixed-map-semloom",
+    "lotus-adapted-native",
+    "lotus-method-semloom-local-diagnostic",
+    "lotus-method-semloom"
+  ],
+  "repeated_queries": 18,
+  "fixture_posts": 96,
+  "real_model_posts": 0,
+  "old_duckdb_fixture_posts": 8,
+  "server_related_tests": {
+    "total": 93,
+    "passed": 92,
+    "skipped": 1
+  },
+  "local_related_tests": {
+    "total": 77,
+    "passed": 76,
+    "skipped": 1
+  },
+  "versions": {
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "lotus-ai": "1.2.4",
+    "aiohttp": "3.14.3"
+  },
+  "setup": {
+    "cpu_affinity": "8 driver CPUs",
+    "ray_cluster_cpus": 8,
+    "ray_cluster_gpus": 0,
+    "concurrency": 4,
+    "workers": 2,
+    "batch_rows": 2,
+    "execution_scope": "one arm per process; query consumers and ledger units close per query; owner and LM stay alive"
+  },
+  "earlier_failures": [
+    {
+      "run": "persistent-local01",
+      "reason": "four optional-library tests could not import Arrow; cancellation primary error assertion corrected"
+    },
+    {
+      "run": "persistent-borrowed-sema-failure01",
+      "reason": "Core control-thread check rejected Sema cross-thread borrowing; implementation removed"
+    },
+    {
+      "run": "persistent-actual02",
+      "reason": "private shell controller syntax error before fixture or model POST"
+    },
+    {
+      "run": "resident-regression02",
+      "reason": "older Conda C++ runtime rejected compiled DuckDB extension; actual POST0; isolated preload repair passed"
+    },
+    {
+      "run": "persistent-old-local03",
+      "reason": "startup-only observer test assumed every event had stage; test now filters startup events and checks worker identity availability; runtime unchanged"
+    }
+  ],
+  "additional_old_local_tests": {
+    "total": 35,
+    "passed": 25,
+    "skipped": 10,
+    "reason": "optional libraries and explicit PG/Ray fixtures checked under their own identities"
+  }
+}

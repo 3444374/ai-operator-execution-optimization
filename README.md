@@ -35,6 +35,10 @@ Sema格式与Daft文件容量修订通过，原32次和8,009次停止保留；�
 
 [跨系统方法与执行接入](experiments/results/postgresql/native_adapter_integration_20261009/README.md)保存固定版本的公共任务、LOTUS、DuckDB、Sema及原生Daft／Ray工程核对，
 区分方法保留、原生供给与实际可观测阶段，新的模型性能结论单独验证。
+同题[常驻fixture](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)验证六条路径的组件复用与逐查询清理，
+将启动、当前输入读取和实际API提交分别记录，真实模型性能仍从对应运行原件判断。
+后续[常驻模型观察](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)完成六臂90查询／5,760 POST，
+保留固定Map接近原生Daft、LOTUS接入变慢与观察成本缺项，默认保持。
 
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留组件、无模型改善与真实模型回退结果，默认同步保持。
 

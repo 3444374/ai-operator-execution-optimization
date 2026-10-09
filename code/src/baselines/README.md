@@ -16,6 +16,8 @@
 `text/frameworks/prepared_map.py`将图外已生成的完整调用送入固定版本Daft Native或Ray Data原生图，
 保留其并发、缓冲及完整响应消费，不在原生kernel中套用SemLoom。
 这是独立的执行器参照；旧SQL reader与内置prompt路径保持，使用方式见[成对查询入口](../../scripts/README.md#native-adapter-query)。
+常驻入口保留原生Daft runner和Ray连接；当前图、原生actor和HTTP session的实际生命周期分别记录，
+不向原生图加入Core或复用已完成结果。合法行间有状态API与当前采用设置见[常驻检查](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
 
 `text/frameworks/semantic_map.py`提供同应用Movie Map的LOTUS1.2.4 `sem_map`、
 Daft0.7.21内置`prompt`、DuckDB1.5.4社区`ai`0.4.14与Sema作者二进制入口。

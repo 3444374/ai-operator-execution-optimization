@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+2026-10-09：[同一适配主报告的常驻fixture](postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
+`resident-source02`以`2a7ab18a`及13份逐文件摘要定位，固定Map与LOTUS六条各连续3次，18查询／96测试POST、真实模型0。
+旧DuckDB两入口共8次测试POST通过，原加载失败实际POST0；93项Linux检查92通过，1项独立库检查另在六臂运行。
+350份紧凑公开成员及[复算入口](postgresql/native_adapter_integration_20261009/persistent_replay.py)核对身份、时间、计数和原失败；冷样本与Sema线程拒绝保留，不据此改默认或作模型性能判断。
+同一[常驻模型章节](postgresql/native_adapter_integration_20261009/README.md#persistent-model)独立保留六臂90查询／5,760唯一响应、source02与15次组件／actor复用。
+完整owner884.689804秒，两次零请求准备失败、原截止与账本保持；协议用量522,669输入／17,280生成／0缓存，计数与退出一致。
+2956份公开投影和[离线复算](postgresql/native_adapter_integration_20261009/resident_replay.py)支持全部重复、结果与中位数；按臂分块、观察等待不同和低扰动／内部CPU缺项不作性能采用结论。
+
 2026-10-09：[跨系统方法与执行适配工程核对](postgresql/native_adapter_integration_20261009/README.md)。
 起点`cbfd952b`，公共、LOTUS、DuckDB和Sema交付分别引入，原Daft／Ray图和旧SQL入口身份保持。
 本地39项与私有PG18.3的3项回归通过；完整响应、发生序号、实际POST及清理分别核对，供应商10条实际库入口与主执行入口均通过。

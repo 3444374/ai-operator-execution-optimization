@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-09：[常驻原生／SemLoom工程检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)
+新增明确清单与启动记录，固定Map三条及LOTUS原生／本地Core诊断／Daft＋Ray三条分别在同一owner中连续执行。
+六条实际库fixture共18查询／96次测试POST，Core与LM身份、逐查询计数、独立归还和release／submit／EOF核对通过；本次fixture真实模型POST0。
+93项Linux相关检查中92通过、1项独立实际库入口跳过；旧DuckDB两入口经原独立C++运行库设置通过，原零POST加载失败保留。
+Sema服务Core直接跨控制线程借用被拒绝并撤回，当前按查询创建；其余常驻供应商资格与真实模型结论分别记录。
+后续[六臂常驻模型观察](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)完成90查询／5,760次POST，独立计数／复用／结果／退出核验通过。
+固定Map SemLoom接近原生Daft，LOTUS两种接入明显更慢；诊断回调的实际等待不同，低扰动敏感性和内部CPU归因尚未执行，默认保持。
+
 2026-10-09：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)已整合公共批次／完整响应、LOTUS单Map／两Map、DuckDB C ABI批次、Sema请求服务和原生Daft／Ray参照。
 新外部输入查询入口分开完整应用、实际提交至消费、任务就绪至调用者完整响应及资源清理；缺少源码观察的阶段写不可观测。
 本地39项相关检查与私有PG18.3的3项旧查询／direct回归通过，供应商10条实际库入口与主执行入口均通过；工程fixture检查模型POST0。

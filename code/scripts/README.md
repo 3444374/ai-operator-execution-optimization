@@ -48,6 +48,28 @@ SemLoom主路径要求Daft payload与真实Ray执行，完整合法任务必须�
 模型POST由共同观察代理逐次持久计数，worker身份标签只用于观察，不重复计费；失败与清理摘要保留。
 调用方管理模型服务、整体期限、CPU与完整运行清单。本入口不自动启动服务或下一查询。
 
+`baselines/run_persistent_native_adapter_query.py`接收明确的`--schedule`列表，在一个常驻进程中顺序执行查询。
+每项包含`arm`、唯一`unit_id`、原始JSONL的`input`和`phase`；`phase`为`qualification`、`warmup`或`measurement`，
+可另给该输入的`references`文件。保持一个arm的清单可使用独立Ray集群；一次最多三个arm的共享部署另记实际可用CPU。
+计划、模型、累计账本和原生参数仍由调用方提供，Ray临时目录须新建且路径短。
+
+```sh
+PYTHONPATH=code python3 code/scripts/baselines/run_persistent_native_adapter_query.py \
+  --schedule /path/to/private/arm-schedule.json \
+  --plan /path/to/private/plan.json --model /path/to/private/model.json \
+  --budget /path/to/private/budget.sqlite --budget-id authorized-comparison \
+  --max-attempts 100 --options /path/to/private/native-options.json \
+  --ray-physical /path/to/private/ray-map.json --ray-temp-root /path/to/new-short-ray-root \
+  --tokenizer /path/to/private/tokenizer.json --output /path/to/new-private-arm-output
+```
+
+`lotus-method-semloom-local-diagnostic`使用同一个Core和本地完整响应传输，`physical=None`，没有Daft／Ray。
+Ray集群、SemLoom执行实例及LOTUS LM跨查询保留；当前查询的输入读取、格式化、图构建、物化和消费继续计时。
+每查询独立归还结果／任务流和账本单元，首次错误停止后续查询；最终owner统一关闭组件。
+`startup.json`记录启动，`query-<序号>/persistent-query.json`分别给出release、实际提交和EOF，
+以SHA-256对应原`summary.json`；同目录`runtime-resources.json`保存查询前后Ray额度，warm-up标签不进入测量分组。
+完整接口和已验证／待验证部分见[常驻检查](../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
+
 ## 数据就绪后的查询计时
 
 `PYTHONPATH=code python -m src.experiments.postgresql.ready_semantic_query`接收

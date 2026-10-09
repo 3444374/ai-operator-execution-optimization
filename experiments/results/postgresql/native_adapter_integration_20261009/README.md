@@ -155,6 +155,111 @@ actor ready约3.7秒，属于提交前准备，未解释LOTUS约30秒的就绪�
 根目录和数据盘入口ACL按任务修改前的保存值复核恢复，自有目录额外条目移除。
 共享实验父目录未记录最初ACL，当前postgres遍历条目保留；未猜测覆盖共享权限，原件与处理说明已保存。
 
+<a id="persistent-fixture"></a>
+
+## 常驻查询与首批payload的工程检查
+
+`resident-source02`以整合提交`2a7ab18a`加13份代码／测试摘要定位，服务器副本在fixture完成后再次逐文件核对。
+身份文件SHA-256为`34b2b2f573b91d3c03e07e176a2a1479d1677f1eed4dda6a62afd340d7fb28c9`；
+源码增量归档摘要和依赖版本见[persistent-verification.json](persistent-verification.json)。真实模型比较仍依据既有语义系统方案与对应运行原件，本节仅报告测试HTTP服务。
+
+`PersistentAdapterGroup`通过原查询入口持有同一个Core、Ray连接与LOTUS LM，每查询重建任务流、观察和账本单元。
+结果消费结束后归还记录并核对Core用量、Job与代理HTTP，最终owner清理所有组件；首次错误停止后续查询，失败清单不复用结果或返还已消耗预算。
+启动记录与逐查询记录分开，`persistent-query.json`以原摘要SHA-256关联`summary.json`，分别保存当前原文读取前的release、实际API提交和EOF。
+当前输入读取、formatter、图创建、首批物化、解析和消费均继续计入release到EOF；`ready-timing.json`仍保留实际提交到EOF。
+同形状预热只运行先前查询，没有提前生成本次测量查询的完整请求或首批数据。
+
+六条实际库路径逐臂使用独立进程；每条连续4、8、4行三次，分别标识资格、预热和测量，共18查询／96次测试POST、真实模型POST0：
+
+| 路径 | 已核对的跨查询对象 | 查询专属对象与当前设置 |
+|---|---|---|
+| 固定Map原生Daft | Native runner所在进程 | 当前图与单行async batch；每行仍创建HTTP session |
+| 固定Map原生Ray | 同一个8CPU、0GPU的Ray连接 | 原HTTP Processor每图创建自身actor，保持原生调度 |
+| 固定Map SemLoom | 同一Core、Ray连接与HTTP worker池 | 完整调用、任务流、结果消费和观察按查询建立 |
+| LOTUS原生 | 同一个LM，缓存关闭 | 原uncached batch请求池、formatter与SDK解析保持 |
+| LOTUS本地SemLoom诊断 | 同一Core、本地完整响应传输与LM | `physical=None`，不含Daft／Ray，不作为普通HTTP或原生LOTUS |
+| LOTUS SemLoom Daft／Ray | 同一Core、LM、Ray连接与HTTP worker池 | 每查询新的LOTUS batch观察与任务流，stage索引从0开始 |
+
+每查询POST、完整行数、预算关闭、owner／执行／LM身份以及HTTP查询标识分别核对。原生Daft0.7.21源码文档提供`@daft.cls`在多个行间复用实例的合法API，
+但该说明没有证明跨查询实例生命周期；本轮保留既有`@daft.func.batch`和每行session设置，没有用新有状态算子改变原生参照。
+原生Ray三次查询前可用逻辑CPU分别8、6、7，来自其自身图actor的异步清理；SemLoom三次均6，因为其自身两个常驻actor各声明1CPU。
+这些是一个arm独立8CPU集群中的实际观测，不声称每个时刻所有内部额度相等。共享多个arm的入口保留为部署诊断，额外保存其他常驻池的声明CPU。
+
+首批payload新增嵌套墙钟探针：Arrow／Daft导入、Native runner设置、源Arrow表、图创建和第一次迭代物化；外围线程等待／工作／恢复仍单独记录。
+LOTUS Daft／Ray路径的首次测试样本保留如下，时间属于本次CPU／HTTP fixture，不解释为模型推理或更大工作负载收益：
+
+| 当前查询 | Daft导入秒 | 图创建秒 | 首批物化秒 |
+|---|---|---|---|
+| 4行资格 | 7.379285 | 0.007345 | 26.187243 |
+| 8行预热 | 0.000033 | 0.008262 | 0.203183 |
+| 4行测量 | 0.000021 | 0.006093 | 0.154244 |
+
+原约30秒模型样本保持原身份。这次首次工作中导入和物化都可见，后两次小样本观察支持继续验证常驻方式；嵌套探针不相加扣除完整查询时间。
+本地77项相关检查76通过、1项实际库入口跳过；Linux93项92通过、1项同入口在六条独立fixture中另行执行。
+旧DuckDB两条`owner=None`入口分别4次测试POST通过；第一次加载被旧Conda C++运行库拒绝，实际POST0，保留其失败及错误的预计POST字段。
+修订检查仅设置既有系统`libstdc++`的独立preload，没有修改模型环境、缓存二进制或查询方法。
+
+Sema直接借用主线程Core至服务I/O线程的尝试被既有控制线程检查拒绝，尝试撤回，私有失败与源码差异保留。
+作者SQL进程的重复SELECT／原表替换与新查询封装通过替身检查；服务Core和worker仍按查询创建，不称完全常驻。
+DuckDB连接、Sema进程与两Map的新增常驻装配已提供，但这些路径的实际库常驻资格仍pending；旧入口回归不代替新增复用检查。
+
+公开[350成员归档](raw/persistent-fixtures.jsonl.gz)保留六臂全部摘要、计时、结果、Core／worker事件、实际资源、旧接口检查与DuckDB加载失败。
+每个成员分别保存私有原件和脱敏副本SHA-256；[persistent_replay.py](persistent_replay.py)复核全部成员、18查询／96 POST、旧DuckDB8 POST及原零POST失败。
+原件保留在仓库外，未把fixture时间或三次查询的极端分位解释为真实模型性能。
+
+<a id="persistent-model"></a>
+
+## 常驻真实模型观察
+
+`resident-model02`沿用`resident-source02`，一个模型服务覆盖六臂；每臂独立常驻进程，Ray路径各自使用8CPU、0GPU集群。
+驱动固定8个CPU，模型固定另一组16个CPU，GPU0运行缓存Qwen2.5-7B-Instruct，BF16、模型长度4096、128服务序列、8192批token、
+显存比例0.8、FCFS与chunked prefill，prefix cache关闭。C4、SemLoom worker2／batch2和原生接法保持，没有在线调参。
+按固定顺序依次完成六臂，属于按臂分块的诊断观察，没有随机化跨臂排序；原生Daft的单行client仍为当前固定接法，不称已最佳调优。
+
+每臂8行资格1次，8行和128行各预热2次、测量5次，合计90查询／5,760 POST，每臂960。
+8行沿用资格样本，128行为既有scale输入，重复使用相同样本；不作独立质量泛化判断。
+本轮保留当前查询读取、formatter、图构造、物化和消费，主指标为release到EOF；实际提交到EOF另存全部原值。
+所有query、行ID、结果摘要、质量重算、HTTP正文不变／单次headers发送／retry0及5,760个唯一成功模型响应通过独立核对。
+同方法每ordinal的三个执行路径实际HTTP值集合相同；Core、LM、Ray身份跨15查询保持，两个实际SemLoom actor ID仅各出现一个创建池，逐查询资源归还通过。
+
+| 方法／执行路径 | 8行release到EOF中位秒 | 128行中位秒 | 128行每次正确数 |
+|---|---:|---:|---:|
+| 固定Map原生Daft | 0.231915 | 3.402501 | 108/128 |
+| 固定Map原生Ray | 4.991013 | 8.471441 | 108/128 |
+| 固定Map SemLoom Daft／Ray | 0.237352 | 3.499192 | 108/128 |
+| LOTUS原生 | 0.278643 | 3.999719 | 106/128 |
+| LOTUS本地Core诊断 | 1.939153 | 30.935126 | 106/128 |
+| LOTUS SemLoom Daft／Ray | 2.754248 | 38.314639 | 106/128 |
+
+所有8行测量均正确5/8，每格各5条完整查询，全部重复、预热、资格、起止和统计秩归[resident-model-analysis.json](resident-model-analysis.json)。
+P99／P99.99仍为样本最大值，不能据此推断总体极端尾部。固定Map中SemLoom与原生Daft接近但略慢，比当前原生Ray入口快；
+LOTUS两种SemLoom接入本次观察明显慢于原生，默认保持。不同方法不混合为统一执行排名，同输出计数也不表示新的质量贡献。
+
+LOTUS本地Core不含Daft／Ray，128行仍约30.94秒，因此持续等待不能全部归为Ray启动或首次payload。
+同规模HTTP覆盖区间中位分别为原生3.892889秒、本地30.621335秒、Daft／Ray37.636577秒，它们仍包含供给及重叠活动。
+128行五次测量的每臂640请求中，转发前回调墙钟中位分别0.001356、0.210924、0.228653秒；转发后回调为0.000335、0.000389、0.000383秒。
+单请求代理dispatch到完整上游体中位分别0.101298、0.440639、0.256279秒，三臂HTTP峰值均4。
+共同保护／观察路径的实际等待并不相同；本轮是完整诊断观察下的常驻实测，低扰动敏感性尚未执行，不能扣回调累计时间构造虚拟JCT。
+
+只读源码核对：原生与SemLoom的batch观察都会逐请求调用`prepare_call`；SemLoom在提交前再次执行参数转换／校验，
+返回时另有完整体解码、SDK ModelResponse转换和原批次值序列化。完整第一次ready扫描在两条128行末次查询中仅约0.03秒，
+未计到第二次转换或逐项Core工作；本地HTTPX client由同一传输保留，不是每请求重建。
+转发前回调包含单锁、完整JSON检查和逐POST SQLite连接／`synchronous=EXTRA`／transaction提交。
+Core在有可提交工作时可以立即推进，其他情况按wake与轮询间隔等待；仅从循环源码不能证明背压忙转。
+SQLite锁／提交、GIL或CPU调度、HTTP客户端、Core推进、SDK转换及模型排队是待分离的候选原因，不写成已实测根因。
+payload内部探针只有墙钟，没有thread／process CPU；完整进程树的1Hz CPU／RSS／PSS和PID创建身份不能替代单函数CPU归因。
+
+两次零请求准备失败单列：默认解释器缺psutil，随后显式账本创建遗漏；原日志、退出、服务计数和清理保留。
+服务01没有成功模型查询被重跑；模型02使用同一账本、同一5,760上限和原截止时刻，没有延长。
+主模型owner完整时间884.689804秒，即14分44.69秒；prompt token522,669、generation token17,280、cached token0，与协议用量逐值核对。
+结束时服务success delta5,760、running／waiting0、owner退出passed、端口关闭，自有模型进程与Ray清理通过；两GPU各1MiB／0%，仅GPU0运行模型。
+
+原私有归档3270文件、9,887,600字节，SHA-256为`b943fb6b0541bc83129a40de9bf5cbb99c99571141babd10e36c779594b5f82e`，独立审核及成员清单保留。
+[公开原始观察](raw/resident-model-observations.jsonl.gz)记录每查询时刻、结果、请求内容摘要、完整响应值、全部Core／worker事件、启动身份和1Hz进程树。
+重复派生字段与owner中的查询事件去重，请求原文替换为完整值／消息摘要；原件和公开投影分别记录SHA-256及投影方式。
+[resident_replay.py](resident_replay.py)复核全部成员、90查询、5,760响应、质量／请求集合／actor复用和全部测量中位数。
+旧首次结果、零POST失败及本轮负结果保持原身份；这项观察不替代PG接入、多Job、低扰动、跨分布或总体尾部资格。
+
 ## 保存与复核
 
 公开工程证据由verification.json及其归档成员定位，包含合成请求／响应、原始阶段事件和全部运行结果。

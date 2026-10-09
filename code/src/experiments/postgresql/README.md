@@ -38,6 +38,14 @@ Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端�
 主机配置与模型文件由调用方预检；请求／状态／结果各自有限，原生等待与观察成本仍计入实际耗时。
 更大工作负载、极端尾部、多模型、级联、Join、并行展开及PG多Map仍需分别验证。
 
+`persistent_native_adapter_query.py`的`PersistentAdapterGroup`复用上述入口，持有常驻Ray连接、各arm的Core／worker和LOTUS LM。
+每查询创建独立消费流、观察与累计账本单元，关流后核对资源归还；源输入和当前formatter／图／首批物化不从查询计时中移出。
+实际API提交仍归原`ready-timing.json`；新的`persistent-query.json`另记当前输入读取前的release、EOF及原摘要SHA-256。
+固定Map三条与LOTUS原生／本地诊断／Daft＋Ray三条通过实际库重复fixture；启动另列，当前原生Ray仍每图创建自身actor。
+单arm独立集群与共享部署的实际Ray额度分别保存；Sema作者进程可保留，服务Core因控制线程不同仍按查询创建。
+DuckDB、Sema及两Map的新增常驻接入不借用这六条资格，未完成实际库常驻检查的部分继续pending。
+调用方式见[脚本入口](../../../scripts/README.md#native-adapter-query)，原始事件与适用范围见[同题报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
+
 <a id="ready-query-timing"></a>
 
 ### 数据就绪后的SQL／原生API计时

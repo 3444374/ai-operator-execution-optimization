@@ -16,6 +16,11 @@
 完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口。
 实际库检查、私有PG18.3旧路径回归与13路径／39查询／384次模型预演通过，属于有限外部输入工程证据。
 原生供给、前继输出造成的任务变化、质量差异和准备成本保留；不更新性能采用或PG多Map结论。
+同一[常驻检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)
+补上固定Map与LOTUS六路径的跨查询组件复用、独立消费归还及读取／提交计时；18查询／96次fixture仅提供工程可行性依据。
+常驻真实模型比较按现行[语义系统方案](experiments/plans/语义系统对照.md)及后续原件判断，首次慢样本和未完成的供应商资格保持。
+随后六臂常驻90查询／5,760 POST通过独立核验；固定Map SemLoom接近原生Daft，LOTUS接入更慢，
+完整诊断观察及按臂分块条件由[同题模型章节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存，默认与其他资格保持。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，
