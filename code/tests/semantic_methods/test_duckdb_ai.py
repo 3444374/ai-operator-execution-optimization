@@ -7,6 +7,7 @@ import os
 import threading
 import time
 import unittest
+from unittest.mock import patch
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -308,6 +309,16 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
             self.select(['http-error'] + ['slow-' + str(i) for i in range(30)], try_complete=False)
         self.assertLessEqual(len(self.server.records), 4)
         self.assertEqual(self.bridge.retained_batches, 0)
+
+    def test_backpressure_prepares_each_complete_task_once(self):
+        from src.execution_provider.adapters import native_tasks
+        self.common()
+        count = 13
+        with patch.object(native_tasks, 'prepare_native_task', wraps=native_tasks.prepare_native_task) as prepared:
+            rows = self.select(['slow-' + str(i) for i in range(count)])
+        self.assertEqual(len(rows), count)
+        self.assertEqual(len(self.server.records), count)
+        self.assertEqual(prepared.call_count, count)
 
 
 if __name__ == '__main__':

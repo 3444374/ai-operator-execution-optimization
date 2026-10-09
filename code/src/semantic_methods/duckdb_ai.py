@@ -221,6 +221,7 @@ class DuckDBNativeTaskExecutor:
                 raise ValueError('DuckDB prepared call differs from the common fixed transport')
         flow = NativeTaskSession(self.execution, 'duckdb:' + calls[0].call_id, 'duckdb-ai-map')
         offset = 0
+        pending = ()
         sealed = False
         finished = False
         try:
@@ -230,15 +231,18 @@ class DuckDBNativeTaskExecutor:
                     raise InterruptedError('DuckDB query cancelled')
                 if offset < len(calls):
                     stop = min(len(calls), offset + flow.limits.offer_tasks)
-                    offered = tuple(prepare_native_task(
+                    # Keep rejected tasks and their work description; only fill new suffix positions.
+                    first_new = offset + len(pending)
+                    pending += tuple(prepare_native_task(
                         call.payload, i, row_sequence=call.row, call_id=call.call_id,
                         work=self.describe_work(call) if self.describe_work else None,
                         max_result_bytes=flow.limits.item_result_bytes,
-                    ) for i, call in enumerate(calls[offset:stop], offset))
-                    result = flow.offer(offered)
+                    ) for i, call in enumerate(calls[first_new:stop], first_new))
+                    result = flow.offer(pending)
                     if result.status not in ('ACCEPTED', 'BACKPRESSURE'):
                         raise RuntimeError('DuckDB task offer rejected: ' + result.reason)
                     offset += result.accepted_prefix_count
+                    pending = pending[result.accepted_prefix_count:]
                 if offset == len(calls) and not sealed:
                     flow.end_input()
                     sealed = True
