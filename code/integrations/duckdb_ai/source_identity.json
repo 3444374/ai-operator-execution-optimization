@@ -1,0 +1,26 @@
+{
+  "upstream_url": "https://github.com/leonardovida/duckdb-ai",
+  "upstream_version": "v0.4.14",
+  "upstream_commit": "9b7b16a5d5bfa97180b8be48d69bd9a4a4106419",
+  "duckdb_version": "v1.5.4",
+  "duckdb_commit": "08e34c447bae34eaee3723cac61f2878b6bdf787",
+  "license": "MIT",
+  "original_sha256": {
+    "CMakeLists.txt": "c64120f6e8800e4e6b06a803640db003636381cd6971eec3d92a970ed0ded618",
+    "src/duckdb_ai_extension.cpp": "639bb227be5274bb97de76f85b2c8f490ebbc9959574571e5abfec06b8295327",
+    "src/duckdb_ai_provider.cpp": "b4bc56d01f9c3bc32e1990e1bff045d713855305ee450ca60785c5ba0553d890",
+    "src/include/duckdb_ai_provider.hpp": "d968db81d71f6eff153241bb4894f2cd671394a1387191042a9f07e63969cd06"
+  },
+  "patched_sha256": {
+    "CMakeLists.txt": "45685355ae95a139511c0033d0e22ec89755e77ca3ba7140c40d9de48a3afbe1",
+    "src/duckdb_ai_extension.cpp": "3051348aced868e9aa6dd6d892fcc59cf43e12d921dd5f00121c602848f3ac4c",
+    "src/duckdb_ai_provider.cpp": "f46f27cf02882ba6f6249a66dfd499c62a7928b3de74cdcf0182f5f347fa46c1",
+    "src/include/duckdb_ai_provider.hpp": "af24ab5186cfe2cbf21291af1dbc53853c393695ee9f133088d8a4d81a083182"
+  },
+  "license_sha256": {
+    "LICENSE.upstream": "e752d3ffb8037c518547ec971c4d59bb103419522cdfc60ea3bf34ceaa17dd30",
+    "LICENSE.duckdb": "7e17fd31249fa875cb3b1c5e05c6c3e99b75509f6a2804ca176c217834de1dcb",
+    "LICENSE.re2": "6040cda75d90b1738292a631d89934c411ef7ffd543c4d6a1b7edfc8edf29449",
+    "LICENSE.yyjson": "734d7fb3eb56f0a04e6b7ab0c5d3634624a8bfaa2acc87a2c03a029b20868cf8"
+  }
+}
