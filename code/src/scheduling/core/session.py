@@ -996,6 +996,10 @@ class SchedulingSession:
             self._check_open_handle()
             if type(leases) not in (tuple, list) or len(leases) > self.limits.held_tasks:
                 raise ValueError("invalid release batch")
+            if not leases:
+                # No capacity changed. Publishing a wake here makes a caller's
+                # no-delivery progress generation stale before its backend wait.
+                return
             for lease in leases:
                 if (
                     type(lease) is not LeaseId

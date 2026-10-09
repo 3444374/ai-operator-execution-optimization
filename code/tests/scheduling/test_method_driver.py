@@ -61,6 +61,30 @@ def tick(driver, backend, reverse=False):
 
 
 class MethodDriverTests(unittest.TestCase):
+    def test_idle_stage_retains_wait_generation_for_the_continuation_consumer(self):
+        driver, engine, backend, pool = make_driver()
+        try:
+            driver.offer_row(RowIdentity(0, "call"), b"one")
+            driver.advance(1)
+            progress = driver.advance(1)
+            self.assertEqual(progress.deliveries, ())
+            self.assertFalse(progress.has_immediate_work)
+            self.assertEqual(progress.blocked_reason, "WAIT_BACKEND")
+            self.assertEqual(progress.generation, engine.wake.generation)
+            self.assertEqual(engine.capacity.usage().active_requests, 1)
+            backend.complete(next(iter(backend.pending)), b"OK")
+            driver.advance(1)
+            result = driver.results(1)[0]
+            self.assertEqual((result.row.sequence, result.value), (0, b"OK"))
+            driver.release_result(result.row)
+            driver.end_input()
+            driver.advance(1)
+            driver.advance(1)
+            self.assertTrue(driver.finished)
+            self.assertEqual(engine.capacity.usage().held_tasks, 0)
+        finally:
+            driver.close()
+
     def test_zero_one_two_stages_eof_and_one_slot(self):
         driver, engine, backend, pool = make_driver(rows=3)
         for seq, value in enumerate((b"zero", b"one", b"two")):
