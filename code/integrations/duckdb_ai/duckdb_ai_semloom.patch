@@ -1,0 +1,192 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index caca3f0..7ada13d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -22 +22,2 @@ set(EXTENSION_SOURCES
+-    src/duckdb_ai_provider.cpp)
++    src/duckdb_ai_provider.cpp
++    src/semloom_batch.cpp)
+diff --git a/src/duckdb_ai_extension.cpp b/src/duckdb_ai_extension.cpp
+index 23773f0..3427fd2 100644
+--- a/src/duckdb_ai_extension.cpp
++++ b/src/duckdb_ai_extension.cpp
+@@ -4,0 +5 @@
++#include "semloom_batch.hpp"
+@@ -2039,0 +2041,48 @@ bool ValidateJsonCompletionOutput(const std::string &output, const std::string &
++// SemLoom modification: choose the whole vector batch before ProviderExecutorState.
++bool TryRunSemLoomCompletionJobs(std::vector<ProviderStringJob> &jobs, ClientContext &context) {
++    Value executor;
++    if (!context.TryGetCurrentSetting("duckdb_ai_executor", executor) || executor.IsNull() ||
++        StringValue::Get(executor) == "native") { return false; }
++    if (StringValue::Get(executor) != "semloom") {
++        throw InvalidInputException("duckdb_ai_executor must be native or semloom");
++    }
++    std::vector<duckdb_ai::PreparedCompletion> prepared;
++    std::vector<uint64_t> rows;
++    std::vector<idx_t> job_indices;
++    for (idx_t i = 0; i < jobs.size(); i++) {
++        auto &job = jobs[i];
++        if (job.options.function_name != "ai_complete" && job.options.function_name != "ai_try_complete") {
++            throw InvalidInputException("SemLoom DuckDB currently supports only ai_complete and ai_try_complete");
++        }
++        try {
++            prepared.push_back(duckdb_ai::PrepareCompletion(job.input, job.options));
++        } catch (InterruptException &) {
++            throw;
++        } catch (std::exception &ex) {
++            job.exception = std::current_exception();
++            job.error_message = ex.what();
++            if (job.fail_on_error) { return true; }
++            continue;
++        }
++        // Unsupported execution policies fail the batch before any external request.
++        duckdb_ai::PrepareSemLoomDispatch(prepared.back());
++        rows.push_back(job.row);
++        job_indices.push_back(i);
++    }
++    duckdb_ai::DispatchSemLoomBatch(prepared, rows, [&](uint64_t i, const duckdb_ai::CompletionResponse &response) {
++        auto &job = jobs[job_indices[i]];
++        try {
++            job.output = duckdb_ai::FinishCompletion(prepared[i], response).text;
++            job.completed = true;
++        } catch (InterruptException &) {
++            throw;
++        } catch (std::exception &ex) {
++            job.exception = std::current_exception();
++            job.error_message = ex.what();
++            return job.fail_on_error;
++        }
++        return false;
++    });
++    return true;
++}
++
+@@ -2086,0 +2136 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
++	if (!TryRunSemLoomCompletionJobs(jobs, state.GetContext())) {
+@@ -2096,0 +2147,2 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
++    }
++
+@@ -2185,0 +2238 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
++	if (!TryRunSemLoomCompletionJobs(jobs, state.GetContext())) {
+@@ -2187,0 +2241,2 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
++    }
++
+@@ -7835,0 +7891,2 @@ void RegisterSettings(ExtensionLoader &loader) {
++    AddSetting(config, "duckdb_ai_executor", "Text Map executor: native or semloom", LogicalType::VARCHAR,
++               Value("native"));
+diff --git a/src/duckdb_ai_provider.cpp b/src/duckdb_ai_provider.cpp
+index 0ba6e4c..fc3b627 100644
+--- a/src/duckdb_ai_provider.cpp
++++ b/src/duckdb_ai_provider.cpp
+@@ -4858 +4858,2 @@ CompletionResult Complete(const std::string &prompt, const std::string &model, c
+-CompletionResult Complete(const std::string &prompt, const CompletionOptions &options) {
++// SemLoom modification: native and external dispatch share preparation and parsing.
++PreparedCompletion PrepareCompletion(const std::string &prompt, const CompletionOptions &options) {
+@@ -4874,12 +4875,39 @@ CompletionResult Complete(const std::string &prompt, const CompletionOptions &op
+-	HttpResponse response;
+-	std::string cache_key;
+-	try {
+-		response = FetchProviderResponse("completion", config, endpoint, payload, request_options,
+-		                                 EstimatedCompletionTokens(prompt, request_options), cache_key);
+-	} catch (InterruptException &) {
+-		// Query cancellation is not a provider failure; keep it out of usage error events.
+-		throw;
+-	} catch (std::exception &ex) {
+-		RecordFailedUsageEvent(config, prompt, request_options, 0, ex.what(), 0);
+-		throw;
+-	}
++	PreparedCompletion prepared;
++    prepared.prompt = prompt;
++    prepared.options = std::move(request_options);
++    prepared.provider = std::move(config);
++    prepared.endpoint = std::move(endpoint);
++    prepared.payload = std::move(payload);
++    return prepared;
++}
++
++void PrepareSemLoomDispatch(PreparedCompletion &prepared) {
++    const auto &options = prepared.options;
++    if (prepared.provider.provider != "openai_compatible" || prepared.provider.protocol != "openai_chat") {
++        throw InvalidInputException("SemLoom DuckDB currently requires openai_compatible text completion");
++    }
++    if (ResponseCacheEnabled(options) || RetryCount(options) != 0 || MinRequestIntervalMs(options) != 0 ||
++        TokenLimitPerMinute(options) != 0 || !options.log_endpoint.empty()) {
++        throw InvalidInputException("SemLoom DuckDB requires response cache, retries, pacing, token-rate and remote logging disabled");
++    }
++    prepared.headers = RequestHeaders(prepared.provider, options);
++    for (const auto &header : prepared.headers) { ValidateHttpHeader(header); }
++    prepared.timeout_seconds = TimeoutSeconds(options);
++    prepared.connect_timeout_seconds = ConnectTimeoutSeconds(options, prepared.timeout_seconds);
++    prepared.estimated_tokens = EstimatedCompletionTokens(prepared.prompt, options);
++    prepared.ready_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
++        std::chrono::steady_clock::now().time_since_epoch()).count();
++}
++
++CompletionResult FinishCompletion(const PreparedCompletion &prepared, const CompletionResponse &value,
++                                  const std::string &cache_key) {
++    const auto &config = prepared.provider;
++    const auto &prompt = prepared.prompt;
++    const auto &request_options = prepared.options;
++    if (!value.transport_error.empty()) {
++        RecordFailedUsageEvent(config, prompt, request_options, 0, value.transport_error, 0);
++        throw IOException("%s", value.transport_error);
++    }
++    HttpResponse response(value.body, value.status, value.elapsed_ms, -1);
++    response.retries = value.retries;
++    response.cache_hit = value.cache_hit;
+@@ -4907,0 +4936,22 @@ CompletionResult Complete(const std::string &prompt, const CompletionOptions &op
++CompletionResult Complete(const std::string &prompt, const CompletionOptions &options) {
++    auto prepared = PrepareCompletion(prompt, options);
++    HttpResponse response;
++    std::string cache_key;
++    try {
++        response = FetchProviderResponse("completion", prepared.provider, prepared.endpoint, prepared.payload,
++                                         prepared.options, EstimatedCompletionTokens(prompt, prepared.options), cache_key);
++    } catch (InterruptException &) {
++        throw;
++    } catch (std::exception &ex) {
++        RecordFailedUsageEvent(prepared.provider, prompt, prepared.options, 0, ex.what(), 0);
++        throw;
++    }
++    CompletionResponse value;
++    value.body = std::move(response.body);
++    value.status = response.status;
++    value.elapsed_ms = response.elapsed_ms;
++    value.retries = response.retries;
++    value.cache_hit = response.cache_hit;
++    return FinishCompletion(prepared, value, cache_key);
++}
++
+diff --git a/src/include/duckdb_ai_provider.hpp b/src/include/duckdb_ai_provider.hpp
+index 025a464..05937ee 100644
+--- a/src/include/duckdb_ai_provider.hpp
++++ b/src/include/duckdb_ai_provider.hpp
+@@ -101,0 +102,23 @@ struct CompletionOptions {
++// SemLoom modification: separate method preparation, dispatch and original parsing.
++struct PreparedCompletion {
++    std::string prompt;
++    CompletionOptions options;
++    ProviderConfig provider;
++    std::string endpoint;
++    std::string payload;
++    std::vector<std::string> headers;
++    int64_t estimated_tokens = 0;
++    int64_t timeout_seconds = 0;
++    int64_t connect_timeout_seconds = 0;
++    int64_t ready_ns = 0;
++};
++
++struct CompletionResponse {
++    std::string body;
++    long status = 0;
++    int64_t elapsed_ms = 0;
++    int64_t retries = 0;
++    bool cache_hit = false;
++    std::string transport_error;
++};
++
+@@ -231,0 +255,4 @@ CompletionResult Complete(const std::string &prompt, const CompletionOptions &op
++PreparedCompletion PrepareCompletion(const std::string &prompt, const CompletionOptions &options);
++void PrepareSemLoomDispatch(PreparedCompletion &prepared);
++CompletionResult FinishCompletion(const PreparedCompletion &prepared, const CompletionResponse &response,
++                                  const std::string &cache_key = "");
