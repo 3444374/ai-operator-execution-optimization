@@ -56,6 +56,36 @@ mode, so a query cannot borrow a service with incompatible response behavior. Co
 pre-send failures have no invented HTTP status; decoding them raises `CompletionAdapterError`.
 Transport failures still use the Core's unknown-remote handling.
 
+## DuckDB local batch transport
+
+`duckdb_batch_socket.DuckDBBatchConnection(execution).serve(connection)` handles a borrowed
+local socket on the Engine owner thread. It reuses the existing four-byte big-endian length
+and UTF-8 JSON framing, with a 1048576-byte frame limit. The listener owns acceptance, socket
+close and service teardown. This initial handler runs one connection at a time; concurrent
+socket dispatch needs an owner-thread service loop and remains pending. It does not receive SQL.
+
+Every message has `protocol="semloom.duckdb.batch.v1"` and the exact fields listed here.
+Decimal sequence strings avoid loss when clients use different JSON number representations.
+
+| Direction | Message and fields |
+|---|---|
+| Client → service | `open`: `query_id`, `operator_id` |
+| Service → client | `opened`: `max_offer_tasks`, `max_input_bytes`, `max_result_bytes`, `max_frame_bytes`, `work_unit` |
+| Client → service | `offer`: `tasks`, each containing `sequence`, `row_sequence`, `call_id`, `stage_id`, `payload` |
+| Service → client | `accepted`: `accepted_prefix_count`, `status`, `reason` |
+| Client → service | `poll`, `end`, or `cancel`, with no additional fields |
+| Service → client | `result`: `sequence`, `row_sequence`, `call_id`, `stage_id`, `status_code`, `headers`, `http_version`, `body_base64` |
+| Service → client | `idle`, `ended`, or `finished`, with no additional fields |
+| Service → client | `cancelled`: `uncertain_requests`; `error`: `code`, `uncertain_requests` |
+
+The `payload` string is the supplier's prepared UTF-8 HTTP body, encoded without reserialization.
+The socket adapter currently measures request count. It advertises a conservative result limit
+that includes response headers and leaves room for base64 and identities in the output frame.
+Each `poll` transfers at most one result; its core lease lasts until the bounded send succeeds
+or the connection consumer stops. Input batches stay finite and the caller retains an unaccepted
+suffix. `cancel` or EOF during polling stops the local consumer, while unconfirmed model work
+remains charged in the shared Engine. The listener owner must continue advancing/reaping it.
+
 ## Adopted source behavior and scope
 
 This is an engineering choice based on the fixed consumers in the
