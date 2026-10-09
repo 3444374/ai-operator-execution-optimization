@@ -304,6 +304,9 @@ LOTUS观测新增`lotus_batch_return`事件，直接记录完整SDK响应列表�
 
 ## 接入持续成本的诊断与修复
 
+真实模型复核按[现有常驻查询清单](../../../plans/语义系统对照.md#resident-native-semloom-test)执行：
+已完成六路径90查询保留，修复后的八路径120查询／7,680 POST需先通过最终一致源码检查。
+
 三项已复现问题分别处理。公共`Session.release`在核对打开状态和tuple／list类型后，对空集合直接返回；
 原先空释放也发布wake，LOTUS批次与MethodDriver的等待时刻因此反复过期。真实lease、取消与资源归还检查保留。
 整合采用公共修复`5a12e76d`与真实接纳前缀通知回归`0183e012`，不再叠加LOTUS调用点的相同修复。
