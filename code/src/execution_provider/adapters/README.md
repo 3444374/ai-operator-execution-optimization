@@ -129,9 +129,15 @@ reservation were retained. Across three 128-row fixture queries, local wall/owne
 medians changed from 27.803/26.837 seconds to 1.507/0.327 seconds. The original loop made roughly
 133000 advances with no blocking condition wait; the corrected loop made roughly 289 advances
 and 177 blocking waits. These are instrumented fixture results, not new model measurements.
+Two corresponding Daft/Ray fixture queries changed wall/owner-thread CPU medians from
+40.807/38.661 seconds to 1.634/0.298 seconds. Both paths kept observed HTTP concurrency at most
+four, complete request values and response bodies, and exactly one durable reservation per POST.
+These CPU totals cover the parent process and owner thread; they omit Ray worker CPU. Nested
+probe durations and separately aggregated medians must not be added into a query-time breakdown.
 The raw fixture, source identities, all repetitions and failures are in the private common-task
-handoff. The old resident model evidence remains unchanged; real-model follow-up is pending
-while GPU access is unavailable. Focused regressions exercise both consumers, the real I/O
+handoff. This fixture ran before the server restart, while GPU access was unavailable. The old
+resident model evidence remains unchanged; real-model follow-up belongs to the integration task.
+Focused regressions exercise both consumers, the real I/O
 thread, empty/invalid/closed releases and nonempty capacity notification.
 
 [Sema request service](sema_request_service.md) adds query-owned transparent and Daft/Ray service
