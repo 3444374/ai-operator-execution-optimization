@@ -109,3 +109,8 @@ backpressure, cancellation/late completion, unknown outcomes, complete HTTP erro
 PG decoder/error mapping. Global status/registry updates and real-model qualification belong to
 the integration task. Real cascades, multiple models, cross-row joins and parallel stage expansion
 remain pending.
+
+[Sema request service](sema_request_service.md) adds query-owned transparent and Daft/Ray service
+paths after the author's native request pool. It retains native supply and SQL parsing; it does
+not establish a SQL executor replacement. Its engineering evidence and pending integration are
+delivered separately by the Sema task.
