@@ -90,6 +90,24 @@ def setup(**changes):
 
 
 class IncrementalSessionTests(unittest.TestCase):
+    def test_offer_wakes_only_when_it_transfers_a_real_prefix(self):
+        engine, session, backend, _clock = setup()
+        before = engine.wake.generation
+        accepted = session.offer((task(0), task(1)))
+        self.assertEqual(accepted.accepted_prefix_count, 2)
+        self.assertGreater(accepted.generation, before)
+        self.assertEqual(accepted.generation, engine.wake.generation)
+        usage = engine.capacity.usage()
+        for tasks, expected in (((task(2),), "BACKPRESSURE"),
+                                ((task(99),), "REJECTED"), ((), "ACCEPTED")):
+            offered = session.offer(tasks)
+            self.assertEqual((offered.accepted_prefix_count, offered.status), (0, expected))
+            self.assertEqual(offered.generation, accepted.generation)
+            self.assertEqual(engine.wake.generation, accepted.generation)
+            self.assertEqual(engine.capacity.usage(), usage)
+        self.assertEqual(backend.pending, {})
+        session.close()
+
     def test_empty_release_preserves_progress_but_keeps_schema_and_closed_checks(self):
         engine, session, backend, _clock = setup()
         session.offer((task(0),))
