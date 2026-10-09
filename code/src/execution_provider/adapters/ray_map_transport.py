@@ -19,6 +19,7 @@ import uuid
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
 from ...scheduling.runtime.stage_broker import StageBrokerLimits
 from .async_fixed_model import AsyncFixedModelTransport, exception_details
+from .full_response import FullResponseTransport
 
 
 @dataclass(frozen=True)
@@ -31,8 +32,11 @@ class RayMapConfig:
     worker_pool: str | None = None
     payload_backend: str = 'daft'
     preparation: StageBrokerLimits | None = None
+    response_mode: str = 'completion'
 
     def __post_init__(self):
+        if self.response_mode not in ('completion', 'full'):
+            raise ValueError("unknown Ray Map response mode")
         if self.payload_backend not in ('daft', 'arrow'):
             raise ValueError("unknown Ray Map payload backend")
         if self.preparation is not None and (
@@ -88,17 +92,23 @@ class _RemoteResult(NamedTuple):
     clock_domain: str | None
 
 
-def _model_identity(config):
-    value = json.dumps(asdict(config), sort_keys=True, separators=(",", ":")).encode()
+def _model_identity(config, response_mode='completion'):
+    fields = asdict(config)
+    if response_mode != 'completion':
+        fields['response_mode'] = response_mode
+    value = json.dumps(fields, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(value).hexdigest()
 
 
 class _HttpActor:
-    def __init__(self, config, concurrency, managed=False):
-        self.transport = AsyncFixedModelTransport(config, concurrency)
+    def __init__(self, config, concurrency, managed=False, response_mode='completion'):
+        if response_mode not in ('completion', 'full'):
+            raise ValueError("unknown Ray worker response mode")
+        transport = FullResponseTransport if response_mode == 'full' else AsyncFixedModelTransport
+        self.transport = transport(config, concurrency)
         self.active = 0
         self.managed, self.owner = managed, None
-        self.identity, self.capacity = _model_identity(config), concurrency
+        self.identity, self.capacity = _model_identity(config, response_mode), concurrency
         self.clock_domain = _clock_domain()
 
     async def ready(self):
@@ -166,8 +176,11 @@ def owned_map_worker_pool(ray, config, capacity, physical):
     try:
         actor = _worker_class(ray, capacity)
         for index in range(physical.workers):
+            arguments = (config, capacity, True)
+            if physical.response_mode != 'completion':
+                arguments += (physical.response_mode,)
             actors.append(actor.options(name=f"{physical.worker_pool}-{index}",
-                                        namespace="semloom-map").remote(config, capacity, True))
+                                        namespace="semloom-map").remote(*arguments))
         ray.get([a.ready.remote() for a in actors], timeout=30)
         yield
     finally:
@@ -244,7 +257,7 @@ class RayMapTransport:
                 with self._startup_stage("actor_bind"):
                     for index in range(physical.workers):
                         actor = self.ray.get_actor(f"{physical.worker_pool}-{index}", namespace="semloom-map")
-                        if self.ray.get(actor.claim.remote(self.worker_owner, _model_identity(config), capacity), timeout=30) is not True:
+                        if self.ray.get(actor.claim.remote(self.worker_owner, _model_identity(config, physical.response_mode), capacity), timeout=30) is not True:
                             raise ValueError("Ray worker query claim was not confirmed")
                         self.leased.append(actor)
                         self.actors.append(actor)
@@ -252,7 +265,10 @@ class RayMapTransport:
                 with self._startup_stage("actor_create"):
                     actor = _worker_class(self.ray, capacity)
                     for _ in range(physical.workers):
-                        self.actors.append(actor.remote(config, capacity))
+                        arguments = (config, capacity)
+                        if physical.response_mode != 'completion':
+                            arguments += (False, physical.response_mode)
+                        self.actors.append(actor.remote(*arguments))
                 with self._startup_stage("actor_ready"):
                     self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
         except BaseException:
