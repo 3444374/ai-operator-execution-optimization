@@ -23,6 +23,31 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 检查只读，额度由调用方为所属进程准备；512行补测使用8192，具体环境与失败见[主报告](../../experiments/results/postgresql/semantic_system_comparison_20261008/README.md)。
 完整执行耗时含原生库准备及输入装配；模型启动和事后质量评价另列，不自动开始下一查询。
 
+<a id="native-adapter-query"></a>
+
+## 原生方法与SemLoom成对查询
+
+`baselines/run_native_adapter_query.py`执行有限外部文本输入的单查询，输入JSONL每行仅含唯一`row_id`和原始`text`。
+`--arm`包括共同固定Map的原生Daft／Ray／SemLoom、LOTUS单Map与两Map三种推进、DuckDB成对执行和Sema三种请求路径。
+具体名字与适用范围见[接口说明](../src/experiments/postgresql/README.md#native-adapter-query)及[工程报告](../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+预算须已创建；配置与输出均在仓库外，输出目录须尚不存在：
+
+```sh
+PYTHONPATH=code python code/scripts/baselines/run_native_adapter_query.py \
+  --arm fixed-map-semloom --input /path/to/private/raw-input.jsonl \
+  --plan /path/to/private/plan.json --model /path/to/private/model.json \
+  --budget /path/to/private/budget.sqlite --budget-id authorized-comparison \
+  --max-attempts 100 --unit-id unique-query --options /path/to/private/native-options.json \
+  --ray-physical /path/to/private/ray-map.json --ray-temp-root /path/to/private/ray-scratch \
+  --references /path/to/private/reference-outputs.json --allowed-output true --allowed-output false \
+  --output /path/to/new-private-query
+```
+
+两Map另传`--stages`，Sema传已核对的`--sema-binary`，DuckDB传已编译的`--duckdb-library`；LOTUS可传`--tokenizer`。
+SemLoom主路径要求Daft payload与真实Ray执行，完整合法任务必须装入所声明窗口；本地诊断另有独立名字。
+模型POST由共同观察代理逐次持久计数，worker身份标签只用于观察，不重复计费；失败与清理摘要保留。
+调用方管理模型服务、整体期限、CPU与完整运行清单。本入口不自动启动服务或下一查询。
+
 ## 数据就绪后的查询计时
 
 `PYTHONPATH=code python -m src.experiments.postgresql.ready_semantic_query`接收

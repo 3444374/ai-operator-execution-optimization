@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-09：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)已整合公共批次／完整响应、LOTUS单Map／两Map、DuckDB C ABI批次、Sema请求服务和原生Daft／Ray参照。
+新外部输入查询入口分开完整应用、实际提交至消费、任务就绪至调用者完整响应及资源清理；缺少源码观察的阶段写不可观测。
+本地39项相关检查与私有PG18.3的3项旧查询／direct回归通过，供应商10条实际库入口与主执行入口均通过；工程fixture检查模型POST0。
+既有原生与PG默认保持，随后13路径／39查询／384次真实POST及计数／退出核对通过，调用集合与质量差异归主报告；多模型、级联、Join、并行展开及PG多Map仍pending。
+
 更新：2026-10-09。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。

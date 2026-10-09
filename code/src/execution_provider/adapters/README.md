@@ -112,5 +112,6 @@ remain pending.
 
 [Sema request service](sema_request_service.md) adds query-owned transparent and Daft/Ray service
 paths after the author's native request pool. It retains native supply and SQL parsing; it does
-not establish a SQL executor replacement. Its engineering evidence and pending integration are
-delivered separately by the Sema task.
+not establish a SQL executor replacement. The [integrated query entry](../../experiments/postgresql/README.md#native-adapter-query)
+retains all three paths; [model and fixture evidence](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)
+records native supply, complete bodies, query exit and unavailable native-call timing.

@@ -10,6 +10,34 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 `native_file_capacity`在单元预留和实际POST之前只读核对文件描述符额度，估计包含同进程的SDK、代理入站与上游连接。
 额度由调用方准备，不以检查替代原生执行或施加HTTP并发限制。
 
+<a id="native-adapter-query"></a>
+
+### 原生方法与可替换执行器
+
+`native_adapter_query.py`提供外部有限输入的共同固定Map参照，`supplier_adapter_query.py`装配已交付的供应商方法。
+输入加载与组件准备计入完整应用；`record_prepared_execution`直接记录实际API入口至消费结束，方法／图构建留在查询内。
+原生SQL reader、PG和原生语义系统旧入口保持。新入口使用已有公共批次与方法驱动，不新增调度核心。
+
+| `--arm` | 方法与执行所有者 |
+|---|---|
+| `fixed-map-native-daft`、`fixed-map-native-ray`、`fixed-map-semloom` | 图外生成相同`SemanticMapPlan`完整调用，分别由Daft Native、Ray Data及SemLoom Daft／Ray执行 |
+| `lotus-adapted-native`、`lotus-method-semloom` | 原`sem_map`、SDK转换及解析，分别进入原LiteLLM请求池或公共执行入口 |
+| `lotus-two-map-native-staged`、`lotus-two-map-semloom-staged`、`lotus-two-map-semloom-incremental` | 原两Map方法；阶段等待参照及既有MethodDriver逐行继续执行 |
+| `duckdb-adapted-native`、`duckdb-method-semloom` | 匹配的patched扩展，原生或C ABI完整批次执行，再进入原C++解析 |
+| `sema-native-direct`、`sema-native-transparent`、`sema-method-semloom-request-service` | 作者二进制直达、透明观察或后置请求服务；原请求池与供给保持 |
+| `fixed-map-semloom-local-diagnostic` | 本地无Ray诊断；单独标识，不进入主实现性能比较 |
+
+`native_adapter_metrics.py`按行、阶段与逻辑调用编号关联任务就绪和原调用者完整响应，统计单位为一次完整模型调用。
+LOTUS批次的调用者取得完整SDK响应列表后才记返回；逐行继续执行则在supplier resume收到完整HTTP响应时记返回。
+DuckDB保留C++的steady-clock值，Python回调另记本进程时刻；未证明两种时钟相同，不做跨钟减法。
+Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端到端标为不可观测；请求服务自己的阶段另列。
+原始字节、HTTP元数据与SDK值对象的哈希各自说明表示形式，完整HTTP时段不改名为纯模型计算。
+查询与调用分别保存全部分位样本、秩与最大值标记；组织等缺少实际起止的阶段写不可观测。
+
+源码与实际库核对、旧PG18.3回归、失败及资源释放见[工程报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+主机配置与模型文件由调用方预检；请求／状态／结果各自有限，原生等待与观察成本仍计入实际耗时。
+更大工作负载、极端尾部、多模型、级联、Join、并行展开及PG多Map仍需分别验证。
+
 <a id="ready-query-timing"></a>
 
 ### 数据就绪后的SQL／原生API计时

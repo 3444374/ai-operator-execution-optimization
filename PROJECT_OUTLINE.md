@@ -12,6 +12,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
+2026-10-09：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
+完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口。
+实际库检查、私有PG18.3旧路径回归与13路径／39查询／384次模型预演通过，属于有限外部输入工程证据。
+原生供给、前继输出造成的任务变化、质量差异和准备成本保留；不更新性能采用或PG多Map结论。
+
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，
 以及PG／LOTUS原始Movie Q3和同后端三控制的模型工程检查。用户确认可运行后授权真实模型，

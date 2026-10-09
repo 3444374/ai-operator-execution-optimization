@@ -13,6 +13,10 @@
 原生系统拥有批次/并发，实际HTTP计数和观测在统一查询时间内；
 [受控验证](../../../experiments/results/postgresql/database_queries_20260910/README.md)不表示真实质量或性能已通过。
 
+`text/frameworks/prepared_map.py`将图外已生成的完整调用送入固定版本Daft Native或Ray Data原生图，
+保留其并发、缓冲及完整响应消费，不在原生kernel中套用SemLoom。
+这是独立的执行器参照；旧SQL reader与内置prompt路径保持，使用方式见[成对查询入口](../../scripts/README.md#native-adapter-query)。
+
 `text/frameworks/semantic_map.py`提供同应用Movie Map的LOTUS1.2.4 `sem_map`、
 Daft0.7.21内置`prompt`、DuckDB1.5.4社区`ai`0.4.14与Sema作者二进制入口。
 同模块的`prepare_rows`先装载原始输入与可复用组件，`execute()`执行原生算子；DuckDB在SQL内装配提示，

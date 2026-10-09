@@ -7,6 +7,9 @@ PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系
 [就绪后计时入口](src/experiments/postgresql/README.md#ready-query-timing)先准备原始输入和运行组件，
 再记录SQL／API提交、统一消费结束与代理HTTP区间；实际记录见[独立报告](../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
 
+[原生方法成对查询](scripts/README.md#native-adapter-query)整合公共完整任务、LOTUS、DuckDB和Sema请求服务，
+共同固定Map分别使用原生Daft、原生Ray与SemLoom执行。工程检查和适用范围归[整合报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
 `RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。

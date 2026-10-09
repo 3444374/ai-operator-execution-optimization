@@ -1,0 +1,718 @@
+{
+  "schema": "semloom.native_adapter_integration.v1",
+  "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+  "dependency_commits": [
+    {
+      "delivered": "1ba9e7dc07023c51c089409bebe97df546925db2",
+      "integrated": "4e3fe522de7ce934e44fdfa9190279f8c154fdc6"
+    },
+    {
+      "delivered": "5a8adeb4f88fef5640442aae158c677d75abad5a",
+      "integrated": "50b23f5dbe5392256ef74b878cdeeb7f8ce23d4b"
+    },
+    {
+      "delivered": "db312fc42608ff81349b2a5a04b6dc1fcaea406a",
+      "integrated": "5ef99a6c9e27e7b24708ffe3d32775861779e46a"
+    },
+    {
+      "delivered": "0fa69b6c7482d4a7cf35e6832353f01d270c52df",
+      "integrated": "7f7f7e5f293a5709cf2f205f3f569485b7d28f30"
+    },
+    {
+      "delivered": "7eec3f85ef2767c9a25b98a825b4701d050f2641",
+      "integrated": "2c8808e4941885fa8310e4c6f2505b0c3a805261"
+    },
+    {
+      "delivered": "0085dfb55525923a477c93115d533afb5553db15",
+      "integrated": "1d87cac45bc73c8b5a2c650bd897034915b8444f"
+    },
+    {
+      "delivered": "3ae8a0b893517227eac470624e2fa5c9b3132932",
+      "integrated": "c9edbfd7b2345af42334a97160ee89a5ae01f1ca"
+    },
+    {
+      "delivered": "53c8729943eb903db63c72d28ff732bc92494bf1",
+      "integrated": "dc425a019d517b101117e600e80ab19e19944da0"
+    }
+  ],
+  "own_source_commit": "62296fef662790073bbed44c70ef2d5662f50ab5",
+  "model_requests_in_engineering_tests": 0,
+  "performance_qualified": false,
+  "local_checks": {
+    "run_id": "local-integration07",
+    "passed": 39,
+    "failed": 0,
+    "skipped": 0,
+    "log_sha256": "c41da1ac9c5358d895aca772285d5ef05f9ed888ae263407d43d2767629bc8d6"
+  },
+  "fixture_library_checks": [
+    {
+      "member": "supplier-entries02/tmp23aa8yzq/query/summary.json",
+      "arm": "lotus-adapted-native",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp_eo4e7mq/query/summary.json",
+      "arm": "lotus-two-map-native-staged",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmpyfxdkrs5/query/summary.json",
+      "arm": "duckdb-adapted-native",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries03/tmpc15yfklb/query/summary.json",
+      "arm": "duckdb-method-semloom",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpo2phjxm3/query/summary.json",
+      "arm": "sema-native-direct",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpc_6b3j9v/query/summary.json",
+      "arm": "sema-native-transparent",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpkv7n23gr/query/summary.json",
+      "arm": "sema-method-semloom-request-service",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 2,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp5jny4iwd/query/summary.json",
+      "arm": "lotus-method-semloom",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp31vz_n3t/query/summary.json",
+      "arm": "lotus-two-map-semloom-staged",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpllhu88ee/query/summary.json",
+      "arm": "lotus-two-map-semloom-incremental",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 3,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp7zwl7h_i/query/summary.json",
+      "arm": "fixed-map-semloom",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": {
+        "consumer": {
+          "status": "CLOSED",
+          "uncertain_requests": 0,
+          "usage": {
+            "held_tasks": 0,
+            "input_bytes": 0,
+            "result_bytes": 0,
+            "active_requests": 0,
+            "active_work": 0
+          },
+          "error": null
+        },
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "errors": {}
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "status": "unavailable",
+        "reason": "no reference labels supplied; outputs and request semantics retained"
+      },
+      "source_snapshot": "source-integrated06"
+    }
+  ],
+  "all_integrated_supplier_runs": [
+    {
+      "member": "supplier-entries02/tmp23aa8yzq/query/summary.json",
+      "arm": "lotus-adapted-native",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp1bcctlje/query/summary.json",
+      "arm": "lotus-method-semloom",
+      "status": "failed",
+      "posts": 4,
+      "peak_http": null,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp_eo4e7mq/query/summary.json",
+      "arm": "lotus-two-map-native-staged",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmpazvnjmxi/query/summary.json",
+      "arm": "lotus-two-map-semloom-staged",
+      "status": "failed",
+      "posts": 4,
+      "peak_http": null,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmprjhiw43a/query/summary.json",
+      "arm": "lotus-two-map-semloom-incremental",
+      "status": "failed",
+      "posts": 4,
+      "peak_http": null,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmpwb3se14f/query/summary.json",
+      "arm": "sema-native-direct",
+      "status": "failed",
+      "posts": 0,
+      "peak_http": null,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp6wx9q85a/query/summary.json",
+      "arm": "sema-native-transparent",
+      "status": "failed",
+      "posts": 0,
+      "peak_http": null,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp69m9ow3x/query/summary.json",
+      "arm": "sema-method-semloom-request-service",
+      "status": "failed",
+      "posts": 0,
+      "peak_http": null,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": null,
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmpyfxdkrs5/query/summary.json",
+      "arm": "duckdb-adapted-native",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries02/tmp4lwtjdyx/query/summary.json",
+      "arm": "duckdb-method-semloom",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated04"
+    },
+    {
+      "member": "supplier-entries03/tmpo2phjxm3/query/summary.json",
+      "arm": "sema-native-direct",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpc_6b3j9v/query/summary.json",
+      "arm": "sema-native-transparent",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpkv7n23gr/query/summary.json",
+      "arm": "sema-method-semloom-request-service",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 2,
+      "core_cleanup": null,
+      "request_e2e_count": null,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp5jny4iwd/query/summary.json",
+      "arm": "lotus-method-semloom",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp31vz_n3t/query/summary.json",
+      "arm": "lotus-two-map-semloom-staged",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpllhu88ee/query/summary.json",
+      "arm": "lotus-two-map-semloom-incremental",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 3,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmpc15yfklb/query/summary.json",
+      "arm": "duckdb-method-semloom",
+      "status": "passed",
+      "posts": 4,
+      "peak_http": 4,
+      "core_cleanup": {
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        }
+      },
+      "request_e2e_count": 4,
+      "quality": {
+        "rows": 4,
+        "correct": 4,
+        "accuracy": 1.0
+      },
+      "source_snapshot": "source-integrated06"
+    },
+    {
+      "member": "supplier-entries03/tmp7zwl7h_i/query/summary.json",
+      "arm": "fixed-map-semloom",
+      "status": "passed",
+      "posts": 8,
+      "peak_http": 4,
+      "core_cleanup": {
+        "consumer": {
+          "status": "CLOSED",
+          "uncertain_requests": 0,
+          "usage": {
+            "held_tasks": 0,
+            "input_bytes": 0,
+            "result_bytes": 0,
+            "active_requests": 0,
+            "active_work": 0
+          },
+          "error": null
+        },
+        "final_core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "errors": {}
+      },
+      "request_e2e_count": 8,
+      "quality": {
+        "status": "unavailable",
+        "reason": "no reference labels supplied; outputs and request semantics retained"
+      },
+      "source_snapshot": "source-integrated06"
+    }
+  ],
+  "old_pg_regression": {
+    "run_id": "pg-regression04",
+    "version": 180003,
+    "passed": 3,
+    "failed": 0,
+    "real_model_posts": 0,
+    "source_snapshot": "source-dev03",
+    "extension_sha256": "739e7567b728d05b14cfe3796d8dcd2c58e8f66ed002715db45a035606f0e4b5",
+    "tests": "tests.experiments.test_pg_query_execution_integration"
+  },
+  "native_graph_checks": [
+    {
+      "arm": "fixed-map-native-daft",
+      "passed": 1,
+      "fixture_http_posts": 8,
+      "source_snapshot": "source-dev01",
+      "real_model_posts": 0
+    },
+    {
+      "arm": "fixed-map-native-ray",
+      "passed": 1,
+      "fixture_http_posts": 8,
+      "source_snapshot": "source-dev01",
+      "real_model_posts": 0
+    }
+  ],
+  "snapshots": [
+    {
+      "run_id": "source-dev01",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied": "4e3fe522",
+      "snapshot_sha256": "58f9bad17a2e0cf250740a0a3a1138e39040c4931460ff143b73aeb540af05c9",
+      "files": 886,
+      "uncommitted_owned_changes": true
+    },
+    {
+      "run_id": "source-dev03",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied_head": "2c8808e4941885fa8310e4c6f2505b0c3a805261",
+      "snapshot_sha256": "2651066da601ff25684fd4db7c779092577ff6a07c3112aa86b70c3fefd2305c",
+      "files": 889
+    },
+    {
+      "run_id": "source-integrated04",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied_head": "dc425a019d517b101117e600e80ab19e19944da0",
+      "snapshot_sha256": "75634dcd4165451af928e2ef912f076528386600c6df303f6687e04cd9052c7c",
+      "files": 920
+    },
+    {
+      "run_id": "source-integrated06",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied_head": "dc425a019d517b101117e600e80ab19e19944da0",
+      "snapshot_sha256": "57803f61bdd5b6c9d056a49e9918d6932d831cc85b11042e3008b6ea7d3c8b16",
+      "files": 920
+    },
+    {
+      "run_id": "source-integrated07",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied_head": "dc425a019d517b101117e600e80ab19e19944da0",
+      "snapshot_sha256": "569185fab33cc67c7aa74848ce6c2d5facc940cf6c7a14371e52c449805e2e7a",
+      "files": 920
+    },
+    {
+      "run_id": "source-integrated08",
+      "source_base": "cbfd952ba64e2fc0125a813041cd60c02533d4cf",
+      "dependency_applied_head": "62296fef662790073bbed44c70ef2d5662f50ab5",
+      "snapshot_sha256": "1bd9c30e373ad05976a996754cd2c73c08966e8bbe293647e2f381655a2d7cf0",
+      "files": 920
+    }
+  ],
+  "raw": {
+    "archive": "raw/fixture-observations.jsonl.gz",
+    "bytes": 137563,
+    "sha256": "db864efba2ad08f5889566a9e1eb54dce63a1df29f42174b95c1c12bcd3182a8",
+    "members": 213,
+    "format": "One JSON object per preserved text member with relative member name, byte count, SHA-256 and text; all synthetic fixture data",
+    "private_archive_sha256": "5fdad2f20a7f0cc49aaa0ad01448a3317cb472e691c8615725c2e0288ba03b92",
+    "private_archive_members": 297,
+    "redacted_network_addresses": 2
+  },
+  "model_rehearsal": {
+    "status": "passed",
+    "successful_queries": 39,
+    "actual_model_posts": 384,
+    "allocated_requests": 392,
+    "maximum_total_posts": 512,
+    "source_snapshot": "source-integrated07",
+    "analysis": "model-analysis.json",
+    "cleanup_passed": true,
+    "source_replayed_queries": 27,
+    "raw_body_observation_revision": {
+      "source_snapshot": "source-integrated08",
+      "source_commit": "32df89a3a6db0f521bebdfa15e3e6f2431f4fcd0",
+      "changes": "persist successful upstream body bytes/status before parsing; separate from caller readiness and receipt",
+      "fixture_posts": 12,
+      "model_posts": 0,
+      "prior_native_cpp_body_bytes": "unavailable for native C++ success bodies in model source07; full JSON values retained; original records not rewritten"
+    }
+  },
+  "code_sha256": {
+    "code/scripts/baselines/run_native_adapter_query.py": "707a86e83b28fb8f93611256af004eca49e80579839d4e86b736ff1938be2e4b",
+    "code/src/baselines/text/frameworks/prepared_map.py": "68c382301433a91ba055d6ca92520d1940e51d5b410c132b9edc6c91998a3bca",
+    "code/src/experiments/postgresql/native_adapter_http.py": "ad07003b82639bc0dde581778cbb62a0932a48991990028e86bc870df5b59663",
+    "code/src/experiments/postgresql/native_adapter_metrics.py": "d8afc30a33ee61212ed85ee9fd71cbd7e2ce5a3da5ecc8fabceed2933e04b5d0",
+    "code/src/experiments/postgresql/native_adapter_query.py": "7c5c88f7d68b0496054bf7dfba23b34f02923cc229ed595d94693e4f9ef2e2b1",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "42274fb670bd3bcd5dfb3f6488a427561a12a7f3cff10f002e2643c9b28ac962",
+    "code/tests/experiments/test_native_adapter_libraries.py": "97352d3d6e1e262c7b1f25ece2240e5248ab7e82b3647518c9509ce33510dbf9",
+    "code/tests/experiments/test_native_adapter_metrics.py": "d532c1d5ae4c0949047c60e971814b74d08fac666cbb01bfc4bb24260a3e2c68",
+    "code/tests/experiments/test_native_adapter_query.py": "2369b109fb8ee0f9e28f97c4af3046e315d8f47f38d63084661bbc230937309b",
+    "code/tests/experiments/test_supplier_adapter_libraries.py": "c48e0568867b1bf983906a9e802efc1883b144de039f8bc712d3da96eb2dfc41",
+    "code/tests/experiments/test_supplier_adapter_observation.py": "27ccb63b2949bb6167e681cffdd610a771500de0b4ee295c68bf51b4c99af9ad"
+  },
+  "fixture_replay": {
+    "hash_checked_members": 213,
+    "call_timing_replayed_cases": 8,
+    "passed": true
+  },
+  "own_observer_commit": "32df89a3a6db0f521bebdfa15e3e6f2431f4fcd0"
+}

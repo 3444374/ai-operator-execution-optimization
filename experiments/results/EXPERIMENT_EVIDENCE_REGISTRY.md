@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-09：[跨系统方法与执行适配工程核对](postgresql/native_adapter_integration_20261009/README.md)。
+起点`cbfd952b`，公共、LOTUS、DuckDB和Sema交付分别引入，原Daft／Ray图和旧SQL入口身份保持。
+本地39项与私有PG18.3的3项回归通过；完整响应、发生序号、实际POST及清理分别核对，供应商10条实际库入口与主执行入口均通过。
+模型预演13路径各3次，共39查询／384次POST，初次8＋后续376，预留392和原512上限保持；服务／进程退出通过。
+调用起止27条复算，其他12条不可观测；Sema后置供给和不可观测时刻、SDK／HTTP表示区别、失败与来源由主报告维护，不更新性能结论。
+
 2026-10-09：[统一比较的新增就绪入口](postgresql/query_ready_timing_20261008/README.md#unified-entry-preparation)。
 基于`a0bf5cf3`及独立源码摘要，PG-source direct、原生Ray Data与Daft Native完成本地提交／EOF及兼容回归；
 327项相关检查中315通过、12项缺Daft／Arrow依赖跳过。服务器连接在认证前关闭，新的实际库接入、PG与模型比较尚未运行；不更新既有性能排名。
