@@ -99,7 +99,7 @@ class NativeRayIntegrationTests(unittest.TestCase):
                 self.assertEqual(execution.engine.capacity.usage(), Usage())
                 self.assertTrue(execution.close())
                 execution = None
-                self.assertEqual(sorted(calls), sorted(request.task.payload for request in requests))
+                self.assertEqual(sorted(calls), sorted(request.payload for request in requests))
                 self.assertTrue(any(e['event']=='ray_block_put' for e in events))
                 self.assertTrue(any(e['event']=='ray_http_completed' for e in events))
                 self.assertTrue(any(e['event']=='ray_transport_closed' and e['confirmed'] for e in events))
@@ -122,7 +122,7 @@ class NativeRayIntegrationTests(unittest.TestCase):
                     self.assertEqual(execution.engine.capacity.usage(), Usage())
                     self.assertTrue(execution.close());execution = None
                 self.assertEqual(len(calls), 4)
-                self.assertEqual(sorted(calls[2:]), sorted(request.task.payload for request in errors))
+                self.assertEqual(sorted(calls[2:]), sorted(request.payload for request in errors))
             finally:
                 release.set()
                 if execution is not None: execution.close()
