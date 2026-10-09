@@ -104,6 +104,8 @@ class SemaSemLoomService(SemaRequestService):
         super().cancel()
         if self._session is not None and not self._ended:
             self._session.request_cancel()
+        if self._progress_changed is not None and self._loop is not None and not self._loop.is_closed():
+            self._loop.call_soon_threadsafe(self._progress_changed.set)
 
     def end_input(self):
         self._ended = True
@@ -118,6 +120,7 @@ class SemaSemLoomService(SemaRequestService):
                 entry = self._pending.get(delivery.key.sequence)
                 if entry is None or entry['future'].done():
                     self._session.release((delivery.lease_id,))
+                    self._progress_changed.set()
                     continue
                 entry['lease'] = delivery.lease_id
                 try:
@@ -136,7 +139,7 @@ class SemaSemLoomService(SemaRequestService):
                 for entry in self._pending.values():
                     if not entry['future'].done():
                         entry['future'].set_exception(RuntimeError('Sema execution stopped'))
-            self._progress_changed.set()
+                self._progress_changed.set()
             await asyncio.sleep(0 if progress.has_immediate_work else self._session.limits.poll_interval_s)
 
     async def _forward(self, body, headers, row, _client):
@@ -145,13 +148,15 @@ class SemaSemLoomService(SemaRequestService):
                 or value.get('stream', False) is not False or not isinstance(value.get('messages'), list)):
             raise ValueError('Sema service accepts complete non-streaming calls to its single model')
         deadline = time.monotonic() + self.limits.timeout_s
+        task = prepare_native_task(body, self._next_task, row_sequence=row['request_sequence'],
+                                   call_id='sema-http-' + str(row['request_sequence']),
+                                   max_result_bytes=self.limits.response_bytes + MAX_RESPONSE_HEADER_BYTES + 12)
         while True:
             if self._halted.is_set():
                 raise RuntimeError('Sema query has stopped before task acceptance')
             sequence = self._next_task
-            task = prepare_native_task(body, sequence, row_sequence=row['request_sequence'],
-                                       call_id='sema-http-' + str(row['request_sequence']),
-                                       max_result_bytes=self.limits.response_bytes + MAX_RESPONSE_HEADER_BYTES + 12)
+            if task.sequence != sequence:
+                task = replace(task, sequence=sequence)
             offered = self._session.offer((task,))
             if offered.status == 'REJECTED':
                 raise ValueError('Sema task rejected by the public session')
@@ -184,6 +189,7 @@ class SemaSemLoomService(SemaRequestService):
         if entry is not None:
             if entry['lease'] is not None:
                 self._session.release((entry['lease'],))
+                self._progress_changed.set()
             elif not entry['future'].done():
                 entry['future'].cancel()
 

@@ -13,9 +13,10 @@ from unittest import mock
 
 from src.execution_provider.adapters.full_response import FullResponseTransport
 from src.execution_provider.adapters.model_config import FixedModelConfig
-from src.execution_provider.adapters.native_tasks import build_native_execution
+from src.execution_provider.adapters.native_tasks import build_native_execution, NativeTaskSession
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.adapters.sema_semloom import SemaSemLoomService
+from src.execution_provider.adapters import sema_semloom
 from src.execution_provider.adapters.sema_service import SemaServiceLimits
 
 import test_sema_service as service_tests
@@ -75,6 +76,40 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
         self.assertIn('submitted', events)
         self.assertIn('terminal', events)
 
+    def test_waiting_http_callers_do_not_reprepare_while_model_capacity_is_held(self):
+        self.server.gate = threading.Event()
+        service = SemaSemLoomService(query_id='query-a',
+            model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
+            physical=self.physical, limits=self.limits,
+            trace_path=self.root / 'requests.jsonl', max_held_tasks=4, max_active_requests=4)
+        with mock.patch.object(sema_semloom, 'prepare_native_task',
+                               wraps=sema_semloom.prepare_native_task) as prepare, \
+                mock.patch.object(NativeTaskSession, 'offer', autospec=True,
+                                  side_effect=NativeTaskSession.offer) as offer:
+            with service:
+                with ThreadPoolExecutor(max_workers=8) as callers:
+                    futures = [callers.submit(self.post, service.endpoint_url) for _ in range(8)]
+                    try:
+                        deadline = time.monotonic() + 1.5
+                        while (len(self.server.calls) != 4 or
+                               sum(row['body_read_ns'] is not None for row in service._rows) != 8):
+                            if time.monotonic() > deadline:
+                                self.fail('fixture did not hold four model calls with four HTTP callers waiting')
+                            time.sleep(0.005)
+                        before = prepare.call_count
+                        before_offers = offer.call_count
+                        time.sleep(0.1)
+                        self.assertEqual(prepare.call_count, before,
+                            'unchanged held capacity must not repeatedly prepare pending HTTP bodies')
+                        self.assertEqual(offer.call_count, before_offers,
+                            'unchanged held capacity must not repeatedly validate pending offers')
+                    finally:
+                        self.server.gate.set()
+                    self.assertEqual([f.result()[0] for f in futures], [200] * 8)
+                service.end_input()
+            self.assertEqual(prepare.call_count, 8, 'each complete HTTP body is prepared once')
+        self.assertEqual(service._execution.engine.capacity.records, {})
+
     def test_first_http_error_suppresses_other_accepted_and_unaccepted_requests(self):
         self.server.status = 503
         self.server.gate = threading.Event()
@@ -102,6 +137,74 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
                 self.server.gate.set()
                 self.assertIn(future.result()[0], (200, 502))
         self.assertEqual(len(self.server.calls), 1)
+        self.assertEqual(service._execution.engine.capacity.records, {})
+        self.assertEqual(service.cleanup_errors, [])
+
+    def test_cancellation_wakes_http_callers_waiting_for_held_storage(self):
+        self.server.gate = threading.Event()
+        service = SemaSemLoomService(query_id='query-a',
+            model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
+            physical=self.physical, limits=self.limits,
+            trace_path=self.root / 'requests.jsonl', max_held_tasks=4, max_active_requests=4)
+        with service:
+            with ThreadPoolExecutor(max_workers=8) as callers:
+                futures = [callers.submit(self.post, service.endpoint_url) for _ in range(8)]
+                deadline = time.monotonic() + 1.5
+                try:
+                    while len(self.server.calls) != 4 or service.summary['received_requests'] != 8:
+                        if time.monotonic() > deadline:
+                            self.fail('fixture did not reach held storage before cancellation')
+                        time.sleep(0.005)
+                    service.cancel()
+                finally:
+                    self.server.gate.set()
+                self.assertTrue(all(f.result(timeout=2)[0] in (200, 502) for f in futures))
+                self.assertEqual(self.post(service.endpoint_url)[0], 410)
+        self.assertEqual(len(self.server.calls), 4)
+        self.assertEqual(service._execution.engine.capacity.records, {})
+        self.assertEqual(service.cleanup_errors, [])
+
+    def test_late_results_wake_waiting_callers_after_their_consumers_leave(self):
+        self.server.gate = threading.Event()
+        service = SemaSemLoomService(query_id='query-a',
+            model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
+            physical=self.physical, limits=self.limits,
+            trace_path=self.root / 'requests.jsonl', max_held_tasks=4, max_active_requests=4)
+        rows = [{'request_sequence': i} for i in range(8)]
+
+        async def forward(row):
+            try:
+                return await service._forward(self.payload, {}, row, None)
+            finally:
+                service._release_response(row)
+
+        with service:
+            futures = [asyncio.run_coroutine_threadsafe(forward(row), service._loop) for row in rows]
+            try:
+                deadline = time.monotonic() + 1.5
+                while len(self.server.calls) != 4:
+                    if time.monotonic() > deadline:
+                        self.fail('fixture did not hold all four accepted requests')
+                    time.sleep(0.005)
+                accepted = [i for i, row in enumerate(rows) if 'core_task_sequence' in row]
+                self.assertEqual(len(accepted), 4)
+                for i in accepted:
+                    futures[i].cancel()
+                while service._pending:
+                    if time.monotonic() > deadline:
+                        self.fail('departed consumers kept local response futures')
+                    time.sleep(0.005)
+                # Only late-result disposal can restore capacity: none of these
+                # four consumers will write a response or release a delivered lease.
+                self.server.gate.set()
+                remaining = [f for i, f in enumerate(futures) if i not in accepted]
+                self.assertEqual([f.result(timeout=1).status for f in remaining], [200] * 4)
+                service.end_input()
+            finally:
+                self.server.gate.set()
+                for future in futures:
+                    future.cancel()
+        self.assertEqual(len(self.server.calls), 8)
         self.assertEqual(service._execution.engine.capacity.records, {})
         self.assertEqual(service.cleanup_errors, [])
 
