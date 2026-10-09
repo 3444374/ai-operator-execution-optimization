@@ -24,6 +24,48 @@ def raw_rows(count):
 
 
 class PersistentAdapterTests(unittest.TestCase):
+    def test_fixed_held_budget_survives_queries_with_independent_active_capacity(self):
+        with tempfile.TemporaryDirectory() as directory,fixture_server() as (url,requests):
+            root=Path(directory)
+            ledger=CellBudgetLedger.create(root/'budget.sqlite',AttemptBudget('held-fixture',32),deadline_utc=time.time()+30)
+            arm='fixed-map-semloom-local-diagnostic'
+            with PersistentAdapterGroup((arm,),plan=SemanticMapPlan('Return ok.','fixture',16),
+                    model=FixedModelConfig(url,'fixture',1000),ledger=ledger,root=root/'group',
+                    options=NativeGraphOptions(concurrency=16),max_held_tasks=128,
+                    sema_native_threads=4,query_timeout_s=3) as group:
+                engine=group.owners[arm].execution.engine
+                self.assertEqual(engine.capacity.limits.held_tasks,128)
+                self.assertEqual(engine.capacity.limits.active_requests,16)
+                self.assertEqual(engine.capacity.limits.input_bytes,128*1048576)
+                self.assertEqual(engine.capacity.limits.result_bytes,128*1048576)
+                for number in range(2):
+                    result=group.run(arm,unit_id='held-'+str(number),root=root/('query-'+str(number)),
+                        load_source=lambda:iter(raw_rows(16)),phase='qualification',allowed_outputs=('ok',))
+                    self.assertEqual(result['semloom_capacity'],dict(held_tasks=128,active_requests=16))
+                    self.assertFalse(engine.capacity.records)
+                    self.assertFalse(engine.jobs.jobs)
+            self.assertEqual(len(requests),32)
+
+    def test_sema_native_owner_receives_threads_independently_from_http_capacity(self):
+        from src.baselines.text.products import sema
+        native=mock.Mock(pid=12345)
+        prepared=mock.MagicMock()
+        prepared.__enter__.return_value=native
+        with tempfile.TemporaryDirectory() as directory,fixture_server() as (url,requests),\
+                mock.patch.object(sema,'prepare_projection',return_value=prepared) as prepare:
+            root=Path(directory)
+            ledger=CellBudgetLedger.create(root/'budget.sqlite',AttemptBudget('sema-threads',1),deadline_utc=time.time()+30)
+            arm='sema-native-direct'
+            with PersistentAdapterGroup((arm,),plan=SemanticMapPlan('Return ok.','fixture',16),
+                    model=FixedModelConfig(url,'fixture',1000),ledger=ledger,root=root/'group',
+                    options=NativeGraphOptions(concurrency=16),max_held_tasks=128,
+                    sema_native_threads=4,query_timeout_s=3) as group:
+                self.assertIs(group.owners[arm].sema_native(raw_rows(1)),native)
+                self.assertEqual(prepare.call_args.kwargs['num_threads'],4)
+                self.assertEqual(group.max_held_tasks,128)
+                self.assertEqual(group.options.concurrency,16)
+            self.assertFalse(requests)
+
     def test_one_core_survives_three_queries_with_changed_row_counts_and_new_budgets(self):
         with tempfile.TemporaryDirectory() as directory, fixture_server() as (url, requests):
             root = Path(directory)

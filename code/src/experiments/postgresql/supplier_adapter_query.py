@@ -21,7 +21,7 @@ from src.scheduling.core.session_contract import Usage, SessionTimeouts
 from src.observability.request_gateway import GatewayRoute, ObservationGateway
 from .cell_evidence import CellErrors
 from .native_adapter_metrics import summarize_calls, executor_phase_observations, sample_distribution
-from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows
+from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows,resolve_adapter_limits
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
 
@@ -151,7 +151,7 @@ def prepare_lotus_lm(plan, model, options, tokenizer_path):
 
 
 @contextmanager
-def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None):
+def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None):
     import lotus
     import pandas as pd
     from src.semantic_methods.lotus.batch import LotusBatchExecutor,lotus_executor
@@ -176,7 +176,8 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
         method=LotusTwoMapMethod(lm,stages,model_config=configured)
         observed=_LotusMethodObservation(method,observations)
         limits=MethodLimits(65536,262144,524288,2)
-        capacity=MethodCapacity(options.concurrency,options.concurrency*row_reservation(limits))
+        held_tasks,_=resolve_adapter_limits(options,max_held_tasks)
+        capacity=MethodCapacity(held_tasks,held_tasks*row_reservation(limits))
         def execute():
             source=(json.dumps(dict(row_id=v['row_id'],text=v['text']),ensure_ascii=False).encode() for v in values)
             iterator=iter_two_map_rows(execution,observed,source,query_id=unit_id,operator_id='lotus-map',
@@ -316,7 +317,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                        physical=None,ray_temp_root=None,ray_address=None,query_timeout_s=120,
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
-                       preparation_started_ns=None, owner=None):
+                       preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
     use_core='semloom' in arm
@@ -331,6 +332,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
         raise ValueError('supplier SemLoom arm requires declared Daft batches fitting a complete legal task')
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
+    held_tasks,native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
     invoked=time.monotonic_ns()
     started=invoked if preparation_started_ns is None else preparation_started_ns
     if type(started) is not int or not 0 < started <= invoked:
@@ -341,6 +343,8 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
     predictions={};summary=dict(schema='semloom.supplier_adapter_query.v1',status='failed',arm=arm,
         unit_id=unit_id,performance_qualified=False,query_preparation_started_ns=started,
         source_identity='finite external raw input; no PG multi-Map',options=asdict(options),
+        semloom_capacity=dict(held_tasks=held_tasks,active_requests=options.concurrency) if use_core else None,
+        sema_native_threads=native_threads if arm.startswith('sema-') else None,
         request_budget_owner='common proxy before upstream POST',stages={})
     values=[];maximum=0
 
@@ -406,7 +410,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             elif use_core and not arm.startswith('sema-'):
                 token=routed.bearer_token or ('EMPTY' if arm.startswith('duckdb-') else 'local-fixture')
                 execution=build_native_execution(replace(routed,bearer_token=token),
-                    physical=physical,max_tasks=options.concurrency,max_active_requests=options.concurrency,
+                    physical=physical,max_tasks=held_tasks,max_active_requests=options.concurrency,
                     observer=core_record,timeouts=SessionTimeouts(backend_s=max(45,query_timeout_s)))
                 def close_execution():
                     nonlocal execution
@@ -418,7 +422,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             if arm.startswith('lotus-'):
                 execute,identity=stack.enter_context(_lotus_rows(stack,arm,values,plan,routed,execution,
                     observations,options,unit_id,stages,stop,tokenizer_path,
-                    lm=owner.lotus_lm() if owner is not None else None))
+                    lm=owner.lotus_lm() if owner is not None else None,max_held_tasks=held_tasks))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
@@ -438,14 +442,14 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                         limits=limits,trace_path=root/'sema-service.jsonl'))
                 elif use_core:
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
-                        limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=options.concurrency,
+                        limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=held_tasks,
                         max_active_requests=options.concurrency))
                 if owner is not None:
                     owner.service=service
                 converted=[dict(source_example_id=v['row_id'],input_text=v['text'],source_position=i) for i,v in enumerate(values)]
                 new_private_directory(root/'native')
                 prepared_native=stack.enter_context(prepare_sema_projection(converted,plan,routed,binary=sema_binary,
-                    root=root/'native',num_threads=options.concurrency,service=service,
+                    root=root/'native',num_threads=native_threads,service=service,
                     native=owner.sema_native(converted) if owner is not None else None))
                 execute=prepared_native.execute
                 summary['identity']=dict(supplier='Sema author binary',integration='request service',

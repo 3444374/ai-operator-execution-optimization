@@ -49,6 +49,16 @@ ARMS = ('fixed-map-native-daft', 'fixed-map-native-ray', 'fixed-map-semloom',
 _PROCESS_CLOCK = 'process-clock-'+uuid.uuid4().hex
 
 
+def resolve_adapter_limits(options, max_held_tasks=None, sema_native_threads=None):
+    held = options.concurrency if max_held_tasks is None else max_held_tasks
+    threads = options.concurrency if sema_native_threads is None else sema_native_threads
+    if any(type(value) is not int or not 1 <= value <= 256 for value in (held, threads)):
+        raise ValueError('adapter held tasks and Sema threads must be from 1 to 256')
+    if held < options.concurrency:
+        raise ValueError('held tasks must cover the active request capacity')
+    return held, threads
+
+
 def call_clock_domain():
     return _clock_domain() or _PROCESS_CLOCK
 
@@ -210,7 +220,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                            ray_temp_root=None, ray_address=None, query_timeout_s=120,
                            max_rows=4096, max_source_bytes=64*1024*1024,
                            reference_outputs=None, allowed_outputs=None,
-                           preparation_started_ns=None, owner=None):
+                           preparation_started_ns=None, owner=None, max_held_tasks=None):
     """Keep method preparation timed, but outside every native execution graph."""
     if arm not in ARMS or (arm == 'fixed-map-semloom' and physical is None):
         raise ValueError('the selected Map arm requires its declared executor')
@@ -224,6 +234,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
         raise ValueError('external source row allowance must be bounded')
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
+    held_tasks, _ = resolve_adapter_limits(options, max_held_tasks)
     invoked = time.monotonic_ns()
     started = invoked if preparation_started_ns is None else preparation_started_ns
     if type(started) is not int or not 0 < started <= invoked:
@@ -235,6 +246,8 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
         source_identity='external finite raw-input producer; no SQL executor replacement',
         method='fixed SemanticMapPlan single-model complete Map',
         native_baseline_modified=False,performance_qualified=False,options=asdict(options),
+        semloom_capacity=(dict(held_tasks=held_tasks,active_requests=options.concurrency)
+                          if arm.startswith('fixed-map-semloom') else None),
         query_preparation_started_ns=started,request_budget_owner='common proxy before upstream POST',
         query_entry='external-input executor API', model_role='main', stages={})
     calls = ()
@@ -331,9 +344,9 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                 execution=owner.execution
             elif arm.startswith('fixed-map-semloom'):
                 execution=build_native_execution(routed,physical=physical,observer=core_record,
-                    max_tasks=options.concurrency,max_active_requests=options.concurrency,
-                    input_bytes=options.concurrency*1048576,
-                    result_bytes=options.concurrency*MAX_MODEL_RESPONSE_BYTES)
+                    max_tasks=held_tasks,max_active_requests=options.concurrency,
+                    input_bytes=held_tasks*1048576,
+                    result_bytes=held_tasks*MAX_MODEL_RESPONSE_BYTES)
                 def close_execution():
                     nonlocal execution
                     closed=errors.attempt('backend_close',lambda:execution.close(execution.drain_timeout_s))
@@ -452,6 +465,8 @@ def main(argv=None):
     parser.add_argument('--budget-id',required=True)
     parser.add_argument('--max-attempts',type=int,required=True)
     parser.add_argument('--options',type=Path)
+    parser.add_argument('--max-held-tasks',type=int)
+    parser.add_argument('--sema-native-threads',type=int)
     parser.add_argument('--references',type=Path)
     parser.add_argument('--allowed-output',action='append')
     parser.add_argument('--stages',type=Path)
@@ -470,18 +485,20 @@ def main(argv=None):
             for line in stream:
                 yield json.loads(line)
     options=NativeGraphOptions(**json.loads(args.options.read_text())) if args.options else NativeGraphOptions()
+    resolve_adapter_limits(options,args.max_held_tasks,args.sema_native_threads)
     physical=RayMapConfig.load(args.ray_physical) if args.ray_physical else None
     common=dict(load_source=load_source,
         plan=SemanticMapPlan(**json.loads(args.plan.read_text())),model=load_fixed_model_config(args.model),
         ledger=CellBudgetLedger(args.budget,AttemptBudget(args.budget_id,args.max_attempts)),
         unit_id=args.unit_id,root=args.output,options=options,physical=physical,
+        max_held_tasks=args.max_held_tasks,
         ray_temp_root=args.ray_temp_root,ray_address=args.ray_address,query_timeout_s=args.query_timeout_s,
         reference_outputs=json.loads(args.references.read_text()) if args.references else None,
         allowed_outputs=tuple(args.allowed_output) if args.allowed_output else None)
     if args.arm in SUPPLIER_ARMS:
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
-                           preparation_started_ns=started)
+                           preparation_started_ns=started,sema_native_threads=args.sema_native_threads)
     else:
         run_prepared_map_query(args.arm,**common,preparation_started_ns=started)
     return 0

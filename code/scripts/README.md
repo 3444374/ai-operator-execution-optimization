@@ -44,6 +44,9 @@ PYTHONPATH=code python code/scripts/baselines/run_native_adapter_query.py \
 ```
 
 两Map另传`--stages`，Sema传已核对的`--sema-binary`，DuckDB传已编译的`--duckdb-library`；LOTUS可传`--tokenizer`。
+单查询与常驻入口均可传`--max-held-tasks`和`--sema-native-threads`，分别控制SemLoom持有任务数与Sema作者线程数。
+活动请求数仍取`--options`中的`concurrency`；两项省略时各自沿用该值，旧命令行为保持。
+固定留存后扫描并发可使用`--max-held-tasks 128 --sema-native-threads 4`；持有量不得小于活动请求数，原生参照不采用SemLoom留存控制。
 SemLoom主路径要求Daft payload与真实Ray执行，完整合法任务必须装入所声明窗口；本地诊断另有独立名字。
 模型POST由共同观察代理逐次持久计数，worker身份标签只用于观察，不重复计费；失败与清理摘要保留。
 调用方管理模型服务、整体期限、CPU与完整运行清单。本入口不自动启动服务或下一查询。

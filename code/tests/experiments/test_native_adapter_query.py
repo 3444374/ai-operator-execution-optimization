@@ -15,7 +15,8 @@ from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.postgresql.native_adapter_http import bind_native_http_events
-from src.experiments.postgresql.native_adapter_query import prepare_fixed_calls, run_prepared_map_query,load_bounded_rows
+from src.experiments.postgresql.native_adapter_query import prepare_fixed_calls, run_prepared_map_query,load_bounded_rows,resolve_adapter_limits
+from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.experiments.request_identity import RAY_IDENTITY_FIELD
 
 
@@ -72,14 +73,29 @@ class NativeAdapterQueryTests(unittest.TestCase):
         self.assertEqual(bound[0]['monotonic_ns'],10)
         with self.assertRaises(ValueError):bind_native_http_events(events[:1])
 
-    def run_local(self, directory, endpoint, *, rows=3):
+    def run_local(self, directory, endpoint, *, rows=3, **parameters):
         budget=AttemptBudget('adapter-fixture',rows)
         ledger=CellBudgetLedger.create(Path(directory)/'budget.sqlite',budget,deadline_utc=time.time()+10)
         return run_prepared_map_query('fixed-map-semloom-local-diagnostic',
             load_source=lambda:iter(dict(row_id=str(i),text='duplicate text') for i in range(rows)),
             plan=SemanticMapPlan('instruction','fixture',16),
             model=FixedModelConfig(endpoint,'fixture',2000),ledger=ledger,unit_id='query-fixture',
-            root=Path(directory)/'query',query_timeout_s=3,max_rows=rows)
+            root=Path(directory)/'query',query_timeout_s=3,max_rows=rows,**parameters)
+
+    def test_more_held_tasks_keep_the_active_capacity_and_complete_every_input(self):
+        with tempfile.TemporaryDirectory() as directory,fixture_server() as (endpoint,requests):
+            value=self.run_local(directory,endpoint,rows=32,max_held_tasks=128)
+            self.assertEqual(value['semloom_capacity'],dict(held_tasks=128,active_requests=4))
+            self.assertEqual((value['actual_posts'],value['rows'],len(requests)),(32,32,32))
+            self.assertFalse(any(value['core_cleanup']['final_core_usage'].values()))
+
+    def test_adapter_limits_keep_legacy_defaults_and_reject_unreachable_capacity(self):
+        options=NativeGraphOptions(concurrency=16)
+        self.assertEqual(resolve_adapter_limits(options),(16,16))
+        self.assertEqual(resolve_adapter_limits(options,128,4),(128,4))
+        for held,threads in ((8,4),(True,4),(128,False),(0,4),(257,4),(128,257)):
+            with self.subTest(held=held,threads=threads),self.assertRaises(ValueError):
+                resolve_adapter_limits(options,held,threads)
 
     def test_real_core_and_fixture_http_keep_counts_full_response_and_release(self):
         with tempfile.TemporaryDirectory() as directory,fixture_server() as (endpoint,requests):
