@@ -1,0 +1,96 @@
+# Sema 请求服务接入
+
+本切片是 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化的请求服务补充观察。
+Sema 仍拥有 SQL、数据供给、提示、联合提示、原生线程、限速、解析和结果行关联。
+这里接入的是其 `llm_url` 后的服务，尚未取得可替换 SQL 执行器的公开接口。
+全局实验入口、实现状态和证据台账由整合任务同步；真实模型验证仍为 `pending`。
+
+## 作者产物与采用决定
+
+来源为[固定作者提交](https://github.com/BITQiKangK/SemaSystem/tree/3f2c7182bdaa26c1e8925f486585da25337e687e)。
+公开树只有说明、附录和两个二进制包。`Sema.zip` 只有 `Sema` 与 macOS 附属元数据，
+没有可读执行器源码或说明中提到的实验脚本目录。因此不能核对未公开的 C++ 请求池实现。
+作者说明中的配置候选以实际二进制检查为准：
+
+| 项目 | 公开产物实测 |
+|---|---|
+| 版本 | `v0.0.1 8c2d3bd2` |
+| 归档 SHA-256，文件完整性摘要 | `e00fc4d1c4e9c99df2ebf647e957ee6943392d2fc74dd22d958d44a71f56632f` |
+| 二进制 SHA-256 | `15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3` |
+| 可配置服务 | `llm_url`、`llm_model`、`llm_api_key` |
+| 原生执行设置 | `threads`、`llm_rate_limit`、`llm_max_burst_seconds`、`semantic_batch_size` |
+| 重试 | 135 项 SQL 设置中未找到关闭重试的设置；已有真实二进制探针记录了重复发送 |
+| 文档差异 | `SET semantic_voting_rounds=1` 返回不认识该设置的错误，退出码 1 |
+
+假模型实测单行调用含原生 system/user 消息、`temperature=0.0`、
+`chat_template_kwargs.enable_thinking=false` 和 JSON schema 字符串要求，未发送 `max_tokens`。
+批量大小 4 将四行合为一份提示，要求固定长度字符串数组；8 行生成 2 次 HTTP POST。
+单行批量的同一 8 行生成 8 次调用。两个设置均由原生解析器恢复 8 行。
+服务把每份完整 payload 作为一个任务，保留格式要求和原始响应，不拆分或合并提示。
+
+## 三条路径与接口
+
+| 路径名称 | 接入方式 | 执行与供给 |
+|---|---|---|
+| `sema-native-direct` | `prepare_sema_projection(service=None)` | 原生二进制直接访问指定模型服务 |
+| `sema-native-transparent` | `SemaRequestService` 的查询专属 URL | aiohttp 原样转发，没有模型排队策略 |
+| `sema-method-semloom-request-service` | `SemaSemLoomService` 的查询专属 URL | 公共任务接口、现有核心、Daft 数据准备及 Ray HTTP worker |
+
+[sema_service.py](sema_service.py)复用[原有 CLI 生命周期](../../baselines/text/products/sema.py)，
+先完成 CSV 导入和数量核对，再提交同一原生 SELECT，读完普通 SQL 完成标记。
+薄包装只增加查询归属、一次提交、结束和取消，并把 HTTP 首错作为查询失败保留。
+原生返回的字符串值由作者解析器生成；服务不替换解析，也不修补非法标签。
+
+[sema_semloom.py](sema_semloom.py)使用公共 `prepare_native_task`、`NativeTaskSession` 和
+`decode_full_response`。组装复用现有 `ray_map_factory`，在其已有发送前回调中登记一次请求，
+不增加新的线程池或调度核心。`RayMapConfig.payload_backend` 必须为 `daft`，完整响应模式为 `full`。
+输入接纳、容量等待、组织、请求提交、完成及结果持有均归现有核心；HTTP 调用者保存未接纳的正文。
+方法继续由作者二进制执行，本切片没有外部方法继续执行程序，不复制 `MethodDriver`。
+
+服务所有核心操作在其 I/O 线程执行；取消使用公共跨线程信号。
+完成响应的租用保留到 HTTP 写入结束，在 `finally` 归还。消费者退出后继续推进核心回收远端结果。
+未确认的远端结果不被当成已取消或成功释放，清理错误单独记录。
+查询结束后拒绝新请求；同一正文的两个出现仍是两个调用，不按内容去重。
+
+用同一 `FixedModelConfig` 和算子输入创建三条路径。透明或 SemLoom 服务先启动，
+再向 `prepare_sema_projection` 传入 `service`；模型 URL 由薄包装送入原生 SQL 配置。
+原有 `prepare_projection`、`run_projection` 和实验默认入口保持原来的调用方式。
+
+## 错误、计数与观测范围
+
+服务收到完整 HTTP 错误后保存首个原始状态、正文和响应头，停止后续发送，取消自有作者进程。
+这些值同时保存在异常和仓库外 `.first-error.json`，正文使用 base64 保存原始字节。
+之后的重试尝试被拒绝，不再次提交模型请求。已经发送的并发请求仍须完成或保留未确认状态。
+一份请求只在选定路径的发送前位置登记一次，不在代理抵达和核心提交处重复登记。
+登记表示发送前预留，不能独立证明模型服务实际执行；服务端接收记录须另行核对。
+
+直达路径没有中间服务，不能看到首次模型 HTTP 错误，也不能替作者关闭重试。
+该路径保留原生行为和有限 SQL 超时；真实错误停止协议需要额外的模型服务侧证据，仍为 `pending`。
+新服务路径的首错协议不借用原生进程退出码来判断成功。
+
+| 记录 | 含义 |
+|---|---|
+| `native_task_ready_ns` | `unavailable`；作者请求池前的就绪时刻不可见 |
+| 原生 HTTP 到源行关联 | `unavailable`；作者正文没有可信行 ID，SQL 输出仍保留源行 ID |
+| `proxy_arrived_ns` / `body_read_ns` | 代理处理入口和完整正文读取完成 |
+| 透明路径的 `forward_started_ns` / `model_returned_ns` | 上游 POST 调用入口和完整响应读取完成 |
+| SemLoom 的同名区间 | Ray 远程调用入口至 worker 完成；独立 HTTP 写入时刻没有采集 |
+| SemLoom 远端时钟 | 只有与 driver 共享单调时钟时填写 worker 完成时刻，其他情况写不可观测 |
+| `response_written_ns` | 本地 HTTP 写入完成，不表示对端已经解析 |
+| 原生查询耗时 | 实际 SELECT 提交至原生结果与完成标记读完，完整耗时另含原生准备 |
+
+所有时刻使用单调时钟。HTTP 抵达时刻不能代替原生请求池前的等待。
+SemLoom 接入增加的容量等待发生在原生供给之后，不恢复作者池已经限制的任务供给。
+线程数、实际 HTTP 在途和 SemLoom 活动容量分别记录，不能当作相同数量。
+
+## 验证与剩余工作
+
+确定性协议和进程替身验证完整正文、重复出现、错误原值、取消、有限调用数、容量等待、
+乱序结果归属及结果归还。公共核心的本地 HTTP 替身明确为诊断验证，不能冒称 Daft/Ray。
+服务器使用作者二进制及实际 Ray 2.56.1、Daft 0.7.21、Arrow 24.0.0 连接本地假模型。
+三条 8 行路径均返回原生解析结果，原始请求正文的多重集一致；另检查首错和取消。
+实际采用决定、所有运行身份、失败、源码摘要、检查结果与仓库外证据位置写入 `sema.json` 交接。
+这些是工程可行性依据，真实模型请求为 0，不支持质量或性能结论。
+
+首版生产包装固定单模型、非流式文本 Map；联合提示仍原样交给服务。
+真实级联、多模型、Join、并行阶段展开、原生执行器替换、原生池前时刻与真实模型资格均为 `pending`。
