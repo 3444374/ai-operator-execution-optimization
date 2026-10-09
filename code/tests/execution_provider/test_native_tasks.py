@@ -154,6 +154,53 @@ class NativeTaskTests(unittest.TestCase):
 
 
 class NativeServiceCloseTests(unittest.TestCase):
+    def test_empty_release_keeps_backend_wait_generation_in_real_io_thread(self):
+        release, started = threading.Event(), threading.Event()
+        async def execute(request, endpoint):
+            started.set()
+            while not release.is_set(): await asyncio.sleep(0.002)
+            return encode_full_response(FullModelResponse(200, (), b'late'))
+        execution = build_native_execution(FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                                          physical=None, execute=execute, max_tasks=4)
+        flow = NativeTaskSession(execution, 'query', 'map')
+        try:
+            self.assertEqual(flow.offer(tuple(task(i) for i in range(4))).accepted_prefix_count, 4)
+            progress = flow.advance(4)
+            self.assertTrue(started.wait(1))
+            self.assertEqual(progress.deliveries, ())
+            self.assertFalse(progress.has_immediate_work)
+            self.assertEqual(progress.blocked_reason, 'WAIT_BACKEND')
+            # Same feedback pattern as the LOTUS batch: release every returned tuple,
+            # including no deliveries, then wait using this progress generation.
+            flow.release(tuple(d.lease_id for d in progress.deliveries))
+            self.assertEqual(execution.engine.wake.generation, progress.generation)
+            before = time.monotonic()
+            flow.wait(progress)
+            self.assertGreaterEqual(time.monotonic() - before, 0.005)
+            self.assertEqual(execution.engine.capacity.usage().active_requests, 4)
+            release.set()
+            completed = []
+            deadline = time.monotonic() + 2
+            while len(completed) != 4 and time.monotonic() < deadline:
+                progress = flow.advance(4)
+                completed.extend(progress.deliveries)
+                flow.release(tuple(d.lease_id for d in progress.deliveries))
+                flow.wait(progress)
+            self.assertEqual(sorted(d.key.sequence for d in completed), [0, 1, 2, 3])
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+            flow.end_input()
+            self.assertEqual(flow.advance(1).state, State.FINISHED)
+            flow.close(clean=True)
+            self.assertTrue(execution.close())
+        finally:
+            release.set()
+            flow.close()
+            deadline = time.monotonic() + 2
+            while execution.engine.capacity.usage().held_tasks and time.monotonic() < deadline:
+                execution.engine.advance()
+                execution.engine.wake.wait(execution.engine.wake.generation, 0.005)
+            execution.engine.backend.close()
+
     def test_service_close_waits_for_open_flow_and_late_remote_confirmation(self):
         release, started = threading.Event(), threading.Event()
         async def execute(request, endpoint):

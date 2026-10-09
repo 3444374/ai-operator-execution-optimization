@@ -31,6 +31,9 @@ the same full response. No new method scheduler is introduced.
   body, http_version)`. The native consumer interprets its body, including usage and logprobs.
   After consumption call `release((delivery.lease_id,))`; a result stays charged until release.
   The public wrapper retains no separate task or result history.
+  An empty list or tuple releases nothing and preserves the last progress generation, so
+  a no-delivery feedback step can still wait for backend completion. A nonempty valid release
+  continues to notify capacity waiters. Invalid batches and closed handles remain errors.
 - `end_input()` seals this task producer. Call it only when no continuation can produce more
   tasks; source EOF alone does not meet that condition for a multi-stage method.
 - `close(clean=False)` requires the consumer to discard its result bytes first. It requests
@@ -109,6 +112,27 @@ backpressure, cancellation/late completion, unknown outcomes, complete HTTP erro
 PG decoder/error mapping. Global status/registry updates and real-model qualification belong to
 the integration task. Real cascades, multiple models, cross-row joins and parallel stage expansion
 remain pending.
+
+## Empty-release feedback correction
+
+The LOTUS batch and generic `MethodDriver` both release the delivery tuple before waiting on
+its progress generation. Previously, an empty tuple published a wake despite changing no
+resource ownership; every backend wait then returned immediately. The correction is in
+`SchedulingSession.release` after batch/handle validation. Native and method consumers reuse
+it without a second producer guard. Nonempty release, cancellation, uncertain remote work,
+capacity, complete responses and PostgreSQL protocol values retain their existing behavior.
+
+The repair was reproduced with the original resident LOTUS complete request values and response
+bodies in a CPU-only localhost fixture, C4 and CPU affinity 32–39. The original SDK preparation,
+response reconstruction, usage/cost path, complete-response observation and per-POST SQLite
+reservation were retained. Across three 128-row fixture queries, local wall/owner-thread CPU
+medians changed from 27.803/26.837 seconds to 1.507/0.327 seconds. The original loop made roughly
+133000 advances with no blocking condition wait; the corrected loop made roughly 289 advances
+and 177 blocking waits. These are instrumented fixture results, not new model measurements.
+The raw fixture, source identities, all repetitions and failures are in the private common-task
+handoff. The old resident model evidence remains unchanged; real-model follow-up is pending
+while GPU access is unavailable. Focused regressions exercise both consumers, the real I/O
+thread, empty/invalid/closed releases and nonempty capacity notification.
 
 [Sema request service](sema_request_service.md) adds query-owned transparent and Daft/Ray service
 paths after the author's native request pool. It retains native supply and SQL parsing; it does
