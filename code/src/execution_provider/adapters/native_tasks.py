@@ -26,12 +26,21 @@ def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, cal
 def build_native_execution(config, *, physical: RayMapConfig | None, execute=None, **options):
     """Use Daft/Ray for the main path; physical=None explicitly selects a local diagnostic."""
     if physical is None:
-        return build_fixed_model_execution(config, execute=execute,
-                                          transport_factory=None if execute else FullResponseTransport,
-                                          **options)
-    if execute is not None or type(physical) is not RayMapConfig:
-        raise ValueError("native Ray execution requires RayMapConfig and its own transport")
-    return ray_map_factory(replace(physical, response_mode="full"))(config, **options)
+        execution = build_fixed_model_execution(config, execute=execute,
+            transport_factory=None if execute else FullResponseTransport, **options)
+    else:
+        if execute is not None or type(physical) is not RayMapConfig:
+            raise ValueError("native Ray execution requires RayMapConfig and its own transport")
+        execution = ray_map_factory(replace(physical, response_mode="full"))(config, **options)
+
+    def close(timeout=5.0):
+        # Backend teardown cannot claim service cleanup while a flow or unknown
+        # remote request still owns the Engine's storage/capacity.
+        if execution.engine.capacity.records or execution.engine.jobs.jobs:
+            return False
+        return execution.close(timeout)
+
+    return replace(execution, close=close)
 
 
 class NativeTaskSession:

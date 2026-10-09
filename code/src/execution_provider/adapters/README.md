@@ -37,6 +37,8 @@ the same full response. No new method scheduler is introduced.
   cleanup of its flow and Job, but does not close the shared backend. The service owner keeps
   advancing/reaping the Engine, then closes the execution when all resources have settled.
   Unknown remote work stays charged and is never retried or declared remotely cancelled.
+  `execution.close()` returns false while any registered Job or task is still retained;
+  completing a local failed HTTP await does not establish full service cleanup.
 
 ## Complete HTTP responses
 
