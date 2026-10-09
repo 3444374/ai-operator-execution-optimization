@@ -5,6 +5,17 @@ from src.data.materializers.payloads import PayloadBatchLimits, iter_payload_bat
 
 
 class PayloadBatchTests(unittest.TestCase):
+    def test_first_payload_probes_separate_library_graph_and_materialization(self):
+        events=[]
+        rows=((1,0,b'a'),(1,1,b'b'))
+        batches=list(iter_payload_batches(rows,PayloadBatchLimits(2,1024),batch_rows=1,observe=events.append))
+        self.assertEqual(sum(batch.num_rows for batch in batches),2)
+        self.assertEqual([event['stage'] for event in events],[
+            'arrow_import','daft_import','runner_configure','source_table','graph_create','first_materialization'])
+        for event in events:
+            self.assertEqual(event['status'],'completed')
+            self.assertEqual(event['elapsed_ns'],event['ended_ns']-event['started_ns'])
+            self.assertGreaterEqual(event['elapsed_ns'],0)
     def test_text_image_duplicate_values_and_tail_batch_keep_row_identity(self):
         rows = ((1, 0, '中文'.encode()), (1, 1, b'\x89PNG\x00\xff'),
                 (1, 2, b''), (1, 3, b'same'), (1, 4, b'same'))

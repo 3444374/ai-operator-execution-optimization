@@ -94,6 +94,7 @@ class ObservationGateway:
         request_timeout_s: float = 600.0,
         before_forward: Callable[[GatewayRoute, bytes], None] | None = None,
         after_forward: Callable[[GatewayRoute, bytes, bytes, int], None] | None = None,
+        query_identity: Callable[[], str | None] | None = None,
     ) -> None:
         if not routes:
             raise ValueError("observation gateway requires at least one route")
@@ -111,6 +112,8 @@ class ObservationGateway:
         self._request_timeout_s = request_timeout_s
         self._before_forward = before_forward
         self._after_forward = after_forward
+        self._query_identity = query_identity
+        self._trace_rows: list[dict[str, object]] = []
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._ready = threading.Event()
@@ -178,13 +181,28 @@ class ObservationGateway:
 
         return tuple(self.endpoint_url(job_id, endpoint) for endpoint in endpoint_ids)
 
+    def snapshot(self, timeout_s: float = 5.0) -> list[dict[str, Any]]:
+        """Copy settled observations on the gateway loop without stopping its client."""
+        if self._loop is None or not math.isfinite(timeout_s) or timeout_s <= 0:
+            raise ValueError("a running gateway and positive snapshot timeout are required")
+
+        async def copy_rows():
+            deadline = time.monotonic() + timeout_s
+            while any(row["request_terminal_monotonic_ns"] is None for row in self._trace_rows):
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("gateway requests remain unsettled")
+                await asyncio.sleep(.001)
+            return json.loads(json.dumps(self._trace_rows))
+
+        return asyncio.run_coroutine_threadsafe(copy_rows(), self._loop).result(timeout_s + 1)
+
     def _run(self) -> None:
         loop = asyncio.new_event_loop()
         self._loop = loop
         asyncio.set_event_loop(loop)
         runner: Any = None
         trace_stream = None
-        trace_rows: list[dict[str, object]] = []
+        trace_rows = self._trace_rows
         try:
             from aiohttp import ClientSession, ClientTimeout, TCPConnector, TraceConfig, web
 
@@ -276,6 +294,8 @@ class ObservationGateway:
                     **dict.fromkeys(_MONOTONIC_FIELDS),
                     **_response_usage(b""),
                 }
+                if self._query_identity is not None:
+                    row["query_id"] = self._query_identity()
                 # The evidence buffer also retains failures during body reading.
                 # No synchronous disk I/O is added to request handling.
                 trace_rows.append(row)

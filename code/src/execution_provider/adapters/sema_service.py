@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -91,6 +91,11 @@ class SemaRequestService:
         self._cancel_native = callback
         if self._halted.is_set():
             self._cancel_owner()
+
+    def unbind_native_cancel(self, callback):
+        if self._cancel_native != callback:
+            raise RuntimeError('Sema native process owner differs')
+        self._cancel_native = None
 
     def _cancel_owner(self):
         if self._cancel_native is not None:
@@ -371,12 +376,16 @@ class SemaProjection:
 
 
 @contextmanager
-def prepare_sema_projection(values, plan, model, *, binary, root, num_threads, service=None):
+def prepare_sema_projection(values, plan, model, *, binary, root, num_threads, service=None, native=None):
     """Reuse the pinned CLI lifecycle for direct or explicitly routed requests."""
     preparation_started_ns = time.monotonic_ns()
     routed = model if service is None else replace(model, endpoint_url=service.endpoint_url)
-    with prepare_projection(values, plan, routed, binary=binary, root=root,
-                            num_threads=num_threads) as native:
+    borrowed = native is not None
+    if borrowed:
+        native.replace_source(values, root, routed.endpoint_url)
+    context = nullcontext(native) if borrowed else prepare_projection(
+        values, plan, routed, binary=binary, root=root, num_threads=num_threads)
+    with context as native:
         if service is not None:
             service.bind_native_cancel(native.cancel)
         query = SemaProjection(native, service, preparation_started_ns)
@@ -385,3 +394,5 @@ def prepare_sema_projection(values, plan, model, *, binary, root, num_threads, s
         finally:
             if query.status != 'completed':
                 query.cancel()
+            elif borrowed and service is not None:
+                service.unbind_native_cancel(native.cancel)

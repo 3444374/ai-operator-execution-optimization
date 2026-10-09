@@ -153,6 +153,8 @@ class _PreparedProjection:
         return 'SELECT ' + ','.join(literal(value) for value in marker) + ';'
 
     def prepare(self, statement, row_count):
+        if self._active or self._closed or self._cancelled.is_set():
+            raise RuntimeError('native Sema cannot prepare input during execution or after stopping')
         marker = self._marker(row_count)
         # COUNT belongs to preparation and proves that COPY finished before entry.
         ready = ('SELECT ' + literal(marker[0]) + ',' + literal(marker[1]) +
@@ -164,6 +166,18 @@ class _PreparedProjection:
                 raise ValueError('native Sema preparation returned an unexpected readiness record')
             self._ready = True
             return
+
+    def replace_source(self, values, root, endpoint_url):
+        """Replace the raw relation and observer URL in this author SQL session."""
+        values = tuple(values)
+        source = Path(root) / 'sema-source.csv'
+        with open_private_text(source, newline='') as stream:
+            writer = csv.writer(stream)
+            writer.writerow(('row_id', 'review_text'))
+            writer.writerows((v['source_example_id'], v['input_text']) for v in values)
+        setup = ('SET llm_url=' + literal(endpoint_url) + ';\nDELETE FROM input;\nCOPY input FROM '
+                 + literal(str(source)) + " (HEADER, DELIMITER ',');")
+        self.prepare(setup, len(values))
 
     def execute(self):
         """Submit one native SELECT and stop only after its statement marker."""

@@ -171,7 +171,16 @@ def executor_phase_observations(events):
     """Report measured preparation spans without adding overlapping durations."""
     spans = defaultdict(lambda: defaultdict(list))
     failures = defaultdict(int)
+    payload_spans = defaultdict(list)
+    payload_failures = defaultdict(int)
     for event in events:
+        if event.get('event') == 'payload_stage':
+            value=event.get('elapsed_ns')
+            if type(value) is not int or value < 0:
+                raise ValueError('invalid measured payload stage duration')
+            payload_spans[event['stage']].append(value/1e9)
+            payload_failures[event['stage']] += event.get('status') != 'completed'
+            continue
         if event.get('event') != 'ray_work':
             continue
         stage = event['stage']
@@ -182,7 +191,9 @@ def executor_phase_observations(events):
                 if type(value) is not int or value < 0:
                     raise ValueError('invalid measured executor phase duration')
                 spans[stage][name.removesuffix('_ns')].append(value/1e9)
-    return dict(representation_and_transfer={stage:dict(
+    return dict(payload_generation={stage:dict(duration=sample_distribution(values,unit='seconds'),
+                    failed_spans=payload_failures[stage]) for stage,values in payload_spans.items()},
+                representation_and_transfer={stage:dict(
                     **{name:sample_distribution(values,unit='seconds') for name,values in durations.items()},
                     failed_spans=failures[stage]) for stage,durations in spans.items()},
                 organization=dict(status='unavailable',reason='selection events have no separate start/end probe'),

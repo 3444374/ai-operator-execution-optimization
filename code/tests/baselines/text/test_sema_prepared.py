@@ -129,6 +129,19 @@ class SemaPreparedTests(unittest.TestCase):
         self.assertFalse((self.root / 'sema-source.csv').exists())
         self.assertFalse((self.root / 'fake-events.jsonl').exists())
 
+    def test_same_author_session_replaces_the_raw_relation_before_a_later_select(self):
+        with self.prepared(self.binary()) as session:
+            first=list(session.execute())
+            root=self.root/'replacement'
+            root.mkdir()
+            session.replace_source(self.values[:1],root,self.model.endpoint_url)
+            second=list(session.execute())
+            self.assertEqual(first[:1],second)
+            self.assertEqual({e['pid'] for e in self.events() if 'pid' in e},{session.pid})
+            self.assertEqual([e['rows'] for e in self.events() if e['event']=='copied'],[2,1])
+            self.assertIsNone(session.returncode)
+        self.assert_stopped(session)
+
     def test_preparation_error_stops_before_any_projection(self):
         with self.assertRaisesRegex(RuntimeError, 'completion marker; exit=7'):
             with self.prepared(self.binary('prepare_error')):

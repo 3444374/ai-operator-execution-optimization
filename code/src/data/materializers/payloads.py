@@ -1,6 +1,22 @@
 """Finite, binary payload batches from an already selected database input window."""
 
 from dataclasses import dataclass
+from contextlib import contextmanager
+import time
+
+
+@contextmanager
+def _stage(observe, stage):
+    started = time.monotonic_ns()
+    status = 'failed'
+    try:
+        yield
+        status = 'completed'
+    finally:
+        if observe is not None:
+            ended = time.monotonic_ns()
+            observe(dict(stage=stage, started_ns=started, ended_ns=ended,
+                         elapsed_ns=ended-started, status=status))
 
 
 @dataclass(frozen=True)
@@ -13,7 +29,7 @@ class PayloadBatchLimits:
             raise ValueError("payload batch limits must be positive integers")
 
 
-def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, backend='daft'):
+def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, backend='daft', observe=None):
     """Stream batches of one finite window without collecting its output.
 
     The caller supplies a sealed tuple, not an unbounded producer. The extra
@@ -39,7 +55,8 @@ def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, b
     if size > limits.bytes:
         raise ValueError("payload window exceeds the declared byte count")
 
-    import pyarrow as pa
+    with _stage(observe, 'arrow_import'):
+        import pyarrow as pa
     schema = pa.schema([("session_id", pa.int64()), ("sequence", pa.int64()), ("payload", pa.large_binary())])
     def table_from(selected):
         return pa.Table.from_arrays([pa.array(column, type=field.type)
@@ -48,14 +65,25 @@ def iter_payload_batches(rows, limits: PayloadBatchLimits, *, batch_rows: int, b
         stream = (table_from(rows[start:start + batch_rows])
                   for start in range(0, len(rows), batch_rows))
     else:
-        import daft
-        from .text import configure_daft_runner
-        configure_daft_runner("native")
-        stream = daft.from_arrow(table_from(rows)).into_batches(batch_rows).to_arrow_iter(results_buffer_size=1)
+        with _stage(observe, 'daft_import'):
+            import daft
+            from .text import configure_daft_runner
+        with _stage(observe, 'runner_configure'):
+            configure_daft_runner("native")
+        with _stage(observe, 'source_table'):
+            source = table_from(rows)
+        with _stage(observe, 'graph_create'):
+            stream = daft.from_arrow(source).into_batches(batch_rows).to_arrow_iter(results_buffer_size=1)
     expected = iter(rows)
     name = 'Daft' if backend == 'daft' else 'Arrow'
     try:
-        for batch in stream:
+        with _stage(observe, 'first_materialization'):
+            first = next(stream, None)
+        def batches():
+            if first is not None:
+                yield first
+            yield from stream
+        for batch in batches():
             result = pa.Table.from_batches([batch]) if isinstance(batch, pa.RecordBatch) else batch
             if (result.schema != schema or not 1 <= result.num_rows <= batch_rows
                     or result.nbytes > limits.bytes):

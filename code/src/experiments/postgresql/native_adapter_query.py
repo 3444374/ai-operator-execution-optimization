@@ -210,7 +210,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                            ray_temp_root=None, ray_address=None, query_timeout_s=120,
                            max_rows=4096, max_source_bytes=64*1024*1024,
                            reference_outputs=None, allowed_outputs=None,
-                           preparation_started_ns=None):
+                           preparation_started_ns=None, owner=None):
     """Keep method preparation timed, but outside every native execution graph."""
     if arm not in ARMS or (arm == 'fixed-map-semloom' and physical is None):
         raise ValueError('the selected Map arm requires its declared executor')
@@ -288,16 +288,22 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
             writer=stack.enter_context(BufferedEvents(root/'method-events.jsonl'))
             raw=stack.enter_context(open_private_text(root/'complete-responses.jsonl'))
             protocols=stack.enter_context(open_private_text(root/'protocols.jsonl'))
-            physical,runtime=_runtime(stack,arm,options,physical,ray_temp_root,ray_address)
+            if owner is None:
+                physical,runtime=_runtime(stack,arm,options,physical,ray_temp_root,ray_address)
+            else:
+                physical,runtime=owner.physical,owner.group.runtime
             summary['runtime']=runtime
             summary['physical']=asdict(physical) if physical is not None else None
             summary['method_plan']=asdict(plan)
             summary['model_id']=model.model_id
-            gateway=stack.enter_context(ObservationGateway(
-                routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
-                trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
-                before_forward=before,after_forward=after))
-            routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
+            if owner is None:
+                gateway=stack.enter_context(ObservationGateway(
+                    routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
+                    trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
+                    before_forward=before,after_forward=after))
+                routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
+            else:
+                routed=owner.model
             domain=call_clock_domain()
 
             def record(event):
@@ -319,7 +325,11 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                     record(dict(event='worker_enter',monotonic_ns=event['worker_started_ns'],**fields))
                     record(dict(event='worker_response',monotonic_ns=event['worker_ended_ns'],**fields))
 
-            if arm.startswith('fixed-map-semloom'):
+            if owner is not None:
+                stack.enter_context(owner.query(unit_id,root,before,after,core_record))
+            if arm.startswith('fixed-map-semloom') and owner is not None:
+                execution=owner.execution
+            elif arm.startswith('fixed-map-semloom'):
                 execution=build_native_execution(routed,physical=physical,observer=core_record,
                     max_tasks=options.concurrency,max_active_requests=options.concurrency,
                     input_bytes=options.concurrency*1048576,
@@ -417,7 +427,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
         stop.set()
         errors.record('query',failure)
     finally:
-        if execution is not None:
+        if execution is not None and owner is None:
             closed=errors.attempt('backend_close',lambda:execution.close(execution.drain_timeout_s))
             if closed is False:
                 errors.record('backend_close_unconfirmed',RuntimeError('SemLoom backend close remains unconfirmed'))

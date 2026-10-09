@@ -27,7 +27,7 @@ from .semantic_system_query import record_native_response
 
 
 SUPPLIER_ARMS = (
-    'lotus-adapted-native', 'lotus-method-semloom',
+    'lotus-adapted-native', 'lotus-method-semloom', 'lotus-method-semloom-local-diagnostic',
     'lotus-two-map-native-staged', 'lotus-two-map-semloom-staged',
     'lotus-two-map-semloom-incremental',
     'sema-native-direct', 'sema-native-transparent', 'sema-method-semloom-request-service',
@@ -130,28 +130,35 @@ class _LotusMethodObservation:
         return step
 
 
-@contextmanager
-def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path):
+def prepare_lotus_lm(plan, model, options, tokenizer_path):
     os.environ['LITELLM_LOCAL_MODEL_COST_MAP']='True'
     import lotus
-    import pandas as pd
     from lotus.models import LM
+    from src.semantic_methods.lotus.sdk import validate_source
+    validate_source()
+    token=model.bearer_token or 'local-fixture'
+    tokenizer=None
+    if tokenizer_path is not None:
+        from tokenizers import Tokenizer
+        tokenizer=Tokenizer.from_file(str(tokenizer_path))
+    return LM('openai/'+model.model_id,api_base=model.endpoint_url.removesuffix('/chat/completions'),
+        api_key=token,max_batch_size=options.concurrency,temperature=0,top_p=1,max_tokens=plan.max_tokens,
+        num_retries=0,max_retries=0,timeout=model.timeout_ms/1000,tokenizer=tokenizer)
+
+
+@contextmanager
+def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None):
+    import lotus
+    import pandas as pd
     from src.semantic_methods.lotus.batch import LotusBatchExecutor,lotus_executor
     from src.semantic_methods.lotus.maps import LotusMapStage,LotusTwoMapMethod,staged_two_map
     from src.semantic_methods.lotus.driver import iter_two_map_rows
     from src.semantic_methods.continuation import MethodLimits
     from src.semantic_methods.budget import MethodCapacity,row_reservation
-    from src.semantic_methods.lotus.sdk import validate_source
-    validate_source()
     token=model.bearer_token or 'local-fixture'
     configured=replace(model,bearer_token=token)
-    tokenizer=None
-    if tokenizer_path is not None:
-        from tokenizers import Tokenizer
-        tokenizer=Tokenizer.from_file(str(tokenizer_path))
-    lm=LM('openai/'+model.model_id,api_base=model.endpoint_url.removesuffix('/chat/completions'),
-          api_key=token,max_batch_size=options.concurrency,temperature=0,top_p=1,max_tokens=plan.max_tokens,
-          num_retries=0,max_retries=0,timeout=model.timeout_ms/1000,tokenizer=tokenizer)
+    if lm is None:
+        lm=prepare_lotus_lm(plan,model,options,tokenizer_path)
     frame=pd.DataFrame({'row_id':[v['row_id'] for v in values],'text':[v['text'] for v in values]})
     context=stack.enter_context(lotus.settings.context(lm=lm,enable_cache=False))
     selected=None if execution is None else LotusBatchExecutor(execution,configured,
@@ -194,22 +201,20 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
         native_supply='DataFrame formatting and complete uncached batch; native pool retained only on native arm')
 
 
-def _drain_execution(execution):
+def _drain_execution(execution, *, close=True):
     until=time.monotonic()+execution.drain_timeout_s
     while execution.engine.capacity.usage()!=Usage() and time.monotonic()<until:
         execution.engine.advance();time.sleep(.01)
-    if execution.engine.capacity.usage()!=Usage() or not execution.close(execution.drain_timeout_s):
+    if (execution.engine.capacity.usage()!=Usage() or execution.engine.jobs.jobs
+            or (close and not execution.close(execution.drain_timeout_s))):
         raise RuntimeError('supplier execution retains unresolved model resources')
 
 
-@contextmanager
-def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library):
+def prepare_duckdb_connection(stack,plan,model,options,library):
     import ctypes
     import duckdb
     import _duckdb
-    from src.baselines.text.frameworks.semantic_map import application_prompt
     from src.baselines.text.products.duckdb_ai import DuckDBAiConfig,configure_ai_endpoint
-    from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
     if library is None:raise ValueError('DuckDB adapter requires its verified patched extension')
     if model.timeout_ms%1000:raise ValueError('DuckDB requires an integral request timeout in seconds')
     runtime=ctypes.CDLL(_duckdb.__file__,mode=ctypes.RTLD_GLOBAL)
@@ -230,7 +235,22 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         else:os.environ[environment_name]=previous
     stack.callback(restore_timeout)
     connection.execute('CREATE TABLE adapter_inputs(source_position BIGINT,row_id VARCHAR,prompt VARCHAR)')
+    return connection
+
+
+def replace_duckdb_inputs(connection,values,plan):
+    from src.baselines.text.frameworks.semantic_map import application_prompt
+    connection.execute('DELETE FROM adapter_inputs')
     connection.executemany('INSERT INTO adapter_inputs VALUES (?,?,?)',[(i,v['row_id'],application_prompt(plan.instruction,v['text'])) for i,v in enumerate(values)])
+
+
+@contextmanager
+def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library,*,connection=None):
+    from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
+    token=model.bearer_token or 'EMPTY'
+    if connection is None:
+        connection=prepare_duckdb_connection(stack,plan,model,options,library)
+        replace_duckdb_inputs(connection,values,plan)
     if execution is not None:
         native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token))
         supplied_rows=0
@@ -269,13 +289,14 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                        physical=None,ray_temp_root=None,ray_address=None,query_timeout_s=120,
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
-                       preparation_started_ns=None):
+                       preparation_started_ns=None, owner=None):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
     use_core='semloom' in arm
-    if use_core and physical is None:
+    local=arm=='lotus-method-semloom-local-diagnostic'
+    if use_core and physical is None and not local:
         raise ValueError('supplier SemLoom arm requires its Daft/Ray transport')
-    if not use_core and physical is not None:
+    if (not use_core or local) and physical is not None:
         raise ValueError('Ray Map physical options belong to SemLoom only')
     if physical is not None and (physical.window_bytes < MAX_FRAME_BYTES+24
             or physical.payload_backend != 'daft'
@@ -336,17 +357,26 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             upstream_raw=stack.enter_context(open_private_text(root/'upstream-response-bodies.jsonl'))
             protocols=stack.enter_context(open_private_text(root/'protocols.jsonl'))
             observations=MethodObservations(writer,raw,unit_id)
-            if use_core:
+            if owner is not None:
+                physical,runtime=owner.physical,owner.group.runtime
+                summary['runtime']=runtime
+            elif use_core and not local:
                 physical,runtime=_runtime(stack,'fixed-map-semloom',options,physical,ray_temp_root,ray_address)
                 summary['runtime']=runtime
-            gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
-                trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
-                before_forward=before,after_forward=after))
-            routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
-            if use_core and not arm.startswith('sema-'):
-                def core_record(event):
-                    observations.record(dict(event,event='backend_'+event['event']) if event.get('event') in (
-                        'http_started','http_finished') else event)
+            if owner is None:
+                gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
+                    trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
+                    before_forward=before,after_forward=after))
+                routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
+            else:
+                routed=owner.model
+            def core_record(event):
+                observations.record(dict(event,event='backend_'+event['event']) if event.get('event') in (
+                    'http_started','http_finished') else event)
+            if owner is not None:
+                stack.enter_context(owner.query(unit_id,root,before,after,core_record))
+                execution=owner.execution
+            elif use_core and not arm.startswith('sema-'):
                 token=routed.bearer_token or ('EMPTY' if arm.startswith('duckdb-') else 'local-fixture')
                 execution=build_native_execution(replace(routed,bearer_token=token),
                     physical=physical,max_tasks=options.concurrency,max_active_requests=options.concurrency,
@@ -360,11 +390,15 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 stack.callback(close_execution)
             if arm.startswith('lotus-'):
                 execute,identity=stack.enter_context(_lotus_rows(stack,arm,values,plan,routed,execution,
-                    observations,options,unit_id,stages,stop,tokenizer_path))
+                    observations,options,unit_id,stages,stop,tokenizer_path,
+                    lm=owner.lotus_lm() if owner is not None else None))
+                if local:
+                    identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
             elif arm.startswith('duckdb-'):
                 execute,identity=stack.enter_context(_duckdb_rows(stack,arm,values,plan,routed,execution,
-                    observations,options,duckdb_library))
+                    observations,options,duckdb_library,
+                    connection=owner.duckdb_connection(values) if owner is not None else None))
                 summary['identity']=identity
             else:
                 from src.execution_provider.adapters.sema_service import SemaRequestService,SemaServiceLimits,prepare_sema_projection
@@ -379,10 +413,13 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
                         limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=options.concurrency,
                         max_active_requests=options.concurrency))
+                if owner is not None:
+                    owner.service=service
                 converted=[dict(source_example_id=v['row_id'],input_text=v['text'],source_position=i) for i,v in enumerate(values)]
                 new_private_directory(root/'native')
                 prepared_native=stack.enter_context(prepare_sema_projection(converted,plan,routed,binary=sema_binary,
-                    root=root/'native',num_threads=options.concurrency,service=service))
+                    root=root/'native',num_threads=options.concurrency,service=service,
+                    native=owner.sema_native(converted) if owner is not None else None))
                 execute=prepared_native.execute
                 summary['identity']=dict(supplier='Sema author binary',integration='request service',
                     native_supply='author SQL, threads, request pool, prompt, parser and row association retained')
@@ -440,7 +477,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
     except BaseException as failure:
         stop.set();errors.record('query',failure)
     finally:
-        if execution is not None:errors.attempt('execution_drain',lambda:_drain_execution(execution))
+        if execution is not None and owner is None:errors.attempt('execution_drain',lambda:_drain_execution(execution))
         if reserved:errors.attempt('budget_close',lambda:ledger.close_shared_unit(unit_id))
         if errors.first is not None:summary['status']='failed'
         summary.update(errors=errors.details,attempted_posts=count,ended_ns=time.monotonic_ns())

@@ -75,10 +75,13 @@ class RayMapStartupTests(unittest.TestCase):
                     transport=RayMapTransport(FixedModelConfig('http://localhost/fixture','model',1000),4,
                         events.append,physical=RayMapConfig('fixture-cluster',1,2,1024,2048),ray_api=ray)
                     transport.abort_startup()
-                self.assertEqual([event['stage'] for event in events],
+                startup=[event for event in events if event['event']=='ray_startup']
+                self.assertEqual([event['stage'] for event in startup],
                                  ['library_import','driver_connect','actor_create','actor_ready'])
-                self.assertEqual([event['elapsed_seconds'] for event in events],[0,2,3,5])
-                self.assertTrue(all(event['status']=='completed' for event in events))
+                self.assertEqual([event['elapsed_seconds'] for event in startup],[0,2,3,5])
+                self.assertTrue(all(event['status']=='completed' for event in startup))
+                pool=next(event for event in events if event['event']=='ray_worker_pool')
+                self.assertFalse(pool['identity_available'])
                 self.assertEqual(ray.shutdown.call_count,0 if borrowed else 1)
                 self.assertEqual(len(ray.killed),1)
 
