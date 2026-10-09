@@ -1558,7 +1558,10 @@
           "resume_ns": 0.000298279,
           "elapsed_ns": 2.69462536
         },
-        "actor_ready_seconds": 3.837950598
+        "actor_ready_seconds": 3.837950598,
+        "submit_to_first_upstream_headers_seconds": 2.838829976,
+        "first_headers_to_last_upstream_body_seconds": 0.216054466,
+        "last_upstream_body_to_query_terminal_seconds": 0.003983712
       },
       {
         "arm": "lotus-method-semloom",
@@ -1571,7 +1574,10 @@
           "resume_ns": 0.015867561,
           "elapsed_ns": 28.756555453
         },
-        "actor_ready_seconds": 3.675482936
+        "actor_ready_seconds": 3.675482936,
+        "submit_to_first_upstream_headers_seconds": 29.714315432,
+        "first_headers_to_last_upstream_body_seconds": 1.534200021,
+        "last_upstream_body_to_query_terminal_seconds": 0.077357671
       },
       {
         "arm": "duckdb-method-semloom",
@@ -1584,7 +1590,10 @@
           "resume_ns": 0.000372438,
           "elapsed_ns": 2.42417064
         },
-        "actor_ready_seconds": 3.711998653
+        "actor_ready_seconds": 3.711998653,
+        "submit_to_first_upstream_headers_seconds": 2.576164841,
+        "first_headers_to_last_upstream_body_seconds": 0.224466303,
+        "last_upstream_body_to_query_terminal_seconds": 0.007347993
       },
       {
         "arm": "lotus-two-map-semloom-staged",
@@ -1597,7 +1606,10 @@
           "resume_ns": 0.028175711,
           "elapsed_ns": 31.483628738
         },
-        "actor_ready_seconds": 3.921071829
+        "actor_ready_seconds": 3.921071829,
+        "submit_to_first_upstream_headers_seconds": 32.004299372,
+        "first_headers_to_last_upstream_body_seconds": 5.321630913,
+        "last_upstream_body_to_query_terminal_seconds": 0.052370974
       },
       {
         "arm": "lotus-two-map-semloom-incremental",
@@ -1610,7 +1622,10 @@
           "resume_ns": 0.020729708,
           "elapsed_ns": 31.595375814
         },
-        "actor_ready_seconds": 3.823318899
+        "actor_ready_seconds": 3.823318899,
+        "submit_to_first_upstream_headers_seconds": 32.76253016,
+        "first_headers_to_last_upstream_body_seconds": 4.165917706,
+        "last_upstream_body_to_query_terminal_seconds": 0.065144357
       },
       {
         "arm": "fixed-map-semloom",
@@ -1623,7 +1638,10 @@
           "resume_ns": 0.000239274,
           "elapsed_ns": 2.781302637
         },
-        "actor_ready_seconds": 3.629627924
+        "actor_ready_seconds": 3.629627924,
+        "submit_to_first_upstream_headers_seconds": 2.926186208,
+        "first_headers_to_last_upstream_body_seconds": 0.229869763,
+        "last_upstream_body_to_query_terminal_seconds": 0.004818588
       },
       {
         "arm": "lotus-method-semloom",
@@ -1636,7 +1654,10 @@
           "resume_ns": 0.051931644,
           "elapsed_ns": 30.289978421
         },
-        "actor_ready_seconds": 3.765504792
+        "actor_ready_seconds": 3.765504792,
+        "submit_to_first_upstream_headers_seconds": 31.636607228,
+        "first_headers_to_last_upstream_body_seconds": 1.784529528,
+        "last_upstream_body_to_query_terminal_seconds": 0.120416286
       },
       {
         "arm": "duckdb-method-semloom",
@@ -1649,7 +1670,10 @@
           "resume_ns": 0.000378255,
           "elapsed_ns": 2.682524724
         },
-        "actor_ready_seconds": 3.668455963
+        "actor_ready_seconds": 3.668455963,
+        "submit_to_first_upstream_headers_seconds": 2.832078396,
+        "first_headers_to_last_upstream_body_seconds": 0.22311119,
+        "last_upstream_body_to_query_terminal_seconds": 0.005485523
       },
       {
         "arm": "lotus-two-map-semloom-staged",
@@ -1662,7 +1686,10 @@
           "resume_ns": 0.041327588,
           "elapsed_ns": 26.69486728
         },
-        "actor_ready_seconds": 3.857701904
+        "actor_ready_seconds": 3.857701904,
+        "submit_to_first_upstream_headers_seconds": 27.068507665,
+        "first_headers_to_last_upstream_body_seconds": 5.162750441,
+        "last_upstream_body_to_query_terminal_seconds": 0.025135604
       },
       {
         "arm": "lotus-two-map-semloom-incremental",
@@ -1675,7 +1702,10 @@
           "resume_ns": 0.010569851,
           "elapsed_ns": 31.268190915
         },
-        "actor_ready_seconds": 3.666787175
+        "actor_ready_seconds": 3.666787175,
+        "submit_to_first_upstream_headers_seconds": 31.776530761,
+        "first_headers_to_last_upstream_body_seconds": 5.145527339,
+        "last_upstream_body_to_query_terminal_seconds": 0.033551259
       },
       {
         "arm": "fixed-map-semloom",
@@ -1688,7 +1718,10 @@
           "resume_ns": 0.000200496,
           "elapsed_ns": 2.535890984
         },
-        "actor_ready_seconds": 3.708805894
+        "actor_ready_seconds": 3.708805894,
+        "submit_to_first_upstream_headers_seconds": 2.680802627,
+        "first_headers_to_last_upstream_body_seconds": 0.231780338,
+        "last_upstream_body_to_query_terminal_seconds": 0.006345596
       },
       {
         "arm": "lotus-method-semloom",
@@ -1701,7 +1734,10 @@
           "resume_ns": 0.015840679,
           "elapsed_ns": 28.966942461
         },
-        "actor_ready_seconds": 3.814263242
+        "actor_ready_seconds": 3.814263242,
+        "submit_to_first_upstream_headers_seconds": 30.395553906,
+        "first_headers_to_last_upstream_body_seconds": 1.699921263,
+        "last_upstream_body_to_query_terminal_seconds": 0.035676436
       },
       {
         "arm": "duckdb-method-semloom",
@@ -1714,7 +1750,10 @@
           "resume_ns": 0.000364472,
           "elapsed_ns": 2.792808861
         },
-        "actor_ready_seconds": 3.8537037
+        "actor_ready_seconds": 3.8537037,
+        "submit_to_first_upstream_headers_seconds": 2.950021683,
+        "first_headers_to_last_upstream_body_seconds": 0.225334884,
+        "last_upstream_body_to_query_terminal_seconds": 0.00741268
       },
       {
         "arm": "lotus-two-map-semloom-staged",
@@ -1727,7 +1766,10 @@
           "resume_ns": 0.010533103,
           "elapsed_ns": 29.313628608
         },
-        "actor_ready_seconds": 3.703352686
+        "actor_ready_seconds": 3.703352686,
+        "submit_to_first_upstream_headers_seconds": 29.794512227,
+        "first_headers_to_last_upstream_body_seconds": 5.064567613,
+        "last_upstream_body_to_query_terminal_seconds": 0.034313234
       },
       {
         "arm": "lotus-two-map-semloom-incremental",
@@ -1740,7 +1782,10 @@
           "resume_ns": 0.026017244,
           "elapsed_ns": 32.242547231
         },
-        "actor_ready_seconds": 3.883890369
+        "actor_ready_seconds": 3.883890369,
+        "submit_to_first_upstream_headers_seconds": 33.69489045,
+        "first_headers_to_last_upstream_body_seconds": 4.101660583,
+        "last_upstream_body_to_query_terminal_seconds": 0.023535198
       }
     ],
     "measured_location": "first payload_next action in the existing thread executor; includes Arrow/Daft imports, native runner setup, graph construction, first batch materialization and validation",
