@@ -133,7 +133,8 @@ class PersistentSupplierLibraries(unittest.TestCase):
     def test_changed_inputs_and_scale_keep_the_native_owner_and_reset_query_state(self):
         arm=os.environ['SEMLOOM_PERSISTENT_SUPPLIER']
         self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom',
-            'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service'))
+            'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service',
+            'lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom'))
         root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT'])
         root.mkdir(mode=0o700,parents=True,exist_ok=False)
         inputs=[tuple(dict(row_id='query-'+str(number)+'-row-'+str(i),
@@ -171,6 +172,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     options=NativeGraphOptions(concurrency=4,num_threads=8),
                     physical=RayMapConfig('unused',2,2,2**21+24,2**23),
                     ray_temp_root=Path(os.environ['SEMLOOM_PERSISTENT_RAY_ROOT']),
+                    tokenizer_path=Path(os.environ['SEMLOOM_TOKENIZER']) if os.environ.get('SEMLOOM_TOKENIZER') else None,
                     duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
                     sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY'])) as group:
                 for number,values in enumerate(inputs):
@@ -198,7 +200,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     if group.owners[arm].execution is not None:
                         self.assertFalse(group.owners[arm].execution.engine.capacity.records)
                         self.assertFalse(group.owners[arm].execution.engine.jobs.jobs)
-                for key in ('owner_id','execution_id','duckdb_connection_id','sema_pid','ray_session_id'):
+                for key in ('owner_id','execution_id','lm_id','duckdb_connection_id','sema_pid','ray_session_id'):
                     self.assertEqual(len({value[key] for value in identities}),1,(arm,key))
                 self.assertEqual(len(requests),144)
             if arm=='duckdb-method-semloom':
