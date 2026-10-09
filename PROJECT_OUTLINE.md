@@ -23,6 +23,8 @@
 完整诊断观察及按臂分块条件由[同题模型章节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存，默认与其他资格保持。
 补充[DuckDB与Sema常驻输入更新](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
 通过五条实际库路径和URL替换，17查询／722次fixture POST只核对工程接入；执行节奏修复与模型复核分别处理。
+随后[接入持续成本修复](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
+分别消除空释放造成的反复推进、DuckDB重复封装和Sema重复通知，保留同步保护与方法统计；CPU诊断只支持此次工程原因，真实模型与方法采用仍分别判断。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，

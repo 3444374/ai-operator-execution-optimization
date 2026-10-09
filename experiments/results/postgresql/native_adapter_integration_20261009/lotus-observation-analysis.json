@@ -1,0 +1,2870 @@
+{
+  "schema": "semloom.lotus_observation_diagnostic.v1",
+  "status": "completed_shared_wake_diagnostic",
+  "public_archive": {
+    "path": "raw/lotus-observation-diagnostic.jsonl.gz",
+    "members": 618,
+    "bytes": 5982442,
+    "sha256": "92d4f1ebd8543e26c952ad97dc48f88874d6993cd3b11ffc789af5a71c8ea1c2"
+  },
+  "private_archive": {
+    "bytes": 2564817,
+    "sha256": "12b39a8541936c21ea3ed0b6d78417e10324cc374e8f4442dc9fe863134eb240",
+    "remote_path": "<data_root>/experiment-artifacts/semantic-adapter-integration-20261009/lotus-observation-evidence-before01.tar.gz",
+    "members": 345
+  },
+  "source": "resident-observation-source01",
+  "base_commit": "3a5f7bc9d637dc11ef6beca4b2a1a69106841b38",
+  "valid_fixture_posts": 1632,
+  "valid_queries": 24,
+  "real_model_posts": 0,
+  "function_and_timeline_measurements": [
+    {
+      "status": "passed",
+      "arm": "lotus-adapted-native",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688709460741858,
+          "h0_ns": 2688709855310822,
+          "h1_ns": 2688710008770429,
+          "b1_ns": 2688710014040689,
+          "q1_ns": 2688710018478302,
+          "query_seconds": 0.557736444,
+          "first_http_delay_s": 0.394568964,
+          "http_coverage_s": 0.153459607,
+          "after_last_response_s": 0.00527026,
+          "after_batch_return_s": 0.004437613,
+          "over_query": {
+            "average_inflight": 0.4364596802284629,
+            "zero_inflight_s": 0.469081823,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.5862771628237,
+            "zero_inflight_s": 0.064804986,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688710038744695,
+          "h0_ns": 2688710094517268,
+          "h1_ns": 2688712337912445,
+          "b1_ns": 2688712347583166,
+          "q1_ns": 2688712376232974,
+          "query_seconds": 2.337488279,
+          "first_http_delay_s": 0.055772573,
+          "http_coverage_s": 2.243395177,
+          "after_last_response_s": 0.009670721,
+          "after_batch_return_s": 0.028649808,
+          "over_query": {
+            "average_inflight": 2.0996078718733115,
+            "zero_inflight_s": 0.680635346,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.187670206888387,
+            "zero_inflight_s": 0.586542244,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.031284768,
+          "thread_cpu_sum_s": 0.031235184,
+          "wall_median_s": 0.0001650385,
+          "thread_cpu_median_s": 0.0001648345,
+          "threads": [
+            [
+              156182,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.446916222,
+          "thread_cpu_sum_s": 0.118884052,
+          "wall_median_s": 0.0011109515,
+          "thread_cpu_median_s": 0.0007351295,
+          "threads": [
+            [
+              156182,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.023095675,
+          "thread_cpu_sum_s": 0.022461604,
+          "wall_median_s": 0.0001703145,
+          "thread_cpu_median_s": 0.0001704935,
+          "threads": [
+            [
+              156179,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005401703,
+          "thread_cpu_sum_s": 0.005403963,
+          "wall_median_s": 4.06365e-05,
+          "thread_cpu_median_s": 4.06915e-05,
+          "threads": [
+            [
+              156179,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001940581,
+          "thread_cpu_sum_s": 0.001941514,
+          "wall_median_s": 1.0628e-05,
+          "thread_cpu_median_s": 1.0652e-05,
+          "threads": [
+            [
+              156179,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.013661501,
+          "thread_cpu_sum_s": 0.013700641,
+          "wall_median_s": 7.26715e-05,
+          "thread_cpu_median_s": 7.2889e-05,
+          "threads": [
+            [
+              156182,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.440156958,
+          "thread_cpu_sum_s": 0.112280857,
+          "wall_median_s": 0.0010666755,
+          "thread_cpu_median_s": 0.000692199,
+          "threads": [
+            [
+              156182,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688790622154314,
+          "h0_ns": 2688824983879063,
+          "h1_ns": 2688827488875256,
+          "b1_ns": 2688827600906992,
+          "q1_ns": 2688827607745465,
+          "query_seconds": 36.985591151,
+          "first_http_delay_s": 34.361724749,
+          "http_coverage_s": 2.504996193,
+          "after_last_response_s": 0.112031736,
+          "after_batch_return_s": 0.006838473,
+          "over_query": {
+            "average_inflight": 0.07961708934103066,
+            "zero_inflight_s": 35.316620732,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.1755247865161127,
+            "zero_inflight_s": 0.836025774,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688827653855676,
+          "h0_ns": 2688828290223965,
+          "h1_ns": 2688874651722902,
+          "b1_ns": 2688874711717986,
+          "q1_ns": 2688874750354086,
+          "query_seconds": 47.09649841,
+          "first_http_delay_s": 0.636368289,
+          "http_coverage_s": 46.361498937,
+          "after_last_response_s": 0.059995084,
+          "after_batch_return_s": 0.0386361,
+          "over_query": {
+            "average_inflight": 1.0746774619077248,
+            "zero_inflight_s": 21.249332347,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.0917150337347385,
+            "zero_inflight_s": 20.514332874,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.050680486,
+          "thread_cpu_sum_s": 0.047305119,
+          "wall_median_s": 0.000399485,
+          "thread_cpu_median_s": 0.000395123,
+          "threads": [
+            [
+              159009,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 30.622118734,
+          "thread_cpu_sum_s": 0.425343239,
+          "wall_median_s": 0.239554204,
+          "thread_cpu_median_s": 0.003354232,
+          "threads": [
+            [
+              159009,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.039360602,
+          "thread_cpu_sum_s": 0.039380123,
+          "wall_median_s": 0.000272668,
+          "thread_cpu_median_s": 0.0002727495,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.028484437,
+          "thread_cpu_sum_s": 0.028235234,
+          "wall_median_s": 0.0002131055,
+          "thread_cpu_median_s": 0.0002132895,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.006872085,
+          "thread_cpu_sum_s": 0.006752162,
+          "wall_median_s": 4.9975e-05,
+          "thread_cpu_median_s": 5.0036e-05,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001766681,
+          "thread_cpu_sum_s": 0.001770218,
+          "wall_median_s": 1.2942e-05,
+          "thread_cpu_median_s": 1.2967e-05,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.00854053,
+          "thread_cpu_sum_s": 0.008548148,
+          "wall_median_s": 5.60995e-05,
+          "thread_cpu_median_s": 5.6192e-05,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.020243185,
+          "thread_cpu_sum_s": 0.020319662,
+          "wall_median_s": 0.0001667915,
+          "thread_cpu_median_s": 0.0001675325,
+          "threads": [
+            [
+              159009,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.010886711,
+          "thread_cpu_sum_s": 0.010892271,
+          "wall_median_s": 7.54315e-05,
+          "thread_cpu_median_s": 7.54785e-05,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.056980147,
+          "thread_cpu_sum_s": 0.057016341,
+          "wall_median_s": 0.0004003025,
+          "thread_cpu_median_s": 0.000400517,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 30.607437164,
+          "thread_cpu_sum_s": 0.412620636,
+          "wall_median_s": 0.239470654,
+          "thread_cpu_median_s": 0.003242715,
+          "threads": [
+            [
+              159009,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 202776,
+          "wall_sum_s": 16.556300525,
+          "thread_cpu_sum_s": 15.626609695,
+          "stale_waits": 0,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 202775,
+          "wall_sum_s": 1.121027639,
+          "thread_cpu_sum_s": 1.06227976,
+          "stale_waits": 202775,
+          "threads": [
+            [
+              156638,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688723029418585,
+          "h0_ns": 2688725950809077,
+          "h1_ns": 2688727755435277,
+          "b1_ns": 2688727766780964,
+          "q1_ns": 2688727775420322,
+          "query_seconds": 4.746001737,
+          "first_http_delay_s": 2.921390492,
+          "http_coverage_s": 1.8046262,
+          "after_last_response_s": 0.011345687,
+          "after_batch_return_s": 0.008639358,
+          "over_query": {
+            "average_inflight": 0.7280971814781281,
+            "zero_inflight_s": 3.111367088,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.914828947956092,
+            "zero_inflight_s": 0.169991551,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688727809700367,
+          "h0_ns": 2688728121818658,
+          "h1_ns": 2688763744973289,
+          "b1_ns": 2688763765109539,
+          "q1_ns": 2688763801136719,
+          "query_seconds": 35.991436352,
+          "first_http_delay_s": 0.312118291,
+          "http_coverage_s": 35.623154631,
+          "after_last_response_s": 0.02013625,
+          "after_batch_return_s": 0.03602718,
+          "over_query": {
+            "average_inflight": 1.881391124676168,
+            "zero_inflight_s": 5.019156019,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.9008414504108493,
+            "zero_inflight_s": 4.650874298,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.049871321,
+          "thread_cpu_sum_s": 0.047210923,
+          "wall_median_s": 0.000380785,
+          "thread_cpu_median_s": 0.000378666,
+          "threads": [
+            [
+              156354,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 28.673598409,
+          "thread_cpu_sum_s": 0.395508373,
+          "wall_median_s": 0.2217850565,
+          "thread_cpu_median_s": 0.0031027965,
+          "threads": [
+            [
+              156354,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.038588506,
+          "thread_cpu_sum_s": 0.038352209,
+          "wall_median_s": 0.000262935,
+          "thread_cpu_median_s": 0.0002621305,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.02887306,
+          "thread_cpu_sum_s": 0.025839448,
+          "wall_median_s": 0.0001749585,
+          "thread_cpu_median_s": 0.000175153,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.006360324,
+          "thread_cpu_sum_s": 0.006218583,
+          "wall_median_s": 4.1471e-05,
+          "thread_cpu_median_s": 4.1501e-05,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001756025,
+          "thread_cpu_sum_s": 0.001758628,
+          "wall_median_s": 1.2755e-05,
+          "thread_cpu_median_s": 1.2769e-05,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.006838321,
+          "thread_cpu_sum_s": 0.006844559,
+          "wall_median_s": 4.93395e-05,
+          "thread_cpu_median_s": 4.9375e-05,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.020491201,
+          "thread_cpu_sum_s": 0.02055306,
+          "wall_median_s": 0.000168665,
+          "thread_cpu_median_s": 0.0001690015,
+          "threads": [
+            [
+              156354,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.007812398,
+          "thread_cpu_sum_s": 0.00781981,
+          "wall_median_s": 5.74125e-05,
+          "thread_cpu_median_s": 5.74565e-05,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.044173694,
+          "thread_cpu_sum_s": 0.044202318,
+          "wall_median_s": 0.0003177955,
+          "thread_cpu_median_s": 0.000318015,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 28.66003572,
+          "thread_cpu_sum_s": 0.382485351,
+          "wall_median_s": 0.22165944,
+          "thread_cpu_median_s": 0.002991747,
+          "threads": [
+            [
+              156354,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 152405,
+          "wall_sum_s": 11.087044346,
+          "thread_cpu_sum_s": 10.706339575,
+          "stale_waits": 0,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 152404,
+          "wall_sum_s": 0.779094523,
+          "thread_cpu_sum_s": 0.737465833,
+          "stale_waits": 152404,
+          "threads": [
+            [
+              156351,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-adapted-native",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688533133802467,
+          "h0_ns": 2688533581791073,
+          "h1_ns": 2688533764455426,
+          "b1_ns": 2688533772105299,
+          "q1_ns": 2688533776796699,
+          "query_seconds": 0.642994232,
+          "first_http_delay_s": 0.447988606,
+          "http_coverage_s": 0.182664353,
+          "after_last_response_s": 0.007649873,
+          "after_batch_return_s": 0.0046914,
+          "over_query": {
+            "average_inflight": 0.4229095635184485,
+            "zero_inflight_s": 0.556372299,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.4886780345150321,
+            "zero_inflight_s": 0.09604242,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688533801610733,
+          "h0_ns": 2688533856734996,
+          "h1_ns": 2688536037245614,
+          "b1_ns": 2688536043876550,
+          "q1_ns": 2688536076841672,
+          "query_seconds": 2.275230939,
+          "first_http_delay_s": 0.055124263,
+          "http_coverage_s": 2.180510618,
+          "after_last_response_s": 0.006630936,
+          "after_batch_return_s": 0.032965122,
+          "over_query": {
+            "average_inflight": 2.0432406167275663,
+            "zero_inflight_s": 0.727498983,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.131997995618107,
+            "zero_inflight_s": 0.632778662,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.075594016,
+          "thread_cpu_sum_s": 0.03182293,
+          "wall_median_s": 0.000192367,
+          "thread_cpu_median_s": 0.000170343,
+          "threads": [
+            [
+              153164,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.504007171,
+          "thread_cpu_sum_s": 0.114865905,
+          "wall_median_s": 0.001151883,
+          "thread_cpu_median_s": 0.000724971,
+          "threads": [
+            [
+              153164,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.022828029,
+          "thread_cpu_sum_s": 0.0223387,
+          "wall_median_s": 0.0001704,
+          "thread_cpu_median_s": 0.000170509,
+          "threads": [
+            [
+              153161,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005428277,
+          "thread_cpu_sum_s": 0.005407154,
+          "wall_median_s": 4.07195e-05,
+          "thread_cpu_median_s": 4.0753e-05,
+          "threads": [
+            [
+              153161,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001842662,
+          "thread_cpu_sum_s": 0.001844787,
+          "wall_median_s": 1.33115e-05,
+          "thread_cpu_median_s": 1.3317e-05,
+          "threads": [
+            [
+              153161,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.045558617,
+          "thread_cpu_sum_s": 0.0139598,
+          "wall_median_s": 7.9088e-05,
+          "thread_cpu_median_s": 7.93115e-05,
+          "threads": [
+            [
+              153164,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.497703863,
+          "thread_cpu_sum_s": 0.108742816,
+          "wall_median_s": 0.001097891,
+          "thread_cpu_median_s": 0.000682128,
+          "threads": [
+            [
+              153164,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688610003309924,
+          "h0_ns": 2688643518049717,
+          "h1_ns": 2688646417853490,
+          "b1_ns": 2688646462203808,
+          "q1_ns": 2688646468606429,
+          "query_seconds": 36.465296505,
+          "first_http_delay_s": 33.514739793,
+          "http_coverage_s": 2.899803773,
+          "after_last_response_s": 0.044350318,
+          "after_batch_return_s": 0.006402621,
+          "over_query": {
+            "average_inflight": 0.09536443767907325,
+            "zero_inflight_s": 34.632380663,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.1992164878116391,
+            "zero_inflight_s": 1.066887931,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688646498054093,
+          "h0_ns": 2688647030312328,
+          "h1_ns": 2688695975580515,
+          "b1_ns": 2688696008495030,
+          "q1_ns": 2688696050888133,
+          "query_seconds": 49.55283404,
+          "first_http_delay_s": 0.532258235,
+          "http_coverage_s": 48.945268187,
+          "after_last_response_s": 0.032914515,
+          "after_batch_return_s": 0.042393103,
+          "over_query": {
+            "average_inflight": 1.1509480202275026,
+            "zero_inflight_s": 20.977956528,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.1652349317425552,
+            "zero_inflight_s": 20.370390675,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.382231769,
+          "thread_cpu_sum_s": 0.053727596,
+          "wall_median_s": 0.0004786745,
+          "thread_cpu_median_s": 0.000461352,
+          "threads": [
+            [
+              154445,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 32.811070228,
+          "thread_cpu_sum_s": 0.445274913,
+          "wall_median_s": 0.254346498,
+          "thread_cpu_median_s": 0.003488822,
+          "threads": [
+            [
+              154445,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.041487027,
+          "thread_cpu_sum_s": 0.041525568,
+          "wall_median_s": 0.000266977,
+          "thread_cpu_median_s": 0.000267153,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.023237436,
+          "thread_cpu_sum_s": 0.022759155,
+          "wall_median_s": 0.0001701575,
+          "thread_cpu_median_s": 0.0001703815,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005666734,
+          "thread_cpu_sum_s": 0.005484294,
+          "wall_median_s": 4.08275e-05,
+          "thread_cpu_median_s": 4.0885e-05,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001914922,
+          "thread_cpu_sum_s": 0.001918211,
+          "wall_median_s": 1.3462e-05,
+          "thread_cpu_median_s": 1.3487e-05,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.019588999,
+          "thread_cpu_sum_s": 0.008654395,
+          "wall_median_s": 5.4897e-05,
+          "thread_cpu_median_s": 5.49525e-05,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.188197724,
+          "thread_cpu_sum_s": 0.023217244,
+          "wall_median_s": 0.0001964795,
+          "thread_cpu_median_s": 0.0001918065,
+          "threads": [
+            [
+              154445,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.009950819,
+          "thread_cpu_sum_s": 0.009964545,
+          "wall_median_s": 6.9206e-05,
+          "thread_cpu_median_s": 6.93e-05,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.051389556,
+          "thread_cpu_sum_s": 0.051444112,
+          "wall_median_s": 0.000371733,
+          "thread_cpu_median_s": 0.000372264,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 32.795427774,
+          "thread_cpu_sum_s": 0.432300045,
+          "wall_median_s": 0.254237517,
+          "thread_cpu_median_s": 0.003387491,
+          "threads": [
+            [
+              154445,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 220423,
+          "wall_sum_s": 17.386854686,
+          "thread_cpu_sum_s": 16.451568572,
+          "stale_waits": 0,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 220422,
+          "wall_sum_s": 1.176693002,
+          "thread_cpu_sum_s": 1.120009442,
+          "stale_waits": 220422,
+          "threads": [
+            [
+              153642,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2688546967849543,
+          "h0_ns": 2688550012729111,
+          "h1_ns": 2688551726907355,
+          "b1_ns": 2688551735991609,
+          "q1_ns": 2688551741833263,
+          "query_seconds": 4.77398372,
+          "first_http_delay_s": 3.044879568,
+          "http_coverage_s": 1.714178244,
+          "after_last_response_s": 0.009084254,
+          "after_batch_return_s": 0.005841654,
+          "over_query": {
+            "average_inflight": 0.6588320692890842,
+            "zero_inflight_s": 3.29393276,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.83484627926476,
+            "zero_inflight_s": 0.234127284,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2688551767490139,
+          "h0_ns": 2688552114563535,
+          "h1_ns": 2688585099476746,
+          "b1_ns": 2688585102396642,
+          "q1_ns": 2688585133638079,
+          "query_seconds": 33.36614794,
+          "first_http_delay_s": 0.347073396,
+          "http_coverage_s": 32.984913211,
+          "after_last_response_s": 0.002919896,
+          "after_batch_return_s": 0.031241437,
+          "over_query": {
+            "average_inflight": 1.6917949732317827,
+            "zero_inflight_s": 7.222579199,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.711348488319659,
+            "zero_inflight_s": 6.84134447,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.331727184,
+          "thread_cpu_sum_s": 0.046911604,
+          "wall_median_s": 0.0004069265,
+          "thread_cpu_median_s": 0.0003736155,
+          "threads": [
+            [
+              153342,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 26.054431255,
+          "thread_cpu_sum_s": 0.384846301,
+          "wall_median_s": 0.2051600925,
+          "thread_cpu_median_s": 0.0030201955,
+          "threads": [
+            [
+              153342,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.039969375,
+          "thread_cpu_sum_s": 0.0400058,
+          "wall_median_s": 0.000270093,
+          "thread_cpu_median_s": 0.000270351,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.028627573,
+          "thread_cpu_sum_s": 0.027752108,
+          "wall_median_s": 0.000211101,
+          "thread_cpu_median_s": 0.0002113445,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.006770778,
+          "thread_cpu_sum_s": 0.006696517,
+          "wall_median_s": 5.04145e-05,
+          "thread_cpu_median_s": 5.0492e-05,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001473762,
+          "thread_cpu_sum_s": 0.001476928,
+          "wall_median_s": 1.0616e-05,
+          "thread_cpu_median_s": 1.06455e-05,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.016164292,
+          "thread_cpu_sum_s": 0.007530388,
+          "wall_median_s": 4.78925e-05,
+          "thread_cpu_median_s": 4.7953e-05,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.169723546,
+          "thread_cpu_sum_s": 0.020601263,
+          "wall_median_s": 0.000168989,
+          "thread_cpu_median_s": 0.0001588575,
+          "threads": [
+            [
+              153342,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.008216087,
+          "thread_cpu_sum_s": 0.008223499,
+          "wall_median_s": 6.1616e-05,
+          "thread_cpu_median_s": 6.1734e-05,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.046065685,
+          "thread_cpu_sum_s": 0.046113155,
+          "wall_median_s": 0.000329688,
+          "thread_cpu_median_s": 0.0003299505,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 26.04093495,
+          "thread_cpu_sum_s": 0.371833809,
+          "wall_median_s": 0.2050632915,
+          "thread_cpu_median_s": 0.0029098855,
+          "threads": [
+            [
+              153342,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 125767,
+          "wall_sum_s": 9.892057108,
+          "thread_cpu_sum_s": 9.520780996,
+          "stale_waits": 0,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 125766,
+          "wall_sum_s": 0.696200341,
+          "thread_cpu_sum_s": 0.659178471,
+          "stale_waits": 125766,
+          "threads": [
+            [
+              153339,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    }
+  ],
+  "limits": [
+    "One instrumented measurement per mode; CPU64-71 may compete with other fixture processes",
+    "Nested timings are not additive or removable JCT",
+    "Replayed original complete response bodies with20ms fixture delay are not model execution",
+    "diagnostic01 per-flow record cap failure retained separately",
+    "After diagnosis reused the same request/response values and CPU64-71 after user container restart; no global performance ranking",
+    "diagnostic03 interruption preserved with unavailable partial fixture count; no completed group summary"
+  ],
+  "source_changes": [
+    "Explicit complete batch return event; no SDK or statistics modification"
+  ],
+  "observation_modes": [
+    "original complete writes",
+    "bounded16MiB buffers for3 text streams; SQLite per-POST protection, parsing, usage and statistics retained"
+  ],
+  "after_source": "resident-observation-source02",
+  "after_source_commit": "f9906e0b",
+  "after_shared_fix": "5a12e76de1abc2dd53e4935a2cf461b9df111a28",
+  "after_private_archive": {
+    "bytes": 1628542,
+    "sha256": "d64208074cebc0fb0ae9f9ab7f5d2c0b6214e56b1def4a8fb047985b5a44d277",
+    "remote_path": "<data_root>/experiment-artifacts/semantic-adapter-integration-20261009/lotus-observation-evidence-after01.tar.gz",
+    "members": 273
+  },
+  "after_function_and_timeline_measurements": [
+    {
+      "status": "passed",
+      "arm": "lotus-adapted-native",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2690969883132962,
+          "h0_ns": 2690970262089250,
+          "h1_ns": 2690970426370350,
+          "b1_ns": 2690970438924497,
+          "q1_ns": 2690970443378945,
+          "query_seconds": 0.560245983,
+          "first_http_delay_s": 0.378956288,
+          "http_coverage_s": 0.1642811,
+          "after_last_response_s": 0.012554147,
+          "after_batch_return_s": 0.004454448,
+          "over_query": {
+            "average_inflight": 0.4426218117123028,
+            "zero_inflight_s": 0.482394134,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.5094681737582716,
+            "zero_inflight_s": 0.086429251,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2690970466940351,
+          "h0_ns": 2690970529562827,
+          "h1_ns": 2690972733119565,
+          "b1_ns": 2690972743413128,
+          "q1_ns": 2690972776484430,
+          "query_seconds": 2.309544079,
+          "first_http_delay_s": 0.062622476,
+          "http_coverage_s": 2.203556738,
+          "after_last_response_s": 0.010293563,
+          "after_batch_return_s": 0.033071302,
+          "over_query": {
+            "average_inflight": 1.986119844478621,
+            "zero_inflight_s": 0.646529757,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.081648839758625,
+            "zero_inflight_s": 0.540542416,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.031783261,
+          "thread_cpu_sum_s": 0.03171266,
+          "wall_median_s": 0.000178425,
+          "thread_cpu_median_s": 0.0001781655,
+          "threads": [
+            [
+              6737,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.742479996,
+          "thread_cpu_sum_s": 0.118565588,
+          "wall_median_s": 0.0012253145,
+          "thread_cpu_median_s": 0.0007976165,
+          "threads": [
+            [
+              6737,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.028475185,
+          "thread_cpu_sum_s": 0.02780095,
+          "wall_median_s": 0.000209721,
+          "thread_cpu_median_s": 0.000209834,
+          "threads": [
+            [
+              6734,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.006617217,
+          "thread_cpu_sum_s": 0.006620854,
+          "wall_median_s": 4.9659e-05,
+          "thread_cpu_median_s": 4.9674e-05,
+          "threads": [
+            [
+              6734,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001916684,
+          "thread_cpu_sum_s": 0.001918614,
+          "wall_median_s": 1.30915e-05,
+          "thread_cpu_median_s": 1.31135e-05,
+          "threads": [
+            [
+              6734,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.014001589,
+          "thread_cpu_sum_s": 0.014034631,
+          "wall_median_s": 7.67715e-05,
+          "thread_cpu_median_s": 7.6889e-05,
+          "threads": [
+            [
+              6737,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.735938701,
+          "thread_cpu_sum_s": 0.112203695,
+          "wall_median_s": 0.001182871,
+          "thread_cpu_median_s": 0.0007558715,
+          "threads": [
+            [
+              6737,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2691010840207226,
+          "h0_ns": 2691013212125858,
+          "h1_ns": 2691013315467748,
+          "b1_ns": 2691013320705927,
+          "q1_ns": 2691013326001926,
+          "query_seconds": 2.4857947,
+          "first_http_delay_s": 2.371918632,
+          "http_coverage_s": 0.10334189,
+          "after_last_response_s": 0.005238179,
+          "after_batch_return_s": 0.005295999,
+          "over_query": {
+            "average_inflight": 0.08212043657507195,
+            "zero_inflight_s": 2.420009042,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.9753320362149367,
+            "zero_inflight_s": 0.037556232,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2691013357135334,
+          "h0_ns": 2691013417058650,
+          "h1_ns": 2691015072893762,
+          "b1_ns": 2691015076969367,
+          "q1_ns": 2691015117423509,
+          "query_seconds": 1.760288175,
+          "first_http_delay_s": 0.059923316,
+          "http_coverage_s": 1.655835112,
+          "after_last_response_s": 0.004075605,
+          "after_batch_return_s": 0.040454142,
+          "over_query": {
+            "average_inflight": 1.8977286324155418,
+            "zero_inflight_s": 0.240654341,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.01744077462225,
+            "zero_inflight_s": 0.136201278,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.026915823,
+          "thread_cpu_sum_s": 0.026841388,
+          "wall_median_s": 0.0001936625,
+          "thread_cpu_median_s": 0.000193179,
+          "threads": [
+            [
+              7873,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.440638623,
+          "thread_cpu_sum_s": 0.127768028,
+          "wall_median_s": 0.0025983005,
+          "thread_cpu_median_s": 0.0009363825,
+          "threads": [
+            [
+              7873,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.036577284,
+          "thread_cpu_sum_s": 0.036592882,
+          "wall_median_s": 0.0002631065,
+          "thread_cpu_median_s": 0.00026329,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.028660846,
+          "thread_cpu_sum_s": 0.02777122,
+          "wall_median_s": 0.0002115355,
+          "thread_cpu_median_s": 0.0002116585,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.006791871,
+          "thread_cpu_sum_s": 0.00669793,
+          "wall_median_s": 5.03775e-05,
+          "thread_cpu_median_s": 5.0411e-05,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001764963,
+          "thread_cpu_sum_s": 0.001768434,
+          "wall_median_s": 1.28935e-05,
+          "thread_cpu_median_s": 1.2913e-05,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.006076103,
+          "thread_cpu_sum_s": 0.0060858,
+          "wall_median_s": 4.5028e-05,
+          "thread_cpu_median_s": 4.51255e-05,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.011713354,
+          "thread_cpu_sum_s": 0.011744728,
+          "wall_median_s": 7.9984e-05,
+          "thread_cpu_median_s": 8.01925e-05,
+          "threads": [
+            [
+              7873,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.008562154,
+          "thread_cpu_sum_s": 0.008570398,
+          "wall_median_s": 6.54435e-05,
+          "thread_cpu_median_s": 6.5488e-05,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.044365747,
+          "thread_cpu_sum_s": 0.044391284,
+          "wall_median_s": 0.000343477,
+          "thread_cpu_median_s": 0.0003436895,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.434469261,
+          "thread_cpu_sum_s": 0.121822675,
+          "wall_median_s": 0.002554966,
+          "thread_cpu_median_s": 0.0008913485,
+          "threads": [
+            [
+              7873,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 320,
+          "wall_sum_s": 0.107412056,
+          "thread_cpu_sum_s": 0.091444529,
+          "stale_waits": 0,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 319,
+          "wall_sum_s": 1.383470254,
+          "thread_cpu_sum_s": 0.008140718,
+          "stale_waits": 118,
+          "threads": [
+            [
+              7067,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "mode": "buffered",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2690983424037762,
+          "h0_ns": 2690983504588986,
+          "h1_ns": 2690983599711588,
+          "b1_ns": 2690983602253206,
+          "q1_ns": 2690983606446605,
+          "query_seconds": 0.182408843,
+          "first_http_delay_s": 0.080551224,
+          "http_coverage_s": 0.095122602,
+          "after_last_response_s": 0.002541618,
+          "after_batch_return_s": 0.004193399,
+          "over_query": {
+            "average_inflight": 1.563127808447313,
+            "zero_inflight_s": 0.094744136,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.9974825015825366,
+            "zero_inflight_s": 0.007457895,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2690983626157431,
+          "h0_ns": 2690983668724834,
+          "h1_ns": 2690985092214940,
+          "b1_ns": 2690985095015680,
+          "q1_ns": 2690985127718397,
+          "query_seconds": 1.501560966,
+          "first_http_delay_s": 0.042567403,
+          "http_coverage_s": 1.423490106,
+          "after_last_response_s": 0.00280074,
+          "after_batch_return_s": 0.032702717,
+          "over_query": {
+            "average_inflight": 2.600846769747476,
+            "zero_inflight_s": 0.243354264,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.743489379756883,
+            "zero_inflight_s": 0.165283404,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.030569227,
+          "thread_cpu_sum_s": 0.030500011,
+          "wall_median_s": 0.0001905605,
+          "thread_cpu_median_s": 0.0001900465,
+          "threads": [
+            [
+              6916,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.207500593,
+          "thread_cpu_sum_s": 0.099089266,
+          "wall_median_s": 0.0010722525,
+          "thread_cpu_median_s": 0.0007298765,
+          "threads": [
+            [
+              6916,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.048819446,
+          "thread_cpu_sum_s": 0.048834031,
+          "wall_median_s": 0.0003715335,
+          "thread_cpu_median_s": 0.000371749,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.022585338,
+          "thread_cpu_sum_s": 0.02215307,
+          "wall_median_s": 0.000168585,
+          "thread_cpu_median_s": 0.000168673,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005793184,
+          "thread_cpu_sum_s": 0.00542684,
+          "wall_median_s": 4.01545e-05,
+          "thread_cpu_median_s": 4.0169e-05,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001740482,
+          "thread_cpu_sum_s": 0.001743733,
+          "wall_median_s": 1.28445e-05,
+          "thread_cpu_median_s": 1.28705e-05,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.006594163,
+          "thread_cpu_sum_s": 0.006602519,
+          "wall_median_s": 4.17185e-05,
+          "thread_cpu_median_s": 4.1794e-05,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.013389094,
+          "thread_cpu_sum_s": 0.013419793,
+          "wall_median_s": 8.0437e-05,
+          "thread_cpu_median_s": 8.07215e-05,
+          "threads": [
+            [
+              6916,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.008542514,
+          "thread_cpu_sum_s": 0.008547078,
+          "wall_median_s": 5.41015e-05,
+          "thread_cpu_median_s": 5.4115e-05,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.045828875,
+          "thread_cpu_sum_s": 0.045851524,
+          "wall_median_s": 0.000287537,
+          "thread_cpu_median_s": 0.0002877395,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.201850725,
+          "thread_cpu_sum_s": 0.093571401,
+          "wall_median_s": 0.001025757,
+          "thread_cpu_median_s": 0.000686644,
+          "threads": [
+            [
+              6916,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 284,
+          "wall_sum_s": 0.101356836,
+          "thread_cpu_sum_s": 0.083317369,
+          "stale_waits": 0,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 283,
+          "wall_sum_s": 1.126582007,
+          "thread_cpu_sum_s": 0.006743532,
+          "stale_waits": 108,
+          "threads": [
+            [
+              6911,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "bounded 16MiB text buffers for three evidence streams, flushed on query context exit; SQLite per-POST protection, JSON processing, usage and SDK statistics retained",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-adapted-native",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2690911905258580,
+          "h0_ns": 2690912344675281,
+          "h1_ns": 2690912519698410,
+          "b1_ns": 2690912533170277,
+          "q1_ns": 2690912537478418,
+          "query_seconds": 0.632219838,
+          "first_http_delay_s": 0.439416701,
+          "http_coverage_s": 0.175023129,
+          "after_last_response_s": 0.013471867,
+          "after_batch_return_s": 0.004308141,
+          "over_query": {
+            "average_inflight": 0.3939888928319266,
+            "zero_inflight_s": 0.550421535,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.4231695857751463,
+            "zero_inflight_s": 0.093224826,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2690912560301674,
+          "h0_ns": 2690912625967632,
+          "h1_ns": 2690914859430811,
+          "b1_ns": 2690914867013576,
+          "q1_ns": 2690914899875356,
+          "query_seconds": 2.339573682,
+          "first_http_delay_s": 0.065665958,
+          "http_coverage_s": 2.233463179,
+          "after_last_response_s": 0.007582765,
+          "after_batch_return_s": 0.03286178,
+          "over_query": {
+            "average_inflight": 2.145729574419106,
+            "zero_inflight_s": 0.57210836,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.247671906213234,
+            "zero_inflight_s": 0.465997857,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.08346205,
+          "thread_cpu_sum_s": 0.034554889,
+          "wall_median_s": 0.000236243,
+          "thread_cpu_median_s": 0.000203485,
+          "threads": [
+            [
+              4846,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.423584358,
+          "thread_cpu_sum_s": 0.117493937,
+          "wall_median_s": 0.001267975,
+          "thread_cpu_median_s": 0.0007900225,
+          "threads": [
+            [
+              4846,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.035136306,
+          "thread_cpu_sum_s": 0.031682667,
+          "wall_median_s": 0.000223497,
+          "thread_cpu_median_s": 0.0002236375,
+          "threads": [
+            [
+              4843,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.007721475,
+          "thread_cpu_sum_s": 0.00774701,
+          "wall_median_s": 5.39635e-05,
+          "thread_cpu_median_s": 5.3981e-05,
+          "threads": [
+            [
+              4843,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001846985,
+          "thread_cpu_sum_s": 0.001846947,
+          "wall_median_s": 1.3181e-05,
+          "thread_cpu_median_s": 1.318e-05,
+          "threads": [
+            [
+              4843,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.04391126,
+          "thread_cpu_sum_s": 0.015256629,
+          "wall_median_s": 9.252e-05,
+          "thread_cpu_median_s": 8.99865e-05,
+          "threads": [
+            [
+              4846,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.416823884,
+          "thread_cpu_sum_s": 0.110912155,
+          "wall_median_s": 0.0012111875,
+          "thread_cpu_median_s": 0.000745013,
+          "threads": [
+            [
+              4846,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2690952156581956,
+          "h0_ns": 2690955290432396,
+          "h1_ns": 2690955440674890,
+          "b1_ns": 2690955445366128,
+          "q1_ns": 2690955450665321,
+          "query_seconds": 3.294083365,
+          "first_http_delay_s": 3.13385044,
+          "http_coverage_s": 0.150242494,
+          "after_last_response_s": 0.004691238,
+          "after_batch_return_s": 0.005299193,
+          "over_query": {
+            "average_inflight": 0.06378906624908687,
+            "zero_inflight_s": 3.18791103,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.3985823611261405,
+            "zero_inflight_s": 0.044070159,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2690955481606677,
+          "h0_ns": 2690955532494521,
+          "h1_ns": 2690957214545759,
+          "b1_ns": 2690957218444825,
+          "q1_ns": 2690957252298026,
+          "query_seconds": 1.770691349,
+          "first_http_delay_s": 0.050887844,
+          "http_coverage_s": 1.682051238,
+          "after_last_response_s": 0.003899066,
+          "after_batch_return_s": 0.033853201,
+          "over_query": {
+            "average_inflight": 1.8631854624823154,
+            "zero_inflight_s": 0.313503492,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 1.9613709175249274,
+            "zero_inflight_s": 0.224863381,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.032542085,
+          "thread_cpu_sum_s": 0.026701079,
+          "wall_median_s": 0.0001975045,
+          "thread_cpu_median_s": 0.0001915755,
+          "threads": [
+            [
+              5997,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.429081688,
+          "thread_cpu_sum_s": 0.12326306,
+          "wall_median_s": 0.0026522525,
+          "thread_cpu_median_s": 0.0009313965,
+          "threads": [
+            [
+              5997,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.03425088,
+          "thread_cpu_sum_s": 0.034266413,
+          "wall_median_s": 0.000250917,
+          "thread_cpu_median_s": 0.000251011,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.023165354,
+          "thread_cpu_sum_s": 0.022425113,
+          "wall_median_s": 0.0001704145,
+          "thread_cpu_median_s": 0.000170502,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005399438,
+          "thread_cpu_sum_s": 0.005388018,
+          "wall_median_s": 4.09995e-05,
+          "thread_cpu_median_s": 4.10165e-05,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001835024,
+          "thread_cpu_sum_s": 0.001837428,
+          "wall_median_s": 1.3333e-05,
+          "thread_cpu_median_s": 1.3308e-05,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.008907222,
+          "thread_cpu_sum_s": 0.00638569,
+          "wall_median_s": 4.27955e-05,
+          "thread_cpu_median_s": 4.29195e-05,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.015490822,
+          "thread_cpu_sum_s": 0.011367543,
+          "wall_median_s": 7.93565e-05,
+          "thread_cpu_median_s": 7.96565e-05,
+          "threads": [
+            [
+              5997,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.008140557,
+          "thread_cpu_sum_s": 0.008149834,
+          "wall_median_s": 5.90165e-05,
+          "thread_cpu_median_s": 5.901e-05,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.042751974,
+          "thread_cpu_sum_s": 0.042718586,
+          "wall_median_s": 0.0003063825,
+          "thread_cpu_median_s": 0.0003064995,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.422997575,
+          "thread_cpu_sum_s": 0.117410384,
+          "wall_median_s": 0.0026061065,
+          "thread_cpu_median_s": 0.0008869635,
+          "threads": [
+            [
+              5997,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 326,
+          "wall_sum_s": 0.101832116,
+          "thread_cpu_sum_s": 0.085995445,
+          "stale_waits": 0,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 325,
+          "wall_sum_s": 1.418941155,
+          "thread_cpu_sum_s": 0.007762418,
+          "stale_waits": 120,
+          "threads": [
+            [
+              5185,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    },
+    {
+      "status": "passed",
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "mode": "full",
+      "queries": [
+        {
+          "rows": 8,
+          "q0_ns": 2690926648985353,
+          "h0_ns": 2690926728773011,
+          "h1_ns": 2690926828575318,
+          "b1_ns": 2690926832733779,
+          "q1_ns": 2690926837473142,
+          "query_seconds": 0.188487789,
+          "first_http_delay_s": 0.079787658,
+          "http_coverage_s": 0.099802307,
+          "after_last_response_s": 0.004158461,
+          "after_batch_return_s": 0.004739363,
+          "over_query": {
+            "average_inflight": 1.4228664011757282,
+            "zero_inflight_s": 0.103802241,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.687241909147451,
+            "zero_inflight_s": 0.015116759,
+            "peak": 4
+          }
+        },
+        {
+          "rows": 128,
+          "q0_ns": 2690926864185055,
+          "h0_ns": 2690926905548582,
+          "h1_ns": 2690928344057243,
+          "b1_ns": 2690928346557712,
+          "q1_ns": 2690928374556543,
+          "query_seconds": 1.510371488,
+          "first_http_delay_s": 0.041363527,
+          "http_coverage_s": 1.438508661,
+          "after_last_response_s": 0.002500469,
+          "after_batch_return_s": 0.027998831,
+          "over_query": {
+            "average_inflight": 2.585354569405113,
+            "zero_inflight_s": 0.263239085,
+            "peak": 4
+          },
+          "during_http_work": {
+            "average_inflight": 2.714509779374905,
+            "zero_inflight_s": 0.191376258,
+            "peak": 4
+          }
+        }
+      ],
+      "functions": [
+        {
+          "label": "after_forward",
+          "count": 128,
+          "wall_sum_s": 0.058721792,
+          "thread_cpu_sum_s": 0.033387633,
+          "wall_median_s": 0.0002113645,
+          "thread_cpu_median_s": 0.000196301,
+          "threads": [
+            [
+              5027,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "before_forward",
+          "count": 128,
+          "wall_sum_s": 0.189792083,
+          "thread_cpu_sum_s": 0.106803744,
+          "wall_median_s": 0.0011236925,
+          "thread_cpu_median_s": 0.0007511995,
+          "threads": [
+            [
+              5027,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "executor_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.046994653,
+          "thread_cpu_sum_s": 0.047012881,
+          "wall_median_s": 0.000301655,
+          "thread_cpu_median_s": 0.000301681,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_prepare_call",
+          "count": 128,
+          "wall_sum_s": 0.023198342,
+          "thread_cpu_sum_s": 0.022388232,
+          "wall_median_s": 0.000168937,
+          "thread_cpu_median_s": 0.000169002,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_ready",
+          "count": 128,
+          "wall_sum_s": 0.005372045,
+          "thread_cpu_sum_s": 0.005374436,
+          "wall_median_s": 4.0309e-05,
+          "thread_cpu_median_s": 4.03115e-05,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_received",
+          "count": 128,
+          "wall_sum_s": 0.001522221,
+          "thread_cpu_sum_s": 0.00152329,
+          "wall_median_s": 1.0655e-05,
+          "thread_cpu_median_s": 1.0668e-05,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "observation_save_full",
+          "count": 128,
+          "wall_sum_s": 0.019318006,
+          "thread_cpu_sum_s": 0.007615878,
+          "wall_median_s": 4.0892e-05,
+          "thread_cpu_median_s": 4.0949e-05,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "protocol_observation",
+          "count": 128,
+          "wall_sum_s": 0.031297472,
+          "thread_cpu_sum_s": 0.014469082,
+          "wall_median_s": 8.73815e-05,
+          "thread_cpu_median_s": 8.76235e-05,
+          "threads": [
+            [
+              5027,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "response_wire_decode",
+          "count": 128,
+          "wall_sum_s": 0.00891861,
+          "thread_cpu_sum_s": 0.008924085,
+          "wall_median_s": 5.3029e-05,
+          "thread_cpu_median_s": 5.3048e-05,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sdk_response_reconstruction",
+          "count": 128,
+          "wall_sum_s": 0.045753309,
+          "thread_cpu_sum_s": 0.045774562,
+          "wall_median_s": 0.000278055,
+          "thread_cpu_median_s": 0.0002782,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "sqlite_budget_reserve",
+          "count": 128,
+          "wall_sum_s": 0.183936385,
+          "thread_cpu_sum_s": 0.101096843,
+          "wall_median_s": 0.001078102,
+          "thread_cpu_median_s": 0.000708504,
+          "threads": [
+            [
+              5027,
+              "observation-gateway"
+            ]
+          ],
+          "stale_waits": 0
+        },
+        {
+          "label": "flow_advance",
+          "count": 272,
+          "wall_sum_s": 0.097242434,
+          "thread_cpu_sum_s": 0.080428196,
+          "stale_waits": 0,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        },
+        {
+          "label": "flow_wait",
+          "count": 271,
+          "wall_sum_s": 1.138125139,
+          "thread_cpu_sum_s": 0.006760168,
+          "stale_waits": 104,
+          "threads": [
+            [
+              5024,
+              "MainThread"
+            ]
+          ],
+          "wall_median_s": null,
+          "thread_cpu_median_s": null
+        }
+      ],
+      "fixture_posts": 136,
+      "real_model_posts": 0,
+      "cpu_affinity": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71
+      ],
+      "response_source": "unchanged retained native LOTUS complete HTTP bodies; 20ms local fixture delay",
+      "observation_mode": "original complete evidence writes",
+      "limits": "instrumented diagnostic only; nested function times overlap and must not be subtracted from JCT; shared CPUs may compete with other fixture owners"
+    }
+  ],
+  "projection": "Original review and protocol message text replaced by complete digests; generation fields and full response bytes kept; private originals separately hashed"
+}

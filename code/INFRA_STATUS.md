@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-09：[接入持续成本修复](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
+分别整合公共空释放不唤醒、DuckDB反压pending复用与Sema按真实变化通知／正文一次准备，原生供给、C4、SQLite保护与SDK统计保持。
+LOTUS修复前后24查询／1,632次fixture POST通过相同请求、完整正文和逐阶段时刻复算，真实模型0；带探针样本只作原因定位。
+常驻初始化资源取得后即登记关闭，lifecycle／摘要失败保留查询第一错误，13项故障回归通过；最终统一实际库检查与模型资格各自记录。
+
 2026-10-09：[DuckDB与Sema常驻输入更新检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
 完成五条实际库路径各`8 → 8 → 128`行及同Sema进程更换URL探针，17查询／722次fixture POST、真实模型0。
 同连接／作者进程、当前输入与结果、DuckDB调用ID、逐查询计数和退出核对通过；Sema后置Core／worker仍按查询创建。

@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-09：[同题持续成本修复](postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)。
+公共空释放、DuckDB重复封装和Sema重复通知分别复现与修订；独立字段、原生完整响应、同步记账和统计保持。
+整合24查询／1,632次fixture POST的618成员投影由[离线复算](postgresql/native_adapter_integration_20261009/observation_replay.py)核对相同请求、原响应字节、函数墙钟／线程CPU和Q0／H0／H1／B1／Q1。
+十个初始故障回归旧版2失败／6错误，修复后13项通过；真实模型0，重启中断及原探针上限失败分别保留，旧模型负结果不改数字。
+
 2026-10-09：[同题报告的DuckDB／Sema常驻检查](postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)。
 `resident-supplier-source01`在`3a5f7bc9`上只新增测试，五条各`8 → 8 → 128`行及两次Sema更换URL探针，17查询／722 fixture POST、模型0。
 340份公开成员与[离线复核](postgresql/native_adapter_integration_20261009/supplier_resident_replay.py)核对当前输入、实际请求、结果、native owner、调用ID和原失败。

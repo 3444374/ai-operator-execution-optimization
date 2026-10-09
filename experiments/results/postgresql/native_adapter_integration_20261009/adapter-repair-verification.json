@@ -1,0 +1,24 @@
+{
+  "schema": "semloom.adapter_repair_fixture.v1",
+  "source_snapshot": "adapter-repair-source01",
+  "source_commit": "dbd2e81442bbe6087ef617997146064f5fc2f39a",
+  "public_archive": {
+    "path": "raw/adapter-repair-fixtures.jsonl.gz",
+    "members": 501,
+    "bytes": 2195724,
+    "sha256": "940260cd1078d6b04c89e284ed6aab467a8827d3b32af1fbc7503e5708d08e60"
+  },
+  "private_archive": {
+    "bytes": 1443687,
+    "sha256": "671efc15d3a968b27e26afaeb7e6ef90987d093b96595052e2f10c38e2878fd6",
+    "remote_path": "/root/autodl-tmp/experiment-artifacts/semantic-adapter-integration-20261009/adapter-repair-evidence01.tar.gz",
+    "members": 501
+  },
+  "normal_arms": 8,
+  "normal_queries": 26,
+  "fixture_posts": 1154,
+  "real_model_posts": 0,
+  "actual_initialization_failure": "passed2actualactors,drain1,threads/runtimeclosed,0POST",
+  "retained_harness_failure": "fixture01 long Ray temporary directory rejected before Core creation;0POST",
+  "final_source_status": "further vendor failure patches pending; this successful source is retained separately"
+}

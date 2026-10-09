@@ -283,10 +283,11 @@ Sema保持“作者SQL常驻，后置Core按查询创建”：三个查询的六
 本轮只提供常驻接入的可行性依据，不说明执行节奏已修好，不作性能排名。
 空结果释放、DuckDB反压重复封装与Sema重复推进的诊断和修复另按各自来源核验。
 
-当前容器GPU访问不可用，NVML检查报`Unknown Error`。
+本次最初预检时容器GPU访问不可用，NVML检查报`Unknown Error`。
 最初两次自动硬件选择因此停止，第三次私有启动器把profile参数放在错误位置，也在POST前停止；三份原件保留。
 本次成功检查显式选用仓库外CPU-only profile，只检查CPU fixture所需的`core,text,semantic-benchmarks`，
 机器报告仍记GPU列表为空。旧GPU预检不作当前GPU通过证明，没有调整设备权限或GPU驱动。
+之后用户重启容器，主会话另行核对GPU恢复；本节成功记录仍只说明原CPU fixture。
 
 [supplier-resident-verification.json](supplier-resident-verification.json)登记源码、原件与公开归档身份。
 原私有归档340成员、923,739字节，SHA-256为`94547d96c21e91947911e01e690f660526395fb1079551b4f068f0c795c3cbf3`。
@@ -298,6 +299,73 @@ Sema保持“作者SQL常驻，后置Core按查询创建”：三个查询的六
 LOTUS观测新增`lotus_batch_return`事件，直接记录完整SDK响应列表返回的B1时刻，
 发生在观察序列化与LOTUS统计之前；实际提交Q0、首个上游请求H0、最后响应体H1和消费结束Q1仍各自记录。
 新事件不改变请求、统计、费用或结果行为；旧运行没有该显式事件，保留原证据身份。
+
+<a id="adapter-performance-repair"></a>
+
+## 接入持续成本的诊断与修复
+
+三项已复现问题分别处理。公共`Session.release`在核对打开状态和tuple／list类型后，对空集合直接返回；
+原先空释放也发布wake，LOTUS批次与MethodDriver的等待时刻因此反复过期。真实lease、取消与资源归还检查保留。
+整合采用公共修复`5a12e76d`与真实接纳前缀通知回归`0183e012`，不再叠加LOTUS调用点的相同修复。
+LOTUS原实现、SDK转换、usage和费用统计保持，实际原生LOTUS／Core等待与响应留存回归由独立测试覆盖。
+DuckDB修复`535c048b`保留未接纳的完整任务，只构造新的后缀；反压不再重复执行同一工作描述和封装。
+原生SQL vector、原调度、完整批次返回、取消和C++解析保持。
+Sema修复`b7eefe49`不再每次pump都通知等待者，已接纳的HTTP正文只准备一次，实际归还或取消仍通知；
+同I/O线程中的序号更新和登记保持，正常及迟到结果的释放都覆盖。
+独立作者二进制检查32次／2,176 fixture POST与取消、迟到通知、完整响应和资源回归通过。
+三项修复分别提交，原生所有者、C4、同步SQLite保护、SDK统计、完整HTTP状态与正文保持。
+
+整合方在`resident-observation-source01`与公共修复后的`resident-observation-source02`上，
+直接测量LOTUS准备／ready包装、出站前回调及嵌套SQLite记账、协议观察的墙钟与线程CPU，
+同时核对Q0／H0／H1／B1／Q1、平均上游HTTP在途和仍有HTTP工作时的零在途时段。
+使用相同Movie输入与原生LOTUS保留的完整响应正文，本机fixture延迟20毫秒；CPU64–71、C4保持。
+完整观察及三份证据流的16MiB有限缓冲各作一次128行诊断，缓冲在查询context退出时写盘；
+两种模式都继续逐POST SQLite保护、完整正文与实际请求核验、JSON处理、usage和原LOTUS统计。
+
+| 128行实际API至消费结束，秒 | 修复前完整观察 | 修复前缓冲观察 | 公共修复后完整观察 | 公共修复后缓冲观察 |
+|---|---:|---:|---:|---:|
+| LOTUS原生 | 2.275231 | 2.337488 | 2.339574 | 2.309544 |
+| LOTUS／本地Core诊断 | 33.366148 | 35.991436 | 1.510371 | 1.501561 |
+| LOTUS／Daft＋Ray | 49.552834 | 47.096498 | 1.770691 | 1.760288 |
+
+修复前本地两次等待125,766／152,404次，Daft／Ray220,422／202,775次，采样时全部generation已过期；
+公共修复后对应271／283和325／319次。真实结果归还或backend完成仍可改变generation，不以此要求全部等待都保持同一值。
+修复前128次出站前回调的本地累计墙钟26.054／28.674秒，线程CPU0.385／0.396秒；
+Daft／Ray累计墙钟32.811／30.622秒，线程CPU0.445／0.425秒。SQLite与回调计时相互包含，不能相加或从JCT扣除。
+准备包装本身累计墙钟约0.023–0.029秒，线程CPU接近；缓冲证据写入没有消除原慢区间。
+这些观察支持本fixture中反复推进拖慢其他线程的判断，不能把回调墙钟全部解释成磁盘计算、SDK重建或纯模型时间。
+
+两种观察模式在修复前后共24完整查询／1,632次fixture POST，实际请求集合、原完整响应字节、输出、
+统计、每查询归还和group退出通过，真实模型POST0。每格仅一个带探针样本，且可能与其他CPU fixture竞争，
+只用于原因定位，不作原生系统排名或真实模型收益。旧90查询／5,760响应与LOTUS负结果保持原身份。
+
+最初`diagnostic01`逐轮保存探针达到100,000条上限后停止，改为有限空间累计循环计数，失败保留。
+`diagnostic03`在用户重启时中断，没有完整group摘要，部分fixture POST数不可恢复；模型POST仍为0。
+恢复连接后以新的`diagnostic04`路径完成复核，没有覆盖旧路径，也没有关闭或替换原借用SSH master。
+两份私有归档分别为345成员／SHA-256`12b39a8541936c21ea3ed0b6d78417e10324cc374e8f4442dc9fe863134eb240`和
+273成员／SHA-256`d64208074cebc0fb0ae9f9ab7f5d2c0b6214e56b1def4a8fb047985b5a44d277`，都已下载本地核对。
+[公开诊断原件投影](raw/lotus-observation-diagnostic.jsonl.gz)共618成员，输入及请求原文改为完整摘要，
+生成参数、完整响应、全部函数计时和循环累计计数保留；[聚合](lotus-observation-analysis.json)与
+[observation_replay.py](observation_replay.py)复算全部24查询、完整正文、实际请求集合和逐阶段时刻。
+
+常驻管理另修两类失败处理，与性能结论分开：从首个组件取得动作开始进入统一异常清理，
+执行器成功创建后立即登记已有`_drain_execution`关闭动作，LM或tokenizer失败仍处理已有资源。
+组件退出使用现有ExitStack与CellErrors逐项保存，正常关闭只执行一次；不新增通用清理层。
+owner与group的lifecycle读取、摘要构造和写入也进入原错误收集器，原查询异常保持顶层，
+没有查询异常时传播最早清理或记录错误。十个初始回归在旧源码出现2失败／6错误，
+修复后连同多组件退出顺序检查共13项通过；原失败与成功日志保留，本地相关129项124通过／5项可选实际库跳过。
+这些检查只确认关闭调用和错误传播，不推断旧服务器已经产生资源泄漏。
+
+整合`adapter-repair-source01`以`dbd2e814`定位，1,026份code／deploy文件逐一核对；
+Linux相关129项126通过／3项独立实际库入口另跑。随后八条供应商路径各执行不同输入的`8 → 8 → 128`行，
+加两次Sema更换URL探针，26查询／1,154 fixture POST、真实模型0，当前请求／结果、批次返回、常驻组件及归还通过。
+另在真实Ray、两名实际worker和Core取得后加载缺失tokenizer，原`No such file or directory`保持顶层；
+已登记drain执行一次、Gateway／events线程与所属Ray runtime退出、残留所属Ray进程0、POST0。
+首个私有probe使用过长Ray临时目录，在创建Core前被检查拒绝，原件保留并改用新的短目录；没有用失败运行计算性能。
+501份[紧凑观察](raw/adapter-repair-fixtures.jsonl.gz)及[来源登记](adapter-repair-verification.json)由
+[adapter_repair_replay.py](adapter_repair_replay.py)核对正常路径与实际初始化失败；
+原件SHA-256`671efc15d3a968b27e26afaeb7e6ef90987d093b96595052e2f10c38e2878fd6`已下载本地。
+此快照已通过当前检查；后续三家异常释放／退出修订仍使用新的最终来源与针对性回归，不能将不同源码混作一次模型资格。
 
 ## 保存与复核
 

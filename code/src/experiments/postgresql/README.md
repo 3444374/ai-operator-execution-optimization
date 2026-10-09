@@ -48,6 +48,8 @@ DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema
 两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。
 调用方式见[脚本入口](../../../scripts/README.md#native-adapter-query)，原始事件与适用范围见[同题报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
 LOTUS额外记录完整SDK响应列表返回时刻，先于观察序列化与原方法统计；原提交、HTTP和消费时刻保持。
+常驻owner从组件取得开始统一清理，已建执行器立即登记原drain动作；退出及摘要读取／写入通过现有CellErrors保存，
+原查询异常保持顶层。修复前后诊断与三个独立供给问题见[同题修复记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)。
 
 <a id="ready-query-timing"></a>
 
