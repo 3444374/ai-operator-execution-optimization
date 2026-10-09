@@ -1,11 +1,15 @@
 """Controlled native batches exercise real Core ownership with zero model calls."""
 
 from dataclasses import replace
+import asyncio
 import json
+import threading
+import time
 import unittest
 
 from src.execution_provider.adapters.incremental_execution import IncrementalExecution
-from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
+from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task, build_native_execution
+from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.full_response import FullModelResponse, decode_full_response, encode_full_response
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import State, TaskKey, Uncertain, Usage
@@ -147,3 +151,54 @@ class NativeTaskTests(unittest.TestCase):
         self.assertEqual(len(flow.advance(1).deliveries), 1)
         flow.close()
         self.assertEqual(execution.engine.capacity.usage(), Usage())
+
+
+class NativeServiceCloseTests(unittest.TestCase):
+    def test_service_close_waits_for_open_flow_and_late_remote_confirmation(self):
+        release, started = threading.Event(), threading.Event()
+        async def execute(request, endpoint):
+            started.set()
+            while not release.is_set(): await asyncio.sleep(0.002)
+            return encode_full_response(FullModelResponse(200, (), b'late'))
+        execution = build_native_execution(FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                                          physical=None, execute=execute, max_tasks=2)
+        flow = NativeTaskSession(execution, 'query', 'map')
+        try:
+            self.assertFalse(execution.close())
+            flow.offer((task(0),));flow.advance(1)
+            self.assertTrue(started.wait(1))
+            self.assertEqual(flow.close().uncertain_requests, 1)
+            self.assertFalse(execution.close())
+            release.set()
+            deadline = time.monotonic() + 2
+            while execution.engine.capacity.usage().held_tasks and time.monotonic() < deadline:
+                execution.engine.advance()
+                execution.engine.wake.wait(execution.engine.wake.generation, 0.005)
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+            self.assertTrue(execution.close())
+        finally:
+            release.set()
+            execution.engine.backend.close()
+
+    def test_completed_local_transport_error_does_not_claim_full_service_cleanup(self):
+        attempts = []
+        async def execute(request, endpoint):
+            attempts.append(request.key)
+            raise OSError('controlled unknown remote result')
+        execution = build_native_execution(FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                                          physical=None, execute=execute, max_tasks=2)
+        flow = NativeTaskSession(execution, 'query', 'map')
+        try:
+            flow.offer((task(0),))
+            deadline = time.monotonic() + 2
+            progress = flow.advance(1)
+            while progress.state != State.FAILED and time.monotonic() < deadline:
+                flow.wait(progress);progress = flow.advance(1)
+            self.assertEqual(progress.state, State.FAILED)
+            self.assertEqual(flow.close().uncertain_requests, 1)
+            self.assertFalse(execution.close())
+            self.assertEqual(execution.engine.capacity.usage().active_requests, 1)
+            self.assertEqual(len(attempts), 1)
+        finally:
+            # End only this fixture's finished I/O thread; Core still reports unknown ownership.
+            execution.engine.backend.close()
