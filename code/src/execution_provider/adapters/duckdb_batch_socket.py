@@ -153,6 +153,9 @@ class DuckDBBatchConnection:
         except CompletionAdapterError as failure:
             try: error(failure.code)
             except OSError: pass
+        except RuntimeError:
+            try: error("MODEL_UNAVAILABLE")
+            except OSError: pass
         except (ProtocolError, ValueError, TypeError, RecursionError):
             try: error("INVALID_MESSAGE")
             except OSError: pass
