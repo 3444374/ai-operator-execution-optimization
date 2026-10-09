@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
+from contextlib import nullcontext
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +12,8 @@ from src.execution_provider.adapters.full_response import FullModelResponse,enco
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+from src.scheduling.core.session_contract import CloseReport,Usage
+from src.semantic_methods.duckdb_ai import DuckDBCall,DuckDBResponse
 from src.semantic_methods.continuation import Continue,Final,Request
 from src.experiments.postgresql.native_adapter_metrics import summarize_calls
 from src.experiments.postgresql.supplier_adapter_query import (
@@ -94,6 +97,82 @@ class SupplierObservationTests(unittest.TestCase):
             self.assertEqual(summary['status'],'failed')
             self.assertEqual(summary['attempted_posts'],0)
             self.assertIn('query',summary['errors'])
+
+    def test_duckdb_failure_summary_keeps_inner_and_outer_diagnostics_and_observation_first_error(self):
+        for observation_failure in (False,True):
+            with self.subTest(observation_failure=observation_failure), tempfile.TemporaryDirectory() as directory:
+                primary=ValueError('observation failed' if observation_failure else 'decode failed')
+                cleanup=RuntimeError('iterator close failed')
+                report=CloseReport('closed',0,Usage(),None)
+                class Native:
+                    def __init__(self,*args):
+                        self.last_close_report=None
+                        self.last_cleanup_error=None
+                        self.last_cleanup_errors=()
+                    def __call__(self,calls,cancelled):
+                        native=self
+                        class Responses:
+                            def __iter__(self):return self
+                            def __next__(self):
+                                if not observation_failure:
+                                    native.last_cleanup_errors=('release: RuntimeError: release failed','close: RuntimeError: close failed')
+                                    native.last_cleanup_error='\n'.join(native.last_cleanup_errors)
+                                    raise primary
+                                return DuckDBResponse(calls[0].call_id,b'{}',200,-1)
+                            def close(self):
+                                if observation_failure:
+                                    native.last_close_report=report
+                                    native.last_cleanup_errors=('close: RuntimeError: iterator close failed',)
+                                    native.last_cleanup_error=native.last_cleanup_errors[0]
+                                    raise cleanup
+                        return Responses()
+                class Bridge:
+                    def __init__(self,library,callback):
+                        self.callback=callback;self.last_error=self.last_cleanup_error=None
+                    def __enter__(self):return self
+                    def __exit__(self,*args):return False
+                    def enable(self,connection):connection.bridge=self
+                class Connection:
+                    def execute(self,statement):
+                        call=DuckDBCall(row=0,query_id='fixture',call_id='row-call',model='fixture',
+                            endpoint='http://127.0.0.1:1/v1/chat/completions',
+                            payload=b'{"model":"fixture","messages":[]}',headers=(),
+                            estimated_tokens=1,timeout_seconds=1,connect_timeout_seconds=1,ready_ns=1)
+                        try:list(self.bridge.callback((call,),lambda:False))
+                        except BaseException as error:
+                            self.bridge.last_error=str(error)
+                            raise
+                        raise AssertionError('controlled failure must stop SQL')
+                connection=Connection()
+                physical=SimpleNamespace(window_bytes=2**21+24,payload_backend='daft',workers=2,batch_rows=2)
+                model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions','fixture',1000)
+                owner=SimpleNamespace(physical=physical,group=SimpleNamespace(runtime={}),model=model,
+                    execution=object(),query=lambda *args:nullcontext(),duckdb_connection=lambda values:connection)
+                ledger=SimpleNamespace(reserve_unit=lambda *args:None,claim_shared_unit=lambda *args:None,
+                    close_shared_unit=lambda *args:None)
+                root=Path(directory)/'query'
+                with patch('src.semantic_methods.duckdb_ai.DuckDBNativeTaskExecutor',Native), \
+                     patch('src.semantic_methods.duckdb_ai.DuckDBSemLoomBridge',Bridge), \
+                     patch.object(MethodObservations,'received',side_effect=primary if observation_failure else None):
+                    with self.assertRaises(ValueError) as caught:
+                        run_supplier_query('duckdb-method-semloom',load_source=lambda:iter([dict(row_id='row',text='fixture')]),
+                            plan=SemanticMapPlan('Return ok.','fixture',16),model=model,ledger=ledger,
+                            unit_id='fixture',root=root,options=NativeGraphOptions(concurrency=4),
+                            physical=physical,duckdb_library=Path('fixture'),owner=owner)
+                self.assertIs(caught.exception,primary)
+                saved=json.loads((root/'summary.json').read_text())
+                self.assertEqual(saved['status'],'failed')
+                diagnostics=saved['identity']['diagnostics']
+                self.assertEqual(diagnostics['bridge']['last_error'],str(primary))
+                self.assertIsNone(diagnostics['bridge']['last_cleanup_error'])
+                self.assertTrue(diagnostics['executor']['last_cleanup_errors'])
+                if observation_failure:
+                    self.assertIn('iterator close failed',diagnostics['iterator_close_error'])
+                    self.assertEqual(diagnostics['executor']['last_close_report']['usage']['held_tasks'],0)
+                    self.assertTrue(primary.__notes__)
+                else:
+                    self.assertEqual(len(diagnostics['executor']['last_cleanup_errors']),2)
+                    self.assertIsNone(diagnostics['executor']['last_close_report'])
 
 
 if __name__=='__main__':unittest.main()

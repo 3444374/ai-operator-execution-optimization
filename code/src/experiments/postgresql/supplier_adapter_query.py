@@ -11,7 +11,7 @@ import threading
 import time
 
 from src.baselines.common.private_artifacts import content_digest, new_private_directory, open_private_text, write_private_json
-from src.baselines.common.redact import redact_json_values
+from src.baselines.common.redact import redact_json_values,redact_text
 from src.execution_provider.adapters.full_response import decode_full_response, encode_full_response
 from src.execution_provider.adapters.native_tasks import build_native_execution
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES
@@ -258,8 +258,10 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
     if execution is not None:
         native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token))
         supplied_rows=0
+        iterator_close_error=None
         def execute_batch(calls,cancelled):
-            nonlocal supplied_rows
+            nonlocal supplied_rows,iterator_close_error
+            iterator_close_error=None
             if sorted(c.row for c in calls)!=list(range(len(calls))) or supplied_rows+len(calls)>len(values):
                 raise ValueError('DuckDB source vector differs from the ordered non-NULL input')
             row_ids={c.call_id:values[supplied_rows+c.row]['row_id'] for c in calls}
@@ -268,13 +270,24 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
                 observations.ready(row_ids[call.call_id],0,call.payload,
                     call_id='duckdb-map',native_ready_ns=call.ready_ns,response_representation='complete native provider HTTP body')
             iterator=iter(native(calls,cancelled))
+            primary_error=None
             try:
                 for response in iterator:
                     observations.received(row_ids[response.call_id],0,response.body,call_id='duckdb-map')
                     observations.raw.write(json.dumps(dict(row_id=row_ids[response.call_id],status=response.http_status,
                         body_base64=base64.b64encode(response.body).decode()))+'\n')
                     yield response
-            finally:iterator.close()
+            except GeneratorExit:
+                raise
+            except BaseException as error:
+                primary_error=error
+                raise
+            finally:
+                try:iterator.close()
+                except BaseException as error:
+                    iterator_close_error=redact_text(f'{type(error).__name__}: {error}')[:4096]
+                    if primary_error is None:raise
+                    primary_error.add_note('DuckDB observation iterator close also failed: '+type(error).__name__)
         bridge=stack.enter_context(DuckDBSemLoomBridge(library,execute_batch));bridge.enable(connection)
     statement=('WITH completed AS MATERIALIZED (SELECT row_id,ai_try_complete(prompt,max_tokens => '+str(plan.max_tokens)+
         ',temperature => 0.0) AS result FROM (SELECT * FROM adapter_inputs ORDER BY source_position)) '
@@ -283,10 +296,20 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         for row_id,value,error in connection.execute(statement).fetchall():
             if error is not None or value is None:raise ValueError('native DuckDB parser reported a failed complete call')
             yield row_id,value
-    yield execute,dict(supplier='DuckDB1.5.4/ai0.4.14-semloom1',source_commit='9b7b16a5d5bfa97180b8be48d69bd9a4a4106419',
+    identity=dict(supplier='DuckDB1.5.4/ai0.4.14-semloom1',source_commit='9b7b16a5d5bfa97180b8be48d69bd9a4a4106419',
         sql_threads=1,method_roles=['main'],request_cache=False,retry_count=0,
         caller_scope='complete body returned by native batch callback immediately before C++ response consumer',
         native_supply='current SQL vector only; SQL results wait for complete vector return')
+    try:
+        yield execute,identity
+    finally:
+        if execution is not None:
+            identity['diagnostics']=dict(
+                bridge=dict(last_error=bridge.last_error,last_cleanup_error=bridge.last_cleanup_error),
+                iterator_close_error=iterator_close_error,
+                executor=dict(last_cleanup_error=native.last_cleanup_error,
+                    last_cleanup_errors=list(native.last_cleanup_errors),
+                    last_close_report=None if native.last_close_report is None else asdict(native.last_close_report)))
 
 
 def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,options,
