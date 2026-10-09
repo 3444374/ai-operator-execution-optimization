@@ -1,5 +1,9 @@
 # Semantic method continuations
 
+The [LOTUS method adapter](lotus/README.md) adds a pinned single-Map executor selection and a
+two-Map continuation over external text rows. It reuses LOTUS prompts/parsing and this existing
+driver; global experiment integration and real-model verification are owned by the integration task.
+
 The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through
