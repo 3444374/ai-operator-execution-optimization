@@ -51,6 +51,7 @@ LOTUS额外记录完整SDK响应列表返回时刻，先于观察序列化与原
 常驻owner从组件取得开始统一清理，已建执行器立即登记原drain动作；退出及摘要读取／写入通过现有CellErrors保存，
 原查询异常保持顶层。修复前后诊断与三个独立供给问题见[同题修复记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)。
 供应商release、producer退出和Sema服务关闭的第一错误分别处理；最终同一源码的真实库回归与八路径输入替换见[共同检查](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)。
+DuckDB现有identity／summary在退出时同时保存bridge与内层executor的清理字段和关闭报告；观察与iterator退出连续失败仍保持原观察错误。模型与最新CPU来源分别见[同题模型记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)。
 
 <a id="ready-query-timing"></a>
 

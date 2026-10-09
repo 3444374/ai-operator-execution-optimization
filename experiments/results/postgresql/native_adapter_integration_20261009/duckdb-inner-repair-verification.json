@@ -1,0 +1,20 @@
+{
+  "source_commit": "2b53857db4249e3f091fdac10c74a6d55842208e",
+  "inner_commit": "64f738ad8aa6a1e257b35a809c56fd049f71f1a6",
+  "inner_tests": 28,
+  "recording_tests": 4,
+  "normal_queries": 12,
+  "normal_fixture_posts": 576,
+  "real_model_posts": 0,
+  "private_archive": {
+    "members": 250,
+    "bytes": 950559,
+    "sha256": "8904175676c666cc14d21ad25fe41c3e11aebf8c48eb2d18d321481eb388265c"
+  },
+  "public_archive": {
+    "path": "raw/duckdb-inner-repair-fixtures.jsonl.gz",
+    "members": 250,
+    "bytes": 913497,
+    "sha256": "4caf92c2321d7898c8ef191c3f25da3b298911b0152ba0aae86d15bb53c6d1d1"
+  }
+}

@@ -6,6 +6,8 @@
 十个初始故障回归旧版2失败／6错误，修复后13项通过；真实模型0，重启中断及原探针上限失败分别保留，旧模型负结果不改数字。
 三家异常退出修复由`adapter-repair-source02`／`aef350b2`共同核对，1,028份文件一致；173项回归170通过／3项实际入口通用suite未启用，编译扩展20项全通过。
 八路径26正常查询／1,154 fixture POST、输入／URL更新、完整返回及资源退出由[487成员复算](postgresql/native_adapter_integration_20261009/adapter_repair_final_replay.py)核对，真实模型0；三家失败原件与旧来源均保留。
+[修复来源模型记录](postgresql/native_adapter_integration_20261009/README.md#repair-model)在`aef350b2`完成120查询／7,680唯一响应，1,890成员复算质量、请求、所有五次测量、时钟及386资源采样；Sema服务入口分位与实际128／4分别登记，不能据gateway时间作完整请求尾部结论。
+后续DuckDB内层与摘要源`2b53857d`只作CPU针对性检查，250成员保留28＋4项回归及两个来源12正常查询／576 fixture POST；两份启动器失败原件保留，既有90查询和CPU诊断不改写。
 
 2026-10-09：[同题报告的DuckDB／Sema常驻检查](postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)。
 `resident-supplier-source01`在`3a5f7bc9`上只新增测试，五条各`8 → 8 → 128`行及两次Sema更换URL探针，17查询／722 fixture POST、模型0。

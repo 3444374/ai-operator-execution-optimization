@@ -1,0 +1,5175 @@
+{
+  "schema": "semloom.repair_model_independent_audit.v1",
+  "status": "passed",
+  "queries": 120,
+  "posts": 7680,
+  "unique_model_response_ids": 7680,
+  "archive_identity": {
+    "status": "completed",
+    "remote_archive": "<data_root>/experiment-artifacts/native-adapter-resident-20261009/resident-repair-evidence01.tar.gz",
+    "sha256": "9a2ea37576a5a5a4a34d1f0f547d6f8e652c812c4ae9472376374e0f5a9ad513",
+    "members": 1890,
+    "bytes": 11658975,
+    "queries": 120,
+    "model_posts": 7680,
+    "local_archive": "resident-repair-evidence01.tar.gz"
+  },
+  "protocol_tokens": {
+    "prompt_tokens": 906123,
+    "completion_tokens": 28800
+  },
+  "owner_seconds": 425.1710591316223,
+  "reused_lifetimes": {
+    "lotus-adapted-native": {
+      "owner_id": "e14c7847432f44639bf20a982f64dda9",
+      "execution_id": null,
+      "lm_id": "140191868887184",
+      "duckdb_connection_id": null,
+      "sema_pid": null
+    },
+    "lotus-method-semloom-local-diagnostic": {
+      "owner_id": "4dfc27b943134837b5f6478b74d4c87a",
+      "execution_id": "140241280783552",
+      "lm_id": "140237266261808",
+      "duckdb_connection_id": null,
+      "sema_pid": null
+    },
+    "lotus-method-semloom": {
+      "owner_id": "a8833334049f42ac85ddb2b8c3b69e16",
+      "execution_id": "140437110126784",
+      "lm_id": "140429169227008",
+      "duckdb_connection_id": null,
+      "sema_pid": null
+    },
+    "duckdb-adapted-native": {
+      "owner_id": "3028d2881dbd45d38a71027044c21210",
+      "execution_id": null,
+      "lm_id": null,
+      "duckdb_connection_id": "140415172153392",
+      "sema_pid": null
+    },
+    "duckdb-method-semloom": {
+      "owner_id": "812fcefd3c3b4e37a2ee6c1a8d04849a",
+      "execution_id": "139709254596512",
+      "lm_id": null,
+      "duckdb_connection_id": "139709250305456",
+      "sema_pid": null
+    },
+    "sema-native-direct": {
+      "owner_id": "86d89a263b5c439a90bbbd35aba9edcc",
+      "execution_id": null,
+      "lm_id": null,
+      "duckdb_connection_id": null,
+      "sema_pid": 42643
+    },
+    "sema-native-transparent": {
+      "owner_id": "906b6eda44ed40fb9b744995c456e3e6",
+      "execution_id": null,
+      "lm_id": null,
+      "duckdb_connection_id": null,
+      "sema_pid": 42768
+    },
+    "sema-method-semloom-request-service": {
+      "owner_id": "c42df9ed8612492b8af7775e6b46cd1d",
+      "execution_id": null,
+      "lm_id": null,
+      "duckdb_connection_id": null,
+      "sema_pid": 43825
+    }
+  },
+  "measurement_aggregates": [
+    {
+      "arm": "lotus-adapted-native",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.280175926,
+        "submit_seconds": 0.273677958,
+        "release_to_submit_seconds": 0.007352724,
+        "submit_to_first_dispatch_seconds": 0.026361783,
+        "http_coverage_seconds": 0.233917683,
+        "last_body_to_eof_seconds": 0.012740223,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": 0.009441585,
+        "batch_return_to_eof_seconds": 0.003680624
+      },
+      "query_samples": [
+        0.280870299,
+        0.280175926,
+        0.281980948,
+        0.277244517,
+        0.279889789
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.281980948,
+      "query_p9999": 0.281980948,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.111676438,
+      "proxy_request_p9999": 0.111676438,
+      "mean_inflight_median": 2.8889608803486273,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 3.980171604,
+        "submit_seconds": 3.96953009,
+        "release_to_submit_seconds": 0.010395895,
+        "submit_to_first_dispatch_seconds": 0.066437537,
+        "http_coverage_seconds": 3.856337262,
+        "last_body_to_eof_seconds": 0.04342411,
+        "correct": 106,
+        "last_body_to_batch_return_seconds": 0.008794839,
+        "batch_return_to_eof_seconds": 0.03533561
+      },
+      "query_samples": [
+        3.870979853,
+        3.964284507,
+        4.220088233,
+        4.048831687,
+        3.980171604
+      ],
+      "correct_samples": [
+        106,
+        106,
+        106,
+        106,
+        106
+      ],
+      "query_p99": 4.220088233,
+      "query_p9999": 4.220088233,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.131869352,
+      "proxy_request_p9999": 0.141614971,
+      "mean_inflight_median": 3.230621108101992,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.250357319,
+        "submit_seconds": 0.243114132,
+        "release_to_submit_seconds": 0.007428632,
+        "submit_to_first_dispatch_seconds": 0.014166673,
+        "http_coverage_seconds": 0.221696795,
+        "last_body_to_eof_seconds": 0.006941859,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": 0.003442223,
+        "batch_return_to_eof_seconds": 0.003415448
+      },
+      "query_samples": [
+        0.258172957,
+        0.247057003,
+        0.248560857,
+        0.258776122,
+        0.250357319
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.258776122,
+      "query_p9999": 0.258776122,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.117182979,
+      "proxy_request_p9999": 0.117182979,
+      "mean_inflight_median": 3.251183296081453,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 3.524181637,
+        "submit_seconds": 3.515295966,
+        "release_to_submit_seconds": 0.008898084,
+        "submit_to_first_dispatch_seconds": 0.047549683,
+        "http_coverage_seconds": 3.425767142,
+        "last_body_to_eof_seconds": 0.040194912,
+        "correct": 106,
+        "last_body_to_batch_return_seconds": 0.004404836,
+        "batch_return_to_eof_seconds": 0.035790076
+      },
+      "query_samples": [
+        3.524181637,
+        3.81647362,
+        3.371261865,
+        3.507523466,
+        3.648217998
+      ],
+      "correct_samples": [
+        106,
+        106,
+        106,
+        106,
+        106
+      ],
+      "query_p99": 3.81647362,
+      "query_p9999": 3.81647362,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.12146922,
+      "proxy_request_p9999": 0.124749988,
+      "mean_inflight_median": 3.46794991753707,
+      "zero_inflight_seconds_median": 0.019276652
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.271094218,
+        "submit_seconds": 0.263628173,
+        "release_to_submit_seconds": 0.007268327,
+        "submit_to_first_dispatch_seconds": 0.022874198,
+        "http_coverage_seconds": 0.23096858,
+        "last_body_to_eof_seconds": 0.010191632,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": 0.006793538,
+        "batch_return_to_eof_seconds": 0.003386617
+      },
+      "query_samples": [
+        0.268496075,
+        0.27310933,
+        0.264753614,
+        0.323448034,
+        0.271094218
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.323448034,
+      "query_p9999": 0.323448034,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.111938196,
+      "proxy_request_p9999": 0.111938196,
+      "mean_inflight_median": 2.99364936867126,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 4.056554211,
+        "submit_seconds": 4.044451249,
+        "release_to_submit_seconds": 0.010935215,
+        "submit_to_first_dispatch_seconds": 0.062667697,
+        "http_coverage_seconds": 3.939553721,
+        "last_body_to_eof_seconds": 0.042692824,
+        "correct": 106,
+        "last_body_to_batch_return_seconds": 0.006751563,
+        "batch_return_to_eof_seconds": 0.034555444
+      },
+      "query_samples": [
+        4.065700029,
+        3.984605763,
+        4.097269738,
+        4.056554211,
+        4.0445254
+      ],
+      "correct_samples": [
+        106,
+        106,
+        106,
+        106,
+        106
+      ],
+      "query_p99": 4.097269738,
+      "query_p9999": 4.097269738,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.11962949,
+      "proxy_request_p9999": 0.126272029,
+      "mean_inflight_median": 3.0128198232527175,
+      "zero_inflight_seconds_median": 0.028520378
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.215511512,
+        "submit_seconds": 0.1998794,
+        "release_to_submit_seconds": 0.011557979,
+        "submit_to_first_dispatch_seconds": 0.003636281,
+        "http_coverage_seconds": 0.194472001,
+        "last_body_to_eof_seconds": 0.00158659,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        0.20984654,
+        0.215897825,
+        0.210231933,
+        0.216045809,
+        0.215511512
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.216045809,
+      "query_p9999": 0.216045809,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.103562762,
+      "proxy_request_p9999": 0.103562762,
+      "mean_inflight_median": 3.6714555426922435,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 3.32295979,
+        "submit_seconds": 3.286858526,
+        "release_to_submit_seconds": 0.043996678,
+        "submit_to_first_dispatch_seconds": 0.004752209,
+        "http_coverage_seconds": 3.279319633,
+        "last_body_to_eof_seconds": 0.003498025,
+        "correct": 107,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        3.32295979,
+        3.326968427,
+        3.178621607,
+        3.27706333,
+        3.385264491
+      ],
+      "correct_samples": [
+        107,
+        107,
+        106,
+        106,
+        107
+      ],
+      "query_p99": 3.385264491,
+      "query_p9999": 3.385264491,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.113659132,
+      "proxy_request_p9999": 0.120067159,
+      "mean_inflight_median": 3.8243592421835166,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.255817634,
+        "submit_seconds": 0.246096166,
+        "release_to_submit_seconds": 0.011885296,
+        "submit_to_first_dispatch_seconds": 0.017806576,
+        "http_coverage_seconds": 0.222780881,
+        "last_body_to_eof_seconds": 0.006264637,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        0.251674564,
+        0.255817634,
+        0.28945032,
+        0.282255006,
+        0.244468479
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.28945032,
+      "query_p9999": 0.28945032,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.110745186,
+      "proxy_request_p9999": 0.110745186,
+      "mean_inflight_median": 3.0207319365331418,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 3.67176327,
+        "submit_seconds": 3.628559634,
+        "release_to_submit_seconds": 0.037504763,
+        "submit_to_first_dispatch_seconds": 0.023749199,
+        "http_coverage_seconds": 3.596296356,
+        "last_body_to_eof_seconds": 0.008005198,
+        "correct": 106,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        3.67176327,
+        3.618001733,
+        3.66155142,
+        3.706109891,
+        3.675548204
+      ],
+      "correct_samples": [
+        106,
+        106,
+        106,
+        107,
+        106
+      ],
+      "query_p99": 3.706109891,
+      "query_p9999": 3.706109891,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.110403409,
+      "proxy_request_p9999": 0.116769745,
+      "mean_inflight_median": 3.361438021892188,
+      "zero_inflight_seconds_median": 0.007800497
+    },
+    {
+      "arm": "sema-native-direct",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.227157541,
+        "submit_seconds": 0.216320339,
+        "release_to_submit_seconds": 0.010884287,
+        "submit_to_first_dispatch_seconds": 0.002769673,
+        "http_coverage_seconds": 0.211476473,
+        "last_body_to_eof_seconds": 0.001915438,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        0.227157541,
+        0.228652282,
+        0.222850779,
+        0.230714411,
+        0.226401207
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.230714411,
+      "query_p9999": 0.230714411,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.212993695,
+      "proxy_request_p9999": 0.212993695,
+      "mean_inflight_median": 7.477481800728872,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "sema-native-direct",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 1.972250506,
+        "submit_seconds": 1.958980738,
+        "release_to_submit_seconds": 0.014713614,
+        "submit_to_first_dispatch_seconds": 0.005513998,
+        "http_coverage_seconds": 1.934885227,
+        "last_body_to_eof_seconds": 0.008935963,
+        "correct": 112,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        2.016009053,
+        1.955586345,
+        1.962434712,
+        1.979395265,
+        1.972250506
+      ],
+      "correct_samples": [
+        111,
+        112,
+        112,
+        112,
+        112
+      ],
+      "query_p99": 2.016009053,
+      "query_p9999": 2.016009053,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 1.874658564,
+      "proxy_request_p9999": 1.882901156,
+      "mean_inflight_median": 119.3605064070626,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "sema-native-transparent",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 0.236051258,
+        "submit_seconds": 0.223369295,
+        "release_to_submit_seconds": 0.012729347,
+        "submit_to_first_dispatch_seconds": 0.009531153,
+        "http_coverage_seconds": 0.211595084,
+        "last_body_to_eof_seconds": 0.002489562,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        0.234969478,
+        0.241696617,
+        0.236051258,
+        0.237128276,
+        0.234267238
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 0.241696617,
+      "query_p9999": 0.241696617,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.209711651,
+      "proxy_request_p9999": 0.209711651,
+      "mean_inflight_median": 7.204413388588231,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "sema-native-transparent",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 2.061567082,
+        "submit_seconds": 2.045562501,
+        "release_to_submit_seconds": 0.01706917,
+        "submit_to_first_dispatch_seconds": 0.050752778,
+        "http_coverage_seconds": 1.981733268,
+        "last_body_to_eof_seconds": 0.008949309,
+        "correct": 111,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        2.078712372,
+        2.037858317,
+        2.061567082,
+        2.064681201,
+        2.05497614
+      ],
+      "correct_samples": [
+        111,
+        111,
+        111,
+        111,
+        112
+      ],
+      "query_p99": 2.078712372,
+      "query_p9999": 2.078712372,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 1.895960888,
+      "proxy_request_p9999": 1.899818351,
+      "mean_inflight_median": 114.29224040418183,
+      "zero_inflight_seconds_median": 0.0
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "rows": 8,
+      "count": 5,
+      "medians": {
+        "release_seconds": 4.441943799,
+        "submit_seconds": 0.497568564,
+        "release_to_submit_seconds": 3.939581962,
+        "submit_to_first_dispatch_seconds": 0.149145913,
+        "http_coverage_seconds": 0.340478298,
+        "last_body_to_eof_seconds": 0.007457002,
+        "correct": 5,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        4.157167367,
+        4.441943799,
+        4.57014343,
+        4.587236414,
+        4.17467665
+      ],
+      "correct_samples": [
+        5,
+        5,
+        5,
+        5,
+        5
+      ],
+      "query_p99": 4.587236414,
+      "query_p9999": 4.587236414,
+      "proxy_request_samples": 40,
+      "proxy_request_p99": 0.158666694,
+      "proxy_request_p9999": 0.158666694,
+      "mean_inflight_median": 2.286939477450792,
+      "zero_inflight_seconds_median": 0.010603818
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "rows": 128,
+      "count": 5,
+      "medians": {
+        "release_seconds": 10.518743452,
+        "submit_seconds": 6.108791534,
+        "release_to_submit_seconds": 4.452882812,
+        "submit_to_first_dispatch_seconds": 0.215713248,
+        "http_coverage_seconds": 5.870832702,
+        "last_body_to_eof_seconds": 0.022362162,
+        "correct": 111,
+        "last_body_to_batch_return_seconds": null,
+        "batch_return_to_eof_seconds": null
+      },
+      "query_samples": [
+        10.518743452,
+        10.615326226,
+        10.355876956,
+        9.804502917,
+        10.608540057
+      ],
+      "correct_samples": [
+        110,
+        111,
+        111,
+        111,
+        111
+      ],
+      "query_p99": 10.615326226,
+      "query_p9999": 10.615326226,
+      "proxy_request_samples": 640,
+      "proxy_request_p99": 0.162096043,
+      "proxy_request_p9999": 0.265595472,
+      "mean_inflight_median": 3.048197456333693,
+      "zero_inflight_seconds_median": 0.032423123
+    }
+  ],
+  "statistical_scope": "5 queries per shape and arm; query P99 and P99.99 equal sample maximum; request quantiles are finite observations",
+  "proxy_request_scope": "common gateway receipt through complete response delivery; earlier native pending queues excluded",
+  "timing_scope": "actual release/submission through complete consumer EOF; Sema postposed Core and actors remain per query",
+  "query_observations": [
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.lotus-adapted-native.n8.qualification.0",
+      "release_seconds": 0.815687117,
+      "submit_seconds": 0.800319972,
+      "release_to_submit_seconds": 0.015367145,
+      "submit_to_first_dispatch_seconds": 0.461984615,
+      "http_coverage_seconds": 0.322157054,
+      "last_body_to_eof_seconds": 0.016178303,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 1.097502918495204,
+        "peak": 4,
+        "zero_inflight_seconds": 0.562848026
+      },
+      "upstream_coverage": {
+        "mean_inflight": 2.7264760901370795,
+        "peak": 4,
+        "zero_inflight_seconds": 0.084685108
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697270289339348,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.011452777,
+      "batch_return_to_eof_seconds": 0.004725526
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-adapted-native.n8.warmup.0",
+      "release_seconds": 0.27957347,
+      "submit_seconds": 0.273131467,
+      "release_to_submit_seconds": 0.006442003,
+      "submit_to_first_dispatch_seconds": 0.02341846,
+      "http_coverage_seconds": 0.237560066,
+      "last_body_to_eof_seconds": 0.012152941,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.921915038811694,
+        "peak": 4,
+        "zero_inflight_seconds": 0.035571401
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3594322246063024,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697270583468496,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007297783,
+      "batch_return_to_eof_seconds": 0.004855158
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-adapted-native.n8.warmup.1",
+      "release_seconds": 0.28082887,
+      "submit_seconds": 0.273366155,
+      "release_to_submit_seconds": 0.007462715,
+      "submit_to_first_dispatch_seconds": 0.025507871,
+      "http_coverage_seconds": 0.233783249,
+      "last_body_to_eof_seconds": 0.014075035,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.897928417656531,
+        "peak": 4,
+        "zero_inflight_seconds": 0.039582906
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.388589868558119,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697270880204444,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.010853272,
+      "batch_return_to_eof_seconds": 0.003221763
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n8.measurement.0",
+      "release_seconds": 0.280870299,
+      "submit_seconds": 0.273677958,
+      "release_to_submit_seconds": 0.007192341,
+      "submit_to_first_dispatch_seconds": 0.027114186,
+      "http_coverage_seconds": 0.230385536,
+      "last_body_to_eof_seconds": 0.016178236,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.860604831756308,
+        "peak": 4,
+        "zero_inflight_seconds": 0.043292422
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.398149478446425,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697271172507036,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.010855369,
+      "batch_return_to_eof_seconds": 0.005322867
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n8.measurement.1",
+      "release_seconds": 0.280175926,
+      "submit_seconds": 0.272605487,
+      "release_to_submit_seconds": 0.007570439,
+      "submit_to_first_dispatch_seconds": 0.026361783,
+      "http_coverage_seconds": 0.233503481,
+      "last_body_to_eof_seconds": 0.012740223,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.8749507158672856,
+        "peak": 4,
+        "zero_inflight_seconds": 0.039102006
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.356383967569203,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697271471551038,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.009441585,
+      "batch_return_to_eof_seconds": 0.003298638
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n8.measurement.2",
+      "release_seconds": 0.281980948,
+      "submit_seconds": 0.274490892,
+      "release_to_submit_seconds": 0.007490056,
+      "submit_to_first_dispatch_seconds": 0.023476952,
+      "http_coverage_seconds": 0.233917683,
+      "last_body_to_eof_seconds": 0.017096257,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.8889608803486273,
+        "peak": 4,
+        "zero_inflight_seconds": 0.040573209
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3900534531200877,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697271767981853,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.012071272,
+      "batch_return_to_eof_seconds": 0.005024985
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n8.measurement.3",
+      "release_seconds": 0.277244517,
+      "submit_seconds": 0.269891793,
+      "release_to_submit_seconds": 0.007352724,
+      "submit_to_first_dispatch_seconds": 0.024770479,
+      "http_coverage_seconds": 0.235078713,
+      "last_body_to_eof_seconds": 0.010042601,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.9422087984720604,
+        "peak": 4,
+        "zero_inflight_seconds": 0.03481308
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.37792392116763,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697272063715106,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006361977,
+      "batch_return_to_eof_seconds": 0.003680624
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n8.measurement.4",
+      "release_seconds": 0.279889789,
+      "submit_seconds": 0.273822479,
+      "release_to_submit_seconds": 0.00606731,
+      "submit_to_first_dispatch_seconds": 0.027681819,
+      "http_coverage_seconds": 0.234062453,
+      "last_body_to_eof_seconds": 0.012078207,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.8919468660569683,
+        "peak": 4,
+        "zero_inflight_seconds": 0.039760026
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.383199867601148,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697272361181584,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.008760784,
+      "batch_return_to_eof_seconds": 0.003317423
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-adapted-native.n128.warmup.0",
+      "release_seconds": 4.069635895,
+      "submit_seconds": 4.061163578,
+      "release_to_submit_seconds": 0.008472317,
+      "submit_to_first_dispatch_seconds": 0.062624101,
+      "http_coverage_seconds": 3.952761602,
+      "last_body_to_eof_seconds": 0.045777875,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.2052786865114546,
+        "peak": 4,
+        "zero_inflight_seconds": 0.201598442
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2931814183819323,
+        "peak": 4,
+        "zero_inflight_seconds": 0.093196466
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697276416106138,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.012168739,
+      "batch_return_to_eof_seconds": 0.033609136
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-adapted-native.n128.warmup.1",
+      "release_seconds": 4.355483666,
+      "submit_seconds": 4.34681826,
+      "release_to_submit_seconds": 0.008665406,
+      "submit_to_first_dispatch_seconds": 0.070480765,
+      "http_coverage_seconds": 4.234851331,
+      "last_body_to_eof_seconds": 0.041486164,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.2046227117855164,
+        "peak": 4,
+        "zero_inflight_seconds": 0.21020025
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2893510140557045,
+        "peak": 4,
+        "zero_inflight_seconds": 0.098233321
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697280860277229,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007676449,
+      "batch_return_to_eof_seconds": 0.033809715
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n128.measurement.0",
+      "release_seconds": 3.870979853,
+      "submit_seconds": 3.862144462,
+      "release_to_submit_seconds": 0.008835391,
+      "submit_to_first_dispatch_seconds": 0.071302053,
+      "http_coverage_seconds": 3.747721536,
+      "last_body_to_eof_seconds": 0.043120873,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.328051368990972,
+        "peak": 4,
+        "zero_inflight_seconds": 0.114422926
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.4296612062908616,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697284816664410,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.010549268,
+      "batch_return_to_eof_seconds": 0.032571605
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n128.measurement.1",
+      "release_seconds": 3.964284507,
+      "submit_seconds": 3.955920272,
+      "release_to_submit_seconds": 0.008364235,
+      "submit_to_first_dispatch_seconds": 0.062840597,
+      "http_coverage_seconds": 3.85286371,
+      "last_body_to_eof_seconds": 0.040215965,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.255972357220449,
+        "peak": 4,
+        "zero_inflight_seconds": 0.103056562
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3430632439889756,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697288870425751,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004880355,
+      "batch_return_to_eof_seconds": 0.03533561
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n128.measurement.2",
+      "release_seconds": 4.220088233,
+      "submit_seconds": 4.209692338,
+      "release_to_submit_seconds": 0.010395895,
+      "submit_to_first_dispatch_seconds": 0.066437537,
+      "http_coverage_seconds": 4.099830691,
+      "last_body_to_eof_seconds": 0.04342411,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.080520697662443,
+        "peak": 4,
+        "zero_inflight_seconds": 0.257382254
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.163068271689271,
+        "peak": 4,
+        "zero_inflight_seconds": 0.147520607
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697293196902995,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.008794839,
+      "batch_return_to_eof_seconds": 0.034629271
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n128.measurement.3",
+      "release_seconds": 4.048831687,
+      "submit_seconds": 4.038149736,
+      "release_to_submit_seconds": 0.010681951,
+      "submit_to_first_dispatch_seconds": 0.065558567,
+      "http_coverage_seconds": 3.927335869,
+      "last_body_to_eof_seconds": 0.0452553,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.1947670206452194,
+        "peak": 4,
+        "zero_inflight_seconds": 0.135931945
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.284910695525746,
+        "peak": 4,
+        "zero_inflight_seconds": 0.025118078
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697297356248175,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.009889696,
+      "batch_return_to_eof_seconds": 0.035365604
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-adapted-native.n128.measurement.4",
+      "release_seconds": 3.980171604,
+      "submit_seconds": 3.96953009,
+      "release_to_submit_seconds": 0.010641514,
+      "submit_to_first_dispatch_seconds": 0.06835133,
+      "http_coverage_seconds": 3.856337262,
+      "last_body_to_eof_seconds": 0.044841498,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.230621108101992,
+        "peak": 4,
+        "zero_inflight_seconds": 0.113192828
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.325447653234848,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697301439281935,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "native",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007861389,
+      "batch_return_to_eof_seconds": 0.036980109
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.qualification.0",
+      "release_seconds": 0.355544481,
+      "submit_seconds": 0.340065547,
+      "release_to_submit_seconds": 0.015478934,
+      "submit_to_first_dispatch_seconds": 0.087156946,
+      "http_coverage_seconds": 0.237707055,
+      "last_body_to_eof_seconds": 0.015201546,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.4447152595555353,
+        "peak": 4,
+        "zero_inflight_seconds": 0.102358492
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.497428513428009,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697314023322778,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004630509,
+      "batch_return_to_eof_seconds": 0.010571037
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.warmup.0",
+      "release_seconds": 0.26223932,
+      "submit_seconds": 0.254615396,
+      "release_to_submit_seconds": 0.007623924,
+      "submit_to_first_dispatch_seconds": 0.013787558,
+      "http_coverage_seconds": 0.232960661,
+      "last_body_to_eof_seconds": 0.007867177,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.292405911699071,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021654735
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.598449761438477,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697314306246719,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.003913536,
+      "batch_return_to_eof_seconds": 0.003953641
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.warmup.1",
+      "release_seconds": 0.253190631,
+      "submit_seconds": 0.245979037,
+      "release_to_submit_seconds": 0.007211594,
+      "submit_to_first_dispatch_seconds": 0.013994761,
+      "http_coverage_seconds": 0.225680118,
+      "last_body_to_eof_seconds": 0.006304158,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.2553551301202956,
+        "peak": 4,
+        "zero_inflight_seconds": 0.020298919
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5481597896009607,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697314574248544,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.002945242,
+      "batch_return_to_eof_seconds": 0.003358916
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.measurement.0",
+      "release_seconds": 0.258172957,
+      "submit_seconds": 0.250858336,
+      "release_to_submit_seconds": 0.007314621,
+      "submit_to_first_dispatch_seconds": 0.01511027,
+      "http_coverage_seconds": 0.22917023,
+      "last_body_to_eof_seconds": 0.006577836,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.154737289654987,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021688106
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.453293854965368,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697314846171565,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.003122495,
+      "batch_return_to_eof_seconds": 0.003455341
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.measurement.1",
+      "release_seconds": 0.247057003,
+      "submit_seconds": 0.237749223,
+      "release_to_submit_seconds": 0.00930778,
+      "submit_to_first_dispatch_seconds": 0.014166673,
+      "http_coverage_seconds": 0.216640044,
+      "last_body_to_eof_seconds": 0.006942506,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.258316638115785,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021109179
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.575803598895133,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697315108164234,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.003648939,
+      "batch_return_to_eof_seconds": 0.003293567
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.measurement.2",
+      "release_seconds": 0.248560857,
+      "submit_seconds": 0.240178261,
+      "release_to_submit_seconds": 0.008382596,
+      "submit_to_first_dispatch_seconds": 0.014601375,
+      "http_coverage_seconds": 0.218635027,
+      "last_body_to_eof_seconds": 0.006941859,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.284299431246194,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021543234
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.6079183506126857,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697315371054575,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.003382081,
+      "batch_return_to_eof_seconds": 0.003559778
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.measurement.3",
+      "release_seconds": 0.258776122,
+      "submit_seconds": 0.25134749,
+      "release_to_submit_seconds": 0.007428632,
+      "submit_to_first_dispatch_seconds": 0.013333644,
+      "http_coverage_seconds": 0.231156175,
+      "last_body_to_eof_seconds": 0.006857671,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.251183296081453,
+        "peak": 4,
+        "zero_inflight_seconds": 0.020191315
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5351716691107216,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697315645024208,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.003442223,
+      "batch_return_to_eof_seconds": 0.003415448
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n8.measurement.4",
+      "release_seconds": 0.250357319,
+      "submit_seconds": 0.243114132,
+      "release_to_submit_seconds": 0.007243187,
+      "submit_to_first_dispatch_seconds": 0.013723713,
+      "http_coverage_seconds": 0.221696795,
+      "last_body_to_eof_seconds": 0.007693624,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.1170943818272154,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021417337
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.4182257573908545,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697315911671921,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004279991,
+      "batch_return_to_eof_seconds": 0.003413633
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.warmup.0",
+      "release_seconds": 3.810139504,
+      "submit_seconds": 3.80158429,
+      "release_to_submit_seconds": 0.008555214,
+      "submit_to_first_dispatch_seconds": 0.048570488,
+      "http_coverage_seconds": 3.709124251,
+      "last_body_to_eof_seconds": 0.043889551,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.4253054228609514,
+        "peak": 4,
+        "zero_inflight_seconds": 0.105281531
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.510690503422556,
+        "peak": 4,
+        "zero_inflight_seconds": 0.012821492
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697319702187224,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.00494345,
+      "batch_return_to_eof_seconds": 0.038946101
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.warmup.1",
+      "release_seconds": 3.866131231,
+      "submit_seconds": 3.857309625,
+      "release_to_submit_seconds": 0.008821606,
+      "submit_to_first_dispatch_seconds": 0.04844814,
+      "http_coverage_seconds": 3.769269582,
+      "last_body_to_eof_seconds": 0.039591903,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.4734130037590645,
+        "peak": 4,
+        "zero_inflight_seconds": 0.088040043
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5545426294212987,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697323653491980,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004090207,
+      "batch_return_to_eof_seconds": 0.035501696
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.measurement.0",
+      "release_seconds": 3.524181637,
+      "submit_seconds": 3.515295966,
+      "release_to_submit_seconds": 0.008885671,
+      "submit_to_first_dispatch_seconds": 0.047392624,
+      "http_coverage_seconds": 3.425767142,
+      "last_body_to_eof_seconds": 0.0421362,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.477117192470274,
+        "peak": 4,
+        "zero_inflight_seconds": 0.111238549
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5679879960737857,
+        "peak": 4,
+        "zero_inflight_seconds": 0.021709725
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697327261567450,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004414185,
+      "batch_return_to_eof_seconds": 0.037722015
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.measurement.1",
+      "release_seconds": 3.81647362,
+      "submit_seconds": 3.807584757,
+      "release_to_submit_seconds": 0.008888863,
+      "submit_to_first_dispatch_seconds": 0.051184154,
+      "http_coverage_seconds": 3.716579993,
+      "last_body_to_eof_seconds": 0.03982061,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.4618906501731224,
+        "peak": 4,
+        "zero_inflight_seconds": 0.091004764
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5466590507473574,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697331174096857,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006034192,
+      "batch_return_to_eof_seconds": 0.033786418
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.measurement.2",
+      "release_seconds": 3.371261865,
+      "submit_seconds": 3.362253435,
+      "release_to_submit_seconds": 0.00900843,
+      "submit_to_first_dispatch_seconds": 0.047540348,
+      "http_coverage_seconds": 3.272587988,
+      "last_body_to_eof_seconds": 0.042125099,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.508749856032194,
+        "peak": 4,
+        "zero_inflight_seconds": 0.108942099
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.604885888250715,
+        "peak": 4,
+        "zero_inflight_seconds": 0.019276652
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697334633474089,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004038566,
+      "batch_return_to_eof_seconds": 0.038086533
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.measurement.3",
+      "release_seconds": 3.507523466,
+      "submit_seconds": 3.498625382,
+      "release_to_submit_seconds": 0.008898084,
+      "submit_to_first_dispatch_seconds": 0.047549683,
+      "http_coverage_seconds": 3.411807899,
+      "last_body_to_eof_seconds": 0.0392678,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.46794991753707,
+        "peak": 4,
+        "zero_inflight_seconds": 0.108278743
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5561960005298645,
+        "peak": 4,
+        "zero_inflight_seconds": 0.02146126
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697338239254539,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004236271,
+      "batch_return_to_eof_seconds": 0.035031529
+    },
+    {
+      "arm": "lotus-method-semloom-local-diagnostic",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom-local-diagnostic.n128.measurement.4",
+      "release_seconds": 3.648217998,
+      "submit_seconds": 3.63708577,
+      "release_to_submit_seconds": 0.011132228,
+      "submit_to_first_dispatch_seconds": 0.050940038,
+      "http_coverage_seconds": 3.54595082,
+      "last_body_to_eof_seconds": 0.040194912,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.41309860476565,
+        "peak": 4,
+        "zero_inflight_seconds": 0.09113495
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.500819102448804,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697341998172652,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004404836,
+      "batch_return_to_eof_seconds": 0.035790076
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.lotus-method-semloom.n8.qualification.0",
+      "release_seconds": 3.487410588,
+      "submit_seconds": 3.471301958,
+      "release_to_submit_seconds": 0.01610863,
+      "submit_to_first_dispatch_seconds": 3.214425999,
+      "http_coverage_seconds": 0.244036304,
+      "last_body_to_eof_seconds": 0.012839655,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 0.21606024542794902,
+        "peak": 4,
+        "zero_inflight_seconds": 3.233306916
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.07335564711716,
+        "peak": 4,
+        "zero_inflight_seconds": 0.006041262
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697371308395565,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007470374,
+      "batch_return_to_eof_seconds": 0.005369281
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom.n8.warmup.0",
+      "release_seconds": 0.272282964,
+      "submit_seconds": 0.263969798,
+      "release_to_submit_seconds": 0.008313166,
+      "submit_to_first_dispatch_seconds": 0.023469227,
+      "http_coverage_seconds": 0.229828754,
+      "last_body_to_eof_seconds": 0.010671817,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.9790113299249485,
+        "peak": 4,
+        "zero_inflight_seconds": 0.034141044
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.421543237361849,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697371603929405,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007099819,
+      "batch_return_to_eof_seconds": 0.003571998
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom.n8.warmup.1",
+      "release_seconds": 0.27080475,
+      "submit_seconds": 0.263339719,
+      "release_to_submit_seconds": 0.007465031,
+      "submit_to_first_dispatch_seconds": 0.024412789,
+      "http_coverage_seconds": 0.228736457,
+      "last_body_to_eof_seconds": 0.010190473,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.9388458449748707,
+        "peak": 4,
+        "zero_inflight_seconds": 0.034603262
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3834345829707417,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697371893220706,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006790928,
+      "batch_return_to_eof_seconds": 0.003399545
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n8.measurement.0",
+      "release_seconds": 0.268496075,
+      "submit_seconds": 0.261675716,
+      "release_to_submit_seconds": 0.006820359,
+      "submit_to_first_dispatch_seconds": 0.02302133,
+      "http_coverage_seconds": 0.228526424,
+      "last_body_to_eof_seconds": 0.010127962,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.99364936867126,
+        "peak": 4,
+        "zero_inflight_seconds": 0.033149292
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.4278983072872133,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697372182006544,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006758021,
+      "batch_return_to_eof_seconds": 0.003369941
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n8.measurement.1",
+      "release_seconds": 0.27310933,
+      "submit_seconds": 0.265941947,
+      "release_to_submit_seconds": 0.007167383,
+      "submit_to_first_dispatch_seconds": 0.022746909,
+      "http_coverage_seconds": 0.232967011,
+      "last_body_to_eof_seconds": 0.010228027,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.036184145105924,
+        "peak": 4,
+        "zero_inflight_seconds": 0.032974936
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.4659358830851805,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697372473981224,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.00684141,
+      "batch_return_to_eof_seconds": 0.003386617
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n8.measurement.2",
+      "release_seconds": 0.264753614,
+      "submit_seconds": 0.256603563,
+      "release_to_submit_seconds": 0.008150051,
+      "submit_to_first_dispatch_seconds": 0.023209348,
+      "http_coverage_seconds": 0.225529717,
+      "last_body_to_eof_seconds": 0.007864498,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.896441808175516,
+        "peak": 4,
+        "zero_inflight_seconds": 0.031073846
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.29551820437038,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697372758403499,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004180005,
+      "batch_return_to_eof_seconds": 0.003684493
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n8.measurement.3",
+      "release_seconds": 0.323448034,
+      "submit_seconds": 0.316179707,
+      "release_to_submit_seconds": 0.007268327,
+      "submit_to_first_dispatch_seconds": 0.022874198,
+      "http_coverage_seconds": 0.282909516,
+      "last_body_to_eof_seconds": 0.010395993,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.2814544451456524,
+        "peak": 4,
+        "zero_inflight_seconds": 0.033270191
+      },
+      "upstream_coverage": {
+        "mean_inflight": 2.5497537452928944,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697373102298730,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006793538,
+      "batch_return_to_eof_seconds": 0.003602455
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n8.measurement.4",
+      "release_seconds": 0.271094218,
+      "submit_seconds": 0.263628173,
+      "release_to_submit_seconds": 0.007466045,
+      "submit_to_first_dispatch_seconds": 0.022467961,
+      "http_coverage_seconds": 0.23096858,
+      "last_body_to_eof_seconds": 0.010191632,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.0223682201067334,
+        "peak": 4,
+        "zero_inflight_seconds": 0.032659593
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.4497394061131605,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697373396094563,
+          "stage_id": "0",
+          "response_count": 8,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006845472,
+      "batch_return_to_eof_seconds": 0.00334616
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom.n128.warmup.0",
+      "release_seconds": 3.790100983,
+      "submit_seconds": 3.780416073,
+      "release_to_submit_seconds": 0.00968491,
+      "submit_to_first_dispatch_seconds": 0.056943252,
+      "http_coverage_seconds": 3.684456431,
+      "last_body_to_eof_seconds": 0.03901639,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.257919901717654,
+        "peak": 4,
+        "zero_inflight_seconds": 0.10653056
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.342770634325897,
+        "peak": 4,
+        "zero_inflight_seconds": 0.010570918
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697377178492309,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.005976467,
+      "batch_return_to_eof_seconds": 0.033039923
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.lotus-method-semloom.n128.warmup.1",
+      "release_seconds": 3.835228489,
+      "submit_seconds": 3.826282222,
+      "release_to_submit_seconds": 0.008946267,
+      "submit_to_first_dispatch_seconds": 0.056736135,
+      "http_coverage_seconds": 3.726956785,
+      "last_body_to_eof_seconds": 0.042589302,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.1324475735444066,
+        "peak": 4,
+        "zero_inflight_seconds": 0.103071666
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2159290148570907,
+        "peak": 4,
+        "zero_inflight_seconds": 0.003746229
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697381120368343,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006365815,
+      "batch_return_to_eof_seconds": 0.036223487
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n128.measurement.0",
+      "release_seconds": 4.065700029,
+      "submit_seconds": 4.054862456,
+      "release_to_submit_seconds": 0.010837573,
+      "submit_to_first_dispatch_seconds": 0.064421785,
+      "http_coverage_seconds": 3.947747847,
+      "last_body_to_eof_seconds": 0.042692824,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.0128198232527175,
+        "peak": 4,
+        "zero_inflight_seconds": 0.119260296
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.094566943348142,
+        "peak": 4,
+        "zero_inflight_seconds": 0.012145687
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697385303559964,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.008358617,
+      "batch_return_to_eof_seconds": 0.034334207
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n128.measurement.1",
+      "release_seconds": 3.984605763,
+      "submit_seconds": 3.973585167,
+      "release_to_submit_seconds": 0.011020596,
+      "submit_to_first_dispatch_seconds": 0.061440885,
+      "http_coverage_seconds": 3.872634962,
+      "last_body_to_eof_seconds": 0.03950932,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.0345840894870646,
+        "peak": 4,
+        "zero_inflight_seconds": 0.111433839
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1136883399339617,
+        "peak": 4,
+        "zero_inflight_seconds": 0.010483634
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697389412455295,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.004953876,
+      "batch_return_to_eof_seconds": 0.034555444
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n128.measurement.2",
+      "release_seconds": 4.097269738,
+      "submit_seconds": 4.086334523,
+      "release_to_submit_seconds": 0.010935215,
+      "submit_to_first_dispatch_seconds": 0.062051747,
+      "http_coverage_seconds": 3.979978234,
+      "last_body_to_eof_seconds": 0.044304542,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.0071459587646685,
+        "peak": 4,
+        "zero_inflight_seconds": 0.160877841
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.0875054144831284,
+        "peak": 4,
+        "zero_inflight_seconds": 0.054521552
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697393630321948,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006715688,
+      "batch_return_to_eof_seconds": 0.037588854
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n128.measurement.3",
+      "release_seconds": 4.056554211,
+      "submit_seconds": 4.044451249,
+      "release_to_submit_seconds": 0.012102962,
+      "submit_to_first_dispatch_seconds": 0.064386006,
+      "http_coverage_seconds": 3.939553721,
+      "last_body_to_eof_seconds": 0.040511522,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.037231889007744,
+        "peak": 4,
+        "zero_inflight_seconds": 0.133417906
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1181035155123857,
+        "peak": 4,
+        "zero_inflight_seconds": 0.028520378
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697397820104538,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.006751563,
+      "batch_return_to_eof_seconds": 0.033759959
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.lotus-method-semloom.n128.measurement.4",
+      "release_seconds": 4.0445254,
+      "submit_seconds": 4.033927536,
+      "release_to_submit_seconds": 0.010597864,
+      "submit_to_first_dispatch_seconds": 0.062667697,
+      "http_coverage_seconds": 3.928096706,
+      "last_body_to_eof_seconds": 0.043163133,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.011263089283218,
+        "peak": 4,
+        "zero_inflight_seconds": 0.144257187
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.092392576650581,
+        "peak": 4,
+        "zero_inflight_seconds": 0.038426357
+      },
+      "batch_return_events": [
+        {
+          "event": "lotus_batch_return",
+          "monotonic_ns": 2697401989081940,
+          "stage_id": "0",
+          "response_count": 128,
+          "executor": "semloom",
+          "scope": "complete SDK response list returned before observation serialization and LOTUS statistics"
+        }
+      ],
+      "last_body_to_batch_return_seconds": 0.007503169,
+      "batch_return_to_eof_seconds": 0.035659964
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.duckdb-adapted-native.n8.qualification.0",
+      "release_seconds": 0.695974706,
+      "submit_seconds": 0.21300302,
+      "release_to_submit_seconds": 0.482971686,
+      "submit_to_first_dispatch_seconds": 0.005510425,
+      "http_coverage_seconds": 0.205570493,
+      "last_body_to_eof_seconds": 0.001922102,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.6524998331009577,
+        "peak": 4,
+        "zero_inflight_seconds": 0.007432527
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.784558200188779,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-adapted-native.n8.warmup.0",
+      "release_seconds": 0.215575249,
+      "submit_seconds": 0.20346928,
+      "release_to_submit_seconds": 0.012105969,
+      "submit_to_first_dispatch_seconds": 0.003204658,
+      "http_coverage_seconds": 0.198400683,
+      "last_body_to_eof_seconds": 0.001863939,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.6870792534381605,
+        "peak": 4,
+        "zero_inflight_seconds": 0.005068597
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.781274084626009,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-adapted-native.n8.warmup.1",
+      "release_seconds": 0.215376335,
+      "submit_seconds": 0.204939588,
+      "release_to_submit_seconds": 0.010436747,
+      "submit_to_first_dispatch_seconds": 0.004242674,
+      "http_coverage_seconds": 0.198807961,
+      "last_body_to_eof_seconds": 0.001888953,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.577584712427547,
+        "peak": 4,
+        "zero_inflight_seconds": 0.006131627
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.687924433770537,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n8.measurement.0",
+      "release_seconds": 0.20984654,
+      "submit_seconds": 0.19801334,
+      "release_to_submit_seconds": 0.0118332,
+      "submit_to_first_dispatch_seconds": 0.003983605,
+      "http_coverage_seconds": 0.192438659,
+      "last_body_to_eof_seconds": 0.001591076,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.6114673688146466,
+        "peak": 4,
+        "zero_inflight_seconds": 0.005574681
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.7160865686556255,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n8.measurement.1",
+      "release_seconds": 0.215897825,
+      "submit_seconds": 0.204339846,
+      "release_to_submit_seconds": 0.011557979,
+      "submit_to_first_dispatch_seconds": 0.003636281,
+      "http_coverage_seconds": 0.199116975,
+      "last_body_to_eof_seconds": 0.00158659,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.684205311576872,
+        "peak": 4,
+        "zero_inflight_seconds": 0.005222871
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.7808426227849234,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n8.measurement.2",
+      "release_seconds": 0.210231933,
+      "submit_seconds": 0.1998794,
+      "release_to_submit_seconds": 0.010352533,
+      "submit_to_first_dispatch_seconds": 0.004173434,
+      "http_coverage_seconds": 0.194472001,
+      "last_body_to_eof_seconds": 0.001233965,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.6714555426922435,
+        "peak": 4,
+        "zero_inflight_seconds": 0.005407399
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.7735423465920936,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n8.measurement.3",
+      "release_seconds": 0.216045809,
+      "submit_seconds": 0.207124285,
+      "release_to_submit_seconds": 0.008921524,
+      "submit_to_first_dispatch_seconds": 0.002651878,
+      "http_coverage_seconds": 0.203020235,
+      "last_body_to_eof_seconds": 0.001452172,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.496411108914631,
+        "peak": 4,
+        "zero_inflight_seconds": 0.00410405
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.567090989723266,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n8.measurement.4",
+      "release_seconds": 0.215511512,
+      "submit_seconds": 0.198109277,
+      "release_to_submit_seconds": 0.017402235,
+      "submit_to_first_dispatch_seconds": 0.002729749,
+      "http_coverage_seconds": 0.193611425,
+      "last_body_to_eof_seconds": 0.001768103,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.6741533058040488,
+        "peak": 4,
+        "zero_inflight_seconds": 0.004497852
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.75950879448359,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-adapted-native.n128.warmup.0",
+      "release_seconds": 3.31457805,
+      "submit_seconds": 3.2791686,
+      "release_to_submit_seconds": 0.03540945,
+      "submit_to_first_dispatch_seconds": 0.004055246,
+      "http_coverage_seconds": 3.271238,
+      "last_body_to_eof_seconds": 0.003875354,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.8375588037772745,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0079306
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.8468623591435414,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-adapted-native.n128.warmup.1",
+      "release_seconds": 3.322525988,
+      "submit_seconds": 3.286461705,
+      "release_to_submit_seconds": 0.036064283,
+      "submit_to_first_dispatch_seconds": 0.006543828,
+      "http_coverage_seconds": 3.275798076,
+      "last_body_to_eof_seconds": 0.004119801,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.8340906449113787,
+        "peak": 4,
+        "zero_inflight_seconds": 0.010663629
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.8465716706770543,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n128.measurement.0",
+      "release_seconds": 3.32295979,
+      "submit_seconds": 3.286858526,
+      "release_to_submit_seconds": 0.036101264,
+      "submit_to_first_dispatch_seconds": 0.004156585,
+      "http_coverage_seconds": 3.279319633,
+      "last_body_to_eof_seconds": 0.003382308,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.837507947855009,
+        "peak": 4,
+        "zero_inflight_seconds": 0.007538893
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.8463300710522716,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n128.measurement.1",
+      "release_seconds": 3.326968427,
+      "submit_seconds": 3.290786966,
+      "release_to_submit_seconds": 0.036181461,
+      "submit_to_first_dispatch_seconds": 0.004048853,
+      "http_coverage_seconds": 3.283394291,
+      "last_body_to_eof_seconds": 0.003343822,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.8417427595949705,
+        "peak": 4,
+        "zero_inflight_seconds": 0.007392675
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.8503925753460475,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n128.measurement.2",
+      "release_seconds": 3.178621607,
+      "submit_seconds": 3.134624929,
+      "release_to_submit_seconds": 0.043996678,
+      "submit_to_first_dispatch_seconds": 0.004752209,
+      "http_coverage_seconds": 3.126374695,
+      "last_body_to_eof_seconds": 0.003498025,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.8243592421835166,
+        "peak": 4,
+        "zero_inflight_seconds": 0.008250234
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.834451397387606,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n128.measurement.3",
+      "release_seconds": 3.27706333,
+      "submit_seconds": 3.228263674,
+      "release_to_submit_seconds": 0.048799656,
+      "submit_to_first_dispatch_seconds": 0.010613895,
+      "http_coverage_seconds": 3.213088959,
+      "last_body_to_eof_seconds": 0.00456082,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.7979205629162,
+        "peak": 4,
+        "zero_inflight_seconds": 0.024069331
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.8158573094147563,
+        "peak": 4,
+        "zero_inflight_seconds": 0.008894616
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-adapted-native.n128.measurement.4",
+      "release_seconds": 3.385264491,
+      "submit_seconds": 3.337355758,
+      "release_to_submit_seconds": 0.047908733,
+      "submit_to_first_dispatch_seconds": 0.005807729,
+      "http_coverage_seconds": 3.326230751,
+      "last_body_to_eof_seconds": 0.005317278,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.7625001460812197,
+        "peak": 4,
+        "zero_inflight_seconds": 0.011125007
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.775084312242894,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.duckdb-method-semloom.n8.qualification.0",
+      "release_seconds": 2.187463065,
+      "submit_seconds": 1.875488667,
+      "release_to_submit_seconds": 0.311974398,
+      "submit_to_first_dispatch_seconds": 1.642331859,
+      "http_coverage_seconds": 0.227316702,
+      "last_body_to_eof_seconds": 0.005840106,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 0.4042797892310591,
+        "peak": 4,
+        "zero_inflight_seconds": 1.659510558
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3355321290909807,
+        "peak": 4,
+        "zero_inflight_seconds": 0.011338593
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-method-semloom.n8.warmup.0",
+      "release_seconds": 0.240760617,
+      "submit_seconds": 0.224613982,
+      "release_to_submit_seconds": 0.016146635,
+      "submit_to_first_dispatch_seconds": 0.016309621,
+      "http_coverage_seconds": 0.202167393,
+      "last_body_to_eof_seconds": 0.006136968,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.2078033993449258,
+        "peak": 4,
+        "zero_inflight_seconds": 0.022446589
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.5639649119875627,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-method-semloom.n8.warmup.1",
+      "release_seconds": 0.24741659,
+      "submit_seconds": 0.236626634,
+      "release_to_submit_seconds": 0.010789956,
+      "submit_to_first_dispatch_seconds": 0.017076395,
+      "http_coverage_seconds": 0.21360652,
+      "last_body_to_eof_seconds": 0.005943719,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.0471228103595474,
+        "peak": 4,
+        "zero_inflight_seconds": 0.023020114
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.375507517279903,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n8.measurement.0",
+      "release_seconds": 0.251674564,
+      "submit_seconds": 0.241177277,
+      "release_to_submit_seconds": 0.010497287,
+      "submit_to_first_dispatch_seconds": 0.019757246,
+      "http_coverage_seconds": 0.215155394,
+      "last_body_to_eof_seconds": 0.006264637,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.0207319365331418,
+        "peak": 4,
+        "zero_inflight_seconds": 0.026021883
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.386073151389363,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n8.measurement.1",
+      "release_seconds": 0.255817634,
+      "submit_seconds": 0.246096166,
+      "release_to_submit_seconds": 0.009721468,
+      "submit_to_first_dispatch_seconds": 0.016744008,
+      "http_coverage_seconds": 0.222780881,
+      "last_body_to_eof_seconds": 0.006571277,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.077694010072469,
+        "peak": 4,
+        "zero_inflight_seconds": 0.023315285
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3997921751642592,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n8.measurement.2",
+      "release_seconds": 0.28945032,
+      "submit_seconds": 0.275873365,
+      "release_to_submit_seconds": 0.013576955,
+      "submit_to_first_dispatch_seconds": 0.017806576,
+      "http_coverage_seconds": 0.253482246,
+      "last_body_to_eof_seconds": 0.004584543,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.4587716324118496,
+        "peak": 4,
+        "zero_inflight_seconds": 0.022391119
+      },
+      "upstream_coverage": {
+        "mean_inflight": 2.675964943122683,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n8.measurement.3",
+      "release_seconds": 0.282255006,
+      "submit_seconds": 0.27036971,
+      "release_to_submit_seconds": 0.011885296,
+      "submit_to_first_dispatch_seconds": 0.018323463,
+      "http_coverage_seconds": 0.244323987,
+      "last_body_to_eof_seconds": 0.00772226,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.540279833861567,
+        "peak": 4,
+        "zero_inflight_seconds": 0.026045723
+      },
+      "upstream_coverage": {
+        "mean_inflight": 2.8110818361849996,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n8.measurement.4",
+      "release_seconds": 0.244468479,
+      "submit_seconds": 0.232209113,
+      "release_to_submit_seconds": 0.012259366,
+      "submit_to_first_dispatch_seconds": 0.017294461,
+      "http_coverage_seconds": 0.209062972,
+      "last_body_to_eof_seconds": 0.00585168,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 3.0628164192677487,
+        "peak": 4,
+        "zero_inflight_seconds": 0.023146141
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.401912242977202,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-method-semloom.n128.warmup.0",
+      "release_seconds": 3.817214903,
+      "submit_seconds": 3.77514427,
+      "release_to_submit_seconds": 0.042070633,
+      "submit_to_first_dispatch_seconds": 0.022757985,
+      "http_coverage_seconds": 3.744970471,
+      "last_body_to_eof_seconds": 0.007415814,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.3153242773950993,
+        "peak": 4,
+        "zero_inflight_seconds": 0.030173799
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.342036351399578,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.duckdb-method-semloom.n128.warmup.1",
+      "release_seconds": 3.659886673,
+      "submit_seconds": 3.62174993,
+      "release_to_submit_seconds": 0.038136743,
+      "submit_to_first_dispatch_seconds": 0.024301992,
+      "http_coverage_seconds": 3.587591236,
+      "last_body_to_eof_seconds": 0.009856702,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.3617378726642233,
+        "peak": 4,
+        "zero_inflight_seconds": 0.034158694
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3937461388647456,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n128.measurement.0",
+      "release_seconds": 3.67176327,
+      "submit_seconds": 3.63572337,
+      "release_to_submit_seconds": 0.0360399,
+      "submit_to_first_dispatch_seconds": 0.023099137,
+      "http_coverage_seconds": 3.604619035,
+      "last_body_to_eof_seconds": 0.008005198,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.361438021892188,
+        "peak": 4,
+        "zero_inflight_seconds": 0.031104335
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3904439427119653,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n128.measurement.1",
+      "release_seconds": 3.618001733,
+      "submit_seconds": 3.581026265,
+      "release_to_submit_seconds": 0.036975468,
+      "submit_to_first_dispatch_seconds": 0.023749199,
+      "http_coverage_seconds": 3.547969803,
+      "last_body_to_eof_seconds": 0.009307263,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.365109444959628,
+        "peak": 4,
+        "zero_inflight_seconds": 0.040856959
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3964621955943968,
+        "peak": 4,
+        "zero_inflight_seconds": 0.007800497
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n128.measurement.2",
+      "release_seconds": 3.66155142,
+      "submit_seconds": 3.624046657,
+      "release_to_submit_seconds": 0.037504763,
+      "submit_to_first_dispatch_seconds": 0.029701906,
+      "http_coverage_seconds": 3.586402704,
+      "last_body_to_eof_seconds": 0.007942047,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.361508781756283,
+        "peak": 4,
+        "zero_inflight_seconds": 0.037643953
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3967921810377937,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n128.measurement.3",
+      "release_seconds": 3.706109891,
+      "submit_seconds": 3.668161766,
+      "release_to_submit_seconds": 0.037948125,
+      "submit_to_first_dispatch_seconds": 0.024255805,
+      "http_coverage_seconds": 3.636438316,
+      "last_body_to_eof_seconds": 0.007467645,
+      "correct": 107,
+      "upstream_query": {
+        "mean_inflight": 3.307474747284632,
+        "peak": 4,
+        "zero_inflight_seconds": 0.04756959
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3363283949073868,
+        "peak": 4,
+        "zero_inflight_seconds": 0.01584614
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.duckdb-method-semloom.n128.measurement.4",
+      "release_seconds": 3.675548204,
+      "submit_seconds": 3.628559634,
+      "release_to_submit_seconds": 0.04698857,
+      "submit_to_first_dispatch_seconds": 0.023042174,
+      "http_coverage_seconds": 3.596296356,
+      "last_body_to_eof_seconds": 0.009221104,
+      "correct": 106,
+      "upstream_query": {
+        "mean_inflight": 3.339805820592447,
+        "peak": 4,
+        "zero_inflight_seconds": 0.051315607
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.369768057568835,
+        "peak": 4,
+        "zero_inflight_seconds": 0.019052329
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.sema-native-direct.n8.qualification.0",
+      "release_seconds": 0.912679057,
+      "submit_seconds": 0.792861012,
+      "release_to_submit_seconds": 0.119818045,
+      "submit_to_first_dispatch_seconds": 0.007752575,
+      "http_coverage_seconds": 0.782711144,
+      "last_body_to_eof_seconds": 0.002397293,
+      "correct": 6,
+      "upstream_query": {
+        "mean_inflight": 7.82210032797022,
+        "peak": 8,
+        "zero_inflight_seconds": 0.010149868
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.923534025982899,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-direct.n8.warmup.0",
+      "release_seconds": 0.230345802,
+      "submit_seconds": 0.217406396,
+      "release_to_submit_seconds": 0.012939406,
+      "submit_to_first_dispatch_seconds": 0.00341907,
+      "http_coverage_seconds": 0.212165166,
+      "last_body_to_eof_seconds": 0.00182216,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.492533016369951,
+        "peak": 8,
+        "zero_inflight_seconds": 0.00524123
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.67762508196091,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-direct.n8.warmup.1",
+      "release_seconds": 0.226808125,
+      "submit_seconds": 0.216044867,
+      "release_to_submit_seconds": 0.010763258,
+      "submit_to_first_dispatch_seconds": 0.003137401,
+      "http_coverage_seconds": 0.21114027,
+      "last_body_to_eof_seconds": 0.001767196,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.492154030208919,
+        "peak": 8,
+        "zero_inflight_seconds": 0.004904597
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.666189974086895,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n8.measurement.0",
+      "release_seconds": 0.227157541,
+      "submit_seconds": 0.216320339,
+      "release_to_submit_seconds": 0.010837202,
+      "submit_to_first_dispatch_seconds": 0.002769673,
+      "http_coverage_seconds": 0.211635228,
+      "last_body_to_eof_seconds": 0.001915438,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.477481800728872,
+        "peak": 8,
+        "zero_inflight_seconds": 0.004685111
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.643015830993884,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n8.measurement.1",
+      "release_seconds": 0.228652282,
+      "submit_seconds": 0.216800155,
+      "release_to_submit_seconds": 0.011852127,
+      "submit_to_first_dispatch_seconds": 0.003465543,
+      "http_coverage_seconds": 0.211476473,
+      "last_body_to_eof_seconds": 0.001858139,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.450667103997227,
+        "peak": 8,
+        "zero_inflight_seconds": 0.005323682
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.638229255885122,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n8.measurement.2",
+      "release_seconds": 0.222850779,
+      "submit_seconds": 0.211966492,
+      "release_to_submit_seconds": 0.010884287,
+      "submit_to_first_dispatch_seconds": 0.003620098,
+      "http_coverage_seconds": 0.206425396,
+      "last_body_to_eof_seconds": 0.001920998,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.454301696892734,
+        "peak": 8,
+        "zero_inflight_seconds": 0.005541096
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.654398206895047,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n8.measurement.3",
+      "release_seconds": 0.230714411,
+      "submit_seconds": 0.220432128,
+      "release_to_submit_seconds": 0.010282283,
+      "submit_to_first_dispatch_seconds": 0.002229688,
+      "http_coverage_seconds": 0.216275874,
+      "last_body_to_eof_seconds": 0.001926566,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.545422521167151,
+        "peak": 8,
+        "zero_inflight_seconds": 0.004156254
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.690425715260316,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n8.measurement.4",
+      "release_seconds": 0.226401207,
+      "submit_seconds": 0.214814216,
+      "release_to_submit_seconds": 0.011586991,
+      "submit_to_first_dispatch_seconds": 0.002003084,
+      "http_coverage_seconds": 0.211098419,
+      "last_body_to_eof_seconds": 0.001712713,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.554856090157459,
+        "peak": 8,
+        "zero_inflight_seconds": 0.003715797
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.687838192667847,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-direct.n128.warmup.0",
+      "release_seconds": 2.222395399,
+      "submit_seconds": 2.209588116,
+      "release_to_submit_seconds": 0.012807283,
+      "submit_to_first_dispatch_seconds": 0.088692629,
+      "http_coverage_seconds": 2.112604608,
+      "last_body_to_eof_seconds": 0.008290879,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 108.3493906603723,
+        "peak": 128,
+        "zero_inflight_seconds": 0.096983508
+      },
+      "upstream_coverage": {
+        "mean_inflight": 113.32339476701549,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-direct.n128.warmup.1",
+      "release_seconds": 1.960484378,
+      "submit_seconds": 1.946425788,
+      "release_to_submit_seconds": 0.01405859,
+      "submit_to_first_dispatch_seconds": 0.004943224,
+      "http_coverage_seconds": 1.933005692,
+      "last_body_to_eof_seconds": 0.008476872,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 119.1501875677985,
+        "peak": 128,
+        "zero_inflight_seconds": 0.013420096
+      },
+      "upstream_coverage": {
+        "mean_inflight": 119.97740031848804,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n128.measurement.0",
+      "release_seconds": 2.016009053,
+      "submit_seconds": 2.002147801,
+      "release_to_submit_seconds": 0.013861252,
+      "submit_to_first_dispatch_seconds": 0.071593319,
+      "http_coverage_seconds": 1.922696839,
+      "last_body_to_eof_seconds": 0.007857643,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 115.71914786424901,
+        "peak": 128,
+        "zero_inflight_seconds": 0.079450962
+      },
+      "upstream_coverage": {
+        "mean_inflight": 120.50097172391513,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n128.measurement.1",
+      "release_seconds": 1.955586345,
+      "submit_seconds": 1.939682485,
+      "release_to_submit_seconds": 0.01590386,
+      "submit_to_first_dispatch_seconds": 0.005384901,
+      "http_coverage_seconds": 1.925129902,
+      "last_body_to_eof_seconds": 0.009167682,
+      "correct": 112,
+      "upstream_query": {
+        "mean_inflight": 120.08636020188634,
+        "peak": 128,
+        "zero_inflight_seconds": 0.014552583
+      },
+      "upstream_coverage": {
+        "mean_inflight": 120.99412581406156,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n128.measurement.2",
+      "release_seconds": 1.962434712,
+      "submit_seconds": 1.947721098,
+      "release_to_submit_seconds": 0.014713614,
+      "submit_to_first_dispatch_seconds": 0.004623352,
+      "http_coverage_seconds": 1.934885227,
+      "last_body_to_eof_seconds": 0.008212519,
+      "correct": 112,
+      "upstream_query": {
+        "mean_inflight": 119.3605064070626,
+        "peak": 128,
+        "zero_inflight_seconds": 0.012835871
+      },
+      "upstream_coverage": {
+        "mean_inflight": 120.15233428468365,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n128.measurement.3",
+      "release_seconds": 1.979395265,
+      "submit_seconds": 1.96419419,
+      "release_to_submit_seconds": 0.015201075,
+      "submit_to_first_dispatch_seconds": 0.005513998,
+      "http_coverage_seconds": 1.949186166,
+      "last_body_to_eof_seconds": 0.009494026,
+      "correct": 112,
+      "upstream_query": {
+        "mean_inflight": 118.90662840317229,
+        "peak": 128,
+        "zero_inflight_seconds": 0.015008024
+      },
+      "upstream_coverage": {
+        "mean_inflight": 119.8221661614235,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-direct",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-direct.n128.measurement.4",
+      "release_seconds": 1.972250506,
+      "submit_seconds": 1.958980738,
+      "release_to_submit_seconds": 0.013269768,
+      "submit_to_first_dispatch_seconds": 0.006753105,
+      "http_coverage_seconds": 1.94329167,
+      "last_body_to_eof_seconds": 0.008935963,
+      "correct": 112,
+      "upstream_query": {
+        "mean_inflight": 119.57620192588132,
+        "peak": 128,
+        "zero_inflight_seconds": 0.015689068
+      },
+      "upstream_coverage": {
+        "mean_inflight": 120.54159440512602,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.sema-native-transparent.n8.qualification.0",
+      "release_seconds": 0.374361315,
+      "submit_seconds": 0.238908659,
+      "release_to_submit_seconds": 0.135452656,
+      "submit_to_first_dispatch_seconds": 0.013343968,
+      "http_coverage_seconds": 0.223204658,
+      "last_body_to_eof_seconds": 0.002360033,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.14081858372492,
+        "peak": 8,
+        "zero_inflight_seconds": 0.015704001
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.643224864957792,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-transparent.n8.warmup.0",
+      "release_seconds": 0.237114273,
+      "submit_seconds": 0.224502368,
+      "release_to_submit_seconds": 0.012611905,
+      "submit_to_first_dispatch_seconds": 0.008384188,
+      "http_coverage_seconds": 0.213539248,
+      "last_body_to_eof_seconds": 0.002578932,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.292621483618382,
+        "peak": 8,
+        "zero_inflight_seconds": 0.01096312
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.667025183117626,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-transparent.n8.warmup.1",
+      "release_seconds": 0.232781899,
+      "submit_seconds": 0.219832577,
+      "release_to_submit_seconds": 0.012949322,
+      "submit_to_first_dispatch_seconds": 0.008842252,
+      "http_coverage_seconds": 0.208488637,
+      "last_body_to_eof_seconds": 0.002501688,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.2648677133962725,
+        "peak": 8,
+        "zero_inflight_seconds": 0.01134394
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.660151718484303,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n8.measurement.0",
+      "release_seconds": 0.234969478,
+      "submit_seconds": 0.222575694,
+      "release_to_submit_seconds": 0.012393784,
+      "submit_to_first_dispatch_seconds": 0.009694258,
+      "http_coverage_seconds": 0.210718162,
+      "last_body_to_eof_seconds": 0.002163274,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.220941128459426,
+        "peak": 8,
+        "zero_inflight_seconds": 0.011857532
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.627277913519386,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n8.measurement.1",
+      "release_seconds": 0.241696617,
+      "submit_seconds": 0.228651201,
+      "release_to_submit_seconds": 0.013045416,
+      "submit_to_first_dispatch_seconds": 0.011497491,
+      "http_coverage_seconds": 0.214251061,
+      "last_body_to_eof_seconds": 0.002902649,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.164713458032526,
+        "peak": 8,
+        "zero_inflight_seconds": 0.01440014
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.646264757587361,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n8.measurement.2",
+      "release_seconds": 0.236051258,
+      "submit_seconds": 0.223369295,
+      "release_to_submit_seconds": 0.012681963,
+      "submit_to_first_dispatch_seconds": 0.008717831,
+      "http_coverage_seconds": 0.212802269,
+      "last_body_to_eof_seconds": 0.001849195,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.055714363068567,
+        "peak": 8,
+        "zero_inflight_seconds": 0.010567026
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.406076779190733,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n8.measurement.3",
+      "release_seconds": 0.237128276,
+      "submit_seconds": 0.223603893,
+      "release_to_submit_seconds": 0.013524383,
+      "submit_to_first_dispatch_seconds": 0.009519247,
+      "http_coverage_seconds": 0.211595084,
+      "last_body_to_eof_seconds": 0.002489562,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.217640414695285,
+        "peak": 8,
+        "zero_inflight_seconds": 0.012008809
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.627268386821312,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n8.measurement.4",
+      "release_seconds": 0.234267238,
+      "submit_seconds": 0.221537891,
+      "release_to_submit_seconds": 0.012729347,
+      "submit_to_first_dispatch_seconds": 0.009531153,
+      "http_coverage_seconds": 0.209270867,
+      "last_body_to_eof_seconds": 0.002735871,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 7.204413388588231,
+        "peak": 8,
+        "zero_inflight_seconds": 0.012267024
+      },
+      "upstream_coverage": {
+        "mean_inflight": 7.626721152734556,
+        "peak": 8,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-transparent.n128.warmup.0",
+      "release_seconds": 2.21571974,
+      "submit_seconds": 2.199972725,
+      "release_to_submit_seconds": 0.015747015,
+      "submit_to_first_dispatch_seconds": 0.115385389,
+      "http_coverage_seconds": 2.074714059,
+      "last_body_to_eof_seconds": 0.009873277,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 102.90198883352065,
+        "peak": 128,
+        "zero_inflight_seconds": 0.125258666
+      },
+      "upstream_coverage": {
+        "mean_inflight": 109.11458752591409,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-native-transparent.n128.warmup.1",
+      "release_seconds": 2.034059224,
+      "submit_seconds": 2.018493208,
+      "release_to_submit_seconds": 0.015566016,
+      "submit_to_first_dispatch_seconds": 0.050123703,
+      "http_coverage_seconds": 1.959980592,
+      "last_body_to_eof_seconds": 0.008388913,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 115.252426033925,
+        "peak": 128,
+        "zero_inflight_seconds": 0.058512616
+      },
+      "upstream_coverage": {
+        "mean_inflight": 118.69313405680907,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n128.measurement.0",
+      "release_seconds": 2.078712372,
+      "submit_seconds": 2.060288986,
+      "release_to_submit_seconds": 0.018423386,
+      "submit_to_first_dispatch_seconds": 0.06995754,
+      "http_coverage_seconds": 1.981733268,
+      "last_body_to_eof_seconds": 0.008598178,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 114.29224040418183,
+        "peak": 128,
+        "zero_inflight_seconds": 0.078555718
+      },
+      "upstream_coverage": {
+        "mean_inflight": 118.82277392842354,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n128.measurement.1",
+      "release_seconds": 2.037858317,
+      "submit_seconds": 2.020337992,
+      "release_to_submit_seconds": 0.017520325,
+      "submit_to_first_dispatch_seconds": 0.038489283,
+      "http_coverage_seconds": 1.974072876,
+      "last_body_to_eof_seconds": 0.007775833,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 115.1849131444735,
+        "peak": 128,
+        "zero_inflight_seconds": 0.046265116
+      },
+      "upstream_coverage": {
+        "mean_inflight": 117.88443018503841,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n128.measurement.2",
+      "release_seconds": 2.061567082,
+      "submit_seconds": 2.045562501,
+      "release_to_submit_seconds": 0.016004581,
+      "submit_to_first_dispatch_seconds": 0.050752778,
+      "http_coverage_seconds": 1.984945307,
+      "last_body_to_eof_seconds": 0.009864416,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 113.75374767148217,
+        "peak": 128,
+        "zero_inflight_seconds": 0.060617194
+      },
+      "upstream_coverage": {
+        "mean_inflight": 117.22761315609388,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n128.measurement.3",
+      "release_seconds": 2.064681201,
+      "submit_seconds": 2.04837857,
+      "release_to_submit_seconds": 0.016302631,
+      "submit_to_first_dispatch_seconds": 0.069377034,
+      "http_coverage_seconds": 1.969210109,
+      "last_body_to_eof_seconds": 0.009791427,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 114.15816806411912,
+        "peak": 128,
+        "zero_inflight_seconds": 0.079168461
+      },
+      "upstream_coverage": {
+        "mean_inflight": 118.74768669136463,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-native-transparent",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-native-transparent.n128.measurement.4",
+      "release_seconds": 2.05497614,
+      "submit_seconds": 2.03790697,
+      "release_to_submit_seconds": 0.01706917,
+      "submit_to_first_dispatch_seconds": 0.03308881,
+      "http_coverage_seconds": 1.995868851,
+      "last_body_to_eof_seconds": 0.008949309,
+      "correct": 112,
+      "upstream_query": {
+        "mean_inflight": 115.11662437662697,
+        "peak": 128,
+        "zero_inflight_seconds": 0.042038119
+      },
+      "upstream_coverage": {
+        "mean_inflight": 117.54127585209756,
+        "peak": 128,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 0,
+      "rows": 8,
+      "phase": "qualification",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.qualification.0",
+      "release_seconds": 7.870992244,
+      "submit_seconds": 3.832083404,
+      "release_to_submit_seconds": 4.03890884,
+      "submit_to_first_dispatch_seconds": 3.479970878,
+      "http_coverage_seconds": 0.339804213,
+      "last_body_to_eof_seconds": 0.012308313,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 0.2938914755415903,
+        "peak": 4,
+        "zero_inflight_seconds": 3.50794988
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.314310426162962,
+        "peak": 4,
+        "zero_inflight_seconds": 0.015670689
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 1,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.warmup.0",
+      "release_seconds": 4.695930634,
+      "submit_seconds": 0.485558288,
+      "release_to_submit_seconds": 4.210372346,
+      "submit_to_first_dispatch_seconds": 0.143157928,
+      "http_coverage_seconds": 0.330181997,
+      "last_body_to_eof_seconds": 0.012218363,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.134786687031074,
+        "peak": 4,
+        "zero_inflight_seconds": 0.155376291
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1393697367455196,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 2,
+      "rows": 8,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.warmup.1",
+      "release_seconds": 4.607720034,
+      "submit_seconds": 0.491717117,
+      "release_to_submit_seconds": 4.116002917,
+      "submit_to_first_dispatch_seconds": 0.152327493,
+      "http_coverage_seconds": 0.332375001,
+      "last_body_to_eof_seconds": 0.007014623,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.2686752838827857,
+        "peak": 4,
+        "zero_inflight_seconds": 0.159342116
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.35628873002997,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 3,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.measurement.0",
+      "release_seconds": 4.157167367,
+      "submit_seconds": 0.511213187,
+      "release_to_submit_seconds": 3.64595418,
+      "submit_to_first_dispatch_seconds": 0.149145913,
+      "http_coverage_seconds": 0.349706019,
+      "last_body_to_eof_seconds": 0.012361255,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.313058995874455,
+        "peak": 4,
+        "zero_inflight_seconds": 0.17313653
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.381315152599647,
+        "peak": 4,
+        "zero_inflight_seconds": 0.011629362
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 4,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.measurement.1",
+      "release_seconds": 4.441943799,
+      "submit_seconds": 0.502361837,
+      "release_to_submit_seconds": 3.939581962,
+      "submit_to_first_dispatch_seconds": 0.148669594,
+      "http_coverage_seconds": 0.346524218,
+      "last_body_to_eof_seconds": 0.007168025,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.286939477450792,
+        "peak": 4,
+        "zero_inflight_seconds": 0.155837619
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.3154136343798055,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 5,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.measurement.2",
+      "release_seconds": 4.57014343,
+      "submit_seconds": 0.497568564,
+      "release_to_submit_seconds": 4.072574866,
+      "submit_to_first_dispatch_seconds": 0.149841668,
+      "http_coverage_seconds": 0.340478298,
+      "last_body_to_eof_seconds": 0.007248598,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.2159602932632216,
+        "peak": 4,
+        "zero_inflight_seconds": 0.157090266
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2383625842725516,
+        "peak": 4,
+        "zero_inflight_seconds": 0.0
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 6,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.measurement.3",
+      "release_seconds": 4.587236414,
+      "submit_seconds": 0.493156201,
+      "release_to_submit_seconds": 4.094080213,
+      "submit_to_first_dispatch_seconds": 0.148121551,
+      "http_coverage_seconds": 0.337577648,
+      "last_body_to_eof_seconds": 0.007457002,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.3668733610834187,
+        "peak": 4,
+        "zero_inflight_seconds": 0.171455138
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.457688273839742,
+        "peak": 4,
+        "zero_inflight_seconds": 0.015876585
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 7,
+      "rows": 8,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n8.measurement.4",
+      "release_seconds": 4.17467665,
+      "submit_seconds": 0.490458517,
+      "release_to_submit_seconds": 3.684218133,
+      "submit_to_first_dispatch_seconds": 0.150349737,
+      "http_coverage_seconds": 0.330791985,
+      "last_body_to_eof_seconds": 0.009316795,
+      "correct": 5,
+      "upstream_query": {
+        "mean_inflight": 2.2098781434760975,
+        "peak": 4,
+        "zero_inflight_seconds": 0.17027035
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2765411683115597,
+        "peak": 4,
+        "zero_inflight_seconds": 0.010603818
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 8,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.warmup.0",
+      "release_seconds": 10.171195706,
+      "submit_seconds": 6.088396214,
+      "release_to_submit_seconds": 4.082799492,
+      "submit_to_first_dispatch_seconds": 0.221966879,
+      "http_coverage_seconds": 5.846744175,
+      "last_body_to_eof_seconds": 0.01968516,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 3.084148308190246,
+        "peak": 4,
+        "zero_inflight_seconds": 0.306993
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.2116193766935255,
+        "peak": 4,
+        "zero_inflight_seconds": 0.065340961
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 9,
+      "rows": 128,
+      "phase": "warmup",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.warmup.1",
+      "release_seconds": 10.603082828,
+      "submit_seconds": 6.108622077,
+      "release_to_submit_seconds": 4.494460751,
+      "submit_to_first_dispatch_seconds": 0.187943761,
+      "http_coverage_seconds": 5.898540081,
+      "last_body_to_eof_seconds": 0.022138235,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 2.9714248591908756,
+        "peak": 4,
+        "zero_inflight_seconds": 0.381393
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.077254921682713,
+        "peak": 4,
+        "zero_inflight_seconds": 0.171311004
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 10,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.measurement.0",
+      "release_seconds": 10.518743452,
+      "submit_seconds": 6.111287634,
+      "release_to_submit_seconds": 4.407455818,
+      "submit_to_first_dispatch_seconds": 0.245958408,
+      "http_coverage_seconds": 5.849309791,
+      "last_body_to_eof_seconds": 0.016019435,
+      "correct": 110,
+      "upstream_query": {
+        "mean_inflight": 3.020195542967631,
+        "peak": 4,
+        "zero_inflight_seconds": 0.309573154
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1554635219353866,
+        "peak": 4,
+        "zero_inflight_seconds": 0.047595311
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 11,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.measurement.1",
+      "release_seconds": 10.615326226,
+      "submit_seconds": 6.129864899,
+      "release_to_submit_seconds": 4.485461327,
+      "submit_to_first_dispatch_seconds": 0.215713248,
+      "http_coverage_seconds": 5.895579273,
+      "last_body_to_eof_seconds": 0.018572378,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 3.044244027636603,
+        "peak": 4,
+        "zero_inflight_seconds": 0.250172831
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.165219861339315,
+        "peak": 4,
+        "zero_inflight_seconds": 0.015887205
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 12,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.measurement.2",
+      "release_seconds": 10.355876956,
+      "submit_seconds": 5.902994144,
+      "release_to_submit_seconds": 4.452882812,
+      "submit_to_first_dispatch_seconds": 0.217431591,
+      "http_coverage_seconds": 5.660870372,
+      "last_body_to_eof_seconds": 0.024692181,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 3.0510866646050325,
+        "peak": 4,
+        "zero_inflight_seconds": 0.274546895
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.181586139665803,
+        "peak": 4,
+        "zero_inflight_seconds": 0.032423123
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 13,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.measurement.3",
+      "release_seconds": 9.804502917,
+      "submit_seconds": 6.10487624,
+      "release_to_submit_seconds": 3.699626677,
+      "submit_to_first_dispatch_seconds": 0.211681376,
+      "http_coverage_seconds": 5.870832702,
+      "last_body_to_eof_seconds": 0.022362162,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 3.048197456333693,
+        "peak": 4,
+        "zero_inflight_seconds": 0.296358558
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1697152977397174,
+        "peak": 4,
+        "zero_inflight_seconds": 0.06231502
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "ordinal": 14,
+      "rows": 128,
+      "phase": "measurement",
+      "unit_id": "repair01.sema-method-semloom-request-service.n128.measurement.4",
+      "release_seconds": 10.608540057,
+      "submit_seconds": 6.108791534,
+      "release_to_submit_seconds": 4.499748523,
+      "submit_to_first_dispatch_seconds": 0.182697047,
+      "http_coverage_seconds": 5.903662086,
+      "last_body_to_eof_seconds": 0.022432401,
+      "correct": 111,
+      "upstream_query": {
+        "mean_inflight": 3.0777057228681,
+        "peak": 4,
+        "zero_inflight_seconds": 0.214246406
+      },
+      "upstream_coverage": {
+        "mean_inflight": 3.1846441056619783,
+        "peak": 4,
+        "zero_inflight_seconds": 0.009116958
+      },
+      "batch_return_events": [],
+      "last_body_to_batch_return_seconds": null,
+      "batch_return_to_eof_seconds": null
+    }
+  ],
+  "additional_audit": {
+    "status": "passed",
+    "model_posts_reissued": 0,
+    "source_commit": "aef350b29727b2ddcf82f0734f8905d16edb3a13",
+    "source": "adapter-repair-source02",
+    "archive_sha256": "9a2ea37576a5a5a4a34d1f0f547d6f8e652c812c4ae9472376374e0f5a9ad513",
+    "service_aggregates": [
+      {
+        "arm": "sema-native-transparent",
+        "rows": 8,
+        "samples": 40,
+        "service_p50": 0.21451642,
+        "service_p99": 0.221660193,
+        "service_p9999": 0.221660193,
+        "service_max": 0.221660193,
+        "admission_p99": null,
+        "return_to_service_write_p99": null
+      },
+      {
+        "arm": "sema-native-transparent",
+        "rows": 128,
+        "samples": 640,
+        "service_p50": 1.966551562,
+        "service_p99": 1.991078281,
+        "service_p9999": 2.010409041,
+        "service_max": 2.010409041,
+        "admission_p99": null,
+        "return_to_service_write_p99": null
+      },
+      {
+        "arm": "sema-method-semloom-request-service",
+        "rows": 8,
+        "samples": 40,
+        "service_p50": 0.328861514,
+        "service_p99": 0.506069006,
+        "service_p9999": 0.506069006,
+        "service_max": 0.506069006,
+        "admission_p99": 0.327693485,
+        "return_to_service_write_p99": 0.015100665
+      },
+      {
+        "arm": "sema-method-semloom-request-service",
+        "rows": 128,
+        "samples": 640,
+        "service_p50": 3.184640214,
+        "service_p99": 6.053307142,
+        "service_p9999": 6.078886231,
+        "service_max": 6.078886231,
+        "admission_p99": 5.865947156,
+        "return_to_service_write_p99": 0.01774926
+      }
+    ],
+    "capacity_observations": [
+      {
+        "arm": "lotus-adapted-native",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.230621108101992
+      },
+      {
+        "arm": "lotus-method-semloom-local-diagnostic",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.46794991753707
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.0128198232527175
+      },
+      {
+        "arm": "duckdb-adapted-native",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.8243592421835166
+      },
+      {
+        "arm": "duckdb-method-semloom",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.361438021892188
+      },
+      {
+        "arm": "sema-native-direct",
+        "upstream_peaks": [
+          128,
+          128,
+          128,
+          128,
+          128
+        ],
+        "upstream_mean_over_query_median": 119.3605064070626
+      },
+      {
+        "arm": "sema-native-transparent",
+        "upstream_peaks": [
+          128,
+          128,
+          128,
+          128,
+          128
+        ],
+        "upstream_mean_over_query_median": 114.29224040418183
+      },
+      {
+        "arm": "sema-method-semloom-request-service",
+        "upstream_peaks": [
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "upstream_mean_over_query_median": 3.048197456333693
+      }
+    ],
+    "process_samples": 386,
+    "process_peaks": [
+      {
+        "pid": 35211,
+        "created_epoch": 1791548694.57,
+        "name": "python",
+        "rss_bytes": 1486372864,
+        "pss_bytes": 1473858560
+      },
+      {
+        "pid": 35228,
+        "created_epoch": 1791548707.83,
+        "name": "python",
+        "rss_bytes": 12681216,
+        "pss_bytes": 7148544
+      },
+      {
+        "pid": 35229,
+        "created_epoch": 1791548707.83,
+        "name": "python",
+        "rss_bytes": 5058269184,
+        "pss_bytes": 4761767936
+      },
+      {
+        "pid": 35242,
+        "created_epoch": 1791548717.38,
+        "name": "python",
+        "rss_bytes": 613093376,
+        "pss_bytes": 403684352
+      },
+      {
+        "pid": 35244,
+        "created_epoch": 1791548717.41,
+        "name": "python",
+        "rss_bytes": 599089152,
+        "pss_bytes": 390503424
+      },
+      {
+        "pid": 35283,
+        "created_epoch": 1791548718.7,
+        "name": "python",
+        "rss_bytes": 20434944,
+        "pss_bytes": 9412608
+      },
+      {
+        "pid": 35291,
+        "created_epoch": 1791548718.86,
+        "name": "python",
+        "rss_bytes": 19525632,
+        "pss_bytes": 10550272
+      },
+      {
+        "pid": 35327,
+        "created_epoch": 1791548734.66,
+        "name": "python",
+        "rss_bytes": 31940608,
+        "pss_bytes": 20859904
+      },
+      {
+        "pid": 35328,
+        "created_epoch": 1791548734.85,
+        "name": "python",
+        "rss_bytes": 1130266624,
+        "pss_bytes": 1106403328
+      },
+      {
+        "pid": 35515,
+        "created_epoch": 1791548778.79,
+        "name": "python",
+        "rss_bytes": 1105465344,
+        "pss_bytes": 1089020928
+      },
+      {
+        "pid": 35583,
+        "created_epoch": 1791548819.07,
+        "name": "python",
+        "rss_bytes": 1249505280,
+        "pss_bytes": 1231877120
+      },
+      {
+        "pid": 35586,
+        "created_epoch": 1791548821.32,
+        "name": "gcs_server",
+        "rss_bytes": 224358400,
+        "pss_bytes": 229374976
+      },
+      {
+        "pid": 35685,
+        "created_epoch": 1791548821.86,
+        "name": "python",
+        "rss_bytes": 103161856,
+        "pss_bytes": 77979648
+      },
+      {
+        "pid": 35686,
+        "created_epoch": 1791548822.07,
+        "name": "python",
+        "rss_bytes": 135462912,
+        "pss_bytes": 103120896
+      },
+      {
+        "pid": 35747,
+        "created_epoch": 1791548824.62,
+        "name": "python",
+        "rss_bytes": 99217408,
+        "pss_bytes": 72657920
+      },
+      {
+        "pid": 35748,
+        "created_epoch": 1791548824.63,
+        "name": "raylet",
+        "rss_bytes": 41013248,
+        "pss_bytes": 39606272
+      },
+      {
+        "pid": 35799,
+        "created_epoch": 1791548824.67,
+        "name": "python",
+        "rss_bytes": 163766272,
+        "pss_bytes": 120159232
+      },
+      {
+        "pid": 35801,
+        "created_epoch": 1791548824.67,
+        "name": "python",
+        "rss_bytes": 101781504,
+        "pss_bytes": 71394304
+      },
+      {
+        "pid": 35935,
+        "created_epoch": 1791548827.77,
+        "name": "python",
+        "rss_bytes": 100900864,
+        "pss_bytes": 65063936
+      },
+      {
+        "pid": 35936,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101449728,
+        "pss_bytes": 65678336
+      },
+      {
+        "pid": 35937,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101281792,
+        "pss_bytes": 65740800
+      },
+      {
+        "pid": 35938,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101220352,
+        "pss_bytes": 65659904
+      },
+      {
+        "pid": 35939,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101662720,
+        "pss_bytes": 65731584
+      },
+      {
+        "pid": 35940,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101142528,
+        "pss_bytes": 65816576
+      },
+      {
+        "pid": 35941,
+        "created_epoch": 1791548827.78,
+        "name": "python",
+        "rss_bytes": 101044224,
+        "pss_bytes": 65093632
+      },
+      {
+        "pid": 35942,
+        "created_epoch": 1791548827.79,
+        "name": "python",
+        "rss_bytes": 100995072,
+        "pss_bytes": 65640448
+      },
+      {
+        "pid": 36395,
+        "created_epoch": 1791548830.07,
+        "name": "python",
+        "rss_bytes": 169570304,
+        "pss_bytes": 110469120
+      },
+      {
+        "pid": 36396,
+        "created_epoch": 1791548830.07,
+        "name": "python",
+        "rss_bytes": 168935424,
+        "pss_bytes": 111165440
+      },
+      {
+        "pid": 39156,
+        "created_epoch": 1791548880.95,
+        "name": "python",
+        "rss_bytes": 183988224,
+        "pss_bytes": 174475264
+      },
+      {
+        "pid": 39250,
+        "created_epoch": 1791548907.54,
+        "name": "python",
+        "rss_bytes": 350003200,
+        "pss_bytes": 314943488
+      },
+      {
+        "pid": 39253,
+        "created_epoch": 1791548909.81,
+        "name": "gcs_server",
+        "rss_bytes": 204013568,
+        "pss_bytes": 206114816
+      },
+      {
+        "pid": 39352,
+        "created_epoch": 1791548910.36,
+        "name": "python",
+        "rss_bytes": 99188736,
+        "pss_bytes": 73812992
+      },
+      {
+        "pid": 39353,
+        "created_epoch": 1791548910.61,
+        "name": "python",
+        "rss_bytes": 131473408,
+        "pss_bytes": 98054144
+      },
+      {
+        "pid": 39412,
+        "created_epoch": 1791548913.26,
+        "name": "python",
+        "rss_bytes": 97046528,
+        "pss_bytes": 67640320
+      },
+      {
+        "pid": 39413,
+        "created_epoch": 1791548913.27,
+        "name": "raylet",
+        "rss_bytes": 28643328,
+        "pss_bytes": 27084800
+      },
+      {
+        "pid": 39464,
+        "created_epoch": 1791548913.31,
+        "name": "python",
+        "rss_bytes": 164036608,
+        "pss_bytes": 120331264
+      },
+      {
+        "pid": 39466,
+        "created_epoch": 1791548913.32,
+        "name": "python",
+        "rss_bytes": 101789696,
+        "pss_bytes": 71164928
+      },
+      {
+        "pid": 39600,
+        "created_epoch": 1791548916.42,
+        "name": "python",
+        "rss_bytes": 101150720,
+        "pss_bytes": 65713152
+      },
+      {
+        "pid": 39601,
+        "created_epoch": 1791548916.42,
+        "name": "python",
+        "rss_bytes": 101101568,
+        "pss_bytes": 65657856
+      },
+      {
+        "pid": 39602,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 101277696,
+        "pss_bytes": 65722368
+      },
+      {
+        "pid": 39603,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 100974592,
+        "pss_bytes": 64866304
+      },
+      {
+        "pid": 39604,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 101003264,
+        "pss_bytes": 65631232
+      },
+      {
+        "pid": 39605,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 101068800,
+        "pss_bytes": 64996352
+      },
+      {
+        "pid": 39606,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 101224448,
+        "pss_bytes": 65704960
+      },
+      {
+        "pid": 39607,
+        "created_epoch": 1791548916.43,
+        "name": "python",
+        "rss_bytes": 101085184,
+        "pss_bytes": 65688576
+      },
+      {
+        "pid": 40059,
+        "created_epoch": 1791548918.92,
+        "name": "python",
+        "rss_bytes": 169336832,
+        "pss_bytes": 110283776
+      },
+      {
+        "pid": 40060,
+        "created_epoch": 1791548918.92,
+        "name": "python",
+        "rss_bytes": 169926656,
+        "pss_bytes": 110339072
+      },
+      {
+        "pid": 42639,
+        "created_epoch": 1791548955.53,
+        "name": "python",
+        "rss_bytes": 60248064,
+        "pss_bytes": 48046080
+      },
+      {
+        "pid": 42643,
+        "created_epoch": 1791548956.05,
+        "name": "Sema",
+        "rss_bytes": 42328064,
+        "pss_bytes": 37154816
+      },
+      {
+        "pid": 42763,
+        "created_epoch": 1791548973.21,
+        "name": "python",
+        "rss_bytes": 60551168,
+        "pss_bytes": 48163840
+      },
+      {
+        "pid": 42768,
+        "created_epoch": 1791548973.79,
+        "name": "Sema",
+        "rss_bytes": 42164224,
+        "pss_bytes": 37089280
+      },
+      {
+        "pid": 42884,
+        "created_epoch": 1791548991.29,
+        "name": "python",
+        "rss_bytes": 313327616,
+        "pss_bytes": 297462784
+      },
+      {
+        "pid": 42885,
+        "created_epoch": 1791548993.4,
+        "name": "gcs_server",
+        "rss_bytes": 231129088,
+        "pss_bytes": 236251136
+      },
+      {
+        "pid": 42984,
+        "created_epoch": 1791548993.95,
+        "name": "python",
+        "rss_bytes": 103620608,
+        "pss_bytes": 77790208
+      },
+      {
+        "pid": 42985,
+        "created_epoch": 1791548994.15,
+        "name": "python",
+        "rss_bytes": 135700480,
+        "pss_bytes": 104941568
+      },
+      {
+        "pid": 43046,
+        "created_epoch": 1791548996.49,
+        "name": "python",
+        "rss_bytes": 100589568,
+        "pss_bytes": 73783296
+      },
+      {
+        "pid": 43047,
+        "created_epoch": 1791548996.5,
+        "name": "raylet",
+        "rss_bytes": 46522368,
+        "pss_bytes": 42864640
+      },
+      {
+        "pid": 43100,
+        "created_epoch": 1791548997.53,
+        "name": "python",
+        "rss_bytes": 167092224,
+        "pss_bytes": 122594304
+      },
+      {
+        "pid": 43102,
+        "created_epoch": 1791548997.53,
+        "name": "python",
+        "rss_bytes": 102006784,
+        "pss_bytes": 71233536
+      },
+      {
+        "pid": 43234,
+        "created_epoch": 1791549000.65,
+        "name": "python",
+        "rss_bytes": 101150720,
+        "pss_bytes": 65732608
+      },
+      {
+        "pid": 43235,
+        "created_epoch": 1791549000.65,
+        "name": "python",
+        "rss_bytes": 101343232,
+        "pss_bytes": 65606656
+      },
+      {
+        "pid": 43236,
+        "created_epoch": 1791549000.65,
+        "name": "python",
+        "rss_bytes": 100843520,
+        "pss_bytes": 65643520
+      },
+      {
+        "pid": 43237,
+        "created_epoch": 1791549000.65,
+        "name": "python",
+        "rss_bytes": 101261312,
+        "pss_bytes": 65718272
+      },
+      {
+        "pid": 43238,
+        "created_epoch": 1791549000.65,
+        "name": "python",
+        "rss_bytes": 101138432,
+        "pss_bytes": 65761280
+      },
+      {
+        "pid": 43239,
+        "created_epoch": 1791549000.66,
+        "name": "python",
+        "rss_bytes": 100839424,
+        "pss_bytes": 64875520
+      },
+      {
+        "pid": 43240,
+        "created_epoch": 1791549000.66,
+        "name": "python",
+        "rss_bytes": 101081088,
+        "pss_bytes": 65678336
+      },
+      {
+        "pid": 43241,
+        "created_epoch": 1791549000.66,
+        "name": "python",
+        "rss_bytes": 101117952,
+        "pss_bytes": 64903168
+      },
+      {
+        "pid": 43694,
+        "created_epoch": 1791549002.97,
+        "name": "python",
+        "rss_bytes": 155258880,
+        "pss_bytes": 98996224
+      },
+      {
+        "pid": 43695,
+        "created_epoch": 1791549002.97,
+        "name": "python",
+        "rss_bytes": 155058176,
+        "pss_bytes": 98890752
+      },
+      {
+        "pid": 43825,
+        "created_epoch": 1791549006.73,
+        "name": "Sema",
+        "rss_bytes": 37785600,
+        "pss_bytes": 32176128
+      },
+      {
+        "pid": 43913,
+        "created_epoch": 1791549010.64,
+        "name": "python",
+        "rss_bytes": 166154240,
+        "pss_bytes": 108672000
+      },
+      {
+        "pid": 43914,
+        "created_epoch": 1791549010.64,
+        "name": "python",
+        "rss_bytes": 167526400,
+        "pss_bytes": 109573120
+      },
+      {
+        "pid": 44065,
+        "created_epoch": 1791549015.37,
+        "name": "python",
+        "rss_bytes": 166903808,
+        "pss_bytes": 108140544
+      },
+      {
+        "pid": 44066,
+        "created_epoch": 1791549015.37,
+        "name": "python",
+        "rss_bytes": 166146048,
+        "pss_bytes": 108226560
+      },
+      {
+        "pid": 44207,
+        "created_epoch": 1791549020.0,
+        "name": "python",
+        "rss_bytes": 80355328,
+        "pss_bytes": 52029440
+      },
+      {
+        "pid": 44208,
+        "created_epoch": 1791549020.0,
+        "name": "python",
+        "rss_bytes": 80760832,
+        "pss_bytes": 52297728
+      },
+      {
+        "pid": 44351,
+        "created_epoch": 1791549024.2,
+        "name": "python",
+        "rss_bytes": 167079936,
+        "pss_bytes": 108379136
+      },
+      {
+        "pid": 44352,
+        "created_epoch": 1791549024.2,
+        "name": "python",
+        "rss_bytes": 167399424,
+        "pss_bytes": 108517376
+      },
+      {
+        "pid": 44490,
+        "created_epoch": 1791549028.67,
+        "name": "python",
+        "rss_bytes": 166166528,
+        "pss_bytes": 109265920
+      },
+      {
+        "pid": 44491,
+        "created_epoch": 1791549028.67,
+        "name": "python",
+        "rss_bytes": 166301696,
+        "pss_bytes": 108391424
+      },
+      {
+        "pid": 44642,
+        "created_epoch": 1791549033.27,
+        "name": "python",
+        "rss_bytes": 163934208,
+        "pss_bytes": 107329536
+      },
+      {
+        "pid": 44643,
+        "created_epoch": 1791549033.27,
+        "name": "python",
+        "rss_bytes": 163799040,
+        "pss_bytes": 106820608
+      },
+      {
+        "pid": 44782,
+        "created_epoch": 1791549037.88,
+        "name": "python",
+        "rss_bytes": 166666240,
+        "pss_bytes": 108343296
+      },
+      {
+        "pid": 44783,
+        "created_epoch": 1791549037.89,
+        "name": "python",
+        "rss_bytes": 167727104,
+        "pss_bytes": 108438528
+      },
+      {
+        "pid": 44925,
+        "created_epoch": 1791549042.09,
+        "name": "python",
+        "rss_bytes": 168726528,
+        "pss_bytes": 109606912
+      },
+      {
+        "pid": 44926,
+        "created_epoch": 1791549042.09,
+        "name": "python",
+        "rss_bytes": 167759872,
+        "pss_bytes": 109679616
+      },
+      {
+        "pid": 45293,
+        "created_epoch": 1791549052.46,
+        "name": "python",
+        "rss_bytes": 167886848,
+        "pss_bytes": 109452288
+      },
+      {
+        "pid": 45294,
+        "created_epoch": 1791549052.46,
+        "name": "python",
+        "rss_bytes": 167514112,
+        "pss_bytes": 109484032
+      },
+      {
+        "pid": 45703,
+        "created_epoch": 1791549063.31,
+        "name": "python",
+        "rss_bytes": 168787968,
+        "pss_bytes": 110144512
+      },
+      {
+        "pid": 45704,
+        "created_epoch": 1791549063.32,
+        "name": "python",
+        "rss_bytes": 168800256,
+        "pss_bytes": 110987264
+      },
+      {
+        "pid": 46087,
+        "created_epoch": 1791549074.08,
+        "name": "python",
+        "rss_bytes": 168484864,
+        "pss_bytes": 109655040
+      },
+      {
+        "pid": 46088,
+        "created_epoch": 1791549074.08,
+        "name": "python",
+        "rss_bytes": 167284736,
+        "pss_bytes": 109537280
+      },
+      {
+        "pid": 46464,
+        "created_epoch": 1791549084.92,
+        "name": "python",
+        "rss_bytes": 167837696,
+        "pss_bytes": 109865984
+      },
+      {
+        "pid": 46465,
+        "created_epoch": 1791549084.93,
+        "name": "python",
+        "rss_bytes": 167948288,
+        "pss_bytes": 109841408
+      },
+      {
+        "pid": 46891,
+        "created_epoch": 1791549095.56,
+        "name": "python",
+        "rss_bytes": 168939520,
+        "pss_bytes": 110256128
+      },
+      {
+        "pid": 46892,
+        "created_epoch": 1791549095.56,
+        "name": "python",
+        "rss_bytes": 168853504,
+        "pss_bytes": 111026176
+      },
+      {
+        "pid": 47261,
+        "created_epoch": 1791549105.63,
+        "name": "python",
+        "rss_bytes": 167534592,
+        "pss_bytes": 109659136
+      },
+      {
+        "pid": 47262,
+        "created_epoch": 1791549105.63,
+        "name": "python",
+        "rss_bytes": 167792640,
+        "pss_bytes": 109764608
+      }
+    ],
+    "whole_tree_pss_peak_bytes": 5980241920,
+    "whole_tree_rss_peak_bytes": 6852366336,
+    "cpu_seconds_sum_of_process_sample_maxima": 544.03,
+    "interpretation": [
+      "service latency begins at HTTP service arrival, not native task generation",
+      "common model gateway latency for SemLoom Sema begins after its admission; earlier service waiting is excluded",
+      "Sema native and transparent upstream peak128 versus SemLoom peak4; no matched request-capacity attribution",
+      "Sema postposed Core and actors are recreated per query; query preparation is paid",
+      "RSS tree sum double counts shared pages; PSS and CPU are process samples over startup and all queries, not query-isolated",
+      "all quantiles are finite nearest-rank observations; query maxima have only5 samples, request P99.99 has only640 at128rows"
+    ]
+  },
+  "source_commit": "aef350b29727b2ddcf82f0734f8905d16edb3a13",
+  "source": "adapter-repair-source02",
+  "public_archive": {
+    "path": "raw/resident-repair-model-observations.jsonl.gz",
+    "members": 1890,
+    "bytes": 10958519,
+    "sha256": "3db648cd328b09990293fbde3e2f1cd0d9df5e698f6b5929fa1176a6fa222efb"
+  }
+}

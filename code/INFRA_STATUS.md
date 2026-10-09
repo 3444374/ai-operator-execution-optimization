@@ -6,6 +6,8 @@ LOTUS修复前后24查询／1,632次fixture POST通过相同请求、完整正�
 常驻初始化资源取得后即登记关闭，lifecycle／摘要失败保留查询第一错误，13项故障回归通过；最终统一实际库检查与模型资格各自记录。
 三家异常退出另按`60c45593`／`8ab8e3e`／`7663ab52`整合：LOTUS保留执行第一错误，DuckDB退出失败使批次失败，Sema独立清理并传播迟到HTTP错误。
 最终`adapter-repair-source02`的1,028份文件一致，173项相关检查170通过／3项独立入口跳过，实际扩展20项包含在通过数中；八路径26正常查询／1,154 fixture POST与退出核对通过，真实模型0。
+后续DuckDB`64f738ad`已合入，内层按本次异常保存第一错误并重置诊断；`2b53857d`入口摘要同时保存桥／内层诊断及关闭报告，观察错误不被关闭错误替换。28项DuckDB及4项摘要检查、最终两路径6正常查询／288 fixture POST通过。
+[实际模型复核](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)的120查询／7,680 POST仍对应`aef350b2`；Sema原生／透明峰128而SemLoom4，现有C4只作诊断，独立H／C与Sema线程的实验参数拆分、对象可达检查和有限校准仍pending。
 
 2026-10-09：[DuckDB与Sema常驻输入更新检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
 完成五条实际库路径各`8 → 8 → 128`行及同Sema进程更换URL探针，17查询／722次fixture POST、真实模型0。
