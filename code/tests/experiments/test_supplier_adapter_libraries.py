@@ -1,5 +1,7 @@
 """Opt-in delivered supplier query entries, always using a local fixture."""
 import importlib.util
+import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -46,6 +48,12 @@ class SupplierAdapterLibraryTests(unittest.TestCase):
             self.assertEqual(result['actual_posts'],count)
             self.assertEqual(len(requests),count)
             self.assertEqual(result['execution']['recorded_rows'],4)
+            bodies=[json.loads(line) for line in (root/'query/upstream-response-bodies.jsonl').read_text().splitlines()]
+            self.assertEqual(len(bodies),count)
+            for body in bodies:
+                raw=base64.b64decode(body['response_body_base64'],validate=True)
+                self.assertEqual(hashlib.sha256(raw).hexdigest(),body['response_body_sha256'])
+                self.assertEqual(json.loads(raw)['choices'][0]['message']['content'],'"ok"' if arm.startswith('sema-') else 'ok')
             if arm.startswith('lotus-'):
                 self.assertEqual(result['call_timing']['request_e2e']['count'],count)
                 if chain:self.assertEqual(len(result['call_timing']['successor_waits']),4)

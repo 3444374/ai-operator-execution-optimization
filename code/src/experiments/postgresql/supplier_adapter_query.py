@@ -308,6 +308,11 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
 
     def after(route,body,response,status):
         try:
+            with lock:
+                upstream_raw.write(json.dumps(dict(request_values_sha256=content_digest(json.loads(body)),
+                    request_body_sha256=hashlib.sha256(body).hexdigest(),http_status=status,
+                    response_body_sha256=hashlib.sha256(response).hexdigest(),
+                    response_body_base64=base64.b64encode(response).decode()))+'\n')
             record_native_response(protocols,body,response,status,model.model_id)
         except BaseException as failure:
             stop.set();errors.record('http_failure',failure)
@@ -328,6 +333,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
         with ExitStack() as stack:
             writer=stack.enter_context(BufferedEvents(root/'method-events.jsonl'))
             raw=stack.enter_context(open_private_text(root/'complete-responses.jsonl'))
+            upstream_raw=stack.enter_context(open_private_text(root/'upstream-response-bodies.jsonl'))
             protocols=stack.enter_context(open_private_text(root/'protocols.jsonl'))
             observations=MethodObservations(writer,raw,unit_id)
             if use_core:
