@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import ctypes as ct
-import sys
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -218,12 +217,16 @@ class DuckDBNativeTaskExecutor:
         self.describe_work = describe_work
         self.last_close_report = None
         self.last_cleanup_error = None
+        self.last_cleanup_errors: tuple[str, ...] = ()
 
     def __call__(self, calls: tuple[DuckDBCall, ...], cancelled: Callable[[], bool]):
         from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
         from src.execution_provider.adapters.full_response import decode_full_response
         from src.scheduling.core.session_contract import State
 
+        self.last_close_report = None
+        self.last_cleanup_error = None
+        self.last_cleanup_errors = ()
         if not calls:
             return
         # The fixed transport uses these identities and bearer header, never provider guesses.
@@ -239,6 +242,9 @@ class DuckDBNativeTaskExecutor:
         pending = ()
         sealed = False
         finished = False
+        primary_error = None
+        cleanup_errors: list[str] = []
+        close_report = None
         try:
             while True:
                 if cancelled():
@@ -263,14 +269,23 @@ class DuckDBNativeTaskExecutor:
                     sealed = True
                 progress = flow.advance(flow.limits.offer_tasks)
                 for delivery in progress.deliveries:
+                    delivery_error = None
                     try:
                         raw = decode_full_response(delivery.result)
                         call = calls[delivery.key.sequence]
                         if delivery.info.call_id != call.call_id or delivery.info.row_sequence != call.row:
                             raise ValueError('DuckDB Core delivery changed row association')
                         response = DuckDBResponse(call.call_id, raw.body, raw.status_code, -1)
+                    except BaseException as error:
+                        delivery_error = error
+                        raise
                     finally:
-                        flow.release((delivery.lease_id,))
+                        try:
+                            flow.release((delivery.lease_id,))
+                        except BaseException as error:
+                            cleanup_errors.append(redact_text(f'release: {type(error).__name__}: {error}')[:4096])
+                            if delivery_error is None:
+                                raise
                     # -1 preserves unavailable HTTP-only elapsed time. It is never queue time or zero.
                     yield response
                 if progress.state == State.FINISHED:
@@ -279,11 +294,20 @@ class DuckDBNativeTaskExecutor:
                 if progress.state in (State.FAILED, State.CANCELLED):
                     raise RuntimeError('DuckDB common execution stopped: ' + str(progress.error))
                 flow.wait(progress, min(0.01, flow.limits.poll_interval_s))
+        except GeneratorExit:
+            # Closing after a consumer stop is control flow, not an inner execution error.
+            raise
+        except BaseException as error:
+            primary_error = error
+            raise
         finally:
-            primary = sys.exc_info()[1]
             try:
-                self.last_close_report = flow.close(clean=finished)
+                close_report = flow.close(clean=finished)
             except BaseException as error:
-                if primary is None:
+                cleanup_errors.append(redact_text(f'close: {type(error).__name__}: {error}')[:4096])
+                if primary_error is None:
                     raise
-                self.last_cleanup_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+            finally:
+                self.last_close_report = close_report
+                self.last_cleanup_errors = tuple(cleanup_errors)
+                self.last_cleanup_error = '\n'.join(cleanup_errors)[:4096] if cleanup_errors else None

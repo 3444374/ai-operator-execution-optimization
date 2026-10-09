@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import ctypes as ct
+from contextlib import ExitStack, contextmanager
+from dataclasses import replace
 import json
 import os
 import threading
@@ -13,7 +15,7 @@ from pathlib import Path
 
 from src.semantic_methods.duckdb_ai import (
     DuckDBCall, DuckDBResponse, DuckDBSemLoomBridge, DuckDBNativeTaskExecutor,
-    _Call, _Response, _Cancelled, _Consume,
+    _Call, _Response, _Cancelled, _Consume, _Batch,
 )
 
 
@@ -43,7 +45,7 @@ class _ClosingResponses:
             raise RuntimeError(self.close_error)
 
 
-def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id=1):
+def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id=1, through_ctypes=False):
     if bridge is None:
         bridge = object.__new__(DuckDBSemLoomBridge)
         bridge.last_error = bridge.last_cleanup_error = None
@@ -57,8 +59,9 @@ def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id
         calls[i] = _Call(i, b'query', f'call-{i}'.encode(), b'fixture', b'http://localhost/model',
                          ct.addressof(body), len(body.value), None, 0, 8, 5, 5, 1)
     outputs = (_Response * 3)()
-    cancelled = _Cancelled(lambda _: int(cancel))
-    status = bridge._dispatch(batch_id, calls, 3, outputs, cancelled, _Consume(consume), None)
+    cancelled = _Cancelled(lambda _: int(cancel() if callable(cancel) else cancel))
+    dispatch = _Batch(bridge._dispatch) if through_ctypes else bridge._dispatch
+    status = dispatch(batch_id, calls, 3, outputs, cancelled, _Consume(consume), None)
     return bridge, outputs, status
 
 
@@ -197,6 +200,150 @@ class DuckDBAbiTests(unittest.TestCase):
                 self.assertIsNone(bridge.last_cleanup_error)
                 bridge._release(1)
                 self.assertEqual(bridge.retained_batches, 0)
+
+
+class DuckDBInnerFailureTests(unittest.TestCase):
+    def setUp(self):
+        from src.execution_provider.adapters.native_tasks import build_native_execution
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
+        self.invalid_encoding = False
+        async def execute(request, endpoint):
+            return b'bad encoding' if self.invalid_encoding else encode_full_response(FullModelResponse(200, (), b'ok'))
+        self.config = FixedModelConfig('http://localhost/model', 'fixture', 5000)
+        self.execution = build_native_execution(self.config, physical=None, execute=execute,
+                                                max_tasks=4, max_active_requests=3)
+        self.adapter = DuckDBNativeTaskExecutor(self.execution, self.config)
+        self.closed_reports = []
+
+    def assert_returned(self):
+        from src.scheduling.core.session_contract import Usage
+        deadline = time.monotonic() + 2
+        while self.execution.engine.capacity.records and time.monotonic() < deadline:
+            self.execution.engine.advance()
+            time.sleep(0.002)
+        self.assertEqual(self.execution.engine.capacity.usage(), Usage())
+        self.assertEqual(self.execution.engine.capacity.records, {})
+        self.assertEqual(self.execution.engine.jobs.jobs, {})
+
+    def tearDown(self):
+        self.assert_returned()
+        self.assertTrue(self.execution.close())
+
+    @contextmanager
+    def faults(self, *, release=False, close=False, association=False):
+        from src.execution_provider.adapters.native_tasks import NativeTaskSession
+        original_release, original_close, original_advance = (
+            NativeTaskSession.release, NativeTaskSession.close, NativeTaskSession.advance)
+        def release_result(flow, leases):
+            original_release(flow, leases)
+            if release:
+                raise RuntimeError('injected inner release failure')
+        def close_flow(flow, **kwargs):
+            report = original_close(flow, **kwargs)
+            self.closed_reports.append(report)
+            if close:
+                raise RuntimeError('injected inner close failure')
+            return report
+        def advance(flow, count):
+            progress = original_advance(flow, count)
+            if association and progress.deliveries:
+                first = progress.deliveries[0]
+                first = replace(first, info=replace(first.info, call_id='wrong'))
+                progress = replace(progress, deliveries=(first,) + progress.deliveries[1:])
+            return progress
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(NativeTaskSession, 'release', release_result))
+            stack.enter_context(patch.object(NativeTaskSession, 'close', close_flow))
+            stack.enter_context(patch.object(NativeTaskSession, 'advance', advance))
+            yield
+
+    def dispatch(self, **kwargs):
+        bridge, output, status = invoke(self.adapter, through_ctypes=True, **kwargs)
+        bridge._release(1)
+        self.assertEqual(bridge.retained_batches, 0)
+        return bridge, status
+
+    def test_ambient_old_exception_does_not_hide_inner_close_failure(self):
+        with self.faults(close=True):
+            try:
+                raise ValueError('unrelated old caller error')
+            except ValueError:
+                bridge, status = self.dispatch()
+        self.assertEqual(status, 2)
+        self.assertIn('injected inner close failure', bridge.last_error)
+        self.assertIn('injected inner close failure', self.adapter.last_cleanup_error)
+        self.assert_returned()
+
+    def test_decode_and_association_first_errors_survive_release_and_close(self):
+        for bad_encoding in (True, False):
+            with self.subTest(bad_encoding=bad_encoding):
+                self.invalid_encoding = bad_encoding
+                with self.faults(release=True, close=True, association=not bad_encoding):
+                    bridge, status = self.dispatch()
+                self.assertEqual(status, 2)
+                self.assertIn('invalid complete response' if bad_encoding else 'changed row association',
+                              bridge.last_error)
+                self.assertIn('release failure', self.adapter.last_cleanup_errors[0])
+                self.assertIn('close failure', self.adapter.last_cleanup_errors[1])
+                self.assertEqual(len(self.adapter.last_cleanup_errors), 2)
+                self.assert_returned()
+
+    def test_release_first_error_survives_following_close_failure(self):
+        with self.faults(release=True, close=True):
+            bridge, status = self.dispatch()
+        self.assertEqual(status, 2)
+        self.assertIn('injected inner release failure', bridge.last_error)
+        self.assertEqual(len(getattr(self.adapter, 'last_cleanup_errors', ())), 2)
+        self.assertIn('close failure', self.adapter.last_cleanup_errors[1])
+        self.assert_returned()
+
+    def test_generator_close_exposes_cleanup_and_preserves_outer_consumer_state(self):
+        for consumer_status, expected in ((1, 3), (2, 2)):
+            with self.subTest(consumer_status=consumer_status):
+                with self.faults(close=True):
+                    bridge, status = self.dispatch(consume=lambda *_: consumer_status)
+                self.assertEqual(status, expected)
+                self.assertIsNotNone(bridge.last_cleanup_error)
+                self.assertIn('injected inner close failure', bridge.last_cleanup_error)
+                if consumer_status == 2:
+                    self.assertIn('consumer rejected metadata', bridge.last_error)
+                else:
+                    self.assertIsNone(bridge.last_error)
+                self.assert_returned()
+
+    def test_cancel_status_survives_inner_close_failure(self):
+        cancelled = [False]
+        def consume(*_):
+            cancelled[0] = True
+            return 0
+        with self.faults(close=True):
+            _, status = self.dispatch(consume=consume, cancel=lambda: cancelled[0])
+        self.assertEqual(status, 1)
+        self.assertIn('injected inner close failure', self.adapter.last_cleanup_error)
+        self.assert_returned()
+
+    def test_inner_diagnostics_reset_after_resources_returned(self):
+        with self.faults():
+            _, status = self.dispatch()
+        self.assertEqual(status, 0)
+        self.assertIsNotNone(self.adapter.last_close_report)
+        self.assert_returned()
+        self.invalid_encoding = True
+        with self.faults(close=True):
+            _, status = self.dispatch()
+        self.assertEqual(status, 2)
+        self.assertIsNone(self.adapter.last_close_report)
+        self.assertIsNotNone(self.adapter.last_cleanup_error)
+        self.assert_returned()
+        self.invalid_encoding = False
+        with self.faults():
+            _, status = self.dispatch()
+        self.assertEqual(status, 0)
+        self.assertIsNone(self.adapter.last_cleanup_error)
+        self.assertEqual(self.adapter.last_cleanup_errors, ())
+        self.assertIsNotNone(self.adapter.last_close_report)
+        self.assert_returned()
 
 
 class _FixtureServer(ThreadingHTTPServer):
@@ -468,6 +615,57 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
         self.assertIsNone(self.bridge.last_error)
         self.assertIn('fixture iterator close failed', self.bridge.last_cleanup_error)
         self.assertEqual(self.bridge.retained_batches, 0)
+
+    def test_inner_close_failure_under_ambient_exception_fails_sql_and_next_query_is_clean(self):
+        from src.execution_provider.adapters.native_tasks import NativeTaskSession
+        from src.scheduling.core.session_contract import Usage
+        self.common()
+        original = NativeTaskSession.close
+        def fail_after_close(flow, **kwargs):
+            original(flow, **kwargs)
+            raise RuntimeError('injected inner close failure')
+        for try_complete in (False, True):
+            with self.subTest(try_complete=try_complete):
+                with patch.object(NativeTaskSession, 'close', fail_after_close):
+                    try:
+                        raise ValueError('unrelated old caller error')
+                    except ValueError:
+                        with self.assertRaisesRegex(Exception, 'batch executor failed'):
+                            self.select(['one', 'two'], try_complete=try_complete)
+                self.assertIn('injected inner close failure', self.bridge.last_error)
+                self.assertIn('injected inner close failure', self.adapter.last_cleanup_error)
+                self.assertIsNone(self.adapter.last_close_report)
+                self.assertEqual(self.execution.engine.capacity.usage(), Usage())
+                self.assertEqual(self.execution.engine.jobs.jobs, {})
+                rows = self.select(['clean'], try_complete=try_complete)
+                self.assertEqual(rows[0][1]['response'] if try_complete else rows[0][1], 'out:clean')
+                self.assertIsNone(self.bridge.last_error)
+                self.assertIsNone(self.adapter.last_cleanup_error)
+                self.assertEqual(self.adapter.last_cleanup_errors, ())
+                self.assertIsNotNone(self.adapter.last_close_report)
+
+    def test_inner_generator_close_error_preserves_native_parser_first_error(self):
+        from src.execution_provider.adapters.native_tasks import NativeTaskSession
+        from src.scheduling.core.session_contract import Usage
+        self.common()
+        original = NativeTaskSession.close
+        def fail_after_close(flow, **kwargs):
+            original(flow, **kwargs)
+            raise RuntimeError('injected inner close failure')
+        with patch.object(NativeTaskSession, 'close', fail_after_close):
+            with self.assertRaisesRegex(Exception, 'fixture failure'):
+                self.select(['http-error', 'slow-future'], try_complete=False)
+        self.assertIsNone(self.bridge.last_error)
+        self.assertIsNotNone(self.bridge.last_cleanup_error)
+        self.assertIn('injected inner close failure', self.bridge.last_cleanup_error)
+        self.assertIn('injected inner close failure', self.adapter.last_cleanup_error)
+        self.assertEqual(self.bridge.retained_batches, 0)
+        deadline = time.monotonic() + 2
+        while self.execution.engine.capacity.records and time.monotonic() < deadline:
+            self.execution.engine.advance()
+            time.sleep(0.002)
+        self.assertEqual(self.execution.engine.capacity.usage(), Usage())
+        self.assertEqual(self.execution.engine.jobs.jobs, {})
 
 
 if __name__ == '__main__':
