@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-10：[原生方法容量准备](postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)
+按实际源码分别保存H128／C与Sema线程、Arrow/Ray字节计数、原生库请求与退出检查、独立输入及环境记录。
+最终源码43查询／19,160次fixture POST与早期来源分别保存；CPU fixture与BF16小张量不作为模型质量或性能结论，模型筛查已准备但未启动。
+
 2026-10-09：[同题持续成本修复](postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)。
 公共空释放、DuckDB重复封装和Sema重复通知分别复现与修订；独立字段、原生完整响应、同步记账和统计保持。
 整合24查询／1,632次fixture POST的618成员投影由[离线复算](postgresql/native_adapter_integration_20261009/observation_replay.py)核对相同请求、原响应字节、函数墙钟／线程CPU和Q0／H0／H1／B1／Q1。

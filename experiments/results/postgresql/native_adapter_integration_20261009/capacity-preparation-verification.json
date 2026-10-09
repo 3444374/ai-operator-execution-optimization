@@ -1,0 +1,54 @@
+{
+  "schema": "semloom.capacity_preparation.v1",
+  "sources": [
+    {
+      "commit": "23e7472f9c4c26fe7f31f552d5f8f6e738d4ce99",
+      "source": "adapter-capacity-source01",
+      "archive_sha256": "83abd84d8c95494edc68a6dc749f2479dbb8ddfe68515072f2ff6d5f6702e05a",
+      "real_model_posts": 0,
+      "files": 1028,
+      "manifest_sha256": "10a384c57687b83fb14eca5a9db9cb92fe3b3e5e70b2be80a809a549a4a85fd4"
+    },
+    {
+      "commit": "e75716913d44d02aaec28209fc1a76c80bb470f4",
+      "source": "adapter-capacity-source02",
+      "archive_sha256": "9079ad11401c6b7ef53fad9741e026cc05a3231cf78c6420c8bb0127311bcced",
+      "real_model_posts": 0,
+      "files": 1028,
+      "manifest_sha256": "defc9bbe3529e954859c5c870be519bd244d5893e773e56ad39ab7dcae02f424"
+    }
+  ],
+  "final_source_commit": "e75716913d44d02aaec28209fc1a76c80bb470f4",
+  "final_source_queries": 43,
+  "final_source_fixture_posts": 19160,
+  "earlier_source_queries": 16,
+  "earlier_source_fixture_posts": 8192,
+  "failed_cases": 2,
+  "real_model_posts": 0,
+  "private_archive": {
+    "run": "native-adapter-calibration-20261009/preparation01",
+    "members": 4970,
+    "bytes": 45811085,
+    "sha256": "8cf0049e2e9aff008dd935d4a451d00da7436871c30606e83007aea42d31b85f"
+  },
+  "public_archive": {
+    "path": "raw/capacity-preparation-observations.jsonl.gz",
+    "rows": 51460,
+    "bytes": 2087004,
+    "sha256": "47e1dbebcf348633db6b3d0d4dd7a7b492291fa8a62ceb0827b5d3bf76add1e6"
+  },
+  "projection_counts": {
+    "case": 61,
+    "request": 27352,
+    "summary": 59,
+    "report": 7,
+    "data": 1,
+    "cleanup": 59,
+    "object_observation": 23918,
+    "preflight": 1,
+    "prepared_manifest": 1,
+    "regression": 1
+  },
+  "object_observations_original": 140898,
+  "projection_policy": "Complete byte counter changes; repeated equal values stored as runs. Full stage events remain in private archive."
+}

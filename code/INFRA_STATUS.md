@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-10：[有限容量准备](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)
+单查询／常驻入口分开SemLoom持有任务、模型活动请求与Sema作者线程；省略新参数保持原行为。
+DuckDB原池64与批回调的SemLoom容量分开，原生池仍由扩展管理；相关源码为`e7571691`。
+最终源码43查询／19,160次fixture POST通过；独立调参／评价输入、GPU0 BF16小张量、模型缓存及只读环境检查分别登记，真实模型校准尚未启动。
+
 2026-10-09：[接入持续成本修复](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
 分别整合公共空释放不唤醒、DuckDB反压pending复用与Sema按真实变化通知／正文一次准备，原生供给、C4、SQLite保护与SDK统计保持。
 LOTUS修复前后24查询／1,632次fixture POST通过相同请求、完整正文和逐阶段时刻复算，真实模型0；带探针样本只作原因定位。

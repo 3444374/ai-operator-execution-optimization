@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-10：原生方法接入的有限容量准备
+
+- `23e7472f`分开实验入口的H／C／Sema线程，旧参数默认保持；`e7571691`分开DuckDB原生池64与SemLoom批回调容量，没有修改原生提示、解析或C++二进制。
+- [同题准备记录](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)保存最终源码43查询／19,160次受控HTTP检查，真实模型调用0；512行调参与512行评价输入分开，只读预检和GPU0 BF16小张量检查通过。
+- [现有计划](experiments/plans/语义系统对照.md#resident-capacity-calibration)登记17配置／102查询的首轮清单与43,656次调用、3,600秒上限；后续复验及独立评价另列清单，未自动启动。
+
 ## 2026-10-09：补充有限校准参照与Sema部署口径
 
 - [有限校准计划](experiments/plans/语义系统对照.md#resident-capacity-calibration)补充H128下重新测C4，以及新实验源码与独立运行身份；旧H4／C4记录继续按原条件保留。
