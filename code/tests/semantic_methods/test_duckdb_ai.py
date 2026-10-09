@@ -25,10 +25,30 @@ def response_body(prompt):
                        'provider_detail': {'kept': True}}, ensure_ascii=False).encode()
 
 
-def invoke(execute, *, cancel=False, consume=lambda *_: 0):
-    bridge = object.__new__(DuckDBSemLoomBridge)
-    bridge.execute, bridge.last_error = execute, None
-    bridge._buffers, bridge.batch_sizes, bridge._lock = {}, [], threading.Lock()
+class _ClosingResponses:
+    def __init__(self, responses, close_error='fixture iterator close failed'):
+        self.responses = iter(responses)
+        self.close_error = close_error
+        self.close_calls = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.responses)
+
+    def close(self):
+        self.close_calls += 1
+        if self.close_error:
+            raise RuntimeError(self.close_error)
+
+
+def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id=1):
+    if bridge is None:
+        bridge = object.__new__(DuckDBSemLoomBridge)
+        bridge.last_error = bridge.last_cleanup_error = None
+        bridge._buffers, bridge.batch_sizes, bridge._lock = {}, [], threading.Lock()
+    bridge.execute = execute
     owners = []
     calls = (_Call * 3)()
     for i in range(3):
@@ -38,7 +58,7 @@ def invoke(execute, *, cancel=False, consume=lambda *_: 0):
                          ct.addressof(body), len(body.value), None, 0, 8, 5, 5, 1)
     outputs = (_Response * 3)()
     cancelled = _Cancelled(lambda _: int(cancel))
-    status = bridge._dispatch(1, calls, 3, outputs, cancelled, _Consume(consume), None)
+    status = bridge._dispatch(batch_id, calls, 3, outputs, cancelled, _Consume(consume), None)
     return bridge, outputs, status
 
 
@@ -95,6 +115,88 @@ class DuckDBAbiTests(unittest.TestCase):
         bridge, _, status = invoke(execute, consume=lambda *_: 1)
         self.assertEqual((status, seen, closed), (3, ['call-0'], [True]))
         bridge._release(1)
+
+    def test_close_failure_after_all_consumed_responses_fails_the_batch(self):
+        iterators, consumed = [], []
+        def execute(calls, _):
+            iterator = _ClosingResponses([DuckDBResponse(c.call_id, b'ok', 200, 0) for c in calls])
+            iterators.append(iterator)
+            return iterator
+        bridge, _, status = invoke(execute, consume=lambda index, *_: consumed.append(index) or 0)
+        self.assertEqual(consumed, [0, 1, 2])
+        self.assertEqual(iterators[0].close_calls, 1)
+        self.assertEqual(status, 2)
+        self.assertIn('fixture iterator close failed', bridge.last_error)
+        self.assertIn('fixture iterator close failed', bridge.last_cleanup_error)
+        bridge._release(1)
+        self.assertEqual(bridge.retained_batches, 0)
+
+    def test_first_dispatch_or_consumer_failure_survives_iterator_close_failure(self):
+        for bad_identity, parsed, expected_status, first_error in [
+                (True, 0, 2, 'changes call identity'),
+                (False, 2, 2, 'consumer rejected metadata'),
+                (False, 1, 3, None)]:
+            with self.subTest(bad_identity=bad_identity, consumer_status=parsed):
+                iterators = []
+                def execute(calls, _):
+                    iterator = _ClosingResponses([DuckDBResponse(
+                        'unknown' if bad_identity else c.call_id, b'ok', 200, 0) for c in calls])
+                    iterators.append(iterator)
+                    return iterator
+                bridge, _, status = invoke(execute, consume=lambda *_: parsed)
+                self.assertEqual(status, expected_status)
+                if first_error is None:
+                    self.assertIsNone(bridge.last_error)
+                else:
+                    self.assertIn(first_error, bridge.last_error)
+                self.assertIn('fixture iterator close failed', bridge.last_cleanup_error)
+                self.assertEqual(iterators[0].close_calls, 1)
+                bridge._release(1)
+
+    def test_next_batch_clears_dispatch_and_cleanup_diagnostics(self):
+        bridge, _, status = invoke(lambda *_: _ClosingResponses([DuckDBResponse('unknown', b'ok', 200, 0)]))
+        self.assertEqual(status, 2)
+        self.assertIsNotNone(bridge.last_error)
+        self.assertIsNotNone(bridge.last_cleanup_error)
+        bridge._release(1)
+        bridge, _, status = invoke(lambda calls, _: [DuckDBResponse(c.call_id, b'ok', 200, 0) for c in calls],
+                                   bridge=bridge, batch_id=2)
+        self.assertEqual(status, 0)
+        self.assertIsNone(bridge.last_error)
+        self.assertIsNone(bridge.last_cleanup_error)
+        bridge._release(2)
+
+    def test_nested_batch_cannot_replace_outer_status_or_diagnostics(self):
+        for outer_bad_identity, nested_close_failure in ((False, True), (True, False)):
+            with self.subTest(outer_bad_identity=outer_bad_identity, nested_close_failure=nested_close_failure):
+                bridge = object.__new__(DuckDBSemLoomBridge)
+                bridge.last_error = bridge.last_cleanup_error = None
+                bridge._buffers, bridge.batch_sizes, bridge._lock = {}, [], threading.Lock()
+                nested_statuses = []
+                class NestedResponses(_ClosingResponses):
+                    def close(self):
+                        _, _, status = invoke(lambda calls, _: _ClosingResponses([
+                            DuckDBResponse(c.call_id, b'ok', 200, 0) for c in calls],
+                            close_error='nested close failed' if nested_close_failure else None),
+                            bridge=bridge, batch_id=2)
+                        nested_statuses.append(status)
+                        bridge._release(2)
+                        super().close()
+                def execute(calls, _):
+                    return NestedResponses([DuckDBResponse(
+                        'unknown' if outer_bad_identity else c.call_id, b'ok', 200, 0) for c in calls],
+                        close_error=None)
+                bridge, _, status = invoke(execute, bridge=bridge)
+                self.assertEqual(nested_statuses, [2 if nested_close_failure else 0])
+                self.assertEqual(status, 2 if outer_bad_identity else 0)
+                if outer_bad_identity:
+                    self.assertIsNotNone(bridge.last_error)
+                    self.assertIn('changes call identity', bridge.last_error)
+                else:
+                    self.assertIsNone(bridge.last_error)
+                self.assertIsNone(bridge.last_cleanup_error)
+                bridge._release(1)
+                self.assertEqual(bridge.retained_batches, 0)
 
 
 class _FixtureServer(ThreadingHTTPServer):
@@ -319,6 +421,53 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
         self.assertEqual(len(rows), count)
         self.assertEqual(len(self.server.records), count)
         self.assertEqual(prepared.call_count, count)
+
+    def test_all_native_responses_consumed_before_close_failure_still_fail_sql(self):
+        fail_close, iterators = [True], []
+        def execute(calls, _):
+            iterator = _ClosingResponses([DuckDBResponse(c.call_id, response_body(
+                json.loads(c.payload)['messages'][-1]['content']), 200, 0) for c in calls],
+                close_error='fixture iterator close failed' if fail_close[0] else None)
+            iterators.append(iterator)
+            return iterator
+        self.bridge = DuckDBSemLoomBridge(EXTENSION, execute)
+        self.bridge.enable(self.connection)
+        for try_complete in (False, True):
+            with self.subTest(try_complete=try_complete):
+                before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
+                fail_close[0] = True
+                with self.assertRaisesRegex(Exception, 'batch executor failed'):
+                    self.select(['one', 'two'], try_complete=try_complete)
+                self.assertEqual(self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0], before + 2)
+                self.assertEqual(iterators[-1].close_calls, 1)
+                self.assertIn('fixture iterator close failed', self.bridge.last_error)
+                self.assertIn('fixture iterator close failed', self.bridge.last_cleanup_error)
+                self.assertEqual(self.bridge.retained_batches, 0)
+                fail_close[0] = False
+                rows = self.select(['clean-one', 'clean-two'], try_complete=try_complete)
+                self.assertEqual([r[1]['response'] if try_complete else r[1] for r in rows],
+                                 ['out:clean-one', 'out:clean-two'])
+                self.assertIsNone(self.bridge.last_error)
+                self.assertIsNone(self.bridge.last_cleanup_error)
+                self.assertEqual(self.bridge.retained_batches, 0)
+
+    def test_native_parser_first_error_survives_iterator_close_failure(self):
+        iterators = []
+        def execute(calls, _):
+            iterator = _ClosingResponses([DuckDBResponse(c.call_id,
+                b'{"error":{"message":"fixture first parser failure","code":"fixture-first"}}', 429, 0)
+                for c in calls])
+            iterators.append(iterator)
+            return iterator
+        self.bridge = DuckDBSemLoomBridge(EXTENSION, execute)
+        self.bridge.enable(self.connection)
+        with self.assertRaisesRegex(Exception, 'fixture first parser failure'):
+            self.select(['first', 'second'], try_complete=False)
+        self.assertEqual(self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0], 1)
+        self.assertEqual(iterators[0].close_calls, 1)
+        self.assertIsNone(self.bridge.last_error)
+        self.assertIn('fixture iterator close failed', self.bridge.last_cleanup_error)
+        self.assertEqual(self.bridge.retained_batches, 0)
 
 
 if __name__ == '__main__':

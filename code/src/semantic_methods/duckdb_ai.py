@@ -108,67 +108,82 @@ class DuckDBSemLoomBridge:
     def _dispatch(self, batch_id, raw_calls, count, raw_responses, is_cancelled, consume, context) -> int:
         cancelled = lambda: bool(is_cancelled(context))
         buffers: list = []
+        iterator = None
+        status = 0
+        primary_error = cleanup_error = None
         with self._lock:
+            self.last_error = self.last_cleanup_error = None
             self._buffers[batch_id] = buffers
             self.batch_sizes.append(count)
             # Bounded diagnostic history, independent of query size.
             del self.batch_sizes[:-64]
         try:
             if cancelled():
-                return 1
-            calls = tuple(DuckDBCall(
-                row=item.row, query_id=item.query_id.decode(), call_id=item.call_id.decode(),
-                model=item.model.decode(), endpoint=item.endpoint.decode(),
-                payload=ct.string_at(item.payload, item.payload_size),
-                headers=tuple(item.headers[j].decode() for j in range(item.header_count)),
-                estimated_tokens=item.estimated_tokens, timeout_seconds=item.timeout_seconds,
-                connect_timeout_seconds=item.connect_timeout_seconds, ready_ns=item.ready_ns,
-            ) for item in (raw_calls[i] for i in range(count)))
-            if len({call.call_id for call in calls}) != count:
-                raise ValueError('DuckDB batch repeats a call identity')
-            positions = {call.call_id: i for i, call in enumerate(calls)}
-            received: set[str] = set()
-            result_bytes = 0
-            iterator = iter(self.execute(calls, cancelled))
-            for response in iterator:
-                if response.call_id not in positions or response.call_id in received:
-                    raise ValueError('DuckDB batch response repeats or changes call identity')
-                if not isinstance(response.body, bytes):
-                    raise TypeError('DuckDB batch response body must be bytes')
-                error = response.transport_error.encode()
-                result_bytes += len(response.body) + len(error)
-                if (len(response.body) > MAX_RESPONSE_BYTES or len(error) > MAX_RESPONSE_BYTES
-                        or result_bytes > MAX_BATCH_BYTES):
-                    raise ValueError('DuckDB batch response exceeds its byte limit')
-                if not 0 <= response.http_status <= 599 or response.elapsed_ms < -1:
-                    raise ValueError('DuckDB batch response has invalid status or elapsed time')
-                received.add(response.call_id)
-                body_buffer = ct.create_string_buffer(response.body)
-                error_buffer = ct.create_string_buffer(error)
-                buffers.extend([body_buffer, error_buffer])
-                index = positions[response.call_id]
-                raw_responses[index] = _Response(calls[index].row, ct.addressof(body_buffer), len(response.body),
-                                                response.http_status, response.elapsed_ms,
-                                                ct.addressof(error_buffer), len(error))
-                parsed = consume(index, ct.byref(raw_responses[index]), context)
-                if parsed == 1:
-                    return 3
-                if parsed != 0:
-                    raise ValueError('DuckDB native response consumer rejected metadata')
-            if cancelled():
-                return 1
-            if len(received) != count:
-                raise ValueError('DuckDB batch response is incomplete')
-            return 0
+                status = 1
+            else:
+                calls = tuple(DuckDBCall(
+                    row=item.row, query_id=item.query_id.decode(), call_id=item.call_id.decode(),
+                    model=item.model.decode(), endpoint=item.endpoint.decode(),
+                    payload=ct.string_at(item.payload, item.payload_size),
+                    headers=tuple(item.headers[j].decode() for j in range(item.header_count)),
+                    estimated_tokens=item.estimated_tokens, timeout_seconds=item.timeout_seconds,
+                    connect_timeout_seconds=item.connect_timeout_seconds, ready_ns=item.ready_ns,
+                ) for item in (raw_calls[i] for i in range(count)))
+                if len({call.call_id for call in calls}) != count:
+                    raise ValueError('DuckDB batch repeats a call identity')
+                positions = {call.call_id: i for i, call in enumerate(calls)}
+                received: set[str] = set()
+                result_bytes = 0
+                iterator = iter(self.execute(calls, cancelled))
+                for response in iterator:
+                    if response.call_id not in positions or response.call_id in received:
+                        raise ValueError('DuckDB batch response repeats or changes call identity')
+                    if not isinstance(response.body, bytes):
+                        raise TypeError('DuckDB batch response body must be bytes')
+                    error = response.transport_error.encode()
+                    result_bytes += len(response.body) + len(error)
+                    if (len(response.body) > MAX_RESPONSE_BYTES or len(error) > MAX_RESPONSE_BYTES
+                            or result_bytes > MAX_BATCH_BYTES):
+                        raise ValueError('DuckDB batch response exceeds its byte limit')
+                    if not 0 <= response.http_status <= 599 or response.elapsed_ms < -1:
+                        raise ValueError('DuckDB batch response has invalid status or elapsed time')
+                    received.add(response.call_id)
+                    body_buffer = ct.create_string_buffer(response.body)
+                    error_buffer = ct.create_string_buffer(error)
+                    buffers.extend([body_buffer, error_buffer])
+                    index = positions[response.call_id]
+                    raw_responses[index] = _Response(calls[index].row, ct.addressof(body_buffer), len(response.body),
+                                                    response.http_status, response.elapsed_ms,
+                                                    ct.addressof(error_buffer), len(error))
+                    parsed = consume(index, ct.byref(raw_responses[index]), context)
+                    if parsed == 1:
+                        status = 3
+                        break
+                    if parsed != 0:
+                        raise ValueError('DuckDB native response consumer rejected metadata')
+                if status == 0:
+                    if cancelled():
+                        status = 1
+                    elif len(received) != count:
+                        raise ValueError('DuckDB batch response is incomplete')
         except BaseException as error:
-            self.last_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
-            return 1 if cancelled() else 2
+            primary_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+            status = 1 if cancelled() else 2
         finally:
-            if 'iterator' in locals() and hasattr(iterator, 'close'):
+            if iterator is not None:
                 try:
-                    iterator.close()
+                    close = getattr(iterator, 'close', None)
+                    if close is not None:
+                        close()
                 except BaseException as error:
-                    self.last_cleanup_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+                    cleanup_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+        if status == 0 and cleanup_error is not None:
+            primary_error = cleanup_error
+            status = 2
+        with self._lock:
+            self.last_error = primary_error
+            self.last_cleanup_error = cleanup_error
+        return status
 
     def enable(self, connection) -> None:
         if self._closed:
