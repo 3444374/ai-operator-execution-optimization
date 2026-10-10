@@ -62,7 +62,7 @@ manifest = read('workflow-manifest.json')
 ordinals = tuple(int(v) for v in args.ordinals.split(','))
 all_queries = []
 for cell in manifest['cells']:
-    for ordinal in range(7):
+    for ordinal in range(manifest.get('queries_per_cell', 7)):
         summary = read(cell['name'] + '/query-' + str(ordinal) + '/summary.json')
         assert summary['status'] == 'passed' and not summary['errors']
         assert summary['preparation_model_posts'] == 0
@@ -78,6 +78,7 @@ for cell in manifest['cells']:
     assert startup['ready_ns'] >= startup['started_ns']
     http, call_e2e, rpc_before, worker, rpc_after, service = [], [], [], [], [], []
     method_stages = defaultdict(list)
+    sema_stages = defaultdict(list)
     http_stages = defaultdict(list)
     phases = defaultdict(list)
     samples, lifecycles = [], []
@@ -149,6 +150,16 @@ for cell in manifest['cells']:
             for event in lines(prefix + 'sema-service.jsonl'):
                 assert event['error_type'] is None and event['response_written_ns'] >= event['proxy_arrived_ns']
                 service.append((event['response_written_ns'] - event['proxy_arrived_ns']) / 1e9)
+                for label, left, right in (
+                    ('arrival_to_accept', 'proxy_arrived_ns', 'core_accepted_ns'),
+                    ('accept_to_rpc', 'core_accepted_ns', 'forward_started_ns'),
+                    ('received_to_delivery', 'model_returned_observed_ns', 'core_delivery_ns'),
+                    ('delivery_to_resume', 'response_ready_ns', 'forward_resumed_ns'),
+                    ('resume_to_write', 'forward_resumed_ns', 'response_written_ns'),
+                ):
+                    if event.get(left) is not None and event.get(right) is not None:
+                        assert event[right] >= event[left]
+                        sema_stages[label].append((event[right] - event[left]) / 1e9)
         adapter = value.get('identity', {}).get('adapter_timings')
         if adapter:
             assert adapter['vector_rows'] == rows
@@ -187,6 +198,7 @@ for cell in manifest['cells']:
         http=distribution(http, preserve=True), request_e2e=distribution(call_e2e, preserve=True),
         rpc_before_worker=distribution(rpc_before), worker=distribution(worker), rpc_after_worker=distribution(rpc_after),
         sema_service_arrival_to_write=distribution(service),
+        sema_stages={k: distribution(v, preserve=True) for k, v in sema_stages.items()},
         method_stages={k: distribution(v) for k, v in method_stages.items()},
         http_stages={k: distribution(v) for k, v in http_stages.items()},
         measured_phase_totals={k: distribution(v, preserve=True) for k, v in phases.items()},
@@ -208,7 +220,7 @@ result = dict(schema='semloom.latest_supplier_short_observations.v1', status='pa
     run_id=manifest['run_id'], source_commit=manifest['source_commit'],
     real_model_posts=manifest['max_posts'], queries=manifest['queries'], measurements=len(ordinals)*len(records),
     records=records, all_queries=all_queries, request_comparisons=comparisons,
-    quantile_scope='nearest rank; five queries make whole-query P99 a sample maximum; related request samples are not independent population tails',
+    quantile_scope=f'nearest rank; {len(ordinals)} queries make whole-query P99 a sample maximum; related request samples are not independent population tails',
     timing_scope='direct preparation and SQL/API-to-EOF timestamps; HTTP includes transfer and service wait; nested and parallel spans are not added or subtracted',
     unavailable=dict(model_inference='no per-call model execution probes', organization='no separate task-selection start/end probe',
         native_task_ready='native DuckDB and author Sema do not expose upstream legal-task readiness'))
