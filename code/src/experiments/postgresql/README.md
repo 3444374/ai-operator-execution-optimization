@@ -47,6 +47,11 @@ Sema 可显式选择 `sema_executor_scope=group-diagnostic`：专属固定线程
 当前查询借用执行器并拥有独立 `NativeTaskSession`、HTTP 入口、响应 lease 和观察；组退出才关闭执行器。
 连续查询的输入、前发送回调、session 身份与结果分别核对；取消、错误或资源未归还后停止后续借用。
 CPU／替身查询和退出检查已通过，实际 Daft／Ray 对象释放与真实模型耗时仍需单独验证，默认保持 `query`。
+`SemaRequestService` 可选 `upstream_concurrency` 只配置原 aiohttp 连接器的总连接／单主机额度；
+默认 `0` 保持原透明转发，非零用于简单有界转发诊断。连接等待另记起止，停止后拒绝等待请求取得新连接，
+完整正文、响应、取消和首错记录保持；这是后置服务控制，不能代表作者原生请求池。
+原 `forward_started_ns` 仍在连接取得之前，包含连接等待；共同上游网关的 HTTP 时段另列。
+实现使用[公开连接事件](https://docs.aiohttp.org/en/v3.9.5/tracing_reference.html#connection-acquiring)。
 DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema进程更换URL检查；
 同连接／作者进程复用、输入替换和当前结果关联分别核对，后置Core按查询创建的事实保留。
 两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。

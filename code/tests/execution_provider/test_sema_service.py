@@ -1,4 +1,5 @@
 import gzip
+from concurrent.futures import ThreadPoolExecutor
 import base64
 import hashlib
 import json
@@ -277,6 +278,88 @@ class SemaServiceTests(unittest.TestCase):
                     self.assertEqual((caught.exception.status, caught.exception.body), (422, self.server.body))
                     self.assertEqual(query.status, 'failed')
         self.assertEqual(len(self.server.calls), 1)
+
+
+class SemaConnectorControlTests(unittest.TestCase):
+    setUp = SemaServiceTests.setUp
+    stop_model = SemaServiceTests.stop_model
+    post = SemaServiceTests.post
+
+    def service(self, concurrency):
+        return SemaRequestService(query_id='query-a', upstream_url=self.url, limits=self.limits,
+            trace_path=self.root / 'requests.jsonl', upstream_concurrency=concurrency)
+
+    def wait_for(self, predicate):
+        deadline = time.monotonic() + 1.5
+        while not predicate():
+            if time.monotonic() >= deadline:
+                self.fail('fixture did not reach the declared connector capacity and waiting state')
+            time.sleep(.005)
+
+    def test_two_connections_hold_upstream_capacity_and_record_pool_wait(self):
+        self.server.gate = threading.Event()
+        with self.service(2) as service:
+            with ThreadPoolExecutor(max_workers=4) as callers:
+                futures = [callers.submit(self.post, service.endpoint_url) for _ in range(4)]
+                try:
+                    self.wait_for(lambda: len(self.server.calls) == 2 and
+                        sum('connector_wait_started_ns' in row for row in service._rows) == 2)
+                    self.assertEqual(service._client.connector.limit, 2)
+                    self.assertEqual(service._client.connector.limit_per_host, 2)
+                finally:
+                    self.server.gate.set()
+                replies = [future.result() for future in futures]
+                self.assertEqual([(status, body) for status, body, _headers in replies], [(200, self.server.body)] * 4)
+                self.assertTrue(all(headers['X-Sema-Fixture'] == 'preserve' for _, _, headers in replies))
+            service.end_input()
+        rows = [json.loads(line) for line in service.trace_path.read_text().splitlines()]
+        waiting = [row for row in rows if 'connector_wait_started_ns' in row]
+        self.assertEqual(len(waiting), 2)
+        self.assertTrue(all(row['connector_wait_started_ns'] < row['connector_wait_ended_ns']
+                            < row['model_returned_ns'] for row in waiting))
+        self.assertEqual(service.summary['upstream_concurrency'], 2)
+        self.assertEqual(len(self.server.calls), 4)
+
+    def test_bounded_forwarding_keeps_original_http_failure_and_stops_later_calls(self):
+        self.server.status = 429
+        self.server.body = b'{"error":"fixture original failure"}'
+        with self.service(2) as service:
+            self.assertEqual(self.post(service.endpoint_url)[:2], (429, self.server.body))
+            self.assertEqual(self.post(service.endpoint_url)[0], 410)
+            self.assertEqual(service.first_error.body, self.server.body)
+        self.assertEqual(len(self.server.calls), 1)
+
+    def test_cancellation_rejects_waiting_connections_without_another_upstream_post(self):
+        self.server.gate = threading.Event()
+        with self.service(2) as service:
+            with ThreadPoolExecutor(max_workers=4) as callers:
+                futures = [callers.submit(self.post, service.endpoint_url) for _ in range(4)]
+                try:
+                    self.wait_for(lambda: len(self.server.calls) == 2 and
+                        sum('connector_wait_started_ns' in row for row in service._rows) == 2)
+                    service.cancel()
+                finally:
+                    self.server.gate.set()
+                self.assertEqual(sorted(future.result()[0] for future in futures), [200, 200, 502, 502])
+            self.assertEqual(self.post(service.endpoint_url)[0], 410)
+        self.assertEqual(len(self.server.calls), 2)
+        self.assertEqual(service.first_error.phase, 'transport')
+
+    def test_zero_preserves_unlimited_connector_and_original_forwarding(self):
+        self.server.gate = threading.Event()
+        with self.service(0) as service:
+            with ThreadPoolExecutor(max_workers=4) as callers:
+                futures = [callers.submit(self.post, service.endpoint_url) for _ in range(4)]
+                try:
+                    self.wait_for(lambda: len(self.server.calls) == 4)
+                    self.assertEqual(service._client.connector.limit, 0)
+                    self.assertEqual(service._client.connector.limit_per_host, 0)
+                    self.assertTrue(all('connector_wait_started_ns' not in row for row in service._rows))
+                finally:
+                    self.server.gate.set()
+                self.assertEqual([future.result()[0] for future in futures], [200] * 4)
+            service.end_input()
+        self.assertIsNone(service.first_error)
 
 
 if __name__ == '__main__':
