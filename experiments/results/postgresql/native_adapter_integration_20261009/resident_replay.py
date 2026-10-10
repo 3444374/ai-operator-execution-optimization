@@ -13,7 +13,7 @@ def main():
     sys.path.insert(0,str(root.parents[3]/'code'))
     from src.experiments.postgresql.native_adapter_metrics import summarize_calls
     from src.experiments.postgresql.native_adapter_http import bind_native_http_events
-    report=json.loads((root/'resident-model-analysis.json').read_text())
+    report=json.loads(gzip.decompress((root/'resident-model-analysis.json.gz').read_bytes()))
     archive=root/report['public_archive']['path']
     assert hashlib.sha256(archive.read_bytes()).hexdigest()==report['public_archive']['sha256']
     members={};originals={}

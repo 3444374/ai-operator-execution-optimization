@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-08
+更新时间：2026-10-10
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -12,23 +12,13 @@
 
 ## 0. 当前优先级与历史记录范围
 
-2026-10-09：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
-完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口。
-实际库检查、私有PG18.3旧路径回归与13路径／39查询／384次模型预演通过，属于有限外部输入工程证据。
-原生供给、前继输出造成的任务变化、质量差异和准备成本保留；不更新性能采用或PG多Map结论。
-同一[常驻检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)
-补上固定Map与LOTUS六路径的跨查询组件复用、独立消费归还及读取／提交计时；18查询／96次fixture仅提供工程可行性依据。
-常驻真实模型比较按现行[语义系统方案](experiments/plans/语义系统对照.md)及后续原件判断，首次慢样本和未完成的供应商资格保持。
-随后六臂常驻90查询／5,760 POST通过独立核验；固定Map SemLoom接近原生Daft，LOTUS接入更慢，
-完整诊断观察及按臂分块条件由[同题模型章节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存，默认与其他资格保持。
-补充[DuckDB与Sema常驻输入更新](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
-通过五条实际库路径和URL替换，17查询／722次fixture POST只核对工程接入；执行节奏修复与模型复核分别处理。
-随后[接入持续成本修复](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
-分别消除空释放造成的反复推进、DuckDB重复封装和Sema重复通知，保留同步保护与方法统计；CPU诊断只支持此次工程原因，真实模型与方法采用仍分别判断。
-三家异常释放／退出修复在新的`adapter-repair-source02`共同核对，170项相关检查及八路径26查询／1,154 fixture POST通过，真实模型0；旧来源与模型负结果保留。
-[修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)完成120查询／7,680 POST，LOTUS原持续差距消失，Daft／Ray与DuckDB仍略慢于各自原生；Sema实际在途128／4不同，保留整体与后置服务观察。最新DuckDB内层／记录修订只作受影响CPU检查，有限容量校准尚未执行。
-2026-10-10：[容量准备](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)完成H／C／Sema线程独立传参及目标输入的实际库检查，三条供应商SemLoom路径可达到C4至C128；真实模型筛查与最终比较配置仍待完成。
-随后[首轮真实筛查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)因运行包标签不一致停止，修订与原件分别保留；尚无有效容量测量或新性能结论。
+2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
+完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口，属于有限外部输入的工程证据。
+[修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)
+保留旧负结果、全部重复与实际请求容量差异；工程修复不作为调度算法贡献，也不扩大为PG多Map或通用性能结论。
+[有限容量准备与首次停止](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
+已完成参数拆分和目标输入检查，筛查因运行包标签不一致停止，尚无有效容量测量或新性能结论。
+逐次来源、质量、耗时、失败和恢复位置只从主报告、证据台账与[代码状态](code/INFRA_STATUS.md)引用。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，

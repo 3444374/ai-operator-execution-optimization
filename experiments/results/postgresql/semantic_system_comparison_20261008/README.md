@@ -378,7 +378,7 @@ Sema给模型发送原生上下文和应用指令，同时要求JSON字符串，
 
 单张RTX4090（GPU0），另一卡未参与；驱动与模型环境隔离。模型为缓存的Qwen2.5-7B-Instruct，
 revision `a09a35458c702b33eeacc393d103063234e8bc28`，全部权重、配置和tokenizer文件逐项摘要匹配。
-vLLM0.25.1、BF16、TP1、FCFS、context4096、max-num-seqs128、batched-token8192，
+vLLM0.25.1、BF16、张量并行为1、FCFS、context4096、max-num-seqs128、batched-token8192，
 分块输入处理、前缀缓存关闭、显存比例0.8；实际参数见[服务设置](raw/service-settings.json)。
 PG及每个查询驱动使用相同8个CPU，Sema线程和各SDK并发是原生设置，实际HTTP峰值另测。
 

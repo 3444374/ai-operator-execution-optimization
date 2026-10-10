@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-10：[适配分析保存精简](postgresql/native_adapter_integration_20261009/README.md#保存与复核)
+四份分析改为完整字节的单一gzip副本，[保存登记](postgresql/native_adapter_integration_20261009/verification.json)保留原提交、路径、字节数与SHA-256，原始观测、运行身份及复算入口继续保留。
+
 2026-10-10：[容量筛查的首次停止](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
 保留8次真实调用、零完成查询及运行包标签错误；修订参考表示与允许值的3查询／24次fixture POST另计，修正版没有启动真实模型。
 

@@ -48,7 +48,14 @@ def replay_calls(values, prefixes=None):
 
 
 verification = json.loads((ROOT / 'verification.json').read_text())
-analysis = json.loads((ROOT / 'model-analysis.json').read_text())
+for identity in verification['analysis_storage']['files'].values():
+    compressed = (ROOT / identity['path']).read_bytes()
+    assert len(compressed) == identity['compressed_bytes']
+    assert hashlib.sha256(compressed).hexdigest() == identity['compressed_sha256']
+    original = gzip.decompress(compressed)
+    assert len(original) == identity['original_bytes']
+    assert hashlib.sha256(original).hexdigest() == identity['original_sha256']
+analysis = json.loads(gzip.decompress((ROOT / 'model-analysis.json.gz').read_bytes()))
 fixture = members(ROOT / verification['raw']['archive'], verification['raw']['sha256'])
 model = members(ROOT / analysis['archive']['path'], analysis['archive']['sha256'])
 assert replay_calls(fixture) == 8

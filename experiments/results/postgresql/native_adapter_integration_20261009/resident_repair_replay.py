@@ -1,5 +1,6 @@
 """Replay retained repair-model evidence without issuing requests."""
 from collections import Counter, defaultdict
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -8,7 +9,7 @@ import sys
 import tarfile
 
 root = Path(__file__).resolve().parent
-report = json.loads((root/'resident-repair-model-analysis.json').read_text())
+report = json.loads(gzip.decompress((root/'resident-repair-model-analysis.json.gz').read_bytes()))
 identity = report['public_archive']
 archive = root/identity['path']
 assert hashlib.sha256(archive.read_bytes()).hexdigest() == identity['sha256']

@@ -8,18 +8,10 @@ PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系
 再记录SQL／API提交、统一消费结束与代理HTTP区间；实际记录见[独立报告](../experiments/results/postgresql/query_ready_timing_20261008/README.md)。
 
 [原生方法成对查询](scripts/README.md#native-adapter-query)整合公共完整任务、LOTUS、DuckDB和Sema请求服务，
-共同固定Map分别使用原生Daft、原生Ray与SemLoom执行。工程检查和适用范围归[整合报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
-同入口新增常驻清单，跨查询保留Core、Ray连接和LOTUS LM，逐查询关消费流与记账；
-固定Map三条和LOTUS三条重复fixture通过，启动、当前查询读取及实际API提交分别记录。
-Sema服务Core的线程限制、原生Ray每图actor及其他常驻接入的待验证项见[常驻检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
-同一源码的[常驻模型记录](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)保存90查询／5,760 POST、全部重复和负结果；源码、观察成本与统计用途分别说明。
-[DuckDB与Sema常驻输入更新](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
-补上五条实际库路径与URL替换探针，17查询／722次fixture POST；同连接／作者进程复用已核对，Sema后置Core仍按查询创建，执行节奏修复另测。
-[持续成本修复](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
-分别处理空释放、DuckDB反压重复封装与Sema反复通知，常驻初始化／退出也保留第一错误；原保护与SDK统计保持，CPU诊断不替代模型复核。
-三家供应商另处理release／producer close／HTTP服务退出异常；错误传播和附加诊断分别保存。
-[最终同一源码检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)通过实际扩展、常驻输入更新与资源归还，原来源和模型负结果保持。
-[新的模型记录](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)保留120查询与Sema不同实际容量；最新DuckDB内层／摘要诊断的CPU检查独立登记，未替换模型来源。有限配置选择见现有计划，不把请求4或原生峰128当最佳点。
+共同固定Map分别使用原生Daft、原生Ray与SemLoom执行。常驻入口复用Core、LOTUS LM、DuckDB连接及Sema作者进程；
+Sema后置Core／worker仍按查询创建。当前参数分开持有任务、模型活动请求及Sema作者线程。
+实现与未完成项见[代码状态](INFRA_STATUS.md)；工程检查、异常处理、历次模型观察和筛查停止由
+[同一主报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)维护，原模型来源及负结果均保留。
 
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。

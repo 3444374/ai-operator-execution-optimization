@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 root=Path(__file__).parent
-analysis=json.loads((root/'lotus-observation-analysis.json').read_text())
+analysis=json.loads(gzip.decompress((root/'lotus-observation-analysis.json.gz').read_bytes()))
 archive=root/analysis['public_archive']['path']
 assert hashlib.sha256(archive.read_bytes()).hexdigest()==analysis['public_archive']['sha256']
 members={}
