@@ -31,6 +31,14 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 LOTUS批次的调用者取得完整SDK响应列表后才记返回；逐行继续执行则在supplier resume收到完整HTTP响应时记返回。
 DuckDB保留C++的steady-clock值，Python回调另记本进程时刻；未证明两种时钟相同，不做跨钟减法。
 Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端到端标为不可观测；请求服务自己的阶段另列。
+DuckDB SemLoom 主路径和本地诊断由同一 SELECT 持有一个 Core Job，各原生 vector 只借用独立 session。
+vector 关闭后保留查询份额；查询取消后停止后续 vector，未知远端工作继续计入原查询，结束时统一关闭 Job。
+原生 DuckDB 与直接使用 `DuckDBNativeTaskExecutor(query_owner=None)` 的单批入口保持；
+全源行编号继续通过已有 `supplied_rows + call.row` 关联，原 C++ 的 vector 局部 row 语义不改。
+2,051 行、2,048＋3 的 CPU／替身检查覆盖连续 Job、全源行与结果；编译产物的同名多 vector 检查仍需实际库运行：
+`DUCKDB_SEMLOOM_EXTENSION` 指向匹配扩展后，运行
+`tests.semantic_methods.test_duckdb_ai.DuckDBNativeLibraryTests.test_compiled_multiple_vectors_borrow_one_query_job`。
+该检查使用实际 SQL、C ABI、parser 和 Core，响应为确定替身，HTTP／模型调用为 0。
 原始字节、HTTP元数据与SDK值对象的哈希各自说明表示形式，完整HTTP时段不改名为纯模型计算。
 查询与调用分别保存全部分位样本、秩与最大值标记；组织等缺少实际起止的阶段写不可观测。
 

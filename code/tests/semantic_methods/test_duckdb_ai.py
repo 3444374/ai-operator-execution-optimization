@@ -658,6 +658,43 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
         self.bridge = DuckDBSemLoomBridge(EXTENSION, self.adapter)
         self.bridge.enable(self.connection)
 
+    def test_compiled_multiple_vectors_borrow_one_query_job(self):
+        from src.execution_provider.adapters.native_tasks import NativeQueryJob,build_native_execution
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.execution_provider.adapters.full_response import FullModelResponse,encode_full_response
+        from src.scheduling.core.session_contract import Usage
+        config=FixedModelConfig(self.endpoint,'fixture',5000,bearer_token='EMPTY')
+
+        async def complete(task,_endpoint):
+            prompt=json.loads(task.task.payload)['messages'][-1]['content']
+            return encode_full_response(FullModelResponse(200,(),response_body(prompt)))
+
+        self.execution=build_native_execution(config,physical=None,execute=complete,
+                                             max_tasks=16,max_active_requests=16)
+        query=NativeQueryJob(self.execution,'one-select')
+        adapter=DuckDBNativeTaskExecutor(self.execution,config,query_owner=query)
+        job_handles=[];call_ids=[]
+        def execute(calls,cancelled):
+            job_handles.append(next(iter(self.execution.engine.jobs.jobs)))
+            call_ids.extend(call.call_id for call in calls)
+            yield from adapter(calls,cancelled)
+            self.assertIn(query.job,self.execution.engine.jobs.jobs)
+            self.assertFalse(self.execution.engine.jobs.jobs[query.job].closing)
+        self.bridge=DuckDBSemLoomBridge(EXTENSION,execute)
+        self.bridge.enable(self.connection)
+        prompts=[f'query-vector-row-{i}' for i in range(2051)]
+        with query:
+            rows=self.select(prompts)
+            self.assertEqual([row[1]['response'] for row in rows],['out:'+prompt for prompt in prompts])
+            self.assertGreater(len(self.bridge.batch_sizes),1)
+            self.assertTrue(all(job is query.job for job in job_handles))
+            self.assertEqual(len(set(call_ids)),len(prompts))
+            self.assertEqual(self.execution.engine.jobs.sequence,1)
+        self.assertFalse(self.execution.engine.jobs.jobs)
+        self.assertEqual(self.execution.engine.capacity.usage(),Usage())
+        self.assertEqual(self.bridge.retained_batches,0)
+        self.assertFalse(self.server.records)
+
     def test_compiled_batch_bypasses_native_one_worker_and_guard(self):
         from src.scheduling.core.session_contract import Usage
         self.common()

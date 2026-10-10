@@ -272,10 +272,13 @@ class DuckDBNativeTaskExecutor:
     after copying its full response into the native vector's bounded result storage.
     """
     def __init__(self, execution, config, *, describe_work=None, collect_timings=False,
-                 retry_offer_prefix=False, prepare_blocks=False):
+                 retry_offer_prefix=False, prepare_blocks=False, query_owner=None):
         if prepare_blocks and describe_work is not None:
             raise ValueError('prepared-block diagnostic requires default immutable work descriptions')
         self.execution, self.config = execution, config
+        if query_owner is not None and query_owner.execution is not execution:
+            raise ValueError('DuckDB query owner must use the same execution')
+        self.query_owner = query_owner
         self.describe_work = describe_work
         self.collect_timings = collect_timings
         self.retry_offer_prefix, self.prepare_blocks = retry_offer_prefix, prepare_blocks
@@ -307,7 +310,8 @@ class DuckDBNativeTaskExecutor:
                     or call.timeout_seconds * 1000 != self.config.timeout_ms or auth != expected_auth
                     or call.connect_timeout_seconds != call.timeout_seconds):
                 raise ValueError('DuckDB prepared call differs from the common fixed transport')
-        flow = NativeTaskSession(self.execution, 'duckdb:' + calls[0].call_id, 'duckdb-ai-map')
+        flow = (NativeTaskSession(self.execution, 'duckdb:' + calls[0].call_id, 'duckdb-ai-map')
+                if self.query_owner is None else self.query_owner.open_session('duckdb-ai-map'))
         offset = 0
         pending = ()
         pending_validated = False
@@ -319,6 +323,8 @@ class DuckDBNativeTaskExecutor:
         try:
             while True:
                 if cancelled():
+                    if self.query_owner is not None:
+                        self.query_owner.request_cancel()
                     flow.request_cancel()
                     raise InterruptedError('DuckDB query cancelled')
                 if offset < len(calls):
@@ -394,14 +400,20 @@ class DuckDBNativeTaskExecutor:
                 timings.finish('wait', wait_started)
         except GeneratorExit:
             # Closing after a consumer stop is control flow, not an inner execution error.
+            if self.query_owner is not None:
+                self.query_owner.request_cancel()
             raise
         except BaseException as error:
+            if self.query_owner is not None:
+                self.query_owner.request_cancel()
             primary_error = error
             raise
         finally:
             try:
                 close_report = flow.close(clean=finished)
             except BaseException as error:
+                if self.query_owner is not None:
+                    self.query_owner.request_cancel()
                 cleanup_errors.append(redact_text(f'close: {type(error).__name__}: {error}')[:4096])
                 if primary_error is None:
                     raise

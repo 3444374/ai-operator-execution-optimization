@@ -1,15 +1,17 @@
 import io
+import asyncio
 import hashlib
 import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
-from contextlib import nullcontext
+from contextlib import nullcontext,ExitStack
 import unittest
 from unittest.mock import patch
 
 from src.execution_provider.adapters.full_response import FullModelResponse,encode_full_response
 from src.execution_provider.adapters.model_config import FixedModelConfig
+from src.execution_provider.adapters.native_tasks import build_native_execution
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.scheduling.core.session_contract import CloseReport,Usage
@@ -17,7 +19,7 @@ from src.semantic_methods.duckdb_ai import DuckDBCall,DuckDBResponse
 from src.semantic_methods.continuation import Continue,Final,Request
 from src.experiments.postgresql.native_adapter_metrics import summarize_calls
 from src.experiments.postgresql.supplier_adapter_query import (
-    MethodObservations,_LotusBatchObservation,_LotusMethodObservation,run_supplier_query,
+    MethodObservations,_LotusBatchObservation,_LotusMethodObservation,run_supplier_query,_duckdb_rows,
 )
 
 
@@ -30,6 +32,70 @@ class SupplierObservationTests(unittest.TestCase):
     def observations(self):
         writer=Writer();raw=io.StringIO()
         return MethodObservations(writer,raw,'fixture'),writer,raw
+
+    def test_duckdb_select_vectors_share_query_job_and_keep_global_source_rows(self):
+        values=[dict(row_id=f'row-{i:04d}',text=f'input-{i}') for i in range(2051)]
+        observations,writer,raw=self.observations()
+        jobs=[];call_values={}
+        model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions','fixture',1000,bearer_token='EMPTY')
+
+        async def complete(task, _endpoint):
+            value=json.loads(task.task.payload)['value']
+            if value.endswith('-0'):
+                await asyncio.sleep(.002)
+            return encode_full_response(FullModelResponse(200,(),json.dumps(dict(value=value)).encode()))
+
+        execution=build_native_execution(model,physical=None,execute=complete,max_tasks=16,max_active_requests=16)
+
+        class Bridge:
+            def __init__(self,_library,callback):
+                self.callback=callback;self.last_error=self.last_cleanup_error=None
+            def __enter__(self):return self
+            def __exit__(self,*_error):return False
+            def enable(self,connection):connection.bridge=self
+
+        class Connection:
+            def execute(connection,_statement):
+                result=[]
+                for vector,start in enumerate((0,2048)):
+                    rows=values[start:min(start+2048,len(values))]
+                    jobs.append(next(iter(execution.engine.jobs.jobs)))
+                    calls=[]
+                    for row,value in enumerate(rows):
+                        call_id=f'vector-{vector}-call-{row}'
+                        call_values[call_id]=value
+                        calls.append(DuckDBCall(row,'native-vector-'+str(vector),call_id,'fixture',model.endpoint_url,
+                            json.dumps(dict(model='fixture',messages=[],value=value['text'])).encode(),
+                            ('Authorization: Bearer EMPTY',),1,1,1,1))
+                    responses=list(connection.bridge.callback(tuple(calls),lambda:False))
+                    self.assertEqual(len(responses),len(rows))
+                    for response in responses:
+                        source=call_values[response.call_id]
+                        self.assertEqual(json.loads(response.body)['value'],source['text'])
+                        result.append((source['row_id'],source['text'],None))
+                    self.assertEqual(len(execution.engine.jobs.jobs),1)
+                    self.assertFalse(execution.engine.jobs.jobs[jobs[-1]].closing)
+                    self.assertEqual(execution.engine.capacity.usage(),Usage())
+                return SimpleNamespace(fetchall=lambda:sorted(result))
+
+        try:
+            with ExitStack() as stack,patch('src.semantic_methods.duckdb_ai.DuckDBSemLoomBridge',Bridge):
+                execute,identity=stack.enter_context(_duckdb_rows(stack,'duckdb-method-semloom-local-diagnostic',
+                    values,SemanticMapPlan('instruction','fixture',16),model,execution,observations,
+                    NativeGraphOptions(concurrency=16),'unused-fixture-library',connection=Connection()))
+                self.assertEqual(list(execute()),[(value['row_id'],value['text']) for value in values])
+                self.assertIs(jobs[0],jobs[1])
+                self.assertEqual(execution.engine.jobs.sequence,1)
+                self.assertEqual(identity['query_job']['label'],'fixture')
+            self.assertFalse(execution.engine.jobs.jobs)
+            self.assertEqual(execution.engine.capacity.usage(),Usage())
+            ready=[event['row_id'] for event in writer.events if event['event']=='task_ready']
+            received=[event['row_id'] for event in writer.events if event['event']=='caller_response']
+            self.assertEqual(ready,[value['row_id'] for value in values])
+            self.assertEqual(set(received),set(ready))
+            self.assertEqual(len(received),len(values))
+        finally:
+            self.assertTrue(execution.close())
 
     def test_native_batch_caller_receipts_wait_for_original_batch_return(self):
         observations,writer,raw=self.observations()
@@ -105,7 +171,7 @@ class SupplierObservationTests(unittest.TestCase):
                 cleanup=RuntimeError('iterator close failed')
                 report=CloseReport('closed',0,Usage(),None)
                 class Native:
-                    def __init__(self,*args):
+                    def __init__(self,*args,**kwargs):
                         self.last_close_report=None
                         self.last_cleanup_error=None
                         self.last_cleanup_errors=()
@@ -146,8 +212,10 @@ class SupplierObservationTests(unittest.TestCase):
                 connection=Connection()
                 physical=SimpleNamespace(window_bytes=2**21+24,payload_backend=backend,workers=2,batch_rows=2)
                 model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions','fixture',1000)
+                from tests.execution_provider.test_native_tasks import fixture
+                execution,_backend,_clock=fixture()
                 owner=SimpleNamespace(physical=physical,group=SimpleNamespace(runtime={}),model=model,
-                    execution=object(),query=lambda *args:nullcontext(),duckdb_connection=lambda values:connection)
+                    execution=execution,query=lambda *args:nullcontext(),duckdb_connection=lambda values:connection)
                 ledger=SimpleNamespace(reserve_unit=lambda *args:None,claim_shared_unit=lambda *args:None,
                     close_shared_unit=lambda *args:None)
                 root=Path(directory)/'query'
