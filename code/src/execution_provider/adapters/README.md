@@ -61,36 +61,6 @@ mode, so a query cannot borrow a service with incompatible response behavior. Co
 pre-send failures have no invented HTTP status; decoding them raises `CompletionAdapterError`.
 Transport failures still use the Core's unknown-remote handling.
 
-## DuckDB local batch transport
-
-`duckdb_batch_socket.DuckDBBatchConnection(execution).serve(connection)` handles a borrowed
-local socket on the Engine owner thread. It reuses the existing four-byte big-endian length
-and UTF-8 JSON framing, with a 1048576-byte frame limit. The listener owns acceptance, socket
-close and service teardown. This initial handler runs one connection at a time; concurrent
-socket dispatch needs an owner-thread service loop and remains pending. It does not receive SQL.
-
-Every message has `protocol="semloom.duckdb.batch.v1"` and the exact fields listed here.
-Decimal sequence strings avoid loss when clients use different JSON number representations.
-
-| Direction | Message and fields |
-|---|---|
-| Client → service | `open`: `query_id`, `operator_id` |
-| Service → client | `opened`: `max_offer_tasks`, `max_input_bytes`, `max_result_bytes`, `max_frame_bytes`, `work_unit` |
-| Client → service | `offer`: `tasks`, each containing `sequence`, `row_sequence`, `call_id`, `stage_id`, `payload` |
-| Service → client | `accepted`: `accepted_prefix_count`, `status`, `reason` |
-| Client → service | `poll`, `end`, or `cancel`, with no additional fields |
-| Service → client | `result`: `sequence`, `row_sequence`, `call_id`, `stage_id`, `status_code`, `headers`, `http_version`, `body_base64` |
-| Service → client | `idle`, `ended`, or `finished`, with no additional fields |
-| Service → client | `cancelled`: `uncertain_requests`; `error`: `code`, `uncertain_requests` |
-
-The `payload` string is the supplier's prepared UTF-8 HTTP body, encoded without reserialization.
-The socket adapter currently measures request count. It advertises a conservative result limit
-that includes response headers and leaves room for base64 and identities in the output frame.
-Each `poll` transfers at most one result; its core lease lasts until the bounded send succeeds
-or the connection consumer stops. Input batches stay finite and the caller retains an unaccepted
-suffix. `cancel` or EOF during polling stops the local consumer, while unconfirmed model work
-remains charged in the shared Engine. The listener owner must continue advancing/reaping it.
-
 ## Adopted source behavior and scope
 
 This is an engineering choice based on the fixed consumers in the
@@ -122,17 +92,12 @@ resource ownership; every backend wait then returned immediately. The correction
 it without a second producer guard. Nonempty release, cancellation, uncertain remote work,
 capacity, complete responses and PostgreSQL protocol values retain their existing behavior.
 
-The repair was reproduced with the original resident LOTUS complete request values and response
-bodies in a CPU-only localhost fixture, C4 and CPU affinity 32–39. The original SDK preparation,
-response reconstruction, usage/cost path, complete-response observation and per-POST SQLite
-reservation were retained. Across three 128-row fixture queries, local wall/owner-thread CPU
-medians changed from 27.803/26.837 seconds to 1.507/0.327 seconds. The original loop made roughly
-133000 advances with no blocking condition wait; the corrected loop made roughly 289 advances
-and 177 blocking waits. These are instrumented fixture results, not new model measurements.
-The raw fixture, source identities, all repetitions and failures are in the private common-task
-handoff. The old resident model evidence remains unchanged; real-model follow-up is pending
-while GPU access is unavailable. Focused regressions exercise both consumers, the real I/O
-thread, empty/invalid/closed releases and nonempty capacity notification.
+Behavior checks cover native and method consumers, empty/invalid/closed releases, nonempty
+capacity notification and complete responses. CPU fixture observations, source identities and
+failures remain in private run `common-performance-repair`, whose evidence archive has SHA-256
+`384c5246f332efa0361cb622a7790a149b03c2958ee0f6700383f011661dd45e`.
+The project maintainer can supply that archive by run identity and digest; experiment details
+and later model checks belong to the [adapter result report](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md).
 
 [Sema request service](sema_request_service.md) adds query-owned transparent and Daft/Ray service
 paths after the author's native request pool. It retains native supply and SQL parsing; it does
