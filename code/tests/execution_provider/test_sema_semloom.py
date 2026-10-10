@@ -75,77 +75,37 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
         self.assertEqual(service._execution.engine.capacity.records, {})
         self.assertEqual(service.cleanup_errors, [])
 
-    def test_backend_completion_wakes_pump_before_long_poll_timeout(self):
-        self.server.gate = threading.Event()
-        polling = threading.Event()
-        returned = []
+    def test_default_pump_advances_on_the_owner_without_a_wait_executor(self):
         core_threads = set()
-        wait_threads = {}
-        original_advance = NativeTaskSession.advance
-        original_wait = NativeTaskSession.wait
-
-        def wait(flow, progress):
-            wait_threads[threading.get_ident()] = threading.current_thread()
-            original_wait(flow, progress)
-
-        def advance(flow, maximum=1):
-            progress = original_advance(flow, maximum)
-            if (not progress.has_immediate_work and not progress.deliveries
-                    and flow.execution.engine.capacity.usage().active_requests):
-                polling.set()
-            return progress
 
         def build(service):
             execution = _public_core_diagnostic(service)
-            execution.engine.capacity.limits = replace(execution.engine.capacity.limits, poll_interval_s=.3)
-            original_execute = execution.engine.backend._execute
             original_operation = execution.engine._operation
 
             def operation():
                 core_threads.add(threading.get_ident())
                 return original_operation()
 
-            async def execute(task, endpoint):
-                response = await original_execute(task, endpoint)
-                returned.append(time.monotonic_ns())
-                return response
-
-            execution.engine.backend._execute = execute
             execution.engine._operation = operation
             return execution
 
         with mock.patch.object(SemaSemLoomService, '_build_execution', build), \
-                mock.patch.object(NativeTaskSession, 'advance', advance), \
-                mock.patch.object(NativeTaskSession, 'wait', wait):
+                mock.patch.object(NativeTaskSession, 'wait', wraps=NativeTaskSession.wait) as wait:
             with self.service() as service:
-                with ThreadPoolExecutor(max_workers=1) as callers:
-                    future = callers.submit(self.post, service.endpoint_url)
-                    try:
-                        self.assertTrue(self.server.received.wait(1))
-                        polling.clear()
-                        self.assertTrue(polling.wait(1))
-                        time.sleep(.01)
-                    finally:
-                        self.server.gate.set()
-                    self.assertEqual(future.result(timeout=1)[0], 200)
+                self.assertEqual(self.post(service.endpoint_url)[0], 200)
                 service.end_input()
-        terminal = next(event for event in service.summary['core_events'] if event['event'] == 'terminal')
-        delay = (terminal['observed_ns'] - returned[0]) / 1e9
-        self.assertLess(delay, .12, 'backend completion must wake Core before the .3 second fallback poll')
-        self.assertEqual(len(self.server.calls), 1)
+        wait.assert_not_called()
+        self.assertEqual(core_threads, {service._thread.ident})
         self.assertEqual(service._execution.engine.capacity.records, {})
         self.assertEqual(service.cleanup_errors, [])
-        self.assertEqual(core_threads, {service._thread.ident})
-        self.assertTrue(wait_threads)
-        self.assertNotIn(service._thread.ident, wait_threads)
-        for thread in wait_threads.values():
-            thread.join(1)
-            self.assertFalse(thread.is_alive(), 'closed query loop retained a wait executor thread')
 
-    def test_owner_observation_is_recorded_before_the_next_loop_turn(self):
+    def test_owner_observation_is_deferred_to_the_next_loop_turn(self):
         with self.service() as service:
             async def observe():
                 service._observe(dict(event='fixture-owner-observation'))
+                self.assertNotIn('fixture-owner-observation',
+                                 [event['event'] for event in service.summary['core_events']])
+                await asyncio.sleep(0)
                 self.assertIn('fixture-owner-observation',
                               [event['event'] for event in service.summary['core_events']])
 
@@ -436,7 +396,6 @@ class SemaResidentExecutorTests(unittest.TestCase):
                     model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
                     physical=self.physical, max_held_tasks=4, max_active_requests=2) as owner:
                 identities, charged, session_ids = [], [], []
-                wait_threads = set()
                 for number, count in enumerate((2, 3)):
                     calls = []
                     service = SemaSemLoomService(query_id='query-' + str(number),
@@ -460,7 +419,6 @@ class SemaResidentExecutorTests(unittest.TestCase):
                     self.assertTrue(owner._thread.is_alive())
                     self.assertEqual(owner.snapshot()['core_jobs'], 0)
                     self.assertFalse(owner.execution.engine.capacity.records)
-                    wait_threads.update(owner._loop._default_executor._threads)
                     rows = [json.loads(line) for line in service.trace_path.read_text().splitlines()]
                     self.assertEqual({row['query_id'] for row in rows}, {service.query_id})
                     self.assertEqual([row['core_task_sequence'] for row in rows], list(range(count)))
@@ -472,9 +430,6 @@ class SemaResidentExecutorTests(unittest.TestCase):
         self.assertFalse(owner._thread.is_alive())
         self.assertTrue(owner._loop.is_closed())
         self.assertEqual(len(self.server.calls), 5)
-        for thread in wait_threads:
-            thread.join(1)
-            self.assertFalse(thread.is_alive(), 'closed group owner retained a wait executor thread')
 
     def test_cancelled_query_drains_before_owner_rejects_another_query(self):
         self.server.gate = threading.Event()
@@ -493,12 +448,8 @@ class SemaResidentExecutorTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'startup failed'):
                     with self.query_service(owner, 'later'):
                         self.fail('cancelled owner accepted a new query')
-                wait_threads = tuple(owner._loop._default_executor._threads)
         self.assertEqual(len(self.server.calls), 1)
         self.assertFalse(owner._thread.is_alive())
-        for thread in wait_threads:
-            thread.join(1)
-            self.assertFalse(thread.is_alive(), 'cancelled group owner retained a wait executor thread')
 
     def test_owner_close_failure_retains_executor_and_keeps_original_error(self):
         with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', _public_core_diagnostic):

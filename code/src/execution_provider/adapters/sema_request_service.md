@@ -36,8 +36,8 @@ Sema 仍拥有 SQL、数据供给、提示、联合提示、原生请求池、�
 [sema_semloom.py](sema_semloom.py)复用 `prepare_native_task`、`NativeTaskSession`、`decode_full_response` 和 `ray_map_factory`；数据准备默认 `daft`，可显式选择既有 `arrow` 直接分批，响应模式为 `full`，不另建方法驱动或调度核心。
 SemLoom分支不创建透明转发的HTTP客户端；完成响应只解码一次，原始编码结果仍由Core持有到HTTP写出完成后归还。
 执行核心 Core 在服务输入输出（I/O）线程上建立和操作，跨线程取消使用公共信号；持有任务数 `max_held_tasks` 与活动请求数 `max_active_requests` 分别传入现有核心。
-pump 无即刻工作时通过 `asyncio.to_thread` 等待既有 `NativeTaskSession.wait` 的通知序号与期限；等待线程只等待信号，Core 仍由原控制线程操作。后备轮询保留，单个 pump 不并行提交等待任务。
-同一事件循环内的观测当场记录，其他线程仍通过 `call_soon_threadsafe` 回送；服务退出唤醒短等待，查询级循环关闭后释放其默认线程池，组级诊断则由组 owner 最终关闭。
+pump 有即刻工作时让出事件循环并继续推进，其他情况使用既有短轮询。满额收取完成事件后，Core 提示再检查一次，下一次空收取仍允许等待。
+观测通过 `call_soon_threadsafe` 在 owner 的下一次循环记录。通知等待与当场记录的联合候选在短模型对照中更慢，默认恢复原流程；受测源码和负结果保留在[执行成本报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
 HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
 原 `prepare_projection`、`run_projection` 与实验默认调用方式保持。

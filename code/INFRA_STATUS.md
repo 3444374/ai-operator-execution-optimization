@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[执行成本修订与负结果](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)。
+Core减少重复元数据签名分配；满额收取事件后提示再检查一次，下一次空收取仍可等待。
+Sema保留交付／响应就绪／调用者恢复观测，通知等待与当场记录候选因短模型对照变慢而恢复原轮询及延后记录。
+已测17配置／68查询／26,248次模型调用；batch8仅保留诊断，有限观察不代表通用性能收益。
+
+
 [查询间HTTP连接修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)
 由常驻查询所有者更换空闲上游池，查询内继续复用连接；活跃请求拒绝更换，连接事件与池代次可观测，失败POST不重试。
 本地故障复现及受影响常驻检查通过，原机器8查询／3,592次真实连续调用通过；200次评价保持停止。

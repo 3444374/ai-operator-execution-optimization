@@ -233,14 +233,7 @@ class SemaSemLoomService(SemaRequestService):
             return
         when = time.monotonic_ns()
         if self._loop is not None and not self._loop.is_closed():
-            try:
-                same_loop = asyncio.get_running_loop() is self._loop
-            except RuntimeError:
-                same_loop = False
-            if same_loop:
-                self._record_event(event, when)
-            else:
-                self._loop.call_soon_threadsafe(self._record_event, event, when)
+            self._loop.call_soon_threadsafe(self._record_event, event, when)
 
     def _record_event(self, event, when):
         # Bounded by the finite query and transport events; keep safe event metadata.
@@ -345,12 +338,7 @@ class SemaSemLoomService(SemaRequestService):
                         entry['row']['response_ready_ns'] = time.monotonic_ns()
                         entry['future'].set_exception(RuntimeError('Sema execution stopped'))
                 self._progress_changed.set()
-            if progress.has_immediate_work:
-                await asyncio.sleep(0)
-            else:
-                # Only wait off-thread. Core mutations stay on this HTTP owner;
-                # the existing generation/deadline check also covers early wakes.
-                await asyncio.to_thread(self._session.wait, progress)
+            await asyncio.sleep(0 if progress.has_immediate_work else self._session.limits.poll_interval_s)
 
     async def _forward(self, body, headers, row, _client):
         row.update(core_delivery_ns=None, response_ready_ns=None, forward_resumed_ns=None)
