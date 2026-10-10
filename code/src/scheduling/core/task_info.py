@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import asdict, dataclass, fields
+from operator import attrgetter
 
 from ...planning.work import StageWork, WorkDescriptor
 from .session_contract import OfferedTask, SessionSpec, TaskInfo
@@ -10,31 +11,35 @@ MAX_WORK_STAGES = 16
 MAX_IDENTITY_BYTES = 256
 UINT64_MAX = (1 << 64) - 1
 
-_INFO_FIELDS = tuple(f.name for f in fields(TaskInfo) if f.name != 'work')
-_WORK_FIELDS = tuple(f.name for f in fields(WorkDescriptor) if f.name != 'stages')
-_STAGE_FIELDS = tuple(f.name for f in fields(StageWork))
+_INFO_VALUES = attrgetter(*(f.name for f in fields(TaskInfo) if f.name != 'work'))
+_WORK_VALUES = attrgetter(*(f.name for f in fields(WorkDescriptor) if f.name != 'stages'))
+_STAGE_VALUES = attrgetter(*(f.name for f in fields(StageWork)))
+_SCALAR_TYPES = (str, int, float, bool, type(None))
 
 
-def _scalar_key(value):
-    kind = type(value)
-    if kind not in (str, int, float, bool, type(None)):
+def _values_key(values):
+    kinds = tuple(map(type, values))
+    if any(kind not in _SCALAR_TYPES for kind in kinds):
         return None
-    # Equality alone merges 1/True, 1/1.0 and signed zero despite different JSON sizes.
-    return kind, value.hex() if kind is float else value
+    # Separate type/value vectors retain 1/True and 1/1.0 distinctions without per-field pairs.
+    if float in kinds:
+        values = tuple(value.hex() if kind is float else value for kind, value in zip(kinds, values))
+    return kinds, values
 
 
 def _info_key(info):
     if type(info) is not TaskInfo or type(info.work) is not WorkDescriptor:
         return None
     work = info.work
-    if (type(work.stages) is not tuple or not 0 < len(work.stages) <= MAX_WORK_STAGES
-            or any(type(stage) is not StageWork for stage in work.stages)):
+    if type(work.stages) is not tuple or not 0 < len(work.stages) <= MAX_WORK_STAGES:
         return None
-    values = tuple(getattr(info, name) for name in _INFO_FIELDS)
-    values += tuple(getattr(work, name) for name in _WORK_FIELDS)
-    values += tuple(getattr(stage, name) for stage in work.stages for name in _STAGE_FIELDS)
-    keys = tuple(_scalar_key(value) for value in values)
-    return (len(work.stages), keys) if all(key is not None for key in keys) else None
+    values = _INFO_VALUES(info) + _WORK_VALUES(work)
+    for stage in work.stages:
+        if type(stage) is not StageWork:
+            return None
+        values += _STAGE_VALUES(stage)
+    key = _values_key(values)
+    return (len(work.stages), key) if key is not None else None
 
 
 @dataclass(frozen=True)
@@ -81,7 +86,7 @@ def validate_task_info(task: OfferedTask, spec: SessionSpec, metadata_bytes: int
     if info is None:
         return
     key = _info_key(info) if _checks is not None else None
-    scope = (tuple(_scalar_key(value) for value in (
+    scope = (_values_key((
         spec.job_id, spec.flow_id, spec.capability, spec.operator, spec.work_unit, metadata_bytes))
         if key is not None else None)
     previous = _checks.find(task.sequence, key, scope) if key is not None else None
