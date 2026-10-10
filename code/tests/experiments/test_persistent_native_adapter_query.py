@@ -130,7 +130,7 @@ class PersistentActualLibraries(unittest.TestCase):
         groups={
             'fixed':('fixed-map-native-daft','fixed-map-native-ray','fixed-map-semloom'),
             'lotus':('lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom'),
-            'duckdb':('duckdb-adapted-native','duckdb-method-semloom'),
+            'duckdb':('duckdb-adapted-native','duckdb-method-semloom-local-diagnostic','duckdb-method-semloom'),
             'sema':('sema-native-direct','sema-native-transparent','sema-method-semloom-request-service'),
             'two-map':('lotus-two-map-native-staged','lotus-two-map-semloom-staged','lotus-two-map-semloom-incremental'),
         }
@@ -176,7 +176,7 @@ class PersistentActualLibraries(unittest.TestCase):
 class PersistentSupplierLibraries(unittest.TestCase):
     def test_changed_inputs_and_scale_keep_the_native_owner_and_reset_query_state(self):
         arm=os.environ['SEMLOOM_PERSISTENT_SUPPLIER']
-        self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom',
+        self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom','duckdb-method-semloom-local-diagnostic',
             'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service',
             'lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom'))
         root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT'])
@@ -192,13 +192,13 @@ class PersistentSupplierLibraries(unittest.TestCase):
         original_replace=sema._PreparedProjection.replace_source
         current_query=None
         class ObservedBridge(original_bridge):
-            def __init__(self,extension,execute):
+            def __init__(self,extension,execute,**options):
                 def observed(calls,cancelled):
                     vectors.append(dict(query=current_query,rows=[call.row for call in calls],
                         native_query_ids=[call.query_id for call in calls],
                         native_call_ids=[call.call_id for call in calls]))
                     yield from execute(calls,cancelled)
-                super().__init__(extension,observed)
+                super().__init__(extension,observed,**options)
                 bridges.append(self)
         def observed_replace(native,values,source_root,endpoint):
             values=tuple(values)
@@ -218,7 +218,8 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     ray_temp_root=Path(os.environ['SEMLOOM_PERSISTENT_RAY_ROOT']),
                     tokenizer_path=Path(os.environ['SEMLOOM_TOKENIZER']) if os.environ.get('SEMLOOM_TOKENIZER') else None,
                     duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
-                    sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY'])) as group:
+                    sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']),
+                    adapter_timings=os.environ.get('SEMLOOM_ADAPTER_TIMINGS')=='1') as group:
                 for number,values in enumerate(inputs):
                     current_query='supplier-query-'+str(number)
                     before=len(requests)
@@ -228,6 +229,11 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     self.assertEqual(result['rows'],len(values))
                     self.assertEqual(result['actual_posts'],len(values))
                     self.assertEqual(len(requests)-before,len(values))
+                    if arm.startswith('duckdb-method-') and group.adapter_timings:
+                        details=result['identity']['adapter_timings']
+                        self.assertEqual(details['vector_rows'],len(values))
+                        self.assertEqual(details['bridge']['phases']['native_consume']['count'],len(values))
+                        self.assertEqual(details['executor']['phases']['delivery_decode_release']['count'],len(values))
                     expected=Counter(value['text'] for value in values)
                     observed=Counter()
                     for request in requests[before:]:
@@ -247,7 +253,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
                 for key in ('owner_id','execution_id','lm_id','duckdb_connection_id','sema_pid','ray_session_id'):
                     self.assertEqual(len({value[key] for value in identities}),1,(arm,key))
                 self.assertEqual(len(requests),144)
-            if arm=='duckdb-method-semloom':
+            if arm.startswith('duckdb-method-'):
                 self.assertEqual([value['rows'] for value in vectors],[list(range(n)) for n in (8,8,128)])
                 calls=[call for value in vectors for call in value['native_call_ids']]
                 self.assertEqual(len(set(calls)),144)

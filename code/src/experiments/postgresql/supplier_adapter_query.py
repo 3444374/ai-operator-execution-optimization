@@ -31,7 +31,7 @@ SUPPLIER_ARMS = (
     'lotus-two-map-native-staged', 'lotus-two-map-semloom-staged',
     'lotus-two-map-semloom-incremental',
     'sema-native-direct', 'sema-native-transparent', 'sema-method-semloom-request-service',
-    'duckdb-adapted-native', 'duckdb-method-semloom',
+    'duckdb-adapted-native', 'duckdb-method-semloom', 'duckdb-method-semloom-local-diagnostic',
 )
 
 
@@ -252,14 +252,16 @@ def replace_duckdb_inputs(connection,values,plan):
 
 
 @contextmanager
-def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library,*,connection=None):
+def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library,*,connection=None,
+                 adapter_timings=False):
     from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
     token=model.bearer_token or 'EMPTY'
     if connection is None:
         connection=prepare_duckdb_connection(stack,plan,model,options,library,semloom_batch=execution is not None)
         replace_duckdb_inputs(connection,values,plan)
     if execution is not None:
-        native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token))
+        native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token),
+            **({'collect_timings':True} if adapter_timings else {}))
         supplied_rows=0
         iterator_close_error=None
         def execute_batch(calls,cancelled):
@@ -291,7 +293,8 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
                     iterator_close_error=redact_text(f'{type(error).__name__}: {error}')[:4096]
                     if primary_error is None:raise
                     primary_error.add_note('DuckDB observation iterator close also failed: '+type(error).__name__)
-        bridge=stack.enter_context(DuckDBSemLoomBridge(library,execute_batch));bridge.enable(connection)
+        bridge=stack.enter_context(DuckDBSemLoomBridge(library,execute_batch,
+            **({'collect_timings':True} if adapter_timings else {})));bridge.enable(connection)
     statement=('WITH completed AS MATERIALIZED (SELECT row_id,ai_try_complete(prompt,max_tokens => '+str(plan.max_tokens)+
         ',temperature => 0.0) AS result FROM (SELECT * FROM adapter_inputs ORDER BY source_position)) '
         'SELECT row_id,result.response,result.error FROM completed ORDER BY row_id')
@@ -315,17 +318,22 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
                 executor=dict(last_cleanup_error=native.last_cleanup_error,
                     last_cleanup_errors=list(native.last_cleanup_errors),
                     last_close_report=None if native.last_close_report is None else asdict(native.last_close_report)))
+            if adapter_timings:
+                identity['adapter_timings']=dict(scope='last current SQL vector; nested spans cannot be added',
+                    vector_rows=bridge.batch_sizes[-1] if bridge.batch_sizes else None,
+                    executor=native.last_timings,bridge=bridge.last_timings)
 
 
 def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,options,
                        physical=None,ray_temp_root=None,ray_address=None,query_timeout_s=120,
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
-                       preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None):
+                       preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
+                       adapter_timings=False):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
     use_core='semloom' in arm
-    local=arm=='lotus-method-semloom-local-diagnostic'
+    local=arm.endswith('local-diagnostic')
     if use_core and physical is None and not local:
         raise ValueError('supplier SemLoom arm requires its Daft/Ray transport')
     if (not use_core or local) and physical is not None:
@@ -433,7 +441,10 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             elif arm.startswith('duckdb-'):
                 execute,identity=stack.enter_context(_duckdb_rows(stack,arm,values,plan,routed,execution,
                     observations,options,duckdb_library,
-                    connection=owner.duckdb_connection(values) if owner is not None else None))
+                    connection=owner.duckdb_connection(values) if owner is not None else None,
+                    adapter_timings=adapter_timings))
+                if local:
+                    identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
             else:
                 from src.execution_provider.adapters.sema_service import SemaRequestService,SemaServiceLimits,prepare_sema_projection

@@ -57,6 +57,11 @@ DuckDB现有identity／summary在退出时同时保存bridge与内层executor的
 DuckDB批回调在原生请求池之前分流，原池设置保持其64上限，SemLoom请求数单独装配。
 [准备记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)保存实际配置与无模型检查。
 
+`duckdb-method-semloom-local-diagnostic`复用相同SQL批回调、响应解释和公共Core，只将执行传输换成本地HTTP。
+常驻入口的可选`--adapter-timings`默认关闭，开启后保存最后一个SQL向量的推进与原生消费累计时间，
+字段及包含关系见[DuckDB局部说明](../../../integrations/duckdb_ai/README.md#可选推进与消费诊断)。
+实际库检查可选`SEMLOOM_ADAPTER_TIMINGS=1`；相同桥的本地与Daft／Ray比较仍须分别记录真实模型观察。
+
 <a id="ready-query-timing"></a>
 
 ### 数据就绪后的SQL／原生API计时
