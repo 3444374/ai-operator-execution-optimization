@@ -69,6 +69,16 @@ ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`�
 公共响应接口没有单独的纯 HTTP 耗时字段，因此新路径的原 usage `elapsed_ms` 写 `-1` 表示不可观测，
 不写零，也不把排队或完整任务耗时填进去。token 用量、状态、重试和错误仍由原解析器记录。
 
+## 查询与请求观测
+
+统一入口的`task_ready`在Python批回调内记录，`caller_response`在完整正文交回C++桥之前记录；
+这段请求耗时不含此前C++生成调用和后续原生解析，也不表示SQL行已经交付。
+`native_ready_ns`保存C++的`ready_ns`，但尚未核验`steady_clock`与Python单调时钟相同，不能混合相减。
+Daft／Arrow准备、Ray对象写入、worker执行和返回按实际事件分别报告；共享批次和嵌套区间不逐行重复累计。
+独立Core接纳、纯组织及纯C++解析时间未单列，写为不可观测；模型HTTP往返不能当作纯推理时间。
+SQL提交至全部结果消费另按[查询记录](../../src/experiments/postgresql/supplier_adapter_query.py)计时，
+请求统计口径见[指标实现](../../src/experiments/postgresql/native_adapter_metrics.py)。
+
 ## 构建与使用
 
 上游源码、DuckDB 源码、构建缓存和二进制均在仓库外保存。需要 C++17 工具链、CMake、Ninja、

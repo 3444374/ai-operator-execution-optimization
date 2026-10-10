@@ -5,6 +5,8 @@
 - 从`81de8db6`建立独立精简分支；四份展开分析改为无损gzip，原始JSON字节、全部样本和来源保持，现有复算脚本直接读取压缩副本。
 - [保存登记](experiments/results/postgresql/native_adapter_integration_20261009/verification.json)记录两种字节数与SHA-256；18个受影响原文件已在仓库外逐成员备份核对，原远端提交可恢复原件，获取标识为`semantic-adapter-evidence-compaction-20261010`。
 - 根入口、代码状态与总纲收敛重复摘要；方案将已执行的暂停叙述改为历史要求，当前状态统一指向[同题主报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+- 公共未使用的DuckDB socket实现及专属测试已移除；LOTUS、DuckDB和Sema说明精简后统一汇入`codex/semantic-adapter-integration-20261009`，最终按该分支相对main的完整差异验收。
+- 整合后69项相关检查和四个受影响的离线复算入口通过；四份分析与原提交逐字节一致。DuckDB请求止于Python回交完整响应、原生解析与异种时钟缺项另行说明，本次精简不调用模型。
 
 ## 2026-10-10：容量筛查首次启动与标签修订
 

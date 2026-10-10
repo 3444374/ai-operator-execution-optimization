@@ -55,6 +55,9 @@ Daft内置prompt未改造为独立方法适配：固定[公开源码](https://ra
 最近秩P99／P99.99、样本数及分位落在最大值的标记。不同表示或时钟不能混用；
 HTTP往返不等于纯模型计算，逻辑名额不等于GPU利用率，并行／嵌套阶段不相加扣除。
 组织等阶段缺少起止时写不可观测。普通分类错误保留在质量分母，非法值、关联或计数错误停止查询。
+DuckDB＋SemLoom的逐请求计时从Python批回调内记录就绪开始，止于完整正文回交C++桥之前，
+不含此前C++生成调用或后续原生解析。C++的`ready_ns`尚未核验与Python单调时钟相同，不能混合相减；
+现有可观测段和缺项见[DuckDB说明](../../../../code/integrations/duckdb_ai/README.md#查询与请求观测)与[Sema说明](../../../../code/src/execution_provider/adapters/sema_request_service.md#观测与计时解释)。
 
 ## 工程验证与失败
 
