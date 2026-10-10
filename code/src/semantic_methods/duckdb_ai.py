@@ -35,6 +35,29 @@ class _BatchTimings:
         return dict(clock='python monotonic_ns', phases=self.phases, **extra) if self.enabled else None
 
 
+def _retry_prefix_count(flow, tasks):
+    """Read current storage; Core still validates and rechecks the offered prefix."""
+    capacity = flow.execution.engine.capacity
+    scopes = [(capacity.usage(), capacity.limits),
+              (capacity.usage(flow.session.session_id), flow.limits)]
+    job_id = flow.session.spec.job_id
+    if job_id in capacity.job_limits:
+        scopes.append((capacity.usage(job_id=job_id), capacity.job_limits[job_id]))
+    available = {name: min(getattr(limit, name) - getattr(usage, name) for usage, limit in scopes)
+                 for name in ('held_tasks', 'input_bytes', 'result_bytes')}
+    count = 0
+    for task in tasks:
+        if (available['held_tasks'] < 1 or available['input_bytes'] < len(task.payload)
+                or available['result_bytes'] < task.max_result_bytes):
+            break
+        count += 1
+        available['held_tasks'] -= 1
+        available['input_bytes'] -= len(task.payload)
+        available['result_bytes'] -= task.max_result_bytes
+    # An attempted item keeps Core rejection/cancellation authoritative even when storage is full.
+    return max(1, count)
+
+
 @dataclass(frozen=True)
 class DuckDBCall:
     row: int
@@ -248,10 +271,14 @@ class DuckDBNativeTaskExecutor:
     The service owner creates and closes execution. This adapter releases each delivery
     after copying its full response into the native vector's bounded result storage.
     """
-    def __init__(self, execution, config, *, describe_work=None, collect_timings=False):
+    def __init__(self, execution, config, *, describe_work=None, collect_timings=False,
+                 retry_offer_prefix=False, prepare_blocks=False):
+        if prepare_blocks and describe_work is not None:
+            raise ValueError('prepared-block diagnostic requires default immutable work descriptions')
         self.execution, self.config = execution, config
         self.describe_work = describe_work
         self.collect_timings = collect_timings
+        self.retry_offer_prefix, self.prepare_blocks = retry_offer_prefix, prepare_blocks
         self.last_timings = None
         self.last_close_report = None
         self.last_cleanup_error = None
@@ -283,6 +310,7 @@ class DuckDBNativeTaskExecutor:
         flow = NativeTaskSession(self.execution, 'duckdb:' + calls[0].call_id, 'duckdb-ai-map')
         offset = 0
         pending = ()
+        pending_validated = False
         sealed = False
         finished = False
         primary_error = None
@@ -298,17 +326,24 @@ class DuckDBNativeTaskExecutor:
                     stop = min(len(calls), offset + flow.limits.offer_tasks)
                     # Keep rejected tasks and their work description; only fill new suffix positions.
                     first_new = offset + len(pending)
-                    pending += tuple(prepare_native_task(
-                        call.payload, i, row_sequence=call.row, call_id=call.call_id,
-                        work=self.describe_work(call) if self.describe_work else None,
-                        max_result_bytes=flow.limits.item_result_bytes,
-                    ) for i, call in enumerate(calls[first_new:stop], first_new))
+                    if not self.prepare_blocks or not pending:
+                        if first_new < stop:
+                            pending_validated = False
+                        pending += tuple(prepare_native_task(
+                            call.payload, i, row_sequence=call.row, call_id=call.call_id,
+                            work=self.describe_work(call) if self.describe_work else None,
+                            max_result_bytes=flow.limits.item_result_bytes,
+                        ) for i, call in enumerate(calls[first_new:stop], first_new))
                     timings.finish('task_prepare', prepare_started)
                     offer_started = timings.start()
-                    result = flow.offer(pending)
+                    offered = (pending[:_retry_prefix_count(flow, pending)]
+                               if self.retry_offer_prefix and pending_validated else pending)
+                    result = flow.offer(offered)
                     timings.finish('task_offer', offer_started)
                     if result.status not in ('ACCEPTED', 'BACKPRESSURE'):
                         raise RuntimeError('DuckDB task offer rejected: ' + result.reason)
+                    # A successful full offer validates its immutable suffix even when none fits.
+                    pending_validated = True
                     offset += result.accepted_prefix_count
                     pending = pending[result.accepted_prefix_count:]
                 if offset == len(calls) and not sealed:

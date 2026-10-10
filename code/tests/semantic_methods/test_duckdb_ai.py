@@ -358,6 +358,16 @@ class DuckDBInnerFailureTests(unittest.TestCase):
         self.assertEqual(self.adapter.last_timings['phases']['caller_resume']['count'], 1)
         self.assert_returned()
 
+    def test_offer_diagnostics_preserve_decode_first_error_and_cleanup_errors(self):
+        self.adapter.retry_offer_prefix = self.adapter.prepare_blocks = True
+        self.invalid_encoding = True
+        with self.faults(release=True, close=True):
+            bridge, status = self.dispatch()
+        self.assertEqual(status, 2)
+        self.assertIn('invalid complete response', bridge.last_error)
+        self.assertEqual(len(self.adapter.last_cleanup_errors), 2)
+        self.assert_returned()
+
 
 class DuckDBTimingTests(unittest.TestCase):
     def test_default_abi_path_does_not_read_the_diagnostic_clock(self):
@@ -424,6 +434,123 @@ class DuckDBTimingTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIsNone(bridge.last_timings)
         bridge._release(3)
+
+
+class DuckDBOfferRetryTests(unittest.TestCase):
+    def run_batch(self, retry, *, invalid_sequence=None, cancel=False, prepare_blocks=False,
+                  bad_call_sequence=None, result_bytes=2048):
+        from src.execution_provider.adapters.incremental_execution import IncrementalExecution
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
+        from src.execution_provider.adapters.native_tasks import NativeTaskSession
+        from src.scheduling.core import session as core
+        from src.scheduling.core.session import SessionEngine
+        from src.scheduling.core.session_contract import Usage
+        from src.scheduling.submission_control.admission import StaticAdmissionController
+        from src.planning.work import StageWork, WorkDescriptor
+        from tests.scheduling.test_incremental_session import setup
+
+        original, _, backend, clock = setup(held_tasks=4, input_bytes=4096, result_bytes=result_bytes,
+            item_input_bytes=1024, item_result_bytes=512, metadata_bytes=1024,
+            active_requests=2, active_work=2, offer_tasks=4)
+        engine = SessionEngine(original.capacity.limits, backend,
+            replace(original.policies, admission=StaticAdmissionController(2)), clock=clock)
+        execution = IncrementalExecution(engine, None, lambda: True, 5)
+        config = FixedModelConfig('http://localhost/model', 'fixture', 5000)
+        submitted, offers, checked = [], [], []
+        original_poll, original_submit = backend.poll, backend.try_submit
+        original_offer, original_validate = NativeTaskSession.offer, core.validate_task_info
+        def poll(handles, maximum):
+            if backend.pending:
+                key = next(iter(backend.pending))
+                backend.complete(key, encode_full_response(FullModelResponse(200, (), b'ok')))
+            return original_poll(handles, maximum)
+        def submit(task, endpoint):
+            submitted.append(task.key.sequence)
+            return original_submit(task, endpoint)
+        def offer(flow, tasks):
+            result = original_offer(flow, tasks)
+            offers.append((tuple(t.sequence for t in tasks), result.accepted_prefix_count, result.status))
+            return result
+        def validate(task, *args):
+            checked.append(task.sequence)
+            return original_validate(task, *args)
+        def describe(call):
+            return WorkDescriptor((StageWork('model', 1, 'work_units'),), 'model',
+                'x' * 1025 if call.row == invalid_sequence else 'fixture')
+        backend.poll, backend.try_submit = poll, submit
+        calls = tuple(DuckDBCall(i, 'q', 'x' * 1025 if i == bad_call_sequence else f'call-{i}',
+                                'fixture', config.endpoint_url,
+                                str(i).encode(), (), 1, 5, 5, 1) for i in range(9))
+        adapter = DuckDBNativeTaskExecutor(execution, config,
+            describe_work=describe if invalid_sequence is not None else None,
+            retry_offer_prefix=retry, prepare_blocks=prepare_blocks)
+        error = None
+        with patch.object(NativeTaskSession, 'offer', offer), patch.object(core, 'validate_task_info', validate):
+            try:
+                result = list(adapter(calls, lambda: cancel and bool(submitted)))
+            except (RuntimeError, InterruptedError) as failure:
+                error, result = str(failure), []
+        while engine.capacity.records:
+            engine.advance()
+        self.assertEqual(engine.capacity.usage(), Usage())
+        self.assertEqual(engine.jobs.jobs, {})
+        return dict(results=[r.call_id for r in result], submitted=submitted,
+                    offers=offers, checked=checked, error=error)
+
+    def test_validated_retry_prefix_preserves_visible_first_offer_and_execution(self):
+        original, retry = self.run_batch(False), self.run_batch(True)
+        self.assertEqual(original['results'], retry['results'])
+        self.assertEqual(original['submitted'], retry['submitted'])
+        self.assertEqual(retry['offers'][0], original['offers'][0])
+        self.assertEqual([r[1] for r in retry['offers']], [r[1] for r in original['offers']])
+        self.assertLess(len(retry['checked']), len(original['checked']))
+        self.assertEqual(retry['error'], None)
+
+    def test_new_invalid_suffix_still_checks_whole_offer_before_any_transfer(self):
+        for invalid in (3, 8):
+            with self.subTest(invalid_sequence=invalid):
+                original, retry = self.run_batch(False, invalid_sequence=invalid), self.run_batch(
+                    True, invalid_sequence=invalid)
+                self.assertIn('invalid batch', retry['error'])
+                self.assertEqual(retry['error'], original['error'])
+                self.assertEqual(retry['submitted'], original['submitted'])
+                self.assertEqual(retry['offers'][-1], original['offers'][-1])
+                if invalid == 3:
+                    self.assertEqual(retry['submitted'], [])
+
+    def test_retry_prefix_retains_cancel_and_unknown_cleanup_ownership(self):
+        original, retry = self.run_batch(False, cancel=True), self.run_batch(True, cancel=True)
+        self.assertEqual(retry['error'], 'DuckDB query cancelled')
+        self.assertEqual(retry['error'], original['error'])
+        self.assertEqual(retry['submitted'], original['submitted'])
+
+    def test_prepared_blocks_keep_legal_calls_and_first_visible_prefix(self):
+        original, blocks = self.run_batch(False), self.run_batch(True, prepare_blocks=True)
+        self.assertEqual(blocks['results'], original['results'])
+        self.assertEqual(blocks['submitted'], original['submitted'])
+        self.assertEqual(blocks['offers'][0], original['offers'][0])
+        self.assertLess(len(blocks['checked']), len(self.run_batch(True)['checked']))
+        cancelled = self.run_batch(True, prepare_blocks=True, cancel=True)
+        self.assertEqual(cancelled['error'], 'DuckDB query cancelled')
+        self.assertEqual(cancelled['submitted'], self.run_batch(False, cancel=True)['submitted'])
+
+    def test_prepared_blocks_reject_custom_work_and_document_later_invalid_call_discovery(self):
+        with self.assertRaisesRegex(ValueError, 'default immutable work descriptions'):
+            DuckDBNativeTaskExecutor(None, None, describe_work=lambda call: None, prepare_blocks=True)
+        original = self.run_batch(False, bad_call_sequence=8)
+        blocks = self.run_batch(True, prepare_blocks=True, bad_call_sequence=8)
+        self.assertIn('invalid batch', blocks['error'])
+        self.assertEqual(blocks['error'], original['error'])
+        self.assertGreater(len(blocks['submitted']), len(original['submitted']))
+
+    def test_retry_prefix_respects_result_bytes_when_task_slots_remain(self):
+        original = self.run_batch(False, result_bytes=1024)
+        retry = self.run_batch(True, prepare_blocks=True, result_bytes=1024)
+        self.assertEqual(retry['results'], original['results'])
+        self.assertEqual(retry['submitted'], original['submitted'])
+        self.assertEqual(retry['offers'][0][1], 2)
+        self.assertEqual(retry['error'], None)
 
 
 class _FixtureServer(ThreadingHTTPServer):
