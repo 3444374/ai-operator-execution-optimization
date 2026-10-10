@@ -10,7 +10,8 @@
 
 源码依据为LOTUS1.2.4提交`b1a85fd7a66fabed8a1585d44d7597d592b4433f`，
 实际库验证使用LiteLLM1.95.0、OpenAI SDK2.50.0。`sdk.validate_source`核对包版本及
-LM、Map、formatter、postprocessor、缓存、设置、列引用和计费模块的SHA-256。
+LM、Map、formatter、postprocessor、缓存、设置、列引用和计费模块的SHA-256，
+以及LiteLLM普通OpenAI文本转换和参数工具的源码摘要。
 新增适配只调用这些库；没有复制或修改LOTUS源码。该提交的
 [LICENSE正文](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/LICENSE)
 为Apache-2.0，而`pyproject.toml`的分类仍写MIT，按正文记录来源。
@@ -41,7 +42,12 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 
 `LotusBatchExecutor`只借用公共execution，按公共offer数量与容量提交，不创建执行线程池。
 输入miss最多4096行，原始响应的批次留存默认最多16MiB；这些是编码字节额度，不是RSS测量。
-`last_responses`只保存最近一次miss批次，`on_response(index, full)`可在解析前交给调用方保存证据。
+`last_responses`默认只保存最近一次miss批次；`retain_full_responses=False`不保存这份原始响应列表，
+`on_response(index, full)`仍在解析前交给调用方保存证据。SDK结果、错误中的完整响应和批次字节额度继续保留。
+`prevalidate_batch=True`先检查整批纯文本消息与共同参数，复用首条规范准备值；其余完整调用按有限块准备，
+`on_prepared(index, call)`将同一不可变调用值交给观察器，避免观察与执行重复转换。默认`False`保持直接入口。
+这项轻校验依赖上述固定版本普通OpenAI纯文本转换，不适用于工具、结构化输出或其他模型转换。
+准备、批次观察与执行使用同一绝对期限；准备块内和接纳、推进之前检查取消及到期。
 完整响应包含实际HTTP状态、重复header、原始body和HTTP版本；Content-Encoding由同版本HTTPX解码，
 原始字节仍保留。HTTP错误保留完整响应并按LM错误路径上抛；解析错误同样保留原始响应。
 
@@ -52,7 +58,13 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 `iter_two_map_rows`只读有限外部输入，每行最多两个串行请求。输出带原始`RowIdentity`，按可用顺序返回；
 调用方可依原序号复位。方法结果在调用方消费期间仍计入固定MethodBudget，关闭迭代器归还本地状态。
 source EOF后继续处理后继，直到所有方法结束才seal。execution的拥有者随后继续reap并关闭backend。
+两Map输入或方法的第一异常继续传播；grant、driver／session和Job清理分别尝试，附加异常对象保存到
+该异常的`lotus_cleanup_errors`，类型与阶段写入notes。没有原执行错误时传播第一项清理异常。
 完整阶段响应以公共响应编码的base64保存到最终值的`raw_responses`，保留usage、logprobs及原始字节。
+
+实验观察对原生与SemLoom统一记录：完整消息及有效参数进入原LM未缓存批次时，任务已经具备方法输入；
+该共同时间写入`task_ready`，HTTP编码完成另外记录为`lotus_http_call_prepared`。这与旧版逐条观察转换
+结束时记录的时间口径不同，历史记录保持原值，不能合并成同一单请求延迟样本。实际出站请求仍由gateway独立核对。
 
 ## 最小入口
 
@@ -84,6 +96,7 @@ with lotus_executor(native_lm):
 原生HTTP正文、usage、费用、logprobs及两Map依赖；
 [等待检查](../../../tests/semantic_methods/test_lotus_wait.py)覆盖等待序号和结果留存；
 [异常检查](../../../tests/semantic_methods/test_lotus_cleanup.py)覆盖第一错误、附加清理错误和Core资源归还。
+[控制检查](../../../tests/semantic_methods/test_lotus_control.py)以真实Core和明确替身覆盖准备中停止、两Map清理及未知远端工作留存。
 [Daft/Ray检查](../../../tests/semantic_methods/test_lotus_ray.py)需显式启用`SEMLOOM_LOTUS_RAY_TEST=1`，
 并将`SEMLOOM_LOTUS_RAY_TMP`设为仓库外短目录，`SEMLOOM_LOTUS_TEST_ARTIFACT`接收脱敏事件。
 这些入口使用localhost响应替身；真实模型结论与实际源码身份由结果报告分别记录。
