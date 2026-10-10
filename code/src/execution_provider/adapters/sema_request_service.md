@@ -38,6 +38,8 @@ SemLoom分支不创建透明转发的HTTP客户端；完成响应只解码一次
 执行核心 Core 在服务输入输出（I/O）线程上建立和操作，跨线程取消使用公共信号；持有任务数 `max_held_tasks` 与活动请求数 `max_active_requests` 分别传入现有核心。
 pump 有即刻工作时让出事件循环并继续推进，其他情况使用既有短轮询。满额收取完成事件后，Core 提示再检查一次，下一次空收取仍允许等待。
 观测通过 `call_soon_threadsafe` 在 owner 的下一次循环记录。通知等待与当场记录的联合候选在短模型对照中更慢，默认恢复原流程；受测源码和负结果保留在[执行成本报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)。
+延后记录动作或必需字段读取报错时，通过现有首错与取消逻辑停止查询，记录阶段为`observation_record`，原异常保存在首错的`__cause__`。HTTP已成功返回或SQL已读完时，服务退出仍传播这项记录首错，整查询不能因此报告通过。
+已有更早的HTTP／查询错误继续保留；附加记录错误和取消／清理错误按原清理记录保存。取消只发公共session信号，未确认的远端请求仍由Core保留，慢HTTP写出完成前不归还结果使用权。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
 HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
 原 `prepare_projection`、`run_projection` 与实验默认调用方式保持。

@@ -18,9 +18,21 @@ from src.execution_provider.adapters.native_tasks import build_native_execution,
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.adapters.sema_semloom import SemaSemLoomService
 from src.execution_provider.adapters import sema_semloom
-from src.execution_provider.adapters.sema_service import SemaServiceLimits
+from src.execution_provider.adapters.sema_service import SemaServiceLimits, SemaServiceError, SemaProjection
+from src.scheduling.core.session_contract import Usage
 
 import test_sema_service as service_tests
+
+
+class _FailingEvents(list):
+    def __init__(self, values, event_name, error):
+        super().__init__(values)
+        self.event_name, self.error = event_name, error
+
+    def append(self, event):
+        if event.get('event') == self.event_name:
+            raise self.error
+        super().append(event)
 
 
 def _public_core_diagnostic(service):
@@ -130,6 +142,165 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
                 asyncio.run_coroutine_threadsafe(barrier(), service._loop).result(1)
             self.assertEqual(recorded, [service._thread.ident])
             service.end_input()
+
+    def test_late_deferred_record_error_fails_query_even_after_http_and_projection_success(self):
+        primary = ValueError('controlled terminal recording failure')
+        service = self.service()
+        held = []
+        original_observe = SemaSemLoomService._observe
+
+        def hold_terminal(current, event):
+            if event.get('event') == 'terminal':
+                held.append(dict(event))
+            else:
+                original_observe(current, event)
+
+        class Native:
+            def execute(native):
+                self.assertEqual(self.post(service.endpoint_url)[0], 200)
+                yield 'row', 'answer'
+            def cancel(native):
+                pass
+
+        loop_errors = []
+        with mock.patch.object(SemaSemLoomService, '_observe', hold_terminal):
+            with self.assertRaises(SemaServiceError) as caught:
+                with service:
+                    query = SemaProjection(Native(), service, time.monotonic_ns())
+                    self.assertEqual(list(query.execute()), [('row', 'answer')])
+                    self.assertEqual(query.status, 'completed')
+                    self.assertEqual(len(held), 1)
+
+                    async def deliver_late():
+                        service._loop.set_exception_handler(lambda loop, context: loop_errors.append(context))
+                        service._core_events = _FailingEvents(service._core_events, 'terminal', primary)
+                        original_observe(service, held[0])
+                        await asyncio.sleep(0)
+
+                    asyncio.run_coroutine_threadsafe(deliver_late(), service._loop).result(1)
+        self.assertIs(caught.exception, service.first_error)
+        self.assertIs(caught.exception.__cause__, primary)
+        self.assertEqual(service.first_error.phase, 'observation_record')
+        self.assertEqual(service.first_error.sequence, 0)
+        self.assertEqual(loop_errors, [])
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertEqual(service._execution.engine.capacity.usage(), Usage())
+        self.assertEqual(service._execution.engine.jobs.jobs, {})
+        self.assertEqual(service.cleanup_errors, [])
+
+    def test_observation_error_remains_primary_when_native_cancel_and_cleanup_fail(self):
+        primary, cancellation, cleanup = ValueError('recording failed'), OSError('native cancel failed'), RuntimeError('executor cleanup failed')
+        service = self.service()
+
+        def cancel_native():
+            if service.first_error is not None:
+                self.assertIs(service.first_error.__cause__, primary)
+            raise cancellation
+
+        original_close = service._close_executor
+        async def failed_close():
+            await original_close()
+            raise cleanup
+
+        with self.assertRaises(SemaServiceError) as caught:
+            with mock.patch.object(service, '_close_executor', failed_close):
+                with service:
+                    service.bind_native_cancel(cancel_native)
+                    async def fail_records():
+                        service._core_events = _FailingEvents(service._core_events, 'terminal', primary)
+                    asyncio.run_coroutine_threadsafe(fail_records(), service._loop).result(1)
+                    self.post(service.endpoint_url)
+                    service.end_input()
+        self.assertIs(caught.exception, service.first_error)
+        self.assertIs(caught.exception.__cause__, primary)
+        stages = [failure['stage'] for failure in service.summary['cleanup_failures']]
+        self.assertIn('native_cancel', stages)
+        self.assertIn('executor_close', stages)
+        self.assertEqual(service._execution.engine.capacity.usage(), Usage())
+        self.assertEqual(service._execution.engine.jobs.jobs, {})
+
+    def test_existing_http_error_is_not_replaced_by_later_record_error(self):
+        self.server.status = 503
+        primary = ValueError('secondary recording failure')
+        with self.service() as service:
+            async def fail_records():
+                service._core_events = _FailingEvents(service._core_events, 'terminal', primary)
+            asyncio.run_coroutine_threadsafe(fail_records(), service._loop).result(1)
+            self.assertEqual(self.post(service.endpoint_url)[0], 503)
+            first = service.first_error
+        self.assertIs(service.first_error, first)
+        self.assertEqual(first.phase, 'http_response')
+        self.assertEqual(first.status, 503)
+        self.assertIn('observation_record', [failure['stage'] for failure in service.summary['cleanup_failures']])
+        self.assertIs(service._cleanup_error, primary)
+
+    def test_missing_ray_record_field_cancels_without_releasing_unconfirmed_work(self):
+        self.server.gate = threading.Event()
+        service = self.service()
+        with self.assertRaises(SemaServiceError) as caught:
+            with service:
+                with ThreadPoolExecutor(max_workers=1) as callers:
+                    future = callers.submit(self.post, service.endpoint_url)
+                    try:
+                        self.assertTrue(self.server.received.wait(1))
+                        async def malformed_record():
+                            service._observe(dict(event='ray_http_completed',
+                                key=dict(session_id=service._session.session.session_id, sequence=0),
+                                rpc_started_ns=time.monotonic_ns(), shared_clock=True))
+                            await asyncio.sleep(0)
+                        asyncio.run_coroutine_threadsafe(malformed_record(), service._loop).result(1)
+                        self.assertEqual(future.result(timeout=1)[0], 502)
+                        async def retained():
+                            self.assertEqual(service._execution.engine.capacity.usage().active_requests, 1)
+                        asyncio.run_coroutine_threadsafe(retained(), service._loop).result(1)
+                        self.assertEqual(self.post(service.endpoint_url)[0], 410)
+                    finally:
+                        self.server.gate.set()
+        self.assertIs(caught.exception, service.first_error)
+        self.assertIsInstance(caught.exception.__cause__, KeyError)
+        self.assertEqual(service.first_error.phase, 'observation_record')
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertEqual(service._execution.engine.capacity.usage(), Usage())
+        self.assertEqual(service._execution.engine.jobs.jobs, {})
+
+    def test_record_failure_during_slow_http_write_keeps_result_lease(self):
+        from aiohttp import web
+        primary = ValueError('recording failed during HTTP write')
+        started_write = threading.Event()
+        finish_write = asyncio.Event()
+        original_write = web.Response.write_eof
+        async def write(response, *args, **kwargs):
+            if response.body == self.server.body:
+                started_write.set()
+                await finish_write.wait()
+            return await original_write(response, *args, **kwargs)
+
+        service = self.service()
+        with mock.patch.object(web.Response, 'write_eof', write):
+            with self.assertRaises(SemaServiceError) as caught:
+                with service:
+                    with ThreadPoolExecutor(max_workers=1) as callers:
+                        future = callers.submit(self.post, service.endpoint_url)
+                        try:
+                            self.assertTrue(started_write.wait(1))
+                            async def fail_and_inspect():
+                                terminal = next(event for event in service._core_events if event['event'] == 'terminal')
+                                service._core_events = _FailingEvents(service._core_events, 'terminal', primary)
+                                service._observe(terminal)
+                                await asyncio.sleep(.02)
+                                self.assertEqual(next(iter(service._execution.engine.capacity.records.values())).phase, 'LEASED')
+                                self.assertEqual(len(service._pending), 1)
+                                self.assertIsNone(service._rows[0]['response_written_ns'])
+                            asyncio.run_coroutine_threadsafe(fail_and_inspect(), service._loop).result(1)
+                        finally:
+                            service._loop.call_soon_threadsafe(finish_write.set)
+                        self.assertEqual(future.result(timeout=1)[0], 200)
+        self.assertIs(caught.exception.__cause__, primary)
+        self.assertIsNotNone(service._rows[0]['response_written_ns'])
+        self.assertEqual(service._execution.engine.capacity.usage(), Usage())
+        self.assertEqual(service._execution.engine.jobs.jobs, {})
+        self.assertEqual(service._pending, {})
+
 
     def test_delivery_lease_stays_held_until_complete_http_write(self):
         from aiohttp import web
@@ -448,6 +619,29 @@ class SemaResidentExecutorTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'startup failed'):
                     with self.query_service(owner, 'later'):
                         self.fail('cancelled owner accepted a new query')
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertFalse(owner._thread.is_alive())
+
+    def test_record_failure_after_success_poisoned_owner_rejects_next_query(self):
+        primary = ValueError('resident recording failed')
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', _public_core_diagnostic):
+            with self.owner() as owner:
+                with self.assertRaises(SemaServiceError) as caught:
+                    with self.query_service(owner, 'failed-observation') as service:
+                        self.assertEqual(self.post(service.endpoint_url)[0], 200)
+                        async def fail_record():
+                            terminal = next(event for event in service._core_events if event['event'] == 'terminal')
+                            service._core_events = _FailingEvents(service._core_events, 'terminal', primary)
+                            service._observe(terminal)
+                            await asyncio.sleep(0)
+                        asyncio.run_coroutine_threadsafe(fail_record(), service._loop).result(1)
+                        service.end_input()
+                self.assertIs(caught.exception.__cause__, primary)
+                self.assertTrue(owner.poisoned)
+                self.assertEqual(owner.snapshot()['core_jobs'], 0)
+                with self.assertRaisesRegex(RuntimeError, 'startup failed'):
+                    with self.query_service(owner, 'later'):
+                        self.fail('owner accepted another query after recording failed')
         self.assertEqual(len(self.server.calls), 1)
         self.assertFalse(owner._thread.is_alive())
 
