@@ -233,7 +233,14 @@ class SemaSemLoomService(SemaRequestService):
             return
         when = time.monotonic_ns()
         if self._loop is not None and not self._loop.is_closed():
-            self._loop.call_soon_threadsafe(self._record_event, event, when)
+            try:
+                same_loop = asyncio.get_running_loop() is self._loop
+            except RuntimeError:
+                same_loop = False
+            if same_loop:
+                self._record_event(event, when)
+            else:
+                self._loop.call_soon_threadsafe(self._record_event, event, when)
 
     def _record_event(self, event, when):
         # Bounded by the finite query and transport events; keep safe event metadata.
@@ -310,11 +317,13 @@ class SemaSemLoomService(SemaRequestService):
         while True:
             progress = self._session.advance(self.max_held_tasks)
             for delivery in progress.deliveries:
+                delivered = time.monotonic_ns()
                 entry = self._pending.get(delivery.key.sequence)
                 if entry is None or entry['future'].done():
                     self._session.release((delivery.lease_id,))
                     self._progress_changed.set()
                     continue
+                entry['row']['core_delivery_ns'] = delivered
                 entry['lease'] = delivery.lease_id
                 try:
                     response = decode_full_response(delivery.result)
@@ -322,20 +331,29 @@ class SemaSemLoomService(SemaRequestService):
                     self._fail(entry['row']['request_sequence'],
                                _Reply(502, b'{"error":"Sema execution failed before a complete response"}', ()),
                                'execution')
+                    entry['row']['response_ready_ns'] = time.monotonic_ns()
                     entry['future'].set_exception(error)
                     continue
                 if not 200 <= response.status_code < 300:
                     self._fail(entry['row']['request_sequence'],
                                _Reply(response.status_code, response.body, response.headers), 'http_response')
+                entry['row']['response_ready_ns'] = time.monotonic_ns()
                 entry['future'].set_result(response)
             if progress.state in (State.FAILED, State.CANCELLED):
                 for entry in self._pending.values():
                     if not entry['future'].done():
+                        entry['row']['response_ready_ns'] = time.monotonic_ns()
                         entry['future'].set_exception(RuntimeError('Sema execution stopped'))
                 self._progress_changed.set()
-            await asyncio.sleep(0 if progress.has_immediate_work else self._session.limits.poll_interval_s)
+            if progress.has_immediate_work:
+                await asyncio.sleep(0)
+            else:
+                # Only wait off-thread. Core mutations stay on this HTTP owner;
+                # the existing generation/deadline check also covers early wakes.
+                await asyncio.to_thread(self._session.wait, progress)
 
     async def _forward(self, body, headers, row, _client):
+        row.update(core_delivery_ns=None, response_ready_ns=None, forward_resumed_ns=None)
         value = json.loads(body)
         if (not isinstance(value, dict) or value.get('model') != self.model_config.model_id
                 or value.get('stream', False) is not False or not isinstance(value.get('messages'), list)):
@@ -368,6 +386,7 @@ class SemaSemLoomService(SemaRequestService):
         try:
             response = await asyncio.wait_for(asyncio.shield(entry['future']),
                                               max(0, deadline - time.monotonic()))
+            row['forward_resumed_ns'] = time.monotonic_ns()
             if len(response.body) > self.limits.response_bytes:
                 raise ValueError('Sema response exceeds its service body limit')
             return _Reply(response.status_code, response.body,
