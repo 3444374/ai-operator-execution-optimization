@@ -36,6 +36,8 @@ Sema 仍拥有 SQL、数据供给、提示、联合提示、原生请求池、�
 [sema_semloom.py](sema_semloom.py)复用 `prepare_native_task`、`NativeTaskSession`、`decode_full_response` 和 `ray_map_factory`；数据准备默认 `daft`，可显式选择既有 `arrow` 直接分批，响应模式为 `full`，不另建方法驱动或调度核心。
 SemLoom分支不创建透明转发的HTTP客户端；完成响应只解码一次，原始编码结果仍由Core持有到HTTP写出完成后归还。
 执行核心 Core 在服务输入输出（I/O）线程上建立和操作，跨线程取消使用公共信号；持有任务数 `max_held_tasks` 与活动请求数 `max_active_requests` 分别传入现有核心。
+pump 无即刻工作时通过 `asyncio.to_thread` 等待既有 `NativeTaskSession.wait` 的通知序号与期限；等待线程只等待信号，Core 仍由原控制线程操作。后备轮询保留，单个 pump 不并行提交等待任务。
+同一事件循环内的观测当场记录，其他线程仍通过 `call_soon_threadsafe` 回送；服务退出唤醒短等待，查询级循环关闭后释放其默认线程池，组级诊断则由组 owner 最终关闭。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
 HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
 原 `prepare_projection`、`run_projection` 与实验默认调用方式保持。
@@ -53,12 +55,16 @@ HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请
 | `worker_started_ns` → `worker_ended_ns` | worker 入口至完整执行响应返回，含 payload 取值与 HTTP，不是纯模型时间 |
 | `model_returned_observed_ns` | driver 收到远程完成；本地单调时钟 |
 | `model_returned_ns` / `model_clock_shared` | 仅在核验共享时钟后使用 worker 完成时刻，否则为不可观测 |
+| `core_delivery_ns` | pump 取得与当前 HTTP 调用对应的 Core delivery 时刻 |
+| `response_ready_ns` | pump 即将设置当前调用的响应 future 时刻，可能是异常 |
+| `forward_resumed_ns` | HTTP handler 等待响应成功恢复，校验正文大小和准备返回之前 |
 | `response_written_ns` | 服务完整响应写出后归还租用，不证明作者已解析 |
 | `submitted_ns` → `finished_ns` | Python 包装实际 SELECT 提交至 SQL 结果和完成标记读完 |
 | `native_task_ready_ns` / 原生 HTTP 到源行对应 | `unavailable`；作者请求池前时刻与可信行身份没有已核实的接点 |
 
 本地时刻使用 `time.monotonic_ns()`；Ray 通过 Linux boot ID、time namespace 和时钟实现的摘要核对共享时钟，并检查事件先后关系。
 同一时钟下可直接计算对应区间；时钟不同只使用各自内部耗时及本地接收时刻，不跨机器相减。
+新增三个时刻仅来自 SemLoom 服务对应的实际动作；未取得时刻保留 `null` 或缺项（不可观测），原生透明路径不补造时刻。原件在退出时写入，请求中不增加同步磁盘写入。
 RPC 至本地接收包含 Ray 等待、worker 执行及返回；worker 区间嵌套其中，准备阶段也可能重叠，不能相加或从完整查询时间扣除。
 作者线程数、Core 活动额度、实际 HTTP 在途与模型服务执行序列分别记录。
 Sema 作者 SQL 进程可以跨查询复用，默认 Core 和 actor 逐查询创建；可选 `group-diagnostic` 在同一控制线程复用设施，任务流、HTTP入口、错误和观察逐查询独立。
