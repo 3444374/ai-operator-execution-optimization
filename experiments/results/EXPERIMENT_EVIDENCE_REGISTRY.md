@@ -1,7 +1,11 @@
 # 实验与机制证据台账
 
+[当前版本三系统短对照](postgresql/native_adapter_integration_20261009/README.md#latest-three-supplier-short)在`fd319309`完成九路径／63查询／27,720次真实调用，
+模型计数一致且无重试；45个整查询测量、23,040个HTTP样本与30组完整调用值对拍通过，原件均已独立下载。
+五个整查询样本的P99仅是最大值，Sema原生／接入HTTP峰值256／64及缺少上游就绪探针分别保留；不作跨系统执行器排名。
+
 [附件补充问题修订](postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)记录LOTUS准备停止、首错退出、有限准备与观察共用，
-以及公共静态检查复用和DuckDB跨vector查询Job；227项共同本地检查通过、45项目标依赖待核对，真实模型调用0。
+以及公共静态检查复用和DuckDB跨vector查询Job；227项共同本地检查通过、45项在本机跳过，目标247项共同回归及18次模拟查询通过。
 CPU序列化减少与旧模型性能分别保留，不把实现修订当调度算法贡献。
 
 [HTTP空闲连接复现与修订](postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)：

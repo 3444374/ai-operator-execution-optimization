@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-10
+更新时间：2026-10-11
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -13,7 +13,9 @@
 ## 0. 当前优先级与历史记录范围
 
 [接入补充修订](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)
-已补LOTUS停止与清理、公共有限静态检查复用及DuckDB跨vector查询Job；本地共同回归通过，目标实际库与新模型短对照待执行。
+已补LOTUS停止与清理、公共有限静态检查复用及DuckDB跨vector查询Job；本地与目标共同检查通过。
+[当前版本短对照](experiments/results/postgresql/native_adapter_integration_20261009/README.md#latest-three-supplier-short)
+完成三系统九路径、63查询／27,720次真实调用，LOTUS有下降信号，DuckDB／Sema仍增加；五次测量与发送规模差异单列。
 这些基础实现修订不作为新的调度算法结论，历史模型数据保持原来源。
 
 2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)

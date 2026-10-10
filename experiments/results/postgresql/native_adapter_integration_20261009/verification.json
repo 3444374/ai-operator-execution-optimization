@@ -826,5 +826,106 @@
     },
     "original_unconfirmed_model_attempts_retained": 1,
     "formal_200_query_evaluation_resumed": false
+  },
+  "latest_short_comparison": {
+    "run_id": "native-adapter-latest-short-20261011-13",
+    "source_commit": "fd3193097a1aa7d07b25d9fcbef9d16bea59a177",
+    "source_identity": {
+      "commit": "fd3193097a1aa7d07b25d9fcbef9d16bea59a177",
+      "parent_commit": "c49ebcfde104236256f59ee6d1464593995dd5bb",
+      "source_files": 1028,
+      "source_manifest_sha256": "1342276be14011915cb5b47ea764f14c8b724934ca8ab8000f22db5de55cb268",
+      "overlay_sha256": "c45f8847c0f0b3f7ba6c0ce400e1ad4f33003d20fce9ba247169a9c3516da15a"
+    },
+    "validation": {
+      "local_passed": 227,
+      "local_skipped": 45,
+      "target_common_passed": 247,
+      "target_common_skipped": 0,
+      "physical_configs": 6,
+      "fixture_queries": 18,
+      "fixture_posts": 864,
+      "fixture_model_posts": 0,
+      "model_retry_policy": "none",
+      "remote_successes": 27720,
+      "model_run_elapsed_seconds": 613.3166
+    },
+    "storage": {
+      "path": "latest-short-observations.json.gz",
+      "compressed_bytes": 185634,
+      "compressed_sha256": "f41c13e0a9c14f89812e4ba0e38d5f2db229d488722e1ee9695014520fb2ec03",
+      "uncompressed_bytes": 607484,
+      "uncompressed_sha256": "5f6bf30e6f7761950a991ae6a2c1db7fbc7aa18b170be6a95c84bb91efbc8110"
+    },
+    "private_originals": {
+      "model": {
+        "archive": "short13-model-complete-full.tar.gz",
+        "members": 1068,
+        "archive_bytes": 37821637,
+        "archive_sha256": "582175781fdbf1284cf00bcd12fd66a0388daa2317cecdafae2a64bdf9b616bc",
+        "local_backup_verified": true
+      },
+      "fixture": {
+        "archive": "short13-fixture-complete-full.tar.gz",
+        "members": 345,
+        "archive_bytes": 1537036,
+        "archive_sha256": "1678bb745524d814e9e6bd55e42d4f8d3a8dde06bcd1845143d688ae95597037",
+        "local_backup_verified": true
+      }
+    },
+    "analysis_recipe": "latest_short_analyze.py",
+    "real_model_posts": 27720,
+    "queries": 63,
+    "measurements": 45,
+    "runtime_identity": {
+      "model_repo": "Qwen/Qwen2.5-7B-Instruct",
+      "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "model_files": {
+        "config.json": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+        "generation_config.json": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+        "model-00001-of-00004.safetensors": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+        "model-00002-of-00004.safetensors": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+        "model-00003-of-00004.safetensors": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+        "model-00004-of-00004.safetensors": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+        "model.safetensors.index.json": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+        "tokenizer.json": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+        "tokenizer_config.json": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583"
+      },
+      "dependency_versions": {
+        "vllm": "0.25.1",
+        "torch": "2.11.0",
+        "transformers": "5.14.1"
+      },
+      "serving_package_version": "0.25.1",
+      "binary_sha256": {
+        "duckdb": "e1f04a82e1a703d00ce14b4401aec57fd0ac393cfcc02d104878892d4ed1e963",
+        "sema": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3"
+      },
+      "configuration_member_sha256": {
+        "binary-identities.json": "282e3fcd5a53a41dcd5fe43d04ed7971752a705ba1552e1a2d499657982606af",
+        "cell-01-physical.json": "847d95ed7988ae53da94a79c1a12b3b38a0b46daf5cd602683046ede8c81f42b",
+        "cell-02-physical.json": "b7c385f565cedac9c229d664fbffff726503b16c089f2368b22349982d9ac044",
+        "cell-03-physical.json": "b7c385f565cedac9c229d664fbffff726503b16c089f2368b22349982d9ac044",
+        "cell-05-physical.json": "847d95ed7988ae53da94a79c1a12b3b38a0b46daf5cd602683046ede8c81f42b",
+        "cell-06-physical.json": "847d95ed7988ae53da94a79c1a12b3b38a0b46daf5cd602683046ede8c81f42b",
+        "cell-07-physical.json": "b7c385f565cedac9c229d664fbffff726503b16c089f2368b22349982d9ac044",
+        "model-reference.json": "6efeedf9e0e4f7e095800b8e91ce0d835e549e158198b179fa40d1e6cf219de5",
+        "model.json": "639782143ae5baa473b664b01e389dc3058437d8a2170959f22798f021b84bc5",
+        "owner-config.json": "3debd2ace7d96e5c101e5c0b4119bbb23d2bbd80b328c64f33b690f59cf6c0c1",
+        "plan.json": "d9f17e399e423d88baff7af82a75ba81954d51abdfee6635ebaf9405b4300423",
+        "service/identity.json": "b35c6eed409f842e43f70e224d788cc86d466930cc575dedc4822eda17729b5c",
+        "workflow-manifest.json": "bdaafbc7b2bfb035d9b7f08fd10091754b16ad23671ddd35c3d98818d7634b83"
+      },
+      "input_sha256": {
+        "qualification": {
+          "input_sha256": "1858541373b1f1c997cee9736560882e9c4c3605cf3b24f110944b1708c13b1b",
+          "reference_sha256": "c00fedb3c389beb843940544864f50e0c57b3a567c226a19c27586e12afbd3bb"
+        },
+        "tuning": {
+          "input_sha256": "28586515347852fa1f0bd1bae1e6274ef410586c61d5fa07babecf1a3cd91423",
+          "reference_sha256": "6a649161482ccc6727846400f7294418177b2d56e72a245a2ae87a15a347176b"
+        }
+      }
+    }
   }
 }

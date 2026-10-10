@@ -3,12 +3,13 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+import statistics
 import sys
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT.parents[3] / 'code'))
 from src.experiments.postgresql.native_adapter_http import bind_native_http_events
-from src.experiments.postgresql.native_adapter_metrics import summarize_calls, summarize_queries
+from src.experiments.postgresql.native_adapter_metrics import sample_distribution, summarize_calls, summarize_queries
 
 
 def members(path, expected):
@@ -100,3 +101,39 @@ if 'adapter_cost_diagnosis' in verification:
     assert all(item['local_backup_verified'] for item in diagnostic['preservation'].values())
     print('Compact observation hashes and all 36 cost samples verified; '
           '80 real queries / 34408 POST and 12 Arrow fixture queries / 576 POST; private originals retained')
+
+if 'latest_short_comparison' in verification:
+    stored = verification['latest_short_comparison']
+    info = stored['storage']
+    encoded = (ROOT / info['path']).read_bytes()
+    assert len(encoded) == info['compressed_bytes']
+    assert hashlib.sha256(encoded).hexdigest() == info['compressed_sha256']
+    decoded = gzip.decompress(encoded)
+    assert len(decoded) == info['uncompressed_bytes']
+    assert hashlib.sha256(decoded).hexdigest() == info['uncompressed_sha256']
+    current = json.loads(decoded)
+    assert current['source_commit'] == stored['source_commit']
+    assert len(current['records']) == 9 and len(current['all_queries']) == 63
+    assert sum(query['posts'] for query in current['all_queries']) == 27720
+    for record in current['records']:
+        assert len(record['samples']) == 5 and record['http']['count'] == 2560
+        for name in ('full', 'submit_to_eof', 'preparation', 'source', 'first_row', 'tail_consume', 'http', 'request_e2e'):
+            observed = record[name]
+            recomputed = sample_distribution(observed['samples'], unit='seconds')
+            assert all(observed[key] == value for key, value in recomputed.items())
+            if observed['samples']:
+                assert observed['median'] == statistics.median(observed['samples'])
+                assert observed['mean'] == statistics.mean(observed['samples'])
+        for name, field in (('full', 'full_seconds'), ('submit_to_eof', 'ready_seconds'),
+                            ('preparation', 'preparation_seconds'), ('source', 'source_seconds')):
+            assert record[name]['samples'] == [query[field] for query in record['samples']]
+        assert record['submit_to_eof']['p99_is_sample_maximum']
+        assert record['full']['p99_is_sample_maximum']
+        assert record['http']['p99_99_is_sample_maximum']
+        assert record['request_e2e']['count'] in (0, 2560)
+    pairs = current['request_comparisons']
+    assert len(pairs) == 30 and all(pair['complete_request_values_multiset_equal'] for pair in pairs)
+    assert all(pair['complete_request_bytes_multiset_equal'] for pair in pairs if pair['supplier'] != 'LOTUS')
+    assert all(original['local_backup_verified'] for original in current['preservation'].values())
+    print('Latest comparison: 63 queries / 27720 real calls, all 45 query measurements, '
+          '23040 HTTP samples and 30 same-method request comparisons verified')
