@@ -75,6 +75,8 @@ def iter_two_map_rows(execution, method, rows, *, query_id, operator_id, limits,
                 if deadlines:
                     timeout = min(timeout, max(0, min(deadlines) - execution.engine.clock()))
                 execution.engine.wake.wait(progress.generation, timeout)
+    except GeneratorExit:
+        raise
     except BaseException as error:
         primary = error
         raise
