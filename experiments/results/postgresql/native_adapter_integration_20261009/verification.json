@@ -927,5 +927,93 @@
         }
       }
     }
+  },
+  "execution_cost_repair": {
+    "run_id": "native-adapter-execution-cost-20261011-16",
+    "source_commit": "92c8bbd4b94da9d0066facfbdcdcd7fb29ef5c93",
+    "queries": 68,
+    "model_posts": 26248,
+    "storage": {
+      "path": "execution-cost-observations.json.gz",
+      "compressed_bytes": 659864,
+      "compressed_sha256": "0c9c899942a23762e63906e9334a9669bce37eca2410ce9ddc9442b10940960b",
+      "uncompressed_bytes": 2229770,
+      "uncompressed_sha256": "1604e467621a01bacaca01a70b76541ddc417103f3d9778944194e9ad9accbb5"
+    },
+    "preservation": {
+      "execution-diagnosis14-cpu-before": {
+        "archive_name": "execution-diagnosis14-cpu-before-full.tar.gz",
+        "archive_bytes": 15914636,
+        "archive_sha256": "a7f78edbfec5205e4ec534b303315a71b134059fb89e358d2fcf02e60baf072c",
+        "members": 690,
+        "local_backup_verified": true
+      },
+      "fixture-cost15": {
+        "archive_name": "fixture-cost15-full.tar.gz",
+        "archive_bytes": 2380375,
+        "archive_sha256": "b8423aa8fbc41f8bab60c5deda981892d1f44666b1c2d153139d37b92ae8e781",
+        "members": 579,
+        "local_backup_verified": true
+      },
+      "execution-cost-failed15": {
+        "archive_name": "execution-cost-failed15-full.tar.gz",
+        "archive_bytes": 235225,
+        "archive_sha256": "8c0c3ed57d3a094fb68a9b6b80dad5323cf17a2f382857b8990a1cb55850fb76",
+        "members": 89,
+        "local_backup_verified": true
+      },
+      "execution-cost-short16": {
+        "archive_name": "execution-cost-short16-full.tar.gz",
+        "archive_bytes": 37729244,
+        "archive_sha256": "0ee3e26060e7dea383c3bdc7e8949b4958aa8846764add662606f61352fe4d5c",
+        "members": 1311,
+        "local_backup_verified": true
+      }
+    },
+    "completion_progress": {
+      "source_commit": "9756d4400b6b3a12a25dc5200d6a072b3dc9a4f8",
+      "run_id": "native-adapter-completion-progress-20261011-17",
+      "queries": 32,
+      "model_posts": 12352,
+      "preservation": {
+        "fixture-progress17": {
+          "archive_name": "fixture-progress17-full.tar.gz",
+          "archive_bytes": 1517453,
+          "archive_sha256": "49c0b5951f7303c5af29b19164f909e4b93bee947b44fb40adf34eb2d32eb315",
+          "members": 347,
+          "local_backup_verified": true
+        },
+        "completion-progress17": {
+          "archive_name": "completion-progress17-full.tar.gz",
+          "archive_bytes": 19937746,
+          "archive_sha256": "da9e5ccf342c4e3e377c8db9ce4f8ca3993ef8e9643acc2135c145d8d080bc06",
+          "members": 637,
+          "local_backup_verified": true
+        }
+      }
+    },
+    "observation_repair": {
+      "source_commit": "6bb81d0259d7af95a3aa68985192b01462ac303a",
+      "run_id": "native-adapter-observation-repair-20261011-18",
+      "queries": 8,
+      "model_posts": 3088,
+      "matching_method_comparisons": 4,
+      "preservation": {
+        "fixture-observation18": {
+          "archive_name": "fixture-observation18-full.tar.gz",
+          "archive_bytes": 538955,
+          "archive_sha256": "80f28e724f7d85ab87d7912213ecba7c981e1ff59d79e3fddc3f9e6ad50d0b28",
+          "members": 131,
+          "local_backup_verified": true
+        },
+        "observation-repair18": {
+          "archive_name": "observation-repair18-full.tar.gz",
+          "archive_bytes": 4841476,
+          "archive_sha256": "4ba06758d35ac4406c603e65aca6adffc62f65ddbad77bf757f947ad6ca8b286",
+          "members": 198,
+          "local_backup_verified": true
+        }
+      }
+    }
   }
 }

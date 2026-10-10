@@ -18,6 +18,11 @@
 完成三系统九路径、63查询／27,720次真实调用，LOTUS有下降信号，DuckDB／Sema仍增加；五次测量与发送规模差异单列。
 这些基础实现修订不作为新的调度算法结论，历史模型数据保持原来源。
 
+[执行成本分项核对](experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)
+已分别检验元数据签名、物理分块与完成通知，修订已有完成结果仍等待的具体问题；原生算子方法保持。
+局部时间下降没有普遍改善整查询，Sema通知候选恢复原行为，仍需将短Map的准备、接纳与分发成本和未来异质工作量上的执行收益区分。
+延后记录异常进入已有首错／取消／退出处理，正常模型观察与故障注入分别登记；不因此声称所有方法或PG接入均已验证。
+
 2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口，属于有限外部输入的工程证据。
 [修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)

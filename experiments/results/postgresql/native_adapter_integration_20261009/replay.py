@@ -12,6 +12,36 @@ from src.experiments.postgresql.native_adapter_http import bind_native_http_even
 from src.experiments.postgresql.native_adapter_metrics import sample_distribution, summarize_calls, summarize_queries
 
 
+def stored_json(info):
+    encoded = (ROOT / info['path']).read_bytes()
+    assert len(encoded) == info['compressed_bytes']
+    assert hashlib.sha256(encoded).hexdigest() == info['compressed_sha256']
+    decoded = gzip.decompress(encoded)
+    assert len(decoded) == info['uncompressed_bytes']
+    assert hashlib.sha256(decoded).hexdigest() == info['uncompressed_sha256']
+    return json.loads(decoded)
+
+
+def verify_cost_model(model, *, queries, calls, configs, comparisons):
+    assert model['queries'] == len(model['all_queries']) == queries
+    assert model['real_model_posts'] == sum(q['posts'] for q in model['all_queries']) == calls
+    assert len(model['records']) == configs and model['measurements'] == 2 * configs
+    for record in model['records']:
+        assert len(record['samples']) == 2 and record['http']['count'] == 1024
+        for name in ('full', 'submit_to_eof', 'preparation', 'source', 'first_row', 'tail_consume', 'http', 'request_e2e'):
+            observed = record[name]
+            recomputed = sample_distribution(observed['samples'], unit='seconds')
+            assert all(observed[key] == value for key, value in recomputed.items())
+            if observed['samples']:
+                assert observed['mean'] == statistics.mean(observed['samples'])
+                assert observed['median'] == statistics.median(observed['samples'])
+        for observed in record['sema_stages'].values():
+            assert all(observed[key] == value for key, value in sample_distribution(observed['samples'], unit='seconds').items())
+        assert record['submit_to_eof']['p99_is_sample_maximum']
+    assert len(model['request_comparisons']) == comparisons
+    assert all(q['complete_request_values_multiset_equal'] and q['complete_request_bytes_multiset_equal'] for q in model['request_comparisons'])
+
+
 def members(path, expected):
     assert hashlib.sha256(path.read_bytes()).hexdigest() == expected
     result = {}
@@ -137,3 +167,67 @@ if 'latest_short_comparison' in verification:
     assert all(original['local_backup_verified'] for original in current['preservation'].values())
     print('Latest comparison: 63 queries / 27720 real calls, all 45 query measurements, '
           '23040 HTTP samples and 30 same-method request comparisons verified')
+
+if 'execution_cost_repair' in verification:
+    current = stored_json(verification['execution_cost_repair']['storage'])
+    model = current['model']
+    verify_cost_model(model, queries=68, calls=26248, configs=17, comparisons=30)
+    cpu = current['cpu_transport']
+    assert cpu['real_model_posts'] == 0 and cpu['fixture_posts'] == 13376 and len(cpu['records']) == 8
+    core = current['core_cpu']
+    assert not core['cprofile_enabled'] and len(core['attempts']) == 10
+    for mode, summary in core['summary'].items():
+        attempts = [a for a in core['attempts'] if a['mode'] == mode]
+        assert len(attempts) == 5
+        for field, aggregate in (('query_seconds', 'query_median'), ('offer_seconds', 'offer_median')):
+            assert summary[field] == [a[field] for a in attempts]
+            assert statistics.median(summary[field]) == summary[aggregate]
+    diagnostic = current['sema_cpu']
+    assert len(diagnostic['units']) == 24 and diagnostic['gpu_calls'] == diagnostic['model_calls'] == 0
+    for variant, summary in diagnostic['summaries'].items():
+        units = [u for u in diagnostic['units'] if u['variant'] == variant]
+        assert len(units) == 6 and all(u['rows'] == len(u['spans']) == 64 for u in units)
+        for unit in units:
+            assert not any(unit['last_observed_core_usage'].values())
+            assert unit['peak_observed_core_usage']['held_tasks'] <= 16
+            assert unit['peak_observed_core_usage']['active_requests'] <= 8
+        for name, field in (('query', None), ('transport_to_terminal', 'transport_to_terminal_ns'),
+                            ('terminal_to_write', 'terminal_to_write_ns')):
+            values = ([u['query_elapsed_ns'] for u in units] if field is None
+                      else [span[field] for u in units for span in u['spans']])
+            expected = summary[name]
+            assert expected['n'] == len(values)
+            assert expected['median_ms'] == statistics.median(values) / 1e6
+            assert expected['max_ms'] == max(values) / 1e6
+            rank = (len(values) * 99 + 99) // 100
+            assert expected['p99_ms'] == sorted(values)[rank - 1] / 1e6
+    if 'completion_progress' in current:
+        followup = current['completion_progress']
+        verify_cost_model(followup['model'], queries=32, calls=12352, configs=8, comparisons=12)
+        assert followup['same_input_model_signature']
+        assert followup['service_count'] == dict(success_delta=12352, running=0, waiting=0)
+        before = followup['core_repro']['repro-before']
+        after = followup['core_repro']['repro-after']
+        assert before['delivered'] == 8 and before['remaining_backend_events'] == 24
+        assert not before['immediate'] and before['progress_generation'] == before['wake_generation_before_wait']
+        assert [tick['remaining_backend_events'] for tick in after['ticks']] == [24, 16, 8, 0]
+        assert all(tick['immediate'] and tick['delivered'] == 8 for tick in after['ticks'])
+        assert not after['empty_next_tick']['immediate']
+        print('Completion progress: 32 queries / 12352 real calls, 16 measurements, '
+              '8192 HTTP samples and 12 original-adapter request comparisons verified')
+    if 'observation_repair' in current:
+        followup = current['observation_repair']
+        verify_cost_model(followup['model'], queries=8, calls=3088, configs=2, comparisons=2)
+        assert followup['same_input_model_signature']
+        assert followup['service_count'] == dict(success_delta=3088, running=0, waiting=0)
+        assert len(followup['matching_method_comparisons']) == 4
+        assert all(pair['complete_request_bytes_multiset_equal'] and pair['complete_request_values_multiset_equal']
+                   for pair in followup['matching_method_comparisons'])
+        assert followup['cleanup']['status'] == 'passed' and not followup['cleanup']['cleanup_errors']
+        assert not followup['cleanup']['remaining_gpu_compute']
+        print('Deferred observation repair: 8 queries / 3088 real calls, 4 measurements, '
+              '2048 HTTP samples and 4 previous-source request comparisons verified')
+    assert current['prelaunch_failure']['model_posts'] == 0
+    assert all(info['local_backup_verified'] for info in current['preservation'].values())
+    print('Execution costs: 68 queries / 26248 real calls, 34 measurements, '
+          '17408 HTTP samples, 30 request comparisons and the zero-call startup failure verified')

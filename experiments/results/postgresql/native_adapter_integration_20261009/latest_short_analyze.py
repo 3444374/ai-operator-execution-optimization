@@ -14,6 +14,7 @@ p.add_argument('evidence', type=Path)
 p.add_argument('--code', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
 p.add_argument('--ordinals', default='2,3,4,5,6')
+p.add_argument('--reference-variant', help='Compare a named same-supplier variant when this run has no native arm')
 args = p.parse_args()
 sys.path.insert(0, str(args.code))
 from src.baselines.common.private_artifacts import content_digest
@@ -205,17 +206,25 @@ for cell in manifest['cells']:
         accuracy=sum(s['correct'] for s in samples)/sum(s['rows'] for s in samples)))
 for supplier in sorted({cell['supplier'] for cell in manifest['cells']}):
     family = [cell for cell in manifest['cells'] if cell['supplier'] == supplier]
-    native = next(cell for cell in family if cell['payload_backend'] == 'native')
+    reference = next(cell for cell in family if (
+        cell.get('variant') == args.reference_variant if args.reference_variant is not None
+        else cell['payload_backend'] == 'native'))
     for cell in family:
-        if cell == native:
+        if cell == reference:
             continue
         for ordinal in ordinals:
-            assert actual_values[native['name'], ordinal] == actual_values[cell['name'], ordinal]
-            byte_equal = bodies[native['name'], ordinal] == bodies[cell['name'], ordinal]
+            assert actual_values[reference['name'], ordinal] == actual_values[cell['name'], ordinal]
+            byte_equal = bodies[reference['name'], ordinal] == bodies[cell['name'], ordinal]
             if supplier != 'LOTUS':
                 assert byte_equal
-            comparisons.append(dict(supplier=supplier, native=native['name'], adapter=cell['name'],
-                query=ordinal, complete_request_values_multiset_equal=True, complete_request_bytes_multiset_equal=byte_equal))
+            pair = dict(supplier=supplier, adapter=cell['name'], query=ordinal,
+                complete_request_values_multiset_equal=True, complete_request_bytes_multiset_equal=byte_equal)
+            if args.reference_variant is None:
+                pair['native'] = reference['name']
+            else:
+                pair.update(reference=reference['name'], reference_variant=args.reference_variant,
+                            reference_role='same-supplier adapter control')
+            comparisons.append(pair)
 result = dict(schema='semloom.latest_supplier_short_observations.v1', status='passed',
     run_id=manifest['run_id'], source_commit=manifest['source_commit'],
     real_model_posts=manifest['max_posts'], queries=manifest['queries'], measurements=len(ordinals)*len(records),
