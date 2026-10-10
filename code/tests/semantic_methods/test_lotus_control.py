@@ -11,7 +11,7 @@ from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from src.scheduling.core.session_contract import Usage
 from src.semantic_methods.budget import MethodBudget, MethodCapacity, row_reservation
-from src.semantic_methods.continuation import Continue, MethodLimits, Request
+from src.semantic_methods.continuation import Continue, Final, MethodLimits, Request
 from src.semantic_methods.driver import MethodDriver
 from src.semantic_methods.lotus.batch import LotusBatchExecutor
 from src.semantic_methods.lotus.driver import iter_two_map_rows
@@ -176,6 +176,30 @@ class LotusChainCleanupTests(unittest.TestCase):
         self.assertIs(caught.exception, consumer)
         self.assertEqual(closing.call_count, 1)
         self.assertEqual(consumer.lotus_cleanup_errors, (('driver', consumer),))
+
+    def test_iterator_close_surfaces_cleanup_error_after_result_delivery(self):
+        execution, backend, _ = fixture()
+        class Method:
+            def start(self, value):
+                return Final(b'completed')
+        limits=MethodLimits(128,128,256,2)
+        iterator=iter_two_map_rows(execution,Method(),(b'input',),query_id='query',operator_id='chain',
+            limits=limits,capacity=MethodCapacity(2,2*row_reservation(limits)))
+        self.assertEqual(next(iterator).value,b'completed')
+        cleanup=OSError('consumer failed')
+        original=MethodDriver.close
+        def close(driver):
+            original(driver)
+            raise cleanup
+        with patch.object(MethodDriver,'close',close), patch.object(execution.engine,'close_job',wraps=execution.engine.close_job) as closing:
+            with self.assertRaises(OSError) as caught:
+                iterator.close()
+        self.assertIs(caught.exception,cleanup)
+        self.assertEqual(closing.call_count,1)
+        self.assertEqual(cleanup.lotus_cleanup_errors,(('driver',cleanup),))
+        self.assertEqual(execution.engine.capacity.usage(),Usage())
+        self.assertEqual(execution.engine.jobs.jobs,{})
+        self.assertEqual(backend.pending,{})
 
     def test_construction_error_survives_grant_and_session_cleanup_errors(self):
         execution, _, _ = fixture()
