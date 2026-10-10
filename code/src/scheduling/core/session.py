@@ -163,7 +163,8 @@ class SessionEngine:
                     session.state = State.CANCELLED
                 if session.state not in TERMINAL_STATES:
                     session._expired(now)
-            used = self._poll(maximum, reap_preparation=False)
+            polled = self._poll(maximum, reap_preparation=False)
+            used = polled
             for session in tuple(self._sessions.values()):
                 if session.state in TERMINAL_STATES:
                     # With preparation, notify every retiring flow before
@@ -203,11 +204,12 @@ class SessionEngine:
                     session._fail("session advancement failed")
                     used += session._cleanup(max(0, maximum - used))
             self._finish_retired()
-            return self._progress(used, self.clock())
+            return self._progress(used, self.clock(), poll_full=polled == maximum)
 
-    def _progress(self, used, now):
+    def _progress(self, used, now, *, poll_full=False):
         """Describe the owner's next tick without invoking stateful policies again."""
-        immediate, queued, consumer, deadlines = False, False, False, []
+        # A full bounded poll may leave completed events behind. An empty next poll clears the hint.
+        immediate, queued, consumer, deadlines = poll_full, False, False, []
         for session in self._sessions.values():
             records = session._records()
             terminal = session.state in TERMINAL_STATES
