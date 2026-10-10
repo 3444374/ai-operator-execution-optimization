@@ -123,6 +123,7 @@ class _ArmOwner:
     def query(self, unit_id, root, before, after, record):
         if self.binding is not None:
             raise RuntimeError('one persistent arm cannot overlap query consumers')
+        self.gateway.reset_upstream_connections()
         self.binding = dict(unit_id=unit_id, before=before, after=after, record=record)
         errors = CellErrors()
         primary = None

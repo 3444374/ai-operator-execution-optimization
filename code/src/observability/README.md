@@ -12,6 +12,12 @@ over the execution policy it observes.
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
 
+Upstream HTTP connections are pooled by default. Sequential query owners call
+`reset_upstream_connections()` before preparing each query, after the preceding query has drained;
+an active request makes this operation fail. Within a query, connections remain reusable.
+Public aiohttp trace signals record connection creation, reuse, connector waiting and pool generation.
+`fresh_upstream_connections=True` is an optional transport diagnostic; it does not replay a failed POST.
+
 `process_resources/` provides Linux FD identity observations, explicit missing values, sampling windows,
 stable baselines, operation/error capture and gzip JSONL persistence. A tick is a sequential observation
 batch, not an atomic snapshot. PostgreSQL session attribution and threshold policies live under

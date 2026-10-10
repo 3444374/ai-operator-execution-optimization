@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+[HTTP空闲连接复现与修订](postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)：
+原网关第二次POST可复现502／`ServerDisconnectedError`；查询间更换池、查询内复用、连接事件及不重试检查通过。
+18项网关和17项常驻入口通过，3项实际库待指定依赖；真实模型连续查询尚待运行，原追加失败不改记账。
+
 2026-10-10：[阶段复核与容量筛查继续执行](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 来源`00623f6e`的三条实库替身确认准备、传输与返回事件；两配置12查询／5,136次模型调用完成后，编排进度写入报错停止。
 原件保留，继续运行只覆盖剩余配置并沿用原结束时间；当前为启动观察，尚未登记完整校准结论。

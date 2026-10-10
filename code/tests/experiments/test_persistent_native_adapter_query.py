@@ -93,6 +93,8 @@ class PersistentAdapterTests(unittest.TestCase):
                     ids.append(sidecar['persistent_lifecycle']['owner_id'])
                     traces=[json.loads(line) for line in (query/'http-trace.jsonl').read_text().splitlines()]
                     self.assertEqual({t['query_id'] for t in traces},{'query-'+str(number)})
+                    self.assertEqual({t['upstream_pool_generation'] for t in traces},{number+1})
+                    self.assertEqual({t['upstream_connection_policy'] for t in traces},{'pooled'})
                 self.assertEqual(len(set(ids)),1)
                 self.assertEqual(len(requests),7)
             self.assertEqual(json.loads((root/'group/group-summary.json').read_text())['status'],'passed')

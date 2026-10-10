@@ -51,7 +51,8 @@ class PersistentCleanupTests(unittest.TestCase):
         return SimpleNamespace(root=self.root/'owner-group',physical=None,
             model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions','fixture',1000),
             plan=SemanticMapPlan('Return ok.','fixture',16),options=NativeGraphOptions(),
-            query_timeout_s=3,ray_session_id=None,tokenizer_path=None)
+            query_timeout_s=3,ray_session_id=None,tokenizer_path=None,
+            max_held_tasks=128,sema_native_threads=4)
 
     def owner(self):
         return persistent._ArmOwner(self.owner_group(),'fixed-map-semloom-local-diagnostic')

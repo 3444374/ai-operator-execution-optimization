@@ -46,6 +46,11 @@ _MONOTONIC_FIELDS = (
     "before_forward_started_monotonic_ns",
     "before_forward_completed_monotonic_ns",
     "upstream_dispatch_started_monotonic_ns",
+    "upstream_connection_queued_started_monotonic_ns",
+    "upstream_connection_queued_completed_monotonic_ns",
+    "upstream_connection_create_started_monotonic_ns",
+    "upstream_connection_create_completed_monotonic_ns",
+    "upstream_connection_reused_monotonic_ns",
     "upstream_headers_send_started_monotonic_ns",
     "upstream_response_body_read_completed_monotonic_ns",
     "upstream_attempt_finished_monotonic_ns",
@@ -95,6 +100,7 @@ class ObservationGateway:
         before_forward: Callable[[GatewayRoute, bytes], None] | None = None,
         after_forward: Callable[[GatewayRoute, bytes, bytes, int], None] | None = None,
         query_identity: Callable[[], str | None] | None = None,
+        fresh_upstream_connections: bool = False,
     ) -> None:
         if not routes:
             raise ValueError("observation gateway requires at least one route")
@@ -105,6 +111,8 @@ class ObservationGateway:
             raise ValueError("observation gateway routes must be unique")
         if not math.isfinite(request_timeout_s) or request_timeout_s <= 0:
             raise ValueError("gateway request timeout must be finite and positive")
+        if not isinstance(fresh_upstream_connections, bool):
+            raise ValueError("fresh upstream connections must be a boolean diagnostic option")
         self._routes = {(route.job_id, route.endpoint_id): route for route in routes}
         self._trace_path = trace_path
         self._bind_host = bind_host
@@ -113,6 +121,9 @@ class ObservationGateway:
         self._before_forward = before_forward
         self._after_forward = after_forward
         self._query_identity = query_identity
+        self._fresh_upstream_connections = fresh_upstream_connections
+        self._upstream_pool_generation = 0
+        self._reset_upstream: Callable[[], Any] | None = None
         self._trace_rows: list[dict[str, object]] = []
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -160,6 +171,7 @@ class ObservationGateway:
             raise RuntimeError("observation gateway did not stop cleanly")
         self._thread = None
         self._loop = None
+        self._reset_upstream = None
 
     def endpoint_url(self, job_id: str, endpoint_id: str) -> str:
         """Return the Job-labelled Chat Completions URL for one route."""
@@ -195,6 +207,14 @@ class ObservationGateway:
             return json.loads(json.dumps(self._trace_rows))
 
         return asyncio.run_coroutine_threadsafe(copy_rows(), self._loop).result(timeout_s + 1)
+
+    def reset_upstream_connections(self, timeout_s: float = 5.0) -> None:
+        """Replace an idle pool between queries; reject any unsettled request."""
+
+        if (self._loop is None or self._reset_upstream is None
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("a running gateway and positive reset timeout are required")
+        asyncio.run_coroutine_threadsafe(self._reset_upstream(), self._loop).result(timeout_s)
 
     def _run(self) -> None:
         loop = asyncio.new_event_loop()
@@ -254,6 +274,41 @@ class ObservationGateway:
                 if row["upstream_headers_send_started_monotonic_ns"] is None:
                     row["upstream_headers_send_started_monotonic_ns"] = time.monotonic_ns()
 
+            def connection_signal(name: str) -> Any:
+                async def record(_session: Any, context: Any, _params: Any) -> None:
+                    row = context.trace_request_ctx
+                    row[name + "_count"] += 1
+                    if row[name + "_monotonic_ns"] is None:
+                        row[name + "_monotonic_ns"] = time.monotonic_ns()
+                return record
+
+            def new_session() -> Any:
+                connector = TCPConnector(limit=0, limit_per_host=0,
+                    force_close=self._fresh_upstream_connections)
+                trace_config = TraceConfig()
+                trace_config.on_request_headers_sent.append(headers_send_started)
+                for signal, name in (
+                    (trace_config.on_connection_queued_start, "upstream_connection_queued_started"),
+                    (trace_config.on_connection_queued_end, "upstream_connection_queued_completed"),
+                    (trace_config.on_connection_create_start, "upstream_connection_create_started"),
+                    (trace_config.on_connection_create_end, "upstream_connection_create_completed"),
+                    (trace_config.on_connection_reuseconn, "upstream_connection_reused"),
+                ):
+                    signal.append(connection_signal(name))
+                return ClientSession(connector=connector,
+                    timeout=ClientTimeout(total=self._request_timeout_s),
+                    trace_configs=[trace_config])
+
+            async def reset_upstream() -> None:
+                nonlocal session
+                if any(row["request_terminal_monotonic_ns"] is None for row in trace_rows):
+                    raise RuntimeError("cannot replace upstream connections during a request")
+                previous = session
+                # Swap before yielding so a newly arriving request uses the new pool.
+                session = new_session()
+                self._upstream_pool_generation += 1
+                await previous.close()
+
             async def observe(request: Any) -> Any:
                 request_id = next(sequence)
                 received_monotonic_ns = time.monotonic_ns()
@@ -282,6 +337,9 @@ class ObservationGateway:
                     "callback_error_type": "",
                     "upstream_response_status": None,
                     "retry_count": 0,
+                    "upstream_connection_policy": (
+                        "fresh_per_request" if self._fresh_upstream_connections else "pooled"),
+                    "upstream_pool_generation": self._upstream_pool_generation,
                     "request_body_sha256": None,
                     "forwarded_body_sha256": None,
                     "forwarded": False,
@@ -291,6 +349,11 @@ class ObservationGateway:
                     "errors": [],
                     "response_write_status": "not_started",
                     "upstream_headers_send_count": 0,
+                    "upstream_connection_queued_started_count": 0,
+                    "upstream_connection_queued_completed_count": 0,
+                    "upstream_connection_create_started_count": 0,
+                    "upstream_connection_create_completed_count": 0,
+                    "upstream_connection_reused_count": 0,
                     **dict.fromkeys(_MONOTONIC_FIELDS),
                     **_response_usage(b""),
                 }
@@ -407,20 +470,17 @@ class ObservationGateway:
                     {
                         "status": "ok",
                         "policy": "pass_through_no_queue_no_retry",
+                        "upstream_connection_policy": (
+                            "fresh_per_request" if self._fresh_upstream_connections else "pooled"),
+                        "upstream_pool_generation": self._upstream_pool_generation,
                         "route_count": len(self._routes),
                     }
                 )
 
             async def initialize() -> Any:
                 nonlocal session
-                connector = TCPConnector(limit=0, limit_per_host=0)
-                trace_config = TraceConfig()
-                trace_config.on_request_headers_sent.append(headers_send_started)
-                session = ClientSession(
-                    connector=connector,
-                    timeout=ClientTimeout(total=self._request_timeout_s),
-                    trace_configs=[trace_config],
-                )
+                session = new_session()
+                self._reset_upstream = reset_upstream
                 app = web.Application(client_max_size=64 * 1024 * 1024)
 
                 async def close_session(_app: Any) -> None:
@@ -449,6 +509,7 @@ class ObservationGateway:
             self._startup_error = error
             self._ready.set()
         finally:
+            self._reset_upstream = None
             if runner is not None:
                 loop.run_until_complete(runner.cleanup())
             if trace_stream is not None:

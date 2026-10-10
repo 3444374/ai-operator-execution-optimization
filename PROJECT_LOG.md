@@ -1,5 +1,11 @@
 # 项目日志
 
+## HTTP空闲连接修订与适配成本排查
+
+- [同题报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)记录原始断连、最小复现与当前修订；查询之间更换空闲池，查询内仍复用，失败POST不重试。
+- 18项网关及17项常驻入口检查通过，3项实际库检查未启用；清理替身补齐容量字段。真实连续查询及DuckDB／Sema成本按[诊断计划](experiments/plans/语义系统对照.md#adapter-cost-diagnosis)继续处理，200次评价保持停止。
+- 平均HTTP在途不单独证明GPU供给不足；SemLoom活跃后端任务包括准备、传输与返回，报告据此修正指标解释。
+
 ## 2026-10-10：阶段复核、模型筛查与整查询追加设计
 
 - `00623f6e`源码在三条供应商SemLoom实库替身中完成阶段、关联与时钟检查，共24次替身POST、模型0；已观测段和缺项由[主报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)说明。

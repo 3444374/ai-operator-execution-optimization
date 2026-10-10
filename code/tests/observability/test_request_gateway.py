@@ -163,6 +163,157 @@ class ObservationGatewayTest(unittest.TestCase):
             self.assertEqual(row["upstream_status"], 503)
             self.assertEqual(row["retry_count"], 0)
 
+    def test_idle_upstream_connection_is_not_reused_between_queries(self) -> None:
+        class RetiringConnectionHandler(_UpstreamHandler):
+            protocol_version = 'HTTP/1.1'
+            calls = []
+            refused_idle_connections = 0
+
+            def do_POST(self):
+                previous = getattr(self, 'last_reply', None)
+                if previous is not None and time.monotonic() - previous >= .03:
+                    type(self).refused_idle_connections += 1
+                    self.close_connection = True
+                    self.connection.shutdown(socket.SHUT_RDWR)
+                    return
+                super().do_POST()
+                self.last_reply = time.monotonic()
+
+        upstream = ThreadingHTTPServer(('127.0.0.1', 0), RetiringConnectionHandler)
+        thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+        thread.start()
+        bodies = [b'{"query":"first"}', b'{"query":"after-preparation"}']
+        try:
+            with TemporaryDirectory() as directory:
+                trace = Path(directory) / 'gateway.jsonl'
+                with ObservationGateway(
+                    routes=(GatewayRoute('job', 'model',
+                        f'http://127.0.0.1:{upstream.server_port}/v1/chat/completions'),),
+                    trace_path=trace,
+                ) as gateway:
+                    statuses = []
+                    for ordinal, body in enumerate(bodies):
+                        if ordinal:
+                            time.sleep(.06)
+                            gateway.reset_upstream_connections()
+                        try:
+                            response = request.urlopen(request.Request(
+                                gateway.endpoint_url('job', 'model'), data=body,
+                                headers={'Content-Type': 'application/json'}), timeout=5)
+                        except error.HTTPError as response:
+                            statuses.append(response.code)
+                            response.read()
+                        else:
+                            statuses.append(response.status)
+                            response.read()
+                rows = [json.loads(line) for line in trace.read_text().splitlines()]
+            self.assertEqual(statuses, [200, 200],
+                f'upstream connection failures: {[row["error_type"] for row in rows]}')
+            self.assertEqual(RetiringConnectionHandler.refused_idle_connections, 0)
+            self.assertEqual(RetiringConnectionHandler.calls,
+                [('/v1/chat/completions', body) for body in bodies])
+            self.assertEqual(len(rows), 2)
+            self.assertTrue(all(row['retry_count'] == 0 and
+                row['upstream_headers_send_count'] == 1 for row in rows))
+            self.assertTrue(all(row['upstream_connection_policy'] == 'pooled'
+                for row in rows))
+            self.assertEqual([row['upstream_pool_generation'] for row in rows], [0, 1])
+            self.assertEqual([row['upstream_connection_create_completed_count'] for row in rows], [1, 1])
+            self.assertEqual([row['upstream_connection_reused_count'] for row in rows], [0, 0])
+        finally:
+            upstream.shutdown()
+            upstream.server_close()
+            thread.join(timeout=5)
+
+    def test_query_reuses_connections_unless_fresh_diagnostic_is_requested(self) -> None:
+        class KeepAliveHandler(_UpstreamHandler):
+            protocol_version = 'HTTP/1.1'
+            calls = []
+
+        self.upstream.RequestHandlerClass = KeepAliveHandler
+        for fresh in (False, True):
+            with self.subTest(fresh=fresh), TemporaryDirectory() as directory:
+                trace = Path(directory) / 'gateway.jsonl'
+                with ObservationGateway(
+                    routes=(GatewayRoute('job', 'model', self._upstream_url()),),
+                    trace_path=trace, fresh_upstream_connections=fresh,
+                ) as gateway:
+                    for _ in range(2):
+                        with request.urlopen(request.Request(
+                            gateway.endpoint_url('job', 'model'), data=b'{}'), timeout=5) as response:
+                            response.read()
+                rows = [json.loads(line) for line in trace.read_text().splitlines()]
+            self.assertEqual([row['upstream_connection_create_completed_count'] for row in rows],
+                [1, 1] if fresh else [1, 0])
+            self.assertEqual([row['upstream_connection_reused_count'] for row in rows],
+                [0, 0] if fresh else [0, 1])
+            self.assertEqual([row['upstream_pool_generation'] for row in rows], [0, 0])
+            for row in rows:
+                self.assertEqual(row['upstream_connection_policy'], 'fresh_per_request' if fresh else 'pooled')
+                self.assertEqual(row['retry_count'], 0)
+                self.assertEqual(row['upstream_headers_send_count'], 1)
+                self.assertLessEqual(row['upstream_dispatch_started_monotonic_ns'],
+                    row['upstream_connection_reused_monotonic_ns'] or row['upstream_connection_create_started_monotonic_ns'])
+                self.assertLessEqual(row['upstream_connection_reused_monotonic_ns'] or
+                    row['upstream_connection_create_completed_monotonic_ns'], row['upstream_headers_send_started_monotonic_ns'])
+        self.assertEqual(len(KeepAliveHandler.calls), 4)
+
+    def test_pool_reset_rejects_an_active_request_without_replay(self) -> None:
+        _UpstreamHandler.response_gate = threading.Event()
+        _UpstreamHandler.headers_sent = threading.Event()
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / 'gateway.jsonl'
+            with ObservationGateway(
+                routes=(GatewayRoute('job', 'model', self._upstream_url()),), trace_path=trace,
+            ) as gateway:
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    future = pool.submit(lambda: request.urlopen(request.Request(
+                        gateway.endpoint_url('job', 'model'), data=b'{}'), timeout=5).read())
+                    try:
+                        self.assertTrue(_UpstreamHandler.headers_sent.wait(timeout=3))
+                        with self.assertRaisesRegex(RuntimeError, 'during a request'):
+                            gateway.reset_upstream_connections()
+                    finally:
+                        _UpstreamHandler.response_gate.set()
+                    future.result(timeout=5)
+                gateway.snapshot()
+                gateway.reset_upstream_connections()
+            row = json.loads(trace.read_text())
+        self.assertEqual(len(_UpstreamHandler.calls), 1)
+        self.assertEqual(row['upstream_pool_generation'], 0)
+        self.assertEqual(row['retry_count'], 0)
+        self.assertEqual(row['status'], 'completed')
+
+    def test_upstream_disconnect_after_receipt_is_not_retried(self) -> None:
+        class DisconnectingHandler(_UpstreamHandler):
+            protocol_version = 'HTTP/1.1'
+            calls = []
+
+            def do_POST(self):
+                body = self.rfile.read(int(self.headers['Content-Length']))
+                type(self).calls.append((self.path, body))
+                self.close_connection = True
+                self.connection.shutdown(socket.SHUT_RDWR)
+
+        self.upstream.RequestHandlerClass = DisconnectingHandler
+        body = b'{"model":"fixture"}'
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / 'gateway.jsonl'
+            with ObservationGateway(
+                routes=(GatewayRoute('job', 'model', self._upstream_url()),),
+                trace_path=trace,
+            ) as gateway:
+                with self.assertRaises(error.HTTPError) as raised:
+                    request.urlopen(request.Request(gateway.endpoint_url('job', 'model'),
+                        data=body, headers={'Content-Type': 'application/json'}), timeout=5)
+                self.assertEqual(raised.exception.code, 502)
+            row = json.loads(trace.read_text())
+        self.assertEqual(DisconnectingHandler.calls, [('/v1/chat/completions', body)])
+        self.assertEqual(row['error_type'], 'ServerDisconnectedError')
+        self.assertEqual(row['retry_count'], 0)
+        self.assertEqual(row['upstream_headers_send_count'], 1)
+        self.assertIsNone(row['upstream_response_body_read_completed_monotonic_ns'])
+
     def test_budget_callback_rejects_before_upstream_send(self) -> None:
         def reject(_route, _body):
             raise RuntimeError('request budget exhausted')

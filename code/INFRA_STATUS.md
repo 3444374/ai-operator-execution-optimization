@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+[查询间HTTP连接修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)
+由常驻查询所有者更换空闲上游池，查询内继续复用连接；活跃请求拒绝更换，连接事件与池代次可观测，失败POST不重试。
+本地故障复现及受影响常驻检查通过；原机器真实连续查询验证及DuckDB／Sema成本诊断待完成，200次评价保持停止。
+
 2026-10-10：[阶段复核与筛查继续执行](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 最新整合源码完成三条SemLoom实库阶段核对；已完成两配置的模型查询保留，进度写入修订后只执行剩余配置。
 此修订属于仓库外编排，不改执行实现；有效选点及200次整查询追加尚待筛查复核。
