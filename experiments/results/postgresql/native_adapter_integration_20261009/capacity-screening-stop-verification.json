@@ -1,0 +1,24 @@
+{
+  "run_id": "native-adapter-screening-20261010-01",
+  "status": "failed",
+  "source_commit": "e75716913d44d02aaec28209fc1a76c80bb470f4",
+  "queries_attempted": 1,
+  "queries_completed": 0,
+  "real_model_posts": 8,
+  "post_stop_fixture_queries": 3,
+  "post_stop_fixture_posts": 24,
+  "post_stop_real_model_posts": 0,
+  "corrected_model_run_started": false,
+  "private_archive": {
+    "bytes": 183688,
+    "members": 249,
+    "sha256": "0457ae4887a0201afe514691389a6d7dae9550c3eb1acca9cd535eb22f8bf250"
+  },
+  "public_archive": {
+    "path": "raw/capacity-screening-stop-observations.jsonl.gz",
+    "bytes": 38612,
+    "members": 31,
+    "sha256": "67776eff71c47fbc5341e117b3a8217608b6d9ecb6a4ef25216ac08efe78c406"
+  },
+  "projection": "Selected complete observations; original request texts replaced with canonical request digests. All original bytes remain in private archive."
+}

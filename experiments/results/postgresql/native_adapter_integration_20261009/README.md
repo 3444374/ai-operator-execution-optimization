@@ -540,6 +540,7 @@ PSS采样峰5,980,241,920字节，RSS树总值会重复共享页，不写作单�
 2026-10-10补充，运行标识为`native-adapter-calibration-20261009/preparation01`。
 本轮完成[有限校准计划](../../../plans/语义系统对照.md#resident-capacity-calibration)要求的参数接线、
 目标输入容量检查和环境准备，没有启动真实模型筛查或确定最终比较配置。
+本节保存启动前状态，随后真实启动与停止见[首轮筛查记录](#capacity-screening-stop)。
 `23e7472f`新增单查询／常驻CLI的`--max-held-tasks`和`--sema-native-threads`；
 H表示持有任务上限，C表示活动模型请求上限，C仍来自`options.concurrency`。
 两项省略时保留旧行为；本次显式H128、Sema作者线程4，CPU8、worker2／每actor CPU1、
@@ -598,6 +599,37 @@ Sema Core／worker仍逐查询创建，保留释放至EOF主指标及直接记�
 SHA-256为`8cf0049e2e9aff008dd935d4a451d00da7436871c30606e83007aea42d31b85f`。
 完整请求、输入、配置及阶段事件由运行标识和成员路径定位仓库外原件；源码包由Git提交和独立manifest定位。
 已有120查询／7,680模型POST仍属于`aef350b2`，本次准备不提供新的真实模型质量或性能结论。
+
+<a id="capacity-screening-stop"></a>
+
+## 首轮真实筛查的启动、停止与清单修订
+
+2026-10-10按用户指示启动`native-adapter-screening-20261010-01`，实际源码仍为`e7571691`。
+重启后只读预检及GPU0 BF16小张量检查通过，没有既有GPU计算进程或Ray集群；
+实验以独立进程在服务器运行，SSH连接与Mac不拥有其生命周期。
+模型健康后开始LOTUS原生C4的8行检查，8次POST均取得合法`POSITIVE/NEGATIVE`响应，
+但应用允许值被运行包误写为`true/false`，首个消费值被拒绝，查询与整组停止。
+这是准备清单与任务说明不一致，发生在SemLoom接入路径执行之前；不据此判断任何系统的性能。
+
+独立复核核对账本分配／请求登记、HTTP及模型服务计数均为8，8个响应身份唯一、无请求重试。
+本轮尝试1查询、完成0查询，无预热或有效测量组；owner从启动至退出56.070773秒含模型准备与清理，
+不是SQL耗时。worker退出1，模型退出0，owner清理错误0、所属GPU计算进程0、模型端口已关闭。
+模型日志中的资源跟踪器警告保留，不将进程退出扩为所有OS资源均已独立检查。
+
+修订时同时发现原调参／评价参考文件也采用`true/false`表示；原文件和失败运行保持。
+`screening-prepared03`将允许值改为`POSITIVE/NEGATIVE`，按`true→POSITIVE`、`false→NEGATIVE`
+转换参考表示，输入、prompt、模型及执行代码保持；逐行逆转换与原参考文件SHA-256相同。
+新启动器在创建账本之前核对允许值与全部参考文件，worker执行同样的检查。
+LOTUS原生、DuckDB／SemLoom和Sema／SemLoom各8行实际库fixture通过，共3查询／24次fixture POST、
+真实模型0；三组受控返回均有1条判断错误，质量分母仍为8，没有被当作协议错误。
+首次修订因参考表示不匹配停止的零POST准备记录也保留。修正版没有启动模型或创建真实运行账本，
+本轮按首次错误停止，不自动重跑、退款或清除旧记录，有限容量校准仍待有效测量。
+
+[保存登记](capacity-screening-stop-verification.json)、[31成员公开观测](raw/capacity-screening-stop-observations.jsonl.gz)
+及[离线复核](capacity_screening_stop_replay.py)核对失败、8次调用、关闭、逐行参考表示转换和三组fixture。
+完整原件249成员／183,688字节已下载核对，SHA-256为
+`0457ae4887a0201afe514691389a6d7dae9550c3eb1acca9cd535eb22f8bf250`；
+请求原文由公开摘要定位仓库外原件，公开内容已解码作隐私扫描。
 
 ## 保存与复核
 

@@ -28,6 +28,7 @@
 三家异常释放／退出修复在新的`adapter-repair-source02`共同核对，170项相关检查及八路径26查询／1,154 fixture POST通过，真实模型0；旧来源与模型负结果保留。
 [修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)完成120查询／7,680 POST，LOTUS原持续差距消失，Daft／Ray与DuckDB仍略慢于各自原生；Sema实际在途128／4不同，保留整体与后置服务观察。最新DuckDB内层／记录修订只作受影响CPU检查，有限容量校准尚未执行。
 2026-10-10：[容量准备](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)完成H／C／Sema线程独立传参及目标输入的实际库检查，三条供应商SemLoom路径可达到C4至C128；真实模型筛查与最终比较配置仍待完成。
+随后[首轮真实筛查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)因运行包标签不一致停止，修订与原件分别保留；尚无有效容量测量或新性能结论。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，

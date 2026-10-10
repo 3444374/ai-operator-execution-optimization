@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-10：[容量筛查的首次停止](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
+保留8次真实调用、零完成查询及运行包标签错误；修订参考表示与允许值的3查询／24次fixture POST另计，修正版没有启动真实模型。
+
 2026-10-10：[原生方法容量准备](postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)
 按实际源码分别保存H128／C与Sema线程、Arrow/Ray字节计数、原生库请求与退出检查、独立输入及环境记录。
 最终源码43查询／19,160次fixture POST与早期来源分别保存；CPU fixture与BF16小张量不作为模型质量或性能结论，模型筛查已准备但未启动。
