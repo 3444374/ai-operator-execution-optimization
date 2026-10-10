@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-10：[阶段复核与容量筛查继续执行](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
+来源`00623f6e`的三条实库替身确认准备、传输与返回事件；两配置12查询／5,136次模型调用完成后，编排进度写入报错停止。
+原件保留，继续运行只覆盖剩余配置并沿用原结束时间；当前为启动观察，尚未登记完整校准结论。
+
 2026-10-10：[适配分析保存精简](postgresql/native_adapter_integration_20261009/README.md#保存与复核)
 四份分析改为完整字节的单一gzip副本，[保存登记](postgresql/native_adapter_integration_20261009/verification.json)保留原提交、路径、字节数与SHA-256，原始观测、运行身份及复算入口继续保留。
 

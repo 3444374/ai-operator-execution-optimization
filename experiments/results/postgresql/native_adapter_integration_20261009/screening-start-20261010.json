@@ -1,0 +1,182 @@
+{
+  "record_type": "partial_run_and_stage_audit",
+  "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+  "source_archive": {
+    "files": 1026,
+    "bytes": 2043676,
+    "sha256": "664fb164f598122b96d58d5ae7e98340dfc040ff77722160f31d5a34fde8f59f"
+  },
+  "preflight": {
+    "status": "passed",
+    "checked_epoch": 1791638858.254164,
+    "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+    "source_files": 1026,
+    "driver_status": "ok",
+    "model_status": "ok",
+    "data_disk_free_bytes": 440418406400,
+    "real_model_posts": 0
+  },
+  "stage_fixture_audit": {
+    "status": "passed",
+    "checked_epoch": 1791639192.25884,
+    "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+    "fixture_queries": 3,
+    "fixture_posts": 24,
+    "real_model_posts": 0,
+    "records": [
+      {
+        "arm": "lotus-method-semloom",
+        "complete_worker_events": 8,
+        "shared_clock_verified": true,
+        "payload_stage_counts": {
+          "arrow_import": 3,
+          "daft_import": 3,
+          "runner_configure": 3,
+          "source_table": 3,
+          "graph_create": 3,
+          "first_materialization": 3
+        },
+        "transfer_stage_counts": {
+          "payload_next": {
+            "queue": 8,
+            "work": 8,
+            "resume": 8,
+            "elapsed": 8
+          },
+          "object_put": {
+            "queue": 5,
+            "work": 5,
+            "resume": 5,
+            "elapsed": 5
+          },
+          "payload_close": {
+            "queue": 3,
+            "work": 3,
+            "resume": 3,
+            "elapsed": 3
+          }
+        },
+        "request_stage_summary": "unavailable fields remain distinct from raw worker and payload observations"
+      },
+      {
+        "arm": "duckdb-method-semloom",
+        "complete_worker_events": 8,
+        "shared_clock_verified": true,
+        "payload_stage_counts": {
+          "arrow_import": 4,
+          "daft_import": 4,
+          "runner_configure": 4,
+          "source_table": 4,
+          "graph_create": 4,
+          "first_materialization": 4
+        },
+        "transfer_stage_counts": {
+          "payload_next": {
+            "queue": 9,
+            "work": 9,
+            "resume": 9,
+            "elapsed": 9
+          },
+          "object_put": {
+            "queue": 5,
+            "work": 5,
+            "resume": 5,
+            "elapsed": 5
+          },
+          "payload_close": {
+            "queue": 4,
+            "work": 4,
+            "resume": 4,
+            "elapsed": 4
+          }
+        },
+        "request_stage_summary": "unavailable fields remain distinct from raw worker and payload observations"
+      },
+      {
+        "arm": "sema-method-semloom-request-service",
+        "complete_worker_events": 8,
+        "shared_clock_verified": true,
+        "payload_stage_counts": {
+          "arrow_import": 2,
+          "daft_import": 2,
+          "runner_configure": 2,
+          "source_table": 2,
+          "graph_create": 2,
+          "first_materialization": 2
+        },
+        "transfer_stage_counts": {
+          "payload_next": {
+            "queue": 6,
+            "work": 6,
+            "resume": 6,
+            "elapsed": 6
+          },
+          "object_put": {
+            "queue": 4,
+            "work": 4,
+            "resume": 4,
+            "elapsed": 4
+          },
+          "payload_close": {
+            "queue": 2,
+            "work": 2,
+            "resume": 2,
+            "elapsed": 2
+          }
+        },
+        "request_stage_summary": "unavailable fields remain distinct from raw worker and payload observations",
+        "service_trace_count": 8
+      }
+    ],
+    "rule": "derive measured stages from retained raw events; preserve nested spans and unavailable fields"
+  },
+  "stopped_run": {
+    "run_id": "native-adapter-screening-20261010-04",
+    "configurations_completed": 2,
+    "passed_queries": 12,
+    "measurement_queries": 6,
+    "real_model_posts": 5136,
+    "failure": "FileExistsError when the orchestration writer created the second progress record at an existing path",
+    "query_groups_passed": true,
+    "zero_model_reproduction_passed": true,
+    "progress_fix": "new immutable progress record for each completed group",
+    "preservation": {
+      "run_id": "native-adapter-screening-20261010-04",
+      "archive_sha256": "03d657fbb8a3b3fdefbca09e1afc1adeff6009d14d141cc6a42d9f42da86eb01",
+      "archive_bytes": 8503412,
+      "members": 328,
+      "member_paths_verified": true,
+      "independent_local_backup_verified": true
+    }
+  },
+  "continuation_snapshot": {
+    "run_id": "native-adapter-screening-20261010-05",
+    "elapsed_seconds": 748.8188562393188,
+    "owner_alive": true,
+    "owner_exit": null,
+    "worker_final": null,
+    "configurations_completed": 8,
+    "configurations_planned": 15,
+    "model_health": 200,
+    "observed_model_successes": 21863.0,
+    "query_records": 51,
+    "passed_query_records": 51,
+    "measured_query_records": 24
+  },
+  "continuation_limits": {
+    "max_model_posts": 38520,
+    "original_deadline_epoch": 1791642939.941373,
+    "skip_completed_configurations": true,
+    "runtime_source_unchanged": true
+  },
+  "combined_snapshot": {
+    "planned_configurations": 17,
+    "completed_configurations": 10,
+    "passed_queries": 63,
+    "measurement_queries": 30,
+    "observed_model_successes": 26999
+  },
+  "status": "running_at_retained_snapshot; full calibration and quality audit pending",
+  "tail_expansion": "200 measured whole queries per selected path planned; not started",
+  "retained_originals": "full stopped-run archive in independent private server and local copies; public archive digest identifies recovery source"
+}

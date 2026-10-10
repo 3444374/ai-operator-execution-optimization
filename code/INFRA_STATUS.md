@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-10：[阶段复核与筛查继续执行](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
+最新整合源码完成三条SemLoom实库阶段核对；已完成两配置的模型查询保留，进度写入修订后只执行剩余配置。
+此修订属于仓库外编排，不改执行实现；有效选点及200次整查询追加尚待筛查复核。
+
 2026-10-10：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 已提供公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray入口。
 查询分别记录输入准备、实际提交、完整消费、请求和退出；既有PG默认路径保留，PG多Map、级联、多模型、Join和并行展开仍pending。
