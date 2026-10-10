@@ -67,11 +67,14 @@ class SemaRequestService:
 
     mode = 'transparent'
 
-    def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None):
+    def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None, upstream_concurrency=0):
         if not isinstance(query_id, str) or not query_id or len(query_id.encode()) > 128:
             raise ValueError('Sema query identity must contain 1..128 UTF-8 bytes')
         if type(limits) is not SemaServiceLimits:
             raise ValueError('Sema service requires explicit limits')
+        if type(upstream_concurrency) is not int or not 0 <= upstream_concurrency <= 256:
+            raise ValueError('Sema upstream connector capacity must be from 0 to 256')
+        self.upstream_concurrency = upstream_concurrency
         self.query_id, self.upstream_url, self.limits = query_id, upstream_url, limits
         self.trace_path, self.before_post = Path(trace_path), before_post
         self.first_error = None
@@ -152,6 +155,8 @@ class SemaRequestService:
             cleanup_failures = list(self._cleanup_failures)
         return {
             'query_id': self.query_id, 'mode': self.mode,
+            'upstream_concurrency': self.upstream_concurrency,
+            'upstream_capacity_owner': 'aiohttp TCPConnector; zero retains unlimited forwarding',
             'native_task_ready': {'status': 'unavailable', 'reason': 'author request pool precedes llm_url'},
             'native_row_association': {'status': 'unavailable', 'reason': 'HTTP payload has no native row identity'},
             'received_requests': self._sequence, 'forwarded_posts': self._forwarded,
@@ -282,8 +287,9 @@ class SemaRequestService:
             raise RuntimeError('Sema query has stopped')
         row['forward_started_ns'] = time.monotonic_ns()
         self._forwarded += 1
+        trace = {'trace_request_ctx': row} if self.upstream_concurrency else {}
         async with client.post(self.upstream_url, data=body, headers=headers,
-                               allow_redirects=False) as response:
+                               allow_redirects=False, **trace) as response:
             value = bytearray()
             async for chunk in response.content.iter_chunked(4096):
                 if len(value) + len(chunk) > self.limits.response_bytes:
@@ -295,6 +301,28 @@ class SemaRequestService:
 
     async def _initialize_executor(self):
         pass
+
+    def _connection_traces(self):
+        if not self.upstream_concurrency:
+            return []
+        from aiohttp import TraceConfig
+        trace = TraceConfig()
+
+        async def queued_start(_session, context, _params):
+            context.trace_request_ctx['connector_wait_started_ns'] = time.monotonic_ns()
+
+        async def check_stopped(_session, _context, _params):
+            if self._halted.is_set():
+                raise RuntimeError('Sema query stopped before upstream connection acquisition')
+
+        async def queued_end(_session, context, _params):
+            context.trace_request_ctx['connector_wait_ended_ns'] = time.monotonic_ns()
+            await check_stopped(_session, context, _params)
+
+        trace.on_connection_queued_start.append(queued_start)
+        trace.on_connection_queued_end.append(queued_end)
+        trace.on_connection_create_start.append(check_stopped)
+        return [trace]
 
     async def _close_executor(self):
         pass
@@ -409,9 +437,11 @@ class SemaRequestService:
 
         async def initialize():
             nonlocal client, runner
-            client = ClientSession(connector=TCPConnector(limit=0),
+            client = ClientSession(connector=TCPConnector(limit=self.upstream_concurrency,
+                                                         limit_per_host=self.upstream_concurrency),
                                    timeout=ClientTimeout(total=self.limits.timeout_s),
-                                   auto_decompress=False, trust_env=False)
+                                   auto_decompress=False, trust_env=False,
+                                   trace_configs=self._connection_traces())
             self._client = client
             await self._initialize_executor()
             app = web.Application(client_max_size=self.limits.request_bytes)
