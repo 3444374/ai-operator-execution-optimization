@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+[附件补充问题修订](postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)记录LOTUS准备停止、首错退出、有限准备与观察共用，
+以及公共静态检查复用和DuckDB跨vector查询Job；227项共同本地检查通过、45项目标依赖待核对，真实模型调用0。
+CPU序列化减少与旧模型性能分别保留，不把实现修订当调度算法贡献。
+
 [HTTP空闲连接复现与修订](postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)：
 原网关第二次POST可复现502／`ServerDisconnectedError`；查询间更换池、查询内复用、连接事件及不重试检查通过。
 18项网关和17项常驻入口通过，3项实际库待指定依赖；后续原机器8查询／3,592次模型调用通过，原追加失败不改记账。

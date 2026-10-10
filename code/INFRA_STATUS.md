@@ -10,7 +10,9 @@ DuckDB提供相同批接入的本地Core参照及默认关闭的推进／消费�
 默认执行保持；三个重复只提供观察信号，尚不据此宣布通用性能收益。
 [接入工程复核](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-engineering-audit)
 修订Sema未用客户端及双解码，开放既有Arrow／Ray显式选择；89项本地检查通过，目标环境四配置／12查询／576次模拟HTTP调用通过。
-公共静态校验复用、LOTUS重复准备与跨vector查询Job连续性尚未实现，不据单Map记录外推多查询调度。
+[附件补充问题修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)
+已实现有限待接纳元数据复用、LOTUS准备停止／首错清理／观察共用，以及DuckDB整查询Job跨vector借用。
+227项整合本地检查通过，45项目标依赖检查留待服务器；不据这些CPU检查更新模型性能或外推多查询调度。
 
 2026-10-10：[阶段复核与筛查继续执行](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 最新整合源码完成三条SemLoom实库阶段核对；已完成两配置的模型查询保留，进度写入修订后只执行剩余配置。

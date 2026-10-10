@@ -1,5 +1,13 @@
 # 项目日志
 
+## 接入补充修订与三系统短测准备
+
+- 整合LOTUS停止／首错与主动关闭处理、批次轻检查和观察共用、原始响应按需留存；SDK、统计与原解析保留。
+- 公共Core复用有限未接纳元数据检查，DuckDB整SQL共用Job与额度；原单批接口、取消隔离和未知远端容量保持。
+- 227项整合本地检查通过、45项目标依赖待服务器核对；Sema测试helper调用失败及原件保留，准备期间模型调用0。
+- [主报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)说明实现范围与CPU诊断；
+  [短测方案](experiments/plans/语义系统对照.md#latest-three-supplier-short)覆盖三系统各原生／Daft＋Ray／Arrow＋Ray，不恢复200次评价。
+
 ## HTTP空闲连接修订与适配成本排查
 
 - [同题报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)记录原始断连、最小复现与当前修订；查询之间更换空闲池，查询内仍复用，失败POST不重试。

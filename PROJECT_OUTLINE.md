@@ -12,6 +12,10 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[接入补充修订](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)
+已补LOTUS停止与清理、公共有限静态检查复用及DuckDB跨vector查询Job；本地共同回归通过，目标实际库与新模型短对照待执行。
+这些基础实现修订不作为新的调度算法结论，历史模型数据保持原来源。
+
 2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口，属于有限外部输入的工程证据。
 [修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)
