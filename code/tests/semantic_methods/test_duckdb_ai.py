@@ -45,12 +45,14 @@ class _ClosingResponses:
             raise RuntimeError(self.close_error)
 
 
-def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id=1, through_ctypes=False):
+def invoke(execute, *, cancel=False, consume=lambda *_: 0, bridge=None, batch_id=1, through_ctypes=False,
+           collect_timings=False):
     if bridge is None:
         bridge = object.__new__(DuckDBSemLoomBridge)
         bridge.last_error = bridge.last_cleanup_error = None
         bridge._buffers, bridge.batch_sizes, bridge._lock = {}, [], threading.Lock()
     bridge.execute = execute
+    bridge.collect_timings = collect_timings
     owners = []
     calls = (_Call * 3)()
     for i in range(3):
@@ -342,8 +344,86 @@ class DuckDBInnerFailureTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertIsNone(self.adapter.last_cleanup_error)
         self.assertEqual(self.adapter.last_cleanup_errors, ())
+        self.assertIsNone(self.adapter.last_timings)
         self.assertIsNotNone(self.adapter.last_close_report)
         self.assert_returned()
+
+    def test_timing_keeps_native_stop_and_inner_close_failure(self):
+        self.adapter.collect_timings = True
+        with self.faults(close=True):
+            bridge, status = self.dispatch(consume=lambda *_: 1, collect_timings=True)
+        self.assertEqual(status, 3)
+        self.assertIn('injected inner close failure', bridge.last_cleanup_error)
+        self.assertEqual(bridge.last_timings['phases']['native_consume']['count'], 1)
+        self.assertEqual(self.adapter.last_timings['phases']['caller_resume']['count'], 1)
+        self.assert_returned()
+
+
+class DuckDBTimingTests(unittest.TestCase):
+    def test_default_abi_path_does_not_read_the_diagnostic_clock(self):
+        with patch('src.semantic_methods.duckdb_ai.time.monotonic_ns',
+                   side_effect=AssertionError('disabled timing sampled the clock')):
+            bridge, _, status = invoke(lambda calls, _: [
+                DuckDBResponse(c.call_id, b'ok', 200, -1) for c in calls])
+        self.assertEqual(status, 0)
+        self.assertIsNone(bridge.last_timings)
+        bridge._release(1)
+
+    def test_actual_core_and_ctypes_consumer_report_separate_local_spans(self):
+        import asyncio
+        from src.execution_provider.adapters.native_tasks import build_native_execution
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
+        from src.scheduling.core.session_contract import Usage
+
+        async def execute(request, endpoint):
+            await asyncio.sleep(0.001)
+            return encode_full_response(FullModelResponse(200, (), b'ok'))
+        config = FixedModelConfig('http://localhost/model', 'fixture', 5000)
+        execution = build_native_execution(config, physical=None, execute=execute,
+                                            max_tasks=4, max_active_requests=1)
+        adapter = DuckDBNativeTaskExecutor(execution, config, collect_timings=True)
+        consumed = []
+        def consume(index, response, context):
+            consumed.append(index)
+            time.sleep(0.002)
+            return 0
+        try:
+            bridge, output, status = invoke(adapter, consume=consume, through_ctypes=True,
+                                             collect_timings=True)
+            self.assertEqual(status, 0)
+            self.assertEqual(sorted(consumed), [0, 1, 2])
+            self.assertEqual([ct.string_at(o.body, o.body_size) for o in output], [b'ok'] * 3)
+            core = adapter.last_timings['phases']
+            native = bridge.last_timings['phases']
+            self.assertEqual(core['delivery_decode_release']['count'], 3)
+            self.assertEqual(core['caller_resume']['count'], 3)
+            self.assertEqual(native['native_consume']['count'], 3)
+            self.assertGreaterEqual(core['caller_resume']['total_ns'], native['native_consume']['total_ns'])
+            self.assertGreaterEqual(core['batch']['total_ns'], core['caller_resume']['total_ns'])
+            self.assertGreater(adapter.last_timings['max_core_advance_gap_ns'], 0)
+            self.assertGreater(core['core_advance']['count'], 0)
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+            self.assertEqual(execution.engine.jobs.jobs, {})
+            bridge._release(1)
+            self.assertEqual(bridge.retained_batches, 0)
+        finally:
+            self.assertTrue(execution.close())
+
+    def test_timing_preserves_early_native_consumer_stop_and_per_batch_reset(self):
+        rows = lambda calls, _: [DuckDBResponse(c.call_id, b'ok', 200, -1) for c in calls]
+        bridge, _, status = invoke(rows, consume=lambda *_: 1, collect_timings=True)
+        self.assertEqual(status, 3)
+        self.assertEqual(bridge.last_timings['phases']['native_consume']['count'], 1)
+        bridge._release(1)
+        bridge, _, status = invoke(rows, bridge=bridge, batch_id=2, collect_timings=True)
+        self.assertEqual(status, 0)
+        self.assertEqual(bridge.last_timings['phases']['native_consume']['count'], 3)
+        bridge._release(2)
+        bridge, _, status = invoke(rows, bridge=bridge, batch_id=3)
+        self.assertEqual(status, 0)
+        self.assertIsNone(bridge.last_timings)
+        bridge._release(3)
 
 
 class _FixtureServer(ThreadingHTTPServer):
