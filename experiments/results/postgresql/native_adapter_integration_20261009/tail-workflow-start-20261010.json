@@ -1,0 +1,66 @@
+{
+  "record_type": "tail_workflow_start_snapshot",
+  "launch": {
+    "run_id": "native-adapter-tail-20261010-06",
+    "launch_pid": 50011,
+    "launched_epoch": 1791642396.244607,
+    "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+    "source_archive_sha256": "664fb164f598122b96d58d5ae7e98340dfc040ff77722160f31d5a34fde8f59f",
+    "max_posts": 814720,
+    "max_seconds": 23400,
+    "manifest_sha256": "02d0e2fb88689e87d2dd6e16b31d9674226853a5f796e33572520c3c32dc16be",
+    "detached_from_ssh": true,
+    "confirmation_groups": 10,
+    "evaluation_groups": 70
+  },
+  "preflight": {
+    "status": "passed",
+    "checked_epoch": 1791642324.1049032,
+    "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+    "source_files": 1026,
+    "driver_status": "ok",
+    "model_status": "ok",
+    "data_disk_free_bytes": 439796224000,
+    "real_model_posts": 0
+  },
+  "local_orchestration_checks": {
+    "status": "passed",
+    "capacity_selection_checks": 2,
+    "query_call_totals_checks": 2,
+    "unique_progress_paths": 80,
+    "compiled_scripts": 3,
+    "real_model_posts": 0
+  },
+  "observed_snapshot": {
+    "run_id": "native-adapter-tail-20261010-06",
+    "elapsed_seconds": 229.65461349487305,
+    "owner_alive": true,
+    "owner_exit": null,
+    "worker_final": null,
+    "configurations_completed": 3,
+    "configurations_planned": 80,
+    "model_health": 200,
+    "observed_model_successes": 9492.0,
+    "passed_query_records": 22,
+    "measured_query_records": 10,
+    "evaluation_started": false
+  },
+  "stopped_screening_backup": {
+    "run_id": "native-adapter-screening-20261010-04",
+    "archive_sha256": "03d657fbb8a3b3fdefbca09e1afc1adeff6009d14d141cc6a42d9f42da86eb01",
+    "archive_bytes": 8503412,
+    "members": 328,
+    "member_paths_verified": true,
+    "independent_local_backup_verified": true
+  },
+  "completed_screening_backup": {
+    "run_id": "native-adapter-screening-20261010-05",
+    "archive_sha256": "82dacd51c70dea6c36545dca681006a2b4279759136a06e9da035f1cae24ebd2",
+    "archive_bytes": 51361879,
+    "members": 1542,
+    "member_paths_verified": true,
+    "independent_local_backup_verified": true
+  },
+  "timing_notes": "first 10 groups confirm settings; remaining 70 groups record 200 measured complete queries per path on evaluation input; fixed selection before evaluation",
+  "private_originals_retained": true
+}

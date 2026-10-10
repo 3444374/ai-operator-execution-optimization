@@ -1,0 +1,41 @@
+{
+  "run_id": "native-adapter-tail-20261010-06",
+  "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+  "status": "stopped_on_first_error",
+  "completed_confirmation_groups": 4,
+  "passed_queries": 28,
+  "measured_queries": 13,
+  "failed_query": "confirmation-04/query-4",
+  "failed_arm": "sema-method-semloom-request-service",
+  "failed_capacity": 64,
+  "server_success_count": 11816.0,
+  "unacknowledged_client_attempts": 1,
+  "primary_error": {
+    "type": "ServerDisconnectedError",
+    "phase": "observation gateway upstream request",
+    "http_status": 502
+  },
+  "secondary_error": {
+    "type": "ValueError",
+    "message": "native completion returned another model or an HTTP failure"
+  },
+  "cause": "upstream HTTP connection disconnected; idle connection reuse and exact cause not yet verified",
+  "evaluation_started": false,
+  "selection_written": false,
+  "owner_exit": {
+    "status": "failed",
+    "failure": "RuntimeError: resident driver failed; original query evidence retained",
+    "cleanup_errors": [],
+    "worker_exit": 1,
+    "model_exit": 0,
+    "resource_samples": 283,
+    "ports_open": {
+      "8000": false
+    },
+    "remaining_gpu_compute": false,
+    "ended_epoch": 1791642708.887883
+  },
+  "automatic_retry": false,
+  "completed_queries_preserved": true,
+  "retention": "all run files retained in private server directory; full archive and independent backup pending"
+}

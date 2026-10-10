@@ -3,6 +3,12 @@
 2026-10-10：[阶段复核与容量筛查继续执行](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 来源`00623f6e`的三条实库替身确认准备、传输与返回事件；两配置12查询／5,136次模型调用完成后，编排进度写入报错停止。
 原件保留，继续运行只覆盖剩余配置并沿用原结束时间；当前为启动观察，尚未登记完整校准结论。
+后续逐组核对确认17配置／102查询全部完成，模型成功计数43,656一致，51条测量查询保留；有限选点仍待交错复验。
+`native-adapter-tail-20261010-06`开始交错复验，成功后以固定配置执行独立评价；当前只登记实跑观察，评价结果仍待完成。
+随后[首次停止](postgresql/native_adapter_integration_20261009/tail-workflow-stop-20261010.json)归属观测网关上游断连，服务成功11,816次、另1次尝试没有成功回执；
+已通过28查询、其中13次测量，完整原件保留，200次整查询评价尚未启动。
+[初步分析](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-analysis)同步全部51个原值、直接提交计时、HTTP／worker分位与token核对；
+LOTUS C64有下降信号，DuckDB增加，Sema准备和发送规模差异分别解释，尚无通用性能结论。
 
 2026-10-10：[适配分析保存精简](postgresql/native_adapter_integration_20261009/README.md#保存与复核)
 四份分析改为完整字节的单一gzip副本，[保存登记](postgresql/native_adapter_integration_20261009/verification.json)保留原提交、路径、字节数与SHA-256，原始观测、运行身份及复算入口继续保留。

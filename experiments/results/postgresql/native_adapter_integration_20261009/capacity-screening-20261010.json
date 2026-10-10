@@ -1,0 +1,356 @@
+{
+  "record_type": "capacity_screening_completion",
+  "audit": {
+    "status": "passed",
+    "source_commit": "00623f6ed4a95a87322d2521b44c027fec7278fd",
+    "configurations": 17,
+    "queries": 102,
+    "measurement_queries": 51,
+    "real_model_posts": 43656,
+    "service_counts_match_query_counts": true
+  },
+  "records": [
+    {
+      "arm": "lotus-adapted-native",
+      "concurrency": 4,
+      "measurement_seconds": [
+        15.579660543,
+        15.828574088,
+        15.541050058
+      ],
+      "median_seconds": 15.579660543,
+      "measured_correct": [
+        410,
+        411,
+        411
+      ]
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "concurrency": 4,
+      "measurement_seconds": [
+        16.522366399,
+        16.598383389,
+        16.96760267
+      ],
+      "median_seconds": 16.598383389,
+      "measured_correct": [
+        411,
+        410,
+        410
+      ]
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "concurrency": 4,
+      "measurement_seconds": [
+        12.228947582,
+        12.219157385,
+        12.112037068
+      ],
+      "median_seconds": 12.219157385,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "concurrency": 4,
+      "measurement_seconds": [
+        16.722475236,
+        16.555875193,
+        16.587213697
+      ],
+      "median_seconds": 16.587213697,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "concurrency": 4,
+      "measurement_seconds": [
+        28.739980123,
+        28.69385984,
+        28.661903268
+      ],
+      "median_seconds": 28.69385984,
+      "measured_correct": [
+        429,
+        430,
+        430
+      ]
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "concurrency": 16,
+      "measurement_seconds": [
+        8.766322155,
+        9.411266108,
+        9.137381695
+      ],
+      "median_seconds": 9.137381695,
+      "measured_correct": [
+        410,
+        410,
+        409
+      ]
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "concurrency": 16,
+      "measurement_seconds": [
+        9.111591734,
+        9.00857947,
+        8.436437791
+      ],
+      "median_seconds": 9.00857947,
+      "measured_correct": [
+        409,
+        411,
+        410
+      ]
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "concurrency": 16,
+      "measurement_seconds": [
+        6.198505813,
+        6.138278712,
+        6.134679656
+      ],
+      "median_seconds": 6.138278712,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "concurrency": 16,
+      "measurement_seconds": [
+        7.875489403,
+        8.060858155,
+        7.897127061
+      ],
+      "median_seconds": 7.897127061,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "concurrency": 16,
+      "measurement_seconds": [
+        17.677871959,
+        16.397847643,
+        16.4457495
+      ],
+      "median_seconds": 16.4457495,
+      "measured_correct": [
+        429,
+        430,
+        430
+      ]
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "concurrency": 64,
+      "measurement_seconds": [
+        9.315781657,
+        8.119542262,
+        8.852935921
+      ],
+      "median_seconds": 8.852935921,
+      "measured_correct": [
+        410,
+        410,
+        409
+      ]
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "concurrency": 64,
+      "measurement_seconds": [
+        7.612314577,
+        6.818159457,
+        6.715368253
+      ],
+      "median_seconds": 6.818159457,
+      "measured_correct": [
+        410,
+        411,
+        408
+      ]
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "concurrency": 64,
+      "measurement_seconds": [
+        4.937254211,
+        4.981254742,
+        5.002916682
+      ],
+      "median_seconds": 4.981254742,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "concurrency": 64,
+      "measurement_seconds": [
+        5.792423742,
+        5.63500049,
+        5.567308417
+      ],
+      "median_seconds": 5.63500049,
+      "measured_correct": [
+        426,
+        426,
+        426
+      ]
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "concurrency": 64,
+      "measurement_seconds": [
+        14.865901805,
+        14.625483621,
+        14.666437049
+      ],
+      "median_seconds": 14.666437049,
+      "measured_correct": [
+        431,
+        431,
+        431
+      ]
+    },
+    {
+      "arm": "sema-native-direct",
+      "concurrency": 4,
+      "measurement_seconds": [
+        7.432860588,
+        7.526576198,
+        7.418010755
+      ],
+      "median_seconds": 7.432860588,
+      "measured_correct": [
+        428,
+        428,
+        428
+      ]
+    },
+    {
+      "arm": "sema-native-transparent",
+      "concurrency": 4,
+      "measurement_seconds": [
+        7.548616757,
+        7.687341855,
+        7.524938242
+      ],
+      "median_seconds": 7.548616757,
+      "measured_correct": [
+        428,
+        429,
+        430
+      ]
+    }
+  ],
+  "selection": [
+    {
+      "arm": "lotus-adapted-native",
+      "selected_concurrency": 16,
+      "selected_median_seconds": 9.137381695,
+      "tested_concurrencies": [
+        4,
+        16,
+        64
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "selected_concurrency": 64,
+      "selected_median_seconds": 6.818159457,
+      "tested_concurrencies": [
+        4,
+        16,
+        64
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "duckdb-adapted-native",
+      "selected_concurrency": 64,
+      "selected_median_seconds": 4.981254742,
+      "tested_concurrencies": [
+        4,
+        16,
+        64
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "duckdb-method-semloom",
+      "selected_concurrency": 64,
+      "selected_median_seconds": 5.63500049,
+      "tested_concurrencies": [
+        4,
+        16,
+        64
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "sema-method-semloom-request-service",
+      "selected_concurrency": 64,
+      "selected_median_seconds": 14.666437049,
+      "tested_concurrencies": [
+        4,
+        16,
+        64
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "sema-native-direct",
+      "selected_concurrency": 4,
+      "selected_median_seconds": 7.432860588,
+      "tested_concurrencies": [
+        4
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    },
+    {
+      "arm": "sema-native-transparent",
+      "selected_concurrency": 4,
+      "selected_median_seconds": 7.548616757,
+      "tested_concurrencies": [
+        4
+      ],
+      "highest_tested_is_fastest": true,
+      "interpretation": "screening candidate; interleaved confirmation and independent evaluation pending"
+    }
+  ],
+  "interpretation": "three measured queries per configuration; independent evaluation and confirmation pending",
+  "completed_run_ids": [
+    "native-adapter-screening-20261010-04",
+    "native-adapter-screening-20261010-05"
+  ]
+}

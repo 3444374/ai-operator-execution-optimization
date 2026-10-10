@@ -5,6 +5,10 @@
 - `00623f6e`源码在三条供应商SemLoom实库替身中完成阶段、关联与时钟检查，共24次替身POST、模型0；已观测段和缺项由[主报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)说明。
 - 首次新模型筛查完成两配置12查询／5,136调用后，在组间进度记录时报错；原件与有效查询保留，零模型复现并修订编排后，仅继续剩余15配置，保留原绝对结束时间。
 - 用户要求增加整查询次数，[方案](experiments/plans/语义系统对照.md#整查询尾延迟追加)增加七条已选路径各200次完整查询的独立追加；当前筛查继续，追加尚未启动。
+- 筛查随后完成全部17配置、102查询／43,656次调用，逐组及最终模型计数匹配；下一清单先做候选／邻近配置交错复验，再保存配置并执行独立评价。
+- `native-adapter-tail-20261010-06`已经在GPU0实跑，先复验候选，再自动执行各200次整查询；保存独立模型环境检查及首组检查／预热观察。
+- [首轮分析](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-analysis)核对真实请求、token和直接计时，明确LOTUS下降信号、DuckDB供给差异与Sema逐查询准备及256／64发送差异；不替代独立评价。
+- 追加复验第五组Sema路径因观测网关上游`ServerDisconnectedError`返回502而停止；28通过查询／11,816次模型成功回执及失败另存，没有自动重跑，独立评价未启动。
 
 ## 2026-10-10：整合分支分析与状态入口精简
 

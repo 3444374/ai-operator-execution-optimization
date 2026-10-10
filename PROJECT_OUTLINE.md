@@ -17,7 +17,10 @@
 [修复来源模型复核](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)
 保留旧负结果、全部重复与实际请求容量差异；工程修复不作为调度算法贡献，也不扩大为PG多Map或通用性能结论。
 [有限容量准备与首次停止](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
-已完成参数拆分和目标输入检查，筛查因运行包标签不一致停止，尚无有效容量测量或新性能结论。
+保留标签和组间进度写入两次停止；随后[有效筛查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-analysis)
+完成17配置、102查询／43,656次模型调用。相同C64下LOTUS接入完整查询中位数下降约23%，
+DuckDB接入增加约13%；Sema接入包含约4.34秒逐查询准备，原生与接入HTTP峰值256／64也不同。
+这些单Map、每配置三次测量只提供观察信号；候选复验随后因模型服务HTTP断连停止，独立评价尚未启动。
 逐次来源、质量、耗时、失败和恢复位置只从主报告、证据台账与[代码状态](code/INFRA_STATUS.md)引用。
 
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)

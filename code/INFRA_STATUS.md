@@ -3,6 +3,8 @@
 2026-10-10：[阶段复核与筛查继续执行](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 最新整合源码完成三条SemLoom实库阶段核对；已完成两配置的模型查询保留，进度写入修订后只执行剩余配置。
 此修订属于仓库外编排，不改执行实现；有效选点及200次整查询追加尚待筛查复核。
+后续复核已确认17配置全部完成、102查询／43,656次调用与模型计数一致；新有限流程已开始候选复验，成功后自动追加七路径各200次完整查询。
+复验随后在Sema路径因观测网关上游HTTP断连停止；28条通过查询保留，独立评价尚未开始，未自动重跑。
 
 2026-10-10：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 已提供公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray入口。
