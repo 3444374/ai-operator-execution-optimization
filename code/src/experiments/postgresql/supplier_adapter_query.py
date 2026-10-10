@@ -254,7 +254,7 @@ def replace_duckdb_inputs(connection,values,plan):
 
 @contextmanager
 def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library,*,connection=None,
-                 adapter_timings=False):
+                 adapter_timings=False,duckdb_offer_diagnostic='original'):
     from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
     token=model.bearer_token or 'EMPTY'
     if connection is None:
@@ -262,7 +262,9 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         replace_duckdb_inputs(connection,values,plan)
     if execution is not None:
         native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token),
-            **({'collect_timings':True} if adapter_timings else {}))
+            **({'collect_timings':True} if adapter_timings else {}),
+            **(dict(retry_offer_prefix=True,prepare_blocks=duckdb_offer_diagnostic=='prepared-blocks')
+               if duckdb_offer_diagnostic!='original' else {}))
         supplied_rows=0
         iterator_close_error=None
         def execute_batch(calls,cancelled):
@@ -309,6 +311,8 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         sql_threads=1,method_roles=['main'],request_cache=False,retry_count=0,
         caller_scope='complete body returned by native batch callback immediately before C++ response consumer',
         native_supply='current SQL vector only; SQL results wait for complete vector return')
+    if execution is not None:
+        identity['offer_diagnostic']=duckdb_offer_diagnostic
     try:
         yield execute,identity
     finally:
@@ -330,9 +334,12 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
                        preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
-                       adapter_timings=False):
+                       adapter_timings=False,duckdb_offer_diagnostic='original'):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
+    if (duckdb_offer_diagnostic not in ('original','validated-prefix','prepared-blocks')
+            or (duckdb_offer_diagnostic!='original' and not arm.startswith('duckdb-method-semloom'))):
+        raise ValueError('offer diagnostics require a DuckDB SemLoom path and a known mode')
     use_core='semloom' in arm
     local=arm.endswith('local-diagnostic')
     if use_core and physical is None and not local:
@@ -443,7 +450,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 execute,identity=stack.enter_context(_duckdb_rows(stack,arm,values,plan,routed,execution,
                     observations,options,duckdb_library,
                     connection=owner.duckdb_connection(values) if owner is not None else None,
-                    adapter_timings=adapter_timings))
+                    adapter_timings=adapter_timings,duckdb_offer_diagnostic=duckdb_offer_diagnostic))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity

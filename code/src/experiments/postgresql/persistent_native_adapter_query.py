@@ -132,7 +132,8 @@ class _ArmOwner:
             native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm=='fixed-map-native-ray'
                                     else 'not a native Ray Data graph'),
             request_service_scope=('per query HTTP/session; group Core/workers diagnostic' if sema is not None
-                                   else 'per query, including Sema service Core and workers' if self.arm.startswith('sema-')
+                                   else 'per query HTTP, Core and workers' if self.arm=='sema-method-semloom-request-service'
+                                   else 'per query HTTP service' if self.arm in ('sema-native-transparent','sema-bounded-forward-diagnostic')
                                    else 'no Sema request service'),
             native_http_client_scope='supplier owns its SDK/client lifecycle')
 
@@ -210,7 +211,7 @@ class PersistentAdapterGroup:
                  ray_temp_root=None, ray_address=None, query_timeout_s=120, owner_timeout_s=1800,
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
-                 sema_executor_scope='query'):
+                 sema_executor_scope='query',duckdb_offer_diagnostic='original'):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
@@ -233,6 +234,11 @@ class PersistentAdapterGroup:
         self.stages, self.tokenizer_path = stages, tokenizer_path
         self.duckdb_library, self.sema_binary = duckdb_library, sema_binary
         self.adapter_timings = adapter_timings
+        if (duckdb_offer_diagnostic not in ('original','validated-prefix','prepared-blocks')
+                or (duckdb_offer_diagnostic!='original'
+                    and any(not arm.startswith('duckdb-method-semloom') for arm in self.arms))):
+            raise ValueError('offer diagnostics require dedicated DuckDB SemLoom arms')
+        self.duckdb_offer_diagnostic = duckdb_offer_diagnostic
         self.stack = ExitStack()
         self._close_errors = CellErrors()
         self.owners, self.used_units = {}, set()
@@ -297,7 +303,7 @@ class PersistentAdapterGroup:
                     result = run_supplier_query(arm, **arguments, stages=self.stages,
                         tokenizer_path=self.tokenizer_path, duckdb_library=self.duckdb_library,
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
-                        adapter_timings=self.adapter_timings)
+                        adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic)
                 else:
                     result = run_prepared_map_query(arm, **arguments)
                 owner.queries += 1
@@ -373,6 +379,7 @@ def main(argv=None):
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
     parser.add_argument('--adapter-timings',action='store_true')
+    parser.add_argument('--duckdb-offer-diagnostic',choices=('original','validated-prefix','prepared-blocks'),default='original')
     parser.add_argument('--sema-executor-scope', choices=('query', 'group-diagnostic'), default='query',
                         help='optional group-owned Core/worker diagnosis; default retains per-query construction')
     for name in ('options','ray-physical','ray-temp-root','stages','tokenizer','duckdb-library','sema-binary'):
@@ -402,7 +409,7 @@ def main(argv=None):
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
             adapter_timings=args.adapter_timings,
-            sema_executor_scope=args.sema_executor_scope) as group:
+            sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic) as group:
         write_private_json(group.root/'schedule.json',schedule)
         for ordinal, item in enumerate(schedule):
             source = Path(item['input'])

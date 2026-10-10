@@ -71,6 +71,9 @@ DuckDB批回调在原生请求池之前分流，原池设置保持其64上限，
 `duckdb-method-semloom-local-diagnostic`复用相同SQL批回调、响应解释和公共Core，只将执行传输换成本地HTTP。
 常驻入口的可选`--adapter-timings`默认关闭，开启后保存最后一个SQL向量的推进与原生消费累计时间，
 字段及包含关系见[DuckDB局部说明](../../../integrations/duckdb_ai/README.md#可选推进与消费诊断)。
+`--duckdb-offer-diagnostic prepared-blocks`仅用于专属DuckDB接入诊断，默认`original`。
+它保留首个可见块、调用值及容量，减少已准备后缀的重复校验；未来非法任务信息可能更晚发现，
+且拒绝自定义工作描述回调，因此不作默认采用。`validated-prefix`另保留原错误发现顺序。
 实际库检查可选`SEMLOOM_ADAPTER_TIMINGS=1`；相同桥的本地与Daft／Ray比较仍须分别记录真实模型观察。
 
 <a id="ready-query-timing"></a>

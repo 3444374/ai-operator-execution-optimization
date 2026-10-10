@@ -280,6 +280,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
                     sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']),
                     adapter_timings=os.environ.get('SEMLOOM_ADAPTER_TIMINGS')=='1',
+                    duckdb_offer_diagnostic=os.environ.get('SEMLOOM_DUCKDB_OFFER_DIAGNOSTIC','original'),
                     sema_executor_scope=os.environ.get('SEMLOOM_SEMA_EXECUTOR_SCOPE', 'query')) as group:
                 for number,values in enumerate(inputs):
                     current_query='supplier-query-'+str(number)
