@@ -180,8 +180,7 @@ class SemaRequestService:
         # Use the existing private artifact writer for exclusive creation and permissions.
         self._trace_context = open_private_text(self.trace_path)
         self._trace_stream = self._trace_context.__enter__()
-        self._thread = threading.Thread(target=self._run, name='sema-request-service', daemon=True)
-        self._thread.start()
+        self._start_runtime()
         if not self._ready.wait(45) or self._startup_error is not None:
             primary = self._startup_error
             if primary is None:
@@ -201,20 +200,7 @@ class SemaRequestService:
             self.cancel()
         except BaseException as error:
             self._record_cleanup_error('cancel', error)
-        if (self._loop is not None and self._thread is not None and self._thread.is_alive()
-                and not self._loop.is_closed() and not self._cleanup_started.is_set()):
-            try:
-                self._loop.call_soon_threadsafe(self._loop.stop)
-            except BaseException as error:
-                self._record_cleanup_error('loop_stop', error)
-        if self._thread is not None:
-            try:
-                self._thread.join(self.limits.timeout_s + 5)
-            except BaseException as error:
-                self._record_cleanup_error('thread_wait', error)
-            if self._thread.is_alive():
-                self._record_cleanup_error('thread_wait',
-                    TimeoutError('Sema request service cleanup did not settle'))
+        self._stop_runtime()
         # Errors first observed while waiting for this exit were not already
         # reported to the caller. Select them once rather than re-read the flag
         # when deciding whether a cleanup failure should propagate.
@@ -256,14 +242,36 @@ class SemaRequestService:
                 })
             except BaseException as error:
                 self._record_cleanup_error('cleanup_write', error)
-        if ((self._thread is None or not self._thread.is_alive())
-                and self._listeners_remaining == 0):
+        if self._runtime_stopped() and self._listeners_remaining == 0:
             self._port = None
         failure = primary if primary is not None else self._cleanup_error
         if failure is not None and self.cleanup_errors:
             failure.add_note('Sema cleanup errors: ' + ','.join(self.cleanup_errors))
         if query_error is None and known_http_error is None and failure is not None:
             raise failure
+
+    def _start_runtime(self):
+        self._thread = threading.Thread(target=self._run, name='sema-request-service', daemon=True)
+        self._thread.start()
+
+    def _runtime_stopped(self):
+        return self._thread is None or not self._thread.is_alive()
+
+    def _stop_runtime(self):
+        if (self._loop is not None and self._thread is not None and self._thread.is_alive()
+                and not self._loop.is_closed() and not self._cleanup_started.is_set()):
+            try:
+                self._loop.call_soon_threadsafe(self._loop.stop)
+            except BaseException as error:
+                self._record_cleanup_error('loop_stop', error)
+        if self._thread is not None:
+            try:
+                self._thread.join(self.limits.timeout_s + 5)
+            except BaseException as error:
+                self._record_cleanup_error('thread_wait', error)
+            if self._thread.is_alive():
+                self._record_cleanup_error('thread_wait',
+                    TimeoutError('Sema request service cleanup did not settle'))
 
     async def _forward(self, body, headers, row, client):
         if self._halted.is_set():
@@ -334,11 +342,8 @@ class SemaRequestService:
         self._listeners_remaining = len(runner.sites)
         self._http_connections_remaining = 0 if runner.server is None else len(runner.server.connections)
 
-    def _run(self):
+    async def _initialize_http(self):
         from aiohttp import ClientSession, ClientTimeout, TCPConnector, web
-        loop = asyncio.new_event_loop()
-        self._loop = loop
-        asyncio.set_event_loop(loop)
         runner = client = None
 
         async def handle_request(request):
@@ -407,6 +412,7 @@ class SemaRequestService:
             client = ClientSession(connector=TCPConnector(limit=0),
                                    timeout=ClientTimeout(total=self.limits.timeout_s),
                                    auto_decompress=False, trust_env=False)
+            self._client = client
             await self._initialize_executor()
             app = web.Application(client_max_size=self.limits.request_bytes)
             app.router.add_post('/sema/{query_id}/v1/chat/completions', handle)
@@ -417,8 +423,39 @@ class SemaRequestService:
             await site.start()
             self._port = site._server.sockets[0].getsockname()[1]
 
+        await initialize()
+
+    async def _shutdown_http(self):
+        self._cleanup_started.set()
+        runner, client = self._runner, getattr(self, '_client', None)
+        if runner is not None:
+            try:
+                await self._close_http_runner(runner)
+            except BaseException as error:
+                self._record_cleanup_error('runner_cleanup', error)
+        else:
+            self._listeners_remaining = self._http_connections_remaining = 0
+        if not self._http_handlers:
+            try:
+                await self._close_executor()
+            except BaseException as error:
+                self._record_cleanup_error('executor_close', error)
+        else:
+            self._record_cleanup_error('executor_close',
+                RuntimeError('Sema HTTP response owners still hold execution results'))
+        if client is not None:
+            try:
+                await client.close()
+            except BaseException as error:
+                self._record_cleanup_error('client_close', error)
+
+    def _run(self):
+        loop = asyncio.new_event_loop()
+        self._loop = loop
+        asyncio.set_event_loop(loop)
+
         try:
-            loop.run_until_complete(initialize())
+            loop.run_until_complete(self._initialize_http())
             self._ready.set()
             loop.run_forever()
         except BaseException as error:
@@ -426,26 +463,7 @@ class SemaRequestService:
         finally:
             self._cleanup_started.set()
             self._ready.set()
-            if runner is not None:
-                try:
-                    loop.run_until_complete(self._close_http_runner(runner))
-                except BaseException as error:
-                    self._record_cleanup_error('runner_cleanup', error)
-            else:
-                self._listeners_remaining = self._http_connections_remaining = 0
-            if not self._http_handlers:
-                try:
-                    loop.run_until_complete(self._close_executor())
-                except BaseException as error:
-                    self._record_cleanup_error('executor_close', error)
-            else:
-                self._record_cleanup_error('executor_close',
-                    RuntimeError('Sema HTTP response owners still hold execution results'))
-            if client is not None:
-                try:
-                    loop.run_until_complete(client.close())
-                except BaseException as error:
-                    self._record_cleanup_error('client_close', error)
+            loop.run_until_complete(self._shutdown_http())
             if not self._http_handlers and self._http_connections_remaining == 0:
                 try:
                     loop.close()

@@ -1,16 +1,166 @@
 """Sema HTTP calls offered to the public task/session API and existing Daft/Ray transport."""
 
 import asyncio
-from dataclasses import replace
+from dataclasses import asdict, replace
 import json
+import threading
 import time
 
-from ...scheduling.core.session_contract import State
+from ...scheduling.core.session_contract import State, Usage
 from .full_response import MAX_RESPONSE_HEADER_BYTES, decode_full_response
 from .model_config import FixedModelConfig, MAX_MODEL_RESPONSE_BYTES
 from .native_tasks import NativeTaskSession, prepare_native_task
 from .ray_map_transport import RayMapConfig, ray_map_factory
 from .sema_service import SemaRequestService, _HOP_HEADERS, _Reply
+
+
+class SemaSemLoomExecutor:
+    """Optional sequential-query owner; Core and workers stay on one control thread."""
+
+    def __init__(self, *, model_config, physical, max_held_tasks, max_active_requests, observer=None):
+        if (type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig
+                or physical.payload_backend != 'daft'):
+            raise ValueError('Sema executor requires its fixed model and Daft/Ray configuration')
+        if (any(type(v) is not int or not 1 <= v <= 256 for v in (max_held_tasks, max_active_requests))
+                or max_active_requests > max_held_tasks or physical.batch_rows > max_active_requests):
+            raise ValueError('Sema executor capacities cannot fit the configured batch')
+        self.model_config, self.physical = model_config, replace(physical, response_mode='full')
+        self.max_held_tasks, self.max_active_requests = max_held_tasks, max_active_requests
+        self.observer = observer
+        self.execution = self._service = self._loop = self._thread = None
+        self._ready = threading.Event()
+        self._stop_requested = threading.Event()
+        self._startup_error = None
+        self._object_bytes = None
+        self._execution_closed = False
+        self.poisoned = False
+
+    def _before_request(self, task):
+        service = self._service
+        if service is None:
+            raise RuntimeError('Sema executor has no current query before model send')
+        service._before_request(task)
+
+    def _observe(self, event):
+        if 'object_bytes' in event:
+            self._object_bytes = event['object_bytes']
+        service = self._service
+        if service is not None:
+            if (service._session is not None and event.get('key') is not None
+                    and event['key']['session_id'] != service._session.session.session_id):
+                return
+            service._observe(event)
+        if self.observer is not None:
+            self.observer(event)
+
+    def _build_execution(self):
+        return ray_map_factory(self.physical, before_request=self._before_request)(
+            self.model_config, max_tasks=self.max_held_tasks,
+            max_active_requests=self.max_active_requests, observer=self._observe)
+
+    def _run(self):
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        try:
+            self.execution = self._build_execution()
+            self._ready.set()
+            if not self._stop_requested.is_set():
+                self._loop.run_forever()
+        except BaseException as error:
+            self._startup_error = error
+        finally:
+            if self._stop_requested.is_set() and self.execution is not None:
+                try:
+                    if not self.execution.close(self.execution.drain_timeout_s):
+                        raise RuntimeError('Sema executor startup cleanup did not settle')
+                    self._execution_closed = True
+                except BaseException as error:
+                    self._startup_error = self._startup_error or error
+            self._loop.close()
+            self._ready.set()
+
+    def __enter__(self):
+        if self._thread is not None:
+            raise RuntimeError('Sema executor owner cannot be restarted')
+        self._thread = threading.Thread(target=self._run, name='sema-executor-owner', daemon=True)
+        self._thread.start()
+        if not self._ready.wait(45) or self._startup_error is not None:
+            self.poisoned = True
+            self._stop_requested.set()
+            if self._loop is not None and not self._loop.is_closed():
+                self._loop.call_soon_threadsafe(self._loop.stop)
+            self._thread.join(5)
+            raise RuntimeError('Sema executor owner startup did not settle') from self._startup_error
+        return self
+
+    def _call(self, operation, timeout):
+        if self._thread is None or not self._thread.is_alive() or self._loop.is_closed():
+            operation.close()
+            raise RuntimeError('Sema executor owner is not running')
+        future = asyncio.run_coroutine_threadsafe(operation, self._loop)
+        try:
+            return future.result(timeout)
+        except BaseException:
+            self.poisoned = True
+            # Cancellation is not proof that a remote request or startup settled.
+            future.cancel()
+            raise
+
+    async def _start_service(self, service):
+        if self.poisoned or self._service is not None:
+            raise RuntimeError('Sema executor stopped or already has a query consumer')
+        self._service = service
+        await service._initialize_http()
+
+    async def _stop_service(self, service):
+        if self._service is not service:
+            return
+        await service._shutdown_http()
+        if (service.first_error is not None or service.cleanup_errors or not service._ended
+                or self.execution.engine.capacity.usage() != Usage()
+                or self.execution.engine.jobs.jobs or self._object_bytes not in (None, 0)):
+            self.poisoned = True
+        if (not service._http_handlers and service._listeners_remaining == 0
+                and service._http_connections_remaining == 0):
+            self._service = None
+
+    def _snapshot(self):
+        return dict(execution_id=None if self.execution is None else str(id(self.execution)),
+            core_usage=None if self.execution is None else asdict(self.execution.engine.capacity.usage()),
+            core_jobs=None if self.execution is None else len(self.execution.engine.jobs.jobs),
+            object_bytes=self._object_bytes, poisoned=self.poisoned,
+            control_thread_alive=self._thread is not None and self._thread.is_alive())
+
+    def snapshot(self):
+        async def read():
+            return self._snapshot()
+        if self._thread is None or not self._thread.is_alive():
+            return self._snapshot()
+        return self._call(read(), 5)
+
+    async def _close(self):
+        if (self._service is not None or self.execution.engine.capacity.usage() != Usage()
+                or self.execution.engine.jobs.jobs or self._object_bytes not in (None, 0)):
+            raise RuntimeError('Sema executor owner retains a query or unresolved work')
+        if not self.execution.close(self.execution.drain_timeout_s):
+            raise RuntimeError('Sema executor owner cleanup did not settle')
+        self._execution_closed = True
+
+    def __exit__(self, error_type, error, traceback):
+        try:
+            if not self._execution_closed:
+                self._call(self._close(), self.execution.drain_timeout_s + 5)
+            if not self._loop.is_closed():
+                self._loop.call_soon_threadsafe(self._loop.stop)
+            self._thread.join(5)
+            if self._thread.is_alive():
+                raise TimeoutError('Sema executor owner control thread did not stop')
+        except BaseException as cleanup:
+            self.poisoned = True
+            if error is not None:
+                error.add_note('Sema executor owner cleanup also failed: ' + type(cleanup).__name__)
+            else:
+                raise
 
 
 class SemaSemLoomService(SemaRequestService):
@@ -24,7 +174,7 @@ class SemaSemLoomService(SemaRequestService):
     mode = 'sema-method-semloom-request-service'
 
     def __init__(self, *, query_id, model_config, physical, limits, trace_path,
-                 max_held_tasks, max_active_requests, before_post=None):
+                 max_held_tasks, max_active_requests, before_post=None, executor_owner=None):
         if type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig:
             raise ValueError('Sema SemLoom service requires FixedModelConfig and RayMapConfig')
         if physical.payload_backend != 'daft':
@@ -41,6 +191,13 @@ class SemaSemLoomService(SemaRequestService):
                          limits=limits, trace_path=trace_path, before_post=before_post)
         self.model_config, self.physical = model_config, replace(physical, response_mode='full')
         self.max_held_tasks, self.max_active_requests = max_held_tasks, max_active_requests
+        if executor_owner is not None and (
+                not isinstance(executor_owner, SemaSemLoomExecutor)
+                or executor_owner.model_config != model_config or executor_owner.physical != self.physical
+                or (executor_owner.max_held_tasks, executor_owner.max_active_requests)
+                    != (max_held_tasks, max_active_requests)):
+            raise ValueError('Sema service differs from its reusable executor configuration')
+        self.executor_owner = executor_owner
         self._execution = self._session = self._pump_task = None
         self._pending = {}
         self._next_task = 0
@@ -54,6 +211,9 @@ class SemaSemLoomService(SemaRequestService):
                 'payload_backend': self.physical.payload_backend,
                 'response_mode': self.physical.response_mode,
                 'max_held_tasks': self.max_held_tasks, 'max_active_requests': self.max_active_requests,
+                'executor_scope': 'query' if self.executor_owner is None else 'persistent group diagnostic',
+                'io_thread_scope': 'query' if self.executor_owner is None else 'persistent executor owner',
+                'execution_id': None if self._execution is None else str(id(self._execution)),
                 'post_count_scope': 'one pre-send reservation per core task; remote receipt is separate',
                 'forward_clock_scope': 'Ray RPC entry, before remote HTTP worker execution',
                 'model_return_clock_scope': 'remote worker completion; unavailable without a shared clock',
@@ -70,6 +230,9 @@ class SemaSemLoomService(SemaRequestService):
         self._forwarded += 1
 
     def _observe(self, event):
+        if (self._session is not None and event.get('key') is not None
+                and event['key']['session_id'] != self._session.session.session_id):
+            return
         when = time.monotonic_ns()
         if self._loop is not None and not self._loop.is_closed():
             self._loop.call_soon_threadsafe(self._record_event, event, when)
@@ -96,9 +259,41 @@ class SemaSemLoomService(SemaRequestService):
 
     async def _initialize_executor(self):
         self._progress_changed = asyncio.Event()
-        self._execution = self._build_execution()
+        self._execution = (self._build_execution() if self.executor_owner is None
+                           else self.executor_owner.execution)
         self._session = NativeTaskSession(self._execution, self.query_id, 'sema-request-service')
         self._pump_task = asyncio.create_task(self._pump())
+
+    def _start_runtime(self):
+        if self.executor_owner is None:
+            return super()._start_runtime()
+        owner = self.executor_owner
+        self._loop, self._thread = owner._loop, owner._thread
+        try:
+            owner._call(owner._start_service(self), 45)
+        except BaseException as error:
+            self._startup_error = error
+        self._ready.set()
+
+    def _stop_runtime(self):
+        if self.executor_owner is None:
+            return super()._stop_runtime()
+        try:
+            self.executor_owner._call(self.executor_owner._stop_service(self), self.limits.timeout_s + 5)
+        except BaseException as error:
+            self._record_cleanup_error('executor_close', error)
+
+    def _runtime_stopped(self):
+        if self.executor_owner is None:
+            return super()._runtime_stopped()
+        return self._cleanup_started.is_set() and not self._http_handlers
+
+    def __exit__(self, *error):
+        try:
+            return super().__exit__(*error)
+        finally:
+            if self.executor_owner is not None and (self.first_error is not None or self.cleanup_errors):
+                self.executor_owner.poisoned = True
 
     def cancel(self):
         super().cancel()
@@ -198,7 +393,7 @@ class SemaSemLoomService(SemaRequestService):
             self._pump_task.cancel()
             await asyncio.gather(self._pump_task, return_exceptions=True)
         if self._session is None:
-            if self._execution is not None:
+            if self._execution is not None and self.executor_owner is None:
                 self._execution.close()
             return
         for entry in self._pending.values():
@@ -215,6 +410,6 @@ class SemaSemLoomService(SemaRequestService):
         while self._execution.engine.capacity.records and time.monotonic() < deadline:
             self._execution.engine.advance()
             await asyncio.sleep(self._session.limits.poll_interval_s)
-        if (self._execution.engine.capacity.records or self._execution.engine.jobs.jobs
-                or not self._execution.close()):
+        if (self._execution.engine.capacity.usage() != Usage() or self._execution.engine.jobs.jobs
+                or (self.executor_owner is None and not self._execution.close())):
             raise RuntimeError('Sema SemLoom execution cleanup has unresolved work')

@@ -42,7 +42,11 @@ Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端�
 每查询创建独立消费流、观察与累计账本单元，关流后核对资源归还；源输入和当前formatter／图／首批物化不从查询计时中移出。
 实际API提交仍归原`ready-timing.json`；新的`persistent-query.json`另记当前输入读取前的release、EOF及原摘要SHA-256。
 固定Map三条与LOTUS原生／本地诊断／Daft＋Ray三条通过实际库重复fixture；启动另列，当前原生Ray仍每图创建自身actor。
-单arm独立集群与共享部署的实际Ray额度分别保存；Sema作者进程可保留，服务Core因控制线程不同仍按查询创建。
+单arm独立集群与共享部署的实际Ray额度分别保存；Sema作者进程可保留，默认服务Core仍按查询创建。
+Sema 可显式选择 `sema_executor_scope=group-diagnostic`：专属固定线程持有同一 Core／worker，
+当前查询借用执行器并拥有独立 `NativeTaskSession`、HTTP 入口、响应 lease 和观察；组退出才关闭执行器。
+连续查询的输入、前发送回调、session 身份与结果分别核对；取消、错误或资源未归还后停止后续借用。
+CPU／替身查询和退出检查已通过，实际 Daft／Ray 对象释放与真实模型耗时仍需单独验证，默认保持 `query`。
 DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema进程更换URL检查；
 同连接／作者进程复用、输入替换和当前结果关联分别核对，后置Core按查询创建的事实保留。
 两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。
@@ -53,7 +57,7 @@ LOTUS额外记录完整SDK响应列表返回时刻，先于观察序列化与原
 供应商release、producer退出和Sema服务关闭的第一错误分别处理；最终同一源码的真实库回归与八路径输入替换见[共同检查](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-final-source)。
 DuckDB现有identity／summary在退出时同时保存bridge与内层executor的清理字段和关闭报告；观察与iterator退出连续失败仍保持原观察错误。模型与最新CPU来源分别见[同题模型记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)。
 单查询和常驻CLI新增可选持有任务数与Sema作者线程参数，活动请求数仍取原生options的concurrency。
-两项省略时保持原装配；H128下输入与结果额度各128MiB，当前Sema Core／worker仍逐查询创建。
+两项省略时保持原装配；H128下输入与结果额度各128MiB，Sema Core／worker 的默认作用范围仍为单查询。
 DuckDB批回调在原生请求池之前分流，原池设置保持其64上限，SemLoom请求数单独装配。
 [准备记录](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)保存实际配置与无模型检查。
 

@@ -3,6 +3,7 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import Counter
+from dataclasses import replace
 import json
 from pathlib import Path
 import tempfile
@@ -242,6 +243,136 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
             SemaSemLoomService(query_id='q', model_config=config,
                 physical=RayMapConfig('127.0.0.1:16379', 1, 1, 2**21, 2**23, payload_backend='arrow'),
                 limits=self.limits, trace_path=self.root / 'invalid.jsonl', max_held_tasks=2, max_active_requests=1)
+
+
+class SemaResidentExecutorTests(unittest.TestCase):
+    def setUp(self):
+        service_tests.SemaServiceTests.setUp(self)
+        self.physical = RayMapConfig('127.0.0.1:16379', 1, 1, 2**21, 2**23)
+    stop_model = service_tests.SemaServiceTests.stop_model
+    post = service_tests.SemaServiceTests.post
+
+    def owner(self):
+        return sema_semloom.SemaSemLoomExecutor(
+            model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
+            physical=self.physical, max_held_tasks=4, max_active_requests=2)
+
+    def query_service(self, owner, name):
+        return SemaSemLoomService(query_id=name, model_config=owner.model_config, physical=self.physical,
+            limits=self.limits, trace_path=self.root / (name + '.jsonl'),
+            max_held_tasks=4, max_active_requests=2, executor_owner=owner)
+
+    def test_two_query_sessions_reuse_one_executor_and_keep_hooks_and_results_separate(self):
+        builds = []
+
+        def build(owner):
+            builds.append(threading.get_ident())
+            return _public_core_diagnostic(owner)
+
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', build):
+            with sema_semloom.SemaSemLoomExecutor(
+                    model_config=FixedModelConfig(self.url, 'fixture-model', 2000),
+                    physical=self.physical, max_held_tasks=4, max_active_requests=2) as owner:
+                identities, charged, session_ids = [], [], []
+                for number, count in enumerate((2, 3)):
+                    calls = []
+                    service = SemaSemLoomService(query_id='query-' + str(number),
+                        model_config=owner.model_config, physical=self.physical,
+                        limits=self.limits, trace_path=self.root / ('q' + str(number) + '.jsonl'),
+                        max_held_tasks=4, max_active_requests=2, before_post=calls.append,
+                        executor_owner=owner)
+                    with service:
+                        identities.append(id(service._execution))
+                        session_ids.append(service._session.session.session_id)
+                        if number:
+                            owner._observe(dict(event='ray_http_completed',
+                                                key=dict(session_id=session_ids[0], sequence=0)))
+                        for i in range(count):
+                            body = self.payload.replace(b'same', ('q' + str(number) + '-' + str(i)).encode())
+                            self.assertEqual(self.post(service.endpoint_url, body)[0], 200)
+                        service.end_input()
+                    charged.append(calls)
+                    self.assertEqual(service.summary['forwarded_posts'], count)
+                    self.assertEqual(service.cleanup_errors, [])
+                    self.assertTrue(owner._thread.is_alive())
+                    self.assertEqual(owner.snapshot()['core_jobs'], 0)
+                    self.assertFalse(owner.execution.engine.capacity.records)
+                    rows = [json.loads(line) for line in service.trace_path.read_text().splitlines()]
+                    self.assertEqual({row['query_id'] for row in rows}, {service.query_id})
+                    self.assertEqual([row['core_task_sequence'] for row in rows], list(range(count)))
+                    self.assertIn('submitted', [event['event'] for event in service.summary['core_events']])
+                self.assertEqual(len(set(identities)), 1)
+                self.assertEqual(len(builds), 1)
+                self.assertEqual(len(set(session_ids)), 2)
+                self.assertEqual([len(calls) for calls in charged], [2, 3])
+        self.assertFalse(owner._thread.is_alive())
+        self.assertTrue(owner._loop.is_closed())
+        self.assertEqual(len(self.server.calls), 5)
+
+    def test_cancelled_query_drains_before_owner_rejects_another_query(self):
+        self.server.gate = threading.Event()
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', _public_core_diagnostic):
+            with self.owner() as owner:
+                with self.query_service(owner, 'cancelled') as service:
+                    with ThreadPoolExecutor(max_workers=1) as callers:
+                        future = callers.submit(self.post, service.endpoint_url)
+                        self.assertTrue(self.server.received.wait(1))
+                        service.cancel()
+                        self.server.gate.set()
+                        self.assertEqual(future.result()[0], 502)
+                self.assertTrue(owner.poisoned)
+                self.assertEqual(owner.snapshot()['core_jobs'], 0)
+                self.assertFalse(owner.execution.engine.capacity.records)
+                with self.assertRaisesRegex(RuntimeError, 'startup failed'):
+                    with self.query_service(owner, 'later'):
+                        self.fail('cancelled owner accepted a new query')
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertFalse(owner._thread.is_alive())
+
+    def test_owner_close_failure_retains_executor_and_keeps_original_error(self):
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', _public_core_diagnostic):
+            owner = self.owner().__enter__()
+            original = owner.execution
+            try:
+                with self.query_service(owner, 'completed') as service:
+                    self.assertEqual(self.post(service.endpoint_url)[0], 200)
+                    service.end_input()
+                owner.execution = replace(original, close=lambda _timeout: False)
+                primary = ValueError('fixture query error')
+                owner.__exit__(ValueError, primary, None)
+                self.assertTrue(owner._thread.is_alive())
+                self.assertTrue(owner.poisoned)
+                self.assertIn('Sema executor owner cleanup also failed: RuntimeError', primary.__notes__)
+            finally:
+                owner.execution = original
+                owner.__exit__(None, None, None)
+        self.assertFalse(owner._thread.is_alive())
+
+    def test_startup_failure_does_not_leave_an_owner_control_thread(self):
+        failure = ValueError('fixture executor startup')
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', side_effect=failure):
+            owner = self.owner()
+            with self.assertRaisesRegex(RuntimeError, 'startup did not settle') as observed:
+                owner.__enter__()
+            self.assertIs(observed.exception.__cause__, failure)
+            owner._thread.join(1)
+            self.assertFalse(owner._thread.is_alive())
+            self.assertTrue(owner._loop.is_closed())
+        self.assertFalse(self.server.calls)
+
+    def test_late_startup_after_timeout_closes_its_idle_executor(self):
+        def build(owner):
+            time.sleep(.03)
+            return _public_core_diagnostic(owner)
+        owner = self.owner()
+        with mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', build), \
+                mock.patch.object(owner._ready, 'wait', return_value=False):
+            with self.assertRaisesRegex(RuntimeError, 'startup did not settle'):
+                owner.__enter__()
+        self.assertTrue(owner._execution_closed)
+        self.assertFalse(owner._thread.is_alive())
+        self.assertTrue(owner._loop.is_closed())
+        self.assertFalse(self.server.calls)
 
 
 if __name__ == '__main__':
