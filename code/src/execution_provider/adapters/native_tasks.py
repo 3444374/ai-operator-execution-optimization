@@ -1,6 +1,7 @@
 """Native ready batches enter the existing Engine without a vendor request pool."""
 
 from dataclasses import replace
+import threading
 
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.session_contract import OfferedTask, SessionSpec, TaskInfo
@@ -43,6 +44,47 @@ def build_native_execution(config, *, physical: RayMapConfig | None, execute=Non
     return replace(execution, close=close)
 
 
+class NativeQueryJob:
+    """One caller-owned query grant, reused by sequential or declared operator flows."""
+
+    def __init__(self, execution, query_id, *, flow_count=1):
+        self.execution, self.query_id = execution, query_id
+        self.job, self.limits, self.budget = execution.open_query_job(query_id, flow_count)
+        self._cancelled = threading.Event()
+        self._closed = False
+        self.cleanup_errors = []
+
+    def open_session(self, operator_id):
+        if self._closed:
+            raise RuntimeError('native query Job is closed')
+        if self._cancelled.is_set():
+            raise InterruptedError('native query Job was cancelled')
+        return NativeTaskSession(self.execution, self.query_id, operator_id,
+                                 job=self.job, limits=self.limits, cancelled=self._cancelled.is_set)
+
+    def request_cancel(self):
+        self._cancelled.set()
+        self.execution.engine.wake.notify()
+
+    def close(self):
+        self.request_cancel()
+        if not self._closed:
+            self.execution.engine.close_job(self.job)
+            self._closed = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, error_type, error, traceback):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            self.cleanup_errors.append(dict(phase='close_job', type=type(cleanup).__name__))
+            if error is None:
+                raise
+            error.add_note('Native query Job cleanup also failed: ' + type(cleanup).__name__)
+
+
 class NativeTaskSession:
     """One query/operator flow; no extra task, result, or capacity queue.
 
@@ -52,10 +94,21 @@ class NativeTaskSession:
     The service owner retains the execution and reaps remote unknown work.
     """
 
-    def __init__(self, execution, query_id: str, operator_id: str):
+    def __init__(self, execution, query_id: str, operator_id: str, *, job=None, limits=None, cancelled=None):
         self.execution = execution
-        self.job, self.session, self.budget = execution.open_job(query_id,
-            SessionSpec(query_id, operator_id, "text-completion", work_unit=execution.work_unit))
+        self._owns_job = job is None
+        self._cancelled = cancelled
+        spec = SessionSpec(query_id, operator_id, "text-completion", work_unit=execution.work_unit)
+        if self._owns_job:
+            if limits is not None:
+                raise ValueError('native borrowed limits require an explicit query Job')
+            self.job, self.session, self.budget = execution.open_job(query_id, spec)
+        else:
+            self.budget = execution.engine.jobs.require(job, joining=True).budget
+            if limits is None or job.label != query_id:
+                raise ValueError('native borrowed session requires its query identity and limits')
+            self.job = job
+            self.session = execution.engine.open(spec, limits, job=job)
         self._closed = False
 
     @property
@@ -63,9 +116,13 @@ class NativeTaskSession:
         return self.session.limits
 
     def offer(self, tasks):
+        if self._cancelled is not None and self._cancelled():
+            self.session.request_cancel()
         return self.session.offer(tasks)
 
     def advance(self, max_deliveries=1):
+        if self._cancelled is not None and self._cancelled():
+            self.session.request_cancel()
         cleanup = self.execution.engine.advance()
         result = self.session.advance(max_deliveries)
         deadlines = [d for d in (cleanup.next_deadline, result.next_deadline) if d is not None]
@@ -92,8 +149,20 @@ class NativeTaskSession:
         self.session.request_cancel()
 
     def close(self, *, clean=False):
-        report = self.session.close_consumer(clean=clean)
-        if not self._closed:
-            self.execution.engine.close_job(self.job)
-            self._closed = True
+        error = None
+        try:
+            report = self.session.close_consumer(clean=clean)
+        except BaseException as failure:
+            error = failure
+        try:
+            if not self._closed:
+                if self._owns_job:
+                    self.execution.engine.close_job(self.job)
+                self._closed = True
+        except BaseException as cleanup:
+            if error is None:
+                raise
+            error.add_note('Native owned Job cleanup also failed: ' + type(cleanup).__name__)
+        if error is not None:
+            raise error
         return report

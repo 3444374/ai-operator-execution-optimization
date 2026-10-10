@@ -19,6 +19,15 @@ the same full response. No new method scheduler is introduced.
   flow. A service can share the same execution with multiple registered flows/Jobs using the
   existing grants and scheduling APIs; each owner must keep all core mutations on its owner
   thread. `request_cancel()` is the cross-thread cancellation signal.
+- `NativeQueryJob(execution, query_id, flow_count=1)` reuses the existing `open_query_job`
+  grant for a complete query. `open_session(operator_id)` borrows that Job and its limits;
+  closing a borrowed session preserves the query grant. Explicit `job` and `limits` arguments
+  offer the same borrowing through `NativeTaskSession`; its default remains the single-batch API.
+  The query owner ends its Job after all vector consumers stop. Cancellation rejects later
+  sessions and is observed by current offers/advances; other query Jobs remain independent.
+  Closing the Job retains unknown remote tasks and grants until the Core can settle them.
+  Query cleanup errors are recorded and do not replace an existing execution error.
+  Owned sessions request Job closure even if consumer cleanup fails, preserving the first error.
 - `offer(tuple_of_tasks)` transfers only `accepted_prefix_count` items. Sequences start at zero
   and increase only for accepted items. The caller keeps the suffix. A tuple exceeding
   `limits.offer_tasks`, or an invalid member anywhere, is rejected as a whole. Storage pressure

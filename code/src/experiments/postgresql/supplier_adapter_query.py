@@ -273,7 +273,10 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         connection=prepare_duckdb_connection(stack,plan,model,options,library,semloom_batch=execution is not None)
         replace_duckdb_inputs(connection,values,plan)
     if execution is not None:
+        from src.execution_provider.adapters.native_tasks import NativeQueryJob
+        query_job=stack.enter_context(NativeQueryJob(execution,observations.unit_id))
         native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token),
+            query_owner=query_job,
             **({'collect_timings':True} if adapter_timings else {}),
             **(dict(retry_offer_prefix=True,prepare_blocks=duckdb_offer_diagnostic=='prepared-blocks')
                if duckdb_offer_diagnostic!='original' else {}))
@@ -325,6 +328,8 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         native_supply='current SQL vector only; SQL results wait for complete vector return')
     if execution is not None:
         identity['offer_diagnostic']=duckdb_offer_diagnostic
+        identity['query_job']=dict(job_id=query_job.job.job_id,label=query_job.query_id,
+            scope='one SQL query Job; one borrowed session per native vector',cleanup_errors=query_job.cleanup_errors)
     try:
         yield execute,identity
     finally:
