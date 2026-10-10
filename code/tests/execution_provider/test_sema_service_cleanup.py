@@ -259,7 +259,8 @@ class SemaThreadedCleanupTests(unittest.TestCase):
                     if query_error: raise query_error
                     service.end_input()
         self.assertIs(caught.exception, query_error or failure)
-        self.assertEqual([r[0] for r in events], ['runner', 'executor', 'client'])
+        self.assertEqual([r[0] for r in events], ['runner', 'executor'])
+        self.assertIsNone(service._client)
         self.assertEqual({r[1] for r in events}, {service._thread.ident})
         self.assertFalse(service._thread.is_alive())
         self.assertTrue(service._loop.is_closed())

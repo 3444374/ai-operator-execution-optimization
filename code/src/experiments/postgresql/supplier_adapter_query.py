@@ -347,9 +347,8 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
     if (not use_core or local) and physical is not None:
         raise ValueError('Ray Map physical options belong to SemLoom only')
     if physical is not None and (physical.window_bytes < MAX_FRAME_BYTES+24
-            or physical.payload_backend != 'daft'
             or max(physical.workers,physical.batch_rows) > options.concurrency):
-        raise ValueError('supplier SemLoom arm requires declared Daft batches fitting a complete legal task')
+        raise ValueError('supplier SemLoom arm requires declared payload batches fitting a complete legal task')
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
     held_tasks,native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)

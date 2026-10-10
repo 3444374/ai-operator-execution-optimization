@@ -46,7 +46,9 @@ Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端�
 Sema 可显式选择 `sema_executor_scope=group-diagnostic`：专属固定线程持有同一 Core／worker，
 当前查询借用执行器并拥有独立 `NativeTaskSession`、HTTP 入口、响应 lease 和观察；组退出才关闭执行器。
 连续查询的输入、前发送回调、session 身份与结果分别核对；取消、错误或资源未归还后停止后续借用。
-CPU／替身查询和退出检查已通过，实际 Daft／Ray 对象释放与真实模型耗时仍需单独验证，默认保持 `query`。
+CPU／替身、实际Daft／Ray对象归还及有限模型查询检查已通过，默认保持 `query`；逐次成本见[分层诊断](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)。
+现有Ray物理配置的 `payload_backend` 默认仍为 `daft`，供应商及固定调用入口也可显式使用 `arrow` 直接分批。
+该选择不重写方法或任务次序；运行身份分别写Daft／Ray或Arrow／Ray，不能合并为同一配置的重复样本。
 `SemaRequestService` 可选 `upstream_concurrency` 只配置原 aiohttp 连接器的总连接／单主机额度；
 默认 `0` 保持原透明转发，非零用于简单有界转发诊断。连接等待另记起止，停止后拒绝等待请求取得新连接，
 完整正文、响应、取消和首错记录保持；这是后置服务控制，不能代表作者原生请求池。

@@ -2,7 +2,13 @@
 
 [HTTP空闲连接复现与修订](postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)：
 原网关第二次POST可复现502／`ServerDisconnectedError`；查询间更换池、查询内复用、连接事件及不重试检查通过。
-18项网关和17项常驻入口通过，3项实际库待指定依赖；真实模型连续查询尚待运行，原追加失败不改记账。
+18项网关和17项常驻入口通过，3项实际库待指定依赖；后续原机器8查询／3,592次模型调用通过，原追加失败不改记账。
+[分层成本诊断](postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)在`986e61e5`完成10配置／60查询／25,680次真实调用，
+21组正文摘要集合一致；三次查询原值、阶段和质量见紧凑观测。Sema组级复用完整查询下降约30%，C64仍慢于简单转发；
+DuckDB真实接纳成本与独立CPU重复校验profile分开解释；`08523a20`的可选准备块及Sema C128另通过12查询／5,136次调用。
+两次诊断共27组正文摘要核对，12配置／72查询／30,816次成功调用；可选改善仍未超过原生，默认保持。
+[接入工程检查](postgresql/native_adapter_integration_20261009/README.md#adapter-engineering-audit)核对原生接点、物理选择和重复工作；
+Sema局部修订及Arrow显式配置的89项本地检查通过；目标机器四配置／12查询／576次模拟HTTP调用通过，退出无残留，真实模型原值不据此改写。
 
 2026-10-10：[阶段复核与容量筛查继续执行](postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 来源`00623f6e`的三条实库替身确认准备、传输与返回事件；两配置12查询／5,136次模型调用完成后，编排进度写入报错停止。

@@ -752,5 +752,79 @@
         "compressed_sha256": "9806f7ba7d8df73918e4381141720f7a8fb9d64390652544ee620716a3a13565"
       }
     }
+  },
+  "adapter_cost_diagnosis": {
+    "schema": "semloom.adapter_cost_diagnosis.v1",
+    "storage": {
+      "path": "adapter-cost-diagnosis.json.gz",
+      "uncompressed_bytes": 135068,
+      "uncompressed_sha256": "241d0c702e647308d5686bc8ab2c0b020a75d017c5d094da559926775775305f",
+      "compressed_bytes": 15704,
+      "compressed_sha256": "892b29fd35ca1f428eb75fd4811639e8394f3cf2ab8c35198eec5c8502407af1"
+    },
+    "model_runs": [
+      {
+        "run_id": "native-adapter-http-repair-07",
+        "source_commit": "649b538650afb84618e6b702e792cd88caf9a0d2",
+        "queries": 8,
+        "real_model_posts": 3592
+      },
+      {
+        "run_id": "native-adapter-cost-diagnosis-09",
+        "source_commit": "986e61e5e372a22050de614d50a6a0ac065bbfa5",
+        "queries": 60,
+        "real_model_posts": 25680
+      },
+      {
+        "run_id": "native-adapter-cost-followup-10",
+        "source_commit": "08523a20afcc96c869ef6a90e0d72a626b520301",
+        "queries": 12,
+        "real_model_posts": 5136
+      }
+    ],
+    "actual_library_arrow": {
+      "configs": 4,
+      "queries": 12,
+      "fixture_posts": 576,
+      "real_model_posts": 0,
+      "source_overlay_sha256": "a6431c25718c3cdd963b81b90d3cb7dbf2c249d96a1f9eee87d600d17c10e19c"
+    },
+    "private_archives": {
+      "cost09": {
+        "bytes": 32653165,
+        "local_backup_verified": true,
+        "members": 1043,
+        "sha256": "a99c70d69132913c6a251ff77755eaa10b1471318e108f87206ffe72774a30aa"
+      },
+      "cost10": {
+        "bytes": 8160414,
+        "local_backup_verified": true,
+        "members": 236,
+        "sha256": "b5780612d4343506ad48f0c980001a74725e254b8c67de3ba9b5eaa6a7a1b543"
+      },
+      "original_tail_failure": {
+        "bytes": 15563314,
+        "local_backup_verified": true,
+        "members": 520,
+        "sha256": "4791917e8e4c886874542b68e739f1dedca14495296e6f92ee49606acacf6a81",
+        "unconfirmed_model_attempts": 1
+      },
+      "engineering11": {
+        "bytes": 3820395,
+        "sha256": "df66a66142b9b3bd328f7d38bec0ce77d09e3d6afa332ad07f33e5af6cfd82ba",
+        "members": 1632,
+        "local_backup_verified": true,
+        "regular_files": 1446,
+        "directories": 186
+      },
+      "http_repair": {
+        "bytes": 5447282,
+        "local_backup_verified": true,
+        "members": 174,
+        "sha256": "ab255744bec35cb60fc69fcfcd1864bfa2e8bd7d51d3e0ee2017c825a32479ff"
+      }
+    },
+    "original_unconfirmed_model_attempts_retained": 1,
+    "formal_200_query_evaluation_resumed": false
   }
 }

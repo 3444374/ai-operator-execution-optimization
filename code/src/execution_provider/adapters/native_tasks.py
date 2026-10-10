@@ -24,7 +24,7 @@ def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, cal
 
 
 def build_native_execution(config, *, physical: RayMapConfig | None, execute=None, **options):
-    """Use Daft/Ray for the main path; physical=None explicitly selects a local diagnostic."""
+    """Use the declared Ray payload backend; physical=None selects a local diagnostic."""
     if physical is None:
         execution = build_fixed_model_execution(config, execute=execute,
             transport_factory=None if execute else FullResponseTransport, **options)

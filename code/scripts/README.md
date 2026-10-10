@@ -71,6 +71,8 @@ PYTHONPATH=code python3 code/scripts/baselines/run_persistent_native_adapter_que
 ```
 
 `lotus-method-semloom-local-diagnostic`使用同一个Core和本地完整响应传输，`physical=None`，没有Daft／Ray。
+供应商及固定Map的 `--ray-physical` 复用既有 `payload_backend` 字段：默认 `daft`，显式 `arrow` 直接分批并使用相同Ray传输。
+两种物理选择分别记录运行身份，不改提示、解析、请求内容或容量；当前模型耗时仍以实际来源和配置为准。
 Ray集群、SemLoom执行实例及LOTUS LM跨查询保留；当前查询的输入读取、格式化、图构建、物化和消费继续计时。
 每查询独立归还结果／任务流和账本单元，首次错误停止后续查询；最终owner统一关闭组件。
 `startup.json`记录启动，`query-<序号>/persistent-query.json`分别给出release、实际提交和EOF，

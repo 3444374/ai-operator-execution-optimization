@@ -23,6 +23,12 @@ DuckDB接入增加约13%；Sema接入包含约4.34秒逐查询准备，原生与
 这些单Map、每配置三次测量只提供观察信号；候选复验随后因模型服务HTTP断连停止，独立评价尚未启动。
 逐次来源、质量、耗时、失败和恢复位置只从主报告、证据台账与[代码状态](code/INFRA_STATUS.md)引用。
 
+[适配成本诊断](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)
+完成HTTP修订后的8查询／3,592次调用，以及12配置／72查询／30,816次模型调用。
+Sema组级复用消除主要重复准备，C64仍慢于简单有界转发；DuckDB反压接纳的重复校验已定位。
+准备块及常驻C128分别改善约9.9%／7.4%，仍慢于原生；来源与逐次结果独立保存。
+默认执行及200次评价保持原状态；这些有限单Map记录不扩大为PG或通用调度结论。
+
 2026-10-08：[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)
 已完成PG本地HTTP、Sema、LOTUS Map、Daft prompt与DuckDB社区AI扩展的512行重复评价，
 以及PG／LOTUS原始Movie Q3和同后端三控制的模型工程检查。用户确认可运行后授权真实模型，

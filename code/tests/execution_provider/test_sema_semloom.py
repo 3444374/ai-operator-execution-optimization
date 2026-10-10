@@ -59,6 +59,22 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
         rows = [json.loads(line) for line in (self.root / 'requests.jsonl').read_text().splitlines()]
         self.assertEqual([r['core_task_sequence'] for r in rows[:2]], [0, 1])
 
+    def test_complete_response_decoded_once_without_a_forwarding_client(self):
+        with mock.patch('aiohttp.ClientSession',
+                        side_effect=AssertionError('SemLoom must use its execution transport')), \
+                mock.patch.object(sema_semloom, 'decode_full_response',
+                                  wraps=sema_semloom.decode_full_response) as decode:
+            with self.service() as service:
+                status, body, headers = self.post(service.endpoint_url)
+                self.assertEqual((status, body), (200, self.server.body))
+                self.assertEqual(headers['X-Sema-Fixture'], 'preserve')
+                service.end_input()
+        self.assertEqual(decode.call_count, 1)
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertEqual(service._pending, {})
+        self.assertEqual(service._execution.engine.capacity.records, {})
+        self.assertEqual(service.cleanup_errors, [])
+
     def test_capacity_waiting_uses_public_session_and_returns_all_results(self):
         self.server.gate = threading.Event()
         with self.service() as service:
@@ -234,15 +250,21 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
         self.assertEqual(Counter(r[1] for r in self.server.calls), Counter(bodies))
         self.assertEqual(service._execution.engine.capacity.records, {})
 
-    def test_main_path_requires_actual_ray_config_and_daft_payload_backend(self):
+    def test_main_path_requires_ray_config_and_allows_both_payload_backends(self):
         config = FixedModelConfig(self.url, 'fixture-model', 2000)
         with self.assertRaisesRegex(ValueError, 'RayMapConfig'):
             SemaSemLoomService(query_id='q', model_config=config, physical=None,
                 limits=self.limits, trace_path=self.root / 'invalid.jsonl', max_held_tasks=2, max_active_requests=1)
-        with self.assertRaisesRegex(ValueError, 'Daft payload'):
-            SemaSemLoomService(query_id='q', model_config=config,
-                physical=RayMapConfig('127.0.0.1:16379', 1, 1, 2**21, 2**23, payload_backend='arrow'),
-                limits=self.limits, trace_path=self.root / 'invalid.jsonl', max_held_tasks=2, max_active_requests=1)
+        for backend in ('daft', 'arrow'):
+            with self.subTest(backend=backend):
+                physical = replace(self.physical, payload_backend=backend)
+                owner = sema_semloom.SemaSemLoomExecutor(model_config=config, physical=physical,
+                    max_held_tasks=2, max_active_requests=1)
+                service = SemaSemLoomService(query_id='q', model_config=config, physical=physical,
+                    limits=self.limits, trace_path=self.root / 'selected.jsonl',
+                    max_held_tasks=2, max_active_requests=1, executor_owner=owner)
+                self.assertEqual(service.summary['payload_backend'], backend)
+                self.assertEqual(owner.physical.payload_backend, backend)
 
 
 class SemaResidentExecutorTests(unittest.TestCase):

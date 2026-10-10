@@ -2,7 +2,15 @@
 
 [查询间HTTP连接修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-http-pool-repair)
 由常驻查询所有者更换空闲上游池，查询内继续复用连接；活跃请求拒绝更换，连接事件与池代次可观测，失败POST不重试。
-本地故障复现及受影响常驻检查通过；原机器真实连续查询验证及DuckDB／Sema成本诊断待完成，200次评价保持停止。
+本地故障复现及受影响常驻检查通过，原机器8查询／3,592次真实连续调用通过；200次评价保持停止。
+[分层模型诊断](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)
+完成60查询／25,680次调用。Sema可选组级固定线程复用已检查输入、任务流、对象及退出，默认仍逐查询创建。
+DuckDB提供相同批接入的本地Core参照及默认关闭的推进／消费计时，反压后缀重复校验已定位；
+准备块及Sema常驻C128另完成12查询／5,136次调用；完整查询分别改善约9.9%／7.4%，仍慢于原生。
+默认执行保持；三个重复只提供观察信号，尚不据此宣布通用性能收益。
+[接入工程复核](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-engineering-audit)
+修订Sema未用客户端及双解码，开放既有Arrow／Ray显式选择；89项本地检查通过，目标环境四配置／12查询／576次模拟HTTP调用通过。
+公共静态校验复用、LOTUS重复准备与跨vector查询Job连续性尚未实现，不据单Map记录外推多查询调度。
 
 2026-10-10：[阶段复核与筛查继续执行](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-live)
 最新整合源码完成三条SemLoom实库阶段核对；已完成两配置的模型查询保留，进度写入修订后只执行剩余配置。

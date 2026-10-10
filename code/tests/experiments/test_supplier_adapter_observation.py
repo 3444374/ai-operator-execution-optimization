@@ -99,8 +99,8 @@ class SupplierObservationTests(unittest.TestCase):
             self.assertIn('query',summary['errors'])
 
     def test_duckdb_failure_summary_keeps_inner_and_outer_diagnostics_and_observation_first_error(self):
-        for observation_failure in (False,True):
-            with self.subTest(observation_failure=observation_failure), tempfile.TemporaryDirectory() as directory:
+        for observation_failure,backend in ((False,'daft'),(True,'daft'),(False,'arrow')):
+            with self.subTest(observation_failure=observation_failure,backend=backend), tempfile.TemporaryDirectory() as directory:
                 primary=ValueError('observation failed' if observation_failure else 'decode failed')
                 cleanup=RuntimeError('iterator close failed')
                 report=CloseReport('closed',0,Usage(),None)
@@ -144,7 +144,7 @@ class SupplierObservationTests(unittest.TestCase):
                             raise
                         raise AssertionError('controlled failure must stop SQL')
                 connection=Connection()
-                physical=SimpleNamespace(window_bytes=2**21+24,payload_backend='daft',workers=2,batch_rows=2)
+                physical=SimpleNamespace(window_bytes=2**21+24,payload_backend=backend,workers=2,batch_rows=2)
                 model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions','fixture',1000)
                 owner=SimpleNamespace(physical=physical,group=SimpleNamespace(runtime={}),model=model,
                     execution=object(),query=lambda *args:nullcontext(),duckdb_connection=lambda values:connection)

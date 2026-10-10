@@ -66,6 +66,7 @@ class SemaRequestService:
     """
 
     mode = 'transparent'
+    _uses_upstream_client = True
 
     def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None, upstream_concurrency=0):
         if not isinstance(query_id, str) or not query_id or len(query_id.encode()) > 128:
@@ -371,7 +372,7 @@ class SemaRequestService:
         self._http_connections_remaining = 0 if runner.server is None else len(runner.server.connections)
 
     async def _initialize_http(self):
-        from aiohttp import ClientSession, ClientTimeout, TCPConnector, web
+        from aiohttp import web
         runner = client = None
 
         async def handle_request(request):
@@ -437,11 +438,13 @@ class SemaRequestService:
 
         async def initialize():
             nonlocal client, runner
-            client = ClientSession(connector=TCPConnector(limit=self.upstream_concurrency,
-                                                         limit_per_host=self.upstream_concurrency),
-                                   timeout=ClientTimeout(total=self.limits.timeout_s),
-                                   auto_decompress=False, trust_env=False,
-                                   trace_configs=self._connection_traces())
+            if self._uses_upstream_client:
+                from aiohttp import ClientSession, ClientTimeout, TCPConnector
+                client = ClientSession(connector=TCPConnector(limit=self.upstream_concurrency,
+                                                             limit_per_host=self.upstream_concurrency),
+                                       timeout=ClientTimeout(total=self.limits.timeout_s),
+                                       auto_decompress=False, trust_env=False,
+                                       trace_configs=self._connection_traces())
             self._client = client
             await self._initialize_executor()
             app = web.Application(client_max_size=self.limits.request_bytes)

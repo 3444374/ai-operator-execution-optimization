@@ -68,3 +68,35 @@ assert len(analysis['queries']) == 39
 assert sum(row['actual_posts'] for row in analysis['queries']) == 384
 print(f'{len(fixture)} fixture members and {len(model)} model members verified; '
       '8 fixture and 27 model call timelines, 13 query distributions, 39 queries / 384 POST replayed')
+
+if 'adapter_cost_diagnosis' in verification:
+    storage = verification['adapter_cost_diagnosis']['storage']
+    compressed = (ROOT / storage['path']).read_bytes()
+    assert len(compressed) == storage['compressed_bytes']
+    assert hashlib.sha256(compressed).hexdigest() == storage['compressed_sha256']
+    raw = gzip.decompress(compressed)
+    assert len(raw) == storage['uncompressed_bytes']
+    assert hashlib.sha256(raw).hexdigest() == storage['uncompressed_sha256']
+    diagnostic = json.loads(raw)
+    runs = [diagnostic[name] for name in ('http_repair', 'cost_diagnosis', 'cost_followup')]
+    assert all(run['status'] == 'passed' for run in runs)
+    assert sum(run['queries'] for run in runs) == 80
+    assert sum(run['real_model_posts'] for run in runs) == 34408
+    records = diagnostic['cost_diagnosis']['records'] + diagnostic['cost_followup']['records']
+    assert len(records) == 12
+    for record in records:
+        samples = record['samples']
+        assert len(samples) == 3 and record['http']['count'] == 1536
+        values = sorted(sample['full_seconds'] for sample in samples)
+        assert record['full']['median'] == values[1]
+        assert record['full']['p99'] == record['full']['p99_99'] == values[-1]
+        assert record['http']['p99_99'] == record['http']['maximum']
+    comparisons = diagnostic['cost_diagnosis']['body_comparisons'] + diagnostic['cost_followup']['body_comparisons']
+    assert len(comparisons) == 27 and all(item['complete_http_body_multiset_equal'] for item in comparisons)
+    engineering = diagnostic['engineering_audit']
+    assert engineering['status'] == 'passed' and engineering['real_model_posts'] == 0
+    assert sum(item['queries'] for item in engineering['records']) == 12
+    assert sum(item['fixture_posts'] for item in engineering['records']) == 576
+    assert all(item['local_backup_verified'] for item in diagnostic['preservation'].values())
+    print('Compact observation hashes and all 36 cost samples verified; '
+          '80 real queries / 34408 POST and 12 Arrow fixture queries / 576 POST; private originals retained')

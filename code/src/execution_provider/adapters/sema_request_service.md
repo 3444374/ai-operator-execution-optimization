@@ -3,6 +3,7 @@
 本切片服务于 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 Sema 仍拥有 SQL、数据供给、提示、联合提示、原生请求池、限速、解析和结果行关联；接点是 `llm_url` 后的服务。
 实现状态与模型观察由[整合报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)记录；本文说明接口、观测和退出处理。
+[最新成本诊断](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)已检查组级复用的实际资源与有限模型样本。
 [修复来源的有限模型观察](https://github.com/3444374/ai-operator-execution-optimization/blob/e8051fef151f00349581b8521d1709fb89a54612/experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)属于其实际整合源码和配置，不能据此认定同容量性能或原生请求池前观测已验证。
 
 ## 作者产物与采用决定
@@ -32,7 +33,8 @@ Sema 仍拥有 SQL、数据供给、提示、联合提示、原生请求池、�
 | `sema-method-semloom-request-service` | `SemaSemLoomService`，公共任务接口、现有核心、Daft 数据准备及 Ray HTTP worker |
 
 [sema_service.py](sema_service.py)复用[原有 CLI 生命周期](../../baselines/text/products/sema.py)：先导入并核对 CSV，再提交同一 SELECT，读完 SQL 结果及完成标记。
-[sema_semloom.py](sema_semloom.py)复用 `prepare_native_task`、`NativeTaskSession`、`decode_full_response` 和 `ray_map_factory`；数据准备选择 `daft`，响应模式为 `full`，不另建方法驱动或调度核心。
+[sema_semloom.py](sema_semloom.py)复用 `prepare_native_task`、`NativeTaskSession`、`decode_full_response` 和 `ray_map_factory`；数据准备默认 `daft`，可显式选择既有 `arrow` 直接分批，响应模式为 `full`，不另建方法驱动或调度核心。
+SemLoom分支不创建透明转发的HTTP客户端；完成响应只解码一次，原始编码结果仍由Core持有到HTTP写出完成后归还。
 执行核心 Core 在服务输入输出（I/O）线程上建立和操作，跨线程取消使用公共信号；持有任务数 `max_held_tasks` 与活动请求数 `max_active_requests` 分别传入现有核心。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
 HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
@@ -59,7 +61,8 @@ HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请
 同一时钟下可直接计算对应区间；时钟不同只使用各自内部耗时及本地接收时刻，不跨机器相减。
 RPC 至本地接收包含 Ray 等待、worker 执行及返回；worker 区间嵌套其中，准备阶段也可能重叠，不能相加或从完整查询时间扣除。
 作者线程数、Core 活动额度、实际 HTTP 在途与模型服务执行序列分别记录。
-Sema 作者 SQL 进程可以跨查询复用，但当前 Core 和 actor 仍逐查询创建；这些准备进入释放至结果消费结束（EOF）的完整时间，实际 SELECT 提交至读完结果另记。
+Sema 作者 SQL 进程可以跨查询复用，默认 Core 和 actor 逐查询创建；可选 `group-diagnostic` 在同一控制线程复用设施，任务流、HTTP入口、错误和观察逐查询独立。
+查询期间的准备进入释放至结果消费结束（EOF）的完整时间，组级初始化另列，实际 SELECT 提交至读完结果直接记录。
 观察包含回调、JSON 和持久记录开销；当前模型观察未采集这些函数的独立 CPU 时间，不能用 CPU fixture 数值扣出虚拟完整查询时间（JCT）。
 
 [作者 README](https://github.com/BITQiKangK/SemaSystem/blob/3f2c7182bdaa26c1e8925f486585da25337e687e/README.md)提供 trace 日志及 `EXPLAIN ANALYZE` 的 token／profile 入口，但没有逐调用池前就绪与行对应的公开字段定义。
@@ -73,7 +76,7 @@ Sema 作者 SQL 进程可以跨查询复用，但当前 Core 和 actor 仍逐查
 每份请求仅在选定发送前位置登记一次；`forwarded_posts` 是发送前预留，实际模型接收需独立收据核对。
 已经发送或未知的远端工作继续由原核心回收；完成响应的租用留到 HTTP 写入结束，调用者离开后的迟到结果也须归还。
 
-退出依次尝试 HTTP runner、Core、HTTP client 和事件循环；任一步报错仍处理后续动作，保留首次异常及每项动作／类型／单调时刻。
+退出依次尝试 HTTP runner、Core、实际创建的 HTTP client 和事件循环；任一步报错仍处理后续动作，保留首次异常及每项动作／类型／单调时刻。
 runner 清理报错时使用 [aiohttp 公开接口](https://docs.aiohttp.org/en/stable/web_reference.html#aiohttp.web.BaseRunner)停止剩余 site 和连接；响应持有者未退出则保留 Core 和循环，监听停止不能确认则保留 runner、端口并报告未完成。
 取消或线程等待超时继续记录实际线程与循环状态；线程结束不替代监听停止证明。
 已有查询或 HTTP 首错继续作为主要原因；退出期间才初次到达的 HTTP 首错补充传播，此前已报告的首错保持原处理；没有主要错误时传播首次清理异常。

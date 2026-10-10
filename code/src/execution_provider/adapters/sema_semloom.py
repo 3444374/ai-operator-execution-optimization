@@ -1,4 +1,4 @@
-"""Sema HTTP calls offered to the public task/session API and existing Daft/Ray transport."""
+"""Sema HTTP calls offered to the public task/session API and existing Ray transport."""
 
 import asyncio
 from dataclasses import asdict, replace
@@ -18,9 +18,8 @@ class SemaSemLoomExecutor:
     """Optional sequential-query owner; Core and workers stay on one control thread."""
 
     def __init__(self, *, model_config, physical, max_held_tasks, max_active_requests, observer=None):
-        if (type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig
-                or physical.payload_backend != 'daft'):
-            raise ValueError('Sema executor requires its fixed model and Daft/Ray configuration')
+        if type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig:
+            raise ValueError('Sema executor requires its fixed model and RayMapConfig')
         if (any(type(v) is not int or not 1 <= v <= 256 for v in (max_held_tasks, max_active_requests))
                 or max_active_requests > max_held_tasks or physical.batch_rows > max_active_requests):
             raise ValueError('Sema executor capacities cannot fit the configured batch')
@@ -172,13 +171,12 @@ class SemaSemLoomService(SemaRequestService):
     """
 
     mode = 'sema-method-semloom-request-service'
+    _uses_upstream_client = False
 
     def __init__(self, *, query_id, model_config, physical, limits, trace_path,
                  max_held_tasks, max_active_requests, before_post=None, executor_owner=None):
         if type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig:
             raise ValueError('Sema SemLoom service requires FixedModelConfig and RayMapConfig')
-        if physical.payload_backend != 'daft':
-            raise ValueError('Sema SemLoom service requires the Daft payload backend')
         if any(type(v) is not int or not 1 <= v <= 256 for v in (max_held_tasks, max_active_requests)):
             raise ValueError('Sema SemLoom task and active capacities must be from 1 to 256')
         if max_active_requests > max_held_tasks or physical.batch_rows > max_active_requests:
@@ -329,7 +327,7 @@ class SemaSemLoomService(SemaRequestService):
                 if not 200 <= response.status_code < 300:
                     self._fail(entry['row']['request_sequence'],
                                _Reply(response.status_code, response.body, response.headers), 'http_response')
-                entry['future'].set_result(delivery.result)
+                entry['future'].set_result(response)
             if progress.state in (State.FAILED, State.CANCELLED):
                 for entry in self._pending.values():
                     if not entry['future'].done():
@@ -368,8 +366,8 @@ class SemaSemLoomService(SemaRequestService):
             self._progress_changed.clear()
             await asyncio.wait_for(self._progress_changed.wait(), remaining)
         try:
-            raw = await asyncio.wait_for(asyncio.shield(entry['future']), max(0, deadline - time.monotonic()))
-            response = decode_full_response(raw)
+            response = await asyncio.wait_for(asyncio.shield(entry['future']),
+                                              max(0, deadline - time.monotonic()))
             if len(response.body) > self.limits.response_bytes:
                 raise ValueError('Sema response exceeds its service body limit')
             return _Reply(response.status_code, response.body,

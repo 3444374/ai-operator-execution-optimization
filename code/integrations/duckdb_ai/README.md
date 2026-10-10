@@ -43,8 +43,12 @@ ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`�
 [Python 薄适配](../../src/semantic_methods/duckdb_ai.py)的 `DuckDBSemLoomBridge` 注册受信任的批次回调。
 `DuckDBNativeTaskExecutor` 使用公共 `NativeTaskSession`、`prepare_native_task` 和 `decode_full_response`；
 现有执行核心拥有接纳、组织、容量、传输和完成记录。主路径的执行对象必须由
-`build_native_execution(config, physical=RayMapConfig(...))` 建立，使用现有 Daft／Ray；
+`build_native_execution(config, physical=RayMapConfig(...))` 建立，默认使用现有 Daft／Ray；
+可显式选择 `payload_backend='arrow'` 直接构建已选调用的有限Arrow批次，再进入相同Ray执行。
 `physical=None` 仅为明确命名的本地诊断。没有新增线程池或另一套调度核心。
+
+当前模型成本与可选准备块的观察见[分层诊断](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)，
+CPU profile、实际库检查和模型查询分别保存，不用替身耗时预测模型加速。
 
 原方法在当前向量内可供给最多 2048 个非 NULL 完整调用。新路径解除原工作线程与请求控制的供给限制，
 但不提前获得下一 SQL 向量。每个响应按唯一调用身份恢复原行位置，重复文本不合并。

@@ -211,8 +211,10 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     runtime = stack.enter_context(native_ray_runtime(ray,config,ray_temp_root))
     if arm == 'fixed-map-semloom':
         physical = replace(physical,address=ray.get_runtime_context().gcs_address,response_mode='full')
-    return physical,dict(runtime,owner=('SemLoom Daft/Ray' if arm == 'fixed-map-semloom' else 'Ray Data'),
-                         version=ray.__version__,source='external finite prepared calls')
+    owner = 'Ray Data'
+    if arm == 'fixed-map-semloom':
+        owner = 'SemLoom Daft/Ray' if physical.payload_backend == 'daft' else 'SemLoom Arrow/Ray'
+    return physical,dict(runtime,owner=owner,version=ray.__version__,source='external finite prepared calls')
 
 
 def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, root,
@@ -227,9 +229,8 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
     if arm != 'fixed-map-semloom' and physical is not None:
         raise ValueError('Ray Map physical options belong to SemLoom only')
     if physical is not None and (physical.window_bytes < MAX_FRAME_BYTES+24
-            or physical.payload_backend != 'daft'
             or max(physical.workers,physical.batch_rows) > options.concurrency):
-        raise ValueError('SemLoom main requires declared Daft batches fitting a complete legal task')
+        raise ValueError('SemLoom requires declared payload batches fitting a complete legal task')
     if type(max_rows) is not int or not 1 <= max_rows <= 4096:
         raise ValueError('external source row allowance must be bounded')
     if plan.model_id != model.model_id:
