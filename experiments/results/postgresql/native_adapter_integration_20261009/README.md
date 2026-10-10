@@ -96,7 +96,7 @@ LOTUS短链是外部输入方法继续执行检查，不等同数据库内多算
 13条入口各完成一次正确性查询及两次有限重复，共39条完成查询／384次POST；其中首次服务8次、第二次服务0次、
 最后服务376次。原共享账本累计预留392次，真实登记384次，0 POST准备失败占用的8次继续保留；总上限512没有增加。
 账本、代理、逐查询协议和vLLM成功增量一致，服务结束时运行／等待请求均0。
-完整源码为`source-integrated07`，源码包SHA-256见verification.json；全部原值与比较见[model-analysis.json](model-analysis.json)。
+完整源码为`source-integrated07`，源码包SHA-256见verification.json；全部原值与比较见[model-analysis.json.gz](model-analysis.json.gz)。
 每条路径复用同8条已使用的Movie原文，3次查询不是24条独立评论；以下是新进程小批量工程观察，不作为系统性能排名。
 
 | 路径 | 完整API秒：三次原值 | 就绪查询秒：三次原值 | 正确行数／8：三次 | HTTP峰值：三次 |
@@ -231,7 +231,7 @@ DuckDB连接、Sema进程与两Map的新增常驻装配已提供，但这些路�
 | LOTUS本地Core诊断 | 1.939153 | 30.935126 | 106/128 |
 | LOTUS SemLoom Daft／Ray | 2.754248 | 38.314639 | 106/128 |
 
-所有8行测量均正确5/8，每格各5条完整查询，全部重复、预热、资格、起止和统计秩归[resident-model-analysis.json](resident-model-analysis.json)。
+所有8行测量均正确5/8，每格各5条完整查询，全部重复、预热、资格、起止和统计秩归[resident-model-analysis.json.gz](resident-model-analysis.json.gz)。
 P99／P99.99仍为样本最大值，不能据此推断总体极端尾部。固定Map中SemLoom与原生Daft接近但略慢，比当前原生Ray入口快；
 LOTUS两种SemLoom接入本次观察明显慢于原生，默认保持。不同方法不混合为统一执行排名，同输出计数也不表示新的质量贡献。
 
@@ -348,7 +348,7 @@ Daft／Ray累计墙钟32.811／30.622秒，线程CPU0.445／0.425秒。SQLite与
 两份私有归档分别为345成员／SHA-256`12b39a8541936c21ea3ed0b6d78417e10324cc374e8f4442dc9fe863134eb240`和
 273成员／SHA-256`d64208074cebc0fb0ae9f9ab7f5d2c0b6214e56b1def4a8fb047985b5a44d277`，都已下载本地核对。
 [公开诊断原件投影](raw/lotus-observation-diagnostic.jsonl.gz)共618成员，输入及请求原文改为完整摘要，
-生成参数、完整响应、全部函数计时和循环累计计数保留；[聚合](lotus-observation-analysis.json)与
+生成参数、完整响应、全部函数计时和循环累计计数保留；[聚合](lotus-observation-analysis.json.gz)与
 [observation_replay.py](observation_replay.py)复算全部24查询、完整正文、实际请求集合和逐阶段时刻。
 
 常驻管理另修两类失败处理，与性能结论分开：从首个组件取得动作开始进入统一异常清理，
@@ -469,7 +469,7 @@ owner与worker退出成功、清理错误0、端口关闭、所属GPU计算进�
 | Sema透明转发 | 0.236051 | 2.061567 | 111／111／111／111／112 |
 | Sema／SemLoom后置服务 | 4.441944 | 10.518743 | 110／111／111／111／111 |
 
-每格五条查询，全部资格、预热、测量与五次原值见[分析](resident-repair-model-analysis.json)及公开原件。
+每格五条查询，全部资格、预热、测量与五次原值见[分析](resident-repair-model-analysis.json.gz)及公开原件。
 8行每次正确5/8；DuckDB与Sema的质量小幅变化按原值保留，不据此声称质量等价或新质量贡献。
 旧LOTUS128行30.935126／38.314639秒负结果不改写；当前本地3.524182秒与Daft／Ray4.056554秒
 表明原持续差距在这份修复来源、输入及观察配置下消失。Daft／Ray仍略慢于本次LOTUS原生3.980172秒，
@@ -586,7 +586,7 @@ Torch2.11.0+cu130／vLLM0.25.1的running、waiting、KV、preemption及token指�
 服务器上的首轮运行包已生成并检查：C4／16／64的LOTUS、DuckDB原生与SemLoom及Sema／SemLoom，
 另加Sema原生直连／透明，共17配置。每配置8行资格1次、512行预热2次及测量3次，
 共102查询，最多43,656次真实调用、3,600秒；单查询120秒，首次协议、关联、计数、超时或清理错误停止，
-不自动重跑或补额度。GPU0使用同一Qwen2.5-7B、BF16／TP1、context4096、服务序列128／批token8192、
+不自动重跑或补额度。GPU0使用同一Qwen2.5-7B、BF16／张量并行为1、context4096、服务序列128／批token8192、
 FCFS、chunked prefill开启／prefix cache关闭；模型服务尚未启动，账本在启动时创建。
 选点、邻近点交错复验及未参与选点数据上的评价仍待执行；简单有界转发控制仍待实现，不阻塞首轮筛查。
 Sema Core／worker仍逐查询创建，保留释放至EOF主指标及直接记录的SQL提交至EOF辅助指标。
@@ -632,6 +632,11 @@ LOTUS原生、DuckDB／SemLoom和Sema／SemLoom各8行实际库fixture通过，�
 请求原文由公开摘要定位仓库外原件，公开内容已解码作隐私扫描。
 
 ## 保存与复核
+
+四份机器可读分析统一保存为本目录的`.json.gz`，解压后的字节与精简前完全一致，包含全部样本、聚合和来源。
+[保存登记](verification.json)的`analysis_storage`记录原路径、公开压缩路径、两种字节数及SHA-256；
+原文件还可从提交`81de8db6`恢复。现有离线脚本直接读取压缩分析，`replay.py`另核对四份分析的完整恢复摘要。
+精简过程和逐文件恢复核验保存在仓库外，获取标识为`semantic-adapter-evidence-compaction-20261010`。
 
 公开工程证据由verification.json及其归档成员定位，包含合成请求／响应、原始阶段事件和全部运行结果。
 [replay.py](replay.py)核对两个公开归档的全部成员摘要、调用时间和查询分布；模型请求正文以完整值摘要及参数代替原文，私有原件保留。

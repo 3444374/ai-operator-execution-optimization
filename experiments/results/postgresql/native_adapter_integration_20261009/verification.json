@@ -684,7 +684,7 @@
     "allocated_requests": 392,
     "maximum_total_posts": 512,
     "source_snapshot": "source-integrated07",
-    "analysis": "model-analysis.json",
+    "analysis": "model-analysis.json.gz",
     "cleanup_passed": true,
     "source_replayed_queries": 27,
     "raw_body_observation_revision": {
@@ -714,5 +714,43 @@
     "call_timing_replayed_cases": 8,
     "passed": true
   },
-  "own_observer_commit": "32df89a3a6db0f521bebdfa15e3e6f2431f4fcd0"
+  "own_observer_commit": "32df89a3a6db0f521bebdfa15e3e6f2431f4fcd0",
+  "analysis_storage": {
+    "format": "gzip of unchanged UTF-8 JSON bytes",
+    "retained_original_commit": "81de8db69f87ece97e8551dbeb94de163465011f",
+    "files": {
+      "model-analysis.json": {
+        "path": "model-analysis.json.gz",
+        "original_path": "model-analysis.json",
+        "original_bytes": 59003,
+        "original_sha256": "3aab6d0a48ae85469bca5012cfa9ae747e8daeac04e1c85f96607fc8a1fa3010",
+        "compressed_bytes": 6620,
+        "compressed_sha256": "31c86bc1af97d8013697ae02a4253c727950c24a672afaa7e46c71841565d786"
+      },
+      "resident-model-analysis.json": {
+        "path": "resident-model-analysis.json.gz",
+        "original_path": "resident-model-analysis.json",
+        "original_bytes": 130996,
+        "original_sha256": "8dd360b1387826f338858ce649e29c4bc8fa4381bc4b4bf1e1255dec149a5742",
+        "compressed_bytes": 17473,
+        "compressed_sha256": "30fe3f93fc9a77e8df17e5e7c91c9707ba909d51d42cbdfb25e90b199f2a435a"
+      },
+      "resident-repair-model-analysis.json": {
+        "path": "resident-repair-model-analysis.json.gz",
+        "original_path": "resident-repair-model-analysis.json",
+        "original_bytes": 162145,
+        "original_sha256": "1f9cca9bb9e85440cef6fb514c5a1fbea01dc7f1d452745ef2aea1d6dd47b359",
+        "compressed_bytes": 18141,
+        "compressed_sha256": "98600ace7a10dc0903fd04be11d1ae207f4472479da0425c58a21a4d19a9691c"
+      },
+      "lotus-observation-analysis.json": {
+        "path": "lotus-observation-analysis.json.gz",
+        "original_path": "lotus-observation-analysis.json",
+        "original_bytes": 81671,
+        "original_sha256": "8c2921e53088016a614754c38d724270aaf5d6f081890c0c18fce12478b3a413",
+        "compressed_bytes": 9209,
+        "compressed_sha256": "9806f7ba7d8df73918e4381141720f7a8fb9d64390652544ee620716a3a13565"
+      }
+    }
+  }
 }

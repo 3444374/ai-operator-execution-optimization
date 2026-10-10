@@ -1,43 +1,23 @@
 # AI 算子执行 Infra 当前状态
 
-2026-10-10：[首轮真实筛查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
-在LOTUS原生8行检查因运行包允许值与查询标签不一致停止，已修正允许值及参考表示，并补启动前核对。
-三条实际库fixture的合法分类错误仍计质量分母；没有修改执行代码或自动重跑真实模型，有效容量测量仍待完成。
+2026-10-10：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)
+已提供公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray入口。
+查询分别记录输入准备、实际提交、完整消费、请求和退出；既有PG默认路径保留，PG多Map、级联、多模型、Join和并行展开仍pending。
+常驻入口复用Core／LOTUS LM、DuckDB连接和Sema作者进程；Sema后置Core／worker仍按查询创建。
 
-2026-10-10：[有限容量准备](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)
-单查询／常驻入口分开SemLoom持有任务、模型活动请求与Sema作者线程；省略新参数保持原行为。
-DuckDB原池64与批回调的SemLoom容量分开，原生池仍由扩展管理；相关源码为`e7571691`。
-最终源码43查询／19,160次fixture POST通过；独立调参／评价输入、GPU0 BF16小张量、模型缓存及只读环境检查分别登记，当时尚未启动真实模型校准。
+[持续成本与异常处理](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
+已修复公共空释放唤醒、DuckDB反压重复封装及Sema重复通知，保留真实归还通知、同步记账与原生统计。
+部分初始化、释放、producer关闭、HTTP退出和摘要记录保存第一错误及附加诊断，后续DuckDB内层修订来源独立登记。
+[模型复核](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)仍对应`aef350b2`；
+LOTUS原持续差距在该输入与配置下消失，Sema原生与后置服务实际容量不同，不能归因纯执行器收益。
 
-2026-10-09：[接入持续成本修复](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-performance-repair)
-分别整合公共空释放不唤醒、DuckDB反压pending复用与Sema按真实变化通知／正文一次准备，原生供给、C4、SQLite保护与SDK统计保持。
-LOTUS修复前后24查询／1,632次fixture POST通过相同请求、完整正文和逐阶段时刻复算，真实模型0；带探针样本只作原因定位。
-常驻初始化资源取得后即登记关闭，lifecycle／摘要失败保留查询第一错误，13项故障回归通过；最终统一实际库检查与模型资格各自记录。
-三家异常退出另按`60c45593`／`8ab8e3e`／`7663ab52`整合：LOTUS保留执行第一错误，DuckDB退出失败使批次失败，Sema独立清理并传播迟到HTTP错误。
-最终`adapter-repair-source02`的1,028份文件一致，173项相关检查170通过／3项独立入口跳过，实际扩展20项包含在通过数中；八路径26正常查询／1,154 fixture POST与退出核对通过，真实模型0。
-后续DuckDB`64f738ad`已合入，内层按本次异常保存第一错误并重置诊断；`2b53857d`入口摘要同时保存桥／内层诊断及关闭报告，观察错误不被关闭错误替换。28项DuckDB及4项摘要检查、最终两路径6正常查询／288 fixture POST通过。
-[实际模型复核](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)的120查询／7,680 POST仍对应`aef350b2`；Sema原生／透明峰128而SemLoom4，现有C4只作诊断，独立H／C与Sema线程的实验参数拆分、对象可达检查和有限校准仍pending。
+[容量准备](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-preparation)
+已分开SemLoom持有任务、模型活动请求和Sema作者线程；DuckDB原生池与批回调容量分别配置，省略新参数保留原行为。
+`e7571691`通过目标输入的实际库可达检查，独立调参／评价输入和环境来源均由主报告定位。
+[首轮真实筛查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
+因运行包标签不一致停止，已修订允许值、参考表示及启动前核对；有效容量测量和最终比较配置仍pending。
 
-2026-10-09：[DuckDB与Sema常驻输入更新检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-supplier-fixture)
-完成五条实际库路径各`8 → 8 → 128`行及同Sema进程更换URL探针，17查询／722次fixture POST、真实模型0。
-同连接／作者进程、当前输入与结果、DuckDB调用ID、逐查询计数和退出核对通过；Sema后置Core／worker仍按查询创建。
-当前GPU访问不可用，成功预检明确只覆盖CPU fixture；三次零POST准备失败保留，执行节奏修复仍另行核验。
-LOTUS观测直接记录完整响应列表返回，区分HTTP区间与后续序列化／统计，原保护与方法统计保持。
-
-2026-10-09：[常驻原生／SemLoom工程检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)
-新增明确清单与启动记录，固定Map三条及LOTUS原生／本地Core诊断／Daft＋Ray三条分别在同一owner中连续执行。
-六条实际库fixture共18查询／96次测试POST，Core与LM身份、逐查询计数、独立归还和release／submit／EOF核对通过；本次fixture真实模型POST0。
-93项Linux相关检查中92通过、1项独立实际库入口跳过；旧DuckDB两入口经原独立C++运行库设置通过，原零POST加载失败保留。
-Sema服务Core直接跨控制线程借用被拒绝并撤回，当前按查询创建；其余常驻供应商资格与真实模型结论分别记录。
-后续[六臂常驻模型观察](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-model)完成90查询／5,760次POST，独立计数／复用／结果／退出核验通过。
-固定Map SemLoom接近原生Daft，LOTUS两种接入明显更慢；诊断回调的实际等待不同，低扰动敏感性和内部CPU归因尚未执行，默认保持。
-
-2026-10-09：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)已整合公共批次／完整响应、LOTUS单Map／两Map、DuckDB C ABI批次、Sema请求服务和原生Daft／Ray参照。
-新外部输入查询入口分开完整应用、实际提交至消费、任务就绪至调用者完整响应及资源清理；缺少源码观察的阶段写不可观测。
-本地39项相关检查与私有PG18.3的3项旧查询／direct回归通过，供应商10条实际库入口与主执行入口均通过；工程fixture检查模型POST0。
-既有原生与PG默认保持，随后13路径／39查询／384次真实POST及计数／退出核对通过，调用集合与质量差异归主报告；多模型、级联、Join、并行展开及PG多Map仍pending。
-
-更新：2026-10-09。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-10。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
