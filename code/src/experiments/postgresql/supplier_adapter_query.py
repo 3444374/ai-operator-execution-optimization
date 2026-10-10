@@ -458,7 +458,8 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 elif use_core:
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
                         limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=held_tasks,
-                        max_active_requests=options.concurrency))
+                        max_active_requests=options.concurrency,
+                        executor_owner=owner.sema_executor if owner is not None else None))
                 if owner is not None:
                     owner.service=service
                 converted=[dict(source_example_id=v['row_id'],input_text=v['text'],source_position=i) for i,v in enumerate(values)]
@@ -468,7 +469,8 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                     native=owner.sema_native(converted) if owner is not None else None))
                 execute=prepared_native.execute
                 summary['identity']=dict(supplier='Sema author binary',integration='request service',
-                    native_supply='author SQL, threads, request pool, prompt, parser and row association retained')
+                    native_supply='author SQL, threads, request pool, prompt, parser and row association retained',
+                    sema_executor_scope='query' if owner is None else owner.group.sema_executor_scope)
             ready=time.monotonic_ns()
             if count:raise ValueError('supplier preparation called the model before query submission')
             @contextmanager

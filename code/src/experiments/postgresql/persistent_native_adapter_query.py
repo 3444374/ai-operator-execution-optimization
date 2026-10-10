@@ -40,7 +40,7 @@ class _ArmOwner:
         self._closed = False
         self.queries = 0
         self.binding = self.service = None
-        self.execution = self.lm = self.connection = self.native = None
+        self.execution = self.sema_executor = self.lm = self.connection = self.native = None
         self.physical = group.physical if 'semloom' in arm and not arm.endswith('diagnostic') else None
         try:
             self.events = self._enter_component(BufferedEvents(self.root / 'owner-events.jsonl'), 'owner_events_close')
@@ -63,6 +63,11 @@ class _ArmOwner:
                     observer=self.observe, timeouts=SessionTimeouts(backend_s=max(45, group.query_timeout_s)))
                 self.stack.callback(self._close_errors.attempt, 'owner_execution_close',
                                     lambda: _drain_execution(self.execution))
+            elif arm == 'sema-method-semloom-request-service' and group.sema_executor_scope == 'group-diagnostic':
+                from src.execution_provider.adapters.sema_semloom import SemaSemLoomExecutor
+                self.sema_executor = self._enter_component(SemaSemLoomExecutor(
+                    model_config=self.model, physical=self.physical, max_held_tasks=group.max_held_tasks,
+                    max_active_requests=group.options.concurrency, observer=self.observe_sema_owner), 'owner_sema_executor_close')
             if arm.startswith('lotus-'):
                 self.lotus_lm()
         except BaseException as failure:
@@ -101,21 +106,33 @@ class _ArmOwner:
         self.events.record(value)
         if self.binding is not None:
             self.binding['record'](event)
-        if self.service is not None:
+        if self.service is not None and self.sema_executor is None:
             self.service._observe(event)
 
+    def observe_sema_owner(self, event):
+        # Query events retain the existing Sema service recorder; group setup/exit
+        # has its own owner log, without adding a second query observation pass.
+        if self.binding is None:
+            self.observe(event)
+
     def lifecycle(self):
+        sema = None if self.sema_executor is None else self.sema_executor.snapshot()
         return dict(owner_id=self.identity, ray_session_id=self.group.ray_session_id,
-            execution_id=None if self.execution is None else str(id(self.execution)),
+            execution_id=(sema['execution_id'] if sema is not None
+                          else None if self.execution is None else str(id(self.execution))),
             lm_id=None if self.lm is None else str(id(self.lm)),
             duckdb_connection_id=None if self.connection is None else str(id(self.connection)),
             sema_pid=None if self.native is None else self.native.pid,
             completed_queries=self.queries, result_cache=False,
-            core_usage=None if self.execution is None else asdict(self.execution.engine.capacity.usage()),
-            core_jobs=None if self.execution is None else len(self.execution.engine.jobs.jobs),
+            core_usage=(sema['core_usage'] if sema is not None
+                        else None if self.execution is None else asdict(self.execution.engine.capacity.usage())),
+            core_jobs=(sema['core_jobs'] if sema is not None
+                       else None if self.execution is None else len(self.execution.engine.jobs.jobs)),
+            sema_executor=sema,
             native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm=='fixed-map-native-ray'
                                     else 'not a native Ray Data graph'),
-            request_service_scope=('per query, including Sema service Core and workers' if self.arm.startswith('sema-')
+            request_service_scope=('per query HTTP/session; group Core/workers diagnostic' if sema is not None
+                                   else 'per query, including Sema service Core and workers' if self.arm.startswith('sema-')
                                    else 'no Sema request service'),
             native_http_client_scope='supplier owns its SDK/client lifecycle')
 
@@ -192,7 +209,8 @@ class PersistentAdapterGroup:
     def __init__(self, arms, *, plan, model, ledger, root, options=NativeGraphOptions(), physical=None,
                  ray_temp_root=None, ray_address=None, query_timeout_s=120, owner_timeout_s=1800,
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
-                 max_held_tasks=None,sema_native_threads=None,adapter_timings=False):
+                 max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
+                 sema_executor_scope='query'):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
@@ -204,6 +222,12 @@ class PersistentAdapterGroup:
         self.plan, self.model, self.ledger = plan, model, ledger
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+        if sema_executor_scope not in ('query', 'group-diagnostic'):
+            raise ValueError('Sema executor scope must be query or group-diagnostic')
+        if (sema_executor_scope != 'query'
+                and 'sema-method-semloom-request-service' not in self.arms):
+            raise ValueError('Sema executor reuse requires the Sema SemLoom request-service arm')
+        self.sema_executor_scope = sema_executor_scope
         self.ray_temp_root, self.ray_address = ray_temp_root, ray_address
         self.query_timeout_s, self.owner_timeout_s = query_timeout_s, owner_timeout_s
         self.stages, self.tokenizer_path = stages, tokenizer_path
@@ -243,6 +267,7 @@ class PersistentAdapterGroup:
                 runtime=self.runtime, ray_session_id=self.ray_session_id,
                 owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
                 max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
+                sema_executor_scope=self.sema_executor_scope,
                 hard_timeout_owner='calling process supervisor', result_cache=False)))
             return self
         except BaseException as failure:
@@ -320,7 +345,8 @@ class PersistentAdapterGroup:
                     available={key:available.get(key,0) for key in keys},
                     semloom_actor_pools=[dict(arm=arm,workers=owner.physical.workers,
                                              declared_cpus=owner.physical.workers)
-                        for arm,owner in self.owners.items() if owner.physical is not None and owner.execution is not None])
+                        for arm,owner in self.owners.items() if owner.physical is not None
+                            and (owner.execution is not None or owner.sema_executor is not None)])
 
     def __exit__(self, error_type, error, traceback):
         errors = self._close_errors
@@ -347,6 +373,8 @@ def main(argv=None):
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
     parser.add_argument('--adapter-timings',action='store_true')
+    parser.add_argument('--sema-executor-scope', choices=('query', 'group-diagnostic'), default='query',
+                        help='optional group-owned Core/worker diagnosis; default retains per-query construction')
     for name in ('options','ray-physical','ray-temp-root','stages','tokenizer','duckdb-library','sema-binary'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--ray-address')
@@ -373,7 +401,8 @@ def main(argv=None):
             tokenizer_path=args.tokenizer, duckdb_library=args.duckdb_library, sema_binary=args.sema_binary,
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
-            adapter_timings=args.adapter_timings) as group:
+            adapter_timings=args.adapter_timings,
+            sema_executor_scope=args.sema_executor_scope) as group:
         write_private_json(group.root/'schedule.json',schedule)
         for ordinal, item in enumerate(schedule):
             source = Path(item['input'])

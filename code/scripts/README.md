@@ -55,6 +55,10 @@ SemLoom主路径要求Daft payload与真实Ray执行，完整合法任务必须�
 每项包含`arm`、唯一`unit_id`、原始JSONL的`input`和`phase`；`phase`为`qualification`、`warmup`或`measurement`，
 可另给该输入的`references`文件。保持一个arm的清单可使用独立Ray集群；一次最多三个arm的共享部署另记实际可用CPU。
 计划、模型、累计账本和原生参数仍由调用方提供，Ray临时目录须新建且路径短。
+Sema 后置路径可显式传 `--sema-executor-scope group-diagnostic`，由组持有固定控制线程、Core 和 worker；
+各查询仍独立创建 HTTP 入口、任务流、观察与计数单元。默认 `query` 保留逐查询创建，
+作者请求池、活动容量、payload 批次与 pump 等待方式保持原装配。取消、首错或未归还资源后拒绝后续借用。
+该选项用于启动成本诊断；CPU／替身检查不代表真实 Daft／Ray 或模型性能已通过。
 
 ```sh
 PYTHONPATH=code python3 code/scripts/baselines/run_persistent_native_adapter_query.py \

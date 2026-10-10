@@ -4,6 +4,7 @@ from collections import Counter
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
 import time
 import unittest
@@ -24,6 +25,64 @@ def raw_rows(count):
 
 
 class PersistentAdapterTests(unittest.TestCase):
+    def test_sema_group_executor_reuses_core_with_changed_inputs_and_query_traces(self):
+        from src.baselines.text.products import sema
+        from src.execution_provider.adapters import sema_semloom
+        from src.execution_provider.adapters.full_response import FullResponseTransport
+        from src.execution_provider.adapters.native_tasks import build_native_execution
+        from tests.execution_provider.test_sema_service import _PROCESS
+
+        def make_execution(owner):
+            class Transport(FullResponseTransport):
+                async def execute(self, task, endpoint):
+                    owner._before_request(task)
+                    return await super().execute(task, endpoint)
+            with mock.patch('src.execution_provider.adapters.native_tasks.FullResponseTransport', Transport):
+                return build_native_execution(owner.model_config, physical=None,
+                    max_tasks=owner.max_held_tasks, max_active_requests=owner.max_active_requests,
+                    observer=owner._observe)
+
+        physical = RayMapConfig('unused', 1, 1, 2**21, 2**23)
+        arm = 'sema-method-semloom-request-service'
+        with tempfile.TemporaryDirectory() as directory, fixture_server(content='"ok"') as (url, requests):
+            root = Path(directory)
+            binary = root / 'fake-sema'
+            binary.write_text('#!' + sys.executable + '\n' + _PROCESS)
+            binary.chmod(0o700)
+            ledger = CellBudgetLedger.create(root / 'budget.sqlite', AttemptBudget('sema-resident', 5),
+                                             deadline_utc=time.time() + 30)
+            with mock.patch.object(sema, 'BINARY_SHA256', hashlib.sha256(binary.read_bytes()).hexdigest()), \
+                    mock.patch.object(sema_semloom.SemaSemLoomExecutor, '_build_execution', make_execution), \
+                    mock.patch('src.experiments.postgresql.persistent_native_adapter_query._runtime',
+                               return_value=(physical, dict(owner='CPU/fake diagnostic; no Ray'))), \
+                    mock.patch.object(PersistentAdapterGroup, 'ray_resources', return_value=dict(status='unavailable')), \
+                    PersistentAdapterGroup((arm,), plan=SemanticMapPlan('Return ok.', 'fixture', 16),
+                        model=FixedModelConfig(url, 'fixture', 1000), ledger=ledger, root=root / 'group',
+                        options=NativeGraphOptions(concurrency=4), max_held_tasks=4, physical=physical,
+                        sema_binary=binary, query_timeout_s=3, sema_executor_scope='group-diagnostic') as group:
+                identities = []
+                for number, count in enumerate((2, 3)):
+                    values = tuple(dict(row_id=str(i), text='query-' + str(number) + '-row-' + str(i))
+                                   for i in range(count))
+                    result = group.run(arm, unit_id='q' + str(number), root=root / ('q' + str(number)),
+                        load_source=lambda: iter(values), phase='qualification', allowed_outputs=('ok',))
+                    identities.append(result['persistent_lifecycle'])
+                    self.assertEqual(result['actual_posts'], count)
+                    self.assertEqual(result['request_service']['forwarded_posts'], count)
+                    self.assertEqual(result['identity']['sema_executor_scope'], 'group-diagnostic')
+                    self.assertEqual(result['request_service']['executor_scope'], 'persistent group diagnostic')
+                    self.assertEqual(result['persistent_lifecycle']['core_jobs'], 0)
+                    self.assertFalse(group.owners[arm].sema_executor.execution.engine.capacity.records)
+                    traces = [json.loads(line) for line in (root / ('q' + str(number)) / 'http-trace.jsonl').read_text().splitlines()]
+                    self.assertEqual({trace['query_id'] for trace in traces}, {'q' + str(number)})
+                for key in ('owner_id', 'execution_id', 'sema_pid'):
+                    self.assertEqual(len({value[key] for value in identities}), 1)
+                self.assertEqual(len(requests), 5)
+                self.assertEqual([body['messages'][0]['content'] for body in requests],
+                    ['query-0-row-0', 'query-0-row-1', 'query-1-row-0', 'query-1-row-1', 'query-1-row-2'])
+            self.assertFalse(group.owners[arm].sema_executor._thread.is_alive())
+            self.assertEqual(json.loads((root / 'group' / 'group-summary.json').read_text())['status'], 'passed')
+
     def test_fixed_held_budget_survives_queries_with_independent_active_capacity(self):
         with tempfile.TemporaryDirectory() as directory,fixture_server() as (url,requests):
             root=Path(directory)
@@ -219,7 +278,8 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     tokenizer_path=Path(os.environ['SEMLOOM_TOKENIZER']) if os.environ.get('SEMLOOM_TOKENIZER') else None,
                     duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
                     sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']),
-                    adapter_timings=os.environ.get('SEMLOOM_ADAPTER_TIMINGS')=='1') as group:
+                    adapter_timings=os.environ.get('SEMLOOM_ADAPTER_TIMINGS')=='1',
+                    sema_executor_scope=os.environ.get('SEMLOOM_SEMA_EXECUTOR_SCOPE', 'query')) as group:
                 for number,values in enumerate(inputs):
                     current_query='supplier-query-'+str(number)
                     before=len(requests)
@@ -250,6 +310,11 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     if group.owners[arm].execution is not None:
                         self.assertFalse(group.owners[arm].execution.engine.capacity.records)
                         self.assertFalse(group.owners[arm].execution.engine.jobs.jobs)
+                    if group.owners[arm].sema_executor is not None:
+                        executor = group.owners[arm].sema_executor
+                        self.assertFalse(executor.execution.engine.capacity.records)
+                        self.assertEqual(executor.snapshot()['core_jobs'], 0)
+                        self.assertEqual(executor.snapshot()['object_bytes'], 0)
                 for key in ('owner_id','execution_id','lm_id','duckdb_connection_id','sema_pid','ray_session_id'):
                     self.assertEqual(len({value[key] for value in identities}),1,(arm,key))
                 self.assertEqual(len(requests),144)
@@ -260,6 +325,8 @@ class PersistentSupplierLibraries(unittest.TestCase):
                 self.assertEqual(len(bridges),3)
                 self.assertTrue(all(bridge._closed and bridge.retained_batches==0 for bridge in bridges))
             if arm.startswith('sema-'):
+                if group.owners[arm].sema_executor is not None:
+                    self.assertFalse(group.owners[arm].sema_executor._thread.is_alive())
                 self.assertEqual([value['rows'] for value in replacements],[8,8,128])
                 self.assertEqual(len({value['pid'] for value in replacements}),1)
                 self.assertEqual(len({value['source_sha256'] for value in replacements}),3)
