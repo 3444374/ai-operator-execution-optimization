@@ -606,6 +606,7 @@ class SchedulingSession:
         if type(tasks) not in (tuple, list) or len(tasks) > self.limits.offer_tasks:
             return False
         self._info_checks.begin()
+        empty_usage = Usage()
         for offset, task in enumerate(tasks):
             if type(task) is not OfferedTask or type(task.sequence) is not int:
                 return False
@@ -640,7 +641,7 @@ class SchedulingSession:
                 or len(task.metadata) > self.limits.metadata_bytes
             ):
                 return False
-            if job_budget is not None and not self.engine.capacity.fits(Usage(), job_budget, task):
+            if job_budget is not None and not self.engine.capacity.fits(empty_usage, job_budget, task):
                 return False
         return True
 

@@ -86,6 +86,32 @@ class TaskInfoReuseTests(unittest.TestCase):
             self.assertEqual(self.flow.offer((changed,)).accepted_prefix_count, 0)
             self.assertEqual(encode.call_count, 1)
 
+    def test_equal_values_with_different_types_or_nonprimitive_fields_do_not_hit(self):
+        class Text(str):
+            pass
+
+        pending = self.pending()
+        for changed in (replace(pending.info, row_sequence=True),
+                        replace(pending.info, row_sequence=1.0),
+                        replace(pending.info, call_id=Text(pending.info.call_id)),
+                        replace(pending.info, work=replace(pending.info.work, locality_key=[]))):
+            with self.subTest(info=changed):
+                self.flow.offer((pending,))
+                before = self.execution.engine.capacity.usage()
+                result = self.flow.offer((replace(pending, info=changed),))
+                self.assertEqual((result.status, result.accepted_prefix_count), ('REJECTED', 0))
+                self.assertEqual(self.execution.engine.capacity.usage(), before)
+
+    def test_equal_integer_and_float_deadlines_recheck_actual_metadata_size(self):
+        first, pending = task(0), task(1)
+        first = replace(first, info=replace(first.info, work=replace(first.info.work, deadline_s=1)))
+        pending = replace(pending, info=replace(pending.info, work=replace(pending.info.work, deadline_s=1)))
+        size = len(json.dumps(task_info.asdict(pending.info), ensure_ascii=False, allow_nan=False).encode())
+        self.flow.session.limits = replace(self.flow.limits, metadata_bytes=size)
+        self.assertEqual(self.flow.offer((first, pending)).accepted_prefix_count, 1)
+        object.__setattr__(pending.info.work, 'deadline_s', 1.0)
+        self.assertEqual(self.flow.offer((pending,)).status, 'REJECTED')
+
     def test_float_signed_zero_change_rechecks_the_actual_metadata_size(self):
         first, pending = task(0), task(1)
         first = replace(first, info=replace(first.info, work=replace(first.info.work, deadline_s=0.0)))
