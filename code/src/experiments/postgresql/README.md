@@ -52,6 +52,8 @@ CPU／替身查询和退出检查已通过，实际 Daft／Ray 对象释放与�
 完整正文、响应、取消和首错记录保持；这是后置服务控制，不能代表作者原生请求池。
 原 `forward_started_ns` 仍在连接取得之前，包含连接等待；共同上游网关的 HTTP 时段另列。
 实现使用[公开连接事件](https://docs.aiohttp.org/en/v3.9.5/tracing_reference.html#connection-acquiring)。
+`sema-bounded-forward-diagnostic`使用该服务，连接容量取`options.concurrency`，保留作者SQL和完整响应；
+它是单独的诊断参照，作者线程参数与连接容量分别记录。
 DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema进程更换URL检查；
 同连接／作者进程复用、输入替换和当前结果关联分别核对，后置Core按查询创建的事实保留。
 两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。

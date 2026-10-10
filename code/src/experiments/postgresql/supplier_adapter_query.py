@@ -31,6 +31,7 @@ SUPPLIER_ARMS = (
     'lotus-two-map-native-staged', 'lotus-two-map-semloom-staged',
     'lotus-two-map-semloom-incremental',
     'sema-native-direct', 'sema-native-transparent', 'sema-method-semloom-request-service',
+    'sema-bounded-forward-diagnostic',
     'duckdb-adapted-native', 'duckdb-method-semloom', 'duckdb-method-semloom-local-diagnostic',
 )
 
@@ -452,9 +453,10 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 if sema_binary is None:raise ValueError('Sema requires the verified author binary')
                 limits=SemaServiceLimits(max_requests=maximum,request_bytes=1048576,
                     response_bytes=1048576-8204,timeout_s=query_timeout_s)
-                if arm=='sema-native-transparent':
+                if arm in ('sema-native-transparent','sema-bounded-forward-diagnostic'):
                     service=stack.enter_context(SemaRequestService(query_id=unit_id,upstream_url=routed.endpoint_url,
-                        limits=limits,trace_path=root/'sema-service.jsonl'))
+                        limits=limits,trace_path=root/'sema-service.jsonl',
+                        upstream_concurrency=options.concurrency if arm=='sema-bounded-forward-diagnostic' else 0))
                 elif use_core:
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
                         limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=held_tasks,
@@ -471,6 +473,9 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 summary['identity']=dict(supplier='Sema author binary',integration='request service',
                     native_supply='author SQL, threads, request pool, prompt, parser and row association retained',
                     sema_executor_scope='query' if owner is None else owner.group.sema_executor_scope)
+                if arm=='sema-bounded-forward-diagnostic':
+                    summary['identity'].update(executor='aiohttp connector capacity diagnostic',
+                        upstream_concurrency=options.concurrency)
             ready=time.monotonic_ns()
             if count:raise ValueError('supplier preparation called the model before query submission')
             @contextmanager
