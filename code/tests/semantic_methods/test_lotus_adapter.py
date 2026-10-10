@@ -16,7 +16,7 @@ from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
 from src.semantic_methods.lotus.driver import iter_two_map_rows
 
 from src.semantic_methods.lotus.maps import LotusMapStage, LotusTwoMapMethod, encode, staged_two_map
-from src.semantic_methods.lotus.sdk import prepare_call, response_model
+from src.semantic_methods.lotus.sdk import prepare_call, response_model, validate_batch
 
 
 HAS_LOTUS = find_spec("lotus") is not None
@@ -102,6 +102,86 @@ def local_execution(base):
 
 @unittest.skipUnless(HAS_LOTUS, "pinned LOTUS library is unavailable")
 class LotusSdkTests(unittest.TestCase):
+    def test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer(self):
+        messages = [{"role":"user","content":"first"}]
+        invalid_messages = ([], [{"role":"tool","content":"last"}],
+            [{"role":"user","content":None}], [{"role":"user","content":"last","extra":1}],
+            [{"role":"user","content":"\ud800"}])
+        invalid_parameters = ({"stream":True},{"n":2},{"num_retries":1},{"max_retries":1},
+            {"timeout":float('inf')},{"temperature":float('nan')},
+            {"response_format":{"type":"json_object"}},{"logit_bias":{1:object()}},
+            {"api_key":None},{"api_base":"http://localhost/v1?query=1"})
+        with fixture_server() as (base,calls), local_execution(base) as execution:
+            lm=model(base)
+            for tail in invalid_messages:
+                with self.subTest(tail=tail):
+                    with self.assertRaises((ValueError,TypeError,UnicodeError)):
+                        prepare_call(lm,tail,lm.kwargs)
+                    selected=LotusBatchExecutor(execution,config(base),query_id='bad-tail',operator_id='map',prevalidate_batch=True)
+                    with patch('src.semantic_methods.lotus.batch.NativeTaskSession',side_effect=AssertionError('invalid batch opened a flow')):
+                        with self.assertRaises((ValueError,TypeError,UnicodeError)):
+                            selected(lm,[(messages,None)]*3+[(tail,None)],lm.kwargs,False,'fixture')
+            for changed in invalid_parameters:
+                kwargs={**lm.kwargs,**changed}
+                with self.subTest(changed=changed):
+                    with self.assertRaises((ValueError,TypeError)):
+                        prepare_call(lm,messages,kwargs)
+                    selected=LotusBatchExecutor(execution,config(base),query_id='bad-parameters',operator_id='map',prevalidate_batch=True)
+                    with patch('src.semantic_methods.lotus.batch.NativeTaskSession',side_effect=AssertionError('invalid parameters opened a flow')):
+                        with self.assertRaises((ValueError,TypeError)):
+                            selected(lm,[(messages,None)]*4,kwargs,False,'fixture')
+            from litellm import OpenAIConfig
+            from litellm.utils import ProviderConfigManager
+            for target,attribute,value in ((OpenAIConfig,'get_config',dict(temperature=1)),
+                    (ProviderConfigManager,'get_provider_chat_config',object())):
+                with self.subTest(attribute=attribute), patch.object(target,attribute,return_value=value):
+                    selected=LotusBatchExecutor(execution,config(base),query_id='bad-configuration',operator_id='map',prevalidate_batch=True)
+                    with patch('src.semantic_methods.lotus.batch.NativeTaskSession',side_effect=AssertionError('unsupported configuration opened a flow')):
+                        with self.assertRaises(ValueError):
+                            selected(lm,[(messages,None)]*4,lm.kwargs,False,'fixture')
+            self.assertEqual(calls,[])
+            self.assertEqual(execution.engine.jobs.jobs,{})
+
+    def test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit(self):
+        cases=((429,b'{"error":{"message":"controlled"}}',8192),
+            (200,b'{"broken":',8192),(200,b'{"value":"complete"}',1))
+        for status,body,limit in cases:
+            with self.subTest(status=status,limit=limit), fixture_server(failure=lambda request:(status,body)) as (base,calls), local_execution(base) as execution:
+                selected=LotusBatchExecutor(execution,config(base),query_id='no-raw-history',operator_id='map',
+                    prevalidate_batch=True,retain_full_responses=False,max_batch_result_bytes=limit)
+                if status!=200:
+                    result=selected(model(base),[([dict(role='user',content='error')],None)],model(base).kwargs,False,'fixture')
+                    self.assertEqual(result[0].full_response.body,body)
+                else:
+                    with self.assertRaises(ValueError) as caught:
+                        lm=model(base)
+                        selected(lm,[([dict(role='user',content='error')],None)],lm.kwargs,False,'fixture')
+                    self.assertEqual(caught.exception.full_response.body,body)
+                self.assertEqual(selected.last_responses,())
+                self.assertEqual(len(calls),1)
+                self.assertEqual(execution.engine.jobs.jobs,{})
+
+    def test_batch_validation_preserves_unicode_and_canonical_call_values(self):
+        with fixture_server() as (base,calls), local_execution(base) as execution:
+            lm=model(base)
+            messages=[[dict(role='user',content=text)] for text in ('plain','你好','\ud83d\ude00')]
+            data=[(value,None) for value in messages]
+            original=prepare_call
+            first=validate_batch(lm,data,lm.kwargs)
+            self.assertEqual(first,original(lm,messages[0],lm.kwargs))
+            prepared=[]
+            selected=LotusBatchExecutor(execution,config(base),query_id='one-preparation',operator_id='map',
+                prevalidate_batch=True,retain_full_responses=False,
+                on_prepared=lambda index,call: prepared.append((index,call)))
+            with patch('src.semantic_methods.lotus.sdk.prepare_call',wraps=original) as first_preparation, \
+                 patch('src.semantic_methods.lotus.batch.prepare_call',wraps=original) as remaining_preparation:
+                responses=selected(lm,data,lm.kwargs,False,'fixture')
+            self.assertEqual((first_preparation.call_count,remaining_preparation.call_count),(1,2))
+            self.assertCountEqual(calls,[json.loads(call.payload) for _,call in prepared])
+            self.assertEqual([r.usage.total_tokens for r in responses],[10]*3)
+            self.assertEqual(selected.last_responses,())
+            self.assertEqual(execution.engine.jobs.jobs,{})
+
     def test_sdk_body_matches_native_http_and_complete_response(self):
         import lotus
         with fixture_server() as (base, calls):

@@ -25,12 +25,17 @@ def iter_two_map_rows(execution, method, rows, *, query_id, operator_id, limits,
         SessionSpec(query_id, operator_id, "text-completion", work_unit=execution.work_unit,
                     task_profiles=(TaskProfile("lotus-map", "text-completion"),)))
     driver = None
+    primary = None
+    cleanup_errors = []
     try:
         grant = pool.allocate(capacity)
         try:
             driver = MethodDriver(session, method, limits, grant)
         except BaseException:
-            grant.close()
+            try:
+                grant.close()
+            except BaseException as error:
+                cleanup_errors.append(("grant", error))
             raise
         source = iter(rows)
         empty = object()
@@ -70,9 +75,21 @@ def iter_two_map_rows(execution, method, rows, *, query_id, operator_id, limits,
                 if deadlines:
                     timeout = min(timeout, max(0, min(deadlines) - execution.engine.clock()))
                 execution.engine.wake.wait(progress.generation, timeout)
+    except BaseException as error:
+        primary = error
+        raise
     finally:
-        if driver is not None:
-            driver.close()
-        else:
-            session.close_consumer()
-        execution.engine.close_job(job)
+        consumer = ("driver", driver.close) if driver is not None else ("session", session.close_consumer)
+        for phase, close in (consumer, ("job", lambda: execution.engine.close_job(job))):
+            try:
+                close()
+            except BaseException as error:
+                cleanup_errors.append((phase, error))
+        if cleanup_errors:
+            failure = primary if primary is not None else cleanup_errors[0][1]
+            failure.lotus_cleanup_errors = tuple(cleanup_errors)
+            for phase, error in cleanup_errors:
+                if error is not failure:
+                    failure.add_note("LOTUS chain " + phase + " cleanup also failed: " + type(error).__name__)
+            if primary is None:
+                raise failure

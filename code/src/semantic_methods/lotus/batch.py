@@ -8,7 +8,7 @@ import math
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from ...scheduling.core.session_contract import State
 from ...execution_provider.adapters.full_response import decode_full_response
-from .sdk import check_model_config, lotus_response, prepare_call, validate_source
+from .sdk import check_model_config, lotus_response, prepare_call, validate_batch, validate_source
 
 
 class LotusBatchExecutor:
@@ -20,15 +20,20 @@ class LotusBatchExecutor:
 
     def __init__(self, execution, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
-                 on_response=None, on_batch=None, cancelled=None, timeout_s=120):
+                 on_response=None, on_batch=None, cancelled=None, timeout_s=120,
+                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError("LOTUS batch timeout must be at most 120 seconds")
+        if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
+            raise ValueError("LOTUS preparation and retention choices must be boolean")
         self.execution, self.model_config = execution, model_config
         self.query_id, self.operator_id = query_id, operator_id
         self.max_batch_rows, self.max_batch_result_bytes = max_batch_rows, max_batch_result_bytes
         self.on_response, self.on_batch, self.cancelled = on_response, on_batch, cancelled
+        self.on_prepared = on_prepared
+        self.prevalidate_batch, self.retain_full_responses = prevalidate_batch, retain_full_responses
         self.timeout_s, self.last_responses = timeout_s, ()
         self.last_cleanup_errors = ()
 
@@ -40,36 +45,53 @@ class LotusBatchExecutor:
         self.last_cleanup_errors = ()
         if not uncached_data:
             return []
-        # Observe the original whole uncached batch before any physical offer or wait.
-        if self.on_batch:
-            self.on_batch(uncached_data, all_kwargs)
-        flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
         count = len(uncached_data)
-        responses, full = [None] * count, [None] * count
+        flow = None
+        full = []
         next_input = completed = result_bytes = 0
         pending = ()
         sealed = False
         clean = False
-        started = time.monotonic()
+        deadline = time.monotonic() + self.timeout_s
         primary = None
+        def check_stop():
+            if self.cancelled and self.cancelled():
+                if flow is not None:
+                    flow.request_cancel()
+                raise RuntimeError("LOTUS batch cancelled")
+            if time.monotonic() >= deadline:
+                if flow is not None:
+                    flow.request_cancel()
+                raise TimeoutError("LOTUS batch deadline exceeded")
         try:
+            check_stop()
+            # Observe the original whole uncached batch before any physical offer or wait.
+            if self.on_batch:
+                self.on_batch(uncached_data, all_kwargs)
+            check_stop()
+            first_call = validate_batch(lm, uncached_data, all_kwargs,
+                check_stop=check_stop) if self.prevalidate_batch else None
+            check_stop()
+            flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
+            responses = [None] * count
+            full = [None] * count if self.retain_full_responses else []
             while True:
-                if self.cancelled and self.cancelled():
-                    flow.request_cancel()
-                    raise RuntimeError("LOTUS batch cancelled")
-                if time.monotonic() - started >= self.timeout_s:
-                    flow.request_cancel()
-                    raise TimeoutError("LOTUS batch deadline exceeded")
+                check_stop()
                 if not pending and next_input < count:
                     size = min(flow.limits.offer_tasks, flow.limits.held_tasks, count - next_input)
                     offered = []
                     for sequence in range(next_input, next_input + size):
-                        call = prepare_call(lm, uncached_data[sequence][0], all_kwargs)
+                        check_stop()
+                        call = first_call if sequence == 0 and first_call is not None else prepare_call(lm, uncached_data[sequence][0], all_kwargs)
+                        first_call = None
                         check_model_config(call, self.model_config)
+                        if self.on_prepared:
+                            self.on_prepared(sequence, call)
                         offered.append(prepare_native_task(call.payload, sequence, row_sequence=sequence,
                             call_id=self.operator_id, max_result_bytes=flow.limits.item_result_bytes))
                     pending = tuple(offered)
                 if pending:
+                    check_stop()
                     outcome = flow.offer(pending)
                     if outcome.accepted_prefix_count:
                         next_input += outcome.accepted_prefix_count
@@ -79,6 +101,7 @@ class LotusBatchExecutor:
                 if next_input == count and not sealed:
                     flow.end_input()
                     sealed = True
+                check_stop()
                 progress = flow.advance(flow.limits.held_tasks)
                 delivery_error = None
                 try:
@@ -96,9 +119,10 @@ class LotusBatchExecutor:
                             error = ValueError("LOTUS retained batch responses exceed declared byte limit")
                             error.full_response = raw_response
                             raise error
-                        full[index] = raw_response
+                        if self.retain_full_responses:
+                            full[index] = raw_response
                         try:
-                            responses[index] = lotus_response(full[index])
+                            responses[index] = lotus_response(raw_response)
                         except OpenAIError as error:
                             responses[index] = error
                         completed += 1
@@ -127,7 +151,8 @@ class LotusBatchExecutor:
         finally:
             self.last_responses = tuple(full)
             try:
-                flow.close(clean=clean)
+                if flow is not None:
+                    flow.close(clean=clean)
             except BaseException as error:
                 self.last_cleanup_errors += (("close", error),)
                 if primary is None:

@@ -22,6 +22,10 @@ SOURCE_HASHES = {
     "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
     "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
 }
+LITELLM_SOURCE_HASHES = {
+    "llms/openai/chat/gpt_transformation.py": "5a19feeb4b9957b8d2fb7c941ef0573e4e3b2931ae85db7609f876cff9e07016",
+    "utils.py": "8ef5db22a20cd45740788756aabc0e394efe20877311f0eff4ce491c94335d2a",
+}
 GENERATION_PARAMS = frozenset({
     "temperature", "top_p", "max_tokens", "max_completion_tokens", "stop", "seed", "n",
     "presence_penalty", "frequency_penalty", "logit_bias", "logprobs", "top_logprobs",
@@ -36,10 +40,11 @@ def validate_source():
     for package, expected in (("lotus-ai", "1.2.4"), ("litellm", "1.95.0"), ("openai", "2.50.0")):
         if version(package) != expected:
             raise ValueError(f"LOTUS adapter requires {package} {expected}")
-    root = Path(import_module("lotus").__file__).parent
-    for relative, digest in SOURCE_HASHES.items():
-        if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
-            raise ValueError(f"LOTUS source differs at {relative}")
+    for package, hashes in (("lotus", SOURCE_HASHES), ("litellm", LITELLM_SOURCE_HASHES)):
+        root = Path(import_module(package).__file__).parent
+        for relative, digest in hashes.items():
+            if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
+                raise ValueError(f"LOTUS adapter source differs at {package}/{relative}")
 
 
 @dataclass(frozen=True)
@@ -48,6 +53,54 @@ class PreparedLotusCall:
     api_base: str
     api_key: str = field(repr=False)
     timeout_s: float
+
+
+def _validate_messages(messages):
+    if not isinstance(messages, list) or not messages:
+        raise ValueError("LOTUS adapter requires a complete text message list")
+    for message in messages:
+        if (type(message) is not dict or set(message) != {"role", "content"}
+                or message["role"] not in ("system", "user", "assistant")
+                or type(message["content"]) is not str):
+            raise ValueError("LOTUS adapter supports text messages with role and content")
+
+
+def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
+    """Reject an invalid suffix before I/O and retain only its first prepared call.
+
+    Common parameters use the actual provider transformation once. For the pinned
+    ordinary OpenAI provider, text-only messages add no row-dependent transformation
+    errors beyond structure and JSON/UTF-8 encoding. Complete calls are still prepared
+    by that provider in finite execution blocks, without retaining the entire batch.
+    """
+    if not uncached_data:
+        return None
+    if check_stop:
+        check_stop()
+    first = prepare_call(lm, uncached_data[0][0], all_kwargs)
+    if check_stop:
+        check_stop()
+    for index in range(1, len(uncached_data)):
+        if check_stop:
+            check_stop()
+        item = uncached_data[index]
+        messages = item[0]
+        _validate_messages(messages)
+        if any(type(message["role"]) is not str for message in messages):
+            # Preserve the existing JSON rules for unusual equality-compatible roles.
+            json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
+            continue
+        for message in messages:
+            for value in message.values():
+                if not value.isascii():
+                    try:
+                        value.encode()
+                    except UnicodeEncodeError:
+                        # The provider's JSON copy combines valid escaped surrogate pairs.
+                        json.loads(json.dumps(value)).encode()
+    if check_stop:
+        check_stop()
+    return first
 
 
 def prepare_call(lm, messages, all_kwargs) -> PreparedLotusCall:
@@ -71,13 +124,7 @@ def prepare_call(lm, messages, all_kwargs) -> PreparedLotusCall:
         raise ValueError("LOTUS paired execution requires explicit zero retries")
     if OpenAIConfig.get_config():
         raise ValueError("global LiteLLM OpenAI configuration must be empty")
-    if not isinstance(messages, list) or not messages:
-        raise ValueError("LOTUS adapter requires a complete text message list")
-    for message in messages:
-        if (type(message) is not dict or set(message) != {"role", "content"}
-                or message["role"] not in ("system", "user", "assistant")
-                or type(message["content"]) is not str):
-            raise ValueError("LOTUS adapter supports text messages with role and content")
+    _validate_messages(messages)
     api_base = kwargs.get("api_base")
     if type(api_base) is not str:
         raise ValueError("LOTUS adapter requires an explicit API base")

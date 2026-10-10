@@ -47,7 +47,8 @@ class MethodObservations:
         value.setdefault('monotonic_ns',time.monotonic_ns())
         self.writer.record(value)
 
-    def ready(self,row_id,stage,payload,*,response_representation,call_id='lotus-map',native_ready_ns=None):
+    def ready(self,row_id,stage,payload,*,response_representation,call_id='lotus-map',native_ready_ns=None,
+              ready_ns=None,readiness_scope=None):
         identity=(row_id,str(stage),call_id)
         if identity in self.calls:
             raise ValueError('method generated a duplicate complete call')
@@ -57,8 +58,11 @@ class MethodObservations:
         if native_ready_ns is not None:
             call['native_ready_ns']=native_ready_ns
             call['readiness_scope']='complete call received by the trusted batch callback; native steady clock retained separately'
+        if readiness_scope is not None:
+            call['readiness_scope']=readiness_scope
         self.calls[identity]=call
-        self.record(dict(event='task_ready',clock_domain=self.domain,**call))
+        self.record(dict(event='task_ready',clock_domain=self.domain,
+            monotonic_ns=time.monotonic_ns() if ready_ns is None else ready_ns,**call))
 
     def received(self,row_id,stage,body,*,when=None,call_id='lotus-map'):
         self.record(dict(event='caller_response',row_id=row_id,stage_id=str(stage),call_id=call_id,
@@ -79,16 +83,23 @@ class _LotusBatchObservation:
 
     def __call__(self,lm,data,kwargs,show_progress_bar,description):
         from src.semantic_methods.lotus.sdk import prepare_call
+        ready_ns=time.monotonic_ns()
         stage=self.stage;self.stage+=1
         if len(data)!=len(self.rows):
             raise ValueError('cache-disabled LOTUS batch differs from the source row set')
-        for index,item in enumerate(data):
-            call=prepare_call(lm,item[0],kwargs)
+        def prepared(index,call):
             self.observations.ready(self.rows[index]['row_id'],stage,call.payload,
-                                    response_representation='complete native SDK ModelResponse values')
+                response_representation='complete native SDK ModelResponse values',ready_ns=ready_ns,
+                readiness_scope='complete messages and effective parameters received by the original uncached batch entry; HTTP encoding follows')
+            self.observations.record(dict(event='lotus_http_call_prepared',row_id=self.rows[index]['row_id'],
+                stage_id=str(stage),clock_domain=self.observations.domain,
+                scope='expected native HTTP encoding' if self.executor is None else 'HTTP encoding used by execution'))
         if self.executor is None:
+            for index,item in enumerate(data):
+                prepared(index,prepare_call(lm,item[0],kwargs))
             results=self.original(data,kwargs,show_progress_bar,description)
         else:
+            self.executor.on_prepared=prepared
             self.executor.on_response=lambda index,full:self.observations.save_full(self.rows[index]['row_id'],stage,full)
             results=self.executor(lm,data,kwargs,show_progress_bar,description)
         if len(results)!=len(self.rows):
@@ -167,7 +178,8 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
     frame=pd.DataFrame({'row_id':[v['row_id'] for v in values],'text':[v['text'] for v in values]})
     context=stack.enter_context(lotus.settings.context(lm=lm,enable_cache=False))
     selected=None if execution is None else LotusBatchExecutor(execution,configured,
-        query_id=unit_id,operator_id='lotus-map',cancelled=stop.is_set)
+        query_id=unit_id,operator_id='lotus-map',cancelled=stop.is_set,
+        prevalidate_batch=True,retain_full_responses=False)
     chain=arm.startswith('lotus-two-map')
     if chain:
         if stages is None:

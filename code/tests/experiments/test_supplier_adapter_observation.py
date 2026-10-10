@@ -47,6 +47,11 @@ class SupplierObservationTests(unittest.TestCase):
         self.assertEqual(len(calls),1)
         receipts=[e for e in writer.events if e['event']=='caller_response']
         self.assertEqual(receipts[0]['monotonic_ns'],receipts[1]['monotonic_ns'])
+        ready=[e for e in writer.events if e['event']=='task_ready']
+        prepared=[e for e in writer.events if e['event']=='lotus_http_call_prepared']
+        self.assertEqual(ready[0]['monotonic_ns'],ready[1]['monotonic_ns'])
+        self.assertEqual(len(prepared),2)
+        self.assertTrue(all(ready[0]['monotonic_ns']<=e['monotonic_ns']<=receipts[0]['monotonic_ns'] for e in prepared))
         batches=[e for e in writer.events if e['event']=='lotus_batch_return']
         self.assertEqual(len(batches),1)
         self.assertEqual(batches[0]['monotonic_ns'],receipts[0]['monotonic_ns'])
@@ -59,6 +64,27 @@ class SupplierObservationTests(unittest.TestCase):
         result=summarize_calls(writer.events,list(observations.calls.values()))
         self.assertEqual(result['request_e2e']['count'],2)
         self.assertEqual(result['calls'][0]['response_representation'],'complete native SDK ModelResponse values')
+
+    def test_semloom_observation_uses_each_execution_payload_once_and_batch_entry_time(self):
+        from tests.semantic_methods.test_lotus_control import LotusControlTests
+        observations,writer,raw=self.observations()
+        with LotusControlTests().batch(prevalidate=True,retain=False) as (executor,execution,state):
+            lm=SimpleNamespace(_process_uncached_messages=lambda *args: (_ for _ in ()).throw(AssertionError('native pool called')))
+            observer=_LotusBatchObservation(lm,[dict(row_id='a'),dict(row_id='b')],observations,executor)
+            with patch('src.semantic_methods.lotus.batch.lotus_response',
+                side_effect=lambda full:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
+                observer(lm,[([dict(role='user',content=str(i))],None) for i in range(2)],{},False,'fixture')
+            self.assertEqual(state['events'].count('prepare'),2)
+            self.assertEqual(executor.last_responses,())
+            self.assertEqual(execution.engine.capacity.usage(),Usage())
+        ready=[e for e in writer.events if e['event']=='task_ready']
+        prepared=[e for e in writer.events if e['event']=='lotus_http_call_prepared']
+        self.assertEqual(ready[0]['monotonic_ns'],ready[1]['monotonic_ns'])
+        self.assertTrue(all(e['scope']=='HTTP encoding used by execution' for e in prepared))
+        self.assertTrue(all(ready[0]['monotonic_ns']<=e['monotonic_ns'] for e in prepared))
+        self.assertEqual([content['request_values_sha256'] for content in observations.calls.values()],
+            [hashlib.sha256(json.dumps(json.loads(payload),sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':')).encode()).hexdigest() for payload in state['actual']])
+        self.assertEqual(len(raw.getvalue().splitlines()),4)
 
     def test_two_stage_observation_keeps_supplier_state_and_real_successor(self):
         observations,writer,raw=self.observations()
