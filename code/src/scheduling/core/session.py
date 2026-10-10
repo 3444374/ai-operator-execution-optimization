@@ -37,7 +37,7 @@ from .session_contract import (
     Usage,
 )
 from .session_policy import IncrementalCreditPolicy, SessionPolicies
-from .task_info import validate_task_info
+from .task_info import _TaskInfoChecks, validate_task_info
 from .session_jobs import (
     JobBudget,
     JobHandle,
@@ -563,7 +563,7 @@ class SessionEngine:
 
 
 class SchedulingSession:
-    """One flow owns only accepted tasks and outstanding delivery leases."""
+    """One flow owns accepted tasks, delivery leases and bounded pending metadata checks."""
 
     def __init__(
         self, engine: SessionEngine, session_id: int, spec: SessionSpec, limits: SessionLimits
@@ -581,6 +581,7 @@ class SchedulingSession:
         self._capacity_waiting: TaskKey | None = None
         self.job: JobHandle | None = None
         self._dispatch_enabled = True
+        self._info_checks = _TaskInfoChecks()
 
     def _records(self) -> tuple[TaskRecord, ...]:
         return tuple(
@@ -594,6 +595,7 @@ class SchedulingSession:
     def _fail(self, reason: str) -> None:
         self.error = self.error or reason
         self.state = State.FAILED
+        self._info_checks.clear()
 
     def request_cancel(self) -> None:
         """The only session mutation available to another thread is a cancellation flag."""
@@ -603,6 +605,7 @@ class SchedulingSession:
     def _validate_batch(self, tasks: tuple[OfferedTask, ...] | list[OfferedTask]) -> bool:
         if type(tasks) not in (tuple, list) or len(tasks) > self.limits.offer_tasks:
             return False
+        self._info_checks.begin()
         for offset, task in enumerate(tasks):
             if type(task) is not OfferedTask or type(task.sequence) is not int:
                 return False
@@ -613,7 +616,7 @@ class SchedulingSession:
                 return False
             try:
                 spec = self.spec.resolve(task.profile_name)
-                validate_task_info(task, spec, self.limits.metadata_bytes)
+                validate_task_info(task, spec, self.limits.metadata_bytes, self._info_checks)
             except ValueError:
                 return False
             job_budget = self.engine.capacity.job_limits.get(self.spec.job_id)
@@ -646,8 +649,10 @@ class SchedulingSession:
             self._check_open_handle()
             wake = self.engine.wake
             if self.state != State.OPEN or self._cancel.is_set():
+                self._info_checks.clear()
                 return OfferResult(0, "REJECTED", "session not open", wake.generation)
             if not self._validate_batch(tasks):
+                self._info_checks.clear()
                 return OfferResult(0, "REJECTED", "invalid batch", wake.generation)
             # Prepare against a private copy; no user callback or dispatch occurs here.
             capacity = self.engine.capacity
@@ -690,9 +695,11 @@ class SchedulingSession:
             status = "ACCEPTED" if accepted == len(tasks) else "BACKPRESSURE"
             result = OfferResult(accepted, status, reason, wake.generation + bool(accepted))
             if self._cancel.is_set():
+                self._info_checks.clear()
                 return OfferResult(0, "REJECTED", "cancel requested", wake.generation)
             capacity.records = candidate
             self._next_sequence += accepted
+            self._info_checks.retain(self._next_sequence)
             if accepted:
                 wake.notify()
             return result
@@ -702,6 +709,7 @@ class SchedulingSession:
             self._check_open_handle()
             if self.state == State.OPEN:
                 self.state = State.DRAINING
+                self._info_checks.clear()
                 self.engine.wake.notify()
 
     def cancel(self, reason: str = "cancelled") -> None:
@@ -709,9 +717,11 @@ class SchedulingSession:
             self._check_open_handle()
             if self.state not in TERMINAL_STATES:
                 self.state = State.CANCELLED
+            self._info_checks.clear()
             self.request_cancel()
 
     def _cleanup(self, budget: int, *, cancel_only: bool = False) -> int:
+        self._info_checks.clear()
         self._pending_members = ()
         used = 0
         records = self._records()

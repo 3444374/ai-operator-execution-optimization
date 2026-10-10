@@ -506,6 +506,16 @@ admission, routing and FIFO credit policies. Task choice is configurable over an
 candidate window; resource ownership is managed by the engine. Result leases remain charged until
 released, and uncertain remote work remains charged after session close.
 
+As an engineering decision, each session reuses static `TaskInfo` checks only for its latest
+unaccepted offer, bounded by `offer_tasks`. It retains primitive field signatures and encoded sizes,
+without task, descriptor, request or response references. Every offer still resolves profiles and
+checks sequences, current work/storage limits, opaque metadata and cancellation; changed deep fields
+or resolved specifications require a new static check. The whole offered batch is checked before any
+task transfers ownership. Accepted entries and pending checks on invalid offers, seal, cancellation,
+failure or close are discarded by the session owner. Callers supply no validation stamp; the existing
+three-argument `validate_task_info` behavior remains available. See the
+[reuse and lifecycle checks](tests/scheduling/test_task_info_reuse.py).
+
 This is where later data organization and submission strategies cooperate, rather than a parallel
 submitter outside the execution layer. The current reference submits one task at a time. Multi-member
 submissions and prepare-stage buffers need explicit member/result mapping and shared budgets before
