@@ -45,7 +45,9 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 完整响应包含实际HTTP状态、重复header、原始body和HTTP版本；Content-Encoding由同版本HTTPX解码，
 原始字节仍保留。HTTP错误保留完整响应并按LM错误路径上抛；解析错误同样保留原始响应。
 
-调用方创建、推进和关闭execution；单Map适配负责自己的Job/session，始终归还每条结果lease。
+调用方创建、推进和关闭execution；单Map适配负责自己的Job/session，在观察及SDK转换结束后归还结果lease。
+执行或delivery处理的第一异常保持顶层；release或close的附加错误以阶段、类型写入notes，
+具体异常对象按批次保存在`last_cleanup_errors`。没有执行错误时首次清理错误传播，后续关闭仍会尝试。
 取消及超时停止新增任务，远端未确认工作仍由公共Engine保留，退出不伪造远端停止证明。
 `iter_two_map_rows`只读有限外部输入，每行最多两个串行请求。输出带原始`RowIdentity`，按可用顺序返回；
 调用方可依原序号复位。方法结果在调用方消费期间仍计入固定MethodBudget，关闭迭代器归还本地状态。
@@ -78,42 +80,17 @@ with lotus_executor(native_lm):
 
 ## 验证入口
 
-[确定性库测试](../../../tests/semantic_methods/test_lotus_adapter.py)使用真正LOTUS/LiteLLM、
-原生HTTP客户端、公共本地诊断执行和MethodDriver；
-[Daft/Ray检查](../../../tests/semantic_methods/test_lotus_ray.py)进一步使用真正Daft0.7.21、
-Arrow24.0.0和Ray2.56.1，明确启用`SEMLOOM_LOTUS_RAY_TEST=1`。
-Ray检查要求仓库外`SEMLOOM_LOTUS_RAY_TMP`为短数据盘目录，以容纳Unix socket路径；
-`SEMLOOM_LOTUS_TEST_ARTIFACT`接收脱敏后的原始事件与响应。
-测试cluster使用2个CPU、0个GPU、128MiB对象存储；传输窗口约1MiB、对象额度8MiB、活动请求2。
-HTTP超时5秒，Core backend等待45秒以覆盖冷Daft准备，单次脚本120秒；改变等待设置的失败原件保留。
-来源工作树、依赖提交、实际检查结果和失败保存在本任务的仓库外交接记录。
-全部模型响应来自localhost确定性替身，真实模型请求0；此检查不支持质量或性能结论。
+[SDK与方法检查](../../../tests/semantic_methods/test_lotus_adapter.py)覆盖真实LOTUS/LiteLLM、
+原生HTTP正文、usage、费用、logprobs及两Map依赖；
+[等待检查](../../../tests/semantic_methods/test_lotus_wait.py)覆盖等待序号和结果留存；
+[异常检查](../../../tests/semantic_methods/test_lotus_cleanup.py)覆盖第一错误、附加清理错误和Core资源归还。
+[Daft/Ray检查](../../../tests/semantic_methods/test_lotus_ray.py)需显式启用`SEMLOOM_LOTUS_RAY_TEST=1`，
+并将`SEMLOOM_LOTUS_RAY_TMP`设为仓库外短目录，`SEMLOOM_LOTUS_TEST_ARTIFACT`接收脱敏事件。
+这些入口使用localhost响应替身；真实模型结论与实际源码身份由结果报告分别记录。
 
-2026-10-09验证：15项LOTUS专属检查、33项完整响应/原有传输/MethodDriver回归及1项真正Daft/Ray检查通过。
-主传输检查包含24次确定性响应，核对了两阶段完整响应、usage、logprobs、原行关联和逐行后继推进。
-测试自己的Ray进程、任务额度与Job均已退出。Mac解释器缺少LOTUS等依赖，16项实库测试明确跳过；
-实际通过证据来自指定服务器的既有独立driver环境。此前SDK对拍、Unix socket路径过长和冷准备等待不足的
-失败原件保留；全局整合及真实模型质量/性能验证仍由整合任务完成。
-
-## 异常退出修复
-
-2026-10-09在LOTUS独立分支`5ba43329`上复现：请求准备、offer或advance已有错误时，close错误会替换它；
-delivery解码、响应观察或SDK解析已有错误时，release及close错误也会替换第一错误。
-现在分别捕获本次执行和delivery处理的第一异常，再尝试释放及关闭。附加错误以阶段、类型写入
-第一异常的notes，`last_cleanup_errors`逐批次保存`("release"或"close", 异常对象)`元组。
-没有执行错误时，第一次清理错误以原对象传播，随后关闭仍会尝试；后续错误作为附注另记。
-调用方正在处理旧异常时，本批次的清理错误也须传播，因此使用局部异常捕获判断本次第一错误。
-
-[异常回归](../../../tests/semantic_methods/test_lotus_cleanup.py)新增11项检查，覆盖prepare/offer/advance、
-完整响应解码、观察、SDK解析、响应字节额度、连续清理失败、成功返回、后继批次诊断重置，
-以及调用方正在处理旧异常的情形。原有完整响应、`last_responses`、SDK usage和缓存token处理保留。
-测试核对真实Core的任务额度及Job归还；close故障注入在执行实际关闭动作后抛出，资源归还结果
-对应这一受控情形。旧失败、初步修复和最终修复的原件分别保留，没有将初步通过作为最终结果。
-
-独立分支最终57项回归通过；以整合提交`1024fb90`为基础、仅加入异常处理的临时副本59项通过。
-后者包含公共空release修复和常驻owner修复，未叠加独立分支原来的调用侧判断。
-整合只采用公共空释放实现，另引入`60c45593`的异常处理与11项回归，没有加入调用侧判断。
-全部独立检查使用CPU40–47、`CUDA_VISIBLE_DEVICES`为空，新增真实模型请求0。
-预检查的软件依赖通过；指定8个CPU少于机器画像默认10个而报告缺项，该记录与CPU用例一起保存。
-源码摘要、全部测试输出和独立补丁以仓库外运行标识`lotus-failure-repair-20261009`交接。
-全局状态、证据登记及统一源码的模型复测由主会话处理。
+整合只采用公共空释放实现，并引入`60c45593`的异常处理；调用侧候选保留在历史分支。
+测量、失败及后续模型复核归[整合结果](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+后续修复的[公开核验记录](https://github.com/3444374/ai-operator-execution-optimization/blob/e8051fef151f00349581b8521d1709fb89a54612/experiments/results/postgresql/native_adapter_integration_20261009/adapter-repair-final-verification.json)
+登记独立57项／组合59项检查、来源提交、原件摘要及公开恢复入口。
+[历史诊断样本](https://github.com/3444374/ai-operator-execution-optimization/blob/60c45593b8d837684c24f6f29375c15af3495f76/code/src/semantic_methods/lotus/README.md#单map等待循环修复)
+保留独立分支原数值与CPU设置，来源对应原提交，便于与后续整合样本分别核对。
