@@ -79,6 +79,37 @@ Daft／Arrow准备、Ray对象写入、worker执行和返回按实际事件分�
 SQL提交至全部结果消费另按[查询记录](../../src/experiments/postgresql/supplier_adapter_query.py)计时，
 请求统计口径见[指标实现](../../src/experiments/postgresql/native_adapter_metrics.py)。
 
+### 可选推进与消费诊断
+
+`DuckDBNativeTaskExecutor(..., collect_timings=True)`和
+`DuckDBSemLoomBridge(..., collect_timings=True)`只增加Python本进程的累计计时。
+默认`False`不读取诊断时钟，`last_timings`为`None`；开启后每批次结束更新该字段，
+保存各阶段的`count`、`total_ns`、`maximum_ns`，不留请求／响应正文或逐任务历史。
+原生C++解析、结果使用权归还、取消和停止行为保持。
+
+| 对象／阶段 | 实际测量内容 |
+|---|---|
+| 执行器`task_prepare`／`task_offer` | 待接纳后缀封装／公共任务接纳调用 |
+| 执行器`core_advance` | 一次公共Engine推进与完成结果取得；含本进程处理，不能当作模型时间 |
+| 执行器`delivery_decode_release` | 完整响应解码、行关联校验与结果使用权归还 |
+| 执行器`caller_resume` | 从交出完整响应至生成器恢复或关闭；含现有观测包装、桥接复制及原生消费 |
+| 执行器`wait` | 公共完成通知与截止时间等待 |
+| 桥`response_validation_copy` | 响应关联／大小检查及C接口缓冲复制 |
+| 桥`native_consume` | 实际原C++消费回调的调用耗时 |
+| 两者`batch` | 各自完整批次调用，包含正常退出或错误处理 |
+
+执行器另存`max_core_advance_gap_ns`，表示相邻两次推进开始时刻的最大间隔；
+其中可以包含等待、准备和消费者处理。它不能单独证明有合法待派发工作或GPU空闲。
+上述区间有包含关系，尤其`native_consume`属于`caller_resume`，不得相加当作查询分解。
+非完成的准备／接纳调用不计入其局部阶段；完整批次与消费退出仍保留。
+每个已完成局部区间增加两次单调时钟采样和常数个字典更新，正式比较应对成对入口采用相同观察设置。
+
+CPU替身确认，同步消费者的人为等待能延迟后续Core推进；这只表征推进结构，
+未证明真实C++解析或当前观测包装足以解释已有模型查询差距。因此没有改默认推进或物理批次。
+本地专项为32项，19通过、13项需Linux编译扩展而跳过，真实模型调用为0；
+开启计时覆盖实际Core＋ctypes消费、原生提前停止、内部关闭失败和逐批重置。
+Linux实际库与模型分层比较由整合任务统一验证并登记。
+
 ## 构建与使用
 
 上游源码、DuckDB 源码、构建缓存和二进制均在仓库外保存。需要 C++17 工具链、CMake、Ninja、

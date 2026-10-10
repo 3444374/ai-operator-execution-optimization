@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ctypes as ct
 import threading
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
@@ -11,6 +12,27 @@ from src.baselines.common.redact import redact_text
 
 MAX_BATCH_BYTES = 32 * 1024 * 1024
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
+
+
+class _BatchTimings:
+    """Opt-in local duration totals; never keep tasks or response bytes."""
+    def __init__(self, enabled):
+        self.enabled = enabled
+        self.phases = {}
+
+    def start(self):
+        return time.monotonic_ns() if self.enabled else None
+
+    def finish(self, phase, started):
+        if started is not None:
+            duration = time.monotonic_ns() - started
+            value = self.phases.setdefault(phase, dict(count=0, total_ns=0, maximum_ns=0))
+            value['count'] += 1
+            value['total_ns'] += duration
+            value['maximum_ns'] = max(value['maximum_ns'], duration)
+
+    def snapshot(self, **extra):
+        return dict(clock='python monotonic_ns', phases=self.phases, **extra) if self.enabled else None
 
 
 @dataclass(frozen=True)
@@ -70,9 +92,12 @@ class DuckDBSemLoomBridge:
     DuckDB SQL or install another per-row request executor. No payload is logged here.
     """
     def __init__(self, extension: str | Path,
-                 execute: Callable[[tuple[DuckDBCall, ...], Callable[[], bool]], Iterable[DuckDBResponse]]):
+                 execute: Callable[[tuple[DuckDBCall, ...], Callable[[], bool]], Iterable[DuckDBResponse]],
+                 *, collect_timings=False):
         self.path = str(Path(extension).resolve())
         self.execute = execute
+        self.collect_timings = collect_timings
+        self.last_timings = None
         self.last_error: str | None = None
         self.last_cleanup_error: str | None = None
         self.batch_sizes: list[int] = []
@@ -105,6 +130,8 @@ class DuckDBSemLoomBridge:
             self._buffers.pop(batch_id, None)
 
     def _dispatch(self, batch_id, raw_calls, count, raw_responses, is_cancelled, consume, context) -> int:
+        timings = _BatchTimings(getattr(self, 'collect_timings', False))
+        batch_started = timings.start()
         cancelled = lambda: bool(is_cancelled(context))
         buffers: list = []
         iterator = None
@@ -112,6 +139,7 @@ class DuckDBSemLoomBridge:
         primary_error = cleanup_error = None
         with self._lock:
             self.last_error = self.last_cleanup_error = None
+            self.last_timings = None
             self._buffers[batch_id] = buffers
             self.batch_sizes.append(count)
             # Bounded diagnostic history, independent of query size.
@@ -135,6 +163,7 @@ class DuckDBSemLoomBridge:
                 result_bytes = 0
                 iterator = iter(self.execute(calls, cancelled))
                 for response in iterator:
+                    copy_started = timings.start()
                     if response.call_id not in positions or response.call_id in received:
                         raise ValueError('DuckDB batch response repeats or changes call identity')
                     if not isinstance(response.body, bytes):
@@ -154,7 +183,12 @@ class DuckDBSemLoomBridge:
                     raw_responses[index] = _Response(calls[index].row, ct.addressof(body_buffer), len(response.body),
                                                     response.http_status, response.elapsed_ms,
                                                     ct.addressof(error_buffer), len(error))
-                    parsed = consume(index, ct.byref(raw_responses[index]), context)
+                    timings.finish('response_validation_copy', copy_started)
+                    consume_started = timings.start()
+                    try:
+                        parsed = consume(index, ct.byref(raw_responses[index]), context)
+                    finally:
+                        timings.finish('native_consume', consume_started)
                     if parsed == 1:
                         status = 3
                         break
@@ -179,9 +213,11 @@ class DuckDBSemLoomBridge:
         if status == 0 and cleanup_error is not None:
             primary_error = cleanup_error
             status = 2
+        timings.finish('batch', batch_started)
         with self._lock:
             self.last_error = primary_error
             self.last_cleanup_error = cleanup_error
+            self.last_timings = timings.snapshot()
         return status
 
     def enable(self, connection) -> None:
@@ -212,9 +248,11 @@ class DuckDBNativeTaskExecutor:
     The service owner creates and closes execution. This adapter releases each delivery
     after copying its full response into the native vector's bounded result storage.
     """
-    def __init__(self, execution, config, *, describe_work=None):
+    def __init__(self, execution, config, *, describe_work=None, collect_timings=False):
         self.execution, self.config = execution, config
         self.describe_work = describe_work
+        self.collect_timings = collect_timings
+        self.last_timings = None
         self.last_close_report = None
         self.last_cleanup_error = None
         self.last_cleanup_errors: tuple[str, ...] = ()
@@ -227,6 +265,11 @@ class DuckDBNativeTaskExecutor:
         self.last_close_report = None
         self.last_cleanup_error = None
         self.last_cleanup_errors = ()
+        self.last_timings = None
+        timings = _BatchTimings(self.collect_timings)
+        batch_started = timings.start()
+        last_advance_ns = None
+        max_advance_gap_ns = 0
         if not calls:
             return
         # The fixed transport uses these identities and bearer header, never provider guesses.
@@ -251,6 +294,7 @@ class DuckDBNativeTaskExecutor:
                     flow.request_cancel()
                     raise InterruptedError('DuckDB query cancelled')
                 if offset < len(calls):
+                    prepare_started = timings.start()
                     stop = min(len(calls), offset + flow.limits.offer_tasks)
                     # Keep rejected tasks and their work description; only fill new suffix positions.
                     first_new = offset + len(pending)
@@ -259,7 +303,10 @@ class DuckDBNativeTaskExecutor:
                         work=self.describe_work(call) if self.describe_work else None,
                         max_result_bytes=flow.limits.item_result_bytes,
                     ) for i, call in enumerate(calls[first_new:stop], first_new))
+                    timings.finish('task_prepare', prepare_started)
+                    offer_started = timings.start()
                     result = flow.offer(pending)
+                    timings.finish('task_offer', offer_started)
                     if result.status not in ('ACCEPTED', 'BACKPRESSURE'):
                         raise RuntimeError('DuckDB task offer rejected: ' + result.reason)
                     offset += result.accepted_prefix_count
@@ -267,8 +314,15 @@ class DuckDBNativeTaskExecutor:
                 if offset == len(calls) and not sealed:
                     flow.end_input()
                     sealed = True
+                advance_started = timings.start()
+                if advance_started is not None:
+                    if last_advance_ns is not None:
+                        max_advance_gap_ns = max(max_advance_gap_ns, advance_started - last_advance_ns)
+                    last_advance_ns = advance_started
                 progress = flow.advance(flow.limits.offer_tasks)
+                timings.finish('core_advance', advance_started)
                 for delivery in progress.deliveries:
+                    decode_started = timings.start()
                     delivery_error = None
                     try:
                         raw = decode_full_response(delivery.result)
@@ -286,14 +340,23 @@ class DuckDBNativeTaskExecutor:
                             cleanup_errors.append(redact_text(f'release: {type(error).__name__}: {error}')[:4096])
                             if delivery_error is None:
                                 raise
+                        finally:
+                            timings.finish('delivery_decode_release', decode_started)
                     # -1 preserves unavailable HTTP-only elapsed time. It is never queue time or zero.
-                    yield response
+                    caller_started = timings.start()
+                    try:
+                        yield response
+                    finally:
+                        # Includes wrappers and native consumption until this generator resumes/closes.
+                        timings.finish('caller_resume', caller_started)
                 if progress.state == State.FINISHED:
                     finished = True
                     return
                 if progress.state in (State.FAILED, State.CANCELLED):
                     raise RuntimeError('DuckDB common execution stopped: ' + str(progress.error))
+                wait_started = timings.start()
                 flow.wait(progress, min(0.01, flow.limits.poll_interval_s))
+                timings.finish('wait', wait_started)
         except GeneratorExit:
             # Closing after a consumer stop is control flow, not an inner execution error.
             raise
@@ -308,6 +371,8 @@ class DuckDBNativeTaskExecutor:
                 if primary_error is None:
                     raise
             finally:
+                timings.finish('batch', batch_started)
+                self.last_timings = timings.snapshot(max_core_advance_gap_ns=max_advance_gap_ns)
                 self.last_close_report = close_report
                 self.last_cleanup_errors = tuple(cleanup_errors)
                 self.last_cleanup_error = '\n'.join(cleanup_errors)[:4096] if cleanup_errors else None
