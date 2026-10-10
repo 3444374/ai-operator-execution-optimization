@@ -237,16 +237,30 @@ class SemaSemLoomService(SemaRequestService):
 
     def _record_event(self, event, when):
         # Bounded by the finite query and transport events; keep safe event metadata.
-        if len(self._core_events) < self.limits.max_requests * 32 + 32:
-            self._core_events.append({**event, 'observed_ns': when})
-        if event.get('event') == 'ray_http_completed':
-            entry = self._pending.get(event['key']['sequence'])
-            if entry is not None:
-                row = entry['row']
-                row['forward_started_ns'] = event['rpc_started_ns']
-                row['model_returned_ns'] = event['worker_ended_ns'] if event['shared_clock'] else None
-                row['model_returned_observed_ns'] = event['received_ns']
-                row['model_clock_shared'] = event['shared_clock']
+        try:
+            if len(self._core_events) < self.limits.max_requests * 32 + 32:
+                self._core_events.append({**event, 'observed_ns': when})
+            if event.get('event') == 'ray_http_completed':
+                entry = self._pending.get(event['key']['sequence'])
+                if entry is not None:
+                    row = entry['row']
+                    row['forward_started_ns'] = event['rpc_started_ns']
+                    row['model_returned_ns'] = event['worker_ended_ns'] if event['shared_clock'] else None
+                    row['model_returned_observed_ns'] = event['received_ns']
+                    row['model_clock_shared'] = event['shared_clock']
+        except Exception as error:
+            key = event.get('key') if type(event) is dict else None
+            task_sequence = key.get('sequence') if type(key) is dict else None
+            sequence = next((row['request_sequence'] for row in self._rows
+                             if task_sequence is not None and row.get('core_task_sequence') == task_sequence), None)
+            previous = self.first_error
+            try:
+                self._fail(sequence, _Reply(502, b'{"error":"Sema event recording failed"}', ()),
+                           'observation_record', cause=error)
+            except BaseException as cleanup:
+                self._record_cleanup_error('observation_cancel', cleanup)
+            if previous is not None:
+                self._record_cleanup_error('observation_record', error)
 
     def _build_execution(self):
         # Compose the existing factory's pre-send hook with the common response mode.
@@ -288,7 +302,12 @@ class SemaSemLoomService(SemaRequestService):
 
     def __exit__(self, *error):
         try:
-            return super().__exit__(*error)
+            result = super().__exit__(*error)
+            # A successful HTTP reply need not have reported a later recording error.
+            if ((not error or error[0] is None) and self.first_error is not None
+                    and self.first_error.phase == 'observation_record'):
+                raise self.first_error
+            return result
         finally:
             if self.executor_owner is not None and (self.first_error is not None or self.cleanup_errors):
                 self.executor_owner.poisoned = True

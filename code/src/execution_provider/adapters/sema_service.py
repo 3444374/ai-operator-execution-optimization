@@ -136,10 +136,12 @@ class SemaRequestService:
         """The native SQL completion marker proves that no more calls can follow."""
         self._halted.set()
 
-    def _fail(self, sequence, reply, phase):
+    def _fail(self, sequence, reply, phase, *, cause=None):
         if self.first_error is None:
             self.first_error = SemaServiceError(
                 sequence, reply.status, reply.body, reply.headers, phase)
+            if cause is not None:
+                self.first_error.__cause__ = cause
         self.cancel()
 
     @property
