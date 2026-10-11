@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[SQuAD原生完整请求画像](../experiments/results/diagnostics/squad_native_length_20261011/README.md)。
+原生formatter、SDK与本地tokenizer全量检查完成；自然调参切片未满足方案异质性条件，模型0。本方案长度控制与薄转发装配暂未推进，现有接入入口和默认保持。
+
 2026-10-11：[Sema期限与归档复算收尾](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-closeout)。
 转发和SemLoom从执行入口共用一次期限；交错归档先读清单再选请求文件，默认复算与旧观察完全一致。104项相关检查通过、3项实际库未启用，新增模型调用0。
 

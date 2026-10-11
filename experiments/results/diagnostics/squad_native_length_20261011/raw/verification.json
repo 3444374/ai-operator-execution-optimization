@@ -1,0 +1,66 @@
+{
+  "archive_name": "squad-length24-full.tar.gz",
+  "archive_bytes": 2165352,
+  "archive_sha256": "d1e6fca3e7d66b3524d2af9f5842b8b752c29ac7fd1d01525b92c136b7edac16",
+  "members": {
+    "dataset-source.json": {
+      "bytes": 249,
+      "sha256": "34cf73572a92a9bd67a48aa21df87cdb803d184dffcd02fbfedb8ebb47c1dc99"
+    },
+    "profile-summary.json": {
+      "bytes": 1505,
+      "sha256": "4559cda5a50892e31096a605da66bc21acafbd8adbbb3afb3c7e6bd1e11cb0f3"
+    },
+    "stop-record.json": {
+      "bytes": 400,
+      "sha256": "4d199058ef36d97d0bb560d2805c0105377425a792d5f40fcadc23f3d43a5ab3"
+    },
+    "finish-state.json": {
+      "bytes": 206,
+      "sha256": "b5e0239358f8d29bb1b2b18c452bfa930df78b622ef350e367525425237b5f83"
+    },
+    "preparation-identity.json": {
+      "bytes": 112,
+      "sha256": "40b579fd874ac9afbb25cf32a748c3c7104a5c0a8c83d55b27ab25bdcb820ac5"
+    },
+    "storage-check.json": {
+      "bytes": 152,
+      "sha256": "39034a934c76daa59b4786bb198c72f7a209087341c88874a9a554939242fd67"
+    },
+    "preflight.json": {
+      "bytes": 6025,
+      "sha256": "c0cdfec1517835aebec01aade1c868dbcc8e098f90eec7a7c08077c61080f4c5"
+    },
+    "preflight.stdout": {
+      "bytes": 6025,
+      "sha256": "c0cdfec1517835aebec01aade1c868dbcc8e098f90eec7a7c08077c61080f4c5"
+    },
+    "profile.stdout": {
+      "bytes": 1253,
+      "sha256": "031782394440d84c4393fd14e6eb9434af8082f3081e5abaf8e63af9b71dc4e4"
+    },
+    "profile.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "profile_squad_lotus.py": {
+      "bytes": 6721,
+      "sha256": "ad62ca988052fd69391536e2461d90582ef388415f17f6480f9f577f8fe8a831"
+    },
+    "dev-v1.1.json": {
+      "bytes": 4854279,
+      "sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9"
+    },
+    "input-manifest.json": {
+      "bytes": 1634420,
+      "sha256": "a0e4a59a1921bbeae09642d1170bb442ed3f26949e044e020219bd3076bb869b"
+    },
+    "native-profile.json": {
+      "bytes": 3941085,
+      "sha256": "0099af42e0b045376de6fbddbfd2ab7810ee91e06e9d7d11a375c8d61b57cb3a"
+    }
+  },
+  "public_profile_bytes": 669834,
+  "public_profile_sha256": "c794766015f3d426f2613eb61797dbc00613ceee10b61b915bd7cb5f0b8c4a14",
+  "model_calls": 0
+}

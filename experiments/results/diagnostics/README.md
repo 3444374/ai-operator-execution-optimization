@@ -2,6 +2,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[SQuAD原生完整请求长度检查](squad_native_length_20261011/README.md)：实际LOTUS formatter与本地tokenizer全量画像；自然调参切片未达到预定异质性条件，未进入模型比较，原件与复算保留。
+
 [文本Map准备分段原型](map_input_preparation_20261004/README.md)：单Job输入借用/阶段持有、本地替身与服务器实际库检查；默认与模型请求保持原用途，失败和补测来源归同一报告。
 
 [真实分批成本与供给形态](map_preparation_shape_20261004/README.md)：固定窗口回放、单／双Job内部对照及选取前就绪快照，模型及PG0；重复、观察干扰、失败和恢复来源归同一报告。

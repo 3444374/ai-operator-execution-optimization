@@ -1,0 +1,51 @@
+{
+  "schema": "semloom.squad.native_request_profile.v1",
+  "source_sha256": "95aa6a52d5d6a735563366753ca50492a658031da74f301ac5238b03966972c9",
+  "source_rows": 10570,
+  "eligible_rows": {
+    "tuning": 5282,
+    "evaluation": 5288
+  },
+  "excluded_context_rows": 0,
+  "tokenizer_sha256": "dd15b53ba5b6886cb665ba580b2bf3ab372edb6c0a2058e4b1ed79a56963e799",
+  "model_id": "qwen2.5-7b",
+  "max_tokens": 64,
+  "preparation_source": "099b994cd90317393e3d50a4b97ccfc894088ac2",
+  "method": "unmodified LOTUS single text sem_map formatter and provider transformation",
+  "splits": {
+    "tuning": {
+      "rows": 512,
+      "input_token_quantiles": {
+        "0": 113,
+        "10": 189,
+        "50": 244,
+        "90": 348,
+        "99": 580,
+        "100": 716
+      },
+      "mean_input_tokens": 262.22265625,
+      "coefficient_of_variation": 0.32044929949276146,
+      "ratio_90_to_10": 1.8412698412698412,
+      "request_bytes": 682475
+    },
+    "evaluation": {
+      "rows": 512,
+      "input_token_quantiles": {
+        "0": 120,
+        "10": 171,
+        "50": 240,
+        "90": 347,
+        "99": 521,
+        "100": 560
+      },
+      "mean_input_tokens": 253.0546875,
+      "coefficient_of_variation": 0.29604812486325843,
+      "ratio_90_to_10": 2.0292397660818713,
+      "request_bytes": 663559
+    }
+  },
+  "decision": "insufficient_heterogeneity",
+  "elapsed_seconds": 13.146456524264067,
+  "model_calls": 0,
+  "history_exclusion_status": "not yet audited; offline opportunity check only"
+}

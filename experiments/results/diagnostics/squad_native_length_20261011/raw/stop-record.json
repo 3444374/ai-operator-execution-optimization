@@ -1,0 +1,8 @@
+{
+  "status": "stopped_before_model",
+  "reason": "tuning native input token 90-to-10 ratio below predeclared 2",
+  "model_calls": 0,
+  "queries_executed": 0,
+  "implementation_changes": 0,
+  "preparation_warning": "Git dataset acquisition emitted one upstream HTTP 503 message; the outer step completed and the resulting official file SHA-256 was verified. No model retry or invocation occurred."
+}

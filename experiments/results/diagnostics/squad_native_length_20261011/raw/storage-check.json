@@ -1,0 +1,7 @@
+{
+  "mount_target": "/root/autodl-tmp",
+  "filesystem": "xfs",
+  "free_bytes": 436765921280,
+  "download_expected_bytes": 4854279,
+  "model_calls": 0
+}
