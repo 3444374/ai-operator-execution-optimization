@@ -935,10 +935,10 @@
     "model_posts": 26248,
     "storage": {
       "path": "execution-cost-observations.json.gz",
-      "compressed_bytes": 1032814,
-      "compressed_sha256": "b71ec93e4a775a46ad8de248c6dc79cb6997e4cce3f7d020a67ba5dea828b975",
-      "uncompressed_bytes": 4048383,
-      "uncompressed_sha256": "617208092ff055018b5aef151dac07dd90f5b75e041b7e568764a38d4b397eca"
+      "compressed_bytes": 2045661,
+      "compressed_sha256": "276ba4ab87cc58bfc743c9ddc05ac26aa5716d6cf0449fdc0916b93d0da9d68d",
+      "uncompressed_bytes": 10539764,
+      "uncompressed_sha256": "b0e5137489d83bd61e10f207cf5180324fc791ccb7fdc28a244b03daa3e63d14"
     },
     "preservation": {
       "execution-diagnosis14-cpu-before": {
@@ -1010,6 +1010,34 @@
         "archive_sha256": "eea31535f77d9583ea6e17de0da93d8bccaf2b98a5cc9d0bb815c5270c4aad55",
         "members": 365,
         "local_backup_verified": true
+      },
+      "fixture-layers20-failed": {
+        "archive_name": "fixture-layers20-failed-full.tar.gz",
+        "archive_bytes": 295771,
+        "archive_sha256": "27cf366415323845e93735b9f96f7ffe5b4028f8d422a860d2460cef05387142",
+        "members": 104,
+        "local_backup_verified": true
+      },
+      "fixture-layers20": {
+        "archive_name": "fixture-layers20-full.tar.gz",
+        "archive_bytes": 769780,
+        "archive_sha256": "5aac2283a43d27f52b13d3c6c884917a7cc557a9a3bbb3547a36f709a1e49a94",
+        "members": 213,
+        "local_backup_verified": true
+      },
+      "sema-layers20-failed": {
+        "archive_name": "sema-layers20-failed-full.tar.gz",
+        "archive_bytes": 259461,
+        "archive_sha256": "aa3633205946b449a516973c575852ae5ab14dbcbb822fce704139505518d4b0",
+        "members": 84,
+        "local_backup_verified": true
+      },
+      "sema-layers21": {
+        "archive_name": "sema-layers21-full.tar.gz",
+        "archive_bytes": 12395975,
+        "archive_sha256": "d8f87f0f00334715496cc441e5fc096e436b2b6f16b30f0022ffb88feb83fa62",
+        "members": 680,
+        "local_backup_verified": true
       }
     },
     "completion_progress": {
@@ -1066,6 +1094,16 @@
       "http_samples": 4096,
       "cpu_fixture_posts": 1920,
       "request_comparisons": 6
+    },
+    "layer_comparison": {
+      "run_id": "native-adapter-sema-layers-20261011-21",
+      "source_commit": "a342ea5d4f92a873ab6fbf1388803f145b49dca0",
+      "queries": 20,
+      "calls": 8224,
+      "measurements": 12,
+      "http_samples": 6144,
+      "request_comparisons": 9,
+      "failed_prior_run_model_posts": 0
     }
   }
 }

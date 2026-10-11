@@ -50,7 +50,7 @@ HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请
 HTTP传输采用现有`FullResponseTransport`，发送前检查与原错误返回保持；默认仍要求Ray物理配置。
 本地`http_started/http_finished`记录到同一服务行，其时刻来自同进程单调时钟，不补造Ray事件。
 简单服务可选`held_request_capacity`与原连接额度一起限制已接纳请求／响应，直到HTTP写出或异常退出才归还；
-默认0保持原透明转发。这些是诊断装配，尚不表示真实模型比较完成；运行计划见[分层方案](../../../../experiments/plans/语义系统对照.md#sema-layer-comparison)。
+默认0保持原透明转发。诊断装配的真实短测与适用范围见[分层结果](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)，运行要求见[分层方案](../../../../experiments/plans/语义系统对照.md#sema-layer-comparison)。
 
 | 现有记录 | 实际作用 |
 |---|---|

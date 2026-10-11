@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-11：[Sema同前端三层诊断](postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)。
+`a342ea5d`完成薄转发／本地Core／Daft及Arrow两个Ray点，20查询／8,224次调用和九组完整请求核对通过。
+本地Core更慢、Ray接近薄转发；全部控制CPU、扫描计数、分位样本及客户端差异保留，未宣称纯Core代价或新默认。
+源于测试字段／准备清单／解释器的失败均在0模型调用单独保留，成功组及旧账本不重写；原件已独立备份逐成员核验。
+
 2026-10-11：[Sema接纳重试核对](postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
 `d10e3e1c`单等待者减少重复校验与容量扫描；12个HTTP／Core模拟单位、目标71项回归及两后端实际连续查询通过。
 16查询／6,176次模型调用和六组测量请求核对通过，完整SQL中位数下降13.1%／15.0%；全部分位样本、归档及有限解释保留，不声称原生Sema比较已重做。

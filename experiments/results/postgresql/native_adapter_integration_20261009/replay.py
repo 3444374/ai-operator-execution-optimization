@@ -22,12 +22,12 @@ def stored_json(info):
     return json.loads(decoded)
 
 
-def verify_cost_model(model, *, queries, calls, configs, comparisons):
+def verify_cost_model(model, *, queries, calls, configs, comparisons, repetitions=2):
     assert model['queries'] == len(model['all_queries']) == queries
     assert model['real_model_posts'] == sum(q['posts'] for q in model['all_queries']) == calls
-    assert len(model['records']) == configs and model['measurements'] == 2 * configs
+    assert len(model['records']) == configs and model['measurements'] == repetitions * configs
     for record in model['records']:
-        assert len(record['samples']) == 2 and record['http']['count'] == 1024
+        assert len(record['samples']) == repetitions and record['http']['count'] == 512 * repetitions
         for name in ('full', 'submit_to_eof', 'preparation', 'source', 'first_row', 'tail_consume', 'http', 'request_e2e'):
             observed = record[name]
             recomputed = sample_distribution(observed['samples'], unit='seconds')
@@ -273,6 +273,43 @@ if 'execution_cost_repair' in verification:
             assert block['singleton_blocks'] == sum(n == 1 for n in block['block_rows'])
         print('Sema admission retry: 16 queries / 6176 real calls, 4096 HTTP samples, '
               '12 CPU units, physical blocks and 6 method-preserving request comparisons verified')
+    if 'layer_comparison' in current:
+        layer = current['layer_comparison']
+        verify_cost_model(layer['model'], queries=20, calls=8224, configs=4, comparisons=9, repetitions=3)
+        assert layer['same_method_and_input']
+        assert layer['service_count'] == dict(success_delta=8224, running=0, waiting=0)
+        assert layer['cleanup']['status'] == 'passed' and not layer['cleanup']['cleanup_errors']
+        assert not layer['cleanup']['remaining_gpu_compute'] and not any(layer['cleanup']['ports_open'].values())
+        assert layer['zero_call_failure']['model_posts'] == 0
+        assert layer['fixture']['posts'] == 576 and layer['fixture']['actual_cli_fixture_posts'] == 32
+        assert layer['fixture']['regressions_passed'] + layer['fixture']['regressions_skipped'] == 120
+        assert len(layer['model']['metadata_corrections']) == 4
+        assert all(m['declared'] == 4 and m['actual'] == 5 for m in layer['model']['metadata_corrections'])
+        control = layer['control']
+        assert len(control['units']) == 12
+        for unit in control['units']:
+            raw = unit['raw']
+            assert unit['offers'] == len(raw['offers'])
+            assert unit['empty_prefix'] == sum(o['accepted'] == 0 for o in raw['offers'])
+            assert unit['offer_cpu_seconds'] == sum(o['cpu_ns'] for o in raw['offers']) / 1e9
+            assert unit['advance_cpu_seconds'] == sum(t['cpu_ns'] for t in raw['ticks']) / 1e9
+            assert unit['sink_cpu_seconds'] == sum(cpu for kind, cpu in raw['sink']) / 1e9
+            assert unit['driver_process_cpu_seconds'] == unit['driver_cpu']['driver_process_cpu_ns'] / 1e9
+            if unit['variant'] == 'thin':
+                assert unit['offers'] == unit['advance_calls'] == 0 and raw['held_frontend_peak'] <= 128
+            else:
+                assert sum(o['accepted'] for o in raw['offers']) == 512
+                assert unit['deliveries'] == unit['submitted'] == unit['terminal'] == 512
+                assert all(t['held'] <= 128 and t['active'] <= 64 for t in raw['ticks'])
+        for summary in control['summaries']:
+            units = [u for u in control['units'] if u['variant'] == summary['variant']]
+            assert len(units) == 3
+            for name, observation in summary.items():
+                if name == 'variant':continue
+                assert observation['samples'] == [u[name] for u in units]
+                assert observation['median'] == statistics.median(observation['samples'])
+        print('Sema layers: 20 queries / 8224 real calls, 6144 HTTP samples, '
+              '12 control profiles, 9 request comparisons and the zero-call failure verified')
     assert current['prelaunch_failure']['model_posts'] == 0
     assert all(info['local_backup_verified'] for info in current['preservation'].values())
     print('Execution costs: 68 queries / 26248 real calls, 34 measurements, '

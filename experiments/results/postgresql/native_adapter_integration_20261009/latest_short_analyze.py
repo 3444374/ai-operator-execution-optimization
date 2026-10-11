@@ -33,6 +33,7 @@ if archive:
                 if ordinal not in selected_ordinals:
                     continue
             if (item.name in ('owner-exit.json', 'workflow-manifest.json')
+                    or item.name.endswith('-schedule.json')
                     or item.name.endswith(('/startup.json', '/group-summary.json', '/summary.json',
                         '/http-trace.jsonl', '/protocols.jsonl', '/method-events.jsonl',
                         '/persistent-query.json', '/sema-service.jsonl'))):
@@ -62,8 +63,15 @@ assert owner['status'] == 'passed', 'failed owner must remain separately reporte
 manifest = read('workflow-manifest.json')
 ordinals = tuple(int(v) for v in args.ordinals.split(','))
 all_queries = []
+metadata_corrections = []
 for cell in manifest['cells']:
-    for ordinal in range(manifest.get('queries_per_cell', 7)):
+    declared = manifest.get('queries_per_cell', 7)
+    schedule_path = cell['name'] + '-schedule.json'
+    actual = len(read(schedule_path)) if exists(schedule_path) else declared
+    if actual != declared:
+        metadata_corrections.append(dict(cell=cell['name'], field='queries_per_cell',
+            declared=declared, actual=actual, source='original schedule and retained query summaries'))
+    for ordinal in range(actual):
         summary = read(cell['name'] + '/query-' + str(ordinal) + '/summary.json')
         assert summary['status'] == 'passed' and not summary['errors']
         assert summary['preparation_model_posts'] == 0
@@ -185,7 +193,8 @@ for cell in manifest['cells']:
         assert len({life['execution_id'] for life in lifecycles}) == 1
         for life in lifecycles:
             assert life['core_jobs'] == 0 and all(amount == 0 for amount in life['core_usage'].values())
-            assert life['sema_executor']['object_bytes'] == 0 and not life['sema_executor']['poisoned']
+            assert life['sema_executor']['object_bytes'] == (None if cell['payload_backend'] == 'local' else 0)
+            assert not life['sema_executor']['poisoned']
         final = read(cell['name'] + '/group-summary.json')['owners'][cell['arm']]['sema_executor']
         assert not final['control_thread_alive']
     records.append(dict(cell, samples=samples, group_startup_seconds=startup['startup_seconds'],
@@ -197,8 +206,8 @@ for cell in manifest['cells']:
         first_row=distribution([s['first_row_seconds'] for s in samples], preserve=True),
         tail_consume=distribution([s['tail_consume_seconds'] for s in samples], preserve=True),
         http=distribution(http, preserve=True), request_e2e=distribution(call_e2e, preserve=True),
-        rpc_before_worker=distribution(rpc_before), worker=distribution(worker), rpc_after_worker=distribution(rpc_after),
-        sema_service_arrival_to_write=distribution(service),
+        rpc_before_worker=distribution(rpc_before, preserve=True), worker=distribution(worker, preserve=True), rpc_after_worker=distribution(rpc_after, preserve=True),
+        sema_service_arrival_to_write=distribution(service, preserve=True),
         sema_stages={k: distribution(v, preserve=True) for k, v in sema_stages.items()},
         method_stages={k: distribution(v) for k, v in method_stages.items()},
         http_stages={k: distribution(v) for k, v in http_stages.items()},
@@ -229,6 +238,7 @@ result = dict(schema='semloom.latest_supplier_short_observations.v1', status='pa
     run_id=manifest['run_id'], source_commit=manifest['source_commit'],
     real_model_posts=manifest['max_posts'], queries=manifest['queries'], measurements=len(ordinals)*len(records),
     records=records, all_queries=all_queries, request_comparisons=comparisons,
+    metadata_corrections=metadata_corrections,
     quantile_scope=f'nearest rank; {len(ordinals)} queries make whole-query P99 a sample maximum; related request samples are not independent population tails',
     timing_scope='direct preparation and SQL/API-to-EOF timestamps; HTTP includes transfer and service wait; nested and parallel spans are not added or subtracted',
     unavailable=dict(model_inference='no per-call model execution probes', organization='no separate task-selection start/end probe',
