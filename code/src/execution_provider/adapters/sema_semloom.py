@@ -201,6 +201,7 @@ class SemaSemLoomService(SemaRequestService):
         self._next_task = 0
         self._ended = False
         self._progress_changed = None
+        self._admission_lock = None
         self._core_events = []
 
     @property
@@ -271,6 +272,7 @@ class SemaSemLoomService(SemaRequestService):
 
     async def _initialize_executor(self):
         self._progress_changed = asyncio.Event()
+        self._admission_lock = asyncio.Lock()
         self._execution = (self._build_execution() if self.executor_owner is None
                            else self.executor_owner.execution)
         self._session = NativeTaskSession(self._execution, self.query_id, 'sema-request-service')
@@ -369,27 +371,30 @@ class SemaSemLoomService(SemaRequestService):
         task = prepare_native_task(body, self._next_task, row_sequence=row['request_sequence'],
                                    call_id='sema-http-' + str(row['request_sequence']),
                                    max_result_bytes=self.limits.response_bytes + MAX_RESPONSE_HEADER_BYTES + 12)
-        while True:
-            if self._halted.is_set():
-                raise RuntimeError('Sema query has stopped before task acceptance')
-            sequence = self._next_task
-            if task.sequence != sequence:
-                task = replace(task, sequence=sequence)
-            offered = self._session.offer((task,))
-            if offered.status == 'REJECTED':
-                raise ValueError('Sema task rejected by the public session')
-            if offered.accepted_prefix_count:
-                self._next_task += 1
-                row['core_task_sequence'] = sequence
-                row['core_accepted_ns'] = time.monotonic_ns()
-                entry = {'row': row, 'future': asyncio.get_running_loop().create_future(), 'lease': None}
-                self._pending[sequence] = entry
-                break
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise TimeoutError('Sema task acceptance deadline exceeded')
-            self._progress_changed.clear()
-            await asyncio.wait_for(self._progress_changed.wait(), remaining)
+        # Only the next producer retries capacity. Accepted calls execute and
+        # consume responses outside this lock, at the unchanged Core capacities.
+        async with asyncio.timeout(max(0, deadline - time.monotonic())), self._admission_lock:
+            while True:
+                if self._halted.is_set():
+                    raise RuntimeError('Sema query has stopped before task acceptance')
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('Sema task acceptance deadline exceeded')
+                sequence = self._next_task
+                if task.sequence != sequence:
+                    task = replace(task, sequence=sequence)
+                offered = self._session.offer((task,))
+                if offered.status == 'REJECTED':
+                    raise ValueError('Sema task rejected by the public session')
+                if offered.accepted_prefix_count:
+                    self._next_task += 1
+                    row['core_task_sequence'] = sequence
+                    row['core_accepted_ns'] = time.monotonic_ns()
+                    entry = {'row': row, 'future': asyncio.get_running_loop().create_future(), 'lease': None}
+                    self._pending[sequence] = entry
+                    break
+                self._progress_changed.clear()
+                await asyncio.wait_for(self._progress_changed.wait(), remaining)
         try:
             response = await asyncio.wait_for(asyncio.shield(entry['future']),
                                               max(0, deadline - time.monotonic()))

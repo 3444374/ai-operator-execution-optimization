@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[Sema接纳重试修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
+单一HTTP接纳等待者避免容量归还后的集体校验，已接纳模型调用保持原并发；本机模拟与71项检查通过，实际库及模型核对待完成。
+
 2026-10-11：[执行成本修订与负结果](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)。
 Core减少重复元数据签名分配；满额收取事件后提示再检查一次，下一次空收取仍可等待。
 Sema保留交付／响应就绪／调用者恢复观测，通知等待与当场记录候选因短模型对照变慢而恢复原轮询及延后记录。

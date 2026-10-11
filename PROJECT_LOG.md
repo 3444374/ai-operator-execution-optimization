@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-11：Sema接纳重试专项修订
+
+- [接纳报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)记录实际HTTP／Core模拟计数；单等待者减少无接纳的重试，原完整请求、Core额度和模型策略保持。
+- 本机相关71项回归通过；作者二进制／两后端连续模拟和短真实模型前后核对待完成，不把模拟CPU改善当作SQL收益。
+
 ## 2026-10-11：接纳、传输与完成推进分项核对
 
 - [同一主报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)保留Core元数据签名CPU复现、实际Ray模拟HTTP批次对照及17配置／68查询／26,248次模型调用；缺少记账文件的零调用失败独立保留。

@@ -94,6 +94,9 @@ runner 清理报错时使用 [aiohttp 公开接口](https://docs.aiohttp.org/en/
 
 [固定历史版本](https://github.com/3444374/ai-operator-execution-optimization/blob/7663ab525f0133769dc37114e4059c7d65c396f2/code/src/execution_provider/adapters/sema_request_service.md)保留作者产物检查、全部 CPU 对照值和退出反例；完整原件、失败、来源与恢复摘要继续由 `sema.json` 交接定位。
 容量修复让正文只准备一次，提交序号随实际接纳更新；仅实际归还、取消或终止错误唤醒等待者，避免原每次推进反复准备与校验。
+接纳锁只允许下一位HTTP调用者向公共Core重试，避免一次归还唤醒全部调用者并重复检查容量和元数据。
+已接纳调用在锁外等待完整响应，模型与结果额度不变；等待接纳仍计入原请求期限。取消、超时和错误退出会归还锁。
+这项工程修订的模拟计数与后续真实核对记录在[接纳重试报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
 作者二进制及实际 Daft／Ray 的 CPU 诊断共 32 查询／2,176 次替身 POST，模型为 0；含带探针与不带探针对照，分别保存，不推断同容量系统加速。
 [退出测试](../../../tests/execution_provider/test_sema_service_cleanup.py)十四项继续覆盖 runner、多项关闭失败、等待超时、记录写入、初始化、取消、监听及迟到 HTTP 错误；四个实际 aiohttp／公共 Core 反例原件也保留。
 真实级联、多模型、Join、并行阶段展开、原生执行器替换及原生池前时刻仍为 `pending`。

@@ -395,6 +395,59 @@ class SemaSemLoomDiagnosticTests(service_tests.SemaServiceTests):
             self.assertEqual(prepare.call_count, 8, 'each complete HTTP body is prepared once')
         self.assertEqual(service._execution.engine.capacity.records, {})
 
+    def test_one_capacity_waiter_offers_after_release_without_broadcast_rechecks(self):
+        self.server.gate = threading.Event()
+        offered_rows = []
+        original_offer = NativeTaskSession.offer
+
+        def offer(session, tasks):
+            result = original_offer(session, tasks)
+            offered_rows.append((tasks[0].info.row_sequence, result.accepted_prefix_count))
+            return result
+
+        with mock.patch.object(NativeTaskSession, 'offer', offer):
+            with self.service() as service:
+                with ThreadPoolExecutor(max_workers=8) as callers:
+                    futures = [callers.submit(self.post, service.endpoint_url) for _ in range(8)]
+                    try:
+                        deadline = time.monotonic() + 1.5
+                        while sum(row['body_read_ns'] is not None for row in service._rows) != 8:
+                            if time.monotonic() > deadline:
+                                self.fail('fixture did not read all eight waiting HTTP bodies')
+                            time.sleep(0.005)
+                        waiting = {row for row, accepted in offered_rows if not accepted}
+                        self.assertEqual(len(waiting), 1,
+                            'one full Core should retain one offering capacity waiter')
+                    finally:
+                        self.server.gate.set()
+                    self.assertEqual([f.result()[0] for f in futures], [200] * 8)
+                service.end_input()
+        self.assertEqual(sum(accepted for row, accepted in offered_rows), 8)
+        self.assertEqual(len(self.server.calls), 8)
+        self.assertEqual(service._pending, {})
+        self.assertEqual(service._execution.engine.capacity.records, {})
+        self.assertEqual(service.cleanup_errors, [])
+
+    def test_admission_wait_deadline_does_not_accept_or_send_a_late_body(self):
+        with self.service() as service:
+            async def hold_admission():
+                # A stalled owner operation cannot extend a waiting body's deadline.
+                await service._admission_lock.acquire()
+                row = dict(request_sequence=0)
+                try:
+                    with mock.patch.object(service, 'limits', replace(service.limits, timeout_s=.02)):
+                        with self.assertRaises(TimeoutError):
+                            await service._forward(self.payload, {}, row, None)
+                    self.assertNotIn('core_task_sequence', row)
+                    self.assertTrue(service._admission_lock.locked())
+                finally:
+                    service._admission_lock.release()
+            asyncio.run_coroutine_threadsafe(hold_admission(), service._loop).result(1)
+            service.end_input()
+        self.assertEqual(service.summary['forwarded_posts'], 0)
+        self.assertEqual(self.server.calls, [])
+        self.assertEqual(service._execution.engine.capacity.records, {})
+
     def test_first_http_error_suppresses_other_accepted_and_unaccepted_requests(self):
         self.server.status = 503
         self.server.gate = threading.Event()
