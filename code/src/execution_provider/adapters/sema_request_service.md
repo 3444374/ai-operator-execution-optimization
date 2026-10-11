@@ -51,6 +51,8 @@ HTTP传输采用现有`FullResponseTransport`，发送前检查与原错误返�
 本地`http_started/http_finished`记录到同一服务行，其时刻来自同进程单调时钟，不补造Ray事件。
 简单服务可选`held_request_capacity`与原连接额度一起限制已接纳请求／响应，直到HTTP写出或异常退出才归还；
 默认0保持原透明转发。诊断装配的真实短测与适用范围见[分层结果](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)，运行要求见[分层方案](../../../../experiments/plans/语义系统对照.md#sema-layer-comparison)。
+转发与SemLoom执行都从进入`_forward()`计算一次请求期限，覆盖名额或接纳等待及完整模型响应等待，后续不重新取得完整超时时间。
+进入前的HTTP正文读取及返回后的HTTP写出另计；响应使用权仍到写出或异常退出才归还，外层SQL期限保持。
 
 | 现有记录 | 实际作用 |
 |---|---|
@@ -76,6 +78,7 @@ HTTP传输采用现有`FullResponseTransport`，发送前检查与原错误返�
 RPC 至本地接收包含 Ray 等待、worker 执行及返回；worker 区间嵌套其中，准备阶段也可能重叠，不能相加或从完整查询时间扣除。
 作者线程数、Core 活动额度、实际 HTTP 在途与模型服务执行序列分别记录。
 Sema 作者 SQL 进程可以跨查询复用，默认 Core 和 actor 逐查询创建；可选 `group-diagnostic` 在同一控制线程复用设施，任务流、HTTP入口、错误和观察逐查询独立。
+该owner只允许顺序查询复用，已有服务未退出时拒绝再接入；并发查询接入仍需独立验证每查询Job、取消和结果责任。
 查询期间的准备进入释放至结果消费结束（EOF）的完整时间，组级初始化另列，实际 SELECT 提交至读完结果直接记录。
 观察包含回调、JSON 和持久记录开销；[分层诊断](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)记录接纳、推进、sink及线程CPU，尚未独立拆出JSON和持久记录函数的CPU，不从完整查询时间（JCT）扣除这些累计值。
 

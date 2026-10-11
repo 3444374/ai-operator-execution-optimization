@@ -293,14 +293,14 @@ class SemaRequestService:
                     TimeoutError('Sema request service cleanup did not settle'))
 
     async def _forward(self, body, headers, row, client):
-        if self._held_slots is not None:
-            async with asyncio.timeout(self.limits.timeout_s):
-                await self._held_slots.acquire()
-                self._held_sequences.add(row['request_sequence'])
-                self._peak_held_requests = max(self._peak_held_requests, len(self._held_sequences))
-                row['service_accepted_ns'] = time.monotonic_ns()
         try:
-            return await self._forward_http(body, headers, row, client)
+            async with asyncio.timeout(self.limits.timeout_s):
+                if self._held_slots is not None:
+                    await self._held_slots.acquire()
+                    self._held_sequences.add(row['request_sequence'])
+                    self._peak_held_requests = max(self._peak_held_requests, len(self._held_sequences))
+                    row['service_accepted_ns'] = time.monotonic_ns()
+                return await self._forward_http(body, headers, row, client)
         except BaseException:
             self._release_response(row)
             raise

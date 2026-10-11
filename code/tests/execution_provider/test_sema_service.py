@@ -340,6 +340,29 @@ class SemaConnectorControlTests(unittest.TestCase):
         self.assertEqual(service.summary['held_requests'],0)
         self.assertFalse(service.cleanup_errors)
 
+    def test_bounded_pipeline_uses_one_timeout_for_slot_wait_and_http(self):
+        import asyncio
+        self.server.reply_for = lambda _body: (200, self.server.body, .18)
+        limits = SemaServiceLimits(16, 65536, 65536, .3)
+        with SemaRequestService(query_id='bounded-deadline', upstream_url=self.url, limits=limits,
+                trace_path=self.root/'bounded-deadline.jsonl', upstream_concurrency=1,
+                held_request_capacity=1) as service:
+            asyncio.run_coroutine_threadsafe(service._held_slots.acquire(), service._loop).result(1)
+            original = service._forward
+
+            async def release_slot_then_forward(body, headers, row, client):
+                asyncio.get_running_loop().call_later(.18, service._held_slots.release)
+                return await original(body, headers, row, client)
+
+            with mock.patch.object(service, '_forward', release_slot_then_forward):
+                self.assertEqual(self.post(service.endpoint_url)[0], 502)
+            self.assertEqual(service.first_error.phase, 'transport')
+            self.assertEqual(service._rows[0]['error_type'], 'TimeoutError')
+            self.assertEqual(service.summary['held_requests'], 0)
+            self.assertEqual(service._held_slots._value, 1)
+        self.assertEqual(len(self.server.calls), 1)
+        self.assertFalse(service.cleanup_errors)
+
     def test_invalid_bounded_pipeline_capacity_is_rejected_before_io(self):
         for capacity in (True,-1,257,1):
             with self.subTest(capacity=capacity),self.assertRaises(ValueError):

@@ -1137,5 +1137,48 @@
       },
       "input_sha256": "d201a1742d0ab472e8bada704226bea25275d27253cf72d341a62834ae3abc5c"
     }
+  },
+  "sema_closeout": {
+    "status": "passed",
+    "model_posts": 0,
+    "fixture_only": true,
+    "base_commit": "d57ffb735a334e1d96e262f0b114089aa8e50bef",
+    "source_sha256": {
+      "code/src/execution_provider/adapters/sema_service.py": "55843bee63412a73a4920215093ef1eefdbf58d8fec0bc6f26a1ac7ae81770c1",
+      "code/src/execution_provider/adapters/sema_semloom.py": "9a57867ca664675cc16927a1425e4559f78929b7eccf2728096151b07922a28f",
+      "code/tests/execution_provider/test_sema_service.py": "fb5ffa48621214761ec57a0e98b4e8df7104c0eeb4de207e03180847ebf40c2e",
+      "experiments/results/postgresql/native_adapter_integration_20261009/latest_short_analyze.py": "67c0389b9b69f25fe4ef451ccd108d79ff1aa8b945806b8bcf91e5e2470785a3"
+    },
+    "regression": {
+      "passed": 104,
+      "skipped": 3,
+      "initial_unloaded_modules": 2,
+      "remaining_modules_passed": 56
+    },
+    "initial_failures": {
+      "timeout": "bounded forwarding returned HTTP 200 after cumulative slot wait and HTTP exceeded one timeout",
+      "archive": "default interleaved archive filtering omitted query 11 HTTP trace",
+      "harness": "two fixture modules required their existing flat test import path"
+    },
+    "default_archive_analysis": {
+      "queries": 30,
+      "calls": 12336,
+      "measurements": 18,
+      "request_comparisons": 12,
+      "exactly_matches_previous": true
+    },
+    "legacy_default_exact": true,
+    "legacy_explicit_subset": {
+      "measurements": 8,
+      "request_comparisons": 6
+    },
+    "directory_archive_exact": true,
+    "preservation": {
+      "archive_name": "sema-closeout23-full.tar.gz",
+      "archive_bytes": 833155,
+      "archive_sha256": "af7087698c7f97caf8450a22a696ae98781842fe79e683f435aa3c06f560cb0a",
+      "members": 19,
+      "independent_copies_verified": true
+    }
   }
 }

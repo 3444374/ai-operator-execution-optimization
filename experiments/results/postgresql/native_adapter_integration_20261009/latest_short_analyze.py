@@ -13,7 +13,7 @@ p = argparse.ArgumentParser()
 p.add_argument('evidence', type=Path)
 p.add_argument('--code', type=Path, required=True)
 p.add_argument('--output', type=Path, required=True)
-p.add_argument('--ordinals', default='2,3,4,5,6')
+p.add_argument('--ordinals', help='Explicit measurements for cells without per-cell ordinals; otherwise use schedule phases')
 p.add_argument('--reference-variant', help='Compare a named same-supplier variant when this run has no native arm')
 args = p.parse_args()
 sys.path.insert(0, str(args.code))
@@ -22,15 +22,47 @@ from src.experiments.postgresql.native_adapter_metrics import sample_distributio
 
 archive = args.evidence.is_file()
 members = {}
-selected_ordinals = {int(v) for v in args.ordinals.split(',')}
+ordinals = tuple(int(v) for v in args.ordinals.split(',')) if args.ordinals is not None else (2,3,4,5,6)
+
+
+def group_name(cell):
+    return cell.get('evidence_group', cell['name'])
+
+
+def measurement_selection(cell, schedule):
+    if 'measurement_ordinals' in cell:
+        return tuple(cell['measurement_ordinals'])
+    if args.ordinals is not None or schedule is None:
+        return ordinals
+    return tuple(i for i, item in enumerate(schedule)
+                 if item['arm'] == cell['arm'] and item['phase'] == 'measurement')
+
+
 if archive:
     total = 0
+    # Read selection metadata before discarding any query's request files.
     with tarfile.open(args.evidence, 'r|gz') as stream:
         for item in stream:
             assert item.isfile() and not Path(item.name).is_absolute() and '..' not in Path(item.name).parts
+            if item.name in ('owner-exit.json', 'workflow-manifest.json') or item.name.endswith('-schedule.json'):
+                total += item.size
+                assert total <= 512 * 2**20, 'short analysis memory allowance exceeded'
+                members[item.name] = stream.extractfile(item).read()
+    selected_queries = defaultdict(set)
+    for cell in json.loads(members['workflow-manifest.json'])['cells']:
+        group = group_name(cell)
+        path = group + '-schedule.json'
+        schedule = json.loads(members[path]) if path in members else None
+        selected_queries[group].update(measurement_selection(cell, schedule))
+    with tarfile.open(args.evidence, 'r|gz') as stream:
+        for item in stream:
+            assert item.isfile() and not Path(item.name).is_absolute() and '..' not in Path(item.name).parts
+            if item.name in members:
+                continue
             if '/query-' in item.name and not item.name.endswith('/summary.json'):
-                ordinal = int(item.name.split('/query-', 1)[1].split('/', 1)[0])
-                if ordinal not in selected_ordinals:
+                group, query = item.name.split('/query-', 1)
+                ordinal = int(query.split('/', 1)[0])
+                if ordinal not in selected_queries.get(group, ()):
                     continue
             if (item.name in ('owner-exit.json', 'workflow-manifest.json')
                     or item.name.endswith('-schedule.json')
@@ -59,16 +91,14 @@ def distribution(values, *, preserve=False):
     return result
 
 
-def group_name(cell):
-    return cell.get('evidence_group', cell['name'])
-
-
 def query_ordinals(cell, *, measurements=False):
-    if measurements:
-        return tuple(cell.get('measurement_ordinals', ordinals))
     schedule_path = group_name(cell) + '-schedule.json'
-    if exists(schedule_path):
-        schedule = read(schedule_path)
+    schedule = read(schedule_path) if exists(schedule_path) else None
+    if measurements:
+        selected = measurement_selection(cell, schedule)
+        assert selected and len(selected) == len(set(selected)), 'measurement selection must be nonempty and unique'
+        return selected
+    if schedule is not None:
         selected = tuple(cell.get('query_ordinals', range(len(schedule))))
         assert len(selected) == len(set(selected)) and all(schedule[i]['arm'] == cell['arm'] for i in selected)
         return selected
@@ -77,7 +107,6 @@ def query_ordinals(cell, *, measurements=False):
 owner = read('owner-exit.json')
 assert owner['status'] == 'passed', 'failed owner must remain separately reported'
 manifest = read('workflow-manifest.json')
-ordinals = tuple(int(v) for v in args.ordinals.split(','))
 all_queries = []
 metadata_corrections = []
 for cell in manifest['cells']:

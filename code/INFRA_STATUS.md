@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[Sema期限与归档复算收尾](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-closeout)。
+转发和SemLoom从执行入口共用一次期限；交错归档先读清单再选请求文件，默认复算与旧观察完全一致。104项相关检查通过、3项实际库未启用，新增模型调用0。
+
 2026-10-11：[Sema当前版本独立输入比较](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-matched-evaluation)。
 原生／薄转发／SemLoom在两组内交错测量，30查询／12,336次调用、请求一致和清理通过；单等待者修订保留，未改变原算子策略或默认。
 接口说明补明待接纳正文、队首先接纳及查询内锁的适用范围，不将有限单查询行为扩为持续服务或多Job能力。
