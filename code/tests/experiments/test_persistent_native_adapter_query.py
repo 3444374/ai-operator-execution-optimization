@@ -347,7 +347,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
                         executor = group.owners[arm].sema_executor
                         self.assertFalse(executor.execution.engine.capacity.records)
                         self.assertEqual(executor.snapshot()['core_jobs'], 0)
-                        self.assertEqual(executor.snapshot()['object_bytes'], 0)
+                        self.assertEqual(executor.snapshot()['object_bytes'], None if executor.physical is None else 0)
                 for key in ('owner_id','execution_id','lm_id','duckdb_connection_id','sema_pid','ray_session_id'):
                     self.assertEqual(len({value[key] for value in identities}),1,(arm,key))
                 self.assertEqual(len(requests),144)
