@@ -22,6 +22,7 @@
 已分别检验元数据签名、物理分块与完成通知，修订已有完成结果仍等待的具体问题；原生算子方法保持。
 局部时间下降没有普遍改善整查询，Sema通知候选恢复原行为，仍需将短Map的准备、接纳与分发成本和未来异质工作量上的执行收益区分。
 延后记录异常进入已有首错／取消／退出处理，正常模型观察与故障注入分别登记；不因此声称所有方法或PG接入均已验证。
+[Sema单等待者修订](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)已用同方法两后端短模型对照核对，减少接纳集体重试，完整SQL有下降信号；仍需独立评价，未修改原算子策略。
 
 2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口，属于有限外部输入的工程证据。

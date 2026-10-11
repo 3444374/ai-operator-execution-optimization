@@ -227,6 +227,52 @@ if 'execution_cost_repair' in verification:
         assert not followup['cleanup']['remaining_gpu_compute']
         print('Deferred observation repair: 8 queries / 3088 real calls, 4 measurements, '
               '2048 HTTP samples and 4 previous-source request comparisons verified')
+    if 'admission_retry' in current:
+        followup = current['admission_retry']
+        verify_cost_model(followup['model'], queries=16, calls=6176, configs=4, comparisons=6)
+        assert followup['same_input_model_signature']
+        assert followup['service_count'] == dict(success_delta=6176, running=0, waiting=0)
+        assert followup['checks']['target_regressions'] == 71
+        assert followup['checks']['fixture_posts'] == 288 and followup['checks']['fixture_model_posts'] == 0
+        assert followup['cleanup']['status'] == 'passed' and not followup['cleanup']['cleanup_errors']
+        assert not followup['cleanup']['remaining_gpu_compute']
+        assert not any(followup['cleanup']['ports_open'].values())
+        for record in followup['model']['records']:
+            for label in ('sema_service_arrival_to_write', 'rpc_before_worker', 'worker', 'rpc_after_worker'):
+                observed = record[label]
+                assert len(observed['samples']) == observed['count'] == 1024
+                expected = sample_distribution(observed['samples'], unit='seconds')
+                assert all(observed[key] == value for key, value in expected.items())
+                assert observed['mean'] == statistics.mean(observed['samples'])
+        cpu = followup['cpu']
+        assert cpu['model_posts'] == 0 and cpu['fixture_posts'] == 1920 and len(cpu['units']) == 12
+        for unit in cpu['units']:
+            n, offers, counts = unit['rows'], unit['offers'], unit['counts']
+            assert counts['offers'] == len(offers)
+            assert counts['accepted'] == sum(o['accepted'] for o in offers) == n
+            assert counts['zero_prefix'] == sum(o['accepted'] == 0 for o in offers)
+            assert sorted(o['row'] for o in offers if o['accepted']) == list(range(n))
+            assert counts.get('metadata_hit', 0) + counts['metadata_miss'] == len(offers)
+            assert counts['prepare'] == len(unit['row_timings']) == n
+            assert sorted(k for k, when in unit['dispatches']) == list(range(n))
+            assert counts['peak_held'] == unit['held_capacity']
+            assert counts['peak_active'] == unit['active_capacity']
+            assert unit['offer_cpu_ns'] == sum(o['cpu_ns'] for o in offers)
+            assert unit['tick_cpu_ns'] == sum(cpu_ns for wall_ns, cpu_ns in unit['ticks'])
+        for summary in cpu['summaries']:
+            units = [u for u in cpu['units'] if (u['rows'], u['variant']) == (summary['rows'], summary['variant'])]
+            assert len(units) == summary['repeats'] == 3
+            assert summary['offer_counts'] == [u['counts']['offers'] for u in units]
+            assert summary['metadata_misses'] == [u['counts']['metadata_miss'] for u in units]
+            assert summary['offer_cpu_median_ns'] == statistics.median(u['offer_cpu_ns'] for u in units)
+            assert summary['release_to_eof_median_ns'] == statistics.median(u['release_to_eof_ns'] for u in units)
+        assert len(followup['blocks']) == 8
+        for block in followup['blocks']:
+            assert block['blocks'] == len(block['block_rows'])
+            assert sum(block['block_rows']) == block['rows'] == 512
+            assert block['singleton_blocks'] == sum(n == 1 for n in block['block_rows'])
+        print('Sema admission retry: 16 queries / 6176 real calls, 4096 HTTP samples, '
+              '12 CPU units, physical blocks and 6 method-preserving request comparisons verified')
     assert current['prelaunch_failure']['model_posts'] == 0
     assert all(info['local_backup_verified'] for info in current['preservation'].values())
     print('Execution costs: 68 queries / 26248 real calls, 34 measurements, '

@@ -935,10 +935,10 @@
     "model_posts": 26248,
     "storage": {
       "path": "execution-cost-observations.json.gz",
-      "compressed_bytes": 659864,
-      "compressed_sha256": "0c9c899942a23762e63906e9334a9669bce37eca2410ce9ddc9442b10940960b",
-      "uncompressed_bytes": 2229770,
-      "uncompressed_sha256": "1604e467621a01bacaca01a70b76541ddc417103f3d9778944194e9ad9accbb5"
+      "compressed_bytes": 1032814,
+      "compressed_sha256": "b71ec93e4a775a46ad8de248c6dc79cb6997e4cce3f7d020a67ba5dea828b975",
+      "uncompressed_bytes": 4048383,
+      "uncompressed_sha256": "617208092ff055018b5aef151dac07dd90f5b75e041b7e568764a38d4b397eca"
     },
     "preservation": {
       "execution-diagnosis14-cpu-before": {
@@ -967,6 +967,48 @@
         "archive_bytes": 37729244,
         "archive_sha256": "0ee3e26060e7dea383c3bdc7e8949b4958aa8846764add662606f61352fe4d5c",
         "members": 1311,
+        "local_backup_verified": true
+      },
+      "fixture-progress17": {
+        "archive_name": "fixture-progress17-full.tar.gz",
+        "archive_bytes": 1517453,
+        "archive_sha256": "49c0b5951f7303c5af29b19164f909e4b93bee947b44fb40adf34eb2d32eb315",
+        "members": 347,
+        "local_backup_verified": true
+      },
+      "completion-progress17": {
+        "archive_name": "completion-progress17-full.tar.gz",
+        "archive_bytes": 19937746,
+        "archive_sha256": "da9e5ccf342c4e3e377c8db9ce4f8ca3993ef8e9643acc2135c145d8d080bc06",
+        "members": 637,
+        "local_backup_verified": true
+      },
+      "fixture-observation18": {
+        "archive_name": "fixture-observation18-full.tar.gz",
+        "archive_bytes": 538955,
+        "archive_sha256": "80f28e724f7d85ab87d7912213ecba7c981e1ff59d79e3fddc3f9e6ad50d0b28",
+        "members": 131,
+        "local_backup_verified": true
+      },
+      "observation-repair18": {
+        "archive_name": "observation-repair18-full.tar.gz",
+        "archive_bytes": 4841476,
+        "archive_sha256": "4ba06758d35ac4406c603e65aca6adffc62f65ddbad77bf757f947ad6ca8b286",
+        "members": 198,
+        "local_backup_verified": true
+      },
+      "fixture-admission19": {
+        "archive_name": "fixture-admission19-full.tar.gz",
+        "archive_bytes": 1153878,
+        "archive_sha256": "91671a311eebb025d67974ad8c22b770212848ea4aed160df19376d99a70216b",
+        "members": 158,
+        "local_backup_verified": true
+      },
+      "sema-admission19": {
+        "archive_name": "sema-admission19-full.tar.gz",
+        "archive_bytes": 9516571,
+        "archive_sha256": "eea31535f77d9583ea6e17de0da93d8bccaf2b98a5cc9d0bb815c5270c4aad55",
+        "members": 365,
         "local_backup_verified": true
       }
     },
@@ -1014,6 +1056,16 @@
           "local_backup_verified": true
         }
       }
+    },
+    "admission_retry": {
+      "run_id": "native-adapter-sema-admission-20261011-19",
+      "source_commit": "d10e3e1c520902bbfb9f02e76958f9f759c09f0b",
+      "queries": 16,
+      "model_posts": 6176,
+      "measurements": 8,
+      "http_samples": 4096,
+      "cpu_fixture_posts": 1920,
+      "request_comparisons": 6
     }
   }
 }

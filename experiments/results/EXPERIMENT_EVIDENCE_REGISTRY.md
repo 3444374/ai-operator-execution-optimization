@@ -1,7 +1,8 @@
 # 实验与机制证据台账
 
-2026-10-11：[Sema接纳重试模拟核对](postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
-正文一次准备后仍有集体接纳重试，单等待者减少重复校验与容量扫描；实际库、模型及完整SQL收益待核对。
+2026-10-11：[Sema接纳重试核对](postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
+`d10e3e1c`单等待者减少重复校验与容量扫描；12个HTTP／Core模拟单位、目标71项回归及两后端实际连续查询通过。
+16查询／6,176次模型调用和六组测量请求核对通过，完整SQL中位数下降13.1%／15.0%；全部分位样本、归档及有限解释保留，不声称原生Sema比较已重做。
 
 2026-10-11：[接纳、传输与完成推进核对](postgresql/native_adapter_integration_20261009/README.md#execution-cost-repair)
 分别保留17配置／68查询的分项模型观察和八配置／32查询的原适配对照；CPU、模拟HTTP、模型与失败原件分开登记。
