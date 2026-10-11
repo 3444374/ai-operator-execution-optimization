@@ -268,6 +268,7 @@ class PersistentSupplierLibraries(unittest.TestCase):
         self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom','duckdb-method-semloom-local-diagnostic',
             'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service',
             'sema-bounded-forward-diagnostic',
+            'sema-bounded-pipeline-diagnostic','sema-method-semloom-local-diagnostic',
             'lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom'))
         root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT'])
         root.mkdir(mode=0o700,parents=True,exist_ok=False)
