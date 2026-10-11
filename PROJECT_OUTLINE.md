@@ -24,6 +24,7 @@
 延后记录异常进入已有首错／取消／退出处理，正常模型观察与故障注入分别登记；不因此声称所有方法或PG接入均已验证。
 [Sema单等待者修订](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)已用同方法两后端短模型对照核对，减少接纳集体重试，完整SQL有下降信号；仍需独立评价，未修改原算子策略。
 [同前端三层诊断](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)指向公共推进与单进程I/O交互的剩余成本，Ray并非统一减速来源；客户端与CPU位置不同，不能拆成纯Core或Ray代价，现有默认保持。
+[当前版本独立输入匹配](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-matched-evaluation)已补同轮原生及薄转发；单等待者修订按当前支持范围收尾，短Map仍有执行成本，后续评价聚焦已有两项研究内容所需的真实组织与调度机会。
 
 2026-10-10：[原生方法与SemLoom执行适配](experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 完成公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray实验入口，属于有限外部输入的工程证据。

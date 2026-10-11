@@ -42,6 +42,35 @@ def verify_cost_model(model, *, queries, calls, configs, comparisons, repetition
     assert all(q['complete_request_values_multiset_equal'] and q['complete_request_bytes_multiset_equal'] for q in model['request_comparisons'])
 
 
+def verify_control_profiles(control):
+    for unit in control['units']:
+        assert unit['driver_process_cpu_seconds'] == unit['driver_cpu']['driver_process_cpu_ns'] / 1e9
+        raw = unit['raw']
+        if raw is None:
+            assert unit['variant'] == 'native'
+            continue
+        assert unit['offers'] == len(raw['offers'])
+        assert unit['empty_prefix'] == sum(o['accepted'] == 0 for o in raw['offers'])
+        assert unit['offer_cpu_seconds'] == sum(o['cpu_ns'] for o in raw['offers']) / 1e9
+        assert unit['advance_cpu_seconds'] == sum(t['cpu_ns'] for t in raw['ticks']) / 1e9
+        assert unit['sink_cpu_seconds'] == sum(cpu for kind, cpu in raw['sink']) / 1e9
+        if unit['variant'] == 'thin':
+            assert unit['offers'] == unit['advance_calls'] == 0 and raw['held_frontend_peak'] <= 128
+        else:
+            assert sum(o['accepted'] for o in raw['offers']) == 512
+            assert unit['deliveries'] == unit['submitted'] == unit['terminal'] == 512
+            assert all(t['held'] <= 128 and t['active'] <= 64 for t in raw['ticks'])
+    for summary in control['summaries']:
+        key = 'cell' if 'cell' in summary else 'variant'
+        units = [u for u in control['units'] if u[key] == summary[key]]
+        assert len(units) == 3
+        for name, observation in summary.items():
+            if name in ('cell', 'group', 'variant'):
+                continue
+            assert observation['samples'] == [u[name] for u in units]
+            assert observation['median'] == statistics.median(observation['samples'])
+
+
 def members(path, expected):
     assert hashlib.sha256(path.read_bytes()).hexdigest() == expected
     result = {}
@@ -287,29 +316,43 @@ if 'execution_cost_repair' in verification:
         assert all(m['declared'] == 4 and m['actual'] == 5 for m in layer['model']['metadata_corrections'])
         control = layer['control']
         assert len(control['units']) == 12
-        for unit in control['units']:
-            raw = unit['raw']
-            assert unit['offers'] == len(raw['offers'])
-            assert unit['empty_prefix'] == sum(o['accepted'] == 0 for o in raw['offers'])
-            assert unit['offer_cpu_seconds'] == sum(o['cpu_ns'] for o in raw['offers']) / 1e9
-            assert unit['advance_cpu_seconds'] == sum(t['cpu_ns'] for t in raw['ticks']) / 1e9
-            assert unit['sink_cpu_seconds'] == sum(cpu for kind, cpu in raw['sink']) / 1e9
-            assert unit['driver_process_cpu_seconds'] == unit['driver_cpu']['driver_process_cpu_ns'] / 1e9
-            if unit['variant'] == 'thin':
-                assert unit['offers'] == unit['advance_calls'] == 0 and raw['held_frontend_peak'] <= 128
-            else:
-                assert sum(o['accepted'] for o in raw['offers']) == 512
-                assert unit['deliveries'] == unit['submitted'] == unit['terminal'] == 512
-                assert all(t['held'] <= 128 and t['active'] <= 64 for t in raw['ticks'])
-        for summary in control['summaries']:
-            units = [u for u in control['units'] if u['variant'] == summary['variant']]
-            assert len(units) == 3
-            for name, observation in summary.items():
-                if name == 'variant':continue
-                assert observation['samples'] == [u[name] for u in units]
-                assert observation['median'] == statistics.median(observation['samples'])
+        verify_control_profiles(control)
         print('Sema layers: 20 queries / 8224 real calls, 6144 HTTP samples, '
               '12 control profiles, 9 request comparisons and the zero-call failure verified')
+    if 'matched_evaluation' in current:
+        matched = current['matched_evaluation']
+        verify_cost_model(matched['model'], queries=30, calls=12336, configs=6, comparisons=12, repetitions=3)
+        assert not any(matched['data']['overlap'].values()) and matched['data']['previous_completed_count'] == 0
+        assert matched['service_count'] == dict(success_delta=12336, running=0, waiting=0)
+        assert matched['cleanup']['status'] == 'passed' and not matched['cleanup']['cleanup_errors']
+        assert not matched['cleanup']['remaining_gpu_compute'] and not any(matched['cleanup']['ports_open'].values())
+        assert matched['fixture']['fixture_posts'] == 864 and matched['fixture']['model_posts'] == 0
+        assert len(matched['control']['units']) == 18
+        verify_control_profiles(matched['control'])
+        for stage in matched['control']['stages']:
+            values = {name: [] for name in stage['observations']}
+            for unit in matched['control']['units']:
+                if unit['cell'] != stage['cell']:
+                    continue
+                raw = unit['raw']
+                marks = {(m['event'], m['sequence']): m['monotonic_ns'] for m in raw['core_marks']}
+                assert len(marks) == 1024
+                for row in raw['row_times']:
+                    n = row['core_task_sequence']
+                    submitted, terminal = marks['submitted', n], marks['terminal', n]
+                    intervals = dict(accept_to_submitted=(row['core_accepted_ns'], submitted),
+                        submitted_to_rpc=(submitted, row['forward_started_ns']),
+                        observed_to_terminal=(row['model_returned_observed_ns'], terminal),
+                        terminal_to_delivery=(terminal, row['core_delivery_ns']))
+                    for name, (start, end) in intervals.items():
+                        assert start <= end
+                        values[name].append((end - start) / 1e9)
+            for name, observation in stage['observations'].items():
+                assert observation['samples'] == values[name]
+                assert all(observation[k] == v for k, v in sample_distribution(values[name], unit='seconds').items())
+                assert observation['mean'] == statistics.mean(values[name])
+        print('Sema independent input: 30 queries / 12336 real calls, 9216 HTTP samples, '
+              '18 CPU profiles, 12 request comparisons and Core submission/terminal stages verified')
     assert current['prelaunch_failure']['model_posts'] == 0
     assert all(info['local_backup_verified'] for info in current['preservation'].values())
     print('Execution costs: 68 queries / 26248 real calls, 34 measurements, '

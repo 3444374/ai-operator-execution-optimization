@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-11：[Sema同轮匹配与独立输入](postgresql/native_adapter_integration_20261009/README.md#sema-matched-evaluation)。
+`78c45679`在原电影分组评价集完成两组三路径交错比较，30查询／12,336次调用、十二组成对完整请求和清理通过。
+单等待者修订保留，SemLoom SQL中位数仍比同组薄转发长约3.3%～3.7%；新增Core提交／终态区间由留存探针复算，未改默认或宣称算法收益。
+
 2026-10-11：[Sema同前端三层诊断](postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)。
 `a342ea5d`完成薄转发／本地Core／Daft及Arrow两个Ray点，20查询／8,224次调用和九组完整请求核对通过。
 本地Core更慢、Ray接近薄转发；全部控制CPU、扫描计数、分位样本及客户端差异保留，未宣称纯Core代价或新默认。

@@ -58,6 +58,22 @@ def distribution(values, *, preserve=False):
         result.pop('samples', None)
     return result
 
+
+def group_name(cell):
+    return cell.get('evidence_group', cell['name'])
+
+
+def query_ordinals(cell, *, measurements=False):
+    if measurements:
+        return tuple(cell.get('measurement_ordinals', ordinals))
+    schedule_path = group_name(cell) + '-schedule.json'
+    if exists(schedule_path):
+        schedule = read(schedule_path)
+        selected = tuple(cell.get('query_ordinals', range(len(schedule))))
+        assert len(selected) == len(set(selected)) and all(schedule[i]['arm'] == cell['arm'] for i in selected)
+        return selected
+    return tuple(range(manifest.get('queries_per_cell', 7)))
+
 owner = read('owner-exit.json')
 assert owner['status'] == 'passed', 'failed owner must remain separately reported'
 manifest = read('workflow-manifest.json')
@@ -66,24 +82,28 @@ all_queries = []
 metadata_corrections = []
 for cell in manifest['cells']:
     declared = manifest.get('queries_per_cell', 7)
-    schedule_path = cell['name'] + '-schedule.json'
-    actual = len(read(schedule_path)) if exists(schedule_path) else declared
+    schedule_path = group_name(cell) + '-schedule.json'
+    selected = query_ordinals(cell)
+    actual = len(selected)
     if actual != declared:
         metadata_corrections.append(dict(cell=cell['name'], field='queries_per_cell',
             declared=declared, actual=actual, source='original schedule and retained query summaries'))
-    for ordinal in range(actual):
-        summary = read(cell['name'] + '/query-' + str(ordinal) + '/summary.json')
+    for ordinal in selected:
+        phase = (read(schedule_path)[ordinal]['phase'] if exists(schedule_path)
+                 else 'qualification' if ordinal == 0 else 'warmup' if ordinal == 1 else 'measurement')
+        summary = read(group_name(cell) + '/query-' + str(ordinal) + '/summary.json')
         assert summary['status'] == 'passed' and not summary['errors']
         assert summary['preparation_model_posts'] == 0
-        assert summary['actual_posts'] == summary['rows'] == (8 if ordinal == 0 else 512)
+        assert summary['actual_posts'] == summary['rows'] == (8 if phase == 'qualification' else 512)
         all_queries.append(dict(cell=cell['name'], query=ordinal,
-            phase='qualification' if ordinal == 0 else 'warmup' if ordinal == 1 else 'measurement',
+            phase=phase,
             rows=summary['rows'], posts=summary['actual_posts'], full_seconds=summary['full_query_seconds'],
             ready_seconds=summary['execution']['ready_query_seconds']))
 assert len(all_queries) == manifest['queries'] and sum(q['posts'] for q in all_queries) == manifest['max_posts']
 records, bodies, actual_values, comparisons = [], {}, {}, []
 for cell in manifest['cells']:
-    startup = read(cell['name'] + '/startup.json')
+    group = group_name(cell)
+    startup = read(group + '/startup.json')
     assert startup['ready_ns'] >= startup['started_ns']
     http, call_e2e, rpc_before, worker, rpc_after, service = [], [], [], [], [], []
     method_stages = defaultdict(list)
@@ -91,8 +111,9 @@ for cell in manifest['cells']:
     http_stages = defaultdict(list)
     phases = defaultdict(list)
     samples, lifecycles = [], []
-    for ordinal in ordinals:
-        prefix = cell['name'] + '/query-' + str(ordinal) + '/'
+    for ordinal in query_ordinals(cell, measurements=True):
+        assert ordinal in query_ordinals(cell)
+        prefix = group + '/query-' + str(ordinal) + '/'
         value = read(prefix + 'summary.json')
         execution = value['execution']
         rows = value['rows']
@@ -107,7 +128,7 @@ for cell in manifest['cells']:
             assert trace['status'] == 'completed' and trace['retry_count'] == 0
             assert trace['upstream_headers_send_count'] == 1
             assert trace['request_body_sha256'] == trace['forwarded_body_sha256']
-            assert trace['upstream_pool_generation'] == ordinal + 1
+            assert trace['upstream_pool_generation'] == query_ordinals(cell).index(ordinal) + 1
             first, last = (trace['upstream_dispatch_started_monotonic_ns'],
                            trace['upstream_response_body_read_completed_monotonic_ns'])
             assert execution['t_submit_ns'] <= first <= last <= execution['t_query_terminal_ns']
@@ -189,16 +210,16 @@ for cell in manifest['cells']:
             output_tokens=sum(t['actual_output_tokens'] for t in traces),
             mean_http_inflight=sum(query_http)/execution['ready_query_seconds'],
             http_peak=value['observed_peak_http'], measured_phase_totals=dict(per_query_phases)))
-    if cell['sema_executor_scope'] == 'group-diagnostic':
+    if cell['sema_executor_scope'] == 'group-diagnostic' and 'semloom' in cell['arm']:
         assert len({life['execution_id'] for life in lifecycles}) == 1
         for life in lifecycles:
             assert life['core_jobs'] == 0 and all(amount == 0 for amount in life['core_usage'].values())
             assert life['sema_executor']['object_bytes'] == (None if cell['payload_backend'] == 'local' else 0)
             assert not life['sema_executor']['poisoned']
-        final = read(cell['name'] + '/group-summary.json')['owners'][cell['arm']]['sema_executor']
+        final = read(group + '/group-summary.json')['owners'][cell['arm']]['sema_executor']
         assert not final['control_thread_alive']
     records.append(dict(cell, samples=samples, group_startup_seconds=startup['startup_seconds'],
-        group_startup_sha256=hashlib.sha256(raw(cell['name'] + '/startup.json')).hexdigest(),
+        group_startup_sha256=hashlib.sha256(raw(group + '/startup.json')).hexdigest(),
         full=distribution([s['full_seconds'] for s in samples], preserve=True),
         submit_to_eof=distribution([s['ready_seconds'] for s in samples], preserve=True),
         preparation=distribution([s['preparation_seconds'] for s in samples], preserve=True),
@@ -213,21 +234,28 @@ for cell in manifest['cells']:
         http_stages={k: distribution(v) for k, v in http_stages.items()},
         measured_phase_totals={k: distribution(v, preserve=True) for k, v in phases.items()},
         accuracy=sum(s['correct'] for s in samples)/sum(s['rows'] for s in samples)))
-for supplier in sorted({cell['supplier'] for cell in manifest['cells']}):
-    family = [cell for cell in manifest['cells'] if cell['supplier'] == supplier]
+families = sorted({(cell['supplier'], cell.get('evidence_group', '')) for cell in manifest['cells']})
+for supplier, evidence_group in families:
+    family = [cell for cell in manifest['cells'] if cell['supplier'] == supplier
+              and cell.get('evidence_group', '') == evidence_group]
     reference = next(cell for cell in family if (
         cell.get('variant') == args.reference_variant if args.reference_variant is not None
         else cell['payload_backend'] == 'native'))
     for cell in family:
         if cell == reference:
             continue
-        for ordinal in ordinals:
-            assert actual_values[reference['name'], ordinal] == actual_values[cell['name'], ordinal]
-            byte_equal = bodies[reference['name'], ordinal] == bodies[cell['name'], ordinal]
+        reference_queries = query_ordinals(reference, measurements=True)
+        adapter_queries = query_ordinals(cell, measurements=True)
+        assert len(reference_queries) == len(adapter_queries)
+        for reference_query, ordinal in zip(reference_queries, adapter_queries):
+            assert actual_values[reference['name'], reference_query] == actual_values[cell['name'], ordinal]
+            byte_equal = bodies[reference['name'], reference_query] == bodies[cell['name'], ordinal]
             if supplier != 'LOTUS':
                 assert byte_equal
             pair = dict(supplier=supplier, adapter=cell['name'], query=ordinal,
                 complete_request_values_multiset_equal=True, complete_request_bytes_multiset_equal=byte_equal)
+            if reference_query != ordinal:
+                pair['reference_query'] = reference_query
             if args.reference_variant is None:
                 pair['native'] = reference['name']
             else:
@@ -236,10 +264,10 @@ for supplier in sorted({cell['supplier'] for cell in manifest['cells']}):
             comparisons.append(pair)
 result = dict(schema='semloom.latest_supplier_short_observations.v1', status='passed',
     run_id=manifest['run_id'], source_commit=manifest['source_commit'],
-    real_model_posts=manifest['max_posts'], queries=manifest['queries'], measurements=len(ordinals)*len(records),
+    real_model_posts=manifest['max_posts'], queries=manifest['queries'], measurements=sum(len(r['samples']) for r in records),
     records=records, all_queries=all_queries, request_comparisons=comparisons,
     metadata_corrections=metadata_corrections,
-    quantile_scope=f'nearest rank; {len(ordinals)} queries make whole-query P99 a sample maximum; related request samples are not independent population tails',
+    quantile_scope=f'nearest rank; {len(records[0]["samples"])} queries per configuration make whole-query P99 a sample maximum; related request samples are not independent population tails',
     timing_scope='direct preparation and SQL/API-to-EOF timestamps; HTTP includes transfer and service wait; nested and parallel spans are not added or subtracted',
     unavailable=dict(model_inference='no per-call model execution probes', organization='no separate task-selection start/end probe',
         native_task_ready='native DuckDB and author Sema do not expose upstream legal-task readiness'))

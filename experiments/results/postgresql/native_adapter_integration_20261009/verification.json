@@ -935,10 +935,10 @@
     "model_posts": 26248,
     "storage": {
       "path": "execution-cost-observations.json.gz",
-      "compressed_bytes": 2045661,
-      "compressed_sha256": "276ba4ab87cc58bfc743c9ddc05ac26aa5716d6cf0449fdc0916b93d0da9d68d",
-      "uncompressed_bytes": 10539764,
-      "uncompressed_sha256": "b0e5137489d83bd61e10f207cf5180324fc791ccb7fdc28a244b03daa3e63d14"
+      "compressed_bytes": 2934281,
+      "compressed_sha256": "2f2884e3f9362debe0c5f30f90a371279422fdcb0fb6710a8683bfc1716140ce",
+      "uncompressed_bytes": 15795236,
+      "uncompressed_sha256": "4c5550421233ad1600d20e2d3f0d13b2ba4b0bbf0393279c5bce929aab050895"
     },
     "preservation": {
       "execution-diagnosis14-cpu-before": {
@@ -1038,6 +1038,20 @@
         "archive_sha256": "d8f87f0f00334715496cc441e5fc096e436b2b6f16b30f0022ffb88feb83fa62",
         "members": 680,
         "local_backup_verified": true
+      },
+      "sema-matched22": {
+        "archive_name": "sema-matched22-full.tar.gz",
+        "archive_bytes": 15711270,
+        "archive_sha256": "ed846f5f03b8e650766744656f7de0db25690ca5f4fe774f956bedd9b089597a",
+        "members": 1027,
+        "local_backup_verified": true
+      },
+      "sema-matched22-analysis": {
+        "archive_name": "sema-matched22-analysis-full.tar.gz",
+        "archive_bytes": 1128148,
+        "archive_sha256": "b3ea1d3c9eb2922e2ee3660b6cc1aff5a5c4c1775eb6c3098da5800a05d37045",
+        "members": 8,
+        "local_backup_verified": true
       }
     },
     "completion_progress": {
@@ -1104,6 +1118,24 @@
       "http_samples": 6144,
       "request_comparisons": 9,
       "failed_prior_run_model_posts": 0
+    },
+    "matched_evaluation": {
+      "run_id": "native-adapter-sema-matched-evaluation-20261011-22",
+      "source_commit": "78c45679594611057c99ac83fef607a051e8ec80",
+      "queries": 30,
+      "calls": 12336,
+      "measurements": 18,
+      "http_samples": 9216,
+      "request_comparisons": 12,
+      "fixture_queries": 18,
+      "fixture_posts": 864,
+      "input_overlap": {
+        "movie_id": 0,
+        "review_id": 0,
+        "row_id": 0,
+        "text": 0
+      },
+      "input_sha256": "d201a1742d0ab472e8bada704226bea25275d27253cf72d341a62834ae3abc5c"
     }
   }
 }

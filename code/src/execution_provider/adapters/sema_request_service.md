@@ -77,7 +77,7 @@ RPC 至本地接收包含 Ray 等待、worker 执行及返回；worker 区间嵌
 作者线程数、Core 活动额度、实际 HTTP 在途与模型服务执行序列分别记录。
 Sema 作者 SQL 进程可以跨查询复用，默认 Core 和 actor 逐查询创建；可选 `group-diagnostic` 在同一控制线程复用设施，任务流、HTTP入口、错误和观察逐查询独立。
 查询期间的准备进入释放至结果消费结束（EOF）的完整时间，组级初始化另列，实际 SELECT 提交至读完结果直接记录。
-观察包含回调、JSON 和持久记录开销；当前模型观察未采集这些函数的独立 CPU 时间，不能用 CPU fixture 数值扣出虚拟完整查询时间（JCT）。
+观察包含回调、JSON 和持久记录开销；[分层诊断](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)记录接纳、推进、sink及线程CPU，尚未独立拆出JSON和持久记录函数的CPU，不从完整查询时间（JCT）扣除这些累计值。
 
 [作者 README](https://github.com/BITQiKangK/SemaSystem/blob/3f2c7182bdaa26c1e8925f486585da25337e687e/README.md)提供 trace 日志及 `EXPLAIN ANALYZE` 的 token／profile 入口，但没有逐调用池前就绪与行对应的公开字段定义。
 这些日志的实际字段、memory/file 保存和时钟语义尚未在固定二进制核实；未取得可信协议前保留上述缺项。
@@ -102,6 +102,11 @@ runner 清理报错时使用 [aiohttp 公开接口](https://docs.aiohttp.org/en/
 容量修复让正文只准备一次，提交序号随实际接纳更新；仅实际归还、取消或终止错误唤醒等待者，避免原每次推进反复准备与校验。
 接纳锁只允许下一位HTTP调用者向公共Core重试，避免一次归还唤醒全部调用者并重复检查容量和元数据。
 已接纳调用在锁外等待完整响应，模型与结果额度不变；等待接纳仍计入原请求期限。取消、超时和错误退出会归还锁。
+只有持锁调用者等待容量并重试；其他调用者仍持有已读取正文和任务描述，等待接纳锁。
+该锁属于当前查询的HTTP服务，结果归还不取得这把锁；锁的持有期只覆盖接纳，不包括模型执行或HTTP写出。
+当前尚无独立于有限查询规模的待接纳总字节额度。扩大输入或持续运行前须先评价并补齐入口存储控制。
+相近请求使用队首先接纳；异质字节需求可能阻挡后面可接纳的请求，尚未完成对应性能评价。
+接纳次序也不表示SQL行序或多查询公平；这些分别由结果身份及Core的Job／flow处理，不将查询内锁扩大为全局调度。
 这项工程修订的模拟计数与后续真实核对记录在[接纳重试报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
 作者二进制及实际 Daft／Ray 的 CPU 诊断共 32 查询／2,176 次替身 POST，模型为 0；含带探针与不带探针对照，分别保存，不推断同容量系统加速。
 [退出测试](../../../tests/execution_provider/test_sema_service_cleanup.py)十四项继续覆盖 runner、多项关闭失败、等待超时、记录写入、初始化、取消、监听及迟到 HTTP 错误；四个实际 aiohttp／公共 Core 反例原件也保留。

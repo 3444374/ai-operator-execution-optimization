@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[Sema当前版本独立输入比较](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-matched-evaluation)。
+原生／薄转发／SemLoom在两组内交错测量，30查询／12,336次调用、请求一致和清理通过；单等待者修订保留，未改变原算子策略或默认。
+接口说明补明待接纳正文、队首先接纳及查询内锁的适用范围，不将有限单查询行为扩为持续服务或多Job能力。
+
 2026-10-11：[Sema分层诊断装配](../experiments/plans/语义系统对照.md#sema-layer-comparison)。
 已提供显式本地Core完整响应路径与保留响应使用权的薄转发，原默认保持；117项检查、四点实际库与实际CLI通过。
 [分层模型诊断](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)完成20查询／8,224次调用；本地Core更慢，Ray两点接近薄转发。控制／I/O CPU和客户端差异单列，不拆成纯Core／Ray代价。
