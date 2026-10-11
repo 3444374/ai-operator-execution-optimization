@@ -63,10 +63,11 @@ class _ArmOwner:
                     observer=self.observe, timeouts=SessionTimeouts(backend_s=max(45, group.query_timeout_s)))
                 self.stack.callback(self._close_errors.attempt, 'owner_execution_close',
                                     lambda: _drain_execution(self.execution))
-            elif arm == 'sema-method-semloom-request-service' and group.sema_executor_scope == 'group-diagnostic':
+            elif arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic') and group.sema_executor_scope == 'group-diagnostic':
                 from src.execution_provider.adapters.sema_semloom import SemaSemLoomExecutor
                 self.sema_executor = self._enter_component(SemaSemLoomExecutor(
                     model_config=self.model, physical=self.physical, max_held_tasks=group.max_held_tasks,
+                    local_diagnostic=arm.endswith('local-diagnostic'),
                     max_active_requests=group.options.concurrency, observer=self.observe_sema_owner), 'owner_sema_executor_close')
             if arm.startswith('lotus-'):
                 self.lotus_lm()
@@ -132,8 +133,8 @@ class _ArmOwner:
             native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm=='fixed-map-native-ray'
                                     else 'not a native Ray Data graph'),
             request_service_scope=('per query HTTP/session; group Core/workers diagnostic' if sema is not None
-                                   else 'per query HTTP, Core and workers' if self.arm=='sema-method-semloom-request-service'
-                                   else 'per query HTTP service' if self.arm in ('sema-native-transparent','sema-bounded-forward-diagnostic')
+                                   else 'per query HTTP, Core and transport' if self.arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic')
+                                   else 'per query HTTP service' if self.arm in ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic')
                                    else 'no Sema request service'),
             native_http_client_scope='supplier owns its SDK/client lifecycle')
 
@@ -226,7 +227,7 @@ class PersistentAdapterGroup:
         if sema_executor_scope not in ('query', 'group-diagnostic'):
             raise ValueError('Sema executor scope must be query or group-diagnostic')
         if (sema_executor_scope != 'query'
-                and 'sema-method-semloom-request-service' not in self.arms):
+                and not any(arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic') for arm in self.arms)):
             raise ValueError('Sema executor reuse requires the Sema SemLoom request-service arm')
         self.sema_executor_scope = sema_executor_scope
         self.ray_temp_root, self.ray_address = ray_temp_root, ray_address

@@ -296,6 +296,56 @@ class SemaConnectorControlTests(unittest.TestCase):
                 self.fail('fixture did not reach the declared connector capacity and waiting state')
             time.sleep(.005)
 
+    def test_bounded_pipeline_keeps_response_slots_until_http_write_finishes(self):
+        import asyncio
+        from aiohttp import web
+        started, allow = threading.Event(), threading.Event()
+        original = web.Response.write_eof
+        async def write(response, *args, **kwargs):
+            if threading.current_thread().name == 'sema-request-service' and response.status == 200:
+                started.set()
+                while not allow.is_set():await asyncio.sleep(.002)
+            return await original(response, *args, **kwargs)
+        with mock.patch.object(web.Response, 'write_eof', write):
+            with SemaRequestService(query_id='bounded', upstream_url=self.url, limits=self.limits,
+                    trace_path=self.root/'bounded.jsonl', upstream_concurrency=1, held_request_capacity=2) as service:
+                with ThreadPoolExecutor(max_workers=3) as callers:
+                    futures=[callers.submit(self.post,service.endpoint_url) for _ in range(3)]
+                    try:
+                        self.assertTrue(started.wait(1))
+                        self.wait_for(lambda: len(self.server.calls)==2 and len(service._rows)==3)
+                        self.assertEqual(service.summary['held_requests'],2)
+                        self.assertEqual(service.summary['peak_held_requests'],2)
+                    finally:allow.set()
+                    self.assertEqual([f.result()[0] for f in futures],[200]*3)
+                service.end_input()
+        self.assertEqual(len(self.server.calls),3)
+        self.assertEqual(service.summary['held_requests'],0)
+        self.assertFalse(service.cleanup_errors)
+
+    def test_bounded_pipeline_cancellation_stops_unaccepted_and_connector_waiters(self):
+        self.server.gate=threading.Event()
+        with SemaRequestService(query_id='bounded',upstream_url=self.url,limits=self.limits,
+                trace_path=self.root/'bounded-stop.jsonl',upstream_concurrency=1,held_request_capacity=2) as service:
+            with ThreadPoolExecutor(max_workers=4) as callers:
+                futures=[callers.submit(self.post,service.endpoint_url) for _ in range(4)]
+                try:
+                    self.wait_for(lambda: len(service._rows)==4 and len(service._held_sequences)==2)
+                    self.assertTrue(self.server.received.wait(1))
+                    service.cancel()
+                finally:self.server.gate.set()
+                replies=[f.result()[0] for f in futures]
+                self.assertIn(502,replies)
+        self.assertEqual(len(self.server.calls),1)
+        self.assertEqual(service.summary['held_requests'],0)
+        self.assertFalse(service.cleanup_errors)
+
+    def test_invalid_bounded_pipeline_capacity_is_rejected_before_io(self):
+        for capacity in (True,-1,257,1):
+            with self.subTest(capacity=capacity),self.assertRaises(ValueError):
+                SemaRequestService(query_id='bounded',upstream_url=self.url,limits=self.limits,
+                    trace_path=self.root/'invalid.jsonl',upstream_concurrency=2,held_request_capacity=capacity)
+
     def test_two_connections_hold_upstream_capacity_and_record_pool_wait(self):
         self.server.gate = threading.Event()
         with self.service(2) as service:

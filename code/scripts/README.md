@@ -30,6 +30,8 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 `baselines/run_native_adapter_query.py`执行有限外部文本输入的单查询，输入JSONL每行仅含唯一`row_id`和原始`text`。
 `--arm`包括共同固定Map的原生Daft／Ray／SemLoom、LOTUS单Map与两Map三种推进、DuckDB成对执行和Sema三种请求路径。
 具体名字与适用范围见[接口说明](../src/experiments/postgresql/README.md#native-adapter-query)及[工程报告](../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+Sema分层诊断可选择`sema-bounded-pipeline-diagnostic`或`sema-method-semloom-local-diagnostic`；
+后者无需`--ray-physical`，可用原`--sema-executor-scope group-diagnostic`，持有与活动额度分别声明。
 预算须已创建；配置与输出均在仓库外，输出目录须尚不存在：
 
 ```sh

@@ -11,6 +11,8 @@ the same full response. No new method scheduler is introduced.
 - `build_native_execution(config, physical=RayMapConfig(...), **capacity_options)` uses existing
   Daft payload batches and Ray HTTP workers. The capacities and policies are those of
   `build_fixed_model_execution`. `physical=None` explicitly selects a local diagnostic.
+  An optional `transport_factory` selects a complete-response local transport with the same
+  backend lifecycle; Ray rejects a custom factory or `execute` replacement.
 - `prepare_native_task(payload, sequence, row_sequence=..., call_id=..., stage_id="model",
   work=..., max_result_bytes=...)` produces the existing `OfferedTask`. Its payload is the
   supplier-converted HTTP request body. The default descriptor measures request count; it is

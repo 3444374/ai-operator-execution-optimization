@@ -25,6 +25,36 @@ def raw_rows(count):
 
 
 class PersistentAdapterTests(unittest.TestCase):
+    def test_sema_local_diagnostic_reuses_core_without_starting_ray(self):
+        from src.baselines.text.products import sema
+        from tests.execution_provider.test_sema_service import _PROCESS
+        arm='sema-method-semloom-local-diagnostic'
+        with tempfile.TemporaryDirectory() as directory,fixture_server(content='"ok"') as (url,requests):
+            root=Path(directory);binary=root/'fake-sema'
+            binary.write_text('#!'+sys.executable+'\n'+_PROCESS);binary.chmod(0o700)
+            ledger=CellBudgetLedger.create(root/'budget.sqlite',AttemptBudget('local-sema',5),deadline_utc=time.time()+30)
+            with mock.patch.object(sema,'BINARY_SHA256',hashlib.sha256(binary.read_bytes()).hexdigest()), \
+                    mock.patch('src.experiments.postgresql.persistent_native_adapter_query._runtime',
+                               side_effect=AssertionError('local diagnostic must not start Ray')), \
+                    PersistentAdapterGroup((arm,),plan=SemanticMapPlan('Return ok.','fixture',16),
+                        model=FixedModelConfig(url,'fixture',1000),ledger=ledger,root=root/'group',
+                        options=NativeGraphOptions(concurrency=4),max_held_tasks=4,sema_binary=binary,
+                        query_timeout_s=3,sema_executor_scope='group-diagnostic') as group:
+                identities=[]
+                for number,count in enumerate((2,3)):
+                    result=group.run(arm,unit_id='local-'+str(number),root=root/str(number),
+                        load_source=lambda count=count: iter(raw_rows(count)),phase='qualification',allowed_outputs=('ok',))
+                    identities.append(result['persistent_lifecycle']['execution_id'])
+                    self.assertEqual(result['actual_posts'],count)
+                    self.assertEqual(result['request_service']['mode'],arm)
+                    self.assertEqual(result['request_service']['payload_backend'],'local')
+                    self.assertIsNone(group.ray_session_id)
+                    self.assertEqual(result['persistent_lifecycle']['core_jobs'],0)
+                    self.assertFalse(any(result['persistent_lifecycle']['core_usage'].values()))
+                self.assertEqual(identities[0],identities[1])
+            self.assertEqual(len(requests),5)
+            self.assertFalse(group.owners[arm].sema_executor._thread.is_alive())
+
     def test_sema_group_executor_reuses_core_with_changed_inputs_and_query_traces(self):
         from src.baselines.text.products import sema
         from src.execution_provider.adapters import sema_semloom

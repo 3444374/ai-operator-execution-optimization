@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-11：[Sema分层诊断装配](../experiments/plans/语义系统对照.md#sema-layer-comparison)。
+已提供显式本地Core完整响应路径与保留响应使用权的薄转发，原默认保持；实际库、控制计数与模型对照待完成。
+
 2026-10-11：[Sema接纳重试修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。
 单一HTTP接纳等待者避免容量归还后的集体校验，已接纳模型调用保持原并发；目标71项检查、6查询／288次模拟调用通过。
 `d10e3e1c`与原流程在两后端16查询／6,176次真实调用核对通过，SQL中位数下降13.1%／15.0%，请求保持一致；两次测量仅作观察信号，原生路径本轮未重跑。

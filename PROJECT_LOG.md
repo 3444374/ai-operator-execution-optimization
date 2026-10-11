@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-11：准备Sema薄转发、本地Core与Ray的分层诊断
+
+- 按用户附件核对当前来源，旧审阅中的集体接纳重试已由上一修订处理；本轮只建立同方法分层诊断，不恢复通知候选或提高batch。
+- 显式本地Core复用原完整响应、发送前检查与生命周期；薄转发另可持有响应到写出。原接口默认保持，模型比较尚未执行；具体范围见[同一方案](experiments/plans/语义系统对照.md#sema-layer-comparison)。
+
 ## 2026-10-11：Sema接纳重试专项修订
 
 - [接纳报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)记录实际HTTP／Core模拟计数；单等待者减少无接纳的重试，原完整请求、Core额度和模型策略保持。

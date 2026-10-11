@@ -68,14 +68,22 @@ class SemaRequestService:
     mode = 'transparent'
     _uses_upstream_client = True
 
-    def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None, upstream_concurrency=0):
+    def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None,
+                 upstream_concurrency=0, held_request_capacity=0):
         if not isinstance(query_id, str) or not query_id or len(query_id.encode()) > 128:
             raise ValueError('Sema query identity must contain 1..128 UTF-8 bytes')
         if type(limits) is not SemaServiceLimits:
             raise ValueError('Sema service requires explicit limits')
         if type(upstream_concurrency) is not int or not 0 <= upstream_concurrency <= 256:
             raise ValueError('Sema upstream connector capacity must be from 0 to 256')
+        if (type(held_request_capacity) is not int or not 0 <= held_request_capacity <= 256
+                or (held_request_capacity and not 0 < upstream_concurrency <= held_request_capacity)):
+            raise ValueError('Sema held request capacity must fit its bounded connector')
         self.upstream_concurrency = upstream_concurrency
+        self.held_request_capacity = held_request_capacity
+        self._held_slots = None
+        self._held_sequences = set()
+        self._peak_held_requests = 0
         self.query_id, self.upstream_url, self.limits = query_id, upstream_url, limits
         self.trace_path, self.before_post = Path(trace_path), before_post
         self.first_error = None
@@ -158,6 +166,9 @@ class SemaRequestService:
             cleanup_failures = list(self._cleanup_failures)
         return {
             'query_id': self.query_id, 'mode': self.mode,
+            **(dict(held_request_capacity=self.held_request_capacity,
+                    held_requests=len(self._held_sequences), peak_held_requests=self._peak_held_requests)
+               if self.held_request_capacity else {}),
             'upstream_concurrency': self.upstream_concurrency,
             'upstream_capacity_owner': 'aiohttp TCPConnector; zero retains unlimited forwarding',
             'native_task_ready': {'status': 'unavailable', 'reason': 'author request pool precedes llm_url'},
@@ -282,6 +293,19 @@ class SemaRequestService:
                     TimeoutError('Sema request service cleanup did not settle'))
 
     async def _forward(self, body, headers, row, client):
+        if self._held_slots is not None:
+            async with asyncio.timeout(self.limits.timeout_s):
+                await self._held_slots.acquire()
+                self._held_sequences.add(row['request_sequence'])
+                self._peak_held_requests = max(self._peak_held_requests, len(self._held_sequences))
+                row['service_accepted_ns'] = time.monotonic_ns()
+        try:
+            return await self._forward_http(body, headers, row, client)
+        except BaseException:
+            self._release_response(row)
+            raise
+
+    async def _forward_http(self, body, headers, row, client):
         if self._halted.is_set():
             raise RuntimeError('Sema query has stopped')
         if self.before_post is not None:
@@ -303,7 +327,8 @@ class SemaRequestService:
                 (k, v) for k, v in response.headers.items() if k.lower() not in _HOP_HEADERS))
 
     async def _initialize_executor(self):
-        pass
+        if self.held_request_capacity:
+            self._held_slots = asyncio.Semaphore(self.held_request_capacity)
 
     def _connection_traces(self):
         if not self.upstream_concurrency:
@@ -328,10 +353,16 @@ class SemaRequestService:
         return [trace]
 
     async def _close_executor(self):
-        pass
+        if self._held_sequences:
+            raise RuntimeError('Sema request service retains response owners')
 
     def _release_response(self, row):
-        pass
+        if self._held_slots is None:
+            return
+        sequence = row['request_sequence']
+        if sequence in self._held_sequences:
+            self._held_sequences.remove(sequence)
+            self._held_slots.release()
 
     async def _close_http_runner(self, runner):
         try:

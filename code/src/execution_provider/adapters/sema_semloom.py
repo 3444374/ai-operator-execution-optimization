@@ -7,23 +7,46 @@ import threading
 import time
 
 from ...scheduling.core.session_contract import State, Usage
-from .full_response import MAX_RESPONSE_HEADER_BYTES, decode_full_response
+from .full_response import FullResponseTransport, MAX_RESPONSE_HEADER_BYTES, decode_full_response
 from .model_config import FixedModelConfig, MAX_MODEL_RESPONSE_BYTES
-from .native_tasks import NativeTaskSession, prepare_native_task
+from .native_tasks import NativeTaskSession, build_native_execution, prepare_native_task
 from .ray_map_transport import RayMapConfig, ray_map_factory
 from .sema_service import SemaRequestService, _HOP_HEADERS, _Reply
+
+
+def _build_execution(owner):
+    if owner.physical is not None:
+        return ray_map_factory(owner.physical, before_request=owner._before_request)(
+            owner.model_config, max_tasks=owner.max_held_tasks,
+            max_active_requests=owner.max_active_requests, observer=owner._observe)
+
+    class GuardedFullResponseTransport(FullResponseTransport):
+        async def execute(self, task, endpoint):
+            try:
+                owner._before_request(task)
+            except Exception:
+                return b'{"bridge_error":"MODEL_UNAVAILABLE"}'
+            return await super().execute(task, endpoint)
+
+    return build_native_execution(owner.model_config, physical=None,
+        transport_factory=GuardedFullResponseTransport, max_tasks=owner.max_held_tasks,
+        max_active_requests=owner.max_active_requests, observer=owner._observe)
 
 
 class SemaSemLoomExecutor:
     """Optional sequential-query owner; Core and workers stay on one control thread."""
 
-    def __init__(self, *, model_config, physical, max_held_tasks, max_active_requests, observer=None):
-        if type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig:
+    def __init__(self, *, model_config, physical, max_held_tasks, max_active_requests, observer=None,
+                 local_diagnostic=False):
+        if (type(model_config) is not FixedModelConfig or type(local_diagnostic) is not bool
+                or (physical is not None if local_diagnostic else type(physical) is not RayMapConfig)):
             raise ValueError('Sema executor requires its fixed model and RayMapConfig')
         if (any(type(v) is not int or not 1 <= v <= 256 for v in (max_held_tasks, max_active_requests))
-                or max_active_requests > max_held_tasks or physical.batch_rows > max_active_requests):
+                or max_active_requests > max_held_tasks
+                or (physical is not None and physical.batch_rows > max_active_requests)):
             raise ValueError('Sema executor capacities cannot fit the configured batch')
-        self.model_config, self.physical = model_config, replace(physical, response_mode='full')
+        self.model_config = model_config
+        self.physical = None if physical is None else replace(physical, response_mode='full')
         self.max_held_tasks, self.max_active_requests = max_held_tasks, max_active_requests
         self.observer = observer
         self.execution = self._service = self._loop = self._thread = None
@@ -53,9 +76,7 @@ class SemaSemLoomExecutor:
             self.observer(event)
 
     def _build_execution(self):
-        return ray_map_factory(self.physical, before_request=self._before_request)(
-            self.model_config, max_tasks=self.max_held_tasks,
-            max_active_requests=self.max_active_requests, observer=self._observe)
+        return _build_execution(self)
 
     def _run(self):
         self._loop = asyncio.new_event_loop()
@@ -174,12 +195,15 @@ class SemaSemLoomService(SemaRequestService):
     _uses_upstream_client = False
 
     def __init__(self, *, query_id, model_config, physical, limits, trace_path,
-                 max_held_tasks, max_active_requests, before_post=None, executor_owner=None):
-        if type(model_config) is not FixedModelConfig or type(physical) is not RayMapConfig:
+                 max_held_tasks, max_active_requests, before_post=None, executor_owner=None,
+                 local_diagnostic=False):
+        if (type(model_config) is not FixedModelConfig or type(local_diagnostic) is not bool
+                or (physical is not None if local_diagnostic else type(physical) is not RayMapConfig)):
             raise ValueError('Sema SemLoom service requires FixedModelConfig and RayMapConfig')
         if any(type(v) is not int or not 1 <= v <= 256 for v in (max_held_tasks, max_active_requests)):
             raise ValueError('Sema SemLoom task and active capacities must be from 1 to 256')
-        if max_active_requests > max_held_tasks or physical.batch_rows > max_active_requests:
+        if (max_active_requests > max_held_tasks
+                or (physical is not None and physical.batch_rows > max_active_requests)):
             raise ValueError('Sema SemLoom capacities cannot fit the configured batch')
         if limits.response_bytes + MAX_RESPONSE_HEADER_BYTES + 12 > MAX_MODEL_RESPONSE_BYTES:
             raise ValueError('Sema response limit must leave space for complete response metadata')
@@ -187,7 +211,10 @@ class SemaSemLoomService(SemaRequestService):
             raise ValueError('Sema service deadline must cover its model deadline')
         super().__init__(query_id=query_id, upstream_url=model_config.endpoint_url,
                          limits=limits, trace_path=trace_path, before_post=before_post)
-        self.model_config, self.physical = model_config, replace(physical, response_mode='full')
+        self.model_config = model_config
+        self.physical = None if physical is None else replace(physical, response_mode='full')
+        if local_diagnostic:
+            self.mode = 'sema-method-semloom-local-diagnostic'
         self.max_held_tasks, self.max_active_requests = max_held_tasks, max_active_requests
         if executor_owner is not None and (
                 not isinstance(executor_owner, SemaSemLoomExecutor)
@@ -207,15 +234,17 @@ class SemaSemLoomService(SemaRequestService):
     @property
     def summary(self):
         return {**super().summary, 'execution_api': 'NativeTaskSession',
-                'payload_backend': self.physical.payload_backend,
-                'response_mode': self.physical.response_mode,
+                'payload_backend': 'local' if self.physical is None else self.physical.payload_backend,
+                'response_mode': 'full',
                 'max_held_tasks': self.max_held_tasks, 'max_active_requests': self.max_active_requests,
                 'executor_scope': 'query' if self.executor_owner is None else 'persistent group diagnostic',
                 'io_thread_scope': 'query' if self.executor_owner is None else 'persistent executor owner',
                 'execution_id': None if self._execution is None else str(id(self._execution)),
                 'post_count_scope': 'one pre-send reservation per core task; remote receipt is separate',
-                'forward_clock_scope': 'Ray RPC entry, before remote HTTP worker execution',
-                'model_return_clock_scope': 'remote worker completion; unavailable without a shared clock',
+                'forward_clock_scope': ('local HTTP transport entry' if self.physical is None
+                                        else 'Ray RPC entry, before remote HTTP worker execution'),
+                'model_return_clock_scope': ('local complete-response transport' if self.physical is None
+                                             else 'remote worker completion; unavailable without a shared clock'),
                 'core_events': list(self._core_events)}
 
     def _before_request(self, task):
@@ -249,6 +278,15 @@ class SemaSemLoomService(SemaRequestService):
                     row['model_returned_ns'] = event['worker_ended_ns'] if event['shared_clock'] else None
                     row['model_returned_observed_ns'] = event['received_ns']
                     row['model_clock_shared'] = event['shared_clock']
+            elif self.physical is None and event.get('event') in ('http_started', 'http_finished'):
+                entry = self._pending.get(event['key']['sequence'])
+                if entry is not None:
+                    row = entry['row']
+                    if event['event'] == 'http_started':
+                        row['forward_started_ns'] = when
+                    else:
+                        row.update(model_returned_ns=when, model_returned_observed_ns=when,
+                                   model_clock_shared=True)
         except Exception as error:
             key = event.get('key') if type(event) is dict else None
             task_sequence = key.get('sequence') if type(key) is dict else None
@@ -264,11 +302,7 @@ class SemaSemLoomService(SemaRequestService):
                 self._record_cleanup_error('observation_record', error)
 
     def _build_execution(self):
-        # Compose the existing factory's pre-send hook with the common response mode.
-        # No shared module needs a Sema-specific callback or scheduling branch.
-        return ray_map_factory(self.physical, before_request=self._before_request)(
-            self.model_config, max_tasks=self.max_held_tasks,
-            max_active_requests=self.max_active_requests, observer=self._observe)
+        return _build_execution(self)
 
     async def _initialize_executor(self):
         self._progress_changed = asyncio.Event()

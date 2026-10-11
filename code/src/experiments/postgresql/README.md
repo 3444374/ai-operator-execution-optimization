@@ -64,6 +64,10 @@ CPU／替身、实际Daft／Ray对象归还及有限模型查询检查已通过�
 实现使用[公开连接事件](https://docs.aiohttp.org/en/v3.9.5/tracing_reference.html#connection-acquiring)。
 `sema-bounded-forward-diagnostic`使用该服务，连接容量取`options.concurrency`，保留作者SQL和完整响应；
 它是单独的诊断参照，作者线程参数与连接容量分别记录。
+`sema-bounded-pipeline-diagnostic`另限制持有请求／响应数到`max_held_tasks`，响应写出前保留名额。
+`sema-method-semloom-local-diagnostic`复用相同Sema服务与Core，只将Ray换成现有完整响应本地HTTP，
+支持原`sema_executor_scope=group-diagnostic`，不启动Ray；默认请求服务路径保持。
+它们用于[三层诊断](../../../../experiments/plans/语义系统对照.md#sema-layer-comparison)，不称原生执行器替换。
 DuckDB与Sema五条已独立通过`8 → 8 → 128`行实际库fixture和同Sema进程更换URL检查；
 同连接／作者进程复用、输入替换和当前结果关联分别核对，后置Core按查询创建的事实保留。
 两Map常驻实际库、修复后的执行节奏及真实模型复核仍按自身证据判断。

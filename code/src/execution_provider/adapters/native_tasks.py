@@ -24,13 +24,14 @@ def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, cal
                        info=TaskInfo(call_id, row_sequence, stage_id, work))
 
 
-def build_native_execution(config, *, physical: RayMapConfig | None, execute=None, **options):
+def build_native_execution(config, *, physical: RayMapConfig | None, execute=None,
+                           transport_factory=None, **options):
     """Use the declared Ray payload backend; physical=None selects a local diagnostic."""
     if physical is None:
         execution = build_fixed_model_execution(config, execute=execute,
-            transport_factory=None if execute else FullResponseTransport, **options)
+            transport_factory=transport_factory or (None if execute else FullResponseTransport), **options)
     else:
-        if execute is not None or type(physical) is not RayMapConfig:
+        if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
             raise ValueError("native Ray execution requires RayMapConfig and its own transport")
         execution = ray_map_factory(replace(physical, response_mode="full"))(config, **options)
 

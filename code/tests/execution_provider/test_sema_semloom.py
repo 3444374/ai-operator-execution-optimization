@@ -598,6 +598,49 @@ class SemaResidentExecutorTests(unittest.TestCase):
     stop_model = service_tests.SemaServiceTests.stop_model
     post = service_tests.SemaServiceTests.post
 
+    def test_local_diagnostic_uses_real_core_complete_http_and_no_ray_factory(self):
+        config = FixedModelConfig(self.url, 'fixture-model', 2000)
+        sent = []
+        with mock.patch.object(sema_semloom, 'ray_map_factory', side_effect=AssertionError('local uses no Ray')):
+            with sema_semloom.SemaSemLoomExecutor(model_config=config, physical=None,
+                    max_held_tasks=4, max_active_requests=2, local_diagnostic=True) as owner:
+                ids = []
+                for number in range(2):
+                    with SemaSemLoomService(query_id='local-' + str(number), model_config=config,
+                            physical=None, limits=self.limits, trace_path=self.root / ('local-'+str(number)+'.jsonl'),
+                            max_held_tasks=4, max_active_requests=2, local_diagnostic=True,
+                            executor_owner=owner, before_post=sent.append) as service:
+                        with ThreadPoolExecutor(max_workers=4) as callers:
+                            results = list(callers.map(lambda _: self.post(service.endpoint_url), range(4)))
+                        self.assertEqual([value[:2] for value in results], [(200, self.server.body)] * 4)
+                        service.end_input()
+                    ids.append(owner.snapshot()['execution_id'])
+                    self.assertEqual(service.mode, 'sema-method-semloom-local-diagnostic')
+                    self.assertEqual(service.summary['payload_backend'], 'local')
+                    self.assertFalse(service.cleanup_errors)
+                    self.assertEqual(owner.execution.engine.capacity.usage(), Usage())
+                    self.assertFalse(owner.execution.engine.jobs.jobs)
+                    for row in service._rows:
+                        self.assertLessEqual(row['core_accepted_ns'], row['forward_started_ns'])
+                        self.assertLessEqual(row['forward_started_ns'], row['model_returned_observed_ns'])
+                        self.assertLessEqual(row['model_returned_observed_ns'], row['core_delivery_ns'])
+                self.assertEqual(ids[0], ids[1])
+        self.assertEqual(sent, [self.payload] * 8)
+        self.assertEqual(len(self.server.calls), 8)
+        self.assertFalse(owner._thread.is_alive())
+
+    def test_local_diagnostic_presend_failure_does_not_call_the_model(self):
+        config = FixedModelConfig(self.url, 'fixture-model', 2000)
+        with SemaSemLoomService(query_id='local-stop', model_config=config, physical=None,
+                limits=self.limits, trace_path=self.root/'local-stop.jsonl', max_held_tasks=2,
+                max_active_requests=1, local_diagnostic=True,
+                before_post=mock.Mock(side_effect=ValueError('presend failed'))) as service:
+            self.assertEqual(self.post(service.endpoint_url)[0], 502)
+            self.assertEqual(service.first_error.phase, 'execution')
+        self.assertEqual(self.server.calls, [])
+        self.assertEqual(service._execution.engine.capacity.usage(), Usage())
+        self.assertFalse(service._execution.engine.jobs.jobs)
+
     def owner(self):
         return sema_semloom.SemaSemLoomExecutor(
             model_config=FixedModelConfig(self.url, 'fixture-model', 2000),

@@ -32,6 +32,8 @@ SUPPLIER_ARMS = (
     'lotus-two-map-semloom-incremental',
     'sema-native-direct', 'sema-native-transparent', 'sema-method-semloom-request-service',
     'sema-bounded-forward-diagnostic',
+    'sema-bounded-pipeline-diagnostic',
+    'sema-method-semloom-local-diagnostic',
     'duckdb-adapted-native', 'duckdb-method-semloom', 'duckdb-method-semloom-local-diagnostic',
 )
 
@@ -476,14 +478,16 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 if sema_binary is None:raise ValueError('Sema requires the verified author binary')
                 limits=SemaServiceLimits(max_requests=maximum,request_bytes=1048576,
                     response_bytes=1048576-8204,timeout_s=query_timeout_s)
-                if arm in ('sema-native-transparent','sema-bounded-forward-diagnostic'):
+                if arm in ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic'):
                     service=stack.enter_context(SemaRequestService(query_id=unit_id,upstream_url=routed.endpoint_url,
                         limits=limits,trace_path=root/'sema-service.jsonl',
-                        upstream_concurrency=options.concurrency if arm=='sema-bounded-forward-diagnostic' else 0))
+                        upstream_concurrency=options.concurrency if arm!='sema-native-transparent' else 0,
+                        held_request_capacity=held_tasks if arm=='sema-bounded-pipeline-diagnostic' else 0))
                 elif use_core:
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
                         limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=held_tasks,
                         max_active_requests=options.concurrency,
+                        local_diagnostic=local,
                         executor_owner=owner.sema_executor if owner is not None else None))
                 if owner is not None:
                     owner.service=service
@@ -499,6 +503,12 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 if arm=='sema-bounded-forward-diagnostic':
                     summary['identity'].update(executor='aiohttp connector capacity diagnostic',
                         upstream_concurrency=options.concurrency)
+                elif arm=='sema-bounded-pipeline-diagnostic':
+                    summary['identity'].update(executor='aiohttp held-response and connector diagnostic',
+                        upstream_concurrency=options.concurrency,held_request_capacity=held_tasks)
+                elif local:
+                    summary['identity'].update(executor='SemLoom local complete-response diagnostic',
+                        payload_backend='no Daft or Ray')
             ready=time.monotonic_ns()
             if count:raise ValueError('supplier preparation called the model before query submission')
             @contextmanager
