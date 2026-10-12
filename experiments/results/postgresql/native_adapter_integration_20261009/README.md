@@ -27,6 +27,9 @@ AI源码`9b7b16a5d5bfa97180b8be48d69bd9a4a4106419`；编译二进制摘要为
 `e1f04a82e1a703d00ce14b4401aec57fd0ac393cfcc02d104878892d4ed1e963`。
 原社区二进制摘要`719c48c6cfda10a4c3e1cfcea42a528d2b290ef52cde9cbecddd5b4bb3286ac4`继续保留。
 Sema v0.0.1作者二进制产物摘要为`15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3`。
+2026-10-12补[原请求池前的可行性核对](../../../../code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)：公开main与发行包仍为原固定来源，旧135项设置没有已核实的任务回调；本轮仅重读产物和探针，不重新执行。
+公开元数据、归档/二进制/设置摘要与读取过程的一次证书错误由[verification.json](verification.json)中的`sema_prepool_feasibility`定位；系统curl校验读取成功，历史各节保持。
+当前决定保留原生系统与后置服务比较，不新增Sema算子或二进制注入；这项源码/产物判断不作为新的模型或性能证据。
 
 Daft内置prompt未改造为独立方法适配：固定[公开源码](https://raw.githubusercontent.com/Eventual-Inc/Daft/v0.7.21/daft/ai/openai/protocols/prompter.py)
 在同一接口完成内容转换、SDK调用、usage记录和结果文本提取，没有独立完整调用／响应导出接口。

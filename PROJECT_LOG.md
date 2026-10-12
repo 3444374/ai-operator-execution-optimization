@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：检查Sema原请求池前接入可行性
+
+- 官方main仍为固定提交；核对唯一分支、空标签/发行清单和四项文件，原ZIP及ELF摘要一致；重读旧探针的135项设置，没有找到已核实的池前任务回调。
+- [接入说明](code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)记录HTTP、物理配置、扩展、二进制拦截与请求回放各路线；不改原算子策略，不新增执行实现。
+- [总体方案](experiments/plans/语义系统对照.md#native-semloom-pairs)保留原生完整路径与后置简单控制/同核心静态比较，池前归因优先使用现有LOTUS／DuckDB接口。
+- 未接触目标服务器或运行二进制/查询/模型；Python取元数据的证书错误和系统curl成功读取记录在原整合verification，历史来源与性能数字保持。
+
 ## 2026-10-12：复核Sema请求服务的实际接点
 
 - 源码确认查询仍交给作者CLI，接入只改模型服务地址；原生HTTP正文读取后才生成Core任务，原SQL执行器、请求池与方法保持。
