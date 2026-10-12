@@ -1,1 +1,0 @@
-"""Image-baseline tests."""

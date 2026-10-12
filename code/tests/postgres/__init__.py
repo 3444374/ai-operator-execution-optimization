@@ -1,1 +1,0 @@
-"""PostgreSQL carrier contract tests."""

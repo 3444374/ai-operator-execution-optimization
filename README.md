@@ -1,61 +1,50 @@
-# SemLoom
+# SemLoom原提交历史保全
 
-本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。PostgreSQL
-负责 SQL、计划、snapshot、权限及查询的取消、错误和结果生命周期；SemLoom 在数据库管理下
-组织任务，并调用可替换的外部执行服务。DB-AIEL（Database-Aware AI Execution Layer）
-是架构层名称。
+本普通分支仅保留原Git提交图和可检索来源，供复核与精确恢复。它不是可运行的集成版本；没有采用、合并实现或重新验证这些旧代码、实验及文档迁移。
+当前tree只展示本说明与来源映射。每个原tip作为汇聚提交的parent，原代码、测试、证据和全部祖先仍可按原SHA查看。main、稳定性及原生canonical不因本分支移动。
 
-## 当前状态
+31个来源在[sources.json](sources.json)中保存branch→原tip→原tree→恢复命令。被清理的旧名称不会改变原提交的内容或实验身份，未来恢复仍先核具名保全ref及祖先关系。
 
-- PostgreSQL 18.3 extension 已接入 SemFilter 与 SemMap 的受限真实语义、公共 provider 接口、
-  Map 有界多在途执行和可选图像嵌入路径。实现范围见[代码状态](code/INFRA_STATUS.md)。
-- [可选 Daft/Ray 文本传输](experiments/results/postgresql/incremental_transport_20260927/README.md)
-  已完成受控 PostgreSQL 检查。[后续真实模型检查](experiments/results/postgresql/transport_real_20260927/README.md)
-  完成 12 条 SQL、4,144 次请求；配对结果有 0–2 行输出差异，尚不能认定质量等价或稳定性能收益。
-- [完整容量复查](experiments/results/postgresql/m1_full_recheck_20260920/README.md)中，两条路径均未满足持续供给要求，
-  尚未选定容量参照。[全局信息方式与图像检查](experiments/results/postgresql/m1_m2_f_real_20260920/README.md)
-  分别留下无稳定优势的结果和有限的真实 CLIP 验证。具体数字及未完成项以各结果报告为准。
+| 原分支 | 原tip | 历史组 |
+|---|---|---|
+| `codex/arrow-payload-batches` | [a5f59a61ea4d5d941f75534f9da10eae134f38df](https://github.com/3444374/ai-operator-execution-optimization/commit/a5f59a61ea4d5d941f75534f9da10eae134f38df) | review_blocked_pr_history |
+| `codex/core-completion-progress-20261011` | [cb014152ab26a910cc4d4c889b8934dfc11e34a9](https://github.com/3444374/ai-operator-execution-optimization/commit/cb014152ab26a910cc4d4c889b8934dfc11e34a9) | core_patch_history |
+| `codex/core-offer-cost-20261011` | [a87242f1223a617b46c83a857372e51f68a99d6b](https://github.com/3444374/ai-operator-execution-optimization/commit/a87242f1223a617b46c83a857372e51f68a99d6b) | core_patch_history |
+| `codex/core-static-validation-reuse-20261011` | [299aff6fbe30dc7ecf982ee78a6ed31031fb590c](https://github.com/3444374/ai-operator-execution-optimization/commit/299aff6fbe30dc7ecf982ee78a6ed31031fb590c) | core_patch_history |
+| `codex/duckdb-pipeline-diagnosis-20261011` | [78a3c8e5ad2fbd21c2951823b718421b94f77f15](https://github.com/3444374/ai-operator-execution-optimization/commit/78a3c8e5ad2fbd21c2951823b718421b94f77f15) | native_adapter_history |
+| `codex/duckdb-query-job-20261011` | [bc9d9dfef850ce2c819e2766967ae77fbbb12a56](https://github.com/3444374/ai-operator-execution-optimization/commit/bc9d9dfef850ce2c819e2766967ae77fbbb12a56) | native_adapter_history |
+| `codex/lotus-adapter-overhead-20261009` | [f087eecadb8d00d0dd86cd2f9e05e1f868287055](https://github.com/3444374/ai-operator-execution-optimization/commit/f087eecadb8d00d0dd86cd2f9e05e1f868287055) | native_adapter_history |
+| `codex/lotus-control-preparation-20261011` | [1e94f6d8f937a56445d7c149255b01e10fcde77a](https://github.com/3444374/ai-operator-execution-optimization/commit/1e94f6d8f937a56445d7c149255b01e10fcde77a) | native_adapter_history |
+| `codex/native-performance-repair-20261009` | [bb81fca7a88760a81930c0daa6b24307c4231c4f](https://github.com/3444374/ai-operator-execution-optimization/commit/bb81fca7a88760a81930c0daa6b24307c4231c4f) | native_adapter_history |
+| `codex/repo-reorg` | [6cb13a44c2c964f7fc76f573050625c692c2acdd](https://github.com/3444374/ai-operator-execution-optimization/commit/6cb13a44c2c964f7fc76f573050625c692c2acdd) | document_history |
+| `codex/repo-slimming` | [e6a22ad4490c021c5545dc0fb08cb88eed9e6179](https://github.com/3444374/ai-operator-execution-optimization/commit/e6a22ad4490c021c5545dc0fb08cb88eed9e6179) | document_history |
+| `codex/saor-feeding-gap-diagnostic-20260817` | [f1844c0f24913ad9fb8eb61da1f121570357eb3f](https://github.com/3444374/ai-operator-execution-optimization/commit/f1844c0f24913ad9fb8eb61da1f121570357eb3f) | experiment_history |
+| `codex/saor-feeding-gap-rerun-20260818` | [034e2b6a67f301c5c700ecd01779993055b7b5b7](https://github.com/3444374/ai-operator-execution-optimization/commit/034e2b6a67f301c5c700ecd01779993055b7b5b7) | experiment_history |
+| `codex/saor-feeding-gap-transport-evidence-20260818` | [2e4c27239f871af28d8c1d7800c438fabccf2707](https://github.com/3444374/ai-operator-execution-optimization/commit/2e4c27239f871af28d8c1d7800c438fabccf2707) | experiment_history |
+| `codex/sema-deferred-observation-20261011` | [5853b0810b913abea4da8f0db0dfcc3ed15136c8](https://github.com/3444374/ai-operator-execution-optimization/commit/5853b0810b913abea4da8f0db0dfcc3ed15136c8) | native_adapter_history |
+| `codex/sema-event-pump-20261011` | [b3eb0a72fc56669c3191d823054a7f912656dc7d](https://github.com/3444374/ai-operator-execution-optimization/commit/b3eb0a72fc56669c3191d823054a7f912656dc7d) | native_adapter_history |
+| `codex/sema-imlane-adapter-20261012` | [650f65c8fe0f834009bc714257ffde0a2ec3716b](https://github.com/3444374/ai-operator-execution-optimization/commit/650f65c8fe0f834009bc714257ffde0a2ec3716b) | native_adapter_history |
+| `codex/sema-native-library-checks-20261012` | [7f18911e80386795714b7b624f74213531d998e0](https://github.com/3444374/ai-operator-execution-optimization/commit/7f18911e80386795714b7b624f74213531d998e0) | native_adapter_history |
+| `codex/sema-performance-repair-20261009` | [ded6441ea96b8043e7105ce4f0f72aa1420e8b86](https://github.com/3444374/ai-operator-execution-optimization/commit/ded6441ea96b8043e7105ce4f0f72aa1420e8b86) | native_adapter_history |
+| `codex/sema-resident-executor-20261011` | [069c7156983c80892227fe9a84fc14a91b72ca9e](https://github.com/3444374/ai-operator-execution-optimization/commit/069c7156983c80892227fe9a84fc14a91b72ca9e) | native_adapter_history |
+| `codex/semantic-duckdb-adapter` | [53c8729943eb903db63c72d28ff732bc92494bf1](https://github.com/3444374/ai-operator-execution-optimization/commit/53c8729943eb903db63c72d28ff732bc92494bf1) | native_adapter_history |
+| `codex/semantic-duckdb-performance-20261009` | [2de2fc230c810787bd2f4acfe5663453e43871de](https://github.com/3444374/ai-operator-execution-optimization/commit/2de2fc230c810787bd2f4acfe5663453e43871de) | native_adapter_history |
+| `codex/semantic-evidence-compact-20261010` | [9a3ae1ef84c91de923530c7b4e7d834a7b1c4964](https://github.com/3444374/ai-operator-execution-optimization/commit/9a3ae1ef84c91de923530c7b4e7d834a7b1c4964) | document_history |
+| `codex/semantic-lotus-adapter-20261009` | [0085dfb55525923a477c93115d533afb5553db15](https://github.com/3444374/ai-operator-execution-optimization/commit/0085dfb55525923a477c93115d533afb5553db15) | native_adapter_history |
+| `codex/semantic-native-execution-20261009` | [7eec3f85ef2767c9a25b98a825b4701d050f2641](https://github.com/3444374/ai-operator-execution-optimization/commit/7eec3f85ef2767c9a25b98a825b4701d050f2641) | native_adapter_history |
+| `codex/semantic-sema-adapter-20261009` | [3ae8a0b893517227eac470624e2fa5c9b3132932](https://github.com/3444374/ai-operator-execution-optimization/commit/3ae8a0b893517227eac470624e2fa5c9b3132932) | native_adapter_history |
+| `codex/text-map-hot-path-timing` | [cf3a9798fcfdf62b93368d2bd5788f699847c4fa](https://github.com/3444374/ai-operator-execution-optimization/commit/cf3a9798fcfdf62b93368d2bd5788f699847c4fa) | review_blocked_pr_history |
+| `codex/text-map-matched-comparison` | [b855f4cc411eb9b5399e08e41175968f702fc736](https://github.com/3444374/ai-operator-execution-optimization/commit/b855f4cc411eb9b5399e08e41175968f702fc736) | review_blocked_pr_history |
+| `codex/text-map-startup-and-first-row` | [96e861a0f4b38f343eff67fc0b599b84a2ed3ae3](https://github.com/3444374/ai-operator-execution-optimization/commit/96e861a0f4b38f343eff67fc0b599b84a2ed3ae3) | review_blocked_pr_history |
+| `codex/text-map-stream-decomposition` | [0e220ce58b88b72f21a1ff1b623e70754dad6238](https://github.com/3444374/ai-operator-execution-optimization/commit/0e220ce58b88b72f21a1ff1b623e70754dad6238) | review_blocked_pr_history |
+| `codex/threaded-map-accounting` | [6414304e7ad7f2c7a22e1edfc4bb5756abecd708](https://github.com/3444374/ai-operator-execution-optimization/commit/6414304e7ad7f2c7a22e1edfc4bb5756abecd708) | review_blocked_pr_history |
 
-[新版文本Map主表](experiments/results/postgresql/text_map_main_real_20260930/README.md)已完成68条查询、41,024次真实请求及独立评价。
-1024行三次时间中位数：SemLoom18.101秒、direct7.705秒、Ray22.849秒、Daft11.668秒，质量与全部原值并列报告。
-前次失败与诊断保留；[准备调优](experiments/results/postgresql/text_map_preparation_tuning_20260930/README.md)
-已定位重复查询的新Ray worker启动成本并验证可选worker服务；
-[真实复测](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)累计20,688次请求，
-1024行完整查询16.502→14.794秒、准备4.737→2.831秒，仍慢于direct和Daft，质量差异单列。
-[分支审查](experiments/results/postgresql/text_map_main_real_20260930/README.md#branch-review)已补分段观测、修正配置核对并无损压缩批量证据；
-[后续gateway诊断与真实复测](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)的无模型阶段10,272次fixture请求，
-共享gateway完整查询中位数12.428→7.569秒，共享启动单列；PG追踪定位了节点返回之后的首行交付等待。
-最后15条查询、12,336次真实请求通过：新gateway14.626→共享gateway10.131秒，direct7.681秒；
-共享准备约14毫秒，仍慢于direct，输出差0–4行。此前中止11,312次保留，源码与资源回收核对通过。
-[热路径细分](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md#热路径独立计时与无模型验证)
-新增5条查询/4,112次fixture，模型0次；同步实验账本每1024行占用gateway事件循环约5.2秒。
-[后续线程记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)70项及8,224次fixture通过，模型0次。
-线程选择8.287→11.570秒，慢39.606%，默认同步保留。
-[直接Arrow分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)完成92项及8,224次fixture，模型0次；
-完整查询8.354→8.149秒，少2.457%，批次构建约1→0.2秒与持久记账重叠。默认Daft保留，真实收益尚待验证。
-旧容量实验未选点不作为所有系统比较的前置条件。
+恢复一个旧名称示例（需明确授权恢复，不能覆盖现有不同tip）：
 
-## 研究内容
+```sh
+git fetch --no-tags origin refs/heads/codex/semloom-history-preservation
+git merge-base --is-ancestor <original-tip> FETCH_HEAD
+git push origin <original-tip>:refs/heads/<original-branch>
+```
 
-1. 按 token、frame、阶段 work 与局部性组织数据，比较不同组织方式对完整查询和资源使用的影响。
-2. 在固定 request/work capacity 下研究提交、服务实例路由及单租户多 Job 调度。
-
-算子代价估计为两项研究内容提供信息，并支持数据库计划比较。文本 `AI_COMPLETE` 是首版主场景；
-图像 `AI_EMBED/AI_CLASSIFY` 用于跨模态验证。研究问题与执行顺序见[项目总纲](PROJECT_OUTLINE.md)。
-
-## 阅读入口
-
-| 需求 | 文件 |
-|---|---|
-| 两分钟了解方向和近期工作 | [当前方向速览](overview/current_direction_and_plan.md) |
-| 查文件、目录职责与历史材料 | [项目导航](PROJECT_INDEX.md) |
-| 查项目长期规则与术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
-| 核对实现与运行入口 | [代码状态](code/INFRA_STATUS.md)、[代码目录](code/README.md)、[脚本说明](code/scripts/README.md) |
-| 查实验计划、证据和失败记录 | [实验计划](experiments/plans/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 理解相关系统与论文 | [知识库](research/knowledge_hub.md) |
-| 追溯历史设计与实施计划 | [历史设计记录](docs/README.md) |
-| 准备机器 | [运行手册](deploy/runtime/README.md) |
-| 追溯已结束的开题材料 | [归档入口](opening/README.md) |
-
-原始结果和失败记录保留在各实验目录。运行条件与结论以结果报告为准；机器准备和真实实验分别遵守
-[运行手册](deploy/runtime/README.md)及目标计划。
+source包含关系只证明历史可取得；是否采用某项Core优化、原生接入、目录精简或实验方法须另行内容审阅和适用验证。原始失败与负结果不会改记为当前成果。

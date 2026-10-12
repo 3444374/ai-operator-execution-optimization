@@ -1,1 +1,0 @@
-"""Text-modality tests."""

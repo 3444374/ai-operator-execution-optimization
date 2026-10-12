@@ -1,0 +1,1125 @@
+{
+  "branch": "codex/semloom-history-preservation",
+  "purpose": "original SemLoom Git history preservation, not integration",
+  "schema": 1,
+  "source_count": 31,
+  "source_snapshot": "remote-heads-before-history-preservation",
+  "sources": [
+    {
+      "branch": "codex/arrow-payload-batches",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/arrow-payload-batches",
+      "original_tip": "a5f59a61ea4d5d941f75534f9da10eae134f38df",
+      "original_tree": "7cde0ccea63f965fd1656ec6e580565c51226c6a",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "a5f59a61ea4d5d941f75534f9da10eae134f38df",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "a5f59a61ea4d5d941f75534f9da10eae134f38df:refs/heads/codex/arrow-payload-batches"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/a5f59a61ea4d5d941f75534f9da10eae134f38df",
+      "unique_commits_at_inventory": [
+        "a5f59a61ea4d5d941f75534f9da10eae134f38df",
+        "c601ae251c2c837bee2726bbe4133087e82314eb",
+        "f89ba28a77857a59d7f698910b61efe95b549387"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/core-completion-progress-20261011",
+      "group": "core_patch_history",
+      "original_ref": "refs/heads/codex/core-completion-progress-20261011",
+      "original_tip": "cb014152ab26a910cc4d4c889b8934dfc11e34a9",
+      "original_tree": "a7f2c983ba047dde783c8d082ea73e06100a197c",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "cb014152ab26a910cc4d4c889b8934dfc11e34a9",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "cb014152ab26a910cc4d4c889b8934dfc11e34a9:refs/heads/codex/core-completion-progress-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/cb014152ab26a910cc4d4c889b8934dfc11e34a9",
+      "unique_commits_at_inventory": [
+        "cb014152ab26a910cc4d4c889b8934dfc11e34a9"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/core-offer-cost-20261011",
+      "group": "core_patch_history",
+      "original_ref": "refs/heads/codex/core-offer-cost-20261011",
+      "original_tip": "a87242f1223a617b46c83a857372e51f68a99d6b",
+      "original_tree": "cefe4a920b690a05c438b03df3e9c272379e0ea4",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "a87242f1223a617b46c83a857372e51f68a99d6b",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "a87242f1223a617b46c83a857372e51f68a99d6b:refs/heads/codex/core-offer-cost-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/a87242f1223a617b46c83a857372e51f68a99d6b",
+      "unique_commits_at_inventory": [
+        "a87242f1223a617b46c83a857372e51f68a99d6b"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/core-static-validation-reuse-20261011",
+      "group": "core_patch_history",
+      "original_ref": "refs/heads/codex/core-static-validation-reuse-20261011",
+      "original_tip": "299aff6fbe30dc7ecf982ee78a6ed31031fb590c",
+      "original_tree": "773daa74d44c20c075a21d75c884e0cf7cfea603",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "299aff6fbe30dc7ecf982ee78a6ed31031fb590c",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "299aff6fbe30dc7ecf982ee78a6ed31031fb590c:refs/heads/codex/core-static-validation-reuse-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/299aff6fbe30dc7ecf982ee78a6ed31031fb590c",
+      "unique_commits_at_inventory": [
+        "299aff6fbe30dc7ecf982ee78a6ed31031fb590c"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/duckdb-pipeline-diagnosis-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/duckdb-pipeline-diagnosis-20261011",
+      "original_tip": "78a3c8e5ad2fbd21c2951823b718421b94f77f15",
+      "original_tree": "c5e72d62493cdc6befe09ed0dbd8924a10021e6d",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "78a3c8e5ad2fbd21c2951823b718421b94f77f15",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "78a3c8e5ad2fbd21c2951823b718421b94f77f15:refs/heads/codex/duckdb-pipeline-diagnosis-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/78a3c8e5ad2fbd21c2951823b718421b94f77f15",
+      "unique_commits_at_inventory": [
+        "78a3c8e5ad2fbd21c2951823b718421b94f77f15",
+        "e6a51275171612d3d61077d86f7983913574e803"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/duckdb-query-job-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/duckdb-query-job-20261011",
+      "original_tip": "bc9d9dfef850ce2c819e2766967ae77fbbb12a56",
+      "original_tree": "a804e9b1196824796a0818c11d9d8771961ca794",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "bc9d9dfef850ce2c819e2766967ae77fbbb12a56",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "bc9d9dfef850ce2c819e2766967ae77fbbb12a56:refs/heads/codex/duckdb-query-job-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/bc9d9dfef850ce2c819e2766967ae77fbbb12a56",
+      "unique_commits_at_inventory": [
+        "bc9d9dfef850ce2c819e2766967ae77fbbb12a56"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/lotus-adapter-overhead-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/lotus-adapter-overhead-20261009",
+      "original_tip": "f087eecadb8d00d0dd86cd2f9e05e1f868287055",
+      "original_tree": "eec042166b2fdd09d97506640c99593f0d8bf248",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "f087eecadb8d00d0dd86cd2f9e05e1f868287055",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "f087eecadb8d00d0dd86cd2f9e05e1f868287055:refs/heads/codex/lotus-adapter-overhead-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/f087eecadb8d00d0dd86cd2f9e05e1f868287055",
+      "unique_commits_at_inventory": [
+        "f087eecadb8d00d0dd86cd2f9e05e1f868287055",
+        "60c45593b8d837684c24f6f29375c15af3495f76",
+        "5ba43329dac0ca57e728c1f2a99a6329b4193e4c",
+        "fa10a9ccfbbd0ff9ca8be451a51cd2cae5c468be"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/lotus-control-preparation-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/lotus-control-preparation-20261011",
+      "original_tip": "1e94f6d8f937a56445d7c149255b01e10fcde77a",
+      "original_tree": "c6c94591389d2423224edeb9dddb192f80cc1e85",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "1e94f6d8f937a56445d7c149255b01e10fcde77a",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "1e94f6d8f937a56445d7c149255b01e10fcde77a:refs/heads/codex/lotus-control-preparation-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/1e94f6d8f937a56445d7c149255b01e10fcde77a",
+      "unique_commits_at_inventory": [
+        "1e94f6d8f937a56445d7c149255b01e10fcde77a",
+        "9654e5ef2b54564cf95afe66c9652e3221afce94"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/native-performance-repair-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/native-performance-repair-20261009",
+      "original_tip": "bb81fca7a88760a81930c0daa6b24307c4231c4f",
+      "original_tree": "75c7b166f5f47a4021bbfcd0f1bb98e4ed398233",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "bb81fca7a88760a81930c0daa6b24307c4231c4f",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "bb81fca7a88760a81930c0daa6b24307c4231c4f:refs/heads/codex/native-performance-repair-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/bb81fca7a88760a81930c0daa6b24307c4231c4f",
+      "unique_commits_at_inventory": [
+        "bb81fca7a88760a81930c0daa6b24307c4231c4f",
+        "a1f039ef4c9b49c8e5699904c08668f6002f2140",
+        "0183e01209289d405139b1208d2ddb31f9dab541",
+        "5a12e76de1abc2dd53e4935a2cf461b9df111a28"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/repo-reorg",
+      "group": "document_history",
+      "original_ref": "refs/heads/codex/repo-reorg",
+      "original_tip": "6cb13a44c2c964f7fc76f573050625c692c2acdd",
+      "original_tree": "71170c24b598050624e8ee768e4a938509cb9024",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "6cb13a44c2c964f7fc76f573050625c692c2acdd",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "6cb13a44c2c964f7fc76f573050625c692c2acdd:refs/heads/codex/repo-reorg"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/6cb13a44c2c964f7fc76f573050625c692c2acdd",
+      "unique_commits_at_inventory": [
+        "6cb13a44c2c964f7fc76f573050625c692c2acdd",
+        "55c5b430d53d553f06848196c7049b3d32551ef9",
+        "0c95d132f2a69dd4274846b09c4dadf854240c09",
+        "57b603df2f69b90b09684d48a9d715741f63e27b",
+        "d23d3ac29dc2525e6285aaba578c2a5d5a88cfc4",
+        "1b452dc5f3ca0a66881a98720d2ce570b635f4d4",
+        "7538f3fe9ee9aa213dd7cc8038730892aa8a24a4",
+        "1f9f5f59eaf45b620ca7e601e379ec2ca38ffd97",
+        "b5c2a3822c24b360ba38a03c2a92905d5e5670eb",
+        "81423e968fa3063c98ca1270ac49f17d0c2a98b9",
+        "5ff767ff93f19eff3631293ca82ed2762f636647"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/repo-slimming",
+      "group": "document_history",
+      "original_ref": "refs/heads/codex/repo-slimming",
+      "original_tip": "e6a22ad4490c021c5545dc0fb08cb88eed9e6179",
+      "original_tree": "f4eea5b797899b3b15fc10177e553083dd7c465e",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "e6a22ad4490c021c5545dc0fb08cb88eed9e6179",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "e6a22ad4490c021c5545dc0fb08cb88eed9e6179:refs/heads/codex/repo-slimming"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/e6a22ad4490c021c5545dc0fb08cb88eed9e6179",
+      "unique_commits_at_inventory": [
+        "e6a22ad4490c021c5545dc0fb08cb88eed9e6179",
+        "e8d55d80b1b706330b58ba04508bd34ae44d4a71",
+        "a253ecd4ac015c4eb0364a819341bb1c6e1094a6",
+        "38e91ee755481bbf19c2304cac272966e4906fc4"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/saor-feeding-gap-diagnostic-20260817",
+      "group": "experiment_history",
+      "original_ref": "refs/heads/codex/saor-feeding-gap-diagnostic-20260817",
+      "original_tip": "f1844c0f24913ad9fb8eb61da1f121570357eb3f",
+      "original_tree": "caf79c5bdead6faabd25640c606df98645a7ebe8",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "f1844c0f24913ad9fb8eb61da1f121570357eb3f",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "f1844c0f24913ad9fb8eb61da1f121570357eb3f:refs/heads/codex/saor-feeding-gap-diagnostic-20260817"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/f1844c0f24913ad9fb8eb61da1f121570357eb3f",
+      "unique_commits_at_inventory": [
+        "f1844c0f24913ad9fb8eb61da1f121570357eb3f"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/saor-feeding-gap-rerun-20260818",
+      "group": "experiment_history",
+      "original_ref": "refs/heads/codex/saor-feeding-gap-rerun-20260818",
+      "original_tip": "034e2b6a67f301c5c700ecd01779993055b7b5b7",
+      "original_tree": "901fbf948ddc9b9965bb9464ff3b49e3e7c6e7b1",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "034e2b6a67f301c5c700ecd01779993055b7b5b7",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "034e2b6a67f301c5c700ecd01779993055b7b5b7:refs/heads/codex/saor-feeding-gap-rerun-20260818"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/034e2b6a67f301c5c700ecd01779993055b7b5b7",
+      "unique_commits_at_inventory": [
+        "034e2b6a67f301c5c700ecd01779993055b7b5b7"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/saor-feeding-gap-transport-evidence-20260818",
+      "group": "experiment_history",
+      "original_ref": "refs/heads/codex/saor-feeding-gap-transport-evidence-20260818",
+      "original_tip": "2e4c27239f871af28d8c1d7800c438fabccf2707",
+      "original_tree": "e4dab970263c40b2aca824cb8b1b6c546afcfc0e",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "2e4c27239f871af28d8c1d7800c438fabccf2707",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "2e4c27239f871af28d8c1d7800c438fabccf2707:refs/heads/codex/saor-feeding-gap-transport-evidence-20260818"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/2e4c27239f871af28d8c1d7800c438fabccf2707",
+      "unique_commits_at_inventory": [
+        "2e4c27239f871af28d8c1d7800c438fabccf2707"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-deferred-observation-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-deferred-observation-20261011",
+      "original_tip": "5853b0810b913abea4da8f0db0dfcc3ed15136c8",
+      "original_tree": "1ed9b2a78ec646aa3684e4a9be585e5d1442387f",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "5853b0810b913abea4da8f0db0dfcc3ed15136c8",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "5853b0810b913abea4da8f0db0dfcc3ed15136c8:refs/heads/codex/sema-deferred-observation-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/5853b0810b913abea4da8f0db0dfcc3ed15136c8",
+      "unique_commits_at_inventory": [
+        "5853b0810b913abea4da8f0db0dfcc3ed15136c8"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-event-pump-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-event-pump-20261011",
+      "original_tip": "b3eb0a72fc56669c3191d823054a7f912656dc7d",
+      "original_tree": "3db5a8f091c46f202f8170534e0438bed17c6afc",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "b3eb0a72fc56669c3191d823054a7f912656dc7d",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "b3eb0a72fc56669c3191d823054a7f912656dc7d:refs/heads/codex/sema-event-pump-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/b3eb0a72fc56669c3191d823054a7f912656dc7d",
+      "unique_commits_at_inventory": [
+        "b3eb0a72fc56669c3191d823054a7f912656dc7d"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-imlane-adapter-20261012",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-imlane-adapter-20261012",
+      "original_tip": "650f65c8fe0f834009bc714257ffde0a2ec3716b",
+      "original_tree": "e7f8ca8cf149bef6d29bd4f6cd64c99aaa157b24",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "650f65c8fe0f834009bc714257ffde0a2ec3716b",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "650f65c8fe0f834009bc714257ffde0a2ec3716b:refs/heads/codex/sema-imlane-adapter-20261012"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/650f65c8fe0f834009bc714257ffde0a2ec3716b",
+      "unique_commits_at_inventory": [
+        "650f65c8fe0f834009bc714257ffde0a2ec3716b",
+        "05fc005f50e928cb5bed8209bb68bd669ca63e09",
+        "885c0744b5041476e2085ded768e28ff5ae3332b",
+        "665845e1a6d5129932ceaa16c8d9f3f36ba17e59"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-native-library-checks-20261012",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-native-library-checks-20261012",
+      "original_tip": "7f18911e80386795714b7b624f74213531d998e0",
+      "original_tree": "fa6751f1fefc089ebc1991364e6b966e689b62a7",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "7f18911e80386795714b7b624f74213531d998e0",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "7f18911e80386795714b7b624f74213531d998e0:refs/heads/codex/sema-native-library-checks-20261012"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/7f18911e80386795714b7b624f74213531d998e0",
+      "unique_commits_at_inventory": [
+        "7f18911e80386795714b7b624f74213531d998e0",
+        "c384375b2b5e8cbeb0a918d23127a3969068fb9d",
+        "d925d6eae8df99fab2da0843acac04e1b80bd5cc",
+        "ef2c3a954f1fc8110216e1de26e61b9f89b02693"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-performance-repair-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-performance-repair-20261009",
+      "original_tip": "ded6441ea96b8043e7105ce4f0f72aa1420e8b86",
+      "original_tree": "bf583d210d5bf4464139f73291745f42db92837b",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "ded6441ea96b8043e7105ce4f0f72aa1420e8b86",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "ded6441ea96b8043e7105ce4f0f72aa1420e8b86:refs/heads/codex/sema-performance-repair-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/ded6441ea96b8043e7105ce4f0f72aa1420e8b86",
+      "unique_commits_at_inventory": [
+        "ded6441ea96b8043e7105ce4f0f72aa1420e8b86",
+        "7663ab525f0133769dc37114e4059c7d65c396f2",
+        "b7eefe49d96ccdd48ec5c914ee056cfc5114038f",
+        "cd8ae0f54105593a1143f2b5a0c94f863c09d633",
+        "3441668ddf1798cc9253c2d3e1ccd14139def681"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/sema-resident-executor-20261011",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/sema-resident-executor-20261011",
+      "original_tip": "069c7156983c80892227fe9a84fc14a91b72ca9e",
+      "original_tree": "5f925009ad6d7210632dd6a9e3c544b54b73176a",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "069c7156983c80892227fe9a84fc14a91b72ca9e",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "069c7156983c80892227fe9a84fc14a91b72ca9e:refs/heads/codex/sema-resident-executor-20261011"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/069c7156983c80892227fe9a84fc14a91b72ca9e",
+      "unique_commits_at_inventory": [
+        "069c7156983c80892227fe9a84fc14a91b72ca9e",
+        "a1a736a38bd0c56fdbc14744aa283b3b63149f6c"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-duckdb-adapter",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/semantic-duckdb-adapter",
+      "original_tip": "53c8729943eb903db63c72d28ff732bc92494bf1",
+      "original_tree": "ae28b95d05412f2a78882baf962c3aeebb9e4319",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "53c8729943eb903db63c72d28ff732bc92494bf1",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "53c8729943eb903db63c72d28ff732bc92494bf1:refs/heads/codex/semantic-duckdb-adapter"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/53c8729943eb903db63c72d28ff732bc92494bf1",
+      "unique_commits_at_inventory": [
+        "53c8729943eb903db63c72d28ff732bc92494bf1",
+        "dede5b49126ead017949a7329aefa80eb59af150",
+        "0258df0d4eb76855bbb7e5330f3618df7f9f707a",
+        "b2f1c95490f31b9017a1bd2ffa7925f79107c44b",
+        "f7be9098b78f68ec0dd18e49978f842847d770c9",
+        "f41c1249a559390972406135ccd69627dad66f92"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-duckdb-performance-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/semantic-duckdb-performance-20261009",
+      "original_tip": "2de2fc230c810787bd2f4acfe5663453e43871de",
+      "original_tree": "155969cf68ef9b5be4b4af7de66f772cf06834df",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "2de2fc230c810787bd2f4acfe5663453e43871de",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "2de2fc230c810787bd2f4acfe5663453e43871de:refs/heads/codex/semantic-duckdb-performance-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/2de2fc230c810787bd2f4acfe5663453e43871de",
+      "unique_commits_at_inventory": [
+        "2de2fc230c810787bd2f4acfe5663453e43871de",
+        "64f738ad8aa6a1e257b35a809c56fd049f71f1a6",
+        "8ab8e3e7405f9639cdad8d74e34c748f4ccc552c",
+        "8d6530289aab75bf14c24a3046febf39bec50064",
+        "535c048b85fe9244762338f0242bc620f9f5d8b5"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-evidence-compact-20261010",
+      "group": "document_history",
+      "original_ref": "refs/heads/codex/semantic-evidence-compact-20261010",
+      "original_tip": "9a3ae1ef84c91de923530c7b4e7d834a7b1c4964",
+      "original_tree": "c986be47255b22ac2a2f9ad6ded6c72800344b94",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "9a3ae1ef84c91de923530c7b4e7d834a7b1c4964",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "9a3ae1ef84c91de923530c7b4e7d834a7b1c4964:refs/heads/codex/semantic-evidence-compact-20261010"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/9a3ae1ef84c91de923530c7b4e7d834a7b1c4964",
+      "unique_commits_at_inventory": [
+        "9a3ae1ef84c91de923530c7b4e7d834a7b1c4964"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-lotus-adapter-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/semantic-lotus-adapter-20261009",
+      "original_tip": "0085dfb55525923a477c93115d533afb5553db15",
+      "original_tree": "8e254f5fb463a58bc3323ec0988290106a690f53",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "0085dfb55525923a477c93115d533afb5553db15",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "0085dfb55525923a477c93115d533afb5553db15:refs/heads/codex/semantic-lotus-adapter-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/0085dfb55525923a477c93115d533afb5553db15",
+      "unique_commits_at_inventory": [
+        "0085dfb55525923a477c93115d533afb5553db15",
+        "9fa5a1ae631670f0188cc8bfc4facac0eab9992f",
+        "fa1fe795b65885dd2d157d1455bc809503155d6a",
+        "561a79ef35f0845d8d2cea1e72dbfa530968573d",
+        "76bc07e4a9523507f23899158f40a1c73b4bec90"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-native-execution-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/semantic-native-execution-20261009",
+      "original_tip": "7eec3f85ef2767c9a25b98a825b4701d050f2641",
+      "original_tree": "5a20451fe8e5523894b5c8fc1fe0fb132d7212bf",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "7eec3f85ef2767c9a25b98a825b4701d050f2641",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "7eec3f85ef2767c9a25b98a825b4701d050f2641:refs/heads/codex/semantic-native-execution-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/7eec3f85ef2767c9a25b98a825b4701d050f2641",
+      "unique_commits_at_inventory": [
+        "7eec3f85ef2767c9a25b98a825b4701d050f2641",
+        "0fa69b6c7482d4a7cf35e6832353f01d270c52df",
+        "db312fc42608ff81349b2a5a04b6dc1fcaea406a",
+        "5a8adeb4f88fef5640442aae158c677d75abad5a",
+        "1ba9e7dc07023c51c089409bebe97df546925db2"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/semantic-sema-adapter-20261009",
+      "group": "native_adapter_history",
+      "original_ref": "refs/heads/codex/semantic-sema-adapter-20261009",
+      "original_tip": "3ae8a0b893517227eac470624e2fa5c9b3132932",
+      "original_tree": "def2e80755cbd77626197f48597af45ef9f1c226",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "3ae8a0b893517227eac470624e2fa5c9b3132932",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "3ae8a0b893517227eac470624e2fa5c9b3132932:refs/heads/codex/semantic-sema-adapter-20261009"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/3ae8a0b893517227eac470624e2fa5c9b3132932",
+      "unique_commits_at_inventory": [
+        "3ae8a0b893517227eac470624e2fa5c9b3132932",
+        "ed93aebafc4222dd600057942b3d5cbd5427a4e6",
+        "45b33c997aa1fa700b9185f7b6a92951e1f67d7f",
+        "df7293f3cb1c8ac953b599622369fa1b62798084",
+        "6e43fdf718e12a1c317e65dfabff5b126d75c3e5",
+        "6d863087230b1a3bbe7320d1f5406ed35d05cb81"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/text-map-hot-path-timing",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/text-map-hot-path-timing",
+      "original_tip": "cf3a9798fcfdf62b93368d2bd5788f699847c4fa",
+      "original_tree": "0b73a7de68546c9931723239671d92d3cf7cd866",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "cf3a9798fcfdf62b93368d2bd5788f699847c4fa",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "cf3a9798fcfdf62b93368d2bd5788f699847c4fa:refs/heads/codex/text-map-hot-path-timing"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/cf3a9798fcfdf62b93368d2bd5788f699847c4fa",
+      "unique_commits_at_inventory": [
+        "cf3a9798fcfdf62b93368d2bd5788f699847c4fa",
+        "8399b0843ee1877d750f06fdbc46c17e1064646a"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/text-map-matched-comparison",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/text-map-matched-comparison",
+      "original_tip": "b855f4cc411eb9b5399e08e41175968f702fc736",
+      "original_tree": "6a774e320960c4bacd304efda6d462f678fa67c5",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "b855f4cc411eb9b5399e08e41175968f702fc736",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "b855f4cc411eb9b5399e08e41175968f702fc736:refs/heads/codex/text-map-matched-comparison"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/b855f4cc411eb9b5399e08e41175968f702fc736",
+      "unique_commits_at_inventory": [
+        "b855f4cc411eb9b5399e08e41175968f702fc736",
+        "36669bc03399142eea2986abc72efdbe8af56f7f",
+        "07a8cfd9d1626bec1f1b79e96fab4c39fd4a6f1b",
+        "9750b6a4b0cf7f9941c1bc2bbb482b220c69a178"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/text-map-startup-and-first-row",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/text-map-startup-and-first-row",
+      "original_tip": "96e861a0f4b38f343eff67fc0b599b84a2ed3ae3",
+      "original_tree": "cfa253655eced3e6e013197392f9979a0bb52a10",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "96e861a0f4b38f343eff67fc0b599b84a2ed3ae3",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "96e861a0f4b38f343eff67fc0b599b84a2ed3ae3:refs/heads/codex/text-map-startup-and-first-row"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/96e861a0f4b38f343eff67fc0b599b84a2ed3ae3",
+      "unique_commits_at_inventory": [
+        "96e861a0f4b38f343eff67fc0b599b84a2ed3ae3"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/text-map-stream-decomposition",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/text-map-stream-decomposition",
+      "original_tip": "0e220ce58b88b72f21a1ff1b623e70754dad6238",
+      "original_tree": "3c8359083adebf2aa1e242eb6db2d06bbdfaed73",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "0e220ce58b88b72f21a1ff1b623e70754dad6238",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "0e220ce58b88b72f21a1ff1b623e70754dad6238:refs/heads/codex/text-map-stream-decomposition"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/0e220ce58b88b72f21a1ff1b623e70754dad6238",
+      "unique_commits_at_inventory": [
+        "0e220ce58b88b72f21a1ff1b623e70754dad6238"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    },
+    {
+      "branch": "codex/threaded-map-accounting",
+      "group": "review_blocked_pr_history",
+      "original_ref": "refs/heads/codex/threaded-map-accounting",
+      "original_tip": "6414304e7ad7f2c7a22e1edfc4bb5756abecd708",
+      "original_tree": "b85e8640d9753eca551b2d06a4c023fe14736cba",
+      "restore_commands": [
+        [
+          "git",
+          "fetch",
+          "--no-tags",
+          "origin",
+          "refs/heads/codex/semloom-history-preservation"
+        ],
+        [
+          "git",
+          "merge-base",
+          "--is-ancestor",
+          "6414304e7ad7f2c7a22e1edfc4bb5756abecd708",
+          "FETCH_HEAD"
+        ],
+        [
+          "git",
+          "push",
+          "origin",
+          "6414304e7ad7f2c7a22e1edfc4bb5756abecd708:refs/heads/codex/threaded-map-accounting"
+        ]
+      ],
+      "source_commit_url": "https://github.com/3444374/ai-operator-execution-optimization/commit/6414304e7ad7f2c7a22e1edfc4bb5756abecd708",
+      "unique_commits_at_inventory": [
+        "6414304e7ad7f2c7a22e1edfc4bb5756abecd708",
+        "2f49660cf20f1c6fe30ca296d876cb438ea599e0"
+      ],
+      "use": "historical provenance and exact restoration; no adoption/qualification implied"
+    }
+  ],
+  "tree_meaning": "documentation and source mapping only; original code/tests/results remain at each original tip"
+}

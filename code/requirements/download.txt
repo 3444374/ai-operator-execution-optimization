@@ -1,2 +1,0 @@
-# Generic model/dataset download capability used by the runtime asset manager.
-huggingface_hub>=0.28
