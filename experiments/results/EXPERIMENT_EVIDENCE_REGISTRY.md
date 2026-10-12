@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-12：[固定发布版实库软件核查](diagnostics/native_release_actual_software_20261012/README.md)。
+4566f1fc的共享SDK解释、真实LOTUS＋Daft／Ray Data及原生图分项保存，首轮整体未通过；有效源码、POST、失败与清理见同题记录。
+公开CLI只读来源路径修补与aiohttp原始cookie header委派另以固定源码复核，未运行模型／GPU、未改变IMLane默认，也不借旧容量资格为async候选背书。
+
 2026-10-12：[LOTUS原生观测准备核查](diagnostics/lotus_observation_modes_20261012/README.md)。
 固定发布版1e969356确认原请求池前观测逐条预期构造，替换臂观察实际准备值；显式性能选项省去前者，默认资格模式保持。
 交付方57项本机通过／25项跳过、16次localhost替身POST，真实模型/GPU0；源码摘要、失败及模式元数据保留。

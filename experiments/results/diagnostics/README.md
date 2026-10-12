@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[固定发布版实库软件核查](native_release_actual_software_20261012/README.md)：共享SDK与真实图的组件结果、首轮失败和有限跟进分别保存，不作为整轮或模型性能资格。
+
 [LOTUS原生观测准备核查](lotus_observation_modes_20261012/README.md)：默认资格模式保持，显式性能模式省去预期请求重复准备；真实计数／额度／结果保留，本地观测成本只作替身证据。
 
 [SemBench Movie原查询准备](sembench_lotus_readiness_20261012/README.md)：固定唯一2000行CSV与清单，六条LOTUS接点保留Q1/Q2/Q3及官方评价；软件16 pass／2 unsupported／0 notrun，128POST、模型0，失败及当前IMLane适配器Q1拒绝分别登记。

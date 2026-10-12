@@ -90,6 +90,34 @@ class NativeHttpFailureAndCookieTests(unittest.TestCase):
                 await client.close()
         asyncio.run(run())
 
+    def test_raw_set_cookie_headers_match_default_jar_and_stay_call_local(self):
+        import aiohttp
+        from yarl import URL
+        async def run():
+            client=native._new_http_client()
+            both_ready,ready=asyncio.Event(),[]
+            url=URL('http://localhost/redirect')
+            async def request(index):
+                async with native._http_session(client) as session:
+                    reference=aiohttp.CookieJar()
+                    headers=[f'sid={index}; Path=/', 'quoted="two words"; Path=/']
+                    session.cookie_jar.update_cookies_from_headers(headers,url)
+                    reference.update_cookies_from_headers(headers,url)
+                    self.assertEqual(session.cookie_jar.filter_cookies(url),reference.filter_cookies(url))
+                    ready.append(index)
+                    if len(ready)==2:both_ready.set()
+                    await both_ready.wait()
+                    self.assertEqual(session.cookie_jar.filter_cookies(url)['sid'].value,str(index))
+            try:
+                await asyncio.gather(request(0),request(1))
+                self.assertFalse(client.session.cookie_jar.filter_cookies(url))
+                async with native._http_session(client) as session:
+                    ip=URL('http://127.0.0.1/redirect')
+                    session.cookie_jar.update_cookies_from_headers(['sid=ip; Path=/'],ip)
+                    self.assertFalse(session.cookie_jar.filter_cookies(ip))
+            finally:await client.close()
+        asyncio.run(run())
+
 
 class Session:
     def __init__(self):

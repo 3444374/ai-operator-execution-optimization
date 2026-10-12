@@ -21,11 +21,12 @@ from .sembench_queries import LOTUS_MOVIE_ARMS, MovieDataset, MovieQuery, MOVIE_
 from .supplier_adapter_query import validate_lotus_observation_mode
 
 
-def _env_path(name):
+def _env_path(name, *, private=True):
     if type(name) is not str or not name or not os.environ.get(name):
         raise ValueError('a required SemBench path environment variable is missing')
     path = Path(os.environ[name]).resolve()
-    require_outside_git(path)
+    if private:
+        require_outside_git(path)
     return path
 
 
@@ -87,7 +88,7 @@ def _imlane_configs(config, *, allow_missing=False):
 
 def preflight(config):
     data = config['dataset']
-    dataset = MovieDataset(_env_path(data['checkout_env']), _env_path(data['manifest_env']),
+    dataset = MovieDataset(_env_path(data['checkout_env'], private=False), _env_path(data['manifest_env']),
                            _env_path(data['csv_env']), data['manifest_content_digest'])
     evidence = dataset.preflight()
     rows = dataset.load_rows()
@@ -209,7 +210,7 @@ def main(argv=None):
     config = load_config(args.config)
     if args.data_preflight:
         data = config['dataset']
-        dataset = MovieDataset(_env_path(data['checkout_env']), _env_path(data['manifest_env']),
+        dataset = MovieDataset(_env_path(data['checkout_env'], private=False), _env_path(data['manifest_env']),
                                _env_path(data['csv_env']), data['manifest_content_digest'])
         value = dataset.preflight()
         rows, coverage = dataset.load_rows(), []

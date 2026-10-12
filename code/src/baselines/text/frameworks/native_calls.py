@@ -181,6 +181,11 @@ def _new_http_client():
                 else:
                     jar.update_cookies(cookies, response_url)
 
+        def update_cookies_from_headers(self, headers, response_url):
+            jar = _HTTP_CALL_COOKIES.get()
+            if jar is not None:
+                jar.update_cookies_from_headers(headers, response_url)
+
         def filter_cookies(self, request_url):
             jar = _HTTP_CALL_COOKIES.get()
             return jar.filter_cookies(request_url) if jar is not None else super().filter_cookies(request_url)

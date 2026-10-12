@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[固定发布版实库软件核查](../experiments/results/diagnostics/native_release_actual_software_20261012/README.md)。
+共享SDK解释与LOTUS在Daft／Ray Data的正常、错误和两阶段组件通过，第一窗口整体未通过，失败与未覆盖项保留。
+公开SemBench CLI的只读checkout来源现在允许Git目录；固定源码核验保持，私有配置、数据及输出检查未改变。30项本地回归通过，另行有限实库复核待完成。
+共享HTTP代理jar补aiohttp3.14.x的原始header更新委派，仍使用本次调用的默认jar；41项本机受影响回归通过，真实3.14.5及原生图有限跟进待完成。
+
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
 显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。
 真实出站、出现身份、总额度和结果评价保留；缺少的预期完整值明确不可观测，计时无估算扣除。

@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from io import StringIO
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -152,6 +153,24 @@ class MovieDataTests(unittest.TestCase):
 
 
 class MovieConfigTests(unittest.TestCase):
+    def test_readonly_checkout_can_be_git_while_private_paths_keep_rejecting_git(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary)
+            checkout=root/'sembench'
+            subprocess.run(['git','init','--quiet',str(checkout)],check=True,capture_output=True)
+            private=root/'model.json'
+            private.write_text('{}')
+            inside=checkout/'model.json'
+            inside.write_text('{}')
+            with patch.dict('os.environ',{'MOVIE_SOURCE':str(checkout),'MOVIE_MODEL':str(private),
+                                          'MOVIE_INSIDE_MODEL':str(inside)}):
+                self.assertEqual(_env_path('MOVIE_SOURCE',private=False),checkout.resolve())
+                self.assertEqual(_env_path('MOVIE_MODEL'),private.resolve())
+                with self.assertRaisesRegex(ValueError,'outside a Git checkout'):
+                    _env_path('MOVIE_SOURCE')
+                with self.assertRaisesRegex(ValueError,'outside a Git checkout'):
+                    _env_path('MOVIE_INSIDE_MODEL')
+
     def test_cli_data_and_runtime_preflight_use_the_same_selected_capacity(self):
         from dataclasses import asdict
         from types import SimpleNamespace
