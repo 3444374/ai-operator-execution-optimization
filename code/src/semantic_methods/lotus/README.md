@@ -111,6 +111,9 @@ SemLoom借用已分派的PreparedLotusCall直到响应解释完成，不重复�
 SDK传输异常的详细子类、逐字消息和所有超时阶段尚未逐项核实；HTTPX的标量超时分别作用于各阶段，
 新HTTP kernel使用总时长与连接超时，不能将这两者解释为所有传输时序均相同。
 Core报告的未知传输失败仍保留原拥有权与失败状态，本次共享响应解释不伪造成功或提前归还。
+IMLane UDF的容量/身份等执行错误另存`execution_error`，不会重放为HTTP连接错误；
+已知内置类型与原错误诊断向调用方恢复，未知作者UDF异常保留原类型诊断并以RuntimeError报告。
+作者仍收到结构化Arrow结果；正常HTTP/传输wire保持兼容，取消和未确认工作保持原退出责任。
 [SDK差分检查](../../../tests/semantic_methods/test_lotus_response_replay.py)使用本地HTTPX MockTransport，
 包含usage/logprobs、缺字段、401/429/500、非法JSON和已知timeout元信息；缺固定SDK时显式跳过。
 原SDK默认跟随重定向，新入口同样默认开启；同目标302会改用GET、307会保留POST，两种行为已逐项对拍。

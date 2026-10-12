@@ -9,9 +9,8 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from integrations.sema.imlane_http_udf import complete_http as _original_complete_http
-from src.baselines.common.redact import redact_text
 from src.baselines.text.frameworks.native_calls import (
-    NativeCallOutcome, _call_from_wire, _outcome_from_wire, _outcome_wire,
+    NativeCallOutcome, _call_from_wire, _outcome_from_wire, _outcome_wire, native_error_text,
 )
 
 
@@ -26,11 +25,11 @@ def complete_http(table):
         try:
             result = _original_complete_http(table)
         except Exception as error:
-            # An HTTP failure is a value; the author must still receive an Arrow result.
-            # No model status, empty semantic answer or automatic retry is fabricated.
+            # HTTP failures are already values from the shared kernel. Other UDF
+            # failures retain their category while the author receives an Arrow result.
             import pyarrow as pa
             outcome = NativeCallOutcome(call.call_id, call.row_id, None,
-                redact_text(f"{type(error).__name__}: {error}")[:4096])
+                execution_error=native_error_text(error))
             result = pa.table({"call_id": pa.array([call.call_id], type=pa.string()),
                 "row_id": pa.array([call.row_id], type=pa.int64()),
                 "native_outcome": pa.array([_outcome_wire(outcome)], type=pa.string())})
@@ -45,6 +44,7 @@ def complete_http(table):
                        request_sha256=hashlib.sha256(call.payload).hexdigest(),
                        status=None if outcome.response is None else outcome.response.status_code,
                        transport_error_type=outcome.transport_error.split(":", 1)[0],
+                       execution_error_type=outcome.execution_error.split(":", 1)[0],
                        local_duration_ns=time.monotonic_ns() - started)
             ray = sys.modules.get("ray")
             if ray is not None and ray.is_initialized():

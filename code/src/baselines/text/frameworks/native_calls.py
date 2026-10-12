@@ -84,6 +84,34 @@ class NativeCallOutcome:
     row_id: int
     response: FullModelResponse | None
     transport_error: str = ""
+    execution_error: str = ""
+
+
+def outcome_kind(outcome):
+    if any(type(value) is not str or len(value.encode()) > 4096
+           for value in (outcome.transport_error, outcome.execution_error)):
+        raise ValueError("native outcome diagnostics exceed their allowance")
+    kinds = [("response", outcome.response is not None),
+             ("transport_error", bool(outcome.transport_error)),
+             ("execution_error", bool(outcome.execution_error))]
+    if sum(active for _, active in kinds) != 1:
+        raise ValueError("native outcome requires one HTTP, transport or execution result")
+    return next(name for name, active in kinds if active)
+
+
+def raise_execution_error(outcome):
+    if outcome.execution_error:
+        name, _, message = outcome.execution_error.partition(":")
+        kind = {"ValueError": ValueError, "TypeError": TypeError,
+                "OverflowError": OverflowError, "AssertionError": AssertionError}.get(name, RuntimeError)
+        error = kind(message.lstrip())
+        error.native_execution_error = outcome.execution_error
+        error.full_response = outcome.response
+        raise error
+
+
+def native_error_text(error):
+    return redact_text(f"{type(error).__name__}: {error}").encode()[:4096].decode(errors="ignore")
 
 
 def _call_wire(call):
@@ -103,10 +131,13 @@ def _call_from_wire(wire):
 
 
 def _outcome_wire(outcome):
-    return json.dumps(dict(call_id=outcome.call_id, row_id=outcome.row_id,
+    value = dict(call_id=outcome.call_id, row_id=outcome.row_id,
         response=(base64.b64encode(encode_full_response(outcome.response)).decode()
                   if outcome.response is not None else None),
-        transport_error=outcome.transport_error), separators=(",", ":"))
+        transport_error=outcome.transport_error)
+    if outcome.execution_error:
+        value["execution_error"] = outcome.execution_error
+    return json.dumps(value, separators=(",", ":"))
 
 
 def _outcome_from_wire(wire):
@@ -150,7 +181,7 @@ async def _request(call, control=None):
     except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as error:
         # No synthetic HTTP response is created for uncertain transport completion.
         return NativeCallOutcome(call.call_id, call.row_id, None,
-                                 redact_text(f"{type(error).__name__}: {error}")[:4096])
+                                 native_error_text(error))
 
 
 class _ProcessorResponse:
@@ -433,8 +464,8 @@ class NativeCallExecutor:
                     return
                 if outcome.call_id not in expected or outcome.call_id in received or expected[outcome.call_id] != outcome.row_id:
                     raise ValueError("native graph response changed its occurrence identity")
-                if (outcome.response is None) == (not outcome.transport_error):
-                    raise ValueError("native graph response must contain HTTP data or a transport error")
+                outcome_kind(outcome)
+                raise_execution_error(outcome)
                 total_bytes += (len(encode_full_response(outcome.response)) if outcome.response is not None
                                 else len(outcome.transport_error.encode()))
                 if total_bytes > self.max_batch_bytes:

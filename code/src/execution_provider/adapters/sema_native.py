@@ -8,7 +8,9 @@ from dataclasses import dataclass, replace
 import threading
 import time
 
-from ...baselines.text.frameworks.native_calls import NativeCall, NativeCallExecutor, NativeCallOutcome
+from ...baselines.text.frameworks.native_calls import (
+    NativeCall, NativeCallExecutor, NativeCallOutcome, outcome_kind, raise_execution_error,
+)
 from ...baselines.common.redact import redact_text
 from .full_response import FullModelResponse, encode_full_response
 from .sema_service import SemaRequestService, _HOP_HEADERS, _Reply
@@ -261,8 +263,8 @@ class SemaNativeService(SemaRequestService):
             entry = self._active.get(outcome.call_id)
             if entry is None or outcome.call_id in self._received or outcome.row_id != entry.call.row_id:
                 raise ValueError('Sema native graph changed or repeated HTTP occurrence identity')
-            if (outcome.response is None) == (not outcome.transport_error):
-                raise ValueError('Sema native outcome requires a complete response or transport error')
+            outcome_kind(outcome)
+            raise_execution_error(outcome)
             self._received.add(outcome.call_id)
             entry.row['native_bridge_outcome_ns'] = stamp
             entry.row['native_outcome_received_ns'] = time.monotonic_ns()

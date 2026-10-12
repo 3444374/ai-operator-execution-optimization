@@ -4,13 +4,14 @@ from __future__ import annotations
 import math
 import time
 
-from src.baselines.text.frameworks.native_calls import NativeCall
+from src.baselines.text.frameworks.native_calls import NativeCall, raise_execution_error
 from src.execution_provider.adapters.full_response import encode_full_response
 from .sdk import check_model_config, parse_lotus_response, prepare_call, validate_batch
 
 
 def parse_native_response(lm, messages, all_kwargs, prepared, outcome):
     """Compatibility entry; every replacement batch uses the same SDK replay."""
+    raise_execution_error(outcome)
     return parse_lotus_response(lm, messages, all_kwargs, prepared,
                                 outcome.response, outcome.transport_error)
 

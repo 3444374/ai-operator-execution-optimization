@@ -20,7 +20,7 @@ from src.baselines.common.private_artifacts import (
 )
 from src.baselines.common.redact import redact_text
 from src.baselines.text.frameworks.native_calls import (
-    NativeCall, _call_wire, _outcome_from_wire,
+    NativeCall, _call_wire, _outcome_from_wire, outcome_kind,
 )
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from .full_response import encode_full_response
@@ -213,10 +213,9 @@ class SemaIMLaneExecutor:
                                 call = expected.get(outcome.call_id)
                                 if call is None or call.row_id != outcome.row_id or outcome.call_id in received:
                                     raise ValueError('Sema IMLane result changed occurrence identity')
-                                if (outcome.response is None) == (not outcome.transport_error):
-                                    raise ValueError('Sema IMLane result requires HTTP data or transport error')
+                                outcome_kind(outcome)
                                 size = (len(encode_full_response(outcome.response)) if outcome.response is not None
-                                        else len(outcome.transport_error.encode()))
+                                        else len((outcome.transport_error or outcome.execution_error).encode()))
                                 total_bytes += size
                                 if size > call.max_response_bytes or total_bytes > 32 * 1024**2:
                                     raise ValueError('Sema IMLane results exceed their byte allowance')

@@ -10,7 +10,7 @@ from pathlib import Path
 import time
 
 from src.execution_provider.adapters.full_response import encode_full_response
-from .native_calls import NativeCall
+from .native_calls import NativeCall, outcome_kind, raise_execution_error
 from .prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.sema_imlane import SemaIMLaneExecutor
 from src.baselines.common.private_artifacts import write_private_json
@@ -152,6 +152,8 @@ class IMLaneCallExecutor:
         total_bytes = 0
         try:
             for outcome in iterator:
+                outcome_kind(outcome)
+                raise_execution_error(outcome)
                 size = (len(encode_full_response(outcome.response)) if outcome.response is not None
                         else len(outcome.transport_error.encode()))
                 total_bytes += size
