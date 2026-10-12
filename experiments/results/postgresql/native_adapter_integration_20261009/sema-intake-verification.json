@@ -118,5 +118,38 @@
     "bytes": 1443068,
     "members": 40,
     "sha256": "ec379b0f83a3a77f3f8d2307ef256987b4faaacf6c7342cb597e7ad20e7902fe"
+  },
+  "review_followup": {
+    "base_commit": "e960fc91d94649b7fecd2c58c802cce938b13db1",
+    "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "aiohttp": "3.14.1",
+    "source_sha256": {
+      "code/src/execution_provider/adapters/sema_native.py": "ba48b6cf665c8ec78ecf976831346711374f0410a9e636f82ca1fa936830acf0",
+      "code/src/execution_provider/adapters/sema_service.py": "d9ff5ea51063aed39364d3f38d879482047d130cdd07634ccffe7bb05091b216",
+      "code/tests/execution_provider/test_sema_intake_review.py": "3a3a366160dcf5e36d0cd5e5d4e8ad56599443014ec9521fc151063e8d0be4d4",
+      "code/tests/execution_provider/test_sema_intake.py": "ee21efd1d3a2412295d7a613fe789d888c0a46e2749e93d3ce24e4ee7d2f07c3",
+      "code/tests/execution_provider/test_sema_native_service.py": "1cbf93f3aa3e7459ff6b10089335e304128d28c0621989e1533544b5c2600ebe",
+      "code/tests/execution_provider/test_sema_service.py": "b6b307cfbb8238dcca75d1fb42d3a4e920d025f6d2c0b72c9deea57d312a7a44"
+    },
+    "local_affected_tests_passed": 120,
+    "targeted_tests_passed": 7,
+    "remote_server_runs": 0,
+    "model_posts": 0,
+    "gpu_workloads": 0,
+    "vendor_runtime_started": false,
+    "historical_server_count": {
+      "total": 126,
+      "inbound_requests": 118,
+      "synthetic_upstream_posts": 8,
+      "source_commit": "e960fc91d94649b7fecd2c58c802cce938b13db1"
+    },
+    "scope": "native stop proof and all HTTP response writers; local CPU/memory and localhost fixture checks only",
+    "archive": {
+      "run_identity": "semloom-intake-review-followup",
+      "members": 15,
+      "bytes": 36871,
+      "sha256": "302a0a1a38533006ac6b030d157467c7e88c1e4337c9635df946db1a663fbf32"
+    },
+    "qualification": "local software regressions only; candidate pending independent re-review; prior server evidence belongs to e960fc91"
   }
 }

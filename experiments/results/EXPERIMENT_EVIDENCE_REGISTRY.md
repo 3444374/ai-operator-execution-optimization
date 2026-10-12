@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-12：[Sema入口复审修补](postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
+原`e960fc91`存在未知native停止证明与合成错误writer遗漏；修补后本机7项针对性／120项受影响检查通过，失败原件保留。历史126仍为118入口请求＋8替身上游POST，本轮未新增远端运行。
+
 2026-10-12：[Sema入口正文存储与期限](postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
 起点`2fad623e`，三份运行代码与`9c642ec7`一致；本机113项不同检查通过，服务器最终21项／53次合成请求通过，所有slice累计126次。
 MiB同步断言失败和自动CPU资格报告均保留；确认本地输入责任的正常归还及未确认图消费的留存，模型、SQL、vendor runtime和性能运行均0。

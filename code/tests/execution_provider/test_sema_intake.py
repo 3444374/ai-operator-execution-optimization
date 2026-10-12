@@ -243,11 +243,12 @@ class SemaIntakeTests(unittest.TestCase):
                 self.wait(lambda: service.summary['body_readers'] == 1)
                 time.sleep(0.12)
                 peer.sendall(b'y')
-                self.assertIn(b'502', peer.recv(4096))
+                self.assertEqual(peer.recv(4096), b'')
                 self.assertLess(time.monotonic() - started, 0.30)
             finally:
                 peer.close()
             self.assertEqual(service._rows[0]['error_type'], 'TimeoutError')
+            self.assertEqual(service.first_error.status, 502)
             self.drained(service)
 
     def test_deadline_includes_response_write_and_releases_owners(self):

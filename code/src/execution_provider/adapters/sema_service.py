@@ -336,6 +336,34 @@ class SemaRequestService:
         return (stamp / 1e9 if stamp is not None
                 else asyncio.get_running_loop().time() + self.limits.timeout_s)
 
+    def _abort_response(self, request):
+        try:
+            transport = request.transport
+            if transport is not None:
+                transport.close()
+        except Exception as error:
+            self._record_cleanup_error('response_connection_close', error)
+        # aiohttp catches ordinary exceptions to start another automatic error
+        # writer. Cancellation ends the protocol task without an unbounded write.
+        raise asyncio.CancelledError('Sema response cannot finish within its request deadline')
+
+    async def _write_error_reply(self, request, row, reply):
+        from aiohttp import web
+        deadline = self._request_deadline(row)
+        if deadline <= asyncio.get_running_loop().time():
+            self._abort_response(request)
+        response = web.Response(status=reply.status, body=reply.body, headers=reply.headers)
+        response.force_close()
+        try:
+            async with asyncio.timeout_at(deadline):
+                await response.prepare(request)
+                await response.write_eof()
+            row['response_written_ns'] = time.monotonic_ns()
+            return response
+        except BaseException as error:
+            row['response_write_error_type'] = type(error).__name__
+            self._abort_response(request)
+
     async def _reserve_body(self, request, row):
         from aiohttp import web
         # Unknown or decoded lengths reserve the single-body maximum. During
@@ -516,11 +544,13 @@ class SemaRequestService:
         self._intake_changed = asyncio.Event()
 
         async def handle_request(request):
+            arrived_ns = time.monotonic_ns()
             if request.match_info['query_id'] != self.query_id:
-                return web.Response(status=404, body=b'{"error":"unknown Sema query"}')
+                return await self._write_error_reply(request,
+                    {'request_deadline_ns': arrived_ns + int(self.limits.timeout_s * 1e9)},
+                    _Reply(404, b'{"error":"unknown Sema query"}', ()))
             sequence = self._sequence
             self._sequence += 1
-            arrived_ns = time.monotonic_ns()
             row = {'query_id': self.query_id, 'request_sequence': sequence, 'mode': self.mode,
                    'native_task_ready_ns': None, 'native_task_ready_status': 'unavailable',
                    'proxy_arrived_ns': arrived_ns, 'body_read_ns': None,
@@ -536,7 +566,8 @@ class SemaRequestService:
                 if sequence >= self.limits.max_requests and not self._halted.is_set():
                     self._fail(sequence, _Reply(429, b'{"error":"Sema run request limit reached"}', ()),
                                'request_limit')
-                return web.Response(status=410, body=b'{"error":"Sema query is not accepting requests"}')
+                return await self._write_error_reply(request, row,
+                    _Reply(410, b'{"error":"Sema query is not accepting requests"}', ()))
             body = reply = response = None
             phase = 'body_intake'
             try:
@@ -574,7 +605,7 @@ class SemaRequestService:
                                        (('Content-Type', 'application/json'),))
                 self._fail(sequence, failure_reply, phase)
                 if phase == 'response_write':
-                    raise
+                    self._abort_response(request)
             finally:
                 body = reply = response = None
                 try:
@@ -583,10 +614,7 @@ class SemaRequestService:
                     self._release_body(sequence)
             row['http_status'] = failure_reply.status
             row['response_body_sha256'] = hashlib.sha256(failure_reply.body).hexdigest()
-            response = web.Response(status=failure_reply.status, body=failure_reply.body,
-                                    headers=failure_reply.headers)
-            response.force_close()
-            return response
+            return await self._write_error_reply(request, row, failure_reply)
 
         async def handle(request):
             task = asyncio.current_task()

@@ -1405,6 +1405,8 @@ SemLoom也在进入同一动作时确定期限；正文读取和HTTP写出另计
 <a id="sema-intake-storage"></a>
 ## Sema入口正文存储与全流程期限
 
+本节原始归档与服务器数字属于`e960fc91`；该提交存在native停止报告未知及合成错误writer两项遗漏，完整生命周期资格以[后续复审修补](#sema-intake-review-fix)及其独立复验为准。
+
 2026-10-12，以`2fad623e`为补丁起点，只读核对`9c642ec7`的三份服务运行代码相同，未发现同项修复。
 新native128个已接纳槽、单snapshot32MiB和单请求／响应8MiB仍在读完正文后生效，不能覆盖全部读取和等待接纳的正文。
 这项工程修订让三条服务在读取前取得入口持有数／总字节预留，默认128个／32MiB；读取、解析、接纳和HTTP写出沿用handler进入时的一次期限。
@@ -1421,6 +1423,15 @@ Core接纳和未知远端责任继续由原核心管理；native图只借用入�
 自有runner、监听、handler与bridge线程退出均已核对；源码和逐次结果摘要见[紧凑验证记录](sema-intake-verification.json)。
 完整失败、源包和原始记录在仓库外`semloom-intake-task7-full`保存，40成员已独立下载核验，1,443,068字节，SHA-256为
 `ec379b0f83a3a77f3f8d2307ef256987b4faaacf6c7342cb597e7ad20e7902fe`；可按运行标识和摘要向维护者取得。
+
+<a id="sema-intake-review-fix"></a>
+## Sema入口针对性复审修补
+
+2026-10-12，在`e960fc91`原独立分支只修补两项生命周期遗漏。native正文归还现在要求明确`graph_consumer_stopped is True`；报告缺失／未知或仅不洁报告均保留登记并报告清理未确认，默认提供布尔证明的Daft／Ray正常路径保持。
+合成413／502的prepare和write_eof现在在handler内使用原剩余期限；404／410也共用该规则。期限已过或写出失败时关闭连接并结束协议处理，防止aiohttp再启动自动错误writer；原first error、正文和Core未知责任保持。
+本机7项针对性检查及120项受影响检查通过；覆盖3种复审报告、空报告／非布尔字段、两种状态的慢prepare／write_eof、已过期限、连接关闭失败，以及正常完整请求、首错、确认停止与Core未知责任回归。
+本轮无远端服务器、GPU、模型或vendor runtime运行；历史126次仍为118入口请求加8次替身上游POST，不增加或改记新源码资格。最初测试捕获fixture缺接口、红色反例及旧502期待失败均保留，后者按本轮“期限已过关闭连接”要求修订。
+来源摘要和本机证据由[同一验证记录](sema-intake-verification.json)的`review_followup`定位；本补丁先交独立复审，未推送或修改其他owner工作树。
 
 ## 保存与复核
 

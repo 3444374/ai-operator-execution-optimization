@@ -333,14 +333,12 @@ class SemaNativeService(SemaRequestService):
                 self._entry_error(entry, error)
 
     def _snapshot_finished(self, error, report, done, cleanup_error):
-        self._snapshot_body_stopped = not (
-            (report is not None and report.get('graph_consumer_stopped') is False)
-            or (cleanup_error is not None and (report is None
-                or report.get('graph_consumer_stopped') is not True)))
+        self._snapshot_body_stopped = (report is not None
+            and report.get('graph_consumer_stopped') is True)
         try:
             self._close_reports.append(report or {'status': 'unavailable'})
-            if report is not None and report.get('graph_consumer_stopped') is False:
-                cleanup_error = cleanup_error or RuntimeError('Sema native graph consumer did not stop')
+            if not self._snapshot_body_stopped:
+                cleanup_error = cleanup_error or RuntimeError('Sema native graph consumer stop is unconfirmed')
                 error = error or cleanup_error
             if report is not None and report.get('clean') is False and not self._graph_stop.is_set():
                 cleanup_error = cleanup_error or RuntimeError('Sema native snapshot cleanup was not clean')
