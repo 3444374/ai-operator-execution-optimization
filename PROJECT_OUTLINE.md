@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-11
+更新时间：2026-10-12
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -13,7 +13,9 @@
 ## 0. 当前优先级与历史记录范围
 
 [异质问答的原生请求画像](experiments/results/diagnostics/squad_native_length_20261011/README.md)已完成全量离线检查，
-当前自然调参切片未达到预设条件，模型比较未启动；保留原生、薄转发与同核心静态对照的[方案](experiments/plans/数据组织.md#heterogeneous-map-pilot)，另选有实际组织机会的输入后再推进，不靠改条件或重复修接入制造收益。
+当前自然调参切片未达到原方案选样条件，模型比较未启动；比值2不作为数据组织研究的通用要求。
+[同一调参元数据的次序描述](experiments/results/diagnostics/squad_native_length_20261011/README.md#candidate-order-description)已完成，不模拟模型执行。
+后续按[目标修订](experiments/plans/数据组织.md#map-order-question)以完整查询完成为主要目标，保留自然输入及原生、薄转发、同核心静态与同信息次序对照；原方案和停止记录保持。
 
 [接入补充修订](experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-control-repairs)
 已补LOTUS停止与清理、公共有限静态检查复用及DuckDB跨vector查询Job；本地与目标共同检查通过。

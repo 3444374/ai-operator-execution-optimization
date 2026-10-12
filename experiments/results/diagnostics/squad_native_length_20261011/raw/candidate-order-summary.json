@@ -1,0 +1,80 @@
+{
+  "schema": "semloom.squad.tuning_order_description.v1",
+  "analysis_id": "squad-tuning-candidate-order-20261012",
+  "preparation_source": "099b994cd90317393e3d50a4b97ccfc894088ac2",
+  "profile_sha256": "c794766015f3d426f2613eb61797dbc00613ceee10b61b915bd7cb5f0b8c4a14",
+  "program_sha256": "25fd093f7b6d1bf3e5797252cf7c9772d99f607397cbc80254f443c513d8b700",
+  "input_split": "tuning",
+  "seed": 20261011,
+  "selection": "same natural sample, original source order",
+  "selected_rows": 512,
+  "candidate_view": "nonoverlapping source chunks, not observed Core candidates",
+  "chunk_rows": 256,
+  "sort": "stable ascending input_tokens",
+  "tail_definition": {
+    "input_tokens_greater_than": 348,
+    "basis": "original tuning 90th percentile"
+  },
+  "counts": {
+    "changed_positions": 511,
+    "non_tail_changed_positions": 460,
+    "absolute_rank_displacement_sum": 43584,
+    "tail_rows": 51,
+    "tail_moved_later": 48,
+    "tail_moved_earlier": 3,
+    "tail_unchanged": 0,
+    "inverted_unequal_length_pairs": 32033,
+    "unequal_length_pairs": 64960,
+    "changed_group_members": 0
+  },
+  "blocks": [
+    {
+      "source_slice": [
+        0,
+        256
+      ],
+      "rows": 256,
+      "distinct_lengths": 162,
+      "min_tokens": 113,
+      "max_tokens": 716,
+      "changed_positions": 256,
+      "non_tail_changed_positions": 226,
+      "absolute_rank_displacement_sum": 18930,
+      "tail_rows": 30,
+      "tail_moved_later": 27,
+      "tail_moved_earlier": 3,
+      "tail_unchanged": 0,
+      "inverted_unequal_length_pairs": 13530,
+      "unequal_length_pairs": 32485,
+      "changed_group_members": 0,
+      "original_order_sha256": "421a55d23d8315b4890a11737440206dc4b9665cd6d7c7030680e3cee21516e7",
+      "ascending_order_sha256": "7315ae28644a29daf66e486a0d7787bf6b5a4b6a0e4840628aef355f189fa74e"
+    },
+    {
+      "source_slice": [
+        256,
+        512
+      ],
+      "rows": 256,
+      "distinct_lengths": 145,
+      "min_tokens": 173,
+      "max_tokens": 600,
+      "changed_positions": 255,
+      "non_tail_changed_positions": 234,
+      "absolute_rank_displacement_sum": 24654,
+      "tail_rows": 21,
+      "tail_moved_later": 21,
+      "tail_moved_earlier": 0,
+      "tail_unchanged": 0,
+      "inverted_unequal_length_pairs": 18503,
+      "unequal_length_pairs": 32475,
+      "changed_group_members": 0,
+      "original_order_sha256": "8c0e3d31e20684d1a7d1a16df23e24b97dba4c8ad3277e6a176d213059103fb0",
+      "ascending_order_sha256": "7f85bd1c4590e4cfeb3d6b0ce090c6d4554ad095aa2386e40ba00f296e97a92c"
+    }
+  ],
+  "model_calls": 0,
+  "queries_executed": 0,
+  "simulated_service_times": false,
+  "formatter_and_tokenizer_rerun": false
+}
