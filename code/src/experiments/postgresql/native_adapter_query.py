@@ -461,7 +461,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
 
 def main(argv=None):
     started=time.monotonic_ns()
-    from .supplier_adapter_query import SUPPLIER_ARMS,run_supplier_query
+    from .supplier_adapter_query import SUPPLIER_ARMS,LOTUS_OBSERVATION_MODES,run_supplier_query
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--arm',choices=ARMS+SUPPLIER_ARMS,required=True)
     for name in ('input','plan','model','budget','output'):
@@ -472,6 +472,7 @@ def main(argv=None):
     parser.add_argument('--options',type=Path)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--references',type=Path)
     parser.add_argument('--allowed-output',action='append')
     parser.add_argument('--stages',type=Path)
@@ -486,6 +487,8 @@ def main(argv=None):
     parser.add_argument('--ray-address')
     parser.add_argument('--query-timeout-s',type=float,default=120)
     args=parser.parse_args(argv)
+    if args.lotus_observation_mode!='qualification' and not args.arm.startswith('lotus-'):
+        parser.error('LOTUS performance observation requires a LOTUS arm')
     if args.input.stat().st_size>64*1024*1024:
         parser.error('raw input file exceeds its byte allowance')
     def load_source():
@@ -507,6 +510,7 @@ def main(argv=None):
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
                            preparation_started_ns=started,sema_native_threads=args.sema_native_threads,
+                           lotus_observation_mode=args.lotus_observation_mode,
                            imlane_config=args.imlane_config,
                            imlane_call_configs={mode: path for mode,path in
                                (('cpython',args.imlane_cpython_config),('ray',args.imlane_ray_config)) if path is not None})

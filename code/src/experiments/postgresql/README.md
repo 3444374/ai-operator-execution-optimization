@@ -22,6 +22,11 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 
 ### 原生方法与可替换执行器
 
+LOTUS 可显式选择 `lotus_observation_mode=performance`（CLI：`--lotus-observation-mode performance`），
+省去原请求池前为观测重复构造的预期 HTTP 值；默认 `qualification` 保留原核对。
+行／阶段身份、真实 POST 额度、原结果与计时保持，未构造值明确为不可观测；
+配置、57 项本地通过／25 项跳过及局部替身成本见[观测核查](../../../../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
+
 LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查见[本轮报告](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 新路径不创建SemLoom Core；Ray Core与Ray Data分别命名，旧`fixed-map-native-ray`仍表示Ray Data。
 单查询和`PersistentAdapterGroup`共用新名字，后者保留LM／连接及调用方Ray runtime，查询各建自己的图／actor。

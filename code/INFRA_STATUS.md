@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
+显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。
+真实出站、出现身份、总额度和结果评价保留；缺少的预期完整值明确不可观测，计时无估算扣除。
+交付方本地57项通过／25项跳过、16次替身POST；固定SDK、实际厂商图、官方Movie evaluator和服务器性能仍待验证。
+
 2026-10-12：[IMLane完整2000行调用桥](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
 三层统一有限行数、payload/wire、单项、待交付及累计响应额度；每查询一个DBEnd上下文，交付后释放并补入下一调用。
 固定2cca502d在两作者模式通过128/129/原Q1完整2000调用、重复身份、乱序慢消费、超限、错误取消及清理后下一查询。

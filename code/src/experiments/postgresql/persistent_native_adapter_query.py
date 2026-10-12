@@ -25,7 +25,7 @@ from .cell_evidence import CellErrors
 from .native_adapter_query import ARMS, _runtime, run_prepared_map_query,resolve_adapter_limits
 from .supplier_adapter_query import (
     SUPPLIER_ARMS, NATIVE_SUPPLIER_BACKENDS, _drain_execution, prepare_duckdb_connection, prepare_lotus_lm,
-    replace_duckdb_inputs, run_supplier_query,
+    replace_duckdb_inputs, run_supplier_query, LOTUS_OBSERVATION_MODES, validate_lotus_observation_mode,
 )
 from .sema_native_query import SEMA_NATIVE_ARMS, validate_native_options
 from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
@@ -232,13 +232,16 @@ class PersistentAdapterGroup:
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
                  sema_executor_scope='query',duckdb_offer_diagnostic='original',imlane_config=None,
-                 imlane_call_configs=None,sembench_dataset=None):
+                 imlane_call_configs=None,sembench_dataset=None,lotus_observation_mode='qualification'):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
             raise ValueError('persistent measurement requires one to three distinct integrated arms')
         if sum('semloom' in arm for arm in self.arms) > 2:
             raise ValueError('persistent group supports at most two SemLoom backends')
+        self.lotus_observation_mode=validate_lotus_observation_mode(lotus_observation_mode)
+        if lotus_observation_mode!='qualification' and not any(arm.startswith('lotus-') for arm in self.arms):
+            raise ValueError('LOTUS performance observation requires a LOTUS arm')
         if not 0 < query_timeout_s <= 120 or not query_timeout_s+120 < owner_timeout_s <= 1800:
             raise ValueError('query and owner durations must leave 120 seconds for final cleanup')
         self.plan, self.model, self.ledger = plan, model, ledger
@@ -317,6 +320,7 @@ class PersistentAdapterGroup:
                 owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
                 max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
                 sema_executor_scope=self.sema_executor_scope,
+                lotus_observation_mode=self.lotus_observation_mode,
                 hard_timeout_owner='calling process supervisor', result_cache=False)))
             return self
         except BaseException as failure:
@@ -351,6 +355,7 @@ class PersistentAdapterGroup:
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
                         adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic,
                         imlane_config=self.imlane_config,imlane_call_configs=self.imlane_call_configs,
+                        lotus_observation_mode=self.lotus_observation_mode if arm.startswith('lotus-') else 'qualification',
                         sembench_query=sembench_query)
                 else:
                     result = run_prepared_map_query(arm, **arguments)
@@ -367,6 +372,7 @@ class PersistentAdapterGroup:
                     release_query_seconds=result['full_query_seconds'],
                     release_scope='raw input reading, query preparation, formatter, graph, materialization and consumer EOF',
                     submit_scope=result['execution']['ready_query_timing_scope'],
+                    lotus_observation_mode=result.get('lotus_observation_mode'),
                     actual_posts=result['actual_posts'], rows=result['rows'])))
                 write_private_json(Path(root)/'runtime-resources.json', dict(
                     before_query=resources_before, after_query=self.ray_resources(),
@@ -426,6 +432,7 @@ def main(argv=None):
     parser.add_argument('--max-attempts', type=int, required=True)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--adapter-timings',action='store_true')
     parser.add_argument('--duckdb-offer-diagnostic',choices=('original','validated-prefix','prepared-blocks'),default='original')
     parser.add_argument('--sema-executor-scope', choices=('query', 'group-diagnostic'), default='query',
@@ -460,6 +467,7 @@ def main(argv=None):
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
             adapter_timings=args.adapter_timings,
+            lotus_observation_mode=args.lotus_observation_mode,
             sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic,
             imlane_config=args.imlane_config,
             imlane_call_configs={mode: path for mode,path in

@@ -37,6 +37,10 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 
 <a id="native-adapter-query"></a>
 
+单查询和常驻查询的 `--lotus-observation-mode` 默认 `qualification`，显式 `performance` 省去原 LOTUS 臂的预期请求重复构造。
+SemBench JSON 使用可选 `lotus_observation_mode` 字段；真实出站、额度和结果继续核对，
+未构造的预期完整值写 `unavailable`。模式身份、复核及待验证项见[观测核查](../../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
+
 ## 原生方法与SemLoom成对查询
 
 `baselines/run_native_adapter_query.py`执行有限外部文本输入的单查询，输入JSONL每行仅含唯一`row_id`和原始`text`。

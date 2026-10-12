@@ -1,5 +1,7 @@
 # SemLoom Code
 
+2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)增加显式性能观测选项，默认资格核对保持；真实POST、总额度和结果继续记录。局部替身回归不授予实际库或模型性能资格。
+
 2026-10-12：[IMLane发布接续](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)已贯通SemBench行容量配置并补桥已创建／停止未确认的跨对象保护；本机105通过、14缺依赖跳过，新增服务器／POST／模型／GPU0。
 
 2026-10-12：[SemBench Movie原查询准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)复用LOTUS完整批接点接入Q1/Q2/Q3和官方评价，保留原Filter、LIMIT/COUNT及重复reviewId的行身份。该历史切片软件资格16 pass／2 unsupported／0 notrun，累计128POST；当时两种IMLane原2000行Q1由旧128行适配器发送前拒绝，旧记录保留，模型0、性能资格未取得。

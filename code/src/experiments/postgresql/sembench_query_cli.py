@@ -18,6 +18,7 @@ from src.experiments.cell_budget import CellBudgetLedger
 from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 from .persistent_native_adapter_query import PersistentAdapterGroup
 from .sembench_queries import LOTUS_MOVIE_ARMS, MovieDataset, MovieQuery, MOVIE_MANIFEST_DIGEST
+from .supplier_adapter_query import validate_lotus_observation_mode
 
 
 def _env_path(name):
@@ -36,10 +37,11 @@ def load_config(path):
     required = {'schema', 'dataset', 'arms', 'queries', 'warmups', 'repeats', 'max_attempts',
                 'model_config_env', 'output_env', 'native_options', 'query_timeout_s', 'owner_timeout_s'}
     optional = {'ray_temp_parent_env', 'physical', 'max_held_tasks', 'imlane_config_envs', 'tokenizer_env',
-                'arm_native_options'}
+                'arm_native_options', 'lotus_observation_mode'}
     if (type(config) is not dict or not required <= set(config) or set(config)-required-optional
             or config['schema'] != 'semloom.sembench_lotus_queries.v1'):
         raise ValueError('SemBench query configuration has missing or unsupported fields')
+    validate_lotus_observation_mode(config.get('lotus_observation_mode', 'qualification'))
     data = config['dataset']
     if (type(data) is not dict or set(data) != {'checkout_env', 'manifest_env', 'csv_env', 'manifest_content_digest'}
             or data['manifest_content_digest'] != MOVIE_MANIFEST_DIGEST):
@@ -144,6 +146,7 @@ def preflight(config):
         raise ValueError('Movie execution requires a new private output directory')
     tokenizer = _env_path(config['tokenizer_env']) if config.get('tokenizer_env') else None
     evidence.update(versions=versions, arms=config['arms'], queries=config['queries'],
+                    lotus_observation_mode=config.get('lotus_observation_mode', 'qualification'),
                     max_attempts=expected, author_runtimes=author,
                     native_options_by_arm={arm: asdict(value) for arm, value in per_arm.items()},
                     config_fingerprint=content_digest(config), model_id=model.model_id,
@@ -172,7 +175,8 @@ def run(config):
                     physical=physical if arm == 'lotus-method-semloom' else None,
                     ray_temp_root=ray_root, query_timeout_s=config['query_timeout_s'],
                     owner_timeout_s=config['owner_timeout_s'], max_held_tasks=config.get('max_held_tasks'),
-                    imlane_call_configs=imlane, tokenizer_path=tokenizer, sembench_dataset=dataset) as group:
+                    imlane_call_configs=imlane, tokenizer_path=tokenizer, sembench_dataset=dataset,
+                    lotus_observation_mode=config.get('lotus_observation_mode', 'qualification')) as group:
                 for phase, repeats in (('warmup', config['warmups']), ('measurement', config['repeats'])):
                     for repeat in range(repeats):
                         for q in config['queries']:
@@ -180,6 +184,7 @@ def run(config):
                             value = group.run(arm, unit_id=identity, root=output/identity, phase=phase,
                                               sembench_query=MovieQuery(dataset, q))
                             result['cells'].append(dict(unit_id=identity, arm=arm, query_id=q, phase=phase,
+                                lotus_observation_mode=value.get('lotus_observation_mode'),
                                 repeat=repeat, status=value['status'], actual_posts=value['actual_posts'],
                                 full_query_seconds=value['full_query_seconds'],
                                 ready_query_seconds=value['execution']['ready_query_seconds'],

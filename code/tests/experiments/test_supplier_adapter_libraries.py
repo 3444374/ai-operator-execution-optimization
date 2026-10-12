@@ -40,6 +40,8 @@ class SupplierAdapterLibraryTests(unittest.TestCase):
                 ray_temp_root=Path('/root/autodl-tmp/rsni.'+uuid.uuid4().hex[:8]) if (
                     core or arm.endswith(('native-ray','native-ray-data'))) else None,
                 query_timeout_s=120,
+                lotus_observation_mode=os.environ.get('SEMLOOM_LOTUS_OBSERVATION_MODE','qualification')
+                    if arm.startswith('lotus-') else 'qualification',
                 stages=[dict(instruction='Summarize {text}.',output_column='summary'),
                         dict(instruction='Classify {summary}.',output_column='label')] if chain else None,
                 sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']) if arm.startswith('sema-') else None,

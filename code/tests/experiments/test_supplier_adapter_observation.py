@@ -218,8 +218,8 @@ class SupplierObservationTests(unittest.TestCase):
         with LotusControlTests().batch(prevalidate=True,retain=False) as (executor,execution,state):
             lm=SimpleNamespace(_process_uncached_messages=lambda *args: (_ for _ in ()).throw(AssertionError('native pool called')))
             observer=_LotusBatchObservation(lm,[dict(row_id='a'),dict(row_id='b')],observations,executor)
-            with patch('src.semantic_methods.lotus.batch.lotus_response',
-                side_effect=lambda full:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
+            with patch('src.semantic_methods.lotus.batch.parse_lotus_response',
+                side_effect=lambda *args,**kwargs:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
                 observer(lm,[([dict(role='user',content=str(i))],None) for i in range(2)],{},False,'fixture')
             self.assertEqual(state['events'].count('prepare'),2)
             self.assertEqual(executor.last_responses,())

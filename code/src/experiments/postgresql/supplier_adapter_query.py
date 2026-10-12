@@ -59,6 +59,15 @@ NATIVE_SUPPLIER_BACKENDS = {
 }
 
 
+LOTUS_OBSERVATION_MODES = ('qualification', 'performance')
+
+
+def validate_lotus_observation_mode(mode):
+    if mode not in LOTUS_OBSERVATION_MODES:
+        raise ValueError('LOTUS observation mode must be qualification or performance')
+    return mode
+
+
 def _record_supplier_http(stream, body, response, status):
     """Keep original response bytes for the supplier's own parser."""
     record=dict(request=json.loads(body),http_status=status)
@@ -106,8 +115,10 @@ class MethodObservations:
         if identity in self.calls:
             raise ValueError('method generated a duplicate complete call')
         call=dict(row_id=row_id,stage_id=str(stage),stage_ordinal=stage,call_id=call_id,
-                  model_role='main',request_values_sha256=content_digest(json.loads(payload)),
+                  model_role='main',request_values_sha256=None if payload is None else content_digest(json.loads(payload)),
                   response_representation=response_representation)
+        if payload is None:
+            call['request_values_scope']='not constructed before the native SDK; actual outbound values are retained by the common proxy'
         if native_ready_ns is not None:
             call['native_ready_ns']=native_ready_ns
             call['readiness_scope']='complete call received by the trusted batch callback; native steady clock retained separately'
@@ -129,7 +140,9 @@ class MethodObservations:
 
 class _LotusBatchObservation:
     """Measure the original LM's complete batch return; native pools remain native."""
-    def __init__(self,lm,rows,observations,executor=None,*,executor_label=None,call_id='lotus-map'):
+    def __init__(self,lm,rows,observations,executor=None,*,executor_label=None,call_id='lotus-map',
+                 observation_mode='qualification'):
+        self.observation_mode=validate_lotus_observation_mode(observation_mode)
         self.original=lm._process_uncached_messages
         self.executor,self.rows,self.observations=executor,rows,observations
         self.stage=0
@@ -137,7 +150,6 @@ class _LotusBatchObservation:
         self.executor_label=executor_label or ('native' if executor is None else 'semloom')
 
     def __call__(self,lm,data,kwargs,show_progress_bar,description):
-        from src.semantic_methods.lotus.sdk import prepare_call
         ready_ns=time.monotonic_ns()
         stage=self.stage;self.stage+=1
         if len(data)!=len(self.rows):
@@ -151,8 +163,15 @@ class _LotusBatchObservation:
                 stage_id=str(stage),clock_domain=self.observations.domain,
                 scope='expected native HTTP encoding' if self.executor is None else 'HTTP encoding used by execution'))
         if self.executor is None:
-            for index,item in enumerate(data):
-                prepared(index,prepare_call(lm,item[0],kwargs))
+            if self.observation_mode=='qualification':
+                from src.semantic_methods.lotus.sdk import prepare_call
+                for index,item in enumerate(data):
+                    prepared(index,prepare_call(lm,item[0],kwargs))
+            else:
+                for row in self.rows:
+                    self.observations.ready(row['row_id'],stage,None,call_id=self.call_id,
+                        response_representation='complete native SDK ModelResponse values',ready_ns=ready_ns,
+                        readiness_scope='complete messages and effective parameters received by the original uncached batch entry; HTTP encoding follows')
             results=self.original(data,kwargs,show_progress_bar,description)
         else:
             self.executor.on_prepared=prepared
@@ -224,7 +243,7 @@ def prepare_lotus_lm(plan, model, options, tokenizer_path, *, sembench=False):
 
 
 @contextmanager
-def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None,query_timeout_s=120,imlane_call_configs=None,sembench_result=None):
+def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None,query_timeout_s=120,imlane_call_configs=None,sembench_result=None,lotus_observation_mode='qualification'):
     import lotus
     import pandas as pd
     from src.semantic_methods.lotus.batch import LotusBatchExecutor,lotus_executor
@@ -277,7 +296,8 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
                 iterator.close()
     else:
         observer=_LotusBatchObservation(lm,values if sembench_result is None else sembench_result.model_rows,
-            observations,selected,executor_label=backend,call_id=operator)
+            observations,selected,executor_label=backend,call_id=operator,
+            observation_mode=lotus_observation_mode)
         stack.enter_context(lotus_executor(lm,observer))
         def execute():
             if sembench_result is not None:
@@ -292,6 +312,12 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
             yield from zip(result['row_id'],result[column])
     yield execute,dict(supplier='LOTUS1.2.4',source_commit='b1a85fd7a66fabed8a1585d44d7597d592b4433f',
         cache_policy='disabled',method_roles=['main'],two_map=chain,
+        observation_mode=lotus_observation_mode,
+        call_values_source=('method continuation payload' if arm.endswith('incremental') else
+            'execution-prepared payload' if selected is not None else
+            'expected native HTTP encoding' if lotus_observation_mode=='qualification' else
+            'unavailable before native SDK encoding; actual HTTP values retained by proxy'),
+        observation_timing='all in-query observation work remains in measured query time; no estimated subtraction',
         caller_scope=('supplier resume callback receives complete HTTP response' if arm.endswith('incremental')
                       else 'original LM receives full uncached SDK response list; whole batch wait retained'),
         native_supply='DataFrame formatting and complete uncached batch; native pool retained only on native arm',
@@ -461,9 +487,12 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
                        preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
                        adapter_timings=False,duckdb_offer_diagnostic='original',imlane_config=None,
-                       imlane_call_configs=None,sembench_query=None):
+                       imlane_call_configs=None,sembench_query=None,lotus_observation_mode='qualification'):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
+    validate_lotus_observation_mode(lotus_observation_mode)
+    if lotus_observation_mode!='qualification' and not arm.startswith('lotus-'):
+        raise ValueError('LOTUS performance observation requires a LOTUS arm')
     if sembench_query is not None:
         from .sembench_queries import MovieQuery, MovieQueryResult, LOTUS_MOVIE_ARMS
         if (type(sembench_query) is not MovieQuery or arm not in LOTUS_MOVIE_ARMS
@@ -502,6 +531,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
         source_identity='finite external raw input; no PG multi-Map',options=asdict(options),
         semloom_capacity=dict(held_tasks=held_tasks,active_requests=options.concurrency) if use_core else None,
         sema_native_threads=native_threads if arm.startswith('sema-') else None,
+        lotus_observation_mode=lotus_observation_mode if arm.startswith('lotus-') else None,
         request_budget_owner='common proxy before upstream POST',stages={})
     values=[];maximum=0
 
@@ -612,7 +642,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                     observations,options,unit_id,stages,stop,tokenizer_path,
                     lm=owner.lotus_lm() if owner is not None else None,max_held_tasks=held_tasks,
                     query_timeout_s=query_timeout_s,imlane_call_configs=imlane_call_configs,
-                    sembench_result=sembench_result))
+                    sembench_result=sembench_result,lotus_observation_mode=lotus_observation_mode))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
@@ -718,8 +748,18 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                 declared_single_stop_answer=qualified if unknown==0 else None,
                 observation_policy='record raw response; supplier parser owns response acceptance')
         if calls:
-            if Counter(c['request_values_sha256'] for c in calls)!=Counter(content_digest(p['request']) for p in protocol_records):
-                raise ValueError('supplier actual HTTP values differ from method-prepared complete calls')
+            missing_values=sum(c['request_values_sha256'] is None for c in calls)
+            if missing_values:
+                if (lotus_observation_mode!='performance'
+                        or arm not in ('lotus-adapted-native','lotus-two-map-native-staged')
+                        or missing_values!=len(calls) or len(calls)!=maximum):
+                    raise ValueError('supplier lacks its declared method-prepared complete call values')
+                summary['method_http_values_audit']=dict(status='unavailable',logical_calls=len(calls),
+                    reason='performance observation omits expected native HTTP construction; actual POST values and counts remain recorded')
+            else:
+                if Counter(c['request_values_sha256'] for c in calls)!=Counter(content_digest(p['request']) for p in protocol_records):
+                    raise ValueError('supplier actual HTTP values differ from method-prepared complete calls')
+                summary['method_http_values_audit']=dict(status='passed',logical_calls=len(calls))
         summary.update(status='passed',rows=len(values),actual_posts=count,preparation_model_posts=0,
             full_query_seconds=(summary['execution']['t_query_terminal_ns']-started)/1e9,
             method_calls=calls,observed_peak_http=proxy_http_peak(traces),executor_phases=executor_phase_observations(events))

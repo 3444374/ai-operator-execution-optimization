@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：LOTUS原生观测准备核查
+
+- 从1e969356独立工作树确认原臂观测重复构造预期HTTP请求，明确处于查询计时内。
+- 默认qualification保持；显式performance只省去原臂预期构造，保存缺少完整值的状态、真实POST、出现身份、额度及原结果评价。
+- [本机报告](experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)保留交付方57通过／25跳过、16次替身POST、全部局部成本样本和失败来源；模型/GPU0，不推导实际性能资格。
+- 独立块未改IMLane、MovieQuery容量或共享native_calls.py；发布者在38e82a9a上按局部函数接入，保留已发布容量配置与未知责任保护，实际SDK／厂商图／官方Movie评价与服务器复验待完成。
+
 ## 2026-10-12：发布IMLane扩容并贯通SemBench容量配置
 
 - 整合7bb10980／5820dc37，归档与离线复算确认两作者模式原Q1完整2000行及累计4563/5000软件POST，旧失败与旧前置拒绝保留，不重复大矩阵。
