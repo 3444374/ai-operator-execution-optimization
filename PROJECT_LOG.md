@@ -6,6 +6,9 @@
 - [同题报告](experiments/results/diagnostics/native_release_actual_software_20261012/README.md)保留源码、首轮失败与真实SDK／厂商图范围；不把组件通过、到达计数或替身开销写成完整资格／模型结论。
 - 公开CLI把必须为Git checkout的SemBench来源误作私有产物而拒绝；只修checkout路径职责，原verify_checkout及私有配置／输出检查保持，30项受影响本地回归通过。父另给有限窗口复核失败与未覆盖项。
 - task-10的3.14.5与本驱动3.14.3均走原始cookie header接口；只补共享jar同名委派，41项本地受影响回归通过。async候选继续未合格、不默认启用，旧容量记录保持。
+- 两轴有限复审无必修，修补6629846a已普通推送并核验远端。另授第二窗口三组3项通过／0跳过，104.662/600秒；fixture101与代理72合计173/256POST，原监督101的计数口径另明。
+- 实际3.14.5的307／302、两loop隔离及关闭通过；真实Daft／Ray Data关闭后无新request_start，未知远端和clean=false保持。12个原Q2/Q3 software_fixture单元核对两模式正文／输出／官方评价，刻意误报／漏报不作为模型结论。
+- 四次公开CLI原2000行预检通过但未执行完整查询；1003份运行文件核对固定源码，68个登记进程无残留、GPU compute空。原失败留存，完整CLI、作者最新Q1及真实模型／正式交错比较仍待。
 
 ## 2026-10-12：LOTUS原生观测准备核查
 

@@ -3,6 +3,9 @@
 2026-10-12：[固定发布版实库软件核查](diagnostics/native_release_actual_software_20261012/README.md)。
 4566f1fc的共享SDK解释、真实LOTUS＋Daft／Ray Data及原生图分项保存，首轮整体未通过；有效源码、POST、失败与清理见同题记录。
 公开CLI只读来源路径修补与aiohttp原始cookie header委派另以固定源码复核，未运行模型／GPU、未改变IMLane默认，也不借旧容量资格为async候选背书。
+固定6629846a另授第二窗口3项通过／0跳过，104.662/600秒；fixture101＋唯一代理72＝173/256POST，监督计数器仅覆盖前者。
+实库3.14.5重定向与两loop、Daft／Ray Data发送／关闭时间戳、两观察模式×三主路径×原Q2/Q3的12个software_fixture单元通过，原官方评价保留误报／漏报。
+四次公开CLI原2000行数据／运行时预检通过、完整CLI执行未跑；源码1003摘要核对、68个登记进程身份无残留，模型/GPU0。准确范围及两份原始档案见同题报告。
 
 2026-10-12：[LOTUS原生观测准备核查](diagnostics/lotus_observation_modes_20261012/README.md)。
 固定发布版1e969356确认原请求池前观测逐条预期构造，替换臂观察实际准备值；显式性能选项省去前者，默认资格模式保持。

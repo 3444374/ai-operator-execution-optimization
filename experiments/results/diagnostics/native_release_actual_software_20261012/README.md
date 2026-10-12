@@ -23,7 +23,7 @@
 
 机器事实和分项结果见[verification.json](verification.json)，首轮失败、日志、收据与验证脚本见[observations.tar.gz](observations.tar.gz)。
 
-## 第二窗口：失败与未覆盖项的有限复核
+## 第二窗口：三组有限复核通过
 
 父任务另行划定600秒／256次POST的新窗口，继续CPU8–15、模型／GPU0；首轮原件和计数保持独立。
 先明确cookie重定向选项、有效Ray参数，并用发送／关闭时间戳区分在途请求与关闭后新开始。
@@ -32,10 +32,33 @@
 
 公开CLI零POST预检暴露只读SemBench Git checkout被私有产物检查拒绝。修补仅为checkout来源路径关闭该私有路径检查，
 其固定commit／tracked内容核验仍由verify_checkout执行；模型配置、清单、CSV、输出与运行配置继续按原私有路径规则检查。
-本地30项受影响回归全部通过、0跳过；第二窗口结果待本次实库执行后补入。
+本地30项受影响回归全部通过、0跳过。固定修补源码6629846a的四次公开CLI数据／运行时预检均通过、POST0；
+预检使用原2000行CSV与固定清单，未执行完整公开CLI查询。
 
 task-10独立async交付02a75cc4的作者生命周期在153POST后因307缺cookie停止，作者Ray及Q1未启动；该候选仍未合格且未默认启用。
 本服务器aiohttp3.14.3与其3.14.5的ClientSession都经`update_cookies_from_headers`处理原始header，代理jar原继承DummyCookieJar的空实现。
 现只增加向本次ContextVar默认jar的同名委派，保留旧mapping入口、IP来源cookie拒绝、同请求重定向及并发／跨请求隔离。
 依据来自固定安装源码及[aiohttp3.14.5客户端](https://github.com/aio-libs/aiohttp/blob/v3.14.5/aiohttp/client.py#L931)和[cookie接口](https://github.com/aio-libs/aiohttp/blob/v3.14.5/aiohttp/cookiejar.py#L992)。
-41项本机受影响回归通过、0跳过；实际3.14.5的307／302与两loop回归将在新窗口先运行，未重复作者矩阵。
+41项本机受影响回归通过、0跳过，两轴有限复审均无必修。
+实际3.14.5的307／302与两loop回归通过：每loop两并发调用及后续独立调用，开始无cookie、重定向只携带本调用cookie，结束池关闭，跨loop客户端不同。
+此项18POST、6GET，未启动IMLane作者过程或重复作者矩阵。
+
+三组共3项通过、0跳过，监督从测试进程首次启动计时104.662/600秒。
+HTTPServer收据计数101POST（cookie18、提前关闭11、Movie fixture72）；aiohttp.web代理未纳入该计数器，另由12单元中72条唯一网关到达和正文摘要核对。
+总计173/256 localhost POST，符合预先保守上限174；原始监督文件的`posts=101`只表示fixture计数，不能读作全部POST。
+代理发送前共用72名额账本，十二单元各扣6次且已关闭，再次扣记被拒绝；不存在把首轮额度重置或转借的操作。
+
+| 跟进 | 实际结果与范围 |
+|---|---|
+| 提前关闭 | 实际Daft／Ray Data各六调用，分别到达5／6。透明aiohttp发送回调保存与close同域时间戳，关闭返回后新request_start为0、活动请求最终0。Daft池关闭为true；Ray池状态及远端HTTP停止仍unavailable，两者clean仍false。未更改厂商调度。 |
+| LOTUS模式 | qualification／performance×原臂／Daft／Ray Data×原Q2／Q3，12单元、每单元6个完整调用。三条路径每种模式连续两查询，owner／LM保持；模式间正文多重集、原查询结果与官方评价一致。原performance完整预期值明确unavailable，替换臂仍通过实际值核查。 |
+| 官方评价 | 八行software_fixture中每单元1误报／1漏报，Q2保留LIMIT与重复，Q3保留COUNT5；原evaluator与全出现分类审计均保存。不以替身响应声称真实模型质量。 |
+| 清理 | 监督登记68个PID／创建时间，CPU均8–15，无超出记录；结束及独立只读复核均无存活残留，GPU compute为空。 |
+
+1003份运行源码／测试文件与固定6629846a逐摘要核对，验证脚本也与上传摘要一致。
+第二窗口机器事实、十二单元结果和准确计数见[followup-window02.json](followup-window02.json)，预检前后、原始日志、发送时间戳、账本和请求见[window02-observations.tar.gz](window02-observations.tar.gz)。
+压缩包265成员及101个解码POST正文已独立扫描、无隐私违规；私有路径与外部IP已脱敏，首轮档案保持。
+逐成员原始／公开摘要见[window02-members-sha256.json](window02-members-sha256.json)；源码及运行侧车里的原摘要属于脱敏前字节，公开成员另按脱敏后摘要复核。
+
+仍待：完整公开SemBench CLI执行、最新发布源码的作者IMLane生命周期／完整Q1、真实模型Q1/Q2/Q3质量与成本、正式交错测量，以及非主路径Ray Core CPU／终止诊断。
+本轮没有性能排名；响应转换、日志与查询内观察仍计入时间，没有估算扣除。默认qualification与同步IMLane保持，async候选02a75cc4仍未合格。
