@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：公开SemBench CLI四路径软件接线与模型小轮提案
+
+- 固定d004e720实际公开CLI原LOTUS／Daft／Ray Data／SemLoom各Q2/Q3，加原LOTUS performance Q2配对，共9查询1080逻辑调用、2160传输POST通过；原关系2000行与每查询120行不改。
+- 首次远端准备被自动审批拒绝，命令未执行；用户本人确认900秒／2560传输POST／1280逻辑调用限定软件范围后继续。359.252秒包含预检及准备间隔，不重置窗口，模型/GPU0。
+- [同题原件](experiments/results/diagnostics/native_release_actual_software_20261012/README.md)保留真实CLI／SDK／原parser/evaluator及所有错误质量；45个登记身份无残留，旧早停未知和首轮失败保持。未占task-10 CPU16–23，不重跑其作者Q1。
+- [同任务单双卡方案](experiments/plans/语义系统对照.md#sembench-native-model-next)准备质量／调用量、固定路由与交错测量，优先既有同步接法，不等待async；仅提案，尚未运行模型。
+
 ## 2026-10-12：固定发布版实库软件核查与只读来源路径修补
 
 - 已发布4566f1fc在既有CPU8–15运行有限矩阵，第一窗口363.192/600秒、154/256POST，17项中14通过，失败／错误／未覆盖另记，模型／GPU0，登记进程清理后无存活残留。

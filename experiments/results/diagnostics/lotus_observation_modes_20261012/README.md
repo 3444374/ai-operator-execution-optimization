@@ -101,6 +101,8 @@ MovieQuery、CLI和公共执行器继续读取同一显式行容量，旧配置1
 
 后续固定发布源码6629846a的[实际软件复核](../native_release_actual_software_20261012/README.md)补齐两模式、三LOTUS主路径与原Q2/Q3的12个software_fixture单元：正文多重集、查询输出、官方评价一致，每单元6调用并保留1误报／1漏报；原performance完整预期值unavailable保持。
 该独立窗口包括其他两组，共173localhost POST／104.662秒、模型/GPU0；完整公开CLI、最新作者IMLane／Q1、真实模型质量与正式交错性能仍待，前述历史本机记录不回写。
+随后d004e720的公开CLI四非IMLane路径原Q2/Q3完整输入通过；原LOTUS qualification／performance Q2各120调用的实际正文、决定、结果与官方评价一致，performance预期值缺项仍明确unavailable。
+新独立窗口共1080逻辑调用／2160传输POST／359.252秒，模型/GPU0；同题[公开接线证据](../native_release_actual_software_20261012/README.md)保留全部错误质量值，不作为模型或性能资格。
 
 有限需求复审指出常驻失败侧车缺少所选观察模式，失败摘要已保留模式；现已补齐`persistent-query.json`，LOTUS写配置值，其他臂写null。
 新增无网络失败用例核对两模式与LOTUS／DuckDB／固定Map六种组合，原异常对象、group停止状态和摘要指纹保持。

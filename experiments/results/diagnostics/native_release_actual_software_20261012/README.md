@@ -62,3 +62,42 @@ HTTPServer收据计数101POST（cookie18、提前关闭11、Movie fixture72）�
 
 仍待：完整公开SemBench CLI执行、最新发布源码的作者IMLane生命周期／完整Q1、真实模型Q1/Q2/Q3质量与成本、正式交错测量，以及非主路径Ray Core CPU／终止诊断。
 本轮没有性能排名；响应转换、日志与查询内观察仍计入时间，没有估算扣除。默认qualification与同步IMLane保持，async候选02a75cc4仍未合格。
+
+## 第三窗口：四路径公开CLI原Q2／Q3通过
+
+本窗口另获用户本人授权：固定d004e720、CPU8–15、模型／GPU0；上限900秒、1280逻辑调用、2560传输POST。
+准备时发现最初1280传输额度不足，未启动旧额度；明确按两跳调整后才执行。
+最初上传／预检被自动审批拒绝，远端命令未执行；用户本人确认限定范围后重试获准。没有绕过审批或途中改限额。
+
+两次实际公开入口均以`python -m src.experiments.postgresql.sembench_query_cli --config <private-config> --execute`运行并退出0。
+主矩阵原LOTUS、Daft Native、Ray Data、SemLoom四路径各Q2／Q3，共8查询960逻辑调用；原LOTUS的performance Q2另120调用。
+原关系2000行、CSV／清单摘要及原SemBench源码保持，每查询按原WHERE选120行；不修改查询、输入规模或标签。
+回应由消息内容摘要确定True／False的本地HTTP fixture提供，未把标签交给回应器。
+固定SDK、原LOTUS parser／evaluator、Daft／Ray／SemLoom真实执行；软件回应与实际依赖分别标注。
+
+| 覆盖 | Q2 | Q3 | 模式与配置 |
+|---|---|---|---|
+| 原LOTUS | 120调用通过 | 120调用通过 | qualification；另performance Q2配对120调用 |
+| Daft Native | 120调用通过 | 120调用通过 | qualification，原图及公共配置保持 |
+| Ray Data | 120调用通过 | 120调用通过 | qualification，两actor／两async batch／batch1 |
+| SemLoom | 120调用通过 | 120调用通过 | qualification，workers2／batch2／held8／active4；结束Core用量和Job均0 |
+
+同查询的四路径正文值多重集、120个独立出现身份、原解析决定、关系结果与官方评价一致；原Q2的两模式也一致。
+每个主owner连跑两查询、owner／LM身份保持；九个单元各扣120名额并已关闭。
+`call_id=lotus-filter`为方法标签，出现身份使用row_id＋stage_id＋stage_ordinal＋call_id组合，不把标签当逐调用唯一ID。
+performance没有构造预期正文，120个预期摘要为null且审计unavailable；真实代理正文摘要继续保存和配对，未把缺项写成相等。
+
+质量错误继续计入：Q2为TP9／FP54／TN52／FN5，LIMIT5返回的五项均非原gold集合，官方F1=0；
+Q3为TP6／FP52／TN54／FN8，原COUNT返回58、gold14，官方绝对误差44。解析非法和缺项均0。
+这些值仅支持软件差分和评价接线，不是模型准确率或模型性能结论。
+
+双计数为1080 gateway＋1080 fixture＝2160/2560传输POST，对应1080/1280逻辑调用；发送前扣记、实际网关到达与fixture收据逐摘要复核。
+计时从第一次零POST预检前的保守时间开始，含预检和准备间隔359.252/900秒，执行时未重置；两CLI分别82.304与13.689秒，不据替身耗时推导模型收益。
+45个登记PID／创建时间仅在CPU8–15，监督及独立只读复核均无存活残留，fixture线程停止、未结回应0、GPU compute空。
+未运行IMLane作者、Q1、模型或新async候选，task-10的CPU16–23／作者过程保持独立。
+
+详细覆盖、配置与原评价见[public-cli-window03.json](public-cli-window03.json)，269成员日志／预检／账本／收据见[window03-observations.tar.gz](window03-observations.tar.gz)，逐成员原始／公开摘要见[window03-members-sha256.json](window03-members-sha256.json)。
+完整原始提示保存在私有原件；公开件省略4320段消息内容并保留摘要，避免复制原评论文本。原摘要属于脱敏前字节，公开成员另用公开摘要核对；隐私扫描0违规。
+此前两个窗口原件与失败未改。第二窗口早停仅证明close起止之后无新request_start及活动请求最终0；没有逐请求远端停止确认，clean=false／remote_http_stopped=unavailable保持。
+
+剩余模型小轮见[同任务单双卡方案](../../../plans/语义系统对照.md#sembench-native-model-next)；先用已验证同步接法，不等待async新功能，尚未启动模型。

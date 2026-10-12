@@ -2,11 +2,13 @@
 
 2026-10-12：[固定发布版实库软件核查](../experiments/results/diagnostics/native_release_actual_software_20261012/README.md)。
 共享SDK解释与LOTUS在Daft／Ray Data的正常、错误和两阶段组件通过，第一窗口整体未通过，失败与未覆盖项保留。
-公开SemBench CLI的只读checkout来源现在允许Git目录；固定源码核验保持，私有配置、数据及输出检查未改变。30项本地回归、四次实际公开CLI零POST预检通过，完整CLI执行未运行。
+公开SemBench CLI的只读checkout来源现在允许Git目录；固定源码核验保持，私有配置、数据及输出检查未改变。30项本地回归、四次实际公开CLI零POST预检通过，随后四非IMLane路径原Q2/Q3公开执行通过。
 共享HTTP代理jar补aiohttp3.14.x的原始header更新委派，仍使用本次调用的默认jar；41项本机受影响回归通过，固定6629846a实库3.14.5重定向／两loop通过，两轴有限复审无必修。
 另授第二窗口3项通过、0跳过，104.662/600秒；fixture101与唯一代理72分别核对，总173/256POST。真实Daft／Ray Data关闭后新开始0，clean仍false／远端未知。
 两模式×三LOTUS主路径×原Q2/Q3共12个software_fixture单元，正文、结果与官方评价一致；68个登记进程无存活残留，模型/GPU0。
-最新作者IMLane、完整CLI及真实模型质量／性能仍待，async候选未合格，默认同步与旧容量资格保持。
+另授第三窗口固定d004e720，四路径原LOTUS／Daft／Ray Data／SemLoom各原Q2/Q3＋原LOTUS performance Q2，共9查询、1080逻辑调用及2160传输POST通过；359.252/900秒含预检和准备间隔，45登记身份无残留。
+原2000行关系不改、每查询原WHERE取120行，实际公开CLI／SDK／parser／evaluator／库运行，回应软件fixture；Q2 FP54/FN5及Q3 FP52/FN8保持，不作模型质量。
+最新作者IMLane／完整Q1及真实模型质量／性能仍待，async候选未合格，默认同步与旧容量资格保持；模型[同任务单双卡计划](../experiments/plans/语义系统对照.md#sembench-native-model-next)待父统筹，未启动。
 
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
 显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。
