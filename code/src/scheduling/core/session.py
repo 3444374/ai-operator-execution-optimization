@@ -947,7 +947,8 @@ class SchedulingSession:
             len(ready) > len(selected)
             or cleanup
             or (
-                queued
+                self._dispatch_enabled
+                and queued
                 and now >= self._retry_at
                 and self._capacity_ready()
                 # A reordered member can fit even when the input-order head cannot.
