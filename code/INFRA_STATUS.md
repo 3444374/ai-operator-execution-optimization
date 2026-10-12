@@ -10,6 +10,8 @@ IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分�
 固定c4f7f157服务器20项真实SDK/清理检查通过、12次localhost POST、模型/GPU0且自有进程退出。
 原生kernel按query/Daft loop及Ray原HTTP批次寿命复用客户端，6项本机生命周期检查通过；
 4次真实localhost调用复用同一连接，原生图新池资格pending，Ray声明C与实际图参数分别记录。
+LOTUS共同接收容量/期限profile已实现，6项本机检查通过，IMLane式2000行目标在准备/执行前拒绝；
+IMLane128源于自有桥检查，C++源码已及时释放完成调用的输入/输出引用，新桥编译及实库2000行能力均pending/unsupported。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。

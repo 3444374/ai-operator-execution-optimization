@@ -41,6 +41,14 @@ fixture服务器关闭、自有进程观察为0。来源摘要见[修补核验](
 Ray默认batch_rows=1时每HTTP stage批次只有一个请求，不声称跨批次或跨查询池复用。
 报告同时保存声明C与actors/async_batches/batch_rows/source_blocks；C不等于实际请求峰值。
 Ray配置上限按actors×async_batches×batch_rows核查，实际执行和供给继续由原native图拥有。
+共同`LotusCallLimits`明确请求/响应字节、批次行数/累计字节和request/batch期限；
+native LOTUS完整响应默认从8MiB改为1MiB，与普通Engine接收范围对应。
+6项本机检查通过，包含IMLane式2000行目标准备前失败、小Engine显式profile失败、最终SDK解释超过期限；
+保留SemLoom有限准备及各native图的物理准备，配置相同不表示所有内部时序或实际并发相同。
+IMLane128来源核到项目`5ee1b90c3`的C++快照检查及Python检查，不是作者系统自然容量。
+桥源码完整stdout输出后释放完成调用`calls[i]`持有的输入/输出；新桥尚未编译。
+32MiB只限定当前声明的输入/已交付结果编码量，不保证C++待交付输出、Arrow/IPC复制及聚合RSS。
+512/2000行仍unsupported；后续先核作者自然连续投递/消费和全部暂存责任，不改变作者并发或添加全批屏障。
 
 本轮在独立分支`codex/native-execution-adapters`整合原LOTUS、DuckDB AI与Sema的方法接点。
 旧主及三个原子任务工作树保持只读，原始成功／失败与私有环境继续保留。

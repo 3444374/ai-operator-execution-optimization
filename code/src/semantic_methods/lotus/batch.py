@@ -9,6 +9,7 @@ from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepa
 from ...scheduling.core.session_contract import State
 from ...execution_provider.adapters.full_response import decode_full_response
 from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
+from .limits import LotusCallLimits
 
 
 class LotusBatchExecutor:
@@ -21,7 +22,7 @@ class LotusBatchExecutor:
     def __init__(self, execution, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, cancelled=None, timeout_s=120,
-                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True):
+                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
@@ -29,26 +30,40 @@ class LotusBatchExecutor:
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
         self.execution, self.model_config = execution, model_config
+        if call_limits is not None and type(call_limits) is not LotusCallLimits:
+            raise TypeError('LOTUS call_limits requires LotusCallLimits')
+        available = execution.engine.capacity.limits
+        self.call_limits = call_limits or LotusCallLimits(model_config.timeout_ms / 1000,
+            max_request_bytes=min(1024 * 1024, available.item_input_bytes),
+            max_response_bytes=min(1024 * 1024, available.item_result_bytes), max_batch_rows=max_batch_rows,
+            max_batch_response_bytes=max_batch_result_bytes, batch_timeout_s=timeout_s)
+        self.call_limits.check_model(model_config)
+        if (self.call_limits.max_request_bytes > available.item_input_bytes
+                or self.call_limits.max_response_bytes > available.item_result_bytes):
+            raise ValueError('LOTUS call capacity exceeds the selected Engine item capacity')
         self.query_id, self.operator_id = query_id, operator_id
-        self.max_batch_rows, self.max_batch_result_bytes = max_batch_rows, max_batch_result_bytes
+        self.max_batch_rows = self.call_limits.max_batch_rows
+        self.max_batch_result_bytes = self.call_limits.max_batch_response_bytes
         self.on_response, self.on_batch, self.cancelled = on_response, on_batch, cancelled
         self.on_prepared = on_prepared
         self.prevalidate_batch, self.retain_full_responses = prevalidate_batch, retain_full_responses
-        self.timeout_s, self.last_responses = timeout_s, ()
+        self.timeout_s, self.last_responses = self.call_limits.batch_timeout_s, ()
         self.last_cleanup_errors = ()
+        self.last_preflight = None
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
-        from openai import OpenAIError
-        if len(uncached_data) > self.max_batch_rows:
-            raise ValueError("LOTUS uncached batch exceeds declared row limit")
+        self.last_preflight = dict(target_rows=len(uncached_data), call_limits=self.call_limits.describe())
+        self.call_limits.preflight_rows(len(uncached_data))
         self.last_responses = ()
         self.last_cleanup_errors = ()
         if not uncached_data:
             return []
+        from openai import OpenAIError
         count = len(uncached_data)
         flow = None
         full = []
         next_input = completed = result_bytes = 0
+        input_bytes = 0
         pending = ()
         prepared_calls = {}
         sealed = False
@@ -87,10 +102,14 @@ class LotusBatchExecutor:
                         call = first_call if sequence == 0 and first_call is not None else prepare_call(lm, uncached_data[sequence][0], all_kwargs)
                         first_call = None
                         check_model_config(call, self.model_config)
+                        self.call_limits.check_prepared(call)
+                        input_bytes += len(call.payload)
+                        if input_bytes > self.call_limits.max_batch_input_bytes:
+                            raise ValueError('LOTUS prepared batch input exceeds the declared byte capacity')
                         if self.on_prepared:
                             self.on_prepared(sequence, call)
                         offered.append(prepare_native_task(call.payload, sequence, row_sequence=sequence,
-                            call_id=self.operator_id, max_result_bytes=flow.limits.item_result_bytes))
+                            call_id=self.operator_id, max_result_bytes=self.call_limits.max_response_bytes))
                         prepared_calls[sequence] = call
                     pending = tuple(offered)
                 if pending:
@@ -143,6 +162,7 @@ class LotusBatchExecutor:
                         delivery_error.add_note("LOTUS result release also failed: " + type(error).__name__)
                 if progress.state in (State.FAILED, State.CANCELLED):
                     raise RuntimeError(progress.error or "LOTUS execution stopped")
+                check_stop()
                 if progress.state == State.FINISHED:
                     if completed != count:
                         raise RuntimeError("LOTUS batch completion count differs")

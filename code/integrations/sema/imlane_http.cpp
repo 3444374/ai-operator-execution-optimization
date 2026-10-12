@@ -93,7 +93,9 @@ int main(int argc, char** argv) {
                     output->column(2)->GetScalar(0).ValueOrDie());
                 if (!result->is_valid) throw std::runtime_error("complete-call output is NULL");
                 std::cout << "SEMA_IMLANE_RESULT " << result->ToString() << std::endl;
-                pending[i].reset(); ++finished;
+                pending[i].reset();
+                calls[i].reset();
+                ++finished;
             }
             if (finished != pending.size()) std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }

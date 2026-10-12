@@ -131,6 +131,16 @@ IMLane UDF的容量/身份等执行错误另存`execution_error`，不会重放�
 Daft连接按查询和实际异步loop拥有及关闭；Ray Data沿原HTTP stage的批次session_factory复用，
 默认batch_rows=1不代表跨批次复用。实际厂商图参数与声明C分别进入关闭报告，C不表示观测并发。
 没有新增统一请求池或SemLoom准入策略；客户端连接器不再另设并发额度。
+
+两种批次入口接受可选`call_limits=LotusCallLimits(...)`；它声明请求字节、完整HTTP响应字节、
+行数、累计输入/响应字节及request/batch期限。显式profile必须能由选定Engine item容量承接，
+native入口在准备前核对目标行数与实际executor容量。普通LOTUS替换请求的默认完整响应额度为1MiB。
+省略profile时保留已有批次参数，并从实际Engine item容量推导有限请求/响应额度；
+自定义小容量诊断仍可运行。SemLoom继续有限准备，native继续采用自己的物理准备方式。
+逐条请求和累计输入在准备时检查；不宣称未知整批字节在SemLoom任何HTTP之前全部核完。
+batch期限覆盖准备、消费至EOF和SDK解释，清理时间另记；各替换传输按总时长核查request期限。
+原LOTUS SDK仍保留阶段超时语义，本profile不能据此证明六条路径所有超时阶段等价。
+IMLane128行来自自有调用桥，2000行当前拒绝，不新增分批供给；来源和后续最小方案见[IMLane接口](../../../integrations/sema/imlane_calls.md)。
 原生消费线程的执行与关闭异常在停止/join后进入`last_close_report.worker_errors`，
 关闭异常对象保存在`last_cleanup_errors`；已有查询第一异常继续传播，附加类型进入notes。
 提前关闭而没有查询错误时，图关闭失败向调用方传播；`clean=False`与未知远端完成保持。

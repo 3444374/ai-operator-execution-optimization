@@ -7,6 +7,7 @@ import time
 from src.baselines.text.frameworks.native_calls import NativeCall, raise_execution_error
 from src.execution_provider.adapters.full_response import encode_full_response
 from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch
+from .limits import LotusCallLimits
 
 
 def parse_native_response(lm, messages, all_kwargs, prepared, outcome, *, replay=None):
@@ -24,7 +25,8 @@ class LotusNativeBatchExecutor:
     def __init__(self, native, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, on_prepared=None,
-                 cancelled=None, timeout_s=120, retain_full_responses=True, follow_redirects=True):
+                 cancelled=None, timeout_s=120, retain_full_responses=True, follow_redirects=True,
+                 call_limits=None):
         if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS native batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
@@ -32,24 +34,36 @@ class LotusNativeBatchExecutor:
         if type(retain_full_responses) is not bool or type(follow_redirects) is not bool:
             raise ValueError("LOTUS raw response retention choice must be boolean")
         self.native, self.model_config = native, model_config
+        if call_limits is not None and type(call_limits) is not LotusCallLimits:
+            raise TypeError('LOTUS call_limits requires LotusCallLimits')
+        self.call_limits = call_limits or LotusCallLimits(model_config.timeout_ms / 1000,
+            max_batch_rows=max_batch_rows, max_batch_response_bytes=max_batch_result_bytes, batch_timeout_s=timeout_s)
+        self.call_limits.check_model(model_config)
         self.query_id, self.operator_id = query_id, operator_id
-        self.max_batch_rows, self.max_batch_result_bytes = max_batch_rows, max_batch_result_bytes
+        self.max_batch_rows = self.call_limits.max_batch_rows
+        self.max_batch_result_bytes = self.call_limits.max_batch_response_bytes
         self.on_response, self.on_batch, self.on_prepared = on_response, on_batch, on_prepared
-        self.cancelled, self.timeout_s = cancelled, timeout_s
+        self.cancelled, self.timeout_s = cancelled, self.call_limits.batch_timeout_s
         self.retain_full_responses = retain_full_responses
         self.follow_redirects = follow_redirects
         self.last_responses, self.last_cleanup_errors = (), ()
         self.last_close_report = None
         self._batch_number = 0
+        self.last_preflight = None
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
-        from openai import OpenAIError
         self.last_responses, self.last_cleanup_errors = (), ()
         self.last_close_report = None
-        if len(uncached_data) > self.max_batch_rows:
-            raise ValueError("LOTUS uncached batch exceeds declared row limit")
+        native_rows = getattr(self.native, 'max_batch_rows', self.max_batch_rows)
+        native_bytes = getattr(self.native, 'max_batch_bytes', self.call_limits.max_batch_input_bytes)
+        self.last_preflight = dict(target_rows=len(uncached_data), native_max_batch_rows=native_rows,
+                                   effective_max_batch_rows=min(native_rows, self.max_batch_rows),
+                                   native_max_batch_input_bytes=native_bytes,
+                                   call_limits=self.call_limits.describe())
+        self.call_limits.preflight_rows(len(uncached_data), native_rows=native_rows)
         if not uncached_data:
             return []
+        from openai import OpenAIError
         if all_kwargs.get("num_retries") != 0 or all_kwargs.get("max_retries") != 0:
             raise ValueError("LOTUS native execution requires explicit zero retries")
         import litellm
@@ -70,17 +84,24 @@ class LotusNativeBatchExecutor:
         self._batch_number += 1
         prepared_calls = []
         calls = []
+        input_bytes = 0
         for index, (messages, _) in enumerate(uncached_data):
             check_stop()
             prepared = first if index == 0 else prepare_call(lm, messages, all_kwargs)
             check_model_config(prepared, self.model_config)
+            self.call_limits.check_prepared(prepared)
+            input_bytes += len(prepared.payload)
+            if input_bytes > min(self.call_limits.max_batch_input_bytes,
+                                 getattr(self.native, 'max_batch_bytes', self.call_limits.max_batch_input_bytes)):
+                raise ValueError('LOTUS prepared batch input exceeds the selected executor byte capacity')
             if self.on_prepared:
                 self.on_prepared(index, prepared)
             prepared_calls.append(prepared)
             calls.append(NativeCall(call_id=f"{self.query_id}:{self.operator_id}:{self._batch_number}:{index}",
                 row_id=index, payload=prepared.payload, endpoint=prepared.api_base + "/chat/completions",
                 headers=(("Content-Type", "application/json"), ("Authorization", "Bearer " + prepared.api_key)),
-                timeout_s=prepared.timeout_s, follow_redirects=self.follow_redirects))
+                timeout_s=prepared.timeout_s, follow_redirects=self.follow_redirects,
+                max_response_bytes=self.call_limits.max_response_bytes))
         check_stop()
         responses = [None] * len(calls)
         full = [None] * len(calls) if self.retain_full_responses else []
@@ -116,6 +137,7 @@ class LotusNativeBatchExecutor:
                 except OpenAIError as error:
                     # LM's original cache/stat/order/choice logic owns this error value.
                     responses[index] = error
+                check_stop()
             if len(received) != len(calls):
                 raise ValueError("LOTUS native batch response is incomplete")
             return responses

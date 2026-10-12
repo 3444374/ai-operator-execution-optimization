@@ -30,6 +30,14 @@
 有效快照上限为128行、32MiB输入；请求更大的配置仍如实暴露上述有效上限。
 超额拒绝，不分段，不切换执行器。完整结果在调用方检查同一字节额度；原C++桥在此检查前
 已经持有Arrow输出，尚无聚合32MiB驻留输出保证。
+128行来源是本项目`5ee1b90c3`添加的C++快照检查，另由Python适配器检查；
+这是当前调用桥的接收范围，不是作者系统自然行容量的证明。
+新桥源码在结果检查、完整stdout输出及已完成future释放后立即清除对应`calls[i]`，
+输入/输出表不再因全批次调用列表而一直保留到EOF；当前尚未单独编译新二进制。
+这减少已交付结果的留存，不保证待交付结果、Arrow/IPC复制和全部并发输出的聚合32MiB RSS。
+当前原SemBench Q1的2000行及512行目标仍为unsupported，LOTUS入口先核对实际executor行容量。
+后续最小方案需先核作者DBEnd投递/消费接口的自然持续能力，以及待交付总量和输入/IPC暂存责任，
+再核实际2000行；不能仅提高128常量，也不能静默加入整块完成后才供应下一块的屏障。
 
 原桥空stdin、线程参数0可读取实际META。2026-10-12的两个软件模式均返回
 settings `native_executors=4`、`native_task_threads=6`；实际Coordinator声明2个executor，
@@ -39,7 +47,8 @@ settings数量不表示物理executor数；未来配置仍须重新探测，不�
 ## 作者循环与结束责任
 
 [薄HTTP函数](imlane_complete_call.py)调用原HTTP函数后恢复作者原event loop，
-使后续作者异步Arrow函数仍能执行。原函数抛出的异常回送为显式transport error；
+使后续作者异步Arrow函数仍能执行。HTTP失败保持transport error，容量、输入身份和作者UDF异常
+回送execution_error，由调用方恢复已知内置类别、保留未知类别的原诊断；
 任意UDF异常与全部原方法错误类型的逐项一致性仍待核对。薄函数不改prompt/parser，
 不重试，不生成虚假的HTTP成功状态。
 
