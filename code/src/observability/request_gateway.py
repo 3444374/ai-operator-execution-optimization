@@ -107,6 +107,7 @@ class ObservationGateway:
         query_identity: Callable[[], str | None] | None = None,
         fresh_upstream_connections: bool = False,
         preserve_http: bool = False,
+        select_upstream: Callable[[GatewayRoute, bytes], GatewayRoute] | None = None,
     ) -> None:
         if not routes:
             raise ValueError("observation gateway requires at least one route")
@@ -131,6 +132,7 @@ class ObservationGateway:
         self._query_identity = query_identity
         self._fresh_upstream_connections = fresh_upstream_connections
         self._preserve_http = preserve_http
+        self._select_upstream = select_upstream
         self._upstream_pool_generation = 0
         self._reset_upstream: Callable[[], Any] | None = None
         self._trace_rows: list[dict[str, object]] = []
@@ -407,6 +409,12 @@ class ObservationGateway:
                     row["before_forward_started_monotonic_ns"] = time.monotonic_ns()
                     if self._before_forward is not None:
                         self._before_forward(route, body)
+                    if self._select_upstream is not None:
+                        selected = self._select_upstream(route, body)
+                        if not isinstance(selected, GatewayRoute) or selected.job_id != route.job_id:
+                            raise ValueError("selected HTTP route must retain the original Job")
+                        row["selected_replica_id"] = selected.endpoint_id
+                        route = selected
                     row["before_forward_completed_monotonic_ns"] = time.monotonic_ns()
                     row["forwarded"] = True
                     row["forwarded_body_sha256"] = body_sha256

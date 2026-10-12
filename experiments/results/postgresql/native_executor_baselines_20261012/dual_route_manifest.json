@@ -1,0 +1,63 @@
+{
+  "schema": "semloom.fixed.request.replica.manifest.v1",
+  "assignments": {
+    "eb17e5e4b3dad48d19006ed0aceb88203ae01ee6825609517c4d9165da1b7a77": "gpu0",
+    "84ad61baaeb3fb2e38513d4402813ce443286c16cb8d538cd841286e07dc5ceb": "gpu0",
+    "8f05fae16b76fc8f9e19427196222371d116e7523283fb7a7b4d7e1c0d257b5c": "gpu0",
+    "6d970a761993a3d07283509fbeb8191840cc5e9eec8da90aa399adb4fa525e10": "gpu1",
+    "d72bef800936ad276d5eed0d614fc02257c36d4f2253076738f9720e31261202": "gpu1",
+    "7b71e487ce5204167bf7a232fc4a4172a4cf51420213f251d5602c8738aa8efb": "gpu1",
+    "034ab4878feb33b60af40e390b57e22c58abba054eaa081b4be7e3fbea88c910": "gpu1"
+  },
+  "row_routes": [
+    {
+      "row_id": "0",
+      "request_values_sha256": "eb17e5e4b3dad48d19006ed0aceb88203ae01ee6825609517c4d9165da1b7a77",
+      "replica_id": "gpu0"
+    },
+    {
+      "row_id": "1",
+      "request_values_sha256": "84ad61baaeb3fb2e38513d4402813ce443286c16cb8d538cd841286e07dc5ceb",
+      "replica_id": "gpu0"
+    },
+    {
+      "row_id": "2",
+      "request_values_sha256": "84ad61baaeb3fb2e38513d4402813ce443286c16cb8d538cd841286e07dc5ceb",
+      "replica_id": "gpu0"
+    },
+    {
+      "row_id": "3",
+      "request_values_sha256": "8f05fae16b76fc8f9e19427196222371d116e7523283fb7a7b4d7e1c0d257b5c",
+      "replica_id": "gpu0"
+    },
+    {
+      "row_id": "4",
+      "request_values_sha256": "6d970a761993a3d07283509fbeb8191840cc5e9eec8da90aa399adb4fa525e10",
+      "replica_id": "gpu1"
+    },
+    {
+      "row_id": "5",
+      "request_values_sha256": "d72bef800936ad276d5eed0d614fc02257c36d4f2253076738f9720e31261202",
+      "replica_id": "gpu1"
+    },
+    {
+      "row_id": "6",
+      "request_values_sha256": "7b71e487ce5204167bf7a232fc4a4172a4cf51420213f251d5602c8738aa8efb",
+      "replica_id": "gpu1"
+    },
+    {
+      "row_id": "7",
+      "request_values_sha256": "034ab4878feb33b60af40e390b57e22c58abba054eaa081b4be7e3fbea88c910",
+      "replica_id": "gpu1"
+    }
+  ],
+  "row_occurrences_per_query": 8,
+  "replica_requests_per_query": {
+    "gpu0": 4,
+    "gpu1": 4
+  },
+  "single_gpu_source_commit": "9c2fdefac94811b18a1f6f097a855786350fe31f",
+  "model_manifest_sha256": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+  "routing_has_load_feedback": false,
+  "duplicate_input_rows_share_replica": true
+}

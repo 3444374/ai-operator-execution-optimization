@@ -37,3 +37,11 @@ SQL查询完成时间分别保存；采样窗口未捕获短任务时保留采�
 生成任务用答案质量、非空输出、截断与失败解释正确吞吐；embedding任务说明向量维度、数值差异与
 相应质量验证。未采集字段记录原因，重复与失败分别保留。研究中的指标选择依据见
 [指标调研](../../../docs/research/evaluation_metrics_survey_20260731.md#观察变量选择)。
+
+A finite replica experiment can pass `select_upstream` to select a declared
+`GatewayRoute` before the single upstream send. The default has no selection.
+The Job remains unchanged, the trace records `selected_replica_id`, and HTTP bytes,
+errors and the zero-retry policy retain the existing transport behavior.
+[FixedRequestRoutes](../experiments/fixed_request_routes.py) uses an immutable
+complete-request JSON digest manifest; it reads no capacity or service-load state.
+It is a common transport configuration, independent of SemLoom or any supplier scheduler.

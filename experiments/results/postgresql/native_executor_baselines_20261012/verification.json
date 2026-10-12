@@ -223,5 +223,27 @@
     },
     "engineering_only": true,
     "multi_gpu_run": false
+  },
+  "fixed_replica_route_software": {
+    "local_gateway_regression_tests": 30,
+    "local_fixture_posts": 39,
+    "server_route_tests": 6,
+    "server_route_fixture_posts": 11,
+    "server_six_lotus_path_fixture_posts": 12,
+    "fixture_cumulative": 62,
+    "fixture_cap": 64,
+    "passed": true,
+    "models": 0,
+    "GPU": 0,
+    "retries": 0,
+    "fixed_route_per_eight_rows": {
+      "gpu0": 4,
+      "gpu1": 4
+    },
+    "source_prequalification_archive_sha256": "6d7b9fd32153c3b5ee286fc416ef18023bd3143ac8081d56d623055e6195ec2d",
+    "qualified_source_sha256": {
+      "code/src/observability/request_gateway.py": "39d1c4930829cc8ded2b6b6fb57ff3369e99d9ea3baa5011503a1458575d50bc",
+      "code/src/experiments/fixed_request_routes.py": "b2bacd594bd58f9f20f2cc4f2a4ccedfea22fe907206004ded0a1c3029da6403"
+    }
   }
 }

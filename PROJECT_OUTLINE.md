@@ -3,7 +3,7 @@
 2026-10-12工程接续：[原生执行统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)完成三方法IMLane两种作者模式的软件消费与常驻复用；
 同driver Daft初始化修复通过实际库检查。新独立单GPU轮六条LOTUS路径18查询／144真实POST通过，原请求、parser与消费相同；
 每条测量n=2查询／16请求，人工输入不支持任务质量、饱和或稳定尾延迟。较早24POST／32名额失败轮独立保留。
-双GPU仅有[288次候选方案](experiments/plans/语义系统对照.md#lotus-two-gpu)，尚未运行；DuckDB／Sema模型比较仍未完成。
+双GPU[独立有界检查](experiments/plans/语义系统对照.md#lotus-two-gpu)已获授权、公共固定路由软件资格通过，模型尚未启动；DuckDB／Sema模型比较仍未完成。
 
 更新时间：2026-10-12
 

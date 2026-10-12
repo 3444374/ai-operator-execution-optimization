@@ -7,7 +7,7 @@
 新独立单GPU轮`lotus-six-model01/attempt02`六条LOTUS路径18查询／144模型POST全部通过，三种计数一致、0错误／超时／重试及自有资源退出核对通过。
 完整18查询／144请求原值可从同一报告离线复算；人工8行、每条测量n=2／16、固定路径次序，只支持真实模型接线，P99为样本最大值。
 本轮192上限占用144、剩48未用；旧轮24实际／32占用独立保留，累计168实际／176占用。首次连接相关启动失败0POST／0分配及其退出记录保留。
-双GPU方案尚未执行，不把单GPU结果外推为双副本收益；DuckDB／Sema真实模型保持未完成。
+双GPU共同固定路由通过36项本机／服务器控制测试和六条实际LOTUS路径软件消费，累计62POST／64上限、模型0；新独立模型轮仍待启动，不外推单卡收益，DuckDB／Sema模型未完成。
 
 
 2026-10-12：[Sema后置Daft、Ray Data和IMLane检查](postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
