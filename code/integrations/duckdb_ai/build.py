@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     build.mkdir(parents=True, exist_ok=True)
     extension_config = build / 'semloom-extension.cmake'
     extension_config.write_text('duckdb_extension_load(ai SOURCE_DIR "' + source.as_posix()
-                                + '" EXTENSION_VERSION 0.4.14-native1)\n')
+                                + '" EXTENSION_VERSION ' + identity['binary_version'] + ')\n')
     # Preserve DuckDB's own metadata appender and dependent yyjson/re2 targets.
     run(['cmake', '-S', str(duckdb), '-B', str(build), '-G', 'Ninja',
          '-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_CXX_STANDARD=17', '-DBUILD_UNITTESTS=OFF', '-DBUILD_SHELL=OFF',

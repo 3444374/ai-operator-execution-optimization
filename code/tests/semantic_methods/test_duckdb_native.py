@@ -67,7 +67,7 @@ class DuckDBNativeConversionTests(unittest.TestCase):
     def test_complete_payload_headers_timeout_and_reverse_association_are_preserved(self):
         graph = _Graph([self.outcome(c) for c in reversed(self.calls)])
         result = list(DuckDBNativeExecutor(graph)(self.calls, lambda: False))
-        self.assertEqual([r.call_id for r in result], ['call-2', 'call-1', 'call-0'])
+        self.assertEqual([r.call_id for r in result], ['call-0', 'call-1', 'call-2'])
         self.assertEqual([(r.body, r.http_status, r.elapsed_ms) for r in result],
                          [(b'not-json\x00\xff', 429, -1)] * 3)
         for sent, original in zip(graph.calls[0][0], self.calls):
@@ -108,6 +108,18 @@ class DuckDBNativeConversionTests(unittest.TestCase):
         cancelled[0] = True
         with self.assertRaises(InterruptedError):
             next(iterator)
+        self.assertEqual(graph.stream.close_calls, 1)
+
+    def test_cancel_during_restored_prefix_stops_its_pending_suffix(self):
+        graph = _Graph([self.outcome(c) for c in reversed(self.calls)])
+        adapter = DuckDBNativeExecutor(graph)
+        cancelled = [False]
+        stream = adapter(self.calls, lambda: cancelled[0])
+        self.assertEqual(next(stream).call_id, 'call-0')
+        cancelled[0] = True
+        with self.assertRaises(InterruptedError):
+            next(stream)
+        self.assertEqual(adapter.last_delivered_count, 1)
         self.assertEqual(graph.stream.close_calls, 1)
 
     def test_native_fatal_stop_closes_graph_without_consuming_suffix(self):
@@ -151,7 +163,7 @@ class DuckDBNativeConversionTests(unittest.TestCase):
     def test_backend_and_wall_timeout_reject_invalid_values(self):
         graph = _Graph([])
         graph.backend = 'semloom'
-        with self.assertRaisesRegex(ValueError, 'daft or ray-data'):
+        with self.assertRaisesRegex(ValueError, 'daft, ray or ray-data'):
             DuckDBNativeExecutor(graph)
         graph.backend = 'daft'
         for timeout in (0, -1, 121, True, float('inf'), float('nan')):
@@ -166,6 +178,7 @@ class _ExpandedFixture(existing._FixtureHandler):
         prompt = value['messages'][-1]['content']
         with self.server.lock:
             self.server.records.append((raw, self.headers.get('Authorization')))
+            self.server.total_requests += 1
             if not hasattr(self.server, 'header_records'):
                 self.server.header_records = []
             self.server.header_records.append((self.headers.get('Accept-Encoding'), self.headers.get('User-Agent')))
@@ -178,6 +191,12 @@ class _ExpandedFixture(existing._FixtureHandler):
             encoding = None
             if prompt == 'http-error':
                 status, body = 429, b'{"error":{"message":"fixture failure","code":"fixture-limit"},"extra":1}'
+            elif prompt in ('slow-first-error', 'fast-second-error'):
+                if prompt == 'slow-first-error':
+                    if not self.server.second_error_sent.wait(15):
+                        raise RuntimeError('dual-error fixture did not observe its second request')
+                    time.sleep(0.05)
+                status, body = 429, json.dumps({'error': {'message': prompt, 'code': 'fixture-order'}}).encode()
             elif prompt == 'http-not-json':
                 status, body = 503, b'fixture unavailable'
             elif prompt == 'malformed':
@@ -208,6 +227,8 @@ class _ExpandedFixture(existing._FixtureHandler):
             self.end_headers()
             try:
                 self.wfile.write(body)
+                if prompt == 'fast-second-error':
+                    self.server.second_error_sent.set()
             except (BrokenPipeError, ConnectionResetError):
                 pass
         finally:
@@ -218,11 +239,16 @@ class _ExpandedFixture(existing._FixtureHandler):
 BACKEND = os.environ.get('DUCKDB_NATIVE_BACKEND')
 
 
-@unittest.skipUnless(existing.EXTENSION and BACKEND in ('daft', 'ray-data'),
+@unittest.skipUnless(existing.EXTENSION and BACKEND in ('daft', 'ray', 'ray-data'),
                      'requires pinned compiled extension and an explicit native graph backend')
 class DuckDBNativeGraphLibraryTests(unittest.TestCase):
-    setUp = existing.DuckDBNativeLibraryTests.setUp
     select = existing.DuckDBNativeLibraryTests.select
+
+    def setUp(self):
+        existing.DuckDBNativeLibraryTests.setUp(self)
+        self.server.RequestHandlerClass = _ExpandedFixture
+        self.server.total_requests = 0
+        self.server.second_error_sent = threading.Event()
 
     def native(self):
         from src.baselines.text.frameworks.native_calls import NativeCallExecutor
@@ -306,6 +332,55 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertEqual(len(self.server.records), 3)
         self.assertIsNone(self.bridge.last_error)
 
+    def test_fast_second_failure_keeps_first_input_error_and_try_usage(self):
+        prompts = ['slow-first-error', 'fast-second-error']
+        self.connection.execute('SET duckdb_ai_max_concurrent_requests=4')
+        self.connection.execute('SET duckdb_ai_timeout_seconds=20')
+        before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
+        with self.assertRaisesRegex(Exception, 'slow-first-error') as control:
+            self.select(prompts, try_complete=False)
+        native_failed_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
+        self.assertEqual(native_failed_usage, 2)
+        self.server.second_error_sent.clear()
+        before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
+        control_try = self.select(prompts)
+        native_try_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
+        self.native()
+        self.server.second_error_sent.clear()
+        before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
+        with self.assertRaises(type(control.exception)) as selected:
+            self.select(prompts, try_complete=False)
+        self.assertEqual(str(selected.exception), str(control.exception))
+        self.assertEqual(self.adapter.last_delivered_count, 1)
+        selected_failed_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
+        self.graph_observations.append(dict(event='matched-parallel-fatal-usage',
+                                           native_failed_usage=native_failed_usage,
+                                           selected_failed_usage=selected_failed_usage,
+                                           close_report=self.graph.last_close_report))
+        self.server.second_error_sent.clear()
+        before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
+        self.assertEqual(self.select(prompts), control_try)
+        selected_try_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
+        self.assertEqual(selected_try_usage, native_try_usage)
+        self.assertEqual(selected_try_usage, 2)
+
+    def test_provider_failure_before_later_preparation_failure_keeps_first_input_error(self):
+        native_errors = []
+        for prompts in (['http-error', ''], ['ok', ''], ['', 'http-error']):
+            before = self.server.total_requests
+            with self.assertRaises(Exception) as error:
+                self.select(prompts, try_complete=False)
+            native_errors.append((type(error.exception), str(error.exception),
+                                  self.server.total_requests - before))
+        self.native()
+        for prompts, (error_type, message, requests) in zip(
+                (['http-error', ''], ['ok', ''], ['', 'http-error']), native_errors):
+            before = self.server.total_requests
+            with self.subTest(prompts=prompts), self.assertRaises(error_type) as error:
+                self.select(prompts, try_complete=False)
+            self.assertEqual(str(error.exception), message)
+            self.assertEqual(self.server.total_requests - before, requests)
+
     def test_original_gzip_and_redirect_behavior_is_preserved(self):
         self.server.RequestHandlerClass = _ExpandedFixture
         prompts = ['gzip-if-accepted', 'redirect']
@@ -372,7 +447,11 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertIsNone(self.bridge.last_error)
         # Native graphs may have submitted work before the first result is observable.
         # The assertion is on native parser consumption, never a SemLoom accepted prefix.
-        self.assertEqual(self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0], 1)
+        consumed, errors = self.connection.execute(
+            "SELECT COUNT(*),COUNT(*) FILTER (WHERE status='error') FROM ai_usage()").fetchone()
+        self.assertEqual(errors, 1)
+        self.assertEqual(consumed, self.adapter.last_delivered_count)
+        self.assertLessEqual(consumed, 33)
         self.observe_graph('native-parser-stop')
         self.wait_fixture_idle()
         self.assertEqual(self.select(['clean'])[0][1]['response'], 'out:clean')

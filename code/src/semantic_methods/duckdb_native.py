@@ -11,24 +11,26 @@ from .duckdb_ai import DuckDBCall, DuckDBResponse, DuckDBSemLoomBridge, MAX_RESP
 class DuckDBNativeExecutor:
     """Convert complete calls and responses without changing DuckDB's parser.
 
-    The supplied NativeCallExecutor owns its Daft Native or Ray Data graph.
+    The supplied NativeCallExecutor owns its Daft Native, Ray Core or Ray Data graph.
     Closing this iterator closes that graph; no SemLoom execution is created.
     """
 
     def __init__(self, executor, *, timeout_s: float = 120):
-        if executor.backend not in ('daft', 'ray-data'):
-            raise ValueError('DuckDB native execution requires daft or ray-data')
+        if executor.backend not in ('daft', 'ray', 'ray-data'):
+            raise ValueError('DuckDB native execution requires daft, ray or ray-data')
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError('DuckDB native batch timeout must be positive and at most 120 seconds')
         self.executor = executor
         self.backend = executor.backend
         self.timeout_s = timeout_s
         self.last_cleanup_error: str | None = None
+        self.last_delivered_count = 0
 
     def __call__(self, calls: tuple[DuckDBCall, ...], cancelled: Callable[[], bool]):
         from src.baselines.text.frameworks.native_calls import NativeCall
 
         self.last_cleanup_error = None
+        self.last_delivered_count = 0
         if not calls:
             return
         if cancelled():
@@ -51,6 +53,8 @@ class DuckDBNativeExecutor:
         if len(positions) != len(calls):
             raise ValueError('DuckDB batch repeats a call identity')
         received: set[str] = set()
+        pending: dict[str, DuckDBResponse] = {}
+        next_call = 0
         iterator = None
         primary_error = None
         try:
@@ -65,14 +69,25 @@ class DuckDBNativeExecutor:
                 if outcome.transport_error:
                     if outcome.response is not None:
                         raise ValueError('DuckDB native response contains both transport error and HTTP response')
-                    yield DuckDBResponse(outcome.call_id, b'', 0, -1, outcome.transport_error)
+                    response = DuckDBResponse(outcome.call_id, b'', 0, -1, outcome.transport_error)
                 elif outcome.response is None:
                     raise ValueError('DuckDB native response lacks HTTP response or transport error')
                 else:
                     # The C++ FinishCompletion owns JSON, usage, truncation and provider error interpretation.
-                    yield DuckDBResponse(outcome.call_id, outcome.response.body,
-                                         outcome.response.status_code, -1)
-            if len(received) != len(calls):
+                    response = DuckDBResponse(outcome.call_id, outcome.response.body,
+                                              outcome.response.status_code, -1)
+                pending[outcome.call_id] = response
+                # Native workers parse on completion, but AiCompletionFunction
+                # selects the first failing input job after joining its workers.
+                # Restoring this order here keeps that final exception selection.
+                while next_call < len(calls) and calls[next_call].call_id in pending:
+                    if cancelled():
+                        raise InterruptedError('DuckDB query cancelled')
+                    response = pending.pop(calls[next_call].call_id)
+                    next_call += 1
+                    self.last_delivered_count += 1
+                    yield response
+            if len(received) != len(calls) or pending or next_call != len(calls):
                 raise ValueError('DuckDB native response is incomplete')
         except GeneratorExit:
             raise
