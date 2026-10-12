@@ -12,6 +12,11 @@ end only when aiohttp Response.write_eof returns successfully. This is a proxy
 HTTP interval; it excludes earlier SDK work, client receipt and client parsing.
 write_eof completion means local transport writing/flow control completed, not a
 peer acknowledgement. Missing stages remain None after failure.
+
+``preserve_http=True`` passes complete HTTP response bytes and repeated headers
+without decompression or following redirects. Upstream transport failures close
+the caller connection and retain their error type in the trace. This mode does
+not rewrite Location or provide a general proxy route for redirected requests.
 """
 
 from __future__ import annotations
@@ -101,6 +106,7 @@ class ObservationGateway:
         after_forward: Callable[[GatewayRoute, bytes, bytes, int], None] | None = None,
         query_identity: Callable[[], str | None] | None = None,
         fresh_upstream_connections: bool = False,
+        preserve_http: bool = False,
     ) -> None:
         if not routes:
             raise ValueError("observation gateway requires at least one route")
@@ -113,6 +119,8 @@ class ObservationGateway:
             raise ValueError("gateway request timeout must be finite and positive")
         if not isinstance(fresh_upstream_connections, bool):
             raise ValueError("fresh upstream connections must be a boolean diagnostic option")
+        if not isinstance(preserve_http, bool):
+            raise ValueError("HTTP response preservation must be a boolean option")
         self._routes = {(route.job_id, route.endpoint_id): route for route in routes}
         self._trace_path = trace_path
         self._bind_host = bind_host
@@ -122,6 +130,7 @@ class ObservationGateway:
         self._after_forward = after_forward
         self._query_identity = query_identity
         self._fresh_upstream_connections = fresh_upstream_connections
+        self._preserve_http = preserve_http
         self._upstream_pool_generation = 0
         self._reset_upstream: Callable[[], Any] | None = None
         self._trace_rows: list[dict[str, object]] = []
@@ -266,6 +275,12 @@ class ObservationGateway:
                     row["request_terminal_monotonic_ns"] = completed
                     row["response_write_status"] = "completed"
 
+            class DisconnectedResponse(web.StreamResponse):
+                """Let aiohttp finish a closed connection without sending HTTP."""
+
+                async def prepare(self, _request: Any) -> Any:
+                    raise ConnectionResetError("upstream did not return a complete HTTP response")
+
             async def headers_send_started(_session: Any, context: Any, _params: Any) -> None:
                 row = context.trace_request_ctx
                 # aiohttp's documented headers-sent signal runs at entry to its
@@ -297,6 +312,8 @@ class ObservationGateway:
                     signal.append(connection_signal(name))
                 return ClientSession(connector=connector,
                     timeout=ClientTimeout(total=self._request_timeout_s),
+                    auto_decompress=not self._preserve_http,
+                    skip_auto_headers=("Accept-Encoding",) if self._preserve_http else (),
                     trace_configs=[trace_config])
 
             async def reset_upstream() -> None:
@@ -359,6 +376,8 @@ class ObservationGateway:
                 }
                 if self._query_identity is not None:
                     row["query_id"] = self._query_identity()
+                if self._preserve_http:
+                    row.update(preserve_http=True, transport_error="", caller_connection_closed=False)
                 # The evidence buffer also retains failures during body reading.
                 # No synchronous disk I/O is added to request handling.
                 trace_rows.append(row)
@@ -381,7 +400,8 @@ class ObservationGateway:
                 row["dispatch_delay_s"] = max(0.0, upstream_start_epoch_s - received_epoch_s)
                 upstream_status = 0
                 response_body = b""
-                response_headers: dict[str, str] = {}
+                response_headers: Any = {}
+                response_reason = None
                 phase = "before_forward"
                 try:
                     row["before_forward_started_monotonic_ns"] = time.monotonic_ns()
@@ -396,6 +416,7 @@ class ObservationGateway:
                         route.upstream_url,
                         data=body,
                         headers=headers,
+                        allow_redirects=not self._preserve_http,
                         trace_request_ctx=row,
                     ) as response:
                         upstream_status = int(response.status)
@@ -403,11 +424,23 @@ class ObservationGateway:
                         phase = "upstream_response_read"
                         response_body = await response.read()
                         row["upstream_response_body_read_completed_monotonic_ns"] = time.monotonic_ns()
-                        response_headers = {
-                            name: value
-                            for name, value in response.headers.items()
-                            if name.lower() not in _HOP_BY_HOP_HEADERS
-                        }
+                        if self._preserve_http:
+                            # web.Response accepts repeated header pairs. Content-Length
+                            # describes the unchanged encoded body, so keep it too.
+                            response_headers = [
+                                (name.decode("utf-8", "surrogateescape"),
+                                 value.decode("utf-8", "surrogateescape"))
+                                for name, value in response.raw_headers
+                                if name.lower() == b"content-length"
+                                or name.decode("ascii").lower() not in _HOP_BY_HOP_HEADERS
+                            ]
+                            response_reason = response.reason
+                        else:
+                            response_headers = {
+                                name: value
+                                for name, value in response.headers.items()
+                                if name.lower() not in _HOP_BY_HOP_HEADERS
+                            }
                         phase = "upstream_response_release"
                 except asyncio.CancelledError as error:
                     _record_failure(row, error, phase)
@@ -415,6 +448,14 @@ class ObservationGateway:
                     raise
                 except Exception as error:  # third-party transport boundary
                     _record_failure(row, error, phase)
+                    if self._preserve_http and phase != "before_forward":
+                        row.update(upstream_status=upstream_status, client_status=0,
+                            transport_error=type(error).__name__,
+                            request_terminal_monotonic_ns=time.monotonic_ns())
+                        if request.transport is not None:
+                            request.transport.close()
+                            row["caller_connection_closed"] = True
+                        return DisconnectedResponse()
                     upstream_status = 502
                     response_body = json.dumps(
                         {"error": "observation gateway upstream request failed"}
@@ -430,6 +471,7 @@ class ObservationGateway:
                 client_status = upstream_status
                 client_body = response_body
                 client_headers = response_headers
+                client_reason = response_reason
                 try:
                     row["after_forward_started_monotonic_ns"] = time.monotonic_ns()
                     if self._after_forward is not None:
@@ -445,6 +487,7 @@ class ObservationGateway:
                     client_status = 502
                     client_body = b'{"error":"observation callback failed"}'
                     client_headers = {"Content-Type": "application/json"}
+                    client_reason = None
                 usage = _response_usage(response_body)
                 row.update({
                     "response_ready_monotonic_ns": time.monotonic_ns(),
@@ -461,6 +504,7 @@ class ObservationGateway:
                 return ObservedResponse(
                     row,
                     status=client_status,
+                    reason=client_reason,
                     body=client_body,
                     headers=client_headers,
                 )

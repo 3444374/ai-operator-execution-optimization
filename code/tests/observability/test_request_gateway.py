@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
 import json
 import socket
 import struct
@@ -8,7 +9,7 @@ import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from http.client import HTTPConnection
+from http.client import HTTPConnection, RemoteDisconnected
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -96,6 +97,224 @@ class ObservationGatewayTest(unittest.TestCase):
             f"http://127.0.0.1:{self.upstream.server_port}"
             "/v1/chat/completions"
         )
+
+    def _wire_post(self, endpoint: str, body: bytes = b"{}"):
+        url = urlsplit(endpoint)
+        connection = HTTPConnection(url.hostname, url.port, timeout=5)
+        try:
+            connection.request("POST", url.path, body=body,
+                headers={"Content-Type": "application/json"})
+            response = connection.getresponse()
+            return response.status, response.getheaders(), response.read()
+        finally:
+            connection.close()
+
+    def test_preserve_http_keeps_gzip_repeated_headers_and_malformed_error_body(self) -> None:
+        cases = ((200, gzip.compress(b'{"answer":"ok"}', mtime=0), "gzip"),
+                 (429, b"{malformed provider body\xff", None))
+        for status, payload, encoding in cases:
+            with self.subTest(status=status), TemporaryDirectory() as directory:
+                class WireHandler(_UpstreamHandler):
+                    protocol_version = "HTTP/1.1"
+                    calls = []
+
+                    def do_POST(self):
+                        body = self.rfile.read(int(self.headers["Content-Length"]))
+                        type(self).calls.append((self.path, body))
+                        self.send_response(status)
+                        self.send_header("Content-Type", "application/json")
+                        self.send_header("Content-Length", str(len(payload)))
+                        self.send_header("X-Result", "first")
+                        self.send_header("X-Result", "second")
+                        self.send_header("Set-Cookie", "first=1; Path=/")
+                        self.send_header("Set-Cookie", "second=2; Path=/")
+                        if encoding is not None:
+                            self.send_header("Content-Encoding", encoding)
+                        self.end_headers()
+                        self.wfile.write(payload)
+
+                self.upstream.RequestHandlerClass = WireHandler
+                trace = Path(directory) / "gateway.jsonl"
+                observed = []
+                body = b'{"model":"fixture","messages":[]}'
+                with ObservationGateway(
+                    routes=(GatewayRoute("job", "model", self._upstream_url()),),
+                    trace_path=trace, preserve_http=True,
+                    after_forward=lambda route, request_body, response_body, response_status:
+                        observed.append((request_body, response_body, response_status)),
+                ) as gateway:
+                    actual_status, headers, actual_body = self._wire_post(
+                        gateway.endpoint_url("job", "model"), body)
+                    row = gateway.snapshot()[0]
+                self.assertEqual(actual_status, status)
+                self.assertEqual(actual_body, payload)
+                self.assertEqual([value for name, value in headers if name.lower() == "x-result"],
+                    ["first", "second"])
+                self.assertEqual([value for name, value in headers if name.lower() == "set-cookie"],
+                    ["first=1; Path=/", "second=2; Path=/"])
+                self.assertEqual([value for name, value in headers if name.lower() == "content-length"],
+                    [str(len(payload))])
+                self.assertEqual([value for name, value in headers if name.lower() == "content-encoding"],
+                    [encoding] if encoding is not None else [])
+                self.assertEqual(observed, [(body, payload, status)])
+                self.assertEqual(WireHandler.calls, [("/v1/chat/completions", body)])
+                self.assertTrue(row["preserve_http"])
+                self.assertEqual(row["transport_error"], "")
+                self.assertFalse(row["caller_connection_closed"])
+                self.assertEqual(row["upstream_status"], status)
+                self.assertEqual(row["client_status"], status)
+                self.assertEqual(row["response_write_status"], "completed")
+                self.assertEqual(row["upstream_headers_send_count"], 1)
+                self.assertEqual(row["retry_count"], 0)
+
+    def test_preserve_http_leaves_location_unchanged_and_does_not_follow_redirect(self) -> None:
+        location = f"http://127.0.0.1:{self.upstream.server_port}/moved"
+        redirect_body = b'{"redirect":"original"}'
+        final_body = b'{"answer":"followed"}'
+        body = b'{"model":"fixture"}'
+        for preserve in (False, True):
+            with self.subTest(preserve_http=preserve), TemporaryDirectory() as directory:
+                class RedirectHandler(_UpstreamHandler):
+                    protocol_version = "HTTP/1.1"
+                    calls = []
+
+                    def do_POST(self):
+                        received = self.rfile.read(int(self.headers["Content-Length"]))
+                        type(self).calls.append((self.path, received))
+                        moved = self.path == "/moved"
+                        payload = final_body if moved else redirect_body
+                        self.send_response(200 if moved else 307)
+                        self.send_header("Content-Length", str(len(payload)))
+                        if not moved:
+                            self.send_header("Location", location)
+                        self.end_headers()
+                        self.wfile.write(payload)
+
+                self.upstream.RequestHandlerClass = RedirectHandler
+                trace = Path(directory) / "gateway.jsonl"
+                with ObservationGateway(
+                    routes=(GatewayRoute("job", "model", self._upstream_url()),),
+                    trace_path=trace, preserve_http=preserve,
+                ) as gateway:
+                    status, headers, response = self._wire_post(gateway.endpoint_url("job", "model"), body)
+                row = json.loads(trace.read_text())
+                self.assertEqual(status, 307 if preserve else 200)
+                self.assertEqual(response, redirect_body if preserve else final_body)
+                self.assertEqual([value for name, value in headers if name.lower() == "location"],
+                    [location] if preserve else [])
+                self.assertEqual(RedirectHandler.calls,
+                    [("/v1/chat/completions", body)] if preserve else
+                    [("/v1/chat/completions", body), ("/moved", body)])
+                self.assertEqual(row["upstream_headers_send_count"], 1 if preserve else 2)
+                self.assertEqual(row["retry_count"], 0)
+
+    def test_preserve_http_closes_caller_when_upstream_disconnects(self) -> None:
+        class DisconnectingHandler(_UpstreamHandler):
+            protocol_version = "HTTP/1.1"
+            calls = []
+
+            def do_POST(self):
+                body = self.rfile.read(int(self.headers["Content-Length"]))
+                type(self).calls.append((self.path, body))
+                self.close_connection = True
+                self.connection.shutdown(socket.SHUT_RDWR)
+
+        self.upstream.RequestHandlerClass = DisconnectingHandler
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / "gateway.jsonl"
+            after = []
+            with ObservationGateway(
+                routes=(GatewayRoute("job", "model", self._upstream_url()),),
+                trace_path=trace, preserve_http=True,
+                after_forward=lambda *_args: after.append(_args),
+            ) as gateway:
+                with self.assertRaises(RemoteDisconnected):
+                    self._wire_post(gateway.endpoint_url("job", "model"))
+                row = gateway.snapshot()[0]
+            self.assertEqual(DisconnectingHandler.calls, [("/v1/chat/completions", b"{}")])
+            self.assertEqual(after, [])
+            self.assertEqual(row["transport_error"], "ServerDisconnectedError")
+            self.assertEqual(row["error_phase"], "upstream_request")
+            self.assertTrue(row["caller_connection_closed"])
+            self.assertEqual(row["client_status"], 0)
+            self.assertEqual(row["upstream_status"], 0)
+            self.assertEqual(row["status"], "failed")
+            self.assertEqual(row["response_write_status"], "not_started")
+            self.assertIsNone(row["response_write_completed_monotonic_ns"])
+            self.assertIsNotNone(row["request_terminal_monotonic_ns"])
+            self.assertEqual(row["upstream_headers_send_count"], 1)
+            self.assertEqual(row["retry_count"], 0)
+
+    def test_preserve_http_closes_caller_when_upstream_body_times_out(self) -> None:
+        _UpstreamHandler.response_gate = threading.Event()
+        _UpstreamHandler.headers_sent = threading.Event()
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / "gateway.jsonl"
+            with ObservationGateway(
+                routes=(GatewayRoute("job", "model", self._upstream_url()),),
+                trace_path=trace, preserve_http=True, request_timeout_s=.15,
+            ) as gateway:
+                try:
+                    with self.assertRaises(RemoteDisconnected):
+                        self._wire_post(gateway.endpoint_url("job", "model"))
+                    row = gateway.snapshot()[0]
+                finally:
+                    _UpstreamHandler.response_gate.set()
+            self.assertEqual(row["transport_error"], "TimeoutError")
+            self.assertEqual(row["error_phase"], "upstream_response_read")
+            self.assertEqual(row["upstream_response_status"], 200)
+            self.assertEqual(row["upstream_status"], 200)
+            self.assertEqual(row["client_status"], 0)
+            self.assertTrue(row["caller_connection_closed"])
+            self.assertIsNone(row["upstream_response_body_read_completed_monotonic_ns"])
+            self.assertIsNone(row["response_write_completed_monotonic_ns"])
+            self.assertEqual(len(_UpstreamHandler.calls), 1)
+
+    def test_preserve_http_closes_caller_when_upstream_endpoint_is_closed(self) -> None:
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+        with TemporaryDirectory() as directory:
+            trace = Path(directory) / "gateway.jsonl"
+            with ObservationGateway(
+                routes=(GatewayRoute("job", "model", f"http://127.0.0.1:{port}/v1/chat/completions"),),
+                trace_path=trace, preserve_http=True,
+            ) as gateway:
+                with self.assertRaises(RemoteDisconnected):
+                    self._wire_post(gateway.endpoint_url("job", "model"))
+                row = gateway.snapshot()[0]
+            self.assertEqual(row["transport_error"], "ClientConnectorError")
+            self.assertEqual(row["error_phase"], "upstream_request")
+            self.assertEqual(row["client_status"], 0)
+            self.assertTrue(row["caller_connection_closed"])
+            self.assertIsNone(row["upstream_response_status"])
+            self.assertEqual(row["upstream_headers_send_count"], 0)
+            self.assertEqual(row["retry_count"], 0)
+
+    def test_preserve_http_does_not_hide_before_or_after_callback_failures(self) -> None:
+        def reject(*_args):
+            raise ValueError("fixture observation failed")
+        for before in (True, False):
+            with self.subTest(before=before), TemporaryDirectory() as directory:
+                _UpstreamHandler.calls = []
+                trace = Path(directory) / "gateway.jsonl"
+                with ObservationGateway(
+                    routes=(GatewayRoute("job", "model", self._upstream_url()),),
+                    trace_path=trace, preserve_http=True,
+                    before_forward=reject if before else None,
+                    after_forward=None if before else reject,
+                ) as gateway:
+                    status, _headers, body = self._wire_post(gateway.endpoint_url("job", "model"))
+                row = json.loads(trace.read_text())
+                self.assertEqual(status, 502)
+                self.assertIn(b"error", body)
+                self.assertEqual(row["error_type"], "ValueError")
+                self.assertEqual(row["error_phase"], "before_forward" if before else "after_forward")
+                self.assertEqual(row["transport_error"], "")
+                self.assertFalse(row["caller_connection_closed"])
+                self.assertEqual(row["status"], "failed")
+                self.assertEqual(row["response_write_status"], "completed")
+                self.assertEqual(len(_UpstreamHandler.calls), 0 if before else 1)
 
     def test_forwards_exact_body_once_and_records_actual_usage(self) -> None:
         with TemporaryDirectory() as directory:
