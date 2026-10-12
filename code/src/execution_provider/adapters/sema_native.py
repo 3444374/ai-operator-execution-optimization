@@ -219,8 +219,9 @@ class SemaNativeService(SemaRequestService):
                     error = failure
                 else:
                     error.add_note('Sema native iterator cleanup: ' + type(failure).__name__)
-            report = getattr(self.executor, 'last_close_report', None)
+            report = None
             try:
+                report = getattr(self.executor, 'last_close_report', None)
                 report = None if report is None else dict(report)
             except BaseException as failure:
                 cleanup_error = failure
