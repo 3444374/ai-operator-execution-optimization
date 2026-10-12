@@ -10557,3 +10557,8 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 无推理重试；旧8/8账本不变，模型/PG/gateway已清理。提交公开证据后对main执行快进合并，
 不改写原分支历史。正式资源、质量/校准、性能、同查询组合与异步能力仍未完成。
 [完整记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)保存准确测试身份与哈希。
+# 2026-10-12 Sema后置原生执行实施准备
+
+已在[现有总设计](experiments/plans/语义系统对照.md#sema-native-executors)补充并行实施职责与共同验证：
+复用公共完整调用和原Sema服务，新增原生Daft、Ray Data及IMLane后置路径，不改算子策略。
+原请求池仍保留，不能解释为数据库执行器替换；本次准备没有模型调用或GPU占用。
