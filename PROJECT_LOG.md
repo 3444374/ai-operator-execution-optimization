@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-12：补齐Sema入口复审发现的两项生命周期遗漏
+
+- 在原独立分支要求native明确停止证明，并让合成错误写出使用原截止时刻；已过期限关闭连接，保留首错与Core未知责任。
+- [复审修补记录](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)保存本机7项针对性／120项受影响回归与失败原件；本轮服务器、GPU、模型和vendor runtime均0，未推送或改其他owner。
+
 ## 2026-10-12：修订Sema入口正文存储与期限
 
 - 在独立补丁中给HTTP读取预留有限持有数／总字节，并让读取、接纳、执行和写出共用一次期限；Core策略、原提示／parser和native图保持。

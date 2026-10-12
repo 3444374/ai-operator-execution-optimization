@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[Sema入口复审修补](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
+native明确停止证明与全部错误写出期限补齐，本机7项针对性／120项受影响检查通过；新服务器、GPU及模型运行均0，等待独立复审后整合。
+
 2026-10-12：[Sema入口正文与期限修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
 读取前独立预留持有数／总字节，三条服务共用一次handler期限；native图未确认消费停止时继续持有，Core策略和远端未知责任保持。
 本机113项不同检查通过，服务器最终21项通过，含2MiB正文；所有三次软件slice累计126次合成请求，真实模型及性能资格未增加。
