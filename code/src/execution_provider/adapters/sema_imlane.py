@@ -23,6 +23,7 @@ from src.baselines.text.frameworks.native_calls import (
     NativeCall, _call_wire, _outcome_from_wire, outcome_kind,
 )
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+from src.baselines.text.frameworks.imlane_limits import IMLaneBatchLimits
 from .full_response import encode_full_response
 from .sema_native import SemaNativeService
 
@@ -30,6 +31,9 @@ from .sema_native import SemaNativeService
 AUTHOR_COMMIT = '072f8257db80569e42c9f5727d839587df529652'
 _RESULT = b'SEMA_IMLANE_RESULT '
 _META = b'SEMA_IMLANE_META '
+_LIMITS = b'SEMA_IMLANE_LIMITS '
+_STATS = b'SEMA_IMLANE_STATS '
+_ERROR = b'SEMA_IMLANE_ERROR '
 _ENV_NAMES = {'LD_LIBRARY_PATH', 'PATH', 'PYTHONPATH', 'TMPDIR',
               'OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS'}
 
@@ -47,8 +51,12 @@ class SemaIMLaneExecutor:
 
     backend = 'imlane'
 
-    def __init__(self, config_path: Path, options: NativeGraphOptions | None = None):
+    def __init__(self, config_path: Path, options: NativeGraphOptions | None = None, *, limits=None):
         self.options = options or NativeGraphOptions()
+        self.limits = limits or IMLaneBatchLimits()
+        if type(self.limits) is not IMLaneBatchLimits:
+            raise TypeError('IMLane limits requires IMLaneBatchLimits')
+        self.last_preflight = None
         if type(self.options) is not NativeGraphOptions:
             raise ValueError('Sema IMLane requires explicit native execution options')
         self.config_path = Path(config_path).resolve()
@@ -144,10 +152,8 @@ class SemaIMLaneExecutor:
             raise ValueError('Sema IMLane batch requires a finite deadline at most 120 seconds')
         deadline = time.monotonic() + timeout_s
         calls = tuple(calls)
-        if (any(type(call) is not NativeCall for call in calls)
-                or len({call.call_id for call in calls}) != len(calls)
-                or len(calls) > 128 or sum(len(call.payload) for call in calls) > 32 * 1024**2):
-            raise ValueError('Sema IMLane input snapshot exceeds its finite occurrence allowance')
+        self.last_close_report = None
+        self.last_preflight = self.limits.inspect_calls(calls)
         if self.poisoned:
             raise RuntimeError('Sema IMLane executor retained an uncertain previous batch')
         if self._closed or cancelled and cancelled():
@@ -164,6 +170,7 @@ class SemaIMLaneExecutor:
         primary = process = None
         clean = forced = False
         native_settings = None
+        bridge_limits = bridge_stats = None
         self.last_close_report = None
         out = self.work_root / ('batch-' + uuid.uuid4().hex)
         new_private_directory(out)
@@ -179,9 +186,12 @@ class SemaIMLaneExecutor:
                         raise RuntimeError('Sema IMLane requires one live snapshot owner')
                     if time.monotonic() >= deadline:
                         raise TimeoutError('Sema IMLane preparation used the batch deadline')
-                    process = subprocess.Popen([self.config['bridge_binary'],
+                    command = [self.config['bridge_binary'],
                         str(self.config['gateway_port']), self.config['udf_path'],
-                        str(self.config['native_task_threads'])],
+                        str(self.config['native_task_threads'])]
+                    if not self.limits.legacy:
+                        command += self.limits.cpp_arguments()
+                    process = subprocess.Popen(command,
                         stdin=source, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                         env=env, cwd=out, start_new_session=True)
                     self._process = process
@@ -209,6 +219,8 @@ class SemaIMLaneExecutor:
                             if line.startswith(_RESULT):
                                 if native_settings is None:
                                     raise ValueError('Sema IMLane result preceded native settings')
+                                if not self.limits.legacy and bridge_limits is None:
+                                    raise ValueError('IMLane configured bridge did not confirm its capacity')
                                 outcome = _outcome_from_wire(line[len(_RESULT):])
                                 call = expected.get(outcome.call_id)
                                 if call is None or call.row_id != outcome.row_id or outcome.call_id in received:
@@ -217,7 +229,7 @@ class SemaIMLaneExecutor:
                                 size = (len(encode_full_response(outcome.response)) if outcome.response is not None
                                         else len((outcome.transport_error or outcome.execution_error).encode()))
                                 total_bytes += size
-                                if size > call.max_response_bytes or total_bytes > 32 * 1024**2:
+                                if size > call.max_response_bytes or total_bytes > self.limits.max_batch_response_bytes:
                                     raise ValueError('Sema IMLane results exceed their byte allowance')
                                 received.add(outcome.call_id)
                                 yield outcome
@@ -229,6 +241,18 @@ class SemaIMLaneExecutor:
                                                for v in native_settings.values())
                                         or native_settings['native_task_threads'] != self.config['native_task_threads']):
                                     raise ValueError('Sema IMLane native settings are invalid')
+                            elif line.startswith(_LIMITS):
+                                bridge_limits = json.loads(line[len(_LIMITS):])
+                                from dataclasses import asdict
+                                if bridge_limits != asdict(self.limits):
+                                    raise ValueError('IMLane C++ capacity differs from the selected Python profile')
+                            elif line.startswith(_STATS):
+                                bridge_stats = json.loads(line[len(_STATS):])
+                            elif line.startswith(_ERROR):
+                                failure = json.loads(line[len(_ERROR):])
+                                if failure.get('error_type') != 'ValueError' or type(failure.get('message')) is not str:
+                                    raise ValueError('IMLane bridge error record is invalid')
+                                raise ValueError(redact_text(failure['message'])[:4096])
                             else:
                                 log.write(redact_text(line.decode(errors='replace')) + '\n')
                         if eof and buffer:
@@ -243,6 +267,11 @@ class SemaIMLaneExecutor:
                     raise RuntimeError('Sema IMLane bridge did not complete every submitted occurrence')
                 if native_settings is None:
                     raise ValueError('Sema IMLane bridge did not report actual native settings')
+                if not self.limits.legacy and (bridge_stats is None
+                        or bridge_stats.get('submitted') != len(calls) or bridge_stats.get('delivered') != len(calls)
+                        or type(bridge_stats.get('pending_peak')) is not int
+                        or not 0 <= bridge_stats['pending_peak'] <= self.limits.max_pending_calls):
+                    raise ValueError('IMLane C++ did not confirm complete finite-window consumption')
                 clean = True
         except BaseException as error:
             primary = error
@@ -268,6 +297,8 @@ class SemaIMLaneExecutor:
                     remote_http_stopped='unavailable', coordinator_owner='caller',
                     scheduler_owner='IMLane author implementation')
                 self.last_close_report['native_settings'] = native_settings
+                self.last_close_report.update(snapshot=self.last_preflight, bridge_limits=bridge_limits,
+                                              bridge_stats=bridge_stats)
                 self.last_close_report['concurrency_allowance'] = self.options.concurrency
                 self.poisoned = self.poisoned or not clean
                 self.last_close_report['executor_poisoned'] = self.poisoned

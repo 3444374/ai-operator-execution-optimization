@@ -63,7 +63,7 @@ class IMLaneCallProtocolTests(unittest.TestCase):
         self.assertEqual(self.fixture.server.calls, [])
 
     def test_effective_snapshot_limits_reject_without_split_or_fallback(self):
-        executor = self.executor(max_batch_rows=4096)
+        executor = self.executor(max_batch_rows=128)
         self.assertEqual(executor.max_batch_rows, 128)
         with self.assertRaises(ValueError):
             list(executor.iter_batch([self.fixture.call(i) for i in range(129)]))
@@ -72,6 +72,16 @@ class IMLaneCallProtocolTests(unittest.TestCase):
             list(executor.iter_batch([self.fixture.call()]))
         self.verify.assert_not_called()
         self.assertEqual(self.fixture.server.calls, [])
+
+    def test_explicit_total_row_capacity_is_shared_with_the_delegate(self):
+        executor=self.executor(max_batch_rows=2000)
+        self.assertEqual(executor.max_batch_rows,2000)
+        self.assertIs(executor.delegate.limits,executor.limits)
+        self.assertEqual(executor.limits.max_pending_calls,128)
+        with self.assertRaises(ValueError):
+            list(executor.iter_batch([self.fixture.call(i) for i in range(2001)]))
+        self.verify.assert_not_called()
+        self.assertEqual(self.fixture.server.calls,[])
 
     def test_uncertain_occurrence_persists_across_new_executor_objects(self):
         executor = self.executor(mutation='wire["row_id"]=999')

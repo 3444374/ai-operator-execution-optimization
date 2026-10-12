@@ -12,6 +12,7 @@ import time
 from src.execution_provider.adapters.full_response import encode_full_response
 from .native_calls import NativeCall, outcome_kind, raise_execution_error
 from .prepared_map import NativeGraphOptions
+from .imlane_limits import IMLaneBatchLimits
 from src.execution_provider.adapters.sema_imlane import SemaIMLaneExecutor
 from src.baselines.common.private_artifacts import write_private_json
 
@@ -84,17 +85,21 @@ class IMLaneCallExecutor:
     """Reuse the delivered Sema DBEnd bridge as a complete original-method executor."""
     backend = 'imlane'
 
-    def __init__(self, config, options=None, *, max_batch_rows=128, max_batch_bytes=32 * 1024**2):
+    def __init__(self, config, options=None, *, max_batch_rows=128, max_batch_bytes=32 * 1024**2,
+                 max_pending_calls=128):
         if type(config) is not IMLaneCallConfig:
             raise TypeError('explicit IMLaneCallConfig required')
         if any(type(v) is not int or v < 1 for v in (max_batch_rows, max_batch_bytes)):
             raise ValueError('IMLane batch sizes must be positive integers')
         self.config = config
         self.options = options or NativeGraphOptions(concurrency=8)
-        self.max_batch_rows = min(max_batch_rows, 128)
-        self.max_batch_bytes = min(max_batch_bytes, 32 * 1024**2)
-        self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options)
+        self.limits = IMLaneBatchLimits(max_batch_rows=max_batch_rows,
+            max_input_payload_bytes=max_batch_bytes, max_pending_calls=max_pending_calls)
+        self.max_batch_rows = self.limits.max_batch_rows
+        self.max_batch_bytes = self.limits.max_input_payload_bytes
+        self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits)
         self.last_close_report = None
+        self.last_preflight = None
         self._facts = None
         bridge = self.delegate.config
         self._uncertain = self.delegate.work_root / (
@@ -124,16 +129,15 @@ class IMLaneCallExecutor:
             raise ValueError('IMLane batch timeout must be at most 120 seconds')
         deadline = time.monotonic() + timeout_s
         calls = tuple(calls)
-        if (len(calls) > self.max_batch_rows or any(type(c) is not NativeCall for c in calls)
-                or len({c.call_id for c in calls}) != len(calls)
-                or sum(len(c.payload) for c in calls) > self.max_batch_bytes):
-            raise ValueError('IMLane complete-call snapshot exceeds its effective 128-row/32MiB allowance')
+        self.last_preflight = self.limits.inspect_calls(calls, include_wire=False)
         report = dict(clean=False, graph_consumer_stopped=True, prepared=len(calls), received=0,
                       runtime=self.config.runtime, author_dispatch_started=False,
                       author_batches_drained=False, remote_http_stopped='unavailable',
                       external_coordinator_stopped=False, external_coordinator_requires_cleanup=False,
-                      effective_max_batch_rows=self.max_batch_rows, effective_max_batch_bytes=self.max_batch_bytes)
+                      effective_max_batch_rows=self.max_batch_rows, effective_max_batch_bytes=self.max_batch_bytes,
+                      snapshot=self.last_preflight)
         self.last_close_report = report
+        self.delegate.last_close_report = None
         if cancelled and cancelled():
             raise InterruptedError('IMLane cancelled before author dispatch')
         if not calls:
@@ -157,7 +161,7 @@ class IMLaneCallExecutor:
                 size = (len(encode_full_response(outcome.response)) if outcome.response is not None
                         else len(outcome.transport_error.encode()))
                 total_bytes += size
-                if total_bytes > self.max_batch_bytes:
+                if total_bytes > self.limits.max_batch_response_bytes:
                     raise ValueError('IMLane complete results exceed the requested byte allowance')
                 received += 1
                 report['received'] = received
