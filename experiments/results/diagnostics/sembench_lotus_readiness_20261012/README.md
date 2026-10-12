@@ -5,10 +5,11 @@
 执行器、SDK 响应转换、HTTP 客户端寿命及 IMLane 桥仍由原模块拥有，本切片没有修补这些核心。
 数据库执行、模型质量、共同资源配置和性能比较仍需各自的验证。
 
-**最新软件资格：16 pass、2 unsupported、0 notrun，累计128/144次替身POST。**
+**本切片历史软件资格：16 pass、2 unsupported、0 notrun，累计128/144次替身POST。**
 LOTUS原生、Daft、Ray Data和SemLoom各Q1/Q2/Q3正常；两种IMLane各Q2/Q3正常。
-IMLane原始2000行Q1在当前完整调用适配器发送前拒绝，预算分配及模型POST均0；只确认本适配器
+IMLane原始2000行Q1在当时完整调用适配器发送前拒绝，预算分配及模型POST均0；只确认当时适配器
 有效128行，没有把此值归因于作者底层kernel。全部实际模型／GPU／PG运行仍为0。
+后续[完整2000行调用桥软件检查](../../postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)在两作者模式通过；本切片旧拒绝记录保留，MovieQuery独立128预检仍待发布者接续。
 
 ## 来源与实现
 

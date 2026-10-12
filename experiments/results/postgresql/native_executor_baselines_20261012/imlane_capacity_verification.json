@@ -1,0 +1,824 @@
+{
+  "schema_version": 1,
+  "implementation_commit": "2cca502df43e1401284b33ac14862ba945c7c55d",
+  "integration_base": "1e96935610069d17430c6fb75fe37a75659aa84e",
+  "integration_capacity_commit": "7bb10980032e984f8f60ccaed4732c39bc168a1c",
+  "original_patch_sha256": "01be5a5627b3165f4f486e17c249e4186c22d2c5bcd21647e9625a54023632ad",
+  "seven_files_identical_on_integration_base": true,
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "bridge": {
+    "passed": true,
+    "exit_code": 0,
+    "elapsed_seconds": 10.927368573378772,
+    "fixture_posts": 0,
+    "models": 0,
+    "gpu": 0,
+    "rebuilt_author_system": false,
+    "identity": {
+      "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+      "returncode": 0,
+      "compiler_output": "",
+      "source_sha256": "1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984",
+      "binary_sha256": "b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6",
+      "real_model_requests": 0
+    }
+  },
+  "build_supervisor_report_missing": true,
+  "build_cleanup_recheck_passed": true,
+  "configured_limits": {
+    "max_batch_rows": 2000,
+    "max_input_payload_bytes": 33554432,
+    "max_input_wire_bytes": 50331648,
+    "max_item_payload_bytes": 8388608,
+    "max_pending_calls": 128,
+    "max_batch_response_bytes": 33554432
+  },
+  "q1_measurement": {
+    "total_calls": 2000,
+    "payload_total_bytes": 1500488,
+    "wire_total_without_newlines_bytes": 2647072,
+    "stdin_total_bytes": 2649072,
+    "max_payload_bytes": 902,
+    "max_wire_line_bytes": 1527,
+    "model_id": "Qwen2.5-1.5B-Instruct",
+    "call_id_prefix": "q1-offline:filter:1:",
+    "max_response_bytes": 1048576,
+    "payload_sequence_sha256": "ec6948a91625073ac3d85e901dd51f823b4d0b164415e68a66de8737f8448fd6",
+    "wire_sequence_sha256": "d85a25ca894b6f89ffbd471f7fca8edcbb992a7b4d0123a7ac748994a45f4125",
+    "within_32MiB_payload": true,
+    "within_48MiB_wire": true,
+    "max_call_identity_extra_bytes_bound": 8145110,
+    "models": 0,
+    "gpu": 0,
+    "fixture_posts": 0,
+    "backend_submitted": false,
+    "original_rows": 2000,
+    "csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "raw_sha256": "88eceb0f234a54fd38e874b49e627406434716c6b4096c0925befa0b1213eade",
+    "source_commit": "97af50c59d1eae4e6e6b324414f9111b85a579f2",
+    "model_parameters": {
+      "temperature": 0,
+      "top_p": 1,
+      "max_tokens": 8,
+      "stop": [
+        "\n"
+      ],
+      "num_retries": 0,
+      "max_retries": 0,
+      "timeout": 5
+    }
+  },
+  "server_budget": {
+    "first_start_utc": "2026-10-12T11:01:41.629344+00:00",
+    "hard_deadline_utc": "2026-10-12T11:16:41.629344+00:00",
+    "elapsed_seconds": 783.9927559802309,
+    "wall_limit_seconds": 900,
+    "actual_posts": 4559,
+    "post_limit": 5000,
+    "cpu_scope": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ]
+  },
+  "local_combination": {
+    "capacity_protocol_and_lifecycle": {
+      "tests": 20,
+      "passed": true,
+      "skipped": 0,
+      "http_posts": 4,
+      "counting_evidence": "test_real_keepalive_preserves_occurrences_and_reuses_connection asserts four receipts"
+    },
+    "first_error_and_request_cookie_checks": {
+      "tests": 4,
+      "passed": true,
+      "errors": 0,
+      "failures": 0,
+      "http_posts": 0
+    },
+    "local_actual_posts": 4,
+    "models": 0,
+    "gpu": 0,
+    "earlier_console_http_posts_0_annotation_corrected": true
+  },
+  "total_new_software_posts": 4563,
+  "models": 0,
+  "gpu": 0,
+  "passed": true,
+  "attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "posts": 2259,
+      "cumulative_posts": 2259,
+      "elapsed_from_first_start_seconds": 46.79262220999226
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "posts": 9,
+      "cumulative_posts": 2268,
+      "elapsed_from_first_start_seconds": 214.8752205679193
+    },
+    {
+      "attempt": 3,
+      "passed": true,
+      "posts": 2279,
+      "cumulative_posts": 4547,
+      "elapsed_from_first_start_seconds": 475.8781923209317
+    },
+    {
+      "attempt": 4,
+      "passed": true,
+      "posts": 12,
+      "cumulative_posts": 4559,
+      "elapsed_from_first_start_seconds": 783.9927559802309
+    }
+  ],
+  "modes": {
+    "cpython": {
+      "passed": true,
+      "q1": {
+        "prepared": {
+          "input_rows": 2000,
+          "payload_total_bytes": 1500488,
+          "actual_stdin_bytes": 2657072,
+          "max_payload_bytes": 902,
+          "payload_sequence_sha256": "ec6948a91625073ac3d85e901dd51f823b4d0b164415e68a66de8737f8448fd6",
+          "original_wire_sequence_sha256": "d85a25ca894b6f89ffbd471f7fca8edcbb992a7b4d0123a7ac748994a45f4125",
+          "max_response_bytes": 1048576
+        },
+        "started": true,
+        "completed": true,
+        "original_query_result_rows": 5,
+        "complete_responses": 2000,
+        "distinct_occurrences": 2000,
+        "output_columns": [
+          "reviewId"
+        ],
+        "slow_consumer_seconds": 0.2,
+        "close": {
+          "clean": true,
+          "graph_consumer_stopped": true,
+          "prepared": 2000,
+          "received": 2000,
+          "runtime": "cpython",
+          "author_dispatch_started": true,
+          "author_batches_drained": true,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": false,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 2000,
+            "payload_bytes": 1500488,
+            "stdin_wire_bytes": 2657072,
+            "max_item_payload_bytes_observed": 902,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 128,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 128,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 205428,
+          "coordinator_start_ticks": 295142730,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": 0,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128
+          },
+          "bridge_stats": {
+            "delivered": 2000,
+            "delivered_response_bytes": 1054000,
+            "input_payload_bytes": 1500488,
+            "pending_peak": 128,
+            "stdin_wire_bytes": 2657072,
+            "submitted": 2000
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false,
+          "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        },
+        "original_parser": "LOTUS 1.2.4 sem_filter"
+      },
+      "diagnostic_rows": [
+        128,
+        129
+      ],
+      "duplicate_request_and_occurrence_checks_passed": true,
+      "slow_consumer_seconds": 0.2,
+      "continuous_supply": {
+        "rows": 8,
+        "max_pending_calls": 2,
+        "third_started_before_first_completed": true,
+        "close": {
+          "clean": true,
+          "graph_consumer_stopped": true,
+          "prepared": 8,
+          "received": 8,
+          "runtime": "cpython",
+          "author_dispatch_started": true,
+          "author_batches_drained": true,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": false,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 8,
+            "payload_bytes": 16,
+            "stdin_wire_bytes": 2520,
+            "max_item_payload_bytes_observed": 2,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 2,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 2,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 207974,
+          "coordinator_start_ticks": 295163748,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": 0,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 2
+          },
+          "bridge_stats": {
+            "delivered": 8,
+            "delivered_response_bytes": 4192,
+            "input_payload_bytes": 16,
+            "pending_peak": 2,
+            "stdin_wire_bytes": 2520,
+            "submitted": 8
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false,
+          "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        }
+      },
+      "byte_and_2001_rejections_before_author_submission": true,
+      "execution_error": {
+        "type": "ValueError",
+        "diagnostic": "native complete response exceeds its byte allowance",
+        "close": {
+          "clean": false,
+          "graph_consumer_stopped": true,
+          "prepared": 1,
+          "received": 1,
+          "runtime": "cpython",
+          "author_dispatch_started": true,
+          "author_batches_drained": false,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": true,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 1,
+            "payload_bytes": 2,
+            "stdin_wire_bytes": 229,
+            "max_item_payload_bytes_observed": 2,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 128,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 128,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 208116,
+          "coordinator_start_ticks": 295181622,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": -15,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128
+          },
+          "bridge_stats": null,
+          "concurrency_allowance": 8,
+          "executor_poisoned": true,
+          "author_lane_release": "unconfirmed; caller owns cleanup",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        }
+      },
+      "cancel": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "cpython",
+        "author_dispatch_started": true,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": true,
+        "effective_max_batch_rows": 2000,
+        "effective_max_batch_bytes": 33554432,
+        "snapshot": {
+          "input_rows": 1,
+          "payload_bytes": 2,
+          "stdin_wire_bytes": 224,
+          "max_item_payload_bytes_observed": 2,
+          "configured_limits": {
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128,
+            "max_batch_response_bytes": 33554432
+          },
+          "max_pending_calls": 128,
+          "pending_limit_is_execution_concurrency": false,
+          "wire_byte_scope": "utf8_json_lines_including_newlines",
+          "resident_memory_limit": "not established by encoded-byte capacities"
+        },
+        "coordinator_pid": 208159,
+        "coordinator_start_ticks": 295181799,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": -15,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "bridge_limits": {
+          "max_batch_response_bytes": 33554432,
+          "max_batch_rows": 2000,
+          "max_input_payload_bytes": 33554432,
+          "max_input_wire_bytes": 50331648,
+          "max_item_payload_bytes": 8388608,
+          "max_pending_calls": 128
+        },
+        "bridge_stats": null,
+        "concurrency_allowance": 8,
+        "executor_poisoned": true,
+        "author_lane_release": "unconfirmed; caller owns cleanup",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+      },
+      "normal_after_error_cleanup": true,
+      "normal_after_cancel_cleanup": true,
+      "integration_source_error_cancel_next_passed": true,
+      "integration_source_posts": 6
+    },
+    "ray": {
+      "passed": true,
+      "q1": {
+        "prepared": {
+          "input_rows": 2000,
+          "payload_total_bytes": 1500488,
+          "actual_stdin_bytes": 2657072,
+          "max_payload_bytes": 902,
+          "payload_sequence_sha256": "ec6948a91625073ac3d85e901dd51f823b4d0b164415e68a66de8737f8448fd6",
+          "original_wire_sequence_sha256": "d85a25ca894b6f89ffbd471f7fca8edcbb992a7b4d0123a7ac748994a45f4125",
+          "max_response_bytes": 1048576
+        },
+        "started": true,
+        "completed": true,
+        "original_query_result_rows": 5,
+        "complete_responses": 2000,
+        "distinct_occurrences": 2000,
+        "output_columns": [
+          "reviewId"
+        ],
+        "slow_consumer_seconds": 0.2,
+        "close": {
+          "clean": true,
+          "graph_consumer_stopped": true,
+          "prepared": 2000,
+          "received": 2000,
+          "runtime": "ray",
+          "author_dispatch_started": true,
+          "author_batches_drained": true,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": false,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 2000,
+            "payload_bytes": 1500488,
+            "stdin_wire_bytes": 2657072,
+            "max_item_payload_bytes_observed": 902,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 128,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 128,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 208724,
+          "coordinator_start_ticks": 295182614,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": 0,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128
+          },
+          "bridge_stats": {
+            "delivered": 2000,
+            "delivered_response_bytes": 1054000,
+            "input_payload_bytes": 1500488,
+            "pending_peak": 128,
+            "stdin_wire_bytes": 2657072,
+            "submitted": 2000
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false,
+          "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        },
+        "original_parser": "LOTUS 1.2.4 sem_filter"
+      },
+      "diagnostic_rows": [
+        128,
+        129
+      ],
+      "duplicate_request_and_occurrence_checks_passed": true,
+      "slow_consumer_seconds": 0.2,
+      "continuous_supply": {
+        "rows": 8,
+        "max_pending_calls": 2,
+        "third_started_before_first_completed": true,
+        "close": {
+          "clean": true,
+          "graph_consumer_stopped": true,
+          "prepared": 8,
+          "received": 8,
+          "runtime": "ray",
+          "author_dispatch_started": true,
+          "author_batches_drained": true,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": false,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 8,
+            "payload_bytes": 16,
+            "stdin_wire_bytes": 2520,
+            "max_item_payload_bytes_observed": 2,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 2,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 2,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 208724,
+          "coordinator_start_ticks": 295182614,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": 0,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 2
+          },
+          "bridge_stats": {
+            "delivered": 8,
+            "delivered_response_bytes": 4192,
+            "input_payload_bytes": 16,
+            "pending_peak": 2,
+            "stdin_wire_bytes": 2520,
+            "submitted": 8
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false,
+          "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        }
+      },
+      "byte_and_2001_rejections_before_author_submission": true,
+      "execution_error": {
+        "type": "ValueError",
+        "diagnostic": "native complete response exceeds its byte allowance",
+        "close": {
+          "clean": false,
+          "graph_consumer_stopped": true,
+          "prepared": 1,
+          "received": 1,
+          "runtime": "ray",
+          "author_dispatch_started": true,
+          "author_batches_drained": false,
+          "remote_http_stopped": "unavailable",
+          "external_coordinator_stopped": false,
+          "external_coordinator_requires_cleanup": true,
+          "effective_max_batch_rows": 2000,
+          "effective_max_batch_bytes": 33554432,
+          "snapshot": {
+            "input_rows": 1,
+            "payload_bytes": 2,
+            "stdin_wire_bytes": 229,
+            "max_item_payload_bytes_observed": 2,
+            "configured_limits": {
+              "max_batch_rows": 2000,
+              "max_input_payload_bytes": 33554432,
+              "max_input_wire_bytes": 50331648,
+              "max_item_payload_bytes": 8388608,
+              "max_pending_calls": 128,
+              "max_batch_response_bytes": 33554432
+            },
+            "max_pending_calls": 128,
+            "pending_limit_is_execution_concurrency": false,
+            "wire_byte_scope": "utf8_json_lines_including_newlines",
+            "resident_memory_limit": "not established by encoded-byte capacities"
+          },
+          "coordinator_pid": 208724,
+          "coordinator_start_ticks": 295182614,
+          "actual_coordinator_executors": 2,
+          "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+          "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+          "bridge_stopped": true,
+          "forced": false,
+          "returncode": -15,
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "bridge_limits": {
+            "max_batch_response_bytes": 33554432,
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128
+          },
+          "bridge_stats": null,
+          "concurrency_allowance": 8,
+          "executor_poisoned": true,
+          "author_lane_release": "unconfirmed; caller owns cleanup",
+          "native_settings_are_physical_executor_count": false,
+          "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+          "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+        }
+      },
+      "cancel": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "ray",
+        "author_dispatch_started": true,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": true,
+        "effective_max_batch_rows": 2000,
+        "effective_max_batch_bytes": 33554432,
+        "snapshot": {
+          "input_rows": 1,
+          "payload_bytes": 2,
+          "stdin_wire_bytes": 224,
+          "max_item_payload_bytes_observed": 2,
+          "configured_limits": {
+            "max_batch_rows": 2000,
+            "max_input_payload_bytes": 33554432,
+            "max_input_wire_bytes": 50331648,
+            "max_item_payload_bytes": 8388608,
+            "max_pending_calls": 128,
+            "max_batch_response_bytes": 33554432
+          },
+          "max_pending_calls": 128,
+          "pending_limit_is_execution_concurrency": false,
+          "wire_byte_scope": "utf8_json_lines_including_newlines",
+          "resident_memory_limit": "not established by encoded-byte capacities"
+        },
+        "coordinator_pid": 212111,
+        "coordinator_start_ticks": 295188809,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": -15,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "bridge_limits": {
+          "max_batch_response_bytes": 33554432,
+          "max_batch_rows": 2000,
+          "max_input_payload_bytes": 33554432,
+          "max_input_wire_bytes": 50331648,
+          "max_item_payload_bytes": 8388608,
+          "max_pending_calls": 128
+        },
+        "bridge_stats": null,
+        "concurrency_allowance": 8,
+        "executor_poisoned": true,
+        "author_lane_release": "unconfirmed; caller owns cleanup",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+      },
+      "normal_after_error_cleanup": true,
+      "normal_after_cancel_cleanup": true,
+      "integration_source_error_cancel_next_passed": true,
+      "integration_source_posts": 6
+    }
+  },
+  "cleanup": {
+    "active_owned_processes": [],
+    "active_run_token_processes": [],
+    "remaining_owned_shared_memory": {},
+    "known_pid_start_tick_pairs": 173,
+    "owned_namespaces": 14,
+    "author_binaries_unchanged": {
+      "bin/imlane": true,
+      "bin/backend/py_exec_instance": true,
+      "bin/imlane_fixture_cpp": true
+    },
+    "ssh_master_closed": false
+  },
+  "q1_dbend_query_batches": [
+    {
+      "runtime": "cpython",
+      "author_dbend_batches_for_q1": 1,
+      "batch": {
+        "rows": 2000,
+        "unique_call_ids": 2000,
+        "wire_sha256": "284dc4f1f53c51a3ef34124a7803e2c1d0139e9da0940d28442fcf09906baafd",
+        "batch_directory": "batch-866b277ed1584da78eeb894a5bdf4b7e",
+        "first_call_id": "q1-offline:filter:1:0",
+        "last_call_id": "q1-offline:filter:1:1999"
+      }
+    },
+    {
+      "runtime": "ray",
+      "author_dbend_batches_for_q1": 1,
+      "batch": {
+        "rows": 2000,
+        "unique_call_ids": 2000,
+        "wire_sha256": "0191868cb98536f0ce809564e9af809e0f06f413589a785d36102fb6f6ab5492",
+        "batch_directory": "batch-cb01ed67a1b341e282121a88699c2c30",
+        "first_call_id": "q1-offline:filter:1:0",
+        "last_call_id": "q1-offline:filter:1:1999"
+      }
+    }
+  ],
+  "observations": {
+    "path": "imlane_capacity_observations.tar.gz",
+    "sha256": "c1e49c10fffb945e4c3387c991baf0548287084df2dcbfd8b48b0919d8d4efcf",
+    "bytes": 538452,
+    "members": 84
+  },
+  "retained_failures": [
+    {
+      "scope": "build supervisor",
+      "reason": "timeout ancestor included in own cleanup scan; compiler succeeded; independent cleanup recheck passed"
+    },
+    {
+      "attempt": 1,
+      "reason": "HTTP start time of call 129 was an unsuitable assertion for bridge enqueue continuity",
+      "posts": 2259
+    },
+    {
+      "attempt": 2,
+      "reason": "32-byte per-call delivery limit also rejected the larger error diagnostic; assertion expected a UDF outcome",
+      "posts": 9
+    }
+  ],
+  "not_run": [
+    "real model or GPU",
+    "quality or throughput comparison",
+    "DuckDB/Sema 2000 rows",
+    "all author exception types",
+    "shared-Coordinator query isolation",
+    "full Q1 replay on the integration source (seven capacity files identical; exception/cancel/next paths rechecked)"
+  ],
+  "integration_followup": {
+    "movie_query_precheck": "code/src/experiments/postgresql/sembench_queries.py:156",
+    "owner": "publisher",
+    "action": "replace independent 128-row precheck with the qualified selected bridge capacity; use a new owned configuration pointing at the tested binary",
+    "bridge_binary_sha256": "b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6"
+  }
+}

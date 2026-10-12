@@ -1,7 +1,63 @@
 # 三种原方法的原生执行接入
 
+<a id="imlane-2000-capacity"></a>
+## IMLane原Q1完整2000行软件检查
+
+备份补丁SHA256为`01be5a5627b3165f4f486e17c249e4186c22d2c5bcd21647e9625a54023632ad`，七文件原样提交
+`2cca502df43e1401284b33ac14862ba945c7c55d`；在已发布`1e96935610069d17430c6fb75fe37a75659aa84e`
+上只cherry-pick这七文件得到`7bb10980032e984f8f60ccaed4732c39bc168a1c`，逐文件摘要相同。
+现有作者源码仍为`072f8257db80569e42c9f5727d839587df529652`；仅链接既有patched库，不重建作者系统。
+桥C++源码SHA256为`1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984`，
+二进制SHA256为`b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6`，编译10.927/120秒。
+
+公共IMLane、Sema DBEnd及C++共用`IMLaneBatchLimits`：本次全批2000行、payload32MiB、
+wire48MiB（UTF-8 JSON lines含换行）、单项payload8MiB、待交付128项、累计响应32MiB；
+Q1单项完整HTTP响应额度1MiB。每查询一个DBEnd上下文，在交付后补入下一调用并释放该输入/输出引用。
+作者Lane、Coordinator、CPython与作者Ray继续拥有执行；没有每128行重建进程或整组完成后才继续供给。
+这些编码字节额度不保证聚合RSS。接口与旧128来源见[IMLane说明](../../../../code/integrations/sema/imlane_calls.md)。
+
+原SemBench Q1全量2000调用的payload为1,500,488字节，原stdin为2,649,072字节，最大payload902字节、
+最大原wire行1527字节。实际fixture端口使stdin为2,657,072字节；复原原endpoint后wire摘要
+`d85a25ca894b6f89ffbd471f7fca8edcbb992a7b4d0123a7ac748994a45f4125`完全匹配，payload摘要
+`ec6948a91625073ac3d85e901dd51f823b4d0b164415e68a66de8737f8448fd6`也完全匹配。
+CPython和作者Ray各只有一份2000行DBEnd输入，2000个独立出现身份均收到完整响应；
+原LOTUS1.2.4 `sem_filter`完成全部消费后，原Q1才返回5行。没有截断原评论或提前选5条。
+
+两模式通过128/129行、相同完整请求的独立身份、乱序、慢消费、2001行及单项/累计payload/wire超限拒绝。
+两项待交付额度的实际观察证明第3条已到达HTTP时，慢第1条仍未完成；作者线程/META保持。
+256字节响应额度实际触发作者UDF ValueError并恢复原诊断；已发送取消保留未知远端状态和uncertain记录，
+同实例的新对象拒绝提交。核清并结束自有Coordinator/Ray后，用新实例验证下一正常查询。
+`1e969356`的首错/notes/cookie修复未与七文件重叠；组合源码在两模式另以12次POST复验错误、取消及下一查询。
+
+| 软件运行 | 本次服务器POST | 累计POST | 从首次启动至该次结束（秒） | 结果 |
+|---|---:|---:|---:|---|
+| 首次 | 2259 | 2259 | 46.793 | CPython完整Q1通过；持续供给观察的脚本断言失败 |
+| 第二次 | 9 | 2268 | 214.875 | CPython持续供给通过；32字节诊断预期断言失败 |
+| 第三次 | 2279 | 4547 | 475.878 | 两模式全部目标检查通过，已完成的CPython Q1未重跑 |
+| 组合源码补测 | 12 | 4559 | 783.993 | 两模式错误/取消/下一查询通过，完整Q1未重跑 |
+
+全部服务器操作使用CPU16–23。首次启动11:01:41.629 UTC，原900秒截止11:16:41.629 UTC始终保持；
+最后一次已于首次启动后783.993秒结束。本机原容量/协议/分类13项及组合24项通过、无跳过；
+组合keepalive产生4次POST（本机控制台最初的0注记已更正）。服务器4559＋本机4＝4563/5000，模型/GPU0。
+最终独立核查173组PID/start ticks及14个实例，自有存活进程和共享内存为0；三个既有作者二进制摘要均未变，SSH master保持。
+
+保留编译监督报告缺失：监督脚本将自身timeout父进程纳入清理，编译本身退出0；独立资源复核通过，
+脚本在作者测试前修正，未重跑编译。首轮HTTP到达时刻受作者队列影响，不能代替桥补入时刻；
+两项额度用例另外实际检查持续供给。32字节用例也限制错误诊断，C++交付检查正确返回ValueError，
+脚本却要求UDF错误字段；保留该失败，再以能承接诊断的256字节额度核验原作者错误类别和内容。
+生产代码和原Q1未为通过这些检查改写。
+
+机器事实见[imlane_capacity_verification.json](imlane_capacity_verification.json)，84成员脱敏观测见
+[imlane_capacity_observations.tar.gz](imlane_capacity_observations.tar.gz)，可用[离线复算](recompute_imlane_capacity.py)核对全部POST、
+4000个Q1身份、持续供给、失败来源与清理。原件和旧前置拒绝保持原保存位置。
+MovieQuery的独立128预检仍在`sembench_queries.py:156`，由发布者结合新桥配置接续；本任务不推送native或main。
+未运行真实模型/GPU、质量或性能比较、DuckDB/Sema2000行、全部4096行与共享Coordinator查询隔离。
+完整Q1实库检查属于2cca502d；组合七文件相同，组合异常路径已核，不称完整Q1在组合源码重跑。
+
 <a id="native-release-composition"></a>
 ## 发布组合与本机回归
+
+本节保存截至1e969356的发布组合事实；后续扩容资格见上述独立记录，原Q1前置拒绝仍保留。
 
 2026-10-12恢复本机执行后，以已发布`8fc28d97`在独立检出继续现有native分支。
 独立数据集配置测试`e51f4206`已整合为`6faa05ea`，12项本机回归通过、0跳过并已推送核验。
@@ -16,7 +72,7 @@
 修后规范与需求分别复核，剩余必修各0；新增源码和最终回归摘要逐项一致，隐私／新增链接／文字／diff检查通过。
 已保存实际SDK验证仍属`c4f7f157`：20通过、0跳过、12localhost POST、模型/GPU0，源包摘要核验通过。
 本次本机新服务器、HTTP POST、模型及GPU运行均0；不占用服务器CPU16–23。
-保存的`97af50c5`桥编译退出0，源包与当前C++逐字匹配，源码SHA256及已记录的二进制SHA256进入机器事实。
+保存的`97af50c5`桥编译退出0，源包与该发布组合C++逐字匹配，源码SHA256及已记录的二进制SHA256进入机器事实。
 作者系统未重新构建，新桥二进制未用于作者runtime或2000行检查；这些资格仍pending。
 原Q1 2000行的两条IMLane适配器前置拒绝及历史记录保留，当前128行是适配器接受范围。
 机器事实见[integration_verification.json](integration_verification.json)，首四块输出见[integration_first4.txt](integration_first4.txt)，修前复现见[integration_late_before.txt](integration_late_before.txt)，最终输出见[integration_final.txt](integration_final.txt)。
@@ -56,7 +112,7 @@ native LOTUS完整响应默认从8MiB改为1MiB，与普通Engine接收范围对
 IMLane128来源核到项目`5ee1b90c3`的C++快照检查及Python检查，不是作者系统自然容量。
 桥源码完整stdout输出后释放完成调用`calls[i]`持有的输入/输出；保存的新桥编译成功且源码摘要匹配，作者runtime尚未运行。
 32MiB只限定当前声明的输入/已交付结果编码量，不保证C++待交付输出、Arrow/IPC复制及聚合RSS。
-512/2000行仍unsupported；后续先核作者自然连续投递/消费和全部暂存责任，不改变作者并发或添加全批屏障。
+该历史128行桥的512/2000目标未支持；新增完整2000行软件资格见上述独立记录，作者并发保持。
 
 本轮在独立分支`codex/native-execution-adapters`整合原LOTUS、DuckDB AI与Sema的方法接点。
 旧主及三个原子任务工作树保持只读，原始成功／失败与私有环境继续保留。
@@ -77,7 +133,7 @@ Sema的HTTP序号只表示抵达服务的请求，不代表数据库源行；原
 Ray Core静态actor拓扑继续作为`diagnostic_reference`单列；IMLane作者Ray使用作者执行器，名称与Ray Data分开。
 配置与完整调用说明见[IMLane接口](../../../../code/integrations/sema/imlane_calls.md)，
 共同单查询／常驻入口见[CLI说明](../../../../code/scripts/README.md#native-adapter-query)。
-IMLane有效128行／32MiB输入，超额整体拒绝；原C++桥未提供聚合32MiB驻留输出保证。
+IMLane默认128行；显式2000行新桥已取得上述软件资格，超额拒绝；聚合RSS仍没有32MiB保证。
 作者IPC的Job ID仍为空，跨查询公平、独立取消、任意UDF异常及全部传输异常类型一致性尚未证明。
 
 ## 软件与构建事实

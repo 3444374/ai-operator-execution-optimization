@@ -1,23 +1,31 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[IMLane完整2000行调用桥](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
+三层统一有限行数、payload/wire、单项、待交付及累计响应额度；每查询一个DBEnd上下文，交付后释放并补入下一调用。
+固定2cca502d在两作者模式通过128/129/原Q1完整2000调用、重复身份、乱序慢消费、超限、错误取消及清理后下一查询。
+七文件原样cherry-pick到1e969356形成7bb10980，组合错误/取消/下一查询复验12POST通过。
+服务器4559、本机4、合计4563/5000软件POST；编译10.927/120秒，作者测试从首次启动计时783.993/900秒。
+本机13项及组合24项无失败/跳过，自有进程/共享内存归零、作者二进制未变；旧失败证据保留，模型/GPU0。
+MovieQuery独立128预检仍由发布者接续；真实模型、质量、性能、4096行及共享Coordinator查询隔离尚未验证。
+
 2026-10-12：[原生消费关闭诊断修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
 提前关闭后保留线程附加错误，已有首错优先；5项本机图替身回归通过，HTTP／模型0。
 远端完成未知与旧144次模型来源保持，实际厂商库异常路径尚待复验。
 五条LOTUS替换批次已共用固定SDK响应重放入口，原LOTUS保持；11项控制与2项入口检查通过。
 固定SDK差分及既有SDK清理共13项因本机缺依赖跳过，不将源码共用视为完整异常资格。
-IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分类检查通过，实际作者资格pending。
+IMLane执行错误与传输错误已区分，历史5项作者UDF包装/Arrow替身分类检查通过；新增实际作者检查见上述2000行记录。
 共享SDK客户端按替换批次复用，3项入口/关闭检查通过；本机缺固定SDK依赖，已保存c4f7f157的SDK资格见下段，最新组合未在本机运行固定SDK。
 固定c4f7f157服务器20项真实SDK/清理检查通过、12次localhost POST、模型/GPU0且自有进程退出。
 原生kernel按query/Daft loop及Ray原HTTP批次寿命复用客户端，6项本机生命周期检查通过；
 4次真实localhost调用复用同一连接，原生图新池资格pending，Ray声明C与实际图参数分别记录。
-LOTUS共同接收容量/期限profile已实现，6项本机检查通过，IMLane式2000行目标在准备/执行前拒绝；
-IMLane128源于自有桥检查，C++源码及时释放完成调用的输入/输出引用；保存的97af50c5新桥编译成功且源码摘要匹配，作者runtime及2000行资格仍pending。
+LOTUS共同接收容量/期限profile已实现，历史6项本机检查通过，旧IMLane式2000行目标准备前拒绝仍保留；
+IMLane128源于自有桥检查，97af50c5及2cca502d的编译来源分别保存，新配置2000行资格见上述记录。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。
 前四臂各三条、两种IMLane各Q2/Q3正常；原2000行IMLane Q1两项明确拒绝，软件16 pass／2 unsupported／0 notrun。
 累计128次替身POST，作者超时/取消及原生授权错误检查通过，进程/共享内存归零；旧失败/时间窗停止保留，模型未运行。
-当前完整调用适配器有效128行，不切块或把此值归因底层kernel；CLI原生控制按臂声明，不强升级低并发。
+该历史轮完整调用适配器有效128行，不切块或把此值归因底层kernel；CLI原生控制按臂声明，不强升级低并发。
 该切片已纳入原生发布分支，随后追加共享SDK解释、每批客户端复用、消费关闭诊断及IMLane执行错误分类。
 首四块已独立发布；后两块追加HTTP连接寿命及容量期限，并修正独立HTTP首错和请求内重定向cookie行为。
 最终组合本机86项通过、14项缺LOTUS／OpenAI／LiteLLM依赖跳过，缺项不计为通过；新服务器／HTTP／模型／GPU运行0。

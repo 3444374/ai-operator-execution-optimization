@@ -144,7 +144,9 @@ native入口在准备前核对目标行数与实际executor容量。普通LOTUS�
 逐条请求和累计输入在准备时检查；不宣称未知整批字节在SemLoom任何HTTP之前全部核完。
 batch期限覆盖准备、消费至EOF和SDK解释，清理时间另记；各替换传输按总时长核查request期限。
 原LOTUS SDK仍保留阶段超时语义，本profile不能据此证明六条路径所有超时阶段等价。
-IMLane128行来自自有调用桥，2000行当前拒绝，不新增分批供给；来源和后续最小方案见[IMLane接口](../../../integrations/sema/imlane_calls.md)。
+IMLane默认128行来自自有调用桥；显式2000行新桥已在作者CPython/Ray通过原Q1的软件检查。
+同一完整查询持续投递/交付、三层共用有限容量，配置与旧前置拒绝记录见[IMLane接口](../../../integrations/sema/imlane_calls.md)。
+MovieQuery独立128预检仍需发布者接续；模型质量、性能与共享Coordinator独立取消尚未验证。
 原生消费线程的执行与关闭异常在停止/join后进入`last_close_report.worker_errors`，
 关闭异常对象保存在`last_cleanup_errors`；已有查询第一异常继续传播，附加类型进入notes。
 提前关闭而没有查询错误时，图关闭失败向调用方传播；`clean=False`与未知远端完成保持。

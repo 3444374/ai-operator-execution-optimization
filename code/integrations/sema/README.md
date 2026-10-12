@@ -57,7 +57,9 @@ Coordinator须先在同一实例名称和loopback端口就绪；查询只拥有D
 
 [完整调用接口](imlane_calls.md)复用上述DBEnd桥，明确区分作者CPython与作者Ray执行器。
 公共`NativeCallExecutor('imlane', imlane_config=IMLaneCallConfig(...))`直接交接完整批次，
-有效上限128行／32MiB输入；超额拒绝。原C++桥的聚合驻留输出没有32MiB保证。
+默认128行；显式2000行配置已通过两作者模式的原SemBench Q1软件检查。
+三层共用有限行数、payload/wire、单项、待交付及累计响应额度，超额拒绝。
+每查询一个DBEnd上下文，交付后补入下一调用并释放该输入/输出引用；聚合RSS没有32MiB保证。
 LOTUS和DuckDB返回原SDK／C++解析，Sema保持原SQL及请求池后的有限HTTP快照。
 统一CLI使用`--imlane-cpython-config`、`--imlane-ray-config`指定仓库外配置；
 `--options`需覆盖探得的作者任务线程数，本次为6，检查配置使用并发额度8、作者执行器2。
