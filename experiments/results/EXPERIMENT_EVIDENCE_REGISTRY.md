@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-12：[Sema入口正文存储与期限](postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
+起点`2fad623e`，三份运行代码与`9c642ec7`一致；本机113项不同检查通过，服务器最终21项／53次合成请求通过，所有slice累计126次。
+MiB同步断言失败和自动CPU资格报告均保留；确认本地输入责任的正常归还及未确认图消费的留存，模型、SQL、vendor runtime和性能运行均0。
+
 2026-10-12：[Sema原请求池前接入可行性](../../code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)。
 公开main、分支/标签/发行清单、原ZIP/ELF及旧135项设置重新核对，未找到当前产物可小改使用的池前入口；元数据摘要进入原整合verification，历史证据保持。
 仅保留原生整体与后置服务成对比较，不实施算子重写或二进制注入；新二进制/查询/模型运行均0，未接触目标服务器。

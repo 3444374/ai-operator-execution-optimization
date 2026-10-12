@@ -1,0 +1,122 @@
+{
+  "base_commit": "2fad623e310d9d8f988adfadbe0438d53e943e07",
+  "integration_checked_commit": "9c642ec7c48a598abb54f1a32c56e29904eaa334",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/sema_service.py": "51edc9f1d5d62ac6e495f6d6dcbe6152086c657e2fed7ab72d626cf95523bbba",
+    "code/src/execution_provider/adapters/sema_native.py": "e4315ada45a0bc31fa56c361e6b92642e17fa4cb424bdda8ff341a42cfcaa99b",
+    "code/src/execution_provider/adapters/sema_semloom.py": "26a6233c6dba11259fe43f0911f6f7cc76f2bed51cf242db5eace47775473fe3",
+    "code/tests/execution_provider/test_sema_intake.py": "f1d35c4cd48cecd15a2caa2e44dede8063f5d0b6f369258af2e3c0717fc2346b"
+  },
+  "local_distinct_tests_passed": 113,
+  "final_local_intake_tests": 18,
+  "server_runs": [
+    {
+      "tests_run": 20,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "synthetic_requests": 48,
+      "elapsed_s": 2.550170296803117,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7",
+      "summary_sha256": "47de0d0f5b43e8127e308cb5538c09473ee8bbe9248a3c82549be7133947a93a"
+    },
+    {
+      "tests_run": 12,
+      "failures": 1,
+      "errors": 0,
+      "success": false,
+      "synthetic_requests": 25,
+      "elapsed_s": 1.038987091742456,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7-02",
+      "summary_sha256": "7a4f3ee7cd206c8a8bcbadd77c764ba6ee770713a24b5563c89d5604b14400f3"
+    },
+    {
+      "tests_run": 21,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "synthetic_requests": 53,
+      "elapsed_s": 2.465052966028452,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7-03",
+      "summary_sha256": "b2fb591beca9b3d05b97344cefdbcf937b7205ab4aaafc2d8cfcfb62898f44cf"
+    }
+  ],
+  "total_server_synthetic_requests": 126,
+  "total_server_slice_elapsed_s": 6.054210354574025,
+  "failure_reason_run_02": "test checked settled size while second body was still reading; synchronized on body_read_ns before checking settled size",
+  "preflight": {
+    "automatic_profile_cpu_result": "8 assigned CPU slots below automatic profile minimum 10; all core Python packages passed",
+    "explicit_software_profile": "generic_linux_nvidia",
+    "explicit_software_profile_result": "ok",
+    "aiohttp": "3.14.3"
+  },
+  "resource_checks": [
+    {
+      "run_id": "semloom-intake-20261012-task7",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 4
+    },
+    {
+      "run_id": "semloom-intake-20261012-task7-02",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 0
+    },
+    {
+      "run_id": "semloom-intake-20261012-task7-03",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 4
+    }
+  ],
+  "qualification": "real aiohttp application ingress; synthetic native/Core execution; no vendor runtime, model, SQL or performance qualification",
+  "archive": {
+    "run_identity": "semloom-intake-task7-full",
+    "bytes": 1443068,
+    "members": 40,
+    "sha256": "ec379b0f83a3a77f3f8d2307ef256987b4faaacf6c7342cb597e7ad20e7902fe"
+  }
+}

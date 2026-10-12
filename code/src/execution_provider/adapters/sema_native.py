@@ -7,6 +7,7 @@ from collections import deque
 from dataclasses import dataclass, replace
 import threading
 import time
+import traceback
 
 from ...baselines.text.frameworks.native_calls import NativeCall, NativeCallExecutor, NativeCallOutcome
 from ...baselines.common.redact import redact_text
@@ -69,6 +70,8 @@ class SemaNativeService(SemaRequestService):
         self._uncertain = set()
         self._graph_stop = threading.Event()
         self._normal_input_ended = self._normal_exit_cancel = False
+        self._snapshot_body_stopped = True
+        self._snapshot_errors = ()
 
     @property
     def summary(self):
@@ -77,8 +80,8 @@ class SemaNativeService(SemaRequestService):
                 'upstream_concurrency': getattr(getattr(self.executor, 'options', None), 'concurrency', None),
                 'forwarded_posts': None, 'forwarded_posts_status': 'unavailable; kernel not observed',
                 'snapshot_rows': self.snapshot_rows, 'snapshot_bytes': _SNAPSHOT_BYTES,
-                'pre_admission_body_capacity_scope': 'bodies are read before native held-slot admission',
-                'pre_admission_body_max_bytes': self.limits.max_requests * self.limits.request_bytes,
+                'pre_admission_body_capacity_scope': 'shared service intake before body reading; retained through local owners',
+                'pre_admission_body_max_bytes': self.limits.intake_bytes,
                 'snapshot_count': self._snapshot_count, 'prepared_calls': self._prepared_calls,
                 'completed_http_responses': self._completed_http,
                 'native_close_reports': list(self._close_reports),
@@ -119,13 +122,15 @@ class SemaNativeService(SemaRequestService):
 
     def _stop_intake(self):
         while self._pending:
-            self._entry_error(self._pending.popleft(), RuntimeError('Sema query has stopped'))
+            entry = self._pending.popleft()
+            self._entry_error(entry, RuntimeError('Sema query has stopped'))
+            self._release_body(entry.call.row_id, native=True)
         if self._wake is not None:
             self._wake.set()
 
     async def _forward(self, body, headers, row, client):
         loop = asyncio.get_running_loop()
-        deadline = loop.time() + self.limits.timeout_s
+        deadline = self._request_deadline(row)
         row['native_intake_started_ns'] = time.monotonic_ns()
         entry = None
         try:
@@ -145,6 +150,7 @@ class SemaNativeService(SemaRequestService):
                                   min(120, self.limits.timeout_s),
                                   max_response_bytes=self.limits.response_bytes)
                 entry = _Received(call, row, loop.create_future(), deadline)
+                self._retain_native_body(row)
                 self._pending.append(entry)
                 row['native_enqueued_ns'] = time.monotonic_ns()
                 self._wake.set()
@@ -160,8 +166,12 @@ class SemaNativeService(SemaRequestService):
                         self._pending.remove(entry)
                     except ValueError:
                         pass
+                    else:
+                        self._release_body(entry.call.row_id, native=True)
             self._release_response(row)
             raise
+        finally:
+            body = call = entry = None
 
     def _entry_error(self, entry, error):
         entry.row['native_error_type'] = type(error).__name__
@@ -176,6 +186,7 @@ class SemaNativeService(SemaRequestService):
             if entry.future.done() or entry.deadline <= now:
                 self._pending.popleft()
                 self._entry_error(entry, TimeoutError('Sema native intake deadline exceeded'))
+                self._release_body(entry.call.row_id, native=True)
                 continue
             if size + len(entry.call.payload) > _SNAPSHOT_BYTES:
                 break
@@ -199,20 +210,42 @@ class SemaNativeService(SemaRequestService):
             self._received = set()
             self._complete_response_ids = set()
             self._snapshot_response_bytes = 0
+            self._snapshot_body_stopped = False
             captured_ns = time.monotonic_ns()
             captured_bytes = sum(len(entry.call.payload) for entry in snapshot)
             for entry in snapshot:
                 entry.row.update(native_snapshot=self._snapshot_count, native_snapshot_ns=captured_ns,
                                  native_snapshot_rows=len(snapshot),
                                  native_snapshot_bytes=captured_bytes)
+            del entry
             done = asyncio.get_running_loop().create_future()
             timeout = min(entry.deadline for entry in snapshot) - asyncio.get_running_loop().time()
             self._bridge_thread = threading.Thread(target=self._run_snapshot,
                 args=(snapshot, max(0.000001, timeout), done), name='sema-native-graph-bridge', daemon=True)
             self._bridge_thread.start()
             await done
+            # The callback may run before the bridge returns and drops its calls.
+            # Keep each original body charged through both local owners.
+            while self._bridge_thread.is_alive():
+                await asyncio.sleep(0.001)
+            # Saved failure tracebacks must not keep a finished graph's payload
+            # locals after their input ownership is returned. Keep stack locations.
+            errors, seen = list(self._snapshot_errors) + [self._driver_error, self._cleanup_error], set()
+            while errors:
+                error = errors.pop()
+                if error is None or id(error) in seen:
+                    continue
+                seen.add(id(error))
+                traceback.clear_frames(error.__traceback__)
+                errors.extend((error.__cause__, error.__context__))
+            self._snapshot_errors = ()
+            sequences = tuple(entry.call.row_id for entry in snapshot)
+            snapshot = ()
             self._active = {}
             self._received = set()
+            if self._snapshot_body_stopped:
+                for sequence in sequences:
+                    self._release_body(sequence, native=True)
             if self._pending:
                 self._wake.set()
 
@@ -300,6 +333,10 @@ class SemaNativeService(SemaRequestService):
                 self._entry_error(entry, error)
 
     def _snapshot_finished(self, error, report, done, cleanup_error):
+        self._snapshot_body_stopped = not (
+            (report is not None and report.get('graph_consumer_stopped') is False)
+            or (cleanup_error is not None and (report is None
+                or report.get('graph_consumer_stopped') is not True)))
         try:
             self._close_reports.append(report or {'status': 'unavailable'})
             if report is not None and report.get('graph_consumer_stopped') is False:
@@ -329,6 +366,7 @@ class SemaNativeService(SemaRequestService):
             for entry in self._active.values():
                 self._entry_error(entry, failure)
         finally:
+            self._snapshot_errors = (error, cleanup_error)
             if not done.done():
                 done.set_result(None)
 

@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-12：修订Sema入口正文存储与期限
+
+- 在独立补丁中给HTTP读取预留有限持有数／总字节，并让读取、接纳、执行和写出共用一次期限；Core策略、原提示／parser和native图保持。
+- [工程记录](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)保留本机113项不同检查、服务器最终21项、所有slice的126次合成请求及失败原件；真实模型、SQL和性能运行均0。
+
 ## 2026-10-12：检查Sema原请求池前接入可行性
 
 - 官方main仍为固定提交；核对唯一分支、空标签/发行清单和四项文件，原ZIP及ELF摘要一致；重读旧探针的135项设置，没有找到已核实的池前任务回调。
