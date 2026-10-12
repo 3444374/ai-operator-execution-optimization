@@ -76,6 +76,7 @@ CPython和作者Ray各只有一份2000行DBEnd输入，2000个独立出现身份
 新服务器／POST／模型／GPU运行0，没有重复已合格大矩阵或使用已结束的900秒时间窗。
 C++和作者HTTP函数保持task-10的已验证摘要；新配置／保护的本机来源及命令见[发布核验](sembench_imlane_integration_verification.json)，
 输出见[本机回归](sembench_imlane_integration_tests.txt)。当前源码尚未在实际作者环境重新运行完整Q1，实际2000行资格保持2cca502d来源。
+固定源码候选59b86fd2的独立标准与需求复审均无代码必修；标准审查指出的两处旧文档状态已修正并只读复核，剩余必修0。
 
 性能接法独立推进：IMLane逐调用事件循环／session成本、LOTUS原生额外prepare_call观测、Daft／Ray真实池寿命仍需各自检查。
 Sema当前是已抵达快照上的执行服务，前快照消费结束后才交出下一份；这一等待须计入适配成本，不表示厂商完整持续执行能力。

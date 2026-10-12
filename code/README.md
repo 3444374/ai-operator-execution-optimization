@@ -21,7 +21,7 @@ Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
 
 [原生执行统一入口](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)登记LOTUS／DuckDB／Sema与Daft、Ray Data、作者IMLane的接入；
 IMLane明确区分CPython与作者Ray，原方法继续解析完整响应。
-两模式的原SemBench Q1完整2000调用已通过[有限容量软件检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)，需显式新桥配置；原MovieQuery独立128预检由发布者接续。
+两模式的原SemBench Q1完整2000调用已通过[有限容量软件检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)，需显式新桥配置；MovieQuery与CLI已读取所选显式容量，旧配置保留128行。
 六条LOTUS路径已分别通过单GPU与同机双TP1真实模型接线；全部原值、每GPU实际调用／利用采样及公平性资格差异由该报告定位。
 中立[infrastructure/daft_runtime.py](src/infrastructure/daft_runtime.py)统一当前driver的Daft初始化，
 相同runner／线程数复用，配置冲突报错；原生HTTP与SemLoom物化可在同一driver连续执行。
