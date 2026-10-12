@@ -4,12 +4,35 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import ipaddress
 import json
 from pathlib import Path
+import socket
 import subprocess
+import sys
 from urllib.parse import urlsplit
 
 from .model_replicas import ModelReplicaSet
+
+
+@dataclass(frozen=True)
+class ReplicaListener:
+    family: str
+    address: str
+    port: int
+    inode: str = ""
+
+    def __post_init__(self):
+        if type(self.address) is not str:
+            raise ValueError("invalid model listener address")
+        address = ipaddress.ip_address(self.address)
+        if self.family != ("ipv4" if address.version == 4 else "ipv6"):
+            raise ValueError("model listener address family differs")
+        if type(self.port) is not int or not 1 <= self.port <= 65535:
+            raise ValueError("invalid model listener port")
+        if type(self.inode) is not str or (self.inode and not self.inode.isdecimal()):
+            raise ValueError("invalid model listener inode")
+        object.__setattr__(self, "address", str(address))
 
 
 @dataclass(frozen=True)
@@ -19,6 +42,8 @@ class ReplicaProcess:
     start_ticks: str
     argv: tuple[str, ...] = field(repr=False)
     listening_ports: tuple[int, ...] = ()
+    # Port-only observations remain representable but cannot qualify a URL.
+    listening_sockets: tuple[ReplicaListener, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -58,7 +83,8 @@ def _serving_sha256(argv):
     return hashlib.sha256(json.dumps(result, separators=(",", ":")).encode()).hexdigest()
 
 
-def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, independent_devices=True):
+def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, independent_devices=True,
+                             localhost_addresses=None):
     """Verify one-device replicas on this machine; Ray actors cannot satisfy these checks.
 
     sidecars use launch_vllm_with_identity.py's existing schema. A model content
@@ -86,6 +112,14 @@ def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, i
         url = urlsplit(replica.endpoint_url)
         if url.hostname not in ("127.0.0.1", "localhost", "::1") or url.port is None:
             raise ValueError("process verification requires endpoint-machine loopback URLs with explicit ports")
+        if url.hostname == "localhost":
+            if type(localhost_addresses) is not tuple or not 1 <= len(localhost_addresses) <= 16:
+                raise ValueError("localhost requires current resolver address evidence")
+            addresses = tuple(ipaddress.ip_address(address) for address in localhost_addresses)
+            if any(not address.is_loopback for address in addresses):
+                raise ValueError("localhost resolver addresses must be loopback")
+        else:
+            addresses = (ipaddress.ip_address(url.hostname),)
         sidecar = sidecars[replica.endpoint_id]
         if (type(sidecar) is not dict or type(sidecar.get("pid")) is not int
                 or type(sidecar.get("port")) is not int or sidecar.get("schema_version") != 1):
@@ -105,8 +139,23 @@ def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, i
         members = descendants(process.pid)
         if members & used_processes:
             raise ValueError("replicas share a model API process tree")
-        if not any(url.port in by_pid[pid].listening_ports for pid in members):
-            raise ValueError("model process tree does not own the endpoint listener")
+        bindings = []
+        for pid in sorted(members):
+            for listener in by_pid[pid].listening_sockets:
+                if type(listener) is not ReplicaListener:
+                    raise ValueError("model listener address/family evidence is required")
+                bound = ipaddress.ip_address(listener.address)
+                if listener.port == url.port and any(
+                        bound.version == address.version and (bound == address or bound.is_unspecified)
+                        for address in addresses):
+                    bindings.append((pid, listener))
+        # Require every possible localhost resolution to reach this model tree.
+        # An IPv6 wildcard is not assumed to accept IPv4 without socket-mode evidence.
+        if not all(any(ipaddress.ip_address(listener.address).version == address.version
+                       and (ipaddress.ip_address(listener.address) == address
+                            or ipaddress.ip_address(listener.address).is_unspecified)
+                       for _, listener in bindings) for address in addresses):
+            raise ValueError("model process tree does not own the endpoint address/family listener")
         gpu_members = [g for g in gpu_processes if g.pid in members]
         devices = {g.device_id for g in gpu_members}
         if devices != set(replica.device_ids):
@@ -124,10 +173,13 @@ def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, i
         records.append(dict(endpoint_id=replica.endpoint_id, location_id=replica.location_id,
             api_pid=process.pid, process_start_time_ticks=process.start_ticks,
             gpu_process_ids=sorted({g.pid for g in gpu_members}), device_ids=sorted(devices),
-            service_version=version, serving_arguments_sha256=signature))
+            service_version=version, serving_arguments_sha256=signature,
+            listener_bindings=[dict(pid=pid, process_start_time_ticks=by_pid[pid].start_ticks,
+                family=listener.family, address=listener.address, port=listener.port, inode=listener.inode)
+                for pid, listener in bindings]))
     if len(serving) != 1:
         raise ValueError("replicas have different effective serving arguments or package versions")
-    return dict(schema_version=1, replica_set_sha256=directory.sha256, replica_count=len(records),
+    return dict(schema_version=2, replica_set_sha256=directory.sha256, replica_count=len(records),
         gpu_count=len(used_devices), independent_devices=independent_devices,
         model_content_identity="declared; separate content audit required", replicas=records)
 
@@ -147,8 +199,29 @@ def _listeners(proc_root):
         for line in (proc_root / "net" / name).read_text().splitlines()[1:]:
             fields = line.split()
             if len(fields) > 9 and fields[3] == "0A":
-                sockets[fields[9]] = int(fields[1].rsplit(":", 1)[1], 16)
+                encoded, port = fields[1].rsplit(":", 1)
+                expected = 8 if name == "tcp" else 32
+                if len(encoded) != expected:
+                    raise ValueError("model socket address encoding is incomplete")
+                # /proc prints each native-endian 32-bit address word as hex.
+                packed = b"".join(int(encoded[start:start + 8], 16).to_bytes(4, sys.byteorder)
+                                  for start in range(0, len(encoded), 8))
+                family = "ipv4" if name == "tcp" else "ipv6"
+                sockets[fields[9]] = ReplicaListener(family, str(ipaddress.ip_address(packed)),
+                                                     int(port, 16), fields[9])
     return sockets
+
+
+def _process_listeners(path, sockets):
+    listeners = set()
+    for fd in (path / "fd").iterdir():
+        try:
+            target = fd.readlink().as_posix()
+        except OSError:
+            continue
+        if target.startswith("socket:[") and target[8:-1] in sockets:
+            listeners.add(sockets[target[8:-1]])
+    return tuple(sorted(listeners, key=lambda item: (item.family, item.address, item.port, item.inode)))
 
 
 def inspect_local_model_replicas(directory, sidecar_paths, *, independent_devices=True):
@@ -170,18 +243,12 @@ def inspect_local_model_replicas(directory, sidecar_paths, *, independent_device
             parent, started = _process_stat(path / "stat")
             argv = tuple(t.decode("utf-8", "replace")
                          for t in (path / "cmdline").read_bytes().split(b"\0") if t)
-            ports = set()
-            for fd in (path / "fd").iterdir():
-                try:
-                    target = fd.readlink().as_posix()
-                except OSError:
-                    continue
-                if target.startswith("socket:[") and target[8:-1] in sockets:
-                    ports.add(sockets[target[8:-1]])
+            listeners = _process_listeners(path, sockets)
             # PID reuse or a process exiting during the snapshot cannot qualify.
             if (parent, started) != _process_stat(path / "stat"):
                 continue
-            processes.append(ReplicaProcess(int(path.name), parent, started, argv, tuple(sorted(ports))))
+            processes.append(ReplicaProcess(int(path.name), parent, started, argv,
+                tuple(sorted({listener.port for listener in listeners})), listeners))
         except (OSError, ValueError):
             continue
     probe = subprocess.run(["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader,nounits"],
@@ -194,10 +261,21 @@ def inspect_local_model_replicas(directory, sidecar_paths, *, independent_device
         if len(fields) != 2 or not fields[0].strip().isdecimal() or not fields[1].strip().startswith("GPU-"):
             raise ValueError("GPU process identity is unavailable")
         gpu_processes.append(GpuProcess(int(fields[0].strip()), fields[1].strip()))
+    localhost_addresses = None
+    if any(urlsplit(replica.endpoint_url).hostname == "localhost" for replica in directory.replicas):
+        localhost_addresses = tuple(sorted({str(ipaddress.ip_address(item[4][0])) for item in
+            socket.getaddrinfo("localhost", None, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)}))
     result = verify_replica_processes(directory, sidecars, tuple(processes), tuple(gpu_processes),
-                                      independent_devices=independent_devices)
+        independent_devices=independent_devices, localhost_addresses=localhost_addresses)
+    current_sockets = _listeners(proc_root)
     # Recheck the API process identity after the GPU snapshot, not just at sidecar read time.
     for replica in result["replicas"]:
         if _process_stat(proc_root / str(replica["api_pid"]) / "stat")[1] != replica["process_start_time_ticks"]:
             raise ValueError("model API process changed during device verification")
+        for binding in replica["listener_bindings"]:
+            path = proc_root / str(binding["pid"])
+            expected = ReplicaListener(binding["family"], binding["address"], binding["port"], binding["inode"])
+            if (_process_stat(path / "stat")[1] != binding["process_start_time_ticks"]
+                    or expected not in _process_listeners(path, current_sockets)):
+                raise ValueError("model endpoint listener changed during device verification")
     return result

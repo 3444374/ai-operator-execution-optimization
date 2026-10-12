@@ -80,6 +80,14 @@ connection remains available to the others. Startup and finalization attempt all
 owned child cleanup; a cleanup error remains visible on subsequent close calls.
 Unknown work requires service-owner investigation; there is no force-release API.
 
+A failure of the new `replica_transport_started` observer produces the existing
+local error value before any child call. It has no invented HTTP status and can
+settle through the normal result lease. Child observation exceptions are retained
+as one bounded diagnostic and do not replace a completed response or an actual
+I/O exception. Closing the service attempts all child cleanup, then reports the
+observation failure. A dispatched timeout still retains its original unknown
+request/work responsibility; diagnostic failure cannot refund that request.
+
 ## Existing PostgreSQL Map gateway
 
 `code/scripts/services/run_model_replica_gateway.py` passes this factory to the
@@ -95,7 +103,7 @@ is shown below; replace the digest with the actual audited identity.
   "replicas": [
     {
       "endpoint_id": "replica-a",
-      "endpoint_url": "http://localhost:8000/v1/chat/completions",
+      "endpoint_url": "http://127.0.0.1:8000/v1/chat/completions",
       "location_id": "machine-a",
       "device_ids": ["GPU-DECLARED-A"],
       "deployment_sha256": "<AUDITED_DEPLOYMENT_SHA256>",
@@ -104,7 +112,7 @@ is shown below; replace the digest with the actual audited identity.
     },
     {
       "endpoint_id": "replica-b",
-      "endpoint_url": "http://localhost:8001/v1/chat/completions",
+      "endpoint_url": "http://127.0.0.1:8001/v1/chat/completions",
       "location_id": "machine-a",
       "device_ids": ["GPU-DECLARED-B"],
       "deployment_sha256": "<AUDITED_DEPLOYMENT_SHA256>",
@@ -156,6 +164,16 @@ GPU qualification also rejects other GPU compute owners. Shared-device mode is
 explicit and reports the actual GPU count. Ray actors, stale sidecars and mere
 device declarations cannot pass. This currently covers one device per local replica;
 cross-machine verification and model content auditing remain separate work.
+
+Probe evidence schema 2 retains each qualifying listener's address, address
+family, port, inode and owning process/start time. A port-only observation cannot
+qualify a URL. Wildcards cover only their own address family; IPv6 listeners are
+not presumed to accept IPv4. `localhost` requires current resolver evidence and
+every returned loopback address must reach the model tree. Prefer literal loopback
+URLs when only one family is served. The live collector rechecks the listener
+inode/address and its owning process after the GPU snapshot. Old schema 1 reports
+do not establish this address binding. HTTPS and application-path behavior require
+separate HTTP qualification.
 
 ## Verification scope
 

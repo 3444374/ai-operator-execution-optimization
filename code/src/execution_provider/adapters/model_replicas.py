@@ -16,7 +16,7 @@ from ...scheduling.core.models import EndpointSnapshot, RoutingDecision, Topolog
 from ...scheduling.core.session_policy import SessionPolicies
 from ...scheduling.organization.session_window import WorkWindowOrganizer
 from ...scheduling.submission_control.admission import StaticAdmissionController
-from .async_fixed_model import AsyncFixedModelTransport
+from .async_fixed_model import AsyncFixedModelTransport, exception_details
 from .full_response import FullResponseTransport
 from .incremental_execution import build_fixed_model_execution
 from .model_config import FixedModelConfig
@@ -187,6 +187,7 @@ class ReplicaTransport:
                  physical=None, before_request=None):
         self.directory, self.transports = directory, {}
         self._observer = observer
+        self.observation_failure = None
         self._directory_sha256 = directory.sha256
         if response_mode not in ("completion", "full"):
             raise ValueError("unknown replica response mode")
@@ -234,17 +235,30 @@ class ReplicaTransport:
 
     def _observe(self, replica, event):
         if self._observer:
-            self._observer(dict(event, endpoint_id=replica.endpoint_id,
-                model_role=self.directory.role_id, location_id=replica.location_id,
-                deployment_sha256=replica.deployment_sha256, replica_set_sha256=self._directory_sha256))
+            try:
+                self._observer(dict(event, endpoint_id=replica.endpoint_id,
+                    model_role=self.directory.role_id, location_id=replica.location_id,
+                    deployment_sha256=replica.deployment_sha256, replica_set_sha256=self._directory_sha256))
+            except Exception as error:
+                # Keep one bounded diagnostic. A child diagnostic cannot turn a
+                # received response into an unknown request or replace an I/O error.
+                if self.observation_failure is None:
+                    self.observation_failure = dict(event=event.get("event"),
+                        endpoint_id=replica.endpoint_id, reason=exception_details(error))
+                return False
+        return True
 
     async def execute(self, task, endpoint):
         if endpoint not in self.transports:
             raise ValueError("unknown model replica")
         replica = next(r for r in self.directory.replicas if r.endpoint_id == endpoint)
-        self._observe(replica, dict(event="replica_transport_started", key=asdict(task.key),
+        observed = self._observe(replica, dict(event="replica_transport_started", key=asdict(task.key),
             job_id=task.spec.job_id, flow_id=task.spec.flow_id,
             task_info=asdict(task.task.info) if task.task.info else None))
+        if not observed:
+            # No child execute/RPC/HTTP has been entered. The existing local
+            # error representation settles this task without inventing HTTP status.
+            return b'{"bridge_error":"MODEL_UNAVAILABLE"}'
         # The child uses its legacy local name; the Core keeps the physical ID.
         return await self.transports[endpoint].execute(task, "model")
 
@@ -276,6 +290,8 @@ class ReplicaTransport:
                 failures.append(error)
         if failures:
             raise RuntimeError("replica transport cleanup could not be confirmed") from failures[0]
+        if self.observation_failure is not None:
+            raise RuntimeError("replica observation failed")
 
 
 def build_model_replica_execution(config, *, replicas, response_mode="completion", physical=None,

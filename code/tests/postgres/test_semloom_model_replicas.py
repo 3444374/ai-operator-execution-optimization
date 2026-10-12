@@ -26,6 +26,7 @@ from src.execution_provider.adapters.model_replicas import (
 from src.execution_provider.adapters.native_tasks import NativeQueryJob, NativeTaskSession, prepare_native_task
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.multiplexed_gateway import MultiSessionMapGateway
+from src.execution_provider.completion import CompletionAdapterError
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.execution_provider.wire import v6
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
@@ -521,6 +522,108 @@ class ModelReplicaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "cleanup previously failed"):
                 execution.close()
         self.assertEqual(closed, [b.url, a.url])
+
+    def test_observer_presend_failure_is_a_known_local_error_with_no_child_or_unknown_work(self):
+        a = self.site("a")
+        children, events = [], []
+
+        class NoIOChild:
+            def __init__(self, *args):
+                self.calls, self.closed = 0, False
+                children.append(self)
+
+            async def execute(self, *args):
+                self.calls += 1
+                raise AssertionError("pre-send failure must not enter the child")
+
+            async def close(self):
+                self.closed = True
+
+        def observe(event):
+            events.append(event)
+            if event["event"] == "replica_transport_started":
+                raise RuntimeError("controlled pre-send observation failure")
+
+        with mock.patch("src.execution_provider.adapters.model_replicas.FullResponseTransport", NoIOChild):
+            execution = self.execution(directory((a,), capacities=((1, 1),)), observer=observe)
+        flow = self.flow(execution)
+        flow.offer((task(0),)); flow.end_input()
+        result = self.collect(flow, 1, mode="completion")[0][1]
+        with self.assertRaises(CompletionAdapterError):
+            decode_full_response(result)
+        self.assertEqual(sum(c.calls for c in children), 0)
+        failure = execution.engine.backend._execute.__self__.observation_failure
+        self.assertEqual((failure["event"], failure["reason"]["exception_type"]),
+                         ("replica_transport_started", "builtins.RuntimeError"))
+        self.assertEqual(a.requests, [])
+        self.assertEqual(execution.engine.capacity.usage(), Usage())
+        self.assertEqual(replica_usage(execution)["a"]["uncertain_requests"], 0)
+        flow.close(clean=True)
+        with self.assertRaisesRegex(RuntimeError, "finalization failed"):
+            execution.close()
+        self.assertTrue(all(c.closed for c in children))
+        self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_presend_observer_failure_does_not_refund_another_replica_query(self):
+        a, b = self.site("a"), self.site("b", hold=True)
+
+        def observe(event):
+            if event["event"] == "replica_transport_started" and event["endpoint_id"] == "a":
+                raise RuntimeError("controlled pre-send observation failure")
+
+        execution = self.execution(directory((a, b), capacities=((1, 1), (1, 1))),
+                                   observer=observe, max_tasks=8, max_jobs=2)
+        first, other = self.flow(execution, "first"), self.flow(execution, "other")
+        first.offer((task(0),)); other.offer((task(0),))
+        self.until(execution, lambda: len(b.requests) == 1)
+        payload = self.collect(first, 1, mode="completion")[0][1]
+        with self.assertRaises(CompletionAdapterError):
+            decode_full_response(payload)
+        first.close()
+        self.assertEqual(a.requests, [])
+        self.assertEqual(replica_usage(execution)["a"]["active_requests"], 0)
+        self.assertEqual(replica_usage(execution)["b"]["active_requests"], 1)
+        self.assertFalse(execution.close())
+        b.released.set()
+        self.collect(other, 1)
+        other.close()
+        with self.assertRaisesRegex(RuntimeError, "finalization failed"):
+            execution.close()
+
+    def test_child_observer_errors_do_not_hide_completed_http_or_create_unknown_work(self):
+        for event_name in ("http_started", "http_finished"):
+            with self.subTest(event=event_name):
+                site = self.site(event_name)
+                def observe(event):
+                    if event["event"] == event_name:
+                        raise RuntimeError("controlled child observation failure")
+                execution = self.execution(directory((site,), capacities=((1, 1),)), observer=observe)
+                flow = self.flow(execution)
+                flow.offer((task(0),)); flow.end_input()
+                response = self.collect(flow, 1)[0][1]
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(json.loads(response.body)["tag"], "row-0")
+                self.assertEqual(execution.engine.capacity.usage(), Usage())
+                flow.close(clean=True)
+                with self.assertRaisesRegex(RuntimeError, "finalization failed"):
+                    execution.close()
+                self.assertEqual(len(site.requests), 1)
+
+    def test_observer_error_after_dispatch_cannot_refund_a_real_http_timeout(self):
+        site = self.site("a", hold=True)
+        def observe(event):
+            if event["event"] == "http_finished":
+                raise RuntimeError("controlled observation failure after HTTP dispatch")
+        execution = self.execution(directory((site,), capacities=((1, 1),)), observer=observe, timeout=100)
+        flow = self.flow(execution)
+        flow.offer((task(0),))
+        self.until(execution, lambda: flow.session.state == State.FAILED)
+        self.assertEqual(len(site.requests), 1)
+        self.assertEqual(flow.close().uncertain_requests, 1)
+        self.assertEqual(replica_usage(execution)["a"]["uncertain_requests"], 1)
+        self.assertFalse(execution.close())
+        with self.assertRaisesRegex(RuntimeError, "finalization failed"):
+            execution.engine.backend.close()
 
 
 class ReplicaConfigurationTests(unittest.TestCase):
