@@ -105,6 +105,10 @@ Ray运行时由调用方创建和关闭。运行中的Ray会使Daft默认自动�
 HTTP正文按原字节发送，错误状态、重复响应头、原始压缩正文和HTTP版本完整返回；
 网络失败没有伪造的HTTP状态，响应超量与非法关联作为执行错误传播。
 
+连接复用保留每条完整请求的默认cookie行为，重定向在同一请求内沿用cookie；
+并行或后续独立请求使用各自的cookie jar，不继承别的调用状态。单独持有的HTTP客户端关闭失败
+不会覆盖已有执行或传输错误，附加关闭类型随脱敏诊断保留。修后组合与待验证项见[发布记录](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-release-composition)。
+
 `LotusBatchExecutor`与`LotusNativeBatchExecutor`共同使用`sdk.parse_lotus_response`，
 以固定LiteLLM/OpenAI SDK解析已返回响应；旧`parse_native_response`保留为兼容入口。
 SemLoom借用已分派的PreparedLotusCall直到响应解释完成，不重复准备请求；

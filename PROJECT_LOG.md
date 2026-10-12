@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：整合剩余原生修补与修后回归
+
+- 前四块与证据已发布并核验远端9c1e1f22；接续整合5e0390ec/97af50c5，不读取或修改扩容暂存源码。
+- 后两块规范复审的编译状态已同步；需求复审两项必修已修复，独立HTTP保留首错与附加关闭诊断，请求内重定向cookie保留、并发请求cookie隔离。
+- 数据集测试适应Ray请求数量声明与processor session寿命；[组合记录](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-release-composition)保留修前2失败/4错误和最终86通过/14缺依赖跳过，未把跳过当通过。
+- 保存的97af50c5桥编译成功并逐项核验源码摘要；作者runtime、厂商图新池及2000行扩容资格仍pending，原Q1两项适配器前置拒绝保留。新服务器/HTTP/模型/GPU运行0，未占用服务器CPU16–23。
+
 ## 2026-10-12：LOTUS容量声明与IMLane完成输出释放
 
 - 共同LotusCallLimits声明每请求、累计批次字节和期限，实际backend行容量在准备前检查；6项本机回归通过，未改变各执行图的供给方式。

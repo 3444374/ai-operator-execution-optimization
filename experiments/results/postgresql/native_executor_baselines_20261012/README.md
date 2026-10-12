@@ -5,13 +5,21 @@
 
 2026-10-12恢复本机执行后，以已发布`8fc28d97`在独立检出继续现有native分支。
 独立数据集配置测试`e51f4206`已整合为`6faa05ea`，12项本机回归通过、0跳过并已推送核验。
-前四块`c47304d1/c8484a2b/47adb0f1/c4f7f157`已与SemBench组合，14个Python源／测试文件逐项匹配固定候选；
-本机60项中49通过、11因缺LOTUS依赖跳过，跳过项未取得本机验证资格。
-规范与需求独立复审各0项必修；组合保留准备／响应回调、重复行身份、首错和附加清理错误。
+前四块`c47304d1/c8484a2b/47adb0f1/c4f7f157`先与SemBench组合，14个Python源／测试文件逐项匹配固定候选；
+首轮本机60项中49通过、11因缺LOTUS依赖跳过，已独立发布并核验远端`9c1e1f22`。
+前四块规范与需求独立复审各0项必修；组合保留准备／响应回调、重复行身份、首错和附加清理错误。
+随后整合`5e0390ec/97af50c5`两块，规范复审发现1项事实同步，需求复审发现独立HTTP关闭可能覆盖首错和请求内cookie重定向行为改变两项必修。
+已保留原异常及脱敏的附加清理诊断，并让每条完整请求独享默认cookie jar；连接客户端仍复用，同一请求重定向保留cookie，并行请求不互相继承。
+数据集测试辅助参数随Ray请求数量核查调整为有效声明，并使用已进入的processor session替身，原429／transport／行身份检查保持。
+修前16项复现为2失败／4错误，原输出保留；修后100项中86通过、14因缺LOTUS／OpenAI／LiteLLM依赖跳过，0失败／错误。
+14项跳过未取得本机验证资格；实际厂商图、keepalive HTTP fixture及作者runtime未在本次运行。
+修后规范与需求分别复核，剩余必修各0；新增源码和最终回归摘要逐项一致，隐私／新增链接／文字／diff检查通过。
 已保存实际SDK验证仍属`c4f7f157`：20通过、0跳过、12localhost POST、模型/GPU0，源包摘要核验通过。
-本次本机新服务器、HTTP POST、模型及GPU运行均0；后两块连接寿命、容量／期限与C++释放继续有限复审。
+本次本机新服务器、HTTP POST、模型及GPU运行均0；不占用服务器CPU16–23。
+保存的`97af50c5`桥编译退出0，源包与当前C++逐字匹配，源码SHA256及已记录的二进制SHA256进入机器事实。
+作者系统未重新构建，新桥二进制未用于作者runtime或2000行检查；这些资格仍pending。
 原Q1 2000行的两条IMLane适配器前置拒绝及历史记录保留，当前128行是适配器接受范围。
-机器事实见[integration_verification.json](integration_verification.json)，原本机输出见[integration_first4.txt](integration_first4.txt)。
+机器事实见[integration_verification.json](integration_verification.json)，首四块输出见[integration_first4.txt](integration_first4.txt)，修前复现见[integration_late_before.txt](integration_late_before.txt)，最终输出见[integration_final.txt](integration_final.txt)。
 
 <a id="execution-repairs"></a>
 ## 响应与生命周期修补
@@ -35,7 +43,7 @@ IMLane容量/身份和作者UDF异常另以执行错误结构化返回，正常�
 fixture服务器关闭、自有进程观察为0。来源摘要见[修补核验](repair_verification.json)。
 实际Daft0.7.21零HTTP探针4行证明查询EOF后异步loop仍运行，支持检查query/loop持有连接。
 原生HTTP kernel现按查询及其Daft loop持有客户端；Ray Data遵循原HTTP stage的session_factory批次寿命。
-连接器不增加请求准入额度，cookie只来自每次显式请求；每次请求保留自己的期限。
+连接器不增加请求准入额度；每次请求保留自己的期限，cookie只在同一请求及其重定向中沿用，不跨独立调用。
 6项生命周期检查通过，其中4次真实localhost调用使用同一TCP连接，含不同输出和重复输入；
 5项提前关闭回归及2项Ray参数替身检查通过。实际新池的厂商图完整消费/取消资格仍待有限复验。
 Ray默认batch_rows=1时每HTTP stage批次只有一个请求，不声称跨批次或跨查询池复用。
@@ -46,7 +54,7 @@ native LOTUS完整响应默认从8MiB改为1MiB，与普通Engine接收范围对
 6项本机检查通过，包含IMLane式2000行目标准备前失败、小Engine显式profile失败、最终SDK解释超过期限；
 保留SemLoom有限准备及各native图的物理准备，配置相同不表示所有内部时序或实际并发相同。
 IMLane128来源核到项目`5ee1b90c3`的C++快照检查及Python检查，不是作者系统自然容量。
-桥源码完整stdout输出后释放完成调用`calls[i]`持有的输入/输出；新桥尚未编译。
+桥源码完整stdout输出后释放完成调用`calls[i]`持有的输入/输出；保存的新桥编译成功且源码摘要匹配，作者runtime尚未运行。
 32MiB只限定当前声明的输入/已交付结果编码量，不保证C++待交付输出、Arrow/IPC复制及聚合RSS。
 512/2000行仍unsupported；后续先核作者自然连续投递/消费和全部暂存责任，不改变作者并发或添加全批屏障。
 

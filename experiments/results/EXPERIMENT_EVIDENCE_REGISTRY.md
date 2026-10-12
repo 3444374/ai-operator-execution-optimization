@@ -8,7 +8,8 @@ IMLane执行错误分类5项替身检查通过，正常wire兼容，未运行作
 后续指定CPU空闲后，c4f7f157真实SDK/清理20项、12次localhost POST通过；模型/GPU0、自有进程退出。
 原生池6项本机检查通过，含4次真实HTTP及同一连接；Daft EOF loop仍运行的实库零POST探针通过，实际新池图资格pending。
 共同容量/期限profile6项本机检查通过；IMLane128为项目桥接范围，2000/512尚未支持。
-桥源码在完整输出后释放完成调用引用，尚未编译新桥；不声称32MiB聚合驻留保证或新增作者并发能力。
+桥源码在完整输出后释放完成调用引用；保存的97af50c5新桥编译成功、源码摘要与当前桥一致，作者runtime资格仍pending。
+不声称32MiB聚合驻留保证或新增作者并发能力；未借编译证明2000行能力。
 
 2026-10-12：[SemBench Movie原查询与评价准备](diagnostics/sembench_lotus_readiness_20261012/README.md)。
 基线fd8c00bc只接消费提示与确定失败两项稳定性依赖，原方法与六执行接点不复制核心。
@@ -16,7 +17,8 @@ CSV ad5def7d、清单内容e753baa5固定2000行／1865唯一reviewId／135次�
 LOTUS原生／Daft／Ray Data各Q1/Q2/Q3正常，累计60次CPU8–15替身POST；进度文件、旧Ray目录及token参数键断言失败均保留，原生Q3换owner单列。
 父授权追加85.6秒窗口后，软件16 pass／2 unsupported／0 notrun：SemLoom三条和两种IMLane各Q2/Q3正常，原Q1两个适配器发送前拒绝；模型/GPU/PG0。
 累计128POST：正常104、作者完整HTTP/超时/取消16、原生授权错误8；进程/共享内存归零。保留远端HTTP状态unavailable、底层容量归属待独立追溯；C4/C6及旧C8来源分别登记，不排名。
-发布净变更已在原生分支组合检查；随后追加首四块执行修补，本机49项通过、11项缺LOTUS依赖跳过。
+发布净变更已在原生分支组合检查；首四块独立发布后，追加后两块与两项HTTP需求复审修正。
+最终本机86项通过、14项缺LOTUS／OpenAI／LiteLLM依赖跳过，跳过未计为通过；新服务器／HTTP／模型／GPU运行0。
 [发布组合记录](postgresql/native_executor_baselines_20261012/README.md#native-release-composition)保留来源与待验证项，不增加服务器或模型资格。
 
 2026-10-12：[原生执行接续整合](postgresql/native_executor_baselines_20261012/README.md)。

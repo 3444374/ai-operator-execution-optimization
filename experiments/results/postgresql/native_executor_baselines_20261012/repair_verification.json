@@ -44,14 +44,36 @@
     "same_tcp_connection": true,
     "close_regressions_passed": 5,
     "ray_configuration_stand_in_tests_passed": 2,
-    "actual_vendor_pool_fixture": "pending"
+    "actual_vendor_pool_fixture": "pending",
+    "source_commit": "5e0390ec5a40cf0cd7d0e7ba7cc93083b42f33a5",
+    "current_source_qualification": "bounded local regression only; no new vendor graph or HTTP run"
   },
   "imlane_scope": {
     "effective_client_snapshot_rows": 128,
     "capacity_origin_project_commit": "5ee1b90c3",
     "author_natural_row_capacity": "not established by the client guard",
     "target_rows_512_or_2000": "unsupported",
-    "new_author_builds": 0
+    "new_author_builds": 0,
+    "saved_bridge_build": {
+      "source_commit": "97af50c59d1eae4e6e6b324414f9111b85a579f2",
+      "source_archive_sha256": "c5ef6a2b4b27c5222cb57174ac43633cb17ffb2d834beff0ef0dce163fe04260",
+      "source_archive_verified": true,
+      "current_cpp_matches_saved_compiled_source": true,
+      "build": {
+        "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "returncode": 0,
+        "compiler_output": "",
+        "source_sha256": "04e721d3451aa57759dbe040638e1e6e84efc4cf48587241b494c6d51f645eaf",
+        "binary_sha256": "1e46520aa363b9aacdd87996359737c81351c0186da0a33a7dc85d22962ac780",
+        "real_model_requests": 0
+      },
+      "new_builds": 0,
+      "new_author_system_builds": 0,
+      "author_runtime": "pending",
+      "imlane_2000_rows": "pending"
+    },
+    "new_author_runtime_runs": 0
   },
-  "historical_model_results": "old source, retained independently, not qualification of these repairs"
+  "historical_model_results": "old source, retained independently, not qualification of these repairs",
+  "integration_verification": "integration_verification.json"
 }

@@ -7,7 +7,8 @@
     "passed": 12,
     "skipped": 0,
     "failures": 0,
-    "errors": 0
+    "errors": 0,
+    "composition_fixture_changes": "Ray allowances fit actors*async_batches*batch_rows; entered processor session double checks shared client and one close"
   },
   "first_four": {
     "candidate": "c4f7f15742d3473274b75c42556c2d75be423060",
@@ -35,7 +36,8 @@
       "failures": 0,
       "errors": 0
     },
-    "skipped_reason": "pinned LOTUS unavailable; not counted as passed"
+    "skipped_reason": "pinned LOTUS unavailable; not counted as passed",
+    "published_head": "9c1e1f22211a5689878a7969060fc38349f920cd"
   },
   "saved_sdk": {
     "candidate": "c4f7f15742d3473274b75c42556c2d75be423060",
@@ -59,5 +61,135 @@
     "gpu": 0,
     "http_posts": 0
   },
-  "imlane_original_q1_2000": "two adapter preflight rejections retained; 128-row adapter limit does not describe author capability"
+  "imlane_original_q1_2000": "two adapter preflight rejections retained; 128-row adapter limit does not describe author capability",
+  "later_two": {
+    "candidates": [
+      "5e0390ec5a40cf0cd7d0e7ba7cc93083b42f33a5",
+      "97af50c59d1eae4e6e6b324414f9111b85a579f2"
+    ],
+    "integrated": [
+      "af70f2a15fe294401e1240e8daf50b8d784c9244",
+      "97af66710d88b04f77925a997f9432c799a859b3"
+    ],
+    "review": {
+      "standards_code_required": 0,
+      "standards_evidence_sync_required": 1,
+      "standards_evidence_sync_fixed": true,
+      "spec_required": 2,
+      "spec_fixed": 2,
+      "spec_followup_remaining_required": 0,
+      "standards_followup_remaining_required": 0
+    },
+    "fixes": [
+      "standalone HTTP cleanup preserves first error and bounded redacted notes over IMLane wire",
+      "request-local default cookie jars preserve redirects and isolate concurrent/next calls"
+    ],
+    "reproductions_before_fix": {
+      "run": 16,
+      "passed": 10,
+      "failures": 2,
+      "errors": 4,
+      "skipped": 0
+    },
+    "targeted_after_fix": {
+      "run": 22,
+      "passed": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "final_composition": {
+    "pre_followup_head": "97af66710d88b04f77925a997f9432c799a859b3",
+    "tests": {
+      "run": 100,
+      "passed": 86,
+      "skipped": 14,
+      "failures": 0,
+      "errors": 0
+    },
+    "skipped_reason": "11 LOTUS cleanup and 3 pinned OpenAI/LiteLLM replay tests unavailable locally; not counted as passed",
+    "source_sha256": {
+      "code/integrations/sema/imlane_complete_call.py": "9364158f44529f6c5e3082412dce9db09714630aff83d32c1c40c5c2e7152ab7",
+      "code/integrations/sema/imlane_http.cpp": "04e721d3451aa57759dbe040638e1e6e84efc4cf48587241b494c6d51f645eaf",
+      "code/src/baselines/text/frameworks/imlane_calls.py": "c2af1cbec1e65522c0a4a87627e0b5304c8a68272c73f72fb6fb5118f91aec08",
+      "code/src/baselines/text/frameworks/native_calls.py": "a6491b1790b6f2abc71c7df95411413b85729161e0e31db6ffae991b179dac50",
+      "code/src/baselines/text/frameworks/prepared_map.py": "2c74daa0ad1097bd4f99482f4ddff2e94d9991a37a742cd90ef7e87a640d7f59",
+      "code/src/execution_provider/adapters/sema_imlane.py": "5a8a98fcde0d86988d8a8e7c8b114612e8d68ad9fdac5aa211b691a07c3a5f7d",
+      "code/src/execution_provider/adapters/sema_native.py": "7271017b906365b74d491b02c1158b2422d8ce2f0a575fe067c62e204b5cde66",
+      "code/src/semantic_methods/lotus/batch.py": "150a6b6e18159184cea2b184429e1cd4abcbf8743d8da2969ec7799cc7fb1a46",
+      "code/src/semantic_methods/lotus/limits.py": "7ecdd4af8672df0ba1ebfe6c94b409f5a19d30cf3cf832ea883c5cd3608aaf75",
+      "code/src/semantic_methods/lotus/native.py": "bd16b420ad70be0b0ec3b9b499899e6a5c6b4447749fc5aa3aa3fa7cbc9795ba",
+      "code/src/semantic_methods/lotus/sdk.py": "9ed2e00df7d5529f3b3c4b4bcc9b0bf11552604d3f545bc4c3ae103e1cc9fe27",
+      "code/tests/baselines/test_imlane_error_categories.py": "fabb6b9667148dc13f298cd0e9b2b0f65187ca408309b2833afc72fcec059b33",
+      "code/tests/baselines/test_native_call_cleanup.py": "53f2521ed23dd3ce2ee83a0cbeec1801c4a5b02d9cdffd599c77022c399119b8",
+      "code/tests/baselines/test_native_dataset_configuration.py": "61c98ba99aa12d7caa3eac3c0061a9fa97ec6dcb7cc653b27aae072deb07c40a",
+      "code/tests/baselines/test_native_http_lifecycle.py": "28c686c74af69228a3f1c58faf0a36a4d47114ed440378227f325136637ae9f7",
+      "code/tests/baselines/test_native_ray_configuration.py": "d1bf59a548aa754bea8f7d169a534b1cfa736e18eea126a678cc5b750baffffc",
+      "code/tests/semantic_methods/test_lotus_adapter.py": "e972c5db436eb552745ff7c347722053bdb866731d164ac7fb88444c7328ebeb",
+      "code/tests/semantic_methods/test_lotus_call_limits.py": "6eab18cd1daca57fc0877cb69ee82a4fe20154c34d079a5a65a4b45a9548740b",
+      "code/tests/semantic_methods/test_lotus_cleanup.py": "23bbcdabac893db87a8ec4da2bdc16dac9ddffff4a98c85c5662fc9cc58df4ad",
+      "code/tests/semantic_methods/test_lotus_control.py": "144cd1d4f15925a338edf6f7168431fe5747654ba08d5193bfef6c37ef36a282",
+      "code/tests/semantic_methods/test_lotus_response_replay.py": "0e02c4517219432341215e01276f91ab2659dafb0fa657f46372fbe3536d0841"
+    },
+    "not_run": [
+      "actual vendor graphs",
+      "actual keepalive HTTP fixture",
+      "author bridge runtime",
+      "IMLane 2000-row expansion"
+    ],
+    "output": "integration_final.txt",
+    "initial_failure_output": "integration_late_before.txt",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "tests.baselines.test_native_dataset_configuration",
+      "tests.baselines.test_native_call_cleanup",
+      "tests.baselines.test_imlane_error_categories",
+      "tests.baselines.test_native_ray_configuration",
+      "tests.semantic_methods.test_lotus_call_limits",
+      "tests.semantic_methods.test_lotus_cleanup",
+      "tests.semantic_methods.test_lotus_control",
+      "tests.semantic_methods.test_lotus_response_replay",
+      "tests.experiments.test_sembench_queries",
+      "tests.experiments.test_sembench_movie",
+      "tests.execution_provider.test_native_tasks",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_graph_reuses_one_client_with_per_call_timeouts_and_closes",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_ray_batch_factory_reuses_client_and_closes_on_error",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_no_client_crosses_event_loops",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_stopped_control_sends_no_request",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_owner_loop_exit_before_close_is_reported",
+      "-v"
+    ],
+    "process_elapsed_seconds": 0.5816277908161283,
+    "returncode": 0
+  },
+  "saved_bridge_build": {
+    "source_commit": "97af50c59d1eae4e6e6b324414f9111b85a579f2",
+    "source_archive_sha256": "c5ef6a2b4b27c5222cb57174ac43633cb17ffb2d834beff0ef0dce163fe04260",
+    "source_archive_verified": true,
+    "current_cpp_matches_saved_compiled_source": true,
+    "build": {
+      "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+      "returncode": 0,
+      "compiler_output": "",
+      "source_sha256": "04e721d3451aa57759dbe040638e1e6e84efc4cf48587241b494c6d51f645eaf",
+      "binary_sha256": "1e46520aa363b9aacdd87996359737c81351c0186da0a33a7dc85d22962ac780",
+      "real_model_requests": 0
+    },
+    "new_builds": 0,
+    "new_author_system_builds": 0,
+    "author_runtime": "pending",
+    "imlane_2000_rows": "pending"
+  },
+  "release_checks": {
+    "full_tracked_secret_scan_files": 7282,
+    "violations": 0,
+    "existing_baseline_suppressed": 10,
+    "added_local_links_checked": 19,
+    "wording_link_errors": 0,
+    "git_diff_check": true
+  }
 }

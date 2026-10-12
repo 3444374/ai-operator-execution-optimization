@@ -33,7 +33,8 @@
 128行来源是本项目`5ee1b90c3`添加的C++快照检查，另由Python适配器检查；
 这是当前调用桥的接收范围，不是作者系统自然行容量的证明。
 新桥源码在结果检查、完整stdout输出及已完成future释放后立即清除对应`calls[i]`，
-输入/输出表不再因全批次调用列表而一直保留到EOF；当前尚未单独编译新二进制。
+输入/输出表不再因全批次调用列表而一直保留到EOF；保存的97af50c5桥编译成功，源码摘要与当前桥一致。
+编译记录见[发布组合记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-release-composition)；新二进制尚未用于作者runtime或2000行资格检查，实际运行配置仍须单独核验。
 这减少已交付结果的留存，不保证待交付结果、Arrow/IPC复制和全部并发输出的聚合32MiB RSS。
 当前原SemBench Q1的2000行及512行目标仍为unsupported，LOTUS入口先核对实际executor行容量。
 后续最小方案需先核作者DBEnd投递/消费接口的自然持续能力，以及待交付总量和输入/IPC暂存责任，

@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import base64
 from contextlib import asynccontextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 import json
 import math
@@ -26,6 +27,7 @@ from .prepared_map import NativeGraphOptions
 
 _PROCESSOR_URL = "http://localhost/native-complete-call"
 _DAFT_CONTROLS = {}
+_HTTP_CALL_COOKIES = ContextVar('native_http_call_cookies', default=None)
 
 
 def _daft_control(key):
@@ -112,7 +114,11 @@ def raise_execution_error(outcome):
 
 
 def native_error_text(error):
-    return redact_text(f"{type(error).__name__}: {error}").encode()[:4096].decode(errors="ignore")
+    diagnostic = f"{type(error).__name__}: {error}"
+    notes = getattr(error, '__notes__', ())
+    if notes:
+        diagnostic += '\n' + '\n'.join(notes)
+    return redact_text(diagnostic).encode()[:4096].decode(errors="ignore")
 
 
 def _call_wire(call):
@@ -165,24 +171,51 @@ class _HttpClient:
 
 def _new_http_client():
     import aiohttp
+    class CallCookieJar(aiohttp.DummyCookieJar):
+        # Redirects share this call's default jar; concurrent calls never share it.
+        def update_cookies(self, cookies, response_url=None):
+            jar = _HTTP_CALL_COOKIES.get()
+            if jar is not None:
+                if response_url is None:
+                    jar.update_cookies(cookies)
+                else:
+                    jar.update_cookies(cookies, response_url)
+
+        def filter_cookies(self, request_url):
+            jar = _HTTP_CALL_COOKIES.get()
+            return jar.filter_cookies(request_url) if jar is not None else super().filter_cookies(request_url)
+
     # The vendor graph owns concurrency; this pool adds no separate admission.
     return _HttpClient(asyncio.get_running_loop(), aiohttp.ClientSession(
         timeout=aiohttp.ClientTimeout(total=None), auto_decompress=False,
-        cookie_jar=aiohttp.DummyCookieJar(), connector=aiohttp.TCPConnector(limit=0)))
+        cookie_jar=CallCookieJar(), connector=aiohttp.TCPConnector(limit=0)))
 
 
 @asynccontextmanager
 async def _http_session(client):
-    if client is None:
-        owned = _new_http_client()
-        try:
-            yield owned.session
-        finally:
-            await owned.close()
-    else:
-        if asyncio.get_running_loop() is not client.loop:
+    import aiohttp
+    cookies = _HTTP_CALL_COOKIES.set(aiohttp.CookieJar())
+    owned, primary = None, None
+    try:
+        if client is None:
+            client = owned = _new_http_client()
+        elif asyncio.get_running_loop() is not client.loop:
             raise RuntimeError("native HTTP client belongs to a different event loop")
         yield client.session
+    except BaseException as error:
+        primary = error
+        raise
+    finally:
+        try:
+            if owned is not None:
+                try:
+                    await owned.close()
+                except BaseException as cleanup:
+                    if primary is None:
+                        raise
+                    primary.add_note('Native HTTP pool close also failed: ' + type(cleanup).__name__)
+        finally:
+            _HTTP_CALL_COOKIES.reset(cookies)
 
 
 async def _close_http_client(client):

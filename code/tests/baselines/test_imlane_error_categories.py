@@ -62,6 +62,14 @@ class IMLaneErrorCategoryTests(unittest.TestCase):
         self.assertEqual(outcome_kind(outcome), 'execution_error')
         self.assertEqual(outcome.execution_error, 'RuntimeError: author UDF fixture')
 
+    def test_execution_error_keeps_http_cleanup_diagnostic_after_arrow_conversion(self):
+        error = ValueError('response capacity exceeded')
+        error.add_note('Native HTTP pool close also failed: OSError')
+        outcome = self.udf(error=error)
+        self.assertEqual(outcome_kind(outcome), 'execution_error')
+        self.assertTrue(outcome.execution_error.startswith('ValueError: response capacity exceeded'))
+        self.assertIn('pool close also failed: OSError', outcome.execution_error)
+
     def test_diagnostics_are_bounded_in_utf8_bytes(self):
         text = native_error_text(ValueError('中文'*4096))
         self.assertLessEqual(len(text.encode()),4096)

@@ -6,12 +6,12 @@
 五条LOTUS替换批次已共用固定SDK响应重放入口，原LOTUS保持；11项控制与2项入口检查通过。
 固定SDK差分及既有SDK清理共13项因本机缺依赖跳过，不将源码共用视为完整异常资格。
 IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分类检查通过，实际作者资格pending。
-共享SDK客户端现按替换批次复用，减少不必要的逐响应重建；3项入口/关闭检查通过，实际SDK复用资格pending。
+共享SDK客户端按替换批次复用，3项入口/关闭检查通过；本机缺固定SDK依赖，已保存c4f7f157的SDK资格见下段，最新组合未在本机运行固定SDK。
 固定c4f7f157服务器20项真实SDK/清理检查通过、12次localhost POST、模型/GPU0且自有进程退出。
 原生kernel按query/Daft loop及Ray原HTTP批次寿命复用客户端，6项本机生命周期检查通过；
 4次真实localhost调用复用同一连接，原生图新池资格pending，Ray声明C与实际图参数分别记录。
 LOTUS共同接收容量/期限profile已实现，6项本机检查通过，IMLane式2000行目标在准备/执行前拒绝；
-IMLane128源于自有桥检查，C++源码已及时释放完成调用的输入/输出引用，新桥编译及实库2000行能力均pending/unsupported。
+IMLane128源于自有桥检查，C++源码及时释放完成调用的输入/输出引用；保存的97af50c5新桥编译成功且源码摘要匹配，作者runtime及2000行资格仍pending。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。
@@ -19,7 +19,8 @@ IMLane128源于自有桥检查，C++源码已及时释放完成调用的输入/�
 累计128次替身POST，作者超时/取消及原生授权错误检查通过，进程/共享内存归零；旧失败/时间窗停止保留，模型未运行。
 当前完整调用适配器有效128行，不切块或把此值归因底层kernel；CLI原生控制按臂声明，不强升级低并发。
 该切片已纳入原生发布分支，随后追加共享SDK解释、每批客户端复用、消费关闭诊断及IMLane执行错误分类。
-首四块与SemBench组合本机49项通过、11项缺LOTUS依赖跳过；HTTP连接寿命及容量期限后两块仍在有限复审。
+首四块已独立发布；后两块追加HTTP连接寿命及容量期限，并修正独立HTTP首错和请求内重定向cookie行为。
+最终组合本机86项通过、14项缺LOTUS／OpenAI／LiteLLM依赖跳过，缺项不计为通过；新服务器／HTTP／模型／GPU运行0。
 来源与验证范围见[发布组合记录](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-release-composition)。
 
 2026-10-12：[三种原方法的统一原生接入](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。

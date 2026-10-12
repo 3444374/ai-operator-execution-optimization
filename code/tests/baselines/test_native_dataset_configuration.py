@@ -157,9 +157,9 @@ class DaftConfigurationTests(unittest.TestCase):
 
 class RayConfigurationTests(unittest.TestCase):
     def test_batch_actor_and_source_parameters_are_forwarded_separately(self):
-        selections = (NativeGraphOptions(concurrency=4, ray_actors=1, ray_async_batches_per_actor=3,
+        selections = (NativeGraphOptions(concurrency=9, ray_actors=1, ray_async_batches_per_actor=3,
                                         ray_batch_rows=3, source_blocks=2),
-                      NativeGraphOptions(concurrency=8, ray_actors=2, ray_async_batches_per_actor=2,
+                      NativeGraphOptions(concurrency=20, ray_actors=2, ray_async_batches_per_actor=2,
                                         ray_batch_rows=5, source_blocks=4))
         for options in selections:
             with self.subTest(options=options):
@@ -195,15 +195,20 @@ class RayConfigurationTests(unittest.TestCase):
     def test_successful_carrier_keeps_real_http_error_and_transport_failure(self):
         async def check():
             source = calls()[1:]
-            with patch.object(native, "_request", AsyncMock(side_effect=outcome)) as request:
-                for call in source:
-                    row = dict(call_id=call.call_id, row_id=call.row_id, native_call=native._call_wire(call))
-                    response = await native._ProcessorSession().post(native._PROCESSOR_URL,
-                        data=json.dumps(native._ray_preprocess(row)["payload"]), headers={})
-                    self.assertEqual(response.status, 200)
-                    result = native._ray_postprocess(dict(row, http_response=await response.json()))
-                    self.assertEqual(native._outcome_from_wire(result["native_outcome"]), outcome(call))
+            client = SimpleNamespace(close=AsyncMock())
+            with patch.object(native, "_request", AsyncMock(side_effect=lambda call, **kwargs: outcome(call))) as request, \
+                 patch.object(native, "_new_http_client", return_value=client):
+                async with native._ProcessorSession() as session:
+                    for call in source:
+                        row = dict(call_id=call.call_id, row_id=call.row_id, native_call=native._call_wire(call))
+                        response = await session.post(native._PROCESSOR_URL,
+                            data=json.dumps(native._ray_preprocess(row)["payload"]), headers={})
+                        self.assertEqual(response.status, 200)
+                        result = native._ray_postprocess(dict(row, http_response=await response.json()))
+                        self.assertEqual(native._outcome_from_wire(result["native_outcome"]), outcome(call))
                 self.assertEqual(request.await_count, 2)
+                self.assertTrue(all(call.kwargs['client'] is client for call in request.await_args_list))
+                client.close.assert_awaited_once()
         asyncio.run(check())
 
     def test_postprocess_rejects_changed_call_or_row_identity(self):

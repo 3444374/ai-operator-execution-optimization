@@ -130,7 +130,7 @@ Daft及Ray Data各自三条查询共用owner。不能把这些记录称为原生
 15项实际厂商库或运行时检查未启用；CLI帮助退出0，缺必要环境变量的预检明确退出1。
 首轮17项被本机沙箱的端口或进程读取权限阻止，原日志保留；相同源码在本机权限下完成上述回归。
 本轮没有服务器、模型或GPU运行，既有 **16 pass／2 unsupported** 与累计128次软件POST保持原身份。
-该历史发布当时尚未纳入task-8的共享执行修订；后续首四块的组合检查见[发布组合记录](../../postgresql/native_executor_baselines_20261012/README.md#native-release-composition)，不增加性能结论。
+该历史发布当时尚未纳入task-8的共享执行修订；后续六块及修后组合检查见[发布组合记录](../../postgresql/native_executor_baselines_20261012/README.md#native-release-composition)，原Q1两项前置拒绝与旧来源保留，不增加性能结论。
 
 ## 可运行命令
 

@@ -10,6 +10,87 @@ from unittest.mock import patch
 from src.baselines.text.frameworks import native_calls as native
 
 
+class NativeHttpFailureAndCookieTests(unittest.TestCase):
+    def call(self, index=0, **options):
+        return native.NativeCall(f'failure:{index}', index, b'{}', 'http://localhost/fixture', (), 1., **options)
+
+    def test_standalone_capacity_error_survives_pool_close_failure(self):
+        created = []
+        class BrokenClose(Session):
+            async def close(self):
+                await super().close()
+                raise OSError('pool close fixture')
+        def new():
+            client = native._HttpClient(asyncio.get_running_loop(), BrokenClose())
+            created.append(client)
+            return client
+        with patch.object(native, '_new_http_client', new):
+            with self.assertRaisesRegex(ValueError, 'byte allowance') as observed:
+                asyncio.run(native._request(self.call(max_response_bytes=1)))
+        self.assertEqual(created[0].session.closes, 1)
+        self.assertIn('OSError', '\n'.join(observed.exception.__notes__))
+
+    def test_transport_error_retains_its_cause_and_close_diagnostic(self):
+        class BrokenSession(Session):
+            def post(self, *args, **kwargs):
+                raise ConnectionResetError('request fixture')
+            async def close(self):
+                await super().close()
+                raise RuntimeError('pool close fixture')
+        with patch.object(native, '_new_http_client', lambda: native._HttpClient(
+                asyncio.get_running_loop(), BrokenSession())):
+            outcome = asyncio.run(native._request(self.call()))
+        self.assertIsNone(outcome.response)
+        self.assertTrue(outcome.transport_error.startswith('ConnectionResetError: request fixture'))
+        self.assertIn('pool close also failed: RuntimeError', outcome.transport_error)
+
+    def test_pooled_redirect_cookies_match_request_local_default_jar(self):
+        import aiohttp
+        from yarl import URL
+        async def run():
+            client = native._new_http_client()
+            try:
+                for index in range(2):
+                    reference = aiohttp.CookieJar()
+                    async with native._http_session(client) as session:
+                        jar = session.cookie_jar
+                        for endpoint in ('http://localhost/fixture', 'http://127.0.0.1/fixture'):
+                            url = URL(endpoint)
+                            self.assertEqual(jar.filter_cookies(url), reference.filter_cookies(url))
+                            cookie = {'redirect': str(index)}
+                            jar.update_cookies(cookie, url)
+                            reference.update_cookies(cookie, url)
+                            self.assertEqual(jar.filter_cookies(url), reference.filter_cookies(url))
+                        self.assertEqual(jar.filter_cookies(URL('http://localhost/final'))['redirect'].value, str(index))
+                    self.assertFalse(jar.filter_cookies(URL('http://localhost/final')))
+            finally:
+                await client.close()
+        asyncio.run(run())
+
+    def test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session(self):
+        from yarl import URL
+        async def run():
+            client = native._new_http_client()
+            both_ready, ready = asyncio.Event(), []
+            url = URL('http://localhost/fixture')
+            async def request(index):
+                async with native._http_session(client) as session:
+                    self.assertIs(session, client.session)
+                    self.assertFalse(session.cookie_jar.filter_cookies(url))
+                    session.cookie_jar.update_cookies({'redirect': str(index)}, url)
+                    ready.append(index)
+                    if len(ready) == 2:
+                        both_ready.set()
+                    await both_ready.wait()
+                    self.assertEqual(session.cookie_jar.filter_cookies(url)['redirect'].value, str(index))
+            try:
+                await asyncio.gather(request(0), request(1))
+                self.assertFalse(client.session.cookie_jar.filter_cookies(url))
+            finally:
+                await client.close()
+        asyncio.run(run())
+
+
 class Session:
     def __init__(self):
         self.closed, self.requests, self.closes = False, [], 0
