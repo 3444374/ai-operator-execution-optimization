@@ -396,12 +396,13 @@ class SemaSemLoomService(SemaRequestService):
             await asyncio.sleep(0 if progress.has_immediate_work else self._session.limits.poll_interval_s)
 
     async def _forward(self, body, headers, row, _client):
-        deadline = time.monotonic() + self.limits.timeout_s
+        deadline = self._request_deadline(row)
         row.update(core_delivery_ns=None, response_ready_ns=None, forward_resumed_ns=None)
         value = json.loads(body)
         if (not isinstance(value, dict) or value.get('model') != self.model_config.model_id
                 or value.get('stream', False) is not False or not isinstance(value.get('messages'), list)):
             raise ValueError('Sema service accepts complete non-streaming calls to its single model')
+        del value
         task = prepare_native_task(body, self._next_task, row_sequence=row['request_sequence'],
                                    call_id='sema-http-' + str(row['request_sequence']),
                                    max_result_bytes=self.limits.response_bytes + MAX_RESPONSE_HEADER_BYTES + 12)

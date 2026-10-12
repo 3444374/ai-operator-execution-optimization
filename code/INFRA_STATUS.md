@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[Sema入口正文与期限修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
+读取前独立预留持有数／总字节，三条服务共用一次handler期限；native图未确认消费停止时继续持有，Core策略和远端未知责任保持。
+本机113项不同检查通过，服务器最终21项通过，含2MiB正文；所有三次软件slice累计126次合成请求，真实模型及性能资格未增加。
+
 2026-10-11：[SQuAD原生完整请求画像](../experiments/results/diagnostics/squad_native_length_20261011/README.md)。
 原生formatter、SDK与本地tokenizer全量检查完成；自然调参切片未满足本轮选样条件，模型0。2026-10-12补同一调参元数据的静态次序描述，不重新计数token或模拟执行。
 本方案长度描述与薄转发装配暂未推进，现有接入入口和默认保持；后续问题从[数据组织目标修订](../experiments/plans/数据组织.md#map-order-question)核对。
