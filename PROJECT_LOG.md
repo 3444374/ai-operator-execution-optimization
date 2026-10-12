@@ -1,11 +1,32 @@
 # 项目日志
 
+## 2026-10-12：发布可选async并保留统一公开入口计划
+
+- 四非IMLane路径原Q2/Q3 CLI证据已先以0f91ae1b推送并核远端；随后有限整合05758e3f，五个async实现/测试逐字保持，默认同步、共享代码及未知责任保护保持。
+- 两轴有限复审0必修/0缺失；发布者离线复算两作者新347＋4000 POST和143身份清理，未重跑服务器组件矩阵。
+- 本机组合95独立用例通过/0跳过；初轮7项沙箱bind错误保留，只重验该7项，110/128 localhost发送前POST、7.525/60秒。135归档成员/2152解码请求隐私0违规，模型/GPU0。
+- [整合记录](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-async-publisher-integration)与[剩余公开入口提案](experiments/plans/语义系统对照.md#sembench-async-public-entry-next)保留未运行项和各自预算；同步baseline模型小轮独立，不借async组件通过宣称完整CLI或性能。
+
 ## 2026-10-12：公开SemBench CLI四路径软件接线与模型小轮提案
 
 - 固定d004e720实际公开CLI原LOTUS／Daft／Ray Data／SemLoom各Q2/Q3，加原LOTUS performance Q2配对，共9查询1080逻辑调用、2160传输POST通过；原关系2000行与每查询120行不改。
 - 首次远端准备被自动审批拒绝，命令未执行；用户本人确认900秒／2560传输POST／1280逻辑调用限定软件范围后继续。359.252秒包含预检及准备间隔，不重置窗口，模型/GPU0。
 - [同题原件](experiments/results/diagnostics/native_release_actual_software_20261012/README.md)保留真实CLI／SDK／原parser/evaluator及所有错误质量；45个登记身份无残留，旧早停未知和首轮失败保持。未占task-10 CPU16–23，不重跑其作者Q1。
 - [同任务单双卡方案](experiments/plans/语义系统对照.md#sembench-native-model-next)准备质量／调用量、固定路由与交错测量，优先既有同步接法，不等待async；仅提案，尚未运行模型。
+
+## 2026-10-12：完成共享cookie修后IMLane原生async两阶段软件检查
+
+- 固定77cc1ed0基于发布者d004e720；五个async实现/测试文件与a54e1456一致，采用已发布共享cookie/只读源码路径修补，同步默认、作者机制和未知责任保护保持。
+- 本机67项有限回归通过、无跳过；新实库生命周期两作者模式通过，CPython174加Ray173共347/384 POST、53.543/600秒、2GET。
+- 经公开MovieQueryResult.execute及真实配置/容量/工厂/delegate运行两模式原Q1，各完整2000调用/一个DBEnd批次，完整消费后各5行，原payload/wire摘要和稳定作者循环匹配；共4000/4096 POST、90.019/900秒。
+- [同一主报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)保存96成员脱敏观测、完整Q1 wire及离线复算；最终143组进程身份和10实例自有残留0，源码及作者库摘要未改，SSH master保持，模型/GPU0。
+- 旧153 POST失败及准备期CPU检查未通过记录保留；原Git索引告警和本地导出路径拼接错误单列，未重跑作者测试或改源码。完整CLI/观测代理/官方评价、Q2/Q3与真实性能另列待验证。
+
+## 2026-10-12：接续共享cookie修后IMLane原生async验证
+
+- 按父任务新授权从发布者d004e720移植既有五个async实现/测试文件，采用已发布共享cookie及SemBench只读源码路径修补；未新增功能或修改作者机制。
+- 旧02a75cc4候选及153 POST失败/清理观测保留；新生命周期600秒/384 POST单独编号，通过后才执行原Q1的独立900秒/4096 POST。
+- 模型/GPU0，继续核对实际源码/桥/作者身份及资源，只清理本次可确认身份的进程，不因共享修补清空未知责任。
 
 ## 2026-10-12：固定发布版实库软件核查与只读来源路径修补
 

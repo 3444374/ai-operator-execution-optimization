@@ -1,5 +1,128 @@
 # 三种原方法的原生执行接入
 
+<a id="imlane-native-async-followup"></a>
+## 共享cookie修后两作者async与完整Q1检查
+
+固定源码`77cc1ed0f2fcd74c84f76752315ddc30798b6441`基于发布者
+`d004e720239b7902a1b3c5b735eb6f5fa8ad7d33`；采用其6629846a共享cookie和只读SemBench源码路径修补。
+五个async实现/测试文件与已独立复审的a54e1456逐字一致，作者源码/调度及同步默认保持。
+旧[153 POST失败记录](#imlane-native-async-http)与其原件完整保留；本次两个窗口单独记账，未续旧时间窗。
+本机67项有限回归通过、无跳过、实际HTTP/模型/GPU0；本机Arrow/session替身不代替下面的实际库证据。
+
+| 新软件窗口 | 作者模式与实际POST | 总POST额度 | 外层实际启动至清理完成 |
+|---|---|---:|---:|
+| 生命周期 | CPython174，作者Ray173，两模式通过 | 347/384 | 53.543/600秒 |
+| 原Q1完整2000行 | CPython2000，作者Ray2000，两模式通过 | 4000/4096 | 90.019/900秒 |
+
+两窗口分别从UTC`2026-10-12T15:35:56.868232`和`15:38:54.208393`实际启动，
+停止新运行的期限分别为`15:45:56.868232`、`15:53:54.208393`。
+新窗口合计4347 POST、2 GET，模型/GPU0；旧153 POST另册，总async历史4500 POST，不挪用已封存容量预算。
+启动前的CPU忙度检查失败记录保留，未产生作者窗口；最终样本满足同一低于10%的空闲条件。
+仅使用既有作者库/桥，没有安装、编译、重建或访问真实模型。
+
+生命周期覆盖两模式正常8/8/129行、重复文本的独立出现身份、乱序完整响应和慢消费，
+401/429、重复响应头、gzip原字节、非JSON及length结果，307/302、独立与并发cookie，
+超时、容量执行错误、同Coordinator新对象拒绝、已发送取消/提前关闭及结束自有实例后的下一正常查询。
+正常145个出现身份在每模式两名作者worker上保持各自线程/循环；Ray核对实际两actor身份。
+取消或错误时按原记录保持远端工作unavailable和需清理状态，没有因cookie修补清空未知责任。
+
+完整Q1从真实`MovieQueryResult.execute`进入，经配置加载、MovieQuery容量检查、公共
+`NativeCallExecutor`工厂和实际`IMLaneCallExecutor`/`SemaIMLaneExecutor`；声明与实际行容量均为2000。
+每模式一个2000行DBEnd查询批次，全部2000个调用身份及完整状态/响应头/HTTP版本/正文摘要匹配后，
+原LOTUS1.2.4 parser和查询才各返回5条结果；没有截断评论或提前取5条。
+两模式各2000个trace核对执行中的任务/共享HTTP源码、稳定线程/循环与Ray actor；未每128行重启。
+payload仍为1,500,488字节、最大902字节，摘要`ec6948a91625073ac3d85e901dd51f823b4d0b164415e68a66de8737f8448fd6`；
+规范化原endpoint后的wire为2,649,072字节，摘要`d85a25ca894b6f89ffbd471f7fca8edcbb992a7b4d0123a7ac748994a45f4125`。
+实际fixture stdin每模式2,657,072字节，交付编码响应1,108,000字节；实际待交付峰值128。
+该128是槽位额度；原生META4/6及声明请求额度8不代表物理worker或HTTP峰值，本次HTTP峰值观察为2。
+payload/响应32MiB等编码容量仍不等于聚合RSS保证。
+
+最终独立核查143组PID/start ticks与10个实例：自有及同运行token进程、共享内存均为0，
+HTTP连接关闭，没有强制清理或清理错误；21个源码、12个作者源码及3个作者二进制摘要未变，SSH master保持。
+原SemBench Git命令保留macOS `._pack`索引告警；命令返回码、checkout提交及已提交查询源码摘要检查通过，未改原checkout。
+本地证据导出路径拼接错误已修正，生产源码和实库运行保持；原件可按交接中的校验值获取。
+
+机器事实见[imlane_async_followup_verification.json](imlane_async_followup_verification.json)，
+96成员观测见[imlane_async_followup_observations.tar.gz](imlane_async_followup_observations.tar.gz)，
+SHA256为`195f21817b8e3bffd3922c2c20aa79458f4002814cd4262239848e65a48473ef`。
+保留一次完整Q1 wire，两个模式及冗余输入副本以原件摘要映射；私有runtime配置与无独立核验价值的调试副本留在原件。
+可用[离线复算](recompute_imlane_async.py)核对POST、完整payload/wire、两模式身份/循环和清理，不发HTTP。
+
+本次是实际库＋localhost语义响应fixture的公开查询API软件检查。
+完整CLI常驻owner/观测代理、官方Movie质量评价、新async的Q2/Q3与单独128行批次、4096行全批及共享Coordinator并行查询隔离未运行。
+旧同步128行容量证据仍保留；真实模型/GPU、质量、连接复用、匹配性能与RSS结论未建立。
+所需接续仅为发布者整合固定源码与证据；完整CLI/评价或Q2/Q3若需要，另外登记有限软件预算。
+
+<a id="imlane-async-publisher-integration"></a>
+### 发布者整合与本地组合核验
+
+交付05758e3f接到已发布0f91ae1b，五个async实现/测试文件逐字保持；共享HTTP、公开CLI及原作者机制未改。
+同步默认保持，新Coordinator配置显式选择async UDF并核对源码摘要；已发布四非IMLane路径的第三窗口原件与评价不改。
+两轴有限复审必修/缺失证据均0；离线复算确认347＋4000 POST及143组身份清理，未重跑已合格作者组件矩阵。
+
+本地组合95个独立用例最终通过、0跳过：首轮88通过、7项被沙箱拒绝localhost bind，失败原件保留；
+只对这7项用本机临时fixture重验，7通过、110/128发送前POST、7.525/60秒，无远端服务器/模型/GPU。
+取消用例的BrokenPipe线程日志保留；现有停止转发、资源与线程清理断言通过，未据此扩大远端停止结论。
+本机Arrow替身与实际作者实库观测分开；135个归档成员及2152个解码请求均隐私0违规。
+
+原交付事实和追加发布者核验分别在同一[机器记录](imlane_async_followup_verification.json)保存。
+剩余[公开CLI小窗口](../../../plans/语义系统对照.md#sembench-async-public-entry-next)与
+[同步优先的单/双卡模型提案](../../../plans/语义系统对照.md#sembench-native-model-next)以本次整合源码为共同起点；
+前者未启动、各自需新预算，后者未运行模型，不等可选async的补充结果。
+
+<a id="imlane-native-async-http"></a>
+## IMLane原生async HTTP实库失败记录
+
+以下保留旧a54e1456失败运行的状态与计划；当前资格以[修后接续](#imlane-native-async-followup)为准。
+
+固定源码`a54e1456f1eafa88c202d9042b03cbe4831faf24`基于发布者
+`4566f1fc3839cb6149ebb1cf7d76a64c3d4cf04a`，保留已发布容量、未知责任保护和LOTUS观测实现。
+同一可选任务直接`await _request(call)`，CPython/Ray各使用作者原async分支；每调用session继续由既有kernel关闭。
+同步默认、共享`native_calls.py`和作者源码未修改。源码核对及本机65项有限回归通过、无跳过，
+本机Arrow/session使用明确替身、实际HTTP/模型/GPU0；独立规范与需求复审均无源码必修项。
+这些检查不代表实库HTTP生命周期通过。
+
+实际作者CPython在同一Coordinator完成8、8、129行正常批次，以及6项完整HTTP值检查：
+401/429状态、重复响应头、gzip原字节、非JSON正文和length结果均保留。
+152个任务trace记录145个正常出现身份及后续HTTP调用；离线核对两名作者worker各保持同一线程和循环，
+执行中的共享HTTP代码与交付源码匹配。后续完整`run_mode`检查未到达，不将部分观测写成整模式通过。
+
+首个307请求收到`Set-Cookie: route_cookie=first; Path=/`，同一连接的后续POST却没有cookie，
+脚本在预期`route_cookie=first`处出现`AssertionError`。原报告没有断言文本或traceback；
+定位依据是固定脚本和末批请求/响应记录。安装的aiohttp3.14.5使用
+`ClientSession._cookie_jar.update_cookies_from_headers`更新响应cookie；共享`CallCookieJar`
+只转发`update_cookies`，继承的`DummyCookieJar.update_cookies_from_headers`为空操作。
+实际库源码与原始收发记录共同支持这个兼容缺陷，不把问题归因作者async能力或行容量。
+本任务按已指定范围保留共享源码，未在async函数内添加绕过办法。
+
+| 本次软件核验 | 状态 | 实际POST | 时间 |
+|---|---|---:|---:|
+| CPython生命周期 | 307 cookie检查失败，模式未通过 | 153/384 | 4.531/600秒（外层从实际启动计时） |
+| 作者Ray生命周期 | 未启动 | 0 | 未启动 |
+| 两模式各完整2000行原Q1 | 生命周期未通过，未启动 | 0/4096 | 独立900秒预算未启动 |
+
+生命周期实际启动UTC为`2026-10-12T14:11:52.446759`，停止新运行的期限为
+`2026-10-12T14:21:52.446759`，原时间窗已结束；没有重跑、重置或借用旧容量预算。
+GET0、模型/GPU0；只链接既有作者库和容量桥，未编译、重建或安装。
+正常响应后HTTP峰值观察为2，结束时活动请求0、连接已关闭；此值只描述本次fixture。
+监督记录10组自有PID/start ticks，另复核外层启动身份；最终自有进程、同运行token进程和共享内存均为0，
+没有强制清理或清理错误，作者源码/二进制及21个交付文件摘要未变，既有SSH master保持。
+期限之后只读收集和复核没有作者执行、HTTP或模型/GPU活动。
+
+机器事实与未运行清单见[imlane_async_verification.json](imlane_async_verification.json)；
+39成员脱敏观测见[imlane_async_observations.tar.gz](imlane_async_observations.tar.gz)，包含实际请求/响应、
+worker trace、各批关闭、清理、源码清单、实际cookie接口和本机/复审记录。
+归档SHA256为`0542c42942aaa3601631da91b498aa8af117aa308c20c530607cd1469e96912c`。
+私有原件摘要及逐成员公开映射保留；实际runtime配置不进入公开归档，原件由交接artifact获取。
+
+剩余CPython重定向/独立/并发cookie、超时、错误取消和下一查询，以及全部作者Ray生命周期均待验证。
+完整Q1候选已准备真实配置加载、MovieQuery容量检查、公共工厂及`MovieQueryResult.execute`入口，
+当前没有实库通过证据；完整CLI常驻owner/观测代理、官方质量评价与Q2/Q3也未运行。
+最小接续由共享HTTP源码责任方补真实raw-header更新的逐调用转发，核验已安装aiohttp和受影响旧调用方，
+保留本次失败；再登记新固定源码与运行额度，先完成两作者模式生命周期，之后才启动原Q1的4000次完整调用。
+没有连接复用、真实语义质量、RSS或性能收益结论。
+
+
 <a id="imlane-2000-capacity"></a>
 ## IMLane原Q1完整2000行软件检查
 

@@ -1,5 +1,14 @@
 # 实验与机制证据台账
 
+2026-10-12：[IMLane原生async接续](../../code/integrations/sema/README.md#imlane薄客户端)。
+发布者d004e720包含已实际aiohttp3.14.5核验的共享cookie修补；五个async文件与旧a54e1456一致。
+旧[失败原件与脱敏观测](postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-http)保留；
+修后固定77cc1ed0的[两作者模式及完整Q1](postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)均通过。
+新生命周期347/384 POST、53.543/600秒、2GET；原Q1各2000调用/一个DBEnd批次，共4000/4096 POST、90.019/900秒，模型/GPU0。
+本机67项无跳过；公共配置/容量/工厂/实际delegate及完整payload/wire、响应、稳定循环有实库证据；最终143组进程身份/10实例清理及库摘要通过。
+完整CLI/观测代理/官方质量评价、Q2/Q3和性能/RSS未运行；旧失败、未知责任及独立预算记录保持。
+发布者[本地组合与有限整合](postgresql/native_executor_baselines_20261012/README.md#imlane-async-publisher-integration)95独立用例通过/0跳过，初7项沙箱bind错误及仅7项重验另记；同步默认保持，原第三窗口CLI原件不改。
+
 2026-10-12：[固定发布版实库软件核查](diagnostics/native_release_actual_software_20261012/README.md)。
 4566f1fc的共享SDK解释、真实LOTUS＋Daft／Ray Data及原生图分项保存，首轮整体未通过；有效源码、POST、失败与清理见同题记录。
 公开CLI只读来源路径修补与aiohttp原始cookie header委派另以固定源码复核，未运行模型／GPU、未改变IMLane默认，也不借旧容量资格为async候选背书。

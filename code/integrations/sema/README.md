@@ -25,6 +25,62 @@ PYTHONPATH=code <driver-python> code/integrations/sema/verify_native.py \
 
 ## IMLane薄客户端
 
+[原生async任务函数](imlane_async_complete_call.py)作为独立候选，在作者循环上直接`await _request(call)`。
+CPython通过作者`run_until_complete`执行，作者Ray通过原`AsyncActorWrapper`执行；两模式使用同一函数。
+每次仍只有一份完整NativeCall，每调用session由既有kernel关闭，cookie与错误诊断采用发布组合的共享实现。
+不缓存跨调用HTTP client，不新建循环、Runner、并发池或修改作者源码；既有同步UDF默认保持。
+新函数只能在新的Coordinator/实例配置中选择，核对实际worker的任务源码摘要，避免作者module/alias缓存沿用旧函数。
+
+本机65项有限回归通过、无跳过、HTTP/模型/GPU0；Arrow和session使用明确替身。
+固定a54e1456的[实库记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-http)
+在CPython首个307 cookie检查失败：实际aiohttp3.14.5调用raw-header更新接口，共享cookie代理继承的该方法为空操作。
+153/384 POST、4.531/600秒；自有进程/共享内存及HTTP连接已清理，作者Ray和完整Q1未启动。
+该失败轮共享native_calls.py按任务范围保持；原时间窗已结束，未重置或借用旧预算。
+修后固定77cc1ed0基于发布者d004e720，采用其6629846a共享cookie修复与只读SemBench源码路径修复。
+五个async实现/测试文件与已复审候选完全相同；本机67项有限回归通过，无跳过、实际HTTP/模型/GPU0。
+两作者模式[新生命周期与原Q1](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)
+均通过：347/384 POST、53.543/600秒；完整Q1两模式各2000调用、共4000/4096 POST、90.019/900秒。
+最终143组进程身份及10个实例清理通过，源码/作者库摘要未变；完整CLI/观测代理/官方质量评价与Q2/Q3另列未运行。
+源码支持依据是固定作者`PyExecutor::ExecuteFunction`的async分支、Ray执行器的`AsyncActorWrapper`分支，
+以及既有[async Arrow用例](../imlane/fixture_udf.py)；这些依据不代替新任务函数的实库检查。
+[有限验证脚本](verify_imlane_async_calls.py)采用已直接批准的软件预算：CPU16–23、两作者模式、
+计划最多348 POST、上限384 POST/600秒，只访问localhost并保留错误/取消后的资源核查。
+脚本不上传、不编译或加载模型；需已有作者构建与桥二进制和独立输出目录。
+执行前核对交付的`--source-manifest`，包括共享HTTP实现和调用方源码；worker回报新任务及共享HTTP源码摘要。
+使用无字节码缓存的独立源码目录；任务函数逐项比较已加载HTTP函数体与源码编译结果，记录实际请求代码摘要。
+逐批提交前预留最多POST次数；异常额外POST立即停止已核对身份的自有作者进程，强制清理不计通过。
+时间信号停止新工作并保留90秒清理时间；每项清理独立尝试，检查自有PID/start-ticks、线程及共享内存。
+所有正常响应消费后核查HTTP连接关闭，302/307的method、完整请求摘要及两执行器HTTP峰值分别检查。
+本地[验证器故障注入](../../tests/baselines/test_imlane_async_verifier.py)覆盖清理异常、信号、PID复用和POST预算。
+执行前按runtime手册保存`imlane-runtime`预检并确认CPU可用，外层使用有限timeout；原容量预算已封存。
+
+```sh
+taskset -c 16-23 timeout --signal=TERM --kill-after=3 597s \
+  <author-python> -B code/integrations/sema/verify_imlane_async_calls.py --execute \
+  --author-root <checked-author-build> --bridge-binary <existing-bridge> \
+  --source-manifest <delivered-candidate-source-lock> \
+  --output <new-private-output> --wall-limit-s 600 --post-limit 384
+```
+
+仅上述生命周期检查通过后，用独立15分钟/4096 POST预算检查两模式各完整2000行Q1。
+[原Q1客户端](imlane_async_q1_client.py)核对原raw/CSV、完整payload及规范化wire摘要后才取得提交额度，
+保持原LOTUS查询、parser和最后5条结果；各模式一个DBEnd上下文，预计4000 POST，模型/GPU0。
+从公开`MovieQueryResult.execute`进入，经配置加载、`MovieQuery`容量检查和`NativeCallExecutor`工厂，
+核查实际`IMLaneCallExecutor`/`SemaIMLaneExecutor`及桥、UDF、Coordinator身份。
+完整CLI常驻owner/观测代理和官方质量评价另列未运行；此轮只运行公开查询API以保留4096次POST总额度，Q2/Q3未加入。
+私有`q1-spec`提供已有LOTUS解释器、tokenizer、原查询源码/数据路径及既有摘要，不下载资产。
+
+```sh
+taskset -c 16-23 timeout --signal=TERM --kill-after=3 897s \
+  <author-python> -B code/integrations/sema/verify_imlane_async_calls.py --execute --scope q1 \
+  --author-root <checked-author-build> --bridge-binary <existing-bridge> \
+  --source-manifest <same-delivered-candidate-source-lock> \
+  --lifecycle-evidence <passed-lifecycle-summary> --q1-spec <checked-original-q1-spec> \
+  --output <new-private-q1-output> --wall-limit-s 900 --post-limit 4096
+```
+
+该候选在作者循环上执行完整请求，session仍逐调用；不声称keepalive或性能收益。
+
 作者实现采用[固定提交](https://github.com/IM-DM4AI/IMLane0/tree/072f8257db80569e42c9f5727d839587df529652)。
 共享作者构建由独立实施任务提供，本分支只链接Sema调用方，不复制作者库、依赖或虚拟环境。
 需要已有构建目录中的`source/`、`prefix-patched/`与`artifacts/build-patched/build-identity.json`。

@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[IMLane原生async接续核验](integrations/sema/README.md#imlane薄客户端)。
+从已发布d004e720移植既有五个async实现/测试文件，采用其共享cookie及SemBench只读源码路径修复。
+旧02a75cc4候选、153 POST失败与清理证据保留；修后固定77cc1ed0的[两模式实库检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)通过。
+新生命周期347/384 POST、53.543/600秒；公共Movie查询API完整Q1各2000调用、共4000/4096 POST、90.019/900秒，模型/GPU0。
+交付本机67项无跳过，发布者[本地组合](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-async-publisher-integration)95独立项最终通过/0跳过，先7项bind错误及其有限重验另记；最终143组进程身份/10实例、自有进程/共享内存0，源码及作者库摘要未变；完整CLI/评价、Q2/Q3和性能另列未运行。
+同Coordinator未知责任保护、作者调度与同步默认保持，未借旧时间窗或容量预算。
+
 2026-10-12：[固定发布版实库软件核查](../experiments/results/diagnostics/native_release_actual_software_20261012/README.md)。
 共享SDK解释与LOTUS在Daft／Ray Data的正常、错误和两阶段组件通过，第一窗口整体未通过，失败与未覆盖项保留。
 公开SemBench CLI的只读checkout来源现在允许Git目录；固定源码核验保持，私有配置、数据及输出检查未改变。30项本地回归、四次实际公开CLI零POST预检通过，随后四非IMLane路径原Q2/Q3公开执行通过。
@@ -8,7 +15,7 @@
 两模式×三LOTUS主路径×原Q2/Q3共12个software_fixture单元，正文、结果与官方评价一致；68个登记进程无存活残留，模型/GPU0。
 另授第三窗口固定d004e720，四路径原LOTUS／Daft／Ray Data／SemLoom各原Q2/Q3＋原LOTUS performance Q2，共9查询、1080逻辑调用及2160传输POST通过；359.252/900秒含预检和准备间隔，45登记身份无残留。
 原2000行关系不改、每查询原WHERE取120行，实际公开CLI／SDK／parser／evaluator／库运行，回应软件fixture；Q2 FP54/FN5及Q3 FP52/FN8保持，不作模型质量。
-最新作者IMLane／完整Q1及真实模型质量／性能仍待，async候选未合格，默认同步与旧容量资格保持；模型[同任务单双卡计划](../experiments/plans/语义系统对照.md#sembench-native-model-next)待父统筹，未启动。
+作者async的两模式生命周期／完整Q1公开查询API接续证据见本页开头；完整async CLI／Q2/Q3及真实模型质量／性能仍待，默认同步与旧容量资格保持；模型[同任务单双卡计划](../experiments/plans/语义系统对照.md#sembench-native-model-next)待父统筹，未启动。
 
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
 显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。
