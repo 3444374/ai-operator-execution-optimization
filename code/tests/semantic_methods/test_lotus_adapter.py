@@ -293,19 +293,21 @@ class LotusSdkTests(unittest.TestCase):
 
     def test_http_and_parser_errors_retain_full_response_and_release(self):
         import lotus
-        from openai import OpenAIError
-        for status, raw, error_type in ((429, b'{"error":{"message":"fixture quota"}}', OpenAIError),
-                                        (200, b'{not-json}', ValueError)):
+        for status, raw in ((429, b'{"error":{"message":"fixture quota"}}'), (200, b'{not-json}')):
             with self.subTest(status=status), fixture_server(lambda body: (status, raw)) as (base, calls), \
                  local_execution(base) as execution:
+                original_lm = model(base)
+                with lotus.settings.context(enable_cache=False), self.assertRaises(Exception) as original:
+                    original_lm([[{"role": "user", "content": "one"}]], show_progress_bar=False)
                 lm = model(base)
                 executor = LotusBatchExecutor(execution, config(base), query_id="error-query", operator_id="map")
-                with lotus.settings.context(enable_cache=False), self.assertRaises(error_type), lotus_executor(lm, executor):
+                with lotus.settings.context(enable_cache=False), self.assertRaises(type(original.exception)), lotus_executor(lm, executor):
                     lm([[{"role": "user", "content": "one"}]], show_progress_bar=False)
                 self.assertNotIn("_process_uncached_messages", lm.__dict__)
                 self.assertEqual(executor.last_responses[0].status_code, status)
                 self.assertEqual(executor.last_responses[0].body, raw)
-                self.assertEqual(len(calls), 1)
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(lm.stats, original_lm.stats)
                 self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
 
     def test_lm_partial_cache_and_logprobs_preserve_full_response(self):

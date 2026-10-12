@@ -2,6 +2,7 @@
 
 2026-10-12：[原生消费关闭诊断修补](postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
 5项真实消费循环／图替身回归通过，HTTP与模型0；提前关闭附加异常可见，首错及未知远端状态保持。实际厂商库复验pending。
+共享SDK响应重放接入五条替换批次，11项控制及2项入口检查通过、13项SDK差分/清理缺依赖跳过；HTTP/模型0。
 
 2026-10-12：[SemBench Movie原查询与评价准备](diagnostics/sembench_lotus_readiness_20261012/README.md)。
 基线fd8c00bc只接消费提示与确定失败两项稳定性依赖，原方法与六执行接点不复制核心。

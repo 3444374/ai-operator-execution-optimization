@@ -8,7 +8,7 @@ import math
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from ...scheduling.core.session_contract import State
 from ...execution_provider.adapters.full_response import decode_full_response
-from .sdk import check_model_config, lotus_response, prepare_call, validate_batch, validate_source
+from .sdk import check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
 
 
 class LotusBatchExecutor:
@@ -50,6 +50,7 @@ class LotusBatchExecutor:
         full = []
         next_input = completed = result_bytes = 0
         pending = ()
+        prepared_calls = {}
         sealed = False
         clean = False
         deadline = time.monotonic() + self.timeout_s
@@ -89,6 +90,7 @@ class LotusBatchExecutor:
                             self.on_prepared(sequence, call)
                         offered.append(prepare_native_task(call.payload, sequence, row_sequence=sequence,
                             call_id=self.operator_id, max_result_bytes=flow.limits.item_result_bytes))
+                        prepared_calls[sequence] = call
                     pending = tuple(offered)
                 if pending:
                     check_stop()
@@ -122,7 +124,8 @@ class LotusBatchExecutor:
                         if self.retain_full_responses:
                             full[index] = raw_response
                         try:
-                            responses[index] = lotus_response(raw_response)
+                            responses[index] = parse_lotus_response(lm, uncached_data[index][0],
+                                all_kwargs, prepared_calls.pop(index), raw_response)
                         except OpenAIError as error:
                             responses[index] = error
                         completed += 1

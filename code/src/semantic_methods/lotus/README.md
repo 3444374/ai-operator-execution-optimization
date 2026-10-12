@@ -101,12 +101,18 @@ Ray运行时由调用方创建和关闭。运行中的Ray会使Daft默认自动�
 HTTP正文按原字节发送，错误状态、重复响应头、原始压缩正文和HTTP版本完整返回；
 网络失败没有伪造的HTTP状态，响应超量与非法关联作为执行错误传播。
 
-`parse_native_response`使用固定LiteLLM/OpenAI SDK解析已返回响应，其HTTPX客户端仅重放本地响应。
+`LotusBatchExecutor`与`LotusNativeBatchExecutor`共同使用`sdk.parse_lotus_response`，
+以固定LiteLLM/OpenAI SDK解析已返回响应；旧`parse_native_response`保留为兼容入口。
+SemLoom借用已分派的PreparedLotusCall直到响应解释完成，不重复准备请求；
+原LOTUS仍使用原执行入口。各替换批次采用相同的SDK重放工作，HTTPX客户端仅重放本地响应。
 该客户端断言完整请求字段与已准备正文相同、认证相同且仅执行一次解析；没有第二次HTTP发送，
 也不会进入统一HTTP观察器。HTTP状态、畸形JSON和缺失content的错误类型由原SDK及LM决定。
 确定性检查对拍关闭的localhost端口与实际HTTP读超时的最终异常类型、状态和LM用量。
 SDK传输异常的详细子类、逐字消息和所有超时阶段尚未逐项核实；HTTPX的标量超时分别作用于各阶段，
 新HTTP kernel使用总时长与连接超时，不能将这两者解释为所有传输时序均相同。
+Core报告的未知传输失败仍保留原拥有权与失败状态，本次共享响应解释不伪造成功或提前归还。
+[SDK差分检查](../../../tests/semantic_methods/test_lotus_response_replay.py)使用本地HTTPX MockTransport，
+包含usage/logprobs、缺字段、401/429/500、非法JSON和已知timeout元信息；缺固定SDK时显式跳过。
 原SDK默认跟随重定向，新入口同样默认开启；同目标302会改用GET、307会保留POST，两种行为已逐项对拍。
 显式`follow_redirects=False`用于已有关闭重定向的配对配置；跨目标重定向尚未验证。
 `staged_two_map`同样可以选择此执行器，第二个Map仍等待第一个Map整阶段完成。

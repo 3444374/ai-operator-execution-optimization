@@ -203,3 +203,50 @@ def check_model_config(call, model_config):
             or call.timeout_s * 1000 != model_config.timeout_ms
             or json.loads(call.payload)["model"] != model_config.model_id):
         raise ValueError("LOTUS call differs from the selected execution model configuration")
+
+
+def parse_lotus_response(lm, messages, all_kwargs, prepared, full, transport_error=""):
+    """Run the original pinned SDK parser through a network-free response client.
+
+    Its send override avoids experiment observers that intercept httpx.Client.send.
+    A MockTransport also rejects unexpected access; no second request is submitted.
+    """
+    validate_source()
+    import httpx
+    from openai import OpenAI
+    from litellm import completion
+
+    sent = []
+
+    def replay(request):
+        if (request.method != "POST" or str(request.url) != prepared.api_base + "/chat/completions"
+                or json.loads(request.read()) != json.loads(prepared.payload)
+                or request.headers.get("authorization") != "Bearer " + prepared.api_key):
+            raise ValueError("LOTUS SDK parser request differs from its prepared complete call")
+        sent.append(request)
+        if len(sent) != 1:
+            raise ValueError("LOTUS SDK parser attempted to retry its response")
+        if transport_error:
+            error_type = transport_error.partition(":")[0]
+            if error_type in ("TimeoutError", "ConnectionTimeoutError", "SocketTimeoutError", "ServerTimeoutError"):
+                raise httpx.ReadTimeout(transport_error, request=request)
+            raise httpx.ConnectError(transport_error, request=request)
+        return httpx.Response(full.status_code, headers=list(full.headers), content=full.body,
+            request=request, extensions={"http_version": full.http_version.encode()})
+
+    class ResponseClient(httpx.Client):
+        def send(self, request, *args, **kwargs):
+            return replay(request)
+
+    with ResponseClient(transport=httpx.MockTransport(replay)) as http:
+        client = OpenAI(api_key=prepared.api_key, base_url=prepared.api_base,
+                        timeout=prepared.timeout_s, max_retries=0, http_client=http)
+        try:
+            return completion(model=lm.model, messages=messages, drop_params=True,
+                              client=client, **all_kwargs)
+        except Exception as error:
+            error.full_response = full
+            error.native_transport_error = transport_error
+            raise
+        finally:
+            client.close()

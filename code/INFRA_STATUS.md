@@ -3,6 +3,8 @@
 2026-10-12：[原生消费关闭诊断修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
 提前关闭后保留线程附加错误，已有首错优先；5项本机图替身回归通过，HTTP／模型0。
 远端完成未知与旧144次模型来源保持，实际厂商库异常路径尚待复验。
+五条LOTUS替换批次已共用固定SDK响应重放入口，原LOTUS保持；11项控制与2项入口检查通过。
+固定SDK差分及既有SDK清理共13项因本机缺依赖跳过，不将源码共用视为完整异常资格。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。
