@@ -1,7 +1,8 @@
 # Native ready-task execution
 
-`native_tasks.py` accepts already prepared, non-streaming single-model text calls before a
-supplier's request pool. It uses the existing `SessionEngine`, Job grants, organization and
+`native_tasks.py` accepts already prepared, non-streaming single-model text calls at each
+supplier adapter's actual entry. LOTUS and DuckDB AI offer calls before their request pools;
+Sema offers calls after its native HTTP requests arrive. It uses the existing `SessionEngine`, Job grants, organization and
 delivery leases. It neither interprets messages nor changes generation parameters.
 `semantic_methods.MethodDriver` continues to own sequential row methods; callbacks can decode
 the same full response. No new method scheduler is introduced.

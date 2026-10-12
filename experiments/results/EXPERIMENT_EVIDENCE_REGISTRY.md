@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-12：[Sema原请求池前接入可行性](../../code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)。
+公开main、分支/标签/发行清单、原ZIP/ELF及旧135项设置重新核对，未找到当前产物可小改使用的池前入口；元数据摘要进入原整合verification，历史证据保持。
+仅保留原生整体与后置服务成对比较，不实施算子重写或二进制注入；新二进制/查询/模型运行均0，未接触目标服务器。
+
 2026-10-12：[SQuAD同一调参输入的次序描述](diagnostics/squad_native_length_20261011/README.md#candidate-order-description)。
 `squad-tuning-candidate-order-20261012`从原`099b994c`画像重建原seed调参512项，按两个256项源序块稳定升序描述，保留元数据与复算程序摘要。
 仅支持输入块内存在次序差异，不支持实际候选、服务时间或吞吐结论；原选样条件与停止记录未改写，模型/查询/运行代码修改均0。

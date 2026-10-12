@@ -1180,5 +1180,77 @@
       "members": 19,
       "independent_copies_verified": true
     }
+  },
+  "sema_prepool_feasibility": {
+    "checked_on": "2026-10-12",
+    "review_commit": "3f893ffe374324b95bbd16a31d88beaf6e37036b",
+    "status": "no_verified_small_prepool_integration_in_current_public_artifact",
+    "upstream": {
+      "repository": "https://github.com/BITQiKangK/SemaSystem",
+      "main_commit": "3f2c7182bdaa26c1e8925f486585da25337e687e",
+      "branches": [
+        "main"
+      ],
+      "tags": [],
+      "releases": [],
+      "recursive_tree_truncated": false,
+      "files": [
+        "LICENSE",
+        "README.md",
+        "Sema.zip",
+        "SemaAppendix.pdf"
+      ]
+    },
+    "archive": {
+      "name": "Sema.zip",
+      "bytes": 15378294,
+      "sha256": "e00fc4d1c4e9c99df2ebf647e957ee6943392d2fc74dd22d958d44a71f56632f",
+      "members": [
+        "Sema",
+        "__MACOSX/._Sema"
+      ],
+      "executable_bytes": 45920168,
+      "executable_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+      "executable_format": "ELF",
+      "readable_executor_sources_or_headers": 0
+    },
+    "retained_probe": {
+      "archive": "server-evidence05.tar.gz",
+      "archive_sha256": "e6d3355acd6d52e25ea4ad8a0b0f972a21e4d91254574c93d5a15b780dd99178",
+      "version": "v0.0.1 8c2d3bd2",
+      "settings_member": "all-settings.txt",
+      "settings_sha256": "495f54dff3b22524153b830db608b90e2c662cccdfbfa328c690e5e1deea4cf3",
+      "nonempty_settings": 135,
+      "new_binary_execution": false,
+      "controls": [
+        "threads",
+        "worker_threads",
+        "llm_rate_limit",
+        "llm_max_burst_seconds",
+        "semantic_batch_size"
+      ],
+      "generic_extension_loading_visible": true,
+      "verified_semantic_prepool_callback": "not found in reviewed interfaces"
+    },
+    "decision": {
+      "native_system_comparison": "retain",
+      "post_http_thin_and_semloom_comparison": "retain as post-request-service comparison",
+      "captured_request_replay": "possible separate diagnostic; not native Sema SQL execution",
+      "deeper_live_integration": "pending source or supported pre-enqueue callback",
+      "binary_interposition_or_operator_reimplementation": "not attempted; outside small-change scope"
+    },
+    "source_fetch": {
+      "initial_client": "Python urllib",
+      "initial_failure": "SSLCertVerificationError",
+      "fallback_client": "system curl",
+      "certificate_verification_enabled": true,
+      "metadata_fetch_result": "success"
+    },
+    "target_server_contacted": false,
+    "new_binary_runs": 0,
+    "new_query_runs": 0,
+    "new_model_posts": 0,
+    "tests_rerun": 0,
+    "production_code_changed": false
   }
 }

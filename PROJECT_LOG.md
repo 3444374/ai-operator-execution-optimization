@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：检查Sema原请求池前接入可行性
+
+- 官方main仍为固定提交；核对唯一分支、空标签/发行清单和四项文件，原ZIP及ELF摘要一致；重读旧探针的135项设置，没有找到已核实的池前任务回调。
+- [接入说明](code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)记录HTTP、物理配置、扩展、二进制拦截与请求回放各路线；不改原算子策略，不新增执行实现。
+- [总体方案](experiments/plans/语义系统对照.md#native-semloom-pairs)保留原生完整路径与后置简单控制/同核心静态比较，池前归因优先使用现有LOTUS／DuckDB接口。
+- 未接触目标服务器或运行二进制/查询/模型；Python取元数据的证书错误和系统curl成功读取记录在原整合verification，历史来源与性能数字保持。
+
 ## 2026-10-12：复核Sema请求服务的实际接点
 
 - 源码确认查询仍交给作者CLI，接入只改模型服务地址；原生HTTP正文读取后才生成Core任务，原SQL执行器、请求池与方法保持。
@@ -10550,3 +10557,8 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 无推理重试；旧8/8账本不变，模型/PG/gateway已清理。提交公开证据后对main执行快进合并，
 不改写原分支历史。正式资源、质量/校准、性能、同查询组合与异步能力仍未完成。
 [完整记录](experiments/results/postgresql/semmap_resource_lifecycle_20260906/README.md#main-integration)保存准确测试身份与哈希。
+# 2026-10-12 Sema后置原生执行实施准备
+
+已在[现有总设计](experiments/plans/语义系统对照.md#sema-native-executors)补充并行实施职责与共同验证：
+复用公共完整调用和原Sema服务，新增原生Daft、Ray Data及IMLane后置路径，不改算子策略。
+原请求池仍保留，不能解释为数据库执行器替换；本次准备没有模型调用或GPU占用。
