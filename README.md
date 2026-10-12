@@ -2,6 +2,7 @@
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
+Sema后置原生Daft／Ray Data／IMLane执行的适配与检查见[代码入口](code/integrations/sema/README.md)。
 
 研究内容包括按token、frame、阶段工作量与局部性组织数据，以及固定容量下的提交、路由和多Job调度。
 算子代价估计为两项内容提供信息。文本`AI_COMPLETE`是首版主场景，图像用于跨模态验证。

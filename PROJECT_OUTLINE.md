@@ -12,6 +12,11 @@
 
 ## 0. 当前优先级与历史记录范围
 
+[Sema后置原生执行检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)
+已补Daft Native、Ray Data及IMLane Python完整调用入口，三条作者SQL各8行通过，真实模型0。
+原算子策略和上游请求池保持，仍属HTTP之后的执行比较；原池前交接与数据库执行器替换尚未实现。
+分阶段观测、实际容量及清理证据分别保留，不将本轮无模型正确性检查解释为性能收益。
+
 [异质问答的原生请求画像](experiments/results/diagnostics/squad_native_length_20261011/README.md)已完成全量离线检查，
 当前自然调参切片未达到原方案选样条件，模型比较未启动；比值2不作为数据组织研究的通用要求。
 [同一调参元数据的次序描述](experiments/results/diagnostics/squad_native_length_20261011/README.md#candidate-order-description)已完成，不模拟模型执行。

@@ -30,6 +30,8 @@
 2. [代码状态](code/INFRA_STATUS.md)核对实际能力，再读对应源码。
 3. [主架构计划](experiments/plans/系统架构.md)核对设计与实施要求。
 4. [实验台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位原始报告与失败记录。
+Sema后置原生Daft／Ray Data／IMLane的调用接入与检查从[代码说明](code/integrations/sema/README.md)进入，
+对应设计和证据仍由上述既有入口维护。
 
 | 主题 | 入口 |
 |---|---|

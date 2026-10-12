@@ -472,6 +472,7 @@ def main(argv=None):
     parser.add_argument('--allowed-output',action='append')
     parser.add_argument('--stages',type=Path)
     parser.add_argument('--sema-binary',type=Path)
+    parser.add_argument('--imlane-config',type=Path)
     parser.add_argument('--duckdb-library',type=Path)
     parser.add_argument('--tokenizer',type=Path)
     parser.add_argument('--ray-physical',type=Path)
@@ -499,7 +500,8 @@ def main(argv=None):
     if args.arm in SUPPLIER_ARMS:
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
-                           preparation_started_ns=started,sema_native_threads=args.sema_native_threads)
+                           preparation_started_ns=started,sema_native_threads=args.sema_native_threads,
+                           imlane_config=args.imlane_config)
     else:
         run_prepared_map_query(args.arm,**common,preparation_started_ns=started)
     return 0

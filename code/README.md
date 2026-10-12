@@ -12,6 +12,8 @@ PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系
 Sema后置Core／worker仍按查询创建。当前参数分开持有任务、模型活动请求及Sema作者线程。
 实现与未完成项见[代码状态](INFRA_STATUS.md)；工程检查、异常处理、历次模型观察和筛查停止由
 [同一主报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)维护，原模型来源及负结果均保留。
+Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
+[后置原生检查与客户端](integrations/sema/README.md)说明来源、独立运行环境和不改算子策略的接法。
 
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
