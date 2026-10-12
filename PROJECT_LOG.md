@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-12：同机双TP1的六LOTUS路径真实模型检查
+
+- 固定组合`c0f420f8`、原生`7829bb45`，唯一双卡轮18查询／144真实POST全部通过，内层／公共路由／SQLite计数一致，两个vLLM服务各72POST／144输出token；每条8预热＋16测量、错误／超时／重试0。
+- [结果与原值](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-dual-model)保留同输入单卡参照、全部单→双查询／请求／吞吐原值、冷group／服务启动与每GPU241利用样本；新288上限占用144、剩144不消耗，单卡旧48未用，累计模型312实际／320占用。
+- 两服务实际engine／GPU UUID及80–87／88–95亲和核对，共同启动含预检77.708秒、模型supervisor测试78.467秒、driver75.199秒；CPU8–15未占用。API退出0，Coordinator／Ray退出0且未强制；再次只读核自有PID、模型端口、GPU计算进程均无存活，master保留。
+- 独立审计确认SDK响应解释／CPU成本、逐call session与客户端复用、8MiB／1MiB容量及提前close附加异常差异；本轮未改共享核心，修补由独立owner按授权推进。正常parser／消费证据有效，小样本、额外路由跳转与未统一成本不支持公平排名；正式SemBench先完成原Q／质量与上述软件资格，不挪预算或重复旧模型轮。
+
+
 ## 2026-10-12：双GPU公共固定HTTP路由准备
 
 - 继续用户授权的六LOTUS同机双GPU检查；[当前方案](experiments/plans/语义系统对照.md#lotus-two-gpu)改为双卡一轮、15分钟启动／10分钟测试，计划144模型POST、独立上限288，不借旧名额或为花完额度增加样本。
@@ -8,7 +16,7 @@
 
 ## 2026-10-12：六条LOTUS路径的单GPU真实模型检查
 
-- 按新独立192名额运行固定native／stability组合`9c2fdefa`，原LOTUS、Daft、Ray Data、SemLoom、IMLane CPython及作者Ray18查询／144真实POST全部通过；同一Qwen2.5-7B服务、完整请求、原SDK／parser与消费核对一致。
+- 按新独立192名额运行固定native／stability组合`9c2fdefa`，原LOTUS、Daft、Ray Data、SemLoom、IMLane CPython及作者Ray18查询／144真实POST全部通过；同一Qwen2.5-7B服务、完整请求、最终LOTUS parser与正常返回／消费核对一致，中间响应解释仍有差异。
 - [全部原值与复算](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-six-model)保留8预热＋16测量／路径、请求与查询分段、模型文件／PID／GPU身份、错误／超时0；n=2查询／16请求的P99只作样本最大值，人工输入不作任务质量或性能排名。
 - 首次模型就绪后supervisor因连接断开写stdout失败，driver未运行、POST／分配0；保存失败，改持久日志脱离连接后沿用原启动期限。成功轮driver约76.203秒，服务退出0、自有存活及GPU进程归零，IMLane Coordinator／Ray退出0、未强制且共享内存0。
 - 新轮占用144、剩48未用；旧轮24实际／32占用独立保留，两轮累计168实际／176占用。双GPU仅准备[公共路由候选方案](experiments/plans/语义系统对照.md#lotus-two-gpu)，拟新独立288名额，尚未实现公共路由或启动两卡。

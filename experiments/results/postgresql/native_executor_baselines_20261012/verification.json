@@ -245,5 +245,47 @@
       "code/src/observability/request_gateway.py": "39d1c4930829cc8ded2b6b6fb57ff3369e99d9ea3baa5011503a1458575d50bc",
       "code/src/experiments/fixed_request_routes.py": "b2bacd594bd58f9f20f2cc4f2a4ccedfea22fe907206004ded0a1c3029da6403"
     }
+  },
+  "lotus_dual_gpu_current": {
+    "run_id": "lotus-dual01/models",
+    "passed": true,
+    "source_commit": "c0f420f81719da8a0169626c22f106f7c651dbb6",
+    "source_archive_sha256": "c45fa20abd747d475fe715e9c5b9801e8d1a32b9fe1d6b0f25977be248dbadf1",
+    "new_round": {
+      "model_POST_cap": 288,
+      "actual_model_posts": 144,
+      "allocated_slots": 144,
+      "unused_slots": 144,
+      "queries": 18,
+      "warmup_queries": 6,
+      "measurement_queries": 12,
+      "errors": 0,
+      "timeouts": 0,
+      "retries": 0,
+      "fixtures_this_model_round": 0
+    },
+    "counters": {
+      "common_gateway": 144,
+      "inner_gateway": 144,
+      "sqlite_model_posts": 144,
+      "closed_units": 18,
+      "vllm_logs": {
+        "gpu0": 72,
+        "gpu1": 72
+      }
+    },
+    "actual_replica_posts": {
+      "gpu1": 72,
+      "gpu0": 72
+    },
+    "cleanup": {
+      "api_server_exits": [
+        0,
+        0
+      ],
+      "own_survivors": [],
+      "gpu_after": []
+    },
+    "details": "dual_model_results.json"
   }
 }

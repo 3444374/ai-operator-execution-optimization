@@ -66,7 +66,7 @@ LOTUS和DuckDB返回原SDK／C++解析，Sema保持原SQL及请求池后的有�
 它需要已有作者构建、原桥、已编译的`0.4.14-native3`扩展、固定Sema作者二进制和独立LOTUS解释器，
 只访问localhost软件响应，不安装依赖或加载模型。来源和全部失败见
 [本轮记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
-独立模型轮仅检查LOTUS六条路径，两种IMLane模式各24真实POST、实际2个worker通过；
+独立单卡及双卡模型轮分别检查LOTUS六条路径，各轮两种IMLane模式各24真实POST、实际2个worker通过；
 作者Ray另有2个actor ID，Coordinator／Ray正常退出并核对共享内存0。Sema／DuckDB模型尚未运行，不能借用LOTUS结果。
 错误或提前停止消费可能在DBEnd返回EOF前关闭调用方；同一Coordinator出现未确认记录后禁止新对象继续提交。
 调用者核对并结束自己的Coordinator／Ray资源后，使用新的进程身份与实例名称开始下一次检查。

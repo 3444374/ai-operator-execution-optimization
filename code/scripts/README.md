@@ -36,7 +36,7 @@ Daft Native、Ray Data及Ray Core分别单列，Core的静态actor拓扑为`diag
 这些路径只需原生`--options`；两个Ray执行者使用`--ray-temp-root`或已核对的`--ray-address`，
 DuckDB另用`--duckdb-library`选择已验证的本地扩展，Ray Core需要`0.4.14-native2`或`native3`。
 新路径同时可从常驻入口选择，配置、原生对照和实际检查见[本轮接入报告](../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
-六条LOTUS路径的单GPU模型原值与离线CSV复算由同一报告定位；不把软件检查程序当作模型运行入口。
+六条LOTUS路径的单／双GPU原值与离线CSV复算由同一报告定位；不把软件检查程序当作模型运行入口。
 Sema分层诊断可选择`sema-bounded-pipeline-diagnostic`或`sema-method-semloom-local-diagnostic`；
 后者无需`--ray-physical`，可用原`--sema-executor-scope group-diagnostic`，持有与活动额度分别声明。
 Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-service`和

@@ -5,7 +5,7 @@
 
 | 内容 | 报告入口 |
 |---|---|
-| 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单GPU模型](postgresql/native_executor_baselines_20261012/README.md) |
+| 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](postgresql/native_executor_baselines_20261012/README.md) |
 | 独立IMLane构建 | [无模型Arrow往返](diagnostics/imlane_build_20261012/README.md) |
 | 原生方法与SemLoom执行接入 | [固定版本工程核对](postgresql/native_adapter_integration_20261009/README.md) |
 | 文本Map完整系统比较 | [四路径匹配比较](postgresql/text_map_four_path_comparison_20260930/README.md) |

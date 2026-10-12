@@ -22,11 +22,17 @@ def distribution(values: list[float]) -> dict:
     }
 
 
-def recompute(root: Path) -> dict:
-    with (root / "model_queries.csv").open(newline="") as handle:
+def recompute(root: Path, dual: bool = False) -> dict:
+    prefix = "dual" if dual else "model"
+    with (root / (prefix + "_queries.csv")).open(newline="") as handle:
         queries = list(csv.DictReader(handle))
-    with (root / "model_requests.csv").open(newline="") as handle:
+    with (root / (prefix + "_requests.csv")).open(newline="") as handle:
         requests = list(csv.DictReader(handle))
+    if dual:
+        with (root / "dual_inner_requests.csv").open(newline="") as handle:
+            inner = list(csv.DictReader(handle))
+    else:
+        inner = requests
     if len({(r["unit_id"], r["gateway_request_id"]) for r in requests}) != len(requests):
         raise ValueError("duplicate observed HTTP occurrence")
     if any(int(r["http_status"]) != 200 or int(r["retry_count"]) for r in requests):
@@ -36,12 +42,14 @@ def recompute(root: Path) -> dict:
     for arm in dict.fromkeys(q["arm"] for q in queries):
         qs = [q for q in queries if q["arm"] == arm and q["phase"] == "measurement"]
         rs = [r for r in requests if r["arm"] == arm and r["phase"] == "measurement"]
+        observed = [r for r in inner if r["arm"] == arm and r["phase"] == "measurement"]
         if sum(int(q["actual_posts"]) for q in qs) != len(rs):
             raise ValueError("measured query/request count mismatch")
         durations = [float(q["entry_to_full_consumption_seconds"]) for q in qs]
         result[arm] = {
             "query_samples": len(qs), "request_samples": len(rs), "query": distribution(durations),
-            "requests": {n: distribution([float(r[n + "_seconds"]) for r in rs]) for n in names},
+            "requests": {n: distribution([float(r[n + "_seconds"]) for r in
+                         (rs if n == "model_http" else observed)]) for n in names},
             "throughput_rows_per_second": sum(int(q["rows"]) for q in qs) / sum(durations),
             "errors": sum(int(q["errors"]) for q in qs),
             "timeouts": sum(int(q["timeouts"]) for q in qs),
@@ -53,10 +61,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
     parser.add_argument("--check", action="store_true", help="Compare with stored model_results.json")
+    parser.add_argument("--dual", action="store_true", help="Use dual-GPU common and inner observations")
     args = parser.parse_args()
-    result = recompute(args.root)
+    result = recompute(args.root, args.dual)
     if args.check:
-        expected = json.loads((args.root / "model_results.json").read_text())
+        expected = json.loads((args.root / ("dual_model_results.json" if args.dual else "model_results.json")).read_text())
         if result["measured_statistics"] != expected["measured_statistics"]:
             raise ValueError("stored statistics do not match the original observations")
         if result["observed_requests"] != expected["new_round"]["actual_model_posts"]:
