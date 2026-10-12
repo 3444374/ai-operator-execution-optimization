@@ -1,7 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[执行稳定性与多副本组合](../experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)。
+原runtime、多副本与入口修补已保留原提交合到无日期分支；本机270项中249通过／21跳过，未知Job容量和对象保持。
+入口`474706f0`定点独立复审9项通过；修后实际库、设备与模型资格未增加，原生额外接入由另一分支负责。
+
 2026-10-12：[Sema入口复审修补](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
-native明确停止证明与全部错误写出期限补齐，本机7项针对性／120项受影响检查通过；新服务器、GPU及模型运行均0，等待独立复审后整合。
+native明确停止证明与全部错误写出期限补齐，本机7项针对性／120项受影响检查通过；新服务器、GPU及模型运行均0，后续独立复审与组合检查见上条记录。
 
 2026-10-12：[Sema入口正文与期限修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
 读取前独立预留持有数／总字节，三条服务共用一次handler期限；native图未确认消费停止时继续持有，Core策略和远端未知责任保持。

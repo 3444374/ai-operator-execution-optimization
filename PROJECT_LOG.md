@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-12：整合执行稳定性、多副本与入口修补
+
+- 无日期分支`codex/semloom-stability-and-replicas`保留原runtime A/B、副本及入口提交身份，携带入口需要的有限native服务祖先。
+- [组合记录](experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)保存270项本机回归、未知Job隔离和逐文件来源；副本16项／入口9项定点独立复审通过，本轮远端服务器、模型、GPU及实际厂商图运行均0。
+- 原生额外接入仍由`codex/native-execution-adapters`负责；旧分支与用户工作树保留，main未改。
+
 ## 2026-10-12：补齐Sema入口复审发现的两项生命周期遗漏
 
 - 在原独立分支要求native明确停止证明，并让合成错误写出使用原截止时刻；已过期限关闭连接，保留首错与Core未知责任。

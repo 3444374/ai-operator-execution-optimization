@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-12：[执行稳定性与多副本组合](diagnostics/semloom_stability_composition_20261012/README.md)。
+固定runtime／副本／入口修补及必要祖先，本机270项中249通过／21跳过；同execution已知失败归还与未知RPC／HTTP的C/W及37字节对象留存并置通过。
+来源与跳过原因保留，入口定点独立复审9项通过；修后实库、真实设备、模型及PG资格未增加。
+
 2026-10-12：[Sema入口复审修补](postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
 原`e960fc91`存在未知native停止证明与合成错误writer遗漏；修补后本机7项针对性／120项受影响检查通过，失败原件保留。历史126仍为118入口请求＋8替身上游POST，本轮未新增远端运行。
 

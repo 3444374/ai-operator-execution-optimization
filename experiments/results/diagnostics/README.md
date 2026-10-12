@@ -2,6 +2,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[执行稳定性与多副本组合](semloom_stability_composition_20261012/README.md)：runtime已知失败与未知责任隔离、暂停派发、入口停止证明／写出期限及合成监听身份；固定来源本机组合回归，实际库与设备资格待验证。
+
 [SQuAD原生完整请求长度检查](squad_native_length_20261011/README.md)：实际LOTUS formatter与本地tokenizer全量画像；自然调参切片未满足本轮选样条件，未进入模型比较。补同一调参元数据的静态次序描述，原件与复算保留。
 
 [文本Map准备分段原型](map_input_preparation_20261004/README.md)：单Job输入借用/阶段持有、本地替身与服务器实际库检查；默认与模型请求保持原用途，失败和补测来源归同一报告。
