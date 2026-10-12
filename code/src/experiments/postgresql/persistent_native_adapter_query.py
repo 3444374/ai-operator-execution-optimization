@@ -389,6 +389,7 @@ class PersistentAdapterGroup:
                         write_private_json(sidecar, dict(
                             schema='semloom.persistent_adapter_query.v1', status='failed',
                             unit_id=unit_id, arm=arm, measurement_phase=phase,
+                            lotus_observation_mode=self.lotus_observation_mode if arm.startswith('lotus-') else None,
                             persistent_lifecycle=owner.lifecycle(),
                             query_summary_sha256=hashlib.sha256(summary_path.read_bytes()).hexdigest()))
                     except BaseException as observation:

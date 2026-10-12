@@ -4,6 +4,7 @@
 显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。
 真实出站、出现身份、总额度和结果评价保留；缺少的预期完整值明确不可观测，计时无估算扣除。
 交付方本地57项通过／25项跳过、16次替身POST；固定SDK、实际厂商图、官方Movie evaluator和服务器性能仍待验证。
+发布整合保留已发布IMLane容量与未知责任保护，常驻失败侧车补所选观察模式；修后本机157通过／14缺依赖跳过，新增服务器／POST／模型／GPU0。
 
 2026-10-12：[IMLane完整2000行调用桥](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
 三层统一有限行数、payload/wire、单项、待交付及累计响应额度；每查询一个DBEnd上下文，交付后释放并补入下一调用。

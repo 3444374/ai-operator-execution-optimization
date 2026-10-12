@@ -6,6 +6,7 @@
 - 默认qualification保持；显式performance只省去原臂预期构造，保存缺少完整值的状态、真实POST、出现身份、额度及原结果评价。
 - [本机报告](experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)保留交付方57通过／25跳过、16次替身POST、全部局部成本样本和失败来源；模型/GPU0，不推导实际性能资格。
 - 独立块未改IMLane、MovieQuery容量或共享native_calls.py；发布者在38e82a9a上按局部函数接入，保留已发布容量配置与未知责任保护，实际SDK／厂商图／官方Movie评价与服务器复验待完成。
+- 有限需求复审补齐常驻失败侧车的观察模式；两模式与三个系统臂六种无网络失败组合保留首因、停止状态和摘要指纹。修后157通过／14缺依赖跳过，新增服务器／POST／模型／GPU0。
 
 ## 2026-10-12：发布IMLane扩容并贯通SemBench容量配置
 

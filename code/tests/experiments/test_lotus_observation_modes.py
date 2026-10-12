@@ -1,5 +1,6 @@
 """Deterministic observation and proxy checks; no LOTUS SDK or models."""
 from contextlib import contextmanager
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -182,6 +183,43 @@ class LotusObservationModeTests(unittest.TestCase):
                     group.run('lotus-adapted-native', unit_id='query', root=query,
                         load_source=lambda:iter(()), phase='measurement')
                 self.assertEqual(json.loads((query/'persistent-query.json').read_text())['lotus_observation_mode'], mode)
+
+
+    def test_failed_persistent_sidecar_records_selected_mode_and_preserves_primary_exception(self):
+        from src.experiments.postgresql import persistent_native_adapter_query as persistent
+        arms=('lotus-adapted-native', 'duckdb-adapted-native', 'fixed-map-native-daft')
+        for mode in supplier.LOTUS_OBSERVATION_MODES:
+            for arm in arms:
+                with self.subTest(mode=mode, arm=arm), tempfile.TemporaryDirectory() as root:
+                    root=Path(root)
+                    group=PersistentAdapterGroup(arms, plan=SemanticMapPlan('Return ok.', 'fixture', 16),
+                        model=FixedModelConfig('http://127.0.0.1:1/v1/chat/completions', 'fixture', 1000),
+                        ledger=None, root=root/'group', lotus_observation_mode=mode)
+                    group.deadline=time.monotonic()+1800
+                    owner=SimpleNamespace(physical=None, queries=0, lifecycle=lambda:dict(fixture=True))
+                    group.owners={arm:owner}
+                    query=root/'query'
+                    query.mkdir()
+                    primary=ValueError('query failed before any request')
+                    def run(selected_arm, **arguments):
+                        self.assertEqual(selected_arm, arm)
+                        if arm.startswith(('lotus-', 'duckdb-')):
+                            self.assertEqual(arguments['lotus_observation_mode'], mode if arm.startswith('lotus-') else 'qualification')
+                        else:
+                            self.assertNotIn('lotus_observation_mode', arguments)
+                        (query/'summary.json').write_text(json.dumps(dict(status='failed', actual_posts=0)))
+                        raise primary
+                    with patch.object(persistent, 'run_supplier_query', run), \
+                         patch.object(persistent, 'run_prepared_map_query', run):
+                        with self.assertRaises(ValueError) as caught:
+                            group.run(arm, unit_id='query', root=query, load_source=lambda:iter(()), phase='measurement')
+                    self.assertIs(caught.exception, primary)
+                    self.assertTrue(group.poisoned)
+                    self.assertEqual(owner.queries, 0)
+                    saved=json.loads((query/'persistent-query.json').read_text())
+                    self.assertEqual(saved['status'], 'failed')
+                    self.assertEqual(saved['lotus_observation_mode'], mode if arm.startswith('lotus-') else None)
+                    self.assertEqual(saved['query_summary_sha256'], hashlib.sha256((query/'summary.json').read_bytes()).hexdigest())
 
 
 class LotusObservationProxyTests(unittest.TestCase):

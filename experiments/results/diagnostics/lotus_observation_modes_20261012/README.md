@@ -90,7 +90,7 @@ PYTHONPATH=code python3 experiments/results/diagnostics/lotus_observation_modes_
 `supplier_adapter_query.py`和`sembench_query_cli.py`逐字匹配独立三方合并结果，其余13个容量源／测试文件保持已发布摘要。
 MovieQuery、CLI和公共执行器继续读取同一显式行容量，旧配置128、显式2000与桥未知责任的跨对象保护保持。
 
-本机组合170项中156通过、14因缺LOTUS／OpenAI／LiteLLM依赖跳过，0失败／错误；目标64项全部通过、0跳过。
+首个整合候选83a924db本机组合170项中156通过、14因缺LOTUS／OpenAI／LiteLLM依赖跳过，0失败／错误；目标64项全部通过、0跳过。
 本轮新增服务器／POST／模型／GPU0，未使用服务器CPU16–23；三个localhost代理用例未重跑，保留交付方16次替身POST来源。
 原回归源码摘要、82项逐项计数、失败来源、全部局部成本样本及中位数已离线核对，原两份JSON证据和复核脚本字节保持。
 详见[整合机器记录](publisher_integration_verification.json)和[组合回归输出](publisher_integration_tests.txt)。
@@ -98,3 +98,8 @@ MovieQuery、CLI和公共执行器继续读取同一显式行容量，旧配置1
 默认资格模式和显式性能模式分别记录，未构造的预期完整值仍为unavailable，查询计时无估算减法。
 48.176708与16.700666毫秒保持原JSON-only替身的局部测量，不表示实际LOTUS或模型收益。
 实际SDK模式差分、厂商图、官方Movie评价、最新作者完整Q1与模型／性能检查仍待各自验证。
+
+有限需求复审指出常驻失败侧车缺少所选观察模式，失败摘要已保留模式；现已补齐`persistent-query.json`，LOTUS写配置值，其他臂写null。
+新增无网络失败用例核对两模式与LOTUS／DuckDB／固定Map六种组合，原异常对象、group停止状态和摘要指纹保持。
+修后组合171项中157通过、14缺依赖跳过，0失败／错误；14项受影响跟进回归全部通过、0跳过，新增服务器／POST／模型／GPU仍为0。
+修后源码与命令见[修后机器记录](publisher_repair_verification.json)，输出见[修后回归](publisher_repair_tests.txt)；首轮记录保留。
