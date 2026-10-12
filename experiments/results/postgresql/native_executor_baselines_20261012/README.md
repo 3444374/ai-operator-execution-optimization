@@ -1,5 +1,14 @@
 # 三种原方法的原生执行接入
 
+<a id="execution-repairs"></a>
+## 响应与生命周期修补
+
+2026-10-12从`7829bb45`在独立worktree修补原生消费线程的提前关闭诊断。
+线程停止/join后记录执行及关闭错误，附加关闭异常对象保存在`last_cleanup_errors`；
+查询第一异常保留，显式close没有第一异常时传播关闭失败。
+5项本机真实消费循环／图替身回归通过，HTTP／模型0；原图、远端不确定状态和旧模型原值保持。
+实际Daft／Ray异常路径、共享SDK解释、客户端复用及共同容量仍待分别核查，不称完整公平等价。
+
 本轮在独立分支`codex/native-execution-adapters`整合原LOTUS、DuckDB AI与Sema的方法接点。
 旧主及三个原子任务工作树保持只读，原始成功／失败与私有环境继续保留。
 执行目标与范围见[方案](../../../plans/语义系统对照.md#native-executor-adapters)，

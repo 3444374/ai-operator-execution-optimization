@@ -172,3 +172,6 @@ class LotusNativeBatchExecutor:
                 primary.add_note("LOTUS native graph close also failed: " + type(error).__name__)
             finally:
                 self.last_close_report = self.native.last_close_report
+                seen = {id(error) for _, error in self.last_cleanup_errors}
+                self.last_cleanup_errors += tuple((stage, error) for stage, error in
+                    getattr(self.native, "last_cleanup_errors", ()) if id(error) not in seen)

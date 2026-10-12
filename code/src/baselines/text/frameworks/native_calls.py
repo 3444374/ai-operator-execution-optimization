@@ -342,6 +342,7 @@ class NativeCallExecutor:
         self.backend, self.options = backend, options or NativeGraphOptions()
         self.max_batch_rows, self.max_batch_bytes = max_batch_rows, max_batch_bytes
         self.last_close_report = None
+        self.last_cleanup_errors = ()
 
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)
@@ -351,6 +352,7 @@ class NativeCallExecutor:
             self._imlane.close()
 
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        self.last_cleanup_errors = ()
         if self._imlane is not None:
             self.last_close_report = None
             self._imlane.last_close_report = None
@@ -395,13 +397,13 @@ class NativeCallExecutor:
                     if control.stopped.is_set():
                         break
             except BaseException as error:
-                failures.append(error)
+                failures.append(("graph_consume", error))
             finally:
                 try:
                     if iterator is not None:
                         iterator.close()
                 except BaseException as error:
-                    failures.append(error)
+                    failures.append(("graph_close", error))
                 finished.set()
 
         thread = threading.Thread(target=consume, name="native-call-consumer", daemon=True)
@@ -424,7 +426,7 @@ class NativeCallExecutor:
                     if not finished.is_set():
                         continue
                     if failures:
-                        raise failures[0]
+                        raise failures[0][1]
                     if len(received) != len(calls):
                         raise ValueError("native graph response batch is incomplete")
                     clean = True
@@ -458,14 +460,34 @@ class NativeCallExecutor:
                     except BaseException as error:
                         if cleanup is None:
                             cleanup = error
-            self.last_close_report = dict(graph_consumer_stopped=not thread.is_alive(),
+            stopped = not thread.is_alive()
+            worker_errors = tuple(failures)
+            self.last_cleanup_errors = tuple((stage, error) for stage, error in worker_errors
+                                             if stage == "graph_close")
+            if cleanup is not None:
+                self.last_cleanup_errors += (("control_stop", cleanup),)
+            self.last_close_report = dict(graph_consumer_stopped=stopped,
                 clean=clean, received=len(received), prepared=len(calls),
                 remote_http_stopped="unavailable", owned_ray_actors=len(control._actors),
                 ray_actor_shutdown_requested=len(control._killed_actors),
-                owned_ray_actor_ids=[actor._actor_id.hex() for actor in control._actors])
-            if thread.is_alive() and cleanup is None:
+                owned_ray_actor_ids=[actor._actor_id.hex() for actor in control._actors],
+                worker_errors_complete=stopped,
+                worker_errors=[dict(stage=stage, type=type(error).__module__ + "." + type(error).__name__)
+                               for stage, error in worker_errors])
+            if not stopped and cleanup is None:
                 cleanup = RuntimeError("native graph consumer did not stop; remote completion is uncertain")
+                self.last_cleanup_errors += (("consumer_stop", cleanup),)
+            additional = tuple((stage, error) for stage, error in worker_errors if error is not primary)
             if cleanup is not None:
+                additional += (("graph_cleanup", cleanup),)
+            self.last_close_report["cleanup_errors"] = [
+                dict(stage=stage, type=type(error).__module__ + "." + type(error).__name__)
+                for stage, error in self.last_cleanup_errors]
+            if additional:
                 if primary is None or isinstance(primary, GeneratorExit):
-                    raise cleanup
-                primary.add_note("Native graph cleanup also failed: " + type(cleanup).__name__)
+                    first = additional[0][1]
+                    for stage, error in additional[1:]:
+                        first.add_note("Native " + stage + " also failed: " + type(error).__name__)
+                    raise first
+                for stage, error in additional:
+                    primary.add_note("Native " + stage + " also failed: " + type(error).__name__)

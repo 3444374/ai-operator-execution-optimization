@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[原生消费关闭诊断修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
+提前关闭后保留线程附加错误，已有首错优先；5项本机图替身回归通过，HTTP／模型0。
+远端完成未知与旧144次模型来源保持，实际厂商库异常路径尚待复验。
+
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。
 前四臂各三条、两种IMLane各Q2/Q3正常；原2000行IMLane Q1两项明确拒绝，软件16 pass／2 unsupported／0 notrun。

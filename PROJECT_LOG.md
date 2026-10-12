@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：保留原生消费线程的提前关闭错误
+
+- 用户批准附件审计后，在固定`7829bb45`的独立worktree修补关闭诊断，不改活跃接线树。
+- 真实消费循环停止/join后记录线程错误；已有查询首错优先，附加关闭对象与类型可定位，unknown状态不改写。
+- 5项本机图替身回归通过，HTTP／模型0；原144次模型记录继续保持旧源码身份。
+- [同一主报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)区分本机覆盖与实际库复验pending。
+
 ## 2026-10-12：发布整合SemBench原查询接入
 
 - 在现有原生分支`286e4ab5`后整合`1351a45f`／`34afde9b`／`e5d35205`最终净变更及两项必要稳定性依赖；原交付身份保留，公开材料完成私有Ray路径脱敏。
@@ -21,7 +28,6 @@
 - [结果与原值](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-dual-model)保留同输入单卡参照、全部单→双查询／请求／吞吐原值、冷group／服务启动与每GPU241利用样本；新288上限占用144、剩144不消耗，单卡旧48未用，累计模型312实际／320占用。
 - 两服务实际engine／GPU UUID及80–87／88–95亲和核对，共同启动含预检77.708秒、模型supervisor测试78.467秒、driver75.199秒；CPU8–15未占用。API退出0，Coordinator／Ray退出0且未强制；再次只读核自有PID、模型端口、GPU计算进程均无存活，master保留。
 - 独立审计确认SDK响应解释／CPU成本、逐call session与客户端复用、8MiB／1MiB容量及提前close附加异常差异；本轮未改共享核心，修补由独立owner按授权推进。正常parser／消费证据有效，小样本、额外路由跳转与未统一成本不支持公平排名；正式SemBench先完成原Q／质量与上述软件资格，不挪预算或重复旧模型轮。
-
 
 ## 2026-10-12：双GPU公共固定HTTP路由准备
 

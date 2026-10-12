@@ -115,6 +115,10 @@ SDK传输异常的详细子类、逐字消息和所有超时阶段尚未逐项�
 继续取结果并关闭本次原生图；已经发送的HTTP请求可能仍在服务端运行。
 `last_close_report.remote_http_stopped`明确为`unavailable`，实际替身活动归零由独立服务记录验证。
 完整批次输入与返回均有编码字节额度，不将这些额度解释为RSS。
+原生消费线程的执行与关闭异常在停止/join后进入`last_close_report.worker_errors`，
+关闭异常对象保存在`last_cleanup_errors`；已有查询第一异常继续传播，附加类型进入notes。
+提前关闭而没有查询错误时，图关闭失败向调用方传播；`clean=False`与未知远端完成保持。
+[控制流回归](../../../tests/baselines/test_native_call_cleanup.py)使用真实消费循环和图替身，未运行厂商库。
 
 `NativeCallExecutor("ray", ...)`增加独立Ray Core执行参照，沿用相同LOTUS批次与SDK解析。
 它直接使用Ray2.56.1原生async actor、固定输入分片及`ray.wait`，每个actor保留一个HTTP调用名额，
