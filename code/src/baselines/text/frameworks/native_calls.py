@@ -1,0 +1,422 @@
+"""Complete HTTP calls on pinned Daft and Ray Data graphs.
+
+Vendor graphs own request concurrency and buffering. A single consumer thread lets
+the synchronous database caller stop a blocked graph; it is never a request pool.
+HTTP errors and transport failures are values for the original operator parser.
+"""
+from __future__ import annotations
+
+import asyncio
+import base64
+from dataclasses import dataclass, field
+import json
+import math
+from queue import Empty, Full, Queue
+import threading
+import time
+from urllib.parse import urlsplit
+
+from src.baselines.common.redact import redact_text
+from src.execution_provider.adapters.full_response import (
+    FullModelResponse, decode_full_response, encode_full_response,
+)
+from .prepared_map import NativeGraphOptions
+
+
+_PROCESSOR_URL = "http://localhost/native-complete-call"
+_DAFT_CONTROLS = {}
+
+
+def _daft_control(key):
+    control = _DAFT_CONTROLS.get(key)
+    if control is None:
+        raise RuntimeError("native Daft graph control is no longer live")
+    return control
+
+
+@dataclass(frozen=True)
+class NativeCall:
+    call_id: str
+    row_id: int
+    payload: bytes = field(repr=False)
+    endpoint: str = field(repr=False)
+    headers: tuple[tuple[str, str], ...] = field(repr=False)
+    timeout_s: float
+    connect_timeout_s: float | None = None
+    max_response_bytes: int = 8 * 1024 * 1024
+    skip_auto_headers: tuple[str, ...] = ()
+    follow_redirects: bool = False
+
+    def __post_init__(self):
+        if type(self.call_id) is not str or not self.call_id or len(self.call_id.encode()) > 4096:
+            raise ValueError("native call requires a finite occurrence identity")
+        if type(self.row_id) is not int or not 0 <= self.row_id < 2**63:
+            raise ValueError("native call row identity must fit a signed 64-bit integer")
+        if type(self.payload) is not bytes or not 0 < len(self.payload) <= 8 * 1024 * 1024:
+            raise ValueError("native call requires complete finite payload bytes")
+        url = urlsplit(self.endpoint)
+        if (url.scheme not in ("http", "https") or not url.hostname or url.username
+                or url.password or url.fragment):
+            raise ValueError("native call requires an explicit HTTP endpoint")
+        if (type(self.headers) is not tuple or len(self.headers) > 128
+                or any(type(item) is not tuple or len(item) != 2
+                       or any(type(value) is not str or "\r" in value or "\n" in value for value in item)
+                       for item in self.headers)
+                or sum(len(value.encode()) for item in self.headers for value in item) > 8192):
+            raise ValueError("native call headers must be finite name/value pairs")
+        for value in (self.timeout_s, self.connect_timeout_s):
+            if value is not None and (type(value) not in (int, float) or not math.isfinite(value)
+                                      or not 0 < value <= 120):
+                raise ValueError("native request timeout must be at most 120 seconds")
+        if self.timeout_s is None:
+            raise ValueError("native request needs a finite timeout")
+        if type(self.max_response_bytes) is not int or not 1 <= self.max_response_bytes <= 8 * 1024 * 1024:
+            raise ValueError("native response byte allowance must be at most 8 MiB")
+        if (type(self.skip_auto_headers) is not tuple or len(self.skip_auto_headers) > 16
+                or any(type(name) is not str or not name or "\r" in name or "\n" in name
+                       for name in self.skip_auto_headers) or type(self.follow_redirects) is not bool):
+            raise ValueError("native call requires explicit header and redirect settings")
+
+
+@dataclass(frozen=True)
+class NativeCallOutcome:
+    call_id: str
+    row_id: int
+    response: FullModelResponse | None
+    transport_error: str = ""
+
+
+def _call_wire(call):
+    return json.dumps(dict(call_id=call.call_id, row_id=call.row_id,
+        payload=base64.b64encode(call.payload).decode(), endpoint=call.endpoint,
+        headers=call.headers, timeout_s=call.timeout_s, connect_timeout_s=call.connect_timeout_s,
+        max_response_bytes=call.max_response_bytes, skip_auto_headers=call.skip_auto_headers,
+        follow_redirects=call.follow_redirects), separators=(",", ":"))
+
+
+def _call_from_wire(wire):
+    value = json.loads(wire)
+    value["payload"] = base64.b64decode(value["payload"], validate=True)
+    value["headers"] = tuple(tuple(item) for item in value["headers"])
+    value["skip_auto_headers"] = tuple(value["skip_auto_headers"])
+    return NativeCall(**value)
+
+
+def _outcome_wire(outcome):
+    return json.dumps(dict(call_id=outcome.call_id, row_id=outcome.row_id,
+        response=(base64.b64encode(encode_full_response(outcome.response)).decode()
+                  if outcome.response is not None else None),
+        transport_error=outcome.transport_error), separators=(",", ":"))
+
+
+def _outcome_from_wire(wire):
+    value = json.loads(wire)
+    if value["response"] is not None:
+        value["response"] = decode_full_response(base64.b64decode(value["response"], validate=True))
+    return NativeCallOutcome(**value)
+
+
+async def _request(call, control=None):
+    """One request kernel; no status interpretation, retries, routing or scheduling."""
+    import aiohttp
+    if control is not None and control.stopped.is_set():
+        return NativeCallOutcome(call.call_id, call.row_id, None, "NativeCallCancelled")
+    try:
+        timeout = aiohttp.ClientTimeout(total=call.timeout_s,
+            connect=call.connect_timeout_s or call.timeout_s)
+        async with aiohttp.ClientSession(timeout=timeout, auto_decompress=False,
+                                         skip_auto_headers=call.skip_auto_headers) as session:
+            registration = control.register_session(session) if control is not None else None
+            try:
+                if control is not None and control.stopped.is_set():
+                    return NativeCallOutcome(call.call_id, call.row_id, None, "NativeCallCancelled")
+                async with session.post(call.endpoint, data=call.payload, headers=call.headers,
+                                        allow_redirects=call.follow_redirects, max_redirects=20) as response:
+                    buffer = bytearray()
+                    async for chunk in response.content.iter_chunked(4096):
+                        if len(buffer) + len(chunk) > call.max_response_bytes:
+                            raise ValueError("native complete response exceeds its byte allowance")
+                        buffer.extend(chunk)
+                    full = FullModelResponse(response.status,
+                        tuple((name.decode("ascii"), value.decode("latin-1"))
+                              for name, value in response.raw_headers), bytes(buffer),
+                        f"HTTP/{response.version.major}.{response.version.minor}")
+                    if len(encode_full_response(full)) > call.max_response_bytes:
+                        raise ValueError("native response with HTTP metadata exceeds its byte allowance")
+                    return NativeCallOutcome(call.call_id, call.row_id, full)
+            finally:
+                if control is not None:
+                    control.unregister_session(registration)
+    except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as error:
+        # No synthetic HTTP response is created for uncertain transport completion.
+        return NativeCallOutcome(call.call_id, call.row_id, None,
+                                 redact_text(f"{type(error).__name__}: {error}")[:4096])
+
+
+class _ProcessorResponse:
+    """Ray's HTTP stage sees a successful carrier; the real status stays in the value."""
+    status = 200
+    reason = "Complete call carrier"
+
+    def __init__(self, outcome):
+        self.outcome = outcome
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *error):
+        pass
+
+    async def json(self):
+        return {"native_outcome": _outcome_wire(self.outcome)}
+
+
+class _ProcessorSession:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *error):
+        pass
+
+    async def post(self, url, *, data, headers):
+        if url != _PROCESSOR_URL:
+            raise ValueError("native Ray carrier destination differs")
+        call = _call_from_wire(json.loads(data)["native_call"])
+        return _ProcessorResponse(await _request(call))
+
+
+def _ray_preprocess(row):
+    return {"payload": {"native_call": row["native_call"]}}
+
+
+def _ray_postprocess(row):
+    wire = row["http_response"]["native_outcome"]
+    outcome = _outcome_from_wire(wire)
+    if outcome.call_id != row["call_id"] or outcome.row_id != row["row_id"]:
+        raise ValueError("native Ray response changed its occurrence identity")
+    return {"native_outcome": wire}
+
+
+class _GraphControl:
+    def __init__(self):
+        self.stopped = threading.Event()
+        self._lock = threading.Lock()
+        self._sessions = {}
+        self.result = None
+        self._stopped_executor = None
+
+    def register_session(self, session):
+        with self._lock:
+            self._sessions[id(session)] = (asyncio.get_running_loop(), session)
+        return id(session)
+
+    def unregister_session(self, key):
+        with self._lock:
+            self._sessions.pop(key, None)
+
+    def stop(self):
+        self.stopped.set()
+        with self._lock:
+            sessions = tuple(self._sessions.values())
+        for loop, session in sessions:
+            if not loop.is_closed():
+                loop.call_soon_threadsafe(lambda current=session: asyncio.create_task(current.close()))
+        executor = getattr(self.result, "_current_executor", None)
+        if executor is not None and executor is not self._stopped_executor:
+            self._stopped_executor = executor
+            executor.shutdown(force=True)
+
+
+def _daft_rows(calls, options, control):
+    if control.stopped.is_set():
+        return
+    import daft
+    from daft.runners import get_or_create_runner
+    if daft.__version__ != "0.7.21" or get_or_create_runner().name != "native":
+        raise RuntimeError("native complete calls require Daft 0.7.21 with its native runner")
+    frame = daft.from_pydict({"native_call": [_call_wire(call) for call in calls]})
+    # Daft validates serialization even for use_process=False. Keep only the
+    # primitive key in its function closure; actual stop/session state is local.
+    control_key = id(control)
+    _DAFT_CONTROLS[control_key] = control
+
+    @daft.func.batch(return_dtype=daft.DataType.string(), use_process=False,
+                    batch_size=1, max_concurrency=options.concurrency - 1,
+                    max_retries=0, on_error="raise")
+    async def complete(wires):
+        if len(wires) != 1:
+            raise ValueError("native Daft requires one complete call per batch")
+        outcome = await _request(_call_from_wire(wires.to_pylist()[0]), _daft_control(control_key))
+        return daft.Series.from_pylist([_outcome_wire(outcome)])
+
+    iterator = None
+    try:
+        result = frame.with_column("native_outcome", complete(daft.col("native_call"))).select("native_outcome")
+        if control.stopped.is_set():
+            return
+        iterator = result.iter_rows(results_buffer_size=1)
+        for row in iterator:
+            if control.stopped.is_set():
+                return
+            yield _outcome_from_wire(row["native_outcome"])
+    finally:
+        if iterator is not None:
+            iterator.close()
+        _DAFT_CONTROLS.pop(control_key, None)
+
+
+def _ray_rows(calls, options, control):
+    if control.stopped.is_set():
+        return
+    import ray
+    from ray.data.llm import HttpRequestProcessorConfig, build_processor
+    from ray.data._internal.planner.plan_udf_map_op import DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
+    if ray.__version__ != "2.56.1" or not ray.is_initialized():
+        raise RuntimeError("native complete calls require caller-owned Ray 2.56.1")
+    if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != options.ray_async_batches_per_actor:
+        raise RuntimeError("native Ray asynchronous batch limit differs from its import-time setting")
+    inputs = [dict(call_id=call.call_id, row_id=call.row_id, native_call=_call_wire(call)) for call in calls]
+    dataset = ray.data.from_items(inputs, override_num_blocks=min(len(inputs), options.source_blocks))
+    processor = build_processor(HttpRequestProcessorConfig(url=_PROCESSOR_URL,
+        batch_size=options.ray_batch_rows, concurrency=(options.ray_actors, options.ray_actors),
+        max_retries=0, session_factory=_ProcessorSession), preprocess=_ray_preprocess,
+        postprocess=_ray_postprocess, preprocess_map_kwargs={"max_retries": 0},
+        postprocess_map_kwargs={"max_retries": 0})
+    for stage in processor.stages.values():
+        stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0, max_concurrency=1)
+    result = control.result = processor(dataset)
+    if control.stopped.is_set():
+        return
+    iterator = result.iter_rows()
+    try:
+        for row in iterator:
+            if control.stopped.is_set():
+                return
+            yield _outcome_from_wire(row["native_outcome"])
+    finally:
+        close = getattr(iterator, "close", None)
+        if close is not None:
+            close()
+        executor = getattr(result, "_current_executor", None)
+        if executor is not None:
+            executor.shutdown(force=True)
+
+
+class NativeCallExecutor:
+    """Finite original-method batches, with independently owned vendor graphs."""
+    def __init__(self, backend, options=None, *, max_batch_rows=4096, max_batch_bytes=32 * 1024 * 1024):
+        if backend not in ("daft", "ray-data"):
+            raise ValueError("native complete-call backend must be daft or ray-data")
+        if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_bytes)):
+            raise ValueError("native complete-call batch limits must be positive integers")
+        self.backend, self.options = backend, options or NativeGraphOptions()
+        self.max_batch_rows, self.max_batch_bytes = max_batch_rows, max_batch_bytes
+        self.last_close_report = None
+
+    def __call__(self, calls, cancelled=None):
+        return self.iter_batch(calls, cancelled=cancelled)
+
+    def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
+            raise ValueError("native complete-call batch timeout must be at most 120 seconds")
+        calls = tuple(calls)
+        if any(type(call) is not NativeCall for call in calls) or len({call.call_id for call in calls}) != len(calls):
+            raise ValueError("native complete-call batch repeats or changes occurrence identity")
+        if len(calls) > self.max_batch_rows or sum(len(call.payload) for call in calls) > self.max_batch_bytes:
+            raise ValueError("native complete-call input batch exceeds its declared allowance")
+        expected = {call.call_id: call.row_id for call in calls}
+        deadline = time.monotonic() + timeout_s
+        self.last_close_report = None
+        if not calls:
+            return
+        control = _GraphControl()
+        queue = Queue(maxsize=1)
+        finished = threading.Event()
+        failures = []
+
+        def consume():
+            iterator = None
+            try:
+                iterator = (_daft_rows if self.backend == "daft" else _ray_rows)(calls, self.options, control)
+                for outcome in iterator:
+                    while not control.stopped.is_set():
+                        try:
+                            queue.put(outcome, timeout=0.01)
+                            break
+                        except Full:
+                            pass
+                    if control.stopped.is_set():
+                        break
+            except BaseException as error:
+                failures.append(error)
+            finally:
+                try:
+                    if iterator is not None:
+                        iterator.close()
+                except BaseException as error:
+                    failures.append(error)
+                finished.set()
+
+        thread = threading.Thread(target=consume, name="native-call-consumer", daemon=True)
+        primary = None
+        received = set()
+        total_bytes = 0
+        clean = False
+        try:
+            if cancelled and cancelled():
+                raise InterruptedError("native complete-call batch cancelled before graph start")
+            thread.start()
+            while True:
+                if cancelled and cancelled():
+                    raise InterruptedError("native complete-call batch cancelled")
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("native complete-call batch deadline exceeded")
+                try:
+                    outcome = queue.get(timeout=min(0.01, max(0.001, deadline - time.monotonic())))
+                except Empty:
+                    if not finished.is_set():
+                        continue
+                    if failures:
+                        raise failures[0]
+                    if len(received) != len(calls):
+                        raise ValueError("native graph response batch is incomplete")
+                    clean = True
+                    return
+                if outcome.call_id not in expected or outcome.call_id in received or expected[outcome.call_id] != outcome.row_id:
+                    raise ValueError("native graph response changed its occurrence identity")
+                if (outcome.response is None) == (not outcome.transport_error):
+                    raise ValueError("native graph response must contain HTTP data or a transport error")
+                total_bytes += (len(encode_full_response(outcome.response)) if outcome.response is not None
+                                else len(outcome.transport_error.encode()))
+                if total_bytes > self.max_batch_bytes:
+                    raise ValueError("native complete-call results exceed their batch byte allowance")
+                received.add(outcome.call_id)
+                yield outcome
+        except BaseException as error:
+            primary = error
+            raise
+        finally:
+            cleanup = None
+            try:
+                control.stop()
+            except BaseException as error:
+                cleanup = error
+            if thread.ident is not None:
+                stop_deadline = time.monotonic() + min(120, max(call.timeout_s for call in calls) + 5)
+                while thread.is_alive() and time.monotonic() < stop_deadline:
+                    thread.join(0.05)
+                    try:
+                        # Ray creates its executor lazily during the first next().
+                        control.stop()
+                    except BaseException as error:
+                        if cleanup is None:
+                            cleanup = error
+            self.last_close_report = dict(graph_consumer_stopped=not thread.is_alive(),
+                clean=clean, received=len(received), prepared=len(calls),
+                remote_http_stopped="unavailable")
+            if thread.is_alive() and cleanup is None:
+                cleanup = RuntimeError("native graph consumer did not stop; remote completion is uncertain")
+            if cleanup is not None:
+                if primary is None or isinstance(primary, GeneratorExit):
+                    raise cleanup
+                primary.add_note("Native graph cleanup also failed: " + type(cleanup).__name__)
