@@ -83,6 +83,39 @@ with lotus_executor(native_lm):
     native_result = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
 ```
 
+## Daft Native与Ray Data执行
+
+`LotusNativeBatchExecutor`沿同一个未缓存批次入口选择
+`NativeCallExecutor("daft"|"ray-data", NativeGraphOptions(...))`。
+路径身份为`LOTUS method + Daft Native`和`LOTUS method + Ray Data`；原生LOTUS对照继续使用
+`lotus_executor(lm)`。原LM缓存、算子缓存、usage、计费、logprobs、Map提示、postprocessor、
+缓存命中与miss合并以及整阶段等待均由固定LOTUS源码继续处理。
+单模型非流式普通OpenAI文本配置沿用显式API base、认证、有限超时和零重试要求；其他配置明确拒绝。
+原LOTUS的LM与算子缓存保留；额外的全局LiteLLM响应缓存需要另行指定策略，当前新入口拒绝该配置。
+
+公共[完整调用执行](../../baselines/text/frameworks/native_calls.py)只接收已准备的完整HTTP正文、
+原行与调用身份、目标、headers和单请求期限。Daft0.7.21的原生异步批次函数及
+Ray Data2.56.1的HTTP Processor拥有并行与结果缓冲；它不调用SemLoom Core或方法驱动器。
+Daft调用方须在首次创建runner之前显式选择`daft.set_runner_native(num_threads=...)`；
+Ray运行时由调用方创建和关闭。运行中的Ray会使Daft默认自动选择Ray runner，因此未明确选择Native时拒绝该身份。
+HTTP正文按原字节发送，错误状态、重复响应头、原始压缩正文和HTTP版本完整返回；
+网络失败没有伪造的HTTP状态，响应超量与非法关联作为执行错误传播。
+
+`parse_native_response`使用固定LiteLLM/OpenAI SDK解析已返回响应，其HTTPX客户端仅重放本地响应。
+该客户端断言完整请求字段与已准备正文相同、认证相同且仅执行一次解析；没有第二次HTTP发送，
+也不会进入统一HTTP观察器。HTTP状态、畸形JSON和缺失content的错误类型由原SDK及LM决定。
+确定性检查对拍关闭的localhost端口与实际HTTP读超时的最终异常类型、状态和LM用量。
+SDK传输异常的详细子类、逐字消息和所有超时阶段尚未逐项核实；HTTPX的标量超时分别作用于各阶段，
+新HTTP kernel使用总时长与连接超时，不能将这两者解释为所有传输时序均相同。
+原SDK默认跟随重定向，新入口同样默认开启；同目标302会改用GET、307会保留POST，两种行为已逐项对拍。
+显式`follow_redirects=False`用于已有关闭重定向的配对配置；跨目标重定向尚未验证。
+`staged_two_map`同样可以选择此执行器，第二个Map仍等待第一个Map整阶段完成。
+
+单一消费线程只供同步调用方读取原生图和触发停止，不是请求池。取消、到期或consumer关闭会停止
+继续取结果并关闭本次原生图；已经发送的HTTP请求可能仍在服务端运行。
+`last_close_report.remote_http_stopped`明确为`unavailable`，实际替身活动归零由独立服务记录验证。
+完整批次输入与返回均有编码字节额度，不将这些额度解释为RSS。
+
 两Map使用`LotusMapStage("Summarize {text}.", "summary")`，随后
 `LotusMapStage("Classify {summary}.", "label")`。
 `staged_two_map(frame, lm, stages)`保持每个原生Map整阶段等待；同一batch选择器也可为它提供SemLoom执行。
@@ -100,6 +133,13 @@ with lotus_executor(native_lm):
 [Daft/Ray检查](../../../tests/semantic_methods/test_lotus_ray.py)需显式启用`SEMLOOM_LOTUS_RAY_TEST=1`，
 并将`SEMLOOM_LOTUS_RAY_TMP`设为仓库外短目录，`SEMLOOM_LOTUS_TEST_ARTIFACT`接收脱敏事件。
 这些入口使用localhost响应替身；真实模型结论与实际源码身份由结果报告分别记录。
+
+[完整调用检查](../../../tests/baselines/test_native_calls.py)和
+[LOTUS原生执行检查](../../../tests/semantic_methods/test_lotus_native.py)通过
+`SEMLOOM_NATIVE_CALL_TEST=1`启用实际Daft/Ray Data；`SEMLOOM_NATIVE_CALL_RAY_TMP`指定仓库外短目录。
+在导入Ray Data前显式设置`RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY=2`。
+检查包含完整响应、重复输入、缓存／用量、logprobs、HTTP与JSON错误、两Map等待、取消、到期及退出。
+`SEMLOOM_NATIVE_CALL_ARTIFACT`指向仓库外新目录时保存脱敏请求、原始响应和HTTP活动记录。
 
 整合只采用公共空释放实现，并引入`60c45593`的异常处理；调用侧候选保留在历史分支。
 测量、失败及后续模型复核归[整合结果](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
