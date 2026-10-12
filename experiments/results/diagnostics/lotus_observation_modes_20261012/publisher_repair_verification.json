@@ -109,5 +109,22 @@
     "official Movie Q1/Q2/Q3 evaluator differential",
     "newly owned author runtime and latest publisher full Q1",
     "real model, GPU or performance comparison"
-  ]
+  ],
+  "source_candidate": "916e1f5437e43f88b7d065e88f9fa3d7793341cb",
+  "independent_review": {
+    "base": "38e82a9a1da57ef317b7dfee804aadac03273540",
+    "initial_candidate": "83a924db57c64e338b6dc9651353fb715358d429",
+    "corrected_candidate": "916e1f5437e43f88b7d065e88f9fa3d7793341cb",
+    "standards_initial_required": 0,
+    "spec_initial_required": 1,
+    "fixed_failure_mode_metadata": true,
+    "standards_followup_required": 0,
+    "spec_followup_required": 0,
+    "reviewers_readonly_no_tests_services_or_http": true
+  },
+  "privacy": {
+    "full_tracked_scan_files": 7303,
+    "violations": 0,
+    "existing_baseline_suppressions": 10
+  }
 }
