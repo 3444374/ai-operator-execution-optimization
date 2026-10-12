@@ -328,6 +328,23 @@ class SemaNativeServiceTests(unittest.TestCase):
         self.assertTrue(any(item['stage'] == 'native_graph_close' for item in service.summary['cleanup_failures']))
         self.assertIn('OSError', '\n'.join(service.first_error.__notes__))
 
+    def test_close_report_access_failure_does_not_strand_the_driver(self):
+        class ReportFailure:
+            backend = 'daft'
+            @property
+            def last_close_report(self):
+                raise OSError('fixture close report read')
+            def iter_batch(self, calls, **kwargs):
+                yield from ()
+        with self.service(ReportFailure()) as service:
+            self.assertEqual(self.post(service.endpoint_url)[0], 502)
+        self.assertTrue(service.summary['native_driver_stopped'])
+        self.assertFalse(service.summary['native_bridge_thread_alive'])
+        self.assertTrue(service.summary['io_loop_closed'])
+        self.assertEqual(service.first_error.phase, 'native_graph')
+        self.assertTrue(any(item['stage'] == 'native_graph_close'
+                            for item in service.summary['cleanup_failures']))
+
     def test_native_limits_and_imlane_do_not_silently_fall_back(self):
         for options in ({'held_request_capacity': 0}, {'held_request_capacity': 129},
                         {'snapshot_rows': 0}, {'snapshot_rows': 129}):
