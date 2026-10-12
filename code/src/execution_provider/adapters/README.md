@@ -1,5 +1,12 @@
 # Native ready-task execution
 
+[Equivalent model replicas](model_replicas.md) compose the existing execution
+factory with declared physical endpoints, static or round-robin routing and
+global/per-endpoint request/work capacities. The independent Map gateway CLI and
+complete-response Python API preserve existing task/Job/lease ownership. The
+read-only process/device probe distinguishes model replicas from HTTP workers;
+local fixtures and actual-library CPU checks have separate scopes.
+
 `native_tasks.py` accepts already prepared, non-streaming single-model text calls before a
 supplier's request pool. It uses the existing `SessionEngine`, Job grants, organization and
 delivery leases. It neither interprets messages nor changes generation parameters.

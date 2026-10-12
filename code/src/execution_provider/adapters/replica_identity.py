@@ -1,0 +1,203 @@
+"""Read-only local verification of model API processes and their actual GPU descendants."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+from urllib.parse import urlsplit
+
+from .model_replicas import ModelReplicaSet
+
+
+@dataclass(frozen=True)
+class ReplicaProcess:
+    pid: int
+    parent_pid: int
+    start_ticks: str
+    argv: tuple[str, ...] = field(repr=False)
+    listening_ports: tuple[int, ...] = ()
+
+
+@dataclass(frozen=True)
+class GpuProcess:
+    pid: int
+    device_id: str
+
+
+def _option(argv, name, *, required=True):
+    values = []
+    for index, token in enumerate(argv):
+        if token == name:
+            if index + 1 == len(argv) or argv[index + 1].startswith("--"):
+                raise ValueError("model process has an incomplete serving option")
+            values.append(argv[index + 1])
+        elif token.startswith(name + "="):
+            values.append(token[len(name) + 1:])
+    if len(values) > 1 or (required and not values):
+        raise ValueError("model process serving option is missing or repeated")
+    return values[0] if values else None
+
+
+def _serving_sha256(argv):
+    # Compare actual serving arguments while withholding paths and credential values.
+    module = argv.index("vllm.entrypoints.openai.api_server")
+    result, index = [], module + 1
+    physical = ("--port", "--host", "--api-key")
+    while index < len(argv):
+        token = argv[index]
+        if token in physical:
+            index += 2
+        elif any(token.startswith(name + "=") for name in physical):
+            index += 1
+        else:
+            result.append(token)
+            index += 1
+    return hashlib.sha256(json.dumps(result, separators=(",", ":")).encode()).hexdigest()
+
+
+def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, independent_devices=True):
+    """Verify one-device replicas on this machine; Ray actors cannot satisfy these checks.
+
+    sidecars use launch_vllm_with_identity.py's existing schema. A model content
+    audit must separately establish deployment_sha256; this verifies the live
+    process/device topology and equal serving argv/package versions only.
+    """
+    if type(directory) is not ModelReplicaSet or type(independent_devices) is not bool:
+        raise ValueError("invalid model replica verification request")
+    if set(sidecars) != {r.endpoint_id for r in directory.replicas}:
+        raise ValueError("runtime sidecars must cover exactly the declared replicas")
+    by_pid = {p.pid: p for p in processes}
+    if len(by_pid) != len(processes):
+        raise ValueError("duplicate process identities")
+
+    def descendants(pid):
+        members = {pid}
+        while True:
+            grown = members | {p.pid for p in processes if p.parent_pid in members}
+            if grown == members:
+                return members
+            members = grown
+
+    used_processes, used_devices, records, serving = set(), set(), [], set()
+    for replica in directory.replicas:
+        url = urlsplit(replica.endpoint_url)
+        if url.hostname not in ("127.0.0.1", "localhost", "::1") or url.port is None:
+            raise ValueError("process verification requires endpoint-machine loopback URLs with explicit ports")
+        sidecar = sidecars[replica.endpoint_id]
+        if (type(sidecar) is not dict or type(sidecar.get("pid")) is not int
+                or type(sidecar.get("port")) is not int or sidecar.get("schema_version") != 1):
+            raise ValueError("invalid model runtime sidecar")
+        process = by_pid.get(sidecar["pid"])
+        if (process is None or process.start_ticks != sidecar.get("process_start_time_ticks")
+                or sidecar["port"] != url.port):
+            raise ValueError("runtime sidecar has a stale process or different endpoint port")
+        if ("vllm.entrypoints.openai.api_server" not in process.argv
+                or _option(process.argv, "--port") != str(url.port)
+                or _option(process.argv, "--served-model-name") != directory.model_id
+                or _option(process.argv, "--model") is None
+                or _option(process.argv, "--tensor-parallel-size") != "1"):
+            raise ValueError("replica is not the declared one-device model API process")
+        if len(replica.device_ids) != 1:
+            raise ValueError("qualification requires exactly one declared GPU per replica")
+        members = descendants(process.pid)
+        if members & used_processes:
+            raise ValueError("replicas share a model API process tree")
+        if not any(url.port in by_pid[pid].listening_ports for pid in members):
+            raise ValueError("model process tree does not own the endpoint listener")
+        gpu_members = [g for g in gpu_processes if g.pid in members]
+        devices = {g.device_id for g in gpu_members}
+        if devices != set(replica.device_ids):
+            raise ValueError("actual model GPU descendants differ from the declared devices")
+        if independent_devices and (devices & used_devices or any(
+                g.device_id in devices and g.pid not in members for g in gpu_processes)):
+            raise ValueError("independent replicas require GPUs without other compute owners")
+        version = sidecar.get("package_version")
+        if type(version) is not str or not version:
+            raise ValueError("model runtime package version is unavailable")
+        signature = _serving_sha256(process.argv)
+        serving.add((version, signature))
+        used_processes.update(members)
+        used_devices.update(devices)
+        records.append(dict(endpoint_id=replica.endpoint_id, location_id=replica.location_id,
+            api_pid=process.pid, process_start_time_ticks=process.start_ticks,
+            gpu_process_ids=sorted({g.pid for g in gpu_members}), device_ids=sorted(devices),
+            service_version=version, serving_arguments_sha256=signature))
+    if len(serving) != 1:
+        raise ValueError("replicas have different effective serving arguments or package versions")
+    return dict(schema_version=1, replica_set_sha256=directory.sha256, replica_count=len(records),
+        gpu_count=len(used_devices), independent_devices=independent_devices,
+        model_content_identity="declared; separate content audit required", replicas=records)
+
+
+def _process_stat(path):
+    raw = path.read_text(encoding="utf-8")
+    close = raw.rfind(")")
+    fields = raw[close + 2:].split()
+    if close < 0 or len(fields) <= 19:
+        raise ValueError("model process stat is incomplete")
+    return int(fields[1]), fields[19]
+
+
+def _listeners(proc_root):
+    sockets = {}
+    for name in ("tcp", "tcp6"):
+        for line in (proc_root / "net" / name).read_text().splitlines()[1:]:
+            fields = line.split()
+            if len(fields) > 9 and fields[3] == "0A":
+                sockets[fields[9]] = int(fields[1].rsplit(":", 1)[1], 16)
+    return sockets
+
+
+def inspect_local_model_replicas(directory, sidecar_paths, *, independent_devices=True):
+    """No HTTP, model launch, GPU allocation, downloads, or SSH connections."""
+    proc_root = Path("/proc")
+    if not proc_root.is_dir():
+        raise ValueError("live replica verification requires Linux /proc on the endpoint machine")
+    sidecars = {}
+    for endpoint, path in sidecar_paths.items():
+        path = Path(path)
+        if path.stat().st_size > 65536:
+            raise ValueError("model runtime sidecar exceeds its byte capacity")
+        sidecars[endpoint] = json.loads(path.read_text())
+    sockets, processes = _listeners(proc_root), []
+    for path in proc_root.iterdir():
+        if not path.name.isdecimal():
+            continue
+        try:
+            parent, started = _process_stat(path / "stat")
+            argv = tuple(t.decode("utf-8", "replace")
+                         for t in (path / "cmdline").read_bytes().split(b"\0") if t)
+            ports = set()
+            for fd in (path / "fd").iterdir():
+                try:
+                    target = fd.readlink().as_posix()
+                except OSError:
+                    continue
+                if target.startswith("socket:[") and target[8:-1] in sockets:
+                    ports.add(sockets[target[8:-1]])
+            # PID reuse or a process exiting during the snapshot cannot qualify.
+            if (parent, started) != _process_stat(path / "stat"):
+                continue
+            processes.append(ReplicaProcess(int(path.name), parent, started, argv, tuple(sorted(ports))))
+        except (OSError, ValueError):
+            continue
+    probe = subprocess.run(["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader,nounits"],
+                           capture_output=True, text=True, timeout=10, check=True)
+    gpu_processes = []
+    for line in probe.stdout.splitlines():
+        if not line.strip():
+            continue
+        fields = line.split(",")
+        if len(fields) != 2 or not fields[0].strip().isdecimal() or not fields[1].strip().startswith("GPU-"):
+            raise ValueError("GPU process identity is unavailable")
+        gpu_processes.append(GpuProcess(int(fields[0].strip()), fields[1].strip()))
+    result = verify_replica_processes(directory, sidecars, tuple(processes), tuple(gpu_processes),
+                                      independent_devices=independent_devices)
+    # Recheck the API process identity after the GPU snapshot, not just at sidecar read time.
+    for replica in result["replicas"]:
+        if _process_stat(proc_root / str(replica["api_pid"]) / "stat")[1] != replica["process_start_time_ticks"]:
+            raise ValueError("model API process changed during device verification")
+    return result
