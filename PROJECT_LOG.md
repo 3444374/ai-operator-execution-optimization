@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：六条LOTUS路径的单GPU真实模型检查
+
+- 按新独立192名额运行固定native／stability组合`9c2fdefa`，原LOTUS、Daft、Ray Data、SemLoom、IMLane CPython及作者Ray18查询／144真实POST全部通过；同一Qwen2.5-7B服务、完整请求、原SDK／parser与消费核对一致。
+- [全部原值与复算](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-six-model)保留8预热＋16测量／路径、请求与查询分段、模型文件／PID／GPU身份、错误／超时0；n=2查询／16请求的P99只作样本最大值，人工输入不作任务质量或性能排名。
+- 首次模型就绪后supervisor因连接断开写stdout失败，driver未运行、POST／分配0；保存失败，改持久日志脱离连接后沿用原启动期限。成功轮driver约76.203秒，服务退出0、自有存活及GPU进程归零，IMLane Coordinator／Ray退出0、未强制且共享内存0。
+- 新轮占用144、剩48未用；旧轮24实际／32占用独立保留，两轮累计168实际／176占用。双GPU仅准备[公共路由候选方案](experiments/plans/语义系统对照.md#lotus-two-gpu)，拟新独立288名额，尚未实现公共路由或启动两卡。
+
 ## 2026-10-12：接续原生执行整合与IMLane公共入口
 
 - 在独立Git副本接续旧主，原任务／工作树／进程保持只读；固定交付与失败原件见[接入记录](experiments/results/postgresql/native_executor_baselines_20261012/README.md)。

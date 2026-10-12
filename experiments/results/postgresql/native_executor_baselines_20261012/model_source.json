@@ -1,0 +1,459 @@
+{
+  "schema": "semloom.lotus.six.model.source.v1",
+  "run_id": "lotus-six-model01/attempt02",
+  "source_commit": "9c2fdefac94811b18a1f6f097a855786350fe31f",
+  "source_archive_sha256": "d90eb58cca214a81935b538137a6fce3bd71554d6c0e63f4dc2d0235bd7e0ab5",
+  "native_parent": "fd8c00bca70804075cc7f527d24e27eaea2c60c5",
+  "stability_parent": "9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c",
+  "evidence_archive_sha256": "b5b92075e09bfee3d68ff4e95af1a9c47c2f6a2dde8ebf97f08716f2ff60a623",
+  "evidence_archive_bytes": 372058,
+  "input": {
+    "kind": "synthetic protocol-only input, no benchmark quality claim",
+    "rows": [
+      {
+        "row_id": "0",
+        "text": "A small complete-call engineering check."
+      },
+      {
+        "row_id": "1",
+        "text": "Repeated text."
+      },
+      {
+        "row_id": "2",
+        "text": "Repeated text."
+      },
+      {
+        "row_id": "3",
+        "text": "Complete input with a newline.\nThe second line remains present."
+      },
+      {
+        "row_id": "4",
+        "text": "中文文本完整保留。"
+      },
+      {
+        "row_id": "5",
+        "text": "A sixth short input."
+      },
+      {
+        "row_id": "6",
+        "text": "Punctuation: [] {} <>."
+      },
+      {
+        "row_id": "7",
+        "text": "The final input occurrence."
+      }
+    ]
+  },
+  "complete_native_request_values": [
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «A sixth short input.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «A small complete-call engineering check.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «Complete input with a newline.\nThe second line remains present.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «Punctuation: [] {} <>.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «Repeated text.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «Repeated text.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «The final input occurrence.»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    },
+    {
+      "max_completion_tokens": 16,
+      "messages": [
+        {
+          "content": "The user will provide an instruction and some relevant context.\nYour job is to answer the user's instruction given the context.",
+          "role": "system"
+        },
+        {
+          "content": "Context:\n[Text]: «中文文本完整保留。»\n\n\nInstruction: For the given text, return only the lowercase word ok, without quotes or punctuation.\nInput: Text",
+          "role": "user"
+        }
+      ],
+      "model": "Qwen2.5-7B-Instruct",
+      "temperature": 0,
+      "top_p": 1
+    }
+  ],
+  "identical_request_multiset_all_18_queries": true,
+  "model_repository": "Qwen/Qwen2.5-7B-Instruct",
+  "model_files_sha256": {
+    "config.json": {
+      "sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "bytes": 663
+    },
+    "configuration.json": {
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2
+    },
+    "generation_config.json": {
+      "sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "bytes": 243
+    },
+    "merges.txt": {
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "bytes": 1671839
+    },
+    "model-00001-of-00004.safetensors": {
+      "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "bytes": 3945441440
+    },
+    "model-00002-of-00004.safetensors": {
+      "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "bytes": 3864726352
+    },
+    "model-00003-of-00004.safetensors": {
+      "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "bytes": 3864726424
+    },
+    "model-00004-of-00004.safetensors": {
+      "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "bytes": 3556377672
+    },
+    "model.safetensors.index.json": {
+      "sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "bytes": 27752
+    },
+    "tokenizer.json": {
+      "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "bytes": 7031645
+    },
+    "tokenizer_config.json": {
+      "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "bytes": 7305
+    },
+    "vocab.json": {
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "bytes": 2776833
+    }
+  },
+  "model_manifest_sha256": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+  "serving_versions": {
+    "vllm": "0.25.1",
+    "torch": "2.11.0",
+    "transformers": "5.14.1"
+  },
+  "serving": {
+    "TP": 1,
+    "PP": 1,
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 16,
+    "max_num_batched_tokens": 2048,
+    "gpu_memory_utilization": 0.8,
+    "enforce_eager": true,
+    "prefix_caching": false,
+    "model_service_cpu_affinity": [
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87
+    ],
+    "gpu_ready_actual": [
+      "181201, GPU-b7729a10-0f62-16ed-e91b-65801dfa5ee9, 19450"
+    ]
+  },
+  "driver_options": {
+    "concurrency": 8,
+    "num_threads": 8,
+    "ray_actors": 2,
+    "ray_async_batches_per_actor": 2,
+    "ray_batch_rows": 1,
+    "source_blocks": 4
+  },
+  "driver_cpu_affinity": [
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79
+  ],
+  "imlane_actual_modes": [
+    {
+      "runtime": "cpython",
+      "declared_author_executors": 2,
+      "declared_graph_allowance": 8,
+      "cpu_affinity": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "ray_cpus": 0,
+      "ray_gpus": 0,
+      "actual_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "settings_executors_are_physical_count": false,
+      "coordinator_pid": 184152,
+      "coordinator_start_ticks": 293643456,
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "actual_worker_pids": [
+        184155,
+        184158
+      ],
+      "ray_actor_ids": [],
+      "kernel_actual_calls": 24,
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "cleanup_passed": true
+    },
+    {
+      "runtime": "ray",
+      "declared_author_executors": 2,
+      "declared_graph_allowance": 8,
+      "cpu_affinity": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "ray_cpus": 2,
+      "ray_gpus": 0,
+      "actual_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "settings_executors_are_physical_count": false,
+      "coordinator_pid": 184703,
+      "coordinator_start_ticks": 293644105,
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "actual_worker_pids": [
+        184770,
+        184777
+      ],
+      "ray_actor_ids": [
+        "408cf4abf734c4d786eb527702000000",
+        "a9c4bdf8960c0a654fb38c4d02000000"
+      ],
+      "kernel_actual_calls": 24,
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "cleanup_passed": true
+    }
+  ],
+  "group_startups": [
+    {
+      "arm": "lotus-adapted-native",
+      "reusable_group_startup_seconds": 9.154718634,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "reusable_group_startup_seconds": 0.464635303,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "reusable_group_startup_seconds": 10.915583655,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "reusable_group_startup_seconds": 11.945073628,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "reusable_group_startup_seconds": 0.27217034,
+      "author_startup_seconds": 0.5643882630392909
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "reusable_group_startup_seconds": 0.27442774,
+      "author_startup_seconds": 4.6476664412766695
+    }
+  ],
+  "timing": {
+    "request": "gateway monotonic intervals plus original LM whole-batch ready/return; no cross-process clock subtraction",
+    "query": "complete entry to parser/consumer/recording EOF and per-query cleanup",
+    "original_lm": "Full uncached batch ready to complete batch return; eight identical call spans per query, not independent per-request return times.",
+    "startup_excluded": true,
+    "query_includes_recording_and_per_query_cleanup": true,
+    "cross_process_clock_subtraction": false
+  },
+  "first_startup": {
+    "error_type": "BrokenPipeError",
+    "stage": "supervisor stdout after model readiness, before query driver",
+    "actual_posts": 0,
+    "allocated_slots": 0,
+    "model_readiness_seconds": 47.09627880388871,
+    "api_server_exit": 0,
+    "survivors": 0,
+    "gpu_compute_processes_after": 0,
+    "repair": "Detached owned supervision with durable output files; original startup deadline preserved; no query retried."
+  },
+  "remaining_scope": [
+    "synthetic eight rows; no benchmark/task quality claim",
+    "two measured queries and sixteen requests per arm",
+    "serialized arm blocks; fixed order; no service saturation evidence",
+    "no multi-GPU or model-replica throughput result",
+    "IMLane original author Job ID empty; arbitrary-UDF/exception taxonomy and independent cancellation not fully qualified"
+  ],
+  "fresh_final_readonly_resource_check": {
+    "at_utc": "2026-10-12T07:16:56.984022+00:00",
+    "read_only": true,
+    "known_prior_pids": [
+      {
+        "pid": 181148,
+        "exists": false
+      },
+      {
+        "pid": 181173,
+        "exists": false
+      },
+      {
+        "pid": 181201,
+        "exists": false
+      },
+      {
+        "pid": 184152,
+        "exists": false
+      },
+      {
+        "pid": 184155,
+        "exists": false
+      },
+      {
+        "pid": 184158,
+        "exists": false
+      },
+      {
+        "pid": 184703,
+        "exists": false
+      },
+      {
+        "pid": 184770,
+        "exists": false
+      },
+      {
+        "pid": 184777,
+        "exists": false
+      }
+    ],
+    "gpu_command_returncode": 0,
+    "current_gpu_compute_processes": [],
+    "owned_model_port_59889_listening": false
+  }
+}

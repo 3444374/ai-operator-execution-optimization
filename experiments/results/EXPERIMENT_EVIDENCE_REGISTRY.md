@@ -3,7 +3,11 @@
 2026-10-12：[原生执行接续整合](postgresql/native_executor_baselines_20261012/README.md)。
 保留LOTUS／DuckDB原交付及作者IMLane630行／132次Arrow调用，公共三方法IMLane两个模式成功轮48软件POST；前轮21／11／14失败及归档符号链接拒绝保留，累计94、模型0。
 同driver Daft重设runner反例与中立修复通过54次软件调用；较早源码单GPU只完成三条warmup／24真实POST，32名额占用、测量0、服务已退出。
-公共关联保持原方法，Sema HTTP序号不作源行；固定native／stability组合247项无失败／29项跳过，真实公共入口追加32软件POST通过，累计126；后续模型资格仍待单独运行。
+公共关联保持原方法，Sema HTTP序号不作源行；固定native／stability组合247项无失败／29项跳过，真实公共入口追加32软件POST通过，累计126。
+新独立单GPU轮`lotus-six-model01/attempt02`六条LOTUS路径18查询／144模型POST全部通过，三种计数一致、0错误／超时／重试及自有资源退出核对通过。
+完整18查询／144请求原值可从同一报告离线复算；人工8行、每条测量n=2／16、固定路径次序，只支持真实模型接线，P99为样本最大值。
+本轮192上限占用144、剩48未用；旧轮24实际／32占用独立保留，累计168实际／176占用。首次连接相关启动失败0POST／0分配及其退出记录保留。
+双GPU方案尚未执行，不把单GPU结果外推为双副本收益；DuckDB／Sema真实模型保持未完成。
 
 
 2026-10-12：[Sema后置Daft、Ray Data和IMLane检查](postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。

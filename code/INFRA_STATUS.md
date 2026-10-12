@@ -3,8 +3,11 @@
 2026-10-12：[三种原方法的统一原生接入](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 LOTUS／DuckDB／Sema公共入口支持Daft、Ray Data与IMLane，作者CPython／Ray分别登记。
 IMLane实际共同源码完成48次软件POST、三方法完整消费和两模式常驻复用，自有进程／共享内存归零，模型0。
-Daft初始化统一到中立模块，真实同driver四路径组合通过；单GPU较早源码只完成三条warmup／24POST，SemLoom失败与修复另列，测量及IMLane模型未运行。
-稳定性、入口正文与多副本采用独立分支，固定稳定性`9bb6c415`组合247项通过／29项跳过，真实三方法双mode追加32软件POST通过，不据软件或warmup作性能排名。
+Daft初始化统一到中立模块，真实同driver四路径组合通过；较早24POST／32占用名额的模型失败轮保留。
+新独立单GPU六条LOTUS路径18查询／144真实POST通过，完整请求／原parser／消费与自有资源退出核对一致；
+每条8预热＋16测量，模型同一缓存Qwen2.5-7B、同一RTX4090服务；小型人工输入不作性能排名。
+双GPU公共透明路由仍待实现与软件资格，现有PG Map多副本CLI不能直接替代；本轮剩48名额未用。
+稳定性、入口正文与多副本采用独立分支，固定稳定性`9bb6c415`组合247项通过／29项跳过，真实三方法双mode追加32软件POST通过；模型轮使用固定组合`9c2fdefa`。
 
 
 2026-10-12：[Sema后置原生执行检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。

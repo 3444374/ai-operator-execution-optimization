@@ -193,6 +193,35 @@
     "service_exit": 0,
     "survivors": 0,
     "same_model_source_archive_sha256": "2a0fae7600e5789466540652c1742cac30b27009b95701922d3820cb50096aef",
-    "performance_qualified": false
+    "performance_qualified": false,
+    "historical_round": true,
+    "unused_allocation_not_reused": true
+  },
+  "lotus_six_model_current": {
+    "run_id": "lotus-six-model01/attempt02",
+    "passed": true,
+    "details": "model_results.json",
+    "original_observations": [
+      "model_requests.csv",
+      "model_queries.csv"
+    ],
+    "source": "model_source.json",
+    "source_commit": "9c2fdefac94811b18a1f6f097a855786350fe31f",
+    "source_archive_sha256": "d90eb58cca214a81935b538137a6fce3bd71554d6c0e63f4dc2d0235bd7e0ab5",
+    "actual_model_posts": 144,
+    "allocated_slots": 144,
+    "new_post_cap": 192,
+    "unused_slots": 48,
+    "driver_test_seconds": 76.20315596880391,
+    "errors": 0,
+    "timeouts": 0,
+    "retries": 0,
+    "cleanup": {
+      "api_server_exit": 0,
+      "own_survivors": [],
+      "gpu_after": []
+    },
+    "engineering_only": true,
+    "multi_gpu_run": false
   }
 }

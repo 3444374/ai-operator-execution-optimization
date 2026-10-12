@@ -17,6 +17,7 @@ Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
 
 [原生执行统一入口](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)登记LOTUS／DuckDB／Sema与Daft、Ray Data、作者IMLane的接入；
 IMLane明确区分CPython与作者Ray，原方法继续解析完整响应。
+六条LOTUS路径已通过同一单GPU真实模型接线；全部请求／查询原值、有限样本及未运行的双GPU方案由该报告定位。
 中立[infrastructure/daft_runtime.py](src/infrastructure/daft_runtime.py)统一当前driver的Daft初始化，
 相同runner／线程数复用，配置冲突报错；原生HTTP与SemLoom物化可在同一driver连续执行。
 
