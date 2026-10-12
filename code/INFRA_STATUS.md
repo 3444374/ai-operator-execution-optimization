@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[同步IMLane原Q2公开CLI软件入口](../experiments/results/diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)。
+固定3bd53587两作者模式各完整120调用／原2000行关系，实际--execute退出0，240逻辑／480传输POST、49.861/300秒，无跳过。
+31登记身份和fixture连接／请求线程清理通过；四真实作者工作进程bootstrap与原身份关联，1001已发布源码未改，模型/GPU0。
+替身TP9/FP54/TN52/FN5及官方F1=0保持；同步Q1/Q3完整CLI、可选async完整CLI及真实模型/交错测量仍待，不借软件时间作排名。
+
+
 2026-10-12：[IMLane原生async接续核验](integrations/sema/README.md#imlane薄客户端)。
 从已发布d004e720移植既有五个async实现/测试文件，采用其共享cookie及SemBench只读源码路径修复。
 旧02a75cc4候选、153 POST失败与清理证据保留；修后固定77cc1ed0的[两模式实库检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)通过。

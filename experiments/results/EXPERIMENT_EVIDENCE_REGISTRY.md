@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-10-12：[同步IMLane原Q2公开入口补充](diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)。
+固定3bd53587，两作者模式各原Q2完整120请求、CLI退出0，240逻辑／480传输POST，49.861/300秒，模型/GPU0。
+原2000行关系、SDK/parser/evaluator、真实worker/计数身份、31进程清理及错误替身质量均保存；1001源码未改。
+232成员公开观测、逐成员双摘要、720解码payload隐私扫描及离线核查通过；旧桥preflight失败与导出补齐记录保留，未重跑窗口。
+当前同步六路径原Q2最低软件公开入口已有证据，完整Q1/Q3／可选async CLI及真实模型/交错测量分别待执行。
+
+
 2026-10-12：[IMLane原生async接续](../../code/integrations/sema/README.md#imlane薄客户端)。
 发布者d004e720包含已实际aiohttp3.14.5核验的共享cookie修补；五个async文件与旧a54e1456一致。
 旧[失败原件与脱敏观测](postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-http)保留；

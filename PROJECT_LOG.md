@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-12：补齐同步作者原Q2最低公开入口
+
+- 固定3bd53587，两同步IMLane作者模式经真实公开SemBench CLI各完整原Q2的120调用；240逻辑／480传输POST，49.861/300秒，模型/GPU0。
+- 实际四worker bootstrap、31进程清理、连接／请求线程及1001源码检查通过；现有容量桥复用，无编译／安装，替身错误质量保持。
+- 首次上传自动审批拒绝，经公开源码／无敏感材料证据后同机制获准；误选旧桥的只读preflight失败和首份导出缺bootstrap原件均保留。
+- [同题原件](experiments/results/diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)与离线核查、232成员公开摘要完成；真实模型小轮仍未启动，不重跑已发布窗口。
+
+
 ## 2026-10-12：发布可选async并保留统一公开入口计划
 
 - 四非IMLane路径原Q2/Q3 CLI证据已先以0f91ae1b推送并核远端；随后有限整合05758e3f，五个async实现/测试逐字保持，默认同步、共享代码及未知责任保护保持。

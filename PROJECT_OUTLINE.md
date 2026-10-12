@@ -1,5 +1,8 @@
 # 项目大纲
 
+2026-10-12工程接续：[同步IMLane原Q2公开入口](experiments/results/diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)两作者模式各完整120调用通过，原2000行关系保持；240逻辑／480传输POST、49.861秒，模型/GPU0。同步六路径原Q2最低软件入口已有证据，真实模型质量与交错测量仍待，替身时间不用于排名。
+
+
 2026-10-12工程接续：[原生执行统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)完成三方法IMLane两种作者模式的软件消费与常驻复用；
 同driver Daft初始化修复通过实际库检查。新独立单GPU轮六条LOTUS路径18查询／144真实POST通过，原请求、parser与消费相同；
 每条测量n=2查询／16请求，人工输入不支持任务质量、饱和或稳定尾延迟。较早24POST／32名额失败轮独立保留。

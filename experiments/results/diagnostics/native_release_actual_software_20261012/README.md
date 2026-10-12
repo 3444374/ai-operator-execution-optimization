@@ -1,5 +1,7 @@
 # 固定发布版的真实 SDK 与原生图软件核查
 
+最新补充：[同步IMLane原Q2公开入口](#imlane-sync-public-q2-software)在固定3bd53587通过两作者模式，240逻辑／480传输POST；真实模型尚未运行。历史三个窗口继续按各自范围解释。
+
 本记录保留已发布4566f1fc在既有服务器、CPU8–15上的有限软件验证。没有安装依赖、重建作者库或运行模型／GPU；IMLane及2000行矩阵未重复。
 自动机器模板的CPU项仍为8<10，相关既有依赖项通过；不宣称完整机器模板或模型环境资格。
 
@@ -101,3 +103,40 @@ Q3为TP6／FP52／TN54／FN8，原COUNT返回58、gold14，官方绝对误差44�
 此前两个窗口原件与失败未改。第二窗口早停仅证明close起止之后无新request_start及活动请求最终0；没有逐请求远端停止确认，clean=false／remote_http_stopped=unavailable保持。
 
 剩余模型小轮见[同任务单双卡方案](../../../plans/语义系统对照.md#sembench-native-model-next)；先用已验证同步接法，不等待async新功能，尚未启动模型。
+
+
+<a id="imlane-sync-public-q2-software"></a>
+## 同步IMLane原Q2公开入口软件窗口
+
+固定已发布3bd53587，单独300秒／256逻辑调用／512传输POST窗口。实际两次公开
+`python -m src.experiments.postgresql.sembench_query_cli --config <private-config> --execute`
+均退出0，作者CPython及原生Ray各原Q2完整120调用；原2000行关系、WHERE、LIMIT5、提示、SDK parser和官方evaluator保持。
+从外层监督启动、早于作者启动与首次公开预检计时，共49.861秒；未触发停止信号或强制清理。
+
+| 路径 | 实际逻辑调用 | 完整查询／就绪后查询 | 观察身份 |
+|---|---:|---|---|
+| 同步IMLane CPython | 120 | 4.367733／4.265819秒 | 两个原二进制执行器，与Coordinator父进程、executor参数、PID／start ticks及bootstrap关联 |
+| 同步IMLane作者Ray | 120 | 4.509083／4.404728秒 | 两个原同步ActorWrapper，按准确进程命令、PID／start ticks及bootstrap关联 |
+
+这些是qualification软件替身时间，不作性能排名。两模式完整请求值多重集、120个组合出现身份、解析决定、LIMIT结果和评价一致。
+声明HTTP上限6，原作者META为executors4／threads6，实际各两名工作进程；不将META或桥的pending128读作物理并发。
+发送前账本及真实收据核对：gateway240＋fixture240＝480传输POST，对应240逻辑调用；6个实际发送进程的bootstrap源码摘要和有效hook保持，未确认返回0。
+fixture仅根据消息摘要生成True／False，无标签输入；TP9／FP54／TN52／FN5、LIMIT5的官方F1=0保留为替身错误，不声称真实模型质量。
+
+为核对前述四路径，只在离线请求副本中将其软件模型名改为本窗口模型名，其他完整JSON值、决定、结果及评价均相等。
+两个窗口实际执行的原正文与原摘要各自保留；此处比较不是六路径同时运行或同一模型性能证据。
+
+实际核1001个公开Git源码文件、缓存模型12文件、2123个vLLM源码文件、原作者及现有容量桥摘要；十CPU runtime只读检查通过，模型未启动。
+最初上传因自动审批要求明确材料与目的地而被拒绝，未执行；补公开GitHub可读、逐Git blob匹配和隐私证据后，同一上传机制获准。
+首次只读资产核验误选扩容前旧桥而失败，原件保留；随后改用已有已验证b201be88容量桥，与当前C++源码1e27ee6e匹配，没有新编译、安装或作者库修改。
+自有源码副本仅追加指向同一私有计数入口的sitecustomize辅助链接，让作者原Ray UDF目录能加载计数；1001已发布文件和作者调度／函数正文未改。
+
+监督登记31个进程身份仅CPU8–15，结束及独立只读复核均无自有残留。fixture活动连接／请求线程为0，GPU compute列表为空，模型／GPU0。
+原始导出首份漏选bootstrap目录，保留后补齐导出，未重跑窗口或增加请求。
+[验证记录](imlane-sync-q2-verification.json)、[232成员脱敏原件](imlane-sync-q2-observations.tar.gz)、
+[逐成员双摘要与省略记录](imlane-sync-q2-members-sha256.json)及[离线核查脚本](recompute_imlane_sync_q2.py)支持复核。
+公开件省略1440段消息正文、保留原内容摘要；240个编码请求也同样省略，720个解码payload独立隐私检查为0违规。
+原正文／wire摘要属于脱敏前字节，公开省略件使用成员公开摘要，不用省略正文重新计算原请求摘要。
+
+此次软件窗口补齐同步六路径原Q2的最低公开入口前置项，不恢复旧额度、不重复作者容量或异常矩阵。
+同步完整Q1／Q3 CLI、可选async完整CLI及模型质量／交错测量仍按[现有计划](../../../plans/语义系统对照.md#sembench-native-model-next)分别记录；两项历史Q1适配器前置拒绝保持，作者原系统容量不由旧128配置推断。
