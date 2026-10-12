@@ -52,6 +52,7 @@ DuckDB提供相同批接入的本地Core参照及默认关闭的推进／消费�
 
 2026-10-10：[原生方法与SemLoom执行适配](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)
 已提供公共完整任务、LOTUS单Map／短链、DuckDB批次、Sema请求服务及原生Daft／Ray入口。
+Sema仅在原生HTTP正文读完后进入Core，原SQL、请求池、提示与解析保留；尚未实现数据库执行器替换，原池前任务就绪与HTTP到源行对应不可观测。
 查询分别记录输入准备、实际提交、完整消费、请求和退出；既有PG默认路径保留，PG多Map、级联、多模型、Join和并行展开仍pending。
 常驻入口复用Core／LOTUS LM、DuckDB连接和Sema作者进程；Sema后置Core／worker仍按查询创建。
 

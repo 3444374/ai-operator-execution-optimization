@@ -1,4 +1,4 @@
-"""Native ready batches enter the existing Engine without a vendor request pool."""
+"""Complete supplier calls enter Core; each adapter declares its upstream execution scope."""
 
 from dataclasses import replace
 import threading

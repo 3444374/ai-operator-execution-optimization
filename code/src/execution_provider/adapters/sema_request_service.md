@@ -2,6 +2,9 @@
 
 本切片服务于 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
 Sema 仍拥有 SQL、数据供给、提示、联合提示、原生请求池、限速、解析和结果行关联；接点是 `llm_url` 后的服务。
+当前顺序为Sema原生SQL与方法 → 原生请求池 → HTTP正文抵达并读完 → SemLoom任务接纳与外部执行 → 原Sema解析。
+SemLoom只能组织已经抵达的完整请求，不能跳过原池、取得尚未发送的任务或接管数据库扫描与算子推进；这不是Sema数据库执行器替换。
+`request_sequence`与Core任务编号对应本服务的一次HTTP调用，不是Sema源行身份；`native_ready_ns`表示本次CLI与输入准备完成，不是模型任务在原池前就绪。
 实现状态与模型观察由[整合报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)记录；本文说明接口、观测和退出处理。
 [最新成本诊断](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#adapter-cost-diagnosis)已检查组级复用的实际资源与有限模型样本。
 [修复来源的有限模型观察](https://github.com/3444374/ai-operator-execution-optimization/blob/e8051fef151f00349581b8521d1709fb89a54612/experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)属于其实际整合源码和配置，不能据此认定同容量性能或原生请求池前观测已验证。
@@ -41,6 +44,7 @@ pump 有即刻工作时让出事件循环并继续推进，其他情况使用既
 延后记录动作或必需字段读取报错时，通过现有首错与取消逻辑停止查询，记录阶段为`observation_record`，原异常保存在首错的`__cause__`。HTTP已成功返回或SQL已读完时，服务退出仍传播这项记录首错，整查询不能因此报告通过。
 已有更早的HTTP／查询错误继续保留；附加记录错误和取消／清理错误按原清理记录保存。取消只发公共session信号，未确认的远端请求仍由Core保留，慢HTTP写出完成前不归还结果使用权。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
+`NativeTaskSession`的Job由外部查询runner创建，不来自Sema查询计划；组级复用只延长外部Core／worker的寿命，不改变接点位置。
 HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
 原 `prepare_projection`、`run_projection` 与实验默认调用方式保持。
 
