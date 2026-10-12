@@ -30,6 +30,17 @@ IMLane容量/身份和作者UDF异常另以执行错误结构化返回，正常�
 11项准备/清理控制检查及3项入口/关闭检查通过，3项实际SDK检查本机缺依赖跳过；
 新增实际SDK用例覆盖错误后继续解释、不同输出及重复值、客户端身份复用和释放。
 指定服务器CPU16–23第一次只读采样最高忙10%，因此该次没有启动验证；后续先重新检查空闲状态。
+用户批准具体服务器源码上传后，固定`c4f7f15742d3473274b75c42556c2d75be423060`
+通过20项真实SDK/清理检查、无跳过，12次localhost POST、模型/GPU0，15.739秒；
+fixture服务器关闭、自有进程观察为0。来源摘要见[修补核验](repair_verification.json)。
+实际Daft0.7.21零HTTP探针4行证明查询EOF后异步loop仍运行，支持检查query/loop持有连接。
+原生HTTP kernel现按查询及其Daft loop持有客户端；Ray Data遵循原HTTP stage的session_factory批次寿命。
+连接器不增加请求准入额度，cookie只来自每次显式请求；每次请求保留自己的期限。
+6项生命周期检查通过，其中4次真实localhost调用使用同一TCP连接，含不同输出和重复输入；
+5项提前关闭回归及2项Ray参数替身检查通过。实际新池的厂商图完整消费/取消资格仍待有限复验。
+Ray默认batch_rows=1时每HTTP stage批次只有一个请求，不声称跨批次或跨查询池复用。
+报告同时保存声明C与actors/async_batches/batch_rows/source_blocks；C不等于实际请求峰值。
+Ray配置上限按actors×async_batches×batch_rows核查，实际执行和供给继续由原native图拥有。
 
 本轮在独立分支`codex/native-execution-adapters`整合原LOTUS、DuckDB AI与Sema的方法接点。
 旧主及三个原子任务工作树保持只读，原始成功／失败与私有环境继续保留。

@@ -23,7 +23,7 @@ LM、Map、formatter、postprocessor、缓存、设置、列引用和计费模�
 | 已核对的源码行为 | 采用与保留 |
 |---|---|
 | [LM.__call__](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/models/lm.py)先查LM缓存，再把全部miss交给`_process_uncached_messages` | 在该实例的方法入口选择执行器；原生默认仍调用LOTUS/LiteLLM。SemLoom分支获得全部miss，随后才进入自己的有限offer |
-| LM原生分支拥有RPM/TPM等待、`batch_completion`线程池与批次提交 | SemLoom分支绕过这些物理控制，直接使用公共SessionEngine及Daft/Ray传输。它没有调用单条`completion`，也没有嵌套LOTUS请求池 |
+| LM原生分支拥有RPM/TPM等待、`batch_completion`线程池与批次提交 | SemLoom分支直接使用公共SessionEngine及Daft/Ray传输；响应回到消费线程后调用`completion`作本地SDK重放，未再发送HTTP或进入LOTUS请求池 |
 | LM在批次返回后更新physical/virtual usage、LM缓存，并按原位置合并命中与miss，提取choice/logprobs | 这些源码继续执行；乱序完成按miss序号复位。完整HTTP响应由适配保存，原生ModelResponse继续交给LM |
 | [DataFrame.sem_map](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/sem_ops/sem_map.py)拥有算子缓存、整表格式化、方法提示、postprocessor及结果列 | 单Map全部保留；批次接入不会自动增加跨算子推进。结果全列表返回前的等待仍存在 |
 | `df2multimodal_info`、`map_formatter`和`map_postprocess`可以处理普通文本行 | 两Map复用这些函数，由MethodDriver保留行身份、状态与结果。第二条指令必须引用第一条输出列；没有方法算法重写 |
@@ -128,6 +128,9 @@ IMLane UDF的容量/身份等执行错误另存`execution_error`，不会重放�
 继续取结果并关闭本次原生图；已经发送的HTTP请求可能仍在服务端运行。
 `last_close_report.remote_http_stopped`明确为`unavailable`，实际替身活动归零由独立服务记录验证。
 完整批次输入与返回均有编码字节额度，不将这些额度解释为RSS。
+Daft连接按查询和实际异步loop拥有及关闭；Ray Data沿原HTTP stage的批次session_factory复用，
+默认batch_rows=1不代表跨批次复用。实际厂商图参数与声明C分别进入关闭报告，C不表示观测并发。
+没有新增统一请求池或SemLoom准入策略；客户端连接器不再另设并发额度。
 原生消费线程的执行与关闭异常在停止/join后进入`last_close_report.worker_errors`，
 关闭异常对象保存在`last_cleanup_errors`；已有查询第一异常继续传播，附加类型进入notes。
 提前关闭而没有查询错误时，图关闭失败向调用方传播；`clean=False`与未知远端完成保持。

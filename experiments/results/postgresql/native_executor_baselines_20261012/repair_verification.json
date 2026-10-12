@@ -1,0 +1,57 @@
+{
+  "sdk_qualification": {
+    "source_commit": "c4f7f15742d3473274b75c42556c2d75be423060",
+    "source_archive_sha256": "3b7ae4469dcbfd86591d06a36df96f3f7f987bbce4a30b6129ac608217f36429",
+    "evidence_archive_sha256": "cd1a288cf19d0a4caef39fabeca4ca1083240f2ebf2ea7b13012ad8ac95f4ac4",
+    "tests": {
+      "run": 20,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "passed": true
+    },
+    "localhost_posts": 12,
+    "model_posts": 0,
+    "gpu_operations": 0,
+    "elapsed_seconds": 15.738809945061803,
+    "cpu_affinity": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "fixture_servers_closed": true,
+    "owned_processes_observed_after_exit": []
+  },
+  "daft_loop_probe": {
+    "rows": 4,
+    "loops": [
+      {
+        "id": 140670718716256,
+        "running": true,
+        "closed": false
+      }
+    ],
+    "http_posts": 0
+  },
+  "new_pool_qualification": {
+    "local_lifecycle_tests_passed": 6,
+    "local_real_keepalive_posts": 4,
+    "same_tcp_connection": true,
+    "close_regressions_passed": 5,
+    "ray_configuration_stand_in_tests_passed": 2,
+    "actual_vendor_pool_fixture": "pending"
+  },
+  "imlane_scope": {
+    "effective_client_snapshot_rows": 128,
+    "capacity_origin_project_commit": "5ee1b90c3",
+    "author_natural_row_capacity": "not established by the client guard",
+    "target_rows_512_or_2000": "unsupported",
+    "new_author_builds": 0
+  },
+  "historical_model_results": "old source, retained independently, not qualification of these repairs"
+}

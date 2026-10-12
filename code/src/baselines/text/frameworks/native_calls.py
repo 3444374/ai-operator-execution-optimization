@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 import json
 import math
@@ -147,22 +148,67 @@ def _outcome_from_wire(wire):
     return NativeCallOutcome(**value)
 
 
-async def _request(call, control=None):
+@dataclass
+class _HttpClient:
+    loop: object
+    session: object
+
+    @property
+    def closed(self):
+        return self.session.closed
+
+    async def close(self):
+        if asyncio.get_running_loop() is not self.loop:
+            raise RuntimeError("native HTTP client belongs to a different event loop")
+        await self.session.close()
+
+
+def _new_http_client():
+    import aiohttp
+    # The vendor graph owns concurrency; this pool adds no separate admission.
+    return _HttpClient(asyncio.get_running_loop(), aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=None), auto_decompress=False,
+        cookie_jar=aiohttp.DummyCookieJar(), connector=aiohttp.TCPConnector(limit=0)))
+
+
+@asynccontextmanager
+async def _http_session(client):
+    if client is None:
+        owned = _new_http_client()
+        try:
+            yield owned.session
+        finally:
+            await owned.close()
+    else:
+        if asyncio.get_running_loop() is not client.loop:
+            raise RuntimeError("native HTTP client belongs to a different event loop")
+        yield client.session
+
+
+async def _close_http_client(client):
+    await client.close()
+
+
+async def _request(call, control=None, *, client=None):
     """One request kernel; no status interpretation, retries, routing or scheduling."""
     import aiohttp
     if control is not None and control.stopped.is_set():
         return NativeCallOutcome(call.call_id, call.row_id, None, "NativeCallCancelled")
+    if client is None and control is not None:
+        client = control.client()
+        if client is None:
+            return NativeCallOutcome(call.call_id, call.row_id, None, "NativeCallCancelled")
     try:
         timeout = aiohttp.ClientTimeout(total=call.timeout_s,
             connect=call.connect_timeout_s or call.timeout_s)
-        async with aiohttp.ClientSession(timeout=timeout, auto_decompress=False,
-                                         skip_auto_headers=call.skip_auto_headers) as session:
+        async with _http_session(client) as session:
             registration = control.register_session(session) if control is not None else None
             try:
                 if control is not None and control.stopped.is_set():
                     return NativeCallOutcome(call.call_id, call.row_id, None, "NativeCallCancelled")
                 async with session.post(call.endpoint, data=call.payload, headers=call.headers,
-                                        allow_redirects=call.follow_redirects, max_redirects=20) as response:
+                                        allow_redirects=call.follow_redirects, max_redirects=20,
+                                        timeout=timeout, skip_auto_headers=call.skip_auto_headers) as response:
                     buffer = bytearray()
                     async for chunk in response.content.iter_chunked(4096):
                         if len(buffer) + len(chunk) > call.max_response_bytes:
@@ -203,17 +249,29 @@ class _ProcessorResponse:
 
 
 class _ProcessorSession:
+    def __init__(self):
+        self._client = None
+
     async def __aenter__(self):
+        self._client = _new_http_client()
         return self
 
     async def __aexit__(self, *error):
-        pass
+        if self._client is not None:
+            try:
+                await _close_http_client(self._client)
+            except BaseException as cleanup:
+                if error[1] is None:
+                    raise
+                error[1].add_note("Native HTTP pool close also failed: " + type(cleanup).__name__)
 
     async def post(self, url, *, data, headers):
         if url != _PROCESSOR_URL:
             raise ValueError("native Ray carrier destination differs")
         call = _call_from_wire(json.loads(data)["native_call"])
-        return _ProcessorResponse(await _request(call))
+        if self._client is None:
+            raise RuntimeError("native Ray HTTP session was not entered")
+        return _ProcessorResponse(await _request(call, client=self._client))
 
 
 def _ray_preprocess(row):
@@ -233,6 +291,8 @@ class _GraphControl:
         self.stopped = threading.Event()
         self._lock = threading.Lock()
         self._sessions = {}
+        self._clients = {}
+        self._client_closes = {}
         self.result = None
         self._stopped_executor = None
         self._actors = []
@@ -253,13 +313,44 @@ class _GraphControl:
         with self._lock:
             self._sessions.pop(key, None)
 
+    def client(self):
+        loop = asyncio.get_running_loop()
+        with self._lock:
+            if self.stopped.is_set():
+                return None
+            client = self._clients.get(loop)
+            if client is None:
+                client = self._clients[loop] = _new_http_client()
+        return client
+
+    def wait_clients_closed(self, timeout):
+        deadline = time.monotonic() + timeout
+        with self._lock:
+            closing = tuple(self._client_closes.values())
+        for future in closing:
+            future.result(timeout=max(0, deadline - time.monotonic()))
+        with self._lock:
+            if any(not connector.closed for connector in self._clients.values()):
+                raise RuntimeError("native HTTP pool closure is unconfirmed")
+
     def stop(self):
         self.stopped.set()
+        first_error = None
         with self._lock:
             sessions = tuple(self._sessions.values())
+            pooled_sessions = {id(client.session) for client in self._clients.values()}
         for loop, session in sessions:
-            if not loop.is_closed():
+            if id(session) not in pooled_sessions and not loop.is_closed():
                 loop.call_soon_threadsafe(lambda current=session: asyncio.create_task(current.close()))
+        with self._lock:
+            for loop, client in self._clients.items():
+                if client.closed or loop in self._client_closes:
+                    continue
+                if loop.is_closed() or not loop.is_running():
+                    first_error = first_error or RuntimeError("native HTTP pool owner loop stopped before close")
+                    continue
+                self._client_closes[loop] = asyncio.run_coroutine_threadsafe(
+                    _close_http_client(client), loop)
         executor = getattr(self.result, "_current_executor", None)
         if executor is not None and executor is not self._stopped_executor:
             self._stopped_executor = executor
@@ -271,6 +362,8 @@ class _GraphControl:
             import ray
             for actor in actors:
                 ray.kill(actor, no_restart=True)
+        if first_error is not None:
+            raise first_error
 
 
 def _ray_core_rows(calls, options, control):
@@ -311,9 +404,11 @@ def _daft_rows(calls, options, control):
                 return
             yield _outcome_from_wire(row["native_outcome"])
     finally:
-        if iterator is not None:
-            iterator.close()
-        _DAFT_CONTROLS.pop(control_key, None)
+        try:
+            if iterator is not None:
+                iterator.close()
+        finally:
+            _DAFT_CONTROLS.pop(control_key, None)
 
 
 def _ray_rows(calls, options, control):
@@ -492,7 +587,14 @@ class NativeCallExecutor:
                         if cleanup is None:
                             cleanup = error
             stopped = not thread.is_alive()
+            try:
+                control.wait_clients_closed(1)
+            except BaseException as error:
+                if cleanup is None:
+                    cleanup = error
+                clean = False
             worker_errors = tuple(failures)
+            clean = clean and stopped and cleanup is None
             self.last_cleanup_errors = tuple((stage, error) for stage, error in worker_errors
                                              if stage == "graph_close")
             if cleanup is not None:
@@ -501,7 +603,20 @@ class NativeCallExecutor:
                 clean=clean, received=len(received), prepared=len(calls),
                 remote_http_stopped="unavailable", owned_ray_actors=len(control._actors),
                 ray_actor_shutdown_requested=len(control._killed_actors),
+                http_pool_scope="native_processor_batch" if self.backend == "ray-data" else "graph_event_loop",
+                http_pool_count="unavailable" if self.backend == "ray-data" else len(control._clients),
+                http_pools_closed="unavailable" if self.backend == "ray-data" else
+                    all(connector.closed for connector in control._clients.values()),
                 owned_ray_actor_ids=[actor._actor_id.hex() for actor in control._actors],
+                declared_options=dict(vars(self.options)),
+                native_graph_parameters=(
+                    dict(batch_size=1, max_concurrency=self.options.concurrency - 1)
+                    if self.backend == "daft" else
+                    dict(actor_pool_range=[self.options.ray_actors, self.options.ray_actors],
+                         http_batch_rows=self.options.ray_batch_rows,
+                         async_batches_setting=self.options.ray_async_batches_per_actor,
+                         stage_max_concurrency=1, source_blocks=min(len(calls), self.options.source_blocks))
+                    if self.backend == "ray-data" else dict(actor_count=self.options.concurrency)),
                 worker_errors_complete=stopped,
                 worker_errors=[dict(stage=stage, type=type(error).__module__ + "." + type(error).__name__)
                                for stage, error in worker_errors])

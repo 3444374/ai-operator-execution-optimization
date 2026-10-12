@@ -7,6 +7,9 @@
 固定SDK差分及既有SDK清理共13项因本机缺依赖跳过，不将源码共用视为完整异常资格。
 IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分类检查通过，实际作者资格pending。
 共享SDK客户端现按替换批次复用，减少不必要的逐响应重建；3项入口/关闭检查通过，实际SDK复用资格pending。
+固定c4f7f157服务器20项真实SDK/清理检查通过、12次localhost POST、模型/GPU0且自有进程退出。
+原生kernel按query/Daft loop及Ray原HTTP批次寿命复用客户端，6项本机生命周期检查通过；
+4次真实localhost调用复用同一连接，原生图新池资格pending，Ray声明C与实际图参数分别记录。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。

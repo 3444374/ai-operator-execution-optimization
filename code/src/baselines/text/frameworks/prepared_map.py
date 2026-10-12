@@ -55,8 +55,8 @@ class NativeGraphOptions:
             raise ValueError('native graph sizes must be positive and bounded')
         if self.concurrency < 2:
             raise ValueError('pinned native Daft needs at least two request slots')
-        if self.ray_actors * self.ray_async_batches_per_actor > self.concurrency:
-            raise ValueError('native Ray asynchronous batches exceed the declared HTTP allowance')
+        if self.ray_actors * self.ray_async_batches_per_actor * self.ray_batch_rows > self.concurrency:
+            raise ValueError('native Ray batch request envelope exceeds the declared HTTP allowance')
 
 
 @contextmanager
