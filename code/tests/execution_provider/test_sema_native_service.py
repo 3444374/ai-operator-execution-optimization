@@ -303,6 +303,63 @@ class SemaNativeServiceTests(unittest.TestCase):
         self.assertTrue(service.summary['native_driver_stopped'])
         self.assertTrue(service.summary['io_loop_closed'])
 
+    def test_normal_end_input_finishes_delayed_iterator_without_abort(self):
+        observed = []
+        class DelayedClose(_Executor):
+            def iter_batch(self, calls, *, cancelled, **kwargs):
+                yield NativeCallOutcome(calls[0].call_id, calls[0].row_id,
+                                        FullModelResponse(200, (), b'complete'))
+                deadline = time.monotonic() + 0.06
+                while time.monotonic() < deadline:
+                    if cancelled():
+                        observed.append('aborted')
+                        self.last_close_report = dict(graph_consumer_stopped=True, clean=False)
+                        raise InterruptedError('fixture was aborted during normal iterator completion')
+                    time.sleep(0.002)
+                observed.append('closed')
+                self.last_close_report = dict(graph_consumer_stopped=True, clean=True,
+                                             remote_http_stopped='unavailable')
+        with self.service(DelayedClose()) as service:
+            self.assertEqual(self.post(service.endpoint_url)[:2], (200, b'complete'))
+            service.end_input()
+        self.assertEqual(observed, ['closed'])
+        self.assertIsNone(service.first_error)
+        self.assertTrue(service.summary['last_close_report']['clean'])
+        self.assertFalse(service.summary['native_graph_abort_requested'])
+
+    def test_normal_end_input_keeps_iterator_cleanup_deadline_failure(self):
+        class DelayedTimeout(_Executor):
+            def iter_batch(self, calls, *, cancelled, **kwargs):
+                yield NativeCallOutcome(calls[0].call_id, calls[0].row_id,
+                                        FullModelResponse(200, (), b'complete'))
+                time.sleep(0.06)
+                if cancelled():
+                    raise InterruptedError('fixture unexpected normal-exit abort')
+                self.last_close_report = dict(graph_consumer_stopped=True, clean=False)
+                raise TimeoutError('fixture delayed iterator cleanup deadline')
+        service = self.service(DelayedTimeout())
+        service.__enter__()
+        self.assertEqual(self.post(service.endpoint_url)[0], 200)
+        service.end_input()
+        with self.assertRaises(SemaServiceError) as caught:
+            service.__exit__(None, None, None)
+        self.assertIsInstance(caught.exception.__cause__, TimeoutError)
+        self.assertIn('TimeoutError', service.summary['cleanup_errors'])
+        self.assertFalse(service.summary['last_close_report']['clean'])
+
+    def test_unclean_snapshot_without_explicit_abort_is_rejected(self):
+        class Unclean(_Executor):
+            def iter_batch(self, calls, **kwargs):
+                yield NativeCallOutcome(calls[0].call_id, calls[0].row_id,
+                                        FullModelResponse(200, (), b'complete'))
+                self.last_close_report = dict(graph_consumer_stopped=True, clean=False)
+        with self.service(Unclean()) as service:
+            self.post(service.endpoint_url)
+            self.wait(lambda: service.first_error is not None)
+            self.assertEqual(service.first_error.phase, 'native_graph')
+        self.assertTrue(any(item['stage'] == 'native_graph_close'
+                            for item in service.summary['cleanup_failures']))
+
     def test_iterator_close_error_preserves_the_first_http_failure(self):
         class CloseFailureIterator:
             def __init__(self, call):

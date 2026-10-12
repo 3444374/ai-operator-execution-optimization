@@ -67,6 +67,8 @@ class SemaNativeService(SemaRequestService):
         self._snapshot_count = self._prepared_calls = self._completed_http = self._snapshot_response_bytes = 0
         self._close_reports = []
         self._uncertain = set()
+        self._graph_stop = threading.Event()
+        self._normal_input_ended = self._normal_exit_cancel = False
 
     @property
     def summary(self):
@@ -85,6 +87,7 @@ class SemaNativeService(SemaRequestService):
                 'uncertain_request_sequences': sorted(self._uncertain),
                 'native_bridge_thread_alive': self._bridge_thread is not None and self._bridge_thread.is_alive(),
                 'native_driver_stopped': self._driver is None or self._driver.done(),
+                'native_graph_abort_requested': self._graph_stop.is_set(),
                 'native_timing': 'driver snapshot/start/receive only; model HTTP times unavailable'}
 
     async def _initialize_executor(self):
@@ -93,9 +96,26 @@ class SemaNativeService(SemaRequestService):
         self._driver = asyncio.create_task(self._drive(), name='sema-native-snapshot-source')
 
     def cancel(self):
+        normal_exit = self._normal_exit_cancel and self.first_error is None
+        self._normal_exit_cancel = False
+        if not normal_exit:
+            self._graph_stop.set()
         super().cancel()
         if self._loop is not None and not self._loop.is_closed() and self._wake is not None:
             self._loop.call_soon_threadsafe(self._stop_intake)
+
+    def end_input(self):
+        self._normal_input_ended = True
+        super().end_input()
+
+    def __exit__(self, *error):
+        self._normal_exit_cancel = (self._normal_input_ended and self.first_error is None
+            and (not error or error[0] is None) and not self._pending
+            and set(self._active) <= self._complete_response_ids and not self._graph_stop.is_set())
+        try:
+            return super().__exit__(*error)
+        finally:
+            self._normal_exit_cancel = False
 
     def _stop_intake(self):
         while self._pending:
@@ -204,7 +224,7 @@ class SemaNativeService(SemaRequestService):
             calls = tuple(replace(entry.call, timeout_s=min(120,
                                 max(0.000001, entry.deadline - time.monotonic()))) for entry in snapshot)
             iterator = iter(self.executor.iter_batch(calls,
-                            cancelled=self._halted.is_set, timeout_s=min(120, timeout)))
+                            cancelled=self._graph_stop.is_set, timeout_s=min(120, timeout)))
             for outcome in iterator:
                 self._loop.call_soon_threadsafe(self._accept_outcome, outcome, time.monotonic_ns())
         except BaseException as failure:
@@ -285,12 +305,15 @@ class SemaNativeService(SemaRequestService):
             if report is not None and report.get('graph_consumer_stopped') is False:
                 cleanup_error = cleanup_error or RuntimeError('Sema native graph consumer did not stop')
                 error = error or cleanup_error
+            if report is not None and report.get('clean') is False and not self._graph_stop.is_set():
+                cleanup_error = cleanup_error or RuntimeError('Sema native snapshot cleanup was not clean')
+                error = error or cleanup_error
             if error is None and len(self._received) != len(self._active):
                 error = ValueError('Sema native response snapshot is incomplete')
             if cleanup_error is not None:
                 self._record_cleanup_error('native_graph_close', cleanup_error)
             if error is not None:
-                expected_stop = isinstance(error, (InterruptedError, TimeoutError)) and self._halted.is_set()
+                expected_stop = isinstance(error, (InterruptedError, TimeoutError)) and self._graph_stop.is_set()
                 if not expected_stop or cleanup_error is not None:
                     self._driver_error = self._driver_error or error
                     sequence = next(iter(self._active.values())).call.row_id
