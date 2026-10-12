@@ -19,8 +19,8 @@ index 23773f0..ae7097b 100644
 +    if (!context.TryGetCurrentSetting("duckdb_ai_executor", executor) || executor.IsNull() ||
 +        StringValue::Get(executor) == "native") { return false; }
 +    const auto selected_executor = StringValue::Get(executor);
-+    if (selected_executor != "semloom" && selected_executor != "daft" && selected_executor != "ray" && selected_executor != "ray-data") {
-+        throw InvalidInputException("duckdb_ai_executor must be native, semloom, daft, ray or ray-data");
++    if (selected_executor != "semloom" && selected_executor != "daft" && selected_executor != "ray" && selected_executor != "ray-data" && selected_executor != "imlane") {
++        throw InvalidInputException("duckdb_ai_executor must be native, semloom, daft, ray, ray-data or imlane");
 +    }
 +    std::vector<duckdb_ai::PreparedCompletion> prepared;
 +    std::vector<uint64_t> rows;
@@ -77,7 +77,7 @@ index 23773f0..ae7097b 100644
 +    }
 +
 @@ -7835,0 +7896,2 @@ void RegisterSettings(ExtensionLoader &loader) {
-+    AddSetting(config, "duckdb_ai_executor", "Text Map executor: native, semloom, daft, ray or ray-data", LogicalType::VARCHAR,
++    AddSetting(config, "duckdb_ai_executor", "Text Map executor: native, semloom, daft, ray, ray-data or imlane", LogicalType::VARCHAR,
 +               Value("native"));
 diff --git a/src/duckdb_ai_provider.cpp b/src/duckdb_ai_provider.cpp
 index 0ba6e4c..fc3b627 100644

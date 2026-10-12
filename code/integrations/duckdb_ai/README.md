@@ -94,6 +94,15 @@ actor 数量不超过已声明的 CPU 槽位，每个 actor 使用 1 CPU、0 GPU
 新增 `duckdb_ai_batch_register_v1` 登记明确的外部执行名称；查询选择必须与登记名称相同。
 此前 SemLoom 登记、注销和 ABI v1 保留，SQL 的 `native` 默认值保持。
 
+### IMLane作者CPython与Ray
+
+`0.4.14-native3`增加明确的`imlane`登记和SQL选择；完整批次ABI、请求生成与原`FinishCompletion`继续复用。
+`DuckDBNativeExecutor`可使用公共`NativeCallExecutor('imlane', imlane_config=...)`，
+模式由[IMLane配置](../sema/imlane_calls.md)明确选择。有效批次最多128行／32MiB；
+当前向量超额报错，不拆分或替换原SQL策略。作者Coordinator／Ray资源由调用者拥有。
+`native1`／`native2`没有这个名称选择；统一入口在提交前拒绝不匹配二进制。
+本轮匹配二进制及正常／错误检查见[原生执行记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
+
 固定上游的 curl 客户端不声明 `Accept-Encoding`（可接受的响应压缩），也不解压正文或跟随重定向。
 此薄适配显式禁止客户端自动添加该压缩请求头，保留原 User-Agent（客户端标识）；完整压缩正文
 仍交回原解析器，不在 Python 解压或重写。默认配置继续拒绝原先未支持的缓存、重试、请求间隔、

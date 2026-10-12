@@ -14,6 +14,11 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 
 ### 原生方法与可替换执行器
 
+LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查见[本轮报告](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
+新路径不创建SemLoom Core；Ray Core与Ray Data分别命名，旧`fixed-map-native-ray`仍表示Ray Data。
+单查询和`PersistentAdapterGroup`共用新名字，后者保留LM／连接及调用方Ray runtime，查询各建自己的图／actor。
+Daft在Ray初始化前显式设置Native runner，Ray入口仍需要新的短私有暂存目录；所有HTTP结果交回原方法。
+
 `native_adapter_query.py`提供外部有限输入的共同固定Map参照，`supplier_adapter_query.py`装配已交付的供应商方法。
 输入加载与组件准备计入完整应用；`record_prepared_execution`直接记录实际API入口至消费结束，方法／图构建留在查询内。
 原生SQL reader、PG和原生语义系统旧入口保持。新入口使用已有公共批次与方法驱动，不新增调度核心。
@@ -21,12 +26,18 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 | `--arm` | 方法与执行所有者 |
 |---|---|
 | `fixed-map-native-daft`、`fixed-map-native-ray`、`fixed-map-semloom` | 图外生成相同`SemanticMapPlan`完整调用，分别由Daft Native、Ray Data及SemLoom Daft／Ray执行 |
+| `lotus-method-native-daft`、`lotus-method-native-ray-data` | 原LOTUS LM未缓存批次进入Daft Native或Ray Data；原SDK、cache、统计和parser保持 |
+| `duckdb-method-native-daft`、`duckdb-method-native-ray-data` | 当前SQL vector完整准备后进入Daft Native或Ray Data，原C++ completion响应解释保持 |
+| `lotus-method-native-ray`、`duckdb-method-native-ray` | 相同原方法进入Ray Core actor/task静态分片，身份为`diagnostic_reference` |
 | `lotus-adapted-native`、`lotus-method-semloom` | 原`sem_map`、SDK转换及解析，分别进入原LiteLLM请求池或公共执行入口 |
 | `lotus-two-map-native-staged`、`lotus-two-map-semloom-staged`、`lotus-two-map-semloom-incremental` | 原两Map方法；阶段等待参照及既有MethodDriver逐行继续执行 |
 | `duckdb-adapted-native`、`duckdb-method-semloom` | 匹配的patched扩展，原生或C ABI完整批次执行，再进入原C++解析 |
 | `sema-native-direct`、`sema-native-transparent`、`sema-method-semloom-request-service` | 作者二进制直达、透明观察或后置请求服务；原请求池与供给保持 |
 | `sema-native-daft-request-service`、`sema-native-ray-data-request-service`、`sema-imlane-request-service` | 同一Sema请求服务来源，已经抵达的请求快照由Daft Native、Ray Data或作者IMLane执行；原请求池继续保留，未替换数据库执行器 |
 | `fixed-map-semloom-local-diagnostic` | 本地无Ray诊断；单独标识，不进入主实现性能比较 |
+| `lotus-method-native-imlane`、`lotus-method-native-imlane-ray` | 原LOTUS未缓存批次由作者CPython／Ray执行完整调用，再回到原SDK与parser |
+| `duckdb-method-native-imlane`、`duckdb-method-native-imlane-ray` | 当前SQL向量通过同一完整批次ABI交作者CPython／Ray，原C++解析继续拥有结果和错误 |
+| `sema-native-imlane-request-service`、`sema-native-imlane-ray-request-service` | 原Sema请求池之后的有限HTTP快照，模式及Coordinator身份明确核对 |
 
 `native_adapter_metrics.py`按行、阶段与逻辑调用编号关联任务就绪和原调用者完整响应，统计单位为一次完整模型调用。
 LOTUS批次的调用者取得完整SDK响应列表后才记返回；逐行继续执行则在supplier resume收到完整HTTP响应时记返回。
@@ -35,6 +46,8 @@ Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端�
 Sema原生后置路径的`service_timing`使用同一服务进程时钟，保存正文读取、接纳、快照、图开始、
 完整响应收到、写出及请求P99原值；模型HTTP采用实际网关观察，图返回时刻不当作模型完成时刻。
 `--imlane-config`用于仓库外已就绪作者运行环境；所需字段和实现见[Sema服务说明](../../execution_provider/adapters/sema_request_service.md)。
+两种新IMLane模式分别使用`--imlane-cpython-config`、`--imlane-ray-config`；
+所需字段、有效128行／32MiB上限与错误后的结束责任见[完整调用说明](../../../integrations/sema/imlane_calls.md)。
 DuckDB SemLoom 主路径和本地诊断由同一 SELECT 持有一个 Core Job，各原生 vector 只借用独立 session。
 vector 关闭后保留查询份额；查询取消后停止后续 vector，未知远端工作继续计入原查询，结束时统一关闭 Job。
 原生 DuckDB 与直接使用 `DuckDBNativeTaskExecutor(query_owner=None)` 的单批入口保持；

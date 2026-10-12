@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import replace
 import importlib.util
 from pathlib import Path
+import tempfile
 import unittest
 from unittest import mock
 
@@ -144,6 +145,19 @@ class IMLaneThinKernelTests(unittest.TestCase):
         finally:
             asyncio.set_event_loop(None)
             loop.close()
+
+
+class IMLaneFixtureEvidenceTests(unittest.TestCase):
+    def test_fixture_failure_log_redacts_before_writing_and_refuses_overwrite(self):
+        from integrations.sema.verify_imlane_calls import write_log
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/"failure.log"
+            secret = "test" + "-value"
+            write_log(path, "password=" + secret + "\nfixture failure")
+            self.assertEqual(path.read_text(), "password=***\nfixture failure")
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            with self.assertRaises(FileExistsError):
+                write_log(path, "replacement")
 
 
 if __name__ == "__main__":

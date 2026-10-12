@@ -30,6 +30,12 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 `baselines/run_native_adapter_query.py`执行有限外部文本输入的单查询，输入JSONL每行仅含唯一`row_id`和原始`text`。
 `--arm`包括共同固定Map的原生Daft／Ray／SemLoom、LOTUS单Map与两Map三种推进、DuckDB成对执行及Sema直达／后置请求路径。
 具体名字与适用范围见[接口说明](../src/experiments/postgresql/README.md#native-adapter-query)及[工程报告](../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+LOTUS新增`lotus-method-native-daft`、`lotus-method-native-ray-data`与`lotus-method-native-ray`；
+DuckDB新增`duckdb-method-native-daft`、`duckdb-method-native-ray-data`与`duckdb-method-native-ray`。
+Daft Native、Ray Data及Ray Core分别单列，Core的静态actor拓扑为`diagnostic_reference`。
+这些路径只需原生`--options`；两个Ray执行者使用`--ray-temp-root`或已核对的`--ray-address`，
+DuckDB另用`--duckdb-library`选择已验证的本地扩展，Ray Core需要`0.4.14-native2`或`native3`。
+新路径同时可从常驻入口选择，配置、原生对照和实际检查见[本轮接入报告](../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 Sema分层诊断可选择`sema-bounded-pipeline-diagnostic`或`sema-method-semloom-local-diagnostic`；
 后者无需`--ray-physical`，可用原`--sema-executor-scope group-diagnostic`，持有与活动额度分别声明。
 Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-service`和
@@ -37,6 +43,11 @@ Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-ser
 前两条直接使用原options配置，后一条另传`--imlane-config /path/to/private/ready-imlane.json`。
 持有上限用`--max-held-tasks`显式设置且不超过128，原Sema线程继续由`--sema-native-threads`控制。
 它们保留原算子策略，不能解释为替换Sema数据库执行器；准备、真实SQL和服务阶段分别记录。
+三种方法各有`*-native-imlane`及`*-native-imlane-ray`路径，具体名称见接口表；
+分别传`--imlane-cpython-config`和`--imlane-ray-config`，配置包含作者模式及就绪Coordinator的PID/start ticks。
+IMLane作者Ray单列，公共入口直接复用原DBEnd桥。默认options并发4无法覆盖本次探得的6个任务线程，
+本次使用显式并发8；有效批次128行／32MiB，SQL向量或LOTUS批次超额报错，不自动切分。
+DuckDB的IMLane名称选择要求`0.4.14-native3`；配置与结束责任见[完整调用说明](../integrations/sema/imlane_calls.md)。
 预算须已创建；配置与输出均在仓库外，输出目录须尚不存在：
 
 ```sh

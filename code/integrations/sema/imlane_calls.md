@@ -61,6 +61,7 @@ HTTP超时可正常回送一条错误值；即使DBEnd已排空，远端HTTP停�
 
 [协议测试](../../tests/baselines/test_imlane_calls.py)的8项在作者运行环境全部通过，
 包含真实Arrow、完整回送、出现身份、发送前取消、快照超额拒绝、消费中止和跨对象uncertain记录。
+新增的日志脱敏与拒绝覆盖检查在本机通过；它只改检查程序的落盘，不改适配器或HTTP函数。
 [有界检查程序](verify_imlane_calls.py)执行真实作者CPython与作者Ray两种模式：
 
 - 同一6份完整HTTP调用，覆盖200/401/429、gzip、非JSON正文、重复头及原始正文摘要；

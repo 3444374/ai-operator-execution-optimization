@@ -11,13 +11,13 @@ from .duckdb_ai import DuckDBCall, DuckDBResponse, DuckDBSemLoomBridge, MAX_RESP
 class DuckDBNativeExecutor:
     """Convert complete calls and responses without changing DuckDB's parser.
 
-    The supplied NativeCallExecutor owns its Daft Native, Ray Core or Ray Data graph.
+    The supplied executor uses Daft Native, Ray Core, Ray Data or author IMLane.
     Closing this iterator closes that graph; no SemLoom execution is created.
     """
 
     def __init__(self, executor, *, timeout_s: float = 120):
-        if executor.backend not in ('daft', 'ray', 'ray-data'):
-            raise ValueError('DuckDB native execution requires daft, ray or ray-data')
+        if executor.backend not in ('daft', 'ray', 'ray-data', 'imlane'):
+            raise ValueError('DuckDB native execution requires daft, ray, ray-data or imlane')
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError('DuckDB native batch timeout must be positive and at most 120 seconds')
         self.executor = executor

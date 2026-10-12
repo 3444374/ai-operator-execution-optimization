@@ -1,5 +1,8 @@
 # 项目大纲
 
+2026-10-12工程接续：[原生执行统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)完成三方法IMLane两种作者模式的软件消费与常驻复用；
+同driver Daft初始化修复通过实际库检查。较早源码单GPU只完成三条warmup／24POST，测量与IMLane模型未执行，性能资格继续按单独计划核对。
+
 更新时间：2026-10-12
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为

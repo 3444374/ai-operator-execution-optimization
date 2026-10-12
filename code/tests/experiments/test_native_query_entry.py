@@ -13,6 +13,11 @@ from src.baselines.text.frameworks.ray_data_pg_http import open_rows as ray_rows
 
 
 class NativeEntryTests(unittest.TestCase):
+    def setUp(self):
+        # Each vendor stub represents an independent process runtime.
+        runtime = patch('src.infrastructure.daft_runtime._configured',None)
+        runtime.start()
+        self.addCleanup(runtime.stop)
     def test_pg_preparation_records_wait_even_when_gateway_does_not_become_ready(self):
         from src.experiments.postgresql import query_execution as execution
         for failed in (False,True):

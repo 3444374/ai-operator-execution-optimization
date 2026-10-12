@@ -24,11 +24,17 @@ from src.baselines.text.frameworks.imlane_calls import (
 )
 from src.baselines.text.frameworks.native_calls import NativeCall
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
-from src.baselines.common.private_artifacts import write_private_json
+from src.baselines.common.private_artifacts import open_private_text, write_private_json
+from src.baselines.common.redact import redact_text
 
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def write_log(path, value):
+    with open_private_text(path) as stream:
+        stream.write(redact_text(value))
 
 
 class HTTPFixture:
@@ -210,7 +216,7 @@ def check_mode(args, runtime, helper, fixture):
         kernel=CODE/"integrations/sema/imlane_complete_call.py"
         probe=subprocess.run([str(args.bridge_binary),str(port),str(kernel),"0"],
                              input="",text=True,capture_output=True,env=env,timeout=30)
-        (out/"empty-probe.log").write_text(probe.stdout+probe.stderr)
+        write_log(out/"empty-probe.log", probe.stdout+probe.stderr)
         assert probe.returncode==0,probe.stderr
         meta=json.loads(next(line.partition(" ")[2] for line in probe.stdout.splitlines()
                              if line.startswith("SEMA_IMLANE_META ")))
@@ -255,7 +261,7 @@ def check_mode(args, runtime, helper, fixture):
         old_fixture=subprocess.run([str(prefix/"bin/imlane_fixture_cpp"),str(port),
             str(author/"harness/code/integrations/imlane/fixture_udf.py")],
             env=env,text=True,capture_output=True,timeout=30)
-        (out/"author-loop-regression.log").write_text(old_fixture.stdout+old_fixture.stderr)
+        write_log(out/"author-loop-regression.log", old_fixture.stdout+old_fixture.stderr)
         assert old_fixture.returncode==0,old_fixture.stderr[-2000:]
         report["stages"]["author_loop_after_http"]=dict(returncode=0,models=0,
             complete_arrow_fixture_rows=105)
@@ -267,7 +273,7 @@ def check_mode(args, runtime, helper, fixture):
         result=out/"lotus-result.json"
         client=subprocess.run([str(args.lotus_python),str(child),str(CODE),str(client_config),
             str(args.lotus_native_source),str(args.tokenizer),str(result)],env=env,text=True,capture_output=True,timeout=60)
-        (out/"lotus.log").write_text(client.stdout+client.stderr)
+        write_log(out/"lotus.log", client.stdout+client.stderr)
         assert client.returncode==0,(client.returncode,client.stderr[-3000:])
         report["stages"]["lotus"]=json.loads(result.read_text())
         # A completed author UDF can still report an uncertain remote HTTP timeout.
@@ -293,7 +299,7 @@ def check_mode(args, runtime, helper, fixture):
         time.sleep(.6)
         report["normal_checks_passed"]=True
     except Exception as error:
-        report.update(normal_checks_passed=False,error_type=type(error).__name__,error=str(error)[:4096])
+        report.update(normal_checks_passed=False,error_type=type(error).__name__,error=redact_text(str(error))[:4096])
     finally:
         for value in executors:
             value.close()

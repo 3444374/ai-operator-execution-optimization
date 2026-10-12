@@ -12,6 +12,12 @@ from unittest import mock
 from src.experiments.postgresql.sema_native_query import (
     SEMA_NATIVE_ARMS, gateway_phase_summary, service_phase_summary, validate_native_options,
 )
+from src.baselines.text.frameworks.imlane_calls import IMLaneCallConfig
+
+
+def fixture_imlane_configs():
+    return {mode: IMLaneCallConfig(mode, '/tmp/fixture-bridge.json', 1, 1,
+                                  '/tmp/fixture-build.json') for mode in ('cpython', 'ray')}
 
 
 class SemaNativeQueryTests(unittest.TestCase):
@@ -31,10 +37,10 @@ class SemaNativeQueryTests(unittest.TestCase):
         options = SimpleNamespace(concurrency=4)
         for arm in SEMA_NATIVE_ARMS:
             with self.subTest(arm=arm):
-                validate_native_options(arm, options, 128, 'ready-runtime.json')
+                validate_native_options(arm, options, 128, 'ready-runtime.json', fixture_imlane_configs())
                 for held in (3, 129):
                     with self.assertRaises(ValueError):
-                        validate_native_options(arm, options, held, 'ready-runtime.json')
+                        validate_native_options(arm, options, held, 'ready-runtime.json', fixture_imlane_configs())
 
     def test_imlane_requires_explicit_configuration(self):
         with self.assertRaisesRegex(ValueError, 'ready-runtime'):
@@ -110,7 +116,7 @@ class SemaNativeQueryTests(unittest.TestCase):
                     raise ValueError('fixture changed complete-call identity')
 
         def fixture_service(stack, arm, *, query_id, model, limits, trace_path, options,
-                            held_tasks, imlane_config=None):
+                            held_tasks, imlane_config=None, imlane_call_configs=None):
             backend = SEMA_NATIVE_ARMS[arm]
             return stack.enter_context(SemaNativeService(query_id=query_id,
                 upstream_url=model.endpoint_url, limits=limits, trace_path=trace_path,
@@ -135,7 +141,8 @@ class SemaNativeQueryTests(unittest.TestCase):
                         model=FixedModelConfig(endpoint, 'fixture', 5000), ledger=ledger,
                         unit_id='fixture', root=root/'query', options=NativeGraphOptions(),
                         sema_binary=binary, sema_native_threads=1, query_timeout_s=5,
-                        imlane_config=root/'fixture-only.json', reference_outputs={'0': 'ok', '1': 'ok'})
+                        imlane_config=root/'fixture-only.json', imlane_call_configs=fixture_imlane_configs(),
+                        reference_outputs={'0': 'ok', '1': 'ok'})
                 self.assertEqual(result['status'], 'passed')
                 self.assertEqual(result['actual_posts'], 2)
                 self.assertEqual(len(posts), 2)

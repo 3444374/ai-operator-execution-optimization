@@ -119,7 +119,8 @@ def daft_fixture(*, fail=False):
     functions = types.ModuleType('daft.functions')
     functions.prompt = prompt
     with patch.dict('sys.modules', {'daft': daft, 'daft.functions': functions,
-            'daft.ai.openai.provider': provider}):
+            'daft.ai.openai.provider': provider}), \
+            patch('src.infrastructure.daft_runtime._configured',None):
         yield state
 
 
@@ -265,15 +266,19 @@ class PreparedNativeTests(unittest.TestCase):
             self.assertEqual(state.runner_calls, [{'num_threads': 8}])
             self.assertEqual(len(state.prompts), 4)
 
-    def test_daft_does_not_hide_native_second_thread_configuration_rejection(self):
+    def test_daft_reuses_the_same_runtime_and_rejects_changed_native_threads(self):
         with daft_fixture() as state:
             with semantic_map.prepare_rows('daft-prompt', VALUES, PLAN, MODEL,
                     concurrency=64):
                 pass
-            with self.assertRaisesRegex(RuntimeError, 'worker threads already set'):
+            with semantic_map.prepare_rows('daft-prompt', VALUES, PLAN, MODEL,
+                    concurrency=64):
+                pass
+            with self.assertRaisesRegex(RuntimeError, 'thread count differs'):
                 with semantic_map.prepare_rows('daft-prompt', VALUES, PLAN, MODEL,
-                        concurrency=64):
-                    self.fail('second process-wide thread configuration was accepted')
+                        concurrency=64,num_threads=4):
+                    self.fail('different process-wide thread configuration was accepted')
+            self.assertEqual(state.runner_calls,[{'num_threads':8}])
             self.assertEqual(state.prompts, [])
 
     def test_daft_partial_consumption_closes_the_native_iterator(self):

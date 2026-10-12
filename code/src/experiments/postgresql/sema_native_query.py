@@ -2,33 +2,44 @@
 from __future__ import annotations
 
 from .native_adapter_metrics import sample_distribution
+from .imlane_query import imlane_config_for_arm
 
 
 SEMA_NATIVE_ARMS = {
     'sema-native-daft-request-service': 'daft',
     'sema-native-ray-data-request-service': 'ray-data',
     'sema-imlane-request-service': 'imlane',
+    'sema-native-imlane-request-service': 'imlane',
+    'sema-native-imlane-ray-request-service': 'imlane',
 }
 
 
-def validate_native_options(arm, options, held_tasks, imlane_config=None):
+def validate_native_options(arm, options, held_tasks, imlane_config=None, imlane_call_configs=None):
     if arm not in SEMA_NATIVE_ARMS:
         return
     if not 1 <= held_tasks <= 128 or options.concurrency > held_tasks:
         raise ValueError('Sema native service holds at most 128 complete requests or responses')
-    if SEMA_NATIVE_ARMS[arm] == 'imlane' and imlane_config is None:
+    if arm == 'sema-imlane-request-service' and imlane_config is None:
         raise ValueError('Sema IMLane requires an explicit ready-runtime configuration')
+    if arm in ('sema-native-imlane-request-service','sema-native-imlane-ray-request-service'):
+        imlane_config_for_arm(arm, imlane_call_configs or {})
 
 
 def open_native_service(stack, arm, *, query_id, model, limits, trace_path,
-                        options, held_tasks, imlane_config=None):
+                        options, held_tasks, imlane_config=None, imlane_call_configs=None):
     from src.execution_provider.adapters.sema_native import SemaNativeService
-    validate_native_options(arm, options, held_tasks, imlane_config)
+    validate_native_options(arm, options, held_tasks, imlane_config, imlane_call_configs)
     backend = SEMA_NATIVE_ARMS[arm]
     executor = None
     if backend == 'imlane':
         from src.execution_provider.adapters.sema_imlane import SemaIMLaneExecutor, SemaIMLaneService
-        executor = stack.enter_context(SemaIMLaneExecutor(imlane_config, options))
+        if arm == 'sema-imlane-request-service':
+            executor = stack.enter_context(SemaIMLaneExecutor(imlane_config, options))
+        else:
+            from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+            executor = NativeCallExecutor('imlane', options, max_batch_rows=held_tasks,
+                imlane_config=imlane_config_for_arm(arm, imlane_call_configs or {}))
+            stack.callback(executor.close)
         return stack.enter_context(SemaIMLaneService(executor=executor,
             query_id=query_id, upstream_url=model.endpoint_url, limits=limits,
             trace_path=trace_path, options=options,

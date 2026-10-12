@@ -52,3 +52,19 @@ Coordinator须先在同一实例名称和loopback端口就绪；查询只拥有D
 阶段、请求/查询P99和原始证据由[共同查询入口](../../src/experiments/postgresql/README.md#native-adapter-query)记录。
 检查结果进入[同一主报告](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)，
 无模型检查不用于评价模型性能或Sema原池前调度。
+
+## 三种原方法的IMLane模式
+
+[完整调用接口](imlane_calls.md)复用上述DBEnd桥，明确区分作者CPython与作者Ray执行器。
+公共`NativeCallExecutor('imlane', imlane_config=IMLaneCallConfig(...))`直接交接完整批次，
+有效上限128行／32MiB输入；超额拒绝。原C++桥的聚合驻留输出没有32MiB保证。
+LOTUS和DuckDB返回原SDK／C++解析，Sema保持原SQL及请求池后的有限HTTP快照。
+统一CLI使用`--imlane-cpython-config`、`--imlane-ray-config`指定仓库外配置；
+`--options`需覆盖探得的作者任务线程数，本次为6，检查配置使用并发额度8、作者执行器2。
+
+[公共方法检查](verify_imlane_methods.py)在两种mode中检查真实LOTUS、DuckDB和Sema的完整消费及连续LOTUS查询。
+它需要已有作者构建、原桥、已编译的`0.4.14-native3`扩展、固定Sema作者二进制和独立LOTUS解释器，
+只访问localhost软件响应，不安装依赖或加载模型。来源和全部失败见
+[本轮记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
+错误或提前停止消费可能在DBEnd返回EOF前关闭调用方；同一Coordinator出现未确认记录后禁止新对象继续提交。
+调用者核对并结束自己的Coordinator／Ray资源后，使用新的进程身份与实例名称开始下一次检查。

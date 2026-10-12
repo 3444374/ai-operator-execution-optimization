@@ -13,7 +13,7 @@
   },
   "patched_sha256": {
     "CMakeLists.txt": "45685355ae95a139511c0033d0e22ec89755e77ca3ba7140c40d9de48a3afbe1",
-    "src/duckdb_ai_extension.cpp": "1eca3b9d580e1d59c3da97a132c1145fbbabd532b7651f6786de432746a64096",
+    "src/duckdb_ai_extension.cpp": "0b32eb77564d46edaff9ebaec349e2564941560a2e450b947424d7df681de516",
     "src/duckdb_ai_provider.cpp": "f46f27cf02882ba6f6249a66dfd499c62a7928b3de74cdcf0182f5f347fa46c1",
     "src/include/duckdb_ai_provider.hpp": "af24ab5186cfe2cbf21291af1dbc53853c393695ee9f133088d8a4d81a083182"
   },
@@ -23,5 +23,5 @@
     "LICENSE.re2": "6040cda75d90b1738292a631d89934c411ef7ffd543c4d6a1b7edfc8edf29449",
     "LICENSE.yyjson": "734d7fb3eb56f0a04e6b7ab0c5d3634624a8bfaa2acc87a2c03a029b20868cf8"
   },
-  "binary_version": "0.4.14-native2"
+  "binary_version": "0.4.14-native3"
 }

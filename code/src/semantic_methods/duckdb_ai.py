@@ -117,8 +117,8 @@ class DuckDBSemLoomBridge:
     def __init__(self, extension: str | Path,
                  execute: Callable[[tuple[DuckDBCall, ...], Callable[[], bool]], Iterable[DuckDBResponse]],
                  *, collect_timings=False, executor='semloom'):
-        if executor not in ('semloom', 'daft', 'ray', 'ray-data'):
-            raise ValueError('DuckDB batch executor must be semloom, daft, ray or ray-data')
+        if executor not in ('semloom', 'daft', 'ray', 'ray-data', 'imlane'):
+            raise ValueError('DuckDB batch executor must be semloom, daft, ray, ray-data or imlane')
         self.path = str(Path(extension).resolve())
         self.execute = execute
         self.executor_name = executor

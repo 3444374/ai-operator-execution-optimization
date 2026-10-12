@@ -3,6 +3,9 @@
 The [LOTUS method adapter](lotus/README.md) adds a pinned single-Map executor selection and a
 two-Map continuation over external text rows. It reuses LOTUS prompts/parsing and this existing
 driver. The [integrated query entry](../experiments/postgresql/README.md#native-adapter-query) selects native or SemLoom execution; real-model qualification remains separate.
+The native complete-call adapters additionally select Daft Native, Ray Data, or a Ray Core actor
+reference while leaving LOTUS and DuckDB response interpretation in the original libraries.
+See the [execution adapter checks](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md).
 
 The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.

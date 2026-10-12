@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[三种原方法的统一原生接入](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
+LOTUS／DuckDB／Sema公共入口支持Daft、Ray Data与IMLane，作者CPython／Ray分别登记。
+IMLane实际共同源码完成48次软件POST、三方法完整消费和两模式常驻复用，自有进程／共享内存归零，模型0。
+Daft初始化统一到中立模块，真实同driver四路径组合通过；单GPU较早源码只完成三条warmup／24POST，SemLoom失败与修复另列，测量及IMLane模型未运行。
+稳定性、入口正文与多副本采用独立分支，固定稳定性`9bb6c415`组合247项通过／29项跳过，真实三方法双mode追加32软件POST通过，不据软件或warmup作性能排名。
+
+
 2026-10-12：[Sema后置原生执行检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
 新增Daft Native、Ray Data和IMLane Python执行器的完整HTTP调用路径，复用共同source/sink，未放入SemLoom Core。
 三条路径均通过作者Sema的8行完整SQL检查；原SQL、提示、解析及上游请求池保持，模型调用0。

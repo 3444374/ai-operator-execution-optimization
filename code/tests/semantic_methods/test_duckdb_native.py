@@ -163,8 +163,10 @@ class DuckDBNativeConversionTests(unittest.TestCase):
     def test_backend_and_wall_timeout_reject_invalid_values(self):
         graph = _Graph([])
         graph.backend = 'semloom'
-        with self.assertRaisesRegex(ValueError, 'daft, ray or ray-data'):
+        with self.assertRaisesRegex(ValueError, 'daft, ray, ray-data or imlane'):
             DuckDBNativeExecutor(graph)
+        graph.backend = 'imlane'
+        self.assertEqual(DuckDBNativeExecutor(graph).backend, 'imlane')
         graph.backend = 'daft'
         for timeout in (0, -1, 121, True, float('inf'), float('nan')):
             with self.subTest(timeout=timeout), self.assertRaisesRegex(ValueError, 'timeout'):

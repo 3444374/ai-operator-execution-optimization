@@ -46,6 +46,7 @@ Sema后置原生Daft／Ray Data／IMLane的调用接入与检查从[代码说明
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
 | 同应用原生语义系统 | [清单与剩余方法要求](experiments/plans/语义系统对照.md)、[完整补测与失败记录](experiments/results/postgresql/semantic_system_comparison_20261008/README.md) |
 | 数据就绪后的查询计时 | [SQL／API方案](experiments/plans/SQL就绪计时.md)、[比较结果与恢复](experiments/results/postgresql/query_ready_timing_20261008/README.md) |
+| 原生执行接入与独立IMLane | [三种方法的统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)、[IMLane构建](code/integrations/imlane/README.md)、[完整调用两模式](code/integrations/sema/imlane_calls.md) |
 | 原生／SemLoom常驻查询 | [调用入口](code/scripts/README.md#native-adapter-query)、[复用与首次物化检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture) |
 | worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |

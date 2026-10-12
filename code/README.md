@@ -15,6 +15,11 @@ Sema后置Core／worker仍按查询创建。当前参数分开持有任务、模
 Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
 [后置原生检查与客户端](integrations/sema/README.md)说明来源、独立运行环境和不改算子策略的接法。
 
+[原生执行统一入口](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)登记LOTUS／DuckDB／Sema与Daft、Ray Data、作者IMLane的接入；
+IMLane明确区分CPython与作者Ray，原方法继续解析完整响应。
+中立[infrastructure/daft_runtime.py](src/infrastructure/daft_runtime.py)统一当前driver的Daft初始化，
+相同runner／线程数复用，配置冲突报错；原生HTTP与SemLoom物化可在同一driver连续执行。
+
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
 `RayMapConfig.preparation=None`保留旧路径，显式配置`StageBrokerLimits`才开启，目前仅支持一个Job。

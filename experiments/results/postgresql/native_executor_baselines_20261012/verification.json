@@ -1,0 +1,198 @@
+{
+  "schema": "semloom.native.execution.integration.v1",
+  "source_base": "fa53eb16785fcef4ba34ae480d6cb976dbdeb8bc",
+  "native_branch": "codex/native-execution-adapters",
+  "imlane_delivery": "7116d50d51ecd86930151880bcc535e8fe4ccc95",
+  "stability_candidate": "9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c",
+  "final_combination": {
+    "stability_commit": "9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c",
+    "local_tests": 247,
+    "local_failures": 0,
+    "local_errors": 0,
+    "local_skipped": 29,
+    "actual_public_entry_fixture_posts": 32,
+    "actual_passed": true,
+    "modes": [
+      "cpython",
+      "ray"
+    ],
+    "methods": [
+      "LOTUS",
+      "DuckDB AI",
+      "Sema"
+    ],
+    "source_archive_sha256": "4c4c7c3f8faea7ba6b1d4639e384b31c1ef62ad91d18c438272c6d5963f09857",
+    "native_production_files_match": true,
+    "stability_files_preserved": true,
+    "cumulative_fixture_posts": 126,
+    "fixture_limit": 128,
+    "model_posts": 0,
+    "gpu_resources": 0,
+    "preliminary_failure": "First local run missing the test helper PYTHONPATH; 230 tests/one import error, retained. Corrected path complete247 pass29skip."
+  },
+  "imlane_current_source": {
+    "passed": true,
+    "fixture_posts": 48,
+    "all_fixture_attempts_posts": 94,
+    "model_posts": 0,
+    "gpu_resources": 0,
+    "retries": 0,
+    "source_archive_sha256": "0f2dacb55a5947271bb7508cea0cd00bf4953eb83ccde6b9041f3d3e4a6357d2",
+    "verifier_sha256": "aae84872c7a0426c64d26316b16a73c87e8ae60dc4f30362fa09ca002966e645",
+    "binary_version": "0.4.14-native3",
+    "binary_sha256": "c1b14dbead7cf3e59b18f8b40be996d45a0b24cf5e4c21a83ab9c0cba4a20e78",
+    "modes": [
+      {
+        "runtime": "cpython",
+        "cpu_affinity": [
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79
+        ],
+        "settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "declared_executors": 2,
+        "observed_worker_count": 2,
+        "observed_ray_actor_count": 0,
+        "method_cases": [
+          {
+            "arm": "lotus-method-native-imlane",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "duckdb-method-native-imlane",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "sema-native-imlane-request-service",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "lotus-method-native-imlane",
+            "case": "persistent-two-queries",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          }
+        ],
+        "coordinator_shutdown": {
+          "returncode": 0,
+          "forced": false
+        },
+        "ray_owner_shutdown": null,
+        "survivors": 0,
+        "shm_members": 0
+      },
+      {
+        "runtime": "ray",
+        "cpu_affinity": [
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79
+        ],
+        "settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "declared_executors": 2,
+        "observed_worker_count": 2,
+        "observed_ray_actor_count": 2,
+        "method_cases": [
+          {
+            "arm": "lotus-method-native-imlane-ray",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "duckdb-method-native-imlane-ray",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "sema-native-imlane-ray-request-service",
+            "case": "single-query",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          },
+          {
+            "arm": "lotus-method-native-imlane-ray",
+            "case": "persistent-two-queries",
+            "passed": true,
+            "rows": 4,
+            "posts": 4
+          }
+        ],
+        "coordinator_shutdown": {
+          "returncode": 0,
+          "forced": false
+        },
+        "ray_owner_shutdown": {
+          "returncode": 0,
+          "forced": false
+        },
+        "survivors": 0,
+        "shm_members": 0
+      }
+    ]
+  },
+  "daft_repair": {
+    "red": "Cannot set runner more than once",
+    "software_source_archive_sha256": "08dc87c99fa52e06c9d4f2cff46924460c325188d5ae0105b6d79398322aa9c7",
+    "complete_fixture_posts": 54,
+    "passed": true
+  },
+  "local_native_regression": {
+    "initial_tests": 127,
+    "initial_failures": 1,
+    "initial_skipped": 24,
+    "fixed_targeted_passed": 5,
+    "final_combination": "247/0failure/29skip; actual32POST",
+    "final_tests": 127,
+    "final_failures": 0,
+    "final_errors": 0,
+    "final_skipped": 24
+  },
+  "model_smoke": {
+    "actual_posts": 24,
+    "allocated_slots": 32,
+    "allocation_remaining": 160,
+    "measured_queries": 0,
+    "successful_warmups": [
+      "LOTUS original",
+      "LOTUS Daft",
+      "LOTUS Ray Data"
+    ],
+    "failed_warmup": "SemLoom Daft runner initialization before HTTP",
+    "imlane_model_queries": 0,
+    "service_exit": 0,
+    "survivors": 0,
+    "same_model_source_archive_sha256": "2a0fae7600e5789466540652c1742cac30b27009b95701922d3820cb50096aef",
+    "performance_qualified": false
+  }
+}

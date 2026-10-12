@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-12：[原生执行接续整合](postgresql/native_executor_baselines_20261012/README.md)。
+保留LOTUS／DuckDB原交付及作者IMLane630行／132次Arrow调用，公共三方法IMLane两个模式成功轮48软件POST；前轮21／11／14失败及归档符号链接拒绝保留，累计94、模型0。
+同driver Daft重设runner反例与中立修复通过54次软件调用；较早源码单GPU只完成三条warmup／24真实POST，32名额占用、测量0、服务已退出。
+公共关联保持原方法，Sema HTTP序号不作源行；固定native／stability组合247项无失败／29项跳过，真实公共入口追加32软件POST通过，累计126；后续模型资格仍待单独运行。
+
+
 2026-10-12：[Sema后置Daft、Ray Data和IMLane检查](postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
 实际原生库及完整响应服务检查通过；三条作者SQL各8行，共24次确定性HTTP，真实模型0。
 IMLane采用作者Python执行器与实测原生任务线程数，未证明原生Ray配置；容量、CPU、首次图创建与池后身份分别保留。

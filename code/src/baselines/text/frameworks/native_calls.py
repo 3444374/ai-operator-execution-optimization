@@ -323,12 +323,22 @@ def _ray_rows(calls, options, control):
 
 
 class NativeCallExecutor:
-    """Finite original-method batches on vendor graphs or a Ray Core reference."""
-    def __init__(self, backend, options=None, *, max_batch_rows=4096, max_batch_bytes=32 * 1024 * 1024):
-        if backend not in ("daft", "ray-data", "ray"):
-            raise ValueError("complete-call backend must be daft, ray-data or ray")
+    """Finite complete calls on vendor graphs, author IMLane or a Core reference."""
+    def __init__(self, backend, options=None, *, max_batch_rows=4096,
+                 max_batch_bytes=32 * 1024 * 1024, imlane_config=None):
+        if backend not in ("daft", "ray-data", "ray", "imlane"):
+            raise ValueError("complete-call backend must be daft, ray-data, ray or imlane")
         if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_bytes)):
             raise ValueError("native complete-call batch limits must be positive integers")
+        if backend != "imlane" and imlane_config is not None:
+            raise ValueError("IMLane configuration requires the IMLane backend")
+        self._imlane = None
+        if backend == "imlane":
+            from .imlane_calls import IMLaneCallExecutor
+            self._imlane = IMLaneCallExecutor(imlane_config, options,
+                max_batch_rows=max_batch_rows, max_batch_bytes=max_batch_bytes)
+            options = self._imlane.options
+            max_batch_rows, max_batch_bytes = self._imlane.max_batch_rows, self._imlane.max_batch_bytes
         self.backend, self.options = backend, options or NativeGraphOptions()
         self.max_batch_rows, self.max_batch_bytes = max_batch_rows, max_batch_bytes
         self.last_close_report = None
@@ -336,7 +346,23 @@ class NativeCallExecutor:
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)
 
+    def close(self):
+        if self._imlane is not None:
+            self._imlane.close()
+
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        if self._imlane is not None:
+            self.last_close_report = None
+            self._imlane.last_close_report = None
+            iterator = self._imlane.iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
+            try:
+                yield from iterator
+            finally:
+                try:
+                    iterator.close()
+                finally:
+                    self.last_close_report = self._imlane.last_close_report
+            return
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError("native complete-call batch timeout must be at most 120 seconds")
         calls = tuple(calls)

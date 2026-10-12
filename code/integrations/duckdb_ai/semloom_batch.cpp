@@ -100,7 +100,7 @@ SEMLOOM_EXPORT int duckdb_ai_batch_register_v1(SemLoomDuckDBBatchV1 batch, SemLo
     std::lock_guard<std::mutex> lock(callback_mutex);
     if (!batch || !release || !executor || batch_callback || active_batches) { return 0; }
     const std::string name(executor);
-    if (name != "semloom" && name != "daft" && name != "ray" && name != "ray-data") { return 0; }
+    if (name != "semloom" && name != "daft" && name != "ray" && name != "ray-data" && name != "imlane") { return 0; }
     batch_callback = batch;
     release_callback = release;
     callback_executor = name;

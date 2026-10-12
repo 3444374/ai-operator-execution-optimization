@@ -29,6 +29,12 @@
       {"module": "overrides", "install": "overrides>=7,<8"},
       {"module": "lotus", "install": "lotus-ai==1.2.4"}
     ],
+    "imlane-runtime": [
+      {"module": "numpy", "install": "numpy>=1.25,<2"},
+      {"module": "pyarrow", "install": "pyarrow==16.1.0"},
+      {"module": "ray", "install": "ray==2.56.1"},
+      {"module": "psutil", "install": "psutil==7.0.0"}
+    ],
     "image": [
       {"module": "torch", "install": "torch"},
       {"module": "transformers", "install": "transformers"},

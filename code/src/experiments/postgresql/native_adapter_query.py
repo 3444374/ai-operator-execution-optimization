@@ -200,9 +200,13 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     if arm == 'fixed-map-native-daft':
         from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
         prepare_runtime(options.num_threads)
-        return None,dict(owner='Daft Native',version='0.7.21',source='external finite prepared calls')
+        return None,dict(owner='Daft Native',version='0.7.21',num_threads=options.num_threads,
+                         source='external finite prepared calls')
     if arm == 'fixed-map-semloom-local-diagnostic':
         return None,dict(owner='SemLoom local diagnostic',source='external finite prepared calls')
+    if arm == 'fixed-map-semloom' and physical is not None and physical.payload_backend == 'daft':
+        from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
+        prepare_runtime(options.num_threads)
     os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(options.ray_async_batches_per_actor)
     import ray
     config = QueryConfig(unit_id='prepared-runtime',arm='ray-data',task='map',table='unused',
@@ -211,7 +215,7 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     runtime = stack.enter_context(native_ray_runtime(ray,config,ray_temp_root))
     if arm == 'fixed-map-semloom':
         physical = replace(physical,address=ray.get_runtime_context().gcs_address,response_mode='full')
-    owner = 'Ray Data'
+    owner = 'Ray Core' if arm == 'supplier-native-ray' else 'Ray Data'
     if arm == 'fixed-map-semloom':
         owner = 'SemLoom Daft/Ray' if physical.payload_backend == 'daft' else 'SemLoom Arrow/Ray'
     return physical,dict(runtime,owner=owner,version=ray.__version__,source='external finite prepared calls')
@@ -473,6 +477,8 @@ def main(argv=None):
     parser.add_argument('--stages',type=Path)
     parser.add_argument('--sema-binary',type=Path)
     parser.add_argument('--imlane-config',type=Path)
+    parser.add_argument('--imlane-cpython-config',type=Path)
+    parser.add_argument('--imlane-ray-config',type=Path)
     parser.add_argument('--duckdb-library',type=Path)
     parser.add_argument('--tokenizer',type=Path)
     parser.add_argument('--ray-physical',type=Path)
@@ -501,7 +507,9 @@ def main(argv=None):
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
                            preparation_started_ns=started,sema_native_threads=args.sema_native_threads,
-                           imlane_config=args.imlane_config)
+                           imlane_config=args.imlane_config,
+                           imlane_call_configs={mode: path for mode,path in
+                               (('cpython',args.imlane_cpython_config),('ray',args.imlane_ray_config)) if path is not None})
     else:
         run_prepared_map_query(args.arm,**common,preparation_started_ns=started)
     return 0
