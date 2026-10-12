@@ -25,12 +25,16 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 | `lotus-two-map-native-staged`、`lotus-two-map-semloom-staged`、`lotus-two-map-semloom-incremental` | 原两Map方法；阶段等待参照及既有MethodDriver逐行继续执行 |
 | `duckdb-adapted-native`、`duckdb-method-semloom` | 匹配的patched扩展，原生或C ABI完整批次执行，再进入原C++解析 |
 | `sema-native-direct`、`sema-native-transparent`、`sema-method-semloom-request-service` | 作者二进制直达、透明观察或后置请求服务；原请求池与供给保持 |
+| `sema-native-daft-request-service`、`sema-native-ray-data-request-service`、`sema-imlane-request-service` | 同一Sema请求服务来源，已经抵达的请求快照由Daft Native、Ray Data或作者IMLane执行；原请求池继续保留，未替换数据库执行器 |
 | `fixed-map-semloom-local-diagnostic` | 本地无Ray诊断；单独标识，不进入主实现性能比较 |
 
 `native_adapter_metrics.py`按行、阶段与逻辑调用编号关联任务就绪和原调用者完整响应，统计单位为一次完整模型调用。
 LOTUS批次的调用者取得完整SDK响应列表后才记返回；逐行继续执行则在supplier resume收到完整HTTP响应时记返回。
 DuckDB保留C++的steady-clock值，Python回调另记本进程时刻；未证明两种时钟相同，不做跨钟减法。
 Sema作者产物缺少池前任务就绪及逐行完整响应对应，调用端到端标为不可观测；请求服务自己的阶段另列。
+Sema原生后置路径的`service_timing`使用同一服务进程时钟，保存正文读取、接纳、快照、图开始、
+完整响应收到、写出及请求P99原值；模型HTTP采用实际网关观察，图返回时刻不当作模型完成时刻。
+`--imlane-config`用于仓库外已就绪作者运行环境；所需字段和实现见[Sema服务说明](../../execution_provider/adapters/sema_request_service.md)。
 DuckDB SemLoom 主路径和本地诊断由同一 SELECT 持有一个 Core Job，各原生 vector 只借用独立 session。
 vector 关闭后保留查询份额；查询取消后停止后续 vector，未知远端工作继续计入原查询，结束时统一关闭 Job。
 原生 DuckDB 与直接使用 `DuckDBNativeTaskExecutor(query_owner=None)` 的单批入口保持；

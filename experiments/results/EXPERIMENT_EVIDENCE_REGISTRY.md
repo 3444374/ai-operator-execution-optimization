@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-12：[Sema后置Daft、Ray Data和IMLane检查](postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
+实际原生库及完整响应服务检查通过；三条作者SQL各8行，共24次确定性HTTP，真实模型0。
+IMLane采用作者Python执行器与实测原生任务线程数，未证明原生Ray配置；容量、CPU、首次图创建与池后身份分别保留。
+正常输入结束与取消分开，最终响应后继续核对EOF和清理；准备失败、原始日志和源码摘要均保留在仓库外。
+LOTUS/DuckDB旧接入的36项受控检查通过，13项实际LOTUS库未启用，不替代新编译扩展或模型验证。
+
 2026-10-12：[Sema原请求池前接入可行性](../../code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)。
 公开main、分支/标签/发行清单、原ZIP/ELF及旧135项设置重新核对，未找到当前产物可小改使用的池前入口；元数据摘要进入原整合verification，历史证据保持。
 仅保留原生整体与后置服务成对比较，不实施算子重写或二进制注入；新二进制/查询/模型运行均0，未接触目标服务器。

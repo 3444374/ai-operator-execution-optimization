@@ -27,6 +27,7 @@ from .supplier_adapter_query import (
     SUPPLIER_ARMS, _drain_execution, prepare_duckdb_connection, prepare_lotus_lm,
     replace_duckdb_inputs, run_supplier_query,
 )
+from .sema_native_query import SEMA_NATIVE_ARMS, validate_native_options
 
 
 class _ArmOwner:
@@ -130,11 +131,14 @@ class _ArmOwner:
             core_jobs=(sema['core_jobs'] if sema is not None
                        else None if self.execution is None else len(self.execution.engine.jobs.jobs)),
             sema_executor=sema,
-            native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm=='fixed-map-native-ray'
+            native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm in
+                                    ('fixed-map-native-ray','sema-native-ray-data-request-service')
                                     else 'not a native Ray Data graph'),
             request_service_scope=('per query HTTP/session; group Core/workers diagnostic' if sema is not None
                                    else 'per query HTTP, Core and transport' if self.arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic')
-                                   else 'per query HTTP service' if self.arm in ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic')
+                                   else 'per query HTTP service' if self.arm in
+                                   ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic')
+                                   else 'per query HTTP service; finite native snapshots' if self.arm in SEMA_NATIVE_ARMS
                                    else 'no Sema request service'),
             native_http_client_scope='supplier owns its SDK/client lifecycle')
 
@@ -212,7 +216,7 @@ class PersistentAdapterGroup:
                  ray_temp_root=None, ray_address=None, query_timeout_s=120, owner_timeout_s=1800,
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
-                 sema_executor_scope='query',duckdb_offer_diagnostic='original'):
+                 sema_executor_scope='query',duckdb_offer_diagnostic='original',imlane_config=None):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
@@ -224,6 +228,9 @@ class PersistentAdapterGroup:
         self.plan, self.model, self.ledger = plan, model, ledger
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+        for arm in self.arms:
+            validate_native_options(arm,options,self.max_held_tasks,imlane_config)
+        self.imlane_config = imlane_config
         if sema_executor_scope not in ('query', 'group-diagnostic'):
             raise ValueError('Sema executor scope must be query or group-diagnostic')
         if (sema_executor_scope != 'query'
@@ -253,10 +260,12 @@ class PersistentAdapterGroup:
         self.deadline = time.monotonic()+self.owner_timeout_s
         new_private_directory(self.root)
         try:
-            if 'fixed-map-native-daft' in self.arms:
+            if ('fixed-map-native-daft' in self.arms
+                    or 'sema-native-daft-request-service' in self.arms):
                 _runtime(self.stack, 'fixed-map-native-daft', self.options, None, None, None)
             core = any('semloom' in arm and not arm.endswith('diagnostic') for arm in self.arms)
-            if core or 'fixed-map-native-ray' in self.arms:
+            if (core or 'fixed-map-native-ray' in self.arms
+                    or 'sema-native-ray-data-request-service' in self.arms):
                 if core and self.physical is None:
                     raise ValueError('persistent SemLoom requires the existing physical configuration')
                 self.physical, self.runtime = _runtime(self.stack,
@@ -304,7 +313,8 @@ class PersistentAdapterGroup:
                     result = run_supplier_query(arm, **arguments, stages=self.stages,
                         tokenizer_path=self.tokenizer_path, duckdb_library=self.duckdb_library,
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
-                        adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic)
+                        adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic,
+                        imlane_config=self.imlane_config)
                 else:
                     result = run_prepared_map_query(arm, **arguments)
                 owner.queries += 1
@@ -386,6 +396,7 @@ def main(argv=None):
     for name in ('options','ray-physical','ray-temp-root','stages','tokenizer','duckdb-library','sema-binary'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--ray-address')
+    parser.add_argument('--imlane-config',type=Path)
     parser.add_argument('--allowed-output', action='append')
     parser.add_argument('--query-timeout-s', type=float, default=120)
     parser.add_argument('--owner-timeout-s', type=float, default=1800)
@@ -410,7 +421,8 @@ def main(argv=None):
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
             adapter_timings=args.adapter_timings,
-            sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic) as group:
+            sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic,
+            imlane_config=args.imlane_config) as group:
         write_private_json(group.root/'schedule.json',schedule)
         for ordinal, item in enumerate(schedule):
             source = Path(item['input'])

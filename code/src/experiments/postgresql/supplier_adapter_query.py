@@ -24,6 +24,9 @@ from .native_adapter_metrics import summarize_calls, executor_phase_observations
 from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows,resolve_adapter_limits
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
+from .sema_native_query import (
+    SEMA_NATIVE_ARMS, gateway_phase_summary, open_native_service, service_phase_summary, validate_native_options,
+)
 
 
 SUPPLIER_ARMS = (
@@ -34,6 +37,7 @@ SUPPLIER_ARMS = (
     'sema-bounded-forward-diagnostic',
     'sema-bounded-pipeline-diagnostic',
     'sema-method-semloom-local-diagnostic',
+    *SEMA_NATIVE_ARMS,
     'duckdb-adapted-native', 'duckdb-method-semloom', 'duckdb-method-semloom-local-diagnostic',
 )
 
@@ -353,7 +357,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
                        preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
-                       adapter_timings=False,duckdb_offer_diagnostic='original'):
+                       adapter_timings=False,duckdb_offer_diagnostic='original',imlane_config=None):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
     if (duckdb_offer_diagnostic not in ('original','validated-prefix','prepared-blocks')
@@ -371,6 +375,7 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
     held_tasks,native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+    validate_native_options(arm,options,held_tasks,imlane_config)
     invoked=time.monotonic_ns()
     started=invoked if preparation_started_ns is None else preparation_started_ns
     if type(started) is not int or not 0 < started <= invoked:
@@ -432,6 +437,12 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             elif use_core and not local:
                 physical,runtime=_runtime(stack,'fixed-map-semloom',options,physical,ray_temp_root,ray_address)
                 summary['runtime']=runtime
+            elif arm in SEMA_NATIVE_ARMS and SEMA_NATIVE_ARMS[arm] != 'imlane':
+                runtime_started=time.monotonic_ns()
+                _,runtime=_runtime(stack,'fixed-map-native-daft' if SEMA_NATIVE_ARMS[arm]=='daft'
+                    else 'fixed-map-native-ray',options,None,ray_temp_root,ray_address)
+                summary['runtime']=runtime
+                summary['stages']['native_runtime_seconds']=(time.monotonic_ns()-runtime_started)/1e9
             if owner is None:
                 gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
                     trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
@@ -489,6 +500,12 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                         max_active_requests=options.concurrency,
                         local_diagnostic=local,
                         executor_owner=owner.sema_executor if owner is not None else None))
+                elif arm in SEMA_NATIVE_ARMS:
+                    service_started=time.monotonic_ns()
+                    service=open_native_service(stack,arm,query_id=unit_id,model=routed,limits=limits,
+                        trace_path=root/'sema-service.jsonl',options=options,held_tasks=held_tasks,
+                        imlane_config=imlane_config)
+                    summary['stages']['native_service_startup_seconds']=(time.monotonic_ns()-service_started)/1e9
                 if owner is not None:
                     owner.service=service
                 converted=[dict(source_example_id=v['row_id'],input_text=v['text'],source_position=i) for i,v in enumerate(values)]
@@ -509,6 +526,11 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 elif local:
                     summary['identity'].update(executor='SemLoom local complete-response diagnostic',
                         payload_backend='no Daft or Ray')
+                elif arm in SEMA_NATIVE_ARMS:
+                    summary['identity'].update(executor=SEMA_NATIVE_ARMS[arm],
+                        execution_owner='native vendor graph or ready IMLane Coordinator',
+                        intake_scope='already-arrived finite FIFO snapshots after Sema native request pool',
+                        held_request_capacity=held_tasks)
             ready=time.monotonic_ns()
             if count:raise ValueError('supplier preparation called the model before query submission')
             @contextmanager
@@ -555,6 +577,10 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 else 'author binary exposes no task readiness or per-row full response receipt'))
         if service is not None:
             summary['request_service']=service.summary
+            if arm in SEMA_NATIVE_ARMS:
+                summary['service_timing']=service_phase_summary(
+                    json.loads(line) for line in (root/'sema-service.jsonl').read_text().splitlines())
+                summary['gateway_timing']=gateway_phase_summary(traces)
         if reference_outputs is not None:
             if set(reference_outputs)!=set(predictions):raise ValueError('reference rows differ from supplier results')
             correct=sum(predictions[k]==v for k,v in reference_outputs.items())

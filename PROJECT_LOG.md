@@ -10562,3 +10562,11 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 已在[现有总设计](experiments/plans/语义系统对照.md#sema-native-executors)补充并行实施职责与共同验证：
 复用公共完整调用和原Sema服务，新增原生Daft、Ray Data及IMLane后置路径，不改算子策略。
 原请求池仍保留，不能解释为数据库执行器替换；本次准备没有模型调用或GPU占用。
+
+# 2026-10-12 Sema后置原生执行整合
+
+并行实施的Daft Native、Ray Data与IMLane完整HTTP调用已接入共同单查询和常驻查询入口，
+原生系统仍拥有SQL、提示、解析及请求池。三条作者SQL各8行、24次确定性HTTP通过，模型0；
+实际库、正常结束、取消、失败响应和清理记录见[原整合报告新增节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
+服务和网关阶段及分位分别记录；原池前时刻不可观测，IMLane实际容量及首次图成本独立解释。
+实现、紧凑验证摘要和调用说明进入独立分支；原始证据、失败、构建和运行配置在仓库外保存。

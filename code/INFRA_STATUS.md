@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[Sema后置原生执行检查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
+新增Daft Native、Ray Data和IMLane Python执行器的完整HTTP调用路径，复用共同source/sink，未放入SemLoom Core。
+三条路径均通过作者Sema的8行完整SQL检查；原SQL、提示、解析及上游请求池保持，模型调用0。
+共同入口记录服务接纳、快照、图执行、返回及网关HTTP阶段和请求/查询分位；原池前就绪与源行对应仍unavailable。
+IMLane复用独立作者构建和已就绪Coordinator，检查实际原生线程数；不同容量及首次图成本单列，不据此排名模型性能。
+
 2026-10-11：[SQuAD原生完整请求画像](../experiments/results/diagnostics/squad_native_length_20261011/README.md)。
 原生formatter、SDK与本地tokenizer全量检查完成；自然调参切片未满足本轮选样条件，模型0。2026-10-12补同一调参元数据的静态次序描述，不重新计数token或模拟执行。
 本方案长度描述与薄转发装配暂未推进，现有接入入口和默认保持；后续问题从[数据组织目标修订](../experiments/plans/数据组织.md#map-order-question)核对。
@@ -69,7 +75,7 @@ LOTUS原持续差距在该输入与配置下消失，Sema原生与后置服务�
 [首轮真实筛查](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)
 因运行包标签不一致停止，已修订允许值、参考表示及启动前核对；有效容量测量和最终比较配置仍pending。
 
-更新：2026-10-10。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+更新：2026-10-12。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
 [证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)及对应结果目录；
 代码组织见[目录说明](README.md)和[PostgreSQL extension 说明](postgres/semloom_pg/README.md)。
 
