@@ -1,0 +1,82 @@
+{
+  "upstream_url": "https://github.com/IM-DM4AI/IMLane0",
+  "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "license": "MIT",
+  "original_sha256": {
+    "CMakeLists.txt": "8444b1be3a8b9137738135448db231107bafd5b611f00d820f808cdae5cdf45f",
+    "include/common/parameter.hpp": "49c1b57c54ab47f08070acb6aec8cf88942ef555718494a5ef763e16fc9d99b9",
+    "src/coordinator/coordinator.cpp": "dad516b7ab56851b1d15a7aee55d01183f294f2943ea4ed164957caf4d9fa7e6",
+    "src/main/main.cpp": "a671b9ca7f3e6ec37731e4c9695691a8ba33e95a23eb4217d8c3c19f80b21b26",
+    "src/backend/python/py_executor.cpp": "c880830a32396e962322fd8d12bbcd070e02c9b43326fa17786ec6d73985887f",
+    "src/backend/ray/ray_executor.cpp": "801e7f0d73a0833625d86854d3d83a61544b24384c207e86dd8dd2cf3311def8",
+    "src/dbend/dbend_client.cpp": "ffa56ce3f7b240f9bbb7ba12f07c036f5f8158bc9d87ba02d7153ed7034b7cc4",
+    "src/common/shm/arrow_cpp_exchange.cpp": "d1f2e1687536422132be32224d9f1beb5477383690e3157c430a7cf411e24c98",
+    "src/coordinator/task_scheduler.cpp": "6390c49977a40b596f69f902e5c843538b9d6585c857498b25d3b12460495f00",
+    "include/dbend/dbend_context.hpp": "f524d36e40dcfa6540a1105df65e875d6b34cf04fce3fdf631631b5d1c3fca9b",
+    "LICENSE": "792969a6797d84f70b6ca544731ead6f35bc9abf5ba46a8223e9d6ee3ec03d0f",
+    "include/backend/python/py_executor.hpp": "7b3ac4ca7ce013f4b69eea5a3a87f07a8abe967998103682cb7676ed63c1eecf"
+  },
+  "git_dependencies": {
+    "libuv": {
+      "url": "https://github.com/libuv/libuv",
+      "version": "1.50.0",
+      "commit": "8fb9cb919489a48880680a56efecff6a7dfb4504"
+    },
+    "fmt": {
+      "url": "https://github.com/fmtlib/fmt",
+      "version": "11.1.4",
+      "commit": "123913715afeb8a437e6388b4473fcc4753e1c9a"
+    },
+    "msgpack": {
+      "url": "https://github.com/msgpack/msgpack-c",
+      "version": "cpp-7.0.0",
+      "commit": "919908742b4fdbc575e77fe1a8657e70c9573c44"
+    },
+    "pybind11": {
+      "url": "https://github.com/pybind/pybind11",
+      "version": "2.13.0",
+      "commit": "0c69e1eb2177fa8f8580632c7b1f97fdb606ce8f"
+    },
+    "json": {
+      "url": "https://github.com/nlohmann/json",
+      "version": "3.11.3",
+      "commit": "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03"
+    }
+  },
+  "boost": {
+    "version": "1.84.0",
+    "url": "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.gz",
+    "sha256": "a5800f405508f5df8114558ca9855d2640a2de8f0445f051fa1c7c3383045724",
+    "digest_source": "https://archives.boost.io/release/1.84.0/source/boost_1_84_0.tar.gz.json"
+  },
+  "validation_python": {
+    "python": "3.12",
+    "pyarrow": "16.1.0",
+    "numpy": "1.26.4",
+    "ray": "2.56.1",
+    "psutil": "7.0.0",
+    "ray_bundled_psutil": "7.2.2"
+  },
+  "author_install_difference": [
+    "The author install script refers to a cp38 PyArrow wheel; validation uses a Python 3.12 wheel with matching Arrow C++ and Python libraries.",
+    "Ray 2.56.1 is a project-pinned version; the author README requires Ray 2.10.0 or later.",
+    "The fixture uses the public DBEnd library, Coordinator and original backend executors without building the bundled database forks.",
+    "The bundled nanoarrow testing translation unit needs nlohmann/json, which is absent from the author install script; the validation build supplies pinned public headers.",
+    "The observer imports pinned psutil 7.0.0 before Ray. Ray 2.56.1 also carries psutil 7.2.2 under thirdparty_files; both actual module paths and the import order are retained in the runtime census."
+  ],
+  "scheduler_owner": "IMLane author implementation",
+  "real_model_requests": 0,
+  "patched_sha256": {
+    "include/backend/python/py_executor.hpp": "33b332ac0d43144c8300966c92ef15f2cfc0772873108bca9ce2435d2cd367dd",
+    "include/common/parameter.hpp": "4f3d7115dd6c844cee39d25e8edcbb008df8a479db399b0c6dab822305c5ce2f",
+    "src/backend/python/py_executor.cpp": "e325167c9fc834f32fb53c0aaed330d0f5076788d43d7dd904d5e0dec90cb783",
+    "src/coordinator/coordinator.cpp": "d83cc45ec40f74b47b6c212155cea28395b29d304ed679d8ced108a81a777e27",
+    "src/main/main.cpp": "d81b47ca6080b298ad024540dcc8034120516d499af50433aab5af96984b4950"
+  },
+  "patch_scope": [
+    "Optional per-instance shared-memory and message-queue names keep the author default when unset.",
+    "Optional listen host and a CLI gateway port allow an owned loopback-only fixture service.",
+    "Python 3.12 embedded asyncio explicitly creates the default event loop once and closes its owned loop on executor exit; function scheduling and await calls are retained.",
+    "Ray initialization restores the preexisting Coordinator signal handlers, including the initialization error path, so author shutdown remains reachable."
+  ]
+}
