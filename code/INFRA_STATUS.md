@@ -13,8 +13,9 @@ IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分�
 前四臂各三条、两种IMLane各Q2/Q3正常；原2000行IMLane Q1两项明确拒绝，软件16 pass／2 unsupported／0 notrun。
 累计128次替身POST，作者超时/取消及原生授权错误检查通过，进程/共享内存归零；旧失败/时间窗停止保留，模型未运行。
 当前完整调用适配器有效128行，不切块或把此值归因底层kernel；CLI原生控制按臂声明，不强升级低并发。
-共同响应上限、SDK转换、连接寿命与错误/退出等价仍由独立核心修订处理；本切片不改这些执行模块。
-该切片已纳入原生发布分支，本机组合回归见报告；task-8的新共享核心修订尚未纳入。
+该切片已纳入原生发布分支，随后追加共享SDK解释、每批客户端复用、消费关闭诊断及IMLane执行错误分类。
+首四块与SemBench组合本机49项通过、11项缺LOTUS依赖跳过；HTTP连接寿命及容量期限后两块仍在有限复审。
+来源与验证范围见[发布组合记录](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-release-composition)。
 
 2026-10-12：[三种原方法的统一原生接入](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 LOTUS／DuckDB／Sema公共入口支持Daft、Ray Data与IMLane，作者CPython／Ray分别登记。

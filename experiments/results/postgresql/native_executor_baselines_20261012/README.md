@@ -1,5 +1,18 @@
 # 三种原方法的原生执行接入
 
+<a id="native-release-composition"></a>
+## 发布组合与本机回归
+
+2026-10-12恢复本机执行后，以已发布`8fc28d97`在独立检出继续现有native分支。
+独立数据集配置测试`e51f4206`已整合为`6faa05ea`，12项本机回归通过、0跳过并已推送核验。
+前四块`c47304d1/c8484a2b/47adb0f1/c4f7f157`已与SemBench组合，14个Python源／测试文件逐项匹配固定候选；
+本机60项中49通过、11因缺LOTUS依赖跳过，跳过项未取得本机验证资格。
+规范与需求独立复审各0项必修；组合保留准备／响应回调、重复行身份、首错和附加清理错误。
+已保存实际SDK验证仍属`c4f7f157`：20通过、0跳过、12localhost POST、模型/GPU0，源包摘要核验通过。
+本次本机新服务器、HTTP POST、模型及GPU运行均0；后两块连接寿命、容量／期限与C++释放继续有限复审。
+原Q1 2000行的两条IMLane适配器前置拒绝及历史记录保留，当前128行是适配器接受范围。
+机器事实见[integration_verification.json](integration_verification.json)，原本机输出见[integration_first4.txt](integration_first4.txt)。
+
 <a id="execution-repairs"></a>
 ## 响应与生命周期修补
 
