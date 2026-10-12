@@ -1,0 +1,294 @@
+{
+  "published_head": "a1e6ea240db5cbcf7e401b963a09f52a63a57378",
+  "runtime_source": "3bd5358706679b639e790585347133cd8d60b836",
+  "single": [
+    {
+      "arm": "lotus-adapted-native",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        4.566727047,
+        5.46606986,
+        7.06768783
+      ],
+      "ready_query_values_s": [
+        4.462566179,
+        5.376141496,
+        6.983531063
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 5.46606986,
+        "p95": 6.907526033,
+        "p99": 7.0356554706,
+        "max": 7.06768783,
+        "min": 4.566727047,
+        "mean": 5.7001615789999995,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 5.376141496,
+        "p95": 6.8227921063,
+        "p99": 6.95138327166,
+        "max": 6.983531063,
+        "min": 4.462566179,
+        "mean": 5.607412912666667,
+        "percentile": "linear interpolation; descriptive"
+      }
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        4.66309,
+        5.193836873,
+        7.421350405
+      ],
+      "ready_query_values_s": [
+        4.555217168,
+        5.110523605,
+        7.326724858
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 5.193836873,
+        "p95": 7.1985990518000005,
+        "p99": 7.37680013436,
+        "max": 7.421350405,
+        "min": 4.66309,
+        "mean": 5.759425759333333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 5.110523605,
+        "p95": 7.1051047327,
+        "p99": 7.2824008329400005,
+        "max": 7.326724858,
+        "min": 4.555217168,
+        "mean": 5.664155210333334,
+        "percentile": "linear interpolation; descriptive"
+      }
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        12.717538438,
+        10.404824458,
+        10.550424719
+      ],
+      "ready_query_values_s": [
+        12.621367667,
+        10.316527604,
+        10.467303603
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 10.550424719,
+        "p95": 12.5008270661,
+        "p99": 12.67419616362,
+        "max": 12.717538438,
+        "min": 10.404824458,
+        "mean": 11.224262538333335,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 10.467303603,
+        "p95": 12.4059612606,
+        "p99": 12.578286385719998,
+        "max": 12.621367667,
+        "min": 10.316527604,
+        "mean": 11.135066291333333,
+        "percentile": "linear interpolation; descriptive"
+      }
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        5.201354781,
+        5.463841384,
+        6.893978965
+      ],
+      "ready_query_values_s": [
+        5.104297373,
+        5.374437682,
+        6.810782506
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 5.463841384,
+        "p95": 6.750965206899999,
+        "p99": 6.865376213379999,
+        "max": 6.893978965,
+        "min": 5.201354781,
+        "mean": 5.853058376666667,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 5.374437682,
+        "p95": 6.667148023599999,
+        "p99": 6.7820556095199995,
+        "max": 6.810782506,
+        "min": 5.104297373,
+        "mean": 5.763172520333334,
+        "percentile": "linear interpolation; descriptive"
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        8.250274016,
+        8.469370324,
+        8.902401287
+      ],
+      "ready_query_values_s": [
+        8.165409231,
+        8.368056764,
+        8.805658051
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 8.469370324,
+        "p95": 8.8590981907,
+        "p99": 8.89374066774,
+        "max": 8.902401287,
+        "min": 8.250274016,
+        "mean": 8.540681875666666,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 8.368056764,
+        "p95": 8.7618979223,
+        "p99": 8.79690602526,
+        "max": 8.805658051,
+        "min": 8.165409231,
+        "mean": 8.446374682,
+        "percentile": "linear interpolation; descriptive"
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_n": 3,
+      "request_n": 360,
+      "full_query_values_s": [
+        8.37547409,
+        8.542002286,
+        9.58913684
+      ],
+      "ready_query_values_s": [
+        8.293338364,
+        8.4584127,
+        9.468468507
+      ],
+      "full_query_stats_s": {
+        "n": 3,
+        "p50": 8.542002286,
+        "p95": 9.4844233846,
+        "p99": 9.56819414892,
+        "max": 9.58913684,
+        "min": 8.37547409,
+        "mean": 8.835537738666668,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 3,
+        "p50": 8.4584127,
+        "p95": 9.3674629263,
+        "p99": 9.44826739086,
+        "max": 9.468468507,
+        "min": 8.293338364,
+        "mean": 8.740073190333334,
+        "percentile": "linear interpolation; descriptive"
+      }
+    }
+  ],
+  "dual_completed_original_slots": {
+    "round0": [
+      "J",
+      "I",
+      "S",
+      "R",
+      "D",
+      "N"
+    ],
+    "round1": [
+      "N",
+      "D",
+      "R",
+      "S",
+      "I"
+    ]
+  },
+  "dual_missing_original_slots": [
+    {
+      "round": 1,
+      "position": 5,
+      "arm": "J"
+    },
+    {
+      "round": 2,
+      "position": 0,
+      "arm": "D"
+    },
+    {
+      "round": 2,
+      "position": 1,
+      "arm": "N"
+    },
+    {
+      "round": 2,
+      "position": 2,
+      "arm": "J"
+    },
+    {
+      "round": 2,
+      "position": 3,
+      "arm": "I"
+    },
+    {
+      "round": 2,
+      "position": 4,
+      "arm": "S"
+    },
+    {
+      "round": 2,
+      "position": 5,
+      "arm": "R"
+    }
+  ],
+  "old_window": {
+    "logical_actual": 7680,
+    "logical_hard_limit": 9984,
+    "posts_actual": 23040,
+    "posts_hard_limit": 29952,
+    "elapsed_seconds": 2964.556618871,
+    "seconds_hard_limit": 5100,
+    "startup_seconds": 140.1079425867647,
+    "startup_hard_limit": 900,
+    "closed": true,
+    "reset": false
+  },
+  "new_window": {
+    "planned_logical": 1680,
+    "planned_posts": 5040,
+    "hard_logical": 2048,
+    "hard_posts": 6144,
+    "hard_seconds": 1800,
+    "warmup_queries": 7,
+    "measurement_queries": 7,
+    "new_independent_model_services": 2,
+    "no_existing_slots_repeated": true,
+    "no_additional_matched_controls_planned": true
+  }
+}

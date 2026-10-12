@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "previously_generated_path_line_replayed_error": "FileNotFoundError: old/model-supplement/result.json",
+  "fixed_old_path_and_seven_slots": {
+    "accepted": true,
+    "missing_slots": 7,
+    "change": null
+  },
+  "refusals": [
+    {
+      "error_type": "RuntimeError",
+      "error": "supplement slot list differs",
+      "change": "slot-already-completed"
+    },
+    {
+      "error_type": "RuntimeError",
+      "error": "independent missing-slot scope differs",
+      "change": "widened-budget"
+    }
+  ],
+  "model_calls": 0,
+  "transmission_posts": 0,
+  "gpu": 0
+}
