@@ -6,6 +6,7 @@
 五条LOTUS替换批次已共用固定SDK响应重放入口，原LOTUS保持；11项控制与2项入口检查通过。
 固定SDK差分及既有SDK清理共13项因本机缺依赖跳过，不将源码共用视为完整异常资格。
 IMLane执行错误与传输错误已区分，5项作者UDF包装/Arrow替身分类检查通过，实际作者资格pending。
+共享SDK客户端现按替换批次复用，减少不必要的逐响应重建；3项入口/关闭检查通过，实际SDK复用资格pending。
 
 2026-10-12：[SemBench Movie Q1/Q2/Q3准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
 六条LOTUS路径复用原查询／Filter和官方评价，固定2000行准备集的CSV、字段／标签、源码与版本已核对。

@@ -73,13 +73,13 @@ class LotusCleanupTests(unittest.TestCase):
                 state["errors"]["decode"] = error
                 raise
 
-        def convert(*args):
+        def convert(*args, **kwargs):
             try:
                 if phase == "sdk":
                     error = ValueError("fixture response conversion failed")
                     error.full_response = args[-1]
                     raise error
-                return parse_lotus_response(*args)
+                return parse_lotus_response(*args, **kwargs)
             except BaseException as error:
                 state["errors"]["sdk"] = error
                 raise

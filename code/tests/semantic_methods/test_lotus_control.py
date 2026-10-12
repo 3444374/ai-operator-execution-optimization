@@ -114,7 +114,7 @@ class LotusControlTests(unittest.TestCase):
 
     def test_shared_parser_receives_the_dispatched_prepared_values(self):
         parsed = []
-        def replay(lm, messages, kwargs, prepared, full):
+        def replay(lm, messages, kwargs, prepared, full, **options):
             self.assertEqual(json.loads(prepared.payload)['messages'], messages)
             parsed.append(prepared.payload)
             return SimpleNamespace()

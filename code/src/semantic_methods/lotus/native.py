@@ -6,14 +6,17 @@ import time
 
 from src.baselines.text.frameworks.native_calls import NativeCall, raise_execution_error
 from src.execution_provider.adapters.full_response import encode_full_response
-from .sdk import check_model_config, parse_lotus_response, prepare_call, validate_batch
+from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch
 
 
-def parse_native_response(lm, messages, all_kwargs, prepared, outcome):
+def parse_native_response(lm, messages, all_kwargs, prepared, outcome, *, replay=None):
     """Compatibility entry; every replacement batch uses the same SDK replay."""
     raise_execution_error(outcome)
+    if replay is None:
+        return parse_lotus_response(lm, messages, all_kwargs, prepared,
+                                    outcome.response, outcome.transport_error)
     return parse_lotus_response(lm, messages, all_kwargs, prepared,
-                                outcome.response, outcome.transport_error)
+                                outcome.response, outcome.transport_error, replay=replay)
 
 
 class LotusNativeBatchExecutor:
@@ -85,6 +88,7 @@ class LotusNativeBatchExecutor:
         result_bytes = 0
         iterator = None
         primary = None
+        replay = LotusResponseReplay()
         try:
             iterator = self.native.iter_batch(tuple(calls), cancelled=self.cancelled,
                                               timeout_s=deadline - time.monotonic())
@@ -108,7 +112,7 @@ class LotusNativeBatchExecutor:
                         full[index] = raw
                 try:
                     responses[index] = parse_native_response(lm, uncached_data[index][0], all_kwargs,
-                                                             prepared_calls[index], outcome)
+                                                             prepared_calls[index], outcome, replay=replay)
                 except OpenAIError as error:
                     # LM's original cache/stat/order/choice logic owns this error value.
                     responses[index] = error
@@ -133,3 +137,11 @@ class LotusNativeBatchExecutor:
                 seen = {id(error) for _, error in self.last_cleanup_errors}
                 self.last_cleanup_errors += tuple((stage, error) for stage, error in
                     getattr(self.native, "last_cleanup_errors", ()) if id(error) not in seen)
+                try:
+                    replay.close()
+                except BaseException as error:
+                    self.last_cleanup_errors += (("parser_close", error),)
+                    if primary is None and len(self.last_cleanup_errors) == 1:
+                        raise
+                    if primary is not None:
+                        primary.add_note("LOTUS SDK client close also failed: " + type(error).__name__)

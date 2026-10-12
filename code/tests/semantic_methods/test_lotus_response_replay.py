@@ -11,6 +11,18 @@ from src.semantic_methods.lotus import native, sdk
 
 
 class ReplayDispatchTests(unittest.TestCase):
+    def test_close_attempts_both_clients_and_preserves_first_close_error(self):
+        first, second = ValueError('SDK close fixture'), RuntimeError('HTTP close fixture')
+        replay = sdk.LotusResponseReplay()
+        replay._client = SimpleNamespace(close=lambda: (_ for _ in ()).throw(first))
+        replay._http = SimpleNamespace(close=lambda: (_ for _ in ()).throw(second))
+        with self.assertRaises(ValueError) as raised:
+            replay.close()
+        self.assertIs(raised.exception, first)
+        self.assertIn('RuntimeError', '\n'.join(first.__notes__))
+        self.assertIsNone(replay._client)
+        self.assertIsNone(replay._http)
+
     def test_native_compatibility_entry_preserves_shared_inputs(self):
         lm, messages, kwargs, prepared = object(), object(), object(), object()
         full = FullModelResponse(429, (), b'{}')
@@ -123,6 +135,32 @@ class PinnedSDKReplayTests(unittest.TestCase):
                 self.assertEqual(getattr(actual_error, "status_code", None), getattr(expected_error, "status_code", None))
                 self.assertIs(actual_error.full_response, full)
                 self.assertEqual(actual_error.native_transport_error, transport_error)
+
+    def test_one_batch_client_preserves_distinct_responses_after_sdk_error(self):
+        import httpx
+        args = self.inputs()
+        replay = sdk.LotusResponseReplay()
+        try:
+            failure = FullModelResponse(429, (), b'{"error":{"message":"fixture"}}')
+            _, error = self.outcome(lambda: sdk.parse_lotus_response(*args, failure, replay=replay))
+            self.assertIsNotNone(error)
+            first_client = replay._client
+            self.assertIsNone(replay._active)
+            for content in ("first", "duplicate", "tail", "duplicate"):
+                body = self.successful()
+                body['choices'][0]['message']['content'] = content
+                full = FullModelResponse(200, (), json.dumps(body).encode())
+                with patch.object(httpx.Client, 'send', side_effect=AssertionError('replay sent HTTP')):
+                    actual = sdk.parse_lotus_response(*args, full, replay=replay)
+                self.assertEqual(actual.choices[0].message.content, content)
+                self.assertIs(replay._client, first_client)
+                self.assertIsNone(replay._active)
+            http = replay._http
+        finally:
+            replay.close()
+        self.assertTrue(http.is_closed)
+        self.assertIsNone(replay._client)
+        self.assertIsNone(replay._active)
 
 
 if __name__ == "__main__":

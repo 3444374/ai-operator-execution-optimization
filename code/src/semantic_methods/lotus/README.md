@@ -1,5 +1,9 @@
 # LOTUS方法与SemLoom执行适配
 
+五条替换批次共用`sdk.LotusResponseReplay`，每批次惰性创建一个客户端并复用，
+在已有消费线程执行固定SDK解释，完整响应重放不产生实际HTTP。关闭失败保留第一异常及其他失败的类型注记。
+原LOTUS调用仍使用原执行入口；实际SDK/厂商验证进度见[修补记录](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
+
 本目录实现LOTUS单模型文本Map的成对执行入口，以及外部输入的两Map逐行继续执行。
 总体设计见[语义系统方案](../../../../experiments/plans/语义系统对照.md#native-semloom-pairs)，
 公共执行与完整响应见[执行适配说明](../../execution_provider/adapters/README.md)。

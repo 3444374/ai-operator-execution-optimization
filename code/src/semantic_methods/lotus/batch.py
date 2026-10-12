@@ -8,7 +8,7 @@ import math
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from ...scheduling.core.session_contract import State
 from ...execution_provider.adapters.full_response import decode_full_response
-from .sdk import check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
+from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
 
 
 class LotusBatchExecutor:
@@ -55,6 +55,7 @@ class LotusBatchExecutor:
         clean = False
         deadline = time.monotonic() + self.timeout_s
         primary = None
+        replay = LotusResponseReplay()
         def check_stop():
             if self.cancelled and self.cancelled():
                 if flow is not None:
@@ -125,7 +126,7 @@ class LotusBatchExecutor:
                             full[index] = raw_response
                         try:
                             responses[index] = parse_lotus_response(lm, uncached_data[index][0],
-                                all_kwargs, prepared_calls.pop(index), raw_response)
+                                all_kwargs, prepared_calls.pop(index), raw_response, replay=replay)
                         except OpenAIError as error:
                             responses[index] = error
                         completed += 1
@@ -161,6 +162,15 @@ class LotusBatchExecutor:
                 if primary is None:
                     raise
                 primary.add_note("LOTUS flow close also failed: " + type(error).__name__)
+            finally:
+                try:
+                    replay.close()
+                except BaseException as error:
+                    self.last_cleanup_errors += (("parser_close", error),)
+                    if primary is None and len(self.last_cleanup_errors) == 1:
+                        raise
+                    if primary is not None:
+                        primary.add_note("LOTUS SDK client close also failed: " + type(error).__name__)
 
 
 @contextmanager
