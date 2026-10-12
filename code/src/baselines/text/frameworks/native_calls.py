@@ -493,7 +493,10 @@ class NativeCallExecutor:
             raise ValueError("IMLane configuration requires the IMLane backend")
         self._imlane = None
         if backend == "imlane":
-            from .imlane_calls import IMLaneCallExecutor
+            from .imlane_calls import IMLaneCallConfig, IMLaneCallExecutor
+            if type(imlane_config) is not IMLaneCallConfig:
+                raise TypeError('explicit IMLaneCallConfig required')
+            max_batch_rows = min(max_batch_rows, imlane_config.max_batch_rows)
             self._imlane = IMLaneCallExecutor(imlane_config, options,
                 max_batch_rows=max_batch_rows, max_batch_bytes=max_batch_bytes)
             options = self._imlane.options

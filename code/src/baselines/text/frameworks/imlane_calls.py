@@ -38,8 +38,10 @@ class IMLaneCallConfig:
     coordinator_start_ticks: int
     author_build_identity: str
     n_executors: int = 2
+    max_batch_rows: int = 128
 
     def __post_init__(self):
+        IMLaneBatchLimits(max_batch_rows=self.max_batch_rows)
         if self.runtime not in ('cpython', 'ray'):
             raise ValueError('IMLane requires explicit author cpython or ray mode')
         if any(type(v) is not int or v < 1 for v in
@@ -85,10 +87,12 @@ class IMLaneCallExecutor:
     """Reuse the delivered Sema DBEnd bridge as a complete original-method executor."""
     backend = 'imlane'
 
-    def __init__(self, config, options=None, *, max_batch_rows=128, max_batch_bytes=32 * 1024**2,
+    def __init__(self, config, options=None, *, max_batch_rows=None, max_batch_bytes=32 * 1024**2,
                  max_pending_calls=128):
         if type(config) is not IMLaneCallConfig:
             raise TypeError('explicit IMLaneCallConfig required')
+        if max_batch_rows is None:
+            max_batch_rows = config.max_batch_rows
         if any(type(v) is not int or v < 1 for v in (max_batch_rows, max_batch_bytes)):
             raise ValueError('IMLane batch sizes must be positive integers')
         self.config = config
@@ -134,6 +138,7 @@ class IMLaneCallExecutor:
                       runtime=self.config.runtime, author_dispatch_started=False,
                       author_batches_drained=False, remote_http_stopped='unavailable',
                       external_coordinator_stopped=False, external_coordinator_requires_cleanup=False,
+                      bridge_started=False, author_submission_possible=False,
                       effective_max_batch_rows=self.max_batch_rows, effective_max_batch_bytes=self.max_batch_bytes,
                       snapshot=self.last_preflight)
         self.last_close_report = report
@@ -181,14 +186,16 @@ class IMLaneCallExecutor:
                 previous = self.delegate.last_close_report
                 if previous is not None:
                     report.update(previous)
-                    dispatched = previous.get('returncode') is not None
+                    dispatched = previous.get('bridge_started') is True
                     clean = previous.get('clean') is True
                     report.update(runtime=self.config.runtime, author_dispatch_started=dispatched,
+                        author_submission_possible=dispatched,
                         author_batches_drained=clean,
                         external_coordinator_stopped=False,
                         external_coordinator_requires_cleanup=dispatched and not clean,
                         author_lane_release=('DBEnd returned all batches and sends RestoreLane'
-                                             if clean else 'unconfirmed; caller owns cleanup'),
+                                             if clean else 'unconfirmed; caller owns cleanup'
+                                             if dispatched else 'no bridge process created; no author submission'),
                         native_settings_are_physical_executor_count=False,
                         author_query_job_id='empty in existing bridge; caller occurrence IDs retained',
                         resident_output_limit='existing bridge has no aggregate 32MiB resident-output check')

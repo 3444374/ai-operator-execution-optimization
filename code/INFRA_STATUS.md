@@ -6,7 +6,10 @@
 七文件原样cherry-pick到1e969356形成7bb10980，组合错误/取消/下一查询复验12POST通过。
 服务器4559、本机4、合计4563/5000软件POST；编译10.927/120秒，作者测试从首次启动计时783.993/900秒。
 本机13项及组合24项无失败/跳过，自有进程/共享内存归零、作者二进制未变；旧失败证据保留，模型/GPU0。
-MovieQuery独立128预检仍由发布者接续；真实模型、质量、性能、4096行及共享Coordinator查询隔离尚未验证。
+发布整合已贯通MovieQuery、CLI预检和公共执行器的调用配置：显式2000接受完整Q1，旧配置128行行为保留。
+底层记录桥是否创建；无退出码且停止未确认时写同Coordinator持久标记并拒绝新对象，四态合成回归通过。
+本次组合105项通过、14项缺LOTUS／OpenAI／LiteLLM依赖跳过，0失败／错误；新增服务器／POST／模型／GPU0。
+真实模型、质量、性能、4096行及共享Coordinator查询隔离尚未验证；来源见[发布接续](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)。
 
 2026-10-12：[原生消费关闭诊断修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
 提前关闭后保留线程附加错误，已有首错优先；5项本机图替身回归通过，HTTP／模型0。

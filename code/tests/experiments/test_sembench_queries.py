@@ -1,14 +1,17 @@
 """Data/identity/config rejection tests; no optional library or model runtime."""
 from dataclasses import replace
+from contextlib import ExitStack
+from io import StringIO
 import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.baselines.common.private_artifacts import content_digest
 from src.baselines.text.sembench_movie import verify_checkout, SEMBENCH_COMMIT
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+from src.baselines.text.frameworks.imlane_calls import IMLaneCallConfig
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.postgresql.sembench_queries import MovieDataset, MovieQuery, LOTUS_MOVIE_ARMS
@@ -27,6 +30,38 @@ def fixture_dataset(root, checkout):
 
 
 class MovieDataTests(unittest.TestCase):
+    def test_selected_imlane_capacity_accepts_one_2000_row_query_and_rejects_2001(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dataset = fixture_dataset(root/'data', root/'source')
+            rows = [dict(row_id='movie-row-'+str(i), movie_id='taken_3' if i<120 else 'other') for i in range(2001)]
+            for arm, mode in zip(LOTUS_MOVIE_ARMS[-2:], ('cpython','ray')):
+                selected = IMLaneCallConfig(mode, '/tmp/bridge.json', 1, 1, '/tmp/build.json', max_batch_rows=2000)
+                self.assertEqual(MovieQuery(dataset,1).check_executor_shape(arm,rows[:2000],imlane_config=selected),2000)
+                with self.assertRaisesRegex(ValueError,'one 2001-row uncached batch'):
+                    MovieQuery(dataset,1).check_executor_shape(arm,rows,imlane_config=selected)
+                self.assertEqual(MovieQuery(dataset,2).check_executor_shape(arm,rows,imlane_config=selected),120)
+                with self.assertRaisesRegex(ValueError,'matching ready-runtime'):
+                    MovieQuery(dataset,1).check_executor_shape(arm,rows[:2000],imlane_config=replace(selected,runtime='ray' if mode=='cpython' else 'cpython'))
+
+    def test_supplier_shape_check_receives_selected_config_before_budget_reservation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dataset = fixture_dataset(root/'data', root/'source')
+            selected = IMLaneCallConfig('cpython','/tmp/bridge.json',1,1,'/tmp/build.json',max_batch_rows=2000)
+            ledger = Mock()
+            cause = ValueError('synthetic stop before reservation')
+            with patch.object(MovieDataset,'preflight',return_value={}), \
+                 patch.object(MovieQuery,'check_executor_shape',side_effect=cause) as checking:
+                with self.assertRaises(ValueError) as observed:
+                    run_supplier_query(arm=LOTUS_MOVIE_ARMS[-2], plan=SemanticMapPlan('original', 'fixture', 8),
+                        model=FixedModelConfig('http://localhost/v1/chat/completions','fixture',1000),
+                        ledger=ledger,unit_id='fixture',root=root/'query',options=NativeGraphOptions(),
+                        imlane_call_configs={'cpython':selected},sembench_query=MovieQuery(dataset,1))
+            self.assertIs(observed.exception,cause)
+            self.assertIs(checking.call_args.kwargs['imlane_config'],selected)
+            ledger.reserve_unit.assert_not_called()
+
     def test_duplicate_public_review_ids_are_independent_occurrences_without_labels_in_query_rows(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -117,6 +152,57 @@ class MovieDataTests(unittest.TestCase):
 
 
 class MovieConfigTests(unittest.TestCase):
+    def test_cli_data_and_runtime_preflight_use_the_same_selected_capacity(self):
+        from dataclasses import asdict
+        from types import SimpleNamespace
+        from src.experiments.postgresql import sembench_query_cli as cli
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            dataset = fixture_dataset(root/'data',root/'source')
+            rows = [dict(row_id='movie-row-'+str(i),movie_id='other') for i in range(2000)]
+            selected = IMLaneCallConfig('cpython',str(root/'bridge.json'),1,1,str(root/'build.json'),max_batch_rows=2000)
+            config_path = root/'call.json'
+            config_path.write_text(json.dumps(asdict(selected)))
+            config = dict(dataset=dict(checkout_env='CHECKOUT',manifest_env='MANIFEST',csv_env='CSV',manifest_content_digest='0'*64),
+                arms=[LOTUS_MOVIE_ARMS[-2]],queries=[1],warmups=0,repeats=1,max_attempts=2000,
+                native_options={},model_config_env='MODEL',output_env='OUTPUT',imlane_config_envs={'cpython':'CALL'},
+                query_timeout_s=1,owner_timeout_s=240)
+            env = {name:str(root/name.lower()) for name in ('CHECKOUT','MANIFEST','CSV','MODEL','OUTPUT')}
+            env['CALL'] = str(config_path)
+            captured = []
+            class Executor:
+                def __init__(self, config, options):
+                    captured.append(config)
+                    self.max_batch_rows = config.max_batch_rows
+                    self.delegate = SimpleNamespace(config={'bridge_sha256':'b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6'})
+                def close(self):
+                    pass
+            with ExitStack() as stack:
+                stack.enter_context(patch.dict('os.environ',env,clear=True))
+                stack.enter_context(patch.object(cli,'MovieDataset',return_value=dataset))
+                stack.enter_context(patch.object(MovieDataset,'preflight',side_effect=lambda:{'versions':{}}))
+                stack.enter_context(patch.object(MovieDataset,'load_rows',return_value=rows))
+                model_loading=stack.enter_context(patch.object(cli,'load_fixed_model_config',return_value=FixedModelConfig('http://localhost/v1/chat/completions','fixture',1000)))
+                stack.enter_context(patch('src.baselines.text.frameworks.imlane_calls.IMLaneCallExecutor',Executor))
+                stack.enter_context(patch('src.baselines.text.frameworks.imlane_calls.verify_coordinator',return_value={}))
+                ready=cli.preflight(config)
+                self.assertEqual(captured[0].max_batch_rows,2000)
+                self.assertEqual(ready[-1]['author_runtimes'][config['arms'][0]]['effective_max_batch_rows'],2000)
+                output=StringIO()
+                with patch.object(cli,'load_config',return_value=config),patch('sys.stdout',output):
+                    cli.main(['--config','fixture.json','--data-preflight'])
+                shape=json.loads(output.getvalue())
+                self.assertTrue(shape['complete_matrix_ready'])
+                self.assertEqual(shape['input_shape_coverage'][0]['configured_max_batch_rows'],2000)
+                self.assertFalse(shape['execution_started'])
+                value=asdict(selected);value.pop('max_batch_rows')
+                config_path.write_text(json.dumps(value))
+                model_loading.reset_mock();captured.clear()
+                with self.assertRaisesRegex(ValueError,'at most 128 rows'):
+                    cli.preflight(config)
+                model_loading.assert_not_called()
+                self.assertEqual(captured,[])
+                self.assertFalse(Path(env['OUTPUT']).exists())
     def test_multiple_query_progress_files_are_distinct_and_final_matrix_is_written_once(self):
         from types import SimpleNamespace
         from src.experiments.postgresql.sembench_query_cli import run

@@ -5,7 +5,8 @@
 `sembench_queries.py`保存唯一原始准备集、独立行身份和原查询结果；`sembench_query_cli.py`只编排已有LOTUS执行路径。
 保留公开reviewId重复出现，模型输入不含标签，官方评价在完整消费后执行；COUNT与分类错误分别记录。
 源码、配置、16个正常软件单元和两项原数据明确拒绝见[准备报告](../../../../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
-2000行Q1的IMLane输入形状明确拒绝；此接口不改变PG查询、共享执行核心或IMLane容量。
+IMLane输入预检读取调用方配置的`max_batch_rows`；旧配置为128，已验证新桥的显式2000配置可接完整原Q1。
+数据预检记录所选容量，运行时预检与实际执行器使用同一配置；原方法、完整2000行、PG与共享核心保持。
 
 ## Database-source queries
 

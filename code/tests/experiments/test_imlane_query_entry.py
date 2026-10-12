@@ -1,4 +1,5 @@
 """Public method mode identity and unknown author-work propagation; no models."""
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
@@ -17,6 +18,38 @@ def configs():
 
 
 class IMLaneEntryTests(unittest.TestCase):
+    def test_selected_capacity_reaches_real_public_factory_and_legacy_remains_128(self):
+        from types import SimpleNamespace
+        from src.baselines.text.frameworks.imlane_calls import IMLaneCallExecutor
+        with tempfile.TemporaryDirectory() as temporary:
+            def delegate(*args, **kwargs):
+                return SimpleNamespace(config={'namespace':'fixture'}, work_root=Path(temporary), limits=kwargs['limits'])
+            with mock.patch('src.baselines.text.frameworks.imlane_calls.SemaIMLaneExecutor', side_effect=delegate):
+                for maximum in (128, 2000):
+                    selected = replace(configs()['cpython'], max_batch_rows=maximum)
+                    direct = IMLaneCallExecutor(selected)
+                    graph = NativeCallExecutor('imlane', imlane_config=selected)
+                    self.assertEqual(direct.max_batch_rows, maximum)
+                    self.assertEqual(graph.max_batch_rows, maximum)
+                    self.assertEqual(graph._imlane.delegate.limits.max_batch_rows, maximum)
+                    lower = NativeCallExecutor('imlane', imlane_config=selected, max_batch_rows=64)
+                    self.assertEqual(lower.max_batch_rows, 64)
+
+    def test_private_capacity_field_is_loaded_and_invalid_values_are_rejected(self):
+        from dataclasses import asdict
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary)/'config.json'
+            value = asdict(configs()['cpython'])
+            value.pop('max_batch_rows')
+            path.write_text(json.dumps(value))
+            self.assertEqual(load_imlane_call_configs({'cpython':path})['cpython'].max_batch_rows, 128)
+            value['max_batch_rows'] = 2000
+            path.write_text(json.dumps(value))
+            self.assertEqual(load_imlane_call_configs({'cpython':path})['cpython'].max_batch_rows, 2000)
+        for invalid in (0, True, '2000', 4097):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                replace(configs()['cpython'], max_batch_rows=invalid)
     def test_modes_are_explicit_for_all_three_methods(self):
         values = configs()
         for arm, runtime in IMLANE_METHOD_MODES.items():

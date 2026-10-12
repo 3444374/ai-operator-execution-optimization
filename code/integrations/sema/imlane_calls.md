@@ -9,7 +9,7 @@
 
 ## 调用与配置
 
-`IMLaneCallExecutor(config, options, *, max_batch_rows=128, max_batch_bytes=32*1024**2, max_pending_calls=128)`
+`IMLaneCallExecutor(config, options, *, max_batch_rows=None, max_batch_bytes=32*1024**2, max_pending_calls=128)`
 的`backend`为`imlane`。`IMLaneCallConfig`必须显式给出：
 
 | 字段 | 作用 |
@@ -19,6 +19,12 @@
 | `coordinator_pid`, `coordinator_start_ticks` | 调用方拥有的Linux Coordinator身份 |
 | `author_build_identity` | 已核验作者build-identity.json的绝对路径 |
 | `n_executors` | 实际启动Coordinator的声明数，默认2 |
+| `max_batch_rows` | 同一完整调用批次的显式行容量；省略时128，已验证新桥配置可选2000 |
+
+省略构造参数`max_batch_rows`时使用配置字段；公共`NativeCallExecutor`将自身上限与配置值取较小值。
+SemBench的MovieQuery、数据／运行时预检和实际LOTUS执行器读取同一配置，不按128行拆开原Q1。
+新配置须指向已验证桥二进制，摘要为`b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6`。
+Coordinator PID/start ticks、端口、namespace和产物目录由新的拥有者重新建立，不能复用已结束的证据配置。
 
 适配器在发送前核对PID/start ticks、实际二进制摘要、作者提交、运行模式、端口、
 实例名称和executor声明。它要求调用方先启动Coordinator，不启动模型或Ray服务。
@@ -51,7 +57,7 @@
 这减少已交付结果的留存，不保证待交付结果、Arrow/IPC复制和全部并发输出的聚合32MiB RSS。
 原Q1的2000份完整调用在两种作者模式各交付一次，payload及复原原endpoint后的wire摘要与既有测量一致；
 原LOTUS `sem_filter`消费所有响应后，原Q1返回5行。旧128行前置拒绝记录继续保留。
-独立MovieQuery预检仍写128行，发布者须结合新桥配置接续该入口；不能用旧二进制接收新参数。
+MovieQuery独立预检已贯通`IMLaneCallConfig.max_batch_rows`：显式2000配置允许完整Q1，旧配置仍保留128行拒绝；不能用旧二进制接收新参数。
 本次只支持软件调用容量与生命周期，真实模型、质量、性能和全部4096行能力尚未验证。
 
 原桥空stdin、线程参数0可读取实际META。2026-10-12的两个软件模式均返回
@@ -64,7 +70,10 @@ settings数量不表示物理executor数；未来配置仍须重新探测，不�
 [薄HTTP函数](imlane_complete_call.py)调用原HTTP函数后恢复作者原event loop，
 使后续作者异步Arrow函数仍能执行。HTTP失败保持transport error，容量、输入身份和作者UDF异常
 回送execution_error，由调用方恢复已知内置类别、保留未知类别的原诊断；
-任意UDF异常与全部原方法错误类型的逐项一致性仍待核对。薄函数不改prompt/parser，
+底层关闭报告另记录`bridge_started`和`author_submission_possible`。已创建的桥即使没有退出码，
+只要完成未确认，就保留同Coordinator的持久未确认标记并拒绝新对象；创建前失败不声称作者工作已开始。
+四态合成检查覆盖创建前失败、正常退出、非零退出和已创建但停止未确认，保留原始原因及清理注记；
+它是报告保护的回归，不是历史泄漏证据。任意UDF异常与全部原方法错误类型的逐项一致性仍待核对。薄函数不改prompt/parser，
 不重试，不生成虚假的HTTP成功状态。
 
 `last_close_report`记录`clean`、`graph_consumer_stopped`、`prepared`、`received`、

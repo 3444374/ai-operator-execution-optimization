@@ -4,7 +4,9 @@
 2cca502d的七文件原样接到1e969356形成7bb10980；两作者模式完整128/129/2000调用、持续供给、身份、慢消费、拒绝及错误取消/清理后下一查询通过，组合异常路径另核12POST。
 服务器4559＋本机4＝4563/5000软件POST，作者测试从首次启动计时783.993/900秒；自有进程/共享内存归零，作者库未重建，模型/GPU0。
 Q1完整payload与原wire摘要匹配，两个模式各一个2000行DBEnd批次；旧拒绝、监督记录缺失及两次脚本断言失败均保留。
-只支持该软件容量与生命周期；MovieQuery独立128预检由发布者接续，真实模型/质量/性能和共享Coordinator独立取消尚未验证。
+只支持该软件容量与生命周期；发布者已贯通MovieQuery与执行器的显式行配置，并补桥已创建但无退出码的同Coordinator未知责任保护。
+[发布接续](postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)记录105通过／14缺依赖跳过、四态合成回归及旧默认；新服务器／POST／模型／GPU0。
+真实模型/质量/性能和共享Coordinator独立取消尚未验证。
 
 2026-10-12：[原生消费关闭诊断修补](postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
 5项真实消费循环／图替身回归通过，HTTP与模型0；提前关闭附加异常可见，首错及未知远端状态保持。实际厂商库复验pending。

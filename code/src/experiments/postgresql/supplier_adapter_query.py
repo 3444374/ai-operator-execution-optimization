@@ -539,7 +539,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
         else:
             summary['sembench_preflight']=sembench_query.dataset.preflight()
             values=sembench_query.dataset.load_rows()
-            sembench_query.check_executor_shape(arm,values)
+            sembench_query.check_executor_shape(arm,values,
+                imlane_config=imlane_config_for_arm(arm,imlane_call_configs))
             sembench_result=MovieQueryResult(sembench_query,values,root)
             summary['source_identity']='selected original SemBench Movie finite relation; external source'
         summary['stages']['source_seconds']=(time.monotonic_ns()-source_started)/1e9

@@ -51,5 +51,6 @@ def imlane_runtime_identity(config):
     return dict(owner='IMLane author Coordinator', execution_backend='imlane',
         imlane_runtime=config.runtime, declared_author_executors=config.n_executors,
         runtime_lifecycle='caller owns Coordinator and any author Ray runtime',
-        call_graph='original DBEnd bridge; effective snapshot at most128 rows',
+        call_graph='original DBEnd bridge; explicit complete-call row capacity',
+        configured_max_batch_rows=config.max_batch_rows,
         remote_http_stopped='unavailable')

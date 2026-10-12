@@ -15,6 +15,7 @@ from src.baselines.text.sembench_movie import (
     run_original_lotus_query, verify_checkout,
 )
 from .query_inputs import QueryInputs
+from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm
 from .query_workloads import file_identity, load_manifest, movie_csv_examples, read_prepared
 
 
@@ -149,13 +150,18 @@ class MovieQuery:
     def model_rows(self, rows):
         return rows if self.query_id == 1 else [r for r in rows if r['movie_id'] == 'taken_3']
 
-    def check_executor_shape(self, arm, rows):
+    def check_executor_shape(self, arm, rows, *, imlane_config=None):
         if arm not in LOTUS_MOVIE_ARMS:
             raise ValueError('original Movie query requires an explicitly supported LOTUS executor')
         count = len(self.model_rows(rows))
-        if arm in ('lotus-method-native-imlane', 'lotus-method-native-imlane-ray') and count > 128:
-            raise ValueError(f'original Movie Q{self.query_id} needs one {count}-row uncached batch; '
-                             'current IMLane supports at most 128 rows; no chunking fallback')
+        if arm in IMLANE_METHOD_MODES:
+            maximum = 128
+            if imlane_config is not None:
+                selected = imlane_config_for_arm(arm, {imlane_config.runtime: imlane_config})
+                maximum = selected.max_batch_rows
+            if count > maximum:
+                raise ValueError(f'original Movie Q{self.query_id} needs one {count}-row uncached batch; '
+                                 f'selected IMLane call configuration accepts at most {maximum} rows; no chunking fallback')
         return count
 
 

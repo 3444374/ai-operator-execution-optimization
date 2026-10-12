@@ -50,9 +50,35 @@ CPython和作者Ray各只有一份2000行DBEnd输入，2000个独立出现身份
 机器事实见[imlane_capacity_verification.json](imlane_capacity_verification.json)，84成员脱敏观测见
 [imlane_capacity_observations.tar.gz](imlane_capacity_observations.tar.gz)，可用[离线复算](recompute_imlane_capacity.py)核对全部POST、
 4000个Q1身份、持续供给、失败来源与清理。原件和旧前置拒绝保持原保存位置。
-MovieQuery的独立128预检仍在`sembench_queries.py:156`，由发布者结合新桥配置接续；本任务不推送native或main。
+该独立交付当时仍有MovieQuery的128行预检；发布者随后贯通显式容量并补未知责任保护，见[发布接续](#imlane-publisher-integration)。
 未运行真实模型/GPU、质量或性能比较、DuckDB/Sema2000行、全部4096行与共享Coordinator查询隔离。
 完整Q1实库检查属于2cca502d；组合七文件相同，组合异常路径已核，不称完整Q1在组合源码重跑。
+
+<a id="imlane-publisher-integration"></a>
+## 扩容发布接续与未知责任保护
+
+发布者在1e969356后整合容量7bb10980和证据5820dc37，归档摘要及离线复算通过，旧失败与两项旧Q1前置拒绝保持。
+新`IMLaneCallConfig.max_batch_rows`省略时128；明确设置2000并选择已验证新桥时，MovieQuery、数据／运行时预检、
+公共工厂和实际IMLane执行器使用同一容量。Q1仍以原完整2000行交付，Q2/Q3仍由原taken_3选择，不改Filter、LIMIT、COUNT或原评价。
+2001行、错误模式、非法容量及旧128配置明确拒绝；预检在模型加载、预算分配及执行器创建之前检查行数。
+二进制、UDF、Coordinator和namespace继续按原机制核验；须建立新拥有的配置和进程身份，已结束的实验配置不能复用。
+
+配置文件在仓库外，保留已有runtime、bridge_config_path、coordinator_pid、coordinator_start_ticks、author_build_identity及n_executors，
+追加`"max_batch_rows": 2000`。桥配置必须指向已验证二进制及其SHA256 `b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6`；
+当前没有活跃作者配置，此处交付代码与配置接法，不声称已经重启服务或重新执行完整CLI矩阵。
+
+用户提供的源码合成反例指出：returncode为空可能是桥尚未创建，也可能是已创建但停止未确认。
+底层现在明确记录bridge_started／author_submission_possible，公共包装按启动事实保留未知责任，创建前失败不写作者未确认标记。
+正常退出、非零退出、已创建却没有退出码的四态回归，以及同Coordinator新对象拒绝／原始原因和清理注记均通过。
+附件只是合成反例，未据此认定历史服务器发生泄漏。
+
+本次本机119项中105通过、14因缺LOTUS／OpenAI／LiteLLM依赖跳过，0失败／错误；30项目标检查全部通过、0跳过。
+新服务器／POST／模型／GPU运行0，没有重复已合格大矩阵或使用已结束的900秒时间窗。
+C++和作者HTTP函数保持task-10的已验证摘要；新配置／保护的本机来源及命令见[发布核验](sembench_imlane_integration_verification.json)，
+输出见[本机回归](sembench_imlane_integration_tests.txt)。当前源码尚未在实际作者环境重新运行完整Q1，实际2000行资格保持2cca502d来源。
+
+性能接法独立推进：IMLane逐调用事件循环／session成本、LOTUS原生额外prepare_call观测、Daft／Ray真实池寿命仍需各自检查。
+Sema当前是已抵达快照上的执行服务，前快照消费结束后才交出下一份；这一等待须计入适配成本，不表示厂商完整持续执行能力。
 
 <a id="native-release-composition"></a>
 ## 发布组合与本机回归

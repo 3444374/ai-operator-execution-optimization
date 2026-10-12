@@ -6,7 +6,10 @@
 [唯一准备集及当前资格](../../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)登记CSV、清单摘要、重复reviewId、3×6覆盖及失败。
 `--data-preflight`核对固定源码、版本、CSV/字段/标签与摘要；`--preflight`再核对执行容量及就绪作者身份；均不调用模型。
 配置使用[显式模板](../../deploy/autodl/sembench_lotus_queries.example.json)与仓库外环境路径，缺条件直接失败。
-全六臂的原2000行Q1超出当前两种IMLane128行支持，整计划不能执行；不隐式切块。
+两种IMLane的仓库外调用配置新增可选`max_batch_rows: 2000`，须同时使用已验证的新桥及新拥有的Coordinator身份；
+省略时仍为128，原2000行Q1明确拒绝。MovieQuery预检和公共执行器使用同一容量，不隐式切块。
+`--data-preflight`可只读已提供的调用配置；未提供时报告旧128行范围，不连接Coordinator或模型。
+新桥摘要、字段和已有软件资格见[完整调用说明](../integrations/sema/imlane_calls.md#调用与配置)。
 `--execute`只用于另行授权且完整预检通过的具体清单，正常软件检查不提供性能资格。
 
 ## 原生语义系统单查询
@@ -56,7 +59,7 @@ Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-ser
 三种方法各有`*-native-imlane`及`*-native-imlane-ray`路径，具体名称见接口表；
 分别传`--imlane-cpython-config`和`--imlane-ray-config`，配置包含作者模式及就绪Coordinator的PID/start ticks。
 IMLane作者Ray单列，公共入口直接复用原DBEnd桥。默认options并发4无法覆盖本次探得的6个任务线程，
-本次使用显式并发8；有效批次128行／32MiB，SQL向量或LOTUS批次超额报错，不自动切分。
+历史接线使用显式并发8与128行／32MiB；新调用配置另声明行容量，原生并发与线程选择保持，超额报错、不自动切分。
 DuckDB的IMLane名称选择要求`0.4.14-native3`；配置与结束责任见[完整调用说明](../integrations/sema/imlane_calls.md)。
 预算须已创建；配置与输出均在仓库外，输出目录须尚不存在：
 

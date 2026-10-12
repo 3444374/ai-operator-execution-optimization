@@ -9,7 +9,8 @@
 LOTUS原生、Daft、Ray Data和SemLoom各Q1/Q2/Q3正常；两种IMLane各Q2/Q3正常。
 IMLane原始2000行Q1在当时完整调用适配器发送前拒绝，预算分配及模型POST均0；只确认当时适配器
 有效128行，没有把此值归因于作者底层kernel。全部实际模型／GPU／PG运行仍为0。
-后续[完整2000行调用桥软件检查](../../postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)在两作者模式通过；本切片旧拒绝记录保留，MovieQuery独立128预检仍待发布者接续。
+后续[完整2000行调用桥软件检查](../../postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)在两作者模式通过；本切片旧拒绝记录保留。
+[发布接续](../../postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)已贯通MovieQuery和执行器的显式行配置，并补桥停止未确认的跨对象保护；旧配置仍使用128行。
 
 ## 来源与实现
 
@@ -72,7 +73,7 @@ LOTUS 原方法始终拥有提示、格式化、最终解析和关系行为。�
 软件小fixture资格与上述原数据资格分开：前四臂的Q1/Q2/Q3为pass；IMLane的Q2/Q3为pass，
 原始Q1的两项明确拒绝为unsupported；这个18单元软件清单没有notrun项。
 
-完整六臂示例的 `--preflight` 应因 Q1 的两个 IMLane 单元失败，不能悄悄切块。
+该历史轮完整六臂示例的 `--preflight` 因 Q1 的两个 IMLane 单元失败，不能悄悄切块。
 原方法整批供给保持；本切片没有扩大 IMLane 的 128 行／32MiB 输入支持，也不声称 C++ 输出
 驻留受到聚合 32MiB 保证。原生完整响应 8MiB、SemLoom 1MiB、两类最终批次留存 16MiB，以及
 响应解释、期限起点、连接复用和提前关闭诊断的差异，仍是公平比较前置项。
@@ -142,7 +143,7 @@ Daft及Ray Data各自三条查询共用owner。不能把这些记录称为原生
 PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/experiments/run_sembench_lotus_queries.py \
   --config deploy/autodl/sembench_lotus_queries.example.json --data-preflight
 
-# 全六臂 Q1/Q2/Q3 在当前 IMLane 容量下应明确失败，模型请求0。
+# 使用旧128行调用配置时，完整Q1明确拒绝；新桥显式2000配置见后续发布接续。
 PYTHONPATH=code "$DRIVER_PYTHON" code/scripts/experiments/run_sembench_lotus_queries.py \
   --config deploy/autodl/sembench_lotus_queries.example.json --preflight
 

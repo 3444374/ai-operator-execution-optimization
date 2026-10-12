@@ -162,6 +162,7 @@ class SemaIMLaneExecutor:
             self.start()
         if not calls:
             self.last_close_report = dict(graph_consumer_stopped=True, clean=True,
+                                         bridge_started=False, bridge_stopped=True,
                                          prepared=0, received=0, remote_http_stopped='unavailable')
             return
         expected = {call.call_id: call for call in calls}
@@ -292,6 +293,7 @@ class SemaIMLaneExecutor:
                     if self._process is process and stopped:
                         self._process = None
                 self.last_close_report = dict(graph_consumer_stopped=stopped, bridge_stopped=stopped,
+                    bridge_started=process is not None, author_submission_possible=process is not None,
                     clean=clean, forced=forced, prepared=len(calls), received=len(received),
                     returncode=None if process is None else process.returncode,
                     remote_http_stopped='unavailable', coordinator_owner='caller',

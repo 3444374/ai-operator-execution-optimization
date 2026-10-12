@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-12：发布IMLane扩容并贯通SemBench容量配置
+
+- 整合7bb10980／5820dc37，归档与离线复算确认两作者模式原Q1完整2000行及累计4563/5000软件POST，旧失败与旧前置拒绝保留，不重复大矩阵。
+- MovieQuery、CLI数据／运行时预检和公共执行器共用调用配置max_batch_rows；省略128、明确2000时接完整Q1，原方法和并发选择保持。
+- 修复合成反例指出的未知责任判断：桥已创建且停止未确认时写同Coordinator持久标记并拒绝新对象，创建前失败不伪造工作，首因及清理注记保持。
+- [发布接续](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)记录本机105通过／14缺依赖跳过，30目标检查无跳过；新增服务器／POST／模型／GPU0。性能观测和客户端寿命由独立任务继续。
+
 ## 2026-10-12：完成IMLane原Q1完整2000行软件调用桥
 
 - 核对备份摘要01be5a56…及七文件，在独立副本保留旧暂存区；原样提交2cca502d，再只cherry-pick到1e969356形成7bb10980。

@@ -15,7 +15,7 @@ from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
-from .imlane_query import imlane_config_for_arm, load_imlane_call_configs
+from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 from .persistent_native_adapter_query import PersistentAdapterGroup
 from .sembench_queries import LOTUS_MOVIE_ARMS, MovieDataset, MovieQuery, MOVIE_MANIFEST_DIGEST
 
@@ -69,15 +69,31 @@ def arm_options(config, arm):
     return NativeGraphOptions(**values)
 
 
+def _imlane_configs(config, *, allow_missing=False):
+    configured = config.get('imlane_config_envs', {})
+    if type(configured) is not dict or set(configured)-{'cpython', 'ray'}:
+        raise ValueError('IMLane configuration must name its two caller-owned modes')
+    paths = {}
+    for mode, name in configured.items():
+        if type(name) is not str or not name:
+            raise ValueError('a required SemBench path environment variable is missing')
+        if allow_missing and not os.environ.get(name):
+            continue
+        paths[mode] = _env_path(name)
+    return load_imlane_call_configs(paths)
+
+
 def preflight(config):
     data = config['dataset']
     dataset = MovieDataset(_env_path(data['checkout_env']), _env_path(data['manifest_env']),
                            _env_path(data['csv_env']), data['manifest_content_digest'])
     evidence = dataset.preflight()
     rows = dataset.load_rows()
+    imlane = _imlane_configs(config)
     for arm in config['arms']:
+        selected = imlane_config_for_arm(arm, imlane)
         for q in config['queries']:
-            MovieQuery(dataset, q).check_executor_shape(arm, rows)
+            MovieQuery(dataset, q).check_executor_shape(arm, rows, imlane_config=selected)
     options = NativeGraphOptions(**config['native_options'])
     per_arm = {arm: arm_options(config, arm) for arm in config['arms']}
     model = load_fixed_model_config(_env_path(config['model_config_env']))
@@ -110,10 +126,6 @@ def preflight(config):
         if actual != expected_version:
             raise ValueError('native executor library differs from its selected version')
         versions[name] = actual
-    configured = config.get('imlane_config_envs', {})
-    if type(configured) is not dict or set(configured)-{'cpython', 'ray'}:
-        raise ValueError('IMLane configuration must name its two caller-owned modes')
-    imlane = load_imlane_call_configs({mode: _env_path(name) for mode, name in configured.items()})
     author = {}
     for arm in config['arms']:
         call_config = imlane_config_for_arm(arm, imlane)
@@ -122,6 +134,9 @@ def preflight(config):
             executor = IMLaneCallExecutor(call_config, per_arm[arm])
             try:
                 author[arm] = verify_coordinator(call_config, executor.delegate.config)
+                author[arm].update(configured_max_batch_rows=call_config.max_batch_rows,
+                                  effective_max_batch_rows=executor.max_batch_rows,
+                                  bridge_sha256=executor.delegate.config['bridge_sha256'])
             finally:
                 executor.close()
     output = _env_path(config['output_env'])
@@ -193,12 +208,17 @@ def main(argv=None):
                                _env_path(data['csv_env']), data['manifest_content_digest'])
         value = dataset.preflight()
         rows, coverage = dataset.load_rows(), []
+        imlane = _imlane_configs(config, allow_missing=True)
         for arm in config['arms']:
+            selected = imlane.get(IMLANE_METHOD_MODES.get(arm))
             for q in config['queries']:
                 cell = dict(arm=arm, query_id=q, model_rows=len(MovieQuery(dataset, q).model_rows(rows)))
+                if arm in IMLANE_METHOD_MODES:
+                    cell.update(configured_max_batch_rows=128 if selected is None else selected.max_batch_rows,
+                                capacity_source='legacy default' if selected is None else 'caller-owned configuration')
                 try:
-                    MovieQuery(dataset, q).check_executor_shape(arm, rows)
-                    cell['input_shape'] = 'within current row allowance; bytes and runtime need full preflight'
+                    MovieQuery(dataset, q).check_executor_shape(arm, rows, imlane_config=selected)
+                    cell['input_shape'] = 'within selected row allowance; bytes and runtime need full preflight'
                 except ValueError as error:
                     cell.update(input_shape='blocked', reason=str(error))
                 coverage.append(cell)
