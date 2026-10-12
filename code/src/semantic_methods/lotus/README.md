@@ -116,6 +116,13 @@ SDK传输异常的详细子类、逐字消息和所有超时阶段尚未逐项�
 `last_close_report.remote_http_stopped`明确为`unavailable`，实际替身活动归零由独立服务记录验证。
 完整批次输入与返回均有编码字节额度，不将这些额度解释为RSS。
 
+`NativeCallExecutor("ray", ...)`增加独立Ray Core执行参照，沿用相同LOTUS批次与SDK解析。
+它直接使用Ray2.56.1原生async actor、固定输入分片及`ray.wait`，每个actor保留一个HTTP调用名额，
+数量取`NativeGraphOptions.concurrency`，不得超过配置或实际Ray逻辑CPU数量。
+Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，与官方Ray Data图分别登记。
+停止或consumer关闭仅对本图actor发出`ray.kill(no_restart=True)`；
+`last_close_report`保存创建及终止请求数量，检查独立确认actor状态为DEAD、CPU归还及HTTP活动归零。
+
 两Map使用`LotusMapStage("Summarize {text}.", "summary")`，随后
 `LotusMapStage("Classify {summary}.", "label")`。
 `staged_two_map(frame, lm, stages)`保持每个原生Map整阶段等待；同一batch选择器也可为它提供SemLoom执行。

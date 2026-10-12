@@ -32,7 +32,8 @@ def parse_native_response(lm, messages, all_kwargs, prepared, outcome):
         if len(sent) != 1:
             raise ValueError("LOTUS SDK parser attempted to retry its response")
         if outcome.transport_error:
-            if "Timeout" in outcome.transport_error:
+            error_type = outcome.transport_error.partition(":")[0]
+            if error_type in ("TimeoutError", "ConnectionTimeoutError", "SocketTimeoutError", "ServerTimeoutError"):
                 raise httpx.ReadTimeout(outcome.transport_error, request=request)
             raise httpx.ConnectError(outcome.transport_error, request=request)
         full = outcome.response

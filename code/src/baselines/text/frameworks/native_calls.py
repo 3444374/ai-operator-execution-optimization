@@ -204,6 +204,14 @@ class _GraphControl:
         self._sessions = {}
         self.result = None
         self._stopped_executor = None
+        self._actors = []
+        self._killed_actors = set()
+
+    def register_actor(self, actor):
+        with self._lock:
+            self._actors.append(actor)
+        if self.stopped.is_set():
+            self.stop()
 
     def register_session(self, session):
         with self._lock:
@@ -225,6 +233,18 @@ class _GraphControl:
         if executor is not None and executor is not self._stopped_executor:
             self._stopped_executor = executor
             executor.shutdown(force=True)
+        with self._lock:
+            actors = tuple(actor for actor in self._actors if id(actor) not in self._killed_actors)
+            self._killed_actors.update(id(actor) for actor in actors)
+        if actors:
+            import ray
+            for actor in actors:
+                ray.kill(actor, no_restart=True)
+
+
+def _ray_core_rows(calls, options, control):
+    from ..controls.ray_core_calls import rows
+    yield from rows(calls, options, control)
 
 
 def _daft_rows(calls, options, control):
@@ -303,10 +323,10 @@ def _ray_rows(calls, options, control):
 
 
 class NativeCallExecutor:
-    """Finite original-method batches, with independently owned vendor graphs."""
+    """Finite original-method batches on vendor graphs or a Ray Core reference."""
     def __init__(self, backend, options=None, *, max_batch_rows=4096, max_batch_bytes=32 * 1024 * 1024):
-        if backend not in ("daft", "ray-data"):
-            raise ValueError("native complete-call backend must be daft or ray-data")
+        if backend not in ("daft", "ray-data", "ray"):
+            raise ValueError("complete-call backend must be daft, ray-data or ray")
         if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_bytes)):
             raise ValueError("native complete-call batch limits must be positive integers")
         self.backend, self.options = backend, options or NativeGraphOptions()
@@ -337,7 +357,8 @@ class NativeCallExecutor:
         def consume():
             iterator = None
             try:
-                iterator = (_daft_rows if self.backend == "daft" else _ray_rows)(calls, self.options, control)
+                iterator = {"daft": _daft_rows, "ray-data": _ray_rows, "ray": _ray_core_rows}[self.backend](
+                    calls, self.options, control)
                 for outcome in iterator:
                     while not control.stopped.is_set():
                         try:
@@ -413,7 +434,9 @@ class NativeCallExecutor:
                             cleanup = error
             self.last_close_report = dict(graph_consumer_stopped=not thread.is_alive(),
                 clean=clean, received=len(received), prepared=len(calls),
-                remote_http_stopped="unavailable")
+                remote_http_stopped="unavailable", owned_ray_actors=len(control._actors),
+                ray_actor_shutdown_requested=len(control._killed_actors),
+                owned_ray_actor_ids=[actor._actor_id.hex() for actor in control._actors])
             if thread.is_alive() and cleanup is None:
                 cleanup = RuntimeError("native graph consumer did not stop; remote completion is uncertain")
             if cleanup is not None:

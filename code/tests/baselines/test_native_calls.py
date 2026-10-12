@@ -29,7 +29,8 @@ def record_fixture(name, values):
         root = Path(output)
         root.mkdir(parents=True, exist_ok=True)
         with (root / f"{next(_FIXTURE_SEQUENCE):04}-{name}.json").open("x") as stream:
-            json.dump(redact_json_values(dict(schema=1, real_model_requests=0, **values)), stream, indent=2)
+            json.dump(redact_json_values(dict(schema=1, test_id=os.environ.get("SEMLOOM_NATIVE_CALL_CASE"),
+                real_model_requests=0, **values)), stream, indent=2)
 
 
 @contextmanager
@@ -96,6 +97,9 @@ def call(endpoint, index=0, *, timeout=5, maximum=8192):
 
 
 class NativeHttpTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        os.environ["SEMLOOM_NATIVE_CALL_CASE"] = self.id()
+
     async def test_exact_body_duplicate_headers_and_compressed_http_error_remain_values(self):
         with complete_server(429, compressed=True) as (endpoint, calls, raw):
             outcome = await _request(call(endpoint))
@@ -142,6 +146,10 @@ def prepare_native_test_runtime():
 
 @unittest.skipUnless(ENABLED, "actual pinned native graph validation is explicitly opt-in")
 class NativeGraphTests(unittest.TestCase):
+    BACKENDS = ("daft", "ray-data")
+
+    def setUp(self):
+        os.environ["SEMLOOM_NATIVE_CALL_CASE"] = self.id()
     @classmethod
     def setUpClass(cls):
         import ray
@@ -161,7 +169,7 @@ class NativeGraphTests(unittest.TestCase):
         ray.shutdown()
 
     def test_native_graphs_preserve_duplicate_occurrences_and_full_http_errors(self):
-        for backend in ("daft", "ray-data"):
+        for backend in self.BACKENDS:
             with self.subTest(backend=backend), complete_server(429, compressed=True) as (endpoint, calls, raw):
                 executor = NativeCallExecutor(backend, self.options)
                 outcomes = tuple(executor.iter_batch(tuple(call(endpoint, i) for i in range(7))))
@@ -174,7 +182,7 @@ class NativeGraphTests(unittest.TestCase):
                 self.assertEqual(_DAFT_CONTROLS, {})
 
     def test_provider_errors_are_values_but_byte_limit_failure_stops_the_graph(self):
-        for backend in ("daft", "ray-data"):
+        for backend in self.BACKENDS:
             with self.subTest(backend=backend), complete_server(body=b"long-body") as (endpoint, calls, raw):
                 executor = NativeCallExecutor(backend, self.options)
                 with self.assertRaises(Exception):
@@ -183,7 +191,7 @@ class NativeGraphTests(unittest.TestCase):
                 self.assertEqual(_DAFT_CONTROLS, {})
 
     def test_first_consumer_stop_closes_its_graph_and_waits_for_fixture_activity(self):
-        for backend in ("daft", "ray-data"):
+        for backend in self.BACKENDS:
             with self.subTest(backend=backend), complete_server(delay=0.1) as (endpoint, calls, raw):
                 executor = NativeCallExecutor(backend, self.options)
                 iterator = executor.iter_batch(tuple(call(endpoint, i) for i in range(24)))
@@ -204,7 +212,7 @@ class NativeGraphTests(unittest.TestCase):
                 self.assertEqual(_DAFT_CONTROLS, {})
 
     def test_cancellation_and_timeout_interrupt_blocked_native_iteration(self):
-        for backend in ("daft", "ray-data"):
+        for backend in self.BACKENDS:
             for stop in ("cancel", "timeout"):
                 with self.subTest(backend=backend, stop=stop), complete_server(delay=1) as (endpoint, calls, raw):
                     executor = NativeCallExecutor(backend, self.options)
@@ -217,6 +225,40 @@ class NativeGraphTests(unittest.TestCase):
                         time.sleep(0.01)
                     self.assertEqual(calls.active, 0)
                     self.assertTrue(executor.last_close_report["graph_consumer_stopped"])
+
+
+@unittest.skipUnless(ENABLED, "actual pinned Ray Core reference validation is explicitly opt-in")
+class RayCoreReferenceTests(NativeGraphTests):
+    BACKENDS = ("ray",)
+
+    def test_actor_cpu_allowance_and_termination_belong_to_this_reference(self):
+        import ray
+        with complete_server(delay=0.01) as (endpoint, calls, raw):
+            too_many = NativeGraphOptions(concurrency=9, num_threads=8)
+            executor = NativeCallExecutor("ray", too_many)
+            with self.assertRaisesRegex(ValueError, "logical CPU"):
+                tuple(executor.iter_batch((call(endpoint),)))
+            self.assertEqual(calls, [])
+            self.assertEqual(executor.last_close_report["owned_ray_actors"], 0)
+            executor = NativeCallExecutor("ray", self.options)
+            outcomes = tuple(executor.iter_batch(tuple(call(endpoint, i) for i in range(7))))
+            self.assertEqual(len(outcomes), 7)
+            report = executor.last_close_report
+            self.assertEqual(report["owned_ray_actors"], self.options.concurrency)
+            self.assertEqual(report["ray_actor_shutdown_requested"], self.options.concurrency)
+            deadline = time.monotonic() + 6
+            states = {}
+            while time.monotonic() < deadline:
+                all_actors = ray._private.state.actors()
+                states = {key: all_actors.get(key, {}).get("State") for key in report["owned_ray_actor_ids"]}
+                if (all(value == "DEAD" for value in states.values())
+                        and ray.available_resources().get("CPU", 0) == ray.cluster_resources()["CPU"]):
+                    break
+                time.sleep(0.02)
+            self.assertTrue(all(value == "DEAD" for value in states.values()), states)
+            self.assertEqual(ray.available_resources().get("CPU", 0), ray.cluster_resources()["CPU"])
+            record_fixture("ray-core-lifecycle", dict(report=report, actor_states=states,
+                available_cpus=ray.available_resources().get("CPU", 0), actual_posts=len(calls), peak_active=calls.peak))
 
 
 if __name__ == "__main__":

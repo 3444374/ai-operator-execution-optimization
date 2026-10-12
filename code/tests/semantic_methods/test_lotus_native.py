@@ -31,7 +31,8 @@ def fixture_server(*args, **kwargs):
             yield result
         finally:
             base, calls = result
-            record_fixture("lotus-http", dict(actual_posts=len(calls), requests=list(calls),
+            record_fixture("lotus-http", dict(actual_posts=sum(name == "start" for name, at, body in calls.events),
+                requests=[body for name, at, body in calls.events if name == "start"],
                 events=[dict(event=name, monotonic_ns=at, body=body) for name, at, body in calls.events]))
 
 
@@ -87,6 +88,9 @@ ENABLED = os.environ.get("SEMLOOM_NATIVE_CALL_TEST") == "1" and all(
 @unittest.skipUnless(ENABLED, "actual pinned LOTUS/native graph validation is explicitly opt-in")
 class LotusNativeTests(unittest.TestCase):
     BACKENDS = ("daft", "ray-data")
+
+    def setUp(self):
+        os.environ["SEMLOOM_NATIVE_CALL_CASE"] = self.id()
     @classmethod
     def setUpClass(cls):
         import ray
@@ -220,16 +224,17 @@ class LotusNativeTests(unittest.TestCase):
                 expected = staged_two_map(frame, original_lm, STAGES)
                 original_bodies = list(calls)
                 calls.clear()
-                calls.events.clear()
+                original_event_count = len(calls.events)
                 lm = model(base)
                 selected = self.executor(backend, base)
                 with lotus_executor(lm, selected):
                     result = staged_two_map(frame, lm, STAGES)
                 self.assertEqual(result.to_dict("records"), expected.to_dict("records"))
                 self.assertCountEqual(calls, original_bodies)
-                first_ends = [at for name, at, body in calls.events
+                selected_events = calls.events[original_event_count:]
+                first_ends = [at for name, at, body in selected_events
                               if name == "end" and "Classify" not in body["messages"][-1]["content"]]
-                second_starts = [at for name, at, body in calls.events
+                second_starts = [at for name, at, body in selected_events
                                  if name == "start" and "Classify" in body["messages"][-1]["content"]]
                 self.assertEqual((len(first_ends), len(second_starts)), (3, 3))
                 self.assertGreater(min(second_starts), max(first_ends))
@@ -291,6 +296,11 @@ class LotusNativeTests(unittest.TestCase):
                 with self.assertRaises(InterruptedError), lotus_executor(lm, selected):
                     lm([[dict(role="user", content="first")]], show_progress_bar=False)
             self.assertEqual(calls, [])
+
+
+@unittest.skipUnless(ENABLED, "actual pinned LOTUS/Ray Core reference validation is explicitly opt-in")
+class LotusRayCoreTests(LotusNativeTests):
+    BACKENDS = ("ray",)
 
 
 if __name__ == "__main__":
