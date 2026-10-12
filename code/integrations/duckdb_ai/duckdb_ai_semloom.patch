@@ -7,19 +7,20 @@ index caca3f0..7ada13d 100644
 +    src/duckdb_ai_provider.cpp
 +    src/semloom_batch.cpp)
 diff --git a/src/duckdb_ai_extension.cpp b/src/duckdb_ai_extension.cpp
-index 23773f0..3427fd2 100644
+index 23773f0..51f9842 100644
 --- a/src/duckdb_ai_extension.cpp
 +++ b/src/duckdb_ai_extension.cpp
 @@ -4,0 +5 @@
 +#include "semloom_batch.hpp"
-@@ -2039,0 +2041,48 @@ bool ValidateJsonCompletionOutput(const std::string &output, const std::string &
-+// SemLoom modification: choose the whole vector batch before ProviderExecutorState.
-+bool TryRunSemLoomCompletionJobs(std::vector<ProviderStringJob> &jobs, ClientContext &context) {
+@@ -2039,0 +2041,49 @@ bool ValidateJsonCompletionOutput(const std::string &output, const std::string &
++// External executor selection occurs before the native ProviderExecutorState.
++bool TryRunExternalCompletionJobs(std::vector<ProviderStringJob> &jobs, ClientContext &context) {
 +    Value executor;
 +    if (!context.TryGetCurrentSetting("duckdb_ai_executor", executor) || executor.IsNull() ||
 +        StringValue::Get(executor) == "native") { return false; }
-+    if (StringValue::Get(executor) != "semloom") {
-+        throw InvalidInputException("duckdb_ai_executor must be native or semloom");
++    const auto selected_executor = StringValue::Get(executor);
++    if (selected_executor != "semloom" && selected_executor != "daft" && selected_executor != "ray-data") {
++        throw InvalidInputException("duckdb_ai_executor must be native, semloom, daft or ray-data");
 +    }
 +    std::vector<duckdb_ai::PreparedCompletion> prepared;
 +    std::vector<uint64_t> rows;
@@ -57,22 +58,22 @@ index 23773f0..3427fd2 100644
 +            return job.fail_on_error;
 +        }
 +        return false;
-+    });
++    }, selected_executor);
 +    return true;
 +}
 +
-@@ -2086,0 +2136 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
-+	if (!TryRunSemLoomCompletionJobs(jobs, state.GetContext())) {
-@@ -2096,0 +2147,2 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
+@@ -2086,0 +2137 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
++	if (!TryRunExternalCompletionJobs(jobs, state.GetContext())) {
+@@ -2096,0 +2148,2 @@ void AiCompletionFunction(DataChunk &args, ExpressionState &state, Vector &resul
 +    }
 +
-@@ -2185,0 +2238 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
-+	if (!TryRunSemLoomCompletionJobs(jobs, state.GetContext())) {
-@@ -2187,0 +2241,2 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
+@@ -2185,0 +2239 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
++	if (!TryRunExternalCompletionJobs(jobs, state.GetContext())) {
+@@ -2187,0 +2242,2 @@ void AiTryCompleteFunction(DataChunk &args, ExpressionState &state, Vector &resu
 +    }
 +
-@@ -7835,0 +7891,2 @@ void RegisterSettings(ExtensionLoader &loader) {
-+    AddSetting(config, "duckdb_ai_executor", "Text Map executor: native or semloom", LogicalType::VARCHAR,
+@@ -7835,0 +7892,2 @@ void RegisterSettings(ExtensionLoader &loader) {
++    AddSetting(config, "duckdb_ai_executor", "Text Map executor: native, semloom, daft or ray-data", LogicalType::VARCHAR,
 +               Value("native"));
 diff --git a/src/duckdb_ai_provider.cpp b/src/duckdb_ai_provider.cpp
 index 0ba6e4c..fc3b627 100644

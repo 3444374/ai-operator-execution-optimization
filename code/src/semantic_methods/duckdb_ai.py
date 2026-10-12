@@ -116,9 +116,12 @@ class DuckDBSemLoomBridge:
     """
     def __init__(self, extension: str | Path,
                  execute: Callable[[tuple[DuckDBCall, ...], Callable[[], bool]], Iterable[DuckDBResponse]],
-                 *, collect_timings=False):
+                 *, collect_timings=False, executor='semloom'):
+        if executor not in ('semloom', 'daft', 'ray-data'):
+            raise ValueError('DuckDB batch executor must be semloom, daft or ray-data')
         self.path = str(Path(extension).resolve())
         self.execute = execute
+        self.executor_name = executor
         self.collect_timings = collect_timings
         self.last_timings = None
         self.last_error: str | None = None
@@ -131,15 +134,22 @@ class DuckDBSemLoomBridge:
         self.library.duckdb_ai_semloom_abi_v1.restype = ct.c_int
         if self.library.duckdb_ai_semloom_abi_v1() != 1:
             raise RuntimeError('unsupported DuckDB SemLoom batch ABI')
-        self.library.duckdb_ai_semloom_register_v1.argtypes = [_Batch, _Release]
-        self.library.duckdb_ai_semloom_register_v1.restype = ct.c_int
+        if executor == 'semloom':
+            register = self.library.duckdb_ai_semloom_register_v1
+            register.argtypes = [_Batch, _Release]
+        else:
+            register = self.library.duckdb_ai_batch_register_v1
+            register.argtypes = [_Batch, _Release, ct.c_char_p]
+        register.restype = ct.c_int
         self.library.duckdb_ai_semloom_unregister_v1.argtypes = [_Batch]
         self.library.duckdb_ai_semloom_unregister_v1.restype = ct.c_int
         self._callback = _Batch(self._dispatch)
         self._release_callback = _Release(self._release)
         with _registry_lock:
-            if self.path in _registered or not self.library.duckdb_ai_semloom_register_v1(
-                    self._callback, self._release_callback):
+            arguments = (self._callback, self._release_callback)
+            if executor != 'semloom':
+                arguments += (executor.encode('ascii'),)
+            if self.path in _registered or not register(*arguments):
                 raise RuntimeError('DuckDB SemLoom callback is already owned or active')
             _registered[self.path] = self
 
@@ -246,7 +256,7 @@ class DuckDBSemLoomBridge:
     def enable(self, connection) -> None:
         if self._closed:
             raise RuntimeError('DuckDB SemLoom bridge is closed')
-        connection.execute("SET duckdb_ai_executor = 'semloom'")
+        connection.execute("SET duckdb_ai_executor = '" + self.executor_name + "'")
 
     def close(self) -> None:
         with _registry_lock:

@@ -1,4 +1,4 @@
-# DuckDB AI 方法＋SemLoom 批次适配
+# DuckDB AI 方法的批次执行适配
 
 本目录保存公开扩展的最小补丁、批次接口、构建方式与局部验证；总方案和全局登记由整合任务维护。
 首版支持单模型、非流式文本 `ai_complete`／`ai_try_complete` Map。
@@ -12,8 +12,8 @@
 提交 `9b7b16a5d5bfa97180b8be48d69bd9a4a4106419`。
 其 DuckDB 子模块固定 `08e34c447bae34eaee3723cac61f2878b6bdf787`，对应 v1.5.4。
 [来源清单](source_identity.json)保留原文件和补丁后文件 SHA-256（文件内容摘要）。
-构建脚本核对两个提交，使用 DuckDB 原生构建目标与元数据追加方式；新二进制版本写
-`0.4.14-semloom1`，继续使用 `ai` 扩展名，原生社区二进制保留。
+构建脚本核对两个提交，使用 DuckDB 原生构建目标与元数据追加方式；当前二进制版本写
+`0.4.14-native1`，继续使用 `ai` 扩展名，原生社区二进制和此前 `0.4.14-semloom1` 构建保留。
 ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`、平台和加载结果一致。
 
 已逐项阅读固定版
@@ -23,7 +23,7 @@ ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`�
 | 原生逻辑 | 本适配采用方式 |
 |---|---|
 | `AiCompletionFunction`／`AiTryCompleteFunction` 读取当前向量、处理 NULL、解析配置和 secret，生成带行序号的 `jobs` | 保留，先形成同一批合法完整调用 |
-| `RunProviderJobs` 选择工作线程，`ProviderExecutorState` 留存线程和队列；每个线程调用 `Complete` | 显式 SemLoom 分支在调用它之前分派整批，跳过这两层 |
+| `RunProviderJobs` 选择工作线程，`ProviderExecutorState` 留存线程和队列；每个线程调用 `Complete` | 显式 SemLoom、Daft Native 或 Ray Data 分支在调用它之前分派整批，跳过这两层 |
 | `Complete` 构造调用身份、`RequestPayload`、URL 和完整请求检查 | 拆为 `PrepareCompletion`，原生和新路径共用；不在 Python 重建提示或生成参数 |
 | `FetchProviderResponse` 管理响应缓存，`ProviderHttpPost` 使用 `ProviderRequestGuard` 和重试 | 原生分支保留；首版新路径要求响应缓存、重试、请求间隔、每分钟 token 控制和远程 usage 日志关闭 |
 | `ParseCompletionResult`、`RecordUsageEvent` 解释完整响应、用量、截断和错误 | 拆为 `FinishCompletion`，两路径共用；每个完成响应立即回交原解析器 |
@@ -72,6 +72,56 @@ CPU profile、实际库检查和模型查询分别保存，不用替身耗时预
 仍受其约 1 MiB 设置管理，响应额度包含 headers 表示。上述是逻辑字节额度，不表示总进程内存。
 公共响应接口没有单独的纯 HTTP 耗时字段，因此新路径的原 usage `elapsed_ms` 写 `-1` 表示不可观测，
 不写零，也不把排队或完整任务耗时填进去。token 用量、状态、重试和错误仍由原解析器记录。
+
+### Daft Native 与 Ray Data
+
+[`DuckDBNativeExecutor`](../../src/semantic_methods/duckdb_native.py)把当前向量的原始请求字节、
+唯一调用身份、行位置、地址、headers（HTTP 请求头）、总超时及连接超时交给
+[`NativeCallExecutor`](../../src/baselines/text/frameworks/native_calls.py)。Daft 0.7.21 的 Native runner
+执行完整调用 UDF（自定义请求函数），Ray 2.56.1 的 Data HTTP Processor 执行同样的完整调用。
+各执行图负责并发、数据批次和任务供给；响应正文的 JSON（结构化响应格式）、用量、停止原因、
+截断和供应商错误继续由 `FinishCompletion` 解释。HTTP 非成功状态与畸形正文作为完整响应交回，
+传输故障逐调用交回，`ai_try_complete` 继续处理其他行。原提示和生成参数只在 C++ 生成。
+
+`DuckDBNativeBridge(extension, adapter).enable(connection)`自动选择 `daft` 或 `ray-data`。
+使用统一观察包装时，也可调用
+`DuckDBSemLoomBridge(extension, observed_adapter, executor='daft')`或选择`'ray-data'`。
+新增 `duckdb_ai_batch_register_v1` 只登记这三种外部执行名称；查询选择必须与登记名称相同。
+此前 SemLoom 登记、注销和 ABI v1 保留，SQL 的 `native` 默认值保持。
+
+固定上游的 curl 客户端不声明 `Accept-Encoding`（可接受的响应压缩），也不解压正文或跟随重定向。
+此薄适配显式禁止客户端自动添加该压缩请求头，保留原 User-Agent（客户端标识）；完整压缩正文
+仍交回原解析器，不在 Python 解压或重写。默认配置继续拒绝原先未支持的缓存、重试、请求间隔、
+每分钟 token 控制、远程 usage 日志和混合模型，拒绝发生在外部请求之前。
+
+消费者遇到首次致命错误后停止解析并关闭当前执行图；查询取消也关闭执行图。
+原生执行图可能已提交其他当前向量调用，实际已发数量由替身记录核对。
+关闭报告只确认调用进程的图消费结束；任意远端 HTTP 已终止无法由此单独证明，明确写
+`remote_http_stopped='unavailable'`。当前向量仍等待函数返回，跨向量预取保持 pending。
+请求超时和完整向量图的截止时间分别配置，当前图的最长截止时间为 120 秒。
+
+专属[验证入口](verify_native.py)与[用例](../../tests/semantic_methods/test_duckdb_native.py)检查实际
+SQL 与原生对照；需要已完成机器预检、已加载社区二进制和本次编译的 `0.4.14-native1`。
+测试只访问 localhost 确定性替身，真实模型请求为 0；Linux 使用独立驱动进程和短 Ray 临时目录。
+2026-10-12 服务器实际构建通过；旧 DuckDB 专项与转换测试首轮 48 项通过，本地新增转换和旧接口
+18 项通过。每个后端的 8 项完整 SQL 检查通过，随后 3 项受影响的停止／取消／关闭错误检查通过，
+两组共同覆盖当前 9 项 SQL 用例，不能把重跑次数相加。每后端均检查连续 8、8、2051 行，
+原社区二进制、补丁原生分支、NULL、重复输入、完整请求、HTTP／JSON 错误、usage、截断、
+gzip 协商、强制 gzip 和重定向，全部失败与原始记录保留在仓库外。
+
+Ray Data 的致命解析停止与取消检查分别已发 23／33、24／40 个调用，图消费退出时替身仍有
+4 个活动请求；实际替身随后归零才发起后续 SQL。原生默认客户端在强制 gzip 下的 Unicode
+异常也由新路径保持。这里证明的是固定版本与受控输入的执行接入，性能和真实模型结论仍待验证。
+
+```sh
+python3 code/integrations/duckdb_ai/verify_native.py \
+  --extension <external-build-directory>/extension/ai/ai.duckdb_extension \
+  --backend daft --output <external-artifact-directory>/native-daft.json
+python3 code/integrations/duckdb_ai/verify_native.py \
+  --extension <external-build-directory>/extension/ai/ai.duckdb_extension \
+  --backend ray-data --ray-temp <short-data-disk-directory> \
+  --output <external-artifact-directory>/native-ray-data.json
+```
 
 ## 查询与请求观测
 

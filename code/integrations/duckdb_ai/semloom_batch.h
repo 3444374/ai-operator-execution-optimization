@@ -52,6 +52,10 @@ typedef void (*SemLoomDuckDBReleaseV1)(uint64_t batch_id);
 
 SEMLOOM_EXPORT int duckdb_ai_semloom_abi_v1(void);
 SEMLOOM_EXPORT int duckdb_ai_semloom_register_v1(SemLoomDuckDBBatchV1 batch, SemLoomDuckDBReleaseV1 release);
+// Named native execution uses the same complete-batch ABI. The old registration
+// symbol continues to register only semloom, so SQL and callback ownership agree.
+SEMLOOM_EXPORT int duckdb_ai_batch_register_v1(SemLoomDuckDBBatchV1 batch, SemLoomDuckDBReleaseV1 release,
+                                             const char *executor);
 SEMLOOM_EXPORT int duckdb_ai_semloom_unregister_v1(SemLoomDuckDBBatchV1 batch);
 
 #ifdef __cplusplus
