@@ -1,9 +1,16 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-12：[原Q2真实模型与部分双卡](../experiments/results/diagnostics/native_sembench_model_20261012/README.md)。
+固定3bd53587／原2000关系／120出现，质量6槽、单卡18槽、双卡11槽，7680模型／23040三跳POST。
+原LIMIT5官方F1=1.0与完整真阳性7／假阳性0／真阴性106／假阴性7／召回0.5并列；单卡各n3，双卡J n1、其余n2。
+旧质量等待超时退出1保持；接续双卡CLI bootstrap释放前JSON异常退出1，后7槽未运行／该槽0模型。
+原first19:34:52至20:59:52和账本未重置，启动累计140.11秒，1951身份清理无残留／CPU违规0／GPU空。
+同步原Q1/Q3、async完整CLI、同Coordinator并发、双卡未运行项与规模结论仍待；下面保留各旧块当时的资格。
+
 2026-10-12：[同步IMLane原Q2公开CLI软件入口](../experiments/results/diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)。
 固定3bd53587两作者模式各完整120调用／原2000行关系，实际--execute退出0，240逻辑／480传输POST、49.861/300秒，无跳过。
 31登记身份和fixture连接／请求线程清理通过；四真实作者工作进程bootstrap与原身份关联，1001已发布源码未改，模型/GPU0。
-替身TP9/FP54/TN52/FN5及官方F1=0保持；同步Q1/Q3完整CLI、可选async完整CLI及真实模型/交错测量仍待，不借软件时间作排名。
+替身TP9/FP54/TN52/FN5及官方F1=0保持；同步Q1/Q3完整CLI、可选async完整CLI和未完成模型项仍待，新模型Q2记录见本页开头，不借软件时间作排名。
 
 
 2026-10-12：[IMLane原生async接续核验](integrations/sema/README.md#imlane薄客户端)。
@@ -21,7 +28,7 @@
 两模式×三LOTUS主路径×原Q2/Q3共12个software_fixture单元，正文、结果与官方评价一致；68个登记进程无存活残留，模型/GPU0。
 另授第三窗口固定d004e720，四路径原LOTUS／Daft／Ray Data／SemLoom各原Q2/Q3＋原LOTUS performance Q2，共9查询、1080逻辑调用及2160传输POST通过；359.252/900秒含预检和准备间隔，45登记身份无残留。
 原2000行关系不改、每查询原WHERE取120行，实际公开CLI／SDK／parser／evaluator／库运行，回应软件fixture；Q2 FP54/FN5及Q3 FP52/FN8保持，不作模型质量。
-作者async的两模式生命周期／完整Q1公开查询API接续证据见本页开头；完整async CLI／Q2/Q3及真实模型质量／性能仍待，默认同步与旧容量资格保持；模型[同任务单双卡计划](../experiments/plans/语义系统对照.md#sembench-native-model-next)待父统筹，未启动。
+作者async的两模式生命周期／完整Q1公开查询API接续证据见本页开头；完整async CLI／Q2/Q3及真实模型质量／性能仍待，默认同步与旧容量资格保持；模型[同任务单双卡计划](../experiments/plans/语义系统对照.md#sembench-native-model-next)的质量／单卡完成、双卡部分实际证据见本页开头。
 
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
 显式 `lotus_observation_mode=performance` 省去原臂的预期 HTTP 重复构造，默认资格模式保持。

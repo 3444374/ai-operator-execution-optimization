@@ -1,0 +1,524 @@
+{
+  "schema": "semloom.sembench_original_q2_real_model_quality.v1",
+  "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+  "models": "real cached Qwen2.5-7B-Instruct",
+  "quality_completed": true,
+  "quality_logical": 720,
+  "quality_transmission_posts": 2160,
+  "unknown_returns": 0,
+  "response_errors": 0,
+  "relation_rows": 2000,
+  "eligible_occurrences": 120,
+  "gold_positives": 14,
+  "source_files_verified": 1001,
+  "source_modified": 0,
+  "quality_elapsed_seconds": 185.48257442,
+  "startup_seconds": 46.15722061600536,
+  "full_original_first_clock": {
+    "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+    "started_epoch": 1791833692.0731046,
+    "started_monotonic_ns": 2982217254995869,
+    "deadline_epoch": 1791838792.073105,
+    "deadline_monotonic_ns": 2987317254995869
+  },
+  "quality_wait_timeout_preserved": true,
+  "original_supervisor_passed": false,
+  "original_watchdog_exit": 1,
+  "original_model_process_residuals": 0,
+  "original_gpu_compute_after": [],
+  "quality_all_values_decisions_results_and_quality_equal": true,
+  "classification_recall": 0.5,
+  "classification_f1": 0.6666666666666666,
+  "classification_scope": "all120 before LIMIT; original evaluator LIMIT5 scores are separate",
+  "actual_api": {
+    "phase": "quality",
+    "replica": "gpu0",
+    "api_pid": 252736,
+    "api_start_ticks": 298221725,
+    "endpoint": "http://127.0.0.1:41399/v1/chat/completions",
+    "cpu_affinity": [
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "started_ns": 2982217256843167,
+    "argv": [
+      "taskset",
+      "-c",
+      "82,83,84,85,86,87,88,89",
+      "<serving-python>",
+      "-B",
+      "<owned-run>/source/code/scripts/services/launch_vllm_with_identity.py",
+      "--identity-output",
+      "<owned-run>/model/quality/service-0/identity.json",
+      "--port",
+      "41399",
+      "--",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "41399",
+      "--model",
+      "<cached-model>",
+      "--served-model-name",
+      "Qwen2.5-7B-Instruct",
+      "--dtype",
+      "bfloat16",
+      "--max-model-len",
+      "4096",
+      "--max-num-seqs",
+      "16",
+      "--max-num-batched-tokens",
+      "2048",
+      "--gpu-memory-utilization",
+      "0.80",
+      "--tensor-parallel-size",
+      "1",
+      "--pipeline-parallel-size",
+      "1",
+      "--enforce-eager",
+      "--no-enable-prefix-caching",
+      "--api-key",
+      "***"
+    ],
+    "service_history_before": 0,
+    "ready_ns": 2982263353343599,
+    "readiness_seconds": 46.096500432,
+    "actual_api_affinity": [
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "gpu_uuid": "GPU-b7729a10-0f62-16ed-e91b-65801dfa5ee9",
+    "engine_pid": 252926,
+    "engine_start_ticks": 298224203,
+    "engine_affinity": [
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "api_exit": 0
+  },
+  "actual_model_api_history": {
+    "ready": 0,
+    "final": 720
+  },
+  "response_usage": {
+    "prompt": 89556,
+    "generation": 2880
+  },
+  "gold_identity": {
+    "passed": true,
+    "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+    "original_sembench_preflight": {
+      "schema": "semloom.sembench_movie_preflight.v1",
+      "status": "passed",
+      "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+      "upstream_lotus_version": "1.1.3",
+      "selected_lotus_version": "1.2.4",
+      "versions": {
+        "lotus-ai": "1.2.4",
+        "pandas": "2.3.3",
+        "duckdb": "1.5.4",
+        "scipy": "1.17.1",
+        "litellm": "1.95.0"
+      },
+      "libraries_verified": true,
+      "role": "original_movie_sf2000",
+      "manifest_content_digest": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+      "manifest_file": {
+        "sha256": "3e8066677e0c9d85005f612b188227ed60354eccd37523e624d9af6359146f97",
+        "bytes": 1677
+      },
+      "files": {
+        "raw.jsonl": {
+          "sha256": "88eceb0f234a54fd38e874b49e627406434716c6b4096c0925befa0b1213eade",
+          "bytes": 414520
+        },
+        "references.jsonl": {
+          "sha256": "4f61423c016ca467a4f538dcdc9d935080678b20adc05875b37f8a86f2a30059",
+          "bytes": 225142
+        }
+      },
+      "csv": {
+        "sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+        "bytes": 654765
+      },
+      "source_files": {
+        "src/scenario/movie/runner/lotus_runner/lotus_runner.py": {
+          "sha256": "943e29556b94ad5ef5e81c8c8bc43146d07b7144834868f3ab526e19392d3de5",
+          "bytes": 22438
+        },
+        "src/scenario/movie/evaluation/evaluate.py": {
+          "sha256": "10308033fcc4b298905d90536a882dbdba95577d60fff40c3d1501c106a38576",
+          "bytes": 15850
+        },
+        "src/runner/generic_runner.py": {
+          "sha256": "8adf80b5817de78bd6f182d2d850815675140151498e5139d2c6024f01dcda96",
+          "bytes": 11623
+        },
+        "src/evaluator/generic_evaluator.py": {
+          "sha256": "86ecdcc408e86fb95eaa81bdc01cf2b274c80784a0d915f8943190a427dead3d",
+          "bytes": 25204
+        },
+        "files/movie/query/gold_sql/Q1.sql": {
+          "sha256": "847621f0ed626e03c56dee06b73b7bff5cd587fe2f8b38d1e41e2049e9f4de66",
+          "bytes": 63
+        },
+        "files/movie/query/gold_sql/Q2.sql": {
+          "sha256": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
+          "bytes": 82
+        },
+        "files/movie/query/gold_sql/Q3.sql": {
+          "sha256": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5",
+          "bytes": 105
+        }
+      },
+      "relation_rows": 2000,
+      "independent_row_ids": 2000,
+      "unique_review_ids": 1865,
+      "duplicate_review_id_occurrences": 135,
+      "movie_ids": 105,
+      "positive_rows": 1485,
+      "taken_3_rows": 120,
+      "taken_3_positive_rows": 14,
+      "cache": false,
+      "retries": 0,
+      "max_tokens": 8,
+      "stop": [
+        "\n"
+      ],
+      "source_scope": "finite external prepared relation; no PostgreSQL execution claim"
+    },
+    "query_id": 2,
+    "eligible_occurrences": 120,
+    "positive_occurrences": 14,
+    "original_gold_sql_rows": 14,
+    "positive_occurrences_sha256": "c989a00978f5a5e86cdd376bb33bf2c74df3eb4bbc1cb76291e0a0a6641d93fc",
+    "gold_and_evaluator_source_verified": true,
+    "models": 0,
+    "model_calls": 0,
+    "labels_and_prompt_changed": false
+  },
+  "cells": [
+    {
+      "arm": "lotus-adapted-native",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 5.301655093,
+      "ready_query_seconds": 5.17807401,
+      "full_slot_seconds": 20.893592039,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.1254349795,
+        "p95": 0.15483717975,
+        "p99": 0.18260164059000003,
+        "max": 0.190969272,
+        "min": 0.101054944,
+        "mean": 0.12857625060833333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 4.290053906,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 6.2661448,
+      "ready_query_seconds": 6.164546027,
+      "full_slot_seconds": 21.298040894,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.1349748895,
+        "p95": 0.16536804019999998,
+        "p99": 0.18722608301,
+        "max": 0.198949638,
+        "min": 0.11088158,
+        "mean": 0.13686838406666665,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 4.601459147,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 22.525065874,
+      "ready_query_seconds": 22.423346786,
+      "full_slot_seconds": 50.341045198,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.12634002900000002,
+        "p95": 0.1423111605,
+        "p99": 0.15883940744000002,
+        "max": 0.163174518,
+        "min": 0.09479313,
+        "mean": 0.124904670825,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 5.026646683,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 5.772146807,
+      "ready_query_seconds": 5.670415203,
+      "full_slot_seconds": 36.661614282,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.1294384945,
+        "p95": 0.15638649759999998,
+        "p99": 0.17692046009000004,
+        "max": 0.181964898,
+        "min": 0.099562379,
+        "mean": 0.13131673209166667,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 5.231914483,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 7.816109953,
+      "ready_query_seconds": 7.70845157,
+      "full_slot_seconds": 23.555277241,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.1109384575,
+        "p95": 0.1186313773,
+        "p99": 0.3198558069300005,
+        "max": 0.430090204,
+        "min": 0.093990246,
+        "mean": 0.11477851505,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 7.555272043,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "logical": 120,
+      "full_query_seconds": 8.389479254,
+      "ready_query_seconds": 8.255399784,
+      "full_slot_seconds": 31.740665606,
+      "request_seconds": {
+        "n": 120,
+        "p50": 0.1086914555,
+        "p95": 0.13140160504999998,
+        "p99": 0.3237991899300004,
+        "max": 0.426345933,
+        "min": 0.09543095,
+        "mean": 0.11508838685833332,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_interval_seconds": 7.98833549,
+      "query_metrics_scope": "qualification/cold owner, n1 per arm; not performance ranking"
+    }
+  ],
+  "public_archive": {
+    "path": "quality-observations.tar.gz",
+    "bytes": 1855969,
+    "sha256": "8b6df9b41c6277171c26bba342a049eea5c183b833b539c78fba5456497cf89f",
+    "members": 480
+  },
+  "privacy": {
+    "violations": 0,
+    "messages_omitted": 3360,
+    "request_payloads_omitted": 240,
+    "reviews_omitted": 0,
+    "decoded_payloads_scanned": 960,
+    "binary_encoded_response_wires_omitted": 600,
+    "omission_scope": "binary SDK wires stay private with hashes; all720 full JSON protocol responses retained"
+  },
+  "performance_status": "single/dual separate continuation under unchanged original first clock; see final performance report when completed"
+}
