@@ -5,15 +5,20 @@ import threading
 import time
 import unittest
 
-from src.scheduling.core.session import WakeSignal
+from src.scheduling.core.session import SessionEngine, WakeSignal
 from src.scheduling.core.session_contract import (
     Acceptance,
     BackendTask,
     OfferedTask,
     SessionSpec,
     TaskKey,
+    Terminal,
+    Uncertain,
+    Usage,
 )
-from src.scheduling.runtime.async_backend import BoundedAsyncBackend
+from src.scheduling.core.session_jobs import JobBudget
+from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
+from tests.scheduling.test_incremental_session import setup, task as offered_task
 
 
 def task(sequence):
@@ -84,6 +89,110 @@ class AsyncBackendTests(unittest.TestCase):
             self.assertEqual(backend.try_submit(task(1), "e").acceptance, Acceptance.NOT_ACCEPTED)
         finally:
             self.assertTrue(backend.close())
+
+    def test_confirmed_failure_emits_one_terminal_and_reuses_only_its_slot(self):
+        for isolate in (False, True):
+            with self.subTest(isolate=isolate):
+                reason = {'exception_type': 'builtins.ValueError', 'cause_types': []}
+                failure = ConfirmedTaskFailure(task(0).key, reason)
+                async def execute(request, endpoint):
+                    if request.key.sequence == 0:
+                        raise failure
+                    return b'ok'
+                backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None,
+                                              isolate_failures=isolate)
+                submitted = backend.try_submit(task(0), 'e')
+                try:
+                    self.wait_for(lambda: backend._slots[task(0).key].completed_order is not None)
+                    handles = ((task(0).key, submitted.handle),)
+                    self.assertEqual(backend.poll(handles, 1),
+                                     (Terminal(task(0).key, submitted.handle, 'failed'),))
+                    self.assertEqual(backend.poll(handles, 1), ())
+                    self.assertIs(failure.reason, reason)
+                    second = backend.try_submit(task(1), 'e')
+                    self.assertEqual(second.acceptance, Acceptance.ACCEPTED)
+                    self.wait_for(lambda: backend._slots[task(1).key].completed_order is not None)
+                    self.assertEqual(backend.poll(((task(1).key, second.handle),), 1),
+                                     (Terminal(task(1).key, second.handle, 'completed', b'ok'),))
+                    self.assertFalse(backend._slots)
+                finally:
+                    self.assertTrue(backend.close())
+
+    def test_wrong_confirmed_identity_and_cancelled_future_remain_uncertain(self):
+        for cancelled in (False, True):
+            with self.subTest(cancelled=cancelled):
+                async def execute(request, endpoint):
+                    if cancelled:
+                        raise asyncio.CancelledError()
+                    raise ConfirmedTaskFailure(TaskKey(99, 0), {'exception_type': 'builtins.ValueError'})
+                backend = BoundedAsyncBackend(execute, max_tasks=1, notify=lambda: None,
+                                              isolate_failures=True)
+                submitted = backend.try_submit(task(0), 'e')
+                try:
+                    self.wait_for(lambda: backend._slots[task(0).key].completed_order is not None)
+                    handles = ((task(0).key, submitted.handle),)
+                    self.assertEqual(backend.poll(handles, 1),
+                                     (Uncertain(task(0).key, submitted.handle),))
+                    self.assertEqual(backend.poll(handles, 1), ())
+                    self.assertEqual(backend.try_submit(task(1), 'e').acceptance, Acceptance.NOT_ACCEPTED)
+                finally:
+                    self.assertTrue(backend.close())
+
+    def test_confirmed_failure_preserves_first_error_and_other_job_compute(self):
+        template, _, _, clock = setup(held_tasks=4, input_bytes=16, result_bytes=16,
+                                      active_requests=2, active_work=2)
+        gates, calls = {}, []
+        async def execute(request, endpoint):
+            calls.append(request.key)
+            gate = asyncio.Event()
+            gates[request.key] = gate
+            await gate.wait()
+            if request.key.session_id == failed.session_id:
+                raise ConfirmedTaskFailure(request.key, {'exception_type': 'builtins.ValueError'})
+            return b'ok'
+        backend = BoundedAsyncBackend(execute, max_tasks=2, notify=lambda: engine.wake.notify(),
+                                      isolate_failures=True)
+        engine = SessionEngine(template.capacity.limits, backend, template.policies,
+                               max_jobs=2, clock=clock)
+        first = engine.register_job('failed-job', JobBudget(2, 8, 8, 2, 2))
+        other = engine.register_job('other-job', JobBudget(2, 8, 8, 2, 2))
+        failed = engine.open(SessionSpec('first', 'flow', 'fixture'), job=first)
+        peer = engine.open(SessionSpec('other', 'flow', 'fixture'), job=other)
+        failed.offer((offered_task(0),))
+        peer.offer((offered_task(0),))
+        engine.advance()
+        failed_key, peer_key = TaskKey(failed.session_id, 0), TaskKey(peer.session_id, 0)
+        try:
+            self.wait_for(lambda: len(gates) == 2)
+            peer_usage = engine.capacity.usage(job_id=other.job_id)
+            failed.fail('first consumer error')
+            backend._loop.call_soon_threadsafe(gates[failed_key].set)
+            self.wait_for(lambda: backend._slots[failed_key].completed_order is not None)
+            engine.advance()
+            self.assertEqual(failed.error, 'first consumer error')
+            self.assertEqual(engine.capacity.usage(job_id=first.job_id), Usage())
+            self.assertEqual(engine.capacity.usage(job_id=other.job_id), peer_usage)
+            self.assertEqual(engine.capacity.usage().active_requests, 1)
+            self.assertEqual(set(backend._slots), {peer_key})
+            for _ in range(4): engine.advance()
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(engine.capacity.usage(job_id=other.job_id), peer_usage)
+            backend._loop.call_soon_threadsafe(gates[peer_key].set)
+            self.wait_for(lambda: backend._slots[peer_key].completed_order is not None)
+            engine.advance()
+            delivery = peer.advance(1).deliveries[0]
+            self.assertEqual(delivery.result, b'ok')
+            peer.release((delivery.lease_id,))
+        finally:
+            for gate in tuple(gates.values()): backend._loop.call_soon_threadsafe(gate.set)
+            self.wait_for(lambda: all(s.future.done() for s in backend._slots.values()))
+            failed.close_consumer(clean=True)
+            peer.close_consumer(clean=True)
+            engine.close_job(first)
+            engine.close_job(other)
+            engine.advance()
+            self.assertTrue(backend.close())
+        self.assertEqual(engine.capacity.usage(), Usage())
 
     def test_finalizer_error_does_not_leave_io_thread(self):
         async def execute(request, endpoint):
