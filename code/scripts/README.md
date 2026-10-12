@@ -1,5 +1,14 @@
 # SemLoom 脚本入口
 
+## SemBench Movie原始查询
+
+`experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。
+[唯一准备集及当前资格](../../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)登记CSV、清单摘要、重复reviewId、3×6覆盖及失败。
+`--data-preflight`核对固定源码、版本、CSV/字段/标签与摘要；`--preflight`再核对执行容量及就绪作者身份；均不调用模型。
+配置使用[显式模板](../../deploy/autodl/sembench_lotus_queries.example.json)与仓库外环境路径，缺条件直接失败。
+全六臂的原2000行Q1超出当前两种IMLane128行支持，整计划不能执行；不隐式切块。
+`--execute`只用于另行授权且完整预检通过的具体清单，正常软件检查不提供性能资格。
+
 ## 原生语义系统单查询
 
 `baselines/run_semantic_system_query.py`调用LOTUS原生`sem_map`、Daft内置`prompt`、

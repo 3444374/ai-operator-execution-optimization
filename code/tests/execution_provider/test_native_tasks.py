@@ -36,6 +36,71 @@ def task(sequence, **kwargs):
 
 
 class NativeTaskTests(unittest.TestCase):
+    def test_disabled_dispatch_has_no_immediate_queued_progress_and_waits(self):
+        execution, backend, _ = fixture()
+        flow = NativeTaskSession(execution, 'query', 'map')
+        flow.offer((task(0),))
+        flow.session.set_dispatch_enabled(False)
+        usage = execution.engine.capacity.usage()
+        try:
+            self.assertFalse(execution.engine.advance().has_immediate_work)
+            for _ in range(100):
+                progress = flow.advance(1)
+                self.assertFalse(progress.has_immediate_work)
+            self.assertEqual(backend.routes, [])
+            self.assertEqual(execution.engine.capacity.usage(), usage)
+            with mock.patch.object(execution.engine.wake, 'wait') as wait:
+                flow.wait(progress)
+            wait.assert_called_once_with(progress.generation, flow.limits.poll_interval_s)
+            flow.session.set_dispatch_enabled(True)
+            self.assertGreater(execution.engine.wake.generation, progress.generation)
+            flow.advance(1)
+            self.assertEqual(len(backend.routes), 1)
+            backend.complete(next(iter(backend.pending)),
+                             encode_full_response(FullModelResponse(200, (), b'ok')))
+            delivery = flow.advance(1).deliveries[0]
+            flow.release((delivery.lease_id,))
+        finally:
+            flow.close(clean=True)
+        self.assertEqual(execution.engine.capacity.usage(), Usage())
+
+    def test_disabled_dispatch_still_delivers_ready_and_late_results(self):
+        execution, backend, _ = fixture()
+        flow = NativeTaskSession(execution, 'query', 'map')
+        flow.offer((task(0), task(1)))
+        flow.advance(2)
+        flow.session.set_dispatch_enabled(False)
+        for key in tuple(backend.pending):
+            backend.complete(key, encode_full_response(FullModelResponse(200, (), b'ok')))
+        execution.engine.advance()
+        first = flow.advance(1)
+        self.assertTrue(first.has_immediate_work)
+        second = flow.advance(1)
+        self.assertFalse(second.has_immediate_work)
+        self.assertEqual(len(first.deliveries + second.deliveries), 2)
+        flow.release(tuple(d.lease_id for d in first.deliveries + second.deliveries))
+        flow.end_input()
+        self.assertEqual(flow.advance(1).state, State.FINISHED)
+        flow.close(clean=True)
+        self.assertEqual(execution.engine.capacity.usage(), Usage())
+
+    def test_disabled_dispatch_cancellation_keeps_late_compute_until_terminal(self):
+        execution, backend, _ = fixture()
+        flow = NativeTaskSession(execution, 'query', 'map')
+        flow.offer((task(0), task(1)))
+        flow.advance(2)
+        flow.session.set_dispatch_enabled(False)
+        flow.request_cancel()
+        self.assertEqual(flow.advance(1).state, State.CANCELLED)
+        self.assertEqual(execution.engine.capacity.usage().active_requests, 2)
+        report = flow.close()
+        self.assertEqual(report.uncertain_requests, 2)
+        for key in tuple(backend.pending):
+            backend.complete(key)
+        execution.engine.advance()
+        self.assertEqual(execution.engine.capacity.usage(), Usage())
+        self.assertFalse(execution.engine.jobs.jobs)
+
     def test_query_job_survives_sequential_vector_sessions_with_one_grant(self):
         execution, backend, _ = fixture()
         with native_tasks.NativeQueryJob(execution, 'sql-query') as query:

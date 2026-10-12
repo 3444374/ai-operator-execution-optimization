@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[SemBench Movie原查询准备](sembench_lotus_readiness_20261012/README.md)：固定唯一2000行CSV与清单，六条LOTUS接点保留Q1/Q2/Q3及官方评价；软件16 pass／2 unsupported／0 notrun，128POST、模型0，失败及当前IMLane适配器Q1拒绝分别登记。
+
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [IMLane作者构建与Arrow检查](imlane_build_20261012/README.md)：固定作者源码，两个模式630行／132次无模型调用及正常退出；完整方法接入见对应原生执行报告。

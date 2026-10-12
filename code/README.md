@@ -1,5 +1,7 @@
 # SemLoom Code
 
+2026-10-12：[SemBench Movie原查询准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)复用LOTUS完整批接点接入Q1/Q2/Q3和官方评价，保留原Filter、LIMIT/COUNT及重复reviewId的行身份。软件资格16 pass／2 unsupported／0 notrun，累计128POST；原2000行Q1的两种IMLane路径由当前完整调用适配器发送前拒绝，模型0、性能资格未取得。
+
 [原生语义系统入口](scripts/README.md#原生语义系统单查询)补充LOTUS `sem_map`、Daft内置`prompt`、
 DuckDB社区AI扩展与Sema作者SQL产物；它们保留自己的提示、解析和执行。
 PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系统方案](../experiments/plans/语义系统对照.md)。

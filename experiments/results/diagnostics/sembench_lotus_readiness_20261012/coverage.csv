@@ -1,0 +1,19 @@
+arm,query_id,implementation,software_library_status,fixture_posts,original_model_rows,original_row_shape,original_data_model_run,performance_qualified
+lotus-adapted-native,1,original method wired,passed,8,2000,within_declared_row_allowance_only,not_run,False
+lotus-adapted-native,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-adapted-native,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-daft,1,original method wired,passed,8,2000,within_declared_row_allowance_only,not_run,False
+lotus-method-native-daft,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-daft,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-ray-data,1,original method wired,passed,8,2000,within_declared_row_allowance_only,not_run,False
+lotus-method-native-ray-data,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-ray-data,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-semloom,1,original method wired,passed,8,2000,within_declared_row_allowance_only,not_run,False
+lotus-method-semloom,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-semloom,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-imlane,1,original method wired,unsupported,0,2000,blocked_current_128_row_limit,not_run,False
+lotus-method-native-imlane,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-imlane,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-imlane-ray,1,original method wired,unsupported,0,2000,blocked_current_128_row_limit,not_run,False
+lotus-method-native-imlane-ray,2,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False
+lotus-method-native-imlane-ray,3,original method wired,passed,6,120,within_declared_row_allowance_only,not_run,False

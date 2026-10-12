@@ -187,7 +187,11 @@ class _ArmOwner:
 
     def lotus_lm(self):
         if self.lm is None:
-            self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path)
+            if getattr(self.group, 'sembench_dataset', None) is None:
+                self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path)
+            else:
+                self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path,
+                                          sembench=True)
         return self.lm
 
     def duckdb_connection(self, values):
@@ -228,7 +232,7 @@ class PersistentAdapterGroup:
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
                  sema_executor_scope='query',duckdb_offer_diagnostic='original',imlane_config=None,
-                 imlane_call_configs=None):
+                 imlane_call_configs=None,sembench_dataset=None):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
@@ -238,6 +242,12 @@ class PersistentAdapterGroup:
         if not 0 < query_timeout_s <= 120 or not query_timeout_s+120 < owner_timeout_s <= 1800:
             raise ValueError('query and owner durations must leave 120 seconds for final cleanup')
         self.plan, self.model, self.ledger = plan, model, ledger
+        self.sembench_dataset = sembench_dataset
+        if sembench_dataset is not None:
+            from .sembench_queries import MovieDataset, LOTUS_MOVIE_ARMS
+            if (type(sembench_dataset) is not MovieDataset or any(a not in LOTUS_MOVIE_ARMS for a in self.arms)
+                    or plan.max_tokens != 8 or stages is not None):
+                raise ValueError('original Movie owners require the selected dataset and Filter generation')
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
         self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
@@ -271,6 +281,8 @@ class PersistentAdapterGroup:
         self._lock = threading.Lock()
 
     def __enter__(self):
+        if self.sembench_dataset is not None:
+            self.sembench_preflight = self.sembench_dataset.preflight()
         self.started_ns = time.monotonic_ns()
         self.deadline = time.monotonic()+self.owner_timeout_s
         new_private_directory(self.root)
@@ -313,9 +325,12 @@ class PersistentAdapterGroup:
                 failure.add_note('Persistent group initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
 
-    def run(self, arm, *, unit_id, root, load_source, phase, reference_outputs=None, allowed_outputs=None):
+    def run(self, arm, *, unit_id, root, load_source=None, phase, reference_outputs=None, allowed_outputs=None,
+            sembench_query=None):
         if phase not in ('qualification', 'warmup', 'measurement'):
             raise ValueError('query phase must be explicitly declared')
+        if self.sembench_dataset is not None and sembench_query is None:
+            raise ValueError('original Movie owner requires an explicit original query')
         with self._lock:
             if self.poisoned or arm not in self.owners or unit_id in self.used_units:
                 raise RuntimeError('persistent group stopped or query identity already used')
@@ -335,7 +350,8 @@ class PersistentAdapterGroup:
                         tokenizer_path=self.tokenizer_path, duckdb_library=self.duckdb_library,
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
                         adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic,
-                        imlane_config=self.imlane_config,imlane_call_configs=self.imlane_call_configs)
+                        imlane_config=self.imlane_config,imlane_call_configs=self.imlane_call_configs,
+                        sembench_query=sembench_query)
                 else:
                     result = run_prepared_map_query(arm, **arguments)
                 owner.queries += 1

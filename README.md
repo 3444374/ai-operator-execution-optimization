@@ -1,5 +1,7 @@
 # SemLoom
 
+[SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；原始IMLane Q1由当前完整调用适配器拒绝，模型0。
+
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
 Sema后置原生Daft／Ray Data／IMLane执行的适配与检查见[代码入口](code/integrations/sema/README.md)。

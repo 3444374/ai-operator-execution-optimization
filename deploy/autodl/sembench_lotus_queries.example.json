@@ -1,0 +1,52 @@
+{
+  "schema": "semloom.sembench_lotus_queries.v1",
+  "dataset": {
+    "checkout_env": "SEMBENCH_CHECKOUT",
+    "manifest_env": "SEMBENCH_MOVIE_MANIFEST",
+    "csv_env": "SEMBENCH_MOVIE_CSV",
+    "manifest_content_digest": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2"
+  },
+  "arms": [
+    "lotus-adapted-native",
+    "lotus-method-native-daft",
+    "lotus-method-native-ray-data",
+    "lotus-method-semloom",
+    "lotus-method-native-imlane",
+    "lotus-method-native-imlane-ray"
+  ],
+  "queries": [1, 2, 3],
+  "warmups": 1,
+  "repeats": 3,
+  "max_attempts": 53760,
+  "model_config_env": "SEMBENCH_MODEL_CONFIG",
+  "output_env": "SEMBENCH_OUTPUT",
+  "ray_temp_parent_env": "SEMBENCH_RAY_PARENT",
+  "tokenizer_env": "SEMBENCH_TOKENIZER",
+  "native_options": {
+    "concurrency": 4,
+    "num_threads": 8,
+    "ray_actors": 2,
+    "ray_async_batches_per_actor": 2,
+    "ray_batch_rows": 1,
+    "source_blocks": 4
+  },
+  "arm_native_options": {
+    "lotus-method-native-imlane": {"concurrency": 6},
+    "lotus-method-native-imlane-ray": {"concurrency": 6}
+  },
+  "max_held_tasks": 8,
+  "physical": {
+    "address": "resolved",
+    "workers": 2,
+    "batch_rows": 2,
+    "window_bytes": 2097152,
+    "object_bytes": 8388608,
+    "payload_backend": "daft"
+  },
+  "imlane_config_envs": {
+    "cpython": "SEMBENCH_IMLANE_CPYTHON_CONFIG",
+    "ray": "SEMBENCH_IMLANE_RAY_CONFIG"
+  },
+  "query_timeout_s": 120,
+  "owner_timeout_s": 900
+}

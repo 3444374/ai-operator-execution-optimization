@@ -17,6 +17,7 @@ from typing import NamedTuple
 import uuid
 
 from ...data.materializers.payloads import PayloadBatchLimits, iter_payload_batches
+from ...scheduling.runtime.async_backend import ConfirmedTaskFailure
 from ...scheduling.runtime.stage_broker import StageBrokerLimits
 from .async_fixed_model import AsyncFixedModelTransport, exception_details
 from .full_response import FullResponseTransport
@@ -530,6 +531,15 @@ class RayMapTransport:
                 if reply.key != key or reply.stage not in ("payload", "http"):
                     raise ValueError("Ray failure differs from its row or execution stage")
                 stage, remote_reason = reply.stage, reply.reason
+                if stage == "payload":
+                    # This identified actor reply proves HTTP was never entered.
+                    failure = ConfirmedTaskFailure(key, remote_reason)
+                    self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
+                                  stage=stage, reason=remote_reason, remote_outcome="not_sent")
+                    self._release(block_id, key, failed=True)
+                    if not row.future.done():
+                        row.future.set_exception(failure)
+                    return
                 raise RuntimeError("remote actor execution failed")
             if isinstance(reply, _RemoteResult):
                 actual_key, result, started, ended, domain = reply
@@ -551,11 +561,14 @@ class RayMapTransport:
                           shared_clock=shared_clock,
                           before_worker_ns=started-rpc_started if shared_clock else None,
                           after_worker_ns=received-ended if shared_clock else None)
-        except Exception as error:
+        except (Exception, asyncio.CancelledError) as error:
             reason = remote_reason if remote_reason is not None else exception_details(error)
             self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
                           stage=stage, reason=reason, remote_outcome="unconfirmed")
             self.unknown.add(key)
+            if isinstance(error, asyncio.CancelledError):
+                row.future.cancel()
+                raise
             if not row.future.done():
                 row.future.set_exception(RuntimeError("unconfirmed Ray model execution: " + reason["exception_type"]))
             return

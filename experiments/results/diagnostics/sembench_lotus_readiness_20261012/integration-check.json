@@ -1,0 +1,119 @@
+{
+  "schema": "semloom.sembench_publication_local_check.v1",
+  "base_native_commit": "286e4ab5876c319322109450b134a78badf1e965",
+  "delivery_commits": [
+    "1351a45fa1f4128f0ad88f42dcc2e9aa971c0831",
+    "34afde9b70d0dd3cf6f3dca60bcc4487ba1eac26",
+    "e5d3520581e51db97560eb886a8f648a362c97e8"
+  ],
+  "necessary_dependency_commits": [
+    "905f8c3a2a75c1300bdb35eb273149ae68c59096",
+    "dd14d5923859b94cf00873bf51b94fe3858f8aaa"
+  ],
+  "publication_form": "one commit of integrated final changes; original delivery identities retained as provenance",
+  "implementation_and_saved_evidence_identical_to_delivery": {
+    "code/scripts/experiments/run_sembench_lotus_queries.py": true,
+    "code/src/baselines/text/sembench_movie.py": true,
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": true,
+    "code/src/experiments/postgresql/sembench_queries.py": true,
+    "code/src/experiments/postgresql/sembench_query_cli.py": true,
+    "code/src/experiments/postgresql/supplier_adapter_query.py": true,
+    "code/tests/experiments/test_sembench_lotus_libraries.py": true,
+    "code/tests/experiments/test_sembench_queries.py": true,
+    "deploy/autodl/sembench_lotus_queries.example.json": true,
+    "experiments/results/diagnostics/sembench_lotus_readiness_20261012/coverage.csv": true,
+    "experiments/results/diagnostics/sembench_lotus_readiness_20261012/verification.json": true
+  },
+  "source_files_sha256": {
+    "code/scripts/experiments/run_sembench_lotus_queries.py": "7ea060a2b5fef7380a08c7baa1bd886eb9ef8b156a9476e82036e2cff9c8e10d",
+    "code/src/baselines/text/sembench_movie.py": "d21f3933a83429b5b870abc352a268a3c3241a20e7d0bc405e34cfac275f823d",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "0e460893c570dc0f1411d1e52dce076a781760f9cbf850712482de3f7dc6bae2",
+    "code/src/experiments/postgresql/sembench_queries.py": "d97d62e80fa524ff4a32e99918ff1cb55eb5406b196a936291ffc8ae785ba3e8",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "865b89a19668984676174dcc0badad746c2ae3bf26e49ae311388b8526ec4df8",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "797a1b18c166e7e73f76da418a8e4b74331b1cd86ac2f77aa9072274b8948ee4",
+    "code/tests/experiments/test_sembench_lotus_libraries.py": "5eb78a9a7439763dda56744c8fca0628ecd8056713fcbcb6c9545aaf6cdd23af",
+    "code/tests/experiments/test_sembench_queries.py": "e979bbb40bcbe5859ec9eaa84fc4d8f034edaa131465bd5344493c8e00cc8370",
+    "deploy/autodl/sembench_lotus_queries.example.json": "494a40a2c49c88ca559f54929f28d99d1210457c911b58ad1d8a30495fea19a8",
+    "experiments/results/diagnostics/sembench_lotus_readiness_20261012/coverage.csv": "83de40b4e5e6531c1a1343861214316daae513164e692dd09f8f54cb27012071",
+    "experiments/results/diagnostics/sembench_lotus_readiness_20261012/verification.json": "373c99f968b080f12c2303c0a4db8899396b000dbde71a00c7c6c139711c8949"
+  },
+  "local_regression": {
+    "exit_code": 0,
+    "tests": 107,
+    "skipped": 15,
+    "passed": 92,
+    "elapsed_s": 16.052594833076,
+    "modules": [
+      "tests.experiments.test_sembench_queries",
+      "tests.experiments.test_sembench_movie",
+      "tests.experiments.test_sembench_lotus_libraries",
+      "tests.experiments.test_supplier_adapter_observation",
+      "tests.experiments.test_supplier_http_preservation",
+      "tests.experiments.test_supplier_native_errors",
+      "tests.experiments.test_native_adapter_query",
+      "tests.experiments.test_persistent_native_adapter_query",
+      "tests.experiments.test_persistent_adapter_cleanup",
+      "tests.experiments.test_lotus_runtime_composition",
+      "tests.experiments.test_sema_native_query",
+      "tests.experiments.test_native_adapter_libraries",
+      "tests.experiments.test_supplier_adapter_libraries",
+      "tests.execution_provider.test_native_tasks",
+      "tests.execution_provider.test_ray_map_payload_failure",
+      "tests.execution_provider.test_ray_map_failure_integration",
+      "tests.scheduling.test_async_backend"
+    ],
+    "server_tests": false,
+    "model_runs": 0,
+    "real_library_opt_in": false
+  },
+  "python_version": "3.12.6",
+  "cli_checks": [
+    {
+      "check": "cli-help",
+      "exit_code": 0,
+      "expected": 0,
+      "passed": true,
+      "missing_environment_error": false
+    },
+    {
+      "check": "cli-missing-environment",
+      "exit_code": 1,
+      "expected": 1,
+      "passed": true,
+      "missing_environment_error": true
+    }
+  ],
+  "initial_sandbox_run": {
+    "tests": 107,
+    "skipped": 15,
+    "errors": 17,
+    "reason": "local socket binding or process identity reads denied; original log retained outside Git"
+  },
+  "latest_saved_software_qualification": {
+    "passed": 16,
+    "unsupported": 2,
+    "notrun": 0,
+    "fixture_posts": 128,
+    "authorized_maximum_posts": 144
+  },
+  "current_imlane_q1": {
+    "original_model_rows": 2000,
+    "effective_adapter_max_rows": 128,
+    "unsupported_modes": [
+      "cpython",
+      "ray"
+    ],
+    "reserved_posts": 0,
+    "sent_posts": 0,
+    "chunking": false
+  },
+  "new_server_runs": 0,
+  "new_model_runs": 0,
+  "new_gpu_runs": 0,
+  "task8_core_repairs_included": false,
+  "limitations": [
+    "Local regression does not requalify actual supplier libraries or runtimes.",
+    "No original-data model quality, matched resource or performance conclusion.",
+    "Saved actual-library fixtures and failures retain their original identities."
+  ]
+}

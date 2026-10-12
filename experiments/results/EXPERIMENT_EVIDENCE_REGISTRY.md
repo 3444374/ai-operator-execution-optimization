@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+2026-10-12：[SemBench Movie原查询与评价准备](diagnostics/sembench_lotus_readiness_20261012/README.md)。
+基线fd8c00bc只接消费提示与确定失败两项稳定性依赖，原方法与六执行接点不复制核心。
+CSV ad5def7d、清单内容e753baa5固定2000行／1865唯一reviewId／135次额外重复，taken_3为120行、正向14行。
+LOTUS原生／Daft／Ray Data各Q1/Q2/Q3正常，累计60次CPU8–15替身POST；进度文件、旧Ray目录及token参数键断言失败均保留，原生Q3换owner单列。
+父授权追加85.6秒窗口后，软件16 pass／2 unsupported／0 notrun：SemLoom三条和两种IMLane各Q2/Q3正常，原Q1两个适配器发送前拒绝；模型/GPU/PG0。
+累计128POST：正常104、作者完整HTTP/超时/取消16、原生授权错误8；进程/共享内存归零。保留远端HTTP状态unavailable、底层容量归属待独立追溯；C4/C6及旧C8来源分别登记，不排名。
+发布净变更已在原生分支组合检查；本机回归与未启用实际库项见主报告，不增加服务器或模型资格。
+
 2026-10-12：[原生执行接续整合](postgresql/native_executor_baselines_20261012/README.md)。
 保留LOTUS／DuckDB原交付及作者IMLane630行／132次Arrow调用，公共三方法IMLane两个模式成功轮48软件POST；前轮21／11／14失败及归档符号链接拒绝保留，累计94、模型0。
 同driver Daft重设runner反例与中立修复通过54次软件调用；较早源码单GPU只完成三条warmup／24真实POST，32名额占用、测量0、服务已退出。
