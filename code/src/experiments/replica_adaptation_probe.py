@@ -124,6 +124,8 @@ def _busy_union(records):
 def run_cell(speeds, actual_work, estimates, *, arm, requests, arrival_s=None, fixed_rates=None):
     """One finite query; all HTTP payloads and full responses are checked by row."""
     count = len(actual_work)
+    if arm == "fixed_rate" and (not fixed_rates or any(type(v) is not ReplicaFeedback for v in fixed_rates.values())):
+        raise ValueError("frozen rates require measured calibration support")
     arrival_s = [0.0] * count if arrival_s is None else arrival_s
     trace, received = [], {}
     started = time.monotonic()
@@ -132,7 +134,8 @@ def run_cell(speeds, actual_work, estimates, *, arm, requests, arrival_s=None, f
         replicas = tuple(ModelReplica(s.endpoint_id, s.url, "localhost-fixture", (), "a" * 64, 4, 64) for s in sites)
         adaptation = None if arm == "round_robin" else ReplicaAdaptationConfig(
             target_drain_s=0.15 if arm == "adaptive_supply" else None, sample_interval_s=0.03,
-            stale_after_s=2, rate_alpha=0.3)
+            stale_after_s=2, rate_alpha=0.3, min_rate_support_s=0.03,
+            adapt_supply=arm == "adaptive_supply")
         directory = ModelReplicaSet("fixture", replicas, requests, requests * 16,
             routing="round_robin" if arm == "round_robin" else "adaptive", adaptation=adaptation)
         providers = ({s.endpoint_id: CachedMetricsObservationProvider(s.metrics, min_sample_interval_s=0.03)
@@ -142,7 +145,7 @@ def run_cell(speeds, actual_work, estimates, *, arm, requests, arrival_s=None, f
             replica_observations=providers, observer=lambda event: trace.append(dict(event, at_s=time.monotonic())))
         policy = execution.engine.policies.router
         if arm == "fixed_rate":
-            policy.feedback = lambda endpoint_id: ReplicaFeedback(time.monotonic(), fixed_rates[endpoint_id])
+            policy.feedback = lambda endpoint_id: replace(fixed_rates[endpoint_id], rate_observed_at_s=time.monotonic())
         timed = _TimedPolicy(execution.engine.policies.admission, policy)
         execution.engine.policies = replace(execution.engine.policies, admission=timed, router=timed)
         flow = NativeTaskSession(execution, "fixture-query", "fixture-map")
@@ -230,7 +233,15 @@ def run_probe(repeats=3):
         for run in runs:
             result["calibration"].append(dict(speeds=speeds, **run))
         selected = min(runs, key=lambda r: r["jct_s"])
-        rates = {e["endpoint_id"]: e["completed_work"] / e["busy_s"] for e in selected["endpoints"]}
+        rates = {e["endpoint_id"]: ReplicaFeedback(
+            rate_observed_at_s=max(r["done_at_s"] for r in e["records"]),
+            service_rate_work_units_s=e["completed_work"] / e["busy_s"],
+            rate_support_s=e["busy_s"], rate_completed_requests=len(e["records"]),
+            rate_completed_work=e["completed_work"],
+            rate_mean_active_requests=sum(r["done_at_s"] - r["service_at_s"] for r in e["records"]) / e["busy_s"],
+            rate_peak_active_requests=e["peak_service"],
+            rate_sample_started_at_s=min(r["service_at_s"] for r in e["records"]),
+            rate_provenance="calibration") for e in selected["endpoints"]}
         calibrations[speeds] = selected["requests"], rates
     for name, speeds in cases.items():
         work = [1, 1, 3, 1, 2, 1] * 8

@@ -39,25 +39,41 @@ Neither policy retries a failed request or moves an already accepted request.
 `routing="adaptive"` requires an explicit `adaptation` object in the private
 configuration. `ReplicaAdaptationConfig` accepts `target_drain_s` (optional soft
 work target), `sample_interval_s`, `stale_after_s`, `rate_alpha` and
-`congestion_kv_usage`. Existing `static`/`round_robin` behavior, configuration
+`congestion_kv_usage`, `min_rate_support_s` (default 0.25),
+`min_rate_completed_requests` (default 2), and `adapt_supply` (default false).
+Queue/KV supply changes require explicit `adapt_supply=true`; they remain an
+experimental diagnostic. Existing `static`/`round_robin` behavior, configuration
 signatures and the default single-endpoint assembly are preserved.
 
 This mode reuses `LeastWorkEndpointRouter`. A bounded accumulator per endpoint
 estimates successful completed descriptor work divided by the union of busy
-transport intervals; an exponential average smooths successive samples. It
+transport intervals; an exponential average smooths work and time together. A
+short tail corrects the last supported window of the same busy segment. Weak
+serial segments accumulate enough support across sessions, excluding idle gaps;
+a long idle gap expires unpublished support. A weak observation holds an existing
+qualified prior without refreshing its age. Support duration, successful count/work,
+mean/peak transport concurrency, start time and provenance accompany each rate. It
 includes preparation, HTTP/client waits and service queueing. It is not actual
 token throughput, GPU utilization or calibrated service capacity. HTTP errors,
 local errors and unknown outcomes do not add completed work. A request-count
 descriptor stays in request-count units and is never compared to token/s.
-Until all replicas have fresh rates, neutral outstanding work is used and an
-unmeasured idle endpoint receives a probe opportunity. Probing sends only an
+Rates depend on concurrency, request mix, ready work and other service clients.
+They are not unconditioned capacity constants. Routing first filters hard-legal
+healthy/available candidates. Qualified fresh rates compare only among those
+candidates; an unrelated unavailable replica cannot disable that comparison.
+An unmeasured legal idle endpoint receives a probe opportunity. Occupied unknown
+endpoints retain their Core responsibility; if no qualified candidate is legal,
+neutral outstanding work is used. Probing sends only an
 original queued call, without duplicate requests or hidden retries.
 
-On each new complete queue/KV sample, the per-replica supply target moves one
+With `adapt_supply=true`, each new complete queue/KV sample at the configured
+minimum cadence moves the per-replica supply target one
 request down under pressure or one up on a clear queue, between one and its hard
 declaration. Aggregate admission uses the smaller of the declared global request
 limit and the sum of current targets. Routing still checks that endpoint's hard
-request/work limits against Core records. A sample does not cancel or retire any
+request/work limits against Core records. Repeated samples and faster polling
+hold the target. Diagnostics expose hold/down/recovery/fallback transitions.
+A sample does not cancel or retire any
 already submitted work. Missing/stale pressure restores declared static supply;
 missing/stale rates use the neutral-work fallback. The optional drain target
 additionally limits new outstanding work; one hard-legal task can run alone on an

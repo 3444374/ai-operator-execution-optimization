@@ -22,6 +22,13 @@ def topology(a=0, b=0, a_work=None, b_work=None):
         for k, count, work in (("a", a, a_work), ("b", b, b_work))), 0)
 
 
+def calibrated(rate, observed=1):
+    return ReplicaFeedback(observed, rate, rate_support_s=0.5,
+        rate_completed_requests=2, rate_completed_work=2,
+        rate_mean_active_requests=2, rate_peak_active_requests=2,
+        rate_sample_started_at_s=observed - 0.5, rate_provenance="calibration")
+
+
 class ReplicaAdaptationTests(unittest.TestCase):
     def setUp(self):
         self.now = 1.0
@@ -29,7 +36,7 @@ class ReplicaAdaptationTests(unittest.TestCase):
 
     def policy(self, *, drain=None, maximum=6):
         return ReplicaAdaptivePolicy((ReplicaCapacity("a", 3, 12), ReplicaCapacity("b", 3, 12)),
-            maximum, config=ReplicaAdaptationConfig(target_drain_s=drain),
+            maximum, config=ReplicaAdaptationConfig(target_drain_s=drain, adapt_supply=True),
             feedback=self.samples.__getitem__, clock=lambda: self.now)
 
     def test_one_step_supply_applies_each_service_sample_once_and_restores_after_stale(self):
@@ -61,7 +68,7 @@ class ReplicaAdaptationTests(unittest.TestCase):
         self.assertEqual(policy.decide(0).limit, 4)
 
     def test_rates_compare_same_work_unit_and_use_predicted_drain(self):
-        self.samples.update(a=ReplicaFeedback(1, 1), b=ReplicaFeedback(1, 8))
+        self.samples.update(a=calibrated(1), b=calibrated(8))
         policy = self.policy()
         self.assertEqual(policy.route(request(2), topology(0, 1), "model").endpoint_id, "b")
         self.assertEqual(policy.route(request(2), topology(0, 3), "model").endpoint_id, "a")
@@ -69,12 +76,12 @@ class ReplicaAdaptationTests(unittest.TestCase):
     def test_missing_rate_uses_work_and_probes_unmeasured_idle_replica(self):
         policy = self.policy(maximum=1)
         self.assertEqual(policy.route(request(), topology(), "model").endpoint_id, "a")
-        self.samples["a"] = ReplicaFeedback(1, 100)
+        self.samples["a"] = calibrated(100)
         self.assertEqual(policy.route(request(), topology(), "model").endpoint_id, "b")
         self.assertEqual(policy.route(request(), topology(1, 0, 1, 8), "model").endpoint_id, "a")
 
     def test_soft_work_target_allows_one_hard_legal_task_on_idle_replica(self):
-        self.samples.update(a=ReplicaFeedback(1, 1), b=ReplicaFeedback(1, 1))
+        self.samples.update(a=calibrated(1), b=calibrated(1))
         policy = self.policy(drain=1)
         with self.assertRaises(EndpointCapacityUnavailable):
             policy.route(request(2), topology(1, 1), "model")
@@ -126,7 +133,7 @@ class ReplicaAdaptationTests(unittest.TestCase):
         self.samples = {k: ReplicaFeedback(pressure_observed_at_s=1, waiting=2, kv_usage=0.9)
                         for k in ("a", "b")}
         policy = ReplicaAdaptivePolicy((ReplicaCapacity("a", 4, 4), ReplicaCapacity("b", 4, 4)),
-            2, config=ReplicaAdaptationConfig(), feedback=self.samples.__getitem__, clock=lambda: self.now)
+            2, config=ReplicaAdaptationConfig(adapt_supply=True), feedback=self.samples.__getitem__, clock=lambda: self.now)
         policy.decide(0)
         self.now = 4
         decision = policy.decide(2)

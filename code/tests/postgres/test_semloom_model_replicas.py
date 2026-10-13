@@ -668,11 +668,22 @@ class AdaptiveReplicaTests(unittest.TestCase):
 
     def test_service_queue_reduces_supply_without_adding_running_to_core_counts(self):
         a, b = self.site("a", hold=True), self.site("b", hold=True)
+        observed = [time.monotonic()]
         def sample(_):
-            return AdmissionObservation(time.monotonic(), True, 0, 100, 3, 0.2, sample_age_s=0)
+            now = time.monotonic()
+            return AdmissionObservation(now, True, 0, 100, 3, 0.2, sample_age_s=now - observed[0])
         providers = {k: mock.Mock(latest=sample) for k in ("a", "b")}
-        execution = self.execution(directory((a, b), capacities=((3, 3), (3, 3))),
+        replicas = replace(directory((a, b), capacities=((3, 3), (3, 3))), routing="adaptive",
+            adaptation=ReplicaAdaptationConfig(adapt_supply=True, sample_interval_s=.01))
+        execution = self.execution(replicas,
                                    max_tasks=8, replica_observations=providers)
+        policy = execution.engine.policies.admission
+        self.assertEqual(policy.decide(0).limit, 4)
+        for _ in range(20):
+            self.assertEqual(policy.decide(0).limit, 4)
+        time.sleep(.02)
+        observed[0] = time.monotonic()
+        self.assertEqual(policy.decide(0).limit, 2)
         flow = self.flow(execution)
         flow.offer(tuple(task(i) for i in range(8)))
         self.until(execution, lambda: len(a.requests) + len(b.requests) == 2)

@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[副本反馈支持与证据审计修订](../experiments/results/diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
+短尾/零时尾、串行K1/失败busy支持和候选合法性修复，37项确定性及3项replay通过；压力供给显式opt-in，默认RR不变。审计正常/-O各9项、47种损坏拒绝，原820 metadata两模式只读复核；不是新性能/GPU证据，持久同先验两因素配对pending。
+
 2026-10-13：[能力变化／恢复软件检查](../experiments/results/diagnostics/replica_adaptation_20261013/capacity_change/README.md)
 复用既有HTTP fixture和同transport边界，1800POST；K2在线0.8301／固定0.8942，而K8 RR0.4888／在线0.4958，保留强静态反例与反馈滞后。模型/GPU0，joint欠供给控制仍pending。
 

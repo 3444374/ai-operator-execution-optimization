@@ -1,0 +1,1412 @@
+{
+  "evidence_type": "offline_existing_clock_edges",
+  "input_sha256": "f81da47c07a724d178b3bab60be3b22c67783e4d30d6df878095c6d55ae7ff69",
+  "old_code_sha256": "a8e07a6edc7affefd0aea487d304ce479a0ac911f3a27b6d0c8a14838492b079",
+  "new_code_sha256": "1c2a3d808bdc6d547eae79b8563b6d8a62e916fecd613c5bb39969fbc65bca84",
+  "counterfactual_routes_or_performance": false,
+  "cells": [
+    {
+      "label": "cal-k1",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 11.805534350597538,
+          "new": 11.613879133653347
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 8,
+          "tail_corrections": 0,
+          "low_support_holds": 14,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 2.103015215601772,
+          "last_segment_work": 1,
+          "last_segment_completed": 1,
+          "last_segment_busy_s": 0.08562745898962021,
+          "last_segment_rate": 11.678496732236564
+        }
+      }
+    },
+    {
+      "label": "cal-k2",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 18.94016265869134,
+          "new": 19.007636465945613
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 5,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 1.3046651952899992,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 1.3046651952899992,
+          "last_segment_rate": 18.39552406751014
+        }
+      }
+    },
+    {
+      "label": "cal-k4",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 27.438472522159582,
+          "new": 32.06418698867923
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 3,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8082377570681274,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8082377570681274,
+          "last_segment_rate": 29.694232656316018
+        }
+      }
+    },
+    {
+      "label": "measure-0-adaptive_route",
+      "topology": "single",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 546.4312566932965,
+          "new": 29.262743054526034
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8848244408145547,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8848244408145547,
+          "last_segment_rate": 27.124024713768076
+        }
+      }
+    },
+    {
+      "label": "measure-0-adaptive_supply",
+      "topology": "single",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 278.31116898162304,
+          "new": 28.931816428271084
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8812909219413996,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8812909219413996,
+          "last_segment_rate": 27.23277796522662
+        }
+      }
+    },
+    {
+      "label": "measure-0-fixed_rate",
+      "topology": "single",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 72.2080945105906,
+          "new": 31.783541668619776
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.815070437733084,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.815070437733084,
+          "last_segment_rate": 29.445307900934356
+        }
+      }
+    },
+    {
+      "label": "measure-0-round_robin",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 561.242617824884,
+          "new": 29.744640949787204
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8616189160384238,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8616189160384238,
+          "last_segment_rate": 27.85454166947482
+        }
+      }
+    },
+    {
+      "label": "measure-1-adaptive_route",
+      "topology": "single",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 27.242453699114968,
+          "new": 31.900666450335077
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 3,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8142739860340953,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8142739860340953,
+          "last_segment_rate": 29.47410872953403
+        }
+      }
+    },
+    {
+      "label": "measure-1-adaptive_supply",
+      "topology": "single",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 274.2680279449725,
+          "new": 29.393279533402886
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8799124900251627,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8799124900251627,
+          "last_segment_rate": 27.2754396284495
+        }
+      }
+    },
+    {
+      "label": "measure-1-fixed_rate",
+      "topology": "single",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 294.072654688141,
+          "new": 29.156787470678474
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8877339619211853,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8877339619211853,
+          "last_segment_rate": 27.03512654631407
+        }
+      }
+    },
+    {
+      "label": "measure-1-round_robin",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 188.1969119701035,
+          "new": 28.29651569505957
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.9015636909753084,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.9015636909753084,
+          "last_segment_rate": 26.620415440684933
+        }
+      }
+    },
+    {
+      "label": "measure-2-adaptive_route",
+      "topology": "single",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 246.0681191450521,
+          "new": 29.07428943861862
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8912890059873462,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8912890059873462,
+          "last_segment_rate": 26.927292762254417
+        }
+      }
+    },
+    {
+      "label": "measure-2-adaptive_supply",
+      "topology": "single",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 289.7458391043424,
+          "new": 29.231101029815125
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8843255802057683,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8843255802057683,
+          "last_segment_rate": 27.13932576101167
+        }
+      }
+    },
+    {
+      "label": "measure-2-fixed_rate",
+      "topology": "single",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 320.42801669196785,
+          "new": 29.250211034948016
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 4,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8864465402439237,
+          "last_segment_work": 24,
+          "last_segment_completed": 24,
+          "last_segment_busy_s": 0.8864465402439237,
+          "last_segment_rate": 27.074390739227113
+        }
+      }
+    },
+    {
+      "label": "measure-2-round_robin",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 421.85334341870396,
+          "new": 29.033541744818606
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 5,
+          "tail_corrections": 2,
+          "low_support_holds": 0,
+          "successful_work": 24,
+          "successful_requests": 24,
+          "busy_s": 0.8623035531491041,
+          "last_segment_work": 16,
+          "last_segment_completed": 16,
+          "last_segment_busy_s": 0.5619947132654488,
+          "last_segment_rate": 28.470018707173615
+        }
+      }
+    },
+    {
+      "label": "protocol",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 2,
+      "peaks": {
+        "a": {
+          "old": 7.2899960248220514,
+          "new": 7.370421408091001
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 1,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 2,
+          "successful_requests": 2,
+          "busy_s": 0.2713549048639834,
+          "last_segment_work": 1,
+          "last_segment_completed": 1,
+          "last_segment_busy_s": 0.08479936979711056,
+          "last_segment_rate": 11.792540468078736
+        }
+      }
+    },
+    {
+      "label": "warm-adaptive_route",
+      "topology": "single",
+      "arm": "adaptive_route",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 24.548930664548376,
+          "new": 26.035818160998
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4609035109169781,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4609035109169781,
+          "last_segment_rate": 26.035818160998
+        }
+      }
+    },
+    {
+      "label": "warm-adaptive_supply",
+      "topology": "single",
+      "arm": "adaptive_supply",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 24.037490154526793,
+          "new": 25.959518036531936
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.46225819690153,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.46225819690153,
+          "last_segment_rate": 25.959518036531936
+        }
+      }
+    },
+    {
+      "label": "warm-fixed_rate",
+      "topology": "single",
+      "arm": "fixed_rate",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 24.35976982215151,
+          "new": 26.197308244406813
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4580623279325664,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4580623279325664,
+          "last_segment_rate": 26.197308244406816
+        }
+      }
+    },
+    {
+      "label": "warm-round_robin",
+      "topology": "single",
+      "arm": "round_robin",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 24.362840775569808,
+          "new": 26.174503399234087
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4584614201448858,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4584614201448858,
+          "last_segment_rate": 26.174503399234087
+        }
+      }
+    },
+    {
+      "label": "cal-k2",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 11.210755829214438,
+          "new": 11.04237603558384
+        },
+        "b": {
+          "old": 12.448614737156717,
+          "new": 12.201912793121972
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 5,
+          "tail_corrections": 2,
+          "low_support_holds": 1,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 1.1113991630263627,
+          "last_segment_work": 4,
+          "last_segment_completed": 4,
+          "last_segment_busy_s": 0.34328199410811067,
+          "last_segment_rate": 11.652227814606174
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 3,
+          "tail_corrections": 0,
+          "low_support_holds": 7,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.9891514233313501,
+          "last_segment_work": 1,
+          "last_segment_completed": 1,
+          "last_segment_busy_s": 0.07912464393302798,
+          "last_segment_rate": 12.63828752071746
+        }
+      }
+    },
+    {
+      "label": "cal-k4",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 17.990785297949998,
+          "new": 18.37551453462884
+        },
+        "b": {
+          "old": 18.85285140525335,
+          "new": 18.810418849652667
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 3,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.6824767328798771,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.6824767328798771,
+          "last_segment_rate": 17.583017005375513
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 0,
+          "low_support_holds": 1,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.6436227709054947,
+          "last_segment_work": 4,
+          "last_segment_completed": 4,
+          "last_segment_busy_s": 0.212432072032243,
+          "last_segment_rate": 18.829548484528637
+        }
+      }
+    },
+    {
+      "label": "cal-k8",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 23.13419655541518,
+          "new": 24.563299551139405
+        },
+        "b": {
+          "old": 27.547629042383328,
+          "new": 29.271838000177507
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4885337157174945,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4885337157174945,
+          "last_segment_rate": 24.56329955113941
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4099503420293331,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4099503420293331,
+          "last_segment_rate": 29.27183800017751
+        }
+      }
+    },
+    {
+      "label": "measure-0-adaptive_route",
+      "topology": "dual",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 24.297881266665282,
+          "new": 25.297984053287948
+        },
+        "b": {
+          "old": 25.26716014235852,
+          "new": 27.258968416987695
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4743460970930755,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4743460970930755,
+          "last_segment_rate": 25.297984053287944
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4402220882475376,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4402220882475376,
+          "last_segment_rate": 27.2589684169877
+        }
+      }
+    },
+    {
+      "label": "measure-0-adaptive_supply",
+      "topology": "dual",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 279.1383008084776,
+          "new": 23.793009830269042
+        },
+        "b": {
+          "old": 24.904210344997274,
+          "new": 26.882692597001824
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 1,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.48008520901203156,
+          "last_segment_work": 4,
+          "last_segment_completed": 4,
+          "last_segment_busy_s": 0.14385200198739767,
+          "last_segment_rate": 27.80635614894275
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.44638385670259595,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.44638385670259595,
+          "last_segment_rate": 26.882692597001824
+        }
+      }
+    },
+    {
+      "label": "measure-0-fixed_rate",
+      "topology": "dual",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 25.371738606698173,
+          "new": 27.290466011998387
+        },
+        "b": {
+          "old": 23.70098443872454,
+          "new": 25.169875858414063
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.43971400102600455,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.43971400102600455,
+          "last_segment_rate": 27.290466011998383
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.47676039673388004,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.47676039673388004,
+          "last_segment_rate": 25.169875858414066
+        }
+      }
+    },
+    {
+      "label": "measure-0-round_robin",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 24.40244856323484,
+          "new": 25.525258526184714
+        },
+        "b": {
+          "old": 26.734234516799056,
+          "new": 28.676912344086823
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4701225645840168,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4701225645840168,
+          "last_segment_rate": 25.525258526184718
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.41845509223639965,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.41845509223639965,
+          "last_segment_rate": 28.676912344086826
+        }
+      }
+    },
+    {
+      "label": "measure-1-adaptive_route",
+      "topology": "dual",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 22.63753566588833,
+          "new": 23.9033337592494
+        },
+        "b": {
+          "old": 26.44643919298152,
+          "new": 28.183654565261676
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.50202202424407,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.50202202424407,
+          "last_segment_rate": 23.9033337592494
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.42577870702371,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.42577870702371,
+          "last_segment_rate": 28.18365456526168
+        }
+      }
+    },
+    {
+      "label": "measure-1-adaptive_supply",
+      "topology": "dual",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 22.934535635671494,
+          "new": 24.27150656436935
+        },
+        "b": {
+          "old": 25.04083674050066,
+          "new": 27.042128910274915
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.49440688686445355,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.49440688686445355,
+          "last_segment_rate": 24.271506564369353
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4437520448118448,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4437520448118448,
+          "last_segment_rate": 27.04212891027492
+        }
+      }
+    },
+    {
+      "label": "measure-1-fixed_rate",
+      "topology": "dual",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 25.067135290371553,
+          "new": 27.078322525937356
+        },
+        "b": {
+          "old": 23.61555908107455,
+          "new": 25.079060345676982
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.44315891386941075,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.44315891386941075,
+          "last_segment_rate": 27.07832252593736
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.47848682664334774,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.47848682664334774,
+          "last_segment_rate": 25.079060345676986
+        }
+      }
+    },
+    {
+      "label": "measure-1-round_robin",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 24.677988398204903,
+          "new": 25.855995538663997
+        },
+        "b": {
+          "old": 27.517225785200864,
+          "new": 29.216563622093016
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.464108990970999,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.464108990970999,
+          "last_segment_rate": 25.855995538663997
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4107259209267795,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4107259209267795,
+          "last_segment_rate": 29.21656362209302
+        }
+      }
+    },
+    {
+      "label": "measure-2-adaptive_route",
+      "topology": "dual",
+      "arm": "adaptive_route",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 22.65390781526684,
+          "new": 23.979492827240804
+        },
+        "b": {
+          "old": 26.409312134253447,
+          "new": 28.210768073708834
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.5004275981336832,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.5004275981336832,
+          "last_segment_rate": 23.979492827240804
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.42536948900669813,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.42536948900669813,
+          "last_segment_rate": 28.210768073708834
+        }
+      }
+    },
+    {
+      "label": "measure-2-adaptive_supply",
+      "topology": "dual",
+      "arm": "adaptive_supply",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 25.15683173827118,
+          "new": 25.718248204102608
+        },
+        "b": {
+          "old": 26.430357711323783,
+          "new": 27.858155195370973
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.46659476589411497,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.46659476589411497,
+          "last_segment_rate": 25.71824820410261
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.43075357703492045,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.43075357703492045,
+          "last_segment_rate": 27.858155195370973
+        }
+      }
+    },
+    {
+      "label": "measure-2-fixed_rate",
+      "topology": "dual",
+      "arm": "fixed_rate",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 26.492188875789545,
+          "new": 28.29701689116044
+        },
+        "b": {
+          "old": 24.592337466555904,
+          "new": 25.69999316267269
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4240729701705277,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4240729701705277,
+          "last_segment_rate": 28.297016891160442
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4669261942617595,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4669261942617595,
+          "last_segment_rate": 25.69999316267269
+        }
+      }
+    },
+    {
+      "label": "measure-2-round_robin",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 24,
+      "peaks": {
+        "a": {
+          "old": 23.013687271011158,
+          "new": 24.34274961258743
+        },
+        "b": {
+          "old": 26.66655874361219,
+          "new": 28.570308277381674
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4929599240422249,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4929599240422249,
+          "last_segment_rate": 24.342749612587433
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 12,
+          "successful_requests": 12,
+          "busy_s": 0.4200164689682424,
+          "last_segment_work": 12,
+          "last_segment_completed": 12,
+          "last_segment_busy_s": 0.4200164689682424,
+          "last_segment_rate": 28.570308277381677
+        }
+      }
+    },
+    {
+      "label": "protocol",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 2,
+      "peaks": {
+        "b": {
+          "old": 7.23518559100626,
+          "new": 7.281083905630745
+        }
+      },
+      "diagnostics": {
+        "b": {
+          "active": 0,
+          "rate_updates": 1,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 2,
+          "successful_requests": 2,
+          "busy_s": 0.2746843774802983,
+          "last_segment_work": 1,
+          "last_segment_completed": 1,
+          "last_segment_busy_s": 0.08431334560737014,
+          "last_segment_rate": 11.860518554877347
+        }
+      }
+    },
+    {
+      "label": "warm-adaptive_route",
+      "topology": "dual",
+      "arm": "adaptive_route",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 29.74097403787526,
+          "new": 21.9306815167458
+        },
+        "b": {
+          "old": 20.257938355036426,
+          "new": 20.257938355036426
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 7,
+          "successful_requests": 7,
+          "busy_s": 0.31918752705678344,
+          "last_segment_work": 7,
+          "last_segment_completed": 7,
+          "last_segment_busy_s": 0.31918752705678344,
+          "last_segment_rate": 21.9306815167458
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 0,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 5,
+          "successful_requests": 5,
+          "busy_s": 0.2468168237246573,
+          "last_segment_work": 5,
+          "last_segment_completed": 5,
+          "last_segment_busy_s": 0.2468168237246573,
+          "last_segment_rate": 20.257938355036426
+        }
+      }
+    },
+    {
+      "label": "warm-adaptive_supply",
+      "topology": "dual",
+      "arm": "adaptive_supply",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 481.23579325754184,
+          "new": 20.965268881010612
+        },
+        "b": {
+          "old": 17.827735688034277,
+          "new": 17.827735688034277
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 7,
+          "successful_requests": 7,
+          "busy_s": 0.33388553420081735,
+          "last_segment_work": 7,
+          "last_segment_completed": 7,
+          "last_segment_busy_s": 0.33388553420081735,
+          "last_segment_rate": 20.965268881010612
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 1,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 5,
+          "successful_requests": 5,
+          "busy_s": 0.28046186501160264,
+          "last_segment_work": 5,
+          "last_segment_completed": 5,
+          "last_segment_busy_s": 0.28046186501160264,
+          "last_segment_rate": 17.827735688034277
+        }
+      }
+    },
+    {
+      "label": "warm-fixed_rate",
+      "topology": "dual",
+      "arm": "fixed_rate",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 19.519826074271197,
+          "new": 19.519826074271197
+        },
+        "b": {
+          "old": 47.821834636064,
+          "new": 22.916256543601474
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 1,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 5,
+          "successful_requests": 5,
+          "busy_s": 0.2561498233117163,
+          "last_segment_work": 5,
+          "last_segment_completed": 5,
+          "last_segment_busy_s": 0.2561498233117163,
+          "last_segment_rate": 19.519826074271197
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 7,
+          "successful_requests": 7,
+          "busy_s": 0.3054600120522082,
+          "last_segment_work": 7,
+          "last_segment_completed": 7,
+          "last_segment_busy_s": 0.3054600120522082,
+          "last_segment_rate": 22.91625654360147
+        }
+      }
+    },
+    {
+      "label": "warm-round_robin",
+      "topology": "dual",
+      "arm": "round_robin",
+      "count": 12,
+      "peaks": {
+        "a": {
+          "old": 29.69501053130408,
+          "new": 21.92110188801585
+        },
+        "b": {
+          "old": 20.160473408133093,
+          "new": 20.160473408133093
+        }
+      },
+      "diagnostics": {
+        "a": {
+          "active": 0,
+          "rate_updates": 2,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 7,
+          "successful_requests": 7,
+          "busy_s": 0.31932701356709003,
+          "last_segment_work": 7,
+          "last_segment_completed": 7,
+          "last_segment_busy_s": 0.31932701356709003,
+          "last_segment_rate": 21.921101888015848
+        },
+        "b": {
+          "active": 0,
+          "rate_updates": 0,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 5,
+          "successful_requests": 5,
+          "busy_s": 0.24801004910841584,
+          "last_segment_work": 5,
+          "last_segment_completed": 5,
+          "last_segment_busy_s": 0.24801004910841584,
+          "last_segment_rate": 20.160473408133093
+        }
+      }
+    }
+  ]
+}

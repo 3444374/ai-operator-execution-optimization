@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-13：[副本反馈支持与审计修订](diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
+37项确定性回归、3项replay（16localhost POST），模型/GPU/服务器新增0。47种损坏正常/-O均拒绝；原40批820 metadata两模式复核不变。同clock离线rate修正不推导误路由或反事实JCT，原负结果保持；新持久配对pending。
+
 2026-10-13：[副本能力变化／恢复软件检查](diagnostics/replica_adaptation_20261013/capacity_change/README.md)。
 1800localhostPOST、13.949秒，模型/GPU0；固定work／请求及变更时刻、同completion transport边界。K2在线局部收益未超过K8强静态RR，服务恢复不等于稳定capacity已学到。
 

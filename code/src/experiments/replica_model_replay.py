@@ -117,10 +117,11 @@ class TimedPolicy:
         return result
 
 
-def endpoint_rates(events, endpoint_ids):
+def endpoint_rates(events, endpoint_ids, *, with_support=False):
     """Same accumulator edges and work as online feedback; freeze the batch rate."""
     markers = {k: [] for k in endpoint_ids}
     completed = Counter()
+    counts = Counter()
     for event in events:
         if event.get("event") not in ("feedback_started", "feedback_finished"):
             continue
@@ -131,25 +132,37 @@ def endpoint_rates(events, endpoint_ids):
             markers[endpoint].append((event["monotonic_s"], -1))
             if event["successful"]:
                 completed[endpoint] += event["work"]
+                counts[endpoint] += 1
     result = {}
     for endpoint, edges in markers.items():
         if not edges:
             raise ValueError("calibration did not reach every selected replica")
-        active, busy, previous = 0, 0.0, edges[0][0]
+        active, busy, area, peak, previous = 0, 0.0, 0.0, 0, edges[0][0]
         for stamp, delta in sorted(edges):
             if active:
                 busy += stamp - previous
+                area += (stamp - previous) * active
             active += delta
+            peak = max(peak, active)
             previous = stamp
         if active or busy <= 0 or completed[endpoint] <= 0:
             raise ValueError("calibration completion edges did not settle")
-        result[endpoint] = completed[endpoint] / busy
+        rate = completed[endpoint] / busy
+        result[endpoint] = (ReplicaFeedback(rate_observed_at_s=previous,
+            service_rate_work_units_s=rate, rate_support_s=busy,
+            rate_completed_requests=counts[endpoint], rate_completed_work=completed[endpoint],
+            rate_mean_active_requests=area / busy, rate_peak_active_requests=peak,
+            rate_sample_started_at_s=edges[0][0], rate_provenance="calibration") if with_support else rate)
     return result
 
 
 def replay_batch(config, directory, calls, *, arm, requests, unit, output,
                  stop_new_post_utc, providers=None, fixed_rates=None, query_started=None):
     """One sealed batch, one original POST per occurrence; every response stays private."""
+    if arm == "fixed_rate" and (not fixed_rates
+            or set(fixed_rates) != {r.endpoint_id for r in directory.replicas}
+            or any(type(v) is not ReplicaFeedback for v in fixed_rates.values())):
+        raise ValueError("frozen rates require measured calibration support for every replica")
     output = Path(output)
     output.mkdir(exist_ok=False)
     observer = JsonEvents(output / "events.jsonl")
@@ -157,7 +170,8 @@ def replay_batch(config, directory, calls, *, arm, requests, unit, output,
     attempts, outcomes = [], []
     started = time.monotonic()
     cpu_start = time.process_time()
-    adaptation = None if arm == "round_robin" else ReplicaAdaptationConfig(target_drain_s=None)
+    adaptation = None if arm == "round_robin" else ReplicaAdaptationConfig(
+        target_drain_s=None, adapt_supply=arm == "adaptive_supply")
     selected = replace(directory, max_active_requests=requests, max_active_work=requests,
         routing="round_robin" if arm == "round_robin" else "adaptive", adaptation=adaptation)
     execution = build_model_replica_execution(config, replicas=selected, response_mode="full",
@@ -171,7 +185,9 @@ def replay_batch(config, directory, calls, *, arm, requests, unit, output,
     if arm != "round_robin":
         router.feedback = feedback.latest
     if arm == "fixed_rate":
-        router.feedback = lambda endpoint_id: ReplicaFeedback(time.monotonic(), fixed_rates[endpoint_id])
+        # The timestamp is the frozen view's publication time. Original calibration
+        # edges, duration and concurrency are retained in the input evidence.
+        router.feedback = lambda endpoint_id: replace(fixed_rates[endpoint_id], rate_observed_at_s=time.monotonic())
     timed = TimedPolicy(execution.engine.policies.admission, router, observer)
     execution.engine.policies = replace(execution.engine.policies, admission=timed, router=timed)
     flow = NativeTaskSession(execution, output.name, "preserved-q2-replay")

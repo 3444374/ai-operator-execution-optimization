@@ -65,7 +65,7 @@ def main(output):
         sites[0].seconds_per_work = changing_a
         arms = ("round_robin", "fixed_rate", "adaptive_route")
         for k in (2, 8):
-            rates = endpoint_rates(next(c for c in calibration if c["requests"] == k)["events"], ("0", "1"))
+            rates = endpoint_rates(next(c for c in calibration if c["requests"] == k)["events"], ("0", "1"), with_support=True)
             for repeat, order in enumerate((arms, arms[::-1], ("fixed_rate", "round_robin", "adaptive_route"))):
                 for arm in order:
                     results.append(run(f"k{k}-repeat{repeat}-{arm}", k=k, arm=arm, rates=rates))

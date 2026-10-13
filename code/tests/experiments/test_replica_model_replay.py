@@ -82,7 +82,7 @@ class ReplicaModelReplayTests(unittest.TestCase):
                 self.assertEqual(snapshots[-1]["usage"]["held_tasks"], 0)
                 self.assertEqual(sum(e["event"] == "feedback_finished" for e in result["events"]), 4)
                 if arm == "round_robin":
-                    rates = endpoint_rates(result["events"], ("a", "b"))
+                    rates = endpoint_rates(result["events"], ("a", "b"), with_support=True)
                 self.assertEqual(unit.attempts, 4)
                 budget.close_shared_unit(arm)
             self.assertEqual(budget.snapshot()["allocated_requests"], 16)

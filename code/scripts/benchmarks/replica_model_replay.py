@@ -86,7 +86,7 @@ def main():
         candidates = (1, 2, 4) if args.topology == "single" else (2, 4, 8)
         calibration = [run("cal-k" + str(k), (24, 48), requests=k) for k in candidates]
         selected = min(calibration, key=lambda r: r["jct_s"])
-        rates = endpoint_rates(selected["events"], [r.endpoint_id for r in chosen])
+        rates = endpoint_rates(selected["events"], [r.endpoint_id for r in chosen], with_support=True)
         k = selected["requests"]
         arms = ("round_robin", "fixed_rate", "adaptive_route", "adaptive_supply")
         for arm in arms:
@@ -96,7 +96,8 @@ def main():
             for arm in order:
                 run(f"measure-{repeat}-{arm}", (0, 24), arm=arm, requests=k, rates=rates)
         (args.output / "group.json").write_text(json.dumps(dict(topology=args.topology, selected_k=k,
-            fixed_rates=rates, source_sha256=args.source_sha256, completed_cells=len(results),
+            fixed_rates={k: v.service_rate_work_units_s for k, v in rates.items()},
+            source_sha256=args.source_sha256, completed_cells=len(results),
             budget=budget.snapshot()), indent=2))
         return 0
     except BaseException as error:

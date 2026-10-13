@@ -1,5 +1,8 @@
 # 项目日志
 
+2026-10-13：[副本反馈支持与审计修订](experiments/results/diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
+修复短尾窗口、合法候选和串行支持，并使证据校验不受Python -O跳过；默认RR及Core/LOTUS接线保持，37确定性/31旧路径/3 replay和两模式资格检查通过。原820结果只读保留，新持久配对尚未完成。
+
 2026-10-13：能力变化实验start hook移入既有finally责任范围，异常清理零HTTP检查通过：首错保留、Core／IO线程无残留、整unit预留不退款。
 未重跑1800fixture／820模型，原记录继续绑定52d4f0bb和82bd400b。
 
