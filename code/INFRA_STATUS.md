@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[原生完整调用生命周期](src/baselines/README.md)保留未知远端责任并阻止直接复用，
+无完整HTTP响应的传输错误也计入未知；完整HTTP错误响应保持原结果语义。
+公共执行器／IMLane／配置及入口本地57项，47通过、10项实际库检查跳过；服务器实库仍由接入owner核验。
+
 2026-10-13：[公共HTTPX请求隔离](src/execution_provider/adapters/README.md)保持共享连接池，
 Cookie限制在同一次请求／redirect链内；transport、FullResponse与PG适配26项本地检查通过。
 该公共修补不改默认redirect设置；真实库／模型路径的后续核验由各接入owner按窗口执行。

@@ -133,6 +133,8 @@ class IMLaneEntryTests(unittest.TestCase):
                 load_imlane_call_configs({'cpython': path})
 
     def test_factory_keeps_effective_limits_and_unknown_cleanup_on_early_close(self):
+        from src.baselines.text.frameworks.native_calls import NativeCallOutcome
+        first = NativeCallOutcome('one', 0, None, '')
         class AuthorExecutor:
             def __init__(self, config, options, *, max_batch_rows, max_batch_bytes):
                 self.options = options
@@ -141,7 +143,7 @@ class IMLaneEntryTests(unittest.TestCase):
                 self.last_close_report = None
             def iter_batch(self, calls, *, cancelled, timeout_s):
                 try:
-                    yield calls[0]
+                    yield first
                     raise AssertionError('test should stop consumption')
                 finally:
                     self.last_close_report = dict(clean=False, graph_consumer_stopped=True,
@@ -152,7 +154,7 @@ class IMLaneEntryTests(unittest.TestCase):
                 mock.patch('src.baselines.text.frameworks.native_calls._GraphControl', side_effect=AssertionError('extra scheduler')):
             graph = NativeCallExecutor('imlane', imlane_config=configs()['cpython'])
             iterator = graph.iter_batch(('one', 'two'), timeout_s=3)
-            self.assertEqual(next(iterator), 'one')
+            self.assertIs(next(iterator), first)
             iterator.close()
             self.assertEqual(graph.max_batch_rows, 128)
             self.assertFalse(graph.last_close_report['clean'])
