@@ -73,7 +73,7 @@ continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU �
    公司接口可提前只读核对；最小 spike、正式移植和环境验证按授权分步推进，不作为自有主实现前置项。
    保持同一套方法与执行核心，代码复用和外部部署遵守本文件 Git/隐私规则。
 
-上述允许独立研发不自动授权模型运行或正式实验；仍先有具体计划、环境、baseline、资源和停止条件。
+上述独立研发、模型运行与正式实验分别满足各自的检查要求；服务器使用与模型运行按“环境与正式实验”执行。
 既有 profiler/manifest、Daft/Ray/static/SAOR 结果保持外部执行或 emulated operator 身份，不自动恢复旧
 GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多阶段需求后才另行立项。
 当前任务与实现状态只从主计划、`PROJECT_OUTLINE.md`、`code/INFRA_STATUS.md` 和证据台账引用。
@@ -98,6 +98,10 @@ GPU 矩阵、SAOR、图像动态/HSE。Kalypso-like lineage/KV 只有真实多�
 - 当前代码和实验不支持的能力明确写 `pending` 或“尚未实现”，不以计划存在代替实现。
 
 ## 5. 环境与正式实验
+
+用户已授予本项目对其指定服务器的持续使用授权，覆盖环境准备、依赖修复、真实模型预演与正式实验。
+Agent 按项目目标自行推进，无需逐份计划、额度清单或运行阶段再次确认。目标信息保存在仓库外运行配置中；
+每次实验仍先有具体计划、环境、baseline、资源上限和停止条件，并完成下述检查与证据记录。
 
 准备或执行新机器/容器配置、GPU 切换、缺依赖处理、模型或数据下载、数据库导入、单/多 GPU 实验时，
 读取 `deploy/runtime/AGENTS.md`、`deploy/runtime/README.md` 和目标平台的规则/runbook；

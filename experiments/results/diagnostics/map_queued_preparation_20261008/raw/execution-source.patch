@@ -1,0 +1,503 @@
+--- a/code/INFRA_STATUS.md
++++ b/code/INFRA_STATUS.md
+@@ -3 +3 @@
+-更新：2026-10-04。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
++更新：2026-10-08。本文只在开头汇总现行实现。逐次实验的数据、失败和适用范围见
+@@ -5,0 +6,5 @@
++
++2026-10-08：补充[查询归属、请求发送与计数范围](README.md#query-accounting-scopes)。
++当前单个gateway/Engine内的查询共享、Ray worker发送与跨进程实验预算分别有实现；累计预算、在途容量和观察事件使用不同口径。
++多个gateway的服务总容量协调、同一查询跨PG并行执行进程登记及故障下模型实际执行次数核对仍需对应接入和证据。
++已有[PG查询共享检查](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)不替代共享映射候选的PG/模型资格；本次仅修订文档。
+@@ -29 +34 @@
+-模型/GPU/PG查询均0，数据库生命周期、真实模型与多机仍pending；不能把接入检查当作GPU或原生系统结论。
++模型/GPU/PG查询均0，该共享映射候选的PG生命周期、真实模型与多机检查仍pending；不能把接入检查当作GPU或原生系统结论。
+@@ -40 +45 @@
+-只接本地诊断API，正式观察器／监督器、Linux／Ray／Daft／PG接入仍pending，默认及真实计费保持；生产执行代码未改。
++该日仅接本地诊断API；后续Linux、真实Ray SDK及观察API检查见上方2026-10-04记录。该候选的正式查询入口及PG/模型检查仍pending，默认及真实计费保持。
+--- a/code/README.md
++++ b/code/README.md
+@@ -18 +18 @@
+-正式查询仍同步计数，Core/PG默认未改，真实模型收益pending。
++该共享映射候选尚未接入正式查询入口，其PG生命周期与真实模型检查仍pending；默认仍同步计数。
+@@ -24 +24,2 @@
+-已做组件/Core替身与Linux/真实Ray SDK检查，正式runner及PG/模型接入仍pending，生产默认保持；[报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)记录适用范围。
++已完成组件/Core替身、Linux/真实Ray SDK及真实Ray/Daft/Arrow与本机HTTP检查；该候选的正式查询入口及PG/模型检查仍pending。
++它与现有PG多查询共享使用不同的验证记录，详见下方[查询归属、请求发送与计数范围](#query-accounting-scopes)及[计数报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md)。
+@@ -114 +115 @@
+-实验中的共享gateway已经支持顺序多查询，但没有自动替换默认部署方式。
++实验中的共享gateway已验证顺序查询复用；query-job模式的并发查询另见[查询共享检查](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)，两者不自动替换默认部署方式。
+@@ -118,0 +120,32 @@
++
++<a id="query-accounting-scopes"></a>
++### 查询归属、请求发送与计数范围
++
++多个PG backend进程可以分别登记查询，共享同一个gateway/Engine；同一查询的多个受支持算子流归属一份Job预算。
++查询、算子流和任务分别由Job（查询调度组）、session/flow（算子任务流）与任务key（流内关联键）关联，worker进程数量不增加查询份额。
++当前[PG登记协议](../experiments/plans/数据库接入.md#query-job-版本化登记层)要求各流与控制连接来自同一可信`uid/pid`（用户号/进程号）；
++同一查询的PG并行执行进程共用登记、PG算子流的网络登记与查询身份跨机传递仍pending。
++
++当前gateway由一个控制线程推进一个Engine，[异步backend](src/scheduling/runtime/async_backend.py)维护独立输入输出（I/O）循环，
++[Ray HTTP actor](src/execution_provider/adapters/ray_map_transport.py)在worker进程取payload并发送请求。
++统一维护资源责任与分布式发送可以同时成立。当前SemLoom文本Map的Ray实验路径在远程调用（RPC）前记账，原生Ray/Daft从各自HTTP调用进程记账；
++计数设施需要支持这些进程共享同一额度。这一差异不表示并行能力不同，也不决定生产服务进程数或payload传输拓扑。
++
++| 类型 | 当前实现与作用范围 | 完成或取消后的处理 |
++|---|---|---|
++| 累计实验请求预算 | [SharedClaimedUnit](src/experiments/shared_request_budget.py)用SQLite事务统一领取编号；[共享映射候选](src/experiments/mapped_request_budget.py)先持久预付有限单元，再供同机进程共享领取 | 同摘要的独立调用分别计费；已领取但未发送仍消费预算，不因完成、取消或失败退还 |
++| 在途请求与工作量容量 | [SessionCapacity](src/scheduling/core/session_capacity.py)依据任务记录检查同一Engine内的总量、Job和session上限；工作量单位由执行组装声明 | 权威终态结清后归还计算名额；未知远端结果继续保留占用，记录的活动数不等于实际GPU活动 |
++| 统计与观测 | [HTTP观察器](src/experiments/native_http_observer.py)记录获准编号、调用开始、响应和错误，Core及PG另记录提交、终态与结果交付 | 事件用于核对调用和结果，不发放额外执行容量；客户端调用开始不能证明服务端已接收或模型只执行一次 |
++
++[Ray actor配置](src/execution_provider/adapters/ray_map_transport.py)明确禁用自动重启及任务重试；远端错误按未确认结果保留记录。
++这不构成故障条件下模型执行恰好一次的保证。获准调用、客户端发送、服务端接收、确认完成与结果交付须按实际证据分别核对，
++不能要求取消或未知结果时所有计数相等。记账与记录会改变提交节奏和准备窗口，不能直接从完整时间扣除其累计耗时。
++
++[服务级协调分析](../docs/research/优化方法依据.md#workflow-621-多-job-共享服务必须使用服务级协调)已说明局部容量之和的问题；
++[通用Ray共享协调器](src/scheduling/runtime/shared_credit_ray.py)保留在既有外部执行路径，但[当前PG增量组装](src/execution_provider/adapters/incremental_execution.py)未接入它。
++多个gateway使用同一模型服务时，单实例上限不代表整个部署的总上限；该接入及故障验证仍pending。
++原生Ray/Daft从各自调用进程接入共同实验预算和观测，执行与调度仍由原生系统拥有，不经过SemLoom任务选择和容量策略。
++
++现有PG查询共享的受控与有限真实模型检查由[查询共享报告](../experiments/results/postgresql/query_sharing_lifecycle_check_20260914/README.md)维护，
++其中执行、关联和回收检查与复述质量负结果分别解释。共享映射候选的Linux/真实Ray SDK及本机HTTP检查由
++[计数接入报告](../experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)维护，其PG/真实模型检查尚未完成，不能混用两项资格。
+--- a/code/src/execution_provider/adapters/map_preparation.py
++++ b/code/src/execution_provider/adapters/map_preparation.py
+@@ -61,0 +62,12 @@
++    def _queued_tail(self, tasks):
++        if not tasks or not self.physical.coalesce_queued_preparation or not self.blocks:
++            return None
++        block = self.blocks[next(reversed(self.blocks))]
++        if (self.broker.state_of(block.descriptor.block_id) != 'encoded'
++                or not block.tasks or any(self.rows[t.key].cancelled for t in block.tasks)
++                or block.tasks[0].key.session_id != tasks[0].key.session_id
++                or block.tasks[0].spec != tasks[0].spec
++                or self._work_identity(block.tasks[0]) != self._work_identity(tasks[0])):
++            return None
++        return block
++
+@@ -70 +81,0 @@
+-            selected, size, work = [], 0, 0
+@@ -72,5 +83,26 @@
+-            for task in tasks[:min(available, self.physical.batch_rows)]:
+-                if task.key in self.rows:
+-                    raise ValueError('duplicate prepared Map row')
+-                if selected and (task.spec.job_id != selected[0].spec.job_id
+-                        or self._work_identity(task) != self._work_identity(selected[0])):
++            tail = self._queued_tail(tasks)
++            added = ()
++            for candidate in ((tail, None) if tail is not None else (None,)):
++                prefix = candidate.tasks if candidate is not None else ()
++                selected = list(prefix)
++                size = base_size = sum(len(t.task.payload) + 24 for t in prefix)
++                work = sum(t.task.estimated_work for t in prefix)
++                for task in tasks[:min(available, self.physical.batch_rows - len(prefix))]:
++                    if selected and (task.spec.job_id != selected[0].spec.job_id
++                            or self._work_identity(task) != self._work_identity(selected[0])):
++                        break
++                    if candidate is not None and (task.key.session_id != prefix[0].key.session_id
++                            or task.spec != prefix[0].spec):
++                        break
++                    amount = len(task.task.payload) + 24
++                    if (size + amount > self.physical.window_bytes
++                            or held + size + amount - base_size > self.broker.limits.encoded_bytes
++                            or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
++                            or work + task.task.estimated_work > self.broker.limits.ready_work):
++                        break
++                    selected.append(task)
++                    size += amount
++                    work += task.task.estimated_work
++                added = selected[len(prefix):]
++                if added:
++                    tail = candidate
+@@ -78,10 +110 @@
+-                amount = len(task.task.payload) + 24
+-                if (size + amount > self.physical.window_bytes
+-                        or held + size + amount > self.broker.limits.encoded_bytes
+-                        or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
+-                        or work + task.task.estimated_work > self.broker.limits.ready_work):
+-                    break
+-                selected.append(task)
+-                size += amount
+-                work += task.task.estimated_work
+-            if not selected:
++            if not added:
+@@ -95 +118 @@
+-            block_id = f'map-prepared-{self.ordinal}'
++            block_id = tail.descriptor.block_id if tail is not None else f'map-prepared-{self.ordinal}'
+@@ -97 +120,2 @@
+-                block_id, selected[0].spec.job_id, self.ordinal,
++                block_id, selected[0].spec.job_id,
++                tail.descriptor.ordered_sequence if tail is not None else self.ordinal,
+@@ -104,6 +128,11 @@
+-                time.monotonic())
+-            self.broker.enqueue_encoded(descriptor)
+-            self.ordinal += 1
+-            self.blocks[block_id] = _PreparedBlock(
+-                descriptor, tuple(selected), {t.key for t in selected})
+-            for index, task in enumerate(selected):
++                tail.descriptor.created_at_s if tail is not None else time.monotonic())
++            if tail is not None:
++                self.broker.extend_encoded(descriptor)
++                tail.descriptor, tail.tasks = descriptor, tuple(selected)
++                tail.members.update(t.key for t in added)
++            else:
++                self.broker.enqueue_encoded(descriptor)
++                self.ordinal += 1
++                self.blocks[block_id] = _PreparedBlock(
++                    descriptor, tuple(selected), {t.key for t in selected})
++            for index, task in enumerate(added, start=len(selected) - len(added)):
+@@ -112 +141 @@
+-            return len(selected)
++            return len(added)
+--- a/code/src/execution_provider/adapters/ray_map_transport.py
++++ b/code/src/execution_provider/adapters/ray_map_transport.py
+@@ -33,0 +34 @@
++    coalesce_queued_preparation: bool = False
+@@ -35,0 +37,3 @@
++        if type(self.coalesce_queued_preparation) is not bool or (
++                self.coalesce_queued_preparation and self.preparation is None):
++            raise ValueError("queued preparation coalescing requires explicit preparation")
+--- a/code/src/scheduling/runtime/stage_broker.py
++++ b/code/src/scheduling/runtime/stage_broker.py
+@@ -141,0 +142,38 @@
++        self._assert_invariants()
++
++    def extend_encoded(self, descriptor: StageBlockDescriptor) -> None:
++        """Append rows to the unleased FIFO tail, preserving its existing prefix."""
++        previous = self._descriptors[descriptor.block_id]
++        if (self.state_of(descriptor.block_id) != "encoded"
++                or not self._encoded_queue or self._encoded_queue[-1] != descriptor.block_id):
++            raise ValueError("only the unleased encoded tail can grow")
++        fixed = ("job_id", "ordered_sequence", "representation", "layout", "dtype",
++                 "transform_signature", "model_signature", "created_at_s", "ready_at_s", "retry_count")
++        prefix = len(previous.row_ids)
++        if (any(getattr(previous, name) != getattr(descriptor, name) for name in fixed)
++                or len(descriptor.row_ids) <= prefix
++                or descriptor.row_ids[:prefix] != previous.row_ids
++                or previous.shape[0] != prefix
++                or descriptor.shape != (len(descriptor.row_ids), *previous.shape[1:])):
++            raise ValueError("encoded extension changed the existing row prefix or identity")
++        old_work, new_work = previous.work, descriptor.work
++        work_identity = ("primary_stage", "calibration_signature", "locality_key", "deadline_s",
++                         "lower_primary_units", "upper_primary_units")
++        if (any(getattr(old_work, name) != getattr(new_work, name) for name in work_identity)
++                or len(old_work.stages) != len(new_work.stages)
++                or any(a.stage != b.stage or a.unit != b.unit or b.units < a.units
++                       for a, b in zip(old_work.stages, new_work.stages))
++                or any(getattr(descriptor, name) < getattr(previous, name)
++                       for name in ("logical_bytes", "physical_bytes", "ready_bytes_estimate"))):
++            raise ValueError("encoded extension changed work identity or reduced reservations")
++        appended = descriptor.row_ids[prefix:]
++        if self._admitted_rows.intersection(appended):
++            raise ValueError("extension row_ids already admitted")
++        delta = descriptor.physical_bytes - previous.physical_bytes
++        if (self._encoded_held_bytes + delta > self._limits.encoded_bytes
++                or descriptor.ready_bytes_estimate > self._limits.ready_bytes
++                or descriptor.model_work_units > self._limits.ready_work):
++            raise BufferError("encoded extension exceeds stage capacity")
++        self._descriptors[descriptor.block_id] = descriptor
++        self._admitted_rows.update(appended)
++        self._encoded_held_bytes += delta
+--- a/code/tests/execution_provider/test_map_preparation.py
++++ b/code/tests/execution_provider/test_map_preparation.py
+@@ -4,0 +5 @@
++import importlib.util
+@@ -15 +16 @@
+-from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo
++from src.scheduling.core.session_contract import SessionLimits, SessionSpec, TaskInfo, TaskKey
+@@ -33 +34 @@
+-                   item_bytes=64, guard=None, events=None):
++                   item_bytes=64, guard=None, events=None, coalesce_queued=False, batch_rows=2):
+@@ -35,2 +36,3 @@
+-    physical = RayMapConfig('fixture-cluster', 1, 2, 128, 1024,
+-        payload_backend='arrow', preparation=StageBrokerLimits(encoded_bytes, ready_bytes, 8, 1, max_tasks))
++    physical = RayMapConfig('fixture-cluster', 1, batch_rows, 128, 1024,
++        payload_backend='arrow', preparation=StageBrokerLimits(encoded_bytes, ready_bytes, 8, 1, max_tasks),
++        coalesce_queued_preparation=coalesce_queued)
+@@ -38 +40 @@
+-        2, events.append if events is not None else None, physical=physical,
++        max(2, batch_rows), events.append if events is not None else None, physical=physical,
+@@ -40 +42,2 @@
+-    limits = SessionLimits(max_tasks, 1024, 1024, 2, 2, max_tasks, item_bytes, 100, 64, 8, 2, .01)
++    limits = SessionLimits(max_tasks, 1024, 1024, max(2, batch_rows), max(2, batch_rows),
++                           max_tasks, item_bytes, 100, 64, 8, 2, .01)
+@@ -45,0 +49,203 @@
++    async def test_sparse_input_starts_without_waiting_and_ready_blocks_do_not_grow(self):
++        transport, preparation, ray = make_transport(None, coalesce_queued=True)
++        try:
++            with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', batches):
++                for sequence in range(3):
++                    self.assertEqual(preparation.try_prepare((task(sequence),)), 1)
++                    await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(sequence).key))
++            self.assertEqual(ray.puts, [1, 1, 1])
++        finally:
++            for key in tuple(preparation.rows):
++                preparation.release(key)
++            await transport.close()
++
++    async def test_coalesced_tail_cancellation_preserves_the_other_complete_request(self):
++        entered, release = threading.Event(), threading.Event()
++        calls, events = [], []
++        def blocked(rows, limits, **kwargs):
++            rows = tuple(rows)
++            if rows[0][1] == 0:
++                entered.set()
++                if not release.wait(3):
++                    raise AssertionError('fixture preparation was not released')
++            yield SyntheticTable(rows)
++        async def execute(table, index, template):
++            calls.append((template.key.sequence, table['payload'][index].as_py()))
++            return template.key, table['payload'][index].as_py(), 1, 2
++        transport, preparation, ray = make_transport(execute, coalesce_queued=True, events=events)
++        try:
++            with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
++                preparation.try_prepare((task(0),))
++                self.assertTrue(await asyncio.to_thread(entered.wait, 2))
++                preparation.try_prepare((task(1, b'cancelled'),))
++                preparation.try_prepare((task(2, b'complete'),))
++                self.assertFalse(preparation.release(task(1).key))
++                release.set()
++                await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key))
++            self.assertEqual(await transport.execute(task(2, b'complete'), 'model'), b'complete')
++            self.assertTrue(preparation.release(task(1).key))
++            self.assertTrue(preparation.release(task(2).key))
++            self.assertEqual(calls, [(2, b'complete')])
++            self.assertEqual(ray.puts, [1, 2])
++        finally:
++            release.set()
++            await asyncio.to_thread(wait_until, lambda: not preparation.running)
++            for key in tuple(preparation.rows):
++                preparation.release(key)
++            await transport.close()
++        projected = [dict(event, event='core_' + event['event']) for event in events]
++        self.assertEqual(ray_transport_accounting(projected, 1)['object_blocks'], 2)
++
++    async def test_queued_tail_respects_row_limit_and_separates_sessions(self):
++        for different_session in (False, True):
++            with self.subTest(different_session=different_session):
++                entered, release = threading.Event(), threading.Event()
++                def blocked(rows, limits, **kwargs):
++                    rows = tuple(rows)
++                    if rows[0][1] == 0:
++                        entered.set()
++                        if not release.wait(3):
++                            raise AssertionError('fixture preparation was not released')
++                    yield SyntheticTable(rows)
++                transport, preparation, ray = make_transport(None, coalesce_queued=True)
++                last = replace(task(2), key=TaskKey(9, 2)) if different_session else task(2)
++                try:
++                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
++                        preparation.try_prepare((task(0),))
++                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
++                        preparation.try_prepare((task(1),))
++                        preparation.try_prepare((last,))
++                        preparation.try_prepare((task(3),))
++                        self.assertEqual(preparation.snapshot()['held_tasks'], 4)
++                        release.set()
++                        await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(3).key))
++                    self.assertEqual(ray.puts, [1, 1, 1, 1] if different_session else [1, 2, 1])
++                finally:
++                    release.set()
++                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
++                    for key in tuple(preparation.rows):
++                        preparation.release(key)
++                    await transport.close()
++
++    def test_queued_coalescing_is_explicit_and_requires_preparation(self):
++        self.assertFalse(RayMapConfig('fixture-cluster', 1, 2, 128, 1024).coalesce_queued_preparation)
++        for value in (True, 1, 'true'):
++            with self.subTest(value=value), self.assertRaises(ValueError):
++                RayMapConfig('fixture-cluster', 1, 2, 128, 1024, coalesce_queued_preparation=value)
++
++    async def test_a_row_that_cannot_extend_the_tail_can_start_its_own_block(self):
++        for limit in ('bytes', 'work'):
++            with self.subTest(limit=limit):
++                entered, release = threading.Event(), threading.Event()
++                def blocked(rows, limits, **kwargs):
++                    rows = tuple(rows)
++                    if rows[0][1] == 0:
++                        entered.set()
++                        if not release.wait(3):
++                            raise AssertionError('fixture preparation was not released')
++                    yield SyntheticTable(rows)
++                transport, preparation, ray = make_transport(None, coalesce_queued=True)
++                large = task(1, b'x'*100) if limit == 'bytes' else replace(
++                    task(1), task=replace(task(1).task, estimated_work=6))
++                last = task(2) if limit == 'bytes' else replace(
++                    task(2), task=replace(task(2).task, estimated_work=3))
++                try:
++                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
++                        preparation.try_prepare((task(0),))
++                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
++                        self.assertEqual(preparation.try_prepare((large,)), 1)
++                        self.assertEqual(preparation.try_prepare((last,)), 1)
++                        self.assertEqual(preparation.snapshot()['stages']['encoded_queued'], 2)
++                        self.assertTrue(preparation.release(large.key))
++                        self.assertTrue(preparation.release(last.key))
++                        self.assertFalse(preparation.release(task(0).key))
++                        release.set()
++                        await asyncio.to_thread(wait_until, lambda: not preparation.running)
++                        self.assertTrue(preparation.release(task(0).key))
++                    self.assertFalse(ray.puts)
++                    self.assertEqual(preparation.snapshot()['held_tasks'], 0)
++                finally:
++                    release.set()
++                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
++                    for key in tuple(preparation.rows):
++                        preparation.release(key)
++                    await transport.close()
++
++    @unittest.skipUnless(importlib.util.find_spec('daft') and importlib.util.find_spec('pyarrow'),
++                         'Daft and Arrow are required for actual prepared batches')
++    async def test_actual_batch_adapters_keep_merged_row_identity_and_buffers(self):
++        for backend in ('daft', 'arrow'):
++            with self.subTest(backend=backend):
++                entered, release = threading.Event(), threading.Event()
++                calls, events = [], []
++                async def execute(table, index, template):
++                    identity = (table['session_id'][index].as_py(), table['sequence'][index].as_py())
++                    self.assertEqual(identity, (template.key.session_id, template.key.sequence))
++                    body = table['payload'][index].as_py()
++                    calls.append((template.key.sequence, body))
++                    return template.key, body, 1, 2
++                transport, _, ray = make_transport(execute, coalesce_queued=True, events=events)
++                transport.physical = replace(transport.physical, payload_backend=backend)
++                transport.preparation.physical = transport.physical
++                preparation = transport.preparation
++                original_put = ray.put
++                def blocked_put(table):
++                    if table['sequence'][0].as_py() == 0:
++                        entered.set()
++                        if not release.wait(10):
++                            raise AssertionError('fixture put was not released')
++                    return original_put(table)
++                ray.put = blocked_put
++                try:
++                    preparation.try_prepare((task(0),))
++                    self.assertTrue(await asyncio.to_thread(entered.wait, 10))
++                    preparation.try_prepare((task(1, b'first'),))
++                    preparation.try_prepare((task(2, b'second'),))
++                    release.set()
++                    await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key), 10)
++                    for sequence, body in ((0, b'payload'), (1, b'first'), (2, b'second')):
++                        self.assertEqual(await transport.execute(task(sequence, body), 'model'), body)
++                        self.assertTrue(preparation.release(task(sequence).key))
++                    self.assertEqual(ray.puts, [1, 2])
++                    self.assertEqual(calls, [(0, b'payload'), (1, b'first'), (2, b'second')])
++                    self.assertEqual(transport.used_bytes, 0)
++                finally:
++                    release.set()
++                    await asyncio.to_thread(wait_until, lambda: not preparation.running, 10)
++                    for key in tuple(preparation.rows):
++                        preparation.release(key)
++                    await transport.close()
++                projected = [dict(event, event='core_' + event['event']) for event in events]
++                self.assertEqual(ray_transport_accounting(projected, 3)['object_blocks'], 2)
++
++    async def test_rows_arriving_during_preparation_share_only_the_unstarted_tail(self):
++        for coalesce in (False, True):
++            with self.subTest(coalesce=coalesce):
++                entered, release = threading.Event(), threading.Event()
++                def blocked(rows, limits, **kwargs):
++                    rows = tuple(rows)
++                    if rows[0][1] == 0:
++                        entered.set()
++                        if not release.wait(3):
++                            raise AssertionError('fixture preparation was not released')
++                    yield SyntheticTable(rows)
++                transport, preparation, ray = make_transport(
++                    None, coalesce_queued=coalesce)
++                try:
++                    with patch('src.execution_provider.adapters.map_preparation.iter_payload_batches', blocked):
++                        preparation.try_prepare((task(0),))
++                        self.assertTrue(await asyncio.to_thread(entered.wait, 2))
++                        for sequence in range(1, 3):
++                            self.assertEqual(preparation.try_prepare((task(sequence),)), 1)
++                        queued = preparation.snapshot()['stages']['encoded_queued']
++                        release.set()
++                        await asyncio.to_thread(wait_until, lambda: preparation.is_ready(task(2).key))
++                    self.assertEqual(queued, 1 if coalesce else 2)
++                    self.assertEqual(ray.puts, [1, 2] if coalesce else [1, 1, 1])
++                finally:
++                    release.set()
++                    await asyncio.to_thread(wait_until, lambda: not preparation.running)
++                    for key in tuple(preparation.rows):
++                        preparation.release(key)
++                    await transport.close()
++
+--- a/code/tests/scheduling/test_stage_broker.py
++++ b/code/tests/scheduling/test_stage_broker.py
+@@ -46,0 +47,73 @@
++    def test_extended_tail_is_charged_once_and_leased_with_all_rows(self):
++        original = _descriptor(0)
++        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
++                           logical_bytes=20, physical_bytes=20, ready_bytes_estimate=80,
++                           content_digest='extended', work=replace(original.work,
++                               stages=(StageWork('prepare', 24, 'tensor_values'),
++                                       StageWork('model', 8, 'pixels'))))
++        self.broker.enqueue_encoded(original)
++        self.broker.extend_encoded(extended)
++        self.assertEqual(self.broker.snapshot().encoded_held_bytes, 20)
++        self.assertEqual(self.broker.snapshot().encoded_queued, 1)
++        lease = self.broker.lease_prepare(now_s=1)
++        self.assertEqual(lease.descriptor, extended)
++        self.assertEqual(self.broker.snapshot().ready_held_work, 8)
++        self.broker.complete_prepare(lease.lease_id, replace(extended, representation='ready'), now_s=2)
++        model = self.broker.lease_model(now_s=3)
++        self.broker.complete_model(model.lease_id, output_row_ids=extended.row_ids)
++        self.broker.release_terminal(extended.block_id)
++        self.assertTrue(self.broker.is_drained())
++        self.assertEqual(self.broker.snapshot().ready_held_bytes, 0)
++
++    def test_invalid_extension_preserves_queue_bytes_and_original_lease(self):
++        original = _descriptor(0)
++        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
++                           logical_bytes=20, physical_bytes=20, content_digest='extended')
++        invalid = (
++            replace(extended, row_ids=('different', 'row-new')),
++            replace(extended, job_id='other'),
++            replace(extended, model_signature='other'),
++            replace(extended, physical_bytes=31),
++            replace(extended, ready_bytes_estimate=81),
++            replace(extended, work=replace(original.work,
++                stages=(StageWork('prepare', 12, 'tensor_values'), StageWork('model', 9, 'pixels')))),
++            replace(extended, logical_bytes=9),
++        )
++        for descriptor in invalid:
++            with self.subTest(descriptor=descriptor):
++                broker = BoundedStageBroker(self.broker.limits)
++                broker.enqueue_encoded(original)
++                before = broker.snapshot()
++                with self.assertRaises((ValueError, BufferError)):
++                    broker.extend_encoded(descriptor)
++                self.assertEqual(broker.snapshot(), before)
++                self.assertEqual(broker.lease_prepare(now_s=1).descriptor, original)
++
++    def test_extension_cannot_change_a_leased_or_non_tail_block(self):
++        original = _descriptor(0)
++        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
++                           logical_bytes=20, physical_bytes=20, content_digest='extended')
++        self.broker.enqueue_encoded(original)
++        self.broker.enqueue_encoded(_descriptor(1))
++        before = self.broker.snapshot()
++        with self.assertRaisesRegex(ValueError, 'tail'):
++            self.broker.extend_encoded(extended)
++        self.assertEqual(self.broker.snapshot(), before)
++        lease = self.broker.lease_prepare(now_s=2)
++        before = self.broker.snapshot()
++        with self.assertRaisesRegex(ValueError, 'unleased'):
++            self.broker.extend_encoded(extended)
++        self.assertEqual(self.broker.snapshot(), before)
++        self.assertEqual(lease.descriptor, original)
++
++    def test_extension_rejects_rows_owned_by_another_block(self):
++        self.broker.enqueue_encoded(_descriptor(1))
++        original = _descriptor(0)
++        self.broker.enqueue_encoded(original)
++        extended = replace(original, row_ids=('row-0', 'row-1'), shape=(2,),
++                           logical_bytes=20, physical_bytes=20, content_digest='extended')
++        before = self.broker.snapshot()
++        with self.assertRaisesRegex(ValueError, 'already admitted'):
++            self.broker.extend_encoded(extended)
++        self.assertEqual(self.broker.snapshot(), before)
++

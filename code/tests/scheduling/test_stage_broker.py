@@ -44,6 +44,79 @@ def _descriptor(
 
 
 class BoundedStageBrokerTest(unittest.TestCase):
+    def test_extended_tail_is_charged_once_and_leased_with_all_rows(self):
+        original = _descriptor(0)
+        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
+                           logical_bytes=20, physical_bytes=20, ready_bytes_estimate=80,
+                           content_digest='extended', work=replace(original.work,
+                               stages=(StageWork('prepare', 24, 'tensor_values'),
+                                       StageWork('model', 8, 'pixels'))))
+        self.broker.enqueue_encoded(original)
+        self.broker.extend_encoded(extended)
+        self.assertEqual(self.broker.snapshot().encoded_held_bytes, 20)
+        self.assertEqual(self.broker.snapshot().encoded_queued, 1)
+        lease = self.broker.lease_prepare(now_s=1)
+        self.assertEqual(lease.descriptor, extended)
+        self.assertEqual(self.broker.snapshot().ready_held_work, 8)
+        self.broker.complete_prepare(lease.lease_id, replace(extended, representation='ready'), now_s=2)
+        model = self.broker.lease_model(now_s=3)
+        self.broker.complete_model(model.lease_id, output_row_ids=extended.row_ids)
+        self.broker.release_terminal(extended.block_id)
+        self.assertTrue(self.broker.is_drained())
+        self.assertEqual(self.broker.snapshot().ready_held_bytes, 0)
+
+    def test_invalid_extension_preserves_queue_bytes_and_original_lease(self):
+        original = _descriptor(0)
+        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
+                           logical_bytes=20, physical_bytes=20, content_digest='extended')
+        invalid = (
+            replace(extended, row_ids=('different', 'row-new')),
+            replace(extended, job_id='other'),
+            replace(extended, model_signature='other'),
+            replace(extended, physical_bytes=31),
+            replace(extended, ready_bytes_estimate=81),
+            replace(extended, work=replace(original.work,
+                stages=(StageWork('prepare', 12, 'tensor_values'), StageWork('model', 9, 'pixels')))),
+            replace(extended, logical_bytes=9),
+        )
+        for descriptor in invalid:
+            with self.subTest(descriptor=descriptor):
+                broker = BoundedStageBroker(self.broker.limits)
+                broker.enqueue_encoded(original)
+                before = broker.snapshot()
+                with self.assertRaises((ValueError, BufferError)):
+                    broker.extend_encoded(descriptor)
+                self.assertEqual(broker.snapshot(), before)
+                self.assertEqual(broker.lease_prepare(now_s=1).descriptor, original)
+
+    def test_extension_cannot_change_a_leased_or_non_tail_block(self):
+        original = _descriptor(0)
+        extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),
+                           logical_bytes=20, physical_bytes=20, content_digest='extended')
+        self.broker.enqueue_encoded(original)
+        self.broker.enqueue_encoded(_descriptor(1))
+        before = self.broker.snapshot()
+        with self.assertRaisesRegex(ValueError, 'tail'):
+            self.broker.extend_encoded(extended)
+        self.assertEqual(self.broker.snapshot(), before)
+        lease = self.broker.lease_prepare(now_s=2)
+        before = self.broker.snapshot()
+        with self.assertRaisesRegex(ValueError, 'unleased'):
+            self.broker.extend_encoded(extended)
+        self.assertEqual(self.broker.snapshot(), before)
+        self.assertEqual(lease.descriptor, original)
+
+    def test_extension_rejects_rows_owned_by_another_block(self):
+        self.broker.enqueue_encoded(_descriptor(1))
+        original = _descriptor(0)
+        self.broker.enqueue_encoded(original)
+        extended = replace(original, row_ids=('row-0', 'row-1'), shape=(2,),
+                           logical_bytes=20, physical_bytes=20, content_digest='extended')
+        before = self.broker.snapshot()
+        with self.assertRaisesRegex(ValueError, 'already admitted'):
+            self.broker.extend_encoded(extended)
+        self.assertEqual(self.broker.snapshot(), before)
+
     def test_explicit_ready_block_preserves_fifo_for_the_remaining_blocks(self):
         for i in range(2):
             descriptor = _descriptor(i)

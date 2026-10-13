@@ -355,7 +355,10 @@ class SemaConnectorControlTests(unittest.TestCase):
                 return await original(body, headers, row, client)
 
             with mock.patch.object(service, '_forward', release_slot_then_forward):
-                self.assertEqual(self.post(service.endpoint_url)[0], 502)
+                from http.client import RemoteDisconnected
+                with self.assertRaises(RemoteDisconnected):
+                    self.post(service.endpoint_url)
+            self.assertEqual(service.first_error.status, 502)
             self.assertEqual(service.first_error.phase, 'transport')
             self.assertEqual(service._rows[0]['error_type'], 'TimeoutError')
             self.assertEqual(service.summary['held_requests'], 0)

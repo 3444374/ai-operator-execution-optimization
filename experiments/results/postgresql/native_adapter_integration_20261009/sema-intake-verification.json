@@ -1,0 +1,155 @@
+{
+  "base_commit": "2fad623e310d9d8f988adfadbe0438d53e943e07",
+  "integration_checked_commit": "9c642ec7c48a598abb54f1a32c56e29904eaa334",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/sema_service.py": "51edc9f1d5d62ac6e495f6d6dcbe6152086c657e2fed7ab72d626cf95523bbba",
+    "code/src/execution_provider/adapters/sema_native.py": "e4315ada45a0bc31fa56c361e6b92642e17fa4cb424bdda8ff341a42cfcaa99b",
+    "code/src/execution_provider/adapters/sema_semloom.py": "26a6233c6dba11259fe43f0911f6f7cc76f2bed51cf242db5eace47775473fe3",
+    "code/tests/execution_provider/test_sema_intake.py": "f1d35c4cd48cecd15a2caa2e44dede8063f5d0b6f369258af2e3c0717fc2346b"
+  },
+  "local_distinct_tests_passed": 113,
+  "final_local_intake_tests": 18,
+  "server_runs": [
+    {
+      "tests_run": 20,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "synthetic_requests": 48,
+      "elapsed_s": 2.550170296803117,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7",
+      "summary_sha256": "47de0d0f5b43e8127e308cb5538c09473ee8bbe9248a3c82549be7133947a93a"
+    },
+    {
+      "tests_run": 12,
+      "failures": 1,
+      "errors": 0,
+      "success": false,
+      "synthetic_requests": 25,
+      "elapsed_s": 1.038987091742456,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7-02",
+      "summary_sha256": "7a4f3ee7cd206c8a8bcbadd77c764ba6ee770713a24b5563c89d5604b14400f3"
+    },
+    {
+      "tests_run": 21,
+      "failures": 0,
+      "errors": 0,
+      "success": true,
+      "synthetic_requests": 53,
+      "elapsed_s": 2.465052966028452,
+      "affinity": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119
+      ],
+      "real_model_posts": 0,
+      "vendor_runtime_started": false,
+      "run_id": "semloom-intake-20261012-task7-03",
+      "summary_sha256": "b2fb591beca9b3d05b97344cefdbcf937b7205ab4aaafc2d8cfcfb62898f44cf"
+    }
+  ],
+  "total_server_synthetic_requests": 126,
+  "total_server_slice_elapsed_s": 6.054210354574025,
+  "failure_reason_run_02": "test checked settled size while second body was still reading; synchronized on body_read_ns before checking settled size",
+  "preflight": {
+    "automatic_profile_cpu_result": "8 assigned CPU slots below automatic profile minimum 10; all core Python packages passed",
+    "explicit_software_profile": "generic_linux_nvidia",
+    "explicit_software_profile_result": "ok",
+    "aiohttp": "3.14.3"
+  },
+  "resource_checks": [
+    {
+      "run_id": "semloom-intake-20261012-task7",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 4
+    },
+    {
+      "run_id": "semloom-intake-20261012-task7-02",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 0
+    },
+    {
+      "run_id": "semloom-intake-20261012-task7-03",
+      "threads_alive": 0,
+      "listeners_remaining": 0,
+      "handlers_remaining": 0,
+      "bridge_threads_alive": 0,
+      "retained_injection_bytes": 4
+    }
+  ],
+  "qualification": "real aiohttp application ingress; synthetic native/Core execution; no vendor runtime, model, SQL or performance qualification",
+  "archive": {
+    "run_identity": "semloom-intake-task7-full",
+    "bytes": 1443068,
+    "members": 40,
+    "sha256": "ec379b0f83a3a77f3f8d2307ef256987b4faaacf6c7342cb597e7ad20e7902fe"
+  },
+  "review_followup": {
+    "base_commit": "e960fc91d94649b7fecd2c58c802cce938b13db1",
+    "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "aiohttp": "3.14.1",
+    "source_sha256": {
+      "code/src/execution_provider/adapters/sema_native.py": "ba48b6cf665c8ec78ecf976831346711374f0410a9e636f82ca1fa936830acf0",
+      "code/src/execution_provider/adapters/sema_service.py": "d9ff5ea51063aed39364d3f38d879482047d130cdd07634ccffe7bb05091b216",
+      "code/tests/execution_provider/test_sema_intake_review.py": "3a3a366160dcf5e36d0cd5e5d4e8ad56599443014ec9521fc151063e8d0be4d4",
+      "code/tests/execution_provider/test_sema_intake.py": "ee21efd1d3a2412295d7a613fe789d888c0a46e2749e93d3ce24e4ee7d2f07c3",
+      "code/tests/execution_provider/test_sema_native_service.py": "1cbf93f3aa3e7459ff6b10089335e304128d28c0621989e1533544b5c2600ebe",
+      "code/tests/execution_provider/test_sema_service.py": "b6b307cfbb8238dcca75d1fb42d3a4e920d025f6d2c0b72c9deea57d312a7a44"
+    },
+    "local_affected_tests_passed": 120,
+    "targeted_tests_passed": 7,
+    "remote_server_runs": 0,
+    "model_posts": 0,
+    "gpu_workloads": 0,
+    "vendor_runtime_started": false,
+    "historical_server_count": {
+      "total": 126,
+      "inbound_requests": 118,
+      "synthetic_upstream_posts": 8,
+      "source_commit": "e960fc91d94649b7fecd2c58c802cce938b13db1"
+    },
+    "scope": "native stop proof and all HTTP response writers; local CPU/memory and localhost fixture checks only",
+    "archive": {
+      "run_identity": "semloom-intake-review-followup",
+      "members": 15,
+      "bytes": 36871,
+      "sha256": "302a0a1a38533006ac6b030d157467c7e88c1e4337c9635df946db1a663fbf32"
+    },
+    "qualification": "local software regressions only; candidate pending independent re-review; prior server evidence belongs to e960fc91"
+  }
+}

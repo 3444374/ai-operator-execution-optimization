@@ -6,6 +6,21 @@
 
 [早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
 
+分支按职责组织：
+
+| 分支 | 职责 |
+|---|---|
+| `main` | 经PR验证的稳定共同实现 |
+| `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
+| `codex/native-execution-adapters` | 当前原生接入发布；完成owner交接后归入统一集成分支 |
+| `exp/semloom-query-sharing` | 长短查询共享调度研究 |
+| `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
+| `maintenance/project-rules` | 规则整理的临时同步来源，整合完成后清理 |
+| `codex/semloom-history-preservation` | 保存原提交与实验来源的恢复入口 |
+
+LOTUS、DuckDB、Sema等接入支线用于并行开发，完成整合后可移除对应checkout；
+研究分支按具体假设保留，通用修复进入共同基线。原始实验及各次运行的源码身份仍由报告和证据台账定位。
+
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
 Sema后置原生Daft／Ray Data／IMLane执行的适配与检查见[代码入口](code/integrations/sema/README.md)。
