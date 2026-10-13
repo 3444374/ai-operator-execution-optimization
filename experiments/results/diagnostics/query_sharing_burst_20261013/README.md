@@ -232,6 +232,8 @@ typed描述直接进入TaskInfo，Core仍是work单位和C/W容量的权威；�
 这些是mock SDK与真实Core的接口资格，实际LOTUS新回调、真实模型、批次总量提示及持续短query仍未验证。
 服务器负载与新增HTTP/模型/GPU均0，旧1909/4240额度不变，replica真实模型窗口优先。
 接口与后续有限协议集中在[M4](../../../plans/数据组织.md#query-sharing-costs)，本阶段不把单Map桥扩成任意Filter→Map。
+成本接线自有提交`e3d50689`在桥修复`0517ba9f`之后；公共两文件独立补丁`556977cb`直接父为`e4677b4c`，
+研究分支无树变merge保留，两公共API阶段与桥修复分别可审阅。
 
 <a id="bridge-review-repairs"></a>
 ## 当前桥接源码的三项审查修复
