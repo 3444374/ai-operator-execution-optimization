@@ -1,0 +1,10 @@
+{
+  "schema": "semloom.evidence_storage.v2",
+  "result": "experiments/results/diagnostics/map_queued_preparation_20261008",
+  "files_verified": 215,
+  "bytes_verified": 50560004,
+  "model_requests": 0,
+  "private_originals_verified": 265,
+  "private_original_bytes_verified": 140203904,
+  "scope": "common restore plus independent original backup; full derived audit checked separately with private inputs and ledger"
+}

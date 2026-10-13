@@ -1,0 +1,3719 @@
+{
+  "real_model_requests": 8224,
+  "verified_rows": 8224,
+  "source_files_verified": 861,
+  "owner_seconds": 321.49320459365845,
+  "worker_seconds": 134.7282571932301,
+  "queries": [
+    {
+      "mode": "immediate",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 1.623851336,
+      "preparation_seconds": 0.016339226,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 16,
+      "reserve_seconds": 0.017599984,
+      "first_row_seconds": 1.60726384,
+      "cleanup_seconds": 0.066522196,
+      "timeline": {
+        "first_rpc_ns": 2575363599366943,
+        "last_received_ns": 2575364046854888,
+        "mean_logical_requests": 15.314206113418319,
+        "mean_worker_methods": 8.809850254178356,
+        "model_host_pss_peak_bytes": 3425261568,
+        "model_samples": 6,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 7,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 191483904,
+          "pg_backend": 14700544,
+          "gateway": 266473472,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 216080384,
+          "child:7200": 102903808,
+          "child:7201": 135147520,
+          "child:7278": 98201600,
+          "child:7279": 32952320,
+          "child:7334": 161370112,
+          "child:7336": 101986304,
+          "child:7472": 167989248,
+          "child:7473": 100904960,
+          "child:7474": 100999168,
+          "child:7475": 100855808,
+          "child:7476": 101007360,
+          "child:7477": 155684864,
+          "child:7478": 101126144,
+          "child:7479": 100839424
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10603520,
+          "consumer": 126131200,
+          "pg_backend": 6222848,
+          "gateway": 210720768,
+          "child:6655": 2415616,
+          "child:6656": 735232,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1100800,
+          "child:6661": 2635776,
+          "child:6662": 1526784,
+          "child:6663": 1311744,
+          "child:6664": 4899840,
+          "child:7099": 222768128,
+          "child:7200": 71100416,
+          "child:7201": 96711680,
+          "child:7278": 67277824,
+          "child:7279": 34511872,
+          "child:7334": 116630528,
+          "child:7336": 68544512,
+          "child:7472": 108154880,
+          "child:7473": 64830464,
+          "child:7474": 64738304,
+          "child:7475": 64912384,
+          "child:7476": 64762880,
+          "child:7477": 96489472,
+          "child:7478": 64962560,
+          "child:7479": 64779264
+        },
+        "sampled_total_pss_peak_bytes": 1640229888,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "8016:1791426836.43": {
+            "pid": 8016,
+            "created_at": 1791426836.43,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "7945:1791426834.01": {
+            "pid": 7945,
+            "created_at": 1791426834.01,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 377598316
+      },
+      "prepared_blocks": 0,
+      "prepared_batch_sizes": {},
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "windows": 2,
+      "ray_blocks": 2,
+      "batch_sizes": {},
+      "next_work_seconds": 1.124524544,
+      "next_resume_seconds": 0.028955707,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 66,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "ray_block_sizes": {
+        "1": 1,
+        "15": 1
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.008399107,
+        "before_worker_ns": 2.49331939,
+        "worker_elapsed_ns": 3.942301786,
+        "after_worker_ns": 0.092530737,
+        "rpc_elapsed_ns": 6.528151913
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.5249441875,
+          "p50": 0.4766815,
+          "p95": 0.78109425
+        },
+        "before_worker_ns": {
+          "mean": 155.832461875,
+          "p50": 180.93163950000002,
+          "p95": 195.5535455
+        },
+        "worker_elapsed_ns": {
+          "mean": 246.393861625,
+          "p50": 236.7197065,
+          "p95": 291.58227575
+        },
+        "after_worker_ns": {
+          "mean": 5.7831710625,
+          "p50": 6.1282645,
+          "p95": 6.892752499999999
+        },
+        "rpc_elapsed_ns": {
+          "mean": 408.0094945625,
+          "p50": 414.900817,
+          "p95": 427.48263099999997
+        }
+      },
+      "preparation_remainder_seconds": null,
+      "stream_seconds": 1.60751211,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "prepared",
+      "unit": "check16",
+      "split": "qualification",
+      "repeat": -1,
+      "rows": 16,
+      "jct_seconds": 2.937597817,
+      "preparation_seconds": 0.012347142,
+      "accuracy": 0.9375,
+      "correct_rows": 15,
+      "transactions": 16,
+      "reserve_seconds": 0.022588023,
+      "first_row_seconds": 2.92469427,
+      "cleanup_seconds": 0.066586232,
+      "timeline": {
+        "first_rpc_ns": 2575369550066813,
+        "last_received_ns": 2575370018052250,
+        "mean_logical_requests": 15.29110993468799,
+        "mean_worker_methods": 8.812903173737007,
+        "model_host_pss_peak_bytes": 3425366016,
+        "model_samples": 11,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 12,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 192237568,
+          "pg_backend": 14073856,
+          "gateway": 265674752,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 216670208,
+          "child:7200": 103174144,
+          "child:7201": 135147520,
+          "child:7278": 98201600,
+          "child:7279": 34185216,
+          "child:7334": 162975744,
+          "child:7336": 101986304,
+          "child:7472": 168386560,
+          "child:7473": 100995072,
+          "child:7474": 101101568,
+          "child:7475": 100945920,
+          "child:7476": 101101568,
+          "child:7477": 168153088,
+          "child:7478": 101212160,
+          "child:7479": 100933632
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10682368,
+          "consumer": 126919680,
+          "pg_backend": 5989376,
+          "gateway": 210582528,
+          "child:6655": 2385920,
+          "child:6656": 737280,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1100800,
+          "child:6661": 2635776,
+          "child:6662": 1526784,
+          "child:6663": 1325056,
+          "child:6664": 4982784,
+          "child:7099": 224582656,
+          "child:7200": 71250944,
+          "child:7201": 96730112,
+          "child:7278": 67308544,
+          "child:7279": 36133888,
+          "child:7334": 118278144,
+          "child:7336": 68535296,
+          "child:7472": 109506560,
+          "child:7473": 64989184,
+          "child:7474": 64884736,
+          "child:7475": 65010688,
+          "child:7476": 64925696,
+          "child:7477": 107737088,
+          "child:7478": 65072128,
+          "child:7479": 64927744
+        },
+        "sampled_total_pss_peak_bytes": 1658309632,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "8162:1791426841.09": {
+            "pid": 8162,
+            "created_at": 1791426841.09,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8092:1791426838.86": {
+            "pid": 8092,
+            "created_at": 1791426838.86,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 692169912
+      },
+      "prepared_blocks": 2,
+      "prepared_batch_sizes": {
+        "4": 1,
+        "12": 1
+      },
+      "payload_prepare_seconds": 2.427460179,
+      "prepared_put_seconds": 0.002675641,
+      "windows": 0,
+      "ray_blocks": 2,
+      "batch_sizes": {},
+      "next_work_seconds": 0.0,
+      "next_resume_seconds": 0.0,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 16,
+          "input_bytes": 7419,
+          "result_bytes": 16777216,
+          "active_requests": 16,
+          "active_work": 16
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 98,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "preparation_capacity_peaks": {
+        "encoded_queued": 1,
+        "prepare_inflight": 0,
+        "ready_queued": 1,
+        "model_inflight": 1,
+        "completed": 0,
+        "failed": 0,
+        "encoded_held_bytes": 5872,
+        "ready_held_bytes": 7819,
+        "ready_held_work": 16,
+        "encoded_bytes_limit": 2097152,
+        "ready_bytes_limit": 4194304,
+        "ready_work_limit": 256
+      },
+      "ray_block_sizes": {
+        "4": 1,
+        "12": 1
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.00845348,
+        "before_worker_ns": 2.601204245,
+        "worker_elapsed_ns": 4.124310343,
+        "after_worker_ns": 0.155349621,
+        "rpc_elapsed_ns": 6.880864209
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.5283424999999999,
+          "p50": 0.446994,
+          "p95": 0.8921287499999999
+        },
+        "before_worker_ns": {
+          "mean": 162.5752653125,
+          "p50": 179.0888965,
+          "p95": 236.06795825
+        },
+        "worker_elapsed_ns": {
+          "mean": 257.7693964375,
+          "p50": 249.19047799999998,
+          "p95": 313.2810245
+        },
+        "after_worker_ns": {
+          "mean": 9.7093513125,
+          "p50": 9.9372225,
+          "p95": 15.05858025
+        },
+        "rpc_elapsed_ns": {
+          "mean": 430.0540130625,
+          "p50": 436.837367,
+          "p95": 457.80185700000004
+        }
+      },
+      "preparation_remainder_seconds": 0.000676852,
+      "stream_seconds": 2.925250675,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "immediate",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 13.200803699,
+      "preparation_seconds": 0.012347145,
+      "accuracy": 0.8486328125,
+      "correct_rows": 869,
+      "transactions": 1024,
+      "reserve_seconds": 4.996239008,
+      "first_row_seconds": 5.556439963,
+      "cleanup_seconds": 0.376983439,
+      "timeline": {
+        "first_rpc_ns": 2575379421576565,
+        "last_received_ns": 2575389205982046,
+        "mean_logical_requests": 62.754806218562926,
+        "mean_worker_methods": 31.16700880898417,
+        "model_host_pss_peak_bytes": 3428648960,
+        "model_samples": 48,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 49,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 203325440,
+          "pg_backend": 16248832,
+          "gateway": 275845120,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 224792576,
+          "child:7200": 103174144,
+          "child:7201": 135147520,
+          "child:7278": 98390016,
+          "child:7279": 37294080,
+          "child:8312": 163684352,
+          "child:7334": 163831808,
+          "child:7336": 101986304,
+          "child:7472": 176992256,
+          "child:7473": 101015552,
+          "child:7474": 101126144,
+          "child:7475": 100945920,
+          "child:7476": 101122048,
+          "child:7477": 168927232,
+          "child:7478": 101216256,
+          "child:7479": 100954112
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10679296,
+          "consumer": 134718464,
+          "pg_backend": 8014848,
+          "gateway": 215345152,
+          "child:6655": 2385920,
+          "child:6656": 737280,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1101824,
+          "child:6661": 2634752,
+          "child:6662": 1525760,
+          "child:6663": 1324032,
+          "child:6664": 4977664,
+          "child:7099": 231559168,
+          "child:7200": 71309312,
+          "child:7201": 96679936,
+          "child:7278": 67294208,
+          "child:7279": 40531968,
+          "child:8312": 103701504,
+          "child:7334": 119179264,
+          "child:7336": 68401152,
+          "child:7472": 114477056,
+          "child:7473": 64859136,
+          "child:7474": 64747520,
+          "child:7475": 64860160,
+          "child:7476": 64805888,
+          "child:7477": 107102208,
+          "child:7478": 64921600,
+          "child:7479": 64787456
+        },
+        "sampled_total_pss_peak_bytes": 1793367040,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "8395:1791426850.02": {
+            "pid": 8395,
+            "created_at": 1791426850.02,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "child:8312"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 3944105721
+      },
+      "prepared_blocks": 0,
+      "prepared_batch_sizes": {},
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "windows": 75,
+      "ray_blocks": 111,
+      "batch_sizes": {},
+      "next_work_seconds": 5.104459957,
+      "next_resume_seconds": 5.381976956,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60229,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "ray_block_sizes": {
+        "16": 38,
+        "1": 19,
+        "2": 6,
+        "4": 5,
+        "3": 4,
+        "12": 3,
+        "11": 2,
+        "13": 2,
+        "7": 3,
+        "5": 4,
+        "15": 1,
+        "6": 6,
+        "10": 9,
+        "14": 2,
+        "9": 3,
+        "8": 4
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.7448289,
+        "before_worker_ns": 5.948309593,
+        "worker_elapsed_ns": 304.950651817,
+        "after_worker_ns": 51.731286814,
+        "rpc_elapsed_ns": 362.630248224
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.72737197265625,
+          "p50": 0.494652,
+          "p95": 1.88531075
+        },
+        "before_worker_ns": {
+          "mean": 5.8088960869140625,
+          "p50": 2.8939665,
+          "p95": 18.51053565
+        },
+        "worker_elapsed_ns": {
+          "mean": 297.80337091503907,
+          "p50": 301.9825475,
+          "p95": 486.6914187
+        },
+        "after_worker_ns": {
+          "mean": 50.518834779296874,
+          "p50": 33.6588535,
+          "p95": 146.21023509999998
+        },
+        "rpc_elapsed_ns": {
+          "mean": 354.13110178125,
+          "p50": 352.3993905,
+          "p95": 564.9813084
+        }
+      },
+      "preparation_remainder_seconds": null,
+      "stream_seconds": 13.188456554,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "prepared",
+      "unit": "warm1024",
+      "split": "evaluation",
+      "repeat": 0,
+      "rows": 1024,
+      "jct_seconds": 15.123743659,
+      "preparation_seconds": 0.013482086,
+      "accuracy": 0.849609375,
+      "correct_rows": 870,
+      "transactions": 1024,
+      "reserve_seconds": 9.121681863,
+      "first_row_seconds": 5.512548707,
+      "cleanup_seconds": 0.422404294,
+      "timeline": {
+        "first_rpc_ns": 2575392886817201,
+        "last_received_ns": 2575405157228743,
+        "mean_logical_requests": 62.203694895109656,
+        "mean_worker_methods": 16.019239507427436,
+        "model_host_pss_peak_bytes": 3429607424,
+        "model_samples": 56,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 57,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 242241536,
+          "pg_backend": 16281600,
+          "gateway": 275857408,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 229568512,
+          "child:7200": 103804928,
+          "child:7201": 135417856,
+          "child:7278": 98947072,
+          "child:7279": 39399424,
+          "child:8245": 275824640,
+          "child:7334": 163942400,
+          "child:7336": 101986304,
+          "child:7472": 177352704,
+          "child:7473": 101015552,
+          "child:7474": 101195776,
+          "child:7475": 100950016,
+          "child:7476": 101122048,
+          "child:7477": 176934912,
+          "child:7478": 101228544,
+          "child:7479": 101646336
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 173648896,
+          "pg_backend": 8028160,
+          "gateway": 192698368,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 542720,
+          "child:6659": 1175552,
+          "child:6661": 2643968,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4955136,
+          "child:7099": 236564480,
+          "child:7200": 71337984,
+          "child:7201": 96782336,
+          "child:7278": 67396608,
+          "child:7279": 42547200,
+          "child:8245": 215328768,
+          "child:7334": 119419904,
+          "child:7336": 68401152,
+          "child:7472": 114475008,
+          "child:7473": 64861184,
+          "child:7474": 64755712,
+          "child:7475": 64878592,
+          "child:7476": 64805888,
+          "child:7477": 113405952,
+          "child:7478": 64935936,
+          "child:7479": 64797696
+        },
+        "sampled_total_pss_peak_bytes": 1912560640,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "8732:1791426864.06": {
+            "pid": 8732,
+            "created_at": 1791426864.06,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "child:8245"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 4310902787
+      },
+      "prepared_blocks": 329,
+      "prepared_batch_sizes": {
+        "4": 62,
+        "16": 7,
+        "12": 1,
+        "1": 50,
+        "3": 126,
+        "2": 65,
+        "5": 14,
+        "6": 4
+      },
+      "payload_prepare_seconds": 9.847837615,
+      "prepared_put_seconds": 1.593266632,
+      "windows": 0,
+      "ray_blocks": 329,
+      "batch_sizes": {},
+      "next_work_seconds": 0.0,
+      "next_resume_seconds": 0.0,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60138,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 7042,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "preparation_capacity_peaks": {
+        "encoded_queued": 8,
+        "prepare_inflight": 0,
+        "ready_queued": 35,
+        "model_inflight": 25,
+        "completed": 0,
+        "failed": 0,
+        "encoded_held_bytes": 60769,
+        "ready_held_bytes": 70277,
+        "ready_held_work": 144,
+        "encoded_bytes_limit": 2097152,
+        "ready_bytes_limit": 4194304,
+        "ready_work_limit": 256
+      },
+      "ray_block_sizes": {
+        "4": 62,
+        "16": 7,
+        "12": 1,
+        "1": 50,
+        "3": 126,
+        "2": 65,
+        "5": 14,
+        "6": 4
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.985840162,
+        "before_worker_ns": 6.024783442,
+        "worker_elapsed_ns": 196.562661346,
+        "after_worker_ns": 250.440869184,
+        "rpc_elapsed_ns": 453.028313972
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.962734533203125,
+          "p50": 0.5889195,
+          "p95": 2.7523772499999994
+        },
+        "before_worker_ns": {
+          "mean": 5.883577580078125,
+          "p50": 2.9334555,
+          "p95": 23.702599050000003
+        },
+        "worker_elapsed_ns": {
+          "mean": 191.95572397070313,
+          "p50": 183.5783825,
+          "p95": 457.6205049
+        },
+        "after_worker_ns": {
+          "mean": 244.5711613125,
+          "p50": 264.133071,
+          "p95": 396.00040915
+        },
+        "rpc_elapsed_ns": {
+          "mean": 442.4104628632812,
+          "p50": 482.8372095,
+          "p95": 605.9790589
+        }
+      },
+      "preparation_remainder_seconds": 0.174139477,
+      "stream_seconds": 15.110261573,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "prepared",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 12.764266989,
+      "preparation_seconds": 0.0133981,
+      "accuracy": 0.8486328125,
+      "correct_rows": 869,
+      "transactions": 1024,
+      "reserve_seconds": 9.383238554,
+      "first_row_seconds": 3.104776589,
+      "cleanup_seconds": 0.388206048,
+      "timeline": {
+        "first_rpc_ns": 2575406386717577,
+        "last_received_ns": 2575418904535736,
+        "mean_logical_requests": 61.98062584158681,
+        "mean_worker_methods": 15.809576014707789,
+        "model_host_pss_peak_bytes": 3430074368,
+        "model_samples": 47,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 49,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 221634560,
+          "pg_backend": 16240640,
+          "gateway": 278446080,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 234053632,
+          "child:7200": 103804928,
+          "child:7201": 135417856,
+          "child:7278": 98947072,
+          "child:7279": 43126784,
+          "child:8245": 275816448,
+          "child:7334": 165916672,
+          "child:7336": 101986304,
+          "child:7472": 177352704,
+          "child:7473": 101019648,
+          "child:7474": 101195776,
+          "child:7475": 101101568,
+          "child:7476": 101126144,
+          "child:7477": 179093504,
+          "child:7478": 101228544,
+          "child:7479": 101785600
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10651648,
+          "consumer": 152976384,
+          "pg_backend": 8007680,
+          "gateway": 193189888,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 240185344,
+          "child:7200": 71284736,
+          "child:7201": 96847872,
+          "child:7278": 67499008,
+          "child:7279": 43183104,
+          "child:8245": 192667648,
+          "child:7334": 119727104,
+          "child:7336": 68401152,
+          "child:7472": 114294784,
+          "child:7473": 64881664,
+          "child:7474": 64796672,
+          "child:7475": 64894976,
+          "child:7476": 64842752,
+          "child:7477": 114120704,
+          "child:7478": 64948224,
+          "child:7479": 64830464
+        },
+        "sampled_total_pss_peak_bytes": 1897631744,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "9831:1791426880.16": {
+            "pid": 9831,
+            "created_at": 1791426880.16,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "child:8245"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 3523153630
+      },
+      "prepared_blocks": 330,
+      "prepared_batch_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 44,
+        "4": 60,
+        "2": 74,
+        "3": 127,
+        "5": 13,
+        "6": 3
+      },
+      "payload_prepare_seconds": 7.79093502,
+      "prepared_put_seconds": 1.414491411,
+      "windows": 0,
+      "ray_blocks": 330,
+      "batch_sizes": {},
+      "next_work_seconds": 0.0,
+      "next_resume_seconds": 0.0,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60229,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 7042,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "preparation_capacity_peaks": {
+        "encoded_queued": 8,
+        "prepare_inflight": 0,
+        "ready_queued": 35,
+        "model_inflight": 24,
+        "completed": 0,
+        "failed": 0,
+        "encoded_held_bytes": 58804,
+        "ready_held_bytes": 70168,
+        "ready_held_work": 143,
+        "encoded_bytes_limit": 2097152,
+        "ready_bytes_limit": 4194304,
+        "ready_work_limit": 256
+      },
+      "ray_block_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 44,
+        "4": 60,
+        "2": 74,
+        "3": 127,
+        "5": 13,
+        "6": 3
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.95292625,
+        "before_worker_ns": 5.875237289,
+        "worker_elapsed_ns": 197.901397723,
+        "after_worker_ns": 250.361577573,
+        "rpc_elapsed_ns": 454.138212585
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.930592041015625,
+          "p50": 0.554546,
+          "p95": 2.49143825
+        },
+        "before_worker_ns": {
+          "mean": 5.737536415039062,
+          "p50": 2.8670739999999997,
+          "p95": 19.025314599999998
+        },
+        "worker_elapsed_ns": {
+          "mean": 193.2630837138672,
+          "p50": 191.539942,
+          "p95": 426.28369119999996
+        },
+        "after_worker_ns": {
+          "mean": 244.4937280986328,
+          "p50": 261.868509,
+          "p95": 418.7281447
+        },
+        "rpc_elapsed_ns": {
+          "mean": 443.49434822753904,
+          "p50": 487.310148,
+          "p95": 615.3172701
+        }
+      },
+      "preparation_remainder_seconds": 0.173925895,
+      "stream_seconds": 12.750868889,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "immediate",
+      "unit": "measure1",
+      "split": "evaluation",
+      "repeat": 1,
+      "rows": 1024,
+      "jct_seconds": 10.037689134,
+      "preparation_seconds": 0.01327983,
+      "accuracy": 0.8515625,
+      "correct_rows": 872,
+      "transactions": 1024,
+      "reserve_seconds": 4.945344649,
+      "first_row_seconds": 2.308268358,
+      "cleanup_seconds": 0.389181758,
+      "timeline": {
+        "first_rpc_ns": 2575419939049408,
+        "last_received_ns": 2575429782350580,
+        "mean_logical_requests": 61.953633145626156,
+        "mean_worker_methods": 31.623061389957844,
+        "model_host_pss_peak_bytes": 3430389760,
+        "model_samples": 37,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 39,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 242483200,
+          "pg_backend": 16244736,
+          "gateway": 277004288,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 238215168,
+          "child:7200": 103849984,
+          "child:7201": 135417856,
+          "child:7278": 99168256,
+          "child:7279": 43327488,
+          "child:8312": 278421504,
+          "child:7334": 165941248,
+          "child:7336": 101986304,
+          "child:7472": 179998720,
+          "child:7473": 101040128,
+          "child:7474": 101199872,
+          "child:7475": 101101568,
+          "child:7476": 101126144,
+          "child:7477": 179093504,
+          "child:7478": 101228544,
+          "child:7479": 101785600
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 176099328,
+          "pg_backend": 8007680,
+          "gateway": 193536000,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 244535296,
+          "child:7200": 71374848,
+          "child:7201": 96932864,
+          "child:7278": 67568640,
+          "child:7279": 43339776,
+          "child:8312": 193173504,
+          "child:7334": 119817216,
+          "child:7336": 68401152,
+          "child:7472": 115273728,
+          "child:7473": 64885760,
+          "child:7474": 64813056,
+          "child:7475": 64899072,
+          "child:7476": 64855040,
+          "child:7477": 114120704,
+          "child:7478": 64956416,
+          "child:7479": 64838656
+        },
+        "sampled_total_pss_peak_bytes": 1927668736,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "10878:1791426893.75": {
+            "pid": 10878,
+            "created_at": 1791426893.75,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "child:8312"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 2796510690
+      },
+      "prepared_blocks": 0,
+      "prepared_batch_sizes": {},
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "windows": 71,
+      "ray_blocks": 108,
+      "batch_sizes": {},
+      "next_work_seconds": 1.747086832,
+      "next_resume_seconds": 5.405401717,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60133,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "ray_block_sizes": {
+        "16": 40,
+        "1": 13,
+        "5": 8,
+        "14": 6,
+        "13": 2,
+        "8": 2,
+        "6": 8,
+        "3": 4,
+        "2": 9,
+        "4": 5,
+        "10": 5,
+        "9": 3,
+        "12": 1,
+        "7": 1,
+        "11": 1
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.695618541,
+        "before_worker_ns": 16.813912243,
+        "worker_elapsed_ns": 311.275317242,
+        "after_worker_ns": 51.150839233,
+        "rpc_elapsed_ns": 379.240068718
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.6793149814453125,
+          "p50": 0.48738349999999997,
+          "p95": 1.6509555500000002
+        },
+        "before_worker_ns": {
+          "mean": 16.419836174804686,
+          "p50": 4.2186325,
+          "p95": 77.16830405
+        },
+        "worker_elapsed_ns": {
+          "mean": 303.97980199414064,
+          "p50": 277.2732345,
+          "p95": 515.8019234
+        },
+        "after_worker_ns": {
+          "mean": 49.95199143847656,
+          "p50": 37.537273,
+          "p95": 128.50444149999998
+        },
+        "rpc_elapsed_ns": {
+          "mean": 370.3516296074219,
+          "p50": 346.0497245,
+          "p95": 611.16101815
+        }
+      },
+      "preparation_remainder_seconds": null,
+      "stream_seconds": 10.024409304,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "immediate",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 10.06898278,
+      "preparation_seconds": 0.01358273,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 4.832492232,
+      "first_row_seconds": 2.365809606,
+      "cleanup_seconds": 0.324734113,
+      "timeline": {
+        "first_rpc_ns": 2575430718683450,
+        "last_received_ns": 2575440585044437,
+        "mean_logical_requests": 63.01882401791752,
+        "mean_worker_methods": 31.637993598176056,
+        "model_host_pss_peak_bytes": 3430488064,
+        "model_samples": 37,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 38,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 225779712,
+          "pg_backend": 16248832,
+          "gateway": 280154112,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 241078272,
+          "child:7200": 103849984,
+          "child:7201": 135417856,
+          "child:7278": 99192832,
+          "child:7279": 43724800,
+          "child:8312": 278351872,
+          "child:7334": 165961728,
+          "child:7336": 101986304,
+          "child:7472": 180436992,
+          "child:7473": 101044224,
+          "child:7474": 101199872,
+          "child:7475": 101105664,
+          "child:7476": 101130240,
+          "child:7477": 179093504,
+          "child:7478": 101232640,
+          "child:7479": 101789696
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 156987392,
+          "pg_backend": 7999488,
+          "gateway": 193790976,
+          "child:6655": 2379776,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 247615488,
+          "child:7200": 71415808,
+          "child:7201": 96991232,
+          "child:7278": 67625984,
+          "child:7279": 44398592,
+          "child:8312": 193117184,
+          "child:7334": 119940096,
+          "child:7336": 68401152,
+          "child:7472": 115760128,
+          "child:7473": 64893952,
+          "child:7474": 64817152,
+          "child:7475": 64911360,
+          "child:7476": 64867328,
+          "child:7477": 114120704,
+          "child:7478": 64960512,
+          "child:7479": 64846848
+        },
+        "sampled_total_pss_peak_bytes": 1913867264,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "11136:1791426904.53": {
+            "pid": 11136,
+            "created_at": 1791426904.53,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "child:8312"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 2890347372
+      },
+      "prepared_blocks": 0,
+      "prepared_batch_sizes": {},
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "windows": 97,
+      "ray_blocks": 128,
+      "batch_sizes": {},
+      "next_work_seconds": 2.190518654,
+      "next_resume_seconds": 5.221463826,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60228,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "ray_block_sizes": {
+        "16": 34,
+        "1": 29,
+        "2": 13,
+        "4": 3,
+        "3": 8,
+        "6": 4,
+        "11": 3,
+        "5": 6,
+        "14": 3,
+        "8": 2,
+        "9": 7,
+        "13": 3,
+        "15": 3,
+        "12": 3,
+        "10": 4,
+        "7": 3
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.6898667,
+        "before_worker_ns": 30.413115421,
+        "worker_elapsed_ns": 312.151865744,
+        "after_worker_ns": 50.190833045,
+        "rpc_elapsed_ns": 392.75581421
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.67369794921875,
+          "p50": 0.483027,
+          "p95": 1.61744015
+        },
+        "before_worker_ns": {
+          "mean": 29.70030802832031,
+          "p50": 3.3615375,
+          "p95": 207.36702899999997
+        },
+        "worker_elapsed_ns": {
+          "mean": 304.835806390625,
+          "p50": 307.766368,
+          "p95": 504.25236344999996
+        },
+        "after_worker_ns": {
+          "mean": 49.01448539550781,
+          "p50": 33.5442695,
+          "p95": 132.82591130000003
+        },
+        "rpc_elapsed_ns": {
+          "mean": 383.5505998144531,
+          "p50": 379.5779655,
+          "p95": 633.336481
+        }
+      },
+      "preparation_remainder_seconds": null,
+      "stream_seconds": 10.05540005,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "prepared",
+      "unit": "measure2",
+      "split": "evaluation",
+      "repeat": 2,
+      "rows": 1024,
+      "jct_seconds": 12.685559018,
+      "preparation_seconds": 0.012635045,
+      "accuracy": 0.8525390625,
+      "correct_rows": 873,
+      "transactions": 1024,
+      "reserve_seconds": 9.298003695,
+      "first_row_seconds": 2.807606621,
+      "cleanup_seconds": 0.368994766,
+      "timeline": {
+        "first_rpc_ns": 2575441563371248,
+        "last_received_ns": 2575454019437209,
+        "mean_logical_requests": 62.18170156645657,
+        "mean_worker_methods": 16.909123042496386,
+        "model_host_pss_peak_bytes": 3430561792,
+        "model_samples": 47,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 48,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 235241472,
+          "pg_backend": 16244736,
+          "gateway": 279601152,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 244912128,
+          "child:7200": 103854080,
+          "child:7201": 135417856,
+          "child:7278": 99438592,
+          "child:7279": 44265472,
+          "child:8245": 280178688,
+          "child:7334": 165969920,
+          "child:7336": 101986304,
+          "child:7472": 180453376,
+          "child:7473": 101044224,
+          "child:7474": 101199872,
+          "child:7475": 101105664,
+          "child:7476": 101130240,
+          "child:7477": 179236864,
+          "child:7478": 101232640,
+          "child:7479": 101789696
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 166363136,
+          "pg_backend": 8007680,
+          "gateway": 193608704,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 251244544,
+          "child:7200": 71415808,
+          "child:7201": 97024000,
+          "child:7278": 67691520,
+          "child:7279": 45406208,
+          "child:8245": 193766400,
+          "child:7334": 120091648,
+          "child:7336": 68401152,
+          "child:7472": 115756032,
+          "child:7473": 64898048,
+          "child:7474": 64825344,
+          "child:7475": 64915456,
+          "child:7476": 64867328,
+          "child:7477": 114336768,
+          "child:7478": 64968704,
+          "child:7479": 64855040
+        },
+        "sampled_total_pss_peak_bytes": 1928638464,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "11481:1791426915.35": {
+            "pid": 11481,
+            "created_at": 1791426915.35,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "child:8245"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 3626753762
+      },
+      "prepared_blocks": 317,
+      "prepared_batch_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 55,
+        "4": 93,
+        "2": 45,
+        "3": 98,
+        "5": 17
+      },
+      "payload_prepare_seconds": 7.45123474,
+      "prepared_put_seconds": 1.524332018,
+      "windows": 0,
+      "ray_blocks": 317,
+      "batch_sizes": {},
+      "next_work_seconds": 0.0,
+      "next_resume_seconds": 0.0,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60252,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 7042,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "preparation_capacity_peaks": {
+        "encoded_queued": 8,
+        "prepare_inflight": 0,
+        "ready_queued": 32,
+        "model_inflight": 23,
+        "completed": 0,
+        "failed": 0,
+        "encoded_held_bytes": 58804,
+        "ready_held_bytes": 69243,
+        "ready_held_work": 142,
+        "encoded_bytes_limit": 2097152,
+        "ready_bytes_limit": 4194304,
+        "ready_work_limit": 256
+      },
+      "ray_block_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 55,
+        "4": 93,
+        "2": 45,
+        "3": 98,
+        "5": 17
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.997599091,
+        "before_worker_ns": 5.646366477,
+        "worker_elapsed_ns": 210.62115196,
+        "after_worker_ns": 245.988851872,
+        "rpc_elapsed_ns": 462.256370309
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.9742178623046875,
+          "p50": 0.5655645,
+          "p95": 2.63557995
+        },
+        "before_worker_ns": {
+          "mean": 5.514029762695312,
+          "p50": 2.779974,
+          "p95": 13.524799199999997
+        },
+        "worker_elapsed_ns": {
+          "mean": 205.6847187109375,
+          "p50": 208.8996955,
+          "p95": 443.90146439999995
+        },
+        "after_worker_ns": {
+          "mean": 240.22348815625,
+          "p50": 257.52135899999996,
+          "p95": 394.51491484999997
+        },
+        "rpc_elapsed_ns": {
+          "mean": 451.42223662988283,
+          "p50": 498.8144375,
+          "p95": 651.92293405
+        }
+      },
+      "preparation_remainder_seconds": 0.170008449,
+      "stream_seconds": 12.672923973,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "prepared",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 11.706383357,
+      "preparation_seconds": 0.013724281,
+      "accuracy": 0.8515625,
+      "correct_rows": 872,
+      "transactions": 1024,
+      "reserve_seconds": 8.649611931,
+      "first_row_seconds": 2.82453686,
+      "cleanup_seconds": 0.511526852,
+      "timeline": {
+        "first_rpc_ns": 2575454928038363,
+        "last_received_ns": 2575466406780579,
+        "mean_logical_requests": 62.014277034967435,
+        "mean_worker_methods": 18.248044397846247,
+        "model_host_pss_peak_bytes": 3430600704,
+        "model_samples": 44,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 44,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 244043776,
+          "pg_backend": 16248832,
+          "gateway": 279965696,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 250335232,
+          "child:7200": 103854080,
+          "child:7201": 135684096,
+          "child:7278": 99438592,
+          "child:7279": 45092864,
+          "child:8245": 280158208,
+          "child:7334": 166170624,
+          "child:7336": 101986304,
+          "child:7472": 180453376,
+          "child:7473": 101044224,
+          "child:7474": 101199872,
+          "child:7475": 101105664,
+          "child:7476": 101130240,
+          "child:7477": 179474432,
+          "child:7478": 101232640,
+          "child:7479": 101789696
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 176596992,
+          "pg_backend": 8011776,
+          "gateway": 193847296,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 256561152,
+          "child:7200": 71448576,
+          "child:7201": 97048576,
+          "child:7278": 67752960,
+          "child:7279": 45771776,
+          "child:8245": 193745920,
+          "child:7334": 120346624,
+          "child:7336": 68401152,
+          "child:7472": 115756032,
+          "child:7473": 64898048,
+          "child:7474": 64825344,
+          "child:7475": 64919552,
+          "child:7476": 64871424,
+          "child:7477": 114402304,
+          "child:7478": 64972800,
+          "child:7479": 64863232
+        },
+        "sampled_total_pss_peak_bytes": 1945410560,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "12483:1791426928.72": {
+            "pid": 12483,
+            "created_at": 1791426928.72,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "child:8245"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 3585228743
+      },
+      "prepared_blocks": 319,
+      "prepared_batch_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 56,
+        "3": 112,
+        "2": 40,
+        "4": 86,
+        "5": 16
+      },
+      "payload_prepare_seconds": 6.595499503,
+      "prepared_put_seconds": 1.354019257,
+      "windows": 0,
+      "ray_blocks": 319,
+      "batch_sizes": {},
+      "next_work_seconds": 0.0,
+      "next_resume_seconds": 0.0,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60066,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 7042,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "preparation_capacity_peaks": {
+        "encoded_queued": 8,
+        "prepare_inflight": 0,
+        "ready_queued": 34,
+        "model_inflight": 25,
+        "completed": 0,
+        "failed": 0,
+        "encoded_held_bytes": 58804,
+        "ready_held_bytes": 68181,
+        "ready_held_work": 138,
+        "encoded_bytes_limit": 2097152,
+        "ready_bytes_limit": 4194304,
+        "ready_work_limit": 256
+      },
+      "ray_block_sizes": {
+        "8": 2,
+        "16": 7,
+        "1": 56,
+        "3": 112,
+        "2": 40,
+        "4": 86,
+        "5": 16
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.888284928,
+        "before_worker_ns": 6.436584629,
+        "worker_elapsed_ns": 209.464597589,
+        "after_worker_ns": 212.157049462,
+        "rpc_elapsed_ns": 428.05823168
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.86746575,
+          "p50": 0.5594975,
+          "p95": 2.2694205000000003
+        },
+        "before_worker_ns": {
+          "mean": 6.2857271767578125,
+          "p50": 2.761502,
+          "p95": 16.312468000000003
+        },
+        "worker_elapsed_ns": {
+          "mean": 204.55527108300782,
+          "p50": 208.0705385,
+          "p95": 408.6380815
+        },
+        "after_worker_ns": {
+          "mean": 207.18461861523437,
+          "p50": 210.93348450000002,
+          "p95": 358.77140074999994
+        },
+        "rpc_elapsed_ns": {
+          "mean": 418.025616875,
+          "p50": 447.3008685,
+          "p95": 577.5489484
+        }
+      },
+      "preparation_remainder_seconds": 0.151656682,
+      "stream_seconds": 11.692659076,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    },
+    {
+      "mode": "immediate",
+      "unit": "measure3",
+      "split": "evaluation",
+      "repeat": 3,
+      "rows": 1024,
+      "jct_seconds": 10.232853311,
+      "preparation_seconds": 0.01322376,
+      "accuracy": 0.8505859375,
+      "correct_rows": 871,
+      "transactions": 1024,
+      "reserve_seconds": 5.276943777,
+      "first_row_seconds": 2.464677772,
+      "cleanup_seconds": 0.413117939,
+      "timeline": {
+        "first_rpc_ns": 2575467499368555,
+        "last_received_ns": 2575477536957145,
+        "mean_logical_requests": 62.11455923299602,
+        "mean_worker_methods": 30.175991948679776,
+        "model_host_pss_peak_bytes": 3430677504,
+        "model_samples": 38,
+        "scope": "same-host method interval area, not GPU occupancy; model PSS is host memory after service readiness"
+      },
+      "physical_memory": {
+        "samples": 39,
+        "interval_seconds": 0.2,
+        "peak_rss_bytes": {
+          "pg_postmaster": 21692416,
+          "consumer": 239353856,
+          "pg_backend": 16248832,
+          "gateway": 280604672,
+          "child:6655": 5816320,
+          "child:6656": 3407872,
+          "child:6657": 2584576,
+          "child:6658": 2584576,
+          "child:6659": 4112384,
+          "child:6661": 7688192,
+          "child:6662": 4939776,
+          "child:6663": 4980736,
+          "child:6664": 13414400,
+          "child:7099": 253263872,
+          "child:7200": 103854080,
+          "child:7201": 135684096,
+          "child:7278": 99524608,
+          "child:7279": 45285376,
+          "child:8312": 279986176,
+          "child:7334": 166182912,
+          "child:7336": 101986304,
+          "child:7472": 180625408,
+          "child:7473": 101044224,
+          "child:7474": 101199872,
+          "child:7475": 101105664,
+          "child:7476": 101130240,
+          "child:7477": 179474432,
+          "child:7478": 101232640,
+          "child:7479": 101789696
+        },
+        "peak_pss_bytes": {
+          "pg_postmaster": 10650624,
+          "consumer": 170262528,
+          "pg_backend": 8010752,
+          "gateway": 194143232,
+          "child:6655": 2380800,
+          "child:6656": 732160,
+          "child:6657": 500736,
+          "child:6658": 543744,
+          "child:6659": 1177600,
+          "child:6661": 2644992,
+          "child:6662": 1515520,
+          "child:6663": 1321984,
+          "child:6664": 4960256,
+          "child:7099": 259196928,
+          "child:7200": 71469056,
+          "child:7201": 97056768,
+          "child:7278": 67847168,
+          "child:7279": 45464576,
+          "child:8312": 193863680,
+          "child:7334": 120469504,
+          "child:7336": 68401152,
+          "child:7472": 116038656,
+          "child:7473": 64914432,
+          "child:7474": 64829440,
+          "child:7475": 64919552,
+          "child:7476": 64875520,
+          "child:7477": 114351104,
+          "child:7478": 64976896,
+          "child:7479": 64871424
+        },
+        "sampled_total_pss_peak_bytes": 1942322176,
+        "pss_unavailable": {},
+        "processes": {
+          "6654:1791426653.47": {
+            "pid": 6654,
+            "created_at": 1791426653.47,
+            "name": "postgres",
+            "label": "pg_postmaster"
+          },
+          "7093:1791426821.67": {
+            "pid": 7093,
+            "created_at": 1791426821.67,
+            "name": "python",
+            "label": "consumer"
+          },
+          "13488:1791426941.31": {
+            "pid": 13488,
+            "created_at": 1791426941.31,
+            "name": "postgres",
+            "label": "pg_backend"
+          },
+          "8245:1791426845.08": {
+            "pid": 8245,
+            "created_at": 1791426845.08,
+            "name": "python",
+            "label": "gateway"
+          },
+          "6655:1791426653.49": {
+            "pid": 6655,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6655"
+          },
+          "6656:1791426653.49": {
+            "pid": 6656,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6656"
+          },
+          "6657:1791426653.49": {
+            "pid": 6657,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6657"
+          },
+          "6658:1791426653.49": {
+            "pid": 6658,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6658"
+          },
+          "6659:1791426653.49": {
+            "pid": 6659,
+            "created_at": 1791426653.49,
+            "name": "postgres",
+            "label": "child:6659"
+          },
+          "6661:1791426653.5": {
+            "pid": 6661,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6661"
+          },
+          "6662:1791426653.5": {
+            "pid": 6662,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6662"
+          },
+          "6663:1791426653.5": {
+            "pid": 6663,
+            "created_at": 1791426653.5,
+            "name": "postgres",
+            "label": "child:6663"
+          },
+          "6664:1791426653.58": {
+            "pid": 6664,
+            "created_at": 1791426653.58,
+            "name": "postgres",
+            "label": "child:6664"
+          },
+          "7099:1791426823.94": {
+            "pid": 7099,
+            "created_at": 1791426823.94,
+            "name": "gcs_server",
+            "label": "child:7099"
+          },
+          "7200:1791426824.38": {
+            "pid": 7200,
+            "created_at": 1791426824.38,
+            "name": "python",
+            "label": "child:7200"
+          },
+          "7201:1791426824.66": {
+            "pid": 7201,
+            "created_at": 1791426824.66,
+            "name": "python",
+            "label": "child:7201"
+          },
+          "7278:1791426827.1": {
+            "pid": 7278,
+            "created_at": 1791426827.1,
+            "name": "python",
+            "label": "child:7278"
+          },
+          "7279:1791426827.11": {
+            "pid": 7279,
+            "created_at": 1791426827.11,
+            "name": "raylet",
+            "label": "child:7279"
+          },
+          "8312:1791426847.71": {
+            "pid": 8312,
+            "created_at": 1791426847.71,
+            "name": "python",
+            "label": "child:8312"
+          },
+          "7334:1791426828.15": {
+            "pid": 7334,
+            "created_at": 1791426828.15,
+            "name": "ray::DashboardAgent",
+            "label": "child:7334"
+          },
+          "7336:1791426828.15": {
+            "pid": 7336,
+            "created_at": 1791426828.15,
+            "name": "ray::RuntimeEnvAgent",
+            "label": "child:7336"
+          },
+          "7472:1791426831.26": {
+            "pid": 7472,
+            "created_at": 1791426831.26,
+            "name": "ray::_HttpActor",
+            "label": "child:7472"
+          },
+          "7473:1791426831.26": {
+            "pid": 7473,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7473"
+          },
+          "7474:1791426831.26": {
+            "pid": 7474,
+            "created_at": 1791426831.26,
+            "name": "ray::IDLE",
+            "label": "child:7474"
+          },
+          "7475:1791426831.27": {
+            "pid": 7475,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7475"
+          },
+          "7476:1791426831.27": {
+            "pid": 7476,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7476"
+          },
+          "7477:1791426831.27": {
+            "pid": 7477,
+            "created_at": 1791426831.27,
+            "name": "ray::_HttpActor",
+            "label": "child:7477"
+          },
+          "7478:1791426831.27": {
+            "pid": 7478,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7478"
+          },
+          "7479:1791426831.27": {
+            "pid": 7479,
+            "created_at": 1791426831.27,
+            "name": "ray::IDLE",
+            "label": "child:7479"
+          }
+        },
+        "discovered_but_unobserved": [],
+        "include_children": true,
+        "summed_rss_is_unique_physical_memory": false,
+        "scope": "sampled RSS and proportionally shared PSS; per-role peaks are not additive; short peaks can be missed",
+        "sampler_work_ns": 3004619847
+      },
+      "prepared_blocks": 0,
+      "prepared_batch_sizes": {},
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "windows": 70,
+      "ray_blocks": 108,
+      "batch_sizes": {},
+      "next_work_seconds": 1.825540194,
+      "next_resume_seconds": 5.761651484,
+      "logical_resources": {
+        "logical_peaks": {
+          "held_tasks": 128,
+          "input_bytes": 60187,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "limits": {
+          "held_tasks": 256,
+          "input_bytes": 134217728,
+          "result_bytes": 134217728,
+          "active_requests": 64,
+          "active_work": 64
+        },
+        "observations": 4994,
+        "drained_jobs": 1,
+        "result_bytes_kind": "reserved capacity",
+        "scope": "all recorded responsibility transitions; physical RSS reported separately"
+      },
+      "ray_block_sizes": {
+        "16": 39,
+        "1": 16,
+        "5": 5,
+        "12": 4,
+        "4": 5,
+        "8": 2,
+        "2": 7,
+        "6": 7,
+        "15": 3,
+        "7": 5,
+        "14": 1,
+        "9": 3,
+        "13": 2,
+        "10": 3,
+        "11": 3,
+        "3": 3
+      },
+      "rpc_stage_totals_seconds": {
+        "submit_elapsed_ns": 0.747670235,
+        "before_worker_ns": 8.700763701,
+        "worker_elapsed_ns": 302.894192476,
+        "after_worker_ns": 52.23425637,
+        "rpc_elapsed_ns": 363.829212547
+      },
+      "rpc_stage_per_request_ms": {
+        "submit_elapsed_ns": {
+          "mean": 0.7301467138671875,
+          "p50": 0.4976885,
+          "p95": 1.76167535
+        },
+        "before_worker_ns": {
+          "mean": 8.496839551757812,
+          "p50": 2.9772445,
+          "p95": 36.35749224999999
+        },
+        "worker_elapsed_ns": {
+          "mean": 295.79510983984375,
+          "p50": 301.4630845,
+          "p95": 507.23085685
+        },
+        "after_worker_ns": {
+          "mean": 51.01001598632813,
+          "p50": 34.408667,
+          "p95": 144.8707504
+        },
+        "rpc_elapsed_ns": {
+          "mean": 355.30196537792966,
+          "p50": 345.755544,
+          "p95": 600.05863585
+        }
+      },
+      "preparation_remainder_seconds": null,
+      "stream_seconds": 10.219629551,
+      "synchronous_guard_return_before_rpc": true,
+      "guard_request_association": "one preceding synchronous request per keyed guard; body checked against producer input order"
+    }
+  ],
+  "medians_seconds": {
+    "immediate": 10.06898278,
+    "prepared": 12.685559018
+  },
+  "slowdown_percent": 25.986500276843238,
+  "paired_output_differences": [
+    3,
+    2,
+    3
+  ],
+  "shared_startup": {
+    "ray_startup_seconds": 9.311144053936005,
+    "immediate_worker_startup_seconds": 0.4239890892058611,
+    "prepared_worker_startup_seconds": 0.3364199963398278,
+    "gateway_startup_seconds": {
+      "immediate": 2.6264062519185245,
+      "prepared": 2.2969293198548257
+    }
+  },
+  "source_base_commit": "4e9734be99e383ca00aab376e0546660de7a6cb2",
+  "source_identity": "declared per-file SHA-256 snapshot plus optional queued-tail change",
+  "base_analysis_sha256": "7d52bb358e1305cb30011630f803b8cc5cbe3487843fd626578e844fe5403951",
+  "durable_ledger": {
+    "status": "passed",
+    "requests": 8224,
+    "closed_groups": 4,
+    "sha256": "b4d67213e2d253b24a6a2e51413721268b544c18d50fe9112e70461a31c28e62"
+  },
+  "measurement_summary": {
+    "immediate": {
+      "jct_seconds": 10.06898278,
+      "preparation_seconds": 0.01327983,
+      "stream_seconds": 10.05540005,
+      "first_row_seconds": 2.365809606,
+      "prepared_blocks": 0,
+      "ray_blocks": 108,
+      "payload_prepare_seconds": null,
+      "prepared_put_seconds": null,
+      "next_work_seconds": 1.825540194,
+      "reserve_seconds": 4.945344649,
+      "jct_repeats_seconds": [
+        10.037689134,
+        10.06898278,
+        10.232853311
+      ],
+      "sample_cv": 0.010364579917476396,
+      "mean_worker_methods": 31.623061389957844,
+      "mean_logical_requests": 62.11455923299602,
+      "query_pss_peak_median_bytes": 1927668736,
+      "model_host_pss_peak_median_bytes": 3430488064,
+      "rpc_stage_totals_medians_seconds": {
+        "submit_elapsed_ns": 0.695618541,
+        "before_worker_ns": 16.813912243,
+        "worker_elapsed_ns": 311.275317242,
+        "after_worker_ns": 51.150839233,
+        "rpc_elapsed_ns": 379.240068718
+      },
+      "rpc_stage_per_request_mean_medians_ms": {
+        "submit_elapsed_ns": 0.6793149814453125,
+        "before_worker_ns": 16.419836174804686,
+        "worker_elapsed_ns": 303.97980199414064,
+        "after_worker_ns": 49.95199143847656,
+        "rpc_elapsed_ns": 370.3516296074219
+      }
+    },
+    "prepared": {
+      "jct_seconds": 12.685559018,
+      "preparation_seconds": 0.0133981,
+      "stream_seconds": 12.672923973,
+      "first_row_seconds": 2.82453686,
+      "prepared_blocks": 319,
+      "ray_blocks": 319,
+      "payload_prepare_seconds": 7.45123474,
+      "prepared_put_seconds": 1.414491411,
+      "next_work_seconds": 0.0,
+      "reserve_seconds": 9.298003695,
+      "jct_repeats_seconds": [
+        12.764266989,
+        12.685559018,
+        11.706383357
+      ],
+      "sample_cv": 0.047585349696020914,
+      "mean_worker_methods": 16.909123042496386,
+      "mean_logical_requests": 62.014277034967435,
+      "query_pss_peak_median_bytes": 1928638464,
+      "model_host_pss_peak_median_bytes": 3430561792,
+      "rpc_stage_totals_medians_seconds": {
+        "submit_elapsed_ns": 0.95292625,
+        "before_worker_ns": 5.875237289,
+        "worker_elapsed_ns": 209.464597589,
+        "after_worker_ns": 245.988851872,
+        "rpc_elapsed_ns": 454.138212585
+      },
+      "rpc_stage_per_request_mean_medians_ms": {
+        "submit_elapsed_ns": 0.930592041015625,
+        "before_worker_ns": 5.737536415039062,
+        "worker_elapsed_ns": 204.55527108300782,
+        "after_worker_ns": 240.22348815625,
+        "rpc_elapsed_ns": 443.49434822753904
+      }
+    }
+  }
+}
