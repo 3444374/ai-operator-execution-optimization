@@ -1,0 +1,93 @@
+{
+  "schema": "semloom.replica_model_validation_plan.v1",
+  "status": "awaiting_resource_receipts_and_coordinator_start",
+  "scope": "original_q2_complete_request_fixed_subset_replay",
+  "original_q2_query": false,
+  "original_parser_evaluator_qualification": false,
+  "source": {
+    "execution_sha": "3bd5358706679b639e790585347133cd8d60b836",
+    "archive_basename": "matched-private.tar.gz",
+    "archive_sha256": "54460bd4addac05cea25692d623b2e17622a58d61c61fc5df88ae053866c9448",
+    "input_member": "model-matched/single-a/single-a-round-0-position-4-lotus-method-native-imlane/ia-cpython-4744a6dfcd/batches/batch-f731361fa39c4157a1b9375002809a71/input.jsonl",
+    "input_sha256": "5df16722e3a147b459acd1d92de8d2642e47e843614ac8969486e9df62cf372c",
+    "calls_member": "model-matched/single-a/single-a-round-0-position-4-lotus-method-native-imlane/output/a0-measurement-0-q2/calls.json",
+    "calls_sha256": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961",
+    "original_occurrences": 120,
+    "payload_encoding": "base64_original_http_json_bytes",
+    "database_row_identity": "calls[source_sequence].row_id",
+    "copy_historical_endpoint_headers": false
+  },
+  "sequences": {
+    "measurement": {"first": 0, "count": 24},
+    "calibration": {"first": 24, "count": 24},
+    "warmup": {"first": 48, "count": 12},
+    "protocol": {"first": 60, "count": 4}
+  },
+  "generation": {
+    "model": "Qwen2.5-7B-Instruct",
+    "temperature": 0,
+    "top_p": 1,
+    "stop": ["\n"],
+    "max_completion_tokens": 8,
+    "logprobs": false,
+    "add_or_rewrite_fields": false
+  },
+  "budget": {
+    "topologies": 2,
+    "arms": 4,
+    "repetitions": 3,
+    "measurement_requests": 576,
+    "calibration_requests": 144,
+    "warmup_requests": 96,
+    "protocol_requests": 4,
+    "hard_total_model_requests": 820,
+    "additional_failure_retry_requests": 0,
+    "post_hops_per_call": 1,
+    "refund_failed_unknown_or_unused_reservations": false
+  },
+  "capacity": {
+    "single_k_candidates": [1, 2, 4],
+    "dual_k_candidates": [2, 4, 8],
+    "selection": "minimum_complete_consumption_jct_on_independent_24_call_calibration",
+    "per_replica_hard_requests": 4,
+    "per_replica_hard_work": 4,
+    "work_descriptor": "request_count_work",
+    "work_units_per_call": 1,
+    "global_hard_requests_and_work": "selected_k",
+    "target_drain_s_all_arms": null
+  },
+  "arms": ["round_robin", "fixed_rate", "adaptive_route", "adaptive_supply"],
+  "order_by_repetition": [
+    ["round_robin", "fixed_rate", "adaptive_route", "adaptive_supply"],
+    ["adaptive_supply", "adaptive_route", "fixed_rate", "round_robin"],
+    ["fixed_rate", "round_robin", "adaptive_supply", "adaptive_route"]
+  ],
+  "feedback": {
+    "all_arms_collect_service_pressure": true,
+    "pressure_used_by": ["adaptive_supply"],
+    "sample_interval_s": 0.25,
+    "stale_after_s": 2.0,
+    "rate_alpha": 0.3,
+    "congestion_kv_usage": 0.85,
+    "artificial_delay_or_background_calls": false,
+    "preserve_previous_homogeneous_regressions": true
+  },
+  "resources": {
+    "driver_cpu_ids": [18, 19],
+    "api_a_cpu_ids": [20, 21, 22, 23, 24, 25, 26, 27],
+    "api_b_cpu_ids": [28, 29, 30, 31, 32, 33, 34, 35],
+    "max_physical_gpus": 2,
+    "single_group_resident_models": 1,
+    "start_b_after_single_group": true,
+    "download_assets": false
+  },
+  "time_limits": {
+    "whole_window_s": 1080,
+    "cumulative_model_loading_s": 300,
+    "activity_after_first_ready_s": 600,
+    "stop_new_post_at_elapsed_s": 900,
+    "cleanup_reserved_s": 180,
+    "request_timeout_s": 30,
+    "extend_or_reset_window": false
+  }
+}
