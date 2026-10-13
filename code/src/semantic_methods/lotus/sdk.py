@@ -55,6 +55,13 @@ class PreparedLotusCall:
     timeout_s: float
 
 
+def _validate_utf8(value):
+    # Native OpenAI serialization rejects Python surrogate code points before I/O.
+    # Validate before the JSON copy can combine a surrogate pair into a scalar.
+    if not value.isascii():
+        value.encode("utf-8")
+
+
 def _validate_messages(messages):
     if not isinstance(messages, list) or not messages:
         raise ValueError("LOTUS adapter requires a complete text message list")
@@ -63,6 +70,7 @@ def _validate_messages(messages):
                 or message["role"] not in ("system", "user", "assistant")
                 or type(message["content"]) is not str):
             raise ValueError("LOTUS adapter supports text messages with role and content")
+        _validate_utf8(message["content"])
 
 
 def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
@@ -90,14 +98,6 @@ def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
             # Preserve the existing JSON rules for unusual equality-compatible roles.
             json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
             continue
-        for message in messages:
-            for value in message.values():
-                if not value.isascii():
-                    try:
-                        value.encode()
-                    except UnicodeEncodeError:
-                        # The provider's JSON copy combines valid escaped surrogate pairs.
-                        json.loads(json.dumps(value)).encode()
     if check_stop:
         check_stop()
     return first

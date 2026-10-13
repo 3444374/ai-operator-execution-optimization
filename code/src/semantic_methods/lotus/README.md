@@ -40,6 +40,8 @@ LM、Map、formatter、postprocessor、缓存、设置、列引用和计费模�
 `sdk.prepare_call`读取LM已经选择的完整消息及有效参数，直接调用LiteLLM的
 `get_optional_params`与OpenAI provider转换。它按原非流式调用移除`stream`，并按OpenAI SDK处理
 空`extra_body`。不会擅自把`max_completion_tokens`改成`max_tokens`。
+原始文本必须可以UTF-8编码；Python代理码点在JSON复制前拒绝，包括能被JSON复制合并的代理对。
+整批预检也先拒绝无效suffix，避免已接纳合法前缀后才发现该输入错误。
 确定性HTTP验证对拍服务实际收到的正文，覆盖有效model、消息、生成预算、logprobs及Unicode。
 API base、key、超时和model必须与传入的`FixedModelConfig`相同；连接配置由调用方在仓库外读取。
 成对运行要求显式API base、认证及有限超时、重试为0；未知参数和隐藏的全局OpenAI配置会被拒绝。

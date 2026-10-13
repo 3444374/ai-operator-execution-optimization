@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[LOTUS文本输入校验](src/semantic_methods/lotus/README.md)在JSON复制前拒绝不可UTF-8编码的原始消息，
+轻量本地预检4项通过，21项固定SDK回归缺库跳过；图像profile和数据组织仍保留在独立研究分支。
+
 2026-10-13：[原生完整调用生命周期](src/baselines/README.md)保留未知远端责任并阻止直接复用，
 无完整HTTP响应的传输错误也计入未知；完整HTTP错误响应保持原结果语义。
 公共执行器／IMLane／配置及入口本地57项，47通过、10项实际库检查跳过；服务器实库仍由接入owner核验。
