@@ -303,7 +303,8 @@ typed描述直接进入TaskInfo，Core仍是work单位和C/W容量的权威；�
 [75项本地回归首轮](raw/matched_work_local_checks_20261013.json)为73通过、1实际SDK缺库跳过、1沙箱禁止localhost监听；
 受阻单项经获准的[4次loopback请求复核](raw/matched_work_bind_recheck_20261013.json)通过，首轮失败保留，共74项独立通过/1跳过。
 现有桥的截帧拒绝、四tick推进和首错清理回归保持；没有扩大服务器或模型矩阵。
-后续真实SDK新回调、廉价长度代理、可信单Map总量及持续短frontend仍pending。
+实际SDK单Map新回调资格现见[接续软件检查](#work-sdk-qualification)；生产长度代理、私有共享桥同信息四臂、
+可信单Map总量及持续短frontend仍pending。
 Linux窗口按多模态独立释放后串行协调；新资格使用独立run_id/额度，不借旧1909/4240。
 共同状态、台账和README由baseline owner统一同步，本报告与同题M4维护本研究事实。
 
@@ -316,3 +317,32 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python3 -m src.experiments.query_shari
 ```
 
 未来重跑使用新的输出路径；`query_sharing_probe.py --protocol matched-work`选择本协议，默认`legacy`保持历史入口。
+
+
+<a id="work-sdk-qualification"></a>
+## 实际SDK的单Map工作描述资格
+
+固定`21003676945e57368317421c3d2af484649415d8`，从Git获取全新源码，未复制私有输入。
+[完整脱敏证据](raw/work_sdk_21003676_20261013.json.gz)包含源码SHA、机器preflight、SDK版本/源哈希、全部规范请求/typed描述/结果、
+测试日志、RSS序列、控制器和独立释放检查；私有原件的SHA单独记录。
+`core,text,semantic-benchmarks`自动profile预检通过；未安装依赖、下载模型或覆盖profile。
+使用已有共同host-exclusive lease，没有按replica私有ARTIFACT_ROOT建立平行锁。
+
+实际LOTUS SDK与本地真实Core的单Map新检查、既有3项SDK replay检查，共4项通过/0跳过，unittest计时9.359秒。
+同一4行Map的默认与显式工作描述分别使用独立Core，C=2/W=128/held=2，单进程串行LOTUS settings；
+8次内存后端回复，不调用真实模型或HTTP传输。两个模式的完整规范payload与结果逐项相同，所有消费、Job和Core责任归零。
+默认每项1；显式描述按准备时完整text消息UTF-8字节B及有效输出cap16计算`ceil(B/128)+16`：
+B分别201/1476/796/200，point18/28/23/18、lower2/12/7/2、upper与point相同。
+来源签名绑定完整非message生成配置；metadata及上下界完整到达Core，回调各项仅一次。
+这些区间只描述该未校准代理公式中的输出长度范围，不是GPU耗时、token换算率或统计置信区间。
+资格进程从外层封锁全部socket连接；3项replay中的HTTP/超时/坏JSON错误均是预定义内存响应对拍，日志原样保留。
+
+窗口T0为09:05:58.455558 UTC，硬截止09:15:58.455558，实际09:08:23.926902结束，共145.471344秒；
+源码获取及预检完整计入窗口，Git准备流量与资格网络分别记录，资格网络POST/模型/GPU均0，旧1909/4240不动。
+RSS采样峰值1,066,516,480字节（约0.993GiB），低于4GiB采样停止限；不把离散采样写成连续内存上界。
+预检先观察机器可用CPU；资格进程启动时设置CPU16–17，未采集thread级亲和性/逐核CPU违规审计，不据此作性能资源配平结论。
+09:10:22.030018 UTC使用既有driver独立核对8个PID+birth身份，无存活；共同lease不存在、GPU计算列表为空。
+源文件的5个SHA与本机冻结文件一致；之后不再占用服务器。
+
+该资格覆盖实际SDK、完整单Map和本地Core成本接线，尚未证明私有双前端桥的代理估值共享、完整多阶段SQL并发或GPU性能。
+真实模型四臂仍须同一修后桥、同信息及同C/W/路由/服务；本次没有执行1432请求模型方案，也没有因RR改善忽略补偿等价的负结果。
