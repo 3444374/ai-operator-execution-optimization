@@ -21,7 +21,8 @@ ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`�
 
 基线为已发布 native `a0f3fbd393a6bf0879a2c0a973f727c737d00389`，保留原有接点与固定库来源。
 本次三个互斥切片分别维护原生图转换、SemLoom完整批次和两种IMLane作者模式的验证入口；
-公共容量提交`9f8519d9`与公共生命周期提交`45899253`单独发布，Sema的HTTPX cookie及版本白名单按来源吸收。
+公共容量提交`9f8519d9`、公共生命周期提交`45899253`及无完整响应的transport未知修补`69f3e93b`
+单独发布，Sema的HTTPX cookie及版本白名单按来源吸收。
 
 | 公开方法入口 | 实际执行与结果回填 | 当前范围 |
 |---|---|---|
@@ -157,11 +158,12 @@ DuckDB自身仍最多2048行／32MiB输入，配置须容纳当前完整向量�
 
 专属[验证入口](verify_native.py)与[用例](../../tests/semantic_methods/test_duckdb_native.py)检查实际
 SQL 与原生对照；需要已完成机器预检、已加载社区二进制和匹配本次来源的编译库。
-入口支持`imlane-cpython`／`imlane-ray`和显式`--imlane-config`；`complete`、`parser-stop`、`cancel`
-三个case分别使用新的调用者Coordinator，未确认状态不复用。六项有效容量、完整来源及失败报告留在仓库外。
+入口支持`imlane-cpython`／`imlane-ray`和显式`--imlane-config`；`complete`、`transport-error`、`parser-stop`、`cancel`
+四个case分别使用新的调用者Coordinator，未确认状态不复用。完整429不等于transport未知；
+六项有效容量、完整来源及失败报告留在仓库外。LOAD失败也清理fixture；Ray两组件分别清理后才写最终报告。
 [SemLoom验证](verify_ray.py)增加原首错与合法前缀对照；固定端口由Ray的Cluster API声明，不把未支持参数传给`ray.init`。
 [公开常驻CLI回归](../../tests/semantic_methods/test_duckdb_public_paths.py)按8／8／129行更换输入和重复文本，
-验证连接复用、原方法解析与逐行关联；该fixture不授予模型质量或性能资格。
+验证非空连接身份、递增查询序号、关闭状态、原方法解析与逐行关联；该fixture不授予模型质量或性能资格。
 测试只访问 localhost 确定性替身，真实模型请求为 0；Linux 使用独立驱动进程和短 Ray 临时目录。
 2026-10-12 服务器实际构建通过；旧 DuckDB 专项与转换测试首轮 48 项通过，本地新增转换和旧接口
 18 项通过。每个后端的 8 项完整 SQL 检查通过，随后 3 项受影响的停止／取消／关闭错误检查通过，

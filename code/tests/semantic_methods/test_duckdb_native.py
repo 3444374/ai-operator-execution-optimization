@@ -343,6 +343,12 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertTrue(rows[1][1]['error'])
         self.assertEqual(len(self.server.records), 3)
         self.assertIsNone(self.bridge.last_error)
+        self.assertFalse(self.graph.last_close_report['clean'])
+        self.assertTrue(self.graph.last_close_report['unconfirmed_work'])
+        before = self.server.total_requests
+        with self.assertRaisesRegex(Exception, 'unconfirmed work'):
+            self.select(['later'])
+        self.assertEqual(self.server.total_requests, before)
 
     def test_fast_second_failure_keeps_first_input_error_and_try_usage(self):
         prompts = ['slow-first-error', 'fast-second-error']

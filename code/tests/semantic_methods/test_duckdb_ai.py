@@ -562,6 +562,7 @@ class _FixtureServer(ThreadingHTTPServer):
             raise ValueError('DuckDB fixture port must be zero or between 1024 and 65535')
         super().__init__(('127.0.0.1', port), _FixtureHandler)
         self.records, self.active, self.peak = [], 0, 0
+        self.total_requests = 0
         self.lock = threading.Lock()
         self.started = threading.Event()
 
@@ -576,6 +577,7 @@ class _FixtureHandler(BaseHTTPRequestHandler):
         prompt = value['messages'][-1]['content']
         with self.server.lock:
             self.server.records.append((raw, self.headers.get('Authorization')))
+            self.server.total_requests += 1
             self.server.active += 1
             self.server.peak = max(self.server.peak, self.server.active)
         self.server.started.set()
@@ -611,8 +613,14 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
         self.server = _FixtureServer()
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
+        # LOAD or version validation can fail before tearDown is called.
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(lambda: self.assertFalse(self.thread.is_alive()))
+        self.addCleanup(self.thread.join, timeout=2)
+        self.addCleanup(self.server.shutdown)
         self.endpoint = f'http://127.0.0.1:{self.server.server_port}/v1/chat/completions'
         self.connection = duckdb.connect(config={'allow_unsigned_extensions': 'true', 'threads': '1'})
+        self.addCleanup(self.connection.close)
         self.connection.execute('LOAD ' + "'" + str(Path(EXTENSION).resolve()).replace("'", "''") + "'")
         self.assertEqual(self.connection.execute('SELECT version()').fetchone()[0], 'v1.5.4')
         self.assertIn(self.connection.execute("SELECT extension_version FROM duckdb_extensions() "

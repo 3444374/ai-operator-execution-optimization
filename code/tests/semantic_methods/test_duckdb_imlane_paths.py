@@ -58,13 +58,17 @@ class DuckDBIMLaneContractTests(unittest.TestCase):
                 FullModelResponse(429, (('X-Repeat', 'one'), ('X-Repeat', 'two')), body))
                 for c in reversed(calls)]
 
-    def stream(self, graph, *, clean=True, error=None):
+    def stream(self, graph, *, clean=True, error=None, transport_error=''):
         seen = []
 
         def responses(calls, **options):
             seen.append((calls, options))
             try:
-                yield from self.outcomes(calls)
+                outcomes = self.outcomes(calls)
+                if transport_error:
+                    first = outcomes[0]
+                    outcomes[0] = NativeCallOutcome(first.call_id, first.row_id, None, transport_error)
+                yield from outcomes
                 if error is not None:
                     raise error
             finally:
@@ -148,8 +152,71 @@ class DuckDBIMLaneContractTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'unsettled'):
             list(DuckDBNativeExecutor(another)(self.calls, lambda: False))
 
+    def test_no_full_response_transport_errors_remain_unknown_in_both_author_modes(self):
+        for index, (mode, error) in enumerate((mode, error) for mode in ('cpython', 'ray')
+                for error in ('ServerDisconnectedError: fixture dropped response',
+                              'TimeoutError: fixture complete response deadline',
+                              'ClientPayloadError: fixture response body incomplete',
+                              'ClientConnectorError: fixture connection failed')):
+            with self.subTest(mode=mode, error=error):
+                config = replace(self.config, runtime=mode, coordinator_pid=1000 + index)
+                graph = self.graph(config)
+                self.stream(graph, transport_error=error)
+                results = list(DuckDBNativeExecutor(graph)(self.calls, lambda: False))
+                failed, = [response for response in results if response.transport_error]
+                self.assertEqual((failed.http_status, failed.body, failed.transport_error), (0, b'', error))
+                close = graph.last_close_report
+                self.assertEqual(close['returncode'], 0)  # Synthetic DBEnd finished; remote work remains unknown.
+                self.assertFalse(close['clean'])
+                self.assertTrue(close['transport_completion_uncertain'])
+                self.assertTrue(close['external_coordinator_requires_cleanup'])
+                self.assertFalse(close['reuse_allowed'])
+                self.assertEqual(close['remote_http_stopped'], 'unavailable')
+                self.assertTrue(graph._imlane._uncertain.is_file())
+                with self.assertRaisesRegex(RuntimeError, 'unconfirmed work|unsettled'):
+                    list(graph.iter_batch(()))
+                another = self.graph(config)
+                with self.assertRaisesRegex(RuntimeError, 'unsettled'):
+                    list(DuckDBNativeExecutor(another)(self.calls, lambda: False))
+
 
 class DuckDBIMLaneVerifierTests(unittest.TestCase):
+    def test_load_failure_with_uninitialized_total_requests_keeps_the_original_error(self):
+        class LoadFailure(unittest.TestCase):
+            def setUp(self):
+                self.server = types.SimpleNamespace(records=['first', 'second'])
+                raise RuntimeError('synthetic original LOAD failure')
+
+            def runTest(self):
+                raise AssertionError('failed LOAD must not run SQL')
+
+        result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=verify_native._Result).run(
+            unittest.TestSuite([LoadFailure()]))
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn('synthetic original LOAD failure', result.errors[0][1])
+        self.assertNotIn('AttributeError', result.errors[0][1])
+        self.assertEqual(result.fixture_counts[0]['total_http_requests'], 2)
+        self.assertIsNone(result.fixture_counts[0]['graph_close_report'])
+
+    def test_result_keeps_adapter_cleanup_and_serializes_only_dataclass_capacity_usage(self):
+        from src.scheduling.core.session_contract import CloseReport, Usage
+        close_report = CloseReport('unknown', 1, Usage(active_requests=1), 'fixture remote work unconfirmed')
+        for usage, close in ((Usage(), close_report),
+                             ({'held_tasks': 0}, dict(clean=False, unconfirmed_work=True))):
+            with self.subTest(usage=usage, close=close):
+                case = unittest.FunctionTestCase(lambda: None)
+                case.server = types.SimpleNamespace(records=[], total_requests=0, peak=0, active=0)
+                case.execution = types.SimpleNamespace(engine=types.SimpleNamespace(
+                    capacity=types.SimpleNamespace(usage=lambda: usage)))
+                case.adapter = types.SimpleNamespace(last_close_report=close)
+                result = unittest.TextTestRunner(stream=io.StringIO(), resultclass=verify_native._Result).run(
+                    unittest.TestSuite([case]))
+                row = result.fixture_counts[0]
+                self.assertEqual(row['adapter_close_report'], asdict(close) if isinstance(close, CloseReport) else close)
+                self.assertIsNone(row['graph_close_report'])
+                self.assertEqual(row['core_capacity_usage'], asdict(usage) if isinstance(usage, Usage) else None)
+                self.assertEqual(json.loads(json.dumps(result.fixture_counts)), result.fixture_counts)
+
     def test_missing_exit_and_missing_submission_state_are_never_reported_reusable(self):
         state = verify_native.author_close_state([dict(bridge_started=True, clean=True,
                                                        bridge_stopped=True, returncode=None)])
@@ -214,7 +281,8 @@ class DuckDBIMLaneVerifierTests(unittest.TestCase):
                 suite = unittest.TestSuite([unittest.FunctionTestCase(lambda: None)])
                 imports = unittest.mock.Mock(return_value=types.SimpleNamespace(__version__='1.5.4'))
                 argv = ['--extension', str(extension), '--backend', backend,
-                        '--imlane-config', str(root / 'config.json'), '--output', str(output)]
+                        '--imlane-config', str(root / 'config.json'), '--imlane-case', 'transport-error',
+                        '--output', str(output)]
                 config = IMLaneCallConfig(verify_native.IMLANE_MODES[backend], str(root / 'bridge.json'),
                                          1, 2, str(root / 'identity.json'))
                 with patch.object(verify_native, 'imlane_config', return_value=config), \
@@ -226,6 +294,7 @@ class DuckDBIMLaneVerifierTests(unittest.TestCase):
                     imports.assert_called_once_with('duckdb')
                     report = json.loads(output.read_text())
                     self.assertEqual(report['imlane_runtime'], verify_native.IMLANE_MODES[backend])
+                    self.assertEqual(report['imlane_case'], 'transport-error')
                     self.assertEqual(report['scheduler_owner'], verify_native.SCHEDULER_OWNERS[backend])
                     self.assertEqual(report['remote_http_stopped'], 'unavailable')
                     self.assertEqual(report['real_model_requests'], 0)
@@ -304,11 +373,6 @@ class DuckDBIMLaneCompleteLibraryTests(_IMLaneSQLBase):
         after = self.connection.execute('SELECT SUM(prompt_tokens),SUM(completion_tokens),SUM(total_tokens), '
             "COUNT(*) FILTER (WHERE status='error') FROM ai_usage()").fetchone()
         self.assertEqual(after, tuple(value * 2 for value in before))
-        self.assertTrue(self.graph.last_close_report['clean'])
-        rows = self.select(['one', 'transport-drop', 'three'])
-        self.assertEqual([rows[0][1]['response'], rows[2][1]['response']], ['out:one', 'out:three'])
-        self.assertIsNone(rows[1][1]['response'])
-        self.assertTrue(rows[1][1]['error'])
         self.assertTrue(self.graph.last_close_report['clean'])
 
     def test_complete_response_retains_duplicate_headers_status_body_usage_and_logprobs(self):
@@ -389,10 +453,25 @@ class DuckDBIMLaneCancelLibraryTests(_IMLaneSQLBase):
         self.assert_unknown_author_stop()
 
 
+class DuckDBIMLaneTransportErrorLibraryTests(_IMLaneSQLBase):
+    def test_try_complete_transport_error_preserves_row_error_and_unknown_author_work(self):
+        self.native()
+        rows = self.select(['one', 'transport-drop', 'three'])
+        self.assertEqual([rows[0][1]['response'], rows[2][1]['response']], ['out:one', 'out:three'])
+        self.assertIsNone(rows[1][1]['response'])
+        self.assertTrue(rows[1][1]['error'])
+        self.assertTrue(self.graph.last_close_report['transport_completion_uncertain'])
+        self.assertFalse(self.graph.last_close_report['reuse_allowed'])
+        self.assert_unknown_author_stop()
+        with self.assertRaisesRegex(RuntimeError, 'unconfirmed work|unsettled'):
+            list(self.graph.iter_batch(()))
+
+
 def sql_suite(config, case):
     selected = {'complete': DuckDBIMLaneCompleteLibraryTests,
                 'parser-stop': DuckDBIMLaneParserStopLibraryTests,
-                'cancel': DuckDBIMLaneCancelLibraryTests}[case]
+                'cancel': DuckDBIMLaneCancelLibraryTests,
+                'transport-error': DuckDBIMLaneTransportErrorLibraryTests}[case]
     selected.config = config
     return unittest.defaultTestLoader.loadTestsFromTestCase(selected)
 

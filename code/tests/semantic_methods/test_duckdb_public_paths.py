@@ -55,6 +55,7 @@ class DuckDBPublicPaths(unittest.TestCase):
         server = _FixtureServer()
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
+        verification = None
         try:
             endpoint = f'http://127.0.0.1:{server.server_port}/v1/chat/completions'
             (root / 'model.json').write_text(json.dumps(dict(endpoint_url=endpoint, model_id='fixture', timeout_ms=5000)))
@@ -74,8 +75,15 @@ class DuckDBPublicPaths(unittest.TestCase):
             if arm in ('duckdb-method-native-imlane', 'duckdb-method-native-imlane-ray'):
                 mode = 'ray' if arm.endswith('-ray') else 'cpython'
                 command += [f'--imlane-{mode}-config', os.environ['DUCKDB_PUBLIC_IMLANE_CONFIG']]
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                                    timeout=240, env=dict(os.environ, CUDA_VISIBLE_DEVICES=''))
+            try:
+                result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                        timeout=330, env=dict(os.environ, CUDA_VISIBLE_DEVICES=''))
+            except subprocess.TimeoutExpired as error:
+                output = error.stdout or ''
+                if isinstance(output, bytes):
+                    output = output.decode('utf-8', errors='replace')
+                (root / 'cli.log').write_text(redact_text(output))
+                raise
             (root / 'cli.log').write_text(redact_text(result.stdout))
             self.assertEqual(result.returncode, 0, redact_text(result.stdout[-8000:]))
             summaries = [json.loads((root / f'group/query-{i}/summary.json').read_text()) for i in range(3)]
@@ -90,22 +98,53 @@ class DuckDBPublicPaths(unittest.TestCase):
                 self.assertEqual(summary['identity']['original_method_preserved'], True)
             for key in ('owner_id', 'duckdb_connection_id', 'execution_id', 'ray_session_id'):
                 self.assertEqual(len({v[key] for v in lifecycles}), 1, key)
-            prompts = [json.loads(body)['messages'][-1]['content'] for body, _ in server.records]
+            for lifecycle in lifecycles:
+                for key in ('owner_id', 'duckdb_connection_id'):
+                    self.assertIsInstance(lifecycle[key], str)
+                    self.assertTrue(lifecycle[key], key)
+                if arm == 'duckdb-method-semloom':
+                    self.assertIsInstance(lifecycle['execution_id'], str)
+                    self.assertTrue(lifecycle['execution_id'])
+                else:
+                    self.assertIsNone(lifecycle['execution_id'])
+                if arm in ('duckdb-method-native-ray-data', 'duckdb-method-semloom'):
+                    self.assertIsInstance(lifecycle['ray_session_id'], str)
+                    self.assertTrue(lifecycle['ray_session_id'])
+                else:
+                    self.assertIsNone(lifecycle['ray_session_id'])
+                self.assertFalse(lifecycle['result_cache'])
+            self.assertEqual([v['completed_queries'] for v in lifecycles], [1, 2, 3])
+            with server.lock:
+                records = list(server.records)
+            prompts = [json.loads(body)['messages'][-1]['content'] for body, _ in records]
             self.assertCountEqual(prompts, expected_payloads)
-            self.assertEqual(len(server.records), 145)
+            self.assertEqual(len(records), 145)
             group = json.loads((root / 'group/group-summary.json').read_text())
             self.assertEqual(group['status'], 'passed')
-            (root / 'public-verification.json').write_text(json.dumps(dict(
+            verification = dict(
                 arm=arm, query_rows=[8, 8, 129], fixture_posts=145, real_model_posts=0, gpu_resources=0,
                 public_entry=str(script.name), reused_connection=True, changed_inputs_verified=True,
-                fixture_body_sha256=[hashlib.sha256(body).hexdigest() for body, _ in server.records],
+                fixture_body_sha256=[hashlib.sha256(body).hexdigest() for body, _ in records],
                 evidence_scope='real libraries and public SQL/CLI behavior; model quality and performance untested',
                 caller_owned_imlane_lifecycle=arm.startswith('duckdb-method-native-imlane'),
-            ), indent=2) + '\n')
+            )
         finally:
             server.shutdown()
             thread.join(timeout=2)
+            deadline = time.monotonic() + 5
+            while True:
+                with server.lock:
+                    active = server.active
+                if active == 0 or time.monotonic() >= deadline:
+                    break
+                time.sleep(0.01)
             server.server_close()
+            cleanup = dict(fixture_thread_stopped=not thread.is_alive(), final_active=active)
+            (root / 'fixture-cleanup.json').write_text(json.dumps(cleanup, indent=2) + '\n')
+        self.assertTrue(cleanup['fixture_thread_stopped'])
+        self.assertEqual(cleanup['final_active'], 0)
+        (root / 'public-verification.json').write_text(json.dumps(
+            dict(verification, cleanup=cleanup), indent=2) + '\n')
 
 
 if __name__ == '__main__':

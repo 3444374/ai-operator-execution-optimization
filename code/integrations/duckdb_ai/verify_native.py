@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 import hashlib
 import importlib
 import json
@@ -122,13 +122,22 @@ class _Result(unittest.TextTestResult):
             bridge = getattr(test, 'bridge', None)
             graph = getattr(test, 'graph', None)
             adapter = getattr(test, 'adapter', None)
+            adapter_close = getattr(adapter, 'last_close_report', None)
             imlane = getattr(graph, '_imlane', None)
-            self.fixture_counts.append(dict(test=test.id(), http_requests=len(server.records),
-                                            total_http_requests=server.total_requests,
-                                            peak_http_requests=server.peak, final_active=server.active,
+            records = getattr(server, 'records', ())
+            execution = getattr(test, 'execution', None)
+            engine = getattr(execution, 'engine', None)
+            capacity = getattr(engine, 'capacity', None)
+            usage = capacity.usage() if capacity is not None else None
+            self.fixture_counts.append(dict(test=test.id(), http_requests=len(records),
+                                            total_http_requests=getattr(server, 'total_requests', len(records)),
+                                            peak_http_requests=getattr(server, 'peak', None),
+                                            final_active=getattr(server, 'active', None),
                                             bridge_error=getattr(bridge, 'last_error', None),
                                             bridge_cleanup_error=getattr(bridge, 'last_cleanup_error', None),
                                             graph_close_report=getattr(graph, 'last_close_report', None),
+                                            adapter_close_report=asdict(adapter_close) if is_dataclass(adapter_close) else adapter_close,
+                                            core_capacity_usage=asdict(usage) if is_dataclass(usage) else None,
                                             adapter_delivered_count=getattr(adapter, 'last_delivered_count', None),
                                             imlane_limits=asdict(imlane.limits) if imlane is not None else None,
                                             unsupported=getattr(test, 'unsupported', []),
@@ -144,8 +153,8 @@ def main(argv=None):
     parser.add_argument('--ray-port-base', type=int)
     parser.add_argument('--imlane-config', type=Path,
                         help='private public-call configuration for a ready caller-owned Coordinator')
-    parser.add_argument('--imlane-case', choices=('complete', 'parser-stop', 'cancel'),
-                        help='each stop/cancel case requires its own fresh caller-owned Coordinator')
+    parser.add_argument('--imlane-case', choices=('complete', 'parser-stop', 'cancel', 'transport-error'),
+                        help='each case requires its own fresh caller-owned Coordinator')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     is_imlane = args.backend in IMLANE_MODES
