@@ -709,7 +709,7 @@ conservation、reclaim latency、tenant/Job 两层 service lag 和 worst-tenant 
    P99/SLO、service lag 和最长 no-service。
 
 比较前说明主指标方向、适用的质量/非劣/SLO 要求和不确定性分析；最小实际效应只有在业务需求或测量噪声提供依据时设置，不统一规定约 5%。
-报告每个指标的效应与重复波动，包括退化和无明确收益；不能以百分比决定是否保留方法或结果。
+报告每个指标的效应与重复波动，包括退化和无明确收益；原始结果不因未达预期百分比而隐藏或删除。
 经验性 Pareto improvement 需在该 workload 与指定 baseline 上有改善证据且其他相关目标无退化，
 不能只看一个 headline。理论 Pareto efficiency、sharing incentive、strategy-proofness、service-difference bound
 或 finish-time fairness 仍需完整的模型假设和证明。
