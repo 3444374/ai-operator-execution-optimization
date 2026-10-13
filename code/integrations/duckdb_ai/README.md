@@ -13,9 +13,41 @@
 其 DuckDB 子模块固定 `08e34c447bae34eaee3723cac61f2878b6bdf787`，对应 v1.5.4。
 [来源清单](source_identity.json)保留原文件和补丁后文件 SHA-256（文件内容摘要）。
 构建脚本核对两个提交，使用 DuckDB 原生构建目标与元数据追加方式；当前二进制版本写
-`0.4.14-native2`，继续使用 `ai` 扩展名，原生社区二进制、此前 `0.4.14-semloom1` 与
+`0.4.14-native4`，继续使用 `ai` 扩展名，原生社区二进制、此前 `0.4.14-semloom1` 与
 Daft／Ray Data 首次接入的 `0.4.14-native1` 构建均保留。
 ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`、平台和加载结果一致。
+
+## 六路径的当前支持与本次检查
+
+基线为已发布 native `a0f3fbd393a6bf0879a2c0a973f727c737d00389`，保留原有接点与固定库来源。
+本次三个互斥切片分别维护原生图转换、SemLoom完整批次和两种IMLane作者模式的验证入口；
+公共容量提交`9f8519d9`与公共生命周期提交`45899253`单独发布，Sema的HTTPX cookie及版本白名单按来源吸收。
+
+| 公开方法入口 | 实际执行与结果回填 | 当前范围 |
+|---|---|---|
+| `duckdb-adapted-native` | 原`RunProviderJobs`／curl→原C++解析器 | SQL默认分支，原并发和必要模型调用保留 |
+| `duckdb-method-native-daft` | 当前SQL向量→Daft 0.7.21完整调用UDF→原解析器 | 已有原生图；本次补齐整批预检、重排容量和关闭诊断 |
+| `duckdb-method-native-ray-data` | 当前SQL向量→Ray 2.56.1 Data HTTP Processor→原解析器 | 已有原生图；与IMLane作者Ray分别登记 |
+| `duckdb-method-semloom` | 当前SQL向量→公共NativeTaskSession／Daft／Ray→原解析器 | 同步批次接点；按输入序回填，Core继续拥有原有执行调度 |
+| `duckdb-method-native-imlane` | 当前SQL向量→原DBEnd→IMLane作者CPython→原解析器 | 显式私有配置、实际Coordinator身份与六项容量 |
+| `duckdb-method-native-imlane-ray` | 当前SQL向量→原DBEnd→IMLane作者Ray→原解析器 | 复用调用者拥有的作者Ray，不使用Ray Data替代 |
+
+各路径只支持单模型、非流式文本`ai_complete`／`ai_try_complete`、当前向量和原完整请求／解析。
+响应headers不进入DuckDB批次ABI，固定上游的原解析器只读正文和状态；原生图仍保留完整HTTP表示。
+Ray Core另为独立`diagnostic_reference`，不计入上述六条。
+跨向量预取、级联／Join、作者多查询公平性、未知远端工作的独立取消及恢复仍为unsupported或pending。
+
+本地DuckDB组111项中80通过、31项因实际编译库／runtime条件缺失跳过；公共容量组47通过、1跳过。
+这些是fixture、实际Core及本机HTTP检查，模型和GPU调用均为0。`native4`的重新构建、固定库SQL与
+公开常驻CLI检查排在已有真实计时窗口之后，本次尚未执行；旧`native3`或LOTUS模型成绩不替代这项新来源。
+
+本次修复在复制C输入前核对2048行、32MiB完整输入和指针元数据，完整响应按8MiB单项／32MiB累计检查；
+重排暂存也收费，已交付结果不恢复累计额度。取消后不再消费下一响应；异常类型、原完整正文与附加关闭诊断保留。
+SemLoom按输入序回填，`native4`还在后行准备失败时先执行合法前缀，使原算子继续选择最早输入错误。
+失败SQL的usage数量与记录时刻仍单列，不能据最终异常相同声称完整失败过程完全相同。
+
+原生图有未确认结果或关闭故障时禁止同对象后续批次；只验证消费结束的报告继续写
+`remote_http_stopped='unavailable'`。确定性测试在自有fixture归零后替换对象，不给生产对象增加虚假恢复。
 
 已逐项阅读固定版
 [批次执行](https://github.com/leonardovida/duckdb-ai/blob/9b7b16a5d5bfa97180b8be48d69bd9a4a4106419/src/duckdb_ai_extension.cpp)
@@ -96,10 +128,11 @@ actor 数量不超过已声明的 CPU 槽位，每个 actor 使用 1 CPU、0 GPU
 
 ### IMLane作者CPython与Ray
 
-`0.4.14-native3`增加明确的`imlane`登记和SQL选择；完整批次ABI、请求生成与原`FinishCompletion`继续复用。
+`0.4.14-native3`起增加明确的`imlane`登记和SQL选择；`native4`继续复用完整批次ABI、请求生成与原`FinishCompletion`。
 `DuckDBNativeExecutor`可使用公共`NativeCallExecutor('imlane', imlane_config=...)`，
-模式由[IMLane配置](../sema/imlane_calls.md)明确选择。有效批次最多128行／32MiB；
-当前向量超额报错，不拆分或替换原SQL策略。作者Coordinator／Ray资源由调用者拥有。
+模式由[IMLane配置](../sema/imlane_calls.md)明确选择。旧配置保留128行，六项显式容量经公开factory／CLI传到既有桥；
+DuckDB自身仍最多2048行／32MiB输入，配置须容纳当前完整向量。当前向量超额报错，不拆分或替换原SQL策略。
+作者Coordinator／Ray资源由调用者拥有。
 `native1`／`native2`没有这个名称选择；统一入口在提交前拒绝不匹配二进制。
 本轮匹配二进制及正常／错误检查见[原生执行记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 
@@ -109,21 +142,26 @@ actor 数量不超过已声明的 CPU 槽位，每个 actor 使用 1 CPU、0 GPU
 每分钟 token 控制、远程 usage 日志和混合模型，拒绝发生在外部请求之前。
 
 消费者遇到首次致命错误后停止解析并关闭当前执行图；查询取消也关闭执行图。
-新原生路径在消费前按当前向量的原 job 输入顺序恢复响应。原 `RunProviderJobs` 的并发 worker
+各外部路径在消费前按当前向量的原 job 输入顺序恢复响应。原 `RunProviderJobs` 的并发 worker
 在响应完成时立即解析和记录 usage，`AiCompletionFunction` 随后按输入 job 顺序选择最早行异常；
 恢复消费顺序保留了这个最终 SQL 错误选择，包括前行慢失败、后行快失败的情况。
 原多 worker 在首次失败后仍让已发送调用完成并记录 usage，新路径停止后可能舍弃较晚输入的
 结果；失败 SQL 的 usage 数量与记录时刻因此单列，不声称整个故障过程完全相同。
 正常查询与 `ai_try_complete` 的全部行仍回到原解析器核对结果与汇总用量。
 生成完整请求时遇到致命输入错误，新原生路径停止准备后续行，并先执行已有合法前缀；
-前行的 provider 错误因此仍能优先于后行的准备错误。`semloom` 的既有处理保持。
-原生执行图可能已提交其他当前向量调用，实际已发数量由替身记录核对。
+前行的 provider 错误因此仍能优先于后行的准备错误；`native4`将该处理也用于`semloom`。
+原生执行图可能已提交其他当前向量调用，实际已发数量由替身记录核对；arrival计数不充当关闭后的request-start证明。
 关闭报告只确认调用进程的图消费结束；任意远端 HTTP 已终止无法由此单独证明，明确写
 `remote_http_stopped='unavailable'`。当前向量仍等待函数返回，跨向量预取保持 pending。
 请求超时和完整向量图的截止时间分别配置，当前图的最长截止时间为 120 秒。
 
 专属[验证入口](verify_native.py)与[用例](../../tests/semantic_methods/test_duckdb_native.py)检查实际
-SQL 与原生对照；需要已完成机器预检、已加载社区二进制和本次编译的 `0.4.14-native2`。
+SQL 与原生对照；需要已完成机器预检、已加载社区二进制和匹配本次来源的编译库。
+入口支持`imlane-cpython`／`imlane-ray`和显式`--imlane-config`；`complete`、`parser-stop`、`cancel`
+三个case分别使用新的调用者Coordinator，未确认状态不复用。六项有效容量、完整来源及失败报告留在仓库外。
+[SemLoom验证](verify_ray.py)增加原首错与合法前缀对照；固定端口由Ray的Cluster API声明，不把未支持参数传给`ray.init`。
+[公开常驻CLI回归](../../tests/semantic_methods/test_duckdb_public_paths.py)按8／8／129行更换输入和重复文本，
+验证连接复用、原方法解析与逐行关联；该fixture不授予模型质量或性能资格。
 测试只访问 localhost 确定性替身，真实模型请求为 0；Linux 使用独立驱动进程和短 Ray 临时目录。
 2026-10-12 服务器实际构建通过；旧 DuckDB 专项与转换测试首轮 48 项通过，本地新增转换和旧接口
 18 项通过。每个后端的 8 项完整 SQL 检查通过，随后 3 项受影响的停止／取消／关闭错误检查通过，

@@ -557,7 +557,10 @@ class _FixtureServer(ThreadingHTTPServer):
     daemon_threads = True
 
     def __init__(self):
-        super().__init__(('127.0.0.1', 0), _FixtureHandler)
+        port = int(os.environ.get('DUCKDB_FIXTURE_PORT', '0'))
+        if port != 0 and not 1024 <= port <= 65535:
+            raise ValueError('DuckDB fixture port must be zero or between 1024 and 65535')
+        super().__init__(('127.0.0.1', port), _FixtureHandler)
         self.records, self.active, self.peak = [], 0, 0
         self.lock = threading.Lock()
         self.started = threading.Event()
@@ -614,7 +617,7 @@ class DuckDBNativeLibraryTests(unittest.TestCase):
         self.assertEqual(self.connection.execute('SELECT version()').fetchone()[0], 'v1.5.4')
         self.assertIn(self.connection.execute("SELECT extension_version FROM duckdb_extensions() "
                                              "WHERE extension_name='ai' AND loaded").fetchone()[0],
-                      ('0.4.14-semloom1', '0.4.14-native1', '0.4.14-native2'))
+                      ('0.4.14-semloom1', '0.4.14-native1', '0.4.14-native2', '0.4.14-native3', '0.4.14-native4'))
         self.assertEqual(self.connection.execute("SELECT current_setting('duckdb_ai_executor')").fetchone()[0],
                          'native')
         self.connection.execute("SET duckdb_ai_provider = 'openai_compatible'")

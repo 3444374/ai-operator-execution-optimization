@@ -10,6 +10,7 @@ from typing import Callable, Iterable
 
 from src.baselines.common.redact import redact_text
 
+MAX_BATCH_ROWS = 2048
 MAX_BATCH_BYTES = 32 * 1024 * 1024
 MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 
@@ -168,6 +169,7 @@ class DuckDBSemLoomBridge:
         cancelled = lambda: bool(is_cancelled(context))
         buffers: list = []
         iterator = None
+        execute = self.execute
         status = 0
         primary_error = cleanup_error = None
         with self._lock:
@@ -181,21 +183,46 @@ class DuckDBSemLoomBridge:
             if cancelled():
                 status = 1
             else:
-                calls = tuple(DuckDBCall(
-                    row=item.row, query_id=item.query_id.decode(), call_id=item.call_id.decode(),
-                    model=item.model.decode(), endpoint=item.endpoint.decode(),
-                    payload=ct.string_at(item.payload, item.payload_size),
-                    headers=tuple(item.headers[j].decode() for j in range(item.header_count)),
-                    estimated_tokens=item.estimated_tokens, timeout_seconds=item.timeout_seconds,
-                    connect_timeout_seconds=item.connect_timeout_seconds, ready_ns=item.ready_ns,
-                ) for item in (raw_calls[i] for i in range(count)))
+                if type(count) is not int or not 0 <= count <= MAX_BATCH_ROWS:
+                    raise ValueError('DuckDB batch exceeds its row limit')
+                if count and (not raw_calls or not raw_responses):
+                    raise ValueError('DuckDB batch has invalid request metadata')
+                prepared = []
+                input_bytes = 0
+                for i in range(count):
+                    item = raw_calls[i]
+                    if (any(value is None for value in (item.query_id, item.call_id, item.model, item.endpoint))
+                            or (item.payload_size and not item.payload)
+                            or (item.header_count and not item.headers)):
+                        raise ValueError('DuckDB batch has invalid request metadata')
+                    input_bytes += item.payload_size
+                    if input_bytes > MAX_BATCH_BYTES:
+                        raise ValueError('DuckDB batch exceeds its request byte limit')
+                    headers = tuple(item.headers[j] for j in range(item.header_count))
+                    if any(header is None for header in headers):
+                        raise ValueError('DuckDB batch has invalid request metadata')
+                    input_bytes += sum(len(header) for header in headers)
+                    if input_bytes > MAX_BATCH_BYTES:
+                        raise ValueError('DuckDB batch exceeds its request byte limit')
+                    prepared.append(DuckDBCall(
+                        row=item.row, query_id=item.query_id.decode(), call_id=item.call_id.decode(),
+                        model=item.model.decode(), endpoint=item.endpoint.decode(),
+                        payload=ct.string_at(item.payload, item.payload_size),
+                        headers=tuple(header.decode() for header in headers),
+                        estimated_tokens=item.estimated_tokens, timeout_seconds=item.timeout_seconds,
+                        connect_timeout_seconds=item.connect_timeout_seconds, ready_ns=item.ready_ns,
+                    ))
+                calls = tuple(prepared)
                 if len({call.call_id for call in calls}) != count:
                     raise ValueError('DuckDB batch repeats a call identity')
                 positions = {call.call_id: i for i, call in enumerate(calls)}
                 received: set[str] = set()
                 result_bytes = 0
-                iterator = iter(self.execute(calls, cancelled))
+                iterator = iter(execute(calls, cancelled))
                 for response in iterator:
+                    if cancelled():
+                        status = 1
+                        break
                     copy_started = timings.start()
                     if response.call_id not in positions or response.call_id in received:
                         raise ValueError('DuckDB batch response repeats or changes call identity')
@@ -206,7 +233,8 @@ class DuckDBSemLoomBridge:
                     if (len(response.body) > MAX_RESPONSE_BYTES or len(error) > MAX_RESPONSE_BYTES
                             or result_bytes > MAX_BATCH_BYTES):
                         raise ValueError('DuckDB batch response exceeds its byte limit')
-                    if not 0 <= response.http_status <= 599 or response.elapsed_ms < -1:
+                    if (type(response.http_status) is not int or not 0 <= response.http_status <= 599
+                            or type(response.elapsed_ms) is not int or not -1 <= response.elapsed_ms < 2**63):
                         raise ValueError('DuckDB batch response has invalid status or elapsed time')
                     received.add(response.call_id)
                     body_buffer = ct.create_string_buffer(response.body)
@@ -227,6 +255,9 @@ class DuckDBSemLoomBridge:
                         break
                     if parsed != 0:
                         raise ValueError('DuckDB native response consumer rejected metadata')
+                    if cancelled():
+                        status = 1
+                        break
                 if status == 0:
                     if cancelled():
                         status = 1
@@ -243,6 +274,10 @@ class DuckDBSemLoomBridge:
                         close()
                 except BaseException as error:
                     cleanup_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+                executor_cleanup = getattr(execute, 'last_cleanup_error', None)
+                if executor_cleanup and executor_cleanup != cleanup_error:
+                    cleanup_error = redact_text('\n'.join(
+                        value for value in (cleanup_error, executor_cleanup) if value))[:4096]
         if status == 0 and cleanup_error is not None:
             primary_error = cleanup_error
             status = 2
@@ -312,12 +347,15 @@ class DuckDBNativeTaskExecutor:
         max_advance_gap_ns = 0
         if not calls:
             return
+        if len({call.call_id for call in calls}) != len(calls):
+            raise ValueError('DuckDB batch repeats a call identity')
         # The fixed transport uses these identities and bearer header, never provider guesses.
         for call in calls:
             expected_auth = 'Authorization: Bearer ' + self.config.bearer_token if self.config.bearer_token else None
-            auth = next((h for h in call.headers if h.lower().startswith('authorization:')), None)
+            auth = tuple(h for h in call.headers if h.lower().startswith('authorization:'))
             if (call.model != self.config.model_id or call.endpoint != self.config.endpoint_url
-                    or call.timeout_seconds * 1000 != self.config.timeout_ms or auth != expected_auth
+                    or call.timeout_seconds * 1000 != self.config.timeout_ms
+                    or auth != ((expected_auth,) if expected_auth else ())
                     or call.connect_timeout_seconds != call.timeout_seconds):
                 raise ValueError('DuckDB prepared call differs from the common fixed transport')
         flow = (NativeTaskSession(self.execution, 'duckdb:' + calls[0].call_id, 'duckdb-ai-map')
@@ -327,6 +365,9 @@ class DuckDBNativeTaskExecutor:
         pending_validated = False
         sealed = False
         finished = False
+        received: set[str] = set()
+        pending_results: dict[str, DuckDBResponse] = {}
+        next_call = result_bytes = 0
         primary_error = None
         cleanup_errors: list[str] = []
         close_report = None
@@ -373,13 +414,20 @@ class DuckDBNativeTaskExecutor:
                 progress = flow.advance(flow.limits.offer_tasks)
                 timings.finish('core_advance', advance_started)
                 for delivery in progress.deliveries:
+                    if cancelled():
+                        flow.request_cancel()
+                        raise InterruptedError('DuckDB query cancelled')
                     decode_started = timings.start()
                     delivery_error = None
                     try:
                         raw = decode_full_response(delivery.result)
+                        if not 0 <= delivery.key.sequence < len(calls):
+                            raise ValueError('DuckDB Core delivery changed row association')
                         call = calls[delivery.key.sequence]
                         if delivery.info.call_id != call.call_id or delivery.info.row_sequence != call.row:
                             raise ValueError('DuckDB Core delivery changed row association')
+                        if call.call_id in received:
+                            raise ValueError('DuckDB Core delivery changes or repeats call identity')
                         response = DuckDBResponse(call.call_id, raw.body, raw.status_code, -1)
                     except BaseException as error:
                         delivery_error = error
@@ -393,14 +441,32 @@ class DuckDBNativeTaskExecutor:
                                 raise
                         finally:
                             timings.finish('delivery_decode_release', decode_started)
-                    # -1 preserves unavailable HTTP-only elapsed time. It is never queue time or zero.
-                    caller_started = timings.start()
-                    try:
-                        yield response
-                    finally:
-                        # Includes wrappers and native consumption until this generator resumes/closes.
-                        timings.finish('caller_resume', caller_started)
+                    result_bytes += len(response.body) + len(response.transport_error.encode())
+                    # Charge before retaining the suffix; delivery does not refund the batch allowance.
+                    if len(response.body) > MAX_RESPONSE_BYTES or result_bytes > MAX_BATCH_BYTES:
+                        raise ValueError('DuckDB SemLoom response exceeds its batch byte allowance')
+                    received.add(call.call_id)
+                    pending_results[call.call_id] = response
+                    # Native SQL selects the earliest failing input job after its workers join.
+                    while next_call < len(calls) and calls[next_call].call_id in pending_results:
+                        if cancelled():
+                            flow.request_cancel()
+                            raise InterruptedError('DuckDB query cancelled')
+                        response = pending_results.pop(calls[next_call].call_id)
+                        next_call += 1
+                        # -1 preserves unavailable HTTP-only elapsed time, never queue time or zero.
+                        caller_started = timings.start()
+                        try:
+                            yield response
+                        finally:
+                            # Includes wrappers and native consumption until this generator resumes/closes.
+                            timings.finish('caller_resume', caller_started)
+                        if cancelled():
+                            flow.request_cancel()
+                            raise InterruptedError('DuckDB query cancelled')
                 if progress.state == State.FINISHED:
+                    if len(received) != len(calls) or pending_results or next_call != len(calls):
+                        raise ValueError('DuckDB SemLoom response is incomplete')
                     finished = True
                     return
                 if progress.state in (State.FAILED, State.CANCELLED):
