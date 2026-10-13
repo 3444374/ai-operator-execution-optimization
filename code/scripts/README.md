@@ -736,6 +736,10 @@ exact reference，不产生第二物理路径。接口和使用条件见
 这些脚本的早期机器命令与当时的完成状态保存在 Git 版本 `d32366de` 的本文件中。
 新的运行参数从目标计划、运行手册和脚本接口重新核对。
 
+`summarize_opening_database_e2e.py` 的退出码只检查正确性与证据完整性；原 80% GPU 利用率与
+0.95 供给比字段继续作为历史观察输出，不决定方法优劣。`compare_cost_estimators_contextloo.py`
+保留原代价实验的 pairwise/regret 条件与 JSON 字段，`hist-pass` 只解释当次预注册结果。
+
 ## 早期外部执行脚本
 
 以下脚本服务于外部文本画像、baseline 或历史实验。它们的运行身份以对应结果报告为准；

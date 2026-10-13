@@ -286,12 +286,12 @@ def _dataset_coverage(rows: list[dict[str, str]], contexts: list[str], candidate
 
 
 def _promotion_contract(metrics: dict[str, list[float]]) -> dict[str, object]:
-    """Plan §6 frozen gates
+    """Historical plan §6 criteria
     (experiments/plans/completed/代价估计双卡采集_20260804.md §6).
 
     candidate pairwise >= 0.75, median regret <= 5%, macro-MEAN regret <= 5%, MAX regret <= 15%.
-    Any single failure blocks plan selection. Pure (no I/O) so the contract logic is unit-testable.
-    Note: pooled regret + row-level pairwise are reported separately and are NOT gates (audit F1).
+    Report the original experiment's criteria without authorizing or blocking new research.
+    Pooled regret + row-level pairwise are reported separately (audit F1).
     """
 
     regret = metrics["decision_regret_pct"]
@@ -307,8 +307,9 @@ def _promotion_contract(metrics: dict[str, list[float]]) -> dict[str, object]:
         "macro_mean_decision_regret_pct_at_most": 5.0,
         "max_decision_regret_pct_at_most": 15.0,
         "metric_contract_note": (
-            "plan §6 frozen gates: candidate-aggregated pairwise + median + macro-mean + max "
-            "regret. Pooled regret + row-level pairwise are reported separately, NOT gates."
+            "Historical 2026-08-04 plan §6 criteria: candidate-aggregated pairwise + median + "
+            "macro-mean + max regret. These describe that experiment, not general model "
+            "eligibility. Pooled regret + row-level pairwise are reported separately."
         ),
         "regret_median_pass": median_pass,
         "regret_macro_mean_pass": macro_mean_pass,
@@ -531,7 +532,7 @@ def main() -> None:
     )
     print(
         "estimator          MAE-mean  rowPair  candPair  pick  "
-        "regret-mean  regret-pooled  promote"
+        "regret-mean  regret-pooled  hist-pass"
     )
     for name, result in payload["estimators"].items():
         if result["status"] != "ok":
