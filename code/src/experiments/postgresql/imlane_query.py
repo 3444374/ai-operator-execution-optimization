@@ -1,5 +1,5 @@
 """Explicit caller-owned author IMLane modes for original supplier methods."""
-from dataclasses import fields
+from dataclasses import asdict, fields
 import json
 from pathlib import Path
 
@@ -53,4 +53,5 @@ def imlane_runtime_identity(config):
         runtime_lifecycle='caller owns Coordinator and any author Ray runtime',
         call_graph='original DBEnd bridge; explicit complete-call row capacity',
         configured_max_batch_rows=config.max_batch_rows,
+        configured_limits=asdict(config.batch_limits),
         remote_http_stopped='unavailable')

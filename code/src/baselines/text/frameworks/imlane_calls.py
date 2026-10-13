@@ -1,7 +1,7 @@
 """Complete original-method calls through the fixed author IMLane DBEnd API."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import hashlib
 import json
 import math
@@ -39,9 +39,14 @@ class IMLaneCallConfig:
     author_build_identity: str
     n_executors: int = 2
     max_batch_rows: int = 128
+    max_input_payload_bytes: int = 32 * 1024**2
+    max_input_wire_bytes: int = 48 * 1024**2
+    max_item_payload_bytes: int = 8 * 1024**2
+    max_pending_calls: int = 128
+    max_batch_response_bytes: int = 32 * 1024**2
 
     def __post_init__(self):
-        IMLaneBatchLimits(max_batch_rows=self.max_batch_rows)
+        self.batch_limits
         if self.runtime not in ('cpython', 'ray'):
             raise ValueError('IMLane requires explicit author cpython or ray mode')
         if any(type(v) is not int or v < 1 for v in
@@ -50,6 +55,15 @@ class IMLaneCallConfig:
         for value in (self.bridge_config_path, self.author_build_identity):
             if type(value) is not str or not Path(value).is_absolute():
                 raise ValueError('IMLane configuration paths must be absolute')
+
+    @property
+    def batch_limits(self):
+        return IMLaneBatchLimits(max_batch_rows=self.max_batch_rows,
+            max_input_payload_bytes=self.max_input_payload_bytes,
+            max_input_wire_bytes=self.max_input_wire_bytes,
+            max_item_payload_bytes=self.max_item_payload_bytes,
+            max_pending_calls=self.max_pending_calls,
+            max_batch_response_bytes=self.max_batch_response_bytes)
 
 
 def verify_coordinator(config, bridge):
@@ -87,18 +101,18 @@ class IMLaneCallExecutor:
     """Reuse the delivered Sema DBEnd bridge as a complete original-method executor."""
     backend = 'imlane'
 
-    def __init__(self, config, options=None, *, max_batch_rows=None, max_batch_bytes=32 * 1024**2,
-                 max_pending_calls=128):
+    def __init__(self, config, options=None, *, max_batch_rows=None, max_batch_bytes=None,
+                 max_pending_calls=None, max_input_wire_bytes=None, max_item_payload_bytes=None,
+                 max_batch_response_bytes=None):
         if type(config) is not IMLaneCallConfig:
             raise TypeError('explicit IMLaneCallConfig required')
-        if max_batch_rows is None:
-            max_batch_rows = config.max_batch_rows
-        if any(type(v) is not int or v < 1 for v in (max_batch_rows, max_batch_bytes)):
-            raise ValueError('IMLane batch sizes must be positive integers')
         self.config = config
         self.options = options or NativeGraphOptions(concurrency=8)
-        self.limits = IMLaneBatchLimits(max_batch_rows=max_batch_rows,
-            max_input_payload_bytes=max_batch_bytes, max_pending_calls=max_pending_calls)
+        overrides = dict(max_batch_rows=max_batch_rows, max_input_payload_bytes=max_batch_bytes,
+            max_pending_calls=max_pending_calls, max_input_wire_bytes=max_input_wire_bytes,
+            max_item_payload_bytes=max_item_payload_bytes, max_batch_response_bytes=max_batch_response_bytes)
+        self.limits = replace(config.batch_limits, **{name: value for name, value in overrides.items()
+                                                     if value is not None})
         self.max_batch_rows = self.limits.max_batch_rows
         self.max_batch_bytes = self.limits.max_input_payload_bytes
         self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits)
@@ -129,6 +143,8 @@ class IMLaneCallExecutor:
         return self.iter_batch(calls, cancelled=cancelled)
 
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        self.last_close_report = self.last_preflight = None
+        self.delegate.last_close_report = None
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError('IMLane batch timeout must be at most 120 seconds')
         deadline = time.monotonic() + timeout_s
@@ -142,7 +158,6 @@ class IMLaneCallExecutor:
                       effective_max_batch_rows=self.max_batch_rows, effective_max_batch_bytes=self.max_batch_bytes,
                       snapshot=self.last_preflight)
         self.last_close_report = report
-        self.delegate.last_close_report = None
         if cancelled and cancelled():
             raise InterruptedError('IMLane cancelled before author dispatch')
         if not calls:
