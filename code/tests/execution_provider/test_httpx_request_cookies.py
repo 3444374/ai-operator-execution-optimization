@@ -171,4 +171,3 @@ class HttpxRequestCookieTests(unittest.IsolatedAsyncioTestCase):
                 for call in calls:
                     call.cancel()
                 await asyncio.gather(*calls, return_exceptions=True)
-
