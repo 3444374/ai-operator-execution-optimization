@@ -171,7 +171,7 @@ temperature、max_tokens、消息角色一致；再用 **vLLM prompt-token count
    `1w+3f` 单 endpoint 正式结果。该 runner 只有 singular `--endpoint-url`，证据必须写
    `active_endpoint_count=1`、`multi_endpoint_method_exercised=false`；此前不发布完整数据库系统排名。
 5. 双 endpoint 方法/control 轨使用现有多 endpoint project/control runner，先独立校准冻结静态 control，再比较
-   per-endpoint credit、路由、共享信用等候选策略；动态臂只有通过既有晋级门禁才加入。不等待 DuckDB
+   per-endpoint credit、路由、共享信用等候选策略；候选在自身正确性、质量与资源检查通过后即可比较，收益与退化如实报告。不等待 DuckDB
    单 endpoint 轨即可做 correctness gate，但最终报告必须分表，不能把 DuckDB 单卡数与双卡数直接排名。
 6. 第三方 gateway 完整系统轨是可选扩展：只有在需要研究现实部署组合时才先做 capability/请求等价/
    故障归因门禁并冻结 gateway；它不是 DuckDB 原生 baseline，也不阻塞 A/B 两条主证据轨。

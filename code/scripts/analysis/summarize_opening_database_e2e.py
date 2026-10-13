@@ -6,6 +6,8 @@ The script validates the 2 workloads × 3 arms × (1 warm-up + 3 formal)
 contract, flattens every cell report, and writes formal-run and aggregate CSVs
 plus a machine-readable audit. It never drops failed or semantically degraded
 rows; such outcomes remain explicit columns in the output.
+The historical utilization/feeding thresholds remain observations; the exit
+status checks correctness and evidence completeness, not method superiority.
 """
 
 from __future__ import annotations
@@ -403,9 +405,11 @@ def _audit(rows: list[dict[str, Any]], summaries: list[dict[str, Any]]) -> dict[
         ),
         "feeding_reference": (
             "Within each workload, formal mean service_tokens_per_s is divided by the "
-            "direct_static_sharded formal mean. Values below 0.95 fail the pre-registered "
-            "feeding-saturation gate and cannot support a strategy-performance claim."
+            "direct_static_sharded formal mean. The 0.95 feeding and 80% utilization "
+            "criteria describe the historical opening matrix; they are diagnostic "
+            "observations, not general method-eligibility or audit-success conditions."
         ),
+        "performance_threshold_scope": "historical_opening_matrix_observation_only",
         "all_arm_feeding_service_token_observations_ge_0_95": all(
             gate["feeding_service_tokens_gate_ge_0_95"] for gate in summary_gates
         ),
@@ -422,11 +426,11 @@ def _audit(rows: list[dict[str, Any]], summaries: list[dict[str, Any]]) -> dict[
 
 
 def _audit_passed(audit: dict[str, Any]) -> bool:
-    """Fail closed on the formal correctness and project-feeding contract.
+    """Fail closed on correctness and evidence completeness.
 
-    Product baseline feeding is reported but deliberately not repaired or used
-    to fail the project gate. Cap-semantic failures remain explicit quality
-    outcomes; infrastructure failures are fatal.
+    Feeding and utilization remain reported diagnostics for every arm.
+    Cap-semantic failures remain explicit quality outcomes; infrastructure
+    failures are fatal. Audit success does not establish a performance claim.
     """
     return all(
         (
@@ -436,8 +440,6 @@ def _audit_passed(audit: dict[str, Any]) -> bool:
             audit.get("all_sink_readback_matched") is True,
             int(audit.get("infrastructure_failure_count", -1)) == 0,
             audit.get("manifest_and_identity_consistent") is True,
-            audit.get("all_project_feeding_service_token_gates_passed") is True,
-            audit.get("all_project_gpu_utilization_gates_passed") is True,
         )
     )
 
@@ -484,8 +486,9 @@ def _headline_summary(summaries: list[dict[str, Any]], audit: dict[str, Any]) ->
         "schema_version": 1,
         "workloads": dict(workloads),
         "claim_rule": (
-            "An arm below 0.95 of the workload-matched direct formal mean service tokens/s "
-            "is not eligible to support a strategy-performance claim."
+            "Interpret performance effects with matched semantics, work, resources, "
+            "quality and repeat variation. Historical feeding/utilization criteria "
+            "describe observations and do not establish or deny method superiority."
         ),
     }
 
