@@ -2,6 +2,8 @@
 
 [多查询共享probe](benchmarks/query_sharing_probe.py)只运行真实Core与无模型双服务fixture；
 复算命令及实际前端待验证项见[报告](../../experiments/results/diagnostics/query_sharing_burst_20261013/README.md)。
+[实际LOTUS双进程fixture入口](benchmarks/query_sharing_lotus.py)保留native LM和同桥三控制，
+仅在已有实库环境/分配窗口运行，必须指定新的`--output`gzip；来源检查失败不冒名或降级。
 
 ## 原生语义系统单查询
 

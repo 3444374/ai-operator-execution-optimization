@@ -1,0 +1,33 @@
+{
+  "run_id": "query-sharing-lotus-preparation-20261013",
+  "completed_utc": "2026-10-13T05:07:35.181468+00:00",
+  "source_parent": "7ba322be0e205ffd6e82839756f25108c1d7f814",
+  "source_sha256": {
+    "code/src/experiments/query_sharing_lotus.py": "58a9e6d6aa287eb25bdcf492d52d293ea30f026ab064eec2dc6528009676280a",
+    "code/scripts/benchmarks/query_sharing_lotus.py": "9f1d13c62dd5bcf787b7b6a36eeaa00e62100b8d5925705164564ba1bad7e03c",
+    "code/tests/experiments/test_query_sharing_lotus.py": "6fc2c44b5a674e8dac27a5e784688b983e0aeb4ef49672b1d151a07e1269433d",
+    "code/src/execution_provider/adapters/native_query_bridge.py": "d13315a57f4db3214d8e62ab27f70dd36219abe9b1ff6c5c31b88762c58b028a"
+  },
+  "command": "PYTHONPATH=code python3 -m unittest tests.experiments.test_query_sharing_lotus tests.execution_provider.test_native_query_bridge",
+  "checks": {
+    "tests": 18,
+    "passed": 17,
+    "skipped": 1,
+    "seconds": 1.241,
+    "exit_code": 0
+  },
+  "scope": {
+    "actual_lotus_frontend_pairs": 0,
+    "http_posts": 4,
+    "http_purpose": "two-worker fixture unit test",
+    "real_model_calls": 0,
+    "gpu_jobs": 0,
+    "sql_queries": 0
+  },
+  "pending": [
+    "existing pinned LOTUS source qualification",
+    "actual frontend process pair",
+    "new adapter paired JCT",
+    "common integration source"
+  ]
+}

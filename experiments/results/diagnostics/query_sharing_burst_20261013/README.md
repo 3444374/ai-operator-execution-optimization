@@ -96,3 +96,15 @@ EOF但进程仍活着、还持有delivery时，`close`确认失败，结果保�
 这些是生命周期/接入正确性，不能计为调度收益。RPC复制和新的owner轮询都须计入后续静态/候选两臂。
 未运行真实LOTUS双进程或任何HTTP、SQL、GPU、模型；源码校验、264行请求对拍及客户端JCT仍pending。
 现有服务器解释器只做包元数据核实，不安装依赖；已分配CPU16–17的零模型实库窗口等待baseline计时释放。
+
+<a id="lotus-pair-preparation"></a>
+## LOTUS配对入口准备
+
+[实库入口](../../../../code/src/experiments/query_sharing_lotus.py)和同题M4已收敛到两独立Map进程，
+native请求池保持每LM2，内部三个控制共用新桥、同全局K、Job封口和请求数观测。
+K由独立long64两次K=2/4校准选定；主长256/短8四臂三轮交错及无竞争/取消负例的fixture上限4240POST。
+源/结果/关联与service槽由独立审计复算，错误原件写新输出，不能沿用旧单查询成绩。
+
+入口准备阶段新增18项中17通过/1实库双进程用例因缺LOTUS跳过；本机4个HTTP POST只属于两槽服务单元用例。
+源码摘要与原运行见[lotus_preparation_checks.json](raw/lotus_preparation_checks.json)。
+尚未运行真实LOTUS双前端；这份检查不是实库成绩、SemBench评价、SQL或真实模型验证。

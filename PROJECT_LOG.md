@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：真实LOTUS配对fixture入口准备
+
+- 桥接阶段`7ba322be`已普通push并逐字核验远端；继续在同分支加实际两个spawn LM/`frame.sem_map`入口，四臂共用两槽HTTP替身。
+- 新入口[本地准备](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-pair-preparation)17项通过/1实库跳过；仅4次单元fixture HTTP，不冒称LOTUS双进程实库通过。
+- 三次配对、独立static校准、无竞争和取消写入同题[M4](experiments/plans/数据组织.md#query-sharing-burst)，源码、完整请求、进程/Job/session与资源归零交给独立审计。
+- CPU16–17、30分钟/4GiB/0GPU分配已登记，等待native实际计时释放后复用现有环境；共同SHA、DuckDB SQL、真实模型仍待核验。
+
 ## 2026-10-13：多查询私有前端桥接
 
 - `exp/semloom-query-sharing`沿用已有Core/Job/lease，通过有限继承Pipe把两个独立前端转交一个owner；LOTUS只增加可选session factory，原默认保持。

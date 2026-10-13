@@ -134,8 +134,11 @@ class NativeTaskBridge:
 
     def _emit(self, event, peer=None):
         if self._observer:
-            self._observer(dict(event=event, query_id=peer.label if peer else None,
-                                owner_thread=self._owner_id, t=time.monotonic()))
+            fields = dict(event=event, query_id=peer.label if peer else None,
+                          owner_thread=self._owner_id, t=time.monotonic())
+            if peer is not None and peer.flow is not None:
+                fields.update(job_id=peer.flow.job.job_id, session_id=peer.flow.session.session_id)
+            self._observer(fields)
 
     def _invoke(self, peer, operation, args):
         if operation == 'open':
