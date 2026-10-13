@@ -1,7 +1,8 @@
 # LOTUS图文执行接点与Sema输入核查
 
 早先切片只验证固定前端能力和同方法执行接点，没有真实模型、GPU或Ray启动。
-后文追加真实Daft/Ray及localhost软件fixture；最新[审查修补](#stage-review)纠正旧RSS与关联取证边界。
+后文追加真实Daft/Ray及localhost软件fixture；[审查修补](#stage-review)纠正旧RSS与关联取证边界，
+最新[块尾部诊断](#stage-block-tail)在原配额下未发现准备lease拒绝，未扩策略或GPU窗口。
 没有真实推理或PG-E2E性能资格。
 独立研究原型为`92bcd05a`；通用LOTUS接线为`607b9f88`，只改`lotus/sdk.py`、`lotus/batch.py`并增加独立测试。
 研究假设和静态缓存反例仍见[阶段设计](../../../../docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md#frontend-stage-audit)，
@@ -278,3 +279,73 @@ Daft仅借用Core已接受、仍持准备责任的原任务；模型许可之后
 图像解码仍在LOTUS整批消息构建前端，未受Core held/C/W统一控制；4MiB是辅助缓存或声明额度，不是host物理硬限。
 本轮不证明实际VLM质量/性能、pinned/device/H2D、PG消费或多节点能力。未来轨迹帧选择可复用内容版本与实际消费者回执，
 收益仍须面对同信息强静态有界流水和原生stage pipeline；没有新机器人数据或视频/音频实现。
+
+<a id="stage-block-tail"></a>
+
+## 多行Arrow块尾部的有界诊断
+
+通用预检修复`7d83c2a6`的吸收边界及未覆盖项已交集成负责人；本节不把研究策略并入main。
+假设：已确认快成员仍随同块慢成员持有ready work，可能挡住同Job的合法下一块准备，即使HTTP C/W有余。
+必要条件同时包括编码输入已接受、FIFO头合法、CPU准备槽空、bytes可承接下一块保守reservation、
+三层容量/flow允许以及权威成员终态。强对照先用同配额固定小块；本轮没有实际work退款实现。
+
+源码依据：`map_preparation._settle`先移除成员，只有最后成员才调用broker完成/失败并清引用；
+`stage_broker.lease_prepare`预留下一块ready bytes/work，`complete_prepare`再从保守估值改成实际buffer大小。
+因此旧块尾部的物理buffer仍需保留，下一块2倍ready估值是另一项独立reservation。
+`prepare_inputs`已预检model_inflight≥held_tasks，当前二者均4，未把它误判为请求C或准备瓶颈。
+已有修后trace只有总量与完成，缺少拒绝原因/块成员/Job-session视图，不能从它推出尾部阻塞。
+
+[可选观测](../../../../code/tests/modalities/image/stage_block_trace.py)只用于测试：记录原enqueue/lease_prepare/
+成员settle，Core owner在advance/release/wait外、持准备锁时复制global/Job/session额度及原records标量。
+拒绝发生时只记broker视图，不伪称同步Core快照；统计仅含有FIFO候选时的broker lease_prepare拒绝，
+未分类try_prepare的非阻塞锁/encoded借用返回0。尾部ready容量只在前者检查；成员权威终态按原settle记录，未知结果不计退款。
+owner检查FIFO头、flow状态与三层C/W资格，反事实保留整块bytes、只扣已确认成员work。
+这不执行router/credit/organizer选择；`before_wait`是前一progress提示，未测实际等待时长。
+后续成员终态不会改写早期快照，没有保存请求body或宣称URI物理消失。
+
+6个新廉价回归＋15个旧准备回归共21通过，0跳过。合法tight work=2的seam场景确实复现尾部work挡准备，
+同配额单行块可消除；另以ready bytes=2712核对旧buffer＋下一块实际上界2038可容纳、
+保守2倍reservation相加2720超限的独立bytes问题。未知成员/disabled flow不成为可退款机会。
+初次bytes fixture额度设得过小，导致首块本身只能单行；另一初次断言误把启用状态的历史机会当成disabled机会，
+两次失败日志保留。独立审查还发现wait关键字参数被观测器截断，已在任何新POST前修复并补透明透传回归。
+
+实际软件仅使用原12图片、原Filter全批屏障→Map、强静态资产准备臂；保持C=2/W=2/held=4、
+encoded/ready/object=4MiB、ready work=4、prepare_inflight=1、model_inflight=4。
+保留原batch_rows=2，对照固定1；各19 localhost POST，总38，完整请求、prepare顺序、输出/parser/usage一致。
+两臂都prepare17次、复制URI9,736,050字节，未继续消费者缓存算法。source快照各1,612,536字节。
+
+| batch_rows | Arrow块 | owner检查点 | 有尾部的检查点 | 实际prepare lease拒绝 | 单独尾部work容量机会 |
+|---|---:|---:|---:|---:|---:|
+| 原2 | 14 | 787 | 31 | 0 | 0 |
+| 小块1 | 19 | 199 | 0 | 0 | 0 |
+
+原2中20个检查点同时有尾部和FIFO编码头：1个bytes/work均可容纳；19个已有prepare_inflight=1。
+后者包含暂时work超额和bytes/work同时超额的谓词，但不是独立尾部work拒绝；CPU准备槽已忙，
+实际worker可再次lease时原broker均成功，没有返回一次容量拒绝。例：旧尾部1,352,666 bytes/work2、
+下一块reservation1,010,278/work1、C/W各占1；bytes合计2,362,944及work3均低于原上限，可正常准备。
+即使某点反事实扣work后能容纳，也不能把它写成已解除CPU忙或下一块bytes reservation。
+
+| 原始阶段累计秒（不可相加为主任务wall） | 原2 | 小块1 |
+|---|---:|---:|
+| 前端fetch/decode/RGB-PNG-base64准备 | 1.808297 | 1.779177 |
+| 全批validate（包含下行SDK转换） | 0.159368 | 0.160479 |
+| validate内SDK行转换 | 0.148517 | 0.149148 |
+| 块payload准备（包含首次Daft import） | 2.791505 | 0.432255 |
+
+两臂decode输入的encoded字节累计2,355,880是按17次准备加权；每臂源快照读取1,612,536字节，
+外层取路径另核验一次同源。这些加权decode字节不是额外文件I/O；
+RGB名义展开13,570,440，不当作测得物理tensor驻留。缓存miss的URI准备9,143,678、全部URI导出9,736,050。
+全批validate完整JSON累计9,747,951，有限块中的SDK后缀重复转换8,677,875（首行复用），不是第二次HTTP。
+Arrow backing buffer累计9,748,519／9,748,559，差40 bytes来自5个额外块的8-byte offset；不是RSS/H2D。
+主任务wall 5.555500／2.709387秒含源准备到原行消费；固定顺序、首轮冷import和观测开销均保留，不作速度排名。
+
+只读preflight通过，沿用原driver/LOTUS/Daft/Ray/Arrow/Pillow，无安装/下载。
+窗口`semloom-stage-tail-20261013-1ud8qzw2`在同共同host lease下CPU24–27、600秒/4GiB采样停限：
+11:14:31.201582 UTC／北京时间19:14:31开始，原截止11:24:31.201582；11:15:03.499593 UTC／19:15:03完成。
+实际6个component检查＋1个完整软件用例通过，0跳过；1个CPU Ray集群、38 POST、模型/GPU均0。
+11:16:12.046766 UTC／19:16:12独立新driver核对13个PID＋birth无存活、共同lease不存在、GPU空。
+
+**本切片没有尾部work独立阻塞信号，停止退款策略与GPU配对扩展。** 紧work场景可以存在，但固定小块已能消除，
+不能当作原配置瓶颈或新算法收益。不同work额度、真实VLM慢尾/质量及GPU/pinned/device/PG边界仍未验证。
+[聚合](stage-tail-verification.json)及[29成员原件与双摘要](raw/stage-tail-evidence.tar.gz)保留参数、所有阶段时点、
+逐成员authority、拒绝与一致容量原件；归档SHA-256 `e66e7a4f3925fb839825f83335aca1321691caae581ec9dad986d551f5e0b16e`。

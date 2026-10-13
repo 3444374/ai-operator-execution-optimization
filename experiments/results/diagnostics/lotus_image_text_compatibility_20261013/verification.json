@@ -492,5 +492,11 @@
     "raw": "raw/stage-review-evidence.tar.gz",
     "source_manifest_sha256": "845b8171e3cf560db142060c495fd7ca27a1be2cd273760dd58f0ca2d9e95800",
     "status": "passed software qualification, first attempt retained"
+  },
+  "stage_tail": {
+    "summary": "stage-tail-verification.json",
+    "raw": "raw/stage-tail-evidence.tar.gz",
+    "source_manifest_sha256": "a42873610eaf0af88719f2405eaa5127bb257d07abe61f63c6a499fe08358bec",
+    "status": "software diagnostic passed; no bottleneck signal under original limits"
   }
 }

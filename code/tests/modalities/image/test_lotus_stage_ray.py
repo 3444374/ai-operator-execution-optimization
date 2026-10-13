@@ -33,6 +33,7 @@ from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
 from src.semantic_methods.lotus import batch as batch_module, sdk
 from tests.modalities.image.test_lotus_stage_demand import StaticSharedPreparation, stage_assets
 from tests.modalities.image.stage_http_fixture import stage_http_fixture
+from tests.modalities.image.stage_block_trace import StageBlockTrace
 
 
 REAL = (os.environ.get("SEMLOOM_STAGE_RAY_TEST") == "1" and
@@ -129,6 +130,49 @@ def completion_bytes(body, content):
 
 @unittest.skipUnless(REAL, "select preflight-checked actual Daft/Ray fixture; no installations")
 class LotusStageRayTests(unittest.TestCase):
+    @unittest.skipUnless(os.environ.get("SEMLOOM_STAGE_BLOCK_TRACE")=="1", "opt-in block-tail diagnostic")
+    def test_fixed_small_blocks_against_existing_stage_rows(self):
+        import ray
+        sdk.validate_source(message_profile=sdk.IMAGE_TEXT_PROFILE)
+        root=Path(os.environ["SEMLOOM_STAGE_RAY_ARTIFACT_ROOT"])
+        require_outside_git(root);root.mkdir(mode=0o700,parents=True,exist_ok=False)
+        paths,_,_,_,_=stage_assets()
+        names=tuple(Path(path).name for path in paths)
+        current=dict(stage="filter",error=False)
+        def reply(body):
+            kind,_=request_identity(body,names)
+            parts=body["messages"][-1]["content"]
+            uri=next(part["image_url"]["url"] for part in parts if part["type"]=="image_url")
+            with Image.open(BytesIO(base64.b64decode(uri.split(",",1)[1]))) as image:
+                landscape=image.width>=image.height
+            return 200,completion_bytes(body,str(landscape) if kind=="filter" else "landscape" if landscape else "portrait")
+        self.assertFalse(ray.is_initialized())
+        with tempfile.TemporaryDirectory(prefix="sr-",dir=os.environ["SEMLOOM_STAGE_RAY_TEMP_PARENT"]) as ray_root, \
+             stage_http_fixture(reply,lambda body:request_identity(body,names),max_posts=38) as (base,calls):
+            try:
+                ray.init(num_cpus=2,num_gpus=0,include_dashboard=False,_temp_dir=ray_root)
+                config=FixedModelConfig(base+"/chat/completions","stage-image-fixture",10000,"local-fixture")
+                physical=RayMapConfig(ray.get_runtime_context().gcs_address,2,2,2*MAX_FRAME_BYTES,4*MAX_FRAME_BYTES,
+                    worker_pool="tail-"+root.name[-12:],response_mode="full",
+                    preparation=StageBrokerLimits(4*MAX_FRAME_BYTES,4*MAX_FRAME_BYTES,4,1,4))
+                from dataclasses import replace
+                with owned_map_worker_pool(ray,config,2,physical):
+                    records=[]
+                    for size in (2,1):
+                        current.update(stage="filter",error=False)
+                        records.append(self.run_case(root,"static_bytes",size,config,
+                                                     replace(physical,batch_rows=size),current,calls))
+                self.assertEqual(len(calls),38)
+                for field in ("prepared_requests","received_requests","rows","usage","prepare_order","copied_uri_bytes"):
+                    self.assertEqual(records[0][field],records[1][field],field)
+                write_private_json(root/"summary.json",dict(status="passed",records=records,fixture_posts=len(calls),
+                    batch_rows=[2,1],real_model_calls=0,gpu_starts=0,ray_clusters=1,
+                    scope="read-only block-tail software diagnostic; original Filter barrier and static asset arm"))
+            finally:
+                ray.shutdown()
+                write_private_json(root/"http-receipts.json",list(calls))
+
+    @unittest.skipIf(os.environ.get("SEMLOOM_STAGE_BLOCK_TRACE")=="1", "block trace selects its separate 38-POST diagnostic")
     def test_stage_a_on_existing_daft_ray_execution_and_error_cleanup(self):
         import ray
         sdk.validate_source(message_profile=sdk.IMAGE_TEXT_PROFILE)
@@ -225,9 +269,11 @@ class LotusStageRayTests(unittest.TestCase):
         window = PreparedAssetWindow(uses, max_consumers=24, host_bytes=4 * 1048576, clock=time.monotonic)
         static = StaticSharedPreparation(sources, 4 * 1048576)
         record = dict(arm=arm, repeat=repeat, error_case=current["error"], cache_bytes=4 * 1048576,
+                      batch_rows=physical.batch_rows,
                       source_metadata_s=acquisition_s, prepare_order=[], prepared_requests=[],
                       source_snapshot_bytes=sum(len(s.encoded) for s in snapshots.values()),
                       responses=[], boundaries=[], timing=[], copied_uri_bytes=0)
+        record["frontend_prepare_bytes"]=dict(encoded=0,rgb_nominal=0,uri_encoded=0)
         events, execution, selected = [], None, None
         batch_inputs = [None]
         first_call = len(calls)
@@ -253,7 +299,11 @@ class LotusStageRayTests(unittest.TestCase):
 
         def prepare(path):
             record["prepare_order"].append(keys[path].content_digest)
-            return snapshots[path].fetch(fetch_image).encode("ascii")
+            payload=snapshots[path].fetch(fetch_image).encode("ascii")
+            record["frontend_prepare_bytes"]["encoded"]+=len(snapshots[path].encoded)
+            record["frontend_prepare_bytes"]["rgb_nominal"]+=snapshots[path].rgb_bytes
+            record["frontend_prepare_bytes"]["uri_encoded"]+=len(payload)
+            return payload
 
         def get_image(array, index, image_type="Image"):
             self.assertEqual(image_type, "base64")
@@ -308,6 +358,10 @@ class LotusStageRayTests(unittest.TestCase):
                 execution = build_native_execution(config, physical=physical, max_tasks=4,
                                                    max_active_requests=2, observer=observe)
                 verify_preparation_borrow(stack, execution, record)
+                trace=None
+                if os.environ.get("SEMLOOM_STAGE_BLOCK_TRACE")=="1":
+                    trace=StageBlockTrace(execution,lambda:current["stage"])
+                    trace.attach(stack)
                 record["execution_ready_s"] = time.monotonic() - started
                 selected = LotusBatchExecutor(execution, config, query_id=case.name, operator_id="filter-map",
                     message_profile=sdk.IMAGE_TEXT_PROFILE, on_prepared=on_prepared, on_response=on_response,
@@ -318,8 +372,22 @@ class LotusStageRayTests(unittest.TestCase):
                 stack.enter_context(lotus_executor(lm, selected))
                 stack.enter_context(patch.object(ImageArray, "get_image", get_image))
                 original_prepare = sdk.prepare_call
-                stack.enter_context(patch.object(sdk, "prepare_call", timed(original_prepare,"sdk_prepare")))
-                stack.enter_context(patch.object(batch_module, "prepare_call", timed(original_prepare,"sdk_prepare")))
+                phase=dict(validating=False)
+                record["sdk_preparation_bytes"]=dict(validate=0,execution=0)
+                def measured_prepare(*args,**kwargs):
+                    call=timed(original_prepare,"sdk_validate_row" if phase["validating"] else "sdk_prepare")(*args,**kwargs)
+                    record["sdk_preparation_bytes"]["validate" if phase["validating"] else "execution"]+=len(call.payload)
+                    return call
+                original_validate=batch_module.validate_batch
+                def measured_validate(*args,**kwargs):
+                    phase["validating"]=True
+                    try:
+                        return timed(original_validate,"full_batch_validate")(*args,**kwargs)
+                    finally:
+                        phase["validating"]=False
+                stack.enter_context(patch.object(sdk,"prepare_call",measured_prepare))
+                stack.enter_context(patch.object(batch_module,"prepare_call",measured_prepare))
+                stack.enter_context(patch.object(batch_module,"validate_batch",measured_validate))
                 stack.enter_context(patch.object(batch_module, "parse_lotus_response",
                                                 timed(batch_module.parse_lotus_response,"sdk_parse")))
                 query_started = time.monotonic()
@@ -388,6 +456,8 @@ class LotusStageRayTests(unittest.TestCase):
             record["arrival_order_differs_from_source"] = received != expected
             record["prepare_calls"] = len(record["prepare_order"])
             record["resource_summary"] = sampler.summary()
+            if trace is not None:
+                record["block_trace"]=trace.summary()
             record["status"] = "passed"
             return record
         except BaseException as error:
@@ -399,6 +469,8 @@ class LotusStageRayTests(unittest.TestCase):
                     close_for_record(execution,record)
             finally:
                 record["lifecycle_wall_s"] = time.monotonic() - started
+                if 'trace' in locals() and trace is not None:
+                    record["block_trace"]=trace.summary()
                 write_private_json(case / "record.json", record)
                 write_private_json(case / "events.json", events)
 

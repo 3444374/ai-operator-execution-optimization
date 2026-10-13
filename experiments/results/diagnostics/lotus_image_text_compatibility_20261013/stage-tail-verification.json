@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "run_id": "semloom-stage-tail-20261013-1ud8qzw2",
+  "base_commit": "7d83c2a625fc37901fd8079bed86bb5bc573e854",
+  "source": {
+    "base_commit": "7d83c2a625fc37901fd8079bed86bb5bc573e854",
+    "files": {
+      "code/tests/modalities/image/test_lotus_stage_ray.py": "771029ee8f146605271b3d87f65ba12d57ac2f6614d3924be6249ca42f7ac9f8",
+      "code/tests/modalities/image/stage_block_trace.py": "b0c728aca5454e389aff2b49da885dc475facb6f97b78343ca8b7bcab95a689c",
+      "code/tests/modalities/image/test_stage_block_trace.py": "cdda3c1ee9d0e69aa807f43144cd97856e9921e0c9f39854d1390a8ba0e30f88"
+    },
+    "scope": "opt-in read-only stage-block diagnostic, existing software/components, no production policy",
+    "manifest_sha256": "a42873610eaf0af88719f2405eaa5127bb257d07abe61f63c6a499fe08358bec"
+  },
+  "hypothesis": "A shared Arrow block tail can prevent legal same-Job preparation while C/W is available, independently of next-block double-byte reservation; fixed small blocks are the first strong static control.",
+  "observation_scope": "test-only read-only hooks, owner-thread and preparation-lock snapshots; no routing/credit/organizer decision or measured wait-duration claim",
+  "configuration": {
+    "held": 4,
+    "C": 2,
+    "W": 2,
+    "encoded_bytes": 4194304,
+    "ready_bytes": 4194304,
+    "ready_work": 4,
+    "prepare_inflight": 1,
+    "model_inflight": 4,
+    "source": "same twelve historical immutable images",
+    "method": "original LOTUS Filter then whole-barrier Map; same static preparation arm"
+  },
+  "window": {
+    "t0": "2026-10-13T11:14:31.201582+00:00",
+    "deadline": "2026-10-13T11:24:31.201582+00:00",
+    "cpu_affinity": [
+      24,
+      25,
+      26,
+      27
+    ],
+    "max_sampled_summed_rss_bytes": 4294967296,
+    "max_fixture_posts": 38,
+    "model_posts": 0,
+    "ray_gpus": 0,
+    "source_manifest_sha256": "a42873610eaf0af88719f2405eaa5127bb257d07abe61f63c6a499fe08358bec"
+  },
+  "result": {
+    "status": "passed",
+    "reports": [
+      {
+        "status": "passed",
+        "started_ns": 3038596398658514,
+        "remote_compute_end_known": false,
+        "worker_exit": 0,
+        "remaining_owned_pids": [],
+        "ended_ns": 3038596913221080
+      },
+      {
+        "status": "passed",
+        "started_ns": 3038596915461839,
+        "remote_compute_end_known": false,
+        "worker_exit": 0,
+        "remaining_owned_pids": [],
+        "ended_ns": 3038628679519762
+      }
+    ],
+    "elapsed_s": 32.29797595413402,
+    "ended_at": "2026-10-13T11:15:03.499593+00:00"
+  },
+  "release": {
+    "checked_at": "2026-10-13T11:16:12.046766+00:00",
+    "sampled_pid_birth_count": 13,
+    "alive_sampled_identities": [],
+    "common_lease_exists": false,
+    "gpu_compute_apps": "",
+    "driver": "independent existing preflight driver"
+  },
+  "qualification": {
+    "local_related_tests": 21,
+    "existing_driver_component_tests": 6,
+    "actual_software_tests": 1,
+    "skipped": 0,
+    "fixture_posts": 38,
+    "ray_clusters": 1,
+    "real_model_calls": 0,
+    "gpu_starts": 0,
+    "installations": 0,
+    "downloads": 0
+  },
+  "arms": [
+    {
+      "batch_rows": 2,
+      "requests": 19,
+      "filter_survivors": 7,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "frontend_prepare_bytes": {
+        "encoded": 2355880,
+        "rgb_nominal": 13570440,
+        "uri_encoded": 9143678
+      },
+      "sdk_preparation_bytes": {
+        "validate": 9747951,
+        "execution": 8677875
+      },
+      "stage_elapsed_sums": {
+        "image_prepare": 1.8082966619999996,
+        "sdk_validate_row": 0.148517118,
+        "full_batch_validate": 0.159367887,
+        "sdk_prepare": 0.131639155,
+        "sdk_parse": 0.597279167
+      },
+      "payload_prepare_elapsed_sum_s": 2.791505082,
+      "arrow_buffer_bytes_sum": 9748519,
+      "blocks": 14,
+      "owner_checkpoints": 787,
+      "tail_checkpoints": 31,
+      "tail_and_encoded_head_predicates": {
+        "guards_fit; capacity_eligible=True": 1,
+        "ready_work,prepare_inflight; capacity_eligible=True": 3,
+        "prepare_inflight; capacity_eligible=False": 6,
+        "prepare_inflight; capacity_eligible=True": 7,
+        "ready_bytes,ready_work,prepare_inflight; capacity_eligible=True": 3
+      },
+      "actual_prepare_refusals": 0,
+      "work_only_capacity_opportunities": 0,
+      "before_wait_hint_opportunities": 0,
+      "task_wall_s": 5.555500340182334,
+      "ready_query_wall_s": 5.534694692119956,
+      "confirmed_close": true
+    },
+    {
+      "batch_rows": 1,
+      "requests": 19,
+      "filter_survivors": 7,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "frontend_prepare_bytes": {
+        "encoded": 2355880,
+        "rgb_nominal": 13570440,
+        "uri_encoded": 9143678
+      },
+      "sdk_preparation_bytes": {
+        "validate": 9747951,
+        "execution": 8677875
+      },
+      "stage_elapsed_sums": {
+        "image_prepare": 1.7791774489999999,
+        "sdk_validate_row": 0.149148054,
+        "full_batch_validate": 0.16047868999999998,
+        "sdk_prepare": 0.132429158,
+        "sdk_parse": 0.215477376
+      },
+      "payload_prepare_elapsed_sum_s": 0.432254508,
+      "arrow_buffer_bytes_sum": 9748559,
+      "blocks": 19,
+      "owner_checkpoints": 199,
+      "tail_checkpoints": 0,
+      "tail_and_encoded_head_predicates": {},
+      "actual_prepare_refusals": 0,
+      "work_only_capacity_opportunities": 0,
+      "before_wait_hint_opportunities": 0,
+      "task_wall_s": 2.7093874947167933,
+      "ready_query_wall_s": 2.698789652902633,
+      "confirmed_close": true
+    }
+  ],
+  "source_findings": {
+    "block_ready_bytes_and_work_return_after_last_member": true,
+    "model_inflight_prevalidated_at_least_held_tasks": true,
+    "old_trace_missing_refusal_member_and_scoped_capacity": true
+  },
+  "component_findings": {
+    "tight_work_2_shared_tail_blocks_legal_input": true,
+    "same_quota_single_row_control_removes_it": true,
+    "next_double_reservation_can_block_bytes_separately": true,
+    "unconfirmed_and_disabled_members_not_refunded": true,
+    "actual_partial_refund_implemented": false
+  },
+  "decision": "No actual prepare refusal and no isolated tail-work capacity opportunity in this 38-POST original-configuration slice. Stop policy/GPU expansion for this slice; no general exclusion of other work limits or true VLM latency distributions.",
+  "raw_archive": {
+    "path": "raw/stage-tail-evidence.tar.gz",
+    "sha256": "e66e7a4f3925fb839825f83335aca1321691caae581ec9dad986d551f5e0b16e",
+    "bytes": 176674,
+    "members": 29
+  },
+  "prepare_refusal_scope": "broker lease_prepare returned None with a FIFO candidate; try_prepare nonblocking lock/encoded borrowing returns are not classified"
+}
