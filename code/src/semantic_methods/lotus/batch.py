@@ -6,7 +6,7 @@ import time
 import math
 
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
-from ...scheduling.core.session_contract import State
+from ...scheduling.core.session_contract import SessionLimits, State
 from ...execution_provider.adapters.full_response import decode_full_response
 from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
 from .limits import LotusCallLimits
@@ -22,17 +22,27 @@ class LotusBatchExecutor:
     def __init__(self, execution, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, cancelled=None, timeout_s=120,
-                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None):
+                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None,
+                 session_factory=None, session_limits=None):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError("LOTUS batch timeout must be at most 120 seconds")
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
+        if session_factory is not None and not callable(session_factory):
+            raise ValueError("LOTUS session factory must be callable")
         self.execution, self.model_config = execution, model_config
         if call_limits is not None and type(call_limits) is not LotusCallLimits:
             raise TypeError('LOTUS call_limits requires LotusCallLimits')
-        available = execution.engine.capacity.limits
+        if execution is None:
+            if session_factory is None or type(session_limits) is not SessionLimits:
+                raise ValueError('remote LOTUS frontend requires a session factory and typed limits')
+            available = session_limits
+        else:
+            if session_limits is not None:
+                raise ValueError('local LOTUS capacity comes from its Engine')
+            available = execution.engine.capacity.limits
         self.call_limits = call_limits or LotusCallLimits(model_config.timeout_ms / 1000,
             max_request_bytes=min(1024 * 1024, available.item_input_bytes),
             max_response_bytes=min(1024 * 1024, available.item_result_bytes), max_batch_rows=max_batch_rows,
@@ -49,6 +59,7 @@ class LotusBatchExecutor:
         self.prevalidate_batch, self.retain_full_responses = prevalidate_batch, retain_full_responses
         self.timeout_s, self.last_responses = self.call_limits.batch_timeout_s, ()
         self.last_cleanup_errors = ()
+        self.session_factory = session_factory
         self.last_preflight = None
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
@@ -89,7 +100,11 @@ class LotusBatchExecutor:
             first_call = validate_batch(lm, uncached_data, all_kwargs,
                 check_stop=check_stop) if self.prevalidate_batch else None
             check_stop()
-            flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
+            flow = (NativeTaskSession(self.execution, self.query_id, self.operator_id)
+                    if self.session_factory is None else self.session_factory(self.query_id, self.operator_id))
+            if (self.call_limits.max_request_bytes > flow.limits.item_input_bytes
+                    or self.call_limits.max_response_bytes > flow.limits.item_result_bytes):
+                raise ValueError('LOTUS call capacity exceeds the opened flow item capacity')
             responses = [None] * count
             full = [None] * count if self.retain_full_responses else []
             while True:
