@@ -6,6 +6,10 @@
 新增[本地桥接阶段](diagnostics/query_sharing_burst_20261013/README.md#native-query-bridge)50项通过/13实库跳过，
 真实Core的身份、lease、EOF和进程停止检查通过；不算真实LOTUS并发/性能资格。已分配的实库CPU窗口等待baseline释放，模型预演由主协调。
 
+同报告[LOTUS实际双进程阶段](diagnostics/query_sharing_burst_20261013/README.md#lotus-main-fixture)：
+SDK源码/现有Arrow/Pandas通过，108请求smoke及主协议9个完整cell/1384 POST独立对拍通过；四臂主场景分别long256/short8。
+原30分钟窗口令后续cell退出1，原件和释放证明保留，不能称全协议完成；无模型/GPU/SQL，单样本不能外推性能。
+
 2026-10-12：[执行稳定性与多副本组合](diagnostics/semloom_stability_composition_20261012/README.md)。
 固定runtime／副本／入口修补及必要祖先，本机270项中249通过／21跳过；同execution已知失败归还与未知RPC／HTTP的C/W及37字节对象留存并置通过。
 来源与跳过原因保留，入口定点独立复审9项通过；修后实库、真实设备、模型及PG资格未增加。

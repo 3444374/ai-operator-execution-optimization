@@ -1,0 +1,22 @@
+{
+  "run_id": "query-sharing-main-fixture-9d3e4228",
+  "source_commit": "9d3e4228676086a50355d48c06d419c617bfa44f",
+  "window_started_utc": "2026-10-13T05:20:39.024878+00:00",
+  "absolute_deadline_epoch": 1791870639.024878,
+  "started_utc": "2026-10-13T05:48:06.790719+00:00",
+  "affinity": [
+    16,
+    17
+  ],
+  "remaining_seconds": 152,
+  "repeats": 1,
+  "repetition_reason": "finite remaining original window after preserved repair attempts; no window/budget reset",
+  "previous_fixture_charge": 220,
+  "remaining_fixture_posts": 4020,
+  "model_calls": 0,
+  "gpu_jobs": 0,
+  "sql_queries": 0,
+  "driver_pid": 385412,
+  "exit_code": 1,
+  "finished_utc": "2026-10-13T05:50:10.748412+00:00"
+}

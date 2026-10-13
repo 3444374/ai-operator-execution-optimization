@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-13T05:52:58.981578+00:00",
+  "allocated_cpus": [
+    16,
+    17
+  ],
+  "restricted_process_overlap": [],
+  "zero_model_driver_finished": true,
+  "model_calls": 0,
+  "gpu_jobs": 0,
+  "no_servers_restarted": true
+}

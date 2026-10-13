@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-13：长短查询实库fixture最小四臂与预算停止
+
+- `9d3e4228`在已释放CPU16–17的原窗口完成独立static校准和四臂long256/short8；各264调用、同消息/输出/usage及独立Job/session/进程经[复算](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-main-fixture)通过。
+- 同桥K=4候选短JCT少23.25%，长多1.46%、吞吐少1.44%；单次fixture不当作噪声校准、模型性能或采用结论，native差距另含SDK路径成本。
+- 剩余窗口只足一次；完整协议在后续无竞争cell READY前按绝对截止退出1，0新调用，1384已完成POST与失败均保留。累计保守1604/4240，未重置额度或时间。
+- 05:52:58 UTC独立核查CPU16–17无遗留受限进程；GPU/模型/SQL均0，不再服务器复测。共同安全基点28093954已fetch且含原stability祖先，后续checkpoint本地核对吸收。
+- 与replica owner约定其复用route/capacity且不改本线session封口/工作观测；输入借用、模型责任、结果lease继续区分，stage/副本研究不扩入本线。
+
 ## 2026-10-13：实库预检与配对审计修补
 
 - 主协调确认baseline清理释放；本线CPU16–17占用轻查及实际SDK/Arrow/Pandas资格通过，现有pandas2.3.3，未改公共依赖。

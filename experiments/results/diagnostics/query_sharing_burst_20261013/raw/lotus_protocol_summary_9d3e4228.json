@@ -1,0 +1,220 @@
+{
+  "source_commit": "9d3e4228676086a50355d48c06d419c617bfa44f",
+  "source_sha256": {
+    "src/experiments/query_sharing_lotus.py": "4cd6477f9f009bddd0f74b12e9d1f38a5bf945b205a65c5b5da2d329f79c5f04",
+    "src/execution_provider/adapters/native_query_bridge.py": "400a96326ac120c50bd1902884ab317bd981bca2784101549b1e57fe7ddf0ae4",
+    "src/semantic_methods/lotus/batch.py": "ce736cd6770157b29bba8d4aac9ac277bf71e15de4bf2e8d874cd6bd053ea588",
+    "src/scheduling/submission_control/query_sharing.py": "9daba762d4acce769362559c0167324afb82573b1909812d3d084e37039869b1",
+    "src/scheduling/core/session.py": "a839a32ea37fc89734e22a480fddceb7f54bbef0b3917446b3b6d8a177786d00",
+    "src/scheduling/core/session_jobs.py": "18974ef458ac06c26823c892c66669d5b278f9e0bbe80e218451ac20da1e1465"
+  },
+  "protocol_status": "failed",
+  "protocol_error_type": "NoneType",
+  "passed_cell_summary": [
+    {
+      "run_id": "calibration-k2-r0",
+      "arm": "strong_static",
+      "count": 64,
+      "service_peak": 2,
+      "overlap": false,
+      "client_jct_s": {
+        "long": 1.3321969751268625
+      },
+      "group_jct_s": 1.3321969751268625,
+      "cpu_s": {
+        "long": 0.08464504500000025
+      },
+      "rss_peak_bytes": 1084624896,
+      "cancel_at_s": null,
+      "parent_cpu_s": 1.207448739
+    },
+    {
+      "run_id": "calibration-k2-r1",
+      "arm": "strong_static",
+      "count": 64,
+      "service_peak": 2,
+      "overlap": false,
+      "client_jct_s": {
+        "long": 1.1691260687075555
+      },
+      "group_jct_s": 1.1691260687075555,
+      "cpu_s": {
+        "long": 0.07889732199999955
+      },
+      "rss_peak_bytes": 1085349888,
+      "cancel_at_s": null,
+      "parent_cpu_s": 1.004446418
+    },
+    {
+      "run_id": "calibration-k4-r0",
+      "arm": "strong_static",
+      "count": 64,
+      "service_peak": 2,
+      "overlap": false,
+      "client_jct_s": {
+        "long": 0.9426631829701364
+      },
+      "group_jct_s": 0.9426631829701364,
+      "cpu_s": {
+        "long": 0.0888864990000009
+      },
+      "rss_peak_bytes": 1086500864,
+      "cancel_at_s": null,
+      "parent_cpu_s": 0.9189210510000003
+    },
+    {
+      "run_id": "calibration-k4-r1",
+      "arm": "strong_static",
+      "count": 64,
+      "service_peak": 2,
+      "overlap": false,
+      "client_jct_s": {
+        "long": 0.9285514517687261
+      },
+      "group_jct_s": 0.9285514517687261,
+      "cpu_s": {
+        "long": 0.08435335100000074
+      },
+      "rss_peak_bytes": 1088757760,
+      "cancel_at_s": null,
+      "parent_cpu_s": 0.9156446959999998
+    },
+    {
+      "run_id": "paired-r0-native_shared",
+      "arm": "native_shared",
+      "count": 264,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.5779990227892995,
+        "long": 5.232369789853692
+      },
+      "group_jct_s": 5.232369789853692,
+      "cpu_s": {
+        "short": 0.405610106000001,
+        "long": 1.9998103380000005
+      },
+      "rss_peak_bytes": 2245529600,
+      "cancel_at_s": null,
+      "parent_cpu_s": 0.6017929039999999
+    },
+    {
+      "run_id": "paired-r0-work_conserving",
+      "arm": "work_conserving",
+      "count": 264,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.26648789970204234,
+        "long": 3.604539426509291
+      },
+      "group_jct_s": 3.604539426509291,
+      "cpu_s": {
+        "short": 0.025621824000000792,
+        "long": 0.30815531000000007
+      },
+      "rss_peak_bytes": 2217992192,
+      "cancel_at_s": null,
+      "parent_cpu_s": 1.752311938
+    },
+    {
+      "run_id": "paired-r0-strong_static",
+      "arm": "strong_static",
+      "count": 264,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.2546612429432571,
+        "long": 3.5616654846817255
+      },
+      "group_jct_s": 3.5616654846817255,
+      "cpu_s": {
+        "short": 0.024476223999999824,
+        "long": 0.30272765800000023
+      },
+      "rss_peak_bytes": 2215170048,
+      "cancel_at_s": null,
+      "parent_cpu_s": 1.7024910569999996
+    },
+    {
+      "run_id": "paired-r0-candidate",
+      "arm": "candidate",
+      "count": 264,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.19546176819130778,
+        "long": 3.613557423930615
+      },
+      "group_jct_s": 3.613557423930615,
+      "cpu_s": {
+        "short": 0.02276008199999957,
+        "long": 0.30181122000000116
+      },
+      "rss_peak_bytes": 2213064704,
+      "cancel_at_s": null,
+      "parent_cpu_s": 1.754399015999999
+    },
+    {
+      "run_id": "no-contention-native_shared",
+      "arm": "native_shared",
+      "count": 72,
+      "service_peak": 2,
+      "overlap": false,
+      "client_jct_s": {
+        "long": 1.7226222408935428,
+        "short": 0.5485470797866583
+      },
+      "group_jct_s": 3.5485470797866583,
+      "cpu_s": {
+        "long": 0.9867775820000002,
+        "short": 0.43489450499999993
+      },
+      "rss_peak_bytes": 2245705728,
+      "cancel_at_s": null,
+      "parent_cpu_s": 0.39477707699999876
+    }
+  ],
+  "calibration": {
+    "median_long_jct_s": {
+      "2": 1.250661521917209,
+      "4": 0.9356073173694313
+    },
+    "selected_active_requests": 4,
+    "rule": "lowest median of the independent long64 two-repeat fixture calibration; tie uses smaller K"
+  },
+  "fixture_posts": 1384,
+  "all_protocol_complete": false,
+  "private_archive_sha256": "b6477c24bb4ce1c97234432a7522b1ded4c5fb63885933abe5ea8fc3adc6d48a",
+  "raw_sha256": "d9781d4ff91f49c36c2e3fedcb3c7371a02ad36355c0d61eb7ae7fb26d3b8236",
+  "actual_failed_cell_error_type": [
+    "TimeoutError"
+  ],
+  "audit_source_sha256": "4cd6477f9f009bddd0f74b12e9d1f38a5bf945b205a65c5b5da2d329f79c5f04",
+  "single_pair_effects": {
+    "native_shared": {
+      "short_jct_change_fraction": -0.6618302791446755,
+      "long_jct_change_fraction": -0.30938416643681876,
+      "throughput_change_fraction": 0.44798301950387387
+    },
+    "work_conserving": {
+      "short_jct_change_fraction": -0.2665266662769612,
+      "long_jct_change_fraction": 0.002501844578256529,
+      "throughput_change_fraction": -0.0024956009724940165
+    },
+    "strong_static": {
+      "short_jct_change_fraction": -0.23246362134948018,
+      "long_jct_change_fraction": 0.014569571306477291,
+      "throughput_change_fraction": -0.014360347203904333
+    }
+  },
+  "protocol_error_note": "top-level NoneType from cleanup exception replacement; failed cell retains TimeoutError and no model requests; original remains unchanged",
+  "server_fixture_charge": {
+    "first_failed_smoke_workload_charge": 112,
+    "second_exported_smoke_audited": 108,
+    "protocol_audited": 1384,
+    "conservative_total": 1604,
+    "cap": 4240,
+    "extra_after_window": 0
+  }
+}

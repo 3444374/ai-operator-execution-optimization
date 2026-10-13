@@ -133,3 +133,35 @@ Linux另暴露reader EOF与关闭流程同时关闭Pipe fd的竞态；新增单�
 修订只区分HTTP和Core容量观测；[108请求原件](raw/lotus_smoke_1dab41bc.json.gz)由新审计零HTTP复算，
 [reanalysis](raw/lotus_smoke_reanalysis_1dab41bc.json)确认完整消息/生成/输出/LM usage、两query/Job/session/进程、两服务槽及最终归零。
 三臂真实重叠、RSS峰值约2.14GB；这是实库桥接正确性资格，小样本JCT不作为模型收益。主长256/短8协议尚待执行。
+
+<a id="lotus-main-fixture"></a>
+## 长256／短8：已完成四臂，预算使完整协议未完成
+
+运行源码`9d3e4228676086a50355d48c06d419c617bfa44f`；[完整原件](raw/lotus_protocol_9d3e4228.json.gz)、
+[独立复算](raw/lotus_protocol_summary_9d3e4228.json)、[控制器](raw/lotus_protocol_controller_9d3e4228.json)和
+[释放证明](raw/lotus_release_proof_9d3e4228.json)分别保留。代码父仍为stability来源；本结果不重新绑定后续共同基点。
+本窗口始于05:20:39 UTC，截止05:50:39；修补后只用剩余152秒运行一次四臂，单次重复写入manifest，未暗称三轮完成。
+05:50:10 driver结束；第二个无竞争cell在frontend READY之前超时，0调用、最终Core/Job/lease归零，整协议退出1。
+顶层原件错误类型因cleanup替换异常显示NoneType；失败cell准确保存TimeoutError，复算明确这一诊断缺口，原件不改。
+
+已完成四个独立long64校准、四个long256/short8比较和一个native无竞争，共9个完整cell／1384个fixture POST。
+在校准中K=2／4的long JCT中位数1.2507／0.9356秒，因此内部三臂均选K=4，候选没有用短query结果选点。
+四比较臂各264次完整请求；正文、生成上限、输出、LM usage/cache、行身份、独立进程/Job/session及服务槽由复算确认。
+它们均实际重叠，两服务槽峰值2，RSS峰值≤2.25GB，模型/GPU/SQL均0。
+
+| 单次主场景 | 短query JCT秒 | 长query／整组JCT秒 | parent CPU秒 |
+|---|---:|---:|---:|
+| LOTUS native shared，保留每LM2请求池 | 0.5780 | 5.2324 | 0.6018 |
+| 新桥最少在途的工作守恒，K=4 | 0.2665 | 3.6045 | 1.7523 |
+| 新桥修后静态RR，K=4 | 0.2547 | 3.5617 | 1.7025 |
+| 新桥已封口小Job选择，K=4 | 0.1955 | 3.6136 | 1.7544 |
+
+候选较同桥static短JCT少23.25%，长JCT多1.46%、整组吞吐少1.44%；较工作守恒短JCT少26.65%，
+长多0.25%、吞吐少0.25%。只有一个样本，没有噪声/SLO依据，不据此宣布采用、稳定非劣或双GPU模型收益。
+native差距同时含原LM/SDK请求池与新执行路径的成本，不能全部归到机会选择；parent CPU含Core、fixture和编排，不能称纯调度CPU。
+实际语义入口是两个独立进程的`frame.sem_map`，不是SQL；文本是公开合成fixture标识，未执行SemBench真实评价集。
+
+完整无竞争static/candidate、真实LOTUS取消、连续短到达和重复均未完成；已有Linux12项桥及旧Core负例继续引用，不重复大范围复测。
+窗口累计按首次失败112预留＋已审计smoke108＋本协议1384保守计1604／4240，0模型调用；失败和已完成cell均保留。
+这是固定必要调用集合的执行/生命周期研究，不改变合法求值范围或LIMIT语义，原Q2 LIMIT5成绩不作为这里的全体质量依据。
+后续共同集成/模型预算及剩余资格只维护在[M4](../../../plans/数据组织.md#query-sharing-burst)，阶段源码与旧证据分别保留。
