@@ -1,5 +1,7 @@
 # 项目大纲
 
+2026-10-13接续：[原Q2双卡最后两项](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)在另授600秒窗口完成；双卡18／18位置按11＋5＋2三波分别保存，旧失败与质量不足保持。
+
 2026-10-13：[原Q2双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)完成5／7，双卡共覆盖16／18位置；第三轮S预检因Ray目录过长停止，R未运行。两批计时和服务历史分别保留，原LIMIT5官方F1=1.0与逐行recall0.5保持，剩两项不自动重启。
 
 2026-10-12：[原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)完成质量六路径与单卡全部18槽，双卡11槽后CLI启动确认JSON异常停止，余7槽未运行。实际7680模型调用／23040三跳POST，原LIMIT5官方F1=1.0与全分类FN7／召回0.5并列；单卡n3，双卡n1/n2，仅有限观察。原首次时钟、旧超时、原件及0资源残留保持。

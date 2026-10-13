@@ -1,8 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13接续：[原Q2最后S／R独立窗口](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
+固定3bd／原模型与参数，短Ray父目录22字节，四次真实零模型预检通过；只S／R各预热1测量1，480逻辑／1440POST、完整150.487／600秒。每副本240请求、337身份退出、CPU违规0／GPU空，两个旧时钟与账本保持。双卡三波11＋5＋2覆盖18／18，分波样本与旧失败保留；LIMIT5 F1=1.0／逐行recall0.5，不宣称连续n3或稳定排名。
+下方旧块保留各时点的资格与失败。
+
 2026-10-13：[原Q2双卡五项独立补测](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
 固定3bd53587，原双卡11项之外只补第二轮J与第三轮D／N／J／I，五个预热＋五个测量；实际1200逻辑／3600三跳POST、209.108秒，独立1800秒窗口。第三轮S因新Ray父目录38字节超过24字节预检退出1，R未运行。原时钟及账本保持；493组身份复查无存活、CPU违规0、GPU空。原LIMIT5 F1=1.0／完整recall0.5并列，两个窗口不合成连续n3或排名。
-比较源码及作者实现未改；当前剩第三轮S／R，后文旧块按当时资格解释。
+比较源码及作者实现未改；该时点剩第三轮S／R，后文旧块按当时资格解释。
 
 2026-10-12：[原Q2真实模型与部分双卡](../experiments/results/diagnostics/native_sembench_model_20261012/README.md)。
 固定3bd53587／原2000关系／120出现，质量6槽、单卡18槽、双卡11槽，7680模型／23040三跳POST。
