@@ -16,6 +16,16 @@ from ..execution_provider.adapters.native_tasks import NativeTaskSession, prepar
 from ..scheduling.core.session_contract import State
 from ..scheduling.endpoint_routing.replica_adaptation import ReplicaAdaptationConfig, ReplicaFeedback
 from .attempt_ledger import observe_async_http_posts
+from .attempt_ledger import AttemptBudget
+from .cell_budget import CellBudgetLedger
+
+
+def reuse_unused_budget(path, budget_id, deadline_utc):
+    ledger = CellBudgetLedger(path, AttemptBudget(budget_id, 820))
+    snapshot = ledger.snapshot()
+    if snapshot["allocated_requests"] or snapshot["units"] or snapshot["deadline_utc"] != deadline_utc:
+        raise ValueError("continuation requires the same untouched ledger and original deadline")
+    return ledger
 
 
 def load_preserved_calls(path, expected_sha256):

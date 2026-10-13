@@ -12,11 +12,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "postgres"))
 from test_semloom_model_replicas import Endpoint, directory
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
-from src.experiments.replica_model_replay import endpoint_rates, replay_batch
+from src.experiments.replica_model_replay import endpoint_rates, replay_batch, reuse_unused_budget
 from src.execution_provider.adapters.model_config import FixedModelConfig
 
 
 class ReplicaModelReplayTests(unittest.TestCase):
+    def test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "budget.sqlite"
+            deadline = time.time() + 60
+            ledger = CellBudgetLedger.create(path, AttemptBudget("window", 820), deadline_utc=deadline)
+            self.assertEqual(reuse_unused_budget(path, "window", deadline).snapshot(), ledger.snapshot())
+            with self.assertRaises(ValueError):
+                reuse_unused_budget(path, "window", deadline + 1)
+            ledger.reserve_unit("unused-but-reserved", 1)
+            with self.assertRaises(ValueError):
+                reuse_unused_budget(path, "window", deadline)
+
     def test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget(self):
         with Endpoint("a") as a, Endpoint("b") as b, tempfile.TemporaryDirectory() as root:
             root = Path(root)

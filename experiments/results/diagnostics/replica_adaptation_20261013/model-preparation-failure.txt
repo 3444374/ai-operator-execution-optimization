@@ -1,0 +1,37 @@
+2026-10-13T07:49:17Z
+{
+  "started_utc": 1791877529.0,
+  "deadline_utc": 1791878609.0,
+  "source_sha": "cb284fd237229a680bf903d76d2ef35600159cfa",
+  "budget_id": "replica-adapt-20261013-cb284fd2-0745",
+  "loading_s": 0.0,
+  "first_ready_utc": null,
+  "completed_topologies": [],
+  "mfu": "not_measured",
+  "memory_utilization_is_bandwidth_gbps": false,
+  "error_type": "TimeoutError",
+  "ended_utc": 1791877739.6966105,
+  "remaining_owned_pids": [],
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "replica-adapt-20261013-cb284fd2-0745",
+    "limit": 820,
+    "allocated_requests": 0,
+    "deadline_utc": 1791878609.0,
+    "units": []
+  },
+  "status": "failed",
+  "model_response_cleanup_is_process_exit": false,
+  "gpu_compute_after": []
+}
+Traceback (most recent call last):
+  File "/root/autodl-tmp/replica-adapt-20261013-cb284fd2-0745/source/code/scripts/benchmarks/replica_model_window.py", line 222, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/root/autodl-tmp/replica-adapt-20261013-cb284fd2-0745/source/code/scripts/benchmarks/replica_model_window.py", line 215, in main
+    raise failure
+  File "/root/autodl-tmp/replica-adapt-20261013-cb284fd2-0745/source/code/scripts/benchmarks/replica_model_window.py", line 100, in main
+    run("preflight", preflight, cutoff=args.started_utc + 120)
+  File "/root/autodl-tmp/replica-adapt-20261013-cb284fd2-0745/source/code/scripts/benchmarks/replica_model_window.py", line 91, in run
+    raise TimeoutError(label + " reached the window deadline")
+TimeoutError: preflight reached the window deadline

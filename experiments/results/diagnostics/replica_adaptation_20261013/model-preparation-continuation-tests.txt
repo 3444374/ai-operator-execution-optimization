@@ -1,0 +1,6 @@
+test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger (test_replica_model_replay.ReplicaModelReplayTests.test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK

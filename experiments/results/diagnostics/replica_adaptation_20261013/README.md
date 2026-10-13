@@ -72,3 +72,9 @@ Core供给与动作、250ms vLLM指标及1s逐卡GPU活动观察对所有臂启�
 [10项策略](model-replay-policy-tests.txt)包含压力过期回到已选静态K2，而不是两副本物理上限8。
 [早期驱动失败](model-replay-initial-failure.txt)保留：测试误要求每个fixed-rate评价臂都触及所有副本；修正为只从独立RR校准取冻结rate，没有重发模型。
 此处仍无新模型性能数据；后续窗口与控制改进分别登记。
+
+07:45:29 UTC开始有限窗口；本地载荷传输被自动审批拒绝后，已安全复用服务器原件且两SHA一致，无本地payload传输。
+07:48:59准备因驱动额外T0+120秒截止立即停止：[0 POST失败原件](model-preparation-failure.txt)，预留0、unit0、未加载模型。
+07:50:20独立确认无遗留。修订仅让preflight遵循原1080秒窗／180秒清理余量，
+只允许已证明零预留原账本续接，拒绝改deadline或任何已预留账本；[保护检查](model-preparation-continuation-tests.txt)通过。
+旧失败不改为成功、不退款、不重置原T0，不在半组模型观测中换控制器。

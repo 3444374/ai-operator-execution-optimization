@@ -22,7 +22,7 @@ sys.path.insert(0, str(CODE_ROOT))
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.process_sampling import ProcessSampler
-from src.experiments.replica_model_replay import JsonEvents
+from src.experiments.replica_model_replay import JsonEvents, reuse_unused_budget
 from src.execution_provider.adapters.model_replicas import ModelReplica, ModelReplicaSet
 
 
@@ -36,6 +36,8 @@ def main():
     parser.add_argument("--model-path", type=Path, required=True)
     parser.add_argument("--vllm-python", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--existing-unused-budget", type=Path,
+        help="continue only a proven zero-reservation preparation failure under its original deadline")
     args = parser.parse_args()
     root = args.output
     root.mkdir(mode=0o700, exist_ok=False)
@@ -44,11 +46,18 @@ def main():
         raise ValueError("window source differs from the frozen SHA")
     deadline = args.started_utc + 1080
     budget_id = root.parent.name
-    budget = CellBudgetLedger.create(root / "budget.sqlite", AttemptBudget(budget_id, 820), deadline_utc=deadline)
+    if args.existing_unused_budget is None:
+        budget = CellBudgetLedger.create(root / "budget.sqlite", AttemptBudget(budget_id, 820), deadline_utc=deadline)
+    else:
+        budget = reuse_unused_budget(args.existing_unused_budget, budget_id, deadline)
+    import fcntl
+    lock = budget.path.with_suffix(".window-lock").open("a")
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     owned, handles, leaders = {}, [], []
     report = dict(started_utc=args.started_utc, deadline_utc=deadline, source_sha=args.expected_sha,
                   budget_id=budget_id, loading_s=0.0, first_ready_utc=None, completed_topologies=[],
-                  mfu="not_measured", memory_utilization_is_bandwidth_gbps=False)
+                  mfu="not_measured", memory_utilization_is_bandwidth_gbps=False,
+                  continued_zero_reservation_budget=args.existing_unused_budget is not None)
     sampler = None
     health = JsonEvents(root / "health-get.jsonl")
 
@@ -97,7 +106,7 @@ def main():
     try:
         preflight = [sys.executable, "code/scripts/environment/manage_environment.py", "--env-file",
             str(args.env_file), "check", "--groups", "core,text-qwen7b", "--json-out", str(root / "preflight.json")]
-        run("preflight", preflight, cutoff=args.started_utc + 120)
+        run("preflight", preflight, cutoff=deadline - 180)
         devices = subprocess.check_output(["nvidia-smi", "--query-gpu=uuid", "--format=csv,noheader"], text=True).splitlines()
         existing = subprocess.check_output(["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"], text=True).strip()
         if len(devices) != 2 or existing:
@@ -169,7 +178,7 @@ def main():
             sampler.phase = topology + "-replay"
             run(topology + "-replay", [sys.executable, "code/scripts/benchmarks/replica_model_replay.py",
                 "--source", str(args.source), "--source-sha256", args.source_sha256,
-                "--replicas", str(root / "replicas.json"), "--budget", str(root / "budget.sqlite"),
+                "--replicas", str(root / "replicas.json"), "--budget", str(budget.path),
                 "--budget-id", budget_id, "--topology", topology, "--stop-new-post-utc", str(cutoff),
                 "--output", str(root / topology)], cutoff=cutoff + 35)
             report["completed_topologies"].append(topology)
@@ -211,6 +220,7 @@ def main():
         health.close()
         for handle in handles:
             handle.close()
+        lock.close()
     if failure:
         raise failure
     if report["remaining_owned_pids"] or report["gpu_compute_after"]:
