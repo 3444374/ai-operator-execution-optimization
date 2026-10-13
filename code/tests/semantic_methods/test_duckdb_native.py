@@ -346,8 +346,11 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertFalse(self.graph.last_close_report['clean'])
         self.assertTrue(self.graph.last_close_report['unconfirmed_work'])
         before = self.server.total_requests
-        with self.assertRaisesRegex(Exception, 'unconfirmed work'):
+        with self.assertRaises(Exception):
             self.select(['later'])
+        # The existing C ABI returns a generic SQL exception; the bridge keeps
+        # the Python executor's exact refusal cause without changing SQL text.
+        self.assertIn('unconfirmed work', self.bridge.last_error)
         self.assertEqual(self.server.total_requests, before)
 
     def test_fast_second_failure_keeps_first_input_error_and_try_usage(self):
