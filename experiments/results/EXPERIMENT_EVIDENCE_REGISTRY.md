@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-13：[第二独立N/S A资源停限](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-rss-scope)。源码8862c813/controller6bdffeaa，原4248计划/4608hard/600秒；79.520秒0逻辑/0POST，监督器未确认ready。80帧服务EngineCore误计、两API KILL/4 fallback、195身份/194PID独立释放、五史与时钟保持。12离线行为/80已知子集回放仅软件证据，新采样候选未模型运行，Q1质量/task-ready/供给仍pending。
+
 2026-10-13：[原Q2→Q1双卡N/S A启动失败](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-preflight)。公开源8862c813；计划4248／12744、hard4608／13824／600秒，实际0逻辑／0POST、无完整query。服务IPC141>107字节，26.959秒结束、68条启动身份记录（67个唯一PID）独立释放；旧四史及原时钟不变。2120 SDK mock／4 IPC绑定只作软件证据，Q1真实质量与供给仍pending；失败、摘要映射与未运行修复候选保留。
 
 2026-10-13：[原Q2阶段复算与私有账本诊断](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。

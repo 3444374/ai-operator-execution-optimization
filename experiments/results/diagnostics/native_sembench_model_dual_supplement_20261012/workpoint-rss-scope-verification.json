@@ -1,0 +1,149 @@
+{
+  "schema": "semloom.original_movie_dual_NS_A_resource_scope.v1",
+  "status": "failed_before_protocol_resource_scope_misclassified_services",
+  "run_id": "native-workpoint-20261013-0777397d",
+  "source_head": "8862c8130bfb53aaa4873ac83354b8afa4711d73",
+  "source_files_verified": 407,
+  "executed_controller": "6bdffeaa458676e2f7114b3cf80afd61a95341984d07e08ab22bc1a73d5f3b90",
+  "payload_files": 19,
+  "payload_bytes": 341198,
+  "uploaded_archive_sha256": "57c0ee83c1accb0c8c4bc3d3ece0d110fd8a17a7e0f647aee2b245a5f421aeb9",
+  "planned": {
+    "logical": 4248,
+    "posts": 12744
+  },
+  "hard": {
+    "logical": 4608,
+    "posts": 13824,
+    "seconds": 600,
+    "startup_seconds": 180,
+    "cleanup_reserve_seconds": 120,
+    "client_rss_bytes": 8589934592
+  },
+  "started_utc": "2026-10-13T14:54:13.124790+00:00",
+  "ended_utc": "2026-10-13T14:55:32.644809+00:00",
+  "independent_release_utc": "2026-10-13T14:57:37.537489+00:00",
+  "actual": {
+    "logical": 0,
+    "posts": 0,
+    "protocol_calls": 0,
+    "completed_q1": 0,
+    "completed_q2": 0,
+    "api_processes_started": 2,
+    "supervisor_confirmed_ready": 0,
+    "elapsed_seconds": 79.520018897,
+    "startup_seconds": 39.90964031312615
+  },
+  "readiness_limit": "service logs reached engine/application startup during cleanup; supervisor did not confirm ready, protocol or queries",
+  "assets": {
+    "new_readonly_sha_and_versions_verified": true,
+    "model_fingerprint": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+    "reused_original_request_preparation": true,
+    "new_mock_or_tokenizer_runs": 0,
+    "no_install_download": true
+  },
+  "failure": {
+    "kind": "service engines counted as client RSS by unreliable environment-role exclusion",
+    "samples": 80,
+    "original_peak_sum_bytes": 9034985472,
+    "service_engine_bytes_in_peak": 8942260224,
+    "same_frame_engine_subtracted_bytes": 92725248,
+    "max_all_frames_engine_subtracted_bytes": 115216384,
+    "diagnostic_only": true,
+    "original_stop_retained": true,
+    "engine_identities": [
+      {
+        "pid": 444005,
+        "born": 1791903278.23,
+        "name": "VLLM::EngineCore",
+        "affinity": [
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89
+        ]
+      },
+      {
+        "pid": 444012,
+        "born": 1791903278.39,
+        "name": "VLLM::EngineCore",
+        "affinity": [
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97
+        ]
+      }
+    ],
+    "old_ipc_overlength_error_observed": false
+  },
+  "cleanup": {
+    "identity_records": 195,
+    "unique_pids": 194,
+    "same_identity_live": 0,
+    "lease_exists": false,
+    "gpu_compute": 0,
+    "service_forced_cleanup": true,
+    "api_kill_count": 2,
+    "fallback_processes_before_final_cleanup": 4,
+    "watchdog_forced_cleanup": false,
+    "watchdog_stop_sent": false,
+    "own_clock_unchanged": true,
+    "old_histories_unchanged": 5
+  },
+  "candidate": {
+    "helper_sha256": "e34e2846c3f8127e5e4520d0375979b50ed8c0233baf8901cf37207dfae74ba8",
+    "lifecycle_sha256": "57f816dbdce605376aca56478d6fc7d7bd4ce8d3f8ba6857af2e1ac8a38dc829",
+    "files": {
+      "pilot_supervisor.py": {
+        "bytes": 16866,
+        "sha256": "e34e2846c3f8127e5e4520d0375979b50ed8c0233baf8901cf37207dfae74ba8"
+      },
+      "matched_lifecycle.py": {
+        "bytes": 9911,
+        "sha256": "57f816dbdce605376aca56478d6fc7d7bd4ce8d3f8ba6857af2e1ac8a38dc829"
+      }
+    },
+    "changed_helpers": 2,
+    "uploaded": false,
+    "model_executed": false,
+    "hard_rss_bytes": 8589934592,
+    "offline_behavior_cases": 12,
+    "targeted_sample_replays": 80,
+    "replay_frames_with_unknown_ancestry": 1,
+    "fix": "registered API PID/birth families, retained after reparenting; known-member reads fail closed; spawn/register/publish and snapshot share one lock; client/supervisor/watchdog remain charged; recheck original work deadline after lock and before API timestamp/publication/Popen",
+    "next_fresh_window_required": true
+  },
+  "limitations": [
+    "Q1 real model quality/supply/JCT and N/S comparison still unavailable; queries not run",
+    "posthoc startup subtraction and offline identity cases are not client-tree/Q1 resource qualification",
+    "preserve original failed stop, force cleanup and first offline fixture failure; no clock reset",
+    "retain prior Q2 LIMIT5F1=1.0 but row recall0.5; no stableP99 or performance ranking"
+  ],
+  "archive": {
+    "path": "workpoint-rss-scope-evidence.tar.gz",
+    "bytes": 348653,
+    "sha256": "acd2d522ca70bc560c2a432c077528cb6e3694615fcceeb015c945c36a801222",
+    "members": 59,
+    "unique_mapped_members": 55,
+    "reused_original_members": 30,
+    "retained_private_members": 1
+  },
+  "prior_public_archive": {
+    "path": "workpoint-preflight-evidence.tar.gz",
+    "sha256": "60f3c585bb4ce103807ca8439bc4c093abf053138719be14ddc5b6fcf8dc4018"
+  },
+  "private_archive": {
+    "bytes": 1364410,
+    "sha256": "e0c3769e8388f15df9225a904a2acdd28505d909b41809048b51f9f5e388808d",
+    "members": 65
+  }
+}

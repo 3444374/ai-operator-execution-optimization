@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-13：原N/S A短IPC独立窗口资源误计与释放
+
+- 精确19文件341198字节获得用户单独授权后上传，SHA与目的地不变；原407源／模型／服务版本核验通过，独立14:54:13 UTC启动，未重用旧额度。
+- 79.520秒0逻辑／0POST：两服务EngineCore误入client8GiB求和，监督器未确认ready，原查询未执行。服务两API KILL与4后代fallback保留，195身份／194PID独立无存活，GPU／共同锁空、五份旧历史及本时钟保持。
+- [同题主报告](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-rss-scope)保留原80帧和回溯局限；两私有helper的PID/birth服务家族、读取失败停窗及登记同步候选仅本地12项行为／80已知子集回放，无新模型窗口。
+
 ## 2026-10-13：最小原Movie N/S A窗口启动失败与IPC修复候选
 
 - 沿[原工作点](experiments/plans/语义系统对照.md#sembench-native-workpoint)固定整合8862c813与原模型／数据，2120原生SDK mock和真实tokenizer上下文核验通过；本次不改生产路径或扩大候选。

@@ -5,7 +5,7 @@
 本次LOTUS线的近期任务按以下顺序推进，详细量与停止条件归[同题阶段分析](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，不再另建总计划：
 
 1. 处理私有发送账本的历史增长成本。实际三个账本四条计数均全表扫描，有界零模型并发诊断已确认本地扰动；预算组件局部修订已通过14项无模型回归与配对诊断，四组串行匹配Q2已完成，实际原值与阶段见[本轮记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)，不改SemLoom补偿观察成本。
-2. 建立合理单／双卡工作点。Q2保留小成本参照，原Q1完整2000行与Q3 COUNT分别承担持续供给和质量；各后端少量自身配置，核对实际并发，扩副本供给与固定总预算的方法比较分别设计。 新N/S A先行窗口在API就绪前因IPC地址超限停止，0模型请求；[失败与修复候选](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-preflight)保留，Q1真实质量／供给仍待，未展开最大矩阵。
+2. 建立合理单／双卡工作点。Q2保留小成本参照，原Q1完整2000行与Q3 COUNT分别承担持续供给和质量；各后端少量自身配置，核对实际并发，扩副本供给与固定总预算的方法比较分别设计。 原N/S A两次独立窗口因IPC超限、服务RSS误计停止，均0模型调用；[最新失败与采样候选](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-rss-scope)保留，Q1真实质量／供给仍待，未展开最大矩阵。
 3. 推进一个双副本长短查询共享实验，使用真实多Job入口，面对合理原生共享、工作守恒简单分配和已修强静态版本。复用现有责任机制；图像及多节点按后续实际需要开展。
 
 [IMLane显式2000行能力与同步／可选async软件证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md)已提供；旧默认128配置仍作兼容选择，原Q1／Q3完整真实模型与共享Coordinator并发分别待对应方案。持久计数修订已在有限匹配窗口部署；本次未实施后续长测。
