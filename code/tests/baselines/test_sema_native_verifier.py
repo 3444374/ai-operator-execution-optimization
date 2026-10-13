@@ -13,6 +13,16 @@ from src.execution_provider.adapters.full_response import FullModelResponse
 check_outcomes, main = verifier.check_outcomes, verifier.main
 
 class SemaNativeVerifierTests(unittest.TestCase):
+    def test_private_ray_address_must_be_a_declared_local_interface(self):
+        import socket
+        with mock.patch('psutil.net_if_addrs', return_value={
+                'local': [SimpleNamespace(family=socket.AF_INET, address='192.0.2.10')]}):
+            verifier.validate_ray_address('192.0.2.10:46520')
+            with self.assertRaisesRegex(ValueError, 'local interface'):
+                verifier.validate_ray_address('192.0.2.11:46520')
+        for address in ('auto', 'local', '127.0.0.1:0', '127.0.0.1:65536', '999.0.0.1:46520'):
+            with self.subTest(address=address), self.assertRaises(ValueError):
+                verifier.validate_ray_address(address)
     def response(self, headers=(("X-Repeated", "one"), ("X-Repeated", "two"))):
         return FullModelResponse(429, headers, b"not-json")
 

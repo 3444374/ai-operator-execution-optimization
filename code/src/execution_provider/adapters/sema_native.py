@@ -64,7 +64,8 @@ class SemaNativeService(SemaRequestService):
     _uses_upstream_client = False
 
     def __init__(self, *, query_id, upstream_url, limits, trace_path, backend, options=None,
-                 held_request_capacity=128, snapshot_rows=None, native_limits=None, executor=None):
+                 held_request_capacity=128, snapshot_rows=None, native_limits=None, executor=None,
+                 listen_port=0):
         if backend not in ('daft', 'ray-data', 'imlane'):
             raise ValueError('Sema native backend must be daft, ray-data or imlane')
         if type(held_request_capacity) is not int or not 1 <= held_request_capacity <= 128:
@@ -89,7 +90,7 @@ class SemaNativeService(SemaRequestService):
                 raise ValueError('Sema native snapshot rows exceed held request capacity')
         super().__init__(query_id=query_id, upstream_url=upstream_url, limits=limits,
                          trace_path=trace_path, upstream_concurrency=held_request_capacity,
-                         held_request_capacity=held_request_capacity)
+                         held_request_capacity=held_request_capacity, listen_port=listen_port)
         if limits.timeout_s > 120 or max(limits.request_bytes, limits.response_bytes) > 8 * 1024 * 1024:
             raise ValueError('Sema native complete calls require at most 120 seconds and 8 MiB')
         if executor is None:

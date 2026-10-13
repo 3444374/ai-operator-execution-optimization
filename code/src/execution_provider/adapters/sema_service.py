@@ -88,11 +88,14 @@ class SemaRequestService:
     _uses_upstream_client = True
 
     def __init__(self, *, query_id, upstream_url, limits, trace_path, before_post=None,
-                 upstream_concurrency=0, held_request_capacity=0):
+                 upstream_concurrency=0, held_request_capacity=0, listen_port=0):
         if not isinstance(query_id, str) or not query_id or len(query_id.encode()) > 128:
             raise ValueError('Sema query identity must contain 1..128 UTF-8 bytes')
         if type(limits) is not SemaServiceLimits:
             raise ValueError('Sema service requires explicit limits')
+        if type(listen_port) is not int or not 0 <= listen_port <= 65535:
+            raise ValueError('Sema loopback listen port must be from 0 to 65535')
+        self.listen_port = listen_port
         if type(upstream_concurrency) is not int or not 0 <= upstream_concurrency <= 256:
             raise ValueError('Sema upstream connector capacity must be from 0 to 256')
         if (type(held_request_capacity) is not int or not 0 <= held_request_capacity <= 256
@@ -698,7 +701,7 @@ class SemaRequestService:
                                   handler_cancellation=True, lingering_time=0)
             self._runner = runner
             await runner.setup()
-            site = web.TCPSite(runner, '127.0.0.1', 0)
+            site = web.TCPSite(runner, '127.0.0.1', self.listen_port)
             await site.start()
             self._port = site._server.sockets[0].getsockname()[1]
 

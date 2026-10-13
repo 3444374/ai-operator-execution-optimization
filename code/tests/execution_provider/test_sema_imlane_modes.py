@@ -1,19 +1,23 @@
 """Both public IMLane modes on localhost protocol fixtures, without author/model execution."""
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from dataclasses import replace
+import copy
+import importlib.util
 import json
 import os
 from pathlib import Path
 import sys
 import sysconfig
 import tempfile
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 import unittest
 from unittest import mock
 
 from src.baselines.text.frameworks.imlane_calls import IMLaneCallConfig
 from src.baselines.text.frameworks.imlane_limits import IMLaneBatchLimits
-from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+from src.baselines.text.frameworks.native_calls import (
+    NativeCall, NativeCallExecutor, NativeCallOutcome, _call_wire, _outcome_wire,
+)
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.execution_provider.adapters.sema_imlane import AUTHOR_COMMIT
@@ -194,6 +198,186 @@ class SemaIMLaneModeTests(unittest.TestCase):
 
 
 class SemaIMLaneMethodVerifierTests(unittest.TestCase):
+    def test_worker_trace_checks_actual_author_libraries_and_two_workers_and_actors(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        modules = {'pyarrow': dict(version='16.1.0', source_sha256='a'*64),
+                   'aiohttp': dict(version='3.14.5', source_sha256='b'*64),
+                   'src.baselines.text.frameworks.native_calls': dict(source_sha256=
+                       verifier.fixture_module.digest(verifier.CODE/'src/baselines/text/frameworks/native_calls.py'))}
+        preflight = dict(author=dict(modules={name:dict(sha256=modules[name]['source_sha256'])
+                                             for name in ('pyarrow','aiohttp')}))
+        rows = [dict(kernel_sha256=verifier.fixture_module.digest(verifier.CODE/'integrations/sema/imlane_complete_call.py'),
+            runtime=dict(python_version=[3,12,1],python_prefix='/author',python_executable='/author/bin/python',
+                         modules=copy.deepcopy(modules)), status=200,worker_pid=100+i,ray_actor_id='actor-'+str(i))
+            for i in range(2)]
+        report = dict(runtime='ray', kernel_traces=rows)
+        self.assertTrue(verifier.check_author_runtime_traces(report, preflight)['passed'])
+        for field, bad in (('kernel_sha256','old'), ('worker_pid',100), ('ray_actor_id','actor-0')):
+            changed = copy.deepcopy(report)
+            changed['kernel_traces'][1][field] = bad
+            with self.assertRaises(ValueError):
+                verifier.check_author_runtime_traces(changed, preflight)
+        for name, field, bad in (('pyarrow','version','24.0.0'), ('aiohttp','version','3.14.3'),
+                                ('pyarrow','source_sha256','old'),
+                                ('src.baselines.text.frameworks.native_calls','source_sha256','old')):
+            changed = copy.deepcopy(report)
+            changed['kernel_traces'][1]['runtime']['modules'][name][field] = bad
+            with self.assertRaises(ValueError):
+                verifier.check_author_runtime_traces(changed, preflight)
+        self.assertTrue(verifier.check_author_runtime_traces(dict(runtime='cpython',kernel_traces=rows),preflight)['passed'])
+
+    def test_kernel_trace_observes_loaded_modules_without_changing_complete_response(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        def table(columns):
+            return {key:[SimpleNamespace(as_py=lambda value=value:value) for value in values]
+                    for key, values in columns.items()}
+        call = NativeCall('trace-fixture',0,b'{}','http://localhost/fixture',(),1)
+        response = NativeCallOutcome(call.call_id,call.row_id,FullModelResponse(200,(),b'unchanged'))
+        result = table(dict(native_outcome=[_outcome_wire(response)]))
+        original = ModuleType('integrations.sema.imlane_http_udf')
+        original.complete_http = mock.Mock(return_value=result)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            loaded = {}
+            for name, version in (('pyarrow','16.1.0'),('aiohttp','3.14.5')):
+                source = root/(name+'.py');source.write_text('fixture loaded module\n')
+                loaded[name] = ModuleType(name)
+                loaded[name].__file__, loaded[name].__version__ = str(source), version
+            path = verifier.CODE/'integrations/sema/imlane_complete_call.py'
+            spec = importlib.util.spec_from_file_location('imlane_observation_fixture',path)
+            module = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(sys.modules, dict(loaded, **{original.__name__:original, 'ray':None})), \
+                 mock.patch.dict(os.environ, {'IMLANE_HTTP_TRACE_DIR':str(root/'traces')}):
+                spec.loader.exec_module(module)
+                observed = module.complete_http(table(dict(native_call=[_call_wire(call)])))
+            self.assertIs(observed, result)
+            original.complete_http.assert_called_once()
+            row = json.loads(next((root/'traces').glob('*.jsonl')).read_text())
+            runtime = row['runtime']
+            self.assertEqual(runtime['python_version'], list(sys.version_info[:3]))
+            self.assertEqual(runtime['python_prefix'], sys.prefix)
+            self.assertEqual(runtime['python_executable'], sys.executable)
+            for name, version in (('pyarrow','16.1.0'),('aiohttp','3.14.5')):
+                self.assertEqual(runtime['modules'][name]['version'], version)
+                self.assertEqual(runtime['modules'][name]['source_sha256'],
+                                 verifier.fixture_module.digest(root/(name+'.py')))
+            self.assertEqual(runtime['modules']['src.baselines.text.frameworks.native_calls']['source_sha256'],
+                            verifier.fixture_module.digest(verifier.CODE/'src/baselines/text/frameworks/native_calls.py'))
+
+    def test_sema_only_needs_no_other_supplier_assets_and_keeps_owned_ports(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        argv = ['--author-root','/tmp/fixed-author','--bridge-binary','/tmp/bridge',
+                '--output','/tmp/rs7/new-run','--driver-python','/tmp/driver/bin/python',
+                '--methods','sema','--sema-binary','/tmp/fixed-sema','--fixture-port','46510',
+                '--model-fixture-port','46513','--service-port','46511',
+                '--observation-port','46512','--coordinator-port-start','46650',
+                '--ray-address','127.0.0.1:46520','--ray-temp-root','/tmp/rs7',
+                '--expected-cpus','8-15']
+        args = verifier.parse_arguments(argv)
+        self.assertEqual(args.methods, ('sema',))
+        self.assertIsNone(args.duckdb_extension)
+        self.assertIsNone(args.lotus_native_source)
+        self.assertIsNone(args.tokenizer)
+        self.assertEqual(args.coordinator_ports, {'cpython':46650, 'ray':46651})
+        self.assertEqual(args.expected_cpus, tuple(range(8, 16)))
+        self.assertEqual(args.ray_address, '127.0.0.1:46520')
+        self.assertEqual(verifier.check_ray_temp_path(args.author_root, args.ray_temp_root)['parent'], str(args.ray_temp_root))
+        program = verifier.method_client_program(args)
+        constants = {}
+        exec(program.split('import json,os,pathlib,sys,sysconfig,time', 1)[0], constants)
+        self.assertEqual(constants['METHODS'], ('sema',))
+        self.assertIsNone(constants['DUCKDB_EXTENSION'])
+        self.assertEqual(constants['MODEL_FIXTURE_PORT'], 46513)
+        self.assertEqual(constants['SERVICE_PORT'], 46511)
+        self.assertEqual(constants['OBSERVATION_PORT'], 46512)
+        compile(program, 'sema-only-method-client', 'exec')
+        for extra in (['--methods','sema,sema'], ['--fixture-port','46511'],
+                      ['--ray-address','auto'], ['--expected-cpus','15-8']):
+            with mock.patch('sys.stderr'), self.assertRaises(SystemExit):
+                verifier.parse_arguments(argv + extra)
+
+    def test_fixture_listener_wrapper_keeps_original_handler(self):
+        from integrations.sema.verify_imlane_methods import listen_server_factory
+        original = mock.Mock(return_value='same-server')
+        handler = object()
+        self.assertIs(listen_server_factory(original, 0), original)
+        self.assertEqual(listen_server_factory(original, 46513)(('127.0.0.1', 0), handler), 'same-server')
+        original.assert_called_once_with(('127.0.0.1', 46513), handler)
+
+    def test_sema_only_client_uses_public_sema_queries_without_other_assets(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        from src.experiments.postgresql import supplier_adapter_query as supplier
+        from src.experiments.postgresql import persistent_native_adapter_query as persistent
+        from tests.experiments import test_native_adapter_query as fixture
+        active, calls = [], []
+        @contextmanager
+        def model_fixture(**_options):
+            posts = []
+            active.append(posts)
+            try:
+                yield 'http://127.0.0.1:46513/v1/chat/completions', posts
+            finally:
+                active.pop()
+        def query(arm, **options):
+            rows = list(options['load_source']())
+            calls.append((arm, len(rows), options))
+            active[-1].extend(rows)
+            service = dict(uncertain_requests=0, native_bridge_thread_alive=False, held_requests=0,
+                native_driver_stopped=True, imlane_runtime='cpython', imlane_runtime_verified=True,
+                native_close_reports=[dict(clean=True)])
+            return dict(status='passed', actual_posts=len(rows), execution=dict(recorded_rows=len(rows)),
+                identity=dict(imlane_runtime='cpython'), runtime=dict(owner='IMLane author Coordinator'),
+                request_service=service)
+        class Group:
+            def __init__(self, arms, **options):
+                self.arm, self.options = arms[0], options
+            def __enter__(self): return self
+            def __exit__(self, *_args): pass
+            def run(self, arm, **options): return query(arm, **dict(self.options, **options))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            bridge = root / 'bridge.json'
+            bridge.write_text(json.dumps(dict(env={})))
+            config = root / 'config.json'
+            config.write_text(json.dumps(dict(fixture_endpoint='http://127.0.0.1:46510/complete',
+                runtime='cpython', coordinator_pid=123, coordinator_start_ticks=456,
+                bridge_config_path=str(bridge), author_build_identity=str(root / 'author/artifacts/build-patched/build.json'))))
+            args = SimpleNamespace(duckdb_extension=None, sema_binary=root/'sema', methods=('sema',),
+                                   model_fixture_port=46513, service_port=46511, observation_port=46512)
+            with mock.patch.object(sys, 'argv', ['client', str(verifier.CODE), str(config), 'None', 'None', str(root/'result.json')]), \
+                 mock.patch.object(sys, 'path', list(sys.path)), mock.patch.dict(os.environ, {}), \
+                 mock.patch.object(supplier, 'run_supplier_query', side_effect=query), \
+                 mock.patch.object(persistent, 'PersistentAdapterGroup', Group), \
+                 mock.patch.object(fixture, 'fixture_server', model_fixture), \
+                 mock.patch.object(fixture, 'ThreadingHTTPServer'), \
+                 mock.patch.object(supplier, 'ObservationGateway'), \
+                 mock.patch.object(persistent, 'ObservationGateway'):
+                exec(compile(verifier.method_client_program(args), 'sema-only-public-routing', 'exec'), {})
+            self.assertEqual([(arm, count) for arm, count, _ in calls],
+                [('sema-native-imlane-request-service',4), ('sema-native-imlane-request-service',2),
+                 ('sema-native-imlane-request-service',2)])
+            self.assertTrue(all(options['tokenizer_path'] is None for _, _, options in calls))
+            self.assertIsNone(calls[0][2]['duckdb_library'])
+            self.assertTrue(all(options['sema_service_config'].listen_port == 46511 for _, _, options in calls))
+            self.assertEqual(json.loads((root/'result.json').read_text())['fixture_posts'], 8)
+
+    def test_bridge_build_requires_matching_fixed_source_binary_and_success(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / 'bridge'
+            binary.write_bytes(b'protocol identity fixture; no author binary')
+            evidence = dict(upstream_commit=AUTHOR_COMMIT, returncode=0,
+                binary_sha256=verifier.fixture_module.digest(binary),
+                source_sha256=verifier.fixture_module.digest(verifier.CODE / 'integrations/sema/imlane_http.cpp'))
+            build = binary.with_suffix('.build.json')
+            build.write_text(json.dumps(evidence))
+            self.assertEqual(verifier.check_bridge_identity(binary)['binary_sha256'], evidence['binary_sha256'])
+            for change in (dict(returncode=1), dict(binary_sha256='0'*64),
+                           dict(source_sha256='0'*64), dict(upstream_commit='0'*40)):
+                build.write_text(json.dumps(dict(evidence, **change)))
+                with self.assertRaisesRegex(ValueError, 'six-capacity ABI'):
+                    verifier.check_bridge_identity(binary)
+
     def test_fixed_runtime_versions_and_uninitialized_ray_are_required(self):
         from integrations.sema.verify_imlane_methods import check_runtime_versions
         identity = dict(python_version=[3, 12], ray_initialized=False,

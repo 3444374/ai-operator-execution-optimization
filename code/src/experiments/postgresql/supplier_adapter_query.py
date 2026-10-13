@@ -672,13 +672,15 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                     service=stack.enter_context(SemaRequestService(query_id=unit_id,upstream_url=routed.endpoint_url,
                         limits=limits,trace_path=root/'sema-service.jsonl',
                         upstream_concurrency=options.concurrency if arm!='sema-native-transparent' else 0,
-                        held_request_capacity=held_tasks if arm=='sema-bounded-pipeline-diagnostic' else 0))
+                        held_request_capacity=held_tasks if arm=='sema-bounded-pipeline-diagnostic' else 0,
+                        listen_port=sema_service_config.listen_port if sema_service_config else 0))
                 elif use_core:
                     service=stack.enter_context(SemaSemLoomService(query_id=unit_id,model_config=routed,physical=physical,
                         limits=limits,trace_path=root/'sema-service.jsonl',max_held_tasks=held_tasks,
                         max_active_requests=options.concurrency,
                         local_diagnostic=local,
-                        executor_owner=owner.sema_executor if owner is not None else None))
+                        executor_owner=owner.sema_executor if owner is not None else None,
+                        listen_port=sema_service_config.listen_port if sema_service_config else 0))
                 elif arm in SEMA_NATIVE_ARMS:
                     service_started=time.monotonic_ns()
                     service=open_native_service(stack,arm,query_id=unit_id,model=routed,limits=limits,

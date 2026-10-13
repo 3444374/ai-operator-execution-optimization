@@ -20,7 +20,8 @@ class SemaServiceConfigTests(unittest.TestCase):
     def config(self):
         return SemaServiceConfig(request_bytes=8192, response_bytes=4096, intake_requests=3,
             intake_bytes=49152, snapshot_rows=2, snapshot_payload_bytes=16384,
-            pending_response_bytes=12288, cumulative_response_bytes=32768, query_response_bytes=65536)
+            pending_response_bytes=12288, cumulative_response_bytes=32768, query_response_bytes=65536,
+            listen_port=46511)
 
     def test_public_configuration_roundtrip_retains_all_capacities(self):
         config = self.config()
@@ -38,6 +39,9 @@ class SemaServiceConfigTests(unittest.TestCase):
             pending_response_bytes=12288, cumulative_response_bytes=32768))
 
     def test_invalid_capacities_fail_before_query_reservation(self):
+        for port in (-1, 65536, True, '46511'):
+            with self.subTest(port=port), self.assertRaises(ValueError):
+                SemaServiceConfig(listen_port=port)
         for field in ('snapshot_rows', 'snapshot_payload_bytes', 'pending_response_bytes',
                       'cumulative_response_bytes', 'query_response_bytes', 'intake_bytes'):
             with self.subTest(field=field), self.assertRaises(ValueError):
@@ -61,6 +65,7 @@ class SemaServiceConfigTests(unittest.TestCase):
                     limits=config.service_limits(8, 5), trace_path=Path('/tmp/unused-sema-config.jsonl'),
                     options=NativeGraphOptions(), held_tasks=4, service_config=config)
                 self.assertEqual(service.native_limits, config.native_limits(4))
+                self.assertEqual(service.listen_port, 46511)
                 self.assertEqual(create.call_args.kwargs['max_batch_rows'], 2)
                 self.assertEqual(create.call_args.kwargs['max_batch_bytes'], 32768)
 

@@ -38,7 +38,7 @@ def write_log(path, value):
 
 
 class HTTPFixture:
-    def __init__(self):
+    def __init__(self, port=0):
         self.receipts, self.lock = [], threading.Lock()
         self.slow_started = threading.Event()
         owner = self
@@ -80,7 +80,7 @@ class HTTPFixture:
                     self.wfile.flush()
                 except (BrokenPipeError, ConnectionResetError):
                     pass
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -144,7 +144,8 @@ def check_mode(args, runtime, helper, fixture):
         "lib=pyarrow.get_library_dirs()[0],base=sys.base_prefix)))"], text=True))
     cpp = Path(subprocess.check_output(["g++", "-print-file-name=libstdc++.so.6"], text=True).strip()).resolve()
     namespace = "ic-" + runtime + "-" + token
-    port = helper.free_port()
+    declared_ports = getattr(args, "coordinator_ports", {})
+    port = declared_ports[runtime] if runtime in declared_ports else helper.free_port()
     env = dict(os.environ, CUDA_VISIBLE_DEVICES="", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
         PATH=str(python.parent)+os.pathsep+os.environ["PATH"],
         PYTHONPATH=os.pathsep.join([info["site"],str(CODE),str(CODE/"integrations/sema")]),
@@ -161,7 +162,8 @@ def check_mode(args, runtime, helper, fixture):
     executors = []
     known = {}
     report = dict(runtime=runtime, namespace=namespace, cpu_affinity=sorted(os.sched_getaffinity(0)),
-                  declared_author_executors=2, ray_cpu_resources=2 if runtime=="ray" else 0,
+                  declared_author_executors=2,
+                  ray_cpu_resources=(None if getattr(args,"ray_address",None) else 2) if runtime=="ray" else 0,
                   gpu_resources=0, model_runs=0, retries=0, stages={})
     monitor_stop = threading.Event()
     def monitor():
@@ -186,21 +188,39 @@ def check_mode(args, runtime, helper, fixture):
                  "--n_executors","2","--runtime",runtime,"--gateway_port",str(port)]
         if runtime=="ray":
             ray_root=out/"ray";ray_root.mkdir()
-            short=author.parents[1]/("ir-"+token)
-            short.symlink_to(ray_root,target_is_directory=True)
             address=out/"ray-address.json"
-            code=("import sys,ray,json;ctx=ray.init(address='local',num_cpus=2,num_gpus=0,"
-                "include_dashboard=False,object_store_memory=134217728,_node_ip_address='127.0.0.1',"
-                "_temp_dir=sys.argv[1]);open(sys.argv[2],'w').write(json.dumps("
-                "dict(address=ctx.address_info['gcs_address'])));sys.stdin.readline();ray.shutdown()")
-            owner,owner_writer=helper.spawn([str(python),"-c",code,str(short),str(address)],
+            external_address = getattr(args, "ray_address", None)
+            if external_address:
+                if external_address in ("auto", "local"):
+                    raise ValueError("author Ray requires the explicit caller-owned GCS address")
+                selected = external_address
+                init = "ctx=ray.init(address=sys.argv[1]);"
+                report["ray_cluster_owner"] = "external caller; verifier disconnects its driver only"
+            else:
+                short_parent = getattr(args, "ray_temp_root", None) or author.parents[1]
+                short=Path(short_parent)/("ir-"+token)
+                if len(os.fsencode(short.absolute())) > 50 or short.exists() or short.is_symlink():
+                    raise ValueError("author Ray temporary directory must be new and short before startup")
+                short.parent.mkdir(parents=True,exist_ok=True)
+                short.symlink_to(ray_root,target_is_directory=True)
+                selected = str(short)
+                init = ("ctx=ray.init(address='local',num_cpus=2,num_gpus=0,"
+                    "include_dashboard=False,object_store_memory=134217728,_node_ip_address='127.0.0.1',"
+                    "_temp_dir=sys.argv[1]);")
+                report["ray_cluster_owner"] = "verifier"
+            code=("import sys,ray,json;"+init+"open(sys.argv[2],'w').write(json.dumps("
+                "dict(address=ctx.address_info['gcs_address'],resources=ray.cluster_resources())));sys.stdin.readline();ray.shutdown()")
+            owner,owner_writer=helper.spawn([str(python),"-c",code,str(selected),str(address)],
                                            env,out/"ray-owner.log",stdin=True)
             until=time.monotonic()+60
             while not address.is_file():
                 if owner.poll() is not None or time.monotonic()>until:
                     raise RuntimeError("owned zero-GPU Ray did not start")
                 time.sleep(.05)
-            command+=["--ray_address",json.loads(address.read_text())["address"]]
+            actual_ray=json.loads(address.read_text())
+            report['ray_cluster_resources']=actual_ray['resources']
+            report['ray_cpu_resources']=actual_ray['resources'].get('CPU',0)
+            command+=["--ray_address",actual_ray["address"]]
         service,writer=helper.spawn(command,env,out/"coordinator.log")
         until=time.monotonic()+60
         while True:
@@ -281,21 +301,17 @@ def check_mode(args, runtime, helper, fixture):
         value,=timed.iter_batch([NativeCall("http-timeout",0,b"{}",fixture.base+"/slow",(),.1)],timeout_s=10)
         assert value.response is None and value.transport_error
         report["stages"]["http_timeout"]=dict(timed.last_close_report,error_type=value.transport_error.split(":",1)[0])
-        fixture.slow_started.clear()
-        cancelled=threading.Event()
-        stopped=executor()
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            future=pool.submit(lambda:list(stopped.iter_batch([NativeCall("cancel-sent",0,b"{}",
-                fixture.base+"/slow",(),2)],cancelled=cancelled.is_set,timeout_s=10)))
-            assert fixture.slow_started.wait(5)
-            cancelled.set()
-            try:
-                future.result(timeout=5)
-                raise AssertionError("sent cancellation was ignored")
-            except InterruptedError:
-                pass
-        report["stages"]["cancel_after_send"]=stopped.last_close_report
-        assert stopped.last_close_report["external_coordinator_requires_cleanup"]
+        assert timed.last_close_report["external_coordinator_requires_cleanup"]
+        # A timeout without a complete HTTP response keeps this Coordinator unknown.
+        # The independent cancellation case must use a separately owned Coordinator.
+        blocked=executor()
+        with_error = None
+        try:
+            list(blocked.iter_batch([NativeCall("reuse-unknown",0,b"{}",fixture.base+"/slow",(),2)]))
+        except RuntimeError as error:
+            with_error = str(error)
+        assert with_error and "cleanup" in with_error
+        report["stages"]["unknown_coordinator_reuse_blocked"] = True
         time.sleep(.6)
         report["normal_checks_passed"]=True
     except Exception as error:

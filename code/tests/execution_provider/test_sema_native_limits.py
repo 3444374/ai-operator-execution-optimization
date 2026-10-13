@@ -2,20 +2,23 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from dataclasses import replace
 import json
 import os
 from pathlib import Path
+import socket
 from types import SimpleNamespace
 import tempfile
 import threading
 import time
 import unittest
 from urllib import error, request
+from urllib.parse import urlsplit
 from unittest import mock
 
 from integrations.sema import verify_native
-from src.baselines.text.frameworks.native_calls import NativeCallOutcome, _request
+from src.baselines.text.frameworks.native_calls import NativeCallExecutor, NativeCallOutcome, _request
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.execution_provider.adapters.sema_native import SemaNativeLimits, SemaNativeService
 from src.execution_provider.adapters.sema_service import SemaServiceLimits
@@ -411,6 +414,93 @@ class SemaNativeLimitsTests(unittest.TestCase):
         configure.assert_called_once_with('native', num_threads=8)
         self.assertFalse(json.loads((root / 'summary.json').read_text())['passed'])
 
+    def test_verifier_connects_only_to_explicit_private_ray_address_and_records_ports(self):
+        root = self.root / 'ray-connection'
+        ray = SimpleNamespace(is_initialized=lambda: False, init=mock.Mock(), shutdown=mock.Mock())
+        result = SimpleNamespace(testsRun=0, failures=[], errors=[], skipped=[], wasSuccessful=lambda: False)
+        with mock.patch.dict(os.environ, {}), mock.patch.dict('sys.modules', {'ray': ray}), \
+                mock.patch.object(verify_native.os, 'sched_setaffinity', create=True), \
+                mock.patch.object(verify_native, 'library_identity', return_value={}), \
+                mock.patch.object(verify_native.unittest.TextTestRunner, 'run', return_value=result), \
+                mock.patch('builtins.print'):
+            self.assertEqual(verify_native.main(['--backend', 'ray-data', '--artifact-root', str(root),
+                '--ray-address', '127.0.0.1:46520', '--fixture-port', '46510', '--service-port', '46511']), 1)
+        self.assertEqual(ray.init.call_args.kwargs, dict(address='127.0.0.1:46520',
+            namespace=f'sema-native-{os.getpid()}'))
+        ray.shutdown.assert_called_once_with()
+        summary = json.loads((root / 'summary.json').read_text())
+        self.assertEqual((summary['fixture_host'], summary['fixture_port'], summary['service_port']),
+                         ('127.0.0.1', 46510, 46511))
+        self.assertEqual(summary['ray_mode'], 'caller_started_cluster_connection')
+        self.assertEqual(summary['ray_shutdown_scope'], 'verifier connection only; cluster remains caller-owned')
+        self.assertFalse(summary['passed'])
+
+    def test_verifier_rejects_auto_nonlocal_or_conflicting_runtime_and_port_settings(self):
+        settings = [['--ray-address', value] for value in
+            ('auto', 'local', 'ray://127.0.0.1:46520', '192.0.2.1:46520', 'localhost:0', 'localhost:65536')]
+        settings.extend((['--ray-address', '127.0.0.1:46520', '--ray-temp', '/tmp/unused-ray'],
+                         ['--fixture-port', '65536'], ['--service-port', '-1'],
+                         ['--fixture-port', '46510', '--service-port', '46510']))
+        for extra in settings:
+            with self.subTest(extra=extra), mock.patch('sys.stderr'), self.assertRaises(SystemExit) as caught:
+                verify_native.main(['--backend', 'ray-data', '--artifact-root', str(self.root / 'unused')] + extra)
+            self.assertEqual(caught.exception.code, 2)
+        self.assertFalse((self.root / 'unused').exists())
+
+    def test_public_sema_factory_transmits_explicit_listener_port(self):
+        from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+        from src.experiments.postgresql.sema_native_query import SemaServiceConfig, open_native_service
+        configuration = SemaServiceConfig(listen_port=46511)
+        with mock.patch('src.execution_provider.adapters.sema_native.SemaNativeService') as factory, ExitStack() as stack:
+            open_native_service(stack, 'sema-native-daft-request-service', query_id='port-factory',
+                model=SimpleNamespace(endpoint_url='http://localhost/model'),
+                limits=configuration.service_limits(16, 1), trace_path=self.root / 'unused',
+                options=NativeGraphOptions(), held_tasks=8, service_config=configuration)
+            self.assertEqual(factory.call_args.kwargs['listen_port'], 46511)
+            self.assertEqual(factory.call_args.kwargs['native_limits'].snapshot_rows, 8)
+
+    def test_explicit_service_listener_port_is_bound_and_recorded(self):
+        with socket.socket() as reserved:
+            reserved.bind(('127.0.0.1', 0))
+            port = reserved.getsockname()[1]
+        checks = verify_native.NativeSemaChecks('test_service_sequential_supply_does_not_wait_for_query_end')
+        checks.service_port, checks.observations = port, []
+        with self.service(listen_port=port) as service:
+            self.assertEqual(urlsplit(service.endpoint_url).port, port)
+            checks.service_running(service)
+            self.assertEqual(self.post(service.endpoint_url)[0], 200)
+            service.end_input()
+        self.assertEqual(checks.observations[0]['service_listener_port'], port)
+        self.assertEqual(checks.observations[0]['configured_service_port'], port)
+
+    def test_verifier_asserts_transport_unknown_and_full_429_reuse_on_public_executor(self):
+        checks = verify_native.NativeSemaChecks('test_graph_transport_timeout_is_a_value_without_retry')
+        checks.observations = []
+        current = verify_native.call('http://localhost/model')
+
+        def failed_rows(calls, _options, _control):
+            for call in calls:
+                yield NativeCallOutcome(call.call_id, call.row_id, None, 'fixture TimeoutError')
+
+        with mock.patch('src.baselines.text.frameworks.native_calls._daft_rows', failed_rows):
+            failed = NativeCallExecutor('daft')
+            self.assertEqual(len(tuple(failed.iter_batch((current,)))), 1)
+            checks.settled(failed, unconfirmed=True)
+            checks.refuses_reuse(failed, current.endpoint, [])
+
+        full = FullModelResponse(429, (('X-Repeated', 'one'), ('X-Repeated', 'two')), b'original failure')
+
+        def response_rows(calls, _options, _control):
+            for call in calls:
+                yield NativeCallOutcome(call.call_id, call.row_id, full)
+
+        with mock.patch('src.baselines.text.frameworks.native_calls._daft_rows', response_rows):
+            reusable = NativeCallExecutor('daft')
+            for _ in range(2):
+                outcomes = tuple(reusable.iter_batch((current,)))
+                verify_native.check_outcomes(outcomes, {(current.call_id, current.row_id)}, 429, full.body)
+                checks.settled(reusable)
+
 
 class SemaStructuredFixtureTests(unittest.IsolatedAsyncioTestCase):
     async def test_structured_verifier_fixture_uses_real_http_kernel_without_model(self):
@@ -424,6 +514,25 @@ class SemaStructuredFixtureTests(unittest.IsolatedAsyncioTestCase):
                 (('Content-Type', 'application/json'), ('X-Repeated', 'one'), ('X-Repeated', 'two'),
                  ('Content-Length', str(len(raw)))))
             self.assertEqual(calls, [verify_native.call(url).payload])
+
+    async def test_all_real_verifier_fixtures_reuse_the_selected_loopback_port_sequentially(self):
+        with socket.socket() as reserved:
+            reserved.bind(('127.0.0.1', 0))
+            port = reserved.getsockname()[1]
+        with verify_native.complete_server(fixture_port=port) as (url, calls, raw):
+            self.assertEqual(urlsplit(url).port, port)
+            self.assertEqual((await _request(verify_native.call(url))).response.body, raw)
+            self.assertEqual(len(calls), 1)
+        with verify_native.structured_response_server(fixture_port=port) as (url, calls, raw, _envelope):
+            self.assertEqual(urlsplit(url).port, port)
+            self.assertEqual((await _request(verify_native.call(url))).response.body, raw)
+            self.assertEqual(len(calls), 1)
+        with verify_native.staggered_server(fixture_port=port) as (url, calls, completed):
+            self.assertEqual(urlsplit(url).port, port)
+            call = verify_native.call(url)
+            call = replace(call, headers=call.headers + (('X-Order', '1'),))
+            self.assertEqual((await _request(call)).response.body, call.payload + b':1')
+            self.assertEqual((len(calls), completed), (1, [1]))
 
 
 if __name__ == '__main__':

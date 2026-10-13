@@ -196,7 +196,7 @@ class SemaSemLoomService(SemaRequestService):
 
     def __init__(self, *, query_id, model_config, physical, limits, trace_path,
                  max_held_tasks, max_active_requests, before_post=None, executor_owner=None,
-                 local_diagnostic=False):
+                 local_diagnostic=False, listen_port=0):
         if (type(model_config) is not FixedModelConfig or type(local_diagnostic) is not bool
                 or (physical is not None if local_diagnostic else type(physical) is not RayMapConfig)):
             raise ValueError('Sema SemLoom service requires FixedModelConfig and RayMapConfig')
@@ -210,7 +210,8 @@ class SemaSemLoomService(SemaRequestService):
         if limits.timeout_s < model_config.timeout_ms / 1000:
             raise ValueError('Sema service deadline must cover its model deadline')
         super().__init__(query_id=query_id, upstream_url=model_config.endpoint_url,
-                         limits=limits, trace_path=trace_path, before_post=before_post)
+                         limits=limits, trace_path=trace_path, before_post=before_post,
+                         listen_port=listen_port)
         self.model_config = model_config
         self.physical = None if physical is None else replace(physical, response_mode='full')
         if local_diagnostic:

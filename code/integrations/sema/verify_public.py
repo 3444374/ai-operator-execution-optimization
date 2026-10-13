@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from functools import partial
 import hashlib
 import json
 import os
@@ -26,6 +27,7 @@ from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.shared_request_budget import CellBudgetLedger
 from src.experiments.postgresql.sema_native_query import SemaServiceConfig
 from src.experiments.postgresql.supplier_adapter_query import run_supplier_query
+from src.experiments.postgresql import supplier_adapter_query as supplier_module
 from integrations.sema.verify_native import library_identity
 from tests.experiments import test_native_adapter_query as fixture_module
 
@@ -41,6 +43,8 @@ def main(argv=None):
     parser.add_argument('--binary', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--fixture-port', type=int, default=46510)
+    parser.add_argument('--service-port', type=int, default=46511)
+    parser.add_argument('--observation-port', type=int, default=46512)
     parser.add_argument('--rows', type=int, default=8)
     parser.add_argument('--sema-native-threads', type=int, default=4)
     parser.add_argument('--max-held-tasks', type=int, default=8)
@@ -54,18 +58,24 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if sys.platform != 'linux':
         parser.error('the pinned author executable requires Linux')
-    if not 1 <= args.rows <= 128 or not 1 <= args.fixture_port <= 65535:
+    ports = (args.fixture_port, args.service_port, args.observation_port)
+    if (not 1 <= args.rows <= 128 or any(not 1 <= port <= 65535 for port in ports)
+            or len(set(ports)) != len(ports)):
         parser.error('the finite public check requires 1..128 rows and one declared loopback port')
     if hashlib.sha256(args.binary.read_bytes()).hexdigest() != BINARY_SHA256:
         parser.error('Sema binary differs from the pinned author artifact')
     options = NativeGraphOptions(**json.loads(args.options.read_text())) if args.options else NativeGraphOptions()
     service_config = SemaServiceConfig.load(args.sema_service_config)
+    if args.arm != 'sema-native-direct':
+        service_config = replace(service_config or SemaServiceConfig(), listen_port=args.service_port)
     physical = RayMapConfig.load(args.ray_physical) if args.ray_physical else None
     new_private_directory(args.output)
     report = dict(status='failed', arm=args.arm, rows=args.rows, real_model_posts=0, gpu_resources=0,
         fixture_posts_limit=args.rows, author_commit=UPSTREAM_COMMIT, binary_sha256=BINARY_SHA256,
         started_monotonic_ns=time.monotonic_ns(), cpu_affinity=sorted(os.sched_getaffinity(0)),
         query_timeout_s=20, source='original prepared author SQL with a loopback software model response',
+        loopback_ports=dict(fixture=args.fixture_port, service=args.service_port,
+                           observation=args.observation_port),
         options=asdict(options), sema_native_threads=args.sema_native_threads,
         max_held_tasks=args.max_held_tasks)
     primary = None
@@ -82,7 +92,9 @@ def main(argv=None):
             return server_class(('127.0.0.1', args.fixture_port), handler)
 
         # Only select the existing fixture's port; author SQL, SDK and graphs are actual runtimes.
+        gateway = partial(supplier_module.ObservationGateway, bind_port=args.observation_port)
         with mock.patch.object(fixture_module, 'ThreadingHTTPServer', listener), \
+                mock.patch.object(supplier_module, 'ObservationGateway', gateway), \
                 fixture_module.fixture_server(content='"ok"') as (endpoint, posts):
             result = run_supplier_query(args.arm,
                 load_source=lambda: iter(dict(row_id=str(i), text='same original fixture text')

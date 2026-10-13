@@ -14,13 +14,14 @@
 
 [verify_public.py](verify_public.py)复用既有作者SQL检查，从公共`run_supplier_query`完整消费原解析结果；
 Linux固定作者二进制、实际Daft／Ray和预先就绪的IMLane配置均须提供，每次独立软件POST额度默认8。
-fixture监听显式loopback端口，模型/GPU0；源码、结果与失败独立保留。它不执行模型质量或性能比较。
+fixture、Sema服务与观测代理分别使用显式loopback端口，模型/GPU0；源码、结果与失败独立保留。它不执行模型质量或性能比较。
 实际运行前按runtime手册完成只读预检，并与现有模型计时错开；调用方提供CPU、短Ray目录和外层期限。
 
 ```sh
 PYTHONPATH=code <driver-python> -B code/integrations/sema/verify_public.py \
   --arm sema-native-daft-request-service --binary <pinned-author-binary> \
-  --fixture-port 46510 --rows 8 --sema-native-threads 4 --max-held-tasks 8 \
+  --fixture-port 46510 --service-port 46511 --observation-port 46512 \
+  --rows 8 --sema-native-threads 4 --max-held-tasks 8 \
   --output <new-private-output>
 ```
 
@@ -30,6 +31,10 @@ PYTHONPATH=code <driver-python> -B code/integrations/sema/verify_public.py \
 先按[运行时说明](../../../deploy/runtime/README.md)对独立driver环境检查`core,text`；
 程序要求Daft0.7.21或Ray2.56.1，不安装依赖，不接管已存在的Ray会话。
 Ray使用8CPU、零GPU、128MiB对象存储，拥有自己的短临时目录；只关闭本次启动的运行设施。
+已有独立集群时可传`--ray-address <local-ip>:<port>`，验证器只持有并关闭driver连接；
+调用方预先检查短目录、CPU/对象额度及自有端口，并负责关闭集群。
+`--fixture-port`、`--service-port`分别指定上游和Sema listener，默认0保留自动分配。
+每库整组最坏75次软件POST；完整429可复用，缺少完整响应的transport错误保持unknown并拒绝复用。
 
 ```sh
 PYTHONPATH=code <driver-python> code/integrations/sema/verify_native.py \
@@ -140,6 +145,8 @@ LOTUS和DuckDB返回原SDK／C++解析，Sema保持原SQL及请求池后的有�
 `--options`需覆盖探得的作者任务线程数，本次为6，检查配置使用并发额度8、作者执行器2。
 
 [公共方法检查](verify_imlane_methods.py)在两种mode中检查真实LOTUS、DuckDB和Sema的完整消费及连续LOTUS查询。
+`--methods sema`只验证Sema，两模式各保留一次公开查询与常驻两查询，独立Coordinator保持隔离。
+本轮固定driver为Arrow24/aiohttp3.14.3，作者为Arrow16.1.0/aiohttp3.14.5；实际worker模块摘要和两个actor需单独核对。
 它需要已有作者构建、原桥、已编译的`0.4.14-native3`扩展、固定Sema作者二进制和独立LOTUS解释器，
 只访问localhost软件响应，不安装依赖或加载模型。来源和全部失败见
 [本轮记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。

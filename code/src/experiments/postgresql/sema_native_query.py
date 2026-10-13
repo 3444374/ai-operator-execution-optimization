@@ -31,8 +31,11 @@ class SemaServiceConfig:
     pending_response_bytes: int = 32 * 1024 * 1024
     cumulative_response_bytes: int = 32 * 1024 * 1024
     query_response_bytes: int | None = None
+    listen_port: int = 0
 
     def __post_init__(self):
+        if type(self.listen_port) is not int or not 0 <= self.listen_port <= 65535:
+            raise ValueError('Sema loopback listen port must be from 0 to 65535')
         self.service_limits(1, 1)
         self.native_limits(128)
 
@@ -83,7 +86,8 @@ def open_native_service(stack, arm, *, query_id, model, limits, trace_path,
     from src.execution_provider.adapters.sema_native import SemaNativeService
     validate_native_options(arm, options, held_tasks, imlane_config, imlane_call_configs, service_config)
     service_options = ({'snapshot_rows': held_tasks} if service_config is None else
-                       {'native_limits': service_config.native_limits(held_tasks)})
+                       {'native_limits': service_config.native_limits(held_tasks),
+                        'listen_port': service_config.listen_port})
     backend = SEMA_NATIVE_ARMS[arm]
     executor = None
     if backend == 'imlane':

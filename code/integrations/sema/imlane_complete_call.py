@@ -46,6 +46,15 @@ def complete_http(table):
                        transport_error_type=outcome.transport_error.split(":", 1)[0],
                        execution_error_type=outcome.execution_error.split(":", 1)[0],
                        local_duration_ns=time.monotonic_ns() - started)
+            modules = {}
+            for name in ('pyarrow', 'aiohttp', 'src.baselines.text.frameworks.native_calls'):
+                module = sys.modules.get(name)
+                source = getattr(module, '__file__', None)
+                modules[name] = dict(version=getattr(module, '__version__', None),
+                    source_path=source, source_sha256=(hashlib.sha256(Path(source).read_bytes()).hexdigest()
+                                                    if source is not None else None))
+            row['runtime'] = dict(python_version=list(sys.version_info[:3]), python_prefix=sys.prefix,
+                                  python_executable=sys.executable, modules=modules)
             ray = sys.modules.get("ray")
             if ray is not None and ray.is_initialized():
                 context = ray.get_runtime_context()

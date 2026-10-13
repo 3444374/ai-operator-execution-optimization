@@ -85,6 +85,7 @@ Daft、Ray Data及两条IMLane路径使用[原生请求交接](sema_native.py)�
 单查询与常驻入口均接受`--sema-service-config` JSON，或在factory传`SemaServiceConfig`：
 `request_bytes`、`response_bytes`、`intake_requests`、`intake_bytes`、`snapshot_rows`、
 `snapshot_payload_bytes`、`pending_response_bytes`、`cumulative_response_bytes`、`query_response_bytes`。
+可选`listen_port`只绑定loopback，0保持系统分配端口；指定端口在打开服务前校验。
 省略配置保持旧有效值；`snapshot_rows`默认取声明持有量，显式值须不超过该量且最多128。
 `cumulative_response_bytes`按每图累计完整编码响应；`pending_response_bytes`保留到HTTP写完。
 服务另按正文统计全查询累计量，`query_response_bytes`默认`max_requests × response_bytes`，
