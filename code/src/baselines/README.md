@@ -24,6 +24,9 @@
 HTTP错误与网络失败分别交回原算子；响应超量和身份错误直接停止执行。LOTUS原缓存、提示、SDK解析
 及阶段等待的采用方式见[LOTUS适配](../semantic_methods/lotus/README.md#daft-native与ray-data执行)。
 旧固定Map与SQL读取入口继续保留。
+同一`NativeCallExecutor`一次只拥有一个活动批次。已启动的图缺结果、消费线程未结束或图／HTTP池
+关闭出错时，记录`unconfirmed_work=True`并拒绝该对象后续批次；发送前取消及正常完整批次仍可复用。
+替换执行器前由调用者核清其运行时，报告保留`remote_http_stopped='unavailable'`，不把消费结束当作模型停止。
 
 [`text/controls/ray_core_calls.py`](text/controls/ray_core_calls.py)另用Ray Core原生actor和`ray.wait`，
 固定数量、每actor单调用的静态分片拓扑明确登记为`diagnostic_reference`。

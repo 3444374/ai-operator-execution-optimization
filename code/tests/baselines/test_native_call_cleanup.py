@@ -103,6 +103,62 @@ class NativeCallCleanupTests(unittest.TestCase):
         self.assertFalse(executor.last_close_report["clean"])
         self.assertEqual(executor.last_close_report["remote_http_stopped"], "unavailable")
 
+    def test_missing_result_prevents_reuse_even_after_the_consumer_thread_stops(self):
+        executor, error, _ = self.scenario(early=True)
+        self.assertIsNone(error)
+        self.assertTrue(executor.last_close_report['unconfirmed_work'])
+        self.assertFalse(executor.last_close_report['reuse_allowed'])
+        calls = (native.NativeCall('later', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        with patch.object(native, '_daft_rows') as graph, self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+            list(executor.iter_batch(calls))
+        graph.assert_not_called()
+
+    def test_complete_result_allows_another_independent_batch(self):
+        executor, error, _ = self.scenario()
+        self.assertIsNone(error)
+        self.assertFalse(executor.last_close_report['unconfirmed_work'])
+        calls = (native.NativeCall('later', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        def graph(values, options, control):
+            for call in values:
+                yield native.NativeCallOutcome(call.call_id, call.row_id,
+                    native.FullModelResponse(200, (), b'complete'))
+        with patch.object(native, '_daft_rows', graph):
+            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
+        self.assertTrue(executor.last_close_report['clean'])
+
+    def test_cancelled_before_graph_start_does_not_prevent_later_use(self):
+        executor = native.NativeCallExecutor('daft')
+        calls = (native.NativeCall('later', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        with patch.object(native, '_daft_rows') as graph, self.assertRaises(InterruptedError):
+            list(executor.iter_batch(calls, cancelled=lambda: True))
+        graph.assert_not_called()
+        self.assertFalse(executor.last_close_report['unconfirmed_work'])
+
+    def test_all_results_with_failed_graph_close_still_prevent_reuse(self):
+        executor, error, _ = self.scenario(closing=GraphCloseError('failed closure'))
+        self.assertIsInstance(error, GraphCloseError)
+        self.assertEqual(executor.last_close_report['received'], executor.last_close_report['prepared'])
+        self.assertTrue(executor.last_close_report['unconfirmed_work'])
+        with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+            list(executor.iter_batch(()))
+
+    def test_overlapping_batch_cannot_replace_an_active_or_unconfirmed_batch(self):
+        calls = tuple(native.NativeCall(str(i), i, b'{}', 'http://localhost/fixture', (), 1) for i in range(2))
+        def graph(values, options, control):
+            for call in values:
+                yield native.NativeCallOutcome(call.call_id, call.row_id,
+                    native.FullModelResponse(200, (), b'complete'))
+        executor = native.NativeCallExecutor('daft')
+        with patch.object(native, '_daft_rows', graph):
+            first = executor.iter_batch(calls)
+            self.assertEqual(next(first).call_id, '0')
+            with self.assertRaisesRegex(RuntimeError, 'active batch'):
+                list(executor.iter_batch(calls[:1]))
+            first.close()
+            self.assertTrue(executor.last_close_report['unconfirmed_work'])
+            with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+                list(executor.iter_batch(calls[:1]))
+
 
 if __name__ == "__main__":
     unittest.main()
