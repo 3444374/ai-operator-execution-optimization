@@ -8,6 +8,11 @@
 不访问服务器或模型。配置、职责和限制见[模块说明](../src/execution_provider/adapters/model_replicas.md)，
 全部观测与负结果见[软件报告](../../experiments/results/diagnostics/replica_adaptation_20261013/README.md)。
 
+`benchmarks/replica_model_replay.py`只运行已预留预算的一组固定完整请求，
+`benchmarks/replica_model_window.py`只监督已登记UTC起点的有限单／双模型窗口；
+复用环境检查、模型identity和ProcessSampler，不安装／下载／补发／重置额度。
+配置及820次边界见[模型计划](../../experiments/plans/查询调优.md#replica-adaptation)。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

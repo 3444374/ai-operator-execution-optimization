@@ -122,6 +122,18 @@ class ReplicaAdaptationTests(unittest.TestCase):
         self.assertIsNone(service_pressure({"vllm:num_requests_running": 4}))
         self.assertIsNone(service_pressure(dict(metrics, **{"vllm:num_requests_running": 1.5})))
 
+    def test_stale_pressure_returns_to_explicit_static_k_below_physical_sum(self):
+        self.samples = {k: ReplicaFeedback(pressure_observed_at_s=1, waiting=2, kv_usage=0.9)
+                        for k in ("a", "b")}
+        policy = ReplicaAdaptivePolicy((ReplicaCapacity("a", 4, 4), ReplicaCapacity("b", 4, 4)),
+            2, config=ReplicaAdaptationConfig(), feedback=self.samples.__getitem__, clock=lambda: self.now)
+        policy.decide(0)
+        self.now = 4
+        decision = policy.decide(2)
+        self.assertEqual(decision.limit, 2)  # The selected static K, not the sum of eight.
+        self.assertFalse(decision.allowed)
+        self.assertEqual(policy.supply(), dict(a=4, b=4))
+
 
 if __name__ == "__main__":
     unittest.main()

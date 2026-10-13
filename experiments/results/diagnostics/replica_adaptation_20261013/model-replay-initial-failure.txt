@@ -1,0 +1,17 @@
+test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget (test_replica_model_replay.ReplicaModelReplayTests.test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget) ... ERROR
+
+======================================================================
+ERROR: test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget (test_replica_model_replay.ReplicaModelReplayTests.test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/junshun/Documents/Codex/2026-10-13/task-8/GPU/code/tests/experiments/test_replica_model_replay.py", line 39, in test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget
+    rates = endpoint_rates(result["events"], ("a", "b"))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/junshun/Documents/Codex/2026-10-13/task-8/GPU/code/src/experiments/replica_model_replay.py", line 95, in endpoint_rates
+    raise ValueError("calibration did not reach every selected replica")
+ValueError: calibration did not reach every selected replica
+
+----------------------------------------------------------------------
+Ran 1 test in 0.268s
+
+FAILED (errors=1)

@@ -60,3 +60,15 @@
 实际Ray/Daft库、PG和模型性能尚未在此新接线验证。独立分支不合并main。
 后续模型预演先复用已下载Qwen与原公开数据，在同版本同适配器下分开路由与供给因素，
 先确认机器/模型/服务/协议签名、独立静态选点与资源空闲，再运行有限单／双卡配对；无净收益也发布原值。
+
+## 有限模型重放驱动的本地资格
+
+固定原Q2前64出现只用于24评价／24校准／12预热／4协议分组，模型执行计划见[查询计划](../../../plans/查询调优.md#replica-adaptation)。
+新驱动不含原SQL、LOTUS formatter/parser或官方evaluator；四臂同Core／完整响应HTTP／硬C/W，默认不变。
+固定与在线rate用同一既有completion accumulator clock边界与成功request-count work；固定冻结整批忙时并集，在线保留原窗口／EWMA。
+Core供给与动作、250ms vLLM指标及1s逐卡GPU活动观察对所有臂启用；MFU未测，低waiting不作独立收益判据。
+
+[四臂fixture](model-replay-driver-tests.txt)共16次localhost POST，逐出现完整响应关联、原请求字节、持久累计额度、Core待提交／在途及清理通过。
+[10项策略](model-replay-policy-tests.txt)包含压力过期回到已选静态K2，而不是两副本物理上限8。
+[早期驱动失败](model-replay-initial-failure.txt)保留：测试误要求每个fixed-rate评价臂都触及所有副本；修正为只从独立RR校准取冻结rate，没有重发模型。
+此处仍无新模型性能数据；后续窗口与控制改进分别登记。

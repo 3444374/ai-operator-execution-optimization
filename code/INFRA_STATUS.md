@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[固定原Q2请求子集模型计划](../experiments/plans/查询调优.md#replica-adaptation)的有限驱动已接已有Core／完整响应HTTP与持久POST账本。
+同一completion accumulator边界记录固定／在线request-count rate；四臂同开销GPU／服务／Core时间线。
+16次localhost四臂fixture及静态K回退测试通过；模型尚未执行，不称原SQL／parser／evaluator资格。
+
 2026-10-13：[单查询副本供给／路由](../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
 从统一28093954复用真实副本组装与既有硬C/W，增加显式adaptive反馈和独立gateway的非阻塞metrics选项；
 旧默认与静态签名保持。31项localhost生命周期＋9项策略通过，扩展435项通过／1个旧pyarrow模块缺依赖。

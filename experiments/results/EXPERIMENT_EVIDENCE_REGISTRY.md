@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-13：固定请求重放驱动四臂16次localhost检查通过，完成rate统一既有transport时钟、Core供给观测、持久计数与清理。
+模型窗口尚未运行；[具体计划](../plans/查询调优.md#replica-adaptation)保持820总额度，不借旧软件供给结果归因。
+
 2026-10-13：[单查询副本供给／路由软件验证](diagnostics/replica_adaptation_20261013/README.md)。
 统一28093954上的31项真实localhost生命周期与9项确定性策略通过；扩展435通过／1旧pyarrow模块缺依赖。
 五场景、四同适配器内部臂、三交错重复，3096软件HTTP／0模型／0GPU，完整输入/结果/lease与容量核对。
