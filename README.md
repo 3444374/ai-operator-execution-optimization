@@ -2,7 +2,22 @@
 
 [原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
 
-[SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；原始IMLane Q1由当前完整调用适配器拒绝，模型0。
+[SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；该早期切片的IMLane Q1由当时128行适配器拒绝，模型0；后续显式2000行接法见[容量软件检查](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
+
+分支按职责组织：
+
+| 分支 | 职责 |
+|---|---|
+| `main` | 经PR验证的稳定共同实现 |
+| `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
+| `codex/native-execution-adapters` | 当前原生接入发布；完成owner交接后归入统一集成分支 |
+| `exp/semloom-query-sharing` | 长短查询共享调度研究 |
+| `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
+| `maintenance/project-rules` | 规则整理的临时同步来源，整合完成后清理 |
+| `codex/semloom-history-preservation` | 保存原提交与实验来源的恢复入口 |
+
+LOTUS、DuckDB、Sema等接入支线用于并行开发，完成整合后可移除对应checkout；
+研究分支按具体假设保留，通用修复进入共同基线。原始实验及各次运行的源码身份仍由报告和证据台账定位。
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。

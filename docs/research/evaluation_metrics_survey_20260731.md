@@ -237,7 +237,7 @@
 | # | 指标 | 为什么 | 采集成本 |
 |---|---|---|---|
 | 10 | Variance / CI / error bars 跨 formal repeat 显式报告 | 已有 `repeat_index` 机制，但报告未必标 ±std/CI。文献通病是多数预印本不报方差（仅 FlashAttention/ServerlessLLM/InferDB/Abacus 做了）；显式报告提升策略对比（如 prefix +5.9% 是否显著）可信度。 | 低：后处理。 |
-| 11 | SLO Scale + Coefficient of Variation + Performance regression count | SLO Scale（DistServe，最紧可承受 SLO）与 CV（SABER，可预测性）是策略鲁棒性/稳定性附加维度；regression count（GRACEFUL）是安全性审计。策略晋级判定（5% 门禁）时提供更立体证据。 | 低：后处理。 |
+| 11 | SLO Scale + Coefficient of Variation + Performance regression count | SLO Scale（DistServe，最紧可承受 SLO）与 CV（SABER，可预测性）是策略鲁棒性/稳定性附加维度；regression count（GRACEFUL）记录回退情况。比较策略收益与退化时提供补充证据。 | 低：后处理。 |
 | 12 | 调度逻辑开销占比%（对照文献 <1% 基准） | 已有 `organizer_plan_s/collect_s/submit_s` 分量，归一化为占 `operator_wall_s` 的百分比，对照 SGLang(<0.3%)/SCORPIO(0.12–0.17%)/BucketServe(<1%) 基准，论证自适应控制工程可行性。 | 低：后处理。 |
 
 **2026-08-04 实现状态（代码事实，尚非新实验结果）**：上述 12 项已接入下一轮
@@ -485,8 +485,8 @@ database-E2E 可观测性**，并与冻结静态点做消融。
 9. **Ray LLMPerf / Locust / pgbench** 作可引用的社区认可 bounded 负载生成器（feeding 门禁的 bounded HTTP baseline 显式对齐 LLMPerf/Locust：逐步并发 + 二分搜索 max sustainable QPS + Little's Law）。
 
 **应强化（项目已有的优势）**：
-10. §7.5 的"1 warmup + 3 formal repeats + CV 控制 + feeding-saturation ≥95% bounded 门禁"**已超过除 Snowflake 论文外所有厂商的公开协议**——在报告中明确声明此协议层级。
-11. **三臂对照设计**（Snowflake 强 oracle / 动态 / 便宜 static）直接对应本项目"固定静态 credit 是强 baseline、动态需显著优于同上限静态才过 5% 门禁"——除 Snowflake 外无厂商做到。
+10. 历史实验的 warmup、重复、CV 与 feeding-saturation ≥95% 条件用于解释当时的测量范围；新实验按问题和重复噪声确定设置，不能据此宣称协议优于所有厂商。
+11. **三臂对照设计**（强 oracle / 动态 / 便宜 static）可帮助区分预测上界、方法收益与实现成本；固定静态 credit 是强对照，但收益判断不设统一 5% 门槛。
 12. **测量卫生**：tokens/s 计算明确排除 tokenization/编码时间（从 vLLM Prometheus prompt_tokens_total+generation_tokens_total 取）——避免重蹈 Oracle 公开 bug。
 
 **应规避（被社区批评的反模式）**：
@@ -627,7 +627,7 @@ SQL、单纯向量索引和用户自写 HTTP UDF 是四种不同系统；它们�
 
 多 job 实验另报以下四层结果；不能只报聚合吞吐，也不能用单一 Jain 或综合分数代替约束。
 
-#### 第四层：多 Job 的反事实、服务公平与晋级规则
+#### 第四层：多 Job 的反事实与服务公平评价
 
 先冻结**当前评价主体与未来层级**。本项目当前正式问题是**单租户内多个 Job/workload class**
 共享同一模型服务：Job/query 是调度单元，request 是工作量载体。在这个范围内，以 `job_id`
@@ -677,7 +677,7 @@ conservation、reclaim latency、tenant/Job 两层 service lag 和 worst-tenant 
 
 评价向量采用**约束下多目标/Pareto**，而不是把吞吐、JCT、Jain 和能耗压成一个加权总分：
 
-1. **有效性硬门**：语义、质量、exactly-once、资源/上限、arrival fidelity、feeding 和稳定性先通过；
+1. **有效性检查**：语义、质量、exactly-once、资源/上限与 arrival fidelity 符合实验要求；feeding 和稳定性按比较目的诊断，条件不足时限定结论范围；
 2. **效率与 SLO**：correct throughput、SLO goodput、group JCT、P95/P99、能耗。`group JCT`
    定义为共同 group start/ready barrier 到最后一个 Job 完成的 wall time，即本批 workload 的
    makespan；不再新增一个同义 `makespan` headline。它必须与 per-Job/request tail 同报，因为
@@ -708,7 +708,11 @@ conservation、reclaim latency、tenant/Job 两层 service lag 和 worst-tenant 
    变坏；反之，高 Jain 也可能只是所有 Job 同样慢。正式保护看 max slowdown、worst-Job/class
    P99/SLO、service lag 和最长 no-service。
 
-候选晋级需预注册“至少一个 headline 改善约 5%”的 effect-size 门，以及**每个保护指标各自的方向和非劣/SLO 边界**。保护边界不能事后用“无不可接受退化”概括，也不应强行共用 5%；应在看到候选标签前，根据业务 SLO、correctness 要求和 baseline repeat 噪声冻结。只有所有保护约束满足、至少一个 headline 越过 effect-size 门，才称该 workload 上相对指定 baseline 的经验性 Pareto improvement。理论 Pareto efficiency、sharing incentive、strategy-proofness、service-difference bound 或 finish-time fairness 只有在相应模型假设和证明完整时才能使用。
+比较前说明主指标方向、适用的质量/非劣/SLO 要求和不确定性分析；最小实际效应只有在业务需求或测量噪声提供依据时设置，不统一规定约 5%。
+报告每个指标的效应与重复波动，包括退化和无明确收益；原始结果不因未达预期百分比而隐藏或删除。
+经验性 Pareto improvement 需在该 workload 与指定 baseline 上有改善证据且其他相关目标无退化，
+不能只看一个 headline。理论 Pareto efficiency、sharing incentive、strategy-proofness、service-difference bound
+或 finish-time fairness 仍需完整的模型假设和证明。
 
 **现有证据的可行性分级**：
 
@@ -843,11 +847,11 @@ operator JCT
 ### 9.6 最小决定性实验
 
 1. **估计器消融**：固定静态、解析模型、profile lookup、解析+residual、加入输出分位数/服务状态、oracle actual output；所有臂共享同一最大 active work 与资源。
-2. **开环预测 + 闭环决策同时评价**：报告 MAE/Q-error/区间 coverage，同时报告配置排序、SLO goodput、regret、回退率；若预测更准但 decision regret 不降，模型不晋级。
+2. **开环预测 + 闭环决策同时评价**：报告 MAE/Q-error/区间 coverage，同时报告配置排序、SLO goodput、regret、回退率；预测精度提高而 decision regret 不降时，不能据此声称决策收益。
 3. **队列迁移审计**：同步记录 Ray held/pending work、pre-submit wait、vLLM running/waiting/KV、TTFT/TPOT；证明策略不是把可见排队移到不可见层。
 4. **受控干预**：在相同 arrival trace 下随机化部分 submit/hold 或 threshold，检验估计器在不同 action 下是否校准，避免只学习旧策略生成的数据分布。
 5. **泛化留出**：配置组、独立时间段、短/长输出 workload、burst、不同模型/endpoint；多模态仅替换 work 定义为 frame/pixel budget，复用相同决策接口。
-6. **晋级准则**：只有在至少一个主 workload 上相对同上限强静态策略显著改善 SLO goodput/JCT，且无明显 tail/fairness 回退，才把 cost-aware 动态策略写入主贡献。
+6. **结论依据**：相对同上限强静态策略报告 SLO goodput/JCT 的效应、不确定性及 tail/fairness 变化；有对应证据才声称更优，未胜出的候选保留为负结果或适用性分析。
 
 ### 9.7 本节主要文献来源
 
