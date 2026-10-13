@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[公共HTTPX请求隔离](src/execution_provider/adapters/README.md)保持共享连接池，
+Cookie限制在同一次请求／redirect链内；transport、FullResponse与PG适配26项本地检查通过。
+该公共修补不改默认redirect设置；真实库／模型路径的后续核验由各接入owner按窗口执行。
+
 2026-10-13：[IMLane公开容量配置](integrations/sema/imlane_calls.md)贯通六项行数／字节／待交付上限，
 保留调用方更小的额度与原生执行责任。统一基线受影响本地检查43项，33通过、10项实库检查跳过；
 首次loopback绑定拒绝的11项随后单独通过。该配置修补尚未增加作者库、模型或性能证据。
