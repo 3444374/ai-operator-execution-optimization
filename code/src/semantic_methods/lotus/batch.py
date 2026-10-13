@@ -8,7 +8,7 @@ import math
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
 from ...scheduling.core.session_contract import State
 from ...execution_provider.adapters.full_response import decode_full_response
-from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
+from .sdk import LotusResponseReplay, check_message_profile, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
 from .limits import LotusCallLimits
 
 
@@ -22,7 +22,8 @@ class LotusBatchExecutor:
     def __init__(self, execution, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, cancelled=None, timeout_s=120,
-                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None):
+                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None,
+                 message_profile="text"):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
@@ -30,6 +31,7 @@ class LotusBatchExecutor:
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
         self.execution, self.model_config = execution, model_config
+        self.message_profile = check_message_profile(message_profile)
         if call_limits is not None and type(call_limits) is not LotusCallLimits:
             raise TypeError('LOTUS call_limits requires LotusCallLimits')
         available = execution.engine.capacity.limits
@@ -46,7 +48,8 @@ class LotusBatchExecutor:
         self.max_batch_result_bytes = self.call_limits.max_batch_response_bytes
         self.on_response, self.on_batch, self.cancelled = on_response, on_batch, cancelled
         self.on_prepared = on_prepared
-        self.prevalidate_batch, self.retain_full_responses = prevalidate_batch, retain_full_responses
+        self.prevalidate_batch = prevalidate_batch or self.message_profile != "text"
+        self.retain_full_responses = retain_full_responses
         self.timeout_s, self.last_responses = self.call_limits.batch_timeout_s, ()
         self.last_cleanup_errors = ()
         self.last_preflight = None
@@ -86,8 +89,9 @@ class LotusBatchExecutor:
             if self.on_batch:
                 self.on_batch(uncached_data, all_kwargs)
             check_stop()
+            profile_kwargs = {} if self.message_profile == "text" else {"message_profile": self.message_profile}
             first_call = validate_batch(lm, uncached_data, all_kwargs,
-                check_stop=check_stop) if self.prevalidate_batch else None
+                check_stop=check_stop, **profile_kwargs) if self.prevalidate_batch else None
             check_stop()
             flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
             responses = [None] * count
@@ -99,7 +103,7 @@ class LotusBatchExecutor:
                     offered = []
                     for sequence in range(next_input, next_input + size):
                         check_stop()
-                        call = first_call if sequence == 0 and first_call is not None else prepare_call(lm, uncached_data[sequence][0], all_kwargs)
+                        call = first_call if sequence == 0 and first_call is not None else prepare_call(lm, uncached_data[sequence][0], all_kwargs, **profile_kwargs)
                         first_call = None
                         check_model_config(call, self.model_config)
                         self.call_limits.check_prepared(call)
@@ -201,7 +205,11 @@ def lotus_executor(lm, executor=None):
     if executor is None:
         yield lm
         return
-    validate_source()
+    profile = check_message_profile(getattr(executor, "message_profile", "text"))
+    if profile == "text":
+        validate_source()
+    else:
+        validate_source(message_profile=profile)
     def selected(instance, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
         return executor(instance, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc)
     lm._process_uncached_messages = MethodType(selected, lm)
