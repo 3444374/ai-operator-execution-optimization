@@ -135,5 +135,174 @@
   "evidence_archive_sha256": "6b26867690c913085c43b0c9aa92b29abed11ea38be01ce5f955d78431f35d44",
   "evidence_members": 9,
   "run_start_and_ready_wall_times": "unavailable; unittest elapsed retained in raw log, no performance claim",
-  "scope": "actual fixed LOTUS/SDK and Core with intercepted/mock/local callback responses; no real visual inference, VLM quality or performance qualification"
+  "scope": "actual fixed LOTUS/SDK and Core with intercepted/mock/local callback responses; no real visual inference, VLM quality or performance qualification",
+  "repair_validation": {
+    "run_suffix": "repair-1",
+    "payload_sha256": "2c20b011eab238264c35f3ec1fa4ba82841e1f086633a890817d6e33096159fc",
+    "records": [
+      {
+        "file": "test_lotus_adapter.py",
+        "returncode": 0,
+        "tests": 19,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_cleanup.py",
+        "returncode": 0,
+        "tests": 11,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_call_limits.py",
+        "returncode": 0,
+        "tests": 6,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_control.py",
+        "returncode": 0,
+        "tests": 11,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_wait.py",
+        "returncode": 0,
+        "tests": 2,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_response_replay.py",
+        "returncode": 0,
+        "tests": 6,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      },
+      {
+        "file": "test_lotus_multimodal.py",
+        "returncode": 0,
+        "tests": 11,
+        "skipped": 0,
+        "failures": [],
+        "errors": []
+      }
+    ],
+    "tests_total": 66,
+    "passed": 66,
+    "skipped": 0,
+    "text_tests": 55,
+    "image_tests": 11,
+    "local_passed": 27,
+    "local_skipped": 39,
+    "start_utc": "2026-10-13T05:00:21.709019+00:00",
+    "end_utc": "2026-10-13T05:01:27.066928+00:00",
+    "cpu_affinity": [
+      24,
+      25
+    ],
+    "real_model_calls": 0,
+    "gpu_starts": 0,
+    "ray_starts": 0,
+    "runtime_change": "Reject UTF-8-unencodable Python strings before the JSON copy can normalize surrogate pairs. Text whole-batch rejection requires explicit prevalidation; image profile always prevalidates.",
+    "bad_input_error": "UnicodeEncodeError; the adapter does not reproduce the native SDK wrapper exception type.",
+    "old_failures_preserved": true,
+    "shared_httpx_cookie_fix_adopted": false,
+    "evidence_archive_sha256": "74ebe07755a4006ab0d33aed4afd0fce26e9d342353818c95d817117c7273b9b",
+    "evidence_members": 12,
+    "repair_commit": "aa3338ce8a62267600ee7a63837379001ef357ca"
+  },
+  "readonly_image_prerequisites": {
+    "checked_utc": "2026-10-13T05:01:58.450688+00:00",
+    "model_metadata": [
+      {
+        "directory": "Mistral-7B-Instruct-v0.3",
+        "architectures": [
+          "MistralForCausalLM"
+        ],
+        "vision_config": false,
+        "processors": [],
+        "weight_files": 3
+      },
+      {
+        "directory": "Qwen2.5-1.5B-Instruct",
+        "architectures": [
+          "Qwen2ForCausalLM"
+        ],
+        "vision_config": false,
+        "processors": [],
+        "weight_files": 1
+      },
+      {
+        "directory": "Qwen2.5-7B-Instruct",
+        "architectures": [
+          "Qwen2ForCausalLM"
+        ],
+        "vision_config": false,
+        "processors": [],
+        "weight_files": 4
+      },
+      {
+        "directory": "clip-vit-base-patch32",
+        "architectures": [
+          "CLIPModel"
+        ],
+        "vision_config": true,
+        "processors": [
+          "preprocessor_config.json"
+        ],
+        "weight_files": 1
+      }
+    ],
+    "data_metadata": [
+      {
+        "root": "data",
+        "relative": "raw/coco_val2017/val2017",
+        "image_count": 5000,
+        "annotations": []
+      },
+      {
+        "root": "raw",
+        "relative": "lmcache_agentic/stats",
+        "image_count": 4,
+        "annotations": []
+      }
+    ],
+    "historical_assets_checked": 12,
+    "historical_hashes_match": 12,
+    "byte_ranges": {
+      "encoded_source_bytes": [
+        62406,
+        204829
+      ],
+      "logical_rgb_bytes": [
+        562500,
+        983040
+      ],
+      "png_bytes": [
+        202453,
+        653891
+      ],
+      "data_uri_bytes": [
+        269962,
+        871878
+      ]
+    },
+    "data_uri_alone_exceeds_default_request_bytes": 0,
+    "generative_vlm_verified": false,
+    "gold_annotations_verified": false,
+    "proposed_max_model_calls": 38,
+    "proposed_window_minutes": 10,
+    "proposed_window_started": false,
+    "scope": "Configured model root and two explicit data roots; directory/config reads only, no model import or service requests."
+  }
 }

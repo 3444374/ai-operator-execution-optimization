@@ -212,4 +212,7 @@ with lotus_executor(lm, selected):
 消息兼容不证明endpoint/model具备视觉能力，须另核实生成式VLM及真实任务质量。
 视频/音频、图像状态的逐行两Map继续执行、PG图文和原生Daft/Ray图文执行没有本轮资格。
 [实SDK无模型配对](../../../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)
-验证单Map及Filter→Map；9项通过，旧文本4项既有失败与原版本复现一并保存，不声明所有旧测试全绿。
+验证单Map及Filter→Map；接线首次9项通过，4项既有文本失败与原版本复现保持。
+诊断修后55项文本、11项图文共66项在固定SDK通过，无跳过。消息中的Python surrogate码点在JSON副本前
+拒绝，合法Unicode标量（含`😀`）保留；单调用抛`UnicodeEncodeError`，文本启用整批预检时、图文强制整批
+预检时均在任何flow前拒绝非法后缀。该拒绝不模仿原SDK包装异常的类型，不把不可编码输入规范化后提交。

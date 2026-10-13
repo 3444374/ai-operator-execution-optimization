@@ -654,6 +654,10 @@ FP32/224/512维；只能复用该受限图像语义/生命周期依据，不能�
 保留原生Map/Filter及完整JSON请求值、内容/行顺序、parser与usage；默认text仍保持。
 固定SDK9项无模型配对通过，旧文本54项中50通过、4项失败均在原`92bcd05`复现；
 范围、失败、双摘要和代码入口由[唯一检查报告](../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)维护。
+接续诊断发现JSON副本会将原SDK拒绝的surrogate规范化并提交，已加编码预检；更新其余旧断言后，
+55项文本和11项图文实际SDK检查全部通过，首次失败原件保持。已有12个COCO资产摘要重核一致，
+JPEG为62,406–204,829字节、RGB逻辑占用562,500–983,040字节、PNG data URI为269,962–871,878字节；
+这证明不同阶段表示须分别计量，不是准备耗时、allocator峰值或GPU驻留测量。
 同信息静态缓存反例没有改变，没有取得超静态收益。
 
 固定Sema二进制的函数目录及2次localhost探针表明，当前公开普通VARCHAR语义投影将PNG路径和data URI

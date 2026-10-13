@@ -1,7 +1,8 @@
 # 实验与机制证据台账
 
 2026-10-13：[LOTUS图文接点与固定Sema输入核查](diagnostics/lotus_image_text_compatibility_20261013/README.md)。
-实际LOTUS/SDK及Core使用模拟响应，原方法/消息/解析配对验证；不是视觉质量、真实模型或性能证据，原版本旧失败和准备缓存反例保留。
+实际LOTUS/SDK及Core使用模拟响应，原方法/消息/解析配对验证；诊断修后66项通过，非法Unicode预检零提交。
+已有12个COCO资产摘要一致，RGB/PNG/base64膨胀单独记录；不是视觉质量、真实模型或性能证据，原版本旧失败和静态准备缓存反例保留。
 
 2026-10-13接续：[原Q2最后S／R独立补测](diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
 固定3bd／原模型与参数，短Ray父目录22字节，四次真实零模型预检通过；只S／R各预热1测量1，480逻辑／1440POST、完整150.487／600秒。每副本240请求、337身份退出、CPU违规0／GPU空，两个旧时钟与账本保持。双卡三波11＋5＋2覆盖18／18，分波样本与旧失败保留；LIMIT5 F1=1.0／逐行recall0.5，不宣称连续n3或稳定排名。
