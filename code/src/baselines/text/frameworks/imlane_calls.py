@@ -174,10 +174,12 @@ class IMLaneCallExecutor:
         primary = None
         received = 0
         total_bytes = 0
+        transport_uncertain = False
         try:
             for outcome in iterator:
                 outcome_kind(outcome)
                 raise_execution_error(outcome)
+                transport_uncertain = transport_uncertain or bool(outcome.transport_error)
                 size = (len(encode_full_response(outcome.response)) if outcome.response is not None
                         else len(outcome.transport_error.encode()))
                 total_bytes += size
@@ -204,17 +206,19 @@ class IMLaneCallExecutor:
                     dispatched = previous.get('bridge_started') is True
                     clean = previous.get('clean') is True
                     report.update(runtime=self.config.runtime, author_dispatch_started=dispatched,
+                        clean=clean and not transport_uncertain,
+                        transport_completion_uncertain=transport_uncertain,
                         author_submission_possible=dispatched,
                         author_batches_drained=clean,
                         external_coordinator_stopped=False,
-                        external_coordinator_requires_cleanup=dispatched and not clean,
+                        external_coordinator_requires_cleanup=dispatched and (not clean or transport_uncertain),
                         author_lane_release=('DBEnd returned all batches and sends RestoreLane'
                                              if clean else 'unconfirmed; caller owns cleanup'
                                              if dispatched else 'no bridge process created; no author submission'),
                         native_settings_are_physical_executor_count=False,
                         author_query_job_id='empty in existing bridge; caller occurrence IDs retained',
                         resident_output_limit='existing bridge has no aggregate 32MiB resident-output check')
-                    if dispatched and not clean:
+                    if dispatched and (not clean or transport_uncertain):
                         try:
                             write_private_json(self._uncertain, report)
                         except BaseException as exc:

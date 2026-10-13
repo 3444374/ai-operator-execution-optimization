@@ -51,6 +51,42 @@ class IMLaneCallProtocolTests(unittest.TestCase):
         self.assertTrue(executor.last_close_report["clean"])
         self.assertEqual(executor.last_close_report["runtime"], "ray")
         self.assertFalse(executor.last_close_report["native_settings_are_physical_executor_count"])
+        self.assertFalse(executor._uncertain.exists())
+        self.assertEqual(len(list(executor.iter_batch(calls))), 2)
+        self.assertTrue(executor.last_close_report["clean"])
+
+    def test_complete_transport_result_requires_cleanup_across_executor_objects(self):
+        executor = self.executor()
+        call = self.fixture.call(endpoint='http://127.0.0.1:1/closed')
+        outcome, = executor.iter_batch((call,))
+        self.assertIsNone(outcome.response)
+        self.assertTrue(outcome.transport_error)
+        report = executor.last_close_report
+        self.assertEqual(report['received'], report['prepared'])
+        self.assertTrue(report['bridge_stopped'])
+        self.assertTrue(report['author_batches_drained'])
+        self.assertFalse(report['clean'])
+        self.assertTrue(report['transport_completion_uncertain'])
+        self.assertTrue(report['external_coordinator_requires_cleanup'])
+        self.assertTrue(executor._uncertain.is_file())
+        another = IMLaneCallExecutor(executor.config, executor.options)
+        self.addCleanup(another.close)
+        with self.assertRaisesRegex(RuntimeError, 'unsettled'):
+            list(another.iter_batch((call,)))
+        self.assertEqual(self.fixture.server.calls, [])
+
+    def test_public_native_factory_keeps_complete_transport_failure_sticky(self):
+        from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+        direct = self.executor()
+        executor = NativeCallExecutor('imlane', direct.options, imlane_config=direct.config)
+        self.addCleanup(executor.close)
+        call = self.fixture.call(endpoint='http://127.0.0.1:1/closed')
+        self.assertEqual(len(list(executor.iter_batch((call,)))), 1)
+        self.assertTrue(executor.last_close_report['unconfirmed_work'])
+        self.assertFalse(executor.last_close_report['reuse_allowed'])
+        with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+            list(executor.iter_batch((call,)))
+        self.assertEqual(self.fixture.server.calls, [])
 
     def test_pre_dispatch_cancel_and_empty_do_not_contact_author_or_http(self):
         executor = self.executor()

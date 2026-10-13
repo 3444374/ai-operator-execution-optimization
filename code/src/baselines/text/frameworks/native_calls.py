@@ -539,12 +539,20 @@ class NativeCallExecutor:
             self._imlane.last_close_report = None
             iterator = self._imlane.iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
             try:
-                yield from iterator
+                for outcome in iterator:
+                    if outcome.transport_error:
+                        self._unsettled = True
+                    yield outcome
             finally:
                 try:
                     iterator.close()
                 finally:
-                    self.last_close_report = self._imlane.last_close_report
+                    report = self._imlane.last_close_report
+                    if report is not None:
+                        self._unsettled = self._unsettled or (
+                            report.get('external_coordinator_requires_cleanup') is True)
+                        self.last_close_report = dict(report, unconfirmed_work=self._unsettled,
+                                                      reuse_allowed=not self._unsettled)
             return
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError("native complete-call batch timeout must be at most 120 seconds")
@@ -591,6 +599,7 @@ class NativeCallExecutor:
         primary = None
         received = set()
         total_bytes = 0
+        transport_uncertain = False
         clean = False
         try:
             if cancelled and cancelled():
@@ -621,6 +630,7 @@ class NativeCallExecutor:
                 if total_bytes > self.max_batch_bytes:
                     raise ValueError("native complete-call results exceed their batch byte allowance")
                 received.add(outcome.call_id)
+                transport_uncertain = transport_uncertain or bool(outcome.transport_error)
                 yield outcome
         except BaseException as error:
             primary = error
@@ -652,7 +662,9 @@ class NativeCallExecutor:
             clean = clean and stopped and cleanup is None
             self._unsettled = self._unsettled or (thread.ident is not None and (
                 not stopped or len(received) != len(calls) or cleanup is not None
+                or transport_uncertain
                 or any(stage == 'graph_close' for stage, _ in worker_errors)))
+            clean = clean and not self._unsettled
             self.last_cleanup_errors = tuple((stage, error) for stage, error in worker_errors
                                              if stage == "graph_close")
             if cleanup is not None:
@@ -660,6 +672,7 @@ class NativeCallExecutor:
             self.last_close_report = dict(graph_consumer_stopped=stopped,
                 clean=clean, received=len(received), prepared=len(calls),
                 unconfirmed_work=self._unsettled, reuse_allowed=not self._unsettled,
+                transport_completion_uncertain=transport_uncertain,
                 remote_http_stopped="unavailable", owned_ray_actors=len(control._actors),
                 ray_actor_shutdown_requested=len(control._killed_actors),
                 http_pool_scope="native_processor_batch" if self.backend == "ray-data" else "graph_event_loop",
