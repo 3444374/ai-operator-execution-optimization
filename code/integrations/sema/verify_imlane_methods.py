@@ -345,7 +345,9 @@ def parse_arguments(argv=None):
         parser.error('declared fixture, service, Coordinator and Ray ports must be distinct')
     for name, value in vars(args).items():
         if isinstance(value, Path):
-            setattr(args, name, value.resolve())
+            # A venv launcher symlink must keep its lexical path so Python reads
+            # that environment's pyvenv.cfg instead of the base interpreter's.
+            setattr(args, name, value.absolute() if name == 'lotus_python' else value.resolve())
     return args
 
 

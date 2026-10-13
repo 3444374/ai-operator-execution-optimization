@@ -200,6 +200,19 @@ class SemaIMLaneModeTests(unittest.TestCase):
 
 
 class SemaIMLaneMethodVerifierTests(unittest.TestCase):
+    def test_driver_symlink_keeps_its_selected_virtual_environment(self):
+        from integrations.sema import verify_imlane_methods as verifier
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            driver = root/'driver/bin/python'
+            driver.parent.mkdir(parents=True)
+            driver.symlink_to(sys.executable)
+            args = verifier.parse_arguments(['--methods','sema','--author-root',str(root/'author'),
+                '--output',str(root/'output'),'--bridge-binary',str(root/'bridge'),
+                '--driver-python',str(driver),'--sema-binary',str(root/'Sema')])
+            self.assertEqual(args.lotus_python, driver.absolute())
+            self.assertNotEqual(args.lotus_python, driver.resolve())
+
     def test_ray_address_is_published_only_after_complete_resource_rpc(self):
         from integrations.sema import verify_imlane_calls as helper
         captured = []
