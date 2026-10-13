@@ -112,6 +112,11 @@ def load_suite(config, case):
         from tests.semantic_methods.test_duckdb_imlane_paths import sql_suite
         return sql_suite(config, case)
     from tests.semantic_methods.test_duckdb_native import DuckDBNativeGraphLibraryTests
+    selected = os.environ.get('DUCKDB_ONLY_TEST')
+    if selected is not None:
+        if not selected.startswith('test_') or not callable(getattr(DuckDBNativeGraphLibraryTests, selected, None)):
+            raise ValueError('DUCKDB_ONLY_TEST must name an existing compiled native test')
+        return unittest.TestSuite([DuckDBNativeGraphLibraryTests(selected)])
     return unittest.defaultTestLoader.loadTestsFromTestCase(DuckDBNativeGraphLibraryTests)
 
 
@@ -145,6 +150,7 @@ class _Result(unittest.TextTestResult):
                                             adapter_delivered_count=getattr(adapter, 'last_delivered_count', None),
                                             imlane_limits=asdict(imlane.limits) if imlane is not None else None,
                                             unsupported=getattr(test, 'unsupported', []),
+                                            execution_events=getattr(test, 'events', []),
                                             graph_events=getattr(test, 'graph_observations', [])))
         super().stopTest(test)
 

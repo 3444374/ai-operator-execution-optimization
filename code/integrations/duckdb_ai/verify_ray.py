@@ -41,7 +41,7 @@ class RayDuckDBChecks(DuckDBNativeLibraryTests):
         timeout = self.connection.execute("SELECT current_setting('duckdb_ai_timeout_seconds')").fetchone()[0]
         config = FixedModelConfig(self.endpoint, 'fixture', timeout * 1000, bearer_token='EMPTY')
         physical = RayMapConfig(self.address, workers=1, batch_rows=2,
-                                window_bytes=2 * 1024 * 1024, object_bytes=4 * 1024 * 1024)
+                                window_bytes=2 * 1024 * 1024 + 24, object_bytes=4 * 1024 * 1024)
         self.events = []
         self.execution = build_native_execution(config, physical=physical, max_tasks=4, max_active_requests=2,
                                                observer=self.events.append)
