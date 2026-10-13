@@ -119,6 +119,11 @@ class LotusPairAuditTests(unittest.TestCase):
                 call['body_sha256']=digest(call['body'])
         self.assertEqual(len(audit([a,b])),2)
 
+    def test_transport_observations_do_not_claim_core_capacity_fields(self):
+        run=traced_pair()
+        run['core_events'].append(dict(event='http_response',status=200))
+        self.assertEqual(audit([run])[0]['count'],2)
+
 
 @unittest.skipUnless(find_spec('lotus') is not None,'actual pinned LOTUS is unavailable')
 class RealLotusPairTests(unittest.TestCase):

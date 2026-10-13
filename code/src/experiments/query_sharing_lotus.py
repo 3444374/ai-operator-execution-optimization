@@ -223,6 +223,7 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
                     cancel_at_s=cancel_at_s, status='running')
     service.run_id = evidence['run_id']
     start_calls, start_errors = len(service.calls), len(service.errors)
+    parent_cpu = time.process_time()
     bridge, children, controls = None, {}, {}
     release = ctx.Event()
     cancellations = {query:ctx.Event() for query in counts}
@@ -313,6 +314,9 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
         evidence['calls'] = service.calls[start_calls:]
         evidence['http_errors'] = service.errors[start_errors:]
         evidence['exitcodes'] = {q:p.exitcode for q,p in children.items()}
+        # Parent includes Core, fixture HTTP and orchestration threads; this is
+        # an observed control cost, not an isolated scheduler CPU attribution.
+        evidence['parent_cpu_s'] = time.process_time()-parent_cpu
         if (any(p.is_alive() or p.exitcode!=0 for p in children.values()) or service.active or evidence['http_errors']
                 or (bridge and not evidence['bridge_closed'])):
             evidence['status'] = 'failed'
@@ -378,6 +382,8 @@ def audit(runs):
                     or len({e['session_id'] for e in opened})!=len(run['counts'])):
                 raise ValueError('missing independent query Job')
             for event in run['core_events']:
+                if 'usage' not in event:
+                    continue  # The shared factory observer also reports HTTP transport events.
                 if (event['usage']['active_requests']>run['active_requests']
                         or event['usage']['active_work']>run['active_requests']
                         or event['usage']['held_tasks']>64):
@@ -393,6 +399,7 @@ def audit(runs):
             overlap=overlap,client_jct_s={q:r['jct_s'] for q,r in finished.items()},
             group_jct_s=max(r['ended'] for r in finished.values())-run['release_epoch'],
             cpu_s={q:r['cpu_s'] for q,r in finished.items()},rss_peak_bytes=run['rss_peak_bytes'],cancel_at_s=run['cancel_at_s']))
+        summaries[-1]['parent_cpu_s']=run.get('parent_cpu_s')
     return summaries
 
 

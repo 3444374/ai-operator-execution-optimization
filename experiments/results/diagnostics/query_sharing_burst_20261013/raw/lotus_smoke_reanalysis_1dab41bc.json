@@ -1,0 +1,76 @@
+{
+  "source_commit": "1dab41bc156dd276fb8768e3085314b0eab699f0",
+  "independent_audit": "current recorded local audit slice",
+  "summary": [
+    {
+      "run_id": "native_shared",
+      "arm": "native_shared",
+      "count": 36,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.4387481678277254,
+        "long": 0.6860379348509014
+      },
+      "group_jct_s": 0.6860379348509014,
+      "cpu_s": {
+        "short": 0.40038431500000016,
+        "long": 0.5183062599999992
+      },
+      "rss_peak_bytes": 2140446720,
+      "cancel_at_s": null,
+      "parent_cpu_s": null
+    },
+    {
+      "run_id": "strong_static",
+      "arm": "strong_static",
+      "count": 36,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.20561031019315124,
+        "long": 0.5086291139014065
+      },
+      "group_jct_s": 0.5086291139014065,
+      "cpu_s": {
+        "short": 0.021189908999999396,
+        "long": 0.0467316629999992
+      },
+      "rss_peak_bytes": 2113576960,
+      "cancel_at_s": null,
+      "parent_cpu_s": null
+    },
+    {
+      "run_id": "candidate",
+      "arm": "candidate",
+      "count": 36,
+      "service_peak": 2,
+      "overlap": true,
+      "client_jct_s": {
+        "short": 0.08490743953734636,
+        "long": 0.40437920670956373
+      },
+      "group_jct_s": 0.40437920670956373,
+      "cpu_s": {
+        "short": 0.019137025000000918,
+        "long": 0.04579470600000057
+      },
+      "rss_peak_bytes": 2115051520,
+      "cancel_at_s": null,
+      "parent_cpu_s": null
+    }
+  ],
+  "audit_source_sha256": "4cd6477f9f009bddd0f74b12e9d1f38a5bf945b205a65c5b5da2d329f79c5f04",
+  "observed_fixture_posts": 108,
+  "checks": {
+    "server_bridge_tests": 12,
+    "server_bridge_passed": 12,
+    "server_suite_exit": 1,
+    "server_audit_error": "HTTP observer has no Core capacity usage field",
+    "offline_reanalysis": "passed with HTTP/Core observation distinction",
+    "model_calls": 0,
+    "gpu_jobs": 0,
+    "sql_queries": 0
+  },
+  "raw_sha256": "6f3edd3bb03e867dd48fca6e2056a2bc51c47bd24ecfbd1a26e8782247173152"
+}

@@ -127,3 +127,9 @@ K由独立long64两次K=2/4校准选定；主长256/短8四臂三轮交错及无
 Linux另暴露reader EOF与关闭流程同时关闭Pipe fd的竞态；新增单独关闭互斥和真实fd并发用例，属于普通正确性修补。
 本地21项20通过/1实库跳过；修后完整实库验证仍pending，失败/预检与源码摘要归[repair checks](raw/lotus_sdk_repair_checks.json)。
 首次实库仅保存日志，没有HTTP事件原件；后续小配对将在审计前导出事件，即使失败也保留，不把这一缺口抹掉。
+
+`1dab41bc`复测的12项Linux桥检查通过，fd竞态未再出现；三组32+4真实LOTUS进程返回且完整事件已导出，
+共享observer的`http_started/http_finished`缺少Core `usage`导致审计KeyError，suite仍保留退出1。
+修订只区分HTTP和Core容量观测；[108请求原件](raw/lotus_smoke_1dab41bc.json.gz)由新审计零HTTP复算，
+[reanalysis](raw/lotus_smoke_reanalysis_1dab41bc.json)确认完整消息/生成/输出/LM usage、两query/Job/session/进程、两服务槽及最终归零。
+三臂真实重叠、RSS峰值约2.14GB；这是实库桥接正确性资格，小样本JCT不作为模型收益。主长256/短8协议尚待执行。
