@@ -1,9 +1,51 @@
 """Bounded fixed-model HTTP transport; it owns no queueing or scheduling policy."""
 
 import asyncio
+from contextlib import contextmanager
+from contextvars import ContextVar
+from http.cookiejar import CookieJar
 import json
 from dataclasses import asdict
 from pathlib import Path
+
+
+class _RequestCookieJar(CookieJar):
+    """Use CookieJar's normal redirect rules within one execute task only."""
+
+    def __init__(self):
+        super().__init__()
+        self._active = ContextVar('fixed_model_request_cookies', default=None)
+
+    @contextmanager
+    def request_scope(self):
+        token = self._active.set(CookieJar())
+        try:
+            yield
+        finally:
+            self._active.reset(token)
+
+    def _current(self):
+        jar = self._active.get()
+        # Client inspection/preparation outside an execution sees no stored cookies.
+        return CookieJar() if jar is None else jar
+
+    def __iter__(self):
+        return iter(self._current())
+
+    def extract_cookies(self, response, request):
+        return self._current().extract_cookies(response, request)
+
+    def add_cookie_header(self, request):
+        return self._current().add_cookie_header(request)
+
+    def set_cookie(self, cookie):
+        return self._current().set_cookie(cookie)
+
+    def clear(self, *args):
+        return self._current().clear(*args)
+
+    def clear_session_cookies(self):
+        return self._current().clear_session_cookies()
 
 
 def exception_details(error):
@@ -31,10 +73,12 @@ class AsyncFixedModelTransport:
         self.max_active_requests = max_active_requests
         self._observer = observer
         self._client = None
+        self._request_cookies = _RequestCookieJar()
 
     async def execute(self, request, endpoint):
         try:
-            return await self._execute(request, endpoint)
+            with self._request_cookies.request_scope():
+                return await self._execute(request, endpoint)
         except BaseException as error:
             if self._observer:
                 try:
@@ -54,6 +98,7 @@ class AsyncFixedModelTransport:
                 headers["Authorization"] = f"Bearer {self.config.bearer_token}"
             self._client = httpx.AsyncClient(
                 headers=headers,
+                cookies=self._request_cookies,
                 trust_env=False,
                 timeout=None,
                 follow_redirects=False,
@@ -62,6 +107,11 @@ class AsyncFixedModelTransport:
                     max_keepalive_connections=self.max_active_requests,
                 ),
             )
+        # Also covers an explicitly supplied client (for example a MockTransport)
+        # without replacing its transport, connection pool or redirect settings.
+        if self._client.cookies.jar is not self._request_cookies:
+            self._client.cookies = self._request_cookies
+
     async def _execute(self, request, endpoint):
         if endpoint != "model":
             raise ValueError("unknown endpoint")
