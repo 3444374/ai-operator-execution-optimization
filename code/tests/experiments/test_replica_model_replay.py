@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import time
+from types import SimpleNamespace
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "postgres"))
@@ -17,6 +19,33 @@ from src.execution_provider.adapters.model_config import FixedModelConfig
 
 
 class ReplicaModelReplayTests(unittest.TestCase):
+    def test_start_hook_failure_closes_core_without_post_or_budget_refund(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            budget = CellBudgetLedger.create(root / "budget.sqlite", AttemptBudget("start-hook", 2),
+                deadline_utc=time.time() + 60)
+            budget.reserve_unit("cell", 2)
+            unit = budget.claim_shared_unit("cell")
+            calls = tuple(dict(source_sequence=i, source_row_id=i, source_call_id=f"fixture-{i}",
+                body=b'{"model":"fixture","messages":[]}') for i in range(2))
+            live_before = {t.ident for t in threading.enumerate() if t.name == "semloom-async-io"}
+            site = SimpleNamespace(identity="a", url="http://127.0.0.1:9/v1/chat/completions")
+            failure = ValueError("fixture-start-failure")
+            def fail(_):
+                raise failure
+            with self.assertRaises(ValueError) as caught:
+                replay_batch(FixedModelConfig(site.url, "fixture", 2000), directory((site,)), calls,
+                    arm="round_robin", requests=1, unit=unit, output=root / "failed",
+                    stop_new_post_utc=time.time() + 20, query_started=fail)
+            self.assertIs(caught.exception, failure)
+            cleanup = json.loads((root / "failed/cleanup.json").read_text())
+            self.assertEqual(cleanup["usage"]["held_tasks"], 0)
+            self.assertEqual(cleanup["usage"]["active_requests"], 0)
+            self.assertEqual(unit.attempts, 0)
+            self.assertEqual(budget.snapshot()["allocated_requests"], 2)
+            self.assertEqual({t.ident for t in threading.enumerate() if t.name == "semloom-async-io"}, live_before)
+            budget.close_shared_unit("cell")
+
     def test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger(self):
         with tempfile.TemporaryDirectory() as root:
             path = Path(root) / "budget.sqlite"

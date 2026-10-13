@@ -21,3 +21,6 @@ K8第一轮仅在0.274/0.294秒收到第一批rate，完成前没有新的恢复
 三个K8在线cell均覆盖A恢复（12／14／14请求），不能因此称持久在线适应已成立。
 完整route／供给／rate／逐请求服务阶段和CPU成本在[数值原件](raw.json.gz)，所有JCT与开销在[摘要](summary.json)，[原运行记录](run.txt)保留。
 该切片没有新增生产控制器，soft work关闭、未修改Core／跨query机会、未执行GPU或P99资格；默认仍RR。
+
+后续仅增加实验起点hook的异常清理保护：[零HTTP检查](start-hook-cleanup-tests.txt)确认首错保留、Core／IO线程关闭、预留额度不退款。
+原1800次记录对应`52d4f0bb`的源码fingerprint，没有重跑fixture或模型；成功路径、固定变化时刻和所有原值保持。

@@ -203,9 +203,9 @@ def replay_batch(config, directory, calls, *, arm, requests, unit, output,
         observer(dict(event="durable_post_reserved", attempt=attempt, payload_sha256=digest))
 
     query_start = time.monotonic()
-    if query_started is not None:
-        query_started(query_start)
     try:
+        if query_started is not None:
+            query_started(query_start)
         with observe_async_http_posts(unit, before_send):
             offer = flow.offer(tasks)
             if offer.accepted_prefix_count != len(tasks):

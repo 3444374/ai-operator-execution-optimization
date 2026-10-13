@@ -1,0 +1,6 @@
+test_start_hook_failure_closes_core_without_post_or_budget_refund (test_replica_model_replay.ReplicaModelReplayTests.test_start_hook_failure_closes_core_without_post_or_budget_refund) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.008s
+
+OK
