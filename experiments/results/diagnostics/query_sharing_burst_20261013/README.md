@@ -1,12 +1,12 @@
 # 已封口小Job共享机会：无模型机制与反例
 
-本报告只解释真实SessionEngine加两个串行替身服务，模型、GPU、HTTP和PG查询均为0。
+初始实验只解释真实SessionEngine加两个串行替身服务，模型、GPU、HTTP和PG查询均为0；新增桥接阶段见下节。
 研究问题和真实前端预演只维护在[同题M4方案](../../../plans/数据组织.md#query-sharing-burst)。
 LOTUS/Sema/DuckDB原生多查询及真实模型性能均pending；FCFS诊断不代表这些系统。
 
 ## 来源与证据
 
-- 固定base：`9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c`，隔离分支`exp/semloom-query-sharing`，未merge native/main或推送。
+- 固定base：`9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c`，隔离分支`exp/semloom-query-sharing`，未merge native/main；初始实验及规则阶段已推至`126b591f`。
 - [原始证据](raw/probe.json.gz)：126次七场景/六臂/三次确定性重复、两次静态校准、42次满资源/保留资源solo，
   共170次运行/8308次合成请求；工作定义和四份运行源码SHA在原件中，另保留288个探索cell。
 - [summary.json](summary.json)由[独立分析器](../../../../code/src/experiments/query_sharing_analysis.py)复算，含全部重复、每查询三种JCT反事实、
@@ -82,3 +82,17 @@ PYTHONPATH=code python -m src.experiments.query_sharing_analysis \
 ```
 
 不把host elapsed当模拟服务时间；完整资源、决策及重复事件均在gzip，summary只是一份可再生聚合。
+
+<a id="native-query-bridge"></a>
+## 双前端到单Core owner：本地桥接阶段
+
+[bridge_checks.json](raw/bridge_checks.json)保存这次独立运行与源码摘要；63项中50通过，13项实际LOTUS库检查因本机缺库跳过。
+新增11项桥测试用真实Core与替身I/O，其中两个确实spawn独立Python进程；其余以进程内客户演练相同RPC协议。
+同adapter RR/候选保持独立Job/session，覆盖query身份、外Job lease、部分输入封口、慢消费者、取消后在途额度、
+进程异常停止与EOF负例、畸形帧、8MiB上限。LOTUS可选factory另有旧consumer路径行为检查。
+
+EOF但进程仍活着、还持有delivery时，`close`确认失败，结果保持计费；另一Job仍完成。
+进程sentinel确认停止后遗留lease归还；取消已接收的两个计算保留额度直到替身服务返回终态。
+这些是生命周期/接入正确性，不能计为调度收益。RPC复制和新的owner轮询都须计入后续静态/候选两臂。
+未运行真实LOTUS双进程或任何HTTP、SQL、GPU、模型；源码校验、264行请求对拍及客户端JCT仍pending。
+现有服务器解释器只做包元数据核实，不安装依赖；已分配CPU16–17的零模型实库窗口等待baseline计时释放。

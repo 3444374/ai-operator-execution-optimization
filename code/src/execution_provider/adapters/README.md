@@ -62,6 +62,33 @@ the same full response. No new method scheduler is introduced.
   `execution.close()` returns false while any registered Job or task is still retained;
   completing a local failed HTTP await does not establish full service cleanup.
 
+## Private multi-query frontend bridge
+
+`native_query_bridge.py` lets caller-created, trusted child processes invoke the
+existing consumer API through inherited bounded Pipes. `NativeTaskBridge` constructs
+the execution on one owner thread; pipe readers only enqueue one RPC per peer. The
+owner registers a separate Job/session per query. Query labels are bound to their
+pipe; a peer cannot open another query or release its delivery leases. The optional
+`LotusBatchExecutor(session_factory=client.open_session)` keeps native formatting,
+SDK preparation, parsing and whole-frame completion; its default remains unchanged.
+
+This research slice supports one complete uncached Map per frontend/query, with a
+declared input count. It seals the Job only after that count has been accepted.
+Sequential Maps, dynamic peers, DuckDB/SQL, untrusted IPC and service recovery are
+outside this slice. Pickle is restricted to inherited handles of trusted children;
+frames are capped at 8 MiB, offers preserve complete rows, and delivery counts are
+capped against declared result/metadata sizes. RPC copies have an additional finite
+transport cost; they do not add compute grants or replace Core accounting.
+
+The parent binds each started process with `bind_process`. EOF requests cancellation
+but does not prove result bytes have stopped being used. A process sentinel permits
+orphan delivery cleanup; accepted remote work still waits for its terminal. Orderly
+`close` retains the existing consumer promise to discard/release delivery bytes.
+`bridge.close()` returns false while that proof or remote completion is missing.
+The caller owns frontend watchdogs, including blocked pipe writes; the RPC timeout
+bounds reply waiting. Static and candidate comparisons use the same bridge and
+transport overhead. Scope and evidence are in the [M4 record](../../../../experiments/plans/数据组织.md#query-sharing-burst).
+
 ## Complete HTTP responses
 
 `full_response.py` carries a bounded header plus raw response bytes inside the existing result

@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：多查询私有前端桥接
+
+- `exp/semloom-query-sharing`沿用已有Core/Job/lease，通过有限继承Pipe把两个独立前端转交一个owner；LOTUS只增加可选session factory，原默认保持。
+- [本地阶段](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#native-query-bridge)50项通过/13实库跳过；EOF不冒充停止证明、取消不提前释放在途工作，另一Job可独立完成。
+- 一前端/一完整Map、8MiB帧、每peer一个RPC是本切片边界；新adapter静态/候选共同承担复制/轮询成本，正确性修订不归算法收益。
+- 原stability来源保留，共同源码仍待统一owner；服务器仅核实既有包元数据，CPU16–17零模型窗口等待baseline释放，未安装、运行真实库/SQL/模型/GPU。
+
 ## 2026-10-13：共享研究分支吸收规则patch
 
 - 研究成果先提交为`2a8cf9ec`；原规则`d8d3e095`→本分支`c14d2f20`、`abda3404`→`22596647`，仅吸收规则及历史诊断patch。

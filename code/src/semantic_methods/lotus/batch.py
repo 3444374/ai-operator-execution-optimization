@@ -21,13 +21,16 @@ class LotusBatchExecutor:
     def __init__(self, execution, model_config, *, query_id, operator_id,
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, cancelled=None, timeout_s=120,
-                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True):
+                 on_prepared=None, prevalidate_batch=False, retain_full_responses=True,
+                 session_factory=None):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError("LOTUS batch timeout must be at most 120 seconds")
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
+        if session_factory is not None and not callable(session_factory):
+            raise ValueError("LOTUS session factory must be callable")
         self.execution, self.model_config = execution, model_config
         self.query_id, self.operator_id = query_id, operator_id
         self.max_batch_rows, self.max_batch_result_bytes = max_batch_rows, max_batch_result_bytes
@@ -36,6 +39,7 @@ class LotusBatchExecutor:
         self.prevalidate_batch, self.retain_full_responses = prevalidate_batch, retain_full_responses
         self.timeout_s, self.last_responses = timeout_s, ()
         self.last_cleanup_errors = ()
+        self.session_factory = session_factory
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
         from openai import OpenAIError
@@ -72,7 +76,8 @@ class LotusBatchExecutor:
             first_call = validate_batch(lm, uncached_data, all_kwargs,
                 check_stop=check_stop) if self.prevalidate_batch else None
             check_stop()
-            flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
+            flow = (NativeTaskSession(self.execution, self.query_id, self.operator_id)
+                    if self.session_factory is None else self.session_factory(self.query_id, self.operator_id))
             responses = [None] * count
             full = [None] * count if self.retain_full_responses else []
             while True:

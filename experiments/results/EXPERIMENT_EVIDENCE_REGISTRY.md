@@ -3,7 +3,8 @@
 2026-10-13：[已封口Job共享机会的无模型实验](diagnostics/query_sharing_burst_20261013/README.md)。
 固定`9bb6c415`来源、真实Core/双串行服务；170次运行8308次合成提交由独立事件审计复算，GPU/模型/HTTP/PG均0。
 同adapter强静态与候选已配平；改善与估计偏差长Job退化反例均保留，不能外推原生系统或真实查询性能。
-检查、不可用依赖和前端多查询待实现项归报告，模型预演由主协调。
+新增[本地桥接阶段](diagnostics/query_sharing_burst_20261013/README.md#native-query-bridge)50项通过/13实库跳过，
+真实Core的身份、lease、EOF和进程停止检查通过；不算真实LOTUS并发/性能资格。已分配的实库CPU窗口等待baseline释放，模型预演由主协调。
 
 2026-10-12：[执行稳定性与多副本组合](diagnostics/semloom_stability_composition_20261012/README.md)。
 固定runtime／副本／入口修补及必要祖先，本机270项中249通过／21跳过；同execution已知失败归还与未知RPC／HTTP的C/W及37字节对象留存并置通过。

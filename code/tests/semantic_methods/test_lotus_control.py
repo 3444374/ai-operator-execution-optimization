@@ -112,6 +112,16 @@ class LotusControlTests(unittest.TestCase):
             self.assertEqual(state['events'], [])
             self.assertEqual(execution.engine.jobs.jobs, {})
 
+    def test_optional_session_factory_preserves_batch_consumer(self):
+        from src.semantic_methods.lotus import batch
+        with self.batch() as (selected, execution, state):
+            constructor = batch.NativeTaskSession
+            selected.session_factory = lambda query, operator: constructor(execution, query, operator)
+            selected.execution = None  # A remote frontend has no Engine reference.
+            with patch.object(batch, 'NativeTaskSession', side_effect=AssertionError('default flow used')):
+                self.assertEqual(len(self.run_batch(selected)), 2)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
     def test_prevalidation_is_timed_and_cancelled_before_flow_creation(self):
         for expired in (False, True):
             with self.subTest(expired=expired), self.batch(stop_phase='prepare', expired=expired, prevalidate=True) as (selected, execution, state):

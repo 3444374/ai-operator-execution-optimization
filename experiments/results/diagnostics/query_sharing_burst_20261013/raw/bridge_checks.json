@@ -1,0 +1,45 @@
+{
+  "run_id": "query-sharing-local-bridge-20261013",
+  "completed_utc": "2026-10-13T04:54:21.144088+00:00",
+  "source_parent": "126b591f2b3047674997eeed82e5373669e45f4e",
+  "execution_source": "parent plus recorded uncommitted bridge slice",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/native_query_bridge.py": "25515e121cb612f0841d945ef50a8a64532cab2df4bc995b012989240c68bf19",
+    "code/src/semantic_methods/lotus/batch.py": "ce736cd6770157b29bba8d4aac9ac277bf71e15de4bf2e8d874cd6bd053ea588",
+    "code/tests/execution_provider/test_native_query_bridge.py": "298d4b02ca7d428658c05e731cc333cf51a207b114d470b781e2efd8d0c73cf8",
+    "code/tests/semantic_methods/test_lotus_control.py": "62f1261f25e9e60342c41f3232ba4d1e0828cf3aad7aaf13673a8f788b86fb98"
+  },
+  "command": "PYTHONPATH=code python3 -m unittest tests.execution_provider.test_native_query_bridge tests.execution_provider.test_native_tasks tests.semantic_methods.test_lotus_control tests.semantic_methods.test_lotus_cleanup tests.semantic_methods.test_lotus_wait tests.scheduling.test_query_sharing",
+  "tests": {
+    "run": 63,
+    "passed": 50,
+    "skipped": 13,
+    "exit_code": 0,
+    "seconds": 0.888,
+    "output": ".........................................sssssssssssss.........\n----------------------------------------------------------------------\nRan 63 tests in 0.888s\n\nOK (skipped=13)\n"
+  },
+  "skipped_reason": "actual LOTUS tests unavailable on local Python; dependencies not installed",
+  "scope": {
+    "actual_core": true,
+    "private_pipe_rpc": true,
+    "spawned_frontend_in_two_tests": true,
+    "lotus_factory_consumer_test": true,
+    "http_posts": 0,
+    "real_model_calls": 0,
+    "gpu_jobs": 0,
+    "sql_queries": 0,
+    "actual_lotus_frontend_pairs": 0
+  },
+  "negative_cases": [
+    "EOF while frontend remains alive retains leased result and bridge.close returns false",
+    "known accepted compute remains charged after cancel until terminal",
+    "foreign query/lease and malformed frame affect one peer only"
+  ],
+  "qualification_pending": [
+    "actual pinned LOTUS source validation",
+    "long256 + short8 separate LOTUS frontend processes",
+    "same new adapter static/candidate paired JCT",
+    "common integration source",
+    "real model experiment"
+  ]
+}
