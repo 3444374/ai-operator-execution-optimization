@@ -1,14 +1,14 @@
 # 项目大纲
 
-当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，报告修订不产生新模型结果。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
+当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，新增持久计数修订的四组匹配观察仍使用该算法／适配源码。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
 
 本次LOTUS线的近期任务按以下顺序推进，详细量与停止条件归[同题阶段分析](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，不再另建总计划：
 
-1. 处理私有发送账本的历史增长成本。实际三个账本四条计数均全表扫描，有界零模型并发诊断已确认本地扰动；预算组件局部修订已通过14项无模型回归与配对诊断，待固定新helper及payload后以一轮串行匹配Q2核验现场，不改SemLoom补偿观察成本。
+1. 处理私有发送账本的历史增长成本。实际三个账本四条计数均全表扫描，有界零模型并发诊断已确认本地扰动；预算组件局部修订已通过14项无模型回归与配对诊断，四组串行匹配Q2已完成，实际原值与阶段见[本轮记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)，不改SemLoom补偿观察成本。
 2. 建立合理单／双卡工作点。Q2保留小成本参照，原Q1完整2000行与Q3 COUNT分别承担持续供给和质量；各后端少量自身配置，核对实际并发，扩副本供给与固定总预算的方法比较分别设计。
 3. 推进一个双副本长短查询共享实验，使用真实多Job入口，面对合理原生共享、工作守恒简单分配和已修强静态版本。复用现有责任机制；图像及多节点按后续实际需要开展。
 
-[IMLane显式2000行能力与同步／可选async软件证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md)已提供；旧默认128配置仍作兼容选择，原Q1／Q3完整真实模型与共享Coordinator并发分别待对应方案。本次没有新增真实模型运行或批准长测。
+[IMLane显式2000行能力与同步／可选async软件证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md)已提供；旧默认128配置仍作兼容选择，原Q1／Q3完整真实模型与共享Coordinator并发分别待对应方案。持久计数修订已在有限匹配窗口部署；本次未实施后续长测。
 
 已结束的小轮、两次补测及较早接线检查以[项目日志](PROJECT_LOG.md)和各原报告保存历史；缺7项／缺2项及早期128行拒绝不再作为当前待办。PG、其他前端及其余研究状态仍按下文各自来源解释。
 
