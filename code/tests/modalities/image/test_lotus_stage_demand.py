@@ -24,6 +24,7 @@ from src.data.materializers.prepared_assets import (
 )
 from src.semantic_methods.lotus.sdk import IMAGE_TEXT_PROFILE, IMAGE_SOURCE_HASHES, validate_source
 from src.planning.work import StageWork, WorkDescriptor
+from tests.modalities.image.stage_asset_snapshot import read_image_snapshot
 
 
 PINNED = all(find_spec(name) is not None for name in ("lotus", "pandas", "httpx", "litellm"))
@@ -35,30 +36,28 @@ def stage_assets():
     started = time.monotonic()
     manifest = json.loads(MANIFEST.read_text())["images"]["selected"]
     root = Path(os.environ["SEMLOOM_COCO_IMAGE_ROOT"])
-    paths, sources, keys = [], {}, {}
+    if len(manifest) != 12:
+        raise ValueError("fixture requires the twelve unique historical assets")
+    paths, sources, keys, snapshots = [], {}, {}, {}
     from PIL import __version__ as pillow_version
     for row in manifest:
         path = root / row["file"]
-        raw = path.read_bytes()
-        if hashlib.sha256(raw).hexdigest() != row["sha256"]:
-            raise ValueError("historical image source changed")
-        with Image.open(BytesIO(raw)) as image:
-            if getattr(image, "n_frames", 1) != 1:
-                raise ValueError("historical image is not single-frame")
-            rgb_bytes = image.width * image.height * 3
+        snapshot = read_image_snapshot(path, row["sha256"], row["bytes"])
         key = PreparedAssetKey(row["sha256"], "lotus-rgb-png-base64:" +
                                IMAGE_SOURCE_HASHES["utils.py"] + ":pillow=" + pillow_version)
         paths.append(str(path))
         keys[str(path)] = key
-        work = WorkDescriptor((StageWork("source", len(raw), "encoded_bytes"),
-                               StageWork("prepare", rgb_bytes, "rgb_bytes"),
+        snapshots[str(path)] = snapshot
+        work = WorkDescriptor((StageWork("source", len(snapshot.encoded), "encoded_bytes"),
+                               StageWork("prepare", snapshot.rgb_bytes, "rgb_bytes"),
                                StageWork("model", 1, "complete_requests")), "model",
                               key.transform_signature, lower_primary_units=1, upper_primary_units=1)
         sources[key] = PreparedSourceMetadata(row["file"], row["sha256"], work,
                                               "historical-manifest+verified-bytes+image-header")
     if len(paths) != 12 or len(sources) != 12:
         raise ValueError("fixture requires the twelve unique historical assets")
-    return paths, sources, keys, time.monotonic() - started
+    # This fixed source residency is separate from the auxiliary prepare cache.
+    return paths, sources, keys, snapshots, time.monotonic() - started
 
 
 class StaticSharedPreparation:
@@ -119,7 +118,7 @@ class LotusStageDemandTest(unittest.TestCase):
         from lotus.dtype_extensions.image import fetch_image
         from lotus.models import LM
         validate_source(message_profile=IMAGE_TEXT_PROFILE)
-        paths, metadata, keys, metadata_acquisition_s = stage_assets()
+        paths, metadata, keys, snapshots, metadata_acquisition_s = stage_assets()
         self.assertEqual(len(keys), 12)  # No added aliases or duplicated rows.
         self.assertEqual(len({key.content_digest for key in keys.values()}),12)
         all_records = []
@@ -141,7 +140,7 @@ class LotusStageDemandTest(unittest.TestCase):
 
                 def prepare(path):
                     prepared_order.append(keys[path].content_digest)
-                    uri = fetch_image(path, "base64")
+                    uri = snapshots[path].fetch(fetch_image)
                     return uri if arm == "static_uri" else uri.encode("ascii")
 
                 def get_image(array, index, image_type="Image"):
@@ -224,7 +223,7 @@ class LotusStageDemandTest(unittest.TestCase):
                 native_fetch = fetch_image
                 def observe_native(image, image_type="Image"):
                     prepared_order.append(keys[str(image)].content_digest)
-                    return native_fetch(image,image_type)
+                    return snapshots[str(image)].fetch(native_fetch,image_type)
                 native_patch = (patch("lotus.dtype_extensions.image.fetch_image",observe_native)
                                 if arm == "native" else nullcontext())
                 started = time.monotonic()
@@ -263,6 +262,7 @@ class LotusStageDemandTest(unittest.TestCase):
                     prepare_calls=len(prepared_order),prepare_order=prepared_order,copied_uri_bytes=copied_uri_bytes[0],
                     request_bytes=sum(c["request_bytes"] for c in calls),stage_boundaries=boundaries,
                     diagnostic_query_wall_s=query_s,metadata_acquisition_s=metadata_acquisition_s,
+                    source_snapshot_bytes=sum(len(snapshot.encoded) for snapshot in snapshots.values()),
                     message_owners=message_owners,
                     cache_byte_seconds=(static.byte_seconds if arm in ("static_uri","static_bytes") else
                         window.snapshot().resident_byte_seconds if arm == "consumer_bytes" else None)))

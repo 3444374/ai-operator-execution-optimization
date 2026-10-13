@@ -11,7 +11,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
+import threading
 import time
 import unittest
 import sys
@@ -30,7 +32,7 @@ from src.scheduling.runtime.stage_broker import StageBrokerLimits
 from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
 from src.semantic_methods.lotus import batch as batch_module, sdk
 from tests.modalities.image.test_lotus_stage_demand import StaticSharedPreparation, stage_assets
-from tests.semantic_methods.test_lotus_adapter import fixture_server
+from tests.modalities.image.stage_http_fixture import stage_http_fixture
 
 
 REAL = (os.environ.get("SEMLOOM_STAGE_RAY_TEST") == "1" and
@@ -50,6 +52,81 @@ def body_digest(body):
     return hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
 
 
+def assert_stage_limits(event):
+    if "usage" in event:
+        caps = dict(held_tasks=4,active_requests=2,active_work=2,input_bytes=4*1048576,result_bytes=4*1048576)
+        assert all(0 <= event["usage"][name] <= cap for name,cap in caps.items()), event
+    if "object_bytes" in event:
+        assert 0 <= event["object_bytes"] <= 4*1048576, event
+    prepared = event.get("preparation")
+    if prepared:
+        assert 0 <= prepared["held_tasks"] <= 4
+        caps = dict(encoded_held_bytes=4*1048576,ready_held_bytes=4*1048576,
+                    ready_held_work=4,prepare_inflight=1,model_inflight=4)
+        assert all(0 <= prepared["stages"][name] <= cap for name,cap in caps.items()), prepared
+
+
+def verify_preparation_borrow(stack, execution, record):
+    original = execution.engine.preparation.try_prepare
+    record["borrowed_inputs"] = []
+
+    def checked(tasks):
+        for task in tasks:
+            accepted = execution.engine.capacity.records.get(task.key)
+            assert accepted is not None and accepted.task is task.task and accepted.preparation_held
+        count = original(tasks)
+        record["borrowed_inputs"].extend(asdict(t.key) for t in tasks[:count])
+        return count
+    stack.enter_context(patch.object(execution.engine.preparation,"try_prepare",checked))
+
+
+def guarded_sampler(path):
+    def rss_guard():
+        import psutil
+        driver = psutil.Process(os.getpid())
+        measured = 0
+        for process in (driver, *driver.children(recursive=True)):
+            try:
+                measured += process.memory_info().rss
+            except psutil.NoSuchProcess:
+                pass
+        if measured > 4 * 1024**3:
+            raise MemoryError("sampled driver and owned child RSS exceeds 4 GiB")
+        return {}
+    return ProcessSampler(path,{"driver":os.getpid()},interval=.05,max_samples=12000,
+                          include_children=True,pid_provider=rss_guard)
+
+
+def close_for_record(execution, record):
+    primary=sys.exception()
+    try:
+        record["exception_close_confirmed"]=execution.close()
+    except BaseException as error:
+        record["close_error_type"]=type(error).__name__
+        if primary is None:
+            record.update(status="failed",failure_type=type(error).__name__)
+            raise
+        primary.add_note("fixture execution close also failed: "+type(error).__name__)
+
+
+def fixture_lm(config):
+    from lotus.models import LM
+    return LM("openai/"+config.model_id, api_base=config.endpoint_url.removesuffix("/chat/completions"),
+              api_key=config.bearer_token,max_tokens=32,max_batch_size=1,
+              timeout=config.timeout_ms/1000,num_retries=0,max_retries=0)
+
+
+def listing_identity(body):
+    text = "\n".join(p["text"] for p in body["messages"][-1]["content"] if p["type"] == "text")
+    return ("filter" if "Claim:" in text else "map", re.search(r"«([^»]+)»",text).group(1))
+
+
+def completion_bytes(body, content):
+    return json.dumps(dict(id="stage-demand",object="chat.completion",created=1,model=body["model"],
+        choices=[dict(index=0,message=dict(role="assistant",content="Answer: "+content),finish_reason="stop")],
+        usage=dict(prompt_tokens=9,completion_tokens=3,total_tokens=12))).encode()
+
+
 @unittest.skipUnless(REAL, "select preflight-checked actual Daft/Ray fixture; no installations")
 class LotusStageRayTests(unittest.TestCase):
     def test_stage_a_on_existing_daft_ray_execution_and_error_cleanup(self):
@@ -58,12 +135,22 @@ class LotusStageRayTests(unittest.TestCase):
         root = Path(os.environ["SEMLOOM_STAGE_RAY_ARTIFACT_ROOT"])
         require_outside_git(root)
         root.mkdir(mode=0o700, parents=True, exist_ok=False)
-        paths, _, _, _ = stage_assets()
+        paths, _, _, _, _ = stage_assets()
         names = tuple(Path(path).name for path in paths)
         current, records = {}, []
         started = time.monotonic()
+        include_all_429=os.environ.get("SEMLOOM_STAGE_RAY_ALL_429","1")=="1"
+        expected_posts=110 if include_all_429 else 86
 
         def reply(body):
+            if current.get("listing"):
+                stage, listing = listing_identity(body)
+                if listing == "keep-a" and current.get("gate") is not None:
+                    if not current["gate"].wait(5):
+                        raise TimeoutError("fast unique response was not consumed before slow response")
+                if current.get("mixed") and listing == "drop-b":
+                    return 429,b'{"error":{"message":"controlled image fixture","type":"fixture"}}'
+                return 200,completion_bytes(body,str(listing.startswith("keep")) if stage=="filter" else listing)
             identity = request_identity(body, names)
             self.assertEqual(identity[0], current["stage"])
             if current["error"]:
@@ -73,17 +160,14 @@ class LotusStageRayTests(unittest.TestCase):
             with Image.open(BytesIO(base64.b64decode(uri.split(",", 1)[1]))) as image:
                 landscape = image.width >= image.height
             content = str(landscape) if identity[0] == "filter" else "landscape" if landscape else "portrait"
-            response = dict(id="stage-demand", object="chat.completion", created=1, model=body["model"],
-                choices=[dict(index=0, message=dict(role="assistant", content="Answer: " + content),
-                              finish_reason="stop")],
-                usage=dict(prompt_tokens=9, completion_tokens=3, total_tokens=12))
-            return 200, json.dumps(response).encode()
+            return 200,completion_bytes(body,content)
 
         self.assertFalse(ray.is_initialized(), "never join an existing user cluster")
         ray_parent = Path(os.environ["SEMLOOM_STAGE_RAY_TEMP_PARENT"])
         require_outside_git(ray_parent)
         with tempfile.TemporaryDirectory(prefix="sr-", dir=ray_parent) as ray_root, \
-             fixture_server(failure=reply, delay=lambda b: .05 if request_identity(b, names)[1] == names[0] else 0) as (base, calls):
+             stage_http_fixture(reply, lambda b:listing_identity(b) if current.get("listing") else
+                                request_identity(b,names), max_posts=expected_posts) as (base, calls):
             try:
                 ray.init(num_cpus=2, num_gpus=0, include_dashboard=False, _temp_dir=ray_root)
                 config = FixedModelConfig(base + "/chat/completions", "stage-image-fixture", 10000, "local-fixture")
@@ -97,10 +181,13 @@ class LotusStageRayTests(unittest.TestCase):
                                         (1, "consumer_bytes"), (1, "static_bytes")):
                         current.update(stage="filter", error=False)
                         records.append(self.run_case(root, arm, repeat, config, physical, current, calls))
-                    for arm in ("static_bytes", "consumer_bytes"):
+                    for arm in (("static_bytes", "consumer_bytes") if include_all_429 else ()):
                         current.update(stage="filter", error=True)
                         records.append(self.run_case(root, arm, 0, config, physical, current, calls))
-                self.assertEqual(len(calls), 100)
+                    self.assertEqual(len(calls),100 if include_all_429 else 76)
+                    unique = self.run_listing_case(root,config,physical,current,calls,reply,mixed=False)
+                    mixed = self.run_listing_case(root,config,physical,current,calls,reply,mixed=True)
+                self.assertEqual(len(calls),expected_posts)
                 successful = records[:4]
                 for record in successful[1:]:
                     for field in ("prepared_requests", "received_requests", "rows", "usage", "prepare_order"):
@@ -108,14 +195,18 @@ class LotusStageRayTests(unittest.TestCase):
                 self.assertTrue(all(r["prepare_calls"] == 17 for r in successful))
                 self.assertTrue(all(r["copied_uri_bytes"] == 9736050 for r in successful))
                 self.assertTrue(all(r["filter_survivors"] == 7 for r in successful))
-                self.assertTrue(any(r["arrival_order_differs_from_source"] for r in successful))
+                # Orientation outputs alone are not an association oracle. A
+                # separate unique-output flow below forces completion inversion.
                 write_private_json(root / "summary.json", dict(status="passed", records=records,
+                    unique_association=unique,mixed_sdk=mixed,
                     fixture_posts=len(calls), real_model_calls=0, gpu_starts=0, ray_clusters=1,
+                    all_429_included=include_all_429,
                     runtime_ready_s=runtime_ready_s, total_wall_s=time.monotonic()-started,
                     memory_scope="50ms sampled process RSS; summed RSS is not unique physical memory",
                     request_scope="prepared payload bytes and canonical received JSON; raw HTTP wire bytes unavailable"))
             finally:
                 ray.shutdown()
+                write_private_json(root/"http-receipts.json",list(calls))
         self.assertFalse(ray.is_initialized())
 
     def run_case(self, root, arm, repeat, config, physical, current, calls):
@@ -123,11 +214,10 @@ class LotusStageRayTests(unittest.TestCase):
         import pandas as pd
         from lotus.dtype_extensions import ImageArray
         from lotus.dtype_extensions.image import fetch_image
-        from lotus.models import LM
         case = root / (arm + "-" + str(repeat) + ("-error" if current["error"] else ""))
         case.mkdir(mode=0o700)
         started = time.monotonic()
-        paths, sources, keys, acquisition_s = stage_assets()
+        paths, sources, keys, snapshots, acquisition_s = stage_assets()
         names = tuple(Path(path).name for path in paths)
         uses = tuple(use for path in paths for use in (
             AssetUse("filter:" + Path(path).name, keys[path], source=sources[keys[path]]),
@@ -136,33 +226,19 @@ class LotusStageRayTests(unittest.TestCase):
         static = StaticSharedPreparation(sources, 4 * 1048576)
         record = dict(arm=arm, repeat=repeat, error_case=current["error"], cache_bytes=4 * 1048576,
                       source_metadata_s=acquisition_s, prepare_order=[], prepared_requests=[],
+                      source_snapshot_bytes=sum(len(s.encoded) for s in snapshots.values()),
                       responses=[], boundaries=[], timing=[], copied_uri_bytes=0)
         events, execution, selected = [], None, None
         batch_inputs = [None]
         first_call = len(calls)
-        sampler = ProcessSampler(case / "rss.jsonl", {"driver":os.getpid()}, interval=.05,
-                                 max_samples=12000, include_children=True)
-
-        def rss_guard():
-            import psutil
-            driver = psutil.Process(os.getpid())
-            measured = 0
-            for process in (driver, *driver.children(recursive=True)):
-                try:
-                    measured += process.memory_info().rss
-                except psutil.NoSuchProcess:
-                    pass
-            if measured > 4 * 1024**3:
-                raise MemoryError("sampled driver and owned child RSS exceeds 4 GiB")
-            return {}
-
-        sampler.pid_provider = rss_guard
+        sampler = guarded_sampler(case / "rss.jsonl")
 
         def check_resources():
             if sampler.error:
                 raise sampler.error
 
         def observe(event):
+            assert_stage_limits(event)
             events.append(dict(event, observed_ns=time.monotonic_ns(), query_stage=current["stage"]))
 
         def timed(function, label):
@@ -177,7 +253,7 @@ class LotusStageRayTests(unittest.TestCase):
 
         def prepare(path):
             record["prepare_order"].append(keys[path].content_digest)
-            return fetch_image(path, "base64").encode("ascii")
+            return snapshots[path].fetch(fetch_image).encode("ascii")
 
         def get_image(array, index, image_type="Image"):
             self.assertEqual(image_type, "base64")
@@ -231,13 +307,12 @@ class LotusStageRayTests(unittest.TestCase):
             with sampler, ExitStack() as stack:
                 execution = build_native_execution(config, physical=physical, max_tasks=4,
                                                    max_active_requests=2, observer=observe)
+                verify_preparation_borrow(stack, execution, record)
                 record["execution_ready_s"] = time.monotonic() - started
                 selected = LotusBatchExecutor(execution, config, query_id=case.name, operator_id="filter-map",
                     message_profile=sdk.IMAGE_TEXT_PROFILE, on_prepared=on_prepared, on_response=on_response,
                     on_batch=lambda data,_kwargs:batch_inputs.__setitem__(0,data))
-                lm = LM("openai/stage-image-fixture", api_base=config.endpoint_url.removesuffix("/chat/completions"),
-                    api_key="local-fixture", max_tokens=32, max_batch_size=1, timeout=10,
-                    num_retries=0, max_retries=0)
+                lm = fixture_lm(config)
                 frame = pd.DataFrame({"image":ImageArray(paths), "asset_id":list(names)})
                 stack.enter_context(lotus.settings.context(lm=lm, enable_cache=False))
                 stack.enter_context(lotus_executor(lm, selected))
@@ -278,13 +353,21 @@ class LotusStageRayTests(unittest.TestCase):
                     mapped = filtered.sem_map("Return the orientation of {image}. Asset: {asset_id}.", suffix="_orientation")
                     record["map_wall_s"] = time.monotonic() - map_started
                     record["rows"] = mapped[["asset_id","_orientation"]].to_dict("records")
+                    expected = []
+                    for path in paths:
+                        with Image.open(BytesIO(snapshots[path].encoded)) as image:
+                            if image.width >= image.height:
+                                expected.append(dict(asset_id=Path(path).name,_orientation="Answer: landscape"))
+                    self.assertEqual(record["rows"], expected)
                     record["usage"] = {name:getattr(lm.stats.physical_usage,name)
                                        for name in ("prompt_tokens","completion_tokens","total_tokens")}
+                    self.assertEqual(record["usage"],dict(prompt_tokens=171,completion_tokens=57,total_tokens=228))
                     batch_inputs[0] = None
                     boundary("map-result-consumed")
                 record["ready_query_wall_s"] = time.monotonic() - query_started
                 record["task_wall_s"] = time.monotonic() - started
                 self.assertEqual(selected.last_cleanup_errors, ())
+                calls.wait_idle()
                 self.assertEqual(len(calls)-first_call, 12 if current["error"] else 19)
                 self.assertTrue(all(item["usage"]["result_bytes"] > 0 for item in record["responses"]))
                 sampler.phase = "cleanup"
@@ -298,8 +381,7 @@ class LotusStageRayTests(unittest.TestCase):
                 self.assertFalse(static.cache)
                 self.assertEqual((window.snapshot().pending_consumers,window.snapshot().held_consumers,
                                   window.snapshot().prepared_bytes), (0,0,0) if arm == "consumer_bytes" else (24,0,0))
-            received = [dict(identity=request_identity(body,names), json_sha256=body_digest(body))
-                        for body in calls[first_call:]]
+            received = [dict(identity=row["identity"],json_sha256=row["json_sha256"]) for row in calls[first_call:]]
             expected = [dict(identity=r["identity"],json_sha256=r["json_sha256"]) for r in record["prepared_requests"]]
             self.assertEqual(sorted(received,key=lambda r:r["identity"]), sorted(expected,key=lambda r:r["identity"]))
             record["received_requests"] = sorted(received,key=lambda r:r["identity"])
@@ -312,8 +394,122 @@ class LotusStageRayTests(unittest.TestCase):
             record.update(status="failed", failure_type=type(error).__name__)
             raise
         finally:
-            if execution is not None:
-                record["exception_close_confirmed"] = execution.close()
-            record["lifecycle_wall_s"] = time.monotonic() - started
-            write_private_json(case / "record.json", record)
-            write_private_json(case / "events.json", events)
+            try:
+                if execution is not None:
+                    close_for_record(execution,record)
+            finally:
+                record["lifecycle_wall_s"] = time.monotonic() - started
+                write_private_json(case / "record.json", record)
+                write_private_json(case / "events.json", events)
+
+    def run_listing_case(self, root, config, physical, current, calls, reply, *, mixed):
+        import httpx
+        import lotus
+        import pandas as pd
+        from lotus.dtype_extensions import ImageArray
+        from lotus.dtype_extensions.image import fetch_image
+        paths,_,_,snapshots,_ = stage_assets()
+        labels = ["keep-a","drop-b","keep-c","drop-d"]
+        index = [10,20,30,40]
+        record = dict(mixed=mixed,responses=[],prepared=[],native=[],events=[])
+        current.update(listing=True,mixed=mixed,stage="map" if mixed else "filter",gate=None)
+
+        def frame():
+            return pd.DataFrame({"image":ImageArray(paths[:4]),"listing_text":labels},index=index)
+
+        def get_image(array, row, image_type="Image"):
+            return snapshots[str(array._data[row])].fetch(fetch_image,image_type)
+
+        gate=threading.Event()
+        before=len(calls)
+        execution=None
+        name="mixed-sdk" if mixed else "unique-association"
+        sampler=guarded_sampler(root/(name+"-rss.jsonl"))
+        def observe(event):
+            if sampler.error:
+                raise sampler.error
+            assert_stage_limits(event)
+            record["events"].append(dict(event,query_stage=current["stage"],observed_ns=time.monotonic_ns()))
+        def response(sequence,raw):
+            state=asdict(execution.engine.capacity.usage())
+            record["responses"].append(dict(stage=current["stage"],sequence=sequence,status=raw.status_code,usage=state))
+            if sequence==1:
+                self.assertGreater(state["active_requests"],0)
+                gate.set()
+        def prepared(sequence,call):
+            body=json.loads(call.payload)
+            record["prepared"].append(dict(identity=listing_identity(body),json_sha256=body_digest(body)))
+        try:
+            with sampler, ExitStack() as stack:
+                if mixed:
+                    def native_send(client,request,**options):
+                        body=json.loads(request.read())
+                        record["native"].append(dict(identity=listing_identity(body),json_sha256=body_digest(body)))
+                        status,data=reply(body)
+                        return httpx.Response(status,content=data,request=request,headers={"content-type":"application/json"})
+                    native_error=None
+                    with lotus.settings.context(lm=fixture_lm(config),enable_cache=False), \
+                         patch.object(ImageArray,"get_image",get_image), patch.object(httpx.Client,"send",native_send):
+                        try:
+                            frame().sem_map("Describe {listing_text} using {image}.",suffix="_decision")
+                        except Exception as error:
+                            native_error=error
+                    self.assertIsNotNone(native_error)
+                    self.assertEqual(getattr(native_error,"status_code",None),429)
+                    self.assertEqual(len(record["native"]),4)
+                current["gate"]=gate
+                execution=build_native_execution(config,physical=physical,max_tasks=4,max_active_requests=2,observer=observe)
+                verify_preparation_borrow(stack,execution,record)
+                selected=LotusBatchExecutor(execution,config,query_id="mixed" if mixed else "unique",operator_id="association",
+                    message_profile=sdk.IMAGE_TEXT_PROFILE,on_prepared=prepared,on_response=response)
+                lm=fixture_lm(config)
+                stack.enter_context(lotus.settings.context(lm=lm,enable_cache=False))
+                stack.enter_context(lotus_executor(lm,selected))
+                stack.enter_context(patch.object(ImageArray,"get_image",get_image))
+                data=frame()
+                if mixed:
+                    with self.assertRaises(type(native_error)) as caught:
+                        data.sem_map("Describe {listing_text} using {image}.",suffix="_decision")
+                    self.assertEqual(getattr(caught.exception,"status_code",None),429)
+                    self.assertEqual(sorted(record["prepared"],key=lambda r:r["identity"]),
+                                     sorted(record["native"],key=lambda r:r["identity"]))
+                    self.assertEqual(sorted(r["status"] for r in record["responses"]),[200,200,200,429])
+                else:
+                    filtered=data.sem_filter("{image} is consistent with {listing_text}.")
+                    self.assertEqual(filtered.index.tolist(),[10,30])
+                    self.assertEqual(filtered["listing_text"].tolist(),["keep-a","keep-c"])
+                    gate.clear()
+                    current["stage"]= "map"
+                    mapped=filtered.sem_map("Describe {listing_text} using {image}.",suffix="_decision",return_raw_outputs=True)
+                    self.assertEqual(mapped.index.tolist(),[10,30])
+                    self.assertEqual(mapped["_decision"].tolist(),["Answer: keep-a","Answer: keep-c"])
+                    map_order=[r["sequence"] for r in record["responses"] if r["stage"]=="map"]
+                    self.assertLess(map_order.index(1),map_order.index(0))
+                    self.assertEqual(lm.stats.physical_usage.total_tokens,72)
+                    record["expected_indices"],record["expected_outputs"]=[10,30],["Answer: keep-a","Answer: keep-c"]
+                first_stage="map" if mixed else "filter"
+                order=[r["sequence"] for r in record["responses"] if r["stage"]==first_stage]
+                self.assertLess(order.index(1),order.index(0))
+                self.assertEqual(execution.engine.capacity.usage(),Usage())
+                self.assertEqual(execution.engine.jobs.jobs,{})
+                self.assertEqual(execution.engine.preparation.snapshot()["object_bytes"],0)
+                self.assertEqual(selected.last_cleanup_errors,())
+                calls.wait_idle()
+                self.assertEqual(len(calls)-before,4 if mixed else 6)
+                self.assertTrue(execution.close());execution=None
+            received=[dict(identity=r["identity"],json_sha256=r["json_sha256"]) for r in calls[before:]]
+            self.assertEqual(sorted(received,key=lambda r:r["identity"]),sorted(record["prepared"],key=lambda r:r["identity"]))
+            record["received"]=list(calls[before:])
+            record["status"]="passed"
+            return record
+        except BaseException as error:
+            record.update(status="failed",failure_type=type(error).__name__)
+            raise
+        finally:
+            gate.set()
+            try:
+                if execution is not None:
+                    close_for_record(execution,record)
+            finally:
+                record["resource_summary"]=sampler.summary()
+                write_private_json(root/(name+".json"),record)

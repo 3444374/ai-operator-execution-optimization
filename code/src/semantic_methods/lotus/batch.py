@@ -90,8 +90,11 @@ class LotusBatchExecutor:
                 self.on_batch(uncached_data, all_kwargs)
             check_stop()
             profile_kwargs = {} if self.message_profile == "text" else {"message_profile": self.message_profile}
+            validation_kwargs = dict(profile_kwargs)
+            if self.message_profile != "text":
+                validation_kwargs.update(model_config=self.model_config, call_limits=self.call_limits)
             first_call = validate_batch(lm, uncached_data, all_kwargs,
-                check_stop=check_stop, **profile_kwargs) if self.prevalidate_batch else None
+                check_stop=check_stop, **validation_kwargs) if self.prevalidate_batch else None
             check_stop()
             flow = NativeTaskSession(self.execution, self.query_id, self.operator_id)
             responses = [None] * count

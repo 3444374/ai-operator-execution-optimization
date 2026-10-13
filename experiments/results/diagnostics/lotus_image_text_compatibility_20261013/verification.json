@@ -486,5 +486,11 @@
     "ray_clusters_started_total": 3,
     "evidence_archive_sha256": "8ec9cb89fc6b306976bbd06a1b09d511e60891f93f2296bf20ce4cf90018939c",
     "evidence_members": 32
+  },
+  "stage_review": {
+    "summary": "stage-review-verification.json",
+    "raw": "raw/stage-review-evidence.tar.gz",
+    "source_manifest_sha256": "845b8171e3cf560db142060c495fd7ca27a1be2cd273760dd58f0ca2d9e95800",
+    "status": "passed software qualification, first attempt retained"
   }
 }

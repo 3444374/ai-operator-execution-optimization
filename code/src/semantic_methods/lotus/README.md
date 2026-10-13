@@ -141,7 +141,8 @@ Daft连接按查询和实际异步loop拥有及关闭；Ray Data沿原HTTP stage
 native入口在准备前核对目标行数与实际executor容量。普通LOTUS替换请求的默认完整响应额度为1MiB。
 省略profile时保留已有批次参数，并从实际Engine item容量推导有限请求/响应额度；
 自定义小容量诊断仍可运行。SemLoom继续有限准备，native继续采用自己的物理准备方式。
-逐条请求和累计输入在准备时检查；不宣称未知整批字节在SemLoom任何HTTP之前全部核完。
+默认纯文本分块路径在准备时检查逐条请求和累计输入，不宣称未知整批字节在任何HTTP之前全部核完。
+显式图文profile的整批容量预检见下文；纯文本默认和轻预检行为保持原样。
 batch期限覆盖准备、消费至EOF和SDK解释，清理时间另记；各替换传输按总时长核查request期限。
 原LOTUS SDK仍保留阶段超时语义，本profile不能据此证明六条路径所有超时阶段等价。
 IMLane默认128行来自自有调用桥；显式2000行新桥已在作者CPython/Ray通过原Q1的软件检查。
@@ -198,6 +199,10 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 `ImageArray`与文本列经过Map/Filter formatter生成的user内容列表，仅接受原PNG data URI与text部分。
 默认`message_profile="text"`保持旧输入范围；原生`lotus_executor(lm)`不装替换器。
 该profile额外核对图像加载、ImageArray和Filter源码，并在任何flow接纳前对整批使用原SDK转换检查。
+预检同时核对每行固定模型配置、完整请求字节和累计输入字节；非法后续窗口零flow、零提交。
+仅保留首个规范调用，其余正文校验后丢弃；合法后缀在原有限执行块内再次准备，不建立整批payload缓存。
+取消及到期覆盖这些检查；[审查修补与实依赖资格](../../../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-review)
+保留初次失败、受影响旧文本回归和实际Daft/Ray取证边界。
 profile不进入模型请求，原提示/内容顺序、生成参数、原LM及parser/usage继续保留。
 
 ```python

@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "run_id": "semloom-stage-review-20261013-qm1wafys",
+  "base_commit": "9673682c5845afc3d53c1e38739677f8614b217d",
+  "final_source": {
+    "base_commit": "9673682c5845afc3d53c1e38739677f8614b217d",
+    "files": {
+      "code/src/semantic_methods/lotus/batch.py": "b9f839703065d7d3d8f5fdda448d0d1867e513fd9ad532412514b827688476d7",
+      "code/src/semantic_methods/lotus/sdk.py": "4b7e7b90eefdf3e94ece084385e2ec308d7ad5961731e5212617ec0b5382d6ec",
+      "code/tests/modalities/image/stage_asset_snapshot.py": "61f94cd2e86ac21cd727b922b857f49766318872fa208ae70c08fe161b7bac36",
+      "code/tests/modalities/image/stage_http_fixture.py": "c38d8a3768df574db4006d4230e6cc295d0e978463737439719a93bce65224ee",
+      "code/tests/modalities/image/test_lotus_stage_demand.py": "d95f707b9fe2fde2a40adf2145efb5554fa6c4bb1a3ec2303d845548b6346971",
+      "code/tests/modalities/image/test_lotus_stage_ray.py": "d5506a50a58ec91c827d8c082658e6028711170102d50a94c98388c66b72fe4b",
+      "code/tests/modalities/image/test_stage_asset_snapshot.py": "61c7ee4e189c5e81b83a1bcfbc344474fb8e08c767851cd40a3744507d2e6c31",
+      "code/tests/modalities/image/test_stage_http_fixture.py": "33ef9d6b5293ecfe463f626a2b5f7ed98a36ee19212b2277cb47dc53876bf289",
+      "code/tests/semantic_methods/test_lotus_batch_preflight.py": "4bb91dcdb3e1c27f3f2beb55c84a1e005caa1e5acb95ea4ea0e9eaf017b305fe",
+      "code/tests/semantic_methods/test_lotus_stage_lifecycle.py": "8c9d14fb8c3a33591284d15caeb5e17c214fc274cc6b88726a4dd8966fa23259"
+    },
+    "scope": "10 reviewed files over published base; existing dependency environment",
+    "manifest_sha256": "845b8171e3cf560db142060c495fd7ca27a1be2cd273760dd58f0ca2d9e95800"
+  },
+  "window": {
+    "t0": "2026-10-13T10:19:38.142090+00:00",
+    "deadline": "2026-10-13T10:29:38.142090+00:00",
+    "cpu_affinity": [
+      24,
+      25,
+      26,
+      27
+    ],
+    "num_ray_cpus": 2,
+    "num_ray_gpus": 0,
+    "max_sampled_summed_rss_bytes": 4294967296,
+    "max_stage_fixture_posts": 110,
+    "max_sdk_httpx_posts": 250,
+    "weakref_urllib_posts": 2,
+    "model_posts": 0,
+    "source_manifest_sha256": "991d0c5801d341f44379e6fa49ce1b1aa2793bc36322120a0bc06c40155e14df"
+  },
+  "completed_at": "2026-10-13T10:24:22.592105+00:00",
+  "release": {
+    "checked_at": "2026-10-13T10:25:35.394309+00:00",
+    "driver": "existing preflight driver, independent new process",
+    "sampled_pid_birth_count": 26,
+    "alive_sampled_identities": [],
+    "common_lease_exists": false,
+    "gpu_compute_apps": ""
+  },
+  "local_related_tests": {
+    "passed": 55,
+    "skipped": 0,
+    "http_body_weakref_tests": 1,
+    "scope": "Core/data regressions with seams; no actual LOTUS/Ray locally"
+  },
+  "existing_environment_tests": {
+    "tests": 83,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "network_httpx_posts": 20,
+    "network_httpx_requests": 20,
+    "other_network_hosts": [],
+    "weakref_urllib_posts": 2,
+    "model_requests": 0,
+    "gpu_starts": 0
+  },
+  "stage_tests": {
+    "passed": 1,
+    "skipped": 0,
+    "first_attempt": {
+      "status": "failed",
+      "fixture_posts": 19,
+      "reason": "independent Map oracle omitted original Answer prefix"
+    },
+    "recovery": {
+      "fixture_posts": 86,
+      "known_all_429_cases_omitted": true,
+      "scope": "4 successful orientation arms + unique association + mixed SDK success/429"
+    },
+    "total_stage_posts": 105,
+    "stage_limit": 110,
+    "native_mixed_in_memory_replies": 4,
+    "ray_clusters": 2,
+    "real_model_calls": 0,
+    "gpu_starts": 0
+  },
+  "metrics": [
+    {
+      "arm": "static_bytes",
+      "repeat": 0,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "task_wall_s": 5.379852110054344,
+      "ready_query_wall_s": 5.363296214025468,
+      "driver_peak_mib": 1181.828125,
+      "summed_peak_mib": 2322.35546875
+    },
+    {
+      "arm": "consumer_bytes",
+      "repeat": 0,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "task_wall_s": 2.7326842988841236,
+      "ready_query_wall_s": 2.72255795635283,
+      "driver_peak_mib": 1202.03515625,
+      "summed_peak_mib": 2350.3828125
+    },
+    {
+      "arm": "consumer_bytes",
+      "repeat": 1,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "task_wall_s": 2.739024840760976,
+      "ready_query_wall_s": 2.7273924802429974,
+      "driver_peak_mib": 1208.96484375,
+      "summed_peak_mib": 2360.28125
+    },
+    {
+      "arm": "static_bytes",
+      "repeat": 1,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "source_snapshot_bytes": 1612536,
+      "task_wall_s": 2.840349123813212,
+      "ready_query_wall_s": 2.8310394450090826,
+      "driver_peak_mib": 1213.76171875,
+      "summed_peak_mib": 2365.16796875
+    }
+  ],
+  "unique_and_mixed_orders": [
+    {
+      "case": "unique-association",
+      "stage": "filter",
+      "delivery_sequences": [
+        1,
+        0,
+        2,
+        3
+      ],
+      "completion_first": [
+        "drop-b",
+        "keep-a",
+        "keep-c",
+        "drop-d"
+      ],
+      "one_before_zero": true
+    },
+    {
+      "case": "unique-association",
+      "stage": "map",
+      "delivery_sequences": [
+        1,
+        0
+      ],
+      "completion_first": [
+        "keep-c",
+        "keep-a"
+      ],
+      "one_before_zero": true
+    },
+    {
+      "case": "mixed-sdk",
+      "stage": "map",
+      "delivery_sequences": [
+        1,
+        0,
+        2,
+        3
+      ],
+      "completion_first": [
+        "drop-b",
+        "keep-a",
+        "keep-c",
+        "drop-d"
+      ],
+      "one_before_zero": true
+    }
+  ],
+  "runtime_ready_s": 8.468820353038609,
+  "fixture_wall_s": 24.262717885896564,
+  "raw_archive": {
+    "path": "raw/stage-review-evidence.tar.gz",
+    "sha256": "63557209531122688d5bb755deeabaed2b1af6335d034f3b0f84d0b374b94beb",
+    "members": 60,
+    "bytes": 168578
+  },
+  "qualification": "software fixture only; no image decoder Core admission, pinned/device memory, actual VLM, PG E2E, or performance qualification",
+  "conclusion": "both byte arms still prepare 17 times and copy 9736050 URI bytes; no work-saving signal; RSS not a performance ranking"
+}

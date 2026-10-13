@@ -1,7 +1,8 @@
 # LOTUS图文执行接点与Sema输入核查
 
 早先切片只验证固定前端能力和同方法执行接点，没有真实模型、GPU或Ray启动。
-末节追加真实Daft/Ray及localhost软件fixture；没有真实推理或PG-E2E性能资格。
+后文追加真实Daft/Ray及localhost软件fixture；最新[审查修补](#stage-review)纠正旧RSS与关联取证边界。
+没有真实推理或PG-E2E性能资格。
 独立研究原型为`92bcd05a`；通用LOTUS接线为`607b9f88`，只改`lotus/sdk.py`、`lotus/batch.py`并增加独立测试。
 研究假设和静态缓存反例仍见[阶段设计](../../../../docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md#frontend-stage-audit)，
 这次接线不采用准备缓存，也没有新增调度或性能结论。
@@ -156,6 +157,9 @@ lease归还没有伪造模型/设备结束或结果消费回执；结果仍由�
 <a id="stage-a-daft-ray"></a>
 ## 阶段A的真实Daft/Ray软件接线验证
 
+本节是历史首轮，数字及原件保留。旧fixture跨轮持有完整请求正文，且同向Map输出不能独立验证行关联；
+RSS与关联结论的修正及新资格见[审查修补](#stage-review)。
+
 复用现有`LotusBatchExecutor(image-text)`→`NativeTaskSession/SessionEngine`→
 `MapInputPreparation/iter_payload_batches`（Daft native分批）→`RayMapTransport`（Ray HTTP actor）→原SDK重放。
 解码仍由原LOTUS前端完成，`physical=None`不包含Daft/Ray；PG typed CLIP是另一条既有CPU/GPU stage路径。
@@ -188,8 +192,9 @@ Daft Native完整调用baseline由其自身graph调度，与SemLoom内部Daft ma
 | 3 consumer_bytes | 17 | 9736050 | 2.834861 | 2.822550 | 1218.75 | 2368.62 |
 | 4 static_bytes | 17 | 9736050 | 2.723388 | 2.713941 | 1231.00 | 2382.39 |
 
-四次均为12唯一源／7后继／19完整请求；原请求JSON、源关联、prepared顺序、SDK输出顺序、parser与usage一致。
-HTTP到达允许异序，原SDK按sequence恢复输出；每次准备payload总字节9,747,951。原始HTTP wire、H2D、pinned/device驻留未测。
+四次均为12唯一源／7后继／19完整请求；原请求JSON、prepared顺序、四臂输出、parser与usage一致。
+这不是独立行关联oracle。HTTP到达异序也不能代替完成异序取证；每次准备payload总字节9,747,951。
+原始HTTP wire、H2D、pinned/device驻留未测。
 两次429流程各12完整请求、12次图片prepare，Map未执行；原异常status=429，消费者需求取消后缓存归零。
 六流程在消费边界Core held/input/result/request/work及broker encoded/ready/model/object均归零，关闭回执为true。
 
@@ -217,3 +222,59 @@ Ray对象在其成员获得确认终态后释放，不能用缓存释放代替�
 [聚合与定义](stage-ray-verification.json)、[原区间/RSS/失败/源码身份](raw/stage-ray-evidence.tar.gz)保留32份观测及双摘要清单。
 归档SHA-256 `8ec9cb89fc6b306976bbd06a1b09d511e60891f93f2296bf20ce4cf90018939c`；
 原件按`semloom-stage-ray-20261013-hzw91ilu`定位，前两次失败不覆盖，原历史归档保持。
+
+<a id="stage-review"></a>
+
+## 审查修补与重新取得软件资格
+
+基底`9673682c`。只修现有图文预检与阶段fixture，不新增调度器、结果缓存或模型窗口。
+[源码与聚合](stage-review-verification.json)按十份源码SHA冻结；[原件](raw/stage-review-evidence.tar.gz)
+保留60个成员及private/public双摘要，SHA-256 `63557209531122688d5bb755deeabaed2b1af6335d034f3b0f84d0b374b94beb`。
+
+- 第5行超请求容量、累计输入容量或固定模型配置时，旧实现已有1个flow、4条backend提交；
+  修后held=2/4的六个子例均零flow、零提交、零解析。图文逐行完整转换后检查并丢弃后缀，只留首行；
+  取消/到期覆盖检查，合法后缀仍按原有界块重做转换。纯文本默认及轻预检没有升级。
+- 原来SHA/header核验后重新按路径转换，文件替换可使旧key用于新内容。现在同一不可变encoded bytes
+  完成SHA、header与原LOTUS PIL分支转换；超源字节界在decode前拒绝，多帧仍拒绝。固定12源额外驻留
+  1,612,536字节，明确独立于4MiB辅助准备缓存。三类PIL输入与固定原fetch_image的离线对拍一致。
+- 旧HTTP helper跨轮留存100份完整body，其中URI合计51,337,272字节；这不是实际RSS量，
+  但使旧跨轮RSS不能作为缓存驻留优势的证据。新专属fixture只保存身份、摘要、长度、状态和时点；
+  handler结束前清除body及其parts引用，嵌套body弱引用回归证明前轮对象不再被helper持有。
+- 同向输出互换仍可能保持四臂一致。新独立预期指定索引`[10,30]`与唯一输出
+  `['Answer: keep-a','Answer: keep-c']`。gate在sequence 1被实际Core交付后才放开0；
+  Filter交付`[1,0,2,3]`、Map交付`[1,0]`，HTTP完成时点同样先1后0；逐行对应与原序恢复通过。
+- 混合200/429在原LM用4个内存SDK回复取得异常参照，再经实际Ray的4个HTTP回复核对。
+  先交付429时慢行仍占C/W；不提前退款，最终原SDK异常类型/status及完整请求一致，确认终态后关闭归零。
+  parser/消费错误、取消和actor未知的五个廉价生产Core/transport回归通过；未知成员保留C/W/held各1及块责任，
+  关闭不伪造确认。这是seam故障注入，未在实际Ray杀actor。独立审查另复现并修好fixture清理异常覆盖
+  第一异常、跳过落盘的问题；第一异常和关闭错误分别保存。
+
+本地相关55项＋HTTP弱引用1项通过，0跳过；新增部分使用seam，不称为本地实SDK/Ray资格。
+沿用Linux既有driver及LOTUS1.2.4、Daft0.7.21、Ray2.56.1、Arrow24.0.0、Pillow12.2.0，
+只读preflight通过，无安装/下载。实环境83项旧SDK＋新增回归通过，0跳过，20个localhost HTTPX POST＋2个弱引用POST。
+独立代码审查的初次HTTP用例因其sandbox禁bind未执行；本线本地和Linux均实际通过该项。
+
+窗口`semloom-stage-review-20261013-qm1wafys`：T0 10:19:38.142090 UTC／北京时间18:19:38，
+原硬截止10:29:38.142090 UTC／18:29:38。CPU24–27、600秒、4GiB采样RSS停限、同一共同host lease。
+首次实Ray在19个POST后因新oracle误删原Map的`Answer:`前缀失败；原parser不改，失败及源码身份保留。
+恢复仍在原期限和110阶段POST总额内：四成功臂76＋唯一关联6＋混合429的4＝86，累计105。
+为守原预算，本轮未重复两次全429；此前两次24请求证据仍在旧归档。两轮共2个CPU Ray集群，模型/GPU均0。
+恢复监督于10:24:22.592105 UTC／18:24:22退出；10:25:35.394309 UTC／18:25:35独立新driver
+核对26个采样PID＋birth全部无存活，共同lease不存在、GPU计算进程为空。此后无新增服务器负载。
+
+| 顺序／臂 | prepare | URI复制字节 | 主任务秒 | driver峰值MiB | 同时RSS加总峰值MiB |
+|---|---:|---:|---:|---:|---:|
+| static_bytes 0 | 17 | 9736050 | 5.379852 | 1181.83 | 2322.36 |
+| consumer_bytes 0 | 17 | 9736050 | 2.732684 | 1202.04 | 2350.38 |
+| consumer_bytes 1 | 17 | 9736050 | 2.739025 | 1208.96 | 2360.28 |
+| static_bytes 1 | 17 | 9736050 | 2.840349 | 1213.76 | 2365.17 |
+
+各臂实际准入/准备事件均核对C≤2、W≤2、held≤4、input/result/object声明≤4MiB，
+Daft仅借用Core已接受、仍持准备责任的原任务；模型许可之后仍受C/W约束，消费边界归零。
+同一准备缓存、source快照和原输入表示下，两臂工作量仍相同；冷导入、固定顺序、采样共享页面及SDK前端驻留
+继续存在，表中wall/RSS不作性能排名。source准备前缀不在各臂RSS采样内，外层窗口采样另存。
+
+**原负结果保持：消费者准备未减少prepare或URI复制；驻留与速度没有收益资格。**
+图像解码仍在LOTUS整批消息构建前端，未受Core held/C/W统一控制；4MiB是辅助缓存或声明额度，不是host物理硬限。
+本轮不证明实际VLM质量/性能、pinned/device/H2D、PG消费或多节点能力。未来轨迹帧选择可复用内容版本与实际消费者回执，
+收益仍须面对同信息强静态有界流水和原生stage pipeline；没有新机器人数据或视频/音频实现。
