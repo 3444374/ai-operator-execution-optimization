@@ -56,32 +56,50 @@ Daft／Ray与Arrow／Ray分别登记；同方法、完整请求、实际调用/�
 服务阶段从HTTP抵达到完整写出，模型HTTP另计；原池前请求端到端P99与源行对应继续为unavailable，不能把服务P99改名补值。
 后置比较仍受原生供给影响，不能解释为替换数据库执行器的收益；无原池干扰的组织归因优先使用已有LOTUS／DuckDB池前接点。
 
-## 三条路径与接口
+## 六条路径与接口
 
 | 路径 | 接入与执行 |
 |---|---|
 | `sema-native-direct` | `prepare_sema_projection(service=None)`，作者二进制直达模型服务 |
-| `sema-native-transparent` | `SemaRequestService` 查询专属 URL，aiohttp 原样转发 |
 | `sema-method-semloom-request-service` | `SemaSemLoomService`，公共任务接口、现有核心、Daft 数据准备及 Ray HTTP worker |
 | `sema-native-daft-request-service` | `SemaNativeService`，已经抵达的请求进入Daft0.7.21原生执行图，不创建Core |
 | `sema-native-ray-data-request-service` | 同一接收/回送，批内执行由Ray2.56.1 HTTP Processor拥有，不创建Core |
-| `sema-imlane-request-service` | 同一接收/回送，完整调用进入作者DBEnd与Coordinator；需要明确的已就绪IMLane配置 |
+| `sema-native-imlane-request-service` | 同一接收/回送，完整调用进入固定作者DBEnd与CPython Coordinator；使用`--imlane-cpython-config` |
+| `sema-native-imlane-ray-request-service` | 同一完整调用进入作者Ray `AsyncActorWrapper`；使用`--imlane-ray-config`，与Ray Data分开登记 |
 
-后三条使用[原生请求交接](sema_native.py)和[完整调用执行器](../../baselines/text/frameworks/native_calls.py)。
+`sema-native-transparent`是原样转发诊断，`sema-imlane-request-service`保留旧桥配置兼容入口。
+六路径均执行原Sema SQL与解析。公开二进制没有可用的池前提交回调，也没有可审阅的优化器、缓存和内部统计源码；
+外部适配不能替换或声称复现这些内部机制。当前公开查询固定`semantic_batch_size=1`；联合提示的既有实证另按原设置解释。
+
+Daft、Ray Data及两条IMLane路径使用[原生请求交接](sema_native.py)和[完整调用执行器](../../baselines/text/frameworks/native_calls.py)。
 每次取当前已经抵达的有限FIFO快照，不等待SQL结束或更多请求，原生图只执行快照内完整调用。
-单个快照最多128项、32MiB，默认不改变提示或重试，不排序长度、不添加Core并发策略。
-前一快照退出后才能启动下一快照，快照构建及图内结果等待计入真实查询，不称全查询充分流水。
+单个快照默认最多128项、32MiB，使用`SemaNativeLimits`显式声明行数、payload、待写完整响应与图内累计完整响应额度。
+前一快照退出后才能启动下一快照是当前adapter的供给形式，不是Daft／Ray库的固有等待要求；
+快照构建及图内结果等待计入真实查询，不称全查询充分流水。不排序长度、不增加SemLoom策略或提高作者线程制造供给。
 
 取得名额后的请求、执行中调用和待写响应共享持有上限，直到HTTP写出或异常退出才归还。
-正文在原有`request.read()`后才进入这项名额：此前已读取但尚未接纳的正文仍按有限查询的
-`max_requests × request_bytes`解释，128项不能代表全部HTTP内存。原入站重复header仍沿旧服务合并方式，
-响应重复header、状态和原始体在新执行路径中完整保留。
+正文在读取前取得独立的`intake_requests`／`intake_bytes`额度，读取、接纳及完整响应共用一次请求期限。
+入站重复header传入透明转发与原生调用；SemLoom任务只携带完整正文，模型凭据仍由固定配置提供，任意逐调用header转发尚未支持。
+响应状态、重复header、原始正文及其中的usage/logprobs保留；公开观察代理对Sema也选择完整HTTP模式。
+
+单查询与常驻入口均接受`--sema-service-config` JSON，或在factory传`SemaServiceConfig`：
+`request_bytes`、`response_bytes`、`intake_requests`、`intake_bytes`、`snapshot_rows`、
+`snapshot_payload_bytes`、`pending_response_bytes`、`cumulative_response_bytes`、`query_response_bytes`。
+省略配置保持旧有效值；`snapshot_rows`默认取声明持有量，显式值须不超过该量且最多128。
+`cumulative_response_bytes`按每图累计完整编码响应；`pending_response_bytes`保留到HTTP写完。
+服务另按正文统计全查询累计量，`query_response_bytes`默认`max_requests × response_bytes`，
+记录实际返回量及已接纳量；native直达没有这些外部服务额度。transport与vendor内部临时buffer另受各自额度管理，
+这些编码/正文计数不保证整个进程RSS。IMLane作者库六项额度来自其独立调用配置，实际限制取各层较小值。
 
 IMLane通过[薄适配](sema_imlane.py)执行完整HTTP调用，不使用算术fixture代替。
 单查询与常驻入口的`--imlane-config`读取仓库外配置，核对作者提交、DBEnd程序/UDF摘要、
 loopback端口、私有输出目录、实例名称和实际原生任务线程数。
 Coordinator与其Python/Ray运行环境由调用方事先准备；查询只拥有自身DBEnd子进程，不停止共享服务。
 取消和超时会终止本次子进程，未确认的远端HTTP仍写unavailable，不补造已取消或自动重试。
+报告分别记录桥已创建、提交可能性、本地停止和作者模式；`returncode=None`不能证明未启动。
+原生图缺少可靠停止报告或存在未知响应后，禁止同一executor跨服务继续使用；一份声明为clean的报告不足以掩盖缺失结果。
+HTTPX共用传输的cookie使用每调用独立jar，保留同一调用内部的重定向规则及连接复用。
+SemLoom pump首错通过原cause、等待者及退出传播；未知Core责任或未归还资源阻止后续借用。
 
 各阶段从[服务时钟分析](../../experiments/postgresql/sema_native_query.py)取得：抵达至正文读取、
 接纳等待、入队、快照等待、图启动、原生执行至完整响应收到、响应收到至HTTP写出。

@@ -27,7 +27,7 @@ from .supplier_adapter_query import (
     SUPPLIER_ARMS, NATIVE_SUPPLIER_BACKENDS, _drain_execution, prepare_duckdb_connection, prepare_lotus_lm,
     replace_duckdb_inputs, run_supplier_query, LOTUS_OBSERVATION_MODES, validate_lotus_observation_mode,
 )
-from .sema_native_query import SEMA_NATIVE_ARMS, validate_native_options
+from .sema_native_query import SEMA_NATIVE_ARMS, SemaServiceConfig, validate_native_options
 from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 
 
@@ -50,7 +50,7 @@ class _ArmOwner:
                 routes=(GatewayRoute(self.identity, 'model', group.model.endpoint_url),),
                 trace_path=self.root / 'http-trace.jsonl',
                 request_timeout_s=min(group.query_timeout_s, group.model.timeout_ms/1000),
-                preserve_http=arm.startswith(('lotus-','duckdb-')),
+                preserve_http=arm.startswith(('lotus-','duckdb-','sema-')),
                 before_forward=self.before, after_forward=self.after,
                 query_identity=lambda: self.binding['unit_id'] if self.binding else None), 'owner_gateway_close')
             token = group.model.bearer_token
@@ -232,7 +232,8 @@ class PersistentAdapterGroup:
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
                  sema_executor_scope='query',duckdb_offer_diagnostic='original',imlane_config=None,
-                 imlane_call_configs=None,sembench_dataset=None,lotus_observation_mode='qualification'):
+                 imlane_call_configs=None,sembench_dataset=None,lotus_observation_mode='qualification',
+                 sema_service_config=None):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
@@ -253,10 +254,15 @@ class PersistentAdapterGroup:
                 raise ValueError('original Movie owners require the selected dataset and Filter generation')
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+        self.sema_service_config = SemaServiceConfig.load(sema_service_config)
+        if self.sema_service_config is not None and not any(arm.startswith('sema-') and
+                arm!='sema-native-direct' for arm in self.arms):
+            raise ValueError('Sema service configuration requires a post-HTTP Sema path')
         self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
         for arm in self.arms:
             imlane_config_for_arm(arm,self.imlane_call_configs)
-            validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs)
+            validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs,
+                                    self.sema_service_config)
         self.imlane_config = imlane_config
         if sema_executor_scope not in ('query', 'group-diagnostic'):
             raise ValueError('Sema executor scope must be query or group-diagnostic')
@@ -319,6 +325,7 @@ class PersistentAdapterGroup:
                 runtime=self.runtime, ray_session_id=self.ray_session_id,
                 owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
                 max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
+                sema_service_config=None if self.sema_service_config is None else asdict(self.sema_service_config),
                 sema_executor_scope=self.sema_executor_scope,
                 lotus_observation_mode=self.lotus_observation_mode,
                 hard_timeout_owner='calling process supervisor', result_cache=False)))
@@ -355,6 +362,8 @@ class PersistentAdapterGroup:
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
                         adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic,
                         imlane_config=self.imlane_config,imlane_call_configs=self.imlane_call_configs,
+                        sema_service_config=self.sema_service_config if arm.startswith('sema-') and
+                            arm!='sema-native-direct' else None,
                         lotus_observation_mode=self.lotus_observation_mode if arm.startswith('lotus-') else 'qualification',
                         sembench_query=sembench_query)
                 else:
@@ -433,6 +442,8 @@ def main(argv=None):
     parser.add_argument('--max-attempts', type=int, required=True)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--sema-service-config',type=Path,
+                        help='JSON limits for Sema post-HTTP intake, snapshots and complete responses')
     parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--adapter-timings',action='store_true')
     parser.add_argument('--duckdb-offer-diagnostic',choices=('original','validated-prefix','prepared-blocks'),default='original')
@@ -467,6 +478,7 @@ def main(argv=None):
             tokenizer_path=args.tokenizer, duckdb_library=args.duckdb_library, sema_binary=args.sema_binary,
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
+            sema_service_config=args.sema_service_config,
             adapter_timings=args.adapter_timings,
             lotus_observation_mode=args.lotus_observation_mode,
             sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic,

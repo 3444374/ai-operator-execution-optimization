@@ -25,7 +25,8 @@ from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows,
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
 from .sema_native_query import (
-    SEMA_NATIVE_ARMS, gateway_phase_summary, open_native_service, service_phase_summary, validate_native_options,
+    SEMA_NATIVE_ARMS, SemaServiceConfig, gateway_phase_summary, open_native_service,
+    service_phase_summary, validate_native_options,
 )
 from .imlane_query import (
     IMLANE_METHOD_MODES, imlane_config_for_arm, imlane_runtime_identity, load_imlane_call_configs,
@@ -487,7 +488,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
                        preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
                        adapter_timings=False,duckdb_offer_diagnostic='original',imlane_config=None,
-                       imlane_call_configs=None,sembench_query=None,lotus_observation_mode='qualification'):
+                       imlane_call_configs=None,sembench_query=None,lotus_observation_mode='qualification',
+                       sema_service_config=None):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
     validate_lotus_observation_mode(lotus_observation_mode)
@@ -516,9 +518,12 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
     held_tasks,native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+    sema_service_config=SemaServiceConfig.load(sema_service_config)
+    if sema_service_config is not None and (not arm.startswith('sema-') or arm=='sema-native-direct'):
+        raise ValueError('Sema service configuration requires a post-HTTP Sema path')
     imlane_call_configs=load_imlane_call_configs(imlane_call_configs)
     imlane_config_for_arm(arm,imlane_call_configs)
-    validate_native_options(arm,options,held_tasks,imlane_config,imlane_call_configs)
+    validate_native_options(arm,options,held_tasks,imlane_config,imlane_call_configs,sema_service_config)
     invoked=time.monotonic_ns()
     started=invoked if preparation_started_ns is None else preparation_started_ns
     if type(started) is not int or not 0 < started <= invoked:
@@ -531,6 +536,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
         source_identity='finite external raw input; no PG multi-Map',options=asdict(options),
         semloom_capacity=dict(held_tasks=held_tasks,active_requests=options.concurrency) if use_core else None,
         sema_native_threads=native_threads if arm.startswith('sema-') else None,
+        sema_service_config=None if sema_service_config is None else asdict(sema_service_config),
         lotus_observation_mode=lotus_observation_mode if arm.startswith('lotus-') else None,
         request_budget_owner='common proxy before upstream POST',stages={})
     values=[];maximum=0
@@ -614,7 +620,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
             if owner is None:
                 gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
                     trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
-                    preserve_http=arm.startswith(('lotus-','duckdb-')),
+                preserve_http=arm.startswith(('lotus-','duckdb-','sema-')),
                     before_forward=before,after_forward=after))
                 routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
             else:
@@ -660,7 +666,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                 from src.execution_provider.adapters.sema_semloom import SemaSemLoomService
                 if sema_binary is None:raise ValueError('Sema requires the verified author binary')
                 limits=SemaServiceLimits(max_requests=maximum,request_bytes=1048576,
-                    response_bytes=1048576-8204,timeout_s=query_timeout_s)
+                    response_bytes=1048576-8204,timeout_s=query_timeout_s) if sema_service_config is None else \
+                    sema_service_config.service_limits(maximum,query_timeout_s)
                 if arm in ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic'):
                     service=stack.enter_context(SemaRequestService(query_id=unit_id,upstream_url=routed.endpoint_url,
                         limits=limits,trace_path=root/'sema-service.jsonl',
@@ -676,7 +683,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                     service_started=time.monotonic_ns()
                     service=open_native_service(stack,arm,query_id=unit_id,model=routed,limits=limits,
                         trace_path=root/'sema-service.jsonl',options=options,held_tasks=held_tasks,
-                        imlane_config=imlane_config,imlane_call_configs=imlane_call_configs)
+                        imlane_config=imlane_config,imlane_call_configs=imlane_call_configs,
+                        **({'service_config':sema_service_config} if sema_service_config is not None else {}))
                     summary['stages']['native_service_startup_seconds']=(time.monotonic_ns()-service_started)/1e9
                 if owner is not None:
                     owner.service=service

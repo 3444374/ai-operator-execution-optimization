@@ -33,6 +33,8 @@ class SemaServiceLimits:
     timeout_s: float
     intake_requests: int = 128
     intake_bytes: int = 32 * 1024 * 1024
+    pending_response_bytes: int | None = None
+    cumulative_response_bytes: int | None = None
 
     def __post_init__(self):
         for value in (self.max_requests, self.request_bytes, self.response_bytes,
@@ -42,6 +44,13 @@ class SemaServiceLimits:
         if (isinstance(self.timeout_s, bool) or not isinstance(self.timeout_s, (int, float))
                 or not math.isfinite(self.timeout_s) or self.timeout_s <= 0):
             raise ValueError('Sema service timeout must be finite and positive')
+        for name, default in (('pending_response_bytes', self.intake_requests * self.response_bytes),
+                              ('cumulative_response_bytes', self.max_requests * self.response_bytes)):
+            value = getattr(self, name)
+            if value is None:
+                object.__setattr__(self, name, default)
+            elif type(value) is not int or value < 1:
+                raise ValueError('Sema response volume limits must be positive integers')
 
 
 class SemaServiceError(RuntimeError):
@@ -95,6 +104,10 @@ class SemaRequestService:
         self._held_sequences = set()
         self._peak_held_requests = 0
         self._body_reservations = {}
+        self._response_sizes = {}
+        self._pending_response_bytes = self._peak_pending_response_bytes = 0
+        self._cumulative_response_bytes = 0
+        self._received_response_body_bytes = 0
         self._intake_bytes = self._peak_intake_bytes = self._peak_intake_requests = 0
         self._intake_changed = None
         self._intake_waiters, self._body_readers = set(), set()
@@ -118,6 +131,8 @@ class SemaRequestService:
         self._startup_error = None
         self._rows = []
         self._sequence = self._forwarded = self._rejected = 0
+        self._stop_requested_ns = None
+        self._headers_sent = 0
 
     def bind_native_cancel(self, callback):
         if self._cancel_native is not None:
@@ -151,6 +166,8 @@ class SemaRequestService:
 
     def cancel(self):
         """Stop further sends before signaling the existing native process owner."""
+        if self._stop_requested_ns is None:
+            self._stop_requested_ns = time.monotonic_ns()
         self._halted.set()
         if ((self._intake_waiters or self._body_readers)
                 and self._loop is not None and not self._loop.is_closed()):
@@ -192,6 +209,14 @@ class SemaRequestService:
             'intake_requests': len(self._body_reservations), 'intake_bytes': self._intake_bytes,
             'peak_intake_requests': self._peak_intake_requests, 'peak_intake_bytes': self._peak_intake_bytes,
             'intake_waiters': len(self._intake_waiters), 'body_readers': len(self._body_readers),
+            'pending_response_body_capacity': self.limits.pending_response_bytes,
+            'cumulative_response_body_capacity': self.limits.cumulative_response_bytes,
+            'pending_response_body_bytes': self._pending_response_bytes,
+            'peak_pending_response_body_bytes': self._peak_pending_response_bytes,
+            'cumulative_response_body_bytes': self._cumulative_response_bytes,
+            'received_response_body_bytes': self._received_response_body_bytes,
+            'response_capacity_scope': 'complete bodies accepted for HTTP delivery; temporary transport buffers excluded',
+            'cookie_scope': 'independent request headers; upstream cookies are never stored by this service',
             **(dict(held_request_capacity=self.held_request_capacity,
                     held_requests=len(self._held_sequences), peak_held_requests=self._peak_held_requests)
                if self.held_request_capacity else {}),
@@ -200,6 +225,10 @@ class SemaRequestService:
             'native_task_ready': {'status': 'unavailable', 'reason': 'author request pool precedes llm_url'},
             'native_row_association': {'status': 'unavailable', 'reason': 'HTTP payload has no native row identity'},
             'received_requests': self._sequence, 'forwarded_posts': self._forwarded,
+            'upstream_headers_send_started': self._headers_sent if self._uses_upstream_client else None,
+            'stop_requested_ns': self._stop_requested_ns,
+            'unconfirmed_request_start_sequences': [row['request_sequence'] for row in self._rows
+                if row.get('upstream_headers_send_started_ns') is not None and row.get('model_returned_ns') is None],
             'rejected_requests': self._rejected,
             'first_error': None if self.first_error is None else {
                 'sequence': self.first_error.sequence, 'status': self.first_error.status,
@@ -439,6 +468,25 @@ class SemaRequestService:
             self._intake_bytes -= reservation.size
             self._intake_changed.set()
 
+    def _retain_reply(self, row, reply):
+        size = len(reply.body)
+        self._received_response_body_bytes += size
+        row['complete_response_body_bytes'] = size
+        if size > self.limits.response_bytes:
+            raise ValueError('Sema response exceeds the single response body allowance')
+        if self._cumulative_response_bytes + size > self.limits.cumulative_response_bytes:
+            raise ValueError('Sema query responses exceed the cumulative body allowance')
+        if self._pending_response_bytes + size > self.limits.pending_response_bytes:
+            raise ValueError('Sema pending responses exceed the declared body allowance')
+        self._response_sizes[row['request_sequence']] = size
+        self._cumulative_response_bytes += size
+        self._pending_response_bytes += size
+        self._peak_pending_response_bytes = max(self._peak_pending_response_bytes,
+                                                self._pending_response_bytes)
+
+    def _release_reply(self, row):
+        self._pending_response_bytes -= self._response_sizes.pop(row['request_sequence'], 0)
+
     async def _forward_http(self, body, headers, row, client):
         if self._halted.is_set():
             raise RuntimeError('Sema query has stopped')
@@ -448,7 +496,7 @@ class SemaRequestService:
             raise RuntimeError('Sema query has stopped')
         row['forward_started_ns'] = time.monotonic_ns()
         self._forwarded += 1
-        trace = {'trace_request_ctx': row} if self.upstream_concurrency else {}
+        trace = {'trace_request_ctx': row}
         async with client.post(self.upstream_url, data=body, headers=headers,
                                allow_redirects=False, **trace) as response:
             value = bytearray()
@@ -465,8 +513,6 @@ class SemaRequestService:
             self._held_slots = asyncio.Semaphore(self.held_request_capacity)
 
     def _connection_traces(self):
-        if not self.upstream_concurrency:
-            return []
         from aiohttp import TraceConfig
         trace = TraceConfig()
 
@@ -481,9 +527,15 @@ class SemaRequestService:
             context.trace_request_ctx['connector_wait_ended_ns'] = time.monotonic_ns()
             await check_stopped(_session, context, _params)
 
+        async def headers_sent(_session, context, _params):
+            # aiohttp signals entry to header emission, not remote receipt.
+            context.trace_request_ctx['upstream_headers_send_started_ns'] = time.monotonic_ns()
+            self._headers_sent += 1
+
         trace.on_connection_queued_start.append(queued_start)
         trace.on_connection_queued_end.append(queued_end)
         trace.on_connection_create_start.append(check_stopped)
+        trace.on_request_headers_sent.append(headers_sent)
         return [trace]
 
     async def _close_executor(self):
@@ -578,9 +630,12 @@ class SemaRequestService:
                     self._settle_body_size(row, len(body))
                     row['body_read_ns'] = time.monotonic_ns()
                     row['request_body_sha256'] = hashlib.sha256(body).hexdigest()
-                    headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP_HEADERS}
+                    headers = tuple((k.decode('ascii'), v.decode('latin-1')) for k, v in request.raw_headers
+                                    if k.decode('ascii').lower() not in _HOP_HEADERS)
                     phase = 'transport'
                     reply = await self._forward(body, headers, row, client)
+                    phase = 'response_volume'
+                    self._retain_reply(row, reply)
                     if not 200 <= reply.status < 300:
                         self._fail(sequence, reply, 'http_response')
                     row['http_status'] = reply.status
@@ -611,6 +666,7 @@ class SemaRequestService:
                 try:
                     self._release_response(row)
                 finally:
+                    self._release_reply(row)
                     self._release_body(sequence)
             row['http_status'] = failure_reply.status
             row['response_body_sha256'] = hashlib.sha256(failure_reply.body).hexdigest()
@@ -627,10 +683,11 @@ class SemaRequestService:
         async def initialize():
             nonlocal client, runner
             if self._uses_upstream_client:
-                from aiohttp import ClientSession, ClientTimeout, TCPConnector
+                from aiohttp import ClientSession, ClientTimeout, DummyCookieJar, TCPConnector
                 client = ClientSession(connector=TCPConnector(limit=self.upstream_concurrency,
                                                              limit_per_host=self.upstream_concurrency),
                                        timeout=ClientTimeout(total=self.limits.timeout_s),
+                                       cookie_jar=DummyCookieJar(),
                                        auto_decompress=False, trust_env=False,
                                        trace_configs=self._connection_traces())
             self._client = client

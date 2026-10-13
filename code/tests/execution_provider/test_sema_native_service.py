@@ -13,7 +13,7 @@ from unittest import mock
 
 from src.baselines.text.frameworks.native_calls import NativeCallOutcome
 from src.execution_provider.adapters.full_response import FullModelResponse
-from src.execution_provider.adapters.sema_native import SemaNativeService
+from src.execution_provider.adapters.sema_native import SemaNativeLimits, SemaNativeService
 from src.execution_provider.adapters.sema_service import SemaServiceError, SemaServiceLimits
 
 
@@ -237,17 +237,17 @@ class SemaNativeServiceTests(unittest.TestCase):
     def test_snapshot_prefix_fits_bytes_and_retains_every_suffix_call(self):
         gate, executor = threading.Event(), _Executor(response=lambda call: FullModelResponse(200, (), b''))
         executor.gate = gate
-        with mock.patch('src.execution_provider.adapters.sema_native._SNAPSHOT_BYTES', 512):
-            with self.service(executor, snapshot_rows=4) as service, ThreadPoolExecutor(max_workers=5) as pool:
-                first = pool.submit(self.post, service.endpoint_url, b'{}')
-                self.assertTrue(executor.started.wait(1))
-                bodies = [b'x' * 210 + bytes([65 + number]) for number in range(4)]
-                rest = [pool.submit(self.post, service.endpoint_url, body) for body in bodies]
-                self.wait(lambda: len(service._pending) == 4)
-                gate.set()
-                self.assertEqual(first.result()[0], 200)
-                self.assertEqual([future.result()[0] for future in rest], [200] * 4)
-                service.end_input()
+        capacities = SemaNativeLimits(snapshot_rows=4, snapshot_payload_bytes=512)
+        with self.service(executor, native_limits=capacities) as service, ThreadPoolExecutor(max_workers=5) as pool:
+            first = pool.submit(self.post, service.endpoint_url, b'{}')
+            self.assertTrue(executor.started.wait(1))
+            bodies = [b'x' * 210 + bytes([65 + number]) for number in range(4)]
+            rest = [pool.submit(self.post, service.endpoint_url, body) for body in bodies]
+            self.wait(lambda: len(service._pending) == 4)
+            gate.set()
+            self.assertEqual(first.result()[0], 200)
+            self.assertEqual([future.result()[0] for future in rest], [200] * 4)
+            service.end_input()
         self.assertEqual([len(batch) for batch in executor.batches], [1, 2, 2])
         self.assertEqual(len(set(executor.produced)), 5)
         self.assertEqual({call.payload for batch in executor.batches for call in batch}, {b'{}', *bodies})

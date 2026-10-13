@@ -1,5 +1,6 @@
 """Subprocess/localhost fixtures for the bridge protocol, without author IMLane or a model."""
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 import gzip
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -15,6 +16,7 @@ from unittest import mock
 
 from src.baselines.text.frameworks.native_calls import NativeCall
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+from src.baselines.text.frameworks.imlane_limits import IMLaneBatchLimits
 from src.execution_provider.adapters.sema_imlane import (
     AUTHOR_COMMIT, SemaIMLaneExecutor, open_sema_imlane_service,
 )
@@ -68,22 +70,29 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
             endpoint or ('http://127.0.0.1:' + str(self.server.server_port) + '/complete'),
             (('Content-Type', 'application/json'),), 2, max_response_bytes=65536)
 
-    def executor(self, *, mutation='', pause=False, metadata=True, late_failure=False):
+    def executor(self, *, mutation='', pause=False, metadata=True, late_failure=False, limits=None):
         # This executable is a protocol fixture, never a substitute for IMLane.
         script = self.root / ('protocol-' + str(time.monotonic_ns()))
         script.write_text('#!' + sys.executable + '\n' +
             'import asyncio,json,sys,time\n' +
             'sys.path.insert(0,' + repr(str(self.code_root)) + ')\n' +
             'from src.baselines.text.frameworks.native_calls import _call_from_wire,_request,_outcome_wire\n' +
+            'from src.execution_provider.adapters.full_response import encode_full_response\n' +
             'calls=[_call_from_wire(line) for line in sys.stdin]\n' +
             ('print(\'SEMA_IMLANE_META {"native_executors":2,"native_task_threads":4}\',flush=True)\n'
              if metadata else '') +
+            'capacity=' + repr(asdict(limits or IMLaneBatchLimits())) + '\n' +
+            'if len(sys.argv)==10:capacity=dict(zip(capacity,map(int,sys.argv[4:])))\n' +
+            'print("SEMA_IMLANE_LIMITS "+json.dumps(capacity),flush=True)\n' +
+            'delivered_bytes=0\n' +
             'for call in reversed(calls):\n' +
             ' outcome=asyncio.run(_request(call))\n' +
+            ' delivered_bytes+=len(encode_full_response(outcome.response)) if outcome.response else len((outcome.transport_error or outcome.execution_error).encode())\n' +
             ' wire=json.loads(_outcome_wire(outcome))\n' +
             (' ' + mutation + '\n' if mutation else '') +
             ' print("SEMA_IMLANE_RESULT "+json.dumps(wire),flush=True)\n' +
             (' time.sleep(3)\n' if pause else '') +
+            'print("SEMA_IMLANE_STATS "+json.dumps(dict(submitted=len(calls),delivered=len(calls),pending_peak=min(len(calls),capacity["max_pending_calls"]),delivered_response_bytes=delivered_bytes)),flush=True)\n' +
             ('time.sleep(.15)\nsys.exit(7)\n' if late_failure else ''))
         script.chmod(0o700)
         udf = self.code_root / 'integrations/sema/imlane_http_udf.py'
@@ -94,7 +103,7 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
             namespace='owned-fixture', native_task_threads=4)
         path = self.root / (script.name + '.json')
         path.write_text(json.dumps(config))
-        executor = SemaIMLaneExecutor(path, NativeGraphOptions(concurrency=4))
+        executor = SemaIMLaneExecutor(path, NativeGraphOptions(concurrency=4), limits=limits)
         self.addCleanup(executor.close)
         return executor
 
@@ -150,6 +159,25 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
         self.assertFalse(executor.last_close_report['clean'])
         self.assertTrue(executor.poisoned)
 
+    def test_creation_failure_does_not_poison_an_executor_that_never_submitted(self):
+        executor = self.executor()
+        executor.start()
+        original = OSError('fixture bridge creation failed')
+        with mock.patch('src.execution_provider.adapters.sema_imlane.subprocess.Popen', side_effect=original):
+            with self.assertRaises(OSError) as caught:
+                list(executor.iter_batch((self.call(),)))
+        self.assertIs(caught.exception, original)
+        report = executor.last_close_report
+        self.assertFalse(report['bridge_started'])
+        self.assertFalse(report['author_submission_possible'])
+        self.assertIsNone(report['returncode'])
+        self.assertIsNone(report['bridge_started_monotonic_ns'])
+        self.assertFalse(executor.poisoned)
+        self.assertEqual(self.server.calls, [])
+        value, = executor.iter_batch((self.call(1),))
+        self.assertEqual(value.call_id, 'occurrence-1')
+        self.assertEqual(self.server.calls, [self.raw])
+
     def test_cancel_during_sent_http_stops_only_child_and_keeps_unknown_remote_state(self):
         executor = self.executor()
         self.server.gate.clear()
@@ -168,6 +196,10 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
         self.assertEqual(executor.last_close_report['received'], 0)
         self.assertTrue(executor.last_close_report['bridge_stopped'])
         self.assertEqual(executor.last_close_report['remote_http_stopped'], 'unavailable')
+        report = executor.last_close_report
+        self.assertLessEqual(report['batch_started_monotonic_ns'], report['bridge_started_monotonic_ns'])
+        self.assertLessEqual(report['bridge_started_monotonic_ns'], report['bridge_stop_requested_monotonic_ns'])
+        self.assertLessEqual(report['bridge_stop_requested_monotonic_ns'], report['bridge_stopped_monotonic_ns'])
 
     def test_partial_consumer_close_stops_remaining_work_without_invented_completion(self):
         executor = self.executor(pause=True)
@@ -181,10 +213,19 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
 
     def test_deadline_covers_bridge_wait_after_response_and_keeps_first_failure(self):
         executor = self.executor(pause=True)
-        with mock.patch('src.execution_provider.adapters.sema_imlane.write_private_json',
-                        side_effect=OSError('fixture record failure')):
-            with self.assertRaises(TimeoutError) as caught:
-                list(executor.iter_batch((self.call(),), timeout_s=.6))
+        iterator = executor.iter_batch((self.call(),), timeout_s=10)
+        try:
+            # Confirm the complete response before advancing the caller clock past
+            # its deadline. CPython startup time cannot choose the tested phase.
+            self.assertEqual(next(iterator).response.status_code, 200)
+            expired = time.monotonic() + 11
+            with mock.patch('src.execution_provider.adapters.sema_imlane.time.monotonic', return_value=expired), \
+                 mock.patch('src.execution_provider.adapters.sema_imlane.write_private_json',
+                            side_effect=OSError('fixture record failure')):
+                with self.assertRaises(TimeoutError) as caught:
+                    next(iterator)
+        finally:
+            iterator.close()
         self.assertIn('OSError', '\n'.join(caught.exception.__notes__))
         self.assertFalse(executor.last_close_report['clean'])
         self.assertTrue(executor.last_close_report['bridge_stopped'])
@@ -236,6 +277,9 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
         self.assertEqual(service.summary['snapshot_count'], 2)
         self.assertEqual(service.summary['upstream_concurrency'], 4)
         self.assertTrue(service.summary['native_settings_observed'])
+        self.assertIsNone(service.summary['imlane_runtime'])
+        self.assertFalse(service.summary['imlane_runtime_verified'])
+        self.assertIsNone(service.summary['actual_coordinator_executors'])
         self.assertEqual(service.summary['uncertain_requests'], 0)
         self.assertEqual(service.summary['held_requests'], 0)
         self.assertTrue(service.summary['io_loop_closed'])

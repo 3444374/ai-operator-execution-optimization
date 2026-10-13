@@ -65,6 +65,9 @@ Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-ser
 `sema-imlane-request-service`，在原请求池之后由各原生执行器处理已抵达快照；
 前两条直接使用原options配置，后一条另传`--imlane-config /path/to/private/ready-imlane.json`。
 持有上限用`--max-held-tasks`显式设置且不超过128，原Sema线程继续由`--sema-native-threads`控制。
+单查询和常驻入口的`--sema-service-config`读取正文、intake、快照、待写响应与累计响应的JSON容量配置；
+字段、默认值、每图／全查询口径见[Sema服务](../src/execution_provider/adapters/sema_request_service.md#六条路径与接口)。
+这些外部服务配置不用于`sema-native-direct`，原作者请求池仍拥有原生供给。
 它们保留原算子策略，不能解释为替换Sema数据库执行器；准备、真实SQL和服务阶段分别记录。
 三种方法各有`*-native-imlane`及`*-native-imlane-ray`路径，具体名称见接口表；
 分别传`--imlane-cpython-config`和`--imlane-ray-config`，配置包含作者模式及就绪Coordinator的PID/start ticks。

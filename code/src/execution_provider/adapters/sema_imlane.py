@@ -150,6 +150,7 @@ class SemaIMLaneExecutor:
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError('Sema IMLane batch requires a finite deadline at most 120 seconds')
+        batch_started_ns = time.monotonic_ns()
         deadline = time.monotonic() + timeout_s
         calls = tuple(calls)
         self.last_close_report = None
@@ -172,6 +173,7 @@ class SemaIMLaneExecutor:
         clean = forced = False
         native_settings = None
         bridge_limits = bridge_stats = None
+        bridge_started_ns = None
         self.last_close_report = None
         out = self.work_root / ('batch-' + uuid.uuid4().hex)
         new_private_directory(out)
@@ -195,6 +197,7 @@ class SemaIMLaneExecutor:
                     process = subprocess.Popen(command,
                         stdin=source, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                         env=env, cwd=out, start_new_session=True)
+                    bridge_started_ns = time.monotonic_ns()
                     self._process = process
                 os.set_blocking(process.stdout.fileno(), False)
                 with selectors.DefaultSelector() as selector:
@@ -278,6 +281,7 @@ class SemaIMLaneExecutor:
             primary = error
             raise
         finally:
+            stop_requested_ns = time.monotonic_ns()
             try:
                 forced = self._stop(process)
                 if process is not None:
@@ -297,12 +301,17 @@ class SemaIMLaneExecutor:
                     clean=clean, forced=forced, prepared=len(calls), received=len(received),
                     returncode=None if process is None else process.returncode,
                     remote_http_stopped='unavailable', coordinator_owner='caller',
-                    scheduler_owner='IMLane author implementation')
+                    scheduler_owner='IMLane author implementation',
+                    batch_started_monotonic_ns=batch_started_ns,
+                    bridge_started_monotonic_ns=bridge_started_ns,
+                    bridge_stop_requested_monotonic_ns=stop_requested_ns,
+                    bridge_stopped_monotonic_ns=time.monotonic_ns() if process is not None and stopped else None,
+                    native_settings_are_physical_executor_count=False)
                 self.last_close_report['native_settings'] = native_settings
                 self.last_close_report.update(snapshot=self.last_preflight, bridge_limits=bridge_limits,
                                               bridge_stats=bridge_stats)
                 self.last_close_report['concurrency_allowance'] = self.options.concurrency
-                self.poisoned = self.poisoned or not clean
+                self.poisoned = self.poisoned or (process is not None and not clean)
                 self.last_close_report['executor_poisoned'] = self.poisoned
                 try:
                     write_private_json(out / 'close.json', self.last_close_report)
@@ -330,6 +339,16 @@ class SemaIMLaneService(SemaNativeService):
         value['upstream_concurrency'] = None if not settings else settings[-1]['native_task_threads']
         value['native_settings_observed'] = bool(settings)
         value['concurrency_allowance'] = self.executor.options.concurrency
+        modes = {r.get('runtime') for r in value['native_close_reports']
+                 if r.get('runtime') in ('cpython', 'ray')}
+        value['imlane_runtime'] = next(iter(modes)) if len(modes) == 1 else None
+        value['imlane_runtime_verified'] = value['imlane_runtime'] is not None and any(
+            r.get('runtime') == value['imlane_runtime'] and r.get('author_commit') == AUTHOR_COMMIT
+            for r in value['native_close_reports'])
+        value['native_settings_are_physical_executor_count'] = False
+        executors = [r['actual_coordinator_executors'] for r in value['native_close_reports']
+                     if type(r.get('actual_coordinator_executors')) is int]
+        value['actual_coordinator_executors'] = executors[-1] if executors else None
         return value
 
 

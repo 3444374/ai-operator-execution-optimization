@@ -5,6 +5,25 @@
 实现与阶段定义见[Sema服务](../../src/execution_provider/adapters/sema_request_service.md)，
 总设计见[语义系统方案](../../../experiments/plans/语义系统对照.md#sema-native-executors)。
 
+六路径及unsupported项见[服务接口](../../src/execution_provider/adapters/sema_request_service.md#六条路径与接口)。
+同步完整调用保持默认；IMLane CPython／作者Ray分别核对实际Coordinator与任务线程，Ray Data另列。
+`verify_native.py`通过同一Daft runtime owner设置原生runner；Ray必须在执行前核对新空短临时目录。
+`verify_imlane_methods.py`在作者启动前检查固定源码、Arrow16.1.0作者环境与Arrow24 driver隔离，
+保留两模式原Sema公开查询及常驻两查询。新本地回归与尚未运行的实库项见
+[接续记录](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-six-paths-followup)。
+
+[verify_public.py](verify_public.py)复用既有作者SQL检查，从公共`run_supplier_query`完整消费原解析结果；
+Linux固定作者二进制、实际Daft／Ray和预先就绪的IMLane配置均须提供，每次独立软件POST额度默认8。
+fixture监听显式loopback端口，模型/GPU0；源码、结果与失败独立保留。它不执行模型质量或性能比较。
+实际运行前按runtime手册完成只读预检，并与现有模型计时错开；调用方提供CPU、短Ray目录和外层期限。
+
+```sh
+PYTHONPATH=code <driver-python> -B code/integrations/sema/verify_public.py \
+  --arm sema-native-daft-request-service --binary <pinned-author-binary> \
+  --fixture-port 46510 --rows 8 --sema-native-threads 4 --max-held-tasks 8 \
+  --output <new-private-output>
+```
+
 ## Daft和Ray Data
 
 [verify_native.py](verify_native.py)执行有限完整请求及服务回送检查，不调用真实模型。

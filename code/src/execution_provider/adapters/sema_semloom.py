@@ -230,6 +230,7 @@ class SemaSemLoomService(SemaRequestService):
         self._progress_changed = None
         self._admission_lock = None
         self._core_events = []
+        self._core_capacity = self._core_cleanup = self._session_close_report = None
 
     @property
     def summary(self):
@@ -245,6 +246,12 @@ class SemaSemLoomService(SemaRequestService):
                                         else 'Ray RPC entry, before remote HTTP worker execution'),
                 'model_return_clock_scope': ('local complete-response transport' if self.physical is None
                                              else 'remote worker completion; unavailable without a shared clock'),
+                'core_capacity': self._core_capacity,
+                'core_result_scope': 'complete response reservations retained until HTTP consumer release',
+                'response_body_bytes': self.limits.response_bytes,
+                'admitted_response_body_volume_bound': self.limits.max_requests * self.limits.response_bytes,
+                'admitted_response_body_volume_scope': 'finite query model bodies, not a retained-memory limit',
+                'core_cleanup': self._core_cleanup,
                 'core_events': list(self._core_events)}
 
     def _before_request(self, task):
@@ -310,6 +317,7 @@ class SemaSemLoomService(SemaRequestService):
         self._execution = (self._build_execution() if self.executor_owner is None
                            else self.executor_owner.execution)
         self._session = NativeTaskSession(self._execution, self.query_id, 'sema-request-service')
+        self._core_capacity = asdict(self._session.limits)
         self._pump_task = asyncio.create_task(self._pump())
 
     def _start_runtime(self):
@@ -341,7 +349,7 @@ class SemaSemLoomService(SemaRequestService):
             result = super().__exit__(*error)
             # A successful HTTP reply need not have reported a later recording error.
             if ((not error or error[0] is None) and self.first_error is not None
-                    and self.first_error.phase == 'observation_record'):
+                    and self.first_error.phase in ('observation_record', 'execution_pump')):
                 raise self.first_error
             return result
         finally:
@@ -362,6 +370,26 @@ class SemaSemLoomService(SemaRequestService):
             self._loop.call_soon_threadsafe(self._session.end_input)
 
     async def _pump(self):
+        try:
+            await self._pump_requests()
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            previous = self.first_error
+            try:
+                self._fail(None, _Reply(502, b'{"error":"Sema execution pump failed"}', ()),
+                           'execution_pump', cause=error)
+            except BaseException as cleanup:
+                self._record_cleanup_error('execution_cancel', cleanup)
+            if previous is not None:
+                self._record_cleanup_error('execution_pump', error)
+            for entry in self._pending.values():
+                if not entry['future'].done():
+                    entry['row']['response_ready_ns'] = time.monotonic_ns()
+                    entry['future'].set_exception(self.first_error or error)
+            self._progress_changed.set()
+
+    async def _pump_requests(self):
         while True:
             progress = self._session.advance(self.max_held_tasks)
             for delivery in progress.deliveries:
@@ -378,7 +406,7 @@ class SemaSemLoomService(SemaRequestService):
                 except Exception as error:
                     self._fail(entry['row']['request_sequence'],
                                _Reply(502, b'{"error":"Sema execution failed before a complete response"}', ()),
-                               'execution')
+                               'execution', cause=error)
                     entry['row']['response_ready_ns'] = time.monotonic_ns()
                     entry['future'].set_exception(error)
                     continue
@@ -453,6 +481,24 @@ class SemaSemLoomService(SemaRequestService):
                 entry['future'].cancel()
 
     async def _close_executor(self):
+        try:
+            await self._close_executor_session()
+        finally:
+            if self._execution is not None:
+                usage = self._execution.engine.capacity.usage()
+                jobs = len(self._execution.engine.jobs.jobs)
+                self._core_cleanup = {
+                    'consumer_close': (None if self._session_close_report is None
+                                       else asdict(self._session_close_report)),
+                    'remaining_usage': asdict(usage), 'remaining_jobs': jobs,
+                    'unconfirmed_remote_requests': sum(record.compute for record in
+                                                       self._execution.engine.capacity.records.values()),
+                    'settled': usage == Usage() and jobs == 0,
+                    'scope': 'Core resource ownership after consumer close and bounded drain',
+                    'remote_cancellation': 'unavailable; transport has no authoritative remote cancellation',
+                }
+
+    async def _close_executor_session(self):
         if self._pump_task is not None:
             self._pump_task.cancel()
             await asyncio.gather(self._pump_task, return_exceptions=True)
@@ -469,7 +515,7 @@ class SemaSemLoomService(SemaRequestService):
         progress = self._session.advance(self.max_held_tasks)
         for delivery in progress.deliveries:
             self._session.release((delivery.lease_id,))
-        self._session.close(clean=self._ended and self.first_error is None)
+        self._session_close_report = self._session.close(clean=self._ended and self.first_error is None)
         deadline = time.monotonic() + self._execution.drain_timeout_s
         while self._execution.engine.capacity.records and time.monotonic() < deadline:
             self._execution.engine.advance()

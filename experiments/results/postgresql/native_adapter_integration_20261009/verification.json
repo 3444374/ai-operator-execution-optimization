@@ -1625,5 +1625,113 @@
       "runtime": "author Python executor",
       "sql_stdin_transcript": "not captured; source, parameters, CSV and stdout/stderr retained"
     }
+  },
+  "sema_six_paths_followup": {
+    "status": "local_verified_real_runtime_pending",
+    "branch": "feat/sema-native-paths",
+    "native_base": "a0f3fbd393a6bf0879a2c0a973f727c737d00389",
+    "unified_base": "340bdddf02ceae629a23d69fd38943e502a32e85",
+    "composition": "9e8ba47281ee315559ae4c7895920e3345574486",
+    "shared_sources": {
+      "httpx_cookie": "aaa88e287b75edc76b6c0c05b171097e6e4e7e50",
+      "imlane_capacities": "9f8519d9a01c9420c4275d0270738423301b8542",
+      "native_lifecycle": "45899253becefb0aa3491c15d6dc8bf27332c31e"
+    },
+    "author_source": "3f2c7182bdaa26c1e8925f486585da25337e687e",
+    "sema_binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+    "local_runtime": {
+      "python": "3.12.6",
+      "httpx": "0.28.1",
+      "aiohttp": "3.14.1"
+    },
+    "checks": {
+      "sema_combined": {
+        "ran": 218,
+        "passed": 218,
+        "skipped": 0
+      },
+      "httpx_related": {
+        "ran": 41,
+        "passed": 41,
+        "skipped": 0,
+        "independent_review": "no blocking finding"
+      },
+      "shared_related": {
+        "ran": 88,
+        "passed": 55,
+        "skipped": 33,
+        "reason": "real vendor libraries or opt-in runtime not available"
+      },
+      "public_preflight": {
+        "ran": 6,
+        "passed": 6,
+        "skipped": 0,
+        "scope": "includes the five configuration tests and one new binary preflight test"
+      }
+    },
+    "models": 0,
+    "gpu_runs": 0,
+    "real_linux_runtimes": "not run for the new composition; existing source evidence is retained separately",
+    "unsupported": [
+      "pre-author-request-pool submission",
+      "author optimizer/cache/statistics source audit",
+      "arbitrary per-request headers through SemLoom body-only tasks",
+      "confirmed remote request cancellation without runtime proof"
+    ],
+    "source_sha256": {
+      "code/src/execution_provider/adapters/async_fixed_model.py": "3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b",
+      "code/src/execution_provider/adapters/sema_service.py": "97414787434a4a74b738ab06bec3a61f925a75cb676bde164dbeee0c9567ad4c",
+      "code/src/execution_provider/adapters/sema_native.py": "fe4cd469f42473fb6f1a457d35a3830efd8ab279805cc129b1629693d3a79e56",
+      "code/src/execution_provider/adapters/sema_semloom.py": "8171f86dc18c3c044415f3b1f2770ce9a52ddf23b92381602deee45a964c0df6",
+      "code/src/execution_provider/adapters/sema_imlane.py": "68827f513a7c99383590b1acfd9f87f6d625003dd638d0d349d5e970e20c996e",
+      "code/src/experiments/postgresql/sema_native_query.py": "c087b9fc90c3a03dca64bfe12500540cbd0b7009d0378af536f12b56fe250221",
+      "code/src/experiments/postgresql/supplier_adapter_query.py": "1a660ba4bfa5cd78f41371039d51dcbd7dd88ea0d491606b22cf70f84d2cdf2b",
+      "code/src/experiments/postgresql/persistent_native_adapter_query.py": "d586dea088464dcd59b617980f4b0b98bbbca63b7d471614fbc0bd061f1a060f",
+      "code/integrations/sema/verify_native.py": "26f1541faa411bf6098fc4c44a2599891ead745f5f4f087727968f49183f5ccf",
+      "code/integrations/sema/verify_imlane_methods.py": "cf7e9d8a19d2ceceeca2f958fb33bbd6b9bbd0a71baa9fb9a2b7a7b7d31579bf",
+      "code/integrations/sema/verify_public.py": "5cee4a3b9c629aab01a445d354d7008bf418732901f276038861aa0599095682"
+    },
+    "private_local_logs": {
+      "tmp/sema-paths/httpx-cookie-before.txt": {
+        "bytes": 9940,
+        "sha256": "2c628af56eaf1952594baa5dfb21891a6685e4796db1031fb64bd921b9342c13"
+      },
+      "tmp/sema-paths/httpx-public-regression-final.txt": {
+        "bytes": 140,
+        "sha256": "a0d0ec6fb490fe443fc34d02e7b81336a1de861ae4fcd6522b797ff43f103c8f"
+      },
+      "tmp/sema-paths/sema-combined.txt": {
+        "bytes": 5791,
+        "sha256": "ca48e7b96879cdd1958419409362164ca4baa6ec005626d2b9e1f3a4e9657289"
+      },
+      "tmp/sema-paths/sema-combined-top-level.txt": {
+        "bytes": 319,
+        "sha256": "c435eca57fd8790b355f5ee089e49a5b4a3cad0a04842516624919d6b2ee2dd9"
+      },
+      "tmp/sema-paths/sema-final-current.txt": {
+        "bytes": 319,
+        "sha256": "7c31501417bac1fe1d00361e2ac9ae5a500cc440f0c6c765139c278f7751ce50"
+      },
+      "tmp/sema-paths/shared-final-current.txt": {
+        "bytes": 2490,
+        "sha256": "b8dabd4e03d5e8b1cce7767a39f395b0c04261aee782a7c74f1250f8805ffd5b"
+      },
+      "tmp/sema-paths/shared-final-passed.txt": {
+        "bytes": 1678,
+        "sha256": "fb3e5bebf4255d1e92267f27bc8662a535d8567d32b720bb5d45d756995fb210"
+      },
+      "tmp/sema-paths/public-verifier-preflight.txt": {
+        "bytes": 104,
+        "sha256": "9ae8fbe2785cd37c9c9907001ccd6472073dda18e446550717fb9e84e8be5b7a"
+      }
+    },
+    "sema_command": "PYTHONPATH=code:code/tests/execution_provider python3 -B -m unittest discover -s code/tests -t code -p 'test_sema*.py'",
+    "shared_command": "PYTHONPATH=code:code/tests/semantic_methods python3 -B -m unittest tests.baselines.test_imlane_calls tests.baselines.test_imlane_capacity tests.baselines.test_native_call_cleanup tests.baselines.test_native_calls tests.experiments.test_imlane_query_entry tests.semantic_methods.test_lotus_native tests.semantic_methods.test_lotus_cleanup tests.execution_provider.test_httpx_request_cookies tests.execution_provider.test_full_response tests.execution_provider.test_async_transport",
+    "public_local_evidence": {
+      "file": "sema-six-paths-local.tar.gz",
+      "sha256": "18e5c9d0679185473378a43576ccd8663d01259be08415f78f0cff679e350e10",
+      "bytes": 4000,
+      "members": 9
+    }
   }
 }

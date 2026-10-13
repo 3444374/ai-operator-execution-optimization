@@ -5,6 +5,34 @@
 这是固定版本的工程接入证据，实际模型运行与性能判断分别登记。既有原生入口和默认PG路径保留。
 总体设计由[语义系统方案](../../../plans/语义系统对照.md#native-semloom-pairs)维护；命令见[脚本入口](../../../../code/scripts/README.md#native-adapter-query)。
 
+<a id="sema-six-paths-followup"></a>
+## Sema六路径接续（2026-10-13）
+
+隔离`feat/sema-native-paths`以native `a0f3fbd3`起步，合入统一`340bdddf`为`9e8ba472`，
+复用固定作者二进制及stability的正文接纳、共同期限和停止证明；原生直达、Daft、Ray Data、SemLoom、
+IMLane CPython和作者Ray的[支持矩阵与容量](../../../../code/src/execution_provider/adapters/sema_request_service.md#六条路径与接口)
+集中说明。没有新建Sema算子、替换请求池或修改优化器，原SQL和parser继续消费完整响应。
+
+Daft／Ray Data组补完整编码响应容量、写出前持有和未知工作保护；SemLoom组补pump首错及常驻退出传播；
+IMLane组补作者模式、实际Coordinator数量和启动／停止时间线。单查询和常驻factory贯通服务JSON配置，
+快照的adapter等待与库原生执行分开。明确未创建IMLane桥且不可提交时记`not_submitted`；
+无可靠证明仍为unknown，`returncode=None`不能充当未启动证明。首错与失败仍保留，clean报告必须同时符合实际消费。
+
+公共HTTPX修复`aaa88e28`使用每调用独立CookieJar，复用同一client／连接池，保持默认不跟随redirect；
+连续、并发、307／303、domain／path／Secure、取消和旧调用方41项通过，独立review无必修。
+它影响SemLoom共用传输及普通completion调用方；原LOTUS／Daft／Ray Data／IMLane各自HTTP实现另有来源，
+旧无cookie模型运行没有由此改变输出的证据。公共IMLane六容量`9f8519d9`及native生命周期`45899253`
+按独立提交吸收；不是新的Sema模型或速度结论。
+
+Sema组合218项通过；公开验证器新增预检通过。受影响公共组88项中55通过、33因实际库或opt-in环境缺失而跳过。
+本机为Python3.12.6、HTTPX0.28.1、aiohttp3.14.1；实际HTTP使用loopback软件fixture，模型／GPU0。
+早期组合的测试包路径遮蔽、IMLane冷启动期限用例和cookie修前失败均保留；生产期限没有放宽。
+来源、命令、输出摘要和未运行项见[verification.json](verification.json)的`sema_six_paths_followup`。
+脱敏[本地通过与失败原件](sema-six-paths-local.tar.gz)含9个成员及原始／公开摘要映射；私有原件仍保留。
+本轮固定Daft／Ray／作者IMLane及作者Sema的新Linux复测尚未运行，旧实库证据保持原来源，不能代替本次改动。
+服务器新零模型检查必须与已有模型计时错开；[公共作者检查](../../../../code/integrations/sema/verify_public.py)
+复用原SQL入口与固定二进制，按新私有目录和有限软件POST额度独立执行，不借用旧模型预算。
+
 ## 来源与实现
 
 起点为`cbfd952ba64e2fc0125a813041cd60c02533d4cf`，依赖提交各自保留后引入独立整合分支。

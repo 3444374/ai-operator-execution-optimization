@@ -27,9 +27,51 @@ from src.baselines.common.private_artifacts import new_private_directory, open_p
 from src.baselines.common.redact import redact_json_values, redact_text
 from src.baselines.text.frameworks.native_calls import NativeCallExecutor, _DAFT_CONTROLS
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
+from src.execution_provider.adapters.sema_native import SemaNativeLimits
+from src.infrastructure.daft_runtime import configure_daft_runner
 from tests.baselines.test_native_calls import call, complete_server, record_fixture
 
 _SERVICE_SEQUENCE = itertools.count()
+
+
+@contextmanager
+def structured_response_server():
+    """Return a complete chat envelope, including fields the original parser owns."""
+    envelope = dict(id="fixture-completion", object="chat.completion", model="fixture",
+        choices=[dict(index=0, message=dict(role="assistant", content="result"), finish_reason="stop",
+                      logprobs=dict(content=[dict(token="result", logprob=-0.25)]))],
+        usage=dict(prompt_tokens=11, completion_tokens=1, total_tokens=12))
+    raw = json.dumps(envelope, indent=2).encode() + b"\n"
+    calls = []
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"
+
+        def do_POST(self):
+            calls.append(self.rfile.read(int(self.headers["Content-Length"])))
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("X-Repeated", "one")
+            self.send_header("X-Repeated", "two")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.05), daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/structured", calls, raw, envelope
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(5)
+        if thread.is_alive():
+            raise RuntimeError("structured fixture did not stop")
+        record_fixture("structured-http", dict(actual_posts=len(calls), body_sha256=hashlib.sha256(raw).hexdigest()))
 
 
 @contextmanager
@@ -109,6 +151,7 @@ class NativeSemaChecks(unittest.TestCase):
     backend = ""
     artifact_root = None
     observations = None
+    native_limits = SemaNativeLimits(snapshot_rows=8)
     options = NativeGraphOptions(concurrency=4, ray_actors=2,
         ray_async_batches_per_actor=2, ray_batch_rows=1, source_blocks=4)
 
@@ -147,6 +190,22 @@ class NativeSemaChecks(unittest.TestCase):
             self.assertTrue(all(o.response is None and "TimeoutError" in o.transport_error for o in outcomes))
             self.settled(executor)
             self.record(actual_posts=len(calls), transport_errors=4, automatic_retries=0)
+
+    def test_graph_preserves_usage_logprobs_and_complete_chat_envelope(self):
+        with structured_response_server() as (url, calls, raw, envelope):
+            executor = self.executor()
+            outcomes = tuple(executor.iter_batch(tuple(call(url, i) for i in range(2))))
+            check_outcomes(outcomes, {(f"call:{i}", i) for i in range(2)}, 200, raw)
+            self.assertTrue(all(json.loads(outcome.response.body) == envelope for outcome in outcomes))
+            expected_headers = (("Content-Type", "application/json"), ("X-Repeated", "one"),
+                                ("X-Repeated", "two"), ("Content-Length", str(len(raw))))
+            for outcome in outcomes:
+                self.assertEqual(tuple((key, value) for key, value in outcome.response.headers
+                    if key.lower() not in ("server", "date")), expected_headers)
+            self.assertEqual(calls, [call(url).payload] * 2)
+            self.settled(executor)
+            self.record(actual_posts=len(calls), usage=envelope["usage"],
+                        logprobs=envelope["choices"][0]["logprobs"], complete_body_sha256=hashlib.sha256(raw).hexdigest())
 
     def test_graph_staggered_responses_keep_occurrence_association(self):
         with staggered_server() as (url, requests, completed):
@@ -190,7 +249,8 @@ class NativeSemaChecks(unittest.TestCase):
         root.mkdir(mode=0o700)
         return SemaNativeService(query_id="native-fixture", upstream_url=url,
             limits=SemaServiceLimits(16, 65536, 65536, 45), trace_path=root / "service.jsonl",
-            backend=self.backend, options=self.options, held_request_capacity=8, snapshot_rows=8)
+            backend=self.backend, options=self.options,
+            held_request_capacity=max(8, self.native_limits.snapshot_rows), native_limits=self.native_limits)
 
     @staticmethod
     def post(url, body):
@@ -253,6 +313,18 @@ class NativeSemaChecks(unittest.TestCase):
             self.assertEqual(len(calls), 1)
             self.service_settled(service)
 
+    def test_service_returns_usage_logprobs_and_complete_chat_envelope(self):
+        with structured_response_server() as (url, calls, raw, envelope):
+            service = self.service(url)
+            with service:
+                for _ in range(2):
+                    status, body, headers = self.post(service.endpoint_url, call(url).payload)
+                    self.assertEqual((status, body, headers), (200, raw, ["one", "two"]))
+                    self.assertEqual(json.loads(body), envelope)
+                service.end_input()
+            self.assertEqual(calls, [call(url).payload] * 2)
+            self.service_settled(service, normal=True)
+
     def test_service_cancel_stops_further_native_sends(self):
         with complete_server(delay=0.5) as (url, calls, _raw):
             service = self.service(url)
@@ -283,9 +355,18 @@ def main(argv=None):
     parser.add_argument("--artifact-root", type=Path, required=True)
     parser.add_argument("--ray-temp", type=Path)
     parser.add_argument("--scope", choices=("all", "graph", "service"), default="all")
+    parser.add_argument("--snapshot-rows", type=int, default=8)
+    parser.add_argument("--snapshot-payload-bytes", type=int, default=32 * 1024 * 1024)
+    parser.add_argument("--pending-response-bytes", type=int, default=32 * 1024 * 1024)
+    parser.add_argument("--cumulative-response-bytes", type=int, default=32 * 1024 * 1024)
     args = parser.parse_args(argv)
     if args.backend == "ray-data" and (args.ray_temp is None or len(str(args.ray_temp.resolve()).encode()) > 40):
         parser.error("Ray Data needs a caller-owned --ray-temp path of at most 40 bytes")
+    try:
+        native_limits = SemaNativeLimits(args.snapshot_rows, args.snapshot_payload_bytes,
+                                        args.pending_response_bytes, args.cumulative_response_bytes)
+    except ValueError as failure:
+        parser.error(str(failure))
     new_private_directory(args.artifact_root)
     os.environ["RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY"] = "2"
     os.environ["SEMLOOM_NATIVE_CALL_ARTIFACT"] = str(args.artifact_root)
@@ -298,6 +379,7 @@ def main(argv=None):
     owns_ray = False
     summary = dict(backend=args.backend, scope=args.scope, real_model_requests=0, gpu_tasks=0,
                    tests_run=0, failures=0, errors=0, skipped=0, observations=[],
+                   native_limits=dict(vars(native_limits)), cumulative_response_scope="per_snapshot",
                    cpu_affinity=sorted(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else None,
                    verifier_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                    native_calls_source_sha256=hashlib.sha256((CODE / "src/baselines/text/frameworks/native_calls.py").read_bytes()).hexdigest())
@@ -307,12 +389,20 @@ def main(argv=None):
     try:
         summary["library_identity"] = library_identity(args.backend)
         if args.backend == "daft":
-            import daft
-            daft.set_runner_native(num_threads=8)
+            configure_daft_runner("native", num_threads=8)
         else:
             import ray
             if ray.is_initialized():
                 raise RuntimeError("native verifier requires an independently owned Ray runtime")
+            if args.ray_temp.is_symlink():
+                raise RuntimeError("Ray temporary directory cannot be a symlink")
+            if args.ray_temp.exists():
+                if (not args.ray_temp.is_dir() or any(args.ray_temp.iterdir())
+                        or args.ray_temp.stat().st_uid != os.getuid()):
+                    raise RuntimeError("Ray temporary directory must be empty and caller-owned before startup")
+            else:
+                new_private_directory(args.ray_temp)
+            summary["ray_temp_preflight"] = "empty caller-owned short directory checked before ray.init"
             owns_ray = True
             ray.init(address="local", namespace=f"sema-native-{os.getpid()}", num_cpus=8, num_gpus=0,
                      include_dashboard=False, object_store_memory=128 * 1024 * 1024,
@@ -320,6 +410,7 @@ def main(argv=None):
         summary["runtime_prepare_ns"] = time.monotonic_ns() - runtime_started
         NativeSemaChecks.backend, NativeSemaChecks.artifact_root = args.backend, args.artifact_root
         NativeSemaChecks.observations = summary["observations"]
+        NativeSemaChecks.native_limits = native_limits
         names = [name for name in unittest.defaultTestLoader.getTestCaseNames(NativeSemaChecks)
                  if args.scope == "all" or name.startswith("test_" + args.scope + "_")]
         with open_private_text(args.artifact_root / "checks.log") as log:

@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-13：Sema六路径容量与退出处理接续
+
+- 在隔离`feat/sema-native-paths`组合native `a0f3fbd3`与统一`340bdddf`，保留规则、共享计数和stability的Sema修复。
+- 三组并行补Daft／Ray Data、SemLoom与两IMLane模式，集成owner贯通公共查询／常驻服务配置；
+  原SQL、提示、请求池及解析保持，支持矩阵与本地证据由[同题报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-six-paths-followup)定位。
+- 公共HTTPX cookie独立修复与DuckDB owner的IMLane容量／native生命周期来源分别保留；已完成阶段普通推送并核对远端SHA。
+  新服务器实库检查与模型计时错开，原模型结果不合并为新接入性能。
+
 ## 2026-10-13：建立统一基础实现集成分支
 
 - `integration/baselines` 以普通合并保留 native `62445a7e`、main `425f0145` 与 stability `9bb6c415`

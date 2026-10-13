@@ -472,6 +472,8 @@ def main(argv=None):
     parser.add_argument('--options',type=Path)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--sema-service-config',type=Path,
+                        help='JSON limits for Sema post-HTTP intake, snapshots and complete responses')
     parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--references',type=Path)
     parser.add_argument('--allowed-output',action='append')
@@ -487,6 +489,9 @@ def main(argv=None):
     parser.add_argument('--ray-address')
     parser.add_argument('--query-timeout-s',type=float,default=120)
     args=parser.parse_args(argv)
+    if args.sema_service_config is not None and (not args.arm.startswith('sema-')
+                                                or args.arm=='sema-native-direct'):
+        parser.error('Sema service configuration requires a post-HTTP Sema path')
     if args.lotus_observation_mode!='qualification' and not args.arm.startswith('lotus-'):
         parser.error('LOTUS performance observation requires a LOTUS arm')
     if args.input.stat().st_size>64*1024*1024:
@@ -510,6 +515,7 @@ def main(argv=None):
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
                            preparation_started_ns=started,sema_native_threads=args.sema_native_threads,
+                           sema_service_config=args.sema_service_config,
                            lotus_observation_mode=args.lotus_observation_mode,
                            imlane_config=args.imlane_config,
                            imlane_call_configs={mode: path for mode,path in
