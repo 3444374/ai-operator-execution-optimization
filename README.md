@@ -2,7 +2,9 @@
 
 [原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
 
-[SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；原始IMLane Q1由当前完整调用适配器拒绝，模型0。
+当前LOTUS线先核对[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，再建立少量合理的单／双卡工作点，随后设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。
+
+[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。

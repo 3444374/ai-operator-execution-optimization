@@ -1,21 +1,18 @@
 # 项目大纲
 
-2026-10-13接续：[原Q2双卡最后两项](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)在另授600秒窗口完成；双卡18／18位置按11＋5＋2三波分别保存，旧失败与质量不足保持。
+当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，报告修订不产生新模型结果。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
 
-2026-10-13：[原Q2双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)完成5／7，双卡共覆盖16／18位置；第三轮S预检因Ray目录过长停止，R未运行。两批计时和服务历史分别保留，原LIMIT5官方F1=1.0与逐行recall0.5保持，剩两项不自动重启。
+本次LOTUS线的近期任务按以下顺序推进，详细量与停止条件归[同题阶段分析](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，不再另建总计划：
 
-2026-10-12：[原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)完成质量六路径与单卡全部18槽，双卡11槽后CLI启动确认JSON异常停止，余7槽未运行。实际7680模型调用／23040三跳POST，原LIMIT5官方F1=1.0与全分类FN7／召回0.5并列；单卡n3，双卡n1/n2，仅有限观察。原首次时钟、旧超时、原件及0资源残留保持。
+1. 处理私有发送账本的历史增长成本。实际三个账本四条计数均全表扫描，有界零模型并发诊断已确认本地扰动；预算组件局部修订已通过14项无模型回归与配对诊断，待固定新helper及payload后以一轮串行匹配Q2核验现场，不改SemLoom补偿观察成本。
+2. 建立合理单／双卡工作点。Q2保留小成本参照，原Q1完整2000行与Q3 COUNT分别承担持续供给和质量；各后端少量自身配置，核对实际并发，扩副本供给与固定总预算的方法比较分别设计。
+3. 推进一个双副本长短查询共享实验，使用真实多Job入口，面对合理原生共享、工作守恒简单分配和已修强静态版本。复用现有责任机制；图像及多节点按后续实际需要开展。
 
-2026-10-12工程接续：[同步IMLane原Q2公开入口](experiments/results/diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)两作者模式各完整120调用通过，原2000行关系保持；240逻辑／480传输POST、49.861秒，模型/GPU0。同步六路径原Q2最低软件入口已有证据；真实模型质量、完整单卡及部分双卡见本页上方新报告，替身时间不用于排名。
+[IMLane显式2000行能力与同步／可选async软件证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md)已提供；旧默认128配置仍作兼容选择，原Q1／Q3完整真实模型与共享Coordinator并发分别待对应方案。本次没有新增真实模型运行或批准长测。
 
+已结束的小轮、两次补测及较早接线检查以[项目日志](PROJECT_LOG.md)和各原报告保存历史；缺7项／缺2项及早期128行拒绝不再作为当前待办。PG、其他前端及其余研究状态仍按下文各自来源解释。
 
-2026-10-12工程接续：[原生执行统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)完成三方法IMLane两种作者模式的软件消费与常驻复用；
-同driver Daft初始化修复通过实际库检查。新独立单GPU轮六条LOTUS路径18查询／144真实POST通过，原请求、parser与消费相同；
-每条测量n=2查询／16请求，人工输入不支持任务质量、饱和或稳定尾延迟。较早24POST／32名额失败轮独立保留。
-双GPU[固定路由检查](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-dual-model)六路径18查询／144真实POST通过，每卡72，正常返回／消费及退出核对通过；
-SDK解释、客户端复用、容量和关闭诊断差异由独立owner修补，本轮只支持旧源码接线，不作公平排名。DuckDB／Sema模型比较仍未完成。
-
-更新时间：2026-10-12
+更新时间：2026-10-13
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
