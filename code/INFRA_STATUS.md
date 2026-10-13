@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
+创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
+本地定向66项，31通过／35固定SDK或缺依赖跳过，内存后端无HTTP／服务器／模型；实际SDK的新HEAD资格尚待核验。
+默认有限分块、session工厂／typed容量及原UTF-8拒绝保持；图文profile、准备缓存和stage实库证据未移入。
+
 2026-10-13：统一分支按来源整合DuckDB专属交付`3f0b62d6`，公共修补去重；
 [LOTUS可选session工厂](src/semantic_methods/lotus/README.md)接受typed容量声明，默认本地路径与SDK重放保持。
 Ray退出报告现在保留上下文更新的同一字典。本地组合120通过／32实际库或opt-in跳过，

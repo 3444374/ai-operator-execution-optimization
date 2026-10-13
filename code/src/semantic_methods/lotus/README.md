@@ -55,9 +55,17 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 输入miss最多4096行，原始响应的批次留存默认最多16MiB；这些是编码字节额度，不是RSS测量。
 `last_responses`默认只保存最近一次miss批次；`retain_full_responses=False`不保存这份原始响应列表，
 `on_response(index, full)`仍在解析前交给调用方保存证据。SDK结果、错误中的完整响应和批次字节额度继续保留。
-`prevalidate_batch=True`先检查整批纯文本消息与共同参数，复用首条规范准备值；其余完整调用按有限块准备，
-`on_prepared(index, call)`将同一不可变调用值交给观察器，避免观察与执行重复转换。默认`False`保持直接入口。
-这项轻校验依赖上述固定版本普通OpenAI纯文本转换，不适用于工具、结构化输出或其他模型转换。
+<a id="whole-text-preflight"></a>
+`prevalidate_batch=True`在打开本地flow或调用`session_factory`前逐行准备完整纯文本调用，
+检查固定模型／连接配置、单请求字节与期限及累计输入容量。非法后续窗口零flow、零发送；取消及到期覆盖预检。
+只保留首条规范调用，其余正文校验后丢弃，执行时在有限块内再次准备；额外准备计入本次批次期限与任务成本。
+`on_prepared(index, call)`仍只观察实际执行使用的同一不可变值。默认`False`保持原有限块准备与发送语义。
+直接调用`sdk.validate_batch`而不传模型／容量guard时，保留原轻量消息、共同参数及UTF-8检查。
+这些入口只支持上述固定版本普通OpenAI纯文本转换，不适用于工具、结构化输出或其他模型转换。
+通用拒绝规则来自[固定stage修补](https://github.com/3444374/ai-operator-execution-optimization/blob/7d83c2a625fc37901fd8079bed86bb5bc573e854/experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-review)；
+本集成分支只实现文本边界，[本地Core回归](../../../tests/semantic_methods/test_lotus_batch_preflight.py)使用内存后端，无SDK／HTTP／模型。
+stage图文profile、准备缓存及其实际Daft/Ray结果仍属原研究版本，不作为本集成HEAD的实库资格。
+LOTUS在Core前的整表读取／解码与消息构建尚未获得统一准入，本次只核对已经形成的完整文本调用。
 准备、批次观察与执行使用同一绝对期限；准备块内和接纳、推进之前检查取消及到期。
 完整响应包含实际HTTP状态、重复header、原始body和HTTP版本；Content-Encoding由同版本HTTPX解码，
 原始字节仍保留。HTTP错误保留完整响应并按LM错误路径上抛；解析错误同样保留原始响应。
@@ -148,7 +156,8 @@ Daft连接按查询和实际异步loop拥有及关闭；Ray Data沿原HTTP stage
 native入口在准备前核对目标行数与实际executor容量。普通LOTUS替换请求的默认完整响应额度为1MiB。
 省略profile时保留已有批次参数，并从实际Engine item容量推导有限请求/响应额度；
 自定义小容量诊断仍可运行。SemLoom继续有限准备，native继续采用自己的物理准备方式。
-逐条请求和累计输入在准备时检查；不宣称未知整批字节在SemLoom任何HTTP之前全部核完。
+默认分块路径在准备时检查逐条请求和累计输入，不宣称未知整批字节在任何HTTP之前全部核完。
+SemLoom显式`prevalidate_batch=True`先按上面的整批文本规则拒绝，再打开flow；原生替换入口保持原路径。
 batch期限覆盖准备、消费至EOF和SDK解释，清理时间另记；各替换传输按总时长核查request期限。
 原LOTUS SDK仍保留阶段超时语义，本profile不能据此证明六条路径所有超时阶段等价。
 IMLane默认128行来自自有调用桥；显式2000行新桥已在作者CPython/Ray通过原Q1的软件检查。

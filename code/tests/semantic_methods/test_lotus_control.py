@@ -168,7 +168,8 @@ class LotusControlTests(unittest.TestCase):
             selected.on_prepared=lambda index, call: prepared.append((index, call))
             selected.on_response=lambda index, full: received.append((index, full))
             self.assertEqual(len(self.run_batch(selected)), 2)
-            self.assertEqual(state['events'].count('prepare'), 2)
+            # Whole-batch guards prepare both rows; execution reuses the first.
+            self.assertEqual(state['events'].count('prepare'), 3)
             self.assertEqual(state['actual'], [call.payload for _,call in prepared])
             self.assertEqual([index for index,_ in received], [0,1])
             self.assertEqual(selected.last_responses, ())

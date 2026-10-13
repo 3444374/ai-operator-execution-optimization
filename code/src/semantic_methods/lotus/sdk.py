@@ -73,31 +73,45 @@ def _validate_messages(messages):
         _validate_utf8(message["content"])
 
 
-def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
+def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None,
+                   model_config=None, call_limits=None):
     """Reject an invalid suffix before I/O and retain only its first prepared call.
 
-    Common parameters use the actual provider transformation once. For the pinned
-    ordinary OpenAI provider, text-only messages add no row-dependent transformation
-    errors beyond structure and JSON/UTF-8 encoding. Complete calls are still prepared
-    by that provider in finite execution blocks, without retaining the entire batch.
+    Unguarded text keeps the light structure/UTF-8 check after the first call.
+    Guards prepare each complete call to check model and declared byte capacity,
+    discarding suffix bodies. Execution prepares them again in finite blocks.
     """
     if not uncached_data:
         return None
-    if check_stop:
-        check_stop()
-    first = prepare_call(lm, uncached_data[0][0], all_kwargs)
-    if check_stop:
-        check_stop()
-    for index in range(1, len(uncached_data)):
+    guarded = model_config is not None or call_limits is not None
+    first, input_bytes = None, 0
+    for index, item in enumerate(uncached_data):
         if check_stop:
             check_stop()
-        item = uncached_data[index]
         messages = item[0]
-        _validate_messages(messages)
-        if any(type(message["role"]) is not str for message in messages):
-            # Preserve the existing JSON rules for unusual equality-compatible roles.
-            json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
-            continue
+        if index == 0 or guarded:
+            call = prepare_call(lm, messages, all_kwargs)
+            if check_stop:
+                check_stop()
+            if model_config is not None:
+                check_model_config(call, model_config)
+            if check_stop:
+                check_stop()
+            if call_limits is not None:
+                call_limits.check_prepared(call)
+                input_bytes += len(call.payload)
+                if input_bytes > call_limits.max_batch_input_bytes:
+                    raise ValueError('LOTUS prepared batch input exceeds the declared byte capacity')
+            if index == 0:
+                first = call
+            del call
+        else:
+            _validate_messages(messages)
+            if any(type(message["role"]) is not str for message in messages):
+                # Preserve the existing JSON rules for unusual equality-compatible roles.
+                json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
+        if check_stop:
+            check_stop()
     if check_stop:
         check_stop()
     return first

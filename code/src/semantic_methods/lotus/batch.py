@@ -98,7 +98,8 @@ class LotusBatchExecutor:
                 self.on_batch(uncached_data, all_kwargs)
             check_stop()
             first_call = validate_batch(lm, uncached_data, all_kwargs,
-                check_stop=check_stop) if self.prevalidate_batch else None
+                check_stop=check_stop, model_config=self.model_config,
+                call_limits=self.call_limits) if self.prevalidate_batch else None
             check_stop()
             flow = (NativeTaskSession(self.execution, self.query_id, self.operator_id)
                     if self.session_factory is None else self.session_factory(self.query_id, self.operator_id))

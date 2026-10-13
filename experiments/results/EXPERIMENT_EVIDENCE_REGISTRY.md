@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
+本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
+旧实现12组后窗口反例已复现；修后显式预检零flow／零发送，默认分块的合法前缀及未消费责任保留。SDK、HTTP、服务器和模型新增0。
+固定stage修补仅为来源；其图文／实际Daft/Ray软件结果不作为本集成HEAD的实库验证或性能结论。
+
 2026-10-13：[DuckDB六路径源码、实库与公开SQL检查](postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)。
 固定native来源`a0f3fbd3`，原调用、解析及当前向量屏障保留；新`native4`构建、固定实际库和六条常驻CLI软件检查完成。
 逐次运行／源码、失败、预算与清理归于同题机器事实和原件；模型／GPU及新匹配性能未运行，不能借用旧LOTUS成绩。

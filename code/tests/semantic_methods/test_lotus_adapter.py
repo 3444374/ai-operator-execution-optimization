@@ -187,7 +187,9 @@ class LotusSdkTests(unittest.TestCase):
             with patch('src.semantic_methods.lotus.sdk.prepare_call',wraps=original) as first_preparation, \
                  patch('src.semantic_methods.lotus.batch.prepare_call',wraps=original) as remaining_preparation:
                 responses=selected(lm,data,lm.kwargs,False,'fixture')
-            self.assertEqual((first_preparation.call_count,remaining_preparation.call_count),(1,2))
+            # Guard every row, then reuse the first call in finite execution.
+            self.assertEqual((first_preparation.call_count,remaining_preparation.call_count),
+                             (len(data),len(data)-1))
             self.assertCountEqual(calls,[json.loads(call.payload) for _,call in prepared])
             self.assertEqual([r.usage.total_tokens for r in responses],[10]*3)
             self.assertEqual(selected.last_responses,())

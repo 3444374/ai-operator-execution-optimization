@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-13：收敛LOTUS整批文本预检的零发送拒绝
+
+- 按固定stage来源`7d83c2a6`只移植通用预检规则到当前文本接口；显式启用时，flow前逐行检查固定模型、请求及累计输入容量，后缀正文校验后丢弃，只保留首call。
+  默认有限分块、`session_factory/SessionLimits`和原UTF-8拒绝保持；图文profile、PreparedAssetWindow、stage fixture和研究策略未引入。
+- [模块说明](code/src/semantic_methods/lotus/README.md#whole-text-preflight)引用固定研究报告，区分额外准备成本与适用边界；原stage负结果及其实际库资格保留原source身份。
+- 旧实现3类后窗口错误×held2／4×本地／远程factory共12组反例复现。定向66项，31通过／35固定依赖跳过；新增8项内存后端回归覆盖零flow／发送、取消／期限、有限持有与合法消费。
+  首轮新增默认路径用例错误期待提前消费失败后资源归零，已按既有Core未消费责任修正断言；失败与通过日志均保留在仓库外。
+- 本阶段仅本地无SDK／HTTP的受控回归，没有启动服务器／模型／GPU；新集成HEAD的实际SDK验证仍待完成，不借stage实库结果。
+
 ## 2026-10-13：统一基线整合DuckDB专属交付与最小公共接口
 
 - 按来源顺序移植DuckDB七个专属提交，最终交付为`3f0b62d6`；专属实现、测试和来源清单与该交付逐文件一致。
