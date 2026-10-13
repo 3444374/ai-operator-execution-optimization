@@ -511,6 +511,8 @@ class NativeCallExecutor:
         self.max_batch_rows, self.max_batch_bytes = max_batch_rows, max_batch_bytes
         self.last_close_report = None
         self.last_cleanup_errors = ()
+        self._unsettled = False
+        self._batch_lock = threading.Lock()
 
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)
@@ -520,6 +522,17 @@ class NativeCallExecutor:
             self._imlane.close()
 
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        if not self._batch_lock.acquire(blocking=False):
+            raise RuntimeError('native executor already owns an active batch')
+        try:
+            yield from self._iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
+        finally:
+            self._batch_lock.release()
+
+    def _iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        if self._unsettled:
+            raise RuntimeError('native graph has unconfirmed work; caller-owned runtime cleanup required before replacement')
+        self.last_close_report = None
         self.last_cleanup_errors = ()
         if self._imlane is not None:
             self.last_close_report = None
@@ -637,12 +650,16 @@ class NativeCallExecutor:
                 clean = False
             worker_errors = tuple(failures)
             clean = clean and stopped and cleanup is None
+            self._unsettled = self._unsettled or (thread.ident is not None and (
+                not stopped or len(received) != len(calls) or cleanup is not None
+                or any(stage == 'graph_close' for stage, _ in worker_errors)))
             self.last_cleanup_errors = tuple((stage, error) for stage, error in worker_errors
                                              if stage == "graph_close")
             if cleanup is not None:
                 self.last_cleanup_errors += (("control_stop", cleanup),)
             self.last_close_report = dict(graph_consumer_stopped=stopped,
                 clean=clean, received=len(received), prepared=len(calls),
+                unconfirmed_work=self._unsettled, reuse_allowed=not self._unsettled,
                 remote_http_stopped="unavailable", owned_ray_actors=len(control._actors),
                 ray_actor_shutdown_requested=len(control._killed_actors),
                 http_pool_scope="native_processor_batch" if self.backend == "ray-data" else "graph_event_loop",
