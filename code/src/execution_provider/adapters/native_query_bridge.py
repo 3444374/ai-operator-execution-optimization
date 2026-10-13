@@ -42,6 +42,7 @@ class _Peer:
     stopped: threading.Event = field(default_factory=threading.Event)
     reader: object = None
     watcher: object = None
+    connection_close_lock: object = field(default_factory=threading.Lock)
 
 
 class NativeTaskBridge:
@@ -103,6 +104,14 @@ class NativeTaskBridge:
     def request_cancel(self, query_id):
         self._peers[query_id].cancel.set()
 
+    @staticmethod
+    def _close_connection(peer):
+        # Reader EOF and owner shutdown can coincide. Connection.close itself
+        # does not serialize concurrent closes of the same descriptor.
+        with peer.connection_close_lock:
+            if not peer.connection.closed:
+                peer.connection.close()
+
     def _read(self, peer):
         expected = 1
         try:
@@ -130,7 +139,7 @@ class NativeTaskBridge:
             peer.disconnected.set()
             peer.cancel.set()
         finally:
-            peer.connection.close()
+            self._close_connection(peer)
 
     def _emit(self, event, peer=None):
         if self._observer:
@@ -276,7 +285,7 @@ class NativeTaskBridge:
         if self._thread.is_alive():
             return False  # Neither consumer disappearance nor accepted work was confirmed gone.
         for peer in self._peers.values():
-            peer.connection.close()
+            self._close_connection(peer)
         if self._runtime_error is not None:
             raise RuntimeError('native bridge owner failed') from self._runtime_error
         return self._last_snapshot is not None and not any(self._last_snapshot['usage'].values())

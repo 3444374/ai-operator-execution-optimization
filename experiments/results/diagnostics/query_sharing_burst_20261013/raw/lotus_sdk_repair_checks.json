@@ -1,0 +1,52 @@
+{
+  "run_id": "query-sharing-lotus-sdk-repair-20261013",
+  "completed_utc": "2026-10-13T05:32:00.286247+00:00",
+  "source_parent": "a64ce942b7e4077bb0000dafac17450e24e31988",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/native_query_bridge.py": "400a96326ac120c50bd1902884ab317bd981bca2784101549b1e57fe7ddf0ae4",
+    "code/src/experiments/query_sharing_lotus.py": "46c3a53c608e50fd1ec92f1ad13786401d1d618a367203ecc95159fa4e6c00d2",
+    "code/tests/execution_provider/test_native_query_bridge.py": "bdc6fe9e5abae2659ce2b5bc2ef3408e848e0aecea37c396cc5c8e986d74f363",
+    "code/tests/experiments/test_query_sharing_lotus.py": "07a84b919ac7a741764b4e2a38bf5a2987b418b3befcadc70d08f8f05939e75a"
+  },
+  "local_checks": {
+    "tests": 21,
+    "passed": 20,
+    "skipped": 1,
+    "exit_code": 0,
+    "seconds": 1.213,
+    "fixture_posts": 4
+  },
+  "server_first_attempt": {
+    "source_commit": "a64ce942b7e4077bb0000dafac17450e24e31988",
+    "tests": 19,
+    "passed": 18,
+    "errors": 1,
+    "exit_code": 1,
+    "seconds": 33.981,
+    "http_event_trace_exported": false,
+    "expected_fixture_posts_from_workload": 112,
+    "physical_posts_independently_audited": null,
+    "error": "effective max_completion_tokens cap mis-audited as literal max_tokens; concurrent pipe descriptor close also raised OSError in reader"
+  },
+  "private_archive_sha256": "010979db926e398cc27d409d5f6bb50225858d7a539419a22999954f134eb2b8",
+  "public_evidence": [
+    "lotus_preflight_a64ce942.json",
+    "lotus_parameter_check_a64ce942.json",
+    "lotus_smoke_failure_a64ce942.log"
+  ],
+  "changes": [
+    "serialized connection descriptor close",
+    "fixed provider effective output cap audit without request rewrite",
+    "optional actual-library test trace export before audit"
+  ],
+  "real_models": 0,
+  "gpu_jobs": 0,
+  "sql_queries": 0,
+  "pending": [
+    "repaired actual-library pair qualification",
+    "full paired fixture protocol",
+    "common integrated source",
+    "real-model controlled experiment"
+  ],
+  "public_log_normalization": "private path placeholders and whitespace normalization; original archive is retained outside Git"
+}

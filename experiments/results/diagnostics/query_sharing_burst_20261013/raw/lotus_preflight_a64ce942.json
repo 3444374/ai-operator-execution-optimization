@@ -1,0 +1,25 @@
+{
+  "run_id": "query-sharing-a64ce942-preflight",
+  "utc": "2026-10-13T05:20:39.024878+00:00",
+  "python": "3.12.3",
+  "affinity": [
+    16,
+    17
+  ],
+  "cuda_visible_devices": "",
+  "source_commit": "a64ce942b7e4077bb0000dafac17450e24e31988",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pyarrow": "24.0.0",
+    "pandas": "2.3.3",
+    "httpx": "0.28.1"
+  },
+  "model_calls": 0,
+  "fixture_http_posts": 0,
+  "status": "passed",
+  "pinned_source_validated": true,
+  "arrow_basic_table": true,
+  "pandas_basic_frame": true
+}

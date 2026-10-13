@@ -5,10 +5,12 @@ from copy import deepcopy
 from importlib.util import find_spec
 import hashlib
 import json
+import os
+from pathlib import Path
 import unittest
 from urllib.request import Request, urlopen
 
-from src.experiments.query_sharing_lotus import FixtureService, audit, digest, identity, row_text, run_pair
+from src.experiments.query_sharing_lotus import FixtureService, PairFailure, audit, digest, identity, row_text, run_pair
 
 
 def body(query, sequence):
@@ -109,13 +111,31 @@ class LotusPairAuditTests(unittest.TestCase):
                 run['calls'][0]['body_sha256']=digest(run['calls'][0]['body'])
                 with self.assertRaises(ValueError):audit([run])
 
+    def test_pinned_provider_output_cap_conversion_keeps_complete_body_parity(self):
+        a,b=traced_pair(),traced_pair()
+        for run in (a,b):
+            for call in run['calls']:
+                call['body']['max_completion_tokens']=call['body'].pop('max_tokens')
+                call['body_sha256']=digest(call['body'])
+        self.assertEqual(len(audit([a,b])),2)
+
 
 @unittest.skipUnless(find_spec('lotus') is not None,'actual pinned LOTUS is unavailable')
 class RealLotusPairTests(unittest.TestCase):
     def test_native_and_identical_bridge_static_candidate_match(self):
-        with FixtureService(delay_s=.01) as service:
-            runs=[run_pair(service,arm,long_rows=32,short_rows=4,delay_s=.08)
-                  for arm in ('native_shared','strong_static','candidate')]
+        runs=[]
+        try:
+            with FixtureService(delay_s=.01) as service:
+                for arm in ('native_shared','strong_static','candidate'):
+                    runs.append(run_pair(service,arm,long_rows=32,short_rows=4,delay_s=.08))
+        except PairFailure as error:
+            runs.append(error.evidence)
+            raise
+        finally:
+            output=os.environ.get('SEMLOOM_PAIR_TEST_OUTPUT')
+            if output:
+                with Path(output).open('x') as stream:
+                    json.dump(dict(source_commit=os.environ.get('SEMLOOM_SOURCE_COMMIT'),runs=runs),stream)
         self.assertEqual([r['count'] for r in audit(runs)],[36]*3)
         self.assertTrue(all(len(r['ready'])==2 for r in runs))
 

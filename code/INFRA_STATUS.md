@@ -4,7 +4,8 @@
 固定stability来源新增显式Job封口、可关闭的只读工作观测和有限小Job突发；默认RR、native执行、HTTP和计数保持。
 真实Core无模型机制与负例已有独立复算，估计错误可使长Job退化超过允许值；不是模型或SQL收益。
 私有双前端Pipe到单owner的最小桥已实现，50本地检查通过/13实库跳过，取消、EOF与停止证明边界明确；
-真实LOTUS双进程、共同native/stability集成、真实模型仍pending，后续从[M4](../experiments/plans/数据组织.md#query-sharing-burst)核对。
+实际SDK源码与Arrow/Pandas预检通过；首轮LOTUS双进程返回结果但审计字段及Linux fd关闭竞态暴露，修后完整配对仍pending。
+共同native/stability集成、真实模型仍pending，后续从[M4](../experiments/plans/数据组织.md#query-sharing-burst)核对。
 
 2026-10-12：[执行稳定性与多副本组合](../experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)。
 原runtime、多副本与入口修补已保留原提交合到无日期分支；本机270项中249通过／21跳过，未知Job容量和对象保持。

@@ -230,6 +230,27 @@ class NativeQueryBridgeTests(unittest.TestCase):
         a.release(tuple(d.lease_id for d in first))
         self.assertEqual(len(self.consume(a)), 1)
 
+    def test_concurrent_teardown_closes_actual_pipe_descriptor_once(self):
+        bridge = NativeTaskBridge(lambda: None, {'a':1})
+        peer = bridge._peers['a']
+        original, calls = peer.connection.close, []
+        barrier = threading.Barrier(2)
+        def observed_close():
+            calls.append(1)
+            time.sleep(.02)
+            original()
+        peer.connection.close = observed_close
+        def closing():
+            barrier.wait()
+            bridge._close_connection(peer)
+        threads=[threading.Thread(target=closing) for _ in range(2)]
+        for thread in threads:thread.start()
+        for thread in threads:thread.join(1)
+        peer.client_connection.close()
+        self.assertTrue(peer.connection.closed)
+        self.assertTrue(all(not thread.is_alive() for thread in threads))
+        self.assertEqual(len(calls),1)
+
 
 if __name__ == '__main__':
     unittest.main()

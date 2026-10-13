@@ -1,0 +1,50 @@
+.......
+Mapping:   0%|           0/32 LM calls [00:00<?, ?it/s]
+Mapping:   0%|           0/4 LM calls [00:00<?, ?it/s]
+Mapping: 100%|██████████ 4/4 LM calls [00:00<00:00, 10.04it/s]
+Mapping: 100%|██████████ 4/4 LM calls [00:00<00:00, 10.03it/s]
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+
+Mapping: 100%|██████████ 32/32 LM calls [00:00<00:00, 47.55it/s]
+Mapping: 100%|██████████ 32/32 LM calls [00:00<00:00, 47.53it/s]
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<existing-venv>/lib/python3.12/site-packages/lotus/models/lm.py:520: UserWarning: No pricing information available for model openai/lotus-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+E...Exception in thread native-query-pipe-b:
+Traceback (most recent call last):
+.  File "<base-python>/lib/python3.12/threading.py", line 1073, in _bootstrap_inner
+    self.run()
+  File "<base-python>/lib/python3.12/threading.py", line 1010, in run
+    self._target(*self._args, **self._kwargs)
+  File "<isolated-source>/code/src/execution_provider/adapters/native_query_bridge.py", line 133, in _read
+    peer.connection.close()
+  File "<base-python>/lib/python3.12/multiprocessing/connection.py", line 178, in close
+    self._close()
+  File "<base-python>/lib/python3.12/multiprocessing/connection.py", line 377, in _close
+    _close(self._handle)
+OSError: [Errno 9] Bad file descriptor
+.......
+======================================================================
+ERROR: test_native_and_identical_bridge_static_candidate_match (tests.experiments.test_query_sharing_lotus.RealLotusPairTests.test_native_and_identical_bridge_static_candidate_match)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<isolated-source>/code/tests/experiments/test_query_sharing_lotus.py", line 119, in test_native_and_identical_bridge_static_candidate_match
+    self.assertEqual([r['count'] for r in audit(runs)],[36]*3)
+                                          ^^^^^^^^^^^
+  File "<isolated-source>/code/src/experiments/query_sharing_lotus.py", line 345, in audit
+    if call['body'].get(field)!=value: raise ValueError('generation parameter differs')
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: generation parameter differs
+
+----------------------------------------------------------------------
+Ran 19 tests in 33.981s
+
+FAILED (errors=1)

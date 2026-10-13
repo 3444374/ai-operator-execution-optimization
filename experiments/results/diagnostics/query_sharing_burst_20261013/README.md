@@ -113,3 +113,17 @@ K由独立long64两次K=2/4校准选定；主长256/短8四臂三轮交错及无
 8项中7通过/1实库跳过；较严参数校验先拒绝旧测试的max_tokens变动，导致一次错误消息预期失败，
 已改为完整消息差异用例并单测参数拒绝；失败与通过原件分别保留。这两次本地运行共8个fixture POST。
 前端退出、RSS与累计4240上限继续由本runner自己控制；实际库资格仍pending。
+
+<a id="lotus-sdk-repair"></a>
+## 已释放窗口的实库预检与首次失败
+
+主协调确认baseline清理释放后，轻量核查CPU16–17无新受限进程、GPU无计算进程，再上传已提交`a64ce942`快照。
+现有解释器Python3.12.3，实际版本LOTUS1.2.4/LiteLLM1.95.0/OpenAI2.50.0/pyarrow24.0.0/pandas2.3.3/HTTPX0.28.1；
+固定SDK源码摘要、Arrow表和Pandas frame检查通过。早期目录盘点报pandas3.0.5，不能代替此次解释器实测；未安装或修改公共依赖。
+
+首次实库19项18通过/1审计错误；三组32+4 Map结果已返回，但没有导出HTTP事件，所以不授予完整配对资格。
+固定LiteLLM将请求的`max_tokens=16`转换成`max_completion_tokens=16`，旧审计误要求字面字段；
+零HTTP的实际`prepare_call`诊断确认这点，审计改为核对有效输出上限并继续对拍完整正文，不改供应商请求。
+Linux另暴露reader EOF与关闭流程同时关闭Pipe fd的竞态；新增单独关闭互斥和真实fd并发用例，属于普通正确性修补。
+本地21项20通过/1实库跳过；修后完整实库验证仍pending，失败/预检与源码摘要归[repair checks](raw/lotus_sdk_repair_checks.json)。
+首次实库仅保存日志，没有HTTP事件原件；后续小配对将在审计前导出事件，即使失败也保留，不把这一缺口抹掉。

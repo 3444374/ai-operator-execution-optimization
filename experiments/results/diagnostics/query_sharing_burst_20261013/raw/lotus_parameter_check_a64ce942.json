@@ -1,0 +1,18 @@
+{
+  "run_id": "query-sharing-sdk-effective-parameters",
+  "prepared_fields": {
+    "model": "lotus-fixture",
+    "temperature": 0,
+    "top_p": 1,
+    "n": 1,
+    "max_completion_tokens": 16
+  },
+  "requested_generation": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_tokens": 16,
+    "n": 1
+  },
+  "fixture_posts": 0,
+  "model_calls": 0
+}

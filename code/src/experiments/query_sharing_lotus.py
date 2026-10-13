@@ -341,8 +341,13 @@ def audit(runs):
             if call['arrival'] < run['release_epoch']+(run['delay_s'] if call['query_id']=='short' else 0):
                 raise ValueError('HTTP request before query release')
             if call['body_sha256'] != digest(call['body']): raise ValueError('request body digest differs')
-            for field,value in dict(model='lotus-fixture',temperature=0,top_p=1,max_tokens=16,n=1).items():
+            for field,value in dict(model='lotus-fixture',temperature=0,top_p=1,n=1).items():
                 if call['body'].get(field)!=value: raise ValueError('generation parameter differs')
+            # The pinned SDK maps the requested max_tokens to the provider's
+            # max_completion_tokens for this model. Compare its effective cap
+            # and the complete body, without rewriting the supplier request.
+            caps=[call['body'][k] for k in ('max_tokens','max_completion_tokens') if k in call['body']]
+            if not caps or any(cap!=16 for cap in caps): raise ValueError('generation output cap differs')
             raw=call['response_body'].encode()
             if hashlib.sha256(raw).hexdigest()!=call['response_sha256']: raise ValueError('response body digest differs')
             response=json.loads(raw)
@@ -396,8 +401,12 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--repeats',type=int,choices=(1,2,3),default=3)
+    parser.add_argument('--max-fixture-posts',type=int,default=4240)
+    parser.add_argument('--window-seconds',type=int,default=1800)
     args=parser.parse_args()
     if args.output.exists(): parser.error('output already exists; preserve previous evidence')
+    if not 1<=args.max_fixture_posts<=4240 or not 30<=args.window_seconds<=1800:
+        parser.error('fixture budgets must stay within 4240 POST / 1800 seconds')
     report=dict(schema=1,scope='actual LOTUS processes, localhost fixture; model/GPU/SQL zero',
         source_commit=os.environ.get('SEMLOOM_SOURCE_COMMIT'),runs=[],status='running')
     code=Path(__file__).resolve().parents[2]
@@ -407,13 +416,15 @@ def main():
          'src/scheduling/core/session.py','src/scheduling/core/session_jobs.py')}
     report['cpu_affinity']=sorted(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else None
     began=time.monotonic()
+    window_end=began+args.window_seconds-20
+    report['budget']=dict(max_fixture_posts=args.max_fixture_posts,window_seconds=args.window_seconds)
     try:
-        with FixtureService(max_posts=4240) as service:
+        with FixtureService(max_posts=args.max_fixture_posts) as service:
             # Long-only fixture calibration, no evaluation outcomes select K.
             for active in (2,4):
                 for repeat in range(2):
                     report['runs'].append(run_pair(service,'strong_static',long_rows=64,short_rows=0,
-                        active=active,run_id=f'calibration-k{active}-r{repeat}',window_end=began+1780))
+                        active=active,run_id=f'calibration-k{active}-r{repeat}',window_end=window_end))
             calibration={active:median(r['frontends']['long']['jct_s'] for r in report['runs']
                          if r['active_requests']==active) for active in (2,4)}
             selected=min(calibration,key=lambda active:(calibration[active],active))
@@ -421,15 +432,15 @@ def main():
                 rule='lowest median of the independent long64 two-repeat fixture calibration; tie uses smaller K')
             for repeat in range(args.repeats):
                 for arm in (ARMS if repeat%2==0 else tuple(reversed(ARMS))):
-                    if time.monotonic()-began>1700: raise TimeoutError('aggregate fixture window exhausted')
+                    if time.monotonic()>window_end: raise TimeoutError('aggregate fixture window exhausted')
                     report['runs'].append(run_pair(service,arm,active=selected,
-                        run_id=f'paired-r{repeat}-{arm}',window_end=began+1780))
+                        run_id=f'paired-r{repeat}-{arm}',window_end=window_end))
             for arm in ARMS:
                 report['runs'].append(run_pair(service,arm,long_rows=64,delay_s=3,active=selected,
-                    run_id='no-contention-'+arm,window_end=began+1780))
+                    run_id='no-contention-'+arm,window_end=window_end))
             for arm in ('strong_static','candidate'):
                 report['runs'].append(run_pair(service,arm,active=selected,cancel_at_s=.6,
-                    run_id='cancel-'+arm,window_end=began+1780))
+                    run_id='cancel-'+arm,window_end=window_end))
         report['summary']=audit(report['runs']);report['status']='passed'
     except PairFailure as error:
         report['runs'].append(error.evidence);report['error_type']=type(error.__cause__).__name__;report['status']='failed'

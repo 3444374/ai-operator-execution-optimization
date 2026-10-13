@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：实库预检与配对审计修补
+
+- 主协调确认baseline清理释放；本线CPU16–17占用轻查及实际SDK/Arrow/Pandas资格通过，现有pandas2.3.3，未改公共依赖。
+- 首次实库19项18pass/1error且Linux reader双关闭fd竞态可见；完整HTTP明细未导出，不宣布真实双进程对拍通过。
+- 实际SDK将max_tokens转换为max_completion_tokens；只修[有效上限审计与Pipe关闭](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-sdk-repair)，不改原生请求/并发，普通fix不归调度贡献。
+- 0HTTP参数诊断和失败日志保留，本地修后21项20pass/1实库skip；修后服务器配对继续在原30分钟窗口/CPU/RSS/零模型预算内，累计调用不重置。
+
 ## 2026-10-13：LOTUS配对审计补充
 
 - 完整替身响应/摘要、固定n/生成字段、LM cache与实际token usage纳入[同报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-pair-preparation)；拒绝把减少必要工作当成调度改善。
