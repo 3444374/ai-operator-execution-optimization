@@ -3,8 +3,8 @@
 ## 2026-10-13：DuckDB六路径与公共调用修订
 
 - 基于已发布`a0f3fbd3`复用当前向量接点，三个互斥切片完成DuckDB ABI／有界回填、SemLoom输入序及两个作者IMLane模式的验证入口；[方法矩阵](code/integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)记录实际支持与缺项。
-- 公共六项IMLane容量`9f8519d9`、未知结果／关闭故障的原生图复用保护`45899253`分开推送；Sema的native4白名单`3b465f3f`与HTTPX cookie`aaa88e28`按精确来源吸收，未合入其他研究分支。
-- 本地fixture与Core回归完成；`native4`最小C++合法前缀修订已按固定上游四文件摘要核对，重新构建、实际库及公开常驻CLI排在现有模型计时之后。旧LOTUS模型成绩不作为新适配基线。
+- 公共六项IMLane容量`9f8519d9`、未知结果／关闭故障保护`45899253`与无完整HTTP响应保护`69f3e93b`分开推送；Sema的native4白名单、HTTPX cookie及运行时报告引用按精确来源吸收，未合入其他研究分支。
+- `native4`已按固定来源重新构建，实际库SQL及六条公开常驻CLI完成；本地94通过／32实际库条件跳过。[同题实库记录](experiments/results/postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)集中各次来源、原失败、累计预算和截止前清理，模型／GPU0。当前向量屏障保留，旧LOTUS模型成绩不作为新适配基线。
 
 ## 2026-10-13：已有Q2阶段统计与发送账本修订
 

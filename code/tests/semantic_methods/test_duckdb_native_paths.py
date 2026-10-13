@@ -313,6 +313,8 @@ def ray_verifier_fixture(*, initialized=False, start_error=None, address_error=N
         extension.write_bytes(b'verifier unit fixture; no compiled extension')
         arguments = ['--ray-temp', '/tmp/dbr-short', '--output', str(output)]
         with (patch.dict(os.environ, {'DUCKDB_SEMLOOM_EXTENSION': str(extension), 'DUCKDB_FIXTURE_PORT': '0'}),
+              patch.dict('sys.modules', {'daft': modules['daft']}),
+              patch('src.infrastructure.daft_runtime._configured', None),
               patch.object(verifier.importlib, 'import_module', side_effect=lambda name: modules[name]) as imports,
               patch.object(verifier, 'start_ray', side_effect=start) as starter,
               patch.object(verifier.unittest.TextTestRunner, 'run', return_value=result),

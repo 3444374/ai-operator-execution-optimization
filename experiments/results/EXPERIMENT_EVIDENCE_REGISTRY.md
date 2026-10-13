@@ -1,8 +1,8 @@
 # 实验与机制证据台账
 
-2026-10-13：[DuckDB六路径源码与本地切片](postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)。
-固定native来源`a0f3fbd3`，当前向量、原调用与解析保留；公共容量与未知工作保护独立提交，支持矩阵和本地检查由所属目录维护。
-新`native4`构建／实际库／公开CLI尚未运行，不能借用旧LOTUS模型、质量或性能结果。
+2026-10-13：[DuckDB六路径源码、实库与公开SQL检查](postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)。
+固定native来源`a0f3fbd3`，原调用、解析及当前向量屏障保留；新`native4`构建、固定实际库和六条常驻CLI软件检查完成。
+逐次运行／源码、失败、预算与清理归于同题机器事实和原件；模型／GPU及新匹配性能未运行，不能借用旧LOTUS成绩。
 
 2026-10-13：[原Q2阶段复算与私有账本诊断](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72个已有性能查询分解同机墙钟及匹配服务计数；三个服务器账本只读确认无索引、四条计数全表扫描。正／反顺序localhost三跳fixture的扫描CPU及完整请求随历史增长，机制在本地成立；现场因果占比未测，旧真实9360逻辑／28080POST不减估计开销。同事务持久计数修订已通过14项回归；12组相同条件配对中23000行完整fixture请求从约97–105降至39–43毫秒，小账本略慢保留。修订未部署到真实窗口；匹配复测及后续长测待各自方案，真实模型新增0。

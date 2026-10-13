@@ -1,9 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
-2026-10-13：[DuckDB六路径切片](integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)复用`a0f3fbd3`原有当前向量接点，
-补齐ABI／重排容量、取消与原首输入错误；两作者IMLane模式进入专属验证入口。公共六项容量`9f8519d9`与未知工作复用保护`45899253`独立发布，
-另按来源采用Sema的HTTPX cookie修补。DuckDB本地80通过／31实际库条件跳过；`native4`构建、固定库和公开常驻CLI尚未执行，等待已有模型计时结束。
-新适配源码不借旧LOTUS或`native3`的模型、性能和质量成绩。
+2026-10-13：[DuckDB六路径](integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)完成当前向量接入，
+补齐ABI／有界回填、取消与首输入错误；公共容量及未知传输的持续复用保护分块发布，Sema共享修订按来源吸收。
+新`native4`已构建，固定实际库与六条公开常驻CLI检查完成；原请求／解析和SQL向量屏障保留。
+[实库结果与失败证据](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)集中实际覆盖、逐次源码、预算与清理。
+本地94通过／32实际库条件跳过；模型／GPU及新匹配性能未运行，新适配不借旧LOTUS或`native3`成绩。
 
 2026-10-13：[Q2阶段统计与发送账本修订](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改，修后真实模型窗口尚未运行。完整观察OFF开关仍未实现。

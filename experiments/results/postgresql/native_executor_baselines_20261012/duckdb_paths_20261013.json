@@ -1,0 +1,615 @@
+{
+  "schema": "duckdb_paths_software_20261013_v1",
+  "evidence_level": "real fixed libraries and original compiled SQL/public CLI with deterministic HTTP responses; model/GPU/performance untested",
+  "base_sha": "a0f3fbd393a6bf0879a2c0a973f727c737d00389",
+  "latest_server_source_sha": "b8326b0a5e4b9d43988023937225db2fc22615be",
+  "upstream_commit": "9b7b16a5d5bfa97180b8be48d69bd9a4a4106419",
+  "duckdb_commit": "08e34c447bae34eaee3723cac61f2878b6bdf787",
+  "extension_version": "0.4.14-native4",
+  "extension_sha256": "65cd160849d93fba7108733fe7df7a765ecff522ea86bd5af96b5a68f54a76c0",
+  "patch_sha256": "040bfe675f936bf7e2b32efcc3b0f567b8db1303292d93400d7017f58869d02a",
+  "driver_library_versions": {
+    "duckdb": "1.5.4",
+    "daft": "0.7.21",
+    "ray": "2.56.1"
+  },
+  "imlane_author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "imlane_build_versions": {
+    "python": "3.12.3",
+    "arrow": "16.1.0"
+  },
+  "imlane_bridge_sha256": "b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6",
+  "local_checks": [
+    {
+      "group": "final DuckDB fixtures/Core/verifier checks",
+      "tests": 126,
+      "passed": 94,
+      "real_library_condition_skips": 32
+    },
+    {
+      "group": "public IMLane capacities",
+      "tests": 48,
+      "passed": 47,
+      "real_library_condition_skips": 1
+    },
+    {
+      "group": "public uncertain transport lifetime",
+      "tests": 55,
+      "passed": 37,
+      "real_library_condition_skips": 18
+    }
+  ],
+  "qualification": {
+    "native_daft_sql_unique_passes": 11,
+    "native_ray_data_sql_unique_passes": 11,
+    "ray_data_scope": "10 passed in native-raydata02 plus only the original failed test passed in native-raydata-earliest03; no fresh complete 11-test suite claimed",
+    "semloom_sql_unique_passes": 4,
+    "imlane_cpython_sql_unique_passes": 6,
+    "imlane_author_ray_sql_unique_passes": 6,
+    "public_cli_passed_queries": 18,
+    "public_cli_fixture_posts": 870
+  },
+  "fixture_post_budget": 20000,
+  "total_fixture_posts_including_failures": 11608,
+  "last_repair_fixture_limit": 50,
+  "last_repair_fixture_posts": 45,
+  "real_model_posts": 0,
+  "gpu_resources": 0,
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "windows": [
+    {
+      "begin_utc": "2026-10-13T05:18:00Z",
+      "deadline_utc": "2026-10-13T06:18:00Z"
+    },
+    {
+      "begin_utc": "2026-10-13T06:18:00Z",
+      "deadline_utc": "2026-10-13T06:35:00Z",
+      "approved_by": "main coordinator",
+      "same_post_budget": true
+    },
+    {
+      "begin_epoch": 1791873776.9878168,
+      "deadline_epoch": 1791874020.0,
+      "approved_by": "main coordinator",
+      "additional_fixture_limit": 50,
+      "scope": "only previous RayData earliest-error and SemLoom four SQL cases"
+    }
+  ],
+  "final_cleanup": {
+    "checked_utc": "2026-10-13T06:46:59.154913+00:00",
+    "remaining_owned_processes": 0,
+    "reserved_listeners": 0,
+    "deadline_utc": "2026-10-13T06:47:00Z"
+  },
+  "public_cli": [
+    {
+      "run_id": "public-native01",
+      "arm": "duckdb-adapted-native",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-native01/cli/public-verification.json",
+      "verification_sha256": "bf3e293b628da5874aaa4dcc6dc8fe2804a7070574524d7889cd8fdd40055b0d"
+    },
+    {
+      "run_id": "public-daft01",
+      "arm": "duckdb-method-native-daft",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-daft01/cli/public-verification.json",
+      "verification_sha256": "983390e12ed129be10a1f3f88f961e29d9c59a467b10e5dc06718d66788b15ba"
+    },
+    {
+      "run_id": "public-raydata01",
+      "arm": "duckdb-method-native-ray-data",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-raydata01/cli/public-verification.json",
+      "verification_sha256": "0dddfc6934961fceb47b8fe19412f298851b1cba9b3e1e1f8e1506a5ac6a86ab"
+    },
+    {
+      "run_id": "public-semloom01",
+      "arm": "duckdb-method-semloom",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-semloom01/cli/public-verification.json",
+      "verification_sha256": "a91d2b844c66192e5589451dfccfc7ef3a3353e1963da35c40521e33c12e5ebe"
+    },
+    {
+      "run_id": "public-imlane-cpython01",
+      "arm": "duckdb-method-native-imlane",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-imlane-cpython01/cli/public-verification.json",
+      "verification_sha256": "8f0562b972e0f89c7237635c7e0fd73183a1d786ad61eaa4949cf25e7ef38cdc"
+    },
+    {
+      "run_id": "public-imlane-ray02",
+      "arm": "duckdb-method-native-imlane-ray",
+      "passed_queries": 3,
+      "query_rows": [
+        8,
+        8,
+        129
+      ],
+      "fixture_posts": 145,
+      "same_nonempty_owner_and_connection": true,
+      "completed_queries": [
+        1,
+        2,
+        3
+      ],
+      "result_cache": false,
+      "changed_duplicate_utf8_inputs_verified": true,
+      "fixture_cleanup_confirmed": true,
+      "verification_member": "artifacts/public-imlane-ray02/cli/public-verification.json",
+      "verification_sha256": "1534288ae782de9e76fe2ac48b6077c0b007e16249d1005337cb5224329bed6a"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "imlane-cpython-cancel01",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 2,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-cpython-cancel01/result.json",
+      "result_sha256": "4696a4098f486217e8b8d75cb8c2cd88393d9ba67bc9b7601a12151237c56f3d"
+    },
+    {
+      "run_id": "imlane-cpython-complete01",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 2095,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-cpython-complete01/result.json",
+      "result_sha256": "666d82de2e9db492636833ca42fbc3749b2ab47f935c2bca1425f43a0fbe8748"
+    },
+    {
+      "run_id": "imlane-cpython-stop01",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 6,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-cpython-stop01/result.json",
+      "result_sha256": "bd8c582e2cae1ca9266be11e4306965b6bfe971bf0441a5849f2474b71dbb5b2"
+    },
+    {
+      "run_id": "imlane-cpython-transport01",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 3,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-cpython-transport01/result.json",
+      "result_sha256": "ce88fbf0708056972b710251be70d32de4b4128e9df6df05678dbc2368db51a6"
+    },
+    {
+      "run_id": "imlane-ray-cancel01",
+      "phase": "imlane",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "imlane-ray-cancel02",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 2,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-ray-cancel02/result.json",
+      "result_sha256": "a874e3cf05b1c71a11d76ebcc90d09de2b2e3d37ce8d07e81d8a0f2bba6b41c0"
+    },
+    {
+      "run_id": "imlane-ray-complete01",
+      "phase": "imlane",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "imlane-ray-complete02",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 2095,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-ray-complete02/result.json",
+      "result_sha256": "3bfce6c39d31100627f1403a652f9edbd4603afe3207d89bb32bdbc09d890060"
+    },
+    {
+      "run_id": "imlane-ray-stop01",
+      "phase": "imlane",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "imlane-ray-stop02",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 5,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-ray-stop02/result.json",
+      "result_sha256": "509d50ab66ece704d6ee8d3fca3934e6e4c8bec6cf6183383935c6c745fcdbad"
+    },
+    {
+      "run_id": "imlane-ray-transport01",
+      "phase": "imlane",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "imlane-ray-transport02",
+      "phase": "imlane",
+      "passed": true,
+      "fixture_posts": 3,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/imlane-ray-transport02/result.json",
+      "result_sha256": "250b3cb0272f918944684c2d5a718d128788d3b1da0aeb60a421bb1e3e99517a"
+    },
+    {
+      "run_id": "native-daft01",
+      "phase": "native",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "ca70f1f6e2b4d82ee439981169571889f92e725a",
+      "owned_cleanup_confirmed": true,
+      "tests": 11,
+      "failures": 0,
+      "errors": 11,
+      "skips": 0,
+      "result_member": "artifacts/native-daft01/result.json",
+      "result_sha256": "b5d2c02f845ee90a4fe3e7c3038fe761d95bca26c90f66e36cd625d32caaeab4"
+    },
+    {
+      "run_id": "native-daft02",
+      "phase": "native",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "ca70f1f6e2b4d82ee439981169571889f92e725a",
+      "owned_cleanup_confirmed": true,
+      "tests": 11,
+      "failures": 0,
+      "errors": 11,
+      "skips": 0,
+      "result_member": "artifacts/native-daft02/result.json",
+      "result_sha256": "b5d2c02f845ee90a4fe3e7c3038fe761d95bca26c90f66e36cd625d32caaeab4"
+    },
+    {
+      "run_id": "native-daft03",
+      "phase": "native",
+      "passed": false,
+      "fixture_posts": 2147,
+      "source_sha": "ca70f1f6e2b4d82ee439981169571889f92e725a",
+      "owned_cleanup_confirmed": true,
+      "tests": 11,
+      "failures": 1,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/native-daft03/result.json",
+      "result_sha256": "28a47486545b422fb3cc4173762ae7dce3c6610259450e99b9856d807e6d650e"
+    },
+    {
+      "run_id": "native-daft04",
+      "phase": "native",
+      "passed": true,
+      "fixture_posts": 2147,
+      "source_sha": "6a2342a191556af410addbe527c5c243aa446a2a",
+      "owned_cleanup_confirmed": true,
+      "tests": 11,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/native-daft04/result.json",
+      "result_sha256": "b7c72474ade1b359392e034ccd7e2e28d06c691a0d9f6e9ea4daa5ef0635ffaa"
+    },
+    {
+      "run_id": "native-raydata-earliest03",
+      "phase": "native",
+      "passed": true,
+      "fixture_posts": 8,
+      "source_sha": "b8326b0a5e4b9d43988023937225db2fc22615be",
+      "owned_cleanup_confirmed": true,
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/native-raydata-earliest03/result.json",
+      "result_sha256": "528bd8238e103b2208be8fcff99badf4705605d854e1aecd49a9acca51933353"
+    },
+    {
+      "run_id": "native-raydata01",
+      "phase": "native",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "6a2342a191556af410addbe527c5c243aa446a2a",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "native-raydata02",
+      "phase": "native",
+      "passed": false,
+      "fixture_posts": 2179,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 11,
+      "failures": 1,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/native-raydata02/result.json",
+      "result_sha256": "4abaf8b8d57999b6b8ef35b64b9b7e4804eb895500b8349c4e76fda9294c1982"
+    },
+    {
+      "run_id": "public-daft01",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "6a2342a191556af410addbe527c5c243aa446a2a",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-imlane-cpython01",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-imlane-ray01",
+      "phase": "public",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-imlane-ray02",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-native01",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "6a2342a191556af410addbe527c5c243aa446a2a",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-raydata01",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "public-semloom01",
+      "phase": "public",
+      "passed": true,
+      "fixture_posts": 145,
+      "source_sha": "f838cfcb6277a6b06a63354ef6afeb02efb195f0",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "semloom01",
+      "phase": "semloom",
+      "passed": false,
+      "fixture_posts": 0,
+      "source_sha": "6a2342a191556af410addbe527c5c243aa446a2a",
+      "owned_cleanup_confirmed": true,
+      "tests": null,
+      "result_member": null
+    },
+    {
+      "run_id": "semloom02",
+      "phase": "semloom",
+      "passed": false,
+      "fixture_posts": 9,
+      "source_sha": "8d443d24c07a9408d73fa868d74b401413e63b55",
+      "owned_cleanup_confirmed": true,
+      "tests": 4,
+      "failures": 6,
+      "errors": 2,
+      "skips": 0,
+      "result_member": "artifacts/semloom02/result.json",
+      "result_sha256": "5d69ff0c7e1c357dadf651372539ba606fa7a7d0e9e99faabb4fbc82e828033f"
+    },
+    {
+      "run_id": "semloom03",
+      "phase": "semloom",
+      "passed": true,
+      "fixture_posts": 37,
+      "source_sha": "b8326b0a5e4b9d43988023937225db2fc22615be",
+      "owned_cleanup_confirmed": true,
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "result_member": "artifacts/semloom03/result.json",
+      "result_sha256": "80fd4d3074ce665c54a4a927b3143d390496cd5bae94512cc2347063df557d7b"
+    }
+  ],
+  "failure_notes": {
+    "native-daft01/native-daft02": "LOAD failed before HTTP because existing C++ runtime library lacked required ABI; original logs retained.",
+    "native-daft03": "10 passed and one fixture misread generic C ABI SQL error. Corrected to inspect bridge.last_error; native-daft04 is the complete rerun.",
+    "native-raydata01": "SDK canonicalized loopback node address; startup failed with zero POST. Verifier now uses the fixed SDK node address.",
+    "native-raydata02": "10 passed and one earliest-input-error fixture incorrectly required parallel scheduling. First original 429 is now preserved and actual response ordering recorded; only this test rerun.",
+    "semloom01": "Owned Ray startup address failure before SQL/HTTP.",
+    "semloom02": "Verifier directly initialized Daft then the public runtime manager initialized it again, causing MODEL_UNAVAILABLE. Reuses configure_daft_runner at the same eight threads. Legal window increase of 24 bytes is not the root cause.",
+    "imlane-ray-*01/public-imlane-ray01": "Private harness lacked the Ray current-cluster parent directory; zero POST. Repaired runs used new caller-owned runtimes.",
+    "2026-10-13T06:35:00Z": "Preparation after this deadline did not execute SQL; retained as not run without backfilling results or budget."
+  },
+  "preserved_barriers": [
+    "original current-vector read/configuration and complete request preparation before callback",
+    "SQL vector function return",
+    "input-order parser delivery, with bounded later-response buffering"
+  ],
+  "unsupported_or_unverified": [
+    "cross-vector prefetch/pipeline",
+    "multi-model or join/cascade",
+    "author concurrent-query fairness",
+    "independent proof or cancellation of unknown remote HTTP work",
+    "real model quality/GPU/matched performance"
+  ],
+  "raw_evidence": {
+    "name": "duckdb-paths-evidence-final.tar.gz",
+    "sha256": "c13792dfb6de54befd9a87791294a08361e7292ceea523d93853ac168cbb656d",
+    "bytes": 1653762,
+    "members": 852,
+    "retrieval": "private archive by handoff checksum; runtime configs and addresses are not published",
+    "final_summary_member": "artifacts/final-summary.json",
+    "final_summary_sha256": "6204bb3265cd1e63dd4c8c356f7cd053e718866972e691cfc8976b3dfbfbc0fa"
+  },
+  "derivation": "Sum all runs.fixture_posts, including failed runs, for total. CLI counts and lifecycle invariants checked against each retained public-verification and persistent-query member. Build identity checked against the repository source_identity.json. Raw member hashes locate original evidence."
+}
