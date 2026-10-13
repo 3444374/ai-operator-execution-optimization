@@ -146,7 +146,11 @@ LOTUS和DuckDB返回原SDK／C++解析，Sema保持原SQL及请求池后的有�
 
 [公共方法检查](verify_imlane_methods.py)在两种mode中检查真实LOTUS、DuckDB和Sema的完整消费及连续LOTUS查询。
 `--methods sema`只验证Sema，两模式各保留一次公开查询与常驻两查询，独立Coordinator保持隔离。
-本轮固定driver为Arrow24/aiohttp3.14.3，作者为Arrow16.1.0/aiohttp3.14.5；实际worker模块摘要和两个actor需单独核对。
+本轮固定driver为Arrow24/aiohttp3.14.3，作者为Arrow16.1.0/aiohttp3.14.5；实际worker模块摘要和两个actor已由
+`public-imlane04`核对，结果与失败来源见[接续记录](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-six-paths-followup)。
+若Ray head由调用方创建，显式让其`IMLANE_HTTP_TRACE_DIR`与验证器`--ray-worker-trace-root`相同；
+actor继承head环境，不能只给Coordinator设置目录。指定的driver Python保留venv launcher的symlink路径，
+source／binary路径另做规范化；ready-file在Ray资源检查完成后原子发布。
 它需要已有作者构建、原桥、已编译的`0.4.14-native3`扩展、固定Sema作者二进制和独立LOTUS解释器，
 只访问localhost软件响应，不安装依赖或加载模型。来源和全部失败见
 [本轮记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。

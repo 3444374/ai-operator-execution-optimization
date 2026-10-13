@@ -2,7 +2,7 @@
 
 2026-10-13：[Sema六路径容量与生命周期接续](postgresql/native_adapter_integration_20261009/README.md#sema-six-paths-followup)。
 固定原方法，复用native与统一来源；本地Sema组合218通过，共用HTTPX、IMLane容量和旧方法回归分开登记。
-模型／GPU0，实际库跳过项及新Linux／模型待运行清单保留；不增加原池前、优化器或性能结论。
+固定Linux Daft／Ray各9项无跳过，六条原Sema公开SQL软件入口按来源登记；最终两IMLane模式身份完整，冷Ray20秒失败及R/S修后成功退出字段缺项保留。239／320 fixture POST、模型／GPU0，已释放本线资源；不增加原池前、优化器或性能结论。
 
 2026-10-13：[原Q2阶段复算与私有账本诊断](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72个已有性能查询分解同机墙钟及匹配服务计数；三个服务器账本只读确认无索引、四条计数全表扫描。正／反顺序localhost三跳fixture的扫描CPU及完整请求随历史增长，机制在本地成立；现场因果占比未测，旧真实9360逻辑／28080POST不减估计开销。同事务持久计数修订已通过14项回归；12组相同条件配对中23000行完整fixture请求从约97–105降至39–43毫秒，小账本略慢保留。修订未部署到真实窗口；匹配复测及后续长测待各自方案，真实模型新增0。

@@ -1627,7 +1627,7 @@
     }
   },
   "sema_six_paths_followup": {
-    "status": "local_verified_real_runtime_pending",
+    "status": "software_verified_by_source_with_cold_ray_failure_and_success_exit_evidence_pending",
     "branch": "feat/sema-native-paths",
     "native_base": "a0f3fbd393a6bf0879a2c0a973f727c737d00389",
     "unified_base": "340bdddf02ceae629a23d69fd38943e502a32e85",
@@ -1635,7 +1635,10 @@
     "shared_sources": {
       "httpx_cookie": "aaa88e287b75edc76b6c0c05b171097e6e4e7e50",
       "imlane_capacities": "9f8519d9a01c9420c4275d0270738423301b8542",
-      "native_lifecycle": "45899253becefb0aa3491c15d6dc8bf27332c31e"
+      "native_lifecycle": "45899253becefb0aa3491c15d6dc8bf27332c31e",
+      "transport_uncertainty": "69f3e93b8ce6b1a0758bd7494aeabe51b4f9edd8",
+      "runtime_evidence": "cc8b09bc958e31c0c8c5e3bbb4d90c0409764550",
+      "native4_loader": "3b465f3f8fddb16f891e31b23ab8ac2c359322f4"
     },
     "author_source": "3f2c7182bdaa26c1e8925f486585da25337e687e",
     "sema_binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
@@ -1648,7 +1651,8 @@
       "sema_combined": {
         "ran": 218,
         "passed": 218,
-        "skipped": 0
+        "skipped": 0,
+        "scope": "initial implementation local suite; later targeted checks and Linux runs are separate, not summed or a full final-HEAD rerun"
       },
       "httpx_related": {
         "ran": 41,
@@ -1671,7 +1675,303 @@
     },
     "models": 0,
     "gpu_runs": 0,
-    "real_linux_runtimes": "not run for the new composition; existing source evidence is retained separately",
+    "real_linux_runtimes": {
+      "status": "performed; software fixture only, original author SQL preserved",
+      "source_bundles": {
+        "source01": {
+          "git_head": "c88aae6044825abbc831c6147ff9dd72b324b3fc",
+          "dirty": true,
+          "archive_sha256": "5bd7c38fd3faebc48ab2b68767272469570abebbac1ffe142d18c015e281661a",
+          "manifest": "sema-paths-working-source.json"
+        },
+        "source02": {
+          "git_head": "8280b3345bdd96a0568b16251f2bcaf037f93f5f",
+          "dirty": false,
+          "archive_sha256": "05bc37fb78628a3321f13ee3b2903e7f3153b2da70dfa90f20c68a8c01deeda1",
+          "manifest": "sema-paths-source02.json"
+        },
+        "source03": {
+          "git_head": "47214b65f9ad12a395019706fb2acc572fdb5d75",
+          "dirty": false,
+          "archive_sha256": "7cd9206ed1b9694e1a7a0afaeee10b7958d6c913c32bef55a8935e85bc7d71ea",
+          "manifest": "sema-paths-source03.json"
+        },
+        "source04": {
+          "git_head": "86cedb94ee23b1efcb14d3aea510e51532e7b0f3",
+          "dirty": false,
+          "archive_sha256": "788b434d2f965411fbd166d9d0e5a7af7985dd75c36934a8e42eb75d1653b12b",
+          "manifest": "sema-paths-source04.json",
+          "execution": "uploaded but not executed"
+        },
+        "source05": {
+          "git_head": "a9d1acdadf3d87fee3c823a8c64886949d39ca6c",
+          "dirty": false,
+          "archive_sha256": "2d20022350825954c0445c52f366dafa0ffa684a841fa7730c15bc59e4cdeb1a",
+          "manifest": "sema-paths-source05.json"
+        },
+        "source06": {
+          "git_head": "0847ba153c684e13442f05fbde922b2b23ade68c",
+          "dirty": false,
+          "archive_sha256": "2bb9f955c468d1b37a6845edb589cd0f773a4e95344f30b3870b837f680048c4",
+          "manifest": "sema-paths-source06.json"
+        }
+      },
+      "driver": {
+        "python": "3.12.3",
+        "daft": "0.7.21",
+        "ray": "2.56.1",
+        "pyarrow": "24.0.0",
+        "aiohttp": "3.14.3",
+        "httpx": "0.28.1",
+        "openai": "2.50.0",
+        "numpy": "1.26.4",
+        "import_owner": "checked driver virtual environment, venv launcher kept lexical"
+      },
+      "imlane_author": {
+        "commit": "072f8257db80569e42c9f5727d839587df529652",
+        "python": "3.12.3",
+        "pyarrow": "16.1.0",
+        "aiohttp": "3.14.5",
+        "ray": "2.56.1",
+        "numpy": "1.26.4",
+        "bridge_sha256": "b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6",
+        "bridge_cpp_sha256": "1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984",
+        "kernel_sha256": "c8dbd87d246f4130d043ed55886693355fe14de798903da48273e0a95cf865b2",
+        "actual_module_and_actor_identity": "public-imlane04/runtime-preflight.json and mode kernel_traces"
+      },
+      "runtime_capacity": {
+        "cpu_affinity": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "ray_cpus": 8,
+        "ray_gpus": 0,
+        "ray_object_store_bytes": 268435456,
+        "private_fixture_ports": [
+          46510,
+          46511,
+          46512,
+          46513
+        ],
+        "ray_ports": [
+          46520,
+          46521,
+          46522,
+          46523,
+          46524,
+          46525,
+          46526,
+          46527,
+          46528,
+          46529
+        ],
+        "ray_worker_port_range": [
+          46540,
+          46649
+        ],
+        "imlane_coordinator_port_range": [
+          46650,
+          46699
+        ],
+        "sema_native_threads": {
+          "native_daft_ray_semloom": 4,
+          "imlane_modes": 2
+        },
+        "imlane_coordinator_executors": 2,
+        "imlane_native_task_threads": 6,
+        "imlane_declared_concurrency_allowance": 8,
+        "installed_downloaded_compiled": false
+      },
+      "actual_library_checks": {
+        "daft": {
+          "run": "library-daft01",
+          "source": "source01",
+          "ran": 9,
+          "passed": 9,
+          "skipped": 0,
+          "fixture_posts": 59
+        },
+        "ray_data": {
+          "run": "library-ray02",
+          "source": "source02",
+          "ran": 9,
+          "passed": 9,
+          "skipped": 0,
+          "fixture_posts": 67
+        }
+      },
+      "public_native_sql": {
+        "native": {
+          "run": "public-native01",
+          "source": "source01",
+          "status": "passed",
+          "rows": 8,
+          "fixture_posts": 8
+        },
+        "daft": {
+          "run": "public-daft01",
+          "source": "source01",
+          "status": "passed",
+          "rows": 8,
+          "fixture_posts": 8
+        },
+        "ray_data": {
+          "run": "public-ray02",
+          "source": "source02",
+          "status": "passed",
+          "rows": 8,
+          "fixture_posts": 8,
+          "stored_driver_disconnected": false,
+          "stored_driver_disconnected_reason": "runtime dict copy omitted finally update; original report retained, successful rerun pending"
+        },
+        "semloom": {
+          "run": "public-semloom02",
+          "source": "source02",
+          "status": "passed",
+          "rows": 8,
+          "fixture_posts": 8,
+          "core_usage_jobs_unconfirmed": 0,
+          "stored_driver_disconnected": false,
+          "stored_driver_disconnected_reason": "runtime dict copy omitted finally update; original report retained, successful rerun pending"
+        },
+        "imlane_cpython": {
+          "run": "public-imlane04/cpython-64b6d26641",
+          "source": "source06",
+          "status": "passed",
+          "public_queries": 3,
+          "public_rows": [
+            4,
+            2,
+            2
+          ],
+          "public_fixture_posts": 8,
+          "direct_fixture_posts": 7,
+          "actual_worker_pids": [
+            422062,
+            422065
+          ]
+        },
+        "imlane_author_ray": {
+          "run": "public-imlane04/ray-8f31535791",
+          "source": "source06",
+          "status": "passed",
+          "public_queries": 3,
+          "public_rows": [
+            4,
+            2,
+            2
+          ],
+          "public_fixture_posts": 8,
+          "direct_fixture_posts": 7,
+          "actual_worker_pids": [
+            422817,
+            422824
+          ],
+          "actual_actor_ids": [
+            "680a7a58a32ec9ce095013e602000000",
+            "eb581fcd6a3aa01e327d529902000000"
+          ]
+        }
+      },
+      "retained_failures": [
+        {
+          "run": "preflight-driver01",
+          "posts": 0,
+          "cause": "original profile minimum 10 CPUs and GPU_IDS incompatible with allocated eight-CPU zero-GPU check; explicit software profile then passed"
+        },
+        {
+          "run": "library-ray01",
+          "posts": 0,
+          "cause": "fixed SDK canonicalized localhost to a local interface while caller-owned GCS bound loopback; attach failed; owner stopped; new run uses SDK local-node interface"
+        },
+        {
+          "run": "public-imlane01",
+          "posts": 0,
+          "cause": "verifier rejected checked local non-loopback node IPv4 before author submission"
+        },
+        {
+          "run": "public-imlane02",
+          "posts": 15,
+          "cause": "CPython public and direct passed, Ray address file published empty before cluster-resource RPC; atomic ready publication fixes helper"
+        },
+        {
+          "run": "driver symlink preflight",
+          "posts": 0,
+          "cause": "Path.resolve lost requested driver venv and selected base-prefix NumPy2.4.6; lexical launcher fixes selection; old runtime identities retained"
+        },
+        {
+          "run": "public-imlane03",
+          "posts": 30,
+          "cause": "both public SQL modes passed, Ray helper verification lacked traces because actor inherits head environment; explicit shared trace root fixes harness"
+        },
+        {
+          "run": "public-ray03",
+          "source": "source06",
+          "status": "failed",
+          "rows": 8,
+          "fixture_posts": 6,
+          "gateway_received": 8,
+          "gateway_rejected_before_upstream_send": 2,
+          "query_elapsed_seconds": 20.007828689,
+          "query_error": "native Sema statement was canceled",
+          "secondary_gateway_error": "native completion returned another model or an HTTP failure",
+          "driver_disconnected": true,
+          "evidence": "public-ray03/query/q0/execution.json, query/summary.json and query/http-trace.jsonl; first snapshot6 completed, second2 canceled; successful exit fields not requalified"
+        }
+      ],
+      "budgets": {
+        "cumulative_fixture_post_limit": 320,
+        "actual_fixture_posts": 239,
+        "real_model_posts": 0,
+        "gpu_used": 0,
+        "final_window_started_utc": "2026-10-13T06:44:08.492661+00:00",
+        "final_window_ended_utc": "2026-10-13T06:45:12.322789+00:00",
+        "final_window_deadline_utc": "2026-10-13T06:51:08.492672+00:00",
+        "final_window_post_limit": 46,
+        "final_window_actual_posts": 36,
+        "continuation": "preflight refused for insufficient remaining original time; no process or POST"
+      },
+      "release": {
+        "observed_utc": "2026-10-13T06:58:00.391518+00:00",
+        "ports_or_owned_processes_remaining": 0,
+        "all_ray_owner_shutdown": true,
+        "all_coordinator_returncodes": 0,
+        "forced_shutdown": false,
+        "imlane_namespace_shm_remaining": 0,
+        "receipt": "artifacts/release-receipt.json",
+        "sent_to_coordinator": true
+      },
+      "pending": [
+        "successful Ray Data and SemLoom driver_disconnected after cc8b09bc",
+        "original cold eight-row Ray query within 20 seconds",
+        "real model quality, matching performance and scale"
+      ],
+      "minimum_followup_proposal": {
+        "status": "not started; after coordinator releases replica model window",
+        "order": [
+          "semloom",
+          "ray-data"
+        ],
+        "rows_each": 2,
+        "fixture_post_limit": 4,
+        "wall_limit_seconds": 420,
+        "query_timeout_seconds": 20,
+        "source": "0847ba153c684e13442f05fbde922b2b23ade68c",
+        "retained_cumulative_limit": 320,
+        "require": [
+          "original SQL consumption passed",
+          "runtime driver_disconnected is true",
+          "backend cleanup and independent Ray owner release"
+        ],
+        "scope": "successful-close report only; smaller fixture does not repair original eight-row cold deadline failure"
+      }
+    },
     "unsupported": [
       "pre-author-request-pool submission",
       "author optimizer/cache/statistics source audit",
@@ -1680,16 +1980,21 @@
     ],
     "source_sha256": {
       "code/src/execution_provider/adapters/async_fixed_model.py": "3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b",
-      "code/src/execution_provider/adapters/sema_service.py": "97414787434a4a74b738ab06bec3a61f925a75cb676bde164dbeee0c9567ad4c",
-      "code/src/execution_provider/adapters/sema_native.py": "fe4cd469f42473fb6f1a457d35a3830efd8ab279805cc129b1629693d3a79e56",
-      "code/src/execution_provider/adapters/sema_semloom.py": "8171f86dc18c3c044415f3b1f2770ce9a52ddf23b92381602deee45a964c0df6",
+      "code/src/execution_provider/adapters/sema_service.py": "5691fda830d32cd6290cdcc5a5e5ff0828747c99fc758ba3791b1da035905bf2",
+      "code/src/execution_provider/adapters/sema_native.py": "cb50b7170c5f24d8eb6644a12529bca70323d2715260953ff0f13f35632788d9",
+      "code/src/execution_provider/adapters/sema_semloom.py": "950a2f8a289f0635db14b4e0305494741b983fe99712734f5cd35556977b9025",
       "code/src/execution_provider/adapters/sema_imlane.py": "68827f513a7c99383590b1acfd9f87f6d625003dd638d0d349d5e970e20c996e",
-      "code/src/experiments/postgresql/sema_native_query.py": "c087b9fc90c3a03dca64bfe12500540cbd0b7009d0378af536f12b56fe250221",
-      "code/src/experiments/postgresql/supplier_adapter_query.py": "1a660ba4bfa5cd78f41371039d51dcbd7dd88ea0d491606b22cf70f84d2cdf2b",
+      "code/src/experiments/postgresql/sema_native_query.py": "e98e0480ebece5ddfc8c955a03811f9b34772b0074bd04e243d2c2697a311cf4",
+      "code/src/experiments/postgresql/supplier_adapter_query.py": "4360c0121c71f864be06776b1af554d7794146ed244a44a21d0be50c2eeb140c",
       "code/src/experiments/postgresql/persistent_native_adapter_query.py": "d586dea088464dcd59b617980f4b0b98bbbca63b7d471614fbc0bd061f1a060f",
-      "code/integrations/sema/verify_native.py": "26f1541faa411bf6098fc4c44a2599891ead745f5f4f087727968f49183f5ccf",
-      "code/integrations/sema/verify_imlane_methods.py": "cf7e9d8a19d2ceceeca2f958fb33bbd6b9bbd0a71baa9fb9a2b7a7b7d31579bf",
-      "code/integrations/sema/verify_public.py": "5cee4a3b9c629aab01a445d354d7008bf418732901f276038861aa0599095682"
+      "code/integrations/sema/verify_native.py": "4c63a8cabd9a3123d4397f2a43596c9bbbd3164d8f5f40b8d50e8dae4d3ff8a5",
+      "code/integrations/sema/verify_imlane_methods.py": "06612d4cfff47914d8860dc2893794797b0153a070a008137b11322c5a33182b",
+      "code/integrations/sema/verify_public.py": "ac0c875e1030e82e054eda032bb0858e90a2820d370bdbbdddd645027482a533",
+      "code/src/experiments/postgresql/native_adapter_query.py": "9eef19357c49b702cf1c36680331c8eda11149643457dcd62be7787e9321a802",
+      "code/src/baselines/text/frameworks/native_calls.py": "1b305500544cc878845e140be94a9a68ff09a5745fd21f2316990f23c6d2c958",
+      "code/src/baselines/text/frameworks/imlane_calls.py": "7fdfac1688c5cc6d71b9ab015b852f3e66cddb2295d2ab77321bf50e1326a93c",
+      "code/integrations/sema/imlane_http_udf.py": "3035dfb80c80726b8b2faee6e3965dc35ccd1d3a1c082bc2f4eba66fb342351f",
+      "code/integrations/sema/imlane_http.cpp": "1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984"
     },
     "private_local_logs": {
       "tmp/sema-paths/httpx-cookie-before.txt": {
@@ -1732,6 +2037,62 @@
       "sha256": "18e5c9d0679185473378a43576ccd8663d01259be08415f78f0cff679e350e10",
       "bytes": 4000,
       "members": 9
+    },
+    "implementation_head": "0847ba153c684e13442f05fbde922b2b23ade68c",
+    "initial_source_sha256": {
+      "code/src/execution_provider/adapters/async_fixed_model.py": "3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b",
+      "code/src/execution_provider/adapters/sema_service.py": "97414787434a4a74b738ab06bec3a61f925a75cb676bde164dbeee0c9567ad4c",
+      "code/src/execution_provider/adapters/sema_native.py": "fe4cd469f42473fb6f1a457d35a3830efd8ab279805cc129b1629693d3a79e56",
+      "code/src/execution_provider/adapters/sema_semloom.py": "8171f86dc18c3c044415f3b1f2770ce9a52ddf23b92381602deee45a964c0df6",
+      "code/src/execution_provider/adapters/sema_imlane.py": "68827f513a7c99383590b1acfd9f87f6d625003dd638d0d349d5e970e20c996e",
+      "code/src/experiments/postgresql/sema_native_query.py": "c087b9fc90c3a03dca64bfe12500540cbd0b7009d0378af536f12b56fe250221",
+      "code/src/experiments/postgresql/supplier_adapter_query.py": "1a660ba4bfa5cd78f41371039d51dcbd7dd88ea0d491606b22cf70f84d2cdf2b",
+      "code/src/experiments/postgresql/persistent_native_adapter_query.py": "d586dea088464dcd59b617980f4b0b98bbbca63b7d471614fbc0bd061f1a060f",
+      "code/integrations/sema/verify_native.py": "26f1541faa411bf6098fc4c44a2599891ead745f5f4f087727968f49183f5ccf",
+      "code/integrations/sema/verify_imlane_methods.py": "cf7e9d8a19d2ceceeca2f958fb33bbd6b9bbd0a71baa9fb9a2b7a7b7d31579bf",
+      "code/integrations/sema/verify_public.py": "5cee4a3b9c629aab01a445d354d7008bf418732901f276038861aa0599095682"
+    },
+    "late_local_checks": {
+      "runtime-evidence-regression.log": {
+        "ran": 18,
+        "skipped": 3,
+        "bytes": 4206,
+        "sha256": "5ecb19d6a0028f9f26b37c6dc74e85eb7cf4f6c5a8cfa08b38a9aefa834cdf69",
+        "scope": "local fixture/runtime mocks, no Linux or real-model claim"
+      },
+      "imlane-ready-atomic-final.log": {
+        "ran": 18,
+        "skipped": 0,
+        "bytes": 316,
+        "sha256": "ab6a42f984aa3b78942e7ac1bc5fc25d7c9450d8ddb5adb12a55a05a94c7c740",
+        "scope": "local fixture/runtime mocks, no Linux or real-model claim"
+      },
+      "imlane-final-verifier-regression.log": {
+        "ran": 12,
+        "skipped": 0,
+        "bytes": 309,
+        "sha256": "1a552f78eba64b91d59d389d946e12ef84590651df652cb87df404738f2c5c38",
+        "scope": "local fixture/runtime mocks, no Linux or real-model claim"
+      },
+      "public-close-verification.log": {
+        "ran": 7,
+        "skipped": 0,
+        "bytes": 105,
+        "sha256": "d5a4875b4579cd8d17f8638658e481f105ebc0103894fd6f33918fb7e91153a0",
+        "scope": "local fixture/runtime mocks, no Linux or real-model claim"
+      }
+    },
+    "public_runtime_evidence": {
+      "file": "sema-six-paths-runtime.tar.gz",
+      "sha256": "5000cd71566e4f9ae2da4ca3745bbec8ec15c9dcb3c2efc9824d4c73997ac6ba",
+      "bytes": 604807,
+      "members": 642,
+      "raw_archive_sha256": "8ce1cd780de41d2df23432a43c88cd9c337c6f70127e33f542b193d0662c7cb4",
+      "export_manifest": "export-manifest.json",
+      "analysis": "analysis.json",
+      "recompute": "recompute.py",
+      "recompute_check": "all derived values match exported analysis",
+      "scope": "all selected text observations and failed stages, role/path/IP redacted; original private records retained"
     }
   }
 }

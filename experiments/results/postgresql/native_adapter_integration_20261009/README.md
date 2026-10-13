@@ -22,16 +22,53 @@ IMLane组补作者模式、实际Coordinator数量和启动／停止时间线。
 连续、并发、307／303、domain／path／Secure、取消和旧调用方41项通过，独立review无必修。
 它影响SemLoom共用传输及普通completion调用方；原LOTUS／Daft／Ray Data／IMLane各自HTTP实现另有来源，
 旧无cookie模型运行没有由此改变输出的证据。公共IMLane六容量`9f8519d9`及native生命周期`45899253`
-按独立提交吸收；不是新的Sema模型或速度结论。
+按独立提交吸收；缺完整响应的transport-error保护`69f3e93b`另保留来源。不是新的Sema模型或速度结论。
 
-Sema组合218项通过；公开验证器新增预检通过。受影响公共组88项中55通过、33因实际库或opt-in环境缺失而跳过。
+前段本地Sema组合218项通过；公开验证器新增预检通过。受影响公共组88项中55通过、33因实际库或opt-in环境缺失而跳过。
 本机为Python3.12.6、HTTPX0.28.1、aiohttp3.14.1；实际HTTP使用loopback软件fixture，模型／GPU0。
 早期组合的测试包路径遮蔽、IMLane冷启动期限用例和cookie修前失败均保留；生产期限没有放宽。
 来源、命令、输出摘要和未运行项见[verification.json](verification.json)的`sema_six_paths_followup`。
 脱敏[本地通过与失败原件](sema-six-paths-local.tar.gz)含9个成员及原始／公开摘要映射；私有原件仍保留。
-本轮固定Daft／Ray／作者IMLane及作者Sema的新Linux复测尚未运行，旧实库证据保持原来源，不能代替本次改动。
-服务器新零模型检查必须与已有模型计时错开；[公共作者检查](../../../../code/integrations/sema/verify_public.py)
-复用原SQL入口与固定二进制，按新私有目录和有限软件POST额度独立执行，不借用旧模型预算。
+随后在独立CPU8–15／465xx时段执行固定Linux库及[公共作者检查](../../../../code/integrations/sema/verify_public.py)，
+复用原SQL、固定二进制和原parser，所有返回为确定性软件响应。驱动为Python3.12.3、Daft0.7.21、
+Ray2.56.1、Arrow24、aiohttp3.14.3、HTTPX0.28.1／OpenAI2.50.0；作者IMLane独立解释器为
+Arrow16.1.0、aiohttp3.14.5、Ray2.56.1。未安装、下载、编译或启动真实模型，GPU使用0。
+
+| 路径 | 实际软件检查与原Sema公开SQL结果 | 运行来源／尚缺项 |
+|---|---|---|
+| 原生直达 | 8行／8 POST通过 | `public-native01`，source01 |
+| Daft | 9项实库无跳过；原SQL8行／8 POST通过 | `library-daft01`、`public-daft01`，source01 |
+| Ray Data | 9项实库无跳过；原SQL8行／8 POST通过 | source02；source06的冷查询另在20秒取消，不能合记成功 |
+| SemLoom | 原SQL8行／8 POST通过；Core剩余usage、jobs与未确认请求均0 | `public-semloom02`，source02；修后成功退出字段待补 |
+| IMLane CPython | 完整响应／期限等直接调用7 POST；原SQL单次4行及常驻2＋2行均通过 | `public-imlane04`，source06；真实2个worker与模块摘要已核对 |
+| IMLane作者Ray | 同上7＋8 POST通过；实际2个actor／worker身份与模块摘要已核对 | `public-imlane04`，source06；区别于Ray Data |
+
+Daft／Ray Data共126 POST检查完整状态、重复header、原始正文、usage／logprobs、乱序关联、
+完整429复用及无完整响应的未知状态；取消后的本地消费停止与远端停止证明分开，未知对象拒绝继续使用。
+IMLane两模式各保留原DBEnd／Coordinator调度；实际Coordinator executor2、native task threads6，
+声明容量8不当作实际HTTP峰值。两模式期限用例虽返回全部本地outcome，仍报告`transport_completion_uncertain=true`、
+`clean=false`并保留marker；Coordinator最终退出0、无强制停止、存活worker或本次共享内存。
+
+source01是`c88aae60`上的当时工作副本，dirty标记和逐文件摘要保留；source02为`8280b334`，
+最终source06为`0847ba15`。四个Sema服务模块在三包中摘要一致；后续修订主要涉及验证器和报告。
+公共`cc8b09bc`修复runtime浅复制丢失finally更新；source02的R/S成功报告仍原样保留`driver_disconnected=false`，
+不能用独立owner的进程退出记录补写该字段，也不借DuckDB的成功替代Sema复验。
+
+最后窗口实际06:44:08–06:45:12 UTC，原截止06:51:08。source06的Ray冷启动公开查询在20.007829秒触发取消：
+第一快照6行完成，第二快照2行未完成；代理收到8次，6次上游POST／完整200，后2次发送前拒绝。
+失败退出报告已记录`driver_disconnected=true`，成功退出字段仍缺；SemLoom后续未启动，继续检查因剩余时间不足拒绝。
+本轮累计239／320 fixture POST，末窗36／46，预算未重置；06:55和06:58只读确认本线端口、进程归零，已向主协调释放。
+早期CPU配置预检、Ray单机地址、IMLane ready-file空读、解释器symlink错误及缺actor trace失败均保留独立身份；
+ready-file改为原子发布，实际Ray head与作者helper显式共用trace目录，解释器保留所选venv launcher路径。
+
+脱敏[实际库、公开SQL与失败原件](sema-six-paths-runtime.tar.gz)含来源清单、完整HTTP／服务时间线、
+worker身份、释放receipt及`recompute.py`；642成员／604807字节，摘要由verification.json定位，
+公开／私有逐文件摘要映射在归档内，私有原件仍保留。快照开始、graph开始、归还、写出与后续快照可复算；
+代理实际headers发送单独记录，重复正文不能连接到作者原行ID，原池前task-ready和graph内部HTTP发送时刻仍不可观测。
+
+模型窗口结束后最小补证只拟S／R各2行、共最多4 fixture POST、7分钟，沿用固定来源与原20秒查询期限，
+先SemLoom后Ray Data，分别检查成功原SQL消费、`driver_disconnected=true`及各自服务／Core关闭，再核对独立Ray owner释放。
+这仅补成功退出报告，不能消除原8行冷Ray负结果。当前未启动；真实模型质量、同条件性能与规模仍待独立运行。
 
 ## 来源与实现
 

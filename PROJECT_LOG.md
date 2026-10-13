@@ -7,6 +7,10 @@
   原SQL、提示、请求池及解析保持，支持矩阵与本地证据由[同题报告](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-six-paths-followup)定位。
 - 公共HTTPX cookie独立修复与DuckDB owner的IMLane容量／native生命周期来源分别保留；已完成阶段普通推送并核对远端SHA。
   新服务器实库检查与模型计时错开，原模型结果不合并为新接入性能。
+- 固定Linux Daft／Ray各9项及六条原Sema软件SQL结果按源码登记，最终IMLane两模式真实worker／actor身份完整。
+  公共runtime报告复制修复单独保留；末轮冷Ray20秒失败，R/S修后成功退出字段未补，原失败不改写。
+- 累计239／320 fixture POST、真实模型／GPU／安装0；末窗36／46，06:55及06:58只读确认CPU8–15／465xx资源释放。
+  既有结果目录增加一份脱敏压缩证据及复算入口，最小S/R各2行补证待模型窗口结束，未新开服务器负载。
 
 ## 2026-10-13：建立统一基础实现集成分支
 
