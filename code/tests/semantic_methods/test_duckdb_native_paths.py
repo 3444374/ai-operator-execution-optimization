@@ -1,9 +1,14 @@
 """DuckDB conversion and native consumer contracts; graph fixtures make no HTTP calls."""
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stderr
 from dataclasses import replace
+import io
 import json
+import os
+from pathlib import Path
+import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -264,6 +269,144 @@ class DuckDBNativeConsumerLifecycleTests(unittest.TestCase):
             self.assertEqual(closed, [True])
             self.assertEqual(executor.last_cleanup_errors, (('graph_close', closing),))
             self.assertIn('fixture secondary close', adapter.last_cleanup_error)
+
+
+@contextmanager
+def ray_verifier_fixture(*, initialized=False, start_error=None, address_error=None, cleanup_failures=False):
+    """Only verifier orchestration; SDK imports, SQL, HTTP and Ray startup are fixtures."""
+    from integrations.duckdb_ai import verify_ray as verifier
+    events = []
+
+    def shutdown(component):
+        events.append(component + '_shutdown')
+        if cleanup_failures:
+            raise _CloseFailure(f'fixture {component} shutdown api_key=fixture-private-{component}')
+
+    def context():
+        if address_error is not None:
+            raise address_error
+        return SimpleNamespace(gcs_address='127.0.0.1:12345')
+
+    ray = SimpleNamespace(__version__='2.56.1', is_initialized=lambda: initialized,
+                          get_runtime_context=context, shutdown=lambda: shutdown('ray'))
+    cluster = SimpleNamespace(shutdown=lambda: shutdown('cluster'))
+    modules = dict(ray=ray, daft=SimpleNamespace(__version__='0.7.21',
+        set_runner_native=lambda **_: events.append('daft_runner')),
+        duckdb=SimpleNamespace(__version__='1.5.4'))
+    result = SimpleNamespace(testsRun=4, failures=[], errors=[], skipped=[], fixture_counts=[],
+                             wasSuccessful=lambda: True)
+
+    def start(*args):
+        events.append('ray_start')
+        if start_error is not None:
+            raise start_error
+        return cluster
+
+    write = verifier.write_private_json
+    def save(path, value):
+        events.append('write_report')
+        write(path, value)
+
+    with tempfile.TemporaryDirectory(prefix='duckdb-ray-verifier-') as directory:
+        root = Path(directory)
+        extension, output = root / 'fixture.extension', root / 'report.json'
+        extension.write_bytes(b'verifier unit fixture; no compiled extension')
+        arguments = ['--ray-temp', '/tmp/dbr-short', '--output', str(output)]
+        with (patch.dict(os.environ, {'DUCKDB_SEMLOOM_EXTENSION': str(extension), 'DUCKDB_FIXTURE_PORT': '0'}),
+              patch.object(verifier.importlib, 'import_module', side_effect=lambda name: modules[name]) as imports,
+              patch.object(verifier, 'start_ray', side_effect=start) as starter,
+              patch.object(verifier.unittest.TextTestRunner, 'run', return_value=result),
+              patch.object(verifier, 'write_private_json', side_effect=save),
+              patch.object(verifier.os, 'sched_getaffinity', return_value={0, 1, 2, 3}, create=True),
+              patch.object(verifier.os, 'sched_setaffinity', create=True)):
+            yield verifier, arguments, output, events, imports, starter
+
+
+class DuckDBRayVerifierTests(unittest.TestCase):
+    def test_owned_cleanup_failures_are_independent_redacted_and_written_before_return(self):
+        with ray_verifier_fixture(cleanup_failures=True) as (verifier, arguments, output, events, _, _):
+            self.assertEqual(verifier.main(arguments), 1)
+            report = json.loads(output.read_text())
+        self.assertEqual(events[-3:], ['ray_shutdown', 'cluster_shutdown', 'write_report'])
+        self.assertFalse(report['passed'])
+        self.assertEqual(report['owned_ray_cleanup'], 'unconfirmed')
+        self.assertEqual([item['component'] for item in report['cleanup_errors']], ['ray', 'cluster'])
+        self.assertNotIn('fixture-private', json.dumps(report))
+
+    def test_address_failure_closes_the_cluster_and_preserves_the_original_error(self):
+        with ray_verifier_fixture(address_error=ValueError('fixture address api_key=fixture-private-address')) as (
+                verifier, arguments, output, events, _, _):
+            self.assertEqual(verifier.main(arguments), 1)
+            report = json.loads(output.read_text())
+        self.assertEqual(events[-3:], ['ray_shutdown', 'cluster_shutdown', 'write_report'])
+        self.assertEqual((report['tests'], report['error_type'], report['owned_ray_cleanup']), (0, 'ValueError', 'completed'))
+        self.assertIn('fixture address', report['error'])
+        self.assertNotIn('fixture-private-address', report['error'])
+        self.assertFalse(report['passed'])
+
+    def test_start_failure_is_reported_and_owned_driver_cleanup_is_attempted(self):
+        with ray_verifier_fixture(start_error=RuntimeError('fixture Ray start failed')) as (
+                verifier, arguments, output, events, _, _):
+            self.assertEqual(verifier.main(arguments), 1)
+            report = json.loads(output.read_text())
+        self.assertEqual(events[-2:], ['ray_shutdown', 'write_report'])
+        self.assertFalse(report['owned_ray_started'])
+        self.assertEqual(report['owned_ray_cleanup'], 'unconfirmed')
+        self.assertIn('fixture Ray start failed', report['error'])
+
+    def test_existing_ray_connection_is_left_with_its_caller(self):
+        with ray_verifier_fixture(initialized=True) as (verifier, arguments, output, events, _, starter):
+            self.assertEqual(verifier.main(arguments), 1)
+            starter.assert_not_called()
+            report = json.loads(output.read_text())
+        self.assertEqual(events, ['write_report'])
+        self.assertEqual(report['owned_ray_cleanup'], 'not_started')
+
+    def test_fixture_port_overlap_fails_before_runtime_import_or_start(self):
+        with ray_verifier_fixture() as (verifier, arguments, output, events, imports, starter):
+            with patch.dict(os.environ, {'DUCKDB_FIXTURE_PORT': '43011'}), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as caught:
+                    verifier.main(arguments + ['--ray-port-base', '43000'])
+            self.assertEqual(caught.exception.code, 2)
+            imports.assert_not_called()
+            starter.assert_not_called()
+            self.assertFalse(output.exists())
+        self.assertEqual(events, [])
+
+    def test_short_path_check_uses_the_same_absolute_path_passed_to_ray(self):
+        resolve = Path.resolve
+        def redirected(path, *args, **kwargs):
+            return Path('/' + 'long-resolved-path' * 8) if path == Path('/tmp/dbr-short') else resolve(path, *args, **kwargs)
+        with ray_verifier_fixture() as (verifier, arguments, output, events, _, starter):
+            with patch.object(Path, 'resolve', redirected):
+                self.assertEqual(verifier.main(arguments), 0)
+            self.assertEqual(starter.call_args.args[1], Path('/tmp/dbr-short').absolute())
+            report = json.loads(output.read_text())
+        self.assertTrue(report['passed'])
+        self.assertEqual(events[-3:], ['ray_shutdown', 'cluster_shutdown', 'write_report'])
+
+    def test_connect_timeout_is_explicit_before_both_original_controls(self):
+        from integrations.duckdb_ai.verify_ray import RayDuckDBChecks
+        from tests.semantic_methods.test_duckdb_ai import DuckDBNativeLibraryTests
+        import threading
+        events = []
+        case = RayDuckDBChecks('test_later_fast_failure_keeps_the_first_input_sql_error')
+        def setup(value):
+            value.connection = SimpleNamespace(execute=lambda sql: events.append(sql))
+            value.server = SimpleNamespace(second_error_sent=threading.Event())
+        with patch.object(DuckDBNativeLibraryTests, 'setUp', setup):
+            case.setUp()
+        self.assertEqual(events, ['SET duckdb_ai_connect_timeout_seconds=5'])
+        def select(prompts, *, try_complete=True):
+            events.append('original-or-selected-control')
+            if not try_complete:
+                raise ValueError('fixture first input error')
+            return ['fixture response']
+        case.select = select
+        case.common = lambda: events.append('register-semloom')
+        case.test_later_fast_failure_keeps_the_first_input_sql_error()
+        self.assertLess(events.index('SET duckdb_ai_connect_timeout_seconds=20'),
+                        events.index('original-or-selected-control'))
 
 
 if __name__ == '__main__':
