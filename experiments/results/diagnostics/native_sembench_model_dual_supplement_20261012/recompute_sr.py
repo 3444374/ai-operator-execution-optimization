@@ -167,6 +167,9 @@ def audit(raw, original=False):
                 gpu_samples[columns[0]].append({'utilization': float(columns[2]), 'memory_mib': float(columns[4])})
     gpu_summary = {index: {'samples': len(values), 'utilization_mean_percent': sum(v['utilization'] for v in values) / len(values),
                            'utilization_max_percent': max(v['utilization'] for v in values), 'memory_max_mib': max(v['memory_mib'] for v in values)} for index, values in gpu_samples.items()}
+    for fact in units:
+        del fact['request_values_s']
+        fact['request_values_source'] = fact['path'] + 'http-trace.jsonl'
     return {'source_head':SOURCE_HEAD,'passed':True,'run_passed':True,'independent_window':True,'completed_slots':2,'unrun_slots':[],
             'warmup_queries':2,'measurement_queries':2,'logical_calls':480,'transmission_posts':1440,
             'elapsed_seconds':result['elapsed_seconds'],'outer_elapsed_seconds':outer_elapsed,'startup_seconds':result['startup_seconds_used'],
@@ -189,11 +192,22 @@ def audit(raw, original=False):
 def main():
     root = Path(__file__).resolve().parent
     proof = json.loads((root / 'sr-verification.json').read_text())
-    members = json.loads((root / 'sr-members-sha256.json').read_text())['members']
+    manifest = json.loads((root / 'sr-members-sha256.json').read_text())
+    members = manifest['members']
     archive = root / 'sr-observations.tar.gz'
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == proof['public_archive']['sha256']
     with tarfile.open(archive) as source:
         raw = {m.name: source.extractfile(m).read() for m in source if m.isfile()}
+    source_archive = root / manifest['reused_archive']['path']
+    assert hashlib.sha256(source_archive.read_bytes()).hexdigest() == manifest['reused_archive']['sha256']
+    with tarfile.open(source_archive) as source:
+        shared = {m.name: source.extractfile(m).read() for m in source if m.isfile()}
+    for name, value in members.items():
+        storage = value['storage']
+        if storage['kind'] == 'reuse':
+            raw[name] = shared[storage['member']]
+        elif storage['kind'] == 'concat':
+            raw[name] = b''.join(raw[part] for part in storage['parts'])
     assert set(raw) == set(members)
     for name, value in members.items():
         assert hashlib.sha256(raw[name]).hexdigest() == value['public_sha256'], name
