@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：完整调用与query／Job接口是共同研究平台，stability停止责任和租约归还是正确性基础。
+[跨Job组合反例](tests/execution_provider/test_replica_failure_composition.py)、
+[消费者提前关闭](tests/scheduling/test_multisession.py)和[共享对象持有](tests/execution_provider/test_map_preparation.py)
+已在351通过／55跳过的本地组合中覆盖，相关运行时与测试源码未变；其Ray／HTTP仍是受控替身。
+策略采用以配置、调用及独立证据为准，历史Git来源不增加实验资格。
+
 2026-10-13：[LOTUS文本输入校验](src/semantic_methods/lotus/README.md)在JSON复制前拒绝不可UTF-8编码的原始消息，
 轻量本地预检4项通过，21项固定SDK回归缺库跳过；图像profile和数据组织仍保留在独立研究分支。
 

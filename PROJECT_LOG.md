@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-13：共同平台职责与组合反例证据核对
+
+- 原生完整调用接口作为研究平台，stability中的停止责任、查询级失败与租约归还作为正确性基础；
+  独立策略仍按显式调用及实验资格采用，历史保全分支只提供恢复来源。
+- 已通过的本地406项组合包含[跨Job未知／未发送错误](code/tests/execution_provider/test_replica_failure_composition.py)、
+  [消费者提前关闭](code/tests/scheduling/test_multisession.py)与[共享对象慢行持有](code/tests/execution_provider/test_map_preparation.py)。
+  本次逐文件确认其Core、runtime、transport／broker和反例源码与当时组合版本相同，三个指定反例均未跳过；
+  组合总计351通过／55项缺依赖或opt-in跳过保持，不追加同义测试或全量重跑。
+- 该检查的Ray ObjectRef与HTTP结果仍由有限fixture控制；真实集群、作者库及GPU资格分别引用各owner固定报告。
+  研究分支继续使用各自固定基点，本次只补职责与证据引用，没有修改公共Core／route接口。
+
 ## 2026-10-13：统一基线移植LOTUS文本UTF-8拒绝规则
 
 - 从研究提交 `aa3338ce` 只移植通用文本修补及文本回归：Python代理码点在原始消息验证时拒绝，

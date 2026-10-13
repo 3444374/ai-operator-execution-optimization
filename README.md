@@ -12,16 +12,20 @@
 |---|---|
 | `main` | 经PR验证的稳定共同实现 |
 | `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
-| `codex/native-execution-adapters` | 当前原生接入发布；完成owner交接后归入统一集成分支 |
+| `codex/native-execution-adapters` | 完整调用与原生系统接入的研究平台；已发布阶段按固定来源进入统一集成 |
+| `codex/semloom-stability-and-replicas` | 查询级错误、停止责任及资源归还的正确性基础，已进入统一集成 |
 | `feat/duckdb-native-paths` | DuckDB AI六条路径的临时接入，完成后合入统一基线 |
 | `feat/sema-native-paths` | Sema六条路径的临时接入，完成后合入统一基线 |
 | `exp/semloom-query-sharing` | 长短查询共享调度研究 |
 | `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
-| `maintenance/project-rules` | 规则整理的临时同步来源，整合完成后清理 |
+| `exp/semloom-replica-adaptation` | 多副本容量与路由自适应研究，使用固定共同基点 |
+| `maintenance/project-rules` | 规则整理已整合；原分支与tip保留供恢复 |
 | `codex/semloom-history-preservation` | 保存原提交与实验来源的恢复入口 |
 
 LOTUS、DuckDB、Sema等接入支线用于并行开发，完成整合后可移除对应checkout；
 研究分支按具体假设保留，通用修复进入共同基线。原始实验及各次运行的源码身份仍由报告和证据台账定位。
+完整调用、query／Job及资源责任接口提供研究平台；stability修补提供正确性基础。
+策略是否采用由显式配置、实际调用路径及独立验证证据确定，Git合并或历史保全只记录源码与证据来源。
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
