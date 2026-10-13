@@ -1,0 +1,187 @@
+{
+  "schema": 1,
+  "source_commit": "01c28df1f0b15fee9d9b48808809a8fd88baa79a",
+  "scope": "offline lifecycle qualification; no performance claim",
+  "input_sha256": "6d6b5b6bcb40c82cd7aaf5add066a345e0abb50b0eea2092d28002b33f6637d6",
+  "audit_script_sha256": "25f1d18c696310f41a2171f72cbb27155aedbfb7de6c61d7d9ac2c7576bd402f",
+  "request_audit_sha256": "db376dd04d6e88a91234f9e6df30a633f9834614108f42d15f0458159fa4dd0b",
+  "source_sha256": {
+    "src/experiments/query_sharing_lotus.py": "db376dd04d6e88a91234f9e6df30a633f9834614108f42d15f0458159fa4dd0b",
+    "src/execution_provider/adapters/native_query_bridge.py": "6b7f262f9cd00c58a2b853a0d372e47a5c59ecfa1743948527864ed9af5fa47d",
+    "src/semantic_methods/lotus/batch.py": "aecf6d6648c9c9fc999b52b2056b239ba513d2d5ac5996b8cf66fef35ad17ba7",
+    "src/scheduling/submission_control/query_sharing.py": "9daba762d4acce769362559c0167324afb82573b1909812d3d084e37039869b1",
+    "src/scheduling/core/session.py": "a839a32ea37fc89734e22a480fddceb7f54bbef0b3917446b3b6d8a177786d00",
+    "src/scheduling/core/session_jobs.py": "18974ef458ac06c26823c892c66669d5b278f9e0bbe80e218451ac20da1e1465"
+  },
+  "budget": {
+    "max_fixture_posts": 360,
+    "window_seconds": 505,
+    "previous_fixture_posts": 1604,
+    "cumulative_max_fixture_posts": 4240,
+    "fixture_posts": 305,
+    "cumulative_charged_posts": 1909
+  },
+  "runs": [
+    {
+      "run_id": "no-contention-work_conserving",
+      "arm": "work_conserving",
+      "summary": {
+        "run_id": "no-contention-work_conserving",
+        "arm": "work_conserving",
+        "count": 72,
+        "service_peak": 2,
+        "overlap": false,
+        "client_jct_s": {
+          "long": 1.090524354018271,
+          "short": 0.48417505994439125
+        },
+        "group_jct_s": 3.4841750599443913,
+        "cpu_s": {
+          "long": 0.6680764809999999,
+          "short": 0.4195158230000011
+        },
+        "rss_peak_bytes": 2221346816,
+        "cancel_at_s": null,
+        "parent_cpu_s": 1.043648017
+      },
+      "compute_ledger": {
+        "submitted": 72,
+        "terminal": 72,
+        "physical_http": 72,
+        "locally_terminal_without_http": 0,
+        "compute_at_cancel": 0,
+        "long_compute_at_cancel": 0,
+        "long_submitted_after_cancel": 0,
+        "long_inflight_cancellation_exercised": false
+      }
+    },
+    {
+      "run_id": "no-contention-strong_static",
+      "arm": "strong_static",
+      "summary": {
+        "run_id": "no-contention-strong_static",
+        "arm": "strong_static",
+        "count": 72,
+        "service_peak": 2,
+        "overlap": false,
+        "client_jct_s": {
+          "long": 0.9485348132438958,
+          "short": 0.49594701314345
+        },
+        "group_jct_s": 3.49594701314345,
+        "cpu_s": {
+          "long": 0.6304966289999996,
+          "short": 0.429872971
+        },
+        "rss_peak_bytes": 2222813184,
+        "cancel_at_s": null,
+        "parent_cpu_s": 0.930262258
+      },
+      "compute_ledger": {
+        "submitted": 72,
+        "terminal": 72,
+        "physical_http": 72,
+        "locally_terminal_without_http": 0,
+        "compute_at_cancel": 0,
+        "long_compute_at_cancel": 0,
+        "long_submitted_after_cancel": 0,
+        "long_inflight_cancellation_exercised": false
+      }
+    },
+    {
+      "run_id": "no-contention-candidate",
+      "arm": "candidate",
+      "summary": {
+        "run_id": "no-contention-candidate",
+        "arm": "candidate",
+        "count": 72,
+        "service_peak": 2,
+        "overlap": false,
+        "client_jct_s": {
+          "long": 0.9753572302870452,
+          "short": 0.4866498322226107
+        },
+        "group_jct_s": 3.4866498322226107,
+        "cpu_s": {
+          "long": 0.6522100690000006,
+          "short": 0.42566792599999914
+        },
+        "rss_peak_bytes": 2223280128,
+        "cancel_at_s": null,
+        "parent_cpu_s": 0.922898918
+      },
+      "compute_ledger": {
+        "submitted": 72,
+        "terminal": 72,
+        "physical_http": 72,
+        "locally_terminal_without_http": 0,
+        "compute_at_cancel": 0,
+        "long_compute_at_cancel": 0,
+        "long_submitted_after_cancel": 0,
+        "long_inflight_cancellation_exercised": false
+      }
+    },
+    {
+      "run_id": "cancel-strong_static",
+      "arm": "strong_static",
+      "summary": {
+        "run_id": "cancel-strong_static",
+        "arm": "strong_static",
+        "count": 45,
+        "service_peak": 2,
+        "overlap": false,
+        "client_jct_s": {
+          "short": 0.8601491856388748
+        },
+        "group_jct_s": 1.3601491856388748,
+        "cpu_s": {
+          "short": 0.7161001550000012
+        },
+        "rss_peak_bytes": 2146435072,
+        "cancel_at_s": 0.6,
+        "parent_cpu_s": 0.6620040500000002
+      },
+      "compute_ledger": {
+        "submitted": 45,
+        "terminal": 45,
+        "physical_http": 45,
+        "locally_terminal_without_http": 0,
+        "compute_at_cancel": 4,
+        "long_compute_at_cancel": 2,
+        "long_submitted_after_cancel": 0,
+        "long_inflight_cancellation_exercised": true
+      }
+    },
+    {
+      "run_id": "cancel-candidate",
+      "arm": "candidate",
+      "summary": {
+        "run_id": "cancel-candidate",
+        "arm": "candidate",
+        "count": 44,
+        "service_peak": 2,
+        "overlap": false,
+        "client_jct_s": {
+          "short": 0.8171618222258985
+        },
+        "group_jct_s": 1.3171618222258985,
+        "cpu_s": {
+          "short": 0.6794154880000001
+        },
+        "rss_peak_bytes": 2144067584,
+        "cancel_at_s": 0.6,
+        "parent_cpu_s": 0.590163402
+      },
+      "compute_ledger": {
+        "submitted": 44,
+        "terminal": 44,
+        "physical_http": 44,
+        "locally_terminal_without_http": 0,
+        "compute_at_cancel": 4,
+        "long_compute_at_cancel": 0,
+        "long_submitted_after_cancel": 0,
+        "long_inflight_cancellation_exercised": false
+      }
+    }
+  ]
+}

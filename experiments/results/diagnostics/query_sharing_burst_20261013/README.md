@@ -174,8 +174,46 @@ native差距同时含原LM/SDK请求池与新执行路径的成本，不能全�
 本地共同接续45项42通过/3SDK跳过；新增typed-limit最小补丁后48项45通过/3SDK跳过。
 `describe_limits`是owner的只读配置操作，未创建Job/接受输入；无Engine的frontend要求factory与typed SessionLimits，
 拒绝缺失/伪类型及local override，flow打开后复核item容量。共同SDK replay及默认local路径保留。
-新版实库兼容仍pending；旧9d的23.25%不是当前版本收益，新增窗口只补原未完成反例并继承总4240余额。
+此处本地阶段后实库兼容曾pending；下节记录完成的剩余资格。旧9d的23.25%不是当前版本收益，新增窗口继承总4240余额。
 公共两文件补丁`e4677b4c`直接以共同`28093954`为父，已在研究分支无树变merge保留，可独立交给其他owner。
 仅剩余检查入口拒绝扩到360新POST/600秒以上或把旧1604计数清零；本地10项检查通过。
 同组此前一次受文件系统sandbox的loopback bind限制（9项8过/1环境错误），授权环境复验通过；未改变HTTP服务。
 运行时fixed K=4只表示新版本兼容配置，未重新校准或运行旧主比较；旧失败原件及诊断保留。
+
+<a id="lotus-remaining-qualification"></a>
+## 新共同版本的剩余反例与释放
+
+运行源码`01c28df1f0b15fee9d9b48808809a8fd88baa79a`，含共同`28093954`及独立公共接口`e4677b4c`。
+既有解释器和固定SDK未改；两独立进程分别执行Map，Core仍由唯一owner管理。
+运行前已向整合和副本owner登记06:48:30–06:58:30 UTC；实际启动06:49:54.911754，
+仍以登记的06:58:30为硬截止，内部预算505秒且预留20秒清理，不重新开启十分钟。
+实际06:51:00.956162退出0，driver约65.55秒，无watchdog触发；06:52:07.651939独立确认释放。
+
+[完整原件](raw/lotus_remaining_01c28df1.json.gz)保留全部请求、响应、Core事件、前端版本与结果；
+[离线复算](raw/lotus_remaining_audit_01c28df1.json)由[审计入口](../../../../code/scripts/analysis/audit_query_sharing_lotus.py)重建行关联和计算责任，
+[运行摘要](raw/lotus_remaining_checks_01c28df1.json)、[控制器](raw/lotus_remaining_controller_01c28df1.json)及
+[释放证明](raw/lotus_remaining_release_01c28df1.json)记录实际时钟、来源、预算与清理。
+只补原未完成项：work-conserving、strong-static、candidate的long64/short8无竞争各72POST，
+static及candidate取消分别45、44POST，共305新增；旧保守1604继续计入1909/4240，余2331。
+GPU、真实模型与SQL均0，服务并发峰值2，聚合driver RSS峰值2,223,280,128字节，小于4GiB。
+
+三个无竞争cell都实际无重叠，全部64+8行完整对应；两取消cell短query均完整8行、64 tokens、无cache命中。
+取消长query返回定义的RuntimeError；static取消瞬间长query仍有2个在途，candidate长query在途为0，
+两者全局C/W均4。逐事件重放确认每个已提交计算名额保留到其终态，最终submitted与terminal集合相同、全部归零；
+未观察到取消后新的long提交。候选本cell没有覆盖“取消长query在途工作”，不能借global4冒称覆盖。
+完整响应、生成上限、necessary-call/usage、独立PID/Job/session及结果lease由同源请求审计与额外责任复放分别核验。
+四个篡改反例（提前退款、重复终态、取消影响另一query行/HTTP）均被离线审计拒绝，新增网络和模型调用0。
+
+最终5个Core闭合，Job/session/held/input/result/compute/lease均0；driver及10个前端PID不存在，
+CPU16–17无受限相关进程，fixture随driver退出，独立GPU检查为空。释放receipt已交整合与副本owner。
+当前资格支持共同SDK response replay和typed remote factory的实际库兼容、无竞争与取消隔离，
+不支持新版本调度性能比较、真实双GPU模型效果、SQL并发或任意持续多Map服务。
+旧9d的单次23.25%只归旧源码；完整三轮比较、连续短到达、新版本同参校准及真实模型仍未完成。
+
+复算不启动服务：
+
+```bash
+python3 code/scripts/analysis/audit_query_sharing_lotus.py \
+  --input experiments/results/diagnostics/query_sharing_burst_20261013/raw/lotus_remaining_01c28df1.json.gz \
+  --output /tmp/lotus-remaining-new-audit.json
+```

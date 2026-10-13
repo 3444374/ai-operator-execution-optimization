@@ -7,7 +7,10 @@
 实际SDK源码与Arrow/Pandas预检通过；修后12项Linux桥检查及108请求真实LOTUS双进程离线对拍通过，
 两次审计错误与fd竞态来源保留；长256/短8四臂各264次已完成单次同桥对拍，选择K=4。
 候选短JCT较static少23.25%且长多1.46%，为两槽fixture单样本；完整负例/取消/重复被原窗口截止中止，整协议退出1，GPU/模型/SQL均0。
-共同native/stability集成、真实模型仍pending，后续从[M4](../experiments/plans/数据组织.md#query-sharing-burst)核对。
+共同版本的接续与后续验证从[M4](../experiments/plans/数据组织.md#query-sharing-burst)核对，真实模型仍pending。
+共同`28093954`已普通merge，公共两文件typed factory补丁`e4677b4c`可独立应用；
+`01c28df1`的[5项剩余实库资格](../experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-remaining-qualification)通过且已释放。
+这是新版本兼容/生命周期检查；旧23.25%仍属旧源码，新版本性能与真实模型未完成。
 
 2026-10-13：[LOTUS文本输入校验](src/semantic_methods/lotus/README.md)在JSON复制前拒绝不可UTF-8编码的原始消息，
 轻量本地预检4项通过，21项固定SDK回归缺库跳过；图像profile和数据组织仍保留在独立研究分支。

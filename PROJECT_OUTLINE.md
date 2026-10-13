@@ -28,6 +28,7 @@
 完整小Job信息在两个串行服务的后到场景有改善，估计偏差可使长Job退化超过允许值；不代表模型或SQL性能。
 实际LOTUS主场景、DuckDB复现路径、新适配器策略关闭对照及有限模型预算集中在[M4](experiments/plans/数据组织.md#query-sharing-burst)，
 共同native/stability来源和真实窗口由主协调，生产默认保持。
+共同基点和typed remote factory已接续，剩余真实库生命周期资格见[同报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-remaining-qualification)；新版本模型/性能仍待同版本验证。
 
 [Sema后置原生执行检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)
 已补Daft Native、Ray Data及IMLane Python完整调用入口，三条作者SQL各8行通过，真实模型0。

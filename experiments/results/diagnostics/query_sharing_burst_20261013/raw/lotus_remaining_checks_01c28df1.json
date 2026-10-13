@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "source_commit": "01c28df1f0b15fee9d9b48808809a8fd88baa79a",
+  "common_commit": "280939543424c4d3b8c37d0ba53ec5e9ae0337fc",
+  "public_api_commit": "e4677b4c28f179892e70c2fb0db2574fd2744f43",
+  "branch": "exp/semloom-query-sharing",
+  "scope": "new-source real-library lifecycle compatibility; localhost fixture, zero models/GPU/SQL",
+  "preflight": {
+    "checked_utc": "2026-10-13T06:49:01.145758+00:00",
+    "source_commit": "01c28df1f0b15fee9d9b48808809a8fd88baa79a",
+    "cpu_affinity": [
+      16,
+      17
+    ],
+    "cpu_conflicts": [],
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "pandas": "2.3.3",
+      "pyarrow": "24.0.0",
+      "httpx": "0.28.1"
+    },
+    "source_sha256": {
+      "src/experiments/query_sharing_lotus.py": "db376dd04d6e88a91234f9e6df30a633f9834614108f42d15f0458159fa4dd0b",
+      "src/execution_provider/adapters/native_query_bridge.py": "6b7f262f9cd00c58a2b853a0d372e47a5c59ecfa1743948527864ed9af5fa47d",
+      "src/semantic_methods/lotus/batch.py": "aecf6d6648c9c9fc999b52b2056b239ba513d2d5ac5996b8cf66fef35ad17ba7",
+      "src/scheduling/submission_control/query_sharing.py": "9daba762d4acce769362559c0167324afb82573b1909812d3d084e37039869b1",
+      "src/scheduling/core/session.py": "a839a32ea37fc89734e22a480fddceb7f54bbef0b3917446b3b6d8a177786d00",
+      "src/scheduling/core/session_jobs.py": "18974ef458ac06c26823c892c66669d5b278f9e0bbe80e218451ac20da1e1465"
+    },
+    "gpu_compute_processes": ""
+  },
+  "local_checks": {
+    "passed": 10,
+    "skipped": 0,
+    "prior_sandbox_attempt": {
+      "total": 9,
+      "passed": 8,
+      "environment_errors": 1,
+      "reason": "loopback bind unavailable in filesystem sandbox"
+    }
+  },
+  "negative_mutation_checks": {
+    "premature_compute_refund": "rejected",
+    "duplicate_terminal": "rejected",
+    "cancelled_other_query_row_loss": "rejected",
+    "cancelled_other_query_http_loss": "rejected"
+  },
+  "completed_cases": 5,
+  "new_fixture_posts": 305,
+  "previous_charged_posts": 1604,
+  "cumulative_charged_posts": 1909,
+  "cumulative_limit": 4240,
+  "remaining_posts": 2331,
+  "raw_gzip": {
+    "bytes": 72505,
+    "sha256": "6d6b5b6bcb40c82cd7aaf5add066a345e0abb50b0eea2092d28002b33f6637d6",
+    "uncompressed_bytes": 633109,
+    "uncompressed_sha256": "f48313da5a3552329bbfeee93809016247e26ae23a5d9564a059fcfc0e7a9dff",
+    "public_copy_is_byte_identical": true
+  },
+  "private_evidence_archive": {
+    "run_id": "query-sharing-01c28df1",
+    "bytes": 92160,
+    "sha256": "82344d64f03c86e76b32023d291439db3b9d6f5d620a76cbdb98d9596d943ff2",
+    "driver_log_sha256": "135f255beab0eb55585224e335fbd5d0190472bf811e1cc44d647862aaaf9dcc"
+  },
+  "source_archive": {
+    "sha256": "edc5d8bfc17429c91a2178b7539c6fa32025562ac402ebb385cf630e20cd9be4",
+    "bytes": 8017920
+  },
+  "limitations": [
+    "no new-source performance comparison or recalibration",
+    "candidate cancellation has zero long requests in flight",
+    "real models and concurrent SQL not run",
+    "old-source native no-contention result not a new-source comparison",
+    "no repeated main scenario or continuous arrivals in real LOTUS"
+  ]
+}

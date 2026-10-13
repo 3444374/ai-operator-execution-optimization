@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：共同LOTUS版本剩余资格与释放
+
+- 公共两文件接口补丁`e4677b4c`直接父为共同`28093954`，研究分支无树变merge保留，可独立接续。
+- `01c28df1`只补5个无竞争/取消用例，305新增fixture POST，累计1909/4240；所有用例exit0，真实模型/GPU/SQL为0。
+- 06:51:00 UTC退出，06:52:07独立核查自有进程和CPU16–17释放；[同报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-remaining-qualification)保留原件、责任复放及candidate长query在途取消未覆盖的边界。
+- 新版本性能、完整重复和真实模型仍未运行，不继承旧9d单次23.25%作为新接口收益。
+
 ## 2026-10-13：接续共同安全基点和远程容量兼容
 
 - 普通merge `28093954`为`768f59e5`，保留本线`5ae23d0e`父和旧9d真实库证据，Core原祖先9bb已包含；未重复cherry-pick公共修补。
