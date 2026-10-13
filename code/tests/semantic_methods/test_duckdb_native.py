@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import gzip
+import io
 import json
 import os
 import socket
@@ -187,6 +188,7 @@ class _ExpandedFixture(existing._FixtureHandler):
             self.server.active += 1
             self.server.peak = max(self.server.peak, self.server.active)
         self.server.started.set()
+        second_response_observed = None
         try:
             time.sleep(0.3 if prompt.startswith('slow') else 0.01 if prompt.endswith('0') else 0.001)
             status, body = 200, existing.response_body(prompt)
@@ -195,8 +197,9 @@ class _ExpandedFixture(existing._FixtureHandler):
                 status, body = 429, b'{"error":{"message":"fixture failure","code":"fixture-limit"},"extra":1}'
             elif prompt in ('slow-first-error', 'fast-second-error'):
                 if prompt == 'slow-first-error':
-                    if not self.server.second_error_sent.wait(15):
-                        raise RuntimeError('dual-error fixture did not observe its second request')
+                    # A vendor graph may dispatch serially. Keep the same HTTP
+                    # failure even when a second call has not completed yet.
+                    second_response_observed = self.server.second_error_sent.wait(0.5)
                     time.sleep(0.05)
                 status, body = 429, json.dumps({'error': {'message': prompt, 'code': 'fixture-order'}}).encode()
             elif prompt == 'http-not-json':
@@ -229,6 +232,14 @@ class _ExpandedFixture(existing._FixtureHandler):
             self.end_headers()
             try:
                 self.wfile.write(body)
+                if prompt in ('slow-first-error', 'fast-second-error'):
+                    written_ns = time.monotonic_ns()
+                    with self.server.lock:
+                        if not hasattr(self.server, 'dual_error_responses'):
+                            self.server.dual_error_responses = []
+                        self.server.dual_error_responses.append(dict(prompt=prompt, status=status,
+                            response_write_completed_ns=written_ns,
+                            second_response_observed=second_response_observed))
                 if prompt == 'fast-second-error':
                     self.server.second_error_sent.set()
             except (BrokenPipeError, ConnectionResetError):
@@ -236,6 +247,67 @@ class _ExpandedFixture(existing._FixtureHandler):
         finally:
             with self.server.lock:
                 self.server.active -= 1
+
+
+class DuckDBDualErrorFixtureTests(unittest.TestCase):
+    """Direct handler fixtures; no listening socket, SDK, SQL or model requests."""
+    def server(self):
+        return types.SimpleNamespace(records=[], total_requests=0, active=0, peak=0,
+            lock=threading.Lock(), started=threading.Event(), second_error_sent=threading.Event())
+
+    def handle(self, prompt, server):
+        raw = json.dumps({'messages': [{'content': prompt}]}).encode()
+        handler = object.__new__(_ExpandedFixture)
+        handler.server, handler.rfile, handler.wfile = server, io.BytesIO(raw), io.BytesIO()
+        handler.headers = {'Content-Length': str(len(raw))}
+        statuses = []
+        handler.send_response = statuses.append
+        handler.send_header = lambda *_: None
+        handler.end_headers = lambda: None
+        with patch.object(time, 'sleep'):
+            handler.do_POST()
+        return statuses, json.loads(handler.wfile.getvalue())
+
+    def test_missing_second_response_still_returns_the_original_http_failure(self):
+        server = self.server()
+        with patch.object(server.second_error_sent, 'wait', return_value=False) as waited:
+            statuses, body = self.handle('slow-first-error', server)
+        waited.assert_called_once_with(0.5)
+        self.assertEqual(statuses, [429])
+        self.assertEqual(body, {'error': {'message': 'slow-first-error', 'code': 'fixture-order'}})
+        self.assertEqual(server.active, 0)
+        self.assertFalse(server.dual_error_responses[0]['second_response_observed'])
+
+    def test_response_observation_records_the_order_that_actually_completed(self):
+        for order in (('slow-first-error', 'fast-second-error'), ('fast-second-error', 'slow-first-error')):
+            server = self.server()
+            with self.subTest(order=order), patch.object(server.second_error_sent, 'wait', return_value=order[0] == 'fast-second-error'):
+                for prompt in order:
+                    self.assertEqual(self.handle(prompt, server)[0], [429])
+            responses = sorted(server.dual_error_responses, key=lambda row: row['response_write_completed_ns'])
+            self.assertEqual([row['prompt'] for row in responses], list(order))
+            self.assertEqual(server.total_requests, 2)
+            self.assertEqual(server.active, 0)
+
+    def test_owned_fixture_replacement_keeps_observations_and_never_resets_the_old_flag(self):
+        case = DuckDBNativeGraphLibraryTests('test_fast_second_failure_keeps_first_input_error_and_try_usage')
+        events = []
+        previous = types.SimpleNamespace(last_close_report={'unconfirmed_work': True}, _unsettled=True,
+                                         close=lambda: events.append('old-graph-close'))
+        case.graph, case.graph_observations = previous, [dict(event='prior-fatal')]
+        case.bridge = types.SimpleNamespace(close=lambda: events.append('old-bridge-close'))
+        case.wait_fixture_idle = lambda: events.append('fixture-idle')
+        def native():
+            events.append('new-graph')
+            case.graph = types.SimpleNamespace(last_close_report=None)
+            case.graph_observations = []
+        case.native = native
+        case.replace_graph_after_fixture_cleanup()
+        self.assertEqual(events, ['fixture-idle', 'old-bridge-close', 'old-graph-close', 'new-graph'])
+        self.assertTrue(previous._unsettled)
+        self.assertIsNot(case.graph, previous)
+        self.assertEqual(case.graph_observations[0], {'event': 'prior-fatal'})
+        self.assertEqual(case.graph_observations[-1]['previous'], {'unconfirmed_work': True})
 
 
 BACKEND = os.environ.get('DUCKDB_NATIVE_BACKEND')
@@ -251,6 +323,7 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.server.RequestHandlerClass = _ExpandedFixture
         self.server.total_requests = 0
         self.server.second_error_sent = threading.Event()
+        self.server.dual_error_responses = []
 
     def native(self):
         from src.baselines.text.frameworks.native_calls import NativeCallExecutor
@@ -282,9 +355,11 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         # code retains unknown remote work and never resets the executor flag.
         self.wait_fixture_idle()
         previous = self.graph.last_close_report
+        observations = list(self.graph_observations)
         self.bridge.close()
         self.graph.close()
         self.native()
+        self.graph_observations.extend(observations)
         self.graph_observations.append(dict(event='fixture-owner-replaced-graph', previous=previous))
 
     def tearDown(self):
@@ -355,35 +430,58 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
 
     def test_fast_second_failure_keeps_first_input_error_and_try_usage(self):
         prompts = ['slow-first-error', 'fast-second-error']
+        observations = []
+        def observe_responses(phase, start):
+            with self.server.lock:
+                responses = sorted((dict(row) for row in self.server.dual_error_responses[start:]),
+                                   key=lambda row: row['response_write_completed_ns'])
+            observations.append(dict(event='dual-error-fixture-responses', phase=phase, responses=responses,
+                observed_second_response_first=(responses[0]['prompt'] == 'fast-second-error'
+                                                if len(responses) == 2 else None),
+                scope='fixture response write completion; vendor dispatch concurrency is not assumed'))
         self.connection.execute('SET duckdb_ai_max_concurrent_requests=4')
         self.connection.execute('SET duckdb_ai_timeout_seconds=20')
+        start = len(self.server.dual_error_responses)
         before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
         with self.assertRaisesRegex(Exception, 'slow-first-error') as control:
             self.select(prompts, try_complete=False)
         native_failed_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
         self.assertEqual(native_failed_usage, 2)
+        observe_responses('original-fatal', start)
         self.server.second_error_sent.clear()
+        start = len(self.server.dual_error_responses)
         before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
         control_try = self.select(prompts)
         native_try_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
+        observe_responses('original-try', start)
         self.native()
         self.server.second_error_sent.clear()
+        start = len(self.server.dual_error_responses)
         before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
         with self.assertRaises(type(control.exception)) as selected:
             self.select(prompts, try_complete=False)
         self.assertEqual(str(selected.exception), str(control.exception))
         self.assertEqual(self.adapter.last_delivered_count, 1)
+        observe_responses('selected-fatal', start)
+        self.graph_observations.extend(observations)
         selected_failed_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
-        self.graph_observations.append(dict(event='matched-parallel-fatal-usage',
+        self.graph_observations.append(dict(event='matched-fatal-input-usage',
                                            native_failed_usage=native_failed_usage,
                                            selected_failed_usage=selected_failed_usage,
                                            close_report=self.graph.last_close_report))
+        if self.graph.last_close_report.get('unconfirmed_work'):
+            self.replace_graph_after_fixture_cleanup()
+        else:
+            self.wait_fixture_idle()
         self.server.second_error_sent.clear()
+        start = len(self.server.dual_error_responses)
         before = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0]
         self.assertEqual(self.select(prompts), control_try)
         selected_try_usage = self.connection.execute('SELECT COUNT(*) FROM ai_usage()').fetchone()[0] - before
         self.assertEqual(selected_try_usage, native_try_usage)
         self.assertEqual(selected_try_usage, 2)
+        observe_responses('selected-try', start)
+        self.graph_observations.append(observations[-1])
 
     def test_provider_failure_before_later_preparation_failure_keeps_first_input_error(self):
         native_errors = []
