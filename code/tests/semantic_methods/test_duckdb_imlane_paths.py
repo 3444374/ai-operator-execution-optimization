@@ -243,14 +243,16 @@ class DuckDBIMLaneVerifierTests(unittest.TestCase):
     def test_port_selection_uses_the_pinned_cluster_contract_and_owns_only_its_node(self):
         ray = types.SimpleNamespace(init=unittest.mock.Mock(), shutdown=unittest.mock.Mock())
         cluster = types.SimpleNamespace(add_node=unittest.mock.Mock(),
-            shutdown=unittest.mock.Mock(), address='127.0.0.1:46320')
+            shutdown=unittest.mock.Mock(), address='192.0.2.10:46320')
         constructor = unittest.mock.Mock(return_value=cluster)
-        with patch.dict('sys.modules', {'ray.cluster_utils': types.SimpleNamespace(Cluster=constructor)}):
+        with patch.dict('sys.modules', {'ray.cluster_utils': types.SimpleNamespace(Cluster=constructor),
+                'ray._private.services': types.SimpleNamespace(get_node_ip_address=lambda: '192.0.2.10')}):
             self.assertIs(verify_native.start_ray(ray, Path('/tmp/dray'), 46320), cluster)
         options = cluster.add_node.call_args.kwargs
         self.assertEqual(options['gcs_server_port'], 46320)
         self.assertEqual((options['min_worker_port'], options['max_worker_port']), (46330, 46419))
         self.assertEqual(options['num_gpus'], 0)
+        self.assertEqual(options['node_ip_address'], '192.0.2.10')
         self.assertEqual(ray.init.call_args.kwargs['address'], cluster.address)
         self.assertNotIn('node_manager_port', ray.init.call_args.kwargs)
         cluster.shutdown.assert_not_called()
@@ -264,7 +266,8 @@ class DuckDBIMLaneVerifierTests(unittest.TestCase):
                                     shutdown=unittest.mock.Mock(side_effect=OSError('synthetic disconnect failure')))
         cluster = types.SimpleNamespace(add_node=unittest.mock.Mock(),
             shutdown=unittest.mock.Mock(), address='127.0.0.1:46320')
-        with patch.dict('sys.modules', {'ray.cluster_utils': types.SimpleNamespace(Cluster=lambda: cluster)}):
+        with patch.dict('sys.modules', {'ray.cluster_utils': types.SimpleNamespace(Cluster=lambda: cluster),
+                'ray._private.services': types.SimpleNamespace(get_node_ip_address=lambda: '127.0.0.1')}):
             with self.assertRaises(RuntimeError) as caught:
                 verify_native.start_ray(ray, Path('/tmp/dray'), 46320)
         self.assertIs(caught.exception, primary)

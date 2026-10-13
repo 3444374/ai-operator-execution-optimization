@@ -85,10 +85,14 @@ def start_ray(ray, temporary, port_base):
                  object_store_memory=256 * 1024 * 1024, runtime_env=runtime_env)
         return None
     from ray.cluster_utils import Cluster
+    from ray._private.services import get_node_ip_address
+    # ray.init canonicalizes localhost to this machine's interface address.
+    # Bind the owned node to the same address so both sides agree in containers.
+    node_ip = get_node_ip_address()
     cluster = Cluster()
     try:
         cluster.add_node(num_cpus=4, num_gpus=0, include_dashboard=False,
-                         node_ip_address='127.0.0.1', temp_dir=str(temporary),
+                         node_ip_address=node_ip, temp_dir=str(temporary),
                          object_store_memory=256 * 1024 * 1024,
                          **ray_node_ports(port_base))
         ray.init(address=cluster.address, runtime_env=runtime_env)
