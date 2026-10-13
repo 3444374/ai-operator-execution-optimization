@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡独立补测及两项阻塞](native_sembench_model_dual_supplement_20261012/README.md)分别保存原运行和新窗口、全部值、质量及失败。
+
 [固定发布版实库软件核查](native_release_actual_software_20261012/README.md)：首轮失败与第二窗口3组通过分别保存；后者173POST／104.662秒，含真实3.14.5、两图关闭与12个原Q2/Q3软件单元，不作模型性能资格。
 后续公开CLI四路径原Q2/Q3及一模式配对共1080逻辑调用、2160传输POST／359.252秒通过，原120行与错误评价保持；模型计划和IMLane作者Q1由各自清单继续。
 

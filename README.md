@@ -1,5 +1,7 @@
 # SemLoom
 
+[原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；目前双卡覆盖16／18位置，第三轮S／R仍未完成。质量、样本量及失败按同题报告解释。
+
 [SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；原始IMLane Q1由当前完整调用适配器拒绝，模型0。
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。

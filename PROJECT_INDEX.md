@@ -1,5 +1,7 @@
 # 项目导航
 
+[原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)与[双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)拥有两批实际模型观测、失败和离线核验。
+
 [SemBench Movie原查询准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)拥有原Q1/Q2/Q3接线、官方评价、唯一CSV/清单及3×6资格；运行入口见[脚本说明](code/scripts/README.md)。
 
 更新时间：2026-10-08。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。

@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[原Q2双卡五项独立补测](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
+固定3bd53587，原双卡11项之外只补第二轮J与第三轮D／N／J／I，五个预热＋五个测量；实际1200逻辑／3600三跳POST、209.108秒，独立1800秒窗口。第三轮S因新Ray父目录38字节超过24字节预检退出1，R未运行。原时钟及账本保持；493组身份复查无存活、CPU违规0、GPU空。原LIMIT5 F1=1.0／完整recall0.5并列，两个窗口不合成连续n3或排名。
+比较源码及作者实现未改；当前剩第三轮S／R，后文旧块按当时资格解释。
+
 2026-10-12：[原Q2真实模型与部分双卡](../experiments/results/diagnostics/native_sembench_model_20261012/README.md)。
 固定3bd53587／原2000关系／120出现，质量6槽、单卡18槽、双卡11槽，7680模型／23040三跳POST。
 原LIMIT5官方F1=1.0与完整真阳性7／假阳性0／真阴性106／假阴性7／召回0.5并列；单卡各n3，双卡J n1、其余n2。
