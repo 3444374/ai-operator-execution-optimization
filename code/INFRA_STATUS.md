@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[原Q2→完整Q1的双卡N/S A先行](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-preflight)固定整合8862c813，完整2120原生SDK mock与tokenizer资格通过；模型API因141字节IPC地址超107而退出，0POST、无query，26.959秒停止并独立释放。短IPC目录／启动前检查及watchdog RSS身份修复候选未模型复跑；生产Core、adapter及原控制器未改。
+
 2026-10-13：[Q2阶段统计与发送账本修订](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改；修后[四组匹配原Q2](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)已完成，96查询与逐跳计数、质量、退出及原值已重核。完整观察OFF开关仍未实现。
 

@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：最小原Movie N/S A窗口启动失败与IPC修复候选
+
+- 沿[原工作点](experiments/plans/语义系统对照.md#sembench-native-workpoint)固定整合8862c813与原模型／数据，2120原生SDK mock和真实tokenizer上下文核验通过；本次不改生产路径或扩大候选。
+- 原600秒时钟13:01:49.388 UTC启动，双卡API因141字节Unix IPC地址超107而退出；26.959秒完成、0逻辑／0POST，68条启动身份记录（67个唯一PID）独立释放，原时钟／四个旧账本保持。
+- 保留安装前25字节Ray路径失败及完整原件；短服务TMPDIR／RPC目录和watchdog RSS身份修复候选仅本地准备，4 IPC绑定通过，不自动重启原窗口。Q1模型质量／供给／性能仍待。
+- [既有主报告追加](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-preflight)与紧凑证据区分软件／启动失败／未运行候选；历史Q2质量限制及样本范围不变。
+
 ## 2026-10-13：原Movie有限工作点方案准备（未执行）
 
 - 在[既有方案](experiments/plans/语义系统对照.md#sembench-native-workpoint)明确先行双卡N/S A点：2 Q1＋2 Q2＋8协议调用＝4248逻辑/12744POST；提案硬上限4608逻辑/13824POST/600秒。先核Q1完整路径和质量，再按实际供给/收益决定单卡配对、B点或其他原生路径；24变体不是前置门槛。

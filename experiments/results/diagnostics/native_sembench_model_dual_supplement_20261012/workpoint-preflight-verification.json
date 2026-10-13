@@ -1,0 +1,164 @@
+{
+  "schema": "semloom.original_movie_dual_NS_A_preflight.v1",
+  "status": "failed_before_ready_no_queries",
+  "source_head": "8862c8130bfb53aaa4873ac83354b8afa4711d73",
+  "source_files_verified": 407,
+  "executed_controller": "f35476f00d727765a00939951231d08b52dd945160ebb6013021b034543ddb42",
+  "original_plan": "4a4a728457e7908e3b3ab49581db5bc45ea6619e",
+  "planned": {
+    "logical": 4248,
+    "posts": 12744
+  },
+  "hard": {
+    "logical": 4608,
+    "posts": 13824,
+    "seconds": 600,
+    "startup_seconds": 180,
+    "cleanup_reserve_seconds": 120
+  },
+  "actual": {
+    "logical": 0,
+    "posts": 0,
+    "completed_q1": 0,
+    "completed_q2": 0,
+    "protocol_calls": 0,
+    "api_processes_started": 2,
+    "model_engines_ready": 0,
+    "elapsed_seconds": 26.958795209,
+    "startup_seconds": 25.57081919396296
+  },
+  "started_utc": "2026-10-13T13:01:49.387904+00:00",
+  "ended_utc": "2026-10-13T13:02:16.346699+00:00",
+  "hard_deadline_utc": "2026-10-13T13:11:49.387904+00:00",
+  "independent_release_utc": "2026-10-13T13:04:26.465943+00:00",
+  "qualification": {
+    "native_sdk_mock_sends": 2120,
+    "network_posts": 0,
+    "query_occurrences": {
+      "2": 120,
+      "1": 2000
+    },
+    "max_prompt_tokens": 194,
+    "generation_tokens": 8,
+    "context": 4096,
+    "context_violations": 0,
+    "csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "manifest_content_sha256": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "model_files_fingerprint": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+    "routing": {
+      "2": {
+        "gpu0": {
+          "requests": 62,
+          "tokens": 7649
+        },
+        "gpu1": {
+          "requests": 58,
+          "tokens": 7277
+        }
+      },
+      "1": {
+        "gpu0": {
+          "requests": 998,
+          "tokens": 128415
+        },
+        "gpu1": {
+          "requests": 1002,
+          "tokens": 129176
+        }
+      }
+    }
+  },
+  "failure": {
+    "kind": "vLLM ZeroMQ Unix IPC path exceeded107 bytes",
+    "replicas": [
+      {
+        "replica": "service-0",
+        "path_bytes": 141,
+        "limit": 107,
+        "private_log_sha256": "6a688bc9eafa5d9770700e02123ac47b1b4e91c1b09c2077f012a72d553939f1"
+      },
+      {
+        "replica": "service-1",
+        "path_bytes": 141,
+        "limit": 107,
+        "private_log_sha256": "2d3b59417f0ada66c3340413a85f022f2225ccc7a2ad773cec38f8b1f0a804f8"
+      }
+    ]
+  },
+  "cleanup": {
+    "independent_identities": 68,
+    "unique_pids": 67,
+    "same_identity_live": 0,
+    "gpu_compute": 0,
+    "lease_exists": false,
+    "forced_cleanup": false,
+    "original_clock_unchanged": true,
+    "old_history_scopes_unchanged": 4
+  },
+  "sampled_client_rss": {
+    "samples": 52,
+    "max_summed_bytes": 87724032,
+    "hard_bytes": 8589934592,
+    "scope": "startup only; supervisor plus observed non-service descendants; watchdog PID absent from per-sample set; not complete client-tree peak, unique physical memory or Q1 capacity qualification"
+  },
+  "ledger": {
+    "send_rows": 0,
+    "counters": [
+      [
+        "software",
+        0,
+        0
+      ],
+      [
+        "quality",
+        0,
+        0
+      ],
+      [
+        "single",
+        0,
+        0
+      ],
+      [
+        "dual",
+        0,
+        0
+      ],
+      [
+        "__model__",
+        0,
+        0
+      ]
+    ]
+  },
+  "candidate": {
+    "controller": "97c754ec2c4eea5e41f0463c8460cf7f5af042d039fee97b30b08df7293a3a42",
+    "model_run_executed": false,
+    "fix": "short owned service TMPDIR and VLLM_RPC_BASE_PATH, prelaunch path+UUID37-byte limit guard; watchdog RSS anchored by recorded PID/startticks rather than dynamic environment",
+    "targeted_ipc_bindings": 4,
+    "all_bound_and_closed": true,
+    "new_model_window_required": true
+  },
+  "limitations": [
+    "no real Q1 model quality/supply/bottleneck or N/S performance acquired",
+    "retain historical Q2 LIMIT5F1=1.0 but row recall0.5",
+    "no stableP99/full ranking/cross-version gain",
+    "2120 mock SDK sends and4 IPC bindings are software evidence only"
+  ],
+  "prestart_failures": [
+    "system Python lackedpsutil; use existing driver, no installation",
+    "Ray parent25>24 bytes; retained then corrected before model clock"
+  ],
+  "archive": {
+    "path": "workpoint-preflight-evidence.tar.gz",
+    "bytes": 954351,
+    "sha256": "60f3c585bb4ce103807ca8439bc4c093abf053138719be14ddc5b6fcf8dc4018",
+    "members": 69
+  },
+  "retained_private_archive": {
+    "bytes": 1483297,
+    "sha256": "a21114b88974ad2bb63ba992bae5f302be40d200550b424fe2fce77749180409",
+    "members": 89
+  }
+}
