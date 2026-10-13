@@ -150,6 +150,11 @@ class NativeTaskBridge:
             self._observer(fields)
 
     def _invoke(self, peer, operation, args):
+        if operation == 'describe_limits':
+            if args:
+                raise ValueError('invalid capacity-description arguments')
+            # Read-only configuration, before opening any Job or accepting input.
+            return self._execution.engine.capacity.limits
         if operation == 'open':
             query_id, operator_id = args
             if query_id != peer.label or peer.opened or peer.cancel.is_set():
@@ -321,6 +326,9 @@ class NativeTaskClient:
     def open_session(self, query_id, operator_id):
         limits = self._call('open', query_id, operator_id)
         return RemoteNativeTaskSession(self, limits)
+
+    def describe_limits(self):
+        return self._call('describe_limits')
 
 
 class RemoteNativeTaskSession:

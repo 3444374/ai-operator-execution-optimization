@@ -165,3 +165,13 @@ native差距同时含原LM/SDK请求池与新执行路径的成本，不能全�
 窗口累计按首次失败112预留＋已审计smoke108＋本协议1384保守计1604／4240，0模型调用；失败和已完成cell均保留。
 这是固定必要调用集合的执行/生命周期研究，不改变合法求值范围或LIMIT语义，原Q2 LIMIT5成绩不作为这里的全体质量依据。
 后续共同集成/模型预算及剩余资格只维护在[M4](../../../plans/数据组织.md#query-sharing-burst)，阶段源码与旧证据分别保留。
+
+<a id="common-typed-limits"></a>
+## 共同基点与远程typed limits兼容
+
+`28093954`含原stability祖先；其Core session.py/session_jobs.py相对原9bb无公共变更，已普通merge为`768f59e5`，
+父为本线`5ae23d0e`与共同`28093954`，双方源/文档/旧原件保留。共同CSV原CRLF保持，按cr-at-eol检查，未改原结果。
+本地共同接续45项42通过/3SDK跳过；新增typed-limit最小补丁后48项45通过/3SDK跳过。
+`describe_limits`是owner的只读配置操作，未创建Job/接受输入；无Engine的frontend要求factory与typed SessionLimits，
+拒绝缺失/伪类型及local override，flow打开后复核item容量。共同SDK replay及默认local路径保留。
+新版实库兼容仍pending；旧9d的23.25%不是当前版本收益，新增窗口只补原未完成反例并继承总4240余额。

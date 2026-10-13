@@ -71,6 +71,11 @@ owner registers a separate Job/session per query. Query labels are bound to thei
 pipe; a peer cannot open another query or release its delivery leases. The optional
 `LotusBatchExecutor(session_factory=client.open_session)` keeps native formatting,
 SDK preparation, parsing and whole-frame completion; its default remains unchanged.
+After the common `LotusCallLimits`/SDK replay integration, a remote frontend also
+passes `session_limits=client.describe_limits()`. This returns a frozen
+`SessionLimits` configuration on the owner before any Job/input is registered.
+Local execution continues to obtain limits from its own Engine; remote limits
+cannot override that path. The opened flow's item capacities are checked again.
 
 This research slice supports one complete uncached Map per frontend/query, with a
 declared input count. It seals the Job only after that count has been accepted.

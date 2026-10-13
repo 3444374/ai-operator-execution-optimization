@@ -122,6 +122,25 @@ class LotusControlTests(unittest.TestCase):
                 self.assertEqual(len(self.run_batch(selected)), 2)
             self.assertEqual(execution.engine.jobs.jobs, {})
 
+    def test_remote_constructor_consumes_typed_limits_without_engine_access(self):
+        from src.semantic_methods.lotus import batch
+        with self.batch() as (selected, execution, state):
+            constructor=batch.NativeTaskSession
+            selected=LotusBatchExecutor(None,selected.model_config,query_id='query',operator_id='map',
+                session_factory=lambda q,o:constructor(execution,q,o),
+                session_limits=execution.engine.capacity.limits)
+            self.assertEqual(len(self.run_batch(selected)),2)
+            self.assertEqual(execution.engine.jobs.jobs,{})
+            self.assertEqual(selected.last_cleanup_errors,())
+
+    def test_remote_constructor_rejects_missing_or_untyped_limits_before_flow(self):
+        config=FixedModelConfig('http://localhost/v1/chat/completions','fixture',1000,'fixture')
+        for limits in (None,SimpleNamespace(item_input_bytes=1024,item_result_bytes=1024)):
+            with self.subTest(limits=limits),self.assertRaises(ValueError):
+                LotusBatchExecutor(None,config,query_id='q',operator_id='map',
+                    session_factory=lambda *args: self.fail('flow opened before capacity validation'),
+                    session_limits=limits)
+
     def test_shared_parser_receives_the_dispatched_prepared_values(self):
         parsed = []
         def replay(lm, messages, kwargs, prepared, full, **options):

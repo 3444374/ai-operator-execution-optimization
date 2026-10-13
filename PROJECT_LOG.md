@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：接续共同安全基点和远程容量兼容
+
+- 普通merge `28093954`为`768f59e5`，保留本线`5ae23d0e`父和旧9d真实库证据，Core原祖先9bb已包含；未重复cherry-pick公共修补。
+- 共同LOTUS限制及SDK replay需要远程frontend typed limits；本线唯一owner通过readonly `describe_limits`与ctor `session_limits`完成最小兼容，default local/HTTP/计数/router保持。
+- 共同接续42本地pass/3SDKskip，补丁45pass/3skip；新库资格仍待，旧单样本比例不外推新adapter。
+- 主授权只补未完成零模型反例；计划新独立10min/360POST/CPU16–17/RSS4GiB/0模型GPU，先集成owner登记并继续总4240累计上限，其他共享准备/副本目标仍归各owner。
+
 ## 2026-10-13：长短查询实库fixture最小四臂与预算停止
 
 - `9d3e4228`在已释放CPU16–17的原窗口完成独立static校准和四臂long256/short8；各264调用、同消息/输出/usage及独立Job/session/进程经[复算](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-main-fixture)通过。

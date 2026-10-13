@@ -100,6 +100,20 @@ class NativeQueryBridgeTests(unittest.TestCase):
             self.assertNotEqual(snap['owner_thread'], threading.get_ident())
             eventually(lambda: bridge.snapshot()['jobs'] == 0)
 
+    def test_typed_limits_description_has_no_job_or_compute_side_effect(self):
+        bridge=self.bridge({'a':1,'b':1})
+        client=NativeTaskClient(bridge.client_connection('a'),'a')
+        from src.scheduling.core.session_contract import SessionLimits
+        limits=client.describe_limits()
+        self.assertIs(type(limits),SessionLimits)
+        snapshot=bridge.snapshot()
+        self.assertEqual(snapshot['jobs'],0)
+        self.assertFalse(any(snapshot['usage'].values()))
+        a=client.open_session('a','map')
+        self.assertEqual(a.limits.item_input_bytes,limits.item_input_bytes)
+        a.offer((task(0),));a.end_input()
+        self.assertEqual(len(self.consume(a)),1)
+
     def test_connection_cannot_open_another_query_or_seal_partial_input(self):
         bridge = self.bridge({'a': 2, 'b': 1})
         client = NativeTaskClient(bridge.client_connection('a'), 'a', timeout_s=2)

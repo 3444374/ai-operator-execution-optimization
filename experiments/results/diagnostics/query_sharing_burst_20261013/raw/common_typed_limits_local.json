@@ -1,0 +1,39 @@
+{
+  "run_id": "query-sharing-common-typed-limits-local-20261013",
+  "checked_utc": "2026-10-13T06:34:28.790821+00:00",
+  "common_baseline": "280939543424c4d3b8c37d0ba53ec5e9ae0337fc",
+  "merge_commit": "768f59e5dd432269cb2b014acf0f5a500b70b82a",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/native_query_bridge.py": "6b7f262f9cd00c58a2b853a0d372e47a5c59ecfa1743948527864ed9af5fa47d",
+    "code/src/semantic_methods/lotus/batch.py": "aecf6d6648c9c9fc999b52b2056b239ba513d2d5ac5996b8cf66fef35ad17ba7",
+    "code/src/experiments/query_sharing_lotus.py": "f1d25646e89d365724dc7bc09a2eae1c22645fd419d8ab13e22db8172551bd00",
+    "code/tests/execution_provider/test_native_query_bridge.py": "6399b6d7719c885ab7f7f474c1e61e8ef467ff677a562dddddf8991cd4ddae3f",
+    "code/tests/semantic_methods/test_lotus_control.py": "73ff7d53d92c727477b9f12502969d298b26d88a870508168fde16b82a8b6f4b"
+  },
+  "command": "PYTHONPATH=code python3 -m unittest tests.execution_provider.test_native_query_bridge tests.semantic_methods.test_lotus_control tests.semantic_methods.test_lotus_call_limits tests.semantic_methods.test_lotus_response_replay tests.scheduling.test_query_sharing",
+  "before_patch": {
+    "tests": 45,
+    "passed": 42,
+    "skipped": 3,
+    "seconds": 0.855
+  },
+  "after_patch": {
+    "tests": 48,
+    "passed": 45,
+    "skipped": 3,
+    "seconds": 0.827,
+    "exit_code": 0
+  },
+  "skipped_reason": "actual SDK not installed in local environment",
+  "scope": [
+    "owner-only readonly typed configuration before Job/offer",
+    "remote constructor with no Engine",
+    "default local capacity from Engine",
+    "common SDK replay retained",
+    "existing lease/compute/EOF/cancel responsibility preserved"
+  ],
+  "new_server_calls": 0,
+  "models": 0,
+  "gpu_jobs": 0,
+  "old_measurements_not_requalified": true
+}

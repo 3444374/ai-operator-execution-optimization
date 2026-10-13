@@ -160,6 +160,7 @@ def _frontend(channel, pipe, query, count, base, arm, release, cancelled):
             flow_executor = LotusBatchExecutor(None,
                 FixedModelConfig(base + '/chat/completions', 'lotus-fixture', 5000, 'local-fixture'),
                 query_id=query, operator_id='lotus-map', session_factory=client.open_session,
+                session_limits=client.describe_limits(),
                 cancelled=cancelled.is_set, prevalidate_batch=True, retain_full_responses=False,
                 timeout_s=30)
         channel.send(dict(event='ready', query_id=query, pid=os.getpid(),
