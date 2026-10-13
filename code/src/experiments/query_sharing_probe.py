@@ -20,7 +20,7 @@ from src.scheduling.core.session_jobs import JobBudget, round_robin_flow
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import LeastQueuedEndpointRouter
 from src.scheduling.submission_control.admission import StaticAdmissionController
-from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst
+from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst, RemainingWorkPriority
 
 
 @dataclass(frozen=True)
@@ -76,7 +76,8 @@ def least_active_work(ready, history):
     return round_robin_flow(tuple(j for j in ready if j.work.active_work == least), history)
 
 
-def run(queries, arm, *, admission=4, endpoints=2):
+def run(queries, arm, *, admission=4, endpoints=2, request_capacity=4,
+        short_work_limit=4, bypass_work_limit=4):
     """All arms use the same source, storage, router, physical workers and work."""
     started = time.perf_counter()
     names = tuple(f'e{i}' for i in range(endpoints))
@@ -84,7 +85,8 @@ def run(queries, arm, *, admission=4, endpoints=2):
     max_work = max(q.estimated_work for q in queries)
     # Strong static uses less committed work under the SAME global ceiling.
     limits = SessionLimits(16 * len(queries), 1024 * len(queries), 128 * len(queries),
-                           4, 4 * max_work, 16, 64, 8, 256, 64, 120.0, .001, SessionTimeouts())
+                           request_capacity, request_capacity * max_work,
+                           16, 64, 8, 256, 64, 120.0, .001, SessionTimeouts())
     policies = SessionPolicies(StaticAdmissionController(admission), LeastQueuedEndpointRouter(),
         TopologySnapshot(tuple(EndpointSnapshot(e, 'http://localhost/fixture', 'default', str(i),
                                True, 0, 0, None, 0.0) for i, e in enumerate(names)), 0.0), 'default')
@@ -93,8 +95,12 @@ def run(queries, arm, *, admission=4, endpoints=2):
         'work_conserving': least_active_work,
         'shared_rr': round_robin_flow,
         'strong_static': round_robin_flow,
-        'bounded_short': BoundedShortJobBurst(work_unit='synthetic_work', short_work_limit=4,
-                                               bypass_work_limit=4),
+        'remaining_work': RemainingWorkPriority(work_unit='synthetic_work'),
+        'remaining_compensated': RemainingWorkPriority(work_unit='synthetic_work',
+                                                       bypass_work_limit=bypass_work_limit),
+        'bounded_short': BoundedShortJobBurst(work_unit='synthetic_work',
+                                             short_work_limit=short_work_limit,
+                                             bypass_work_limit=bypass_work_limit),
     }['bounded_short' if arm == 'bounded_short_k4' else arm]
     resources = []
     decisions = []
@@ -121,7 +127,7 @@ def run(queries, arm, *, admission=4, endpoints=2):
             raise RuntimeError('finite probe exceeded its owner-tick limit')
         while waiting and waiting[0].release_s <= service.now:
             query = waiting.pop(0)
-            job = core.register_job(query.label, JobBudget(16, 1024, 128, 4, limits.active_work))
+            job = core.register_job(query.label, JobBudget(16, 1024, 128, request_capacity, limits.active_work))
             session = core.open(SessionSpec(job.job_id, 'map', 'fixture', work_unit='synthetic_work'),
                                 replace(limits, held_tasks=16, input_bytes=1024, result_bytes=128), job=job)
             live[job.job_id] = dict(query=query, job=job, session=session, next_input=0,
@@ -191,7 +197,8 @@ def run(queries, arm, *, admission=4, endpoints=2):
             zip([query.release_s] + finishes, finishes))
         row['actual_service_s'] = query.rows * query.service_s
     group_s = max(row['finish_s'] for row in done.values()) - min(q.release_s for q in queries)
-    return dict(arm=arm, admission=admission, endpoints=endpoints, queries=[asdict(q) for q in queries],
+    return dict(arm=arm, admission=admission, endpoints=endpoints, limits=asdict(limits),
+                queries=[asdict(q) for q in queries],
                 jobs=done, group_jct_s=group_s, rows_per_simulated_s=sum(q.rows for q in queries) / group_s,
                 peaks=peaks, final_usage=asdict(core.capacity.usage()), trace=trace,
                 resources=resources, decisions=decisions, owner_ticks=steps,
@@ -236,6 +243,44 @@ def experiment():
                 native_lotus='pending; diagnostic_fcfs is not native LOTUS')
 
 
+
+def matched_work_experiment():
+    """The registered five-condition, four-control slice; no online truth access."""
+    scenarios = {
+        'equal_cost': (Query('long', 64, 0), Query('short', 8, .5)),
+        'heterogeneous_cost': (Query('long', 64, 0, 2, 4), Query('short', 8, .5, 1, 1)),
+        'reversed_estimates': (Query('long', 64, 0, 1, 4), Query('short', 8, .5, 4, 1)),
+        'finite_short_train': (Query('long', 64, 0),) +
+            tuple(Query(f'short{i}', 2, .5 + i) for i in range(8)),
+        'nonpreemptive_block': (Query('long', 2, 0, 20, 20), Query('short', 1, .5)),
+    }
+    arms = ('shared_rr', 'remaining_work', 'remaining_compensated', 'bounded_short')
+    trials = []
+    for scenario, queries in scenarios.items():
+        # Declared fixture metadata freezes the common threshold. The selector
+        # still only sees Core's accepted work view; this does not seal long input.
+        short = queries[1]
+        threshold = short.rows * short.estimated_work
+        for repetition in range(3):
+            for arm in arms:
+                trials.append(dict(scenario=scenario, repetition=repetition, threshold_work=threshold,
+                    **run(queries, arm, admission=2, request_capacity=2,
+                          short_work_limit=threshold, bypass_work_limit=threshold)))
+    submissions = sum(sum(q['rows'] for q in run['queries']) for run in trials)
+    if submissions != 3588:
+        raise RuntimeError('matched-work fixture exceeded or changed its registered submission count')
+    signature = hashlib.sha256(json.dumps({k: [asdict(q) for q in v] for k, v in scenarios.items()},
+                                         sort_keys=True).encode()).hexdigest()
+    return dict(schema_version=2, protocol='matched-work',
+        evidence='synthetic mechanism diagnostic', model_calls=0, gpu_calls=0, http_calls=0,
+        postgres_queries=0, fixture_sha256=signature, trials=trials,
+        synthetic_submissions=submissions, max_synthetic_submissions=3588,
+        controls=list(arms), global_active_requests=2, work_capacity='2 * max declared item work',
+        physical_service='two nonpreemptive serial workers; not vLLM continuous batching',
+        source_base='5e0ff640d57adfc892b629ecf3bd5f607aa60801',
+        total_hint='not implemented; remaining work stays unknown until accepted input is sealed',
+        repetitions='three deterministic repeats check reproducibility, not sampling uncertainty')
+
 def enumerate_counterexamples():
     """Exploratory finite grid; retain every cell, not only the counterexamples."""
     rows = []
@@ -257,21 +302,25 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--protocol', choices=('legacy', 'matched-work'), default='legacy')
     args = parser.parse_args()
-    output = experiment()
-    output['exploratory_grid'] = enumerate_counterexamples()
+    output = matched_work_experiment() if args.protocol == 'matched-work' else experiment()
+    if args.protocol == 'legacy':
+        output['exploratory_grid'] = enumerate_counterexamples()
     root = Path(__file__).resolve().parents[3]
     files = ('code/src/scheduling/core/session.py', 'code/src/scheduling/core/session_jobs.py',
              'code/src/scheduling/submission_control/query_sharing.py',
-             'code/src/experiments/query_sharing_probe.py')
-    output['source_base'] = '9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c'
+             'code/src/experiments/query_sharing_probe.py',
+             'code/src/experiments/query_sharing_analysis.py')
+    output.setdefault('source_base', '9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c')
     output['source_sha256'] = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in files}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     opener = gzip.open if args.output.suffix == '.gz' else open
     with opener(args.output, 'xt', encoding='utf-8') as stream:
-        json.dump(output, stream, ensure_ascii=False, separators=(',', ':'))
+        from src.baselines.common.redact import redact_json_values
+        json.dump(redact_json_values(output), stream, ensure_ascii=False, separators=(',', ':'))
     print(json.dumps(dict(output=str(args.output), trials=len(output['trials']),
-                          static_admission=output['static_admission'], model_calls=0)))
+                          protocol=args.protocol, static_admission=output.get('static_admission'), model_calls=0)))
 
 
 if __name__ == '__main__':

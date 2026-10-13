@@ -3,7 +3,7 @@
 import unittest
 
 from src.experiments.query_sharing_probe import Query, run
-from src.experiments.query_sharing_analysis import audit
+from src.experiments.query_sharing_analysis import audit, same_execution, summarize_matched_work
 
 
 class QuerySharingProbeTests(unittest.TestCase):
@@ -64,6 +64,37 @@ class QuerySharingProbeTests(unittest.TestCase):
         self.assertGreater(candidate['jobs']['long']['jct_s'], 1.05 * static['jobs']['long']['jct_s'])
         short = candidate['jobs']['short']['job_id']
         self.assertTrue(all(e['estimated_work'] == 1 for e in candidate['trace'] if e['job_id'] == short))
+
+    def test_four_controls_use_same_core_capacity_and_keep_service_truth_offline(self):
+        queries = (Query('long', 12, 0, 1, 4), Query('short', 2, .5, 4, 1))
+        results = {arm: run(queries, arm, admission=2, request_capacity=2,
+                           short_work_limit=2, bypass_work_limit=2) for arm in
+                   ('shared_rr', 'remaining_work', 'remaining_compensated', 'bounded_short')}
+        for result in results.values():
+            audit(result)
+            self.assertEqual(result['limits']['active_requests'], 2)
+            self.assertEqual(result['limits']['active_work'], 8)
+            short = result['jobs']['short']['job_id']
+            self.assertTrue(all(job['work']['remaining_work'] is None or
+                                job['work']['remaining_work'] <= 2
+                                for d in result['decisions'] for job in d['ready']
+                                if job['job_id'] == short))
+            self.assertTrue(all(e['estimated_work'] == 1 for e in result['trace'] if e['job_id'] == short))
+        self.assertTrue(same_execution(results['bounded_short'], results['remaining_compensated']))
+
+    def test_audit_enforces_declared_work_capacity_at_every_sample(self):
+        result = run((Query('short', 2, 0, 1, 4),), 'shared_rr', admission=2, request_capacity=2)
+        audit(result)
+        result['resources'][0]['active_work'] = 9
+        with self.assertRaises(AssertionError):
+            audit(result)
+
+    def test_matched_summary_rejects_a_missing_control_instead_of_vacuous_equivalence(self):
+        result = run((Query('short', 2, 0),), 'shared_rr', admission=2, request_capacity=2)
+        evidence = dict(trials=[dict(scenario='equal_cost', repetition=0, **result)],
+                        controls=['shared_rr', 'remaining_work', 'remaining_compensated', 'bounded_short'])
+        with self.assertRaises(AssertionError):
+            summarize_matched_work(evidence)
 
     def test_independent_audit_rejects_duplicate_submission_evidence(self):
         result = run((Query('short', 2, 0),), 'bounded_short', admission=2)

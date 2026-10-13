@@ -2,6 +2,7 @@
 
 import argparse
 import gzip
+import hashlib
 import json
 from pathlib import Path
 
@@ -9,6 +10,8 @@ from pathlib import Path
 def audit(run):
     jobs = {row['job_id']: (label, run['queries'][next(i for i, q in enumerate(run['queries'])
             if q['label'] == label)]) for label, row in run['jobs'].items()}
+    capacity = run.get('limits', dict(active_requests=4,
+        active_work=4 * max(q['estimated_work'] for q in run['queries'])))
     submitted, started, completed, active = {}, {}, {}, {}
     peak = 0
     for event in sorted(run['trace'], key=lambda e: (e['t'], e['event'] != 'service_finish')):
@@ -19,8 +22,8 @@ def audit(run):
             submitted[key] = event
             active[key] = event['estimated_work']
             peak = max(peak, len(active))
-            assert len(active) <= run['admission'] <= 4
-            assert sum(active.values()) <= 4 * max(q['estimated_work'] for q in run['queries'])
+            assert len(active) <= run['admission'] <= capacity['active_requests']
+            assert sum(active.values()) <= capacity['active_work']
         elif event['event'] == 'service_start':
             assert key not in started and event['t'] >= submitted[key]['t']
             started[key] = event
@@ -38,6 +41,8 @@ def audit(run):
                            if started[k]['endpoint'] == name)
         assert all(b[0] >= a[1] for a, b in zip(intervals, intervals[1:]))
     for sample in run['resources']:
+        assert sample['active_requests'] <= capacity['active_requests']
+        assert sample['active_work'] <= capacity['active_work']
         for usage in sample['jobs'].values():
             assert usage['held_tasks'] <= 16 and usage['input_bytes'] <= 1024 and usage['result_bytes'] <= 128
         assert all(sum(u[name] for u in sample['jobs'].values()) == sample[name]
@@ -85,12 +90,68 @@ def summarize(evidence):
         outcomes.append(dict(scenario=name, comparisons=against,
                              passes_all=all(r['passes'] for r in against.values())))
     return dict(evidence=evidence['evidence'], source_base=evidence['source_base'],
-                source_sha256=evidence['source_sha256'], audited_runs=len(trials),
+                source_sha256=evidence['source_sha256'],
+        audit_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), audited_runs=len(trials),
                 synthetic_submissions=sum(sum(q['rows'] for q in r['queries']) for r in trials),
                 model_calls=0, gpu_calls=0, http_calls=0, postgres_queries=0,
                 outcomes=outcomes, rows=rows, exploratory_cells=len(evidence['exploratory_grid']),
                 exploratory_bulk_limit_violations=[r for r in evidence['exploratory_grid']
                     if r['candidate_long'] > 1.05 * r['static_long']])
+
+
+def same_execution(left, right):
+    """Compare observable synthetic execution, excluding host runtime and arm labels."""
+    return all(left[key] == right[key] for key in (
+        'trace', 'resources', 'decisions', 'jobs', 'group_jct_s', 'peaks', 'final_usage', 'owner_ticks'))
+
+
+def summarize_matched_work(evidence):
+    trials = evidence['trials']
+    arms = ('shared_rr', 'remaining_work', 'remaining_compensated', 'bounded_short')
+    scenarios = ('equal_cost', 'heterogeneous_cost', 'reversed_estimates',
+                 'finite_short_train', 'nonpreemptive_block')
+    expected = {(scenario, repetition, arm) for scenario in scenarios
+                for repetition in range(3) for arm in arms}
+    by_key = {(r['scenario'], r['repetition'], r['arm']): r for r in trials}
+    assert tuple(evidence['controls']) == arms
+    assert len(trials) == len(by_key) == len(expected) and by_key.keys() == expected
+    for trial in trials:
+        control = by_key[trial['scenario'], trial['repetition'], 'shared_rr']
+        assert all(trial[name] == control[name] for name in (
+            'queries', 'limits', 'admission', 'endpoints', 'threshold_work'))
+        assert trial['admission'] == trial['limits']['active_requests'] == 2
+        assert trial['limits']['active_work'] == 2 * max(q['estimated_work'] for q in trial['queries'])
+        short = trial['queries'][1]
+        assert trial['threshold_work'] == short['rows'] * short['estimated_work']
+        audit(trial)
+    rows, comparisons = [], []
+    for run in trials:
+        shorts = {label: row['jct_s'] for label, row in run['jobs'].items() if label != 'long'}
+        rows.append(dict(scenario=run['scenario'], repetition=run['repetition'], arm=run['arm'],
+            long_jct_s=run['jobs']['long']['jct_s'], short_jct_s=shorts,
+            worst_short_jct_s=max(shorts.values()), group_jct_s=run['group_jct_s'],
+            rows_per_simulated_s=run['rows_per_simulated_s'], peaks=run['peaks'],
+            threshold_work=run['threshold_work']))
+        if run['arm'] != 'bounded_short':
+            continue
+        for arm in ('shared_rr', 'remaining_work', 'remaining_compensated'):
+            control = by_key[run['scenario'], run['repetition'], arm]
+            comparisons.append(dict(scenario=run['scenario'], repetition=run['repetition'], control=arm,
+                long_jct_ratio=run['jobs']['long']['jct_s'] / control['jobs']['long']['jct_s'],
+                worst_short_jct_ratio=max(run['jobs'][label]['jct_s'] / control['jobs'][label]['jct_s']
+                                          for label in shorts),
+                throughput_ratio=run['rows_per_simulated_s'] / control['rows_per_simulated_s'],
+                same_execution=same_execution(run, control)))
+    reproducible = all(same_execution(run, by_key[run['scenario'], 0, run['arm']]) for run in trials)
+    return dict(protocol=evidence['protocol'], source_base=evidence['source_base'],
+        source_sha256=evidence['source_sha256'],
+        audit_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), audited_runs=len(trials),
+        synthetic_submissions=sum(sum(q['rows'] for q in run['queries']) for run in trials),
+        deterministic_repeats_identical=reproducible,
+        candidate_matches_compensated=all(r['same_execution'] for r in comparisons
+                                         if r['control'] == 'remaining_compensated'),
+        model_calls=0, http_calls=0, gpu_calls=0, postgres_queries=0,
+        rows=rows, comparisons=comparisons)
 
 
 def main():
@@ -99,11 +160,13 @@ def main():
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
     with gzip.open(args.input, 'rt', encoding='utf-8') as stream:
-        summary = summarize(json.load(stream))
+        evidence = json.load(stream)
+    summary = summarize_matched_work(evidence) if evidence.get('protocol') == 'matched-work' else summarize(evidence)
     with args.output.open('x', encoding='utf-8') as stream:
         json.dump(summary, stream, ensure_ascii=False, indent=2)
     print(json.dumps(dict(audited_runs=summary['audited_runs'], synthetic_submissions=summary['synthetic_submissions'],
-                          passes=[r['scenario'] for r in summary['outcomes'] if r['passes_all']])))
+                          candidate_matches_compensated=summary.get('candidate_matches_compensated'),
+                          passes=[r['scenario'] for r in summary.get('outcomes', ()) if r['passes_all']])))
 
 
 if __name__ == '__main__':

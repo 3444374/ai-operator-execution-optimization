@@ -7,7 +7,7 @@ from src.scheduling.core.session_jobs import (
     ReadyJob, JobWorkView, JobSelectionHistory, round_robin_flow,
 )
 from src.scheduling.core.session_contract import Acceptance, TaskKey
-from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst
+from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst, RemainingWorkPriority
 from tests.scheduling.test_multisession import engine, budget, flow
 from tests.scheduling.test_incremental_session import task
 
@@ -58,6 +58,46 @@ class QuerySharingTests(unittest.TestCase):
         for i in range(50):
             choose((view(str(i), 1),), JobSelectionHistory(None, ()))
             self.assertEqual(len(choose._bypassed), 1)
+
+    def test_remaining_priority_includes_known_jobs_above_candidate_threshold(self):
+        ready = (view('0', 40), view('1', 20), view('2', None))
+        history = JobSelectionHistory(None, ())
+        self.assertEqual(RemainingWorkPriority(work_unit='work_units')(ready, history).job_id, '1')
+        self.assertEqual(policy()(ready, history).job_id, '0')
+        self.assertEqual(RemainingWorkPriority(work_unit='work_units')(
+            ready, JobSelectionHistory('1', ())).job_id, '1')
+
+    def test_remaining_ties_rotate_jobs_then_flows(self):
+        choose = RemainingWorkPriority(work_unit='work_units')
+        ready = (ReadyJob('0', (0, 2), JobWorkView('work_units', 8, 1)), view('1', 8))
+        selected = choose(ready, JobSelectionHistory('1', (('0', 0),)))
+        self.assertEqual((selected.job_id, selected.session_id), ('0', 2))
+
+    def test_controls_share_compensation_even_when_attempts_do_not_succeed(self):
+        ready = (view('0', None), view('1', 4, dispatch=3))
+        for choose in (policy(), RemainingWorkPriority(work_unit='work_units', bypass_work_limit=2)):
+            # Core history has not advanced: both submissions were rejected.
+            history = JobSelectionHistory(None, ())
+            self.assertEqual(choose(ready, history).job_id, '1')
+            self.assertEqual(choose(ready, history).job_id, '0')
+            self.assertEqual(choose(ready, history).job_id, '1')
+
+    def test_all_unknown_or_incomparable_views_reset_compensation_to_rr(self):
+        for choose in (policy(), RemainingWorkPriority(work_unit='work_units', bypass_work_limit=2)):
+            known = (view('0', None), view('1', 4, dispatch=3))
+            choose(known, JobSelectionHistory(None, ()))
+            for ready in ((view('0', None), view('1', None)),
+                          (view('0', 5), view('1', 1, unit='tokens')),
+                          (view('0', 5), ReadyJob('1', (1,)))):
+                history = JobSelectionHistory('0', ())
+                self.assertEqual(choose(ready, history), round_robin_flow(ready, history))
+                self.assertFalse(choose._bypassed)
+
+    def test_remaining_compensation_discards_departed_identities(self):
+        choose = RemainingWorkPriority(work_unit='work_units', bypass_work_limit=2)
+        for i in range(50):
+            choose((view(str(i), 1),), JobSelectionHistory(None, ()))
+            self.assertEqual(tuple(choose._bypassed), (str(i),))
 
     def test_sealing_requires_finished_inputs_and_prevents_new_flows(self):
         core, _, _ = engine(requests=2)

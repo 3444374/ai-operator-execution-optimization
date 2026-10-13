@@ -256,3 +256,63 @@ typed描述直接进入TaskInfo，Core仍是work单位和C/W容量的权威；�
 首轮状态回归的额外清理失败及一次测试重复close错误都保留；修正测试的自有flow teardown后18项桥回归通过。
 机会bypass是补偿触发阈值，单次估计工作可跨过它，不是8work的绝对等待、token公平或墙钟保障。
 历史9d/01c原件和1909/4240累计不变；这些正确性修补不支持新版本模型性能，下一RR/候选必须同桥同版。
+
+
+<a id="matched-remaining-work"></a>
+## 同信息剩余工作控制与有限反证
+
+接续基点为`5e0ff640d57adfc892b629ecf3bd5f607aa60801`，工作树接管时干净。
+独立接口补丁`556977cbeef5f96437e4813939156bc000333dbf`的直接父为`e4677b4c`；
+远端研究分支在接管时为同一5e0ff640，补丁已随无树变merge发布，未重新实现或提交。
+[独立补丁检查](raw/lotus_work_descriptor_independent_20261013.json)在临时提取的556源码上得到50通过/3实库缺依赖跳过，
+两文件SHA与此前接口证据一致，不替代实际LOTUS新回调或模型资格。
+
+本次新增`RemainingWorkPriority`及可选相同补偿，与候选复用一套机会记账。
+无可比较的已知总量时清空补偿并RR；有已知总量时最小估计优先、tie按原Job/flow RR，未知Job可由补偿获得机会。
+这也明确了旧候选在全部总量未知时的回退行为；默认RR和关闭工作观测保持。
+补偿只计有资格时选中Job的最大排队估计，失败选择同样计入；单次选择可跨阈值，不是token份额、墙钟等待上限或服务抢占。
+
+[完整运行](raw/matched_work_probe_20261013.json.gz)保存5条件×4臂×3确定性重复，共60个运行、3588次模拟提交；
+[增强独立复算](raw/matched_work_audit_20261013.json)核对完整臂/重复身份、相同输入/阈值/容量、逐项关联、两串行槽、C/W与最终归零。
+运行时源码由[初始三文件补丁](raw/matched_work_source_initial_20261013.patch.gz)相对5e0ff640重建，文件SHA在原件；
+后续增强审计有自己的`audit_source_sha256`，没有改写运行原件。
+全部内部臂C=K=2、W=2×本条件最大声明单项work、每Job16项/1024输入字节/128结果字节，同Core/router/输入与观察。
+阈值在各条件按一个短Job的声明总work预先固定；Core仍只知道已接受工作，长Job全部输入接纳后才封口，未接批次总量提示。
+代理估计来自明确fixture字段；真实服务时长只交后端，未向选择器暴露。HTTP/模型/GPU/PG均0。
+
+下表列出短Job中最差JCT（模拟秒）。三个确定性重复的完整轨迹相同，全部逐Job与长Job数字保留在原件/复算。
+
+| 条件 | RR | 剩余work优先 | 剩余work＋补偿 | 候选 | RR长/组JCT | 其余三臂长/组JCT |
+|---|---:|---:|---:|---:|---:|---:|
+| 等成本long64/short8 | 8.5 | 4.5 | 4.5 | 4.5 | 36/36 | 36/36 |
+| 声明4/1，服务2/1 | 12.5 | 5.5 | 5.5 | 5.5 | 69/69 | 68/68 |
+| 声明4/1，服务1/4 | 20.5 | 16.5 | 16.5 | 16.5 | 48/48 | 48/48 |
+| long64＋8个独立short2 | 6.5 | 1.5 | 4.5 | 4.5 | 40/40 | 40/40 |
+| 两个20秒长请求先占槽 | 20.5 | 20.5 | 20.5 | 20.5 | 20/21 | 20/21 |
+
+候选与带相同补偿的剩余work控制在全部15个条件/重复配对中，选择、服务、容量、查询终态与owner tick轨迹完全相同；
+本切片没有独立调度增量。有限短到达中，无补偿控制最差短Job1.5、补偿/候选4.5，补偿对短Job有代价。
+不可抢占占用时四臂均无短Job收益。该结果只覆盖本表；全部已知大Job超过候选阈值时两规则仍可不同，已有行为回归覆盖。
+这些负结果与旧估计错误导致长Job受损的原件并列保留，不以RR改善推导方法新颖性或真实服务效果。
+
+计时从每个`Query.release_s`预定义到达开始，准入前等待不扣除；`finish_s`在必要结果关联校验、消费释放及Job关闭后记录。
+虚拟时钟只推进后端与到达事件，没有计入真实SDK/解析/消费CPU耗时；这是模拟JCT，不是完整模型查询墙钟。
+独占slowdown未测（本次没有新增solo臂），查询P99未评价，确定性重复不代表随机不确定性；不新增长Job5%门槛。
+真实查询仍须以预定义释放到必要解析/消费完成为终点，独占参照匹配同C/W、服务实例和资源边界。
+
+[75项本地回归首轮](raw/matched_work_local_checks_20261013.json)为73通过、1实际SDK缺库跳过、1沙箱禁止localhost监听；
+受阻单项经获准的[4次loopback请求复核](raw/matched_work_bind_recheck_20261013.json)通过，首轮失败保留，共74项独立通过/1跳过。
+现有桥的截帧拒绝、四tick推进和首错清理回归保持；没有扩大服务器或模型矩阵。
+后续真实SDK新回调、廉价长度代理、可信单Map总量及持续短frontend仍pending。
+Linux窗口按多模态独立释放后串行协调；新资格使用独立run_id/额度，不借旧1909/4240。
+共同状态、台账和README由baseline owner统一同步，本报告与同题M4维护本研究事实。
+
+复算（只读原件、0网络）：
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python3 -m src.experiments.query_sharing_analysis \
+  --input experiments/results/diagnostics/query_sharing_burst_20261013/raw/matched_work_probe_20261013.json.gz \
+  --output /tmp/query-sharing-matched-work-new-audit.json
+```
+
+未来重跑使用新的输出路径；`query_sharing_probe.py --protocol matched-work`选择本协议，默认`legacy`保持历史入口。

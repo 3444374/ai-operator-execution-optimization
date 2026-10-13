@@ -1,0 +1,17 @@
+{
+  "run_id": "query-sharing-matched-work-bind-recheck-20261013",
+  "prior_failure": "matched_work_local_checks_20261013.json",
+  "scope": "single previously blocked localhost bind test; no expansion of successful suite",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "tests.experiments.test_query_sharing_lotus.LotusPairAuditTests.test_two_worker_service_keeps_complete_rows_and_exact_responses"
+  ],
+  "exit_code": 0,
+  "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.566s\n\nOK\n",
+  "local_fixture_posts": 4,
+  "server_load": false,
+  "model_calls": 0,
+  "gpu_calls": 0
+}

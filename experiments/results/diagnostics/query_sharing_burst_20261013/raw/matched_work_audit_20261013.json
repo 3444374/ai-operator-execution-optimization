@@ -1,0 +1,1713 @@
+{
+  "protocol": "matched-work",
+  "source_base": "5e0ff640d57adfc892b629ecf3bd5f607aa60801",
+  "source_sha256": {
+    "code/src/scheduling/core/session.py": "a839a32ea37fc89734e22a480fddceb7f54bbef0b3917446b3b6d8a177786d00",
+    "code/src/scheduling/core/session_jobs.py": "18974ef458ac06c26823c892c66669d5b278f9e0bbe80e218451ac20da1e1465",
+    "code/src/scheduling/submission_control/query_sharing.py": "54f6394db1f04b4ae6c8229452117c41491ce9e02b2b1b604d2d127db76e54c7",
+    "code/src/experiments/query_sharing_probe.py": "b4829679c864c0a58eee19707a2ff1c6428a74b3c4619b852766f856e3428af4",
+    "code/src/experiments/query_sharing_analysis.py": "d3592b613ded3b3e4670dd3ae2532c653a88a10787fc023f802a8a52df7c8b2d"
+  },
+  "audit_source_sha256": "38ee0c2538ce7653bb24f56c1822189f5b7de90037cf405b40c9236fdc22444d",
+  "audited_runs": 60,
+  "synthetic_submissions": 3588,
+  "deterministic_repeats_identical": true,
+  "candidate_matches_compensated": true,
+  "model_calls": 0,
+  "http_calls": 0,
+  "gpu_calls": 0,
+  "postgres_queries": 0,
+  "rows": [
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "arm": "shared_rr",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 8.5
+      },
+      "worst_short_jct_s": 8.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "arm": "remaining_work",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "arm": "remaining_compensated",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "arm": "bounded_short",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "arm": "shared_rr",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 8.5
+      },
+      "worst_short_jct_s": 8.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "arm": "remaining_work",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "arm": "remaining_compensated",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "arm": "bounded_short",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "arm": "shared_rr",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 8.5
+      },
+      "worst_short_jct_s": 8.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "arm": "remaining_work",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "arm": "remaining_compensated",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "arm": "bounded_short",
+      "long_jct_s": 36.0,
+      "short_jct_s": {
+        "short": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 36.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 72,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "arm": "shared_rr",
+      "long_jct_s": 69.0,
+      "short_jct_s": {
+        "short": 12.5
+      },
+      "worst_short_jct_s": 12.5,
+      "group_jct_s": 69.0,
+      "rows_per_simulated_s": 1.0434782608695652,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "arm": "remaining_work",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "arm": "remaining_compensated",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "arm": "bounded_short",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "arm": "shared_rr",
+      "long_jct_s": 69.0,
+      "short_jct_s": {
+        "short": 12.5
+      },
+      "worst_short_jct_s": 12.5,
+      "group_jct_s": 69.0,
+      "rows_per_simulated_s": 1.0434782608695652,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "arm": "remaining_work",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "arm": "remaining_compensated",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "arm": "bounded_short",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "arm": "shared_rr",
+      "long_jct_s": 69.0,
+      "short_jct_s": {
+        "short": 12.5
+      },
+      "worst_short_jct_s": 12.5,
+      "group_jct_s": 69.0,
+      "rows_per_simulated_s": 1.0434782608695652,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "arm": "remaining_work",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "arm": "remaining_compensated",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "arm": "bounded_short",
+      "long_jct_s": 68.0,
+      "short_jct_s": {
+        "short": 5.5
+      },
+      "worst_short_jct_s": 5.5,
+      "group_jct_s": 68.0,
+      "rows_per_simulated_s": 1.0588235294117647,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "arm": "shared_rr",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "arm": "remaining_work",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "arm": "remaining_compensated",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "arm": "bounded_short",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "arm": "shared_rr",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "arm": "remaining_work",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "arm": "remaining_compensated",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "arm": "bounded_short",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "arm": "shared_rr",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "arm": "remaining_work",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "arm": "remaining_compensated",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "arm": "bounded_short",
+      "long_jct_s": 48.0,
+      "short_jct_s": {
+        "short": 16.5
+      },
+      "worst_short_jct_s": 16.5,
+      "group_jct_s": 48.0,
+      "rows_per_simulated_s": 1.5,
+      "peaks": {
+        "held_tasks": 24,
+        "input_bytes": 24,
+        "result_bytes": 192,
+        "active_requests": 2,
+        "active_work": 8
+      },
+      "threshold_work": 8
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "arm": "shared_rr",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 2.5,
+        "short1": 4.5,
+        "short2": 4.5,
+        "short3": 4.5,
+        "short4": 6.5,
+        "short5": 6.5,
+        "short6": 6.5,
+        "short7": 6.5
+      },
+      "worst_short_jct_s": 6.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 25,
+        "input_bytes": 75,
+        "result_bytes": 200,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "arm": "remaining_work",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 1.5,
+        "short2": 1.5,
+        "short3": 1.5,
+        "short4": 1.5,
+        "short5": 1.5,
+        "short6": 1.5,
+        "short7": 1.5
+      },
+      "worst_short_jct_s": 1.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 20,
+        "input_bytes": 60,
+        "result_bytes": 160,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "arm": "remaining_compensated",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "arm": "bounded_short",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "arm": "shared_rr",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 2.5,
+        "short1": 4.5,
+        "short2": 4.5,
+        "short3": 4.5,
+        "short4": 6.5,
+        "short5": 6.5,
+        "short6": 6.5,
+        "short7": 6.5
+      },
+      "worst_short_jct_s": 6.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 25,
+        "input_bytes": 75,
+        "result_bytes": 200,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "arm": "remaining_work",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 1.5,
+        "short2": 1.5,
+        "short3": 1.5,
+        "short4": 1.5,
+        "short5": 1.5,
+        "short6": 1.5,
+        "short7": 1.5
+      },
+      "worst_short_jct_s": 1.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 20,
+        "input_bytes": 60,
+        "result_bytes": 160,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "arm": "remaining_compensated",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "arm": "bounded_short",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "arm": "shared_rr",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 2.5,
+        "short1": 4.5,
+        "short2": 4.5,
+        "short3": 4.5,
+        "short4": 6.5,
+        "short5": 6.5,
+        "short6": 6.5,
+        "short7": 6.5
+      },
+      "worst_short_jct_s": 6.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 25,
+        "input_bytes": 75,
+        "result_bytes": 200,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "arm": "remaining_work",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 1.5,
+        "short2": 1.5,
+        "short3": 1.5,
+        "short4": 1.5,
+        "short5": 1.5,
+        "short6": 1.5,
+        "short7": 1.5
+      },
+      "worst_short_jct_s": 1.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 20,
+        "input_bytes": 60,
+        "result_bytes": 160,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "arm": "remaining_compensated",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "arm": "bounded_short",
+      "long_jct_s": 40.0,
+      "short_jct_s": {
+        "short0": 1.5,
+        "short1": 2.5,
+        "short2": 3.5,
+        "short3": 3.5,
+        "short4": 4.5,
+        "short5": 4.5,
+        "short6": 4.5,
+        "short7": 4.5
+      },
+      "worst_short_jct_s": 4.5,
+      "group_jct_s": 40.0,
+      "rows_per_simulated_s": 2.0,
+      "peaks": {
+        "held_tasks": 23,
+        "input_bytes": 69,
+        "result_bytes": 184,
+        "active_requests": 2,
+        "active_work": 2
+      },
+      "threshold_work": 2
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "arm": "shared_rr",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "arm": "remaining_work",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "arm": "remaining_compensated",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "arm": "bounded_short",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "arm": "shared_rr",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "arm": "remaining_work",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "arm": "remaining_compensated",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "arm": "bounded_short",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "arm": "shared_rr",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "arm": "remaining_work",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "arm": "remaining_compensated",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "arm": "bounded_short",
+      "long_jct_s": 20.0,
+      "short_jct_s": {
+        "short": 20.5
+      },
+      "worst_short_jct_s": 20.5,
+      "group_jct_s": 21.0,
+      "rows_per_simulated_s": 0.14285714285714285,
+      "peaks": {
+        "held_tasks": 3,
+        "input_bytes": 7,
+        "result_bytes": 24,
+        "active_requests": 2,
+        "active_work": 40
+      },
+      "threshold_work": 1
+    }
+  ],
+  "comparisons": [
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.5294117647058824,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 0,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.5294117647058824,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 1,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.5294117647058824,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "equal_cost",
+      "repetition": 2,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "control": "shared_rr",
+      "long_jct_ratio": 0.9855072463768116,
+      "worst_short_jct_ratio": 0.44,
+      "throughput_ratio": 1.0147058823529411,
+      "same_execution": false
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 0,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "control": "shared_rr",
+      "long_jct_ratio": 0.9855072463768116,
+      "worst_short_jct_ratio": 0.44,
+      "throughput_ratio": 1.0147058823529411,
+      "same_execution": false
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 1,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "control": "shared_rr",
+      "long_jct_ratio": 0.9855072463768116,
+      "worst_short_jct_ratio": 0.44,
+      "throughput_ratio": 1.0147058823529411,
+      "same_execution": false
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "heterogeneous_cost",
+      "repetition": 2,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.8048780487804879,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 0,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.8048780487804879,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 1,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.8048780487804879,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "reversed_estimates",
+      "repetition": 2,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.7777777777777778,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 3.0,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 0,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.7777777777777778,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 3.0,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 1,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 0.7777777777777778,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 3.0,
+      "throughput_ratio": 1.0,
+      "same_execution": false
+    },
+    {
+      "scenario": "finite_short_train",
+      "repetition": 2,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 0,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 1,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "control": "shared_rr",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "control": "remaining_work",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    },
+    {
+      "scenario": "nonpreemptive_block",
+      "repetition": 2,
+      "control": "remaining_compensated",
+      "long_jct_ratio": 1.0,
+      "worst_short_jct_ratio": 1.0,
+      "throughput_ratio": 1.0,
+      "same_execution": true
+    }
+  ]
+}

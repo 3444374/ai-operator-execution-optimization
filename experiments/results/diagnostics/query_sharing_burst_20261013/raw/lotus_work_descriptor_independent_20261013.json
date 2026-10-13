@@ -1,0 +1,21 @@
+{
+  "run_id": "query-sharing-work-api-independent-20261013",
+  "commit": "556977cbeef5f96437e4813939156bc000333dbf",
+  "parent": "e4677b4c28f179892e70c2fb0db2574fd2744f43",
+  "scope": "standalone two-file public patch, mock SDK and real Core, no server/model/HTTP",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "tests.semantic_methods.test_lotus_control",
+    "tests.semantic_methods.test_lotus_call_limits",
+    "tests.semantic_methods.test_lotus_response_replay",
+    "tests.execution_provider.test_native_tasks"
+  ],
+  "exit_code": 0,
+  "output": "............................sss......................\n----------------------------------------------------------------------\nRan 53 tests in 0.144s\n\nOK (skipped=3)\n",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/batch.py": "2a98742f86290447819ffd8f52cf974b756b5e44728f03fdaaddabc5396bb479",
+    "code/tests/semantic_methods/test_lotus_control.py": "2b9d73a2effec442a4244746dde279f1d041a37965a8f05eb71bde3ce8925d47"
+  }
+}

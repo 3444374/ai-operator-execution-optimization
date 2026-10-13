@@ -1,0 +1,28 @@
+{
+  "run_id": "query-sharing-matched-work-regression-20261013",
+  "source_base": "5e0ff640d57adfc892b629ecf3bd5f607aa60801",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "tests.scheduling.test_query_sharing",
+    "tests.scheduling.test_multisession",
+    "tests.experiments.test_query_sharing_probe",
+    "tests.execution_provider.test_native_query_bridge",
+    "tests.experiments.test_query_sharing_lotus"
+  ],
+  "exit_code": 1,
+  "total": 75,
+  "elapsed_s": 1.379,
+  "output": "....................................................................E.....s\n======================================================================\nERROR: test_two_worker_service_keeps_complete_rows_and_exact_responses (tests.experiments.test_query_sharing_lotus.LotusPairAuditTests.test_two_worker_service_keeps_complete_rows_and_exact_responses)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"<repository>/code/tests/experiments/test_query_sharing_lotus.py\", line 62, in test_two_worker_service_keeps_complete_rows_and_exact_responses\n    with FixtureService(delay_s=.01,max_posts=4) as service:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repository>/code/src/experiments/query_sharing_lotus.py\", line 112, in __init__\n    self.server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py\", line 457, in __init__\n    self.server_bind()\n  File \"/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/http/server.py\", line 136, in server_bind\n    socketserver.TCPServer.server_bind(self)\n  File \"/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/socketserver.py\", line 473, in server_bind\n    self.socket.bind(self.server_address)\nPermissionError: [Errno 1] Operation not permitted\n\n----------------------------------------------------------------------\nRan 75 tests in 1.379s\n\nFAILED (errors=1, skipped=1)\n",
+  "source_sha256": {
+    "code/src/scheduling/submission_control/query_sharing.py": "54f6394db1f04b4ae6c8229452117c41491ce9e02b2b1b604d2d127db76e54c7",
+    "code/src/experiments/query_sharing_probe.py": "b4829679c864c0a58eee19707a2ff1c6428a74b3c4619b852766f856e3428af4",
+    "code/src/experiments/query_sharing_analysis.py": "38ee0c2538ce7653bb24f56c1822189f5b7de90037cf405b40c9236fdc22444d",
+    "code/tests/scheduling/test_query_sharing.py": "57d42379ad5f278419c9dc1e03ee6fb12d70ef58b004f0de0e7574a285743ef6",
+    "code/tests/experiments/test_query_sharing_probe.py": "de0abab6e5e5a37ac44733cfcb633b9d5b1b132a7cd7b97a33ee9c97c769dbae"
+  },
+  "server_load": false,
+  "model_calls": 0,
+  "gpu_calls": 0
+}
