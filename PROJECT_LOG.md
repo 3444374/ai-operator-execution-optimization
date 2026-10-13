@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-13：集成文本预检最小实际SDK资格
+
+- 固定完整执行SHA`1afa8e325278077a846180997e2db75275631a89`，独立owner复用原driver与共同host lease，6项受影响SDK检查全部通过／0跳过，13localhost POST，模型／GPU0。
+- 第五条单请求／累计输入超限及配置不符在flow前拒绝；原SDK正文、正常文本、默认分块、typed factory、Unicode与usage按[原报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)的实际范围解释。同进程工厂不写成远程IPC资格。
+- 首次自动profile的4／10CPU不匹配导致0POST失败，选择已有4CPU profile后沿原300秒／32POST时钟接续；215.242秒窗口结束，299.068秒内7个PID＋birth独立退出／共同lease释放。失败、预算、逐发送及原始RSS均保留。
+- 仅更新既有事实入口与紧凑脱敏证据，不改生产代码、共享测量或方法策略，也未重复历史矩阵。
+
 ## 2026-10-13：收敛LOTUS整批文本预检的零发送拒绝
 
 - 按固定stage来源`7d83c2a6`只移植通用预检规则到当前文本接口；显式启用时，flow前逐行检查固定模型、请求及累计输入容量，后缀正文校验后丢弃，只保留首call。

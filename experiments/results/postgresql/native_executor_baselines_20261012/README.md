@@ -288,6 +288,29 @@ Sema当前是已抵达快照上的执行服务，前快照消费结束后才交�
 原Q1 2000行的两条IMLane适配器前置拒绝及历史记录保留，当前128行是适配器接受范围。
 机器事实见[integration_verification.json](integration_verification.json)，首四块输出见[integration_first4.txt](integration_first4.txt)，修前复现见[integration_late_before.txt](integration_late_before.txt)，最终输出见[integration_final.txt](integration_final.txt)。
 
+<a id="lotus-text-sdk-preflight"></a>
+## 集成文本整批预检的实际SDK资格
+
+执行源码固定为`1afa8e325278077a846180997e2db75275631a89`；406个公开源码／检查文件在服务器逐SHA核验，
+验证夹具单独记录。复用LOTUS1.2.4、LiteLLM1.95.0、OpenAI2.50.0、pandas2.3.3和既有driver，未安装依赖。
+六项最小受影响检查全部通过，0错误／失败／跳过，实际13个localhost POST，模型／GPU0：
+
+- 第五条单请求超限、第五条累计输入超限和固定模型不符，各在本地及typed session_factory入口检查；零flow、零发送、Core用量归零。
+- 原SDK三条文本与默认分块／显式预检／factory三组各三条配对，完整请求正文、重复值、Unicode、输出和usage保持，共12POST；原SDK正文／logprobs检查另1POST，代理码点拒绝0POST。
+
+factory使用同进程的实际Core，仅验证工厂接口与typed容量，未建立远程Core／IPC资格；未运行图文profile、Daft/Ray图、模型质量或性能比较。
+fixture模型没有定价，不据此报告实际成本。首次自动双卡profile要求10CPU，而进程固定CPU24–27共4槽，
+preflight因此失败且SDK未启动、POST0；保留该15.442秒失败。改用仓库已有4槽`generic_linux_nvidia`显式profile后依赖检查通过，
+原北京时间19:39:30.441起、19:44:30.441截止与300秒／32POST额度保持，接续没有重置时钟或退款。
+窗口含首次失败与接续等待共215.242秒；独立检查在19:44:29.509完成，距原T0为299.068秒。
+7个PID＋birth无存活、共同host lease不存在、GPU空，持久发送与fixture收到均13；采样RSS加总峰值1079078912字节，低于4GiB上限。
+该加总包含共享页面且可能漏采短峰，不能解释为唯一物理内存。未重复旧SDK全套或扩大性能矩阵。
+
+[资格聚合与来源](lotus-text-preflight-sdk-verification.json)及[紧凑原件](lotus-text-preflight-sdk-evidence.tar.gz)
+保存全部用例、逐发送／收取、资源样本、显式profile原因、首次失败和独立释放记录；归档42,124字节，
+SHA-256为`2c53f03e73ba74b1a0428970c5adc6dd12c9d379ba6633da9ad16e8d0e11cd6f`。
+原始私有归档另保留，其SHA及成员脱敏映射在上述证据中；历史SDK／真实模型结果按原源码与计时继续解释。
+
 <a id="execution-repairs"></a>
 ## 响应与生命周期修补
 

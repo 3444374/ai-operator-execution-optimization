@@ -1,0 +1,57 @@
+{
+  "source_sha": "1afa8e325278077a846180997e2db75275631a89",
+  "run_id": "lotus-text-sdk-20261013-9ca5642d",
+  "status": "passed",
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "skips": 0,
+  "actual_localhost_posts": 13,
+  "max_localhost_posts": 32,
+  "real_model_calls": 0,
+  "gpu_starts": 0,
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pandas": "2.3.3"
+  },
+  "cpu_affinity": [
+    24,
+    25,
+    26,
+    27
+  ],
+  "max_seconds": 300,
+  "start_utc": "2026-10-13T11:39:30.441072+00:00",
+  "original_deadline_utc": "2026-10-13T11:44:30.441007+00:00",
+  "window_elapsed_seconds": 215.2424071780406,
+  "through_independent_check_seconds": 299.0678520202637,
+  "first_preflight": {
+    "status": "failed",
+    "posts": 0,
+    "seconds": 15.442498691380024,
+    "reason": "automatic two-GPU profile requires ten CPU slots; this SDK process is pinned to four"
+  },
+  "continuation": {
+    "profile": "generic_linux_nvidia.json",
+    "selection": "explicit",
+    "reason": "existing profile fits the unchanged four-CPU SDK reservation; package checks already passed",
+    "budget_reset": false
+  },
+  "peak_sampled_summed_rss_bytes": 1079078912,
+  "max_sampled_summed_rss_bytes": 4294967296,
+  "checked_pid_birth_identities": 7,
+  "alive_matching_identities": [],
+  "lease_released": true,
+  "gpu_compute_apps": [],
+  "checked_utc": "2026-10-13T11:44:29.508859+00:00",
+  "scope": "actual pinned SDK and in-process Core/factory fixture; no real remote frontend, image/VLM, Ray/Daft graph, model quality or performance claim",
+  "evidence_archive": "lotus-text-preflight-sdk-evidence.tar.gz",
+  "evidence_archive_bytes": 42124,
+  "evidence_archive_sha256": "2c53f03e73ba74b1a0428970c5adc6dd12c9d379ba6633da9ad16e8d0e11cd6f",
+  "private_archive_sha256": "c132734c847e8d2ca6521562ec2d055007d23f41e18e32c0613b1f821e75311a",
+  "actual_sdk_checks_member": "sdk-result.json",
+  "guard_subcases": 6,
+  "normal_adapter_variants": 3
+}
