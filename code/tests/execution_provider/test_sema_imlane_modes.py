@@ -3,12 +3,14 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import replace
 import copy
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import sys
 import sysconfig
 import tempfile
+import threading
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest import mock
@@ -198,6 +200,59 @@ class SemaIMLaneModeTests(unittest.TestCase):
 
 
 class SemaIMLaneMethodVerifierTests(unittest.TestCase):
+    def test_ray_address_is_published_only_after_complete_resource_rpc(self):
+        from integrations.sema import verify_imlane_calls as helper
+        captured = []
+        def capture(command, _env, _log, **_options):
+            captured.append(command)
+            raise RuntimeError('capture only; no owner process started')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args = SimpleNamespace(output=root, author_root=root/'author',
+                ray_address='127.0.0.1:46520', coordinator_ports={'ray':46651})
+            owner_helper = SimpleNamespace(spawn=capture, resources=lambda _prefix:{})
+            affinity = mock.patch.object(helper.os, 'sched_getaffinity', return_value=set(range(8,16)), create=True)
+            info = json.dumps(dict(site=str(root/'site'),lib=str(root/'lib'),base=str(root/'base')))
+            with affinity, mock.patch.object(helper.subprocess, 'check_output', side_effect=[info,str(root/'libstdc++.so.6')]), \
+                 mock.patch.dict(sys.modules, {'psutil':ModuleType('psutil')}):
+                report = helper.check_mode(args, 'ray', owner_helper, SimpleNamespace(receipts=[]))
+            self.assertFalse(report['passed'])
+            self.assertEqual(len(captured), 1)
+            command = captured[0]
+            address = Path(command[4])
+            started, release = threading.Event(), threading.Event()
+            ray = ModuleType('ray')
+            ray.init = mock.Mock(return_value=SimpleNamespace(address_info=dict(gcs_address='127.0.0.1:46520')))
+            def resources():
+                started.set()
+                if not release.wait(3):
+                    raise TimeoutError('fixture resource RPC did not release')
+                return {'CPU':2,'GPU':0}
+            ray.cluster_resources, ray.shutdown = resources, mock.Mock()
+            failures = []
+            def execute_owner():
+                try:
+                    exec(compile(command[2], 'actual-ray-owner-ready-code', 'exec'), {})
+                except BaseException as error:
+                    failures.append(error)
+            with mock.patch.dict(sys.modules, {'ray':ray}), \
+                 mock.patch.object(sys, 'argv', [command[0],command[3],command[4]]), \
+                 mock.patch.object(sys, 'stdin', io.StringIO('\n')):
+                thread = threading.Thread(target=execute_owner)
+                thread.start()
+                try:
+                    self.assertTrue(started.wait(3))
+                    self.assertFalse(address.exists(), 'final address became visible while resource RPC was blocked')
+                finally:
+                    release.set()
+                    thread.join(3)
+            self.assertFalse(thread.is_alive())
+            self.assertEqual(failures, [])
+            self.assertEqual(json.loads(address.read_text()),
+                             dict(address='127.0.0.1:46520',resources={'CPU':2,'GPU':0}))
+            self.assertEqual(list(address.parent.glob(address.name+'*')), [address])
+            ray.shutdown.assert_called_once()
+
     def test_worker_trace_checks_actual_author_libraries_and_two_workers_and_actors(self):
         from integrations.sema import verify_imlane_methods as verifier
         modules = {'pyarrow': dict(version='16.1.0', source_sha256='a'*64),

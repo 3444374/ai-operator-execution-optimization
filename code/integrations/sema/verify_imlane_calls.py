@@ -208,8 +208,11 @@ def check_mode(args, runtime, helper, fixture):
                     "include_dashboard=False,object_store_memory=134217728,_node_ip_address='127.0.0.1',"
                     "_temp_dir=sys.argv[1]);")
                 report["ray_cluster_owner"] = "verifier"
-            code=("import sys,ray,json;"+init+"open(sys.argv[2],'w').write(json.dumps("
-                "dict(address=ctx.address_info['gcs_address'],resources=ray.cluster_resources())));sys.stdin.readline();ray.shutdown()")
+            code=("import sys,ray,json,os;"+init+"data=json.dumps("
+                "dict(address=ctx.address_info['gcs_address'],resources=ray.cluster_resources()));"
+                "temporary=sys.argv[2]+'.pending';stream=open(temporary,'w');"
+                "stream.write(data);stream.close();"
+                "os.replace(temporary,sys.argv[2]);sys.stdin.readline();ray.shutdown()")
             owner,owner_writer=helper.spawn([str(python),"-c",code,str(selected),str(address)],
                                            env,out/"ray-owner.log",stdin=True)
             until=time.monotonic()+60

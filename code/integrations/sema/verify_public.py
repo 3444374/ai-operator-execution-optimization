@@ -117,10 +117,19 @@ def main(argv=None):
                     or service.get('uncertain_requests', 0) or service.get('held_requests', 0)
                     or service.get('native_bridge_thread_alive', False)):
                 raise ValueError('Sema source, responses or local service ownership did not settle')
+            runtime = result.get('runtime', {'owner': 'fixed Sema author binary'})
+            if 'driver_disconnected' in runtime and runtime['driver_disconnected'] is not True:
+                raise ValueError('public runtime report did not confirm the driver disconnect')
+            if args.arm == 'sema-method-semloom-request-service':
+                close = service.get('core_cleanup', {})
+                if (close.get('settled') is not True or close.get('remaining_jobs') != 0
+                        or close.get('unconfirmed_remote_requests') != 0
+                        or any(close.get('remaining_usage', {}).values())):
+                    raise ValueError('public SemLoom Core responsibilities did not settle')
             report.update(status='passed', actual_fixture_posts=len(posts),
                 quality_scope='software response parsed by the fixed original author; no model quality claim',
                 query_summary_sha256=hashlib.sha256((args.output / 'query/summary.json').read_bytes()).hexdigest(),
-                request_service=service, runtime=result.get('runtime', {'owner': 'fixed Sema author binary'}))
+                request_service=service, runtime=runtime)
     except BaseException as error:
         primary = error
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
