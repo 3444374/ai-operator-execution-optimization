@@ -1,6 +1,7 @@
 # LOTUS图文执行接点与Sema输入核查
 
-本轮只验证固定前端能力和同方法执行接点，没有真实模型、GPU或Ray启动。
+早先切片只验证固定前端能力和同方法执行接点，没有真实模型、GPU或Ray启动。
+末节追加真实Daft/Ray及localhost软件fixture；没有真实推理或PG-E2E性能资格。
 独立研究原型为`92bcd05a`；通用LOTUS接线为`607b9f88`，只改`lotus/sdk.py`、`lotus/batch.py`并增加独立测试。
 研究假设和静态缓存反例仍见[阶段设计](../../../../docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md#frontend-stage-audit)，
 这次接线不采用准备缓存，也没有新增调度或性能结论。
@@ -151,3 +152,68 @@ lease归还没有伪造模型/设备结束或结果消费回执；结果仍由�
 [实际查询fixture](../../../../code/tests/modalities/image/test_lotus_stage_demand.py)、[验证元数据](verification.json)及
 [全部阶段原值/失败](raw/stage-demand-evidence.tar.gz)可复核；18份观测加私有/公开双摘要清单。
 归档SHA-256 `abb224268b7694b79b3cdf11b88e63fa4b5cc4fc58084e9f3fc1c2d8a6ed5623`，私有原件按原run标识和stage-a-1/2/3定位。
+
+<a id="stage-a-daft-ray"></a>
+## 阶段A的真实Daft/Ray软件接线验证
+
+复用现有`LotusBatchExecutor(image-text)`→`NativeTaskSession/SessionEngine`→
+`MapInputPreparation/iter_payload_batches`（Daft native分批）→`RayMapTransport`（Ray HTTP actor）→原SDK重放。
+解码仍由原LOTUS前端完成，`physical=None`不包含Daft/Ray；PG typed CLIP是另一条既有CPU/GPU stage路径。
+本轮只补软件fixture，生产默认与执行框架均不改。
+
+固定12张旧图、原Filter→Map提示/parser、4MiB同表示共享准备额度及相同后继信息，C=2、held=4。
+强静态bytes与消费者bytes各2次交错重复，另各1次已知429关闭，至多100个localhost替身POST。
+沿用已有Linux环境，独立GPU=0 Ray集群；CPU24–27、600秒外部硬截止、4GiB采样RSS停限，失败不扩矩阵或策略。
+主任务wall从本次专属源核验/元数据准备到结果消费结束；另报已ready查询与关闭时间。
+图片准备、SDK编码/解析、Daft/put及Ray等待用原始区间保存，重叠累计时间不相加为主任务wall。
+50ms进程RSS与声明cache/Arrow字节分别记录，RSS加总不等于唯一物理驻留；缓存读取结束不推出URI/模型/结果消费结束。
+该路径的分层须准确解释：LOTUS的ImageArray/fetch_image在前端准备URI，原formatter产生完整消息；
+Core拥有准入、工作额度与结果租约；Daft把Core已接受的有限payload窗口转成Arrow批，Ray拥有对象与HTTP actor执行。
+`MapInputPreparation`复用既有broker管理JSON/Arrow输入，未把图像decode移动到Ray，也不是Ray Data原生整查询调度图。
+Daft Native完整调用baseline由其自身graph调度，与SemLoom内部Daft materializer是不同角色。
+
+源码以`b8b9b865`为基底，两份fixture按[源码摘要](stage-ray-verification.json)冻结，生产代码未变。
+沿用Python3.12.3、LOTUS1.2.4、Daft0.7.21、Ray2.56.1、Arrow24.0.0、Pillow12.2.0，既有preflight通过，无安装。
+实际窗口T0为08:43:51.478632 UTC，原硬截止08:53:51.478632；最终监督在08:50:54.235634退出。
+前两次配置拒绝分别为ready额度大于object额度、API base误含`/chat`，均0请求；只修fixture，原失败保留。
+早期LiteLLM导入/零请求probe曾尝试远端价格元数据并超时，最终轮启用其已有`LITELLM_LOCAL_MODEL_COST_MAP=True`。
+整个窗口共3次CPU Ray cluster启动，最终1项完整实依赖用例通过、0跳过；共76成功＋24个429 localhost POST，模型/GPU均0。
+主进程监督跟踪自有PID＋birth；08:53:06 UTC独立确认10个采样身份无存活、共同host lease已释放、GPU为空。
+独立检查先误用缺psutil的系统Python，再改用已有driver完成；没有修改环境。
+
+| 顺序／臂 | 图片prepare | URI复制字节 | 主任务秒 | ready查询秒 | driver采样峰值MiB | 同时RSS加总峰值MiB |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 static_bytes | 17 | 9736050 | 4.714388 | 4.698094 | 1178.16 | 2317.26 |
+| 2 consumer_bytes | 17 | 9736050 | 2.708299 | 2.693082 | 1202.75 | 2351.04 |
+| 3 consumer_bytes | 17 | 9736050 | 2.834861 | 2.822550 | 1218.75 | 2368.62 |
+| 4 static_bytes | 17 | 9736050 | 2.723388 | 2.713941 | 1231.00 | 2382.39 |
+
+四次均为12唯一源／7后继／19完整请求；原请求JSON、源关联、prepared顺序、SDK输出顺序、parser与usage一致。
+HTTP到达允许异序，原SDK按sequence恢复输出；每次准备payload总字节9,747,951。原始HTTP wire、H2D、pinned/device驻留未测。
+两次429流程各12完整请求、12次图片prepare，Map未执行；原异常status=429，消费者需求取消后缓存归零。
+六流程在消费边界Core held/input/result/request/work及broker encoded/ready/model/object均归零，关闭回执为true。
+
+主任务从本次源SHA/header元数据核验起，到Filter/Map结果转成原行输出并消费结束，包含图片准备和准入/结果等待；
+ready查询起点在`sem_filter`前，关闭另报。共同Ray/actor ready为8.462728秒，最终fixture整体25.441468秒；
+监督含解释器导入及退出为42.374281秒，不能用25.44秒替代原600秒窗口累计预算。
+各stage原始区间在归档：首个static的图片prepare累计2.103919秒、SDK prepare0.313750、SDK parse1.188710、
+Daft/Arrow payload0.979224、put0.090394、Ray await0.613691；这些重叠区间的累计数不能相加为主任务时间。
+未单独加入预热轮；首个Daft/SDK解释冷导入明显，四样本不作速度排名，也不删除冷样本或据此另扩重复。
+
+RSS用已有ProcessSampler每50ms观测driver及其自有Ray子进程，采样从backend绑定到关闭；源元数据前缀未采样。
+子区间峰值可能漏采；各进程RSS有共享页面，表中同时加总不是唯一物理内存。driver RSS随顺序上升，两臂均未显示驻留优势。
+4MiB仅约束辅助共享缓存＋声明scratch；broker的encoded/ready/object声明额度与进程RSS分别解释，均不是host物理硬限。
+cache exporter读取结束时reader=0，但SDK重放回调仍持有Filter URI6,196,536字节、Map URI3,539,514字节；
+Core result额度仍保留（回调所见4MiB是容量reservation，不是响应实际内存），消费后的归零由另一条结果租约负责。
+Ray对象在其成员获得确认终态后释放，不能用缓存释放代替模型终态或结果消费；未知远端错误仍按既有合同保留责任，
+本轮实际错误只覆盖已知HTTP429，没有杀actor或证明任意未知失败可干净关闭。
+
+**判定：完整Daft/Ray接线成立，消费者准备没有超强静态的准备、复制或驻留收益证据。** 不增加策略或真实模型窗口。
+现有配置已核实的生成模型是文本Qwen/Mistral，CLIP只适用embedding；原151次CLIP forward不提供本Filter→Map的VLM资格。
+如以后主会话确认已有生成式VLM与质量参照，可先协调两臂各19调用、总38调用／10分钟的接口检查；本轮未启动或申请该窗口。
+数据库图像入口、Ray CPU/GPU tensor阶段、PG结果消费、多节点、帧/token成本校准及全物理驻留均未由本fixture验证。
+
+[实际fixture](../../../../code/tests/modalities/image/test_lotus_stage_ray.py)复用原静态控制、历史资产与现有执行器；
+[聚合与定义](stage-ray-verification.json)、[原区间/RSS/失败/源码身份](raw/stage-ray-evidence.tar.gz)保留32份观测及双摘要清单。
+归档SHA-256 `8ec9cb89fc6b306976bbd06a1b09d511e60891f93f2296bf20ce4cf90018939c`；
+原件按`semloom-stage-ray-20261013-hzw91ilu`定位，前两次失败不覆盖，原历史归档保持。

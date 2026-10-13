@@ -30,6 +30,37 @@ PINNED = all(find_spec(name) is not None for name in ("lotus", "pandas", "httpx"
 MANIFEST = Path(__file__).resolve().parents[4] / "experiments/results/postgresql/capacity_organization_image_validation_20260920/raw/asset-preparation.json"
 
 
+def stage_assets():
+    """Reuse the historical twelve assets, source versions and preparation bounds."""
+    started = time.monotonic()
+    manifest = json.loads(MANIFEST.read_text())["images"]["selected"]
+    root = Path(os.environ["SEMLOOM_COCO_IMAGE_ROOT"])
+    paths, sources, keys = [], {}, {}
+    from PIL import __version__ as pillow_version
+    for row in manifest:
+        path = root / row["file"]
+        raw = path.read_bytes()
+        if hashlib.sha256(raw).hexdigest() != row["sha256"]:
+            raise ValueError("historical image source changed")
+        with Image.open(BytesIO(raw)) as image:
+            if getattr(image, "n_frames", 1) != 1:
+                raise ValueError("historical image is not single-frame")
+            rgb_bytes = image.width * image.height * 3
+        key = PreparedAssetKey(row["sha256"], "lotus-rgb-png-base64:" +
+                               IMAGE_SOURCE_HASHES["utils.py"] + ":pillow=" + pillow_version)
+        paths.append(str(path))
+        keys[str(path)] = key
+        work = WorkDescriptor((StageWork("source", len(raw), "encoded_bytes"),
+                               StageWork("prepare", rgb_bytes, "rgb_bytes"),
+                               StageWork("model", 1, "complete_requests")), "model",
+                              key.transform_signature, lower_primary_units=1, upper_primary_units=1)
+        sources[key] = PreparedSourceMetadata(row["file"], row["sha256"], work,
+                                              "historical-manifest+verified-bytes+image-header")
+    if len(paths) != 12 or len(sources) != 12:
+        raise ValueError("fixture requires the twelve unique historical assets")
+    return paths, sources, keys, time.monotonic() - started
+
+
 class StaticSharedPreparation:
     """Fixed-order LRU with the same source bounds and actual barrier receipt.
 
@@ -88,29 +119,7 @@ class LotusStageDemandTest(unittest.TestCase):
         from lotus.dtype_extensions.image import fetch_image
         from lotus.models import LM
         validate_source(message_profile=IMAGE_TEXT_PROFILE)
-        manifest = json.loads(MANIFEST.read_text())["images"]["selected"]
-        data_root = Path(os.environ["SEMLOOM_COCO_IMAGE_ROOT"])
-        paths, metadata, keys = [], {}, {}
-        acquisition_started = time.monotonic()
-        for row in manifest:
-            path = data_root / row["file"]
-            raw = path.read_bytes()
-            self.assertEqual(hashlib.sha256(raw).hexdigest(), row["sha256"])
-            with Image.open(BytesIO(raw)) as header:
-                self.assertEqual(getattr(header, "n_frames", 1), 1)
-                rgb_bytes = header.width * header.height * 3
-            from PIL import __version__ as pillow_version
-            key = PreparedAssetKey(row["sha256"], "lotus-rgb-png-base64:" +
-                                   IMAGE_SOURCE_HASHES["utils.py"] + ":pillow=" + pillow_version)
-            paths.append(str(path))
-            keys[str(path)] = key
-            work = WorkDescriptor((StageWork("source",len(raw),"encoded_bytes"),
-                                   StageWork("prepare",rgb_bytes,"rgb_bytes"),
-                                   StageWork("model",1,"complete_requests")), "model",
-                                  key.transform_signature, lower_primary_units=1,upper_primary_units=1)
-            metadata[key] = PreparedSourceMetadata(row["file"], row["sha256"], work,
-                                                   "historical-manifest+verified-bytes+image-header")
-        metadata_acquisition_s = time.monotonic() - acquisition_started
+        paths, metadata, keys, metadata_acquisition_s = stage_assets()
         self.assertEqual(len(keys), 12)  # No added aliases or duplicated rows.
         self.assertEqual(len({key.content_digest for key in keys.values()}),12)
         all_records = []

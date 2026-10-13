@@ -1,0 +1,246 @@
+{
+  "run_id": "semloom-stage-ray-20261013-hzw91ilu",
+  "status": "passed",
+  "source_identity": {
+    "base_commit": "b8b9b865dc1badec8dd3787310c7077094d20ce2",
+    "base_tar_sha256": "8dd8112e764f31368a8783a67f236bc8a142d71214decf66a63f7d48e4ff34db",
+    "overlay_tar_sha256": "635dee6f7de6b4206e275832f0b95b54e68c08cf4dd5a85af656bc58321f9e1f",
+    "files": [
+      {
+        "path": "code/tests/modalities/image/test_lotus_stage_demand.py",
+        "sha256": "4c35e97ddbb0d2ecb1a963456c2255600ec56bf38a8886a024d7b8384cb19b3e"
+      },
+      {
+        "path": "code/tests/modalities/image/test_lotus_stage_ray.py",
+        "sha256": "2c1c58062428565d245a9dbd5cb8c5b99043de242973b7a003e09bd7b91d1dcc"
+      }
+    ]
+  },
+  "versions": {
+    "python": "3.12.3",
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "lotus_ai": "1.2.4",
+    "Pillow": "12.2.0",
+    "psutil": "7.2.2"
+  },
+  "fixture_posts": 100,
+  "success_posts": 76,
+  "error_posts": 24,
+  "real_model_calls": 0,
+  "gpu_starts": 0,
+  "ray_clusters_started_total": 3,
+  "window": {
+    "t0": "2026-10-13T08:43:51.478632+00:00",
+    "deadline": "2026-10-13T08:53:51.478632+00:00",
+    "max_fixture_posts": 100,
+    "model_posts": 0,
+    "cpu_affinity": [
+      24,
+      25,
+      26,
+      27
+    ],
+    "num_ray_cpus": 2,
+    "num_ray_gpus": 0,
+    "max_sampled_summed_rss_bytes": 4294967296
+  },
+  "release_check": {
+    "checked_utc": "2026-10-13T08:53:06.003708+00:00",
+    "observed_process_identities": 10,
+    "live_matching_identities": [],
+    "host_lease_exists": false,
+    "fixture_posts": 100,
+    "supervisor": {
+      "status": "passed",
+      "started_ns": 3029937041684180,
+      "remote_compute_end_known": false,
+      "worker_exit": 0,
+      "remaining_owned_pids": [],
+      "ended_ns": 3029979415965495
+    }
+  },
+  "records": [
+    {
+      "arm": "static_bytes",
+      "repeat": 0,
+      "error_case": false,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "task_wall_s": 4.714388100896031,
+      "ready_query_wall_s": 4.698093872051686,
+      "lifecycle_wall_s": 4.751359011977911,
+      "close_s": 0.003752604592591524,
+      "prepared_payload_bytes": 9747951,
+      "peak_driver_rss_bytes": 1235386368,
+      "peak_summed_rss_bytes": 2429820928,
+      "rss_samples": 57,
+      "cumulative_operations_s": {
+        "image_prepare": 2.103918762,
+        "sdk_prepare": 0.313749769,
+        "sdk_parse": 1.188709657
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.979224195,
+        "put_ns": 0.090393799,
+        "worker_elapsed_ns": 0.523572283,
+        "await_elapsed_ns": 0.613690508
+      }
+    },
+    {
+      "arm": "consumer_bytes",
+      "repeat": 0,
+      "error_case": false,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "task_wall_s": 2.7082991525530815,
+      "ready_query_wall_s": 2.693082182202488,
+      "lifecycle_wall_s": 2.7453307728283107,
+      "close_s": 0.00426088972017169,
+      "prepared_payload_bytes": 9747951,
+      "peak_driver_rss_bytes": 1261174784,
+      "peak_summed_rss_bytes": 2465243136,
+      "rss_samples": 39,
+      "cumulative_operations_s": {
+        "image_prepare": 1.817876958,
+        "sdk_prepare": 0.291631095,
+        "sdk_parse": 0.221108474
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.347626193,
+        "put_ns": 0.094387192,
+        "worker_elapsed_ns": 0.24822914399999998,
+        "await_elapsed_ns": 0.345068665
+      }
+    },
+    {
+      "arm": "consumer_bytes",
+      "repeat": 1,
+      "error_case": false,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "task_wall_s": 2.834860560949892,
+      "ready_query_wall_s": 2.8225504443980753,
+      "lifecycle_wall_s": 2.87633258709684,
+      "close_s": 0.004053110722452402,
+      "prepared_payload_bytes": 9747951,
+      "peak_driver_rss_bytes": 1277947904,
+      "peak_summed_rss_bytes": 2483679232,
+      "rss_samples": 41,
+      "cumulative_operations_s": {
+        "image_prepare": 1.832214663,
+        "sdk_prepare": 0.292854107,
+        "sdk_parse": 0.2344643
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.375704918,
+        "put_ns": 0.045826811,
+        "worker_elapsed_ns": 0.37867161,
+        "await_elapsed_ns": 0.52257257
+      }
+    },
+    {
+      "arm": "static_bytes",
+      "repeat": 1,
+      "error_case": false,
+      "prepare_calls": 17,
+      "copied_uri_bytes": 9736050,
+      "task_wall_s": 2.7233876320533454,
+      "ready_query_wall_s": 2.713941090274602,
+      "lifecycle_wall_s": 2.7679645931348205,
+      "close_s": 0.009772007819265127,
+      "prepared_payload_bytes": 9747951,
+      "peak_driver_rss_bytes": 1290801152,
+      "peak_summed_rss_bytes": 2498121728,
+      "rss_samples": 38,
+      "cumulative_operations_s": {
+        "image_prepare": 1.815090705,
+        "sdk_prepare": 0.279808433,
+        "sdk_parse": 0.234639558
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.376767566,
+        "put_ns": 0.068290874,
+        "worker_elapsed_ns": 0.257038669,
+        "await_elapsed_ns": 0.331398453
+      }
+    },
+    {
+      "arm": "static_bytes",
+      "repeat": 0,
+      "error_case": true,
+      "prepare_calls": 12,
+      "copied_uri_bytes": 6196536,
+      "task_wall_s": 1.8625257359817624,
+      "ready_query_wall_s": 1.8514912039972842,
+      "lifecycle_wall_s": 1.8977384050376713,
+      "close_s": 0.004465561825782061,
+      "prepared_payload_bytes": 6204804,
+      "peak_driver_rss_bytes": 1303597056,
+      "peak_summed_rss_bytes": 2513297408,
+      "rss_samples": 25,
+      "cumulative_operations_s": {
+        "image_prepare": 1.221622346,
+        "sdk_prepare": 0.185797227,
+        "sdk_parse": 0.277100778
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.27659342400000003,
+        "put_ns": 0.095133027,
+        "worker_elapsed_ns": 0.188264314,
+        "await_elapsed_ns": 0.229526117
+      }
+    },
+    {
+      "arm": "consumer_bytes",
+      "repeat": 0,
+      "error_case": true,
+      "prepare_calls": 12,
+      "copied_uri_bytes": 6196536,
+      "task_wall_s": 1.8778344569727778,
+      "ready_query_wall_s": 1.8683372139930725,
+      "lifecycle_wall_s": 1.9049736047163606,
+      "close_s": 0.005054841749370098,
+      "prepared_payload_bytes": 6204804,
+      "peak_driver_rss_bytes": 1327136768,
+      "peak_summed_rss_bytes": 2538295296,
+      "rss_samples": 26,
+      "cumulative_operations_s": {
+        "image_prepare": 1.23261339,
+        "sdk_prepare": 0.18754784800000002,
+        "sdk_parse": 0.286617597
+      },
+      "cumulative_transport_s": {
+        "payload_ns": 0.331597064,
+        "put_ns": 0.042165965,
+        "worker_elapsed_ns": 0.174467462,
+        "await_elapsed_ns": 0.223593304
+      }
+    }
+  ],
+  "scope": "actual LOTUS -> SemLoom Core -> Daft finite payload batches -> Ray HTTP actors -> localhost orientation/429 fixture; not PG E2E or VLM performance",
+  "memory_scope": "50ms sampled RSS from backend binding through close; source metadata before sampling; summed RSS is not unique physical memory, subinterval peaks may be missed",
+  "timing_scope": "task_wall includes source hash/header metadata, case-specific binding/setup, image preparation, admission and result consumption; ready_query starts immediately before sem_filter; startup/close separate; cumulative overlapped durations not additive",
+  "request_scope": "complete canonical received JSON matches prepared requests and ordered SDK outputs; prepared body bytes counted; raw HTTP wire/H2D unavailable",
+  "failures": [
+    {
+      "attempt": 1,
+      "error": "fixture ready_bytes exceeded object_bytes; rejected before HTTP",
+      "fixture_posts": 0
+    },
+    {
+      "attempt": 2,
+      "error": "fixture API base incorrectly retained /chat; SDK configuration rejected before HTTP",
+      "fixture_posts": 0
+    },
+    {
+      "attempt": "release-check-first",
+      "error": "system Python missing psutil; existing driver then independently verified ten PID+birth identities",
+      "fixture_posts": 0
+    }
+  ],
+  "metadata_network": "earlier LiteLLM imports/probes attempted remote price metadata and timed out; final fixture set existing LITELLM_LOCAL_MODEL_COST_MAP=True; no dependencies installed",
+  "evidence_archive_sha256": "8ec9cb89fc6b306976bbd06a1b09d511e60891f93f2296bf20ce4cf90018939c",
+  "evidence_members": 32
+}

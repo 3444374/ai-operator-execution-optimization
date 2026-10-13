@@ -475,5 +475,16 @@
     "evidence_archive_sha256": "abb224268b7694b79b3cdf11b88e63fa4b5cc4fc58084e9f3fc1c2d8a6ed5623",
     "evidence_members": 18,
     "implementation_commit": "27815f3e0df30221b55dcebda35603c26c32260c"
+  },
+  "stage_a_daft_ray": {
+    "summary_file": "stage-ray-verification.json",
+    "run_id": "semloom-stage-ray-20261013-hzw91ilu",
+    "status": "passed",
+    "fixture_posts": 100,
+    "real_model_calls": 0,
+    "gpu_starts": 0,
+    "ray_clusters_started_total": 3,
+    "evidence_archive_sha256": "8ec9cb89fc6b306976bbd06a1b09d511e60891f93f2296bf20ce4cf90018939c",
+    "evidence_members": 32
   }
 }
