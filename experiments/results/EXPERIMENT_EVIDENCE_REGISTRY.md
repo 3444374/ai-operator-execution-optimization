@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-13：[持久副本反馈配对](diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)。
+实际123批/8156原localhost请求、0未闭unit/owner清理确认；五臂三重复、独立先验与多有效变化周期，K8强RR仍优。首样本stale和旧route缺精确sample绑定限制保留；buffer诊断降低不宣称稳定JCT收益，修后guard故障测试独立于旧测量来源。
+
 2026-10-13：[副本反馈支持与审计修订](diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
 37项确定性回归、3项replay（16localhost POST），模型/GPU/服务器新增0。47种损坏正常/-O均拒绝；原40批820 metadata两模式复核不变。同clock离线rate修正不推导误路由或反事实JCT，原负结果保持；新持久配对pending。
 

@@ -1,0 +1,13 @@
+test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget (test_replica_model_replay.ReplicaModelReplayTests.test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget) ... ok
+test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger (test_replica_model_replay.ReplicaModelReplayTests.test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger) ... ok
+test_start_hook_failure_closes_core_without_post_or_budget_refund (test_replica_model_replay.ReplicaModelReplayTests.test_start_hook_failure_closes_core_without_post_or_budget_refund) ... ok
+test_absolute_batch_deadline_drains_original_call_within_cleanup_window (test_replica_replay_owner.ReplicaReplayOwnerTests.test_absolute_batch_deadline_drains_original_call_within_cleanup_window) ... ok
+test_failed_start_poisons_owner_and_keeps_reserved_budget (test_replica_replay_owner.ReplicaReplayOwnerTests.test_failed_start_poisons_owner_and_keeps_reserved_budget) ... ok
+test_final_trace_or_cleanup_evidence_failure_poisons_owner_without_http (test_replica_replay_owner.ReplicaReplayOwnerTests.test_final_trace_or_cleanup_evidence_failure_poisons_owner_without_http) ... ok
+test_prepare_and_open_failures_always_detach_and_reap_without_http (test_replica_replay_owner.ReplicaReplayOwnerTests.test_prepare_and_open_failures_always_detach_and_reap_without_http) ... ok
+test_queries_reuse_feedback_and_owner_and_flush_buffered_trace (test_replica_replay_owner.ReplicaReplayOwnerTests.test_queries_reuse_feedback_and_owner_and_flush_buffered_trace) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.512s
+
+OK

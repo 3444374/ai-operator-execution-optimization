@@ -1,0 +1,812 @@
+{
+  "evidence_type": "software_fixture_persistent_owner",
+  "model_requests": 0,
+  "gpu_count": 0,
+  "server_load": false,
+  "posts": 8156,
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "persistent-replica",
+    "limit": 8200,
+    "allocated_requests": 8156,
+    "deadline_utc": 1791887250.921417,
+    "units": [
+      {
+        "unit_id": "change-cal-k2",
+        "first_attempt": 1,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-cal-k4",
+        "first_attempt": 81,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-cal-k8",
+        "first_attempt": 161,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-round_robin",
+        "first_attempt": 241,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-adaptive_route",
+        "first_attempt": 257,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-rr_supply",
+        "first_attempt": 273,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-adaptive_supply",
+        "first_attempt": 289,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-fixed_rate",
+        "first_attempt": 305,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-round_robin",
+        "first_attempt": 321,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-adaptive_route",
+        "first_attempt": 577,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-rr_supply",
+        "first_attempt": 833,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-adaptive_supply",
+        "first_attempt": 1089,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-fixed_rate",
+        "first_attempt": 1345,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-fixed_rate",
+        "first_attempt": 1601,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-adaptive_supply",
+        "first_attempt": 1857,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-rr_supply",
+        "first_attempt": 2113,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-adaptive_route",
+        "first_attempt": 2369,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-round_robin",
+        "first_attempt": 2625,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-rr_supply",
+        "first_attempt": 2881,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-fixed_rate",
+        "first_attempt": 3137,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-round_robin",
+        "first_attempt": 3393,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-adaptive_supply",
+        "first_attempt": 3649,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-adaptive_route",
+        "first_attempt": 3905,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-cal-k2",
+        "first_attempt": 4161,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-cal-k4",
+        "first_attempt": 4241,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-cal-k8",
+        "first_attempt": 4321,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-warm-round_robin",
+        "first_attempt": 4401,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-warm-adaptive_route",
+        "first_attempt": 4417,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-warm-rr_supply",
+        "first_attempt": 4433,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-warm-adaptive_supply",
+        "first_attempt": 4449,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-warm-fixed_rate",
+        "first_attempt": 4465,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-0-round_robin",
+        "first_attempt": 4481,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-0-adaptive_route",
+        "first_attempt": 4545,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-0-rr_supply",
+        "first_attempt": 4609,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-0-adaptive_supply",
+        "first_attempt": 4673,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-0-fixed_rate",
+        "first_attempt": 4737,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-1-fixed_rate",
+        "first_attempt": 4801,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-1-adaptive_supply",
+        "first_attempt": 4865,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-1-rr_supply",
+        "first_attempt": 4929,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-1-adaptive_route",
+        "first_attempt": 4993,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-1-round_robin",
+        "first_attempt": 5057,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-2-rr_supply",
+        "first_attempt": 5121,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-2-fixed_rate",
+        "first_attempt": 5185,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-2-round_robin",
+        "first_attempt": 5249,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-2-adaptive_supply",
+        "first_attempt": 5313,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "homogeneous-measure-2-adaptive_route",
+        "first_attempt": 5377,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-cal-k2",
+        "first_attempt": 5441,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-cal-k4",
+        "first_attempt": 5521,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-cal-k8",
+        "first_attempt": 5601,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-warm-round_robin",
+        "first_attempt": 5681,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-warm-adaptive_route",
+        "first_attempt": 5697,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-warm-rr_supply",
+        "first_attempt": 5713,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-warm-adaptive_supply",
+        "first_attempt": 5729,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-warm-fixed_rate",
+        "first_attempt": 5745,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-0-round_robin",
+        "first_attempt": 5761,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-0-adaptive_route",
+        "first_attempt": 5801,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-0-rr_supply",
+        "first_attempt": 5841,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-0-adaptive_supply",
+        "first_attempt": 5881,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-0-fixed_rate",
+        "first_attempt": 5921,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-1-fixed_rate",
+        "first_attempt": 5961,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-1-adaptive_supply",
+        "first_attempt": 6001,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-1-rr_supply",
+        "first_attempt": 6041,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-1-adaptive_route",
+        "first_attempt": 6081,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-1-round_robin",
+        "first_attempt": 6121,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-2-rr_supply",
+        "first_attempt": 6161,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-2-fixed_rate",
+        "first_attempt": 6201,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-2-round_robin",
+        "first_attempt": 6241,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-2-adaptive_supply",
+        "first_attempt": 6281,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "no_ready-measure-2-adaptive_route",
+        "first_attempt": 6321,
+        "requests": 40,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-cal-k2",
+        "first_attempt": 6361,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-cal-k4",
+        "first_attempt": 6393,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-cal-k8",
+        "first_attempt": 6425,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-warm-round_robin",
+        "first_attempt": 6457,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-warm-adaptive_route",
+        "first_attempt": 6473,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-warm-rr_supply",
+        "first_attempt": 6489,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-warm-adaptive_supply",
+        "first_attempt": 6505,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-warm-fixed_rate",
+        "first_attempt": 6521,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-0-round_robin",
+        "first_attempt": 6537,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-0-adaptive_route",
+        "first_attempt": 6569,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-0-rr_supply",
+        "first_attempt": 6601,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-0-adaptive_supply",
+        "first_attempt": 6633,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-0-fixed_rate",
+        "first_attempt": 6665,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-1-fixed_rate",
+        "first_attempt": 6697,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-1-adaptive_supply",
+        "first_attempt": 6729,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-1-rr_supply",
+        "first_attempt": 6761,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-1-adaptive_route",
+        "first_attempt": 6793,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-1-round_robin",
+        "first_attempt": 6825,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-2-rr_supply",
+        "first_attempt": 6857,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-2-fixed_rate",
+        "first_attempt": 6889,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-2-round_robin",
+        "first_attempt": 6921,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-2-adaptive_supply",
+        "first_attempt": 6953,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "client-measure-2-adaptive_route",
+        "first_attempt": 6985,
+        "requests": 32,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-cal-k2",
+        "first_attempt": 7017,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-cal-k4",
+        "first_attempt": 7097,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-cal-k8",
+        "first_attempt": 7177,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-warm-round_robin",
+        "first_attempt": 7257,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-warm-adaptive_route",
+        "first_attempt": 7273,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-warm-rr_supply",
+        "first_attempt": 7289,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-warm-adaptive_supply",
+        "first_attempt": 7305,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-warm-fixed_rate",
+        "first_attempt": 7321,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-0-round_robin",
+        "first_attempt": 7337,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-0-adaptive_route",
+        "first_attempt": 7349,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-0-rr_supply",
+        "first_attempt": 7361,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-0-adaptive_supply",
+        "first_attempt": 7373,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-0-fixed_rate",
+        "first_attempt": 7385,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-1-fixed_rate",
+        "first_attempt": 7397,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-1-adaptive_supply",
+        "first_attempt": 7409,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-1-rr_supply",
+        "first_attempt": 7421,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-1-adaptive_route",
+        "first_attempt": 7433,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-1-round_robin",
+        "first_attempt": 7445,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-2-rr_supply",
+        "first_attempt": 7457,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-2-fixed_rate",
+        "first_attempt": 7469,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-2-round_robin",
+        "first_attempt": 7481,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-2-adaptive_supply",
+        "first_attempt": 7493,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "tail-measure-2-adaptive_route",
+        "first_attempt": 7505,
+        "requests": 12,
+        "claimed": 1
+      },
+      {
+        "unit_id": "cold-0",
+        "first_attempt": 7517,
+        "requests": 128,
+        "claimed": 1
+      },
+      {
+        "unit_id": "cold-1",
+        "first_attempt": 7645,
+        "requests": 128,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-0-sync",
+        "first_attempt": 7773,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-0-buffered",
+        "first_attempt": 7837,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-1-buffered",
+        "first_attempt": 7901,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-1-sync",
+        "first_attempt": 7965,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-2-sync",
+        "first_attempt": 8029,
+        "requests": 64,
+        "claimed": 1
+      },
+      {
+        "unit_id": "trace-2-buffered",
+        "first_attempt": 8093,
+        "requests": 64,
+        "claimed": 1
+      }
+    ]
+  },
+  "duration_s": 68.79794001579285,
+  "all_owners_clean": true,
+  "cleanup": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "source_hashes": {
+    "src/experiments/replica_model_replay.py": "08e3f13e0ea741146227cce76b4cc8376f4bb93687082bfc89a993c67c289985",
+    "src/execution_provider/adapters/replica_feedback.py": "1c2a3d808bdc6d547eae79b8563b6d8a62e916fecd613c5bb39969fbc65bca84",
+    "src/scheduling/endpoint_routing/replica_adaptation.py": "ec837083f40dbbbe1cbfd31b9e42f81c28ec6c12e9a68fb04767a2cacdb1a2c0",
+    "scripts/benchmarks/replica_persistent_probe.py": "d9ad70b951c7e54cb9d65c44fb86950a64c5b2b050a6b4ee31ed61dce4af2448"
+  }
+}

@@ -19,6 +19,10 @@
 `benchmarks/replica_capacity_change_probe.py <new-private-directory-outside-git>`只运行90秒／1800 localhost POST的固定能力变化／恢复检查；
 复用现有HTTP fixture和同一Core replay，不访问服务器、GPU或模型。[结果](../../experiments/results/diagnostics/replica_adaptation_20261013/capacity_change/README.md)区分K2机制诊断与K8强静态参照。
 
+`benchmarks/replica_persistent_probe.py <new-private-directory-outside-git>`复用同一execution跨查询，五臂8156计划／8200硬预算、120秒监督；
+`--causal-pair`只作RR／online的1808计划／1920硬预算、30秒小对子。完整请求和持久预算保留，服务器／GPU／模型0。
+[实际源码overlay与结果](../../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)保留原窗口保护缺口、首样本stale与无净收益；修后对子尚待执行。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

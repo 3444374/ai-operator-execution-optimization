@@ -1,5 +1,8 @@
 # 项目日志
 
+2026-10-13：[持久副本反馈配对与失败保护](experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)。
+8156软件请求在68.798秒内完成，保留强RR负例、首次信息年龄与完整观察成本；归档e353+实际overlay，修后源码不追溯覆盖测量。开户/准备失败和批次/清理绝对截止已修，8项生命周期与故障检查通过，精确source小对子pending。
+
 2026-10-13：[副本反馈支持与审计修订](experiments/results/diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
 修复短尾窗口、合法候选和串行支持，并使证据校验不受Python -O跳过；默认RR及Core/LOTUS接线保持，37确定性/31旧路径/3 replay和两模式资格检查通过。原820结果只读保留，新持久配对尚未完成。
 
