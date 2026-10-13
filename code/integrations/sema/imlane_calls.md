@@ -9,7 +9,7 @@
 
 ## 调用与配置
 
-`IMLaneCallExecutor(config, options, *, max_batch_rows=None, max_batch_bytes=32*1024**2, max_pending_calls=128)`
+`IMLaneCallExecutor(config, options, *, max_batch_rows=None, max_batch_bytes=None, max_pending_calls=None, ...)`
 的`backend`为`imlane`。`IMLaneCallConfig`必须显式给出：
 
 | 字段 | 作用 |
@@ -20,8 +20,17 @@
 | `author_build_identity` | 已核验作者build-identity.json的绝对路径 |
 | `n_executors` | 实际启动Coordinator的声明数，默认2 |
 | `max_batch_rows` | 同一完整调用批次的显式行容量；省略时128，已验证新桥配置可选2000 |
+| `max_input_payload_bytes` | 全批次原始payload容量；省略时32MiB |
+| `max_input_wire_bytes` | UTF-8 JSON lines及换行容量；省略时48MiB |
+| `max_item_payload_bytes` | 单项payload容量；省略时8MiB |
+| `max_pending_calls` | 桥内待交付数量；省略时128，不表示作者执行并发 |
+| `max_batch_response_bytes` | 全批次完整响应累计容量；省略时32MiB |
 
-省略构造参数`max_batch_rows`时使用配置字段；公共`NativeCallExecutor`将自身上限与配置值取较小值。
+六项均由`IMLaneCallConfig.batch_limits`校验并传到既有DBEnd桥；公开单查询、常驻和MovieQuery的配置文件
+读取同一组字段。省略构造参数时使用配置字段，显式参数可选择合法额度；公共`NativeCallExecutor`将自身
+行数／payload上限与配置值取较小值，其他四项继续采用配置。`imlane_runtime_identity`记录六项实际配置。
+输入预检拒绝时先清除上一批结束报告，不能把上一批`clean=True`用于本次失败。
+本地47项回归通过、1项缺实际库条件跳过，只证明配置／协议fixture行为，不替代作者库、模型或性能核验。
 SemBench的MovieQuery、数据／运行时预检和实际LOTUS执行器读取同一配置，不按128行拆开原Q1。
 新配置须指向已验证桥二进制，摘要为`b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6`。
 Coordinator PID/start ticks、端口、namespace和产物目录由新的拥有者重新建立，不能复用已结束的证据配置。

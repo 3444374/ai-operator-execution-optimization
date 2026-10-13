@@ -18,6 +18,64 @@ def configs():
 
 
 class IMLaneEntryTests(unittest.TestCase):
+    def test_all_six_private_capacities_reach_both_author_factories(self):
+        from dataclasses import asdict
+        import json
+        from types import SimpleNamespace
+        from src.baselines.text.frameworks.imlane_calls import IMLaneCallExecutor
+        from src.experiments.postgresql.imlane_query import imlane_runtime_identity
+        limits = dict(max_batch_rows=256, max_input_payload_bytes=4096, max_input_wire_bytes=8192,
+                      max_item_payload_bytes=1024, max_pending_calls=8, max_batch_response_bytes=2048)
+        with tempfile.TemporaryDirectory() as temporary:
+            def delegate(*args, **kwargs):
+                return SimpleNamespace(config={'namespace': 'fixture'}, work_root=Path(temporary),
+                                       limits=kwargs['limits'], last_close_report=None)
+            with mock.patch('src.baselines.text.frameworks.imlane_calls.SemaIMLaneExecutor', side_effect=delegate):
+                for mode in ('cpython', 'ray'):
+                    path = Path(temporary) / (mode + '.json')
+                    path.write_text(json.dumps(dict(asdict(configs()[mode]), **limits)))
+                    config = load_imlane_call_configs({mode: path})[mode]
+                    direct = IMLaneCallExecutor(config)
+                    graph = NativeCallExecutor('imlane', imlane_config=config)
+                    self.assertEqual(asdict(direct.delegate.limits), limits)
+                    self.assertEqual(asdict(graph._imlane.delegate.limits), limits)
+                    self.assertEqual(imlane_runtime_identity(config)['configured_limits'], limits)
+                    # The caller's smaller source allowance still applies without resetting other capacities.
+                    lower = NativeCallExecutor('imlane', imlane_config=config,
+                                               max_batch_rows=64, max_batch_bytes=512)
+                    self.assertEqual(asdict(lower._imlane.delegate.limits),
+                                     dict(limits, max_batch_rows=64, max_input_payload_bytes=512))
+
+    def test_private_capacity_types_and_maxima_are_checked_before_factory(self):
+        from dataclasses import asdict
+        from src.baselines.text.frameworks.imlane_limits import IMLaneBatchLimits
+        import json
+        defaults = asdict(IMLaneBatchLimits())
+        caps = dict(defaults, max_batch_rows=4096)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'config.json'
+            for name, maximum in caps.items():
+                for invalid in (True, 0, '1', maximum + 1):
+                    path.write_text(json.dumps(dict(asdict(configs()['cpython']), **{name: invalid})))
+                    with self.subTest(name=name, invalid=invalid), self.assertRaises(ValueError):
+                        load_imlane_call_configs({'cpython': path})
+
+    def test_rejected_input_cannot_reuse_a_previous_clean_report(self):
+        from types import SimpleNamespace
+        from src.baselines.text.frameworks.imlane_calls import IMLaneCallExecutor
+        with tempfile.TemporaryDirectory() as temporary, mock.patch(
+                'src.baselines.text.frameworks.imlane_calls.SemaIMLaneExecutor') as factory:
+            factory.return_value = SimpleNamespace(config={'namespace': 'fixture'},
+                work_root=Path(temporary), last_close_report={'clean': True})
+            executor = IMLaneCallExecutor(configs()['cpython'])
+            executor.last_close_report = {'clean': True}
+            executor.last_preflight = {'input_rows': 1}
+            with self.assertRaisesRegex(ValueError, 'non-NativeCall'):
+                list(executor.iter_batch((object(),)))
+            self.assertIsNone(executor.last_close_report)
+            self.assertIsNone(executor.last_preflight)
+            self.assertIsNone(executor.delegate.last_close_report)
+
     def test_selected_capacity_reaches_real_public_factory_and_legacy_remains_128(self):
         from types import SimpleNamespace
         from src.baselines.text.frameworks.imlane_calls import IMLaneCallExecutor
