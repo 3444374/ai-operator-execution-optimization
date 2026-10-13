@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "base_commit": "507572eeb783dec56b18e1749be24bd93c5d208a",
+  "scope": "local mock SDK and real Core; no real-library/model/performance claim",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/batch.py": "2a98742f86290447819ffd8f52cf974b756b5e44728f03fdaaddabc5396bb479",
+    "code/tests/semantic_methods/test_lotus_control.py": "2b9d73a2effec442a4244746dde279f1d041a37965a8f05eb71bde3ce8925d47",
+    "code/src/planning/work.py": "b834dd1cf3b2ce0563e49ece35eb2b7c1afca76fe7e2eeb8ba9246ef35e6a779",
+    "code/src/execution_provider/adapters/native_tasks.py": "a451195d9d15b72260503ca105f449a5da144e9bf07d82e91b60e0e806ca8e34",
+    "code/src/scheduling/core/task_info.py": "f13062e9b1d246918212fc456b4b6c05ed39db85c21894fbee9070fbc046d51f"
+  },
+  "command": "PYTHONPATH=code python3 -m unittest tests.semantic_methods.test_lotus_control tests.semantic_methods.test_lotus_call_limits tests.semantic_methods.test_lotus_response_replay tests.execution_provider.test_native_tasks",
+  "tests": {
+    "total": 53,
+    "passed": 50,
+    "skipped": 3,
+    "errors": 0,
+    "failures": 0,
+    "elapsed_s": 0.147
+  },
+  "behavior": [
+    "default request count remains 1",
+    "immutable per-call descriptor and same payload passed to Core",
+    "lower/upper and calibration provenance retained",
+    "cost 1/3: C peak 2 and W peak 4",
+    "backpressured suffix described once",
+    "remote typed limits and factory without Engine",
+    "noncallable/non-typed/exception rejection and cleanup",
+    "unit mismatch and item cost exceeding W rejected by Core",
+    "cancellation and deadline checked after callback before offer"
+  ],
+  "server_load": false,
+  "http_calls": 0,
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "prior_fixture_cumulative_charged_posts": 1909,
+  "cumulative_fixture_limit": 4240
+}

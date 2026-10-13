@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-13：LOTUS单Map可选工作描述
+
+- 核实已有WorkDescriptor及prepare_native_task(work)入口，LOTUS缺少接线；新增可选describe_work，默认请求数保持。
+- [本地资格](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-work-descriptor)50通过/3实际SDK缺库跳过，异质单位、容量、回压、远程factory与异常/取消清理均覆盖。
+- 已向replica owner提前交接公共接口职责，不改admission/router/C/W控制，不扩任意Filter→Map；本轮服务器负载0。
+
 ## 2026-10-13：共同LOTUS版本剩余资格与释放
 
 - 公共两文件接口补丁`e4677b4c`直接父为共同`28093954`，研究分支无树变merge保留，可独立接续。

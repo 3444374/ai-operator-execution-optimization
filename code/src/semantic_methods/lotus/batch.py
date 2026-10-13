@@ -6,6 +6,7 @@ import time
 import math
 
 from ...execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
+from ...planning.work import WorkDescriptor
 from ...scheduling.core.session_contract import SessionLimits, State
 from ...execution_provider.adapters.full_response import decode_full_response
 from .sdk import LotusResponseReplay, check_model_config, parse_lotus_response, prepare_call, validate_batch, validate_source
@@ -23,7 +24,7 @@ class LotusBatchExecutor:
                  max_batch_rows=4096, max_batch_result_bytes=16777216,
                  on_response=None, on_batch=None, cancelled=None, timeout_s=120,
                  on_prepared=None, prevalidate_batch=False, retain_full_responses=True, call_limits=None,
-                 session_factory=None, session_limits=None):
+                 session_factory=None, session_limits=None, describe_work=None):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
@@ -32,6 +33,8 @@ class LotusBatchExecutor:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
         if session_factory is not None and not callable(session_factory):
             raise ValueError("LOTUS session factory must be callable")
+        if describe_work is not None and not callable(describe_work):
+            raise ValueError('LOTUS work description must be callable')
         self.execution, self.model_config = execution, model_config
         if call_limits is not None and type(call_limits) is not LotusCallLimits:
             raise TypeError('LOTUS call_limits requires LotusCallLimits')
@@ -60,6 +63,7 @@ class LotusBatchExecutor:
         self.timeout_s, self.last_responses = self.call_limits.batch_timeout_s, ()
         self.last_cleanup_errors = ()
         self.session_factory = session_factory
+        self.describe_work = describe_work
         self.last_preflight = None
 
     def __call__(self, lm, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
@@ -123,8 +127,15 @@ class LotusBatchExecutor:
                             raise ValueError('LOTUS prepared batch input exceeds the declared byte capacity')
                         if self.on_prepared:
                             self.on_prepared(sequence, call)
+                        work = None
+                        if self.describe_work is not None:
+                            work = self.describe_work(sequence, call)
+                            if type(work) is not WorkDescriptor:
+                                raise TypeError('LOTUS work description must return WorkDescriptor')
+                            check_stop()
                         offered.append(prepare_native_task(call.payload, sequence, row_sequence=sequence,
-                            call_id=self.operator_id, max_result_bytes=self.call_limits.max_response_bytes))
+                            call_id=self.operator_id, work=work,
+                            max_result_bytes=self.call_limits.max_response_bytes))
                         prepared_calls[sequence] = call
                     pending = tuple(offered)
                 if pending:

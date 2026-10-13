@@ -218,6 +218,21 @@ python3 code/scripts/analysis/audit_query_sharing_lotus.py \
   --output /tmp/lotus-remaining-new-audit.json
 ```
 
+<a id="lotus-work-descriptor"></a>
+## 单Map可选工作描述的本地接线
+
+源码依据：`planning.work.WorkDescriptor`已有单位/来源/不确定性字段，`prepare_native_task`已有`work`参数，
+DuckDB executor已接`describe_work`；LOTUS的`on_prepared`只观察，原来每次固定走默认请求数。
+新增可选`describe_work(index, prepared_call)`，不设置仍每请求1；同一PreparedLotusCall与原完整payload传给观察、任务和SDK解析。
+typed描述直接进入TaskInfo，Core仍是work单位和C/W容量的权威；未新建估计平台或改Job封口、路由、HTTP。
+
+[本地检查](raw/lotus_work_descriptor_local_20261013.json)记录53项50通过/3实际SDK缺库跳过。
+覆盖默认1、异质1/3进入Core、lower/upper/来源保留、相同规范调用、回压suffix只估计一次、远程无Engine factory、
+回调异常和非typed返回、单位/单项容量拒绝、回调后取消/期限检查及现有响应/清理和native task路径。
+这些是mock SDK与真实Core的接口资格，实际LOTUS新回调、真实模型、批次总量提示及持续短query仍未验证。
+服务器负载与新增HTTP/模型/GPU均0，旧1909/4240额度不变，replica真实模型窗口优先。
+接口与后续有限协议集中在[M4](../../../plans/数据组织.md#query-sharing-costs)，本阶段不把单Map桥扩成任意Filter→Map。
+
 <a id="bridge-review-repairs"></a>
 ## 当前桥接源码的三项审查修复
 

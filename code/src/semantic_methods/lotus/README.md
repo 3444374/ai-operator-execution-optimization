@@ -52,6 +52,13 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 `on_response(index, full)`仍在解析前交给调用方保存证据。SDK结果、错误中的完整响应和批次字节额度继续保留。
 `prevalidate_batch=True`先检查整批纯文本消息与共同参数，复用首条规范准备值；其余完整调用按有限块准备，
 `on_prepared(index, call)`将同一不可变调用值交给观察器，避免观察与执行重复转换。默认`False`保持直接入口。
+`describe_work(index, prepared_call)`是可选的单Map工作描述回调，返回已有typed `WorkDescriptor`，
+通过`prepare_native_task(work=...)`进入Core；不设置时继续每请求1 `work_units`及`request-count`来源。
+回调读取与观察、派发、SDK replay同一份已准备调用，每个位置只计算一次，未接纳suffix重试保持同一描述。
+Core核对primary单位与SessionSpec、单项work/metadata界限，估计不满足容量则拒绝，不自动扩大W或改router。
+来源签名、lower/upper及局部性随原有TaskInfo传递；边界描述的是声明单位的估计，不构成真实时延置信区间。
+回调异常保持第一错误；返回非WorkDescriptor、取消或期限已到时在下一次offer前停止，并尝试关闭自有flow。
+此接口不预测未来Filter结果，不改变batch或Job封口；可信整批总量与容量责任分离仍只是[M4研究项](../../../../experiments/plans/数据组织.md#query-sharing-costs)。
 这项轻校验依赖上述固定版本普通OpenAI纯文本转换，不适用于工具、结构化输出或其他模型转换。
 准备、批次观察与执行使用同一绝对期限；准备块内和接纳、推进之前检查取消及到期。
 完整响应包含实际HTTP状态、重复header、原始body和HTTP版本；Content-Encoding由同版本HTTPX解码，

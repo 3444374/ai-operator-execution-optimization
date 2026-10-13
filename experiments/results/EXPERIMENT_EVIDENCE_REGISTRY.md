@@ -11,6 +11,8 @@ SDK源码/现有Arrow/Pandas通过，108请求smoke及主协议9个完整cell/13
 原30分钟窗口令后续cell退出1，原件和释放证明保留，不能称全协议完成；无模型/GPU/SQL，单样本不能外推性能。
 共同`28093954`后的`01c28df1`只补[5项实库生命周期资格](diagnostics/query_sharing_burst_20261013/README.md#lotus-remaining-qualification)，
 原件与零网络责任复放通过，CPU窗口已独立释放；旧比例不绑定新版本，candidate本次未覆盖长query在途取消。
+后续[可选工作描述接线](diagnostics/query_sharing_burst_20261013/README.md#lotus-work-descriptor)只做本地真实Core/mock SDK资格；
+默认请求数、单位与容量拒绝、回压及清理已覆盖，不当作实际库成本估计或模型性能。
 
 2026-10-13：[原Q2阶段复算与私有账本诊断](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72个已有性能查询分解同机墙钟及匹配服务计数；三个服务器账本只读确认无索引、四条计数全表扫描。正／反顺序localhost三跳fixture的扫描CPU及完整请求随历史增长，机制在本地成立；现场因果占比未测，旧真实9360逻辑／28080POST不减估计开销。同事务持久计数修订已通过14项回归；12组相同条件配对中23000行完整fixture请求从约97–105降至39–43毫秒，小账本略慢保留。上述诊断本身模型新增0；修订随后已部署到[四组匹配原Q2](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)，独立完成48槽／96查询、11520逻辑／34560POST，全部原值、两个服务历史与质量限制保持；后续工作点与长测仍待各自方案。

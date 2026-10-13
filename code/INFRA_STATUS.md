@@ -11,6 +11,8 @@
 共同`28093954`已普通merge，公共两文件typed factory补丁`e4677b4c`可独立应用；
 `01c28df1`的[5项剩余实库资格](../experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-remaining-qualification)通过且已释放。
 这是新版本兼容/生命周期检查；旧23.25%仍属旧源码，新版本性能与真实模型未完成。
+LOTUS可选`describe_work(index, prepared_call)`现接原WorkDescriptor/TaskInfo，默认仍每请求1；
+[本地接口资格](../experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-work-descriptor)50通过/3SDK缺库跳过，服务器负载0。
 
 2026-10-13：[LOTUS文本输入校验](src/semantic_methods/lotus/README.md)在JSON复制前拒绝不可UTF-8编码的原始消息，
 轻量本地预检4项通过，21项固定SDK回归缺库跳过；图像profile和数据组织仍保留在独立研究分支。

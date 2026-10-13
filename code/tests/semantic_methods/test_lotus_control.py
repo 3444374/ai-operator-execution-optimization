@@ -9,6 +9,7 @@ from unittest.mock import patch
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.native_tasks import NativeTaskSession, prepare_native_task
+from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session_contract import Usage
 from src.semantic_methods.budget import MethodBudget, MethodCapacity, row_reservation
 from src.semantic_methods.continuation import Continue, Final, MethodLimits, Request
@@ -22,9 +23,9 @@ from tests.execution_provider.test_native_tasks import fixture
 class LotusControlTests(unittest.TestCase):
     @contextmanager
     def batch(self, *, stop_phase=None, expired=False, initially_cancelled=False,
-              prevalidate=False, retain=True):
-        execution, backend, _ = fixture()
-        state = dict(now=0., cancelled=initially_cancelled, events=[], actual=[])
+              prevalidate=False, retain=True, describe_work=None, capacity=None):
+        execution, backend, _ = fixture(**(capacity or {}))
+        state = dict(now=0., cancelled=initially_cancelled, events=[], actual=[], tasks=[], offers=[], usage=[])
         config = FixedModelConfig('http://localhost/v1/chat/completions', 'fixture', 1000, 'fixture')
 
         def preparing(phase):
@@ -49,15 +50,20 @@ class LotusControlTests(unittest.TestCase):
         class Flow(NativeTaskSession):
             def offer(self, tasks):
                 preparing('offer')
-                return super().offer(tasks)
+                result = super().offer(tasks)
+                state['offers'].append(result)
+                return result
 
             def advance(self, maximum):
                 state['events'].append('advance')
                 return super().advance(maximum)
 
             def wait(self, progress, timeout_s=None):
+                state['usage'].append(execution.engine.capacity.usage())
                 for key in tuple(backend.pending):
-                    state['actual'].append(backend.pending[key][1].task.payload)
+                    task = backend.pending[key][1].task
+                    state['tasks'].append(task)
+                    state['actual'].append(task.payload)
                     backend.complete(key, encode_full_response(FullModelResponse(200, (), b'{}')))
 
             def close(self, *, clean=False):
@@ -68,7 +74,7 @@ class LotusControlTests(unittest.TestCase):
         sdk.OpenAIError = type('OpenAIError', (Exception,), {})
         selected = LotusBatchExecutor(execution, config, query_id='query', operator_id='map',
             cancelled=lambda: state['cancelled'], timeout_s=.01,
-            prevalidate_batch=prevalidate,retain_full_responses=retain)
+            prevalidate_batch=prevalidate,retain_full_responses=retain,describe_work=describe_work)
         with patch.dict('sys.modules', {'openai': sdk}), \
              patch('src.semantic_methods.lotus.batch.NativeTaskSession', Flow), \
              patch('src.semantic_methods.lotus.batch.prepare_call', prepare), \
@@ -112,6 +118,90 @@ class LotusControlTests(unittest.TestCase):
             self.assertEqual(state['events'], [])
             self.assertEqual(execution.engine.jobs.jobs, {})
 
+    def test_default_work_remains_one_request_per_call(self):
+        with self.batch() as (selected, execution, state):
+            self.run_batch(selected)
+            self.assertEqual([t.estimated_work for t in state['tasks']], [1, 1])
+            self.assertTrue(all(t.info.work.calibration_signature == 'request-count' for t in state['tasks']))
+
+    def test_work_descriptor_reaches_core_with_bounds_and_same_prepared_call(self):
+        described, prepared = [], []
+        descriptors = [WorkDescriptor((StageWork('model', units, 'work_units'),), 'model',
+            'fixture-input-proxy', lower_primary_units=1, upper_primary_units=4) for units in (1, 3)]
+        def describe(index, call):
+            described.append((index, call))
+            return descriptors[index]
+        with self.batch(describe_work=describe, capacity=dict(active_work=4)) as (selected, execution, state):
+            selected.on_prepared = lambda index, call: prepared.append((index, call))
+            self.assertEqual(len(self.run_batch(selected)), 2)
+            self.assertEqual([t.estimated_work for t in state['tasks']], [1, 3])
+            self.assertEqual([t.info.work for t in state['tasks']], descriptors)
+            self.assertTrue(all(a[1] is b[1] for a, b in zip(described, prepared)))
+            self.assertEqual(state['actual'], [call.payload for _, call in described])
+            self.assertEqual(max(u.active_work for u in state['usage']), 4)
+            self.assertEqual(max(u.active_requests for u in state['usage']), 2)
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_work_description_is_not_recomputed_for_a_backpressured_suffix(self):
+        described = []
+        def describe(index, call):
+            described.append(index)
+            return WorkDescriptor((StageWork('model', 1, 'work_units'),), 'model', 'fixture-input-proxy')
+        with self.batch(describe_work=describe, prevalidate=True) as (selected, execution, state):
+            rows = [([dict(role='user', content=str(i))], None) for i in range(5)]
+            self.assertEqual(len(selected(None, rows, {}, False, 'fixture')), 5)
+            self.assertEqual(described, list(range(5)))
+            self.assertTrue(any(o.status == 'BACKPRESSURE' for o in state['offers']))
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+
+    def test_bad_work_callback_is_rejected_before_offer_and_preserves_its_error(self):
+        primary = ValueError('fixture work description failed')
+        def fail(index, call):
+            raise primary
+        for describe, expected in ((lambda index, call: None, TypeError), (fail, ValueError)):
+            with self.subTest(describe=describe), self.batch(describe_work=describe) as (selected, execution, state):
+                with self.assertRaises(expected) as caught:
+                    self.run_batch(selected)
+                if describe is fail:
+                    self.assertIs(caught.exception, primary)
+                self.assertNotIn('offer', state['events'])
+                self.assertNotIn('advance', state['events'])
+                self.assertEqual(execution.engine.capacity.usage(), Usage())
+                self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_work_unit_and_item_cost_must_match_core_capacity(self):
+        for units, unit in ((1, 'utf8_bytes'), (3, 'work_units')):
+            descriptor = WorkDescriptor((StageWork('model', units, unit),), 'model', 'fixture-input-proxy')
+            with self.subTest(units=units, unit=unit), self.batch(describe_work=lambda i, c: descriptor) as (selected, execution, state):
+                with self.assertRaisesRegex(RuntimeError, 'offer rejected'):
+                    self.run_batch(selected)
+                self.assertNotIn('advance', state['events'])
+                self.assertEqual(execution.engine.capacity.usage(), Usage())
+                self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_work_description_stop_is_checked_before_task_creation_or_offer(self):
+        for expired in (False, True):
+            with self.subTest(expired=expired), self.batch() as (selected, execution, state):
+                def describe(index, call):
+                    state['cancelled'] = not expired
+                    state['now'] = .02 if expired else 0.
+                    return WorkDescriptor((StageWork('model', 1, 'work_units'),), 'model', 'fixture-input-proxy')
+                selected.describe_work = describe
+                with self.assertRaises(TimeoutError if expired else RuntimeError):
+                    self.run_batch(selected)
+                self.assertNotIn('native', state['events'])
+                self.assertNotIn('offer', state['events'])
+                self.assertEqual(execution.engine.capacity.usage(), Usage())
+                self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_work_callback_must_be_callable_at_construction(self):
+        execution, _, _ = fixture()
+        config = FixedModelConfig('http://localhost/v1/chat/completions', 'fixture', 1000, 'fixture')
+        with self.assertRaisesRegex(ValueError, 'must be callable'):
+            LotusBatchExecutor(execution, config, query_id='q', operator_id='map', describe_work=object())
+        self.assertEqual(execution.engine.jobs.jobs, {})
+
     def test_optional_session_factory_preserves_batch_consumer(self):
         from src.semantic_methods.lotus import batch
         with self.batch() as (selected, execution, state):
@@ -132,6 +222,21 @@ class LotusControlTests(unittest.TestCase):
             self.assertEqual(len(self.run_batch(selected)),2)
             self.assertEqual(execution.engine.jobs.jobs,{})
             self.assertEqual(selected.last_cleanup_errors,())
+
+    def test_remote_work_callback_passes_description_without_frontend_engine(self):
+        from src.semantic_methods.lotus import batch
+        descriptor = WorkDescriptor((StageWork('model', 2, 'work_units'),), 'model',
+            'fixture-input-proxy', lower_primary_units=1, upper_primary_units=3)
+        with self.batch(capacity=dict(active_work=4)) as (selected, execution, state):
+            constructor = batch.NativeTaskSession
+            selected = LotusBatchExecutor(None, selected.model_config, query_id='query', operator_id='map',
+                session_factory=lambda q, o: constructor(execution, q, o),
+                session_limits=execution.engine.capacity.limits, describe_work=lambda i, c: descriptor)
+            self.assertEqual(len(self.run_batch(selected)), 2)
+            self.assertTrue(all(t.info.work is descriptor for t in state['tasks']))
+            self.assertEqual(max(u.active_work for u in state['usage']), 4)
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
+            self.assertEqual(execution.engine.jobs.jobs, {})
 
     def test_remote_constructor_rejects_missing_or_untyped_limits_before_flow(self):
         config=FixedModelConfig('http://localhost/v1/chat/completions','fixture',1000,'fixture')
