@@ -138,7 +138,8 @@ def main(argv=None):
             raise RuntimeError('SemLoom SQL validation requires the pinned Ray, Daft and DuckDB versions')
         if ray.is_initialized():
             raise RuntimeError('SemLoom validation requires its own fresh Ray connection')
-        daft.set_runner_native(num_threads=8)
+        from src.infrastructure.daft_runtime import configure_daft_runner
+        configure_daft_runner('native', num_threads=8)
         ray_owned = True
         cluster = start_ray(ray, args.ray_temp.absolute(), args.ray_port_base)
         report['owned_ray_started'] = True
