@@ -218,7 +218,9 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     owner = 'Ray Core' if arm == 'supplier-native-ray' else 'Ray Data'
     if arm == 'fixed-map-semloom':
         owner = 'SemLoom Daft/Ray' if physical.payload_backend == 'daft' else 'SemLoom Arrow/Ray'
-    return physical,dict(runtime,owner=owner,version=ray.__version__,source='external finite prepared calls')
+    # The context updates this same report when its driver disconnects on exit.
+    runtime.update(owner=owner,version=ray.__version__,source='external finite prepared calls')
+    return physical,runtime
 
 
 def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, root,
