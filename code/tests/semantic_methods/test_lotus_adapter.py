@@ -106,7 +106,8 @@ class LotusSdkTests(unittest.TestCase):
         messages = [{"role":"user","content":"first"}]
         invalid_messages = ([], [{"role":"tool","content":"last"}],
             [{"role":"user","content":None}], [{"role":"user","content":"last","extra":1}],
-            [{"role":"user","content":"\ud800"}])
+            [{"role":"user","content":"\ud800"}],
+            [{"role":"user","content":"\ud83d\ude00"}])
         invalid_parameters = ({"stream":True},{"n":2},{"num_retries":1},{"max_retries":1},
             {"timeout":float('inf')},{"temperature":float('nan')},
             {"response_format":{"type":"json_object"}},{"logit_bias":{1:object()}},
@@ -143,28 +144,38 @@ class LotusSdkTests(unittest.TestCase):
             self.assertEqual(execution.engine.jobs.jobs,{})
 
     def test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit(self):
+        import lotus
+        from openai import OpenAIError
         cases=((429,b'{"error":{"message":"controlled"}}',8192),
             (200,b'{"broken":',8192),(200,b'{"value":"complete"}',1))
         for status,body,limit in cases:
             with self.subTest(status=status,limit=limit), fixture_server(failure=lambda request:(status,body)) as (base,calls), local_execution(base) as execution:
                 selected=LotusBatchExecutor(execution,config(base),query_id='no-raw-history',operator_id='map',
                     prevalidate_batch=True,retain_full_responses=False,max_batch_result_bytes=limit)
-                if status!=200:
-                    result=selected(model(base),[([dict(role='user',content='error')],None)],model(base).kwargs,False,'fixture')
-                    self.assertEqual(result[0].full_response.body,body)
-                else:
-                    with self.assertRaises(ValueError) as caught:
-                        lm=model(base)
-                        selected(lm,[([dict(role='user',content='error')],None)],lm.kwargs,False,'fixture')
+                lm=model(base)
+                messages=[dict(role='user',content='error')]
+                if limit == 1:
+                    with self.assertRaisesRegex(ValueError, 'declared byte limit') as caught:
+                        selected(lm,[(messages,None)],lm.kwargs,False,'fixture')
                     self.assertEqual(caught.exception.full_response.body,body)
+                    expected_calls = 1
+                else:
+                    with lotus.settings.context(enable_cache=False), self.assertRaises(OpenAIError) as native_error:
+                        model(base)([messages], show_progress_bar=False)
+                    result=selected(lm,[(messages,None)],lm.kwargs,False,'fixture')
+                    self.assertIsInstance(result[0],type(native_error.exception))
+                    self.assertEqual(result[0].full_response.body,body)
+                    self.assertEqual(result[0].full_response.status_code,status)
+                    expected_calls = 2
                 self.assertEqual(selected.last_responses,())
-                self.assertEqual(len(calls),1)
+                self.assertEqual(len(calls),expected_calls)
+                self.assertEqual(execution.engine.capacity.usage().held_tasks,0)
                 self.assertEqual(execution.engine.jobs.jobs,{})
 
     def test_batch_validation_preserves_unicode_and_canonical_call_values(self):
         with fixture_server() as (base,calls), local_execution(base) as execution:
             lm=model(base)
-            messages=[[dict(role='user',content=text)] for text in ('plain','你好','\ud83d\ude00')]
+            messages=[[dict(role='user',content=text)] for text in ('plain','你好','😀')]
             data=[(value,None) for value in messages]
             original=prepare_call
             first=validate_batch(lm,data,lm.kwargs)
@@ -180,6 +191,34 @@ class LotusSdkTests(unittest.TestCase):
             self.assertCountEqual(calls,[json.loads(call.payload) for _,call in prepared])
             self.assertEqual([r.usage.total_tokens for r in responses],[10]*3)
             self.assertEqual(selected.last_responses,())
+            self.assertEqual(execution.engine.jobs.jobs,{})
+
+    def test_native_surrogate_input_is_rejected_before_transport_or_flow(self):
+        import lotus
+        from openai import OpenAIError
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            for text in ('\ud800', '\ud83d\ude00'):
+                with self.subTest(text=ascii(text)):
+                    messages=[dict(role='user',content=text)]
+                    lm=model(base)
+                    with lotus.settings.context(enable_cache=False), self.assertRaises(OpenAIError) as native_error:
+                        lm([messages],show_progress_bar=False)
+                    causes=[]
+                    cause=native_error.exception
+                    while cause is not None and cause not in causes:
+                        causes.append(cause)
+                        cause=cause.__cause__ or cause.__context__
+                    self.assertTrue(any(isinstance(error,UnicodeEncodeError) for error in causes))
+                    selected=LotusBatchExecutor(execution,config(base),query_id='surrogate',operator_id='map',
+                                                prevalidate_batch=True)
+                    valid=[dict(role='user',content='valid prefix')]
+                    for data in ([(messages,None)],[(valid,None),(messages,None)]):
+                        with patch('src.semantic_methods.lotus.batch.NativeTaskSession',
+                                   side_effect=AssertionError('invalid Unicode opened a flow')):
+                            with self.assertRaises(UnicodeEncodeError):
+                                selected(lm,data,lm.kwargs,False,'fixture')
+            self.assertEqual(calls,[])
+            self.assertEqual(execution.engine.capacity.usage().held_tasks,0)
             self.assertEqual(execution.engine.jobs.jobs,{})
 
     def test_sdk_body_matches_native_http_and_complete_response(self):
@@ -334,8 +373,10 @@ class LotusSdkTests(unittest.TestCase):
             lm = model(base)
             executor = LotusBatchExecutor(execution, config(base), query_id="bounded", operator_id="map", max_batch_rows=1)
             prompts = [[{"role": "user", "content": "same"}]] * 2
-            with lotus.settings.context(enable_cache=False), self.assertRaisesRegex(ValueError, "row limit"), lotus_executor(lm, executor):
+            with lotus.settings.context(enable_cache=False), self.assertRaisesRegex(ValueError, "selected executor capacity"), lotus_executor(lm, executor):
                 lm(prompts, show_progress_bar=False)
+            self.assertEqual(executor.last_preflight['target_rows'],2)
+            self.assertEqual(executor.last_preflight['call_limits']['max_batch_rows'],1)
             executor = LotusBatchExecutor(execution, config(base), query_id="cancel", operator_id="map", cancelled=lambda: True)
             with self.assertRaisesRegex(RuntimeError, "cancelled"), lotus_executor(lm, executor):
                 lm(prompts, show_progress_bar=False)

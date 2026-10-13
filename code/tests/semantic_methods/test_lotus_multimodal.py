@@ -70,6 +70,20 @@ class LotusImageProfileTests(unittest.TestCase):
         self.assertIs(first, data[0][0])
         self.assertEqual(prepared, [item[0] for item in data])
 
+    def test_image_surrogate_text_and_uri_are_rejected_during_prevalidation(self):
+        invalid = [image_messages("\ud83d\ude00"), image_messages("\ud800"), image_messages()]
+        invalid[-1][-1]["content"][1]["image_url"]["url"] += "\ud83d\ude00"
+        for messages in invalid:
+            with self.subTest(messages=ascii(messages)), self.assertRaises(UnicodeEncodeError):
+                sdk._validate_messages(messages, message_profile=sdk.IMAGE_TEXT_PROFILE)
+            def prepare(lm, value, kwargs, **options):
+                sdk._validate_messages(value, **options)
+                return value
+            with patch.object(sdk, "prepare_call", side_effect=prepare):
+                with self.assertRaises(UnicodeEncodeError):
+                    sdk.validate_batch(None, [(image_messages(), None), (messages, None)], {},
+                                       message_profile=sdk.IMAGE_TEXT_PROFILE)
+
     def test_text_batch_keeps_existing_one_provider_preparation_fast_path(self):
         data = [([dict(role="user", content=str(i))], None) for i in range(3)]
         with patch.object(sdk, "prepare_call", return_value="first") as prepare:
@@ -201,6 +215,38 @@ class PinnedLotusMultimodalPairTests(unittest.TestCase):
         calls, error = self.pair(status=429)
         self.assertIsNotNone(error)
         self.assertEqual(len(calls), 4)
+
+    def test_native_image_surrogate_text_and_semloom_both_submit_zero_requests(self):
+        import httpx
+        import lotus
+        from openai import OpenAIError
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from tests.execution_provider.test_native_tasks import fixture
+        execution, _backend, _clock = fixture(held_tasks=2, offer_tasks=2,
+            input_bytes=8192, result_bytes=8192, item_input_bytes=8192,
+            item_result_bytes=8192, active_requests=1, active_work=1)
+        lm = self.model()
+        model = FixedModelConfig("http://localhost/v1/chat/completions", "stage-image-fixture", 2000, "fixture")
+        selected = LotusBatchExecutor(execution, model, query_id="invalid-image-text", operator_id="map",
+                                      message_profile=sdk.IMAGE_TEXT_PROFILE)
+        messages = image_messages("\ud83d\ude00")
+        with lotus.settings.context(enable_cache=False), \
+             patch.object(httpx.Client, "send", side_effect=AssertionError("native invalid Unicode sent HTTP")) as send:
+            with self.assertRaises(OpenAIError) as caught:
+                lm([messages], show_progress_bar=False)
+            send.assert_not_called()
+        cause = caught.exception
+        causes = []
+        while cause is not None and cause not in causes:
+            causes.append(cause)
+            cause = cause.__cause__ or cause.__context__
+        self.assertTrue(any(isinstance(error, UnicodeEncodeError) for error in causes))
+        with patch("src.semantic_methods.lotus.batch.NativeTaskSession",
+                   side_effect=AssertionError("invalid image Unicode opened a flow")):
+            with self.assertRaises(UnicodeEncodeError):
+                selected(lm, [(image_messages(), None), (messages, None)], lm.kwargs, False, "fixture")
+        self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+        self.assertEqual(execution.engine.jobs.jobs, {})
 
 
 if __name__ == "__main__":

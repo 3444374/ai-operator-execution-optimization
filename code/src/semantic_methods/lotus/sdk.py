@@ -74,6 +74,13 @@ class PreparedLotusCall:
     message_profile: str = "text"
 
 
+def _validate_utf8(value):
+    # Native OpenAI serialization rejects Python surrogate code points before I/O.
+    # Validate before the JSON copy can combine a surrogate pair into a scalar.
+    if not value.isascii():
+        value.encode("utf-8")
+
+
 def _validate_messages(messages, *, message_profile="text"):
     check_message_profile(message_profile)
     if not isinstance(messages, list) or not messages:
@@ -84,6 +91,7 @@ def _validate_messages(messages, *, message_profile="text"):
             raise ValueError("LOTUS adapter supports text messages with role and content")
         content = message["content"]
         if type(content) is str:
+            _validate_utf8(content)
             continue
         if message_profile == "text":
             raise ValueError("LOTUS adapter supports text messages with role and content")
@@ -95,6 +103,7 @@ def _validate_messages(messages, *, message_profile="text"):
             if part.get("type") == "text":
                 if set(part) != {"type", "text"} or type(part["text"]) is not str:
                     raise ValueError("invalid LOTUS image text part")
+                _validate_utf8(part["text"])
             elif part.get("type") == "image_url":
                 if (set(part) != {"type", "image_url"} or type(part["image_url"]) is not dict
                         or set(part["image_url"]) != {"url"}
@@ -102,6 +111,7 @@ def _validate_messages(messages, *, message_profile="text"):
                         or not part["image_url"]["url"].startswith("data:image/png;base64,")
                         or not part["image_url"]["url"][len("data:image/png;base64,"):]):
                     raise ValueError("LOTUS image profile requires the native PNG data URI")
+                _validate_utf8(part["image_url"]["url"])
             else:
                 raise ValueError("unsupported LOTUS image content part")
 
@@ -138,14 +148,6 @@ def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None, message_pr
             # Preserve the existing JSON rules for unusual equality-compatible roles.
             json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
             continue
-        for message in messages:
-            for value in message.values():
-                if not value.isascii():
-                    try:
-                        value.encode()
-                    except UnicodeEncodeError:
-                        # The provider's JSON copy combines valid escaped surrogate pairs.
-                        json.loads(json.dumps(value)).encode()
     if check_stop:
         check_stop()
     return first
