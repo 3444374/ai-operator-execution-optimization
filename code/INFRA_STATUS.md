@@ -96,6 +96,17 @@ Daft初始化统一到中立模块，真实同driver四路径组合通过；较�
 共同入口记录服务接纳、快照、图执行、返回及网关HTTP阶段和请求/查询分位；原池前就绪与源行对应仍unavailable。
 IMLane复用独立作者构建和已就绪Coordinator，检查实际原生线程数；不同容量及首次图成本单列，不据此排名模型性能。
 
+2026-10-12：[执行稳定性与多副本组合](../experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)。
+原runtime、多副本与入口修补已保留原提交合到无日期分支；本机270项中249通过／21跳过，未知Job容量和对象保持。
+入口`474706f0`定点独立复审9项通过；修后实际库、设备与模型资格未增加，原生额外接入由另一分支负责。
+
+2026-10-12：[Sema入口复审修补](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
+native明确停止证明与全部错误写出期限补齐，本机7项针对性／120项受影响检查通过；新服务器、GPU及模型运行均0，后续独立复审与组合检查见上条记录。
+
+2026-10-12：[Sema入口正文与期限修订](../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
+读取前独立预留持有数／总字节，三条服务共用一次handler期限；native图未确认消费停止时继续持有，Core策略和远端未知责任保持。
+本机113项不同检查通过，服务器最终21项通过，含2MiB正文；所有三次软件slice累计126次合成请求，真实模型及性能资格未增加。
+
 2026-10-11：[SQuAD原生完整请求画像](../experiments/results/diagnostics/squad_native_length_20261011/README.md)。
 原生formatter、SDK与本地tokenizer全量检查完成；自然调参切片未满足本轮选样条件，模型0。2026-10-12补同一调参元数据的静态次序描述，不重新计数token或模拟执行。
 本方案长度描述与薄转发装配暂未推进，现有接入入口和默认保持；后续问题从[数据组织目标修订](../experiments/plans/数据组织.md#map-order-question)核对。

@@ -185,6 +185,22 @@
 - 稳定性／多副本分支分别保留，固定稳定性提交组合247项通过／29项跳过，追加32软件POST通过；隐私／链接核对及分支收尾继续，不合main，不启动新研究矩阵。
 
 
+## 2026-10-12：整合执行稳定性、多副本与入口修补
+
+- 无日期分支`codex/semloom-stability-and-replicas`保留原runtime A/B、副本及入口提交身份，携带入口需要的有限native服务祖先。
+- [组合记录](experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)保存270项本机回归、未知Job隔离和逐文件来源；副本16项／入口9项定点独立复审通过，本轮远端服务器、模型、GPU及实际厂商图运行均0。
+- 原生额外接入仍由`codex/native-execution-adapters`负责；旧分支与用户工作树保留，main未改。
+
+## 2026-10-12：补齐Sema入口复审发现的两项生命周期遗漏
+
+- 在原独立分支要求native明确停止证明，并让合成错误写出使用原截止时刻；已过期限关闭连接，保留首错与Core未知责任。
+- [复审修补记录](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)保存本机7项针对性／120项受影响回归与失败原件；本轮服务器、GPU、模型和vendor runtime均0，未推送或改其他owner。
+
+## 2026-10-12：修订Sema入口正文存储与期限
+
+- 在独立补丁中给HTTP读取预留有限持有数／总字节，并让读取、接纳、执行和写出共用一次期限；Core策略、原提示／parser和native图保持。
+- [工程记录](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)保留本机113项不同检查、服务器最终21项、所有slice的126次合成请求及失败原件；真实模型、SQL和性能运行均0。
+
 ## 2026-10-12：检查Sema原请求池前接入可行性
 
 - 官方main仍为固定提交；核对唯一分支、空标签/发行清单和四项文件，原ZIP及ELF摘要一致；重读旧探针的135项设置，没有找到已核实的池前任务回调。

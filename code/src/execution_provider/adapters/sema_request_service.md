@@ -101,7 +101,7 @@ pump 有即刻工作时让出事件循环并继续推进，其他情况使用既
 已有更早的HTTP／查询错误继续保留；附加记录错误和取消／清理错误按原清理记录保存。取消只发公共session信号，未确认的远端请求仍由Core保留，慢HTTP写出完成前不归还结果使用权。
 当前 work 描述每份完整请求为一个 `work_units`，即请求数表征，不代表已校准的 token 工作量。
 `NativeTaskSession`的Job由外部查询runner创建，不来自Sema查询计划；组级复用只延长外部Core／worker的寿命，不改变接点位置。
-HTTP 调用者保留尚未接纳的正文，其数量受有限查询和服务请求上限控制；Core 的任务额度不能单独代表全部前端正文留存。
+HTTP 调用者保留尚未接纳的正文，读取前取得独立入口持有数／总字节预留；Core 的任务额度不能单独代表全部前端正文留存。
 原 `prepare_projection`、`run_projection` 与实验默认调用方式保持。
 
 ## 观测与计时解释
@@ -111,8 +111,10 @@ HTTP传输采用现有`FullResponseTransport`，发送前检查与原错误返�
 本地`http_started/http_finished`记录到同一服务行，其时刻来自同进程单调时钟，不补造Ray事件。
 简单服务可选`held_request_capacity`与原连接额度一起限制已接纳请求／响应，直到HTTP写出或异常退出才归还；
 默认0保持原透明转发。诊断装配的真实短测与适用范围见[分层结果](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-layer-comparison)，运行要求见[分层方案](../../../../experiments/plans/语义系统对照.md#sema-layer-comparison)。
-转发与SemLoom执行都从进入`_forward()`计算一次请求期限，覆盖名额或接纳等待及完整模型响应等待，后续不重新取得完整超时时间。
-进入前的HTTP正文读取及返回后的HTTP写出另计；响应使用权仍到写出或异常退出才归还，外层SQL期限保持。
+服务从HTTP handler进入的`proxy_arrived_ns`确定一次`request_deadline_ns`，覆盖入口等待、正文读取、校验／解析、名额或接纳等待、完整响应及HTTP写出。
+转发、SemLoom和native快照都沿用该时刻，后续不重新取得完整超时时间；响应使用权到写出或异常退出才归还，外层SQL期限保持。
+连接建立、HTTP头抵达前的等待不属于这个handler期限。正常、上游回复及合成404／410／413／502都在原截止时刻前完成应用写出，不重新给予timeout。
+期限已过或写出不能按时完成时关闭连接并结束协议处理；服务保留原首错（期限错误仍记录502），客户端可能收到断连而非新的HTTP错误正文。
 
 | 现有记录 | 实际作用 |
 |---|---|
@@ -167,7 +169,15 @@ runner 清理报错时使用 [aiohttp 公开接口](https://docs.aiohttp.org/en/
 已接纳调用在锁外等待完整响应，模型与结果额度不变；等待接纳仍计入原请求期限。取消、超时和错误退出会归还锁。
 只有持锁调用者等待容量并重试；其他调用者仍持有已读取正文和任务描述，等待接纳锁。
 该锁属于当前查询的HTTP服务，结果归还不取得这把锁；锁的持有期只覆盖接纳，不包括模型执行或HTTP写出。
-当前尚无独立于有限查询规模的待接纳总字节额度。扩大输入或持续运行前须先评价并补齐入口存储控制。
+`SemaServiceLimits`追加可选`intake_requests=128`和`intake_bytes=33554432`，原四参数构造与`request_bytes`／`response_bytes`保留。
+三条服务共用入口预留，供给已有占用时先等待额度再读正文；等待计入同一期限。native的持有槽和单snapshot32MiB限制仍独立，不向其vendor图注入Core额度。
+已知长度读取前预留`2 * Content-Length + 1`字节；未知长度、chunked或解码长度未知时预留`2 * request_bytes + 1`，为读取buffer／最终bytes转换和1字节超限探测留空间。
+逐块检查后完成正文，预留缩到实际正文长度。单份超出`request_bytes`或其读取预留永远不能容纳于`intake_bytes`时返回413，保留首错并停止查询，不截断正文或重试。
+入口每个HTTP出现只登记一次，覆盖解析、接纳锁、已接纳handler及响应写出。Core接纳仍取得自己的payload／结果责任；这两个作用域有重叠，不相加为物理内存测量。
+native将同一入口登记交给待处理／活动snapshot共同持有；handler退出和bridge结束后，还须取得`graph_consumer_stopped is True`才归还。
+报告None、缺字段、字段None、非布尔值，或`clean=False`而无明确True都保留登记并报告图消费停止未确认；无异常与bridge返回不能代替该证明。
+取消中止正文读取与尚未读取的入口等待者；aiohttp不再在拒绝后额外读取剩余正文。正常排空后`summary.intake_requests`／`intake_bytes`归零，峰值字段保留实际预留最大值。
+这些字节计量服务持有的正文及读取临时表示，JSON／Python对象开销、aiohttp预解析缓冲、socket、vendor图复制、Core远端未知与首错响应另有责任，不代表RSS总上限。
 相近请求使用队首先接纳；异质字节需求可能阻挡后面可接纳的请求，尚未完成对应性能评价。
 接纳次序也不表示SQL行序或多查询公平；这些分别由结果身份及Core的Job／flow处理，不将查询内锁扩大为全局调度。
 这项工程修订的模拟计数与后续真实核对记录在[接纳重试报告](../../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-admission-retry)。

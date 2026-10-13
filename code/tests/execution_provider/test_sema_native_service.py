@@ -187,7 +187,10 @@ class SemaNativeServiceTests(unittest.TestCase):
             started = time.monotonic()
             second = pool.submit(self.post, service.endpoint_url)
             self.assertEqual(first.result()[0], 200)
-            self.assertEqual(second.result()[0], 502)
+            from http.client import RemoteDisconnected
+            with self.assertRaises(RemoteDisconnected):
+                second.result()
+            self.assertEqual(service.first_error.status, 502)
             self.assertLess(time.monotonic() - started, 0.45)
         self.assertEqual(len(executor.batches), 2)
         self.assertEqual(service.summary['completed_http_responses'], 1)
@@ -273,6 +276,8 @@ class SemaNativeServiceTests(unittest.TestCase):
             self.assertEqual(service.first_error.phase, 'native_graph')
         self.assertEqual(service.summary['uncertain_requests'], 1)
         self.assertFalse(service.summary['last_close_report']['clean'])
+        self.assertEqual(service.summary['intake_requests'], 0)
+        self.assertEqual(service.summary['intake_bytes'], 0)
 
     def test_cleanup_error_after_final_response_and_end_input_is_reported(self):
         gate = threading.Event()

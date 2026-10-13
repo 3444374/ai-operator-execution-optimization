@@ -1,0 +1,278 @@
+{
+  "actual_library_opt_ins": false,
+  "branch": "codex/semloom-stability-and-replicas",
+  "composition": [
+    {
+      "first_error": "first caller error",
+      "followup_completed": true,
+      "observer_child_submissions": 0,
+      "payload_block_releases": 2,
+      "payload_failure_http_calls": 0,
+      "retained_object_bytes": 37,
+      "unknown_job_usage": {
+        "active_requests": 1,
+        "active_work": 1,
+        "held_tasks": 1,
+        "input_bytes": 5,
+        "result_bytes": 512
+      },
+      "unknown_rpc_submissions": 1,
+      "unknown_stage": "ray_await",
+      "wire_http_posts": 0
+    },
+    {
+      "first_error": "first caller error",
+      "followup_completed": true,
+      "observer_child_submissions": 0,
+      "payload_block_releases": 2,
+      "payload_failure_http_calls": 0,
+      "retained_object_bytes": 37,
+      "unknown_job_usage": {
+        "active_requests": 1,
+        "active_work": 1,
+        "held_tasks": 1,
+        "input_bytes": 5,
+        "result_bytes": 512
+      },
+      "unknown_rpc_submissions": 1,
+      "unknown_stage": "http",
+      "wire_http_posts": 0
+    }
+  ],
+  "elapsed_s": 45.338,
+  "errors": 0,
+  "excluded_native_commits": {
+    "5e95852d": "5e95852de8c4aa99e8f95ee63958bfb549a5cfd0",
+    "5ee1b90c": "5ee1b90c31b848c9dde5411564cf0db8a44b5215",
+    "650f65c8": "650f65c8fe0f834009bc714257ffde0a2ec3716b",
+    "9c642ec7": "9c642ec7c48a598abb54f1a32c56e29904eaa334",
+    "f9921475": "f9921475e7bd3ad5706512f0f1a638aebc090ece",
+    "fa53eb16": "fa53eb16785fcef4ba34ae480d6cb976dbdeb8bc"
+  },
+  "failures": 0,
+  "gpu_workloads": 0,
+  "independent_reviews": {
+    "intake-fixes-review": {
+      "commit": "474706f0a4cd36ebe6a346e6504ccdede44767a1",
+      "errors": 0,
+      "failures": 0,
+      "report_sha256": "7f67cd099834474f0dff749a924a57a8d6907bfd73c1a49b8dc2f69750090beb",
+      "skipped": 0,
+      "spec_required_fixes": 0,
+      "standards_required_fixes": 0,
+      "status": "pass within reported scope",
+      "tests": 9
+    },
+    "replica-fixes-review": {
+      "commit": "eb2e8692948b5a87aa03badb7f2afdc8ce25c646",
+      "errors": 0,
+      "failures": 0,
+      "report_sha256": "2de7a95e43b26c6a1400f5be66d64264110b23b851bf99144c9caa0a4015528d",
+      "skipped": 0,
+      "spec_required_fixes": 0,
+      "standards_required_fixes": 0,
+      "status": "pass within reported scope",
+      "tests": 16
+    },
+    "runtime-fixes-review": {
+      "commit": "a21fc084cf648df7118595013f51f41c129a6361",
+      "report_sha256": "43670fed5e2f2eab4d8e3477d071850af945734a74ff00eb6394998c8728ed06",
+      "status": "pass within reported scope"
+    }
+  },
+  "modules": [
+    "tests.postgres.test_semloom_model_replicas",
+    "tests.infrastructure.test_replica_identity",
+    "tests.execution_provider.test_replica_failure_composition",
+    "tests.execution_provider.test_native_tasks",
+    "tests.scheduling.test_multisession",
+    "tests.scheduling.test_shared_compute",
+    "tests.scheduling.test_async_backend",
+    "tests.execution_provider.test_ray_map_errors",
+    "tests.execution_provider.test_ray_map_payload_failure",
+    "tests.execution_provider.test_ray_map_transport",
+    "tests.execution_provider.test_ray_map_worker_pool",
+    "tests.execution_provider.test_ray_map_timing",
+    "tests.execution_provider.test_incremental_session",
+    "tests.execution_provider.test_sema_service",
+    "tests.execution_provider.test_sema_service_cleanup",
+    "tests.execution_provider.test_sema_semloom",
+    "tests.execution_provider.test_sema_native_service",
+    "tests.execution_provider.test_sema_intake",
+    "tests.execution_provider.test_sema_intake_review",
+    "tests.baselines.test_native_calls",
+    "tests.execution_provider.test_model_replicas_ray_integration",
+    "tests.execution_provider.test_ray_map_failure_integration"
+  ],
+  "original_log": {
+    "bytes": 55705,
+    "filename": "local-regression-intake-fix.log",
+    "run_identity": "semloom-stability-local-intake-fix",
+    "sha256": "91faf575c4fa31bf82b975ab36d8f62c3c299875091ea051206691324af84fef"
+  },
+  "packages": {
+    "aiohttp": "3.14.1",
+    "getdaft": null,
+    "httpx": "0.28.1",
+    "pyarrow": null,
+    "ray": null
+  },
+  "passed": 249,
+  "product_sources": {
+    "code/src/baselines/text/frameworks/native_calls.py": {
+      "matches_origin": true,
+      "origin": "3f6aaea6",
+      "sha256": "aed8e3cbc9a28bb4e915e5d08e9c85d36b47561f464fe9e0aa5206c87c35a1d7"
+    },
+    "code/src/execution_provider/adapters/model_replicas.py": {
+      "matches_origin": true,
+      "origin": "eb2e8692",
+      "sha256": "6b6f6cf758e30aa5ed17c0966caf7357bea9b91e411affd55745b2c9c3532351"
+    },
+    "code/src/execution_provider/adapters/ray_map_transport.py": {
+      "matches_origin": true,
+      "origin": "a21fc084",
+      "sha256": "56649fc7f9c3a50f039caa5b4a73b4cc40200e89404b04f02013465d87e429ea"
+    },
+    "code/src/execution_provider/adapters/replica_identity.py": {
+      "matches_origin": true,
+      "origin": "eb2e8692",
+      "sha256": "2c976d4e323af1590694db07c277105319e96e35c2b2665a212a0f72b0984f9b"
+    },
+    "code/src/execution_provider/adapters/sema_native.py": {
+      "matches_origin": true,
+      "origin": "474706f0",
+      "sha256": "ba48b6cf665c8ec78ecf976831346711374f0410a9e636f82ca1fa936830acf0"
+    },
+    "code/src/execution_provider/adapters/sema_semloom.py": {
+      "matches_origin": true,
+      "origin": "e960fc91",
+      "sha256": "26a6233c6dba11259fe43f0911f6f7cc76f2bed51cf242db5eace47775473fe3"
+    },
+    "code/src/execution_provider/adapters/sema_service.py": {
+      "matches_origin": true,
+      "origin": "474706f0",
+      "sha256": "d9ff5ea51063aed39364d3f38d879482047d130cdd07634ccffe7bb05091b216"
+    },
+    "code/src/scheduling/core/session.py": {
+      "matches_origin": true,
+      "origin": "a21fc084",
+      "sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c"
+    },
+    "code/src/scheduling/runtime/async_backend.py": {
+      "matches_origin": true,
+      "origin": "a21fc084",
+      "sha256": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c"
+    }
+  },
+  "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "qualification": "local software composition; scoped runtime, replica, and intake independent reviews passed",
+  "real_model_posts": 0,
+  "remote_server_runs": 0,
+  "required_original_commits": {
+    "2a755809": "2a7558097855befbda77f3302815433804247e34",
+    "2fad623e": "2fad623e310d9d8f988adfadbe0438d53e943e07",
+    "3f6aaea6": "3f6aaea62ee378e5e89f57764e10e680eaa9f4c2",
+    "474706f0": "474706f0a4cd36ebe6a346e6504ccdede44767a1",
+    "a21fc084": "a21fc084cf648df7118595013f51f41c129a6361",
+    "b2006afe": "b2006afe6f13ff653cff09da28c39a96a2c4be77",
+    "c9023fbc": "c9023fbcf5307c4f576e50ac5389c10ebdf9851d",
+    "d487545b": "d487545b9b6f681b63dca42a6fd51f96b36aa93c",
+    "d90f0220": "d90f02204830bb95df470c70591d555af7698c8b",
+    "de04a89d": "de04a89dd6dbcbe055d3dce96db0082b66c53872",
+    "e960fc91": "e960fc91d94649b7fecd2c58c802cce938b13db1",
+    "eb2e8692": "eb2e8692948b5a87aa03badb7f2afdc8ce25c646",
+    "fe490e50": "fe490e50505bc2e38dae2297d54102ca31eaf40d"
+  },
+  "run_identity": "semloom-stability-local-intake-fix",
+  "skip_reasons": [
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_cancel_after_send_waits_for_the_actual_result"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_cancel_before_remote_send_and_guard_failure_spend_no_http"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_fast_row_returns_while_same_batch_slow_row_holds_object"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_object_limit_waits_for_release_without_overspending"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.ArrowMapTransportTests.test_remote_error_retains_unknown_object_and_fails_clean_close"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_after_send_waits_for_the_actual_result"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_cancel_before_remote_send_and_guard_failure_spend_no_http"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_fast_row_returns_while_same_batch_slow_row_holds_object"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_object_limit_waits_for_release_without_overspending"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_transport.RayMapTransportTests.test_remote_error_retains_unknown_object_and_fails_clean_close"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerCancelTests.test_sent_cancel_holds_lease_until_confirmed_result"
+    },
+    {
+      "reason": "Daft and Arrow are required for the actual batch adapter",
+      "test": "tests.execution_provider.test_ray_map_worker_pool.BorrowedWorkerCancelTests.test_unsent_cancel_and_budget_failure_release_lease_without_http"
+    },
+    {
+      "reason": "actual pinned native graph validation is explicitly opt-in",
+      "test": "tests.baselines.test_native_calls.NativeGraphTests.test_cancellation_and_timeout_interrupt_blocked_native_iteration"
+    },
+    {
+      "reason": "actual pinned native graph validation is explicitly opt-in",
+      "test": "tests.baselines.test_native_calls.NativeGraphTests.test_first_consumer_stop_closes_its_graph_and_waits_for_fixture_activity"
+    },
+    {
+      "reason": "actual pinned native graph validation is explicitly opt-in",
+      "test": "tests.baselines.test_native_calls.NativeGraphTests.test_native_graphs_preserve_duplicate_occurrences_and_full_http_errors"
+    },
+    {
+      "reason": "actual pinned native graph validation is explicitly opt-in",
+      "test": "tests.baselines.test_native_calls.NativeGraphTests.test_provider_errors_are_values_but_byte_limit_failure_stops_the_graph"
+    },
+    {
+      "reason": "requires the explicitly enabled actual Ray/Daft CPU fixture",
+      "test": "tests.execution_provider.test_model_replicas_ray_integration.ModelReplicaRayIntegrationTests.test_actual_daft_ray_cancel_retains_slow_replica_and_another_query_then_reuses_execution"
+    },
+    {
+      "reason": "requires the explicitly enabled actual Ray/Daft CPU fixture",
+      "test": "tests.execution_provider.test_model_replicas_ray_integration.ModelReplicaRayIntegrationTests.test_actual_payload_backends_and_two_ray_actors_keep_capacity_calls_and_full_responses"
+    },
+    {
+      "reason": "Requires an explicitly enabled, preflight-checked CPU Ray fixture",
+      "test": "tests.execution_provider.test_ray_map_failure_integration.RayMapFailureIntegrationTests.test_actual_cancel_waits_for_late_http_result"
+    },
+    {
+      "reason": "Requires an explicitly enabled, preflight-checked CPU Ray fixture",
+      "test": "tests.execution_provider.test_ray_map_failure_integration.RayMapFailureIntegrationTests.test_http_timeout_and_disconnect_keep_core_and_object_charges"
+    },
+    {
+      "reason": "Requires an explicitly enabled, preflight-checked CPU Ray fixture",
+      "test": "tests.execution_provider.test_ray_map_failure_integration.RayMapFailureIntegrationTests.test_identified_payload_failure_releases_core_and_worker_for_next_query"
+    }
+  ],
+  "skipped": 21,
+  "source_head": "426eebafa16566671836319814b035c9543a86d4",
+  "success": true,
+  "tests": 270
+}

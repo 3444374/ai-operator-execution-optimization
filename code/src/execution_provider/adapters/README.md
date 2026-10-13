@@ -1,5 +1,12 @@
 # Native ready-task execution
 
+[Equivalent model replicas](model_replicas.md) compose the existing execution
+factory with declared physical endpoints, static or round-robin routing and
+global/per-endpoint request/work capacities. The independent Map gateway CLI and
+complete-response Python API preserve existing task/Job/lease ownership. The
+read-only process/device probe distinguishes model replicas from HTTP workers;
+local fixtures and actual-library CPU checks have separate scopes.
+
 `native_tasks.py` accepts already prepared, non-streaming single-model text calls at each
 supplier adapter's actual entry. LOTUS and DuckDB AI offer calls before their request pools;
 Sema offers calls after its native HTTP requests arrive. It uses the existing `SessionEngine`, Job grants, organization and

@@ -91,6 +91,17 @@ IMLane采用作者Python执行器与实测原生任务线程数，未证明原�
 正常输入结束与取消分开，最终响应后继续核对EOF和清理；准备失败、原始日志和源码摘要均保留在仓库外。
 LOTUS/DuckDB旧接入的36项受控检查通过，13项实际LOTUS库未启用，不替代新编译扩展或模型验证。
 
+2026-10-12：[执行稳定性与多副本组合](diagnostics/semloom_stability_composition_20261012/README.md)。
+固定runtime／副本／入口修补及必要祖先，本机270项中249通过／21跳过；同execution已知失败归还与未知RPC／HTTP的C/W及37字节对象留存并置通过。
+来源与跳过原因保留，入口定点独立复审9项通过；修后实库、真实设备、模型及PG资格未增加。
+
+2026-10-12：[Sema入口复审修补](postgresql/native_adapter_integration_20261009/README.md#sema-intake-review-fix)。
+原`e960fc91`存在未知native停止证明与合成错误writer遗漏；修补后本机7项针对性／120项受影响检查通过，失败原件保留。历史126仍为118入口请求＋8替身上游POST，本轮未新增远端运行。
+
+2026-10-12：[Sema入口正文存储与期限](postgresql/native_adapter_integration_20261009/README.md#sema-intake-storage)。
+起点`2fad623e`，三份运行代码与`9c642ec7`一致；本机113项不同检查通过，服务器最终21项／53次合成请求通过，所有slice累计126次。
+MiB同步断言失败和自动CPU资格报告均保留；确认本地输入责任的正常归还及未确认图消费的留存，模型、SQL、vendor runtime和性能运行均0。
+
 2026-10-12：[Sema原请求池前接入可行性](../../code/src/execution_provider/adapters/sema_request_service.md#prepool-feasibility)。
 公开main、分支/标签/发行清单、原ZIP/ELF及旧135项设置重新核对，未找到当前产物可小改使用的池前入口；元数据摘要进入原整合verification，历史证据保持。
 仅保留原生整体与后置服务成对比较，不实施算子重写或二进制注入；新二进制/查询/模型运行均0，未接触目标服务器。
