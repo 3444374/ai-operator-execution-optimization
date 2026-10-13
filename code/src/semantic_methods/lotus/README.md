@@ -216,3 +216,8 @@ with lotus_executor(lm, selected):
 诊断修后55项文本、11项图文共66项在固定SDK通过，无跳过。消息中的Python surrogate码点在JSON副本前
 拒绝，合法Unicode标量（含`😀`）保留；单调用抛`UnicodeEncodeError`，文本启用整批预检时、图文强制整批
 预检时均在任何flow前拒绝非法后缀。该拒绝不模仿原SDK包装异常的类型，不把不可编码输入规范化后提交。
+
+阶段准备另有[独立需求原型](../../data/materializers/prepared_assets.py)：有来源的资产版本引用既有
+WorkDescriptor，条件后继只在原阶段实际返回后就绪。它未接入默认LOTUS/PG入口，不修改NativeCall。
+[阶段A检查](../../../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-demand)
+用12张唯一既有图像证实静态与消费者方案准备顺序/次数相同；原消息仍存活，没有超静态或真实模型收益证明。

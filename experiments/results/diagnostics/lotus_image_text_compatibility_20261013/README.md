@@ -97,3 +97,57 @@ RGB逻辑字节数不是allocator峰值，未采集准备时长、pinned/device�
 
 该预算先于§11.4的扩大阶段画像建议。具身轨迹可在未来把同一资产标识用于多个任务共享的已选帧，
 帧筛选若改变任务输入须由算子语义/数据规范授权；本轮不引入机器人数据、视频API或新选择器。
+
+
+<a id="stage-a-demand"></a>
+## 阶段A：实际条件需求与释放边界
+
+实现提交`27815f3e`；本切片只扩独立`PreparedAssetWindow`，不改NativeCall、PG协议、公共HTTP或调度核心。
+有来源的可选metadata引用既有WorkDescriptor/StageWork；成本、局部性、主阶段区间与校准来源不另造接口。
+`ready_after/resolve_stage`只接受原阶段实际输出，未就绪的Map不prepare或提交；snapshot可选记录缓存payload字节秒。
+source版本来自历史manifest并重新散列核验，原图尺寸来自header，变换签名包含固定LOTUS源码摘要/Pillow版本。
+工作量是RGB逻辑字节和每行1个完整调用，没有GPU服务/视觉token成本校准。
+
+固定SDK最终21项（20资产/合同＋1实际LOTUS查询诊断）全部通过，无跳过；CPU24/25，依赖沿用既有环境。
+本地20项资产、3项WorkDescriptor、4项stage、8项broker、2项原源码反例共37项通过；实SDK查询在本地缺固定环境而跳过，远端执行。
+首次最小上传没有测试目录package标识，带top-level discovery的两项在加载前失败，改成对应独立目录discover后通过；原失败不覆盖。
+随后去除初稿重复的源字节字段，改引用WorkDescriptor，并增加身份去重的物理表示观察；各阶段源码身份与原值分别保留。
+
+12张既有COCO内容/文件均唯一，没有复制行或新下载。实际原Filter→Map方法以相同图文消息、参数、parser及原LM执行；
+替身仅按图像宽高返回方向，Filter保留7行，Map直到完整Filter返回才有合法需求。它不是VLM语义质量验证。
+8个配置每次均19逻辑调用，完整请求正文哈希/顺序、行关联、输出及usage一致，均提交9,747,951字节HTTP正文。
+这只是拦截正文长度，不是网络wire或H2D字节。共152个SDK替身调用/每轮，真实模型/GPU/Ray启动均0。
+
+| 配置 | 缓存范围 | prepare次数 | 另复制URI字节 | 缓存payload字节秒 | 模拟query wall秒 |
+|---|---|---:|---:|---:|---:|
+| native | 原cache，无新额度 | 19 | 0 | 未采集 | 2.840734 |
+| static_uri | 4 MiB | 17 | 0 | 1963566.086 | 2.122156 |
+| static_bytes | 4 MiB | 17 | 9736050 | 1950505.078 | 2.086052 |
+| consumer_bytes | 4 MiB | 17 | 9736050 | 1932794.027 | 2.071406 |
+| native | 原cache，无新额度 | 19 | 0 | 未采集 | 2.217901 |
+| static_uri | 16 MiB | 12 | 0 | 5003074.131 | 1.515097 |
+| static_bytes | 16 MiB | 12 | 9736050 | 4982682.521 | 1.510543 |
+| consumer_bytes | 16 MiB | 12 | 9736050 | 4966075.094 | 1.507238 |
+
+4/16MiB只限制自有/静态共享缓存及声明的准备scratch，不限制原生ImageArray或全查询host内存。
+上表各一次，顺序执行；元数据获取另记录，未纳入该query wall。没有真实推理、数据库写回或完整E2E，不能据此作速度排名。
+URI静态是强控制：直接共享原字符串；bytes静态与消费者方案使用相同表示、同序、同信息、同scratch额度与last-use。
+它们的prepare顺序也一致。17/12次准备相对原19次的减少完全由普通共享缓存解释，消费者组织没有额外减少工作或正文移动。
+
+**输入读取、模型结束、结果消费不能合并。** bytes exporter复制为独立字符串后结束其真实读取，但Filter消息仍持有
+6,196,536字节URI，Map为3,539,514字节；请求池返回前后都相同，原SemLoom SDK回放也读取原messages。
+bytes方案另外复制9,736,050字节URI；字符串静态缓存与消息共享对象，不重复计物理内存。
+Filter边界已知图像对象的Python字节数为原生/URI静态6,197,028，bytes方案4MiB时7,674,768、16MiB时12,393,960。
+仅按对象身份去重已知图像表示，不包含所有临时buffer、请求、进程RSS或pinned/device；cache字节秒不是全物理驻留字节秒。
+lease归还没有伪造模型/设备结束或结果消费回执；结果仍由原LM/算子持有。
+
+**本轮判定：A没有超强静态的组织机会或净收益证据。** 保留先前4→2反例，暂不推进多副本B或真实模型窗口。
+现有数据库图像入口只核对SemanticImagePlan与已有WorkDescriptor引用，没有PG共享准备接线/E2E证明。
+下一切片沿现有数据库入口，必须由真实语义查询提供资产版本、合法后继及取消/消费事实，再证明可控准备/模型关键阶段；
+不将纯文件转换强归SemLoom，不以本LOTUS fixture替代数据库证据，不扩DROID/视频/新数据平台。
+原始文献边界与后续假设见[现有阶段设计§11.6](../../../../docs/research/heterogeneous_ai_dataflow_execution_model_20260811.md#stage-demand-lifetime)。
+
+[独立模块](../../../../code/src/data/materializers/prepared_assets.py)、[资产检查](../../../../code/tests/data/test_prepared_assets.py)、
+[实际查询fixture](../../../../code/tests/modalities/image/test_lotus_stage_demand.py)、[验证元数据](verification.json)及
+[全部阶段原值/失败](raw/stage-demand-evidence.tar.gz)可复核；18份观测加私有/公开双摘要清单。
+归档SHA-256 `abb224268b7694b79b3cdf11b88e63fa4b5cc4fc58084e9f3fc1c2d8a6ed5623`，私有原件按原run标识和stage-a-1/2/3定位。

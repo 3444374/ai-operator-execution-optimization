@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13阶段A：[有来源的条件准备需求](../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-demand)。
+独立准备窗口引用既有WorkDescriptor，增加真实stage输出解析和可选缓存字节秒；实SDK21项零模型检查通过。
+12张唯一资产的原Filter→Map中，强静态与消费者方案在4/16MiB均为17/12次准备，没有额外组织收益。
+原消息释放边界、新增副本和缓存额度范围明确；PG图像接线/真实E2E仍未证明，未组合多副本B。
+
 2026-10-13：[显式LOTUS图文接点](../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)。
 固定SDK配对支持原单Map和Filter→Map消息；诊断修后55项文本＋11项图文无模型检查通过，无跳过。
 修复JSON副本将原始surrogate规范化后提交的缺口；4项旧失败及源码差分保持。真实VLM、任务质量及性能尚未验证。

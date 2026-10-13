@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-13：阶段A的条件需求与实际消息寿命
+
+- 实现`27815f3e`：独立PreparedAssetWindow补有来源的可选metadata，直接引用既有WorkDescriptor/StageWork，不另建成本、局部性或估计区间；后继需求由原阶段实际结果解析，NativeCall/PG协议/调度核心保持。
+- 12张历史唯一COCO，实际LOTUS Filter→Map使用方向替身；19逻辑调用、7行后继，各方案完整正文/行关联/output/usage一致。4/16MiB共享缓存下，强静态与消费者方案同为17/12准备、顺序一致，普通静态解释全部节省。
+- exporter结束读取bytes不释放原消息；Filter消息仍有6,196,536字节URI，bytes方案再复制9,736,050字节。缓存字节秒与去重对象分开，原生cache额度未改，不把它算作整个host硬限。
+- [同题报告](experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-demand)保存初次discover失败、后续WorkDescriptor修订及最终21项实SDK通过；本地37项通过，零模型/GPU/Ray。Cachew/cedar/Preble/Kalypso/Ray/Daft边界从原文重新核对。
+- PG图像入口仅核对现有plan/work引用，未证明数据库共享准备或真实E2E；未扩大视频/具身数据或多副本组合，已向多副本owner回传A负结果和真实读取回执要求。
+
 ## 2026-10-13：独立图文执行接点
 
 - 研究原型`92bcd05a`与接线`607b9f88`分别推送；接线只改两个LOTUS文件及独立测试，固定方法保持，静态缓存反例未改变。

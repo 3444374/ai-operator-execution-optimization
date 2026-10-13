@@ -304,5 +304,176 @@
     "proposed_window_minutes": 10,
     "proposed_window_started": false,
     "scope": "Configured model root and two explicit data roots; directory/config reads only, no model import or service requests."
+  },
+  "stage_a": {
+    "run_suffix": "stage-a-3",
+    "source_base_commit": "f10032e413ee1d1e65476bbc684877759b32fe99",
+    "source_identity": [
+      {
+        "path": "code/src/data/materializers/prepared_assets.py",
+        "sha256": "dbd4238935517e243bb0f306e28ab24c54f5a881eb72ccbde360b32058b14f7d",
+        "bytes": 12347
+      },
+      {
+        "path": "code/tests/data/test_prepared_assets.py",
+        "sha256": "01beea3b6a56c84c6a484004eda0cfa307db501b8bb4cc96a3e8d04a7cedc6a3",
+        "bytes": 16472
+      },
+      {
+        "path": "code/tests/modalities/image/test_lotus_stage_demand.py",
+        "sha256": "d134404dc6f702139051c9054d96498ca64c995decdca7c78ebcfafe662f6279",
+        "bytes": 16001
+      }
+    ],
+    "work_contract": "existing WorkDescriptor/StageWork referenced; no separate cost/locality/interval schema",
+    "tests": {
+      "start_utc": "2026-10-13T06:36:06.311769+00:00",
+      "end_utc": "2026-10-13T06:36:32.214692+00:00",
+      "cpu_affinity": [
+        24,
+        25
+      ],
+      "real_model_calls": 0,
+      "gpu_starts": 0,
+      "ray_starts": 0,
+      "records": [
+        {
+          "file": "test_prepared_assets.py",
+          "returncode": 0,
+          "tests": 20,
+          "skipped": 0,
+          "failures": [],
+          "errors": []
+        },
+        {
+          "file": "test_lotus_stage_demand.py",
+          "returncode": 0,
+          "tests": 1,
+          "skipped": 0,
+          "failures": [],
+          "errors": []
+        }
+      ]
+    },
+    "unique_assets": 12,
+    "filter_survivors": 7,
+    "fixture_calls_per_case": 19,
+    "total_fixture_calls_per_run": 152,
+    "real_model_calls": 0,
+    "gpu_starts": 0,
+    "ray_starts": 0,
+    "records": [
+      {
+        "arm": "native",
+        "host_cache_bytes": null,
+        "cache_cap_applied": false,
+        "logical_calls": 19,
+        "prepare_calls": 19,
+        "copied_uri_bytes": 0,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 2.8407344478182495,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": null
+      },
+      {
+        "arm": "static_uri",
+        "host_cache_bytes": 4194304,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 17,
+        "copied_uri_bytes": 0,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 2.122155910357833,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 1963566.0856920015
+      },
+      {
+        "arm": "static_bytes",
+        "host_cache_bytes": 4194304,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 17,
+        "copied_uri_bytes": 9736050,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 2.0860524447634816,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 1950505.0778123885
+      },
+      {
+        "arm": "consumer_bytes",
+        "host_cache_bytes": 4194304,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 17,
+        "copied_uri_bytes": 9736050,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 2.0714056380093098,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 1932794.0269302446
+      },
+      {
+        "arm": "native",
+        "host_cache_bytes": null,
+        "cache_cap_applied": false,
+        "logical_calls": 19,
+        "prepare_calls": 19,
+        "copied_uri_bytes": 0,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 2.2179012270644307,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": null
+      },
+      {
+        "arm": "static_uri",
+        "host_cache_bytes": 16777216,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 12,
+        "copied_uri_bytes": 0,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 1.5150966397486627,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 5003074.1308818115
+      },
+      {
+        "arm": "static_bytes",
+        "host_cache_bytes": 16777216,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 12,
+        "copied_uri_bytes": 9736050,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 1.5105425692163408,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 4982682.520668241
+      },
+      {
+        "arm": "consumer_bytes",
+        "host_cache_bytes": 16777216,
+        "cache_cap_applied": true,
+        "logical_calls": 19,
+        "prepare_calls": 12,
+        "copied_uri_bytes": 9736050,
+        "request_bytes": 9747951,
+        "diagnostic_query_wall_s": 1.50723837595433,
+        "metadata_acquisition_s": 0.00921802269294858,
+        "cache_byte_seconds": 4966075.094220484
+      }
+    ],
+    "filter_message_uri_bytes": 6196536,
+    "map_message_uri_bytes": 3539514,
+    "known_filter_representation_bytes": {
+      "native_and_static_uri": 6197028,
+      "bytes_cache_4MiB": 7674768,
+      "bytes_cache_16MiB": 12393960
+    },
+    "static_and_consumer_preparation_orders_equal": true,
+    "extra_organization_opportunity_found": false,
+    "database_image_entry": "Existing SemanticImagePlan and WorkDescriptor reference verified in unit tests; no PostgreSQL sharing integration or E2E claim.",
+    "timing_scope": "Each query uses intercepted orientation responses. Metadata acquisition recorded separately. No real inference or complete database E2E timing; no ranking.",
+    "memory_scope": "Declared shared cache payload cap and known image objects; no native cache cap, RSS, pinned/device or all-process bound.",
+    "evidence_archive_sha256": "abb224268b7694b79b3cdf11b88e63fa4b5cc4fc58084e9f3fc1c2d8a6ed5623",
+    "evidence_members": 18,
+    "implementation_commit": "27815f3e0df30221b55dcebda35603c26c32260c"
   }
 }

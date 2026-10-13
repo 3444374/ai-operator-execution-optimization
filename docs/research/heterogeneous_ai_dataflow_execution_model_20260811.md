@@ -664,3 +664,48 @@ JPEG为62,406–204,829字节、RGB逻辑占用562,500–983,040字节、PNG dat
 放进字符串content，不产生视觉内容列表；不把它加入图文native性能配对。
 实际生成式VLM尚未核实，4个已有模型config中的CLIP只能作为图像embedding能力，不能承担本图文Map。
 这轮不运行真实模型，后续阶段画像和质量比较仍需协调共同基线与视觉服务能力。
+
+<a id="stage-demand-lifetime"></a>
+### 11.6 阶段A：有来源的需求与真实释放边界
+
+继续以数据库语义查询为对象，前端中立的准备核心仍须保留依赖、合法就绪、消费和取消信息。
+本切片先核对既有`WorkDescriptor/StageWork`：阶段单位、局部性、主阶段区间和校准来源均已存在，
+不建立新的成本/估计接口。`PreparedSourceMetadata`只引用该对象并附源对象ID、内容版本及证据来源；
+PNG实验中的RGB字节来自文件header，主阶段1个完整调用不是视觉token或时间成本校准。
+`AssetUse.ready_after`与`resolve_stage`只接收producer已声明的候选及实际阶段输出，
+未就绪的下游需求不能prepare，过滤掉的需求不生成模型调用；未知活跃读取仍保持lease。
+
+**三个释放事实分别成立。** 前置准备bytes经`.decode()`复制为独立URI字符串后，exporter确实结束读取bytes，
+但该字符串、完整请求、SDK解释与模型工作仍由各自owner持有。原LOTUS先生成整阶段消息，LM返回后
+sem_filter才按实际结果`iloc/take`形成Map输入；当前SemLoom重放也再次读取原消息。
+不能从POST完成或准备lease归还推出消息/GPU输入不再被读，更不能推出结果已被数据库消费者接收。
+现有CLIP broker本已在prepare确认后归还encoded额度、remote terminal后归还对象引用；这些既有行为不算本切片贡献。
+
+最小实SDK诊断固定12张历史COCO唯一图像及原Filter→Map方法，模拟服务只按图片真实宽高返回方向结果，
+不增加重复行、不改变输入/原formatter/parser/参数。Filter保留7行，Map后继在整个Filter返回前均未就绪。
+原生ImageArray、同信息强静态URI缓存、同表示静态bytes缓存与消费者bytes候选各执行19个完整调用；
+每次完整请求正文、行关联、输出及usage一致。4MiB缓存下三个共享方案均prepare17次，16MiB均12次，
+准备顺序也相同；原生为19次。静态方案同样利用真实输出释放无后继资产，因此没有额外组织动作或超静态准备收益。
+原生cache没有新额度API；4/16MiB只是共享缓存额度，不是原生/整个查询的host硬限。
+
+消息本身在Filter请求池返回前后仍持有6,196,536字节URI，Map为3,539,514字节；准备exporter已归还也不改变这一事实。
+bytes方案另复制9,736,050字节URI，原生字符串静态缓存可以直接复用相同对象。缓存字节秒和已知对象去重计量
+分别记录；共享引用只计一次，不能把cache字节秒当全部物理驻留、RSS或GPU内存。
+此为零模型机制负证据；模拟查询wall time、取得元数据的时间和原值保留，不作真实E2E/质量或速度排名。
+固定SDK21项通过，本地20项资产、3项work descriptor、4项stage、8项broker及2项源码反例检查通过。
+
+原始来源边界本轮重新核对：[Cachew§4.4](https://www.usenix.org/system/files/atc22-graur.pdf)已按pipeline/autocache摘要、
+worker/client指标选择缓存与重算；[cedar§3.2、§6.2](https://arxiv.org/html/2401.08895v4)已联合缓存、重排和表示膨胀，
+ASR不缓存反例保持。[Preble§3.2–3.3](https://proceedings.iclr.cc/paper_files/paper/2025/file/5bc342f48de8264779952fac378f96dc-Paper-Conference.pdf)
+已联合prefix复用、负载和淘汰成本；其KV状态及引擎动作不等于本地主机图像缓存。
+[Kalypso§4–5.3](https://arxiv.org/html/2607.23815v2)已经声明流水/谓词/连接合同、跟踪子任务依赖并参与stage预算；
+不能以“关系消费者寿命”本身声称空白，也不能从黑盒HTTP推定具备其KV管理权限。
+[Ray2.56.1原始文档](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/data/data-internals.rst)
+已具备streaming、out queue、背压与spill，heap hints不等于OS限额；
+[Daft官方UDF接口](https://docs.daft.ai/en/stable/api/udf/)已提供持久class、资源请求和并发，当前官方页核对不替代固定版本实验。
+
+新增机制只在独立准备模块，不改NativeCall、PG协议或调度器。[唯一检查报告](../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-demand)
+拥有源码、全部原值及失败身份。PostgreSQL图像入口目前仅核对原SemanticImagePlan与WorkDescriptor引用，
+未完成数据库共享准备接线或净收益证明；下一步须由真实查询给出资产版本与合法后继需求，沿已有入口验证，
+不得以本LOTUS fixture替代。A没有超强静态的证据，暂不组合多副本B；具身/DROID仍仅未来候选，不扩新数据平台，
+轨迹片段、视角和采样语义不改成任意独立帧。

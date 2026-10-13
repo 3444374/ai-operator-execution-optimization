@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-13阶段A：[条件需求与释放边界负结果](diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-demand)。
+12张唯一COCO、原LOTUS Filter→Map、19逻辑调用/每臂，4/16MiB下强静态与消费者方案均17/12准备；
+相同请求正文及输出，缓存字节秒/副本分别记录。零模型fixture，不是数据库共享准备、VLM质量或真实性能资格。
+
 2026-10-13：[LOTUS图文接点与固定Sema输入核查](diagnostics/lotus_image_text_compatibility_20261013/README.md)。
 实际LOTUS/SDK及Core使用模拟响应，原方法/消息/解析配对验证；诊断修后66项通过，非法Unicode预检零提交。
 已有12个COCO资产摘要一致，RGB/PNG/base64膨胀单独记录；不是视觉质量、真实模型或性能证据，原版本旧失败和静态准备缓存反例保留。
