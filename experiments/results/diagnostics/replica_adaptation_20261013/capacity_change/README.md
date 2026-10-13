@@ -24,3 +24,6 @@ K8第一轮仅在0.274/0.294秒收到第一批rate，完成前没有新的恢复
 
 后续仅增加实验起点hook的异常清理保护：[零HTTP检查](start-hook-cleanup-tests.txt)确认首错保留、Core／IO线程关闭、预留额度不退款。
 原1800次记录对应`52d4f0bb`的源码fingerprint，没有重跑fixture或模型；成功路径、固定变化时刻和所有原值保持。
+
+最后[三项replay行为检查](replay-final-tests.txt)全部通过（四臂合计16 localhost POST，另两项0HTTP）；
+没有重跑1800软件矩阵或820模型轮，Core／LOTUS公共batch未改。

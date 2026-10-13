@@ -1,0 +1,8 @@
+test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget (test_replica_model_replay.ReplicaModelReplayTests.test_all_four_arms_preserve_bytes_complete_responses_and_cumulative_budget) ... ok
+test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger (test_replica_model_replay.ReplicaModelReplayTests.test_preparation_continuation_cannot_reset_or_reuse_a_reserved_ledger) ... ok
+test_start_hook_failure_closes_core_without_post_or_budget_refund (test_replica_model_replay.ReplicaModelReplayTests.test_start_hook_failure_closes_core_without_post_or_budget_refund) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.279s
+
+OK
