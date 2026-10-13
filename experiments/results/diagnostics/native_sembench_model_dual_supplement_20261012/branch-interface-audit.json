@@ -1,0 +1,36 @@
+{
+  "native_snapshot": "62445a7e7774e51108cfda194210cf8b72951002",
+  "stability_snapshot": "9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c",
+  "main_snapshot": "425f0145b412581ac2027b4aa31c3ae51dd42f0c",
+  "merge_base": "2fad623e310d9d8f988adfadbe0438d53e943e07",
+  "neither_native_nor_stability_is_ancestor_of_other": true,
+  "unique_commit_counts": [
+    50,
+    12
+  ],
+  "identical": [
+    "code/src/scheduling/core",
+    "code/src/planning",
+    "code/src/scheduling/organization",
+    "code/src/execution_provider/adapters/native_tasks.py",
+    "code/src/execution_provider/adapters/incremental_execution.py",
+    "code/src/execution_provider/adapters/ray_map_transport.py"
+  ],
+  "stability_only_new_replica_modules": [
+    "code/src/execution_provider/adapters/model_replicas.py",
+    "code/src/execution_provider/adapters/replica_identity.py"
+  ],
+  "lotus_entry": "lotus_executor(lm, LotusBatchExecutor(execution, config,...)) replacing LM._process_uncached_messages",
+  "lotus_direct_dependencies": [
+    "NativeTaskSession",
+    "prepare_native_task",
+    "execution.engine.capacity.limits",
+    "execution.engine.jobs",
+    "execution.engine.wake",
+    "State",
+    "FullResponse codec",
+    "SDK LotusResponseReplay",
+    "LotusCallLimits"
+  ],
+  "recommendation": "Research from latest verified native; integrate replica modules and relevant Sema lifecycle changes only when needed, with a new verified integration commit. No merge or research branch created."
+}

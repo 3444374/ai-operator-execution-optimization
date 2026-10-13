@@ -2,7 +2,9 @@
 
 [原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
 
-[SemBench Movie原始查询接续](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)：唯一2000行准备集和六条LOTUS执行接点已提供，软件资格16 pass／2 unsupported／0 notrun，累计128POST；该早期切片的IMLane Q1由当时128行适配器拒绝，模型0；后续显式2000行接法见[容量软件检查](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
+当前LOTUS线先核对[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，再建立少量合理的单／双卡工作点，随后设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。
+
+[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
 
 分支按职责组织：
 
@@ -11,6 +13,8 @@
 | `main` | 经PR验证的稳定共同实现 |
 | `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
 | `codex/native-execution-adapters` | 当前原生接入发布；完成owner交接后归入统一集成分支 |
+| `feat/duckdb-native-paths` | DuckDB AI六条路径的临时接入，完成后合入统一基线 |
+| `feat/sema-native-paths` | Sema六条路径的临时接入，完成后合入统一基线 |
 | `exp/semloom-query-sharing` | 长短查询共享调度研究 |
 | `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
 | `maintenance/project-rules` | 规则整理的临时同步来源，整合完成后清理 |

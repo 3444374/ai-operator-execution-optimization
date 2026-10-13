@@ -1,5 +1,7 @@
 # SemLoom Code
 
+[SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)增加显式性能观测选项，默认资格核对保持；真实POST、总额度和结果继续记录。局部替身回归不授予实际库或模型性能资格。
 
 2026-10-12：[IMLane发布接续](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)已贯通SemBench行容量配置并补桥已创建／停止未确认的跨对象保护；本机105通过、14缺依赖跳过，新增服务器／POST／模型／GPU0。

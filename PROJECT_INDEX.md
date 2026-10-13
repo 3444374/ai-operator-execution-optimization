@@ -1,5 +1,7 @@
 # 项目导航
 
+[同题阶段分析与账本修订](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)拥有离线阶段统计、无模型配对及后续计划；实现／调用入口见[发送计数说明](code/scripts/README.md#sembench-send-accounting)。
+
 [原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)与[双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)拥有原轮与两个独立窗口的实际观测、失败和离线核验。
 
 [SemBench Movie原查询准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)拥有原Q1/Q2/Q3接线、官方评价、唯一CSV/清单及3×6资格；运行入口见[脚本说明](code/scripts/README.md)。
