@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[单查询副本供给／路由软件验证](replica_adaptation_20261013/README.md)：实际Core/localhost完整请求，
+同版本静态/固定速率/在线路由/供给配对及负例；GPU、模型和PG为0，默认保持。
+
 [原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。
 
 [固定发布版实库软件核查](native_release_actual_software_20261012/README.md)：首轮失败与第二窗口3组通过分别保存；后者173POST／104.662秒，含真实3.14.5、两图关闭与12个原Q2/Q3软件单元，不作模型性能资格。

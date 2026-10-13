@@ -1,0 +1,46 @@
+test_adaptive_configuration_roundtrip_and_shared_device_rejected (test_semloom_model_replicas.AdaptiveReplicaTests.test_adaptive_configuration_roundtrip_and_shared_device_rejected) ... ok
+test_cancel_keeps_responsibility (test_semloom_model_replicas.AdaptiveReplicaTests.test_cancel_keeps_responsibility) ... ok
+test_complete_error_keeps_body (test_semloom_model_replicas.AdaptiveReplicaTests.test_complete_error_keeps_body) ... ok
+test_fast_replica_replenishes_with_hard_work_limits (test_semloom_model_replicas.AdaptiveReplicaTests.test_fast_replica_replenishes_with_hard_work_limits) ... ok
+test_global_capacity_remains_hard (test_semloom_model_replicas.AdaptiveReplicaTests.test_global_capacity_remains_hard) ... ok
+test_service_queue_reduces_supply_without_adding_running_to_core_counts (test_semloom_model_replicas.AdaptiveReplicaTests.test_service_queue_reduces_supply_without_adding_running_to_core_counts) ... FAIL
+test_single_global_credit_probes_both_replicas_and_learns_own_work_rates (test_semloom_model_replicas.AdaptiveReplicaTests.test_single_global_credit_probes_both_replicas_and_learns_own_work_rates) ... ok
+test_timeout_keeps_responsibility (test_semloom_model_replicas.AdaptiveReplicaTests.test_timeout_keeps_responsibility) ... ok
+test_unknown_keeps_responsibility (test_semloom_model_replicas.AdaptiveReplicaTests.test_unknown_keeps_responsibility) ... ok
+test_cancelled_query_keeps_its_replica_and_another_query_completes_independently (test_semloom_model_replicas.ModelReplicaTests.test_cancelled_query_keeps_its_replica_and_another_query_completes_independently) ... ok
+test_child_observer_errors_do_not_hide_completed_http_or_create_unknown_work (test_semloom_model_replicas.ModelReplicaTests.test_child_observer_errors_do_not_hide_completed_http_or_create_unknown_work) ... ok
+test_cleanup_failure_still_closes_the_other_replica_and_remains_visible (test_semloom_model_replicas.ModelReplicaTests.test_cleanup_failure_still_closes_the_other_replica_and_remains_visible) ... ok
+test_disconnect_retains_unknown_endpoint_without_retries_or_releasing_other_endpoint (test_semloom_model_replicas.ModelReplicaTests.test_disconnect_retains_unknown_endpoint_without_retries_or_releasing_other_endpoint) ... ok
+test_existing_gateway_factory_selects_both_real_endpoints (test_semloom_model_replicas.ModelReplicaTests.test_existing_gateway_factory_selects_both_real_endpoints) ... ok
+test_gateway_cli_serves_v6_wire_with_two_actual_http_endpoints (test_semloom_model_replicas.ModelReplicaTests.test_gateway_cli_serves_v6_wire_with_two_actual_http_endpoints) ... ok
+test_global_request_limit_can_be_lower_than_sum_of_endpoint_capacities (test_semloom_model_replicas.ModelReplicaTests.test_global_request_limit_can_be_lower_than_sum_of_endpoint_capacities) ... ok
+test_http_failure_keeps_full_body_while_cancelled_sibling_remains_charged (test_semloom_model_replicas.ModelReplicaTests.test_http_failure_keeps_full_body_while_cancelled_sibling_remains_charged) ... ok
+test_malformed_json_is_full_response_and_oversized_body_keeps_unknown_reservation (test_semloom_model_replicas.ModelReplicaTests.test_malformed_json_is_full_response_and_oversized_body_keeps_unknown_reservation) ... ok
+test_observer_error_after_dispatch_cannot_refund_a_real_http_timeout (test_semloom_model_replicas.ModelReplicaTests.test_observer_error_after_dispatch_cannot_refund_a_real_http_timeout) ... ok
+test_observer_presend_failure_is_a_known_local_error_with_no_child_or_unknown_work (test_semloom_model_replicas.ModelReplicaTests.test_observer_presend_failure_is_a_known_local_error_with_no_child_or_unknown_work) ... ok
+test_one_replica_preserves_the_existing_completion_body_and_error_mapping (test_semloom_model_replicas.ModelReplicaTests.test_one_replica_preserves_the_existing_completion_body_and_error_mapping) ... ok
+test_per_replica_work_and_request_limits_hold_while_fast_replica_replenishes (test_semloom_model_replicas.ModelReplicaTests.test_per_replica_work_and_request_limits_hold_while_fast_replica_replenishes) ... ok
+test_presend_observer_failure_does_not_refund_another_replica_query (test_semloom_model_replicas.ModelReplicaTests.test_presend_observer_failure_does_not_refund_another_replica_query) ... ok
+test_ray_composition_uses_replica_urls_and_capacities_and_closes_in_reverse_order (test_semloom_model_replicas.ModelReplicaTests.test_ray_composition_uses_replica_urls_and_capacities_and_closes_in_reverse_order) ... ok
+test_read_timeout_keeps_remote_responsibility_even_after_fixture_finishes (test_semloom_model_replicas.ModelReplicaTests.test_read_timeout_keeps_remote_responsibility_even_after_fixture_finishes) ... ok
+test_real_urls_receive_exact_occurrences_and_complete_responses_keep_identity (test_semloom_model_replicas.ModelReplicaTests.test_real_urls_receive_exact_occurrences_and_complete_responses_keep_identity) ... ok
+test_static_oversized_work_fails_without_dispatch_or_rerouting (test_semloom_model_replicas.ModelReplicaTests.test_static_oversized_work_fails_without_dispatch_or_rerouting) ... ok
+test_static_sequence_assignment_waits_for_its_endpoint_without_rerouting (test_semloom_model_replicas.ModelReplicaTests.test_static_sequence_assignment_waits_for_its_endpoint_without_rerouting) ... ok
+test_equivalence_duplicate_urls_and_global_capacities_are_checked_before_io (test_semloom_model_replicas.ReplicaConfigurationTests.test_equivalence_duplicate_urls_and_global_capacities_are_checked_before_io) ... ok
+test_ray_replica_directory_is_checked_before_actor_startup (test_semloom_model_replicas.ReplicaConfigurationTests.test_ray_replica_directory_is_checked_before_actor_startup) ... ok
+test_strict_configuration_roundtrip_and_signature (test_semloom_model_replicas.ReplicaConfigurationTests.test_strict_configuration_roundtrip_and_signature) ... ok
+
+======================================================================
+FAIL: test_service_queue_reduces_supply_without_adding_running_to_core_counts (test_semloom_model_replicas.AdaptiveReplicaTests.test_service_queue_reduces_supply_without_adding_running_to_core_counts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "./code/tests/postgres/test_semloom_model_replicas.py", line 678, in test_service_queue_reduces_supply_without_adding_running_to_core_counts
+    self.until(execution, lambda: len(a.requests) + len(b.requests) == 2)
+  File "./code/tests/postgres/test_semloom_model_replicas.py", line 175, in until
+    self.assertTrue(condition(), "controlled HTTP condition did not complete")
+AssertionError: False is not true : controlled HTTP condition did not complete
+
+----------------------------------------------------------------------
+Ran 31 tests in 4.783s
+
+FAILED (failures=1)

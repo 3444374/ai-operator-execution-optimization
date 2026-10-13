@@ -1,5 +1,13 @@
 # SemLoom 脚本入口
 
+## 单查询模型副本
+
+`services/run_model_replica_gateway.py`沿既有Map v6协议读取私有replica配置。
+`routing=adaptive`与显式`adaptation`启用软反馈，`--replica-metrics`复用后台服务压力采样；旧默认仍轮转。
+`benchmarks/replica_adaptation_probe.py --output <new-local.json.gz>`执行有限Core/localhost软件配对，
+不访问服务器或模型。配置、职责和限制见[模块说明](../src/execution_provider/adapters/model_replicas.md)，
+全部观测与负结果见[软件报告](../../experiments/results/diagnostics/replica_adaptation_20261013/README.md)。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

@@ -1,5 +1,9 @@
 # 组件测量与历史模拟
 
+[副本供给／路由探测](replica_adaptation_probe.py)运行同版本Core/localhost软件fixture，
+保留静态选点、固定速率、在线路由、供给和反例；[原始观测与负结果](../../../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
+不作为模型／GPU证据。
+
 [本轮私有发送hook](sembench_pre_send_ledger.py)配合[持久计数组件](../../src/experiments/send_counts.py)，没有模型启动或预算授权功能；部署导入名、指纹与离线迁移要求见[脚本入口](../README.md#sembench-send-accounting)。原件、本地配对及复算入口统一在[Q2补测主报告](../../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
 原组件和动机命令入口统一在这里。它们用于组件测量、fake/CPU历史复算及机制诊断，证据用途由对应报告说明。

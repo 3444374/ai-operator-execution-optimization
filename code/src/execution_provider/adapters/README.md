@@ -7,6 +7,13 @@ complete-response Python API preserve existing task/Job/lease ownership. The
 read-only process/device probe distinguishes model replicas from HTTP workers;
 local fixtures and actual-library CPU checks have separate scopes.
 
+Replica `adaptive` mode is an explicit option: successful completion work rates
+inform existing least-work routing, while fresh queue/KV samples change supply
+one slot at a time under the same hard limits. The independent gateway can use
+`--replica-metrics`; samplers stay outside Core. [Local paired evidence](../../../../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
+includes regressions, so round-robin remains the default. Shared preparation is
+still rejected and live device qualification is separate.
+
 `native_tasks.py` accepts already prepared, non-streaming single-model text calls at each
 supplier adapter's actual entry. LOTUS and DuckDB AI offer calls before their request pools;
 Sema offers calls after its native HTTP requests arrive. It uses the existing `SessionEngine`, Job grants, organization and

@@ -1,0 +1,14 @@
+test_completion_rate_divides_by_busy_union_and_excludes_idle_and_unknown_work (test_replica_adaptation.ReplicaAdaptationTests.test_completion_rate_divides_by_busy_union_and_excludes_idle_and_unknown_work) ... ok
+test_invalid_feedback_is_rejected (test_replica_adaptation.ReplicaAdaptationTests.test_invalid_feedback_is_rejected) ... ok
+test_missing_rate_uses_work_and_probes_unmeasured_idle_replica (test_replica_adaptation.ReplicaAdaptationTests.test_missing_rate_uses_work_and_probes_unmeasured_idle_replica) ... ok
+test_one_step_supply_applies_each_service_sample_once_and_restores_after_stale (test_replica_adaptation.ReplicaAdaptationTests.test_one_step_supply_applies_each_service_sample_once_and_restores_after_stale) ... ok
+test_pressure_parser_requires_complete_counts_and_does_not_mix_token_rates (test_replica_adaptation.ReplicaAdaptationTests.test_pressure_parser_requires_complete_counts_and_does_not_mix_token_rates) ... ok
+test_queue_and_kv_pressure_restore_one_step_without_exceeding_global_limit (test_replica_adaptation.ReplicaAdaptationTests.test_queue_and_kv_pressure_restore_one_step_without_exceeding_global_limit) ... ok
+test_rates_compare_same_work_unit_and_use_predicted_drain (test_replica_adaptation.ReplicaAdaptationTests.test_rates_compare_same_work_unit_and_use_predicted_drain) ... ok
+test_soft_work_target_allows_one_hard_legal_task_on_idle_replica (test_replica_adaptation.ReplicaAdaptationTests.test_soft_work_target_allows_one_hard_legal_task_on_idle_replica) ... ok
+test_unknown_or_cancelled_work_still_blocks_endpoint_from_core_snapshot (test_replica_adaptation.ReplicaAdaptationTests.test_unknown_or_cancelled_work_still_blocks_endpoint_from_core_snapshot) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK

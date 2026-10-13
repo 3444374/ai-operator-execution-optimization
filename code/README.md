@@ -1,5 +1,9 @@
 # SemLoom Code
 
+[副本供给与目标选择](src/execution_provider/adapters/model_replicas.md#optional-completionpressure-feedback)
+保留既有真实副本组装和硬容量，增加可选完成速率／队列反馈；[配对软件验证](../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
+保留同速及单副本退化，默认仍round-robin。该接线不自动启用共享准备或跨owner全局服务容量。
+
 [SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)增加显式性能观测选项，默认资格核对保持；真实POST、总额度和结果继续记录。局部替身回归不授予实际库或模型性能资格。

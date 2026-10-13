@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
 import sys
@@ -14,6 +15,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.execution_provider import server
 from src.execution_provider.adapters.model_replicas import ModelReplicaSet, build_model_replica_execution
+from src.execution_provider.adapters.replica_metrics import observe_replica_metrics
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 
 
@@ -21,6 +23,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, add_help=False)
     parser.add_argument("--replica-config", required=True, type=Path)
     parser.add_argument("--replica-ray-config", action="append", default=[], metavar="ID=PATH")
+    parser.add_argument("--replica-metrics", action="store_true")
     own, remaining = parser.parse_known_args(argv)
     selected = server.parse_args(remaining)
     if not selected.incremental_map or selected.fixed_model_config is None:
@@ -29,6 +32,8 @@ def main(argv=None):
         parser.error("replica gateway uses its own factory and equal-share Job policy")
     try:
         directory = ModelReplicaSet.load(own.replica_config)
+        if own.replica_metrics and directory.routing != "adaptive":
+            raise ValueError("live metrics require adaptive routing")
         physical = None
         if own.replica_ray_config:
             physical = {}
@@ -39,8 +44,10 @@ def main(argv=None):
                 physical[endpoint] = RayMapConfig.load(path)
     except (OSError, ValueError, TypeError):
         parser.error("invalid replica or replica Ray configuration")
-    return server.main(remaining, incremental_execution_factory=partial(
-        build_model_replica_execution, replicas=directory, physical=physical))
+    with observe_replica_metrics(directory) if own.replica_metrics else nullcontext(None) as observations:
+        return server.main(remaining, incremental_execution_factory=partial(
+            build_model_replica_execution, replicas=directory, physical=physical,
+            replica_observations=observations))
 
 
 if __name__ == "__main__":

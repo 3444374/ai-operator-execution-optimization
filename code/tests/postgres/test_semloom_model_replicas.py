@@ -32,6 +32,8 @@ from src.execution_provider.wire import v6
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES, encode_frame, read_frame
 from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.session_contract import State, TaskKey, Usage
+from src.scheduling.core.models import AdmissionObservation
+from src.scheduling.endpoint_routing.replica_adaptation import ReplicaAdaptationConfig
 
 
 DEPLOYMENT = "a" * 64
@@ -624,6 +626,75 @@ class ModelReplicaTests(unittest.TestCase):
         self.assertFalse(execution.close())
         with self.assertRaisesRegex(RuntimeError, "finalization failed"):
             execution.engine.backend.close()
+
+
+class AdaptiveReplicaTests(unittest.TestCase):
+    setUp = ModelReplicaTests.setUp
+    tearDown = ModelReplicaTests.tearDown
+    sites = ModelReplicaTests.sites
+    site = ModelReplicaTests.site
+    flow = ModelReplicaTests.flow
+    until = ModelReplicaTests.until
+    collect = ModelReplicaTests.collect
+
+    def execution(self, replica_set, **options):
+        if replica_set.routing == "round_robin":
+            replica_set = replace(replica_set, routing="adaptive", adaptation=ReplicaAdaptationConfig())
+        return ModelReplicaTests.execution(self, replica_set, **options)
+
+    test_cancel_keeps_responsibility = ModelReplicaTests.test_cancelled_query_keeps_its_replica_and_another_query_completes_independently
+    test_unknown_keeps_responsibility = ModelReplicaTests.test_disconnect_retains_unknown_endpoint_without_retries_or_releasing_other_endpoint
+    test_timeout_keeps_responsibility = ModelReplicaTests.test_read_timeout_keeps_remote_responsibility_even_after_fixture_finishes
+    test_complete_error_keeps_body = ModelReplicaTests.test_http_failure_keeps_full_body_while_cancelled_sibling_remains_charged
+    test_fast_replica_replenishes_with_hard_work_limits = ModelReplicaTests.test_per_replica_work_and_request_limits_hold_while_fast_replica_replenishes
+    test_global_capacity_remains_hard = ModelReplicaTests.test_global_request_limit_can_be_lower_than_sum_of_endpoint_capacities
+
+    def test_single_global_credit_probes_both_replicas_and_learns_own_work_rates(self):
+        a, b = self.site("a"), self.site("b")
+        execution = self.execution(directory((a, b), requests=1, work=1), max_tasks=8)
+        flow = self.flow(execution)
+        flow.offer(tuple(task(i) for i in range(8)))
+        flow.end_input()
+        result = self.collect(flow, 8)
+        self.assertTrue(a.requests and b.requests)
+        self.assertEqual(Counter(json.loads(r[1])["tag"] for r in a.requests + b.requests),
+                         Counter(f"row-{i}" for i in range(8)))
+        self.assertEqual(set(result), set(range(8)))
+        execution.engine.policies.admission.decide(0)
+        for sample in execution.engine.policies.router._samples.values():
+            self.assertGreater(sample.service_rate_work_units_s, 0)
+        flow.close(clean=True)
+        self.assertTrue(execution.close())
+
+    def test_service_queue_reduces_supply_without_adding_running_to_core_counts(self):
+        a, b = self.site("a", hold=True), self.site("b", hold=True)
+        def sample(_):
+            return AdmissionObservation(time.monotonic(), True, 0, 100, 3, 0.2, sample_age_s=0)
+        providers = {k: mock.Mock(latest=sample) for k in ("a", "b")}
+        execution = self.execution(directory((a, b), capacities=((3, 3), (3, 3))),
+                                   max_tasks=8, replica_observations=providers)
+        flow = self.flow(execution)
+        flow.offer(tuple(task(i) for i in range(8)))
+        self.until(execution, lambda: len(a.requests) + len(b.requests) == 2)
+        self.assertEqual(execution.engine.policies.admission.limit, 2)
+        self.assertEqual(execution.engine.capacity.usage().active_requests, 2)
+        a.released.set(); b.released.set()
+        self.collect(flow, 8)
+        flow.close()
+
+    def test_adaptive_configuration_roundtrip_and_shared_device_rejected(self):
+        a, b = self.site("a"), self.site("b")
+        d = replace(directory((a, b)), routing="adaptive", adaptation=ReplicaAdaptationConfig(target_drain_s=1))
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "replicas.json"
+            path.write_text(json.dumps(asdict(d)))
+            self.assertEqual(ModelReplicaSet.load(path), d)
+        copies = tuple(replace(r, device_ids=("same-device",)) for r in d.replicas)
+        with self.assertRaisesRegex(ValueError, "overlapping physical device"):
+            replace(d, replicas=copies)
+        # Existing explicit shared-device static use is retained; no automatic
+        # physical capacity inference is made by either assembly.
+        replace(d, replicas=copies, routing="round_robin", adaptation=None)
 
 
 class ReplicaConfigurationTests(unittest.TestCase):

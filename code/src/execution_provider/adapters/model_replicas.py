@@ -14,12 +14,16 @@ from urllib.parse import urlsplit
 from ...scheduling.core.errors import EndpointCapacityUnavailable
 from ...scheduling.core.models import EndpointSnapshot, RoutingDecision, TopologySnapshot
 from ...scheduling.core.session_policy import SessionPolicies
+from ...scheduling.endpoint_routing.replica_adaptation import (
+    ReplicaAdaptationConfig, ReplicaAdaptivePolicy, ReplicaCapacity,
+)
 from ...scheduling.organization.session_window import WorkWindowOrganizer
 from ...scheduling.submission_control.admission import StaticAdmissionController
 from .async_fixed_model import AsyncFixedModelTransport, exception_details
 from .full_response import FullResponseTransport
 from .incremental_execution import build_fixed_model_execution
 from .model_config import FixedModelConfig
+from .replica_feedback import ReplicaCompletionFeedback, successful_response
 
 
 _IDENTIFIER = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}\Z")
@@ -86,12 +90,17 @@ class ModelReplicaSet:
     max_active_work: int
     routing: str = "round_robin"
     role_id: str = "model"
+    adaptation: ReplicaAdaptationConfig | None = None
 
     def __post_init__(self):
         if type(self.model_id) is not str or not 1 <= len(self.model_id.encode()) <= 128:
             raise ValueError("invalid replica model identity")
-        if self.role_id != "model" or self.routing not in ("round_robin", "static"):
-            raise ValueError("replicas require the model role and static or round_robin routing")
+        if self.role_id != "model" or self.routing not in ("round_robin", "static", "adaptive"):
+            raise ValueError("replicas require the model role and a supported routing policy")
+        if (self.routing == "adaptive") != (type(self.adaptation) is ReplicaAdaptationConfig):
+            raise ValueError("adaptive routing requires its explicit configuration")
+        if self.routing != "adaptive" and self.adaptation is not None:
+            raise ValueError("static routing does not consume adaptation settings")
         if (type(self.replicas) is not tuple or not 1 <= len(self.replicas) <= MAX_REPLICAS
                 or any(type(replica) is not ModelReplica for replica in self.replicas)):
             raise ValueError("invalid model replica directory")
@@ -101,6 +110,10 @@ class ModelReplicaSet:
             raise ValueError("replicas must use distinct endpoint URLs")
         if len({r.deployment_sha256 for r in self.replicas}) != 1:
             raise ValueError("replicas must declare one equivalent deployment")
+        if self.routing == "adaptive":
+            devices = [(r.location_id, d) for r in self.replicas for d in r.device_ids]
+            if len(devices) != len(set(devices)):
+                raise ValueError("adaptive replicas cannot add capacities on an overlapping physical device")
         _positive(self.max_active_requests, "global request capacity")
         _positive(self.max_active_work, "global work capacity")
         if (self.max_active_requests > sum(r.max_active_requests for r in self.replicas)
@@ -111,6 +124,8 @@ class ModelReplicaSet:
     def sha256(self):
         # Ordering participates because it controls deterministic routing.
         record = asdict(self)
+        if self.adaptation is None:
+            record.pop("adaptation")  # Preserve signatures of existing static configurations.
         for replica in record["replicas"]:
             replica["endpoint_url"] = hashlib.sha256(replica["endpoint_url"].encode()).hexdigest()
         return hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -130,6 +145,8 @@ class ModelReplicaSet:
                 if type(item) is not dict or type(item.get("device_ids")) is not list:
                     raise ValueError("invalid replica configuration fields")
                 replicas.append(ModelReplica(**dict(item, device_ids=tuple(item["device_ids"]))))
+            if value.get("adaptation") is not None:
+                value["adaptation"] = ReplicaAdaptationConfig(**value["adaptation"])
             return cls(**dict(value, replicas=tuple(replicas)))
         except (OSError, UnicodeError, ValueError, TypeError, KeyError):
             raise ValueError("invalid model replica configuration") from None
@@ -184,10 +201,11 @@ class ReplicaTransport:
     """Resolve a Core-selected identity to one owned HTTP transport; never retry."""
 
     def __init__(self, config, capacity, observer=None, *, directory, response_mode,
-                 physical=None, before_request=None):
+                 physical=None, before_request=None, feedback=None):
         self.directory, self.transports = directory, {}
         self._observer = observer
         self.observation_failure = None
+        self.feedback, self.response_mode = feedback, response_mode
         self._directory_sha256 = directory.sha256
         if response_mode not in ("completion", "full"):
             raise ValueError("unknown replica response mode")
@@ -260,7 +278,18 @@ class ReplicaTransport:
             # error representation settles this task without inventing HTTP status.
             return b'{"bridge_error":"MODEL_UNAVAILABLE"}'
         # The child uses its legacy local name; the Core keeps the physical ID.
-        return await self.transports[endpoint].execute(task, "model")
+        if self.feedback is None:
+            return await self.transports[endpoint].execute(task, "model")
+        self.feedback.started(endpoint)
+        successful = False
+        try:
+            payload = await self.transports[endpoint].execute(task, "model")
+            successful = successful_response(payload, self.response_mode)
+            return payload
+        finally:
+            # This feedback retires no request or work credit. Core's terminal
+            # remains the sole authority, including after cancellation/errors.
+            self.feedback.finished(endpoint, task.task.estimated_work, successful=successful)
 
     def cancel_pending(self, key):
         for child in self.transports.values():
@@ -296,7 +325,7 @@ class ReplicaTransport:
 
 def build_model_replica_execution(config, *, replicas, response_mode="completion", physical=None,
                                   before_request=None, max_tasks=None, max_active_requests=None,
-                                  active_work=None, organize=None, **options):
+                                  active_work=None, organize=None, replica_observations=None, **options):
     """Real assembly for Map gateways and complete-response NativeTaskSession consumers."""
     if type(replicas) is not ModelReplicaSet or config.model_id != replicas.model_id:
         raise ValueError("model replica directory differs from the fixed model")
@@ -315,12 +344,23 @@ def build_model_replica_execution(config, *, replicas, response_mode="completion
     now = time.monotonic()
     topology = TopologySnapshot(tuple(EndpointSnapshot(r.endpoint_id, r.endpoint_url, replicas.role_id,
         ",".join(r.device_ids), True, 0, 0, None, now) for r in replicas.replicas), now)
-    policies = SessionPolicies(StaticAdmissionController(requests), StaticReplicaRouter(replicas),
+    feedback = None
+    admission, router = StaticAdmissionController(requests), StaticReplicaRouter(replicas)
+    if replicas.routing == "adaptive":
+        feedback = ReplicaCompletionFeedback(tuple(r.endpoint_id for r in replicas.replicas),
+            replicas.adaptation, observations=replica_observations)
+        router = ReplicaAdaptivePolicy(tuple(ReplicaCapacity(r.endpoint_id, r.max_active_requests,
+            r.max_active_work) for r in replicas.replicas), requests,
+            config=replicas.adaptation, feedback=feedback.latest)
+        admission = router
+    elif replica_observations is not None:
+        raise ValueError("replica observations require adaptive routing")
+    policies = SessionPolicies(admission, router,
         topology, replicas.role_id, organize=organize or WorkWindowOrganizer(tasks, work))
     execution = build_fixed_model_execution(config, max_tasks=tasks, max_active_requests=requests,
         active_work=work, organize=None, policies=policies,
         transport_factory=partial(ReplicaTransport, directory=replicas, response_mode=response_mode,
-                                  physical=physical, before_request=before_request), **options)
+                                  physical=physical, before_request=before_request, feedback=feedback), **options)
 
     cleanup_failure = None
 

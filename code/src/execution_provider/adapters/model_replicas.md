@@ -34,6 +34,57 @@ and waits for that endpoint, even when another endpoint is free. A task too
 large for every replica, or for its static endpoint, fails without sending HTTP.
 Neither policy retries a failed request or moves an already accepted request.
 
+## Optional completion/pressure feedback
+
+`routing="adaptive"` requires an explicit `adaptation` object in the private
+configuration. `ReplicaAdaptationConfig` accepts `target_drain_s` (optional soft
+work target), `sample_interval_s`, `stale_after_s`, `rate_alpha` and
+`congestion_kv_usage`. Existing `static`/`round_robin` behavior, configuration
+signatures and the default single-endpoint assembly are preserved.
+
+This mode reuses `LeastWorkEndpointRouter`. A bounded accumulator per endpoint
+estimates successful completed descriptor work divided by the union of busy
+transport intervals; an exponential average smooths successive samples. It
+includes preparation, HTTP/client waits and service queueing. It is not actual
+token throughput, GPU utilization or calibrated service capacity. HTTP errors,
+local errors and unknown outcomes do not add completed work. A request-count
+descriptor stays in request-count units and is never compared to token/s.
+Until all replicas have fresh rates, neutral outstanding work is used and an
+unmeasured idle endpoint receives a probe opportunity. Probing sends only an
+original queued call, without duplicate requests or hidden retries.
+
+On each new complete queue/KV sample, the per-replica supply target moves one
+request down under pressure or one up on a clear queue, between one and its hard
+declaration. Aggregate admission uses the smaller of the declared global request
+limit and the sum of current targets. Routing still checks that endpoint's hard
+request/work limits against Core records. A sample does not cancel or retire any
+already submitted work. Missing/stale pressure restores declared static supply;
+missing/stale rates use the neutral-work fallback. The optional drain target
+additionally limits new outstanding work; one hard-legal task can run alone on an
+idle endpoint even if its estimate exceeds the soft target.
+
+`replica_observations={endpoint_id: provider}` accepts existing cached/nonblocking
+observation providers. Service running counts can include the owner's requests,
+so they are not added to Core counts. Providers remain caller-owned. The gateway
+CLI's explicit `--replica-metrics` option starts the existing nonblocking sampler
+against `/metrics` on each declared listener, outside the Core decision thread,
+and closes the samplers with the gateway. Missing metrics never become fabricated
+zero queue or zero KV values. Live metrics do not reserve resources against other
+clients or prove deployment identity.
+
+Adaptive mode rejects replicas declaring the same `(location_id, device_id)`;
+several URLs cannot automatically add capacity on one physical device. Device
+declarations still require the separate live identity probe. Empty device tuples
+are allowed for software fixtures and establish no GPU capacity. Existing
+explicit static shared-device checks are unchanged.
+
+This is an optional execution capability, not a new scheduling framework or a
+research contribution. [The local paired report](../../../../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
+separates the already present completion-driven round-robin benefit from new
+decisions, includes stronger fixed-rate routing and retains supply regressions.
+The default stays round-robin. Shared preparation remains unsupported by this
+assembly; a transport completion is not a device-read lifetime receipt.
+
 Core derives outstanding counts from its own records. Submitted, cancelled and
 unknown remote tasks remain in both global and endpoint request/work accounting
 until Core receives an authoritative terminal. No local HTTP timeout, detached

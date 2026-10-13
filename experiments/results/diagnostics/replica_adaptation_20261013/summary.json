@@ -1,0 +1,556 @@
+{
+  "evidence_type": "software_fixture",
+  "elapsed_s": 28.286187834106386,
+  "http_requests": 3096,
+  "model_requests": 0,
+  "summary": [
+    {
+      "case": "heterogeneous",
+      "arm": "round_robin",
+      "requests": 8,
+      "all_jct_s": [
+        0.3822794579900801,
+        0.39498408301733434,
+        0.3562168749049306
+      ],
+      "median_jct_s": 0.3822794579900801,
+      "median_policy_s": 0.000448128,
+      "median_policy_us_per_call": 4.668,
+      "median_wait_s": 0.8946296274662018,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          32,
+          16
+        ],
+        [
+          34,
+          14
+        ]
+      ]
+    },
+    {
+      "case": "heterogeneous",
+      "arm": "fixed_rate",
+      "requests": 8,
+      "all_jct_s": [
+        0.39301887480542064,
+        0.3944264999590814,
+        0.38647833303548396
+      ],
+      "median_jct_s": 0.39301887480542064,
+      "median_policy_s": 0.001544212,
+      "median_policy_us_per_call": 16.085541666666668,
+      "median_wait_s": 0.8817500832956284,
+      "endpoint_counts": [
+        [
+          34,
+          14
+        ],
+        [
+          32,
+          16
+        ],
+        [
+          33,
+          15
+        ]
+      ]
+    },
+    {
+      "case": "heterogeneous",
+      "arm": "adaptive_route",
+      "requests": 8,
+      "all_jct_s": [
+        0.32986441696994007,
+        0.3649916669819504,
+        0.380129958037287
+      ],
+      "median_jct_s": 0.3649916669819504,
+      "median_policy_s": 0.001604289,
+      "median_policy_us_per_call": 16.71134375,
+      "median_wait_s": 0.9315995774231851,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          34,
+          14
+        ],
+        [
+          34,
+          14
+        ]
+      ]
+    },
+    {
+      "case": "heterogeneous",
+      "arm": "adaptive_supply",
+      "requests": 8,
+      "all_jct_s": [
+        0.32883779099211097,
+        0.3648737920448184,
+        0.391838459065184
+      ],
+      "median_jct_s": 0.3648737920448184,
+      "median_policy_s": 0.002402539,
+      "median_policy_us_per_call": 20.20873553719008,
+      "median_wait_s": 0.44354037987068295,
+      "endpoint_counts": [
+        [
+          34,
+          14
+        ],
+        [
+          35,
+          13
+        ],
+        [
+          36,
+          12
+        ]
+      ]
+    },
+    {
+      "case": "burst",
+      "arm": "round_robin",
+      "requests": 8,
+      "all_jct_s": [
+        0.5256640838924795,
+        0.45142445899546146,
+        0.4927939160261303
+      ],
+      "median_jct_s": 0.4927939160261303,
+      "median_policy_s": 0.000559004,
+      "median_policy_us_per_call": 5.822958333333333,
+      "median_wait_s": 0.8489511685911566,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          33,
+          15
+        ],
+        [
+          34,
+          14
+        ]
+      ]
+    },
+    {
+      "case": "burst",
+      "arm": "fixed_rate",
+      "requests": 8,
+      "all_jct_s": [
+        0.44909087498672307,
+        0.5269314160104841,
+        0.4837640000041574
+      ],
+      "median_jct_s": 0.4837640000041574,
+      "median_policy_s": 0.001875215,
+      "median_policy_us_per_call": 19.53348958333333,
+      "median_wait_s": 0.8214506264775991,
+      "endpoint_counts": [
+        [
+          32,
+          16
+        ],
+        [
+          30,
+          18
+        ],
+        [
+          30,
+          18
+        ]
+      ]
+    },
+    {
+      "case": "burst",
+      "arm": "adaptive_route",
+      "requests": 8,
+      "all_jct_s": [
+        0.4488461671862751,
+        0.5170262500178069,
+        0.5196067499928176
+      ],
+      "median_jct_s": 0.5170262500178069,
+      "median_policy_s": 0.00190438,
+      "median_policy_us_per_call": 19.83729166666667,
+      "median_wait_s": 0.846537456382066,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          31,
+          17
+        ],
+        [
+          32,
+          16
+        ]
+      ]
+    },
+    {
+      "case": "burst",
+      "arm": "adaptive_supply",
+      "requests": 8,
+      "all_jct_s": [
+        0.4853830421343446,
+        0.4514972500037402,
+        0.4504529170226306
+      ],
+      "median_jct_s": 0.4514972500037402,
+      "median_policy_s": 0.003454578,
+      "median_policy_us_per_call": 30.844446428571427,
+      "median_wait_s": 0.41555437189526856,
+      "endpoint_counts": [
+        [
+          34,
+          14
+        ],
+        [
+          33,
+          15
+        ],
+        [
+          33,
+          15
+        ]
+      ]
+    },
+    {
+      "case": "estimate_error",
+      "arm": "round_robin",
+      "requests": 8,
+      "all_jct_s": [
+        0.349352499935776,
+        0.4326168750412762,
+        0.39604933303780854
+      ],
+      "median_jct_s": 0.39604933303780854,
+      "median_policy_s": 0.000499916,
+      "median_policy_us_per_call": 5.207458333333333,
+      "median_wait_s": 0.9166311661247164,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          33,
+          15
+        ],
+        [
+          32,
+          16
+        ]
+      ]
+    },
+    {
+      "case": "estimate_error",
+      "arm": "fixed_rate",
+      "requests": 8,
+      "all_jct_s": [
+        0.3455523329321295,
+        0.35913491691462696,
+        0.39200912485830486
+      ],
+      "median_jct_s": 0.35913491691462696,
+      "median_policy_s": 0.001640378,
+      "median_policy_us_per_call": 17.08727083333333,
+      "median_wait_s": 0.9149654188659042,
+      "endpoint_counts": [
+        [
+          33,
+          15
+        ],
+        [
+          35,
+          13
+        ],
+        [
+          33,
+          15
+        ]
+      ]
+    },
+    {
+      "case": "estimate_error",
+      "arm": "adaptive_route",
+      "requests": 8,
+      "all_jct_s": [
+        0.3456497499719262,
+        0.3857718750368804,
+        0.3578686669934541
+      ],
+      "median_jct_s": 0.3578686669934541,
+      "median_policy_s": 0.001523291,
+      "median_policy_us_per_call": 15.867614583333333,
+      "median_wait_s": 0.9056104556657374,
+      "endpoint_counts": [
+        [
+          35,
+          13
+        ],
+        [
+          35,
+          13
+        ],
+        [
+          35,
+          13
+        ]
+      ]
+    },
+    {
+      "case": "estimate_error",
+      "arm": "adaptive_supply",
+      "requests": 8,
+      "all_jct_s": [
+        0.3582887090742588,
+        0.4409120420459658,
+        0.3745419590268284
+      ],
+      "median_jct_s": 0.3745419590268284,
+      "median_policy_s": 0.003109872,
+      "median_policy_us_per_call": 23.35493442622951,
+      "median_wait_s": 0.3761738301254809,
+      "endpoint_counts": [
+        [
+          38,
+          10
+        ],
+        [
+          36,
+          12
+        ],
+        [
+          36,
+          12
+        ]
+      ]
+    },
+    {
+      "case": "homogeneous",
+      "arm": "round_robin",
+      "requests": 8,
+      "all_jct_s": [
+        0.3037865408696234,
+        0.3093381249345839,
+        0.3040221659466624
+      ],
+      "median_jct_s": 0.3040221659466624,
+      "median_policy_s": 0.000431875,
+      "median_policy_us_per_call": 4.498697916666667,
+      "median_wait_s": 0.7966854616533965,
+      "endpoint_counts": [
+        [
+          22,
+          26
+        ],
+        [
+          22,
+          26
+        ],
+        [
+          21,
+          27
+        ]
+      ]
+    },
+    {
+      "case": "homogeneous",
+      "arm": "fixed_rate",
+      "requests": 8,
+      "all_jct_s": [
+        0.2924483339302242,
+        0.2993821247946471,
+        0.297412000130862
+      ],
+      "median_jct_s": 0.297412000130862,
+      "median_policy_s": 0.001481292,
+      "median_policy_us_per_call": 15.430125,
+      "median_wait_s": 0.7842589544598013,
+      "endpoint_counts": [
+        [
+          25,
+          23
+        ],
+        [
+          27,
+          21
+        ],
+        [
+          25,
+          23
+        ]
+      ]
+    },
+    {
+      "case": "homogeneous",
+      "arm": "adaptive_route",
+      "requests": 8,
+      "all_jct_s": [
+        0.3101859160233289,
+        0.2987816659733653,
+        0.2950718339998275
+      ],
+      "median_jct_s": 0.2987816659733653,
+      "median_policy_s": 0.001358459,
+      "median_policy_us_per_call": 14.150614583333335,
+      "median_wait_s": 0.8124307056423277,
+      "endpoint_counts": [
+        [
+          25,
+          23
+        ],
+        [
+          23,
+          25
+        ],
+        [
+          26,
+          22
+        ]
+      ]
+    },
+    {
+      "case": "homogeneous",
+      "arm": "adaptive_supply",
+      "requests": 8,
+      "all_jct_s": [
+        0.3159139158669859,
+        0.3267204170115292,
+        0.329105667071417
+      ],
+      "median_jct_s": 0.3267204170115292,
+      "median_policy_s": 0.002725369,
+      "median_policy_us_per_call": 24.77608181818182,
+      "median_wait_s": 0.49289642088115215,
+      "endpoint_counts": [
+        [
+          24,
+          24
+        ],
+        [
+          25,
+          23
+        ],
+        [
+          26,
+          22
+        ]
+      ]
+    },
+    {
+      "case": "single",
+      "arm": "round_robin",
+      "requests": 4,
+      "all_jct_s": [
+        0.5220785420387983,
+        0.524892333894968,
+        0.5173654588870704
+      ],
+      "median_jct_s": 0.5220785420387983,
+      "median_policy_s": 0.000610291,
+      "median_policy_us_per_call": 6.357197916666667,
+      "median_wait_s": 0.8197300843894482,
+      "endpoint_counts": [
+        [
+          48
+        ],
+        [
+          48
+        ],
+        [
+          48
+        ]
+      ]
+    },
+    {
+      "case": "single",
+      "arm": "fixed_rate",
+      "requests": 4,
+      "all_jct_s": [
+        0.5353256668895483,
+        0.528573082992807,
+        0.5185252919327468
+      ],
+      "median_jct_s": 0.528573082992807,
+      "median_policy_s": 0.001811453,
+      "median_policy_us_per_call": 18.86930208333333,
+      "median_wait_s": 0.8332092110067606,
+      "endpoint_counts": [
+        [
+          48
+        ],
+        [
+          48
+        ],
+        [
+          48
+        ]
+      ]
+    },
+    {
+      "case": "single",
+      "arm": "adaptive_route",
+      "requests": 4,
+      "all_jct_s": [
+        0.5298847910016775,
+        0.5288802499417216,
+        0.5252697500400245
+      ],
+      "median_jct_s": 0.5288802499417216,
+      "median_policy_s": 0.002118499,
+      "median_policy_us_per_call": 22.067697916666667,
+      "median_wait_s": 0.8092965823598206,
+      "endpoint_counts": [
+        [
+          48
+        ],
+        [
+          48
+        ],
+        [
+          48
+        ]
+      ]
+    },
+    {
+      "case": "single",
+      "arm": "adaptive_supply",
+      "requests": 4,
+      "all_jct_s": [
+        0.6294343750923872,
+        0.5912918329704553,
+        0.5829534160438925
+      ],
+      "median_jct_s": 0.5912918329704553,
+      "median_policy_s": 0.003227783,
+      "median_policy_us_per_call": 25.415614173228345,
+      "median_wait_s": 0.4712520819157362,
+      "endpoint_counts": [
+        [
+          48
+        ],
+        [
+          48
+        ],
+        [
+          48
+        ]
+      ]
+    }
+  ]
+}

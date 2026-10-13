@@ -1,0 +1,44 @@
+{
+  "baseline_sha": "280939543424c4d3b8c37d0ba53ec5e9ae0337fc",
+  "python": "3.12.6",
+  "initial_bind_attempt": {
+    "exit_code": 1,
+    "tests": 22,
+    "errors": 21,
+    "reason": "sandbox localhost bind denied"
+  },
+  "first_http_attempt": {
+    "exit_code": 1,
+    "tests": 31,
+    "failures": 1,
+    "reason": "fresh provider timestamp read after controller clock; sample incorrectly considered future"
+  },
+  "fixed_http_attempt": {
+    "exit_code": 0,
+    "passed": 31
+  },
+  "policy_attempt": {
+    "exit_code": 0,
+    "passed": 9
+  },
+  "scheduling_attempt": {
+    "exit_code": 1,
+    "passed": 435,
+    "import_errors": 1,
+    "reason": "existing pyarrow integration module unavailable"
+  },
+  "probe_attempt": {
+    "exit_code": 0,
+    "http_requests": 3096,
+    "model_requests": 0,
+    "cells": 60,
+    "calibration_cells": 9
+  },
+  "raw_sha256": {
+    "probe.json.gz": "eb08653076ed74a21885ecc2622bd283337a6d398f573d65329b09b1af4d7ce5",
+    "policy-tests.txt": "08ca1ece04f2fbd661d2b65be0ad2d5824841c8933be7c252d3d68716461b1e8",
+    "scheduling-tests.txt": "0314df6af67a89e6f10fc78e56d2c38378d75db494bc3df95ee8f8864b9a49b9",
+    "http-tests-fixed.txt": "757d4746e82ff522cdd873e7defa28e67e5d31bcb7ee05b4d1e2aae6942263d8",
+    "http-tests.txt": "53157c99d0fd584f212a85ab438f0b7e36127f53359d753bb29f9a84bda44f1a"
+  }
+}

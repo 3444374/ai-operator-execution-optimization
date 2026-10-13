@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-13：单查询副本供给与路由软件切片
+
+- 从统一安全基点28093954建立独立研究分支，复用ModelReplicaSet／逐副本transport、Core硬请求/work记账和已有least-work。
+  不重写session查询工作观测、不改原生baseline、默认round-robin及旧静态配置签名保持。
+- 增加显式adaptive：已确认响应的估计work完成率、逐新鲜队列/KV样本一槽供给和可选软work目标；
+  非阻塞metrics在Core外采样，取消/未知责任不退款；设备重复声明拒绝，shared preparation仍拒绝。
+- [软件报告](experiments/results/diagnostics/replica_adaptation_20261013/README.md)保存31項localhost＋9項策略，
+  扩展435通过／1旧pyarrow依赖缺失，首次bind失败和一次新样本时间读取错误均保留。
+  五场景四臂各三重复，3096软件HTTP／0模型：既有轮转已向快副本补位，新增供给同速和单副本退化，默认保持。
+- 本切片是执行能力验证；实际Ray/Daft、PG与同模型新接线性能尚未完成，不将旧单双卡接线收益当创新。
+
 ## 2026-10-13：统一基线移植LOTUS文本UTF-8拒绝规则
 
 - 从研究提交 `aa3338ce` 只移植通用文本修补及文本回归：Python代理码点在原始消息验证时拒绝，
