@@ -7,6 +7,9 @@
 
 ## 重点入口
 
+[已封口小Job的采用条件](优化方法依据.md#sealed-query-burst)补充完整Job信息、黑盒提交机会和可否定条件；
+运行与事实分别引用M4方案和同题报告。
+
 | 文件 | 用途 |
 |---|---|
 | [优化方法依据](优化方法依据.md) | 策略选择、反证与最小实验设计；含[模型服务协同](优化方法依据.md#serving-cooperation-candidates)、[多粒度/链路准入评估](优化方法依据.md#granularity-admission-assessment)、[完整流程与场景分层分析](优化方法依据.md#query-specific-execution-opportunities)、[物理需求/表示/准备时机](优化方法依据.md#heterogeneous-demand-supplement)及[执行层分工](优化方法依据.md#engine-ownership-assessment)，实施与结果分别引用计划和报告 |

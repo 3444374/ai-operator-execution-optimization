@@ -30,6 +30,7 @@ class RegisteredJob:
     handle: JobHandle
     budget: JobBudget
     closing: bool = False
+    sealed: bool = False
 
 
 class JobRegistry:
@@ -68,6 +69,8 @@ class JobRegistry:
         job = self.jobs[handle]
         if joining and job.closing:
             raise ValueError("Job is closing")
+        if joining and job.sealed:
+            raise ValueError("Job input is sealed")
         return job
 
     def finish(self, handle):
@@ -111,9 +114,24 @@ def shared_compute_job_budget(engine):
 
 
 @dataclass(frozen=True)
+class JobWorkView:
+    """Accepted work only; an unsealed Job has no known remaining total.
+
+    Inflight requests retain their full estimate until an authoritative terminal.
+    dispatch_work is an upper estimate for any queued member, not elapsed service.
+    """
+
+    work_unit: str
+    remaining_work: int | None
+    dispatch_work: int
+    active_work: int = 0
+
+
+@dataclass(frozen=True)
 class ReadyJob:
     job_id: str
     session_ids: tuple[int, ...]
+    work: JobWorkView | None = None
 
 
 @dataclass(frozen=True)

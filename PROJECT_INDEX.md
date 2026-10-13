@@ -1,6 +1,9 @@
 # 项目导航
 
-更新时间：2026-10-08。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
+更新时间：2026-10-13。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
+
+[多查询共享M4](experiments/plans/数据组织.md#query-sharing-burst)是本次已封口Job方案入口，
+实现与结果分别见[代码说明](code/README.md#query-sharing-burst)、[无模型报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md)。
 
 ## 内容与文档职责
 

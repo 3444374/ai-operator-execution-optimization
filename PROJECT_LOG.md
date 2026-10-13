@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-13：已封口Job共享机会原型与否定条件
+
+- 独立`exp/semloom-query-sharing`从固定`9bb6c415`建立，未改其他工作树、main、native HTTP或计数；branch/worktree已登记给盘点owner。
+- 沿用Job/session/capacity，新增显式Job封口、默认关闭的工作观测及有限完成突发；[M4](experiments/plans/数据组织.md#query-sharing-burst)维护唯一实施与运行方案。
+- [无模型报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md)保存同adapter强静态、工作守恒、共享RR和候选，及估计错误/不可抢占等反例；463项检查通过，缺pyarrow模块另列。
+- 原始决策、终态、每Job资源和全部重复经独立复算；模型、GPU和PG运行0。只读复用用户授权SSH查看GPU，不启动服务。
+- 旧适配器/单查询测量不作新多查询改善参照；真实LOTUS进程隔离、公共owner桥接、DuckDB复现与共同源码集成仍待取得，由主协调模型窗口。
+
 ## 2026-10-12：整合执行稳定性、多副本与入口修补
 
 - 无日期分支`codex/semloom-stability-and-replicas`保留原runtime A/B、副本及入口提交身份，携带入口需要的有限native服务祖先。

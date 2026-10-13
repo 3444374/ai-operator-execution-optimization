@@ -5,6 +5,7 @@
 
 | 脚本 | 内容 | 默认输出目录 |
 |---|---|---|
+| `query_sharing_probe.py` | 真实Core、双串行服务、独立Job共享及反例；0模型 | 必须指定新的`--output`；[报告](../../../experiments/results/diagnostics/query_sharing_burst_20261013/README.md) |
 | `ray_small_task_benchmark.py` | Ray小任务开销 | `experiments/results/diagnostics/` |
 | `ray_object_transfer_benchmark.py` | Ray对象传输 | 同上 |
 | `arrow_recordbatch_serialization_benchmark.py` | Arrow批次序列化 | 同上 |

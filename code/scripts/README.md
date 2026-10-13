@@ -1,5 +1,8 @@
 # SemLoom 脚本入口
 
+[多查询共享probe](benchmarks/query_sharing_probe.py)只运行真实Core与无模型双服务fixture；
+复算命令及实际前端待验证项见[报告](../../experiments/results/diagnostics/query_sharing_burst_20261013/README.md)。
+
 ## 原生语义系统单查询
 
 `baselines/run_semantic_system_query.py`调用LOTUS原生`sem_map`、Daft内置`prompt`、

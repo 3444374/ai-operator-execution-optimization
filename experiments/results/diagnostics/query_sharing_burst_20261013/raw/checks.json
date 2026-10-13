@@ -1,0 +1,38 @@
+{
+  "source_base": "9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c",
+  "tests_run": 463,
+  "skipped": 0,
+  "failures": 0,
+  "errors": 0,
+  "success": true,
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "http_calls": 0,
+  "postgres_queries": 0,
+  "unavailable": [
+    {
+      "module": "tests.scheduling.test_scheduling_daft_ray_contract",
+      "reason": "pyarrow absent in local Python"
+    }
+  ],
+  "earlier_attempts": [
+    {
+      "tests_run": 107,
+      "errors": 5,
+      "reason": "new tests used finish_input instead of existing seal; corrected"
+    },
+    {
+      "reason": "initial probe used actions instead of CleanupReport.events; corrected before evidence"
+    },
+    {
+      "tests_run": 433,
+      "errors": 1,
+      "reason": "unavailable pyarrow import"
+    },
+    {
+      "tests_run": 461,
+      "errors": 6,
+      "reason": "sandbox denied AF_UNIX listener.bind; read-only startup diagnosis confirmed PermissionError; six gateway cases later passed with permitted local socket"
+    }
+  ]
+}

@@ -7,6 +7,9 @@ PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom�
 算子代价估计为两项内容提供信息。文本`AI_COMPLETE`是首版主场景，图像用于跨模态验证。
 方向与近期顺序见[项目总纲](PROJECT_OUTLINE.md)，实际能力与待完成项见[代码状态](code/INFRA_STATUS.md)。
 
+[多查询共享M4](experiments/plans/数据组织.md#query-sharing-burst)维护已封口小Job原型、新适配器匹配对照和真实前端预演；
+[无模型证据](experiments/results/diagnostics/query_sharing_burst_20261013/README.md)保留合理共享控制和长Job受损反例，不能外推为GPU性能。
+
 | 需求 | 入口 |
 |---|---|
 | 查长期规则与领域术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |

@@ -1,6 +1,6 @@
 # 项目大纲
 
-更新时间：2026-10-12
+更新时间：2026-10-13
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。
@@ -11,6 +11,11 @@
 只供追溯，不覆盖当前执行顺序。
 
 ## 0. 当前优先级与历史记录范围
+
+[多查询共享的已封口Job原型](experiments/results/diagnostics/query_sharing_burst_20261013/README.md)在固定stability来源上完成真实Core无模型对照与反例。
+完整小Job信息在两个串行服务的后到场景有改善，估计偏差可使长Job退化超过允许值；不代表模型或SQL性能。
+实际LOTUS主场景、DuckDB复现路径、新适配器策略关闭对照及有限模型预算集中在[M4](experiments/plans/数据组织.md#query-sharing-burst)，
+共同native/stability来源和真实窗口由主协调，生产默认保持。
 
 [异质问答的原生请求画像](experiments/results/diagnostics/squad_native_length_20261011/README.md)已完成全量离线检查，
 当前自然调参切片未达到原方案选样条件，模型比较未启动；比值2不作为数据组织研究的通用要求。

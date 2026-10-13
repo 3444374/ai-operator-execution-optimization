@@ -1,5 +1,7 @@
 # 实验方案
 
+[多查询共享](数据组织.md#query-sharing-burst)在既有M4中维护已封口小Job原型、真实文本Map组合、新适配器匹配对照及主协调的模型预演预算。
+
 本目录维护实施要求与实验设计。[代码状态](../../code/INFRA_STATUS.md)说明已经实现什么，
 [证据台账](../results/EXPERIMENT_EVIDENCE_REGISTRY.md)与原始报告说明实际执行和结论；本页只负责导航。
 

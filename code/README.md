@@ -1,5 +1,24 @@
 # SemLoom Code
 
+<a id="query-sharing-burst"></a>
+## 可选的已封口Job共享机会
+
+[选择器](src/scheduling/submission_control/query_sharing.py)复用`SessionEngine.choose_flow`，只改变未提交工作之间的选择。
+默认RR与`observe_job_work=False`保持；可信owner先对所有session调用`seal()`，再调用`engine.seal_job(job)`，之后拒绝新flow。
+工作观测开启时，`ReadyJob.work`报告已接纳估计、工作单位和在途量；开放输入的总剩余量为unknown，
+在途估计保留到权威终态，READY/LEASED结果不再算模型工作。单位不可比时回到RR，跳过估计量只保护选择机会。
+策略不替换native请求池或改prompt/parser，公共adapter尚未自动接入Job封口。
+[M4方案](../experiments/plans/数据组织.md#query-sharing-burst)与[替身报告](../experiments/results/diagnostics/query_sharing_burst_20261013/README.md)
+分别维护真实前端桥接、实验预算与当前证据。
+
+```python
+from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst
+
+choose = BoundedShortJobBurst(work_unit="tokens", short_work_limit=1024, bypass_work_limit=1024)
+# 仅示例接口，数值不是模型校准结论。构造Core时显式传入：
+# SessionEngine(..., choose_flow=choose, observe_job_work=True)
+```
+
 [原生语义系统入口](scripts/README.md#原生语义系统单查询)补充LOTUS `sem_map`、Daft内置`prompt`、
 DuckDB社区AI扩展与Sema作者SQL产物；它们保留自己的提示、解析和执行。
 PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系统方案](../experiments/plans/语义系统对照.md)。

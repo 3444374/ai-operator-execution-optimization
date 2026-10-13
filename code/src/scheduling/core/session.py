@@ -42,6 +42,7 @@ from .session_jobs import (
     JobBudget,
     JobHandle,
     JobRegistry,
+    JobWorkView,
     ReadyJob,
     JobSelectionHistory,
     FlowChoice,
@@ -90,6 +91,7 @@ class SessionEngine:
         sink: Callable[[str, TaskKey], None] | None = None,
         max_jobs: int = 1,
         observe_capacity_blocks: bool = False,
+        observe_job_work: bool = False,
         preparation: TaskPreparation | None = None,
         choose_flow: Callable[
             [tuple[ReadyJob, ...], JobSelectionHistory], FlowChoice
@@ -100,6 +102,9 @@ class SessionEngine:
         if type(observe_capacity_blocks) is not bool:
             raise ValueError('capacity block observation must be boolean')
         self.observe_capacity_blocks = observe_capacity_blocks
+        if type(observe_job_work) is not bool:
+            raise ValueError('Job work observation must be boolean')
+        self.observe_job_work = observe_job_work
         self.capacity = SessionCapacity(limits)
         self.backend, self.policies, self.clock = backend, policies, clock
         self.preparation = preparation
@@ -147,6 +152,17 @@ class SessionEngine:
                 if session.job is job:
                     session.request_cancel()
             self._finish_retired()
+            self.wake.notify()
+
+    def seal_job(self, job: JobHandle) -> None:
+        """Promise no more flows or input after every owned flow finishes input."""
+        with self._operation():
+            registered = self.jobs.require(job)
+            if registered.closing or any(
+                s.job is job and s.state == State.OPEN for s in self._sessions.values()
+            ):
+                raise ValueError('finish all Job inputs before sealing')
+            registered.sealed = True
             self.wake.notify()
 
     def advance(self, max_actions: int | None = None) -> CleanupReport:
@@ -270,7 +286,9 @@ class SessionEngine:
                     self._emit("flow_capacity_blocked", blocked.key)
         if not ready:
             return None
-        candidates = tuple(ReadyJob(job, tuple(flows)) for job, flows in ready.items())
+        candidates = tuple(ReadyJob(job, tuple(flows), self._job_work(job)
+                                    if self.observe_job_work else None)
+                           for job, flows in ready.items())
         choice = self.choose_flow(
             candidates, JobSelectionHistory(self._last_job, tuple(self._last_flow.items()))
         )
@@ -282,6 +300,21 @@ class SessionEngine:
         ):
             raise ValueError("Job policy selected an ineligible flow")
         return choice.job_id, self._sessions[choice.session_id]
+
+    def _job_work(self, job_id):
+        records = tuple(r for r in self.capacity.records.values() if r.spec.job_id == job_id)
+        units = {r.spec.work_unit for r in records}
+        if len(units) != 1:
+            return None
+        registered = next((j for j in self.jobs.jobs.values() if j.handle.job_id == job_id), None)
+        failed = any(s.spec.job_id == job_id and s.state in (State.FAILED, State.CANCELLED)
+                     for s in self._sessions.values())
+        remaining = sum(r.task.estimated_work for r in records if r.compute or r.phase == 'QUEUED')
+        return JobWorkView(
+            units.pop(), remaining if registered and registered.sealed and not failed else None,
+            max((r.task.estimated_work for r in records if r.phase == 'QUEUED'), default=0),
+            sum(r.task.estimated_work for r in records if r.compute),
+        )
 
     def _prepared_candidates(self, session):
         return tuple(r for r in session._records() if r.phase == "QUEUED" and self._is_prepared(r))
