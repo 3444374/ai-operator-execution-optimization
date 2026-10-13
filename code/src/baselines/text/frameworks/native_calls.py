@@ -503,7 +503,8 @@ class NativeCallExecutor:
                 raise TypeError('explicit IMLaneCallConfig required')
             max_batch_rows = min(max_batch_rows, imlane_config.max_batch_rows)
             self._imlane = IMLaneCallExecutor(imlane_config, options,
-                max_batch_rows=max_batch_rows, max_batch_bytes=max_batch_bytes)
+                max_batch_rows=max_batch_rows,
+                max_batch_bytes=min(max_batch_bytes, imlane_config.max_input_payload_bytes))
             options = self._imlane.options
             max_batch_rows, max_batch_bytes = self._imlane.max_batch_rows, self._imlane.max_batch_bytes
         self.backend, self.options = backend, options or NativeGraphOptions()

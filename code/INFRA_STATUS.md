@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[IMLane公开容量配置](integrations/sema/imlane_calls.md)贯通六项行数／字节／待交付上限，
+保留调用方更小的额度与原生执行责任。统一基线受影响本地检查43项，33通过、10项实库检查跳过；
+首次loopback绑定拒绝的11项随后单独通过。该配置修补尚未增加作者库、模型或性能证据。
+
 2026-10-13：[Q2阶段统计与发送账本修订](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改，修后真实模型窗口尚未运行。完整观察OFF开关仍未实现。
 
