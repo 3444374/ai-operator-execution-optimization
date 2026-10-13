@@ -18,6 +18,7 @@ from src.baselines.common.private_artifacts import write_private_json
 from src.baselines.common.redact import redact_text
 from src.baselines.text.frameworks.imlane_calls import AUTHOR_COMMIT
 from integrations.sema import verify_imlane_calls as fixture_module
+from integrations.sema.verify_native import validate_ray_address
 
 
 METHOD_CLIENT = r'''
@@ -314,7 +315,7 @@ def parse_arguments(argv=None):
     for name in ('fixture-port','model-fixture-port','service-port','observation-port'):
         parser.add_argument('--'+name, type=int, default=0)
     parser.add_argument('--coordinator-port-start', type=int)
-    parser.add_argument('--ray-address', help='Explicit loopback GCS address; caller owns the private CLI cluster')
+    parser.add_argument('--ray-address', help='Explicit local IPv4 GCS address; caller owns the private runtime')
     parser.add_argument('--expected-cpus', type=parse_cpus,
                         help='Check inherited taskset affinity; the verifier never changes CPU affinity')
     args = parser.parse_args(argv)
@@ -334,10 +335,11 @@ def parse_arguments(argv=None):
         args.coordinator_ports = dict(cpython=args.coordinator_port_start, ray=args.coordinator_port_start + 1)
         ports += list(args.coordinator_ports.values())
     if args.ray_address is not None:
-        match = re.fullmatch(r'(?:127\.0\.0\.1|localhost):([0-9]{1,5})', args.ray_address)
-        if match is None or not 1 <= int(match.group(1)) <= 65535:
-            parser.error('--ray-address requires an explicit loopback host:port')
-        ports.append(int(match.group(1)))
+        try:
+            validate_ray_address(args.ray_address)
+        except ValueError as failure:
+            parser.error(str(failure))
+        ports.append(int(args.ray_address.rsplit(':',1)[1]))
     declared = [port for port in ports if port]
     if len(set(declared)) != len(declared):
         parser.error('declared fixture, service, Coordinator and Ray ports must be distinct')
