@@ -148,7 +148,27 @@
     "max_physical_gpus": 2,
     "single_group_resident_models": 1,
     "start_b_after_single_group": true,
-    "download_assets": false
+    "download_assets": false,
+    "preflight_cpu_ids": [
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35
+    ]
   },
   "time_limits": {
     "whole_window_s": 1080,

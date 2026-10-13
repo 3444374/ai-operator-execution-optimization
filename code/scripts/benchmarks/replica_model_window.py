@@ -104,7 +104,9 @@ def main():
 
     failure = None
     try:
-        preflight = [sys.executable, "code/scripts/environment/manage_environment.py", "--env-file",
+        # Inspect the whole allocated owner+API CPU set before APIs start. The
+        # query driver itself remains pinned to 18-19; do not override a profile.
+        preflight = ["taskset", "-c", "18-35", sys.executable, "code/scripts/environment/manage_environment.py", "--env-file",
             str(args.env_file), "check", "--groups", "core,text-qwen7b", "--json-out", str(root / "preflight.json")]
         run("preflight", preflight, cutoff=deadline - 180)
         devices = subprocess.check_output(["nvidia-smi", "--query-gpu=uuid", "--format=csv,noheader"], text=True).splitlines()

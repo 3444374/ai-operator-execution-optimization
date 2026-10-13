@@ -78,3 +78,8 @@ Core供给与动作、250ms vLLM指标及1s逐卡GPU活动观察对所有臂启�
 07:50:20独立确认无遗留。修订仅让preflight遵循原1080秒窗／180秒清理余量，
 只允许已证明零预留原账本续接，拒绝改deadline或任何已预留账本；[保护检查](model-preparation-continuation-tests.txt)通过。
 旧失败不改为成功、不退款、不重置原T0，不在半组模型观测中换控制器。
+
+零预留准备续接仍在preflight停止：继承driver两核亲和性导致机器profile CPU2＜10，
+[完整检查失败](model-preflight-affinity-failure.txt)保留，其余必需检查通过；模型仍0、unit0。
+修订仅在API尚未启动时让preflight检查已登记整体CPU18–35，driver仍18–19，不强制profile，不安装依赖。
+仍使用原T0与原账本，若剩余时间不足即保存未运行项。
