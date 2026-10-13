@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "run_id": "semloom-stage-20261013.z3x6arlg",
+  "research_commit": "92bcd05ae6714b563b8937c80f3276ff38ca6bd7",
+  "wiring_commit": "607b9f88cb2b3082a9442b1848818dba0ee79c9f",
+  "versions": {
+    "python": "3.12.3",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pandas": "2.3.3",
+    "Pillow": "12.2.0"
+  },
+  "profile": "lotus-image-text-v1",
+  "cpu_affinity": [
+    24,
+    25
+  ],
+  "real_model_calls": 0,
+  "gpu_starts": 0,
+  "ray_starts": 0,
+  "new_image_tests": {
+    "total": 9,
+    "passed": 9,
+    "skipped": 0,
+    "map_logical_calls_per_arm": 4,
+    "filter_map_logical_calls_per_arm": 6,
+    "http_error_mock_calls_per_arm": 4,
+    "request_comparison": "complete JSON values including ordered content parts; no raw-wire-byte identity claim"
+  },
+  "old_text_tests": {
+    "total": 54,
+    "passed": 50,
+    "inherited_failures_or_errors": 4,
+    "regression_details": [
+      {
+        "source": "candidate",
+        "file": "test_lotus_adapter.py",
+        "returncode": 1,
+        "tests": 18,
+        "failures": [
+          "test_batch_row_bound_and_cancellation_never_enter_native_pool (test_lotus_adapter.LotusSdkTests.test_batch_row_bound_and_cancellation_never_enter_native_pool)",
+          "test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit (test_lotus_adapter.LotusSdkTests.test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit) (status=200, limit=8192)"
+        ],
+        "errors": [
+          "test_batch_validation_preserves_unicode_and_canonical_call_values (test_lotus_adapter.LotusSdkTests.test_batch_validation_preserves_unicode_and_canonical_call_values)"
+        ],
+        "log": "candidate-test_lotus_adapter.py.txt"
+      },
+      {
+        "source": "candidate",
+        "file": "test_lotus_cleanup.py",
+        "returncode": 0,
+        "tests": 11,
+        "failures": [],
+        "errors": [],
+        "log": "candidate-test_lotus_cleanup.py.txt"
+      },
+      {
+        "source": "candidate",
+        "file": "test_lotus_call_limits.py",
+        "returncode": 0,
+        "tests": 6,
+        "failures": [],
+        "errors": [],
+        "log": "candidate-test_lotus_call_limits.py.txt"
+      },
+      {
+        "source": "candidate",
+        "file": "test_lotus_control.py",
+        "returncode": 0,
+        "tests": 11,
+        "failures": [],
+        "errors": [],
+        "log": "candidate-test_lotus_control.py.txt"
+      },
+      {
+        "source": "candidate",
+        "file": "test_lotus_wait.py",
+        "returncode": 1,
+        "tests": 2,
+        "failures": [],
+        "errors": [
+          "test_completed_response_stays_charged_through_observation_and_sdk_conversion (test_lotus_wait.LotusWaitTests.test_completed_response_stays_charged_through_observation_and_sdk_conversion)"
+        ],
+        "log": "candidate-test_lotus_wait.py.txt"
+      }
+    ],
+    "same_failed_cases_reproduced_on_original": true
+  },
+  "sema": {
+    "binary_sha256": "15a534667a668a152524a8756fe5d66c0fa9c9822e73d26029e1a71693a56ec3",
+    "native_text_semantic_probe_returncode": 0,
+    "fixture_http_calls": 2,
+    "source_forms": [
+      "local_png_path_as_varchar",
+      "png_data_uri_as_varchar"
+    ],
+    "request_shapes": [
+      {
+        "message_content_types": [
+          "str",
+          "str"
+        ],
+        "has_image_url_content_part": false
+      },
+      {
+        "message_content_types": [
+          "str",
+          "str"
+        ],
+        "has_image_url_content_part": false
+      }
+    ],
+    "model_calls": 0,
+    "gpu_starts": 0,
+    "scope": "Only the published ordinary semantic projection with VARCHAR inputs was tested; this is not a visual-model baseline."
+  },
+  "preflight": {
+    "two_cpu_first_check": "machine:cpu_slots observed=2 minimum=10; failure preserved privately",
+    "whole_machine_check_returncode": 0,
+    "whole_machine_affinity_cpus": 128,
+    "actual_test_affinity_cpus": 2,
+    "packages_installed": false
+  },
+  "vlm_check": {
+    "scope": "four existing top-level configured model directories",
+    "text_architectures": [
+      "Qwen2ForCausalLM",
+      "MistralForCausalLM"
+    ],
+    "vision_embedding_architecture": "CLIPModel",
+    "generative_vlm_verified": false
+  },
+  "evidence_archive_sha256": "6b26867690c913085c43b0c9aa92b29abed11ea38be01ce5f955d78431f35d44",
+  "evidence_members": 9,
+  "run_start_and_ready_wall_times": "unavailable; unittest elapsed retained in raw log, no performance claim",
+  "scope": "actual fixed LOTUS/SDK and Core with intercepted/mock/local callback responses; no real visual inference, VLM quality or performance qualification"
+}

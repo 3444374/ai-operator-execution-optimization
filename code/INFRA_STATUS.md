@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[显式LOTUS图文接点](../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)。
+固定SDK配对支持原单Map和Filter→Map消息；默认text保持，真实VLM、任务质量及性能尚未验证，旧文本失败分别记录。
+
 2026-10-13接续：[原Q2双卡补测与单双卡汇总](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)。
 固定3bd的原Q2六路径模型执行已有单卡18及双卡18位置证据，两个独立补测与旧失败分别保存。质量不足、分波可比性及Q1／Q3、async、并发与规模的待验证项保持；计算量、计时和资源退出见主报告。
 下方旧块按各时点的资格解释。

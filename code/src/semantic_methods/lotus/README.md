@@ -190,3 +190,26 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 登记独立57项／组合59项检查、来源提交、原件摘要及公开恢复入口。
 [历史诊断样本](https://github.com/3444374/ai-operator-execution-optimization/blob/60c45593b8d837684c24f6f29375c15af3495f76/code/src/semantic_methods/lotus/README.md#单map等待循环修复)
 保留独立分支原数值与CPU设置，来源对应原提交，便于与后续整合样本分别核对。
+
+<a id="image-text-profile"></a>
+## 显式图文消息profile
+
+`LotusBatchExecutor(..., message_profile="lotus-image-text-v1")`在固定LOTUS1.2.4中接收原生
+`ImageArray`与文本列经过Map/Filter formatter生成的user内容列表，仅接受原PNG data URI与text部分。
+默认`message_profile="text"`保持旧输入范围；原生`lotus_executor(lm)`不装替换器。
+该profile额外核对图像加载、ImageArray和Filter源码，并在任何flow接纳前对整批使用原SDK转换检查。
+profile不进入模型请求，原提示/内容顺序、生成参数、原LM及parser/usage继续保留。
+
+```python
+selected = LotusBatchExecutor(execution, model_config, query_id="image-query",
+                              operator_id="image-map", message_profile="lotus-image-text-v1")
+with lotus_executor(lm, selected):
+    result = frame.sem_map("Describe {listing_text} using {image}.")
+```
+
+输入列`image`须是原`ImageArray`；原LOTUS仍拥有图像加载、PNG/base64和整阶段返回等待，
+这处接线不减少准备工作。工作量沿用完整调用的request-count，没有视觉token校准。
+消息兼容不证明endpoint/model具备视觉能力，须另核实生成式VLM及真实任务质量。
+视频/音频、图像状态的逐行两Map继续执行、PG图文和原生Daft/Ray图文执行没有本轮资格。
+[实SDK无模型配对](../../../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)
+验证单Map及Filter→Map；9项通过，旧文本4项既有失败与原版本复现一并保存，不声明所有旧测试全绿。

@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[LOTUS图文接点与Sema输入核查](lotus_image_text_compatibility_20261013/README.md)：显式图文profile保留原Map/Filter方法，实SDK无模型配对及旧失败复现；模型质量/性能未运行。
+
 [原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。
 
 [固定发布版实库软件核查](native_release_actual_software_20261012/README.md)：首轮失败与第二窗口3组通过分别保存；后者173POST／104.662秒，含真实3.14.5、两图关闭与12个原Q2/Q3软件单元，不作模型性能资格。

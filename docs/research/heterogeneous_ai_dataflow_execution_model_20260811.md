@@ -631,7 +631,7 @@ PYTHONPATH=code SEMLOOM_LOTUS_SOURCE_ROOT=<pinned-checkout>/lotus \
   python3 -m unittest discover -s code/tests/modalities/image -p 'test_lotus_stage_preparation.py' -v
 ```
 
-最小兼容工作仍pending：在主任务协调后，为现有SDK增加独立版本的图文内容profile及`utils.py`/ImageArray摘要核对，
+以下为`92bcd05a`时点的后续需求，已完成的独立接线见§11.5：为现有SDK增加独立版本的图文内容profile及`utils.py`/ImageArray摘要核对，
 由实际SDK产生并重放完整图像调用；再在图像格式化前增加query-local准备接点，不只改LM之后的执行器。
 保留原native入口、模型/processor修订、PNG/RGB与采样配置，核对全消息、响应、usage、错误、关联及退出。
 现有[151次真实CLIP前向](../../experiments/results/postgresql/capacity_organization_image_validation_20260920/raw/image-summary.json)
@@ -646,3 +646,17 @@ FP32/224/512维；只能复用该受限图像语义/生命周期依据，不能�
 这是建议预算，当前未获新模型运行授权，也未执行。小规模只作资格与stage画像，不作吞吐/P99结论。
 测完整查询、准备/PNG/base64、序列化、排队、服务、fan-in、释放，记录所有副本及实际内存；服务内部GPU时间
 不可取得时明示。先有资格与可解释准备占比，再决定是否扩大；收益仅来自静态缓存或完整查询更慢时停止候选。
+
+### 11.5 图文接线与实际前端检查
+
+`607b9f88`是可独立集成的通用接线patch，只改`lotus/sdk.py`、`lotus/batch.py`并增加测试，
+不包含准备缓存、公共HTTP或调度器变化。显式`lotus-image-text-v1`沿用原SDK处理原PNG data URI与文本列表，
+保留原生Map/Filter及完整JSON请求值、内容/行顺序、parser与usage；默认text仍保持。
+固定SDK9项无模型配对通过，旧文本54项中50通过、4项失败均在原`92bcd05`复现；
+范围、失败、双摘要和代码入口由[唯一检查报告](../../experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md)维护。
+同信息静态缓存反例没有改变，没有取得超静态收益。
+
+固定Sema二进制的函数目录及2次localhost探针表明，当前公开普通VARCHAR语义投影将PNG路径和data URI
+放进字符串content，不产生视觉内容列表；不把它加入图文native性能配对。
+实际生成式VLM尚未核实，4个已有模型config中的CLIP只能作为图像embedding能力，不能承担本图文Map。
+这轮不运行真实模型，后续阶段画像和质量比较仍需协调共同基线与视觉服务能力。
