@@ -4,13 +4,16 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from importlib.util import find_spec
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import unittest
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from urllib.request import Request, urlopen
 
-from src.experiments.query_sharing_lotus import FixtureService, PairFailure, audit, digest, identity, row_text, run_pair
+from src.experiments.query_sharing_lotus import FixtureService, PairFailure, audit, digest, identity, main, row_text, run_pair
 
 
 def body(query, sequence):
@@ -39,6 +42,18 @@ def traced_pair():
 
 
 class LotusPairAuditTests(unittest.TestCase):
+    def test_remaining_window_refuses_budget_reset_or_expansion_before_service_start(self):
+        for previous,posts,seconds in ((1603,360,600),(1604,361,600),(1604,360,601),(4000,360,600)):
+            with self.subTest(previous=previous,posts=posts,seconds=seconds), TemporaryDirectory() as directory:
+                args=['query_sharing_lotus','--output',str(Path(directory)/'new.json.gz'),
+                      '--remaining-checks','--previous-fixture-posts',str(previous),
+                      '--max-fixture-posts',str(posts),'--window-seconds',str(seconds)]
+                with patch('sys.argv',args), patch('sys.stderr',io.StringIO()), \
+                     patch('src.experiments.query_sharing_lotus.FixtureService') as service:
+                    with self.assertRaises(SystemExit) as error: main()
+                self.assertEqual(error.exception.code,2)
+                service.assert_not_called()
+
     def test_two_worker_service_keeps_complete_rows_and_exact_responses(self):
         with FixtureService(delay_s=.01,max_posts=4) as service:
             service.run_id='unit-service'

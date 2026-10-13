@@ -175,3 +175,7 @@ native差距同时含原LM/SDK请求池与新执行路径的成本，不能全�
 `describe_limits`是owner的只读配置操作，未创建Job/接受输入；无Engine的frontend要求factory与typed SessionLimits，
 拒绝缺失/伪类型及local override，flow打开后复核item容量。共同SDK replay及默认local路径保留。
 新版实库兼容仍pending；旧9d的23.25%不是当前版本收益，新增窗口只补原未完成反例并继承总4240余额。
+公共两文件补丁`e4677b4c`直接以共同`28093954`为父，已在研究分支无树变merge保留，可独立交给其他owner。
+仅剩余检查入口拒绝扩到360新POST/600秒以上或把旧1604计数清零；本地10项检查通过。
+同组此前一次受文件系统sandbox的loopback bind限制（9项8过/1环境错误），授权环境复验通过；未改变HTTP服务。
+运行时fixed K=4只表示新版本兼容配置，未重新校准或运行旧主比较；旧失败原件及诊断保留。

@@ -411,10 +411,18 @@ def main():
     parser.add_argument('--repeats',type=int,choices=(1,2,3),default=3)
     parser.add_argument('--max-fixture-posts',type=int,default=4240)
     parser.add_argument('--window-seconds',type=int,default=1800)
+    parser.add_argument('--remaining-checks',action='store_true',
+        help='only the three unfinished no-contention and two cancellation checks; no calibration/performance rerun')
+    parser.add_argument('--previous-fixture-posts',type=int,default=0)
     args=parser.parse_args()
     if args.output.exists(): parser.error('output already exists; preserve previous evidence')
     if not 1<=args.max_fixture_posts<=4240 or not 30<=args.window_seconds<=1800:
         parser.error('fixture budgets must stay within 4240 POST / 1800 seconds')
+    if not 0<=args.previous_fixture_posts<=4240 or args.previous_fixture_posts+args.max_fixture_posts>4240:
+        parser.error('previous and new fixture budgets must together stay within 4240 POST')
+    if args.remaining_checks and (args.max_fixture_posts>360 or args.window_seconds>600
+                                 or args.previous_fixture_posts<1604):
+        parser.error('remaining checks require <=360 new POST / <=600 seconds and the previous >=1604 POST charge')
     report=dict(schema=1,scope='actual LOTUS processes, localhost fixture; model/GPU/SQL zero',
         source_commit=os.environ.get('SEMLOOM_SOURCE_COMMIT'),runs=[],status='running')
     code=Path(__file__).resolve().parents[2]
@@ -425,36 +433,52 @@ def main():
     report['cpu_affinity']=sorted(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else None
     began=time.monotonic()
     window_end=began+args.window_seconds-20
-    report['budget']=dict(max_fixture_posts=args.max_fixture_posts,window_seconds=args.window_seconds)
+    report['budget']=dict(max_fixture_posts=args.max_fixture_posts,window_seconds=args.window_seconds,
+        previous_fixture_posts=args.previous_fixture_posts,cumulative_max_fixture_posts=4240)
+    report['protocol']='remaining lifecycle checks' if args.remaining_checks else 'paired fixture with calibration'
     try:
         with FixtureService(max_posts=args.max_fixture_posts) as service:
-            # Long-only fixture calibration, no evaluation outcomes select K.
-            for active in (2,4):
-                for repeat in range(2):
-                    report['runs'].append(run_pair(service,'strong_static',long_rows=64,short_rows=0,
-                        active=active,run_id=f'calibration-k{active}-r{repeat}',window_end=window_end))
-            calibration={active:median(r['frontends']['long']['jct_s'] for r in report['runs']
-                         if r['active_requests']==active) for active in (2,4)}
-            selected=min(calibration,key=lambda active:(calibration[active],active))
-            report['static_calibration']=dict(median_long_jct_s=calibration,selected_active_requests=selected,
-                rule='lowest median of the independent long64 two-repeat fixture calibration; tie uses smaller K')
-            for repeat in range(args.repeats):
-                for arm in (ARMS if repeat%2==0 else tuple(reversed(ARMS))):
-                    if time.monotonic()>window_end: raise TimeoutError('aggregate fixture window exhausted')
-                    report['runs'].append(run_pair(service,arm,active=selected,
-                        run_id=f'paired-r{repeat}-{arm}',window_end=window_end))
-            for arm in ARMS:
-                report['runs'].append(run_pair(service,arm,long_rows=64,delay_s=3,active=selected,
-                    run_id='no-contention-'+arm,window_end=window_end))
-            for arm in ('strong_static','candidate'):
-                report['runs'].append(run_pair(service,arm,active=selected,cancel_at_s=.6,
-                    run_id='cancel-'+arm,window_end=window_end))
+            if args.remaining_checks:
+                # A fixed K is a compatibility configuration, not a newly
+                # calibrated performance point for the merged source.
+                for arm in ARMS[1:]:
+                    report['runs'].append(run_pair(service,arm,long_rows=64,delay_s=3,active=4,
+                        run_id='no-contention-'+arm,window_end=window_end))
+                for arm in ('strong_static','candidate'):
+                    report['runs'].append(run_pair(service,arm,long_rows=64,active=4,cancel_at_s=.6,
+                        run_id='cancel-'+arm,window_end=window_end))
+            else:
+                # Long-only fixture calibration, no evaluation outcomes select K.
+                for active in (2,4):
+                    for repeat in range(2):
+                        report['runs'].append(run_pair(service,'strong_static',long_rows=64,short_rows=0,
+                            active=active,run_id=f'calibration-k{active}-r{repeat}',window_end=window_end))
+                calibration={active:median(r['frontends']['long']['jct_s'] for r in report['runs']
+                             if r['active_requests']==active) for active in (2,4)}
+                selected=min(calibration,key=lambda active:(calibration[active],active))
+                report['static_calibration']=dict(median_long_jct_s=calibration,selected_active_requests=selected,
+                    rule='lowest median of the independent long64 two-repeat fixture calibration; tie uses smaller K')
+                for repeat in range(args.repeats):
+                    for arm in (ARMS if repeat%2==0 else tuple(reversed(ARMS))):
+                        if time.monotonic()>window_end: raise TimeoutError('aggregate fixture window exhausted')
+                        report['runs'].append(run_pair(service,arm,active=selected,
+                            run_id=f'paired-r{repeat}-{arm}',window_end=window_end))
+                for arm in ARMS:
+                    report['runs'].append(run_pair(service,arm,long_rows=64,delay_s=3,active=selected,
+                        run_id='no-contention-'+arm,window_end=window_end))
+                for arm in ('strong_static','candidate'):
+                    report['runs'].append(run_pair(service,arm,active=selected,cancel_at_s=.6,
+                        run_id='cancel-'+arm,window_end=window_end))
         report['summary']=audit(report['runs']);report['status']='passed'
     except PairFailure as error:
-        report['runs'].append(error.evidence);report['error_type']=type(error.__cause__).__name__;report['status']='failed'
+        report['runs'].append(error.evidence)
+        report['error_type']=error.evidence.get('error_type') or type(error.__cause__ or error).__name__
+        report['status']='failed'
     except BaseException as error:
         report['error_type']=type(error).__name__;report['status']='failed'
     report['elapsed_s']=time.monotonic()-began
+    report['budget']['fixture_posts']=sum(len(r.get('calls',())) for r in report['runs'])
+    report['budget']['cumulative_charged_posts']=args.previous_fixture_posts+report['budget']['fixture_posts']
     with args.output.open('xb') as raw, gzip.GzipFile(fileobj=raw,mode='wb',mtime=0) as stream:
         stream.write(json.dumps(report,ensure_ascii=False,separators=(',',':')).encode())
     print(json.dumps(dict(status=report['status'],runs=len(report['runs']),
