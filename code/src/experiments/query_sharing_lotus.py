@@ -91,6 +91,8 @@ class FixtureService:
                                 created=1, model=body['model'], choices=[dict(index=0,
                                     message=dict(role='assistant', content=label), finish_reason='stop')],
                                 usage=dict(prompt_tokens=7, completion_tokens=1, total_tokens=8))).encode()
+                            record['response_body'] = raw.decode()
+                            record['response_sha256'] = hashlib.sha256(raw).hexdigest()
                             self.send_response(200)
                             self.send_header('Content-Type', 'application/json')
                             self.send_header('Content-Length', str(len(raw)))
@@ -149,7 +151,7 @@ def _frontend(channel, pipe, query, count, base, arm, release, cancelled):
         from ..semantic_methods.lotus.sdk import validate_source, SOURCE_HASHES, LITELLM_SOURCE_HASHES
         validate_source()
         lm = LM('openai/lotus-fixture', api_base=base, api_key='local-fixture',
-                max_batch_size=2, temperature=0, top_p=1, max_tokens=16,
+                max_batch_size=2, temperature=0, top_p=1, max_tokens=16, n=1,
                 num_retries=0, max_retries=0, timeout=5, cache=InMemoryCache(max_size=512))
         rows = [(i, row_text(query, i)) for i in range(count)]
         frame = pd.DataFrame(rows, columns=['row_id', 'text'])
@@ -191,8 +193,10 @@ def _frontend(channel, pipe, query, count, base, arm, release, cancelled):
 def _rss_bytes(pids):
     if not Path('/proc/self/status').exists():
         return None
+    from multiprocessing import resource_tracker
+    tracker_pid = resource_tracker._resource_tracker._pid
     total = 0
-    for pid in pids:
+    for pid in set(pids+([tracker_pid] if tracker_pid else [])):
         try:
             text = Path(f'/proc/{pid}/status').read_text()
         except FileNotFoundError:
@@ -298,7 +302,7 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
     finally:
         for process in children.values():
             if process.pid is None: continue
-            process.join(1)
+            process.join(3)
             if process.is_alive(): process.terminate(); process.join(2)
         for control in controls.values(): control.close()
         if bridge:
@@ -309,7 +313,7 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
         evidence['calls'] = service.calls[start_calls:]
         evidence['http_errors'] = service.errors[start_errors:]
         evidence['exitcodes'] = {q:p.exitcode for q,p in children.items()}
-        if (any(p.is_alive() for p in children.values()) or service.active
+        if (any(p.is_alive() or p.exitcode!=0 for p in children.values()) or service.active or evidence['http_errors']
                 or (bridge and not evidence['bridge_closed'])):
             evidence['status'] = 'failed'
             raise PairFailure(evidence)
@@ -337,6 +341,15 @@ def audit(runs):
             if call['arrival'] < run['release_epoch']+(run['delay_s'] if call['query_id']=='short' else 0):
                 raise ValueError('HTTP request before query release')
             if call['body_sha256'] != digest(call['body']): raise ValueError('request body digest differs')
+            for field,value in dict(model='lotus-fixture',temperature=0,top_p=1,max_tokens=16,n=1).items():
+                if call['body'].get(field)!=value: raise ValueError('generation parameter differs')
+            raw=call['response_body'].encode()
+            if hashlib.sha256(raw).hexdigest()!=call['response_sha256']: raise ValueError('response body digest differs')
+            response=json.loads(raw)
+            if (response['model']!='lotus-fixture' or response['usage']['total_tokens']!=8
+                    or response['choices'][0]['finish_reason']!='stop'
+                    or response['choices'][0]['message']['content']!=identity(call['body'])[2]):
+                raise ValueError('fixture complete response differs')
             key=(call['query_id'],call['sequence'])
             if key in bodies and bodies[key]!=call['body']: raise ValueError('paired complete request body differs')
             bodies[key]=call['body']
@@ -365,6 +378,11 @@ def audit(runs):
                         or event['usage']['held_tasks']>64):
                     raise ValueError('Core resource peak exceeds declared capacity')
         finished={q:r for q,r in run['frontends'].items() if r['event']=='finished'}
+        for query,result in finished.items():
+            stats=result['lm_stats']
+            if (stats['cache_hits'] or stats['operator_cache_hits']
+                    or stats['physical_usage']['total_tokens']!=run['counts'][query]*8):
+                raise ValueError('LM cache/usage differs from necessary HTTP work')
         overlap=(len(finished)==2 and finished['long']['began']<finished['short']['began']<finished['long']['ended'])
         summaries.append(dict(run_id=run['run_id'],arm=run['arm'],count=len(identities),service_peak=peak,
             overlap=overlap,client_jct_s={q:r['jct_s'] for q,r in finished.items()},
@@ -390,7 +408,7 @@ def main():
     report['cpu_affinity']=sorted(os.sched_getaffinity(0)) if hasattr(os,'sched_getaffinity') else None
     began=time.monotonic()
     try:
-        with FixtureService() as service:
+        with FixtureService(max_posts=4240) as service:
             # Long-only fixture calibration, no evaluation outcomes select K.
             for active in (2,4):
                 for repeat in range(2):

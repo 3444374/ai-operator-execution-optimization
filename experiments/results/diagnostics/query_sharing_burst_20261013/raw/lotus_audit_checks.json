@@ -1,0 +1,43 @@
+{
+  "run_id": "query-sharing-lotus-audit-20261013",
+  "completed_utc": "2026-10-13T05:15:46.733378+00:00",
+  "source_parent": "c82c2905673dc67ec08a42e926616023ab7b8c85",
+  "source_sha256": {
+    "code/src/experiments/query_sharing_lotus.py": "9abe7935fab3725ee2bb10e59e83f9dd28254c5f6071fb8080b6432013e8086a",
+    "code/tests/experiments/test_query_sharing_lotus.py": "e9f9cf70ae06282b4837970c7d383aa890018262305aadf475df740c8f5aecdc"
+  },
+  "command": "PYTHONPATH=code python3 -m unittest tests.experiments.test_query_sharing_lotus",
+  "attempts": [
+    {
+      "tests": 7,
+      "passed": 5,
+      "failed": 1,
+      "skipped": 1,
+      "exit_code": 1,
+      "seconds": 0.517,
+      "failure": "fixed generation check rejected changed max_tokens before complete-body comparison; test expected later error string",
+      "fixture_posts": 4
+    },
+    {
+      "tests": 8,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 1,
+      "exit_code": 0,
+      "seconds": 0.515,
+      "fixture_posts": 4
+    }
+  ],
+  "scope": {
+    "actual_lotus_frontend_pairs": 0,
+    "http_posts": 8,
+    "real_model_calls": 0,
+    "gpu_jobs": 0,
+    "sql_queries": 0
+  },
+  "pending": [
+    "actual pinned library source and two process pair",
+    "common integration source",
+    "real-model results"
+  ]
+}

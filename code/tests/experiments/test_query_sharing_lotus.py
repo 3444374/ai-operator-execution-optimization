@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from importlib.util import find_spec
+import hashlib
 import json
 import unittest
 from urllib.request import Request, urlopen
@@ -12,14 +13,17 @@ from src.experiments.query_sharing_lotus import FixtureService, audit, digest, i
 
 def body(query, sequence):
     return dict(model='lotus-fixture',messages=[dict(role='user',content=row_text(query,sequence))],
-                max_tokens=16,temperature=0,top_p=1)
+                max_tokens=16,temperature=0,top_p=1,n=1)
 
 
 def traced_pair():
     calls=[]
     for query,start in (('long',1.1),('short',1.3)):
         request=body(query,0)
+        raw=json.dumps(dict(model='lotus-fixture',usage=dict(total_tokens=8),
+            choices=[dict(finish_reason='stop',message=dict(content='POSITIVE'))]))
         calls.append(dict(query_id=query,sequence=0,body=request,body_sha256=digest(request),
+                          response_body=raw,response_sha256=hashlib.sha256(raw.encode()).hexdigest(),
                           arrival=start,service_start=start,service_finish=start+.2))
     return dict(status='passed',run_id='audit-fixture',arm='strong_static',counts=dict(long=1,short=1),
         cancel_at_s=None,release_epoch=1.,delay_s=.2,active_requests=2,calls=calls,
@@ -27,7 +31,8 @@ def traced_pair():
         bridge_closed=True,final_core=dict(usage=dict(active_requests=0),jobs=0),
         bridge_events=[dict(owner_thread=3,event='query_open',query_id=q,job_id=q,session_id=i)
                        for i,q in enumerate(('long','short'))],core_events=[],rss_peak_bytes=1024,
-        frontends={q:dict(event='finished',began=start,ended=2.,jct_s=2.-start,cpu_s=.01)
+        frontends={q:dict(event='finished',began=start,ended=2.,jct_s=2.-start,cpu_s=.01,
+            lm_stats=dict(cache_hits=0,operator_cache_hits=0,physical_usage=dict(total_tokens=8)))
                    for q,start in (('long',1.),('short',1.2))})
 
 
@@ -57,7 +62,7 @@ class LotusPairAuditTests(unittest.TestCase):
 
     def test_body_parity_compares_complete_generation_and_messages(self):
         a,b=traced_pair(),traced_pair()
-        b['calls'][0]['body']['max_tokens']=17
+        b['calls'][0]['body']['messages'][0]['content']+=' Different words.'
         b['calls'][0]['body_sha256']=digest(b['calls'][0]['body'])
         with self.assertRaisesRegex(ValueError,'complete request body differs'):
             audit([a,b])
@@ -84,10 +89,25 @@ class LotusPairAuditTests(unittest.TestCase):
         run=traced_pair();run['counts']['long']=2
         third=deepcopy(run['calls'][0]);third.update(sequence=1,body=body('long',1))
         third['body_sha256']=digest(third['body']);third['service_finish']=1.6
+        response=json.loads(third['response_body']);response['choices'][0]['message']['content']='NEGATIVE'
+        third['response_body']=json.dumps(response)
+        third['response_sha256']=hashlib.sha256(third['response_body'].encode()).hexdigest()
         run['calls'][0]['service_finish']=1.6
         run['calls'].append(third)
         with self.assertRaisesRegex(ValueError,'service slot accounting'):
             audit([run])
+
+    def test_generation_response_digest_and_cached_usage_cannot_pass_as_equal_work(self):
+        changes=(lambda r:r['calls'][0]['body'].update(max_tokens=17),
+                 lambda r:r['calls'][0].update(response_body='{}'),
+                 lambda r:r['frontends']['long']['lm_stats'].update(cache_hits=1),
+                 lambda r:r['frontends']['long']['lm_stats']['physical_usage'].update(total_tokens=0))
+        for change in changes:
+            with self.subTest(change=change):
+                run=traced_pair();change(run)
+                # Keep request digest valid to exercise the parameter-specific check.
+                run['calls'][0]['body_sha256']=digest(run['calls'][0]['body'])
+                with self.assertRaises(ValueError):audit([run])
 
 
 @unittest.skipUnless(find_spec('lotus') is not None,'actual pinned LOTUS is unavailable')

@@ -108,3 +108,8 @@ K由独立long64两次K=2/4校准选定；主长256/短8四臂三轮交错及无
 入口准备阶段新增18项中17通过/1实库双进程用例因缺LOTUS跳过；本机4个HTTP POST只属于两槽服务单元用例。
 源码摘要与原运行见[lotus_preparation_checks.json](raw/lotus_preparation_checks.json)。
 尚未运行真实LOTUS双前端；这份检查不是实库成绩、SemBench评价、SQL或真实模型验证。
+
+补充审计[lotus_audit_checks.json](raw/lotus_audit_checks.json)核对完整响应摘要、n/生成字段及LM实际usage/cache。
+8项中7通过/1实库跳过；较严参数校验先拒绝旧测试的max_tokens变动，导致一次错误消息预期失败，
+已改为完整消息差异用例并单测参数拒绝；失败与通过原件分别保留。这两次本地运行共8个fixture POST。
+前端退出、RSS与累计4240上限继续由本runner自己控制；实际库资格仍pending。

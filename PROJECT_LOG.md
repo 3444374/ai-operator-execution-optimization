@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-13：LOTUS配对审计补充
+
+- 完整替身响应/摘要、固定n/生成字段、LM cache与实际token usage纳入[同报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md#lotus-pair-preparation)；拒绝把减少必要工作当成调度改善。
+- 本地8项7pass/1实库skip；严格参数拒绝使一次旧错误消息预期失败，修正后通过，失败与新增8次HTTP原件独立保留。
+- 仍只在本研究分支，无模型/GPU/SQL；父/两个frontend/stdlib resource tracker一并采样RSS，实际库窗口继续等native释放。
+
 ## 2026-10-13：真实LOTUS配对fixture入口准备
 
 - 桥接阶段`7ba322be`已普通push并逐字核验远端；继续在同分支加实际两个spawn LM/`frame.sem_map`入口，四臂共用两槽HTTP替身。
