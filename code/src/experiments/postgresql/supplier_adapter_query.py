@@ -351,11 +351,11 @@ def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=F
     connection=stack.enter_context(duckdb.connect(config={'allow_unsigned_extensions':'true','threads':'1'}))
     connection.execute("LOAD '"+str(Path(library).resolve()).replace("'","''")+"'")
     version=connection.execute("SELECT extension_version FROM duckdb_extensions() WHERE extension_name='ai' AND loaded").fetchone()[0]
-    if duckdb.__version__!='1.5.4' or version not in ('0.4.14-semloom1','0.4.14-native1','0.4.14-native2','0.4.14-native3'):
+    if duckdb.__version__!='1.5.4' or version not in ('0.4.14-semloom1','0.4.14-native1','0.4.14-native2','0.4.14-native3','0.4.14-native4'):
         raise ValueError('DuckDB adapter binary does not match its compiled source identity')
-    if (batch_executor=='imlane' and version!='0.4.14-native3' or
-            batch_executor=='ray' and version not in ('0.4.14-native2','0.4.14-native3') or
-            batch_executor in ('daft','ray-data') and version not in ('0.4.14-native1','0.4.14-native2','0.4.14-native3')):
+    if (batch_executor=='imlane' and version not in ('0.4.14-native3','0.4.14-native4') or
+            batch_executor=='ray' and version not in ('0.4.14-native2','0.4.14-native3','0.4.14-native4') or
+            batch_executor in ('daft','ray-data') and version not in ('0.4.14-native1','0.4.14-native2','0.4.14-native3','0.4.14-native4')):
         raise ValueError('DuckDB adapter binary does not support its selected native executor')
     token=model.bearer_token or 'EMPTY'
     # The whole-vector callback bypasses ProviderExecutorState and its native pool.
