@@ -1,7 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
 2026-10-13：[Q2阶段统计与发送账本修订](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
-72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改，修后真实模型窗口尚未运行。完整观察OFF开关仍未实现。
+72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改；修后[四组匹配原Q2](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)已完成，96查询与逐跳计数、质量、退出及原值已重核。完整观察OFF开关仍未实现。
 
 2026-10-13接续：[原Q2双卡补测与单双卡汇总](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)。
 固定3bd的原Q2六路径模型执行已有单卡18及双卡18位置证据，两个独立补测与旧失败分别保存。质量不足、分波可比性及Q1／Q3、async、并发与规模的待验证项保持；计算量、计时和资源退出见主报告。

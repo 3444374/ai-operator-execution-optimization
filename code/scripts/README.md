@@ -16,7 +16,7 @@
 
 ### 本轮逐跳发送预算
 
-[sembench_pre_send_ledger.py](benchmarks/sembench_pre_send_ledger.py)是上述模型小轮私有harness的发送hook，配合[send_counts.py](../src/experiments/send_counts.py)。部署时分别复制为validation/pre_send_ledger.py与validation/send_counts.py，并将两者SHA写入既有harness-identity.json；它不是独立查询CLI，启动、额度和新窗口由唯一owner提供。普通初始化只接受新账本或已带核验计数的账本；旧非空格式需要显式离线副本迁移及预计行数，不能直接重置真实窗口。14项回归、源码签名、完整配对数据与未运行的匹配方案见[同题报告](../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+[sembench_pre_send_ledger.py](benchmarks/sembench_pre_send_ledger.py)是上述模型小轮私有harness的发送hook，配合[send_counts.py](../src/experiments/send_counts.py)。部署时分别复制为validation/pre_send_ledger.py与validation/send_counts.py，并将两者SHA写入既有harness-identity.json；它不是独立查询CLI，启动、额度和新窗口由唯一owner提供。普通初始化只接受新账本或已带核验计数的账本；旧非空格式需要显式离线副本迁移及预计行数，不能直接重置真实窗口。14项回归、源码签名、完整配对数据与已执行的有限匹配方案见[同题报告](../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
 ## 原生语义系统单查询
 

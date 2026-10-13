@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-13：持久计数修订后的四组匹配原Q2完成
+
+- 唯一owner按已登记的单a→双a→双b→单b执行，算法／适配源码3bd、原模型／数据／路由／参数保持；新hook与计数模块单独固定，旧三个窗口未迁移或重置。
+- 实际48槽／96查询、11520逻辑／34560POST，完整1974.768／2700秒、启动181.390／600秒；六API与supervisor／watchdog退出0、独立进程及GPU核查无残留。三个零模型owner与真实计时错开。
+- [同题主报告](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)保存全部测量值、分组服务历史、阶段与紧凑观测／stdlib重核；LIMIT5 F1=1.0／完整recall0.5保持，不宣称稳定P99或完整排名。旧失败与本地准备失败记录保持，后续新版adapter的受影响基线仍须共同版本验证。
+
 ## 2026-10-13：已有Q2阶段统计与发送账本修订
 
 - [同题主报告](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)集中阶段均值、全部派生值、服务器只读索引快照、localhost原件与复算；旧模型波次及质量保持，未启动新模型窗口。
