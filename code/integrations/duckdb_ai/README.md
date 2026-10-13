@@ -38,9 +38,13 @@ ABI（扩展与 DuckDB 的二进制接口）必须与实际 `pragma_version()`�
 Ray Core另为独立`diagnostic_reference`，不计入上述六条。
 跨向量预取、级联／Join、作者多查询公平性、未知远端工作的独立取消及恢复仍为unsupported或pending。
 
-本地DuckDB组111项中80通过、31项因实际编译库／runtime条件缺失跳过；公共容量组47通过、1跳过。
-这些是fixture、实际Core及本机HTTP检查，模型和GPU调用均为0。`native4`的重新构建、固定库SQL与
-公开常驻CLI检查排在已有真实计时窗口之后，本次尚未执行；旧`native3`或LOTUS模型成绩不替代这项新来源。
+最终本地DuckDB组126项中94通过、32项因实际编译库／runtime条件缺失跳过；公共容量组47通过、1跳过，
+公共未知传输保护组37通过、18项实际库条件跳过。服务器重新构建`native4`后使用固定真实库与确定性HTTP响应：
+Daft SQL 11／11通过，Ray Data原套件10项通过加原失败单项复验1项通过，SemLoom SQL 4／4通过，
+IMLane作者CPython与Ray各6项SQL检查通过。六条公开常驻CLI各完成8、8、129行三查询，共18查询、870 POST。
+累计11,608／20,000 fixture POST包含失败；真实模型与GPU调用均为0。
+来源、逐次运行、失败和清理见[本次实库记录](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)。
+旧`native3`或LOTUS模型成绩不替代这项新来源。
 
 本次修复在复制C输入前核对2048行、32MiB完整输入和指针元数据，完整响应按8MiB单项／32MiB累计检查；
 重排暂存也收费，已交付结果不恢复累计额度。取消后不再消费下一响应；异常类型、原完整正文与附加关闭诊断保留。
@@ -60,11 +64,13 @@ SemLoom按输入序回填，`native4`还在后行准备失败时先执行合法�
 | `RunProviderJobs` 选择工作线程，`ProviderExecutorState` 留存线程和队列；每个线程调用 `Complete` | 显式 SemLoom、Daft Native、Ray Core 或 Ray Data 分支在调用它之前分派整批，跳过这两层 |
 | `Complete` 构造调用身份、`RequestPayload`、URL 和完整请求检查 | 拆为 `PrepareCompletion`，原生和新路径共用；不在 Python 重建提示或生成参数 |
 | `FetchProviderResponse` 管理响应缓存，`ProviderHttpPost` 使用 `ProviderRequestGuard` 和重试 | 原生分支保留；首版新路径要求响应缓存、重试、请求间隔、每分钟 token 控制和远程 usage 日志关闭 |
-| `ParseCompletionResult`、`RecordUsageEvent` 解释完整响应、用量、截断和错误 | 拆为 `FinishCompletion`，两路径共用；每个完成响应立即回交原解析器 |
+| `ParseCompletionResult`、`RecordUsageEvent` 解释完整响应、用量、截断和错误 | 拆为 `FinishCompletion`，原生与适配路径共用；适配路径按输入序交回原解析器 |
 
 选择批次接点是源码所证明的工程决定：`Complete` 已处于原工作线程内部，替换它的 HTTP 地址或逐行
 回调无法解除前面的线程供给。这里保留 SQL 生成的当前批次，直接使用公共任务入口。
 没有运行第二遍原生模型 SQL，也没有重新实现原算子的提示、算法或解析。
+读取当前向量、配置解析和完整请求准备仍发生在接点之前，当前向量的SQL函数返回屏障仍存在。
+按输入序回填可能等待较早响应，并暂存较晚响应；这些等待没有据接通路径宣称消除。
 
 ## 接口、所有权与供给
 
@@ -86,10 +92,12 @@ CPU profile、实际库检查和模型查询分别保存，不用替身耗时预
 
 原方法在当前向量内可供给最多 2048 个非 NULL 完整调用。新路径解除原工作线程与请求控制的供给限制，
 但不提前获得下一 SQL 向量。每个响应按唯一调用身份恢复原行位置，重复文本不合并。
-完成反馈可立即运行原解析器：`ai_try_complete` 继续逐行捕获；`ai_complete` 首次致命解析错误停止
+完整响应按输入序运行原解析器：`ai_try_complete` 继续逐行捕获；`ai_complete` 首次致命解析错误停止
 未接纳的后续调用，已提交任务按公共核心的退出规则处理。
 所有当前向量输出仍需等待该向量函数返回；单模型请求完成不等于 SQL 行已经交付。
 跨向量流水、多个模型、级联、Join 和并行阶段展开保持 pending。
+既有`test_compiled_multiple_vectors_borrow_one_query_job`核对同一2051行SELECT跨向量借用一个查询Job；
+它使用编译扩展、实际Core和注入的完成fixture，不能代替物理SDK或模型性能证据。
 
 原响应正文和 HTTP（模型服务请求协议）状态回交 C++，原解析器继续处理 usage、额外字段、长度截断
 与供应商错误；公共层不将 HTTP 错误改成 PG 的简化错误类别。取消回调读取 `ClientContext::IsInterrupted`，

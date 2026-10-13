@@ -1,16 +1,65 @@
 # 三种原方法的原生执行接入
 
 <a id="duckdb-paths-20261013"></a>
-## DuckDB六路径源码与本地切片
+## DuckDB六路径源码、实库与公开SQL检查
 
 本次基于已发布`a0f3fbd393a6bf0879a2c0a973f727c737d00389`复用原DuckDB当前向量接点。
 [所属矩阵与检查](../../../../code/integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)登记六个实际方法入口，
 三组专属源码／测试互斥推进；原生baseline不增加SemLoom策略或人为提高并发。
-公共容量`9f8519d9`与未知工作复用保护`45899253`独立发布；Sema的HTTPX cookie和native4工厂白名单按来源采用。
+公共容量`9f8519d9`、未知工作复用保护`45899253`及完整结果数相等但无完整HTTP响应的保护`69f3e93b`独立发布。
+Sema的HTTPX cookie`aaa88e28`、native4工厂白名单`3b465f3f`和运行时报告引用`cc8b09bc`按来源采用。
 
-本地检查使用fixture、实际Core及localhost HTTP，不运行模型或GPU。`native4`合法前缀的最小C++改动
-已经按固定上游四文件的原始／补丁后摘要核对，真实构建、固定SDK/runtime与公开常驻CLI检查尚未执行，
-由主协调在既有模型计时之后运行。失败、缺依赖及未运行状态保留；本次源码身份不借下方旧LOTUS模型成绩。
+本地最后126项中94通过、32项明确需要实际编译库或runtime而跳过；公共容量47通过／1跳过，
+公共传输保护37通过／18实际库条件跳过。服务器检查使用真实固定库、原SQL及确定性HTTP响应，模型／GPU调用均为0。
+重新构建的`0.4.14-native4`二进制SHA256为
+`65cd160849d93fba7108733fe7df7a765ecff522ea86bd5af96b5a68f54a76c0`，
+DuckDB 1.5.4、Daft 0.7.21、Ray 2.56.1固定；作者IMLane来源`072f8257db80569e42c9f5727d839587df529652`，
+使用既有Python 3.12.3／Arrow 16.1.0作者构建和容量桥，未安装依赖或下载模型。
+固定上游四文件与补丁后摘要、编译身份保留；共享DuckDB SDK只读使用，前后状态相同。
+
+| 实际路径 | 原SQL／适配检查 | 公开常驻CLI |
+|---|---|---|
+| DuckDB原生 | 原社区扩展与native4的原完整请求、默认执行与解析对照包含在下列SQL检查内 | 3／3查询通过 |
+| 原生Daft | `native-daft04` 11／11通过，2147 POST | 3／3查询通过 |
+| Ray Data | `native-raydata02` 10通过／1 fixture失败；`native-raydata-earliest03`仅原失败1项通过，合计11个唯一检查 | 3／3查询通过 |
+| SemLoom | `semloom03` 4／4通过，37 POST | 3／3查询通过 |
+| IMLane作者CPython | 正常3项＋传输错误／致命解析／取消各1项，6项通过；各异常组使用新Coordinator，2106 POST | 3／3查询通过 |
+| IMLane作者Ray | 同样6项通过，独立作者Ray与新Coordinator，2105 POST | 3／3查询通过 |
+
+六个CLI组各使用同一连接完成8、8、129行，18查询共870 POST；所有查询的owner与连接身份非空且保持，
+完成序号为1／2／3，结果缓存关闭，变化输入、重复文本独立出现、UTF-8及原解析结果核对通过。
+SemLoom执行身份与Ray会话、Ray Data会话保持；IMLane作者Ray身份归其调用者拥有的runtime，未冒用Ray Data身份。
+Daft与Ray Data原SQL还覆盖2051行自然跨2048＋3向量、完整正文／状态、NULL、usage、长度截断、
+429及非JSON、gzip／重定向原行为、准备失败合法前缀和最早输入错误。
+失败SQL的usage记账数量或时刻存在原生与适配路径差异，原观察保留，不能只据最终异常相同宣称失败过程完全相同。
+
+原完整请求准备仍位于批次接点之前；当前向量函数返回屏障、按输入序回填等待与有界乱序暂存仍存在。
+既有查询Job跨向量复用测试使用编译扩展＋实际Core＋注入完成fixture，其层次与本次物理SDK检查分开。
+本次未修改NativeCall的上游读取需求说明，也未把SemLoom调度引入原生baseline。
+所有结果收到但传输没有完整远端响应仍持续标记未知；同对象及同作者Coordinator的新对象拒绝复用。
+已知完整429不会被当作未知。只证明消费或本地池停止时，`remote_http_stopped`继续为`unavailable`；
+只有fixture拥有者确认归零后才更换测试对象，生产对象没有额外恢复捷径。
+
+失败原件保留：初始LOAD遇旧运行时C++库ABI错误，使用既有编译器库解决；Daft初轮1项断言误读通用C ABI SQL错误，
+改为核对桥的原异常后完整复验；Ray Data首个本地地址与SDK规范地址不同，固定SDK节点地址后启动。
+Ray Data最早错误fixture原先要求并行调度，现保留第一行原429并记录实际响应顺序，单项复验通过。
+SemLoom初轮因验证入口直接初始化Daft后公共manager再次初始化报`MODEL_UNAVAILABLE`，
+改用既有`configure_daft_runner`单一拥有者后4项通过，线程数仍8；合法响应窗口增加24字节不是该错误的根因。
+作者Ray初轮私有临时父目录缺失、0 POST，修私有harness后通过；06:35截止前未启动的准备也保留为未运行。
+这些修订不重置累计预算，也不把不同源码的Ray Data 10＋1写成新完整套件11／11。
+
+授权窗口05:18–06:18 UTC、接续至06:35共用20,000 POST额度；最后独立限定复验实际从
+06:42:56.9878168开始，只运行原Ray Data失败1项和SemLoom 4项，分别8与37 POST，45／50。
+累计11,608／20,000 fixture POST包含失败；CPU 0–7、私有端口和本次进程于
+06:46:59.154913 UTC核对无残留／无监听，早于06:47截止。未改其他路径的runtime、SSH master或公共主机策略。
+
+逐次来源、状态与计数见[机器事实](duckdb_paths_20261013.json)。私有完整证据包`duckdb-paths-evidence-final.tar.gz`
+共852成员、1,653,762字节，SHA256
+`c13792dfb6de54befd9a87791294a08361e7292ceea523d93853ac168cbb656d`；
+按交接校验值获取，运行成员为`artifacts/<运行标识>/`，成功、失败、原源码、日志和清理记录均保留。
+Git仅保存脱敏事实，不公开私有runtime配置、地址或凭据。
+本次建立当前向量的六路径软件接入资格；真实模型质量／GPU与匹配性能、跨向量流水、级联／Join、
+作者并发查询公平性及未知远端工作独立取消仍未建立，不借下方旧LOTUS成绩作新基线。
 
 <a id="imlane-native-async-followup"></a>
 ## 共享cookie修后两作者async与完整Q1检查

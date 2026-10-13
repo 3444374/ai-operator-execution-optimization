@@ -21,10 +21,11 @@ Cookie限制在同一次请求／redirect链内；transport、FullResponse与PG�
 保留调用方更小的额度与原生执行责任。统一基线受影响本地检查43项，33通过、10项实库检查跳过；
 首次loopback绑定拒绝的11项随后单独通过。该配置修补尚未增加作者库、模型或性能证据。
 
-2026-10-13：[DuckDB六路径切片](integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)复用`a0f3fbd3`原有当前向量接点，
-补齐ABI／重排容量、取消与原首输入错误；两作者IMLane模式进入专属验证入口。公共六项容量`9f8519d9`与未知工作复用保护`45899253`独立发布，
-另按来源采用Sema的HTTPX cookie修补。DuckDB本地80通过／31实际库条件跳过；`native4`构建、固定库和公开常驻CLI尚未执行，等待已有模型计时结束。
-新适配源码不借旧LOTUS或`native3`的模型、性能和质量成绩。
+2026-10-13：[DuckDB六路径](integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)完成当前向量接入，
+补齐ABI／有界回填、取消与首输入错误；公共容量及未知传输的持续复用保护分块发布，Sema共享修订按来源吸收。
+新`native4`已构建，固定实际库与六条公开常驻CLI检查完成；原请求／解析和SQL向量屏障保留。
+[实库结果与失败证据](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)集中实际覆盖、逐次源码、预算与清理。
+本地94通过／32实际库条件跳过；模型／GPU及新匹配性能未运行，新适配不借旧LOTUS或`native3`成绩。
 
 2026-10-13：[Q2阶段统计与发送账本修订](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 72条已有性能query离线复算；三个实际账本只读确认四个热路径COUNT全表扫描。新[计数模块](src/experiments/send_counts.py)与[私有发送hook](scripts/benchmarks/sembench_pre_send_ledger.py)通过14项实际函数回归及12组localhost配对，保留逐跳提交、阶段／总额度、失败不退款与崩溃恢复；旧账本未迁移，SemLoom／适配器未改；修后[四组匹配原Q2](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)已完成，96查询与逐跳计数、质量、退出及原值已重核。完整观察OFF开关仍未实现。
