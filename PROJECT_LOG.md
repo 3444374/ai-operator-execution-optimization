@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-13：DuckDB六路径与公共调用修订
+
+- 基于已发布`a0f3fbd3`复用当前向量接点，三个互斥切片完成DuckDB ABI／有界回填、SemLoom输入序及两个作者IMLane模式的验证入口；[方法矩阵](code/integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)记录实际支持与缺项。
+- 公共六项IMLane容量`9f8519d9`、未知结果／关闭故障的原生图复用保护`45899253`分开推送；Sema的native4白名单`3b465f3f`与HTTPX cookie`aaa88e28`按精确来源吸收，未合入其他研究分支。
+- 本地fixture与Core回归完成；`native4`最小C++合法前缀修订已按固定上游四文件摘要核对，重新构建、实际库及公开常驻CLI排在现有模型计时之后。旧LOTUS模型成绩不作为新适配基线。
+
 ## 2026-10-13：已有Q2阶段统计与发送账本修订
 
 - [同题主报告](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)集中阶段均值、全部派生值、服务器只读索引快照、localhost原件与复算；旧模型波次及质量保持，未启动新模型窗口。

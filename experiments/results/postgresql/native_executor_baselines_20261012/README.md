@@ -1,5 +1,17 @@
 # 三种原方法的原生执行接入
 
+<a id="duckdb-paths-20261013"></a>
+## DuckDB六路径源码与本地切片
+
+本次基于已发布`a0f3fbd393a6bf0879a2c0a973f727c737d00389`复用原DuckDB当前向量接点。
+[所属矩阵与检查](../../../../code/integrations/duckdb_ai/README.md#六路径的当前支持与本次检查)登记六个实际方法入口，
+三组专属源码／测试互斥推进；原生baseline不增加SemLoom策略或人为提高并发。
+公共容量`9f8519d9`与未知工作复用保护`45899253`独立发布；Sema的HTTPX cookie和native4工厂白名单按来源采用。
+
+本地检查使用fixture、实际Core及localhost HTTP，不运行模型或GPU。`native4`合法前缀的最小C++改动
+已经按固定上游四文件的原始／补丁后摘要核对，真实构建、固定SDK/runtime与公开常驻CLI检查尚未执行，
+由主协调在既有模型计时之后运行。失败、缺依赖及未运行状态保留；本次源码身份不借下方旧LOTUS模型成绩。
+
 <a id="imlane-native-async-followup"></a>
 ## 共享cookie修后两作者async与完整Q1检查
 

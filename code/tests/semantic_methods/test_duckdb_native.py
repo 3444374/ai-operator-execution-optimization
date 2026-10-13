@@ -277,6 +277,16 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertEqual(self.server.active, 0)
         self.observe_graph('fixture-idle')
 
+    def replace_graph_after_fixture_cleanup(self):
+        # This proof is specific to the owned deterministic server. Production
+        # code retains unknown remote work and never resets the executor flag.
+        self.wait_fixture_idle()
+        previous = self.graph.last_close_report
+        self.bridge.close()
+        self.graph.close()
+        self.native()
+        self.graph_observations.append(dict(event='fixture-owner-replaced-graph', previous=previous))
+
     def tearDown(self):
         if self.bridge:
             self.assertEqual(self.bridge.retained_batches, 0)
@@ -455,7 +465,7 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertEqual(consumed, self.adapter.last_delivered_count)
         self.assertLessEqual(consumed, 33)
         self.observe_graph('native-parser-stop')
-        self.wait_fixture_idle()
+        self.replace_graph_after_fixture_cleanup()
         self.assertEqual(self.select(['clean'])[0][1]['response'], 'out:clean')
 
     def test_real_graph_cleanup_failure_and_native_first_error_are_separate(self):
@@ -521,7 +531,7 @@ class DuckDBNativeGraphLibraryTests(unittest.TestCase):
         self.assertEqual(triggered, [True])
         self.assertEqual(self.bridge.retained_batches, 0)
         self.observe_graph('query-cancel')
-        self.wait_fixture_idle()
+        self.replace_graph_after_fixture_cleanup()
         self.assertEqual(self.select(['after-cancel'])[0][1]['response'], 'out:after-cancel')
 
 

@@ -2,10 +2,15 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from typing import Callable
 
 from src.baselines.common.redact import redact_text
-from .duckdb_ai import DuckDBCall, DuckDBResponse, DuckDBSemLoomBridge, MAX_RESPONSE_BYTES
+from src.baselines.text.frameworks.native_calls import NativeCallOutcome, outcome_kind, raise_execution_error
+from .duckdb_ai import (
+    DuckDBCall, DuckDBResponse, DuckDBSemLoomBridge,
+    MAX_BATCH_ROWS, MAX_BATCH_BYTES, MAX_RESPONSE_BYTES,
+)
 
 
 class DuckDBNativeExecutor:
@@ -35,8 +40,21 @@ class DuckDBNativeExecutor:
             return
         if cancelled():
             raise InterruptedError('DuckDB query cancelled')
+        max_rows = min(MAX_BATCH_ROWS, getattr(self.executor, 'max_batch_rows', MAX_BATCH_ROWS))
+        native_bytes = getattr(self.executor, 'max_batch_bytes', MAX_BATCH_BYTES)
+        result_limit = min(MAX_BATCH_BYTES, native_bytes)
+        if len(calls) > max_rows:
+            raise ValueError('DuckDB native input exceeds the selected batch row allowance')
+        positions = {call.call_id: call.row for call in calls}
+        if len(positions) != len(calls):
+            raise ValueError('DuckDB batch repeats a call identity')
         prepared = []
+        payload_bytes = input_bytes = 0
         for call in calls:
+            payload_bytes += len(call.payload)
+            input_bytes += len(call.payload) + sum(len(header.encode()) for header in call.headers)
+            if input_bytes > MAX_BATCH_BYTES or payload_bytes > native_bytes:
+                raise ValueError('DuckDB native input exceeds the selected batch byte allowance')
             headers = []
             for header in call.headers:
                 name, separator, value = header.partition(':')
@@ -49,11 +67,9 @@ class DuckDBNativeExecutor:
                 connect_timeout_s=call.connect_timeout_seconds, max_response_bytes=MAX_RESPONSE_BYTES,
                 skip_auto_headers=('Accept-Encoding',),
             ))
-        positions = {call.call_id: call.row for call in calls}
-        if len(positions) != len(calls):
-            raise ValueError('DuckDB batch repeats a call identity')
         received: set[str] = set()
         pending: dict[str, DuckDBResponse] = {}
+        result_bytes = 0
         next_call = 0
         iterator = None
         primary_error = None
@@ -65,17 +81,27 @@ class DuckDBNativeExecutor:
                 if (outcome.call_id not in positions or outcome.call_id in received
                         or outcome.row_id != positions[outcome.call_id]):
                     raise ValueError('DuckDB native response changes or repeats call identity')
-                received.add(outcome.call_id)
-                if outcome.transport_error:
-                    if outcome.response is not None:
-                        raise ValueError('DuckDB native response contains both transport error and HTTP response')
-                    response = DuckDBResponse(outcome.call_id, b'', 0, -1, outcome.transport_error)
-                elif outcome.response is None:
-                    raise ValueError('DuckDB native response lacks HTTP response or transport error')
+                normalized = NativeCallOutcome(outcome.call_id, outcome.row_id, outcome.response,
+                    outcome.transport_error, getattr(outcome, 'execution_error', ''))
+                kind = outcome_kind(normalized)
+                if kind == 'execution_error':
+                    raise_execution_error(replace(normalized, execution_error=redact_text(normalized.execution_error)))
+                if kind == 'transport_error':
+                    response = DuckDBResponse(outcome.call_id, b'', 0, -1, normalized.transport_error)
                 else:
+                    raw = normalized.response
+                    if type(raw.body) is not bytes:
+                        raise TypeError('DuckDB native response body must be bytes')
+                    if type(raw.status_code) is not int or not 100 <= raw.status_code <= 599:
+                        raise ValueError('DuckDB native response has invalid HTTP status')
                     # The C++ FinishCompletion owns JSON, usage, truncation and provider error interpretation.
-                    response = DuckDBResponse(outcome.call_id, outcome.response.body,
-                                              outcome.response.status_code, -1)
+                    response = DuckDBResponse(outcome.call_id, raw.body, raw.status_code, -1)
+                result_bytes += len(response.body) + len(response.transport_error.encode())
+                # Charge before retaining an out-of-order suffix, and do not reset
+                # on delivery: both pending storage and cumulative results are bounded.
+                if len(response.body) > MAX_RESPONSE_BYTES or result_bytes > result_limit:
+                    raise ValueError('DuckDB native response exceeds its batch byte allowance')
+                received.add(outcome.call_id)
                 pending[outcome.call_id] = response
                 # Native workers parse on completion, but AiCompletionFunction
                 # selects the first failing input job after joining its workers.
@@ -96,12 +122,21 @@ class DuckDBNativeExecutor:
             raise
         finally:
             if iterator is not None:
+                cleanup_error = None
                 try:
                     iterator.close()
                 except BaseException as error:
-                    self.last_cleanup_error = redact_text(f'{type(error).__name__}: {error}')[:4096]
+                    cleanup_error = error
+                reported = list(getattr(self.executor, 'last_cleanup_errors', ()))
+                if cleanup_error is not None and all(error is not cleanup_error for _, error in reported):
+                    reported.append(('close', cleanup_error))
+                self.last_cleanup_error = ('\n'.join(
+                    redact_text(f'{stage}: {type(error).__name__}: {error}') for stage, error in reported
+                )[:4096] or None)
+                if cleanup_error is not None:
                     if primary_error is None:
-                        raise
+                        raise cleanup_error
+                    primary_error.add_note('DuckDB native graph close also failed: ' + type(cleanup_error).__name__)
 
 
 class DuckDBNativeBridge(DuckDBSemLoomBridge):
