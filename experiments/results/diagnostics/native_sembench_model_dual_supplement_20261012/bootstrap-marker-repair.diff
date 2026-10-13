@@ -1,0 +1,34 @@
+--- a/pre_send_ledger.py
++++ b/pre_send_ledger.py
+@@ -1,6 +1,6 @@
+ """Private pass-through accounting; no request values or retry policy changed."""
+ from collections import Counter
+-import hashlib,json,os,sqlite3,time
++import hashlib,json,os,sqlite3,time,uuid
+ from pathlib import Path
+ from urllib.parse import urlsplit
+ ROOT=Path(os.environ['MODELRUN_ROOT']);STATE=json.loads((ROOT/'state.json').read_text());DB=ROOT/'sends.sqlite'
+@@ -84,10 +84,16 @@
+  for name,(owner,attribute,expected) in _hooks.items():
+   if getattr(owner,attribute) is not expected:raise RuntimeError('run send hook was replaced: '+name)
+  if not _hooks or 'aiohttp' not in _hooks:raise RuntimeError('required real HTTP client accounting missing')
++def _write_bootstrap(target,value):
++ temporary=target.with_name(target.name+'.'+uuid.uuid4().hex+'.tmp')
++ try:
++  temporary.write_text(json.dumps(value)+'\n');temporary.replace(target)
++ finally:
++  if temporary.exists():temporary.unlink()
+ def await_cli_release():
+  assert_hooks();ticks=start_ticks(os.getpid());marker=ROOT/'bootstrap'/f'{os.getpid()}.json'
+  value=json.loads(marker.read_text());value.update(cli_waiting=True,start_ticks=ticks)
+- marker.write_text(json.dumps(value)+'\n');release=ROOT/'bootstrap'/f'{os.getpid()}.release.json';until=time.monotonic()+20
++ _write_bootstrap(marker,value);release=ROOT/'bootstrap'/f'{os.getpid()}.release.json';until=time.monotonic()+20
+  while not release.exists():
+   if time.monotonic()>=until:raise TimeoutError('public CLI startup approval handshake timed out')
+   time.sleep(.02)
+@@ -151,4 +157,4 @@
+  if aiohttp is None:raise RuntimeError('required aiohttp runtime missing')
+  install_gateway_registration();_installed=True;assert_hooks()
+  marker=ROOT/'bootstrap';marker.mkdir(exist_ok=True)
+- (marker/f'{os.getpid()}.json').write_text(json.dumps(dict(pid=os.getpid(),start_ticks=start_ticks(os.getpid()),versions=versions,installed=True,hooks=list(_hooks),helper_identity=identity,namespace=os.environ.get('IMLANE_NAMESPACE'),scope=os.environ.get('MODELRUN_SCOPE'),model_counter_scope='real localhost sends; MockTransport excluded'))+'\n')
++ _write_bootstrap(marker/f'{os.getpid()}.json',dict(pid=os.getpid(),start_ticks=start_ticks(os.getpid()),versions=versions,installed=True,hooks=list(_hooks),helper_identity=identity,namespace=os.environ.get('IMLANE_NAMESPACE'),scope=os.environ.get('MODELRUN_SCOPE'),model_counter_scope='real localhost sends; MockTransport excluded'))

@@ -63,6 +63,33 @@ Daft／Ray与Arrow／Ray分别登记；同方法、完整请求、实际调用/�
 | `sema-native-direct` | `prepare_sema_projection(service=None)`，作者二进制直达模型服务 |
 | `sema-native-transparent` | `SemaRequestService` 查询专属 URL，aiohttp 原样转发 |
 | `sema-method-semloom-request-service` | `SemaSemLoomService`，公共任务接口、现有核心、Daft 数据准备及 Ray HTTP worker |
+| `sema-native-daft-request-service` | `SemaNativeService`，已经抵达的请求进入Daft0.7.21原生执行图，不创建Core |
+| `sema-native-ray-data-request-service` | 同一接收/回送，批内执行由Ray2.56.1 HTTP Processor拥有，不创建Core |
+| `sema-imlane-request-service` | 同一接收/回送，完整调用进入作者DBEnd与Coordinator；需要明确的已就绪IMLane配置 |
+
+后三条使用[原生请求交接](sema_native.py)和[完整调用执行器](../../baselines/text/frameworks/native_calls.py)。
+每次取当前已经抵达的有限FIFO快照，不等待SQL结束或更多请求，原生图只执行快照内完整调用。
+单个快照最多128项、32MiB，默认不改变提示或重试，不排序长度、不添加Core并发策略。
+前一快照退出后才能启动下一快照，快照构建及图内结果等待计入真实查询，不称全查询充分流水。
+
+取得名额后的请求、执行中调用和待写响应共享持有上限，直到HTTP写出或异常退出才归还。
+正文在原有`request.read()`后才进入这项名额：此前已读取但尚未接纳的正文仍按有限查询的
+`max_requests × request_bytes`解释，128项不能代表全部HTTP内存。原入站重复header仍沿旧服务合并方式，
+响应重复header、状态和原始体在新执行路径中完整保留。
+
+IMLane通过[薄适配](sema_imlane.py)执行完整HTTP调用，不使用算术fixture代替。
+单查询与常驻入口的`--imlane-config`读取仓库外配置，核对作者提交、DBEnd程序/UDF摘要、
+loopback端口、私有输出目录、实例名称和实际原生任务线程数。
+Coordinator与其Python/Ray运行环境由调用方事先准备；查询只拥有自身DBEnd子进程，不停止共享服务。
+取消和超时会终止本次子进程，未确认的远端HTTP仍写unavailable，不补造已取消或自动重试。
+
+各阶段从[服务时钟分析](../../experiments/postgresql/sema_native_query.py)取得：抵达至正文读取、
+接纳等待、入队、快照等待、图启动、原生执行至完整响应收到、响应收到至HTTP写出。
+原生执行区间包括图执行、模型HTTP和完成收集；其中重叠部分不拆为纯模型计算。
+单请求服务耗时从抵达到写出，原池前任务端到端仍不可观测；整查询从实际SELECT提交到SQL结果全消费。
+库/服务初始化和原生输入准备另外报告；请求/查询P99都保存样本数、原值和是否仅为样本最大值。
+独立服务检查验证原始非成功响应交回；统一实验入口的质量审计遇到HTTP或输出错误会停止整查询，
+因此该实验入口的失败处理不能作为任意原生SQL错误政策完全一致的证明。
 
 [sema_service.py](sema_service.py)复用[原有 CLI 生命周期](../../baselines/text/products/sema.py)：先导入并核对 CSV，再提交同一 SELECT，读完 SQL 结果及完成标记。
 [sema_semloom.py](sema_semloom.py)复用 `prepare_native_task`、`NativeTaskSession`、`decode_full_response` 和 `ray_map_factory`；数据准备默认 `daft`，可显式选择既有 `arrow` 直接分批，响应模式为 `full`，不另建方法驱动或调度核心。

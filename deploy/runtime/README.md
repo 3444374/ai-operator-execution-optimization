@@ -53,6 +53,9 @@ SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
 本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
+IMLane独立构建与无模型检查使用`imlane-runtime`组：Python3.12、Arrow16.1.0、Ray2.56.1与psutil7.0.0
+在自己的环境核对，不修改原语义系统driver；C++库、构建来源与实际往返另由
+[IMLane接入目录](../../code/integrations/imlane/README.md)记录。该组不检查或下载模型。
 若旧driver缺评价依赖，先审查安装预览，再建独立venv，不混装模型服务环境；
 [本轮环境与验证记录](../../experiments/results/postgresql/database_queries_20260910/README.md)。
 

@@ -19,6 +19,23 @@
 常驻入口保留原生Daft runner和Ray连接；当前图、原生actor和HTTP session的实际生命周期分别记录，
 不向原生图加入Core或复用已完成结果。合法行间有状态API与当前采用设置见[常驻检查](../../../experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture)。
 
+[`text/frameworks/native_calls.py`](text/frameworks/native_calls.py)承接LOTUS与DuckDB已生成的完整调用，
+由Daft Native或Ray Data图执行并返回完整HTTP状态、原始正文、重复header及HTTP版本。
+HTTP错误与网络失败分别交回原算子；响应超量和身份错误直接停止执行。LOTUS原缓存、提示、SDK解析
+及阶段等待的采用方式见[LOTUS适配](../semantic_methods/lotus/README.md#daft-native与ray-data执行)。
+旧固定Map与SQL读取入口继续保留。
+同一`NativeCallExecutor`一次只拥有一个活动批次。已启动的图缺结果、消费线程未结束或图／HTTP池
+关闭出错或收到无完整HTTP响应的`transport_error`时，记录`unconfirmed_work=True`并拒绝该对象后续批次；
+即使本地收到全部错误结果、线程与连接池已退出，也不能据此确认远端停止。完整HTTP错误响应（如429）仍可复用。
+IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对象也要求先清理；发送前取消仍可复用。
+替换执行器前由调用者核清其运行时，报告保留`remote_http_stopped='unavailable'`，不把消费结束当作模型停止。
+
+[`text/controls/ray_core_calls.py`](text/controls/ray_core_calls.py)另用Ray Core原生actor和`ray.wait`，
+固定数量、每actor单调用的静态分片拓扑明确登记为`diagnostic_reference`。
+原生actor队列拥有串行执行，Ray拥有actor调度；没有SemLoom策略或Python HTTP请求池。
+`NativeCallExecutor("ray", ...)`选择该参照，`"ray-data"`仍选择官方HTTP Processor图。
+actor数不能超过配置及实际Ray逻辑CPU数量；取消只终止本次创建的actor，服务端HTTP状态仍需独立核实。
+
 `text/frameworks/semantic_map.py`提供同应用Movie Map的LOTUS1.2.4 `sem_map`、
 Daft0.7.21内置`prompt`、DuckDB1.5.4社区`ai`0.4.14与Sema作者二进制入口。
 同模块的`prepare_rows`先装载原始输入与可复用组件，`execute()`执行原生算子；DuckDB在SQL内装配提示，

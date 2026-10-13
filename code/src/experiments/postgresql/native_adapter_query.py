@@ -200,9 +200,13 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     if arm == 'fixed-map-native-daft':
         from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
         prepare_runtime(options.num_threads)
-        return None,dict(owner='Daft Native',version='0.7.21',source='external finite prepared calls')
+        return None,dict(owner='Daft Native',version='0.7.21',num_threads=options.num_threads,
+                         source='external finite prepared calls')
     if arm == 'fixed-map-semloom-local-diagnostic':
         return None,dict(owner='SemLoom local diagnostic',source='external finite prepared calls')
+    if arm == 'fixed-map-semloom' and physical is not None and physical.payload_backend == 'daft':
+        from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
+        prepare_runtime(options.num_threads)
     os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(options.ray_async_batches_per_actor)
     import ray
     config = QueryConfig(unit_id='prepared-runtime',arm='ray-data',task='map',table='unused',
@@ -211,7 +215,7 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     runtime = stack.enter_context(native_ray_runtime(ray,config,ray_temp_root))
     if arm == 'fixed-map-semloom':
         physical = replace(physical,address=ray.get_runtime_context().gcs_address,response_mode='full')
-    owner = 'Ray Data'
+    owner = 'Ray Core' if arm == 'supplier-native-ray' else 'Ray Data'
     if arm == 'fixed-map-semloom':
         owner = 'SemLoom Daft/Ray' if physical.payload_backend == 'daft' else 'SemLoom Arrow/Ray'
     return physical,dict(runtime,owner=owner,version=ray.__version__,source='external finite prepared calls')
@@ -457,7 +461,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
 
 def main(argv=None):
     started=time.monotonic_ns()
-    from .supplier_adapter_query import SUPPLIER_ARMS,run_supplier_query
+    from .supplier_adapter_query import SUPPLIER_ARMS,LOTUS_OBSERVATION_MODES,run_supplier_query
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--arm',choices=ARMS+SUPPLIER_ARMS,required=True)
     for name in ('input','plan','model','budget','output'):
@@ -468,10 +472,14 @@ def main(argv=None):
     parser.add_argument('--options',type=Path)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--references',type=Path)
     parser.add_argument('--allowed-output',action='append')
     parser.add_argument('--stages',type=Path)
     parser.add_argument('--sema-binary',type=Path)
+    parser.add_argument('--imlane-config',type=Path)
+    parser.add_argument('--imlane-cpython-config',type=Path)
+    parser.add_argument('--imlane-ray-config',type=Path)
     parser.add_argument('--duckdb-library',type=Path)
     parser.add_argument('--tokenizer',type=Path)
     parser.add_argument('--ray-physical',type=Path)
@@ -479,6 +487,8 @@ def main(argv=None):
     parser.add_argument('--ray-address')
     parser.add_argument('--query-timeout-s',type=float,default=120)
     args=parser.parse_args(argv)
+    if args.lotus_observation_mode!='qualification' and not args.arm.startswith('lotus-'):
+        parser.error('LOTUS performance observation requires a LOTUS arm')
     if args.input.stat().st_size>64*1024*1024:
         parser.error('raw input file exceeds its byte allowance')
     def load_source():
@@ -499,7 +509,11 @@ def main(argv=None):
     if args.arm in SUPPLIER_ARMS:
         run_supplier_query(args.arm,**common,stages=json.loads(args.stages.read_text()) if args.stages else None,
                            sema_binary=args.sema_binary,tokenizer_path=args.tokenizer,duckdb_library=args.duckdb_library,
-                           preparation_started_ns=started,sema_native_threads=args.sema_native_threads)
+                           preparation_started_ns=started,sema_native_threads=args.sema_native_threads,
+                           lotus_observation_mode=args.lotus_observation_mode,
+                           imlane_config=args.imlane_config,
+                           imlane_call_configs={mode: path for mode,path in
+                               (('cpython',args.imlane_cpython_config),('ray',args.imlane_ray_config)) if path is not None})
     else:
         run_prepared_map_query(args.arm,**common,preparation_started_ns=started)
     return 0

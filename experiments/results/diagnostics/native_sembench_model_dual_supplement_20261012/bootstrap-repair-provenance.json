@@ -1,0 +1,44 @@
+{
+  "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+  "original_helpers_sha256": {
+    "pre_send_ledger.py": "35691b3dc536079ec1c1ee864313c6281133eb8823f72fe92b3f9a669f815ac0",
+    "sitecustomize.py": "57f2d331add9a70ea3e8226b0f6b30d6f2c36fd2977049fc139a53b93269e9a8",
+    "query_observer.py": "650f426cc68c5087eb3ede99753b43ef81c306d1dc1f227c480d047d5eb6e61d",
+    "support.py": "8db7493f0355d904a07d82f5e8f7e07c322c10e40febf18cd0a64ec6595b55c6",
+    "software.py": "feb6f23d7d84c8f46c6aec66b627e8b32ed59ff8e5387160eff1eda70ced50b9",
+    "software_runner.py": "1479bec512aa447b3189ee94c358d1dec3e3d76b846c2c8c2a0d186c74cfcf57",
+    "asset_check.py": "d2fb86550db9c0220a390b94a938be37cbf7837aec051fc74fd7fd2f118abadf"
+  },
+  "supplement_helpers_sha256": {
+    "pre_send_ledger.py": "a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2",
+    "sitecustomize.py": "57f2d331add9a70ea3e8226b0f6b30d6f2c36fd2977049fc139a53b93269e9a8",
+    "query_observer.py": "650f426cc68c5087eb3ede99753b43ef81c306d1dc1f227c480d047d5eb6e61d",
+    "support.py": "8db7493f0355d904a07d82f5e8f7e07c322c10e40febf18cd0a64ec6595b55c6",
+    "software.py": "feb6f23d7d84c8f46c6aec66b627e8b32ed59ff8e5387160eff1eda70ced50b9",
+    "software_runner.py": "1479bec512aa447b3189ee94c358d1dec3e3d76b846c2c8c2a0d186c74cfcf57",
+    "asset_check.py": "d2fb86550db9c0220a390b94a938be37cbf7837aec051fc74fd7fd2f118abadf"
+  },
+  "unchanged_functions": [
+    "activate",
+    "assert_hooks",
+    "claim_fixture",
+    "counts",
+    "finish",
+    "harness_identity",
+    "initialize",
+    "install_gateway_registration",
+    "reserve",
+    "select",
+    "slot",
+    "start_ticks",
+    "unit"
+  ],
+  "changed_functions": [
+    "await_cli_release",
+    "install"
+  ],
+  "new_function": "_write_bootstrap",
+  "source_code_changed": false,
+  "request_admission_send_finish_and_registration_functions_ast_unchanged": true,
+  "original_harness_files_untouched": true
+}

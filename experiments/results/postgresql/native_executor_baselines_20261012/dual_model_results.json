@@ -1,0 +1,1309 @@
+{
+  "schema": "semloom.lotus.dual.model.result.v1",
+  "passed": true,
+  "run_id": "lotus-dual01/models",
+  "source_commit": "c0f420f81719da8a0169626c22f106f7c651dbb6",
+  "source_archive_sha256": "c45fa20abd747d475fe715e9c5b9801e8d1a32b9fe1d6b0f25977be248dbadf1",
+  "evidence_archive": {
+    "sha256": "190d41994ef9dfc70fb7ea268e4bfbb14088121816958de73ddab3ddaa2cac80",
+    "bytes": 4858859
+  },
+  "new_round": {
+    "model_POST_cap": 288,
+    "actual_model_posts": 144,
+    "allocated_slots": 144,
+    "unused_slots": 144,
+    "queries": 18,
+    "warmup_queries": 6,
+    "measurement_queries": 12,
+    "errors": 0,
+    "timeouts": 0,
+    "retries": 0,
+    "fixtures_this_model_round": 0
+  },
+  "previous_rounds": {
+    "actual_model_posts": 168,
+    "allocated_slots": 176,
+    "single_gpu_unused48_not_used": true
+  },
+  "all_rounds": {
+    "actual_model_posts": 312,
+    "allocated_slots": 320
+  },
+  "fixture_qualification": {
+    "actual_posts": 62,
+    "limit": 64,
+    "models": 0,
+    "GPU": 0,
+    "remaining2_not_used": true
+  },
+  "counters": {
+    "common_gateway": 144,
+    "inner_gateway": 144,
+    "sqlite_model_posts": 144,
+    "closed_units": 18,
+    "vllm_logs": {
+      "gpu0": 72,
+      "gpu1": 72
+    }
+  },
+  "actual_replica_posts": {
+    "gpu1": 72,
+    "gpu0": 72
+  },
+  "actual_replica_output_tokens": {
+    "gpu1": 144,
+    "gpu0": 144
+  },
+  "replicas": [
+    {
+      "replica_id": "gpu0",
+      "api_pid": 189412,
+      "api_start_ticks": 293954379,
+      "cpu_affinity": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87
+      ],
+      "physical_gpu_index": 0,
+      "configuration": [
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "41487",
+        "--model",
+        "<cached-model-root>/Qwen2.5-7B-Instruct",
+        "--served-model-name",
+        "Qwen2.5-7B-Instruct",
+        "--dtype",
+        "bfloat16",
+        "--max-model-len",
+        "4096",
+        "--max-num-seqs",
+        "16",
+        "--max-num-batched-tokens",
+        "2048",
+        "--gpu-memory-utilization",
+        "0.80",
+        "--tensor-parallel-size",
+        "1",
+        "--pipeline-parallel-size",
+        "1",
+        "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--api-key",
+        "local-fixture"
+      ],
+      "started_monotonic": 2939543.795603289,
+      "readiness_seconds": 46.12757649924606,
+      "actual_api_cpu_affinity": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87
+      ],
+      "gpu_uuid": "GPU-b7729a10-0f62-16ed-e91b-65801dfa5ee9",
+      "actual_engine_pid": 189623,
+      "engine_start_ticks": 293956941,
+      "actual_engine_cpu_affinity": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87
+      ],
+      "api_exit": 0
+    },
+    {
+      "replica_id": "gpu1",
+      "api_pid": 189413,
+      "api_start_ticks": 293954379,
+      "cpu_affinity": [
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "physical_gpu_index": 1,
+      "configuration": [
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "58387",
+        "--model",
+        "<cached-model-root>/Qwen2.5-7B-Instruct",
+        "--served-model-name",
+        "Qwen2.5-7B-Instruct",
+        "--dtype",
+        "bfloat16",
+        "--max-model-len",
+        "4096",
+        "--max-num-seqs",
+        "16",
+        "--max-num-batched-tokens",
+        "2048",
+        "--gpu-memory-utilization",
+        "0.80",
+        "--tensor-parallel-size",
+        "1",
+        "--pipeline-parallel-size",
+        "1",
+        "--enforce-eager",
+        "--no-enable-prefix-caching",
+        "--api-key",
+        "local-fixture"
+      ],
+      "started_monotonic": 2939543.798452363,
+      "readiness_seconds": 46.12785689625889,
+      "actual_api_cpu_affinity": [
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "gpu_uuid": "GPU-026e4b6e-0b94-4bb1-706b-62975cf71531",
+      "actual_engine_pid": 189612,
+      "engine_start_ticks": 293956880,
+      "actual_engine_cpu_affinity": [
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "api_exit": 0
+    }
+  ],
+  "model_files_sha256": {
+    "config.json": {
+      "sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "bytes": 663
+    },
+    "configuration.json": {
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "bytes": 2
+    },
+    "generation_config.json": {
+      "sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "bytes": 243
+    },
+    "merges.txt": {
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "bytes": 1671839
+    },
+    "model-00001-of-00004.safetensors": {
+      "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "bytes": 3945441440
+    },
+    "model-00002-of-00004.safetensors": {
+      "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "bytes": 3864726352
+    },
+    "model-00003-of-00004.safetensors": {
+      "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "bytes": 3864726424
+    },
+    "model-00004-of-00004.safetensors": {
+      "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "bytes": 3556377672
+    },
+    "model.safetensors.index.json": {
+      "sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "bytes": 27752
+    },
+    "tokenizer.json": {
+      "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "bytes": 7031645
+    },
+    "tokenizer_config.json": {
+      "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "bytes": 7305
+    },
+    "vocab.json": {
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "bytes": 2776833
+    }
+  },
+  "model_repository": "Qwen/Qwen2.5-7B-Instruct",
+  "serving_versions": {
+    "vllm": "0.25.1",
+    "torch": "2.11.0",
+    "transformers": "5.14.1"
+  },
+  "startup_seconds_including_preflight": 77.70836320193484,
+  "supervisor_test_seconds": 78.46732717799023,
+  "driver_test_seconds": 75.1994924461469,
+  "cleanup": {
+    "api_server_exits": [
+      0,
+      0
+    ],
+    "own_survivors": [],
+    "gpu_after": []
+  },
+  "common_router_stopped": true,
+  "imlane_actual_modes": [
+    {
+      "runtime": "cpython",
+      "declared_author_executors": 2,
+      "declared_graph_allowance": 8,
+      "cpu_affinity": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "ray_cpus": 0,
+      "ray_gpus": 0,
+      "startup_seconds": 0.5582250626757741,
+      "actual_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "settings_executors_are_physical_count": false,
+      "coordinator_pid": 192999,
+      "coordinator_start_ticks": 293965255,
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "actual_worker_pids": [
+        193002,
+        193005
+      ],
+      "ray_actor_ids": [],
+      "kernel_actual_calls": 24,
+      "bridge_close_reports": [
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        },
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        },
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        }
+      ],
+      "uncertain_markers": [],
+      "cleanup_passed": true
+    },
+    {
+      "runtime": "ray",
+      "declared_author_executors": 2,
+      "declared_graph_allowance": 8,
+      "cpu_affinity": [
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "ray_cpus": 2,
+      "ray_gpus": 0,
+      "startup_seconds": 5.563031177967787,
+      "actual_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "settings_executors_are_physical_count": false,
+      "coordinator_pid": 193596,
+      "coordinator_start_ticks": 293966017,
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "ray_owner_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "actual_worker_pids": [
+        193670,
+        193677
+      ],
+      "ray_actor_ids": [
+        "135ba69e381957ff7dc6e04002000000",
+        "af1f981c2158dcda5a8c3f0802000000"
+      ],
+      "kernel_actual_calls": 24,
+      "bridge_close_reports": [
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        },
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        },
+        {
+          "graph_consumer_stopped": true,
+          "bridge_stopped": true,
+          "clean": true,
+          "forced": false,
+          "prepared": 8,
+          "received": 8,
+          "returncode": 0,
+          "remote_http_stopped": "unavailable",
+          "coordinator_owner": "caller",
+          "scheduler_owner": "IMLane author implementation",
+          "native_settings": {
+            "native_executors": 4,
+            "native_task_threads": 6
+          },
+          "concurrency_allowance": 8,
+          "executor_poisoned": false
+        }
+      ],
+      "uncertain_markers": [],
+      "cleanup_passed": true
+    }
+  ],
+  "measured_statistics": {
+    "lotus-adapted-native": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.180696973,
+        "P95": 0.48289774,
+        "P99": 0.48289774,
+        "max": 0.48289774,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.094460262,
+          "P95": 0.418599225,
+          "P99": 0.418599225,
+          "max": 0.418599225,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.076766216,
+          "P95": 0.082841623,
+          "P99": 0.082841623,
+          "max": 0.082841623,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001055685,
+          "P95": 0.03207235,
+          "P99": 0.03207235,
+          "max": 0.03207235,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.091087161,
+          "P95": 0.385944969,
+          "P99": 0.385944969,
+          "max": 0.385944969,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 24.111102283601223,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-daft": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.186022245,
+        "P95": 0.192737766,
+        "P99": 0.192737766,
+        "max": 0.192737766,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.081306897,
+          "P95": 0.0972826,
+          "P99": 0.0972826,
+          "max": 0.0972826,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.066549176,
+          "P95": 0.082303722,
+          "P99": 0.082303722,
+          "max": 0.082303722,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.000970212,
+          "P95": 0.006260437,
+          "P99": 0.006260437,
+          "max": 0.006260437,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.07979837,
+          "P95": 0.094251837,
+          "P99": 0.094251837,
+          "max": 0.094251837,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 42.243107865999086,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-ray-data": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 1.837112975,
+        "P95": 5.629190375,
+        "P99": 5.629190375,
+        "max": 5.629190375,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.067434843,
+          "P95": 0.075548988,
+          "P99": 0.075548988,
+          "max": 0.075548988,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.061951938,
+          "P95": 0.070680144,
+          "P99": 0.070680144,
+          "max": 0.070680144,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.00152313,
+          "P95": 0.002258709,
+          "P99": 0.002258709,
+          "max": 0.002258709,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.064499684,
+          "P95": 0.073949702,
+          "P99": 0.073949702,
+          "max": 0.073949702,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 2.142961416106941,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-semloom": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.164347022,
+        "P95": 0.186899466,
+        "P99": 0.186899466,
+        "max": 0.186899466,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.082056397,
+          "P95": 0.096745928,
+          "P99": 0.096745928,
+          "max": 0.096745928,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.061780166,
+          "P95": 0.078596124,
+          "P99": 0.078596124,
+          "max": 0.078596124,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001554529,
+          "P95": 0.004937939,
+          "P99": 0.004937939,
+          "max": 0.004937939,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.07933224,
+          "P95": 0.092940451,
+          "P99": 0.092940451,
+          "max": 0.092940451,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 45.552056879213545,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-imlane": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.329086729,
+        "P95": 0.371936386,
+        "P99": 0.371936386,
+        "max": 0.371936386,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.061597651,
+          "P95": 0.073378578,
+          "P99": 0.073378578,
+          "max": 0.073378578,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.055746397,
+          "P95": 0.069972144,
+          "P99": 0.069972144,
+          "max": 0.069972144,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001579584,
+          "P95": 0.010431111,
+          "P99": 0.010431111,
+          "max": 0.010431111,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.05761385,
+          "P95": 0.071568022,
+          "P99": 0.071568022,
+          "max": 0.071568022,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 22.82378377780025,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-imlane-ray": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.367844239,
+        "P95": 0.393929889,
+        "P99": 0.393929889,
+        "max": 0.393929889,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.054759638,
+          "P95": 0.07284313,
+          "P99": 0.07284313,
+          "max": 0.07284313,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.049668597,
+          "P95": 0.066456666,
+          "P99": 0.066456666,
+          "max": 0.066456666,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.00112295,
+          "P95": 0.002154673,
+          "P99": 0.002154673,
+          "max": 0.002154673,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.052163461,
+          "P95": 0.070802583,
+          "P99": 0.070802583,
+          "max": 0.070802583,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 21.003601214453425,
+      "errors": 0,
+      "timeouts": 0
+    }
+  },
+  "replica_measured_statistics": {
+    "gpu0": {
+      "actual_posts_total": 72,
+      "actual_output_tokens_total": 144,
+      "measured_requests": 48,
+      "actual_model_http_seconds": {
+        "n": 48,
+        "P50": 0.061264962,
+        "P95": 0.082438817,
+        "P99": 0.082841623,
+        "max": 0.082841623
+      }
+    },
+    "gpu1": {
+      "actual_posts_total": 72,
+      "actual_output_tokens_total": 144,
+      "measured_requests": 48,
+      "actual_model_http_seconds": {
+        "n": 48,
+        "P50": 0.059019396,
+        "P95": 0.080568067,
+        "P99": 0.082303722,
+        "max": 0.082303722
+      }
+    }
+  },
+  "gpu_utilization": {
+    "gpu0": {
+      "n": 241,
+      "mean_sampled_percent": 3.759336099585062,
+      "max_sampled_percent": 100.0,
+      "nonzero_samples": 14,
+      "scope": "whole model test interval, including group/graph startup; sampled not continuous; not saturation proof"
+    },
+    "gpu1": {
+      "n": 241,
+      "mean_sampled_percent": 3.9419087136929463,
+      "max_sampled_percent": 94.0,
+      "nonzero_samples": 16,
+      "scope": "whole model test interval, including group/graph startup; sampled not continuous; not saturation proof"
+    }
+  },
+  "query_gpu_samples": {
+    "arm-0-query-0": {
+      "gpu0": {
+        "n": 2,
+        "mean_sampled_percent": 43.0,
+        "max_sampled_percent": 86.0
+      },
+      "gpu1": {
+        "n": 2,
+        "mean_sampled_percent": 43.0,
+        "max_sampled_percent": 86.0
+      }
+    },
+    "arm-0-query-1": {
+      "gpu0": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      },
+      "gpu1": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      }
+    },
+    "arm-0-query-2": {
+      "gpu0": {
+        "n": 2,
+        "mean_sampled_percent": 13.5,
+        "max_sampled_percent": 27.0
+      },
+      "gpu1": {
+        "n": 2,
+        "mean_sampled_percent": 26.0,
+        "max_sampled_percent": 52.0
+      }
+    },
+    "arm-1-query-0": {
+      "gpu0": {
+        "n": 9,
+        "mean_sampled_percent": 0.0,
+        "max_sampled_percent": 0.0
+      },
+      "gpu1": {
+        "n": 9,
+        "mean_sampled_percent": 0.0,
+        "max_sampled_percent": 0.0
+      }
+    },
+    "arm-1-query-1": {
+      "gpu0": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      },
+      "gpu1": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      }
+    },
+    "arm-1-query-2": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 21.0,
+        "max_sampled_percent": 21.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 84.0,
+        "max_sampled_percent": 84.0
+      }
+    },
+    "arm-2-query-0": {
+      "gpu0": {
+        "n": 44,
+        "mean_sampled_percent": 0.0,
+        "max_sampled_percent": 0.0
+      },
+      "gpu1": {
+        "n": 44,
+        "mean_sampled_percent": 1.9090909090909092,
+        "max_sampled_percent": 84.0
+      }
+    },
+    "arm-2-query-1": {
+      "gpu0": {
+        "n": 17,
+        "mean_sampled_percent": 0.0,
+        "max_sampled_percent": 0.0
+      },
+      "gpu1": {
+        "n": 17,
+        "mean_sampled_percent": 4.9411764705882355,
+        "max_sampled_percent": 84.0
+      }
+    },
+    "arm-2-query-2": {
+      "gpu0": {
+        "n": 6,
+        "mean_sampled_percent": 11.333333333333334,
+        "max_sampled_percent": 68.0
+      },
+      "gpu1": {
+        "n": 6,
+        "mean_sampled_percent": 15.666666666666666,
+        "max_sampled_percent": 94.0
+      }
+    },
+    "arm-3-query-0": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 42.0,
+        "max_sampled_percent": 42.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 88.0,
+        "max_sampled_percent": 88.0
+      }
+    },
+    "arm-3-query-1": {
+      "gpu0": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      },
+      "gpu1": {
+        "n": 0,
+        "mean_sampled_percent": null,
+        "max_sampled_percent": null
+      }
+    },
+    "arm-3-query-2": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 47.0,
+        "max_sampled_percent": 47.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 60.0,
+        "max_sampled_percent": 60.0
+      }
+    },
+    "arm-4-query-0": {
+      "gpu0": {
+        "n": 2,
+        "mean_sampled_percent": 50.0,
+        "max_sampled_percent": 100.0
+      },
+      "gpu1": {
+        "n": 2,
+        "mean_sampled_percent": 0.0,
+        "max_sampled_percent": 0.0
+      }
+    },
+    "arm-4-query-1": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 76.0,
+        "max_sampled_percent": 76.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 37.0,
+        "max_sampled_percent": 37.0
+      }
+    },
+    "arm-4-query-2": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 86.0,
+        "max_sampled_percent": 86.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 48.0,
+        "max_sampled_percent": 48.0
+      }
+    },
+    "arm-5-query-0": {
+      "gpu0": {
+        "n": 4,
+        "mean_sampled_percent": 40.0,
+        "max_sampled_percent": 88.0
+      },
+      "gpu1": {
+        "n": 4,
+        "mean_sampled_percent": 13.0,
+        "max_sampled_percent": 52.0
+      }
+    },
+    "arm-5-query-1": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 69.0,
+        "max_sampled_percent": 69.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 56.0,
+        "max_sampled_percent": 56.0
+      }
+    },
+    "arm-5-query-2": {
+      "gpu0": {
+        "n": 1,
+        "mean_sampled_percent": 72.0,
+        "max_sampled_percent": 72.0
+      },
+      "gpu1": {
+        "n": 1,
+        "mean_sampled_percent": 48.0,
+        "max_sampled_percent": 48.0
+      }
+    }
+  },
+  "gpu_sample_period_seconds": 0.25,
+  "gpu_sampling_note": "nvidia-smi command duration plus .25s wait; query windows use same host CLOCK_MONOTONIC and sample midpoint; n=0 means no sample, not zero utilization",
+  "single_to_dual_diagnostics": {
+    "lotus-adapted-native": {
+      "single_gpu_query_values_seconds": [
+        0.254204468,
+        0.213361137
+      ],
+      "dual_gpu_query_values_seconds": [
+        0.180696973,
+        0.48289774
+      ],
+      "single_gpu_throughput_rows_per_second": 34.21979681332633,
+      "dual_gpu_throughput_rows_per_second": 24.111102283601223,
+      "finite_throughput_ratio_dual_over_single": 0.7045951329030555,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    },
+    "lotus-method-native-daft": {
+      "single_gpu_query_values_seconds": [
+        0.223028466,
+        0.231552716
+      ],
+      "dual_gpu_query_values_seconds": [
+        0.192737766,
+        0.186022245
+      ],
+      "single_gpu_throughput_rows_per_second": 35.19723348336932,
+      "dual_gpu_throughput_rows_per_second": 42.243107865999086,
+      "finite_throughput_ratio_dual_over_single": 1.20018261906746,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    },
+    "lotus-method-native-ray-data": {
+      "single_gpu_query_values_seconds": [
+        5.439133439,
+        1.438762872
+      ],
+      "dual_gpu_query_values_seconds": [
+        5.629190375,
+        1.837112975
+      ],
+      "single_gpu_throughput_rows_per_second": 2.326292702960756,
+      "dual_gpu_throughput_rows_per_second": 2.142961416106941,
+      "finite_throughput_ratio_dual_over_single": 0.921191651153579,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    },
+    "lotus-method-semloom": {
+      "single_gpu_query_values_seconds": [
+        0.181206911,
+        0.177222622
+      ],
+      "dual_gpu_query_values_seconds": [
+        0.164347022,
+        0.186899466
+      ],
+      "single_gpu_throughput_rows_per_second": 44.639178769903424,
+      "dual_gpu_throughput_rows_per_second": 45.552056879213545,
+      "finite_throughput_ratio_dual_over_single": 1.020450154650372,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    },
+    "lotus-method-native-imlane": {
+      "single_gpu_query_values_seconds": [
+        0.33121907,
+        0.384606972
+      ],
+      "dual_gpu_query_values_seconds": [
+        0.329086729,
+        0.371936386
+      ],
+      "single_gpu_throughput_rows_per_second": 22.35179926577748,
+      "dual_gpu_throughput_rows_per_second": 22.82378377780025,
+      "finite_throughput_ratio_dual_over_single": 1.02111617532041,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    },
+    "lotus-method-native-imlane-ray": {
+      "single_gpu_query_values_seconds": [
+        0.372149994,
+        0.382980782
+      ],
+      "dual_gpu_query_values_seconds": [
+        0.367844239,
+        0.393929889
+      ],
+      "single_gpu_throughput_rows_per_second": 21.18838287157826,
+      "dual_gpu_throughput_rows_per_second": 21.003601214453425,
+      "finite_throughput_ratio_dual_over_single": 0.9912791052415474,
+      "diagnostic_only": "different run and additional common-route hop; n=2query/16request per arm; not reliable scaling or P99"
+    }
+  },
+  "sample_limit": "synthetic8rows;2measuredqueries/16requests perarm;P99samplemaximum; no benchmark quality, reliable speedup or saturation conclusion",
+  "raw_projection_files": [
+    "dual_requests.csv",
+    "dual_inner_requests.csv",
+    "dual_queries.csv",
+    "dual_gpu_samples.csv"
+  ],
+  "group_startups": [
+    {
+      "arm": "lotus-adapted-native",
+      "reusable_group_startup_seconds": 8.163676065,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "reusable_group_startup_seconds": 0.427562883,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "reusable_group_startup_seconds": 10.699183266,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "reusable_group_startup_seconds": 11.996776367,
+      "author_startup_seconds": null
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "reusable_group_startup_seconds": 0.27485603,
+      "author_startup_seconds": 0.5582250626757741
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "reusable_group_startup_seconds": 0.289110613,
+      "author_startup_seconds": 5.563031177967787
+    }
+  ],
+  "fresh_final_resource_read": {
+    "at_utc": "2026-10-12T07:57:27.815330+00:00",
+    "read_only": true,
+    "known_owned_pids": [
+      {
+        "pid": 189383,
+        "exists": false
+      },
+      {
+        "pid": 189412,
+        "exists": false
+      },
+      {
+        "pid": 189413,
+        "exists": false
+      },
+      {
+        "pid": 189612,
+        "exists": false
+      },
+      {
+        "pid": 189623,
+        "exists": false
+      },
+      {
+        "pid": 192999,
+        "exists": false
+      },
+      {
+        "pid": 193002,
+        "exists": false
+      },
+      {
+        "pid": 193005,
+        "exists": false
+      },
+      {
+        "pid": 193596,
+        "exists": false
+      },
+      {
+        "pid": 193670,
+        "exists": false
+      },
+      {
+        "pid": 193677,
+        "exists": false
+      }
+    ],
+    "gpu_compute_processes": [],
+    "owned_ports_listening": {
+      "41487": false,
+      "58387": false
+    }
+  },
+  "known_cost_error_differences": [
+    "SDK response interpretation and CPU work differ",
+    "native per-call ClientSession vs SemLoom reuse",
+    "native8MiB vs SemLoom1MiB complete-response cap",
+    "IMLane128row/32MiBinput, C++aggregate-outputresident guarantee absent",
+    "early-close extra consumer-thread errors may be omitted"
+  ],
+  "independent_fixes_in_progress_not_included": true,
+  "raw_projections_sha256": {
+    "dual_requests.csv": "8609ecaf01e2887dd901028a8032f0bbc6ce31e264759947c8891cb26634345f",
+    "dual_inner_requests.csv": "656e964d57f94317ed5f46517bb537000fbc30eb03e0a29877c0a42e32bfc61f",
+    "dual_queries.csv": "d7e3ad8076ab70352b70d7223d5f615aabdf1a51df669c9e98caef9be54a6531",
+    "dual_gpu_samples.csv": "e315478b12799582db6979a4a7a657fa085ef3ca847efdc93064a237b77f0696"
+  }
+}

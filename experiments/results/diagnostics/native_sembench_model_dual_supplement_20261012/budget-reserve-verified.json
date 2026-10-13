@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "case": "valid-three-hop",
+      "accepted": true,
+      "error_type": null
+    },
+    {
+      "case": "logical2048",
+      "accepted": false,
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "posts6144",
+      "accepted": false,
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "global-cleanup",
+      "accepted": false,
+      "error_type": "TimeoutError"
+    },
+    {
+      "case": "phase-cleanup",
+      "accepted": false,
+      "error_type": "TimeoutError"
+    }
+  ],
+  "scope": "synthetic pre-send booking entries including unknown/unreturned; no send functions called",
+  "model_calls": 0,
+  "transmission_posts": 0,
+  "gpu": 0
+}

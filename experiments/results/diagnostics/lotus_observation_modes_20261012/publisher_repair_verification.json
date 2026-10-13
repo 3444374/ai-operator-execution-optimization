@@ -1,0 +1,130 @@
+{
+  "schema": "semloom.lotus_observation_publisher_repair.v1",
+  "published_base": "38e82a9a1da57ef317b7dfee804aadac03273540",
+  "source_candidate_before_repair": "83a924db57c64e338b6dc9651353fb715358d429",
+  "original_candidate": "84132349e8d5dbc729d99771fd064863baec5fd3",
+  "review_finding": "failed persistent-query.json omitted the selected observation mode; failed summary retained it",
+  "repair": "record configured mode for LOTUS failures and null for other arms; preserve original exception, poison status and summary fingerprint",
+  "new_failure_test": {
+    "modes": [
+      "qualification",
+      "performance"
+    ],
+    "arms": [
+      "lotus-adapted-native",
+      "duckdb-adapted-native",
+      "fixed-map-native-daft"
+    ],
+    "combinations": 6,
+    "no_http": true
+  },
+  "local": {
+    "tests": {
+      "run": 171,
+      "passed": 157,
+      "skipped": 14,
+      "failures": 0,
+      "errors": 0
+    },
+    "affected_followup_tests": {
+      "run": 14,
+      "passed": 14,
+      "skipped": 0
+    },
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "tests.baselines.test_native_dataset_configuration",
+      "tests.baselines.test_native_call_cleanup",
+      "tests.baselines.test_imlane_error_categories",
+      "tests.baselines.test_native_ray_configuration",
+      "tests.semantic_methods.test_lotus_call_limits",
+      "tests.semantic_methods.test_lotus_cleanup",
+      "tests.semantic_methods.test_lotus_control",
+      "tests.semantic_methods.test_lotus_response_replay",
+      "tests.experiments.test_sembench_queries",
+      "tests.experiments.test_sembench_movie",
+      "tests.execution_provider.test_native_tasks",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_graph_reuses_one_client_with_per_call_timeouts_and_closes",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_ray_batch_factory_reuses_client_and_closes_on_error",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_no_client_crosses_event_loops",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_stopped_control_sends_no_request",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_owner_loop_exit_before_close_is_reported",
+      "tests.baselines.test_imlane_bridge_ownership",
+      "tests.baselines.test_imlane_capacity",
+      "tests.experiments.test_imlane_query_entry",
+      "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests",
+      "tests.experiments.test_supplier_adapter_observation",
+      "tests.experiments.test_native_adapter_metrics",
+      "tests.experiments.test_persistent_adapter_cleanup",
+      "tests.experiments.test_ready_query_recording",
+      "-v"
+    ],
+    "output": "publisher_repair_tests.txt"
+  },
+  "source_sha256": {
+    "code/integrations/sema/imlane_http.cpp": "1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984",
+    "code/src/baselines/text/frameworks/imlane_calls.py": "f84756be4e566a6069eb5571342b9b9550cedb34c2f07bfa64ee10167aa2d542",
+    "code/src/baselines/text/frameworks/imlane_limits.py": "bedc60d5b966cf3b0da27837b014cfd62922987e5499860b75a72d10700dd2a0",
+    "code/src/baselines/text/frameworks/native_calls.py": "101f8ce14d0b8e1140d3da17f41182b2e789f8a62c369045a2c8cfc73bc408ec",
+    "code/src/execution_provider/adapters/sema_imlane.py": "a171ff8c502cd812fafcfde8b591ec1c0166f64cefe7996a1f0de48bdc998a3e",
+    "code/src/experiments/postgresql/imlane_query.py": "c59466eab4db8986788cd6381f95b2e9af1e26a20539e304f2ab411d6b4ec2d5",
+    "code/src/experiments/postgresql/native_adapter_metrics.py": "3bff7fd3790c7c6fcb09ab7f2c48a609a96c89e4486460c1d24afacf21f28b61",
+    "code/src/experiments/postgresql/native_adapter_query.py": "b5f33154a9ced134ef1d23d638d01272b01a6bcc608ec0e7f8e579ab7e37caaa",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "0aa682550c124e9798283af31525a2fada31c11a8ef3e58faf457337611f5f78",
+    "code/src/experiments/postgresql/sembench_queries.py": "828feb1f8c4cf71f392d174623964bb657aa2df95629e01c159cffd0d8f38088",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "6d8d5b36b682a656c50668f4588b34c5b54ace720b258fbabcb1da3e19391743",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "a6a290bb00f4a76873c2c9ee6d4574635367542f8d87d16d1e91e90998674eb6",
+    "code/tests/baselines/test_imlane_2000_protocol.py": "3670ce07a62b6c7be75267afb78256de3f59369e5b757a86d2c0a596206fa752",
+    "code/tests/baselines/test_imlane_bridge_ownership.py": "b2d5305e8efbd5fb7e2d49ec03c6fd410650b9a1773d72471fdfa1f6defb3183",
+    "code/tests/baselines/test_imlane_calls.py": "1eec35f587cc5c74d5dd583e71f1bb02f04668652c71948205889eff1fd40d6b",
+    "code/tests/baselines/test_imlane_capacity.py": "ab237a86228d4643783eac5ec03c98ac7f8ab595283efeb37de8b613501e86de",
+    "code/tests/experiments/test_imlane_query_entry.py": "d0fa82fba81161b462e23094170974ea76cbd339464a761d931ca10d7128c8fd",
+    "code/tests/experiments/test_lotus_observation_modes.py": "59f4ed3701d91948a85d1c92308bc450e29336c30f7db0953824eae529ad4f41",
+    "code/tests/experiments/test_sembench_queries.py": "35b0a7986d43a32d81811fde4781b8c7b8c8305f5990727d8ae2bea3a02e725c",
+    "code/tests/experiments/test_supplier_adapter_libraries.py": "f98354b6083f0c2f58094811e5024726c338aa1d1e772ceb80364dc883ef8ec0",
+    "code/tests/experiments/test_supplier_adapter_observation.py": "b1aad25dee70b7c51064148e851c1a47f8e45bcef11443b74972520a2e9971b1",
+    "experiments/results/diagnostics/lotus_observation_modes_20261012/probe.py": "e097ddf9e9c5e0ec8dab2c2cf32ca932bb8a4af7583c00aee247f69bd0bfa57f",
+    "experiments/results/diagnostics/lotus_observation_modes_20261012/verify.py": "6e7ef418f7d6a5a27e6d8f1eb232f97f32d134937b64bb8f7c8a5b6fe3997648"
+  },
+  "original_raw_evidence_sha256": {
+    "regression.json": "d38faae9814e901fbae20323d74eeadd4bdfd865c7a643094e839fc0612f6db5",
+    "observation-substitute.json": "a83b21c48220761b6f6c5d01996ccd01ca44c0a3b7511b25c10674a4e88e57bc",
+    "probe.py": "e097ddf9e9c5e0ec8dab2c2cf32ca932bb8a4af7583c00aee247f69bd0bfa57f",
+    "verify.py": "6e7ef418f7d6a5a27e6d8f1eb232f97f32d134937b64bb8f7c8a5b6fe3997648"
+  },
+  "new_runs": {
+    "servers": 0,
+    "fixture_posts": 0,
+    "models": 0,
+    "gpu": 0,
+    "server_cpu_16_23": false
+  },
+  "not_run": [
+    "three localhost proxy fixtures already recorded in original candidate",
+    "fixed LOTUS/LiteLLM/OpenAI mode differential",
+    "actual Daft/Ray Data/IMLane graph execution",
+    "official Movie Q1/Q2/Q3 evaluator differential",
+    "newly owned author runtime and latest publisher full Q1",
+    "real model, GPU or performance comparison"
+  ],
+  "source_candidate": "916e1f5437e43f88b7d065e88f9fa3d7793341cb",
+  "independent_review": {
+    "base": "38e82a9a1da57ef317b7dfee804aadac03273540",
+    "initial_candidate": "83a924db57c64e338b6dc9651353fb715358d429",
+    "corrected_candidate": "916e1f5437e43f88b7d065e88f9fa3d7793341cb",
+    "standards_initial_required": 0,
+    "spec_initial_required": 1,
+    "fixed_failure_mode_metadata": true,
+    "standards_followup_required": 0,
+    "spec_followup_required": 0,
+    "reviewers_readonly_no_tests_services_or_http": true
+  },
+  "privacy": {
+    "full_tracked_scan_files": 7303,
+    "violations": 0,
+    "existing_baseline_suppressions": 10
+  }
+}

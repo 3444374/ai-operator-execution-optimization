@@ -55,6 +55,13 @@ class PreparedLotusCall:
     timeout_s: float
 
 
+def _validate_utf8(value):
+    # Native OpenAI serialization rejects Python surrogate code points before I/O.
+    # Validate before the JSON copy can combine a surrogate pair into a scalar.
+    if not value.isascii():
+        value.encode("utf-8")
+
+
 def _validate_messages(messages):
     if not isinstance(messages, list) or not messages:
         raise ValueError("LOTUS adapter requires a complete text message list")
@@ -63,6 +70,7 @@ def _validate_messages(messages):
                 or message["role"] not in ("system", "user", "assistant")
                 or type(message["content"]) is not str):
             raise ValueError("LOTUS adapter supports text messages with role and content")
+        _validate_utf8(message["content"])
 
 
 def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
@@ -90,14 +98,6 @@ def validate_batch(lm, uncached_data, all_kwargs, *, check_stop=None):
             # Preserve the existing JSON rules for unusual equality-compatible roles.
             json.dumps(json.loads(json.dumps(messages)), ensure_ascii=False, allow_nan=False).encode()
             continue
-        for message in messages:
-            for value in message.values():
-                if not value.isascii():
-                    try:
-                        value.encode()
-                    except UnicodeEncodeError:
-                        # The provider's JSON copy combines valid escaped surrogate pairs.
-                        json.loads(json.dumps(value)).encode()
     if check_stop:
         check_stop()
     return first
@@ -203,3 +203,100 @@ def check_model_config(call, model_config):
             or call.timeout_s * 1000 != model_config.timeout_ms
             or json.loads(call.payload)["model"] != model_config.model_id):
         raise ValueError("LOTUS call differs from the selected execution model configuration")
+
+
+class LotusResponseReplay:
+    """One lazy SDK client for a batch's network-free response interpretation."""
+    def __init__(self):
+        self._http = self._client = self._active = self._configuration = None
+        self._sent = 0
+
+    def _send(self, request):
+        import httpx
+        if self._active is None:
+            raise ValueError("LOTUS SDK parser has no active response")
+        prepared, full, transport_error = self._active
+        if (request.method != "POST" or str(request.url) != prepared.api_base + "/chat/completions"
+                or json.loads(request.read()) != json.loads(prepared.payload)
+                or request.headers.get("authorization") != "Bearer " + prepared.api_key):
+            raise ValueError("LOTUS SDK parser request differs from its prepared complete call")
+        self._sent += 1
+        if self._sent != 1:
+            raise ValueError("LOTUS SDK parser attempted to retry its response")
+        if transport_error:
+            error_type = transport_error.partition(":")[0]
+            if error_type in ("TimeoutError", "ConnectionTimeoutError", "SocketTimeoutError", "ServerTimeoutError"):
+                raise httpx.ReadTimeout(transport_error, request=request)
+            raise httpx.ConnectError(transport_error, request=request)
+        return httpx.Response(full.status_code, headers=list(full.headers), content=full.body,
+            request=request, extensions={"http_version": full.http_version.encode()})
+
+    def parse(self, lm, messages, all_kwargs, prepared, full, transport_error=""):
+        validate_source()
+        import httpx
+        from openai import OpenAI
+        from litellm import completion
+        configuration = (prepared.api_base, prepared.api_key, prepared.timeout_s)
+        if self._active is not None:
+            raise ValueError("LOTUS SDK parser is already interpreting a response")
+        if self._configuration is not None and configuration != self._configuration:
+            raise ValueError("LOTUS SDK parser client configuration changed within its batch")
+        if self._client is None:
+            owner = self
+            class ResponseClient(httpx.Client):
+                def send(self, request, *args, **kwargs):
+                    return owner._send(request)
+            self._http = ResponseClient(transport=httpx.MockTransport(self._send))
+            self._client = OpenAI(api_key=prepared.api_key, base_url=prepared.api_base,
+                timeout=prepared.timeout_s, max_retries=0, http_client=self._http)
+            self._configuration = configuration
+        self._active = (prepared, full, transport_error)
+        self._sent = 0
+        try:
+            return completion(model=lm.model, messages=messages, drop_params=True,
+                              client=self._client, **all_kwargs)
+        except Exception as error:
+            error.full_response = full
+            error.native_transport_error = transport_error
+            raise
+        finally:
+            self._active = None
+
+    def close(self):
+        primary = None
+        try:
+            if self._client is not None:
+                self._client.close()
+        except BaseException as error:
+            primary = error
+            raise
+        finally:
+            try:
+                if self._http is not None:
+                    self._http.close()
+            except BaseException as error:
+                if primary is None:
+                    raise
+                primary.add_note("LOTUS response HTTP client close also failed: " + type(error).__name__)
+            finally:
+                self._http = self._client = self._active = self._configuration = None
+
+
+def parse_lotus_response(lm, messages, all_kwargs, prepared, full, transport_error="", *, replay=None):
+    """Use the pinned SDK without HTTP; callers may own one replay per batch."""
+    if replay is not None:
+        return replay.parse(lm, messages, all_kwargs, prepared, full, transport_error)
+    owned = LotusResponseReplay()
+    primary = None
+    try:
+        return owned.parse(lm, messages, all_kwargs, prepared, full, transport_error)
+    except BaseException as error:
+        primary = error
+        raise
+    finally:
+        try:
+            owned.close()
+        except BaseException as error:
+            if primary is None:
+                raise
+            primary.add_note("LOTUS SDK client close also failed: " + type(error).__name__)

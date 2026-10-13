@@ -1,7 +1,31 @@
 # SemLoom
 
+[原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
+
+当前LOTUS线已完成[持久计数匹配复测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)。[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)保留观察成本的诊断；后续建立少量合理的单／双卡工作点，再设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。
+
+[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
+
+分支按职责组织：
+
+| 分支 | 职责 |
+|---|---|
+| `main` | 经PR验证的稳定共同实现 |
+| `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
+| `codex/native-execution-adapters` | 当前原生接入发布；完成owner交接后归入统一集成分支 |
+| `feat/duckdb-native-paths` | DuckDB AI六条路径的临时接入，完成后合入统一基线 |
+| `feat/sema-native-paths` | Sema六条路径的临时接入，完成后合入统一基线 |
+| `exp/semloom-query-sharing` | 长短查询共享调度研究 |
+| `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
+| `maintenance/project-rules` | 规则整理的临时同步来源，整合完成后清理 |
+| `codex/semloom-history-preservation` | 保存原提交与实验来源的恢复入口 |
+
+LOTUS、DuckDB、Sema等接入支线用于并行开发，完成整合后可移除对应checkout；
+研究分支按具体假设保留，通用修复进入共同基线。原始实验及各次运行的源码身份仍由报告和证据台账定位。
+
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
+Sema后置原生Daft／Ray Data／IMLane执行的适配与检查见[代码入口](code/integrations/sema/README.md)。
 
 研究内容包括按token、frame、阶段工作量与局部性组织数据，以及固定容量下的提交、路由和多Job调度。
 算子代价估计为两项内容提供信息。文本`AI_COMPLETE`是首版主场景，图像用于跨模态验证。

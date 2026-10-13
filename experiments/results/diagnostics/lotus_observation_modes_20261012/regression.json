@@ -1,0 +1,415 @@
+{
+  "schema": "semloom.lotus_observation_regression.v1",
+  "baseline_commit": "1e96935610069d17430c6fb75fe37a75659aa84e",
+  "python_version": "3.12.6",
+  "platform": "Darwin",
+  "modules": [
+    "tests.experiments.test_lotus_observation_modes",
+    "tests.experiments.test_supplier_adapter_observation",
+    "tests.experiments.test_native_adapter_metrics",
+    "tests.experiments.test_persistent_adapter_cleanup",
+    "tests.experiments.test_sembench_queries",
+    "tests.semantic_methods.test_lotus_adapter",
+    "tests.semantic_methods.test_lotus_response_replay",
+    "tests.experiments.test_supplier_adapter_libraries",
+    "tests.experiments.test_sembench_lotus_libraries"
+  ],
+  "source_sha256": {
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "0f6bd12c8aefe09862b32f7b5144e38ab01805402c746f5e8171e32d10c1dff6",
+    "code/src/experiments/postgresql/native_adapter_query.py": "b5f33154a9ced134ef1d23d638d01272b01a6bcc608ec0e7f8e579ab7e37caaa",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "f197042fde52539ff0bf9c55120ab762acee19a8d1eea156f5b815fefd641ee5",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "ddbeca995fef15890c4c613da02b0b8aedfee49676cd02a5eb0b8e4987008687",
+    "code/src/experiments/postgresql/native_adapter_metrics.py": "3bff7fd3790c7c6fcb09ab7f2c48a609a96c89e4486460c1d24afacf21f28b61",
+    "code/tests/experiments/test_supplier_adapter_observation.py": "b1aad25dee70b7c51064148e851c1a47f8e45bcef11443b74972520a2e9971b1",
+    "code/tests/experiments/test_lotus_observation_modes.py": "99a244d9787678299500e332a7192fd9cdcc9f590562e3fac8d7e59834095023",
+    "code/tests/experiments/test_supplier_adapter_libraries.py": "f98354b6083f0c2f58094811e5024726c338aa1d1e772ceb80364dc883ef8ec0"
+  },
+  "tests_run": 82,
+  "passed": 57,
+  "skipped": 25,
+  "errors": 0,
+  "failures": 0,
+  "success": true,
+  "outcomes": [
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_both_modes_observe_replacement_execution_payloads_without_extra_preparation",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_default_and_explicit_qualification_preserve_native_arguments_and_expected_calls",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_movie_config_keeps_default_and_requires_explicit_known_observation_mode",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_native_errors_cancellation_and_partial_results_keep_the_original_behavior",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_native_exception_values_remain_values_and_source_count_fails_before_native",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_performance_keeps_duplicate_input_occurrences_and_batch_receipts_without_preparation",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_persistent_group_records_mode_and_forwards_it_without_inferring_from_phase",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_unknown_modes_and_non_lotus_performance_fail_before_budget_or_runtime",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_insufficient_total_budget_sends_no_posts_in_either_mode",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_overrun_is_refused_before_upstream_and_keeps_failed_evidence_and_closed_budget",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_single_and_two_stage_queries_keep_actual_posts_outputs_occurrences_and_budget",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_duckdb_failure_summary_keeps_inner_and_outer_diagnostics_and_observation_first_error",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_duckdb_select_vectors_share_query_job_and_keep_global_source_rows",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_http_observation_retains_supplier_errors_and_length_without_interpretation",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_invalid_source_retains_failure_before_supplier_or_budget_access",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_batch_caller_receipts_wait_for_original_batch_return",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_execution_label_does_not_report_semloom_for_vendor_graph",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_sdk_error_values_reach_original_lm_without_observer_replacement",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_protocol_observation_keeps_http_errors_malformed_json_and_length_for_native_parser",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_query_runtime_preserves_individual_owner_in_mixed_group",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_semloom_observation_uses_each_execution_payload_once_and_batch_entry_time",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_shared_ray_runtime_keeps_each_native_execution_owner",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_two_stage_observation_keeps_supplier_state_and_real_successor",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_empty_observations_are_unavailable_and_invalid_latencies_fail",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_equal_prompts_do_not_merge_distinct_call_occurrences",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_executor_spans_keep_queue_work_and_resume_separate",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_readiness_queue_and_full_caller_response_are_separate",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_small_query_samples_report_maximum_rank",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_successor_preparation_wait_is_observed",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_unknown_stage_clock_duplicate_and_wrong_response_are_rejected",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_execution_error_precedes_multiple_component_exit_errors",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_first_component_exit_error_precedes_later_component_error",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_first_group_cleanup_error_survives_summary_failure",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_gateway_enter_failure_exits_already_entered_events",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_group_closes_all_owners_before_propagating_first_cleanup_error",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_initialization_error_survives_execution_close_failure",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_lm_failure_closes_execution_created_before_the_lm",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_normal_owner_close_runs_execution_close_once",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_owner_close_retains_first_cleanup_error_when_summary_also_fails",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_owner_lifecycle_failure_is_recorded_before_summary_failure",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_query_error_is_not_replaced_by_lifecycle_failure",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_query_error_is_not_replaced_by_summary_failure",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_summary_failure_without_query_error_is_propagated",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieConfigTests.test_example_has_exact_three_queries_six_owners_and_matching_post_count",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieConfigTests.test_missing_environment_and_unknown_config_fields_do_not_fall_back",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieConfigTests.test_multiple_query_progress_files_are_distinct_and_final_matrix_is_written_once",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieConfigTests.test_native_lower_concurrency_remains_per_executor_and_unknown_arm_is_rejected",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_duplicate_public_review_ids_are_independent_occurrences_without_labels_in_query_rows",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_fixture_cannot_claim_selected_original_benchmark_role",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_git_trust_is_per_command_and_dirty_or_other_revision_is_rejected",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_imlane_rejects_original_large_batch_without_silent_splitting",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_missing_hash_corrupt_file_and_different_label_occurrences_fail",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_no_generic_map_source_or_map_quality_can_enter_original_movie_query",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_sembench_queries.MovieDataTests.test_reordered_source_positions_fail_even_with_new_valid_fixture_hashes",
+      "status": "passed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_cache_stats_native_dispatch_and_instance_restoration",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_row_bound_and_cancellation_never_enter_native_pool",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_validation_preserves_unicode_and_canonical_call_values",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_gzip_decode_keeps_the_original_response_bytes",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_http_and_parser_errors_retain_full_response_and_release",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_inflight_cancel_retains_remote_credit_until_completion",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_invalid_or_excess_external_input_is_rejected_without_dropping_rows",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_iterator_matches_staged_rows_and_closes_early",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_lm_partial_cache_and_logprobs_preserve_full_response",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_method_driver_releases_each_stage_and_advances_one_row_early",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_method_parse_failure_keeps_native_usage_and_response",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_priced_response_preserves_native_usage_cost",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_response_retention_limit_preserves_rejected_body",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_sdk_body_matches_native_http_and_complete_response",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_two_map_method_matches_native_formatter_parser_and_stats",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_unhandled_parameters_roles_and_postprocessor_are_rejected",
+      "status": "skipped",
+      "reason": "pinned LOTUS library is unavailable"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_http_bad_json_missing_fields_and_timeout_match_sdk",
+      "status": "skipped",
+      "reason": "fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_normal_usage_logprobs_and_optional_fields_match_sdk",
+      "status": "skipped",
+      "reason": "fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_one_batch_client_preserves_distinct_responses_after_sdk_error",
+      "status": "skipped",
+      "reason": "fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_close_attempts_both_clients_and_preserves_first_close_error",
+      "status": "passed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_native_compatibility_entry_preserves_shared_inputs",
+      "status": "passed"
+    },
+    {
+      "test": "tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_native_compatibility_entry_preserves_timeout_metadata",
+      "status": "passed"
+    },
+    {
+      "test": "tests.experiments.test_supplier_adapter_libraries.SupplierAdapterLibraryTests.test_supplier_query_entry_records_actual_calls_and_method_receipts",
+      "status": "skipped",
+      "reason": "requires an explicitly selected supplier library fixture"
+    },
+    {
+      "test": "tests.experiments.test_sembench_lotus_libraries.MovieErrorLibraryTests.test_native_auth_error_poisoning_stops_reuse_and_keeps_first_parser_error",
+      "status": "skipped",
+      "reason": "requires explicit no-model original LOTUS parser error check"
+    },
+    {
+      "test": "tests.experiments.test_sembench_lotus_libraries.MovieLibraryTests.test_original_three_queries_and_evaluators_preserve_occurrences_and_native_owners",
+      "status": "skipped",
+      "reason": "requires explicit no-model native runtime and pinned SemBench checkout"
+    },
+    {
+      "test": "tests.experiments.test_sembench_lotus_libraries.MovieUnsupportedLibraryTests.test_original_2000_row_q1_is_rejected_before_model_or_author_dispatch",
+      "status": "skipped",
+      "reason": "requires selected original data and explicit ready IMLane config"
+    }
+  ],
+  "errors_detail": [],
+  "log": "test_both_modes_observe_replacement_execution_payloads_without_extra_preparation (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_both_modes_observe_replacement_execution_payloads_without_extra_preparation) ... ok\ntest_default_and_explicit_qualification_preserve_native_arguments_and_expected_calls (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_default_and_explicit_qualification_preserve_native_arguments_and_expected_calls) ... ok\ntest_movie_config_keeps_default_and_requires_explicit_known_observation_mode (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_movie_config_keeps_default_and_requires_explicit_known_observation_mode) ... ok\ntest_native_errors_cancellation_and_partial_results_keep_the_original_behavior (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_native_errors_cancellation_and_partial_results_keep_the_original_behavior) ... ok\ntest_native_exception_values_remain_values_and_source_count_fails_before_native (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_native_exception_values_remain_values_and_source_count_fails_before_native) ... ok\ntest_performance_keeps_duplicate_input_occurrences_and_batch_receipts_without_preparation (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_performance_keeps_duplicate_input_occurrences_and_batch_receipts_without_preparation) ... ok\ntest_persistent_group_records_mode_and_forwards_it_without_inferring_from_phase (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_persistent_group_records_mode_and_forwards_it_without_inferring_from_phase) ... ok\ntest_unknown_modes_and_non_lotus_performance_fail_before_budget_or_runtime (tests.experiments.test_lotus_observation_modes.LotusObservationModeTests.test_unknown_modes_and_non_lotus_performance_fail_before_budget_or_runtime) ... ok\ntest_insufficient_total_budget_sends_no_posts_in_either_mode (tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_insufficient_total_budget_sends_no_posts_in_either_mode) ... ok\ntest_overrun_is_refused_before_upstream_and_keeps_failed_evidence_and_closed_budget (tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_overrun_is_refused_before_upstream_and_keeps_failed_evidence_and_closed_budget) ... ok\ntest_single_and_two_stage_queries_keep_actual_posts_outputs_occurrences_and_budget (tests.experiments.test_lotus_observation_modes.LotusObservationProxyTests.test_single_and_two_stage_queries_keep_actual_posts_outputs_occurrences_and_budget) ... ok\ntest_duckdb_failure_summary_keeps_inner_and_outer_diagnostics_and_observation_first_error (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_duckdb_failure_summary_keeps_inner_and_outer_diagnostics_and_observation_first_error) ... ok\ntest_duckdb_select_vectors_share_query_job_and_keep_global_source_rows (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_duckdb_select_vectors_share_query_job_and_keep_global_source_rows) ... ok\ntest_http_observation_retains_supplier_errors_and_length_without_interpretation (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_http_observation_retains_supplier_errors_and_length_without_interpretation) ... ok\ntest_invalid_source_retains_failure_before_supplier_or_budget_access (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_invalid_source_retains_failure_before_supplier_or_budget_access) ... ok\ntest_native_batch_caller_receipts_wait_for_original_batch_return (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_batch_caller_receipts_wait_for_original_batch_return) ... ok\ntest_native_execution_label_does_not_report_semloom_for_vendor_graph (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_execution_label_does_not_report_semloom_for_vendor_graph) ... ok\ntest_native_sdk_error_values_reach_original_lm_without_observer_replacement (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_native_sdk_error_values_reach_original_lm_without_observer_replacement) ... ok\ntest_protocol_observation_keeps_http_errors_malformed_json_and_length_for_native_parser (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_protocol_observation_keeps_http_errors_malformed_json_and_length_for_native_parser) ... ok\ntest_query_runtime_preserves_individual_owner_in_mixed_group (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_query_runtime_preserves_individual_owner_in_mixed_group) ... ok\ntest_semloom_observation_uses_each_execution_payload_once_and_batch_entry_time (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_semloom_observation_uses_each_execution_payload_once_and_batch_entry_time) ... ok\ntest_shared_ray_runtime_keeps_each_native_execution_owner (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_shared_ray_runtime_keeps_each_native_execution_owner) ... ok\ntest_two_stage_observation_keeps_supplier_state_and_real_successor (tests.experiments.test_supplier_adapter_observation.SupplierObservationTests.test_two_stage_observation_keeps_supplier_state_and_real_successor) ... ok\ntest_empty_observations_are_unavailable_and_invalid_latencies_fail (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_empty_observations_are_unavailable_and_invalid_latencies_fail) ... ok\ntest_equal_prompts_do_not_merge_distinct_call_occurrences (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_equal_prompts_do_not_merge_distinct_call_occurrences) ... ok\ntest_executor_spans_keep_queue_work_and_resume_separate (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_executor_spans_keep_queue_work_and_resume_separate) ... ok\ntest_readiness_queue_and_full_caller_response_are_separate (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_readiness_queue_and_full_caller_response_are_separate) ... ok\ntest_small_query_samples_report_maximum_rank (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_small_query_samples_report_maximum_rank) ... ok\ntest_successor_preparation_wait_is_observed (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_successor_preparation_wait_is_observed) ... ok\ntest_unknown_stage_clock_duplicate_and_wrong_response_are_rejected (tests.experiments.test_native_adapter_metrics.NativeAdapterMetricsTests.test_unknown_stage_clock_duplicate_and_wrong_response_are_rejected) ... ok\ntest_execution_error_precedes_multiple_component_exit_errors (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_execution_error_precedes_multiple_component_exit_errors) ... ok\ntest_first_component_exit_error_precedes_later_component_error (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_first_component_exit_error_precedes_later_component_error) ... ok\ntest_first_group_cleanup_error_survives_summary_failure (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_first_group_cleanup_error_survives_summary_failure) ... ok\ntest_gateway_enter_failure_exits_already_entered_events (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_gateway_enter_failure_exits_already_entered_events) ... ok\ntest_group_closes_all_owners_before_propagating_first_cleanup_error (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_group_closes_all_owners_before_propagating_first_cleanup_error) ... ok\ntest_initialization_error_survives_execution_close_failure (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_initialization_error_survives_execution_close_failure) ... ok\ntest_lm_failure_closes_execution_created_before_the_lm (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_lm_failure_closes_execution_created_before_the_lm) ... ok\ntest_normal_owner_close_runs_execution_close_once (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_normal_owner_close_runs_execution_close_once) ... ok\ntest_owner_close_retains_first_cleanup_error_when_summary_also_fails (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_owner_close_retains_first_cleanup_error_when_summary_also_fails) ... ok\ntest_owner_lifecycle_failure_is_recorded_before_summary_failure (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_owner_lifecycle_failure_is_recorded_before_summary_failure) ... ok\ntest_query_error_is_not_replaced_by_lifecycle_failure (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_query_error_is_not_replaced_by_lifecycle_failure) ... ok\ntest_query_error_is_not_replaced_by_summary_failure (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_query_error_is_not_replaced_by_summary_failure) ... ok\ntest_summary_failure_without_query_error_is_propagated (tests.experiments.test_persistent_adapter_cleanup.PersistentCleanupTests.test_summary_failure_without_query_error_is_propagated) ... ok\ntest_example_has_exact_three_queries_six_owners_and_matching_post_count (tests.experiments.test_sembench_queries.MovieConfigTests.test_example_has_exact_three_queries_six_owners_and_matching_post_count) ... ok\ntest_missing_environment_and_unknown_config_fields_do_not_fall_back (tests.experiments.test_sembench_queries.MovieConfigTests.test_missing_environment_and_unknown_config_fields_do_not_fall_back) ... ok\ntest_multiple_query_progress_files_are_distinct_and_final_matrix_is_written_once (tests.experiments.test_sembench_queries.MovieConfigTests.test_multiple_query_progress_files_are_distinct_and_final_matrix_is_written_once) ... ok\ntest_native_lower_concurrency_remains_per_executor_and_unknown_arm_is_rejected (tests.experiments.test_sembench_queries.MovieConfigTests.test_native_lower_concurrency_remains_per_executor_and_unknown_arm_is_rejected) ... ok\ntest_duplicate_public_review_ids_are_independent_occurrences_without_labels_in_query_rows (tests.experiments.test_sembench_queries.MovieDataTests.test_duplicate_public_review_ids_are_independent_occurrences_without_labels_in_query_rows) ... ok\ntest_fixture_cannot_claim_selected_original_benchmark_role (tests.experiments.test_sembench_queries.MovieDataTests.test_fixture_cannot_claim_selected_original_benchmark_role) ... ok\ntest_git_trust_is_per_command_and_dirty_or_other_revision_is_rejected (tests.experiments.test_sembench_queries.MovieDataTests.test_git_trust_is_per_command_and_dirty_or_other_revision_is_rejected) ... ok\ntest_imlane_rejects_original_large_batch_without_silent_splitting (tests.experiments.test_sembench_queries.MovieDataTests.test_imlane_rejects_original_large_batch_without_silent_splitting) ... ok\ntest_missing_hash_corrupt_file_and_different_label_occurrences_fail (tests.experiments.test_sembench_queries.MovieDataTests.test_missing_hash_corrupt_file_and_different_label_occurrences_fail) ... ok\ntest_no_generic_map_source_or_map_quality_can_enter_original_movie_query (tests.experiments.test_sembench_queries.MovieDataTests.test_no_generic_map_source_or_map_quality_can_enter_original_movie_query) ... ok\ntest_reordered_source_positions_fail_even_with_new_valid_fixture_hashes (tests.experiments.test_sembench_queries.MovieDataTests.test_reordered_source_positions_fail_even_with_new_valid_fixture_hashes) ... ok\ntest_batch_cache_stats_native_dispatch_and_instance_restoration (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_cache_stats_native_dispatch_and_instance_restoration) ... skipped 'pinned LOTUS library is unavailable'\ntest_batch_row_bound_and_cancellation_never_enter_native_pool (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_row_bound_and_cancellation_never_enter_native_pool) ... skipped 'pinned LOTUS library is unavailable'\ntest_batch_validation_preserves_unicode_and_canonical_call_values (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_validation_preserves_unicode_and_canonical_call_values) ... skipped 'pinned LOTUS library is unavailable'\ntest_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer) ... skipped 'pinned LOTUS library is unavailable'\ntest_gzip_decode_keeps_the_original_response_bytes (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_gzip_decode_keeps_the_original_response_bytes) ... skipped 'pinned LOTUS library is unavailable'\ntest_http_and_parser_errors_retain_full_response_and_release (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_http_and_parser_errors_retain_full_response_and_release) ... skipped 'pinned LOTUS library is unavailable'\ntest_inflight_cancel_retains_remote_credit_until_completion (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_inflight_cancel_retains_remote_credit_until_completion) ... skipped 'pinned LOTUS library is unavailable'\ntest_invalid_or_excess_external_input_is_rejected_without_dropping_rows (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_invalid_or_excess_external_input_is_rejected_without_dropping_rows) ... skipped 'pinned LOTUS library is unavailable'\ntest_iterator_matches_staged_rows_and_closes_early (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_iterator_matches_staged_rows_and_closes_early) ... skipped 'pinned LOTUS library is unavailable'\ntest_lm_partial_cache_and_logprobs_preserve_full_response (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_lm_partial_cache_and_logprobs_preserve_full_response) ... skipped 'pinned LOTUS library is unavailable'\ntest_method_driver_releases_each_stage_and_advances_one_row_early (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_method_driver_releases_each_stage_and_advances_one_row_early) ... skipped 'pinned LOTUS library is unavailable'\ntest_method_parse_failure_keeps_native_usage_and_response (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_method_parse_failure_keeps_native_usage_and_response) ... skipped 'pinned LOTUS library is unavailable'\ntest_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit) ... skipped 'pinned LOTUS library is unavailable'\ntest_priced_response_preserves_native_usage_cost (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_priced_response_preserves_native_usage_cost) ... skipped 'pinned LOTUS library is unavailable'\ntest_response_retention_limit_preserves_rejected_body (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_response_retention_limit_preserves_rejected_body) ... skipped 'pinned LOTUS library is unavailable'\ntest_sdk_body_matches_native_http_and_complete_response (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_sdk_body_matches_native_http_and_complete_response) ... skipped 'pinned LOTUS library is unavailable'\ntest_two_map_method_matches_native_formatter_parser_and_stats (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_two_map_method_matches_native_formatter_parser_and_stats) ... skipped 'pinned LOTUS library is unavailable'\ntest_unhandled_parameters_roles_and_postprocessor_are_rejected (tests.semantic_methods.test_lotus_adapter.LotusSdkTests.test_unhandled_parameters_roles_and_postprocessor_are_rejected) ... skipped 'pinned LOTUS library is unavailable'\ntest_http_bad_json_missing_fields_and_timeout_match_sdk (tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_http_bad_json_missing_fields_and_timeout_match_sdk) ... skipped 'fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed'\ntest_normal_usage_logprobs_and_optional_fields_match_sdk (tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_normal_usage_logprobs_and_optional_fields_match_sdk) ... skipped 'fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed'\ntest_one_batch_client_preserves_distinct_responses_after_sdk_error (tests.semantic_methods.test_lotus_response_replay.PinnedSDKReplayTests.test_one_batch_client_preserves_distinct_responses_after_sdk_error) ... skipped 'fixed LOTUS/OpenAI/LiteLLM packages are unavailable; no install performed'\ntest_close_attempts_both_clients_and_preserves_first_close_error (tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_close_attempts_both_clients_and_preserves_first_close_error) ... ok\ntest_native_compatibility_entry_preserves_shared_inputs (tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_native_compatibility_entry_preserves_shared_inputs) ... ok\ntest_native_compatibility_entry_preserves_timeout_metadata (tests.semantic_methods.test_lotus_response_replay.ReplayDispatchTests.test_native_compatibility_entry_preserves_timeout_metadata) ... ok\ntest_supplier_query_entry_records_actual_calls_and_method_receipts (tests.experiments.test_supplier_adapter_libraries.SupplierAdapterLibraryTests.test_supplier_query_entry_records_actual_calls_and_method_receipts) ... skipped 'requires an explicitly selected supplier library fixture'\ntest_native_auth_error_poisoning_stops_reuse_and_keeps_first_parser_error (tests.experiments.test_sembench_lotus_libraries.MovieErrorLibraryTests.test_native_auth_error_poisoning_stops_reuse_and_keeps_first_parser_error) ... skipped 'requires explicit no-model original LOTUS parser error check'\ntest_original_three_queries_and_evaluators_preserve_occurrences_and_native_owners (tests.experiments.test_sembench_lotus_libraries.MovieLibraryTests.test_original_three_queries_and_evaluators_preserve_occurrences_and_native_owners) ... skipped 'requires explicit no-model native runtime and pinned SemBench checkout'\ntest_original_2000_row_q1_is_rejected_before_model_or_author_dispatch (tests.experiments.test_sembench_lotus_libraries.MovieUnsupportedLibraryTests.test_original_2000_row_q1_is_rejected_before_model_or_author_dispatch) ... skipped 'requires selected original data and explicit ready IMLane config'\n\n----------------------------------------------------------------------\nRan 82 tests in 4.622s\n\nOK (skipped=25)\n",
+  "real_model_requests": 0,
+  "gpu_work": 0,
+  "controlled_http_posts": 16,
+  "http_scope": "two-row JSON-only supplier substitute via the real localhost gateway; other exercised tests use no HTTP",
+  "prior_attempts": [
+    {
+      "source": "summary retained from tool output",
+      "tests_run": 9,
+      "errors": 3,
+      "reason": "sandbox denied localhost bind; no model or HTTP requests"
+    },
+    {
+      "source": "summary retained from tool output",
+      "tests_run": 43,
+      "errors": 4,
+      "reason": "three sandbox process-sampling errors and one existing stale lotus_response test patch"
+    },
+    {
+      "source": "summary retained from tool output",
+      "tests_run": 9,
+      "errors": 0,
+      "failures": 0,
+      "reason": "local gateway regression allowed by automatic review; 16 fixture POST"
+    }
+  ]
+}

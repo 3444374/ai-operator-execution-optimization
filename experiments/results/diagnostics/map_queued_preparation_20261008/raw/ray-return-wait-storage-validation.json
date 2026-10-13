@@ -1,0 +1,16 @@
+{
+  "schema": "semloom.evidence_storage.v2",
+  "result": "experiments/results/diagnostics/map_queued_preparation_20261008",
+  "files_verified": 55,
+  "bytes_verified": 9783305,
+  "model_requests": 0,
+  "status": "passed",
+  "unique_objects": 55,
+  "archive_bytes": 6335167,
+  "verified_cases": 20,
+  "verified_actor_calls": 16448,
+  "public_only_recompute_passed": true,
+  "private_sqlite_recompute_passed": true,
+  "projection_preserves_all_timing_values": true,
+  "probe_source_matches_execution": true
+}

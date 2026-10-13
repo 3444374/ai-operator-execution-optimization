@@ -19,6 +19,14 @@ choose = BoundedShortJobBurst(work_unit="tokens", short_work_limit=1024, bypass_
 # SessionEngine(..., choose_flow=choose, observe_job_work=True)
 ```
 
+[SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+
+2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)增加显式性能观测选项，默认资格核对保持；真实POST、总额度和结果继续记录。局部替身回归不授予实际库或模型性能资格。
+
+2026-10-12：[IMLane发布接续](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)已贯通SemBench行容量配置并补桥已创建／停止未确认的跨对象保护；本机105通过、14缺依赖跳过，新增服务器／POST／模型／GPU0。
+
+2026-10-12：[SemBench Movie原查询准备](../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)复用LOTUS完整批接点接入Q1/Q2/Q3和官方评价，保留原Filter、LIMIT/COUNT及重复reviewId的行身份。该历史切片软件资格16 pass／2 unsupported／0 notrun，累计128POST；当时两种IMLane原2000行Q1由旧128行适配器发送前拒绝，旧记录保留，模型0、性能资格未取得。
+
 [原生语义系统入口](scripts/README.md#原生语义系统单查询)补充LOTUS `sem_map`、Daft内置`prompt`、
 DuckDB社区AI扩展与Sema作者SQL产物；它们保留自己的提示、解析和执行。
 PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系统方案](../experiments/plans/语义系统对照.md)。
@@ -31,6 +39,25 @@ PG＋SemLoom使用既有本地HTTP路径，具体清单和可比性见[语义系
 Sema后置Core／worker仍按查询创建。当前参数分开持有任务、模型活动请求及Sema作者线程。
 实现与未完成项见[代码状态](INFRA_STATUS.md)；工程检查、异常处理、历次模型观察和筛查停止由
 [同一主报告](../experiments/results/postgresql/native_adapter_integration_20261009/README.md)维护，原模型来源及负结果均保留。
+Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
+[后置原生检查与客户端](integrations/sema/README.md)说明来源、独立运行环境和不改算子策略的接法。
+
+[原生执行统一入口](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)登记LOTUS／DuckDB／Sema与Daft、Ray Data、作者IMLane的接入；
+IMLane明确区分CPython与作者Ray，原方法继续解析完整响应。
+两模式的原SemBench Q1完整2000调用已通过[有限容量软件检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)，需显式新桥配置；MovieQuery与CLI已读取所选显式容量，旧配置保留128行。
+六条LOTUS路径已分别通过单GPU与同机双TP1真实模型接线；全部原值、每GPU实际调用／利用采样及公平性资格差异由该报告定位。
+中立[infrastructure/daft_runtime.py](src/infrastructure/daft_runtime.py)统一当前driver的Daft初始化，
+相同runner／线程数复用，配置冲突报错；原生HTTP与SemLoom物化可在同一driver连续执行。
+
+[待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
+`RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
+不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。
+阶段broker原子登记追加字节和行前段；最终147项库检查、16项PG检查及8224次真实模型请求通过。
+1024行完整查询中位数10.069→12.686秒，追加慢25.987%；全部行/计费/资源及RSS/PSS核对，暂不推荐启用，默认保持。
+
+[返回等待隔离](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)补齐真实Ray结果future回调及Map恢复读取时刻。
+71个本地fixture/4107次模拟与20次实际Ray/Daft运行/16,448次模拟行处理通过；本项没有HTTP、PG或模型请求。
+同步实验记账会影响接收与供给；线程选择缩短等待却使完整消费更慢，默认继续保持。
 
 [文本Map准备分段原型](src/execution_provider/adapters/map_preparation.py)通过可选`TaskPreparation`接口，
 借用Core已接纳的有限输入，在模型名额之外准备Arrow/Ray对象；原Core仍控制每行的请求/work、组织、路由和结果。
@@ -96,7 +123,7 @@ Ray Map观测现在区分批次迭代/对象写入的线程池排队、实际调
 内容核对和请求记录留在原事件循环，异步发送前回调完成后才允许RPC；取消等待事务结束且不退款。
 实现位于[线程记账回调](src/experiments/async_request_guard.py)。[目标同条件对照](../experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)
 70项及累计8,224次fixture通过，模型0次；线程选择8.287→11.570秒，慢39.606%，仅保留为显式诊断。
-恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，下一项检查小窗口反复创建。
+恢复等待减少，但输入窗口变小、批次构建增多；默认同步保留，后续[实际Ray分段](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)另核对返回等待、登记排队和分批变化。
 Linux启动、时间命名空间与时钟实现摘要一致时，再拆worker进入前和退出后时长；其他环境保留不可对齐状态。
 实验记录器单独报告持久账本reserve与请求记录时长；这些新增字段不改变容量、请求正文或worker借用方式。
 验证安排见[准备调优计划](../experiments/plans/查询调优.md#热路径独立计时与无模型验证)。

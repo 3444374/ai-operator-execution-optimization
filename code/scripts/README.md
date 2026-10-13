@@ -5,6 +5,24 @@
 [实际LOTUS双进程fixture入口](benchmarks/query_sharing_lotus.py)保留native LM和同桥三控制，
 仅在已有实库环境/分配窗口运行，必须指定新的`--output`gzip；来源检查失败不冒名或降级。
 
+## SemBench Movie原始查询
+
+`experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。
+[唯一准备集及当前资格](../../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)登记CSV、清单摘要、重复reviewId、3×6覆盖及失败。
+`--data-preflight`核对固定源码、版本、CSV/字段/标签与摘要；`--preflight`再核对执行容量及就绪作者身份；均不调用模型。
+配置使用[显式模板](../../deploy/autodl/sembench_lotus_queries.example.json)与仓库外环境路径，缺条件直接失败。
+两种IMLane的仓库外调用配置新增可选`max_batch_rows: 2000`，须同时使用已验证的新桥及新拥有的Coordinator身份；
+省略时仍为128，原2000行Q1明确拒绝。MovieQuery预检和公共执行器使用同一容量，不隐式切块。
+`--data-preflight`可只读已提供的调用配置；未提供时报告旧128行范围，不连接Coordinator或模型。
+新桥摘要、字段和已有软件资格见[完整调用说明](../integrations/sema/imlane_calls.md#调用与配置)。
+`--execute`只用于另行授权且完整预检通过的具体清单，正常软件检查不提供性能资格。
+
+<a id="sembench-send-accounting"></a>
+
+### 本轮逐跳发送预算
+
+[sembench_pre_send_ledger.py](benchmarks/sembench_pre_send_ledger.py)是上述模型小轮私有harness的发送hook，配合[send_counts.py](../src/experiments/send_counts.py)。部署时分别复制为validation/pre_send_ledger.py与validation/send_counts.py，并将两者SHA写入既有harness-identity.json；它不是独立查询CLI，启动、额度和新窗口由唯一owner提供。普通初始化只接受新账本或已带核验计数的账本；旧非空格式需要显式离线副本迁移及预计行数，不能直接重置真实窗口。14项回归、源码签名、完整配对数据与已执行的有限匹配方案见[同题报告](../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+
 ## 原生语义系统单查询
 
 `baselines/run_semantic_system_query.py`调用LOTUS原生`sem_map`、Daft内置`prompt`、
@@ -30,13 +48,34 @@ PYTHONPATH=code python code/scripts/baselines/run_semantic_system_query.py \
 
 <a id="native-adapter-query"></a>
 
+单查询和常驻查询的 `--lotus-observation-mode` 默认 `qualification`，显式 `performance` 省去原 LOTUS 臂的预期请求重复构造。
+SemBench JSON 使用可选 `lotus_observation_mode` 字段；真实出站、额度和结果继续核对，
+未构造的预期完整值写 `unavailable`。模式身份、复核及待验证项见[观测核查](../../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
+
 ## 原生方法与SemLoom成对查询
 
 `baselines/run_native_adapter_query.py`执行有限外部文本输入的单查询，输入JSONL每行仅含唯一`row_id`和原始`text`。
-`--arm`包括共同固定Map的原生Daft／Ray／SemLoom、LOTUS单Map与两Map三种推进、DuckDB成对执行和Sema三种请求路径。
+`--arm`包括共同固定Map的原生Daft／Ray／SemLoom、LOTUS单Map与两Map三种推进、DuckDB成对执行及Sema直达／后置请求路径。
 具体名字与适用范围见[接口说明](../src/experiments/postgresql/README.md#native-adapter-query)及[工程报告](../../experiments/results/postgresql/native_adapter_integration_20261009/README.md)。
+LOTUS新增`lotus-method-native-daft`、`lotus-method-native-ray-data`与`lotus-method-native-ray`；
+DuckDB新增`duckdb-method-native-daft`、`duckdb-method-native-ray-data`与`duckdb-method-native-ray`。
+Daft Native、Ray Data及Ray Core分别单列，Core的静态actor拓扑为`diagnostic_reference`。
+这些路径只需原生`--options`；两个Ray执行者使用`--ray-temp-root`或已核对的`--ray-address`，
+DuckDB另用`--duckdb-library`选择已验证的本地扩展，Ray Core需要`0.4.14-native2`或`native3`。
+新路径同时可从常驻入口选择，配置、原生对照和实际检查见[本轮接入报告](../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
+六条LOTUS路径的单／双GPU原值与离线CSV复算由同一报告定位；不把软件检查程序当作模型运行入口。
 Sema分层诊断可选择`sema-bounded-pipeline-diagnostic`或`sema-method-semloom-local-diagnostic`；
 后者无需`--ray-physical`，可用原`--sema-executor-scope group-diagnostic`，持有与活动额度分别声明。
+Sema另有`sema-native-daft-request-service`、`sema-native-ray-data-request-service`和
+`sema-imlane-request-service`，在原请求池之后由各原生执行器处理已抵达快照；
+前两条直接使用原options配置，后一条另传`--imlane-config /path/to/private/ready-imlane.json`。
+持有上限用`--max-held-tasks`显式设置且不超过128，原Sema线程继续由`--sema-native-threads`控制。
+它们保留原算子策略，不能解释为替换Sema数据库执行器；准备、真实SQL和服务阶段分别记录。
+三种方法各有`*-native-imlane`及`*-native-imlane-ray`路径，具体名称见接口表；
+分别传`--imlane-cpython-config`和`--imlane-ray-config`，配置包含作者模式及就绪Coordinator的PID/start ticks。
+IMLane作者Ray单列，公共入口直接复用原DBEnd桥。默认options并发4无法覆盖本次探得的6个任务线程，
+历史接线使用显式并发8与128行／32MiB；新调用配置另声明行容量，原生并发与线程选择保持，超额报错、不自动切分。
+DuckDB的IMLane名称选择要求`0.4.14-native3`；配置与结束责任见[完整调用说明](../integrations/sema/imlane_calls.md)。
 预算须已创建；配置与输出均在仓库外，输出目录须尚不存在：
 
 ```sh

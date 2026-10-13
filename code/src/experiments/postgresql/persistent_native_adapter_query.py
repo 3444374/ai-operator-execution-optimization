@@ -24,9 +24,11 @@ from src.scheduling.core.session_contract import SessionTimeouts
 from .cell_evidence import CellErrors
 from .native_adapter_query import ARMS, _runtime, run_prepared_map_query,resolve_adapter_limits
 from .supplier_adapter_query import (
-    SUPPLIER_ARMS, _drain_execution, prepare_duckdb_connection, prepare_lotus_lm,
-    replace_duckdb_inputs, run_supplier_query,
+    SUPPLIER_ARMS, NATIVE_SUPPLIER_BACKENDS, _drain_execution, prepare_duckdb_connection, prepare_lotus_lm,
+    replace_duckdb_inputs, run_supplier_query, LOTUS_OBSERVATION_MODES, validate_lotus_observation_mode,
 )
+from .sema_native_query import SEMA_NATIVE_ARMS, validate_native_options
+from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 
 
 class _ArmOwner:
@@ -48,6 +50,7 @@ class _ArmOwner:
                 routes=(GatewayRoute(self.identity, 'model', group.model.endpoint_url),),
                 trace_path=self.root / 'http-trace.jsonl',
                 request_timeout_s=min(group.query_timeout_s, group.model.timeout_ms/1000),
+                preserve_http=arm.startswith(('lotus-','duckdb-')),
                 before_forward=self.before, after_forward=self.after,
                 query_identity=lambda: self.binding['unit_id'] if self.binding else None), 'owner_gateway_close')
             token = group.model.bearer_token
@@ -130,13 +133,24 @@ class _ArmOwner:
             core_jobs=(sema['core_jobs'] if sema is not None
                        else None if self.execution is None else len(self.execution.engine.jobs.jobs)),
             sema_executor=sema,
-            native_ray_actor_scope=('original Ray Data graph creates its own actors' if self.arm=='fixed-map-native-ray'
-                                    else 'not a native Ray Data graph'),
+            native_ray_actor_scope=('original Ray Data graph creates its own actors' if (
+                self.arm in ('fixed-map-native-ray','sema-native-ray-data-request-service')
+                or NATIVE_SUPPLIER_BACKENDS.get(self.arm)=='ray-data')
+                                    else 'Ray Core owns per-query call actors' if NATIVE_SUPPLIER_BACKENDS.get(self.arm)=='ray'
+                                    else 'Daft Native owns per-query batch function graph' if NATIVE_SUPPLIER_BACKENDS.get(self.arm)=='daft'
+                                    else 'IMLane author '+IMLANE_METHOD_MODES[self.arm]+' executor' if self.arm in IMLANE_METHOD_MODES
+                                    else 'supplier SDK/client owns execution'),
             request_service_scope=('per query HTTP/session; group Core/workers diagnostic' if sema is not None
                                    else 'per query HTTP, Core and transport' if self.arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic')
-                                   else 'per query HTTP service' if self.arm in ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic')
+                                   else 'per query HTTP service' if self.arm in
+                                   ('sema-native-transparent','sema-bounded-forward-diagnostic','sema-bounded-pipeline-diagnostic')
+                                   else 'per query HTTP service; finite native snapshots' if self.arm in SEMA_NATIVE_ARMS
                                    else 'no Sema request service'),
-            native_http_client_scope='supplier owns its SDK/client lifecycle')
+            native_http_client_scope=('native graph HTTP kernels; DuckDB C++ FinishCompletion parses body/status'
+                                      if self.arm in NATIVE_SUPPLIER_BACKENDS and self.arm.startswith('duckdb-') else
+                                      'native graph HTTP kernels; LOTUS SDK parser receives full responses'
+                                      if self.arm in NATIVE_SUPPLIER_BACKENDS else
+                                      'supplier owns its SDK/client lifecycle'))
 
     @contextmanager
     def query(self, unit_id, root, before, after, record):
@@ -173,7 +187,11 @@ class _ArmOwner:
 
     def lotus_lm(self):
         if self.lm is None:
-            self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path)
+            if getattr(self.group, 'sembench_dataset', None) is None:
+                self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path)
+            else:
+                self.lm = prepare_lotus_lm(self.group.plan, self.model, self.group.options, self.group.tokenizer_path,
+                                          sembench=True)
         return self.lm
 
     def duckdb_connection(self, values):
@@ -181,7 +199,8 @@ class _ArmOwner:
             self._capture_component_close('owner_duckdb_close')
             self.connection = prepare_duckdb_connection(self.stack, self.group.plan, self.model,
                                                        self.group.options, self.group.duckdb_library,
-                                                       semloom_batch=self.execution is not None)
+                                                       semloom_batch=self.execution is not None or self.arm in NATIVE_SUPPLIER_BACKENDS,
+                                                       batch_executor=NATIVE_SUPPLIER_BACKENDS.get(self.arm))
         replace_duckdb_inputs(self.connection, values, self.group.plan)
         return self.connection
 
@@ -212,18 +231,33 @@ class PersistentAdapterGroup:
                  ray_temp_root=None, ray_address=None, query_timeout_s=120, owner_timeout_s=1800,
                  stages=None, tokenizer_path=None, duckdb_library=None, sema_binary=None,
                  max_held_tasks=None,sema_native_threads=None,adapter_timings=False,
-                 sema_executor_scope='query',duckdb_offer_diagnostic='original'):
+                 sema_executor_scope='query',duckdb_offer_diagnostic='original',imlane_config=None,
+                 imlane_call_configs=None,sembench_dataset=None,lotus_observation_mode='qualification'):
         self.arms = tuple(arms)
         if (not 1 <= len(self.arms) <= 3 or len(set(self.arms)) != len(self.arms)
                 or any(arm not in ARMS+SUPPLIER_ARMS for arm in self.arms)):
             raise ValueError('persistent measurement requires one to three distinct integrated arms')
         if sum('semloom' in arm for arm in self.arms) > 2:
             raise ValueError('persistent group supports at most two SemLoom backends')
+        self.lotus_observation_mode=validate_lotus_observation_mode(lotus_observation_mode)
+        if lotus_observation_mode!='qualification' and not any(arm.startswith('lotus-') for arm in self.arms):
+            raise ValueError('LOTUS performance observation requires a LOTUS arm')
         if not 0 < query_timeout_s <= 120 or not query_timeout_s+120 < owner_timeout_s <= 1800:
             raise ValueError('query and owner durations must leave 120 seconds for final cleanup')
         self.plan, self.model, self.ledger = plan, model, ledger
+        self.sembench_dataset = sembench_dataset
+        if sembench_dataset is not None:
+            from .sembench_queries import MovieDataset, LOTUS_MOVIE_ARMS
+            if (type(sembench_dataset) is not MovieDataset or any(a not in LOTUS_MOVIE_ARMS for a in self.arms)
+                    or plan.max_tokens != 8 or stages is not None):
+                raise ValueError('original Movie owners require the selected dataset and Filter generation')
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+        self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
+        for arm in self.arms:
+            imlane_config_for_arm(arm,self.imlane_call_configs)
+            validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs)
+        self.imlane_config = imlane_config
         if sema_executor_scope not in ('query', 'group-diagnostic'):
             raise ValueError('Sema executor scope must be query or group-diagnostic')
         if (sema_executor_scope != 'query'
@@ -246,21 +280,32 @@ class PersistentAdapterGroup:
         self.poisoned = False
         self.ray_session_id = None
         self.runtime = dict(owner='persistent group', source='finite raw input')
+        self.daft_runtime = None
         self._lock = threading.Lock()
 
     def __enter__(self):
+        if self.sembench_dataset is not None:
+            self.sembench_preflight = self.sembench_dataset.preflight()
         self.started_ns = time.monotonic_ns()
         self.deadline = time.monotonic()+self.owner_timeout_s
         new_private_directory(self.root)
         try:
-            if 'fixed-map-native-daft' in self.arms:
-                _runtime(self.stack, 'fixed-map-native-daft', self.options, None, None, None)
+            if ('fixed-map-native-daft' in self.arms
+                    or 'sema-native-daft-request-service' in self.arms
+                    or any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='daft' for arm in self.arms)):
+                _,self.daft_runtime = _runtime(self.stack, 'fixed-map-native-daft', self.options, None, None, None)
             core = any('semloom' in arm and not arm.endswith('diagnostic') for arm in self.arms)
-            if core or 'fixed-map-native-ray' in self.arms:
+            if (core or 'fixed-map-native-ray' in self.arms
+                    or 'sema-native-ray-data-request-service' in self.arms
+                    or any(NATIVE_SUPPLIER_BACKENDS.get(arm) in ('ray','ray-data') for arm in self.arms)):
                 if core and self.physical is None:
                     raise ValueError('persistent SemLoom requires the existing physical configuration')
                 self.physical, self.runtime = _runtime(self.stack,
-                    'fixed-map-semloom' if core else 'fixed-map-native-ray', self.options,
+                    'fixed-map-semloom' if core else ('supplier-native-ray'
+                        if 'fixed-map-native-ray' not in self.arms
+                        and 'sema-native-ray-data-request-service' not in self.arms
+                        and not any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='ray-data' for arm in self.arms)
+                        else 'fixed-map-native-ray'), self.options,
                     self.physical, self.ray_temp_root, self.ray_address)
                 self.ray_session_id = uuid.uuid4().hex
             for arm in self.arms:
@@ -275,6 +320,7 @@ class PersistentAdapterGroup:
                 owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
                 max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
                 sema_executor_scope=self.sema_executor_scope,
+                lotus_observation_mode=self.lotus_observation_mode,
                 hard_timeout_owner='calling process supervisor', result_cache=False)))
             return self
         except BaseException as failure:
@@ -283,9 +329,12 @@ class PersistentAdapterGroup:
                 failure.add_note('Persistent group initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
 
-    def run(self, arm, *, unit_id, root, load_source, phase, reference_outputs=None, allowed_outputs=None):
+    def run(self, arm, *, unit_id, root, load_source=None, phase, reference_outputs=None, allowed_outputs=None,
+            sembench_query=None):
         if phase not in ('qualification', 'warmup', 'measurement'):
             raise ValueError('query phase must be explicitly declared')
+        if self.sembench_dataset is not None and sembench_query is None:
+            raise ValueError('original Movie owner requires an explicit original query')
         with self._lock:
             if self.poisoned or arm not in self.owners or unit_id in self.used_units:
                 raise RuntimeError('persistent group stopped or query identity already used')
@@ -304,7 +353,10 @@ class PersistentAdapterGroup:
                     result = run_supplier_query(arm, **arguments, stages=self.stages,
                         tokenizer_path=self.tokenizer_path, duckdb_library=self.duckdb_library,
                         sema_binary=self.sema_binary,sema_native_threads=self.sema_native_threads,
-                        adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic)
+                        adapter_timings=self.adapter_timings,duckdb_offer_diagnostic=self.duckdb_offer_diagnostic,
+                        imlane_config=self.imlane_config,imlane_call_configs=self.imlane_call_configs,
+                        lotus_observation_mode=self.lotus_observation_mode if arm.startswith('lotus-') else 'qualification',
+                        sembench_query=sembench_query)
                 else:
                     result = run_prepared_map_query(arm, **arguments)
                 owner.queries += 1
@@ -320,6 +372,7 @@ class PersistentAdapterGroup:
                     release_query_seconds=result['full_query_seconds'],
                     release_scope='raw input reading, query preparation, formatter, graph, materialization and consumer EOF',
                     submit_scope=result['execution']['ready_query_timing_scope'],
+                    lotus_observation_mode=result.get('lotus_observation_mode'),
                     actual_posts=result['actual_posts'], rows=result['rows'])))
                 write_private_json(Path(root)/'runtime-resources.json', dict(
                     before_query=resources_before, after_query=self.ray_resources(),
@@ -336,6 +389,7 @@ class PersistentAdapterGroup:
                         write_private_json(sidecar, dict(
                             schema='semloom.persistent_adapter_query.v1', status='failed',
                             unit_id=unit_id, arm=arm, measurement_phase=phase,
+                            lotus_observation_mode=self.lotus_observation_mode if arm.startswith('lotus-') else None,
                             persistent_lifecycle=owner.lifecycle(),
                             query_summary_sha256=hashlib.sha256(summary_path.read_bytes()).hexdigest()))
                     except BaseException as observation:
@@ -379,6 +433,7 @@ def main(argv=None):
     parser.add_argument('--max-attempts', type=int, required=True)
     parser.add_argument('--max-held-tasks',type=int)
     parser.add_argument('--sema-native-threads',type=int)
+    parser.add_argument('--lotus-observation-mode',choices=LOTUS_OBSERVATION_MODES,default='qualification')
     parser.add_argument('--adapter-timings',action='store_true')
     parser.add_argument('--duckdb-offer-diagnostic',choices=('original','validated-prefix','prepared-blocks'),default='original')
     parser.add_argument('--sema-executor-scope', choices=('query', 'group-diagnostic'), default='query',
@@ -386,6 +441,9 @@ def main(argv=None):
     for name in ('options','ray-physical','ray-temp-root','stages','tokenizer','duckdb-library','sema-binary'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--ray-address')
+    parser.add_argument('--imlane-config',type=Path)
+    parser.add_argument('--imlane-cpython-config',type=Path)
+    parser.add_argument('--imlane-ray-config',type=Path)
     parser.add_argument('--allowed-output', action='append')
     parser.add_argument('--query-timeout-s', type=float, default=120)
     parser.add_argument('--owner-timeout-s', type=float, default=1800)
@@ -410,7 +468,11 @@ def main(argv=None):
             query_timeout_s=args.query_timeout_s, owner_timeout_s=args.owner_timeout_s,
             max_held_tasks=args.max_held_tasks,sema_native_threads=args.sema_native_threads,
             adapter_timings=args.adapter_timings,
-            sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic) as group:
+            lotus_observation_mode=args.lotus_observation_mode,
+            sema_executor_scope=args.sema_executor_scope,duckdb_offer_diagnostic=args.duckdb_offer_diagnostic,
+            imlane_config=args.imlane_config,
+            imlane_call_configs={mode: path for mode,path in
+                (('cpython',args.imlane_cpython_config),('ray',args.imlane_ray_config)) if path is not None}) as group:
         write_private_json(group.root/'schedule.json',schedule)
         for ordinal, item in enumerate(schedule):
             source = Path(item['input'])

@@ -1,0 +1,90 @@
+{
+  "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+  "destination": "<fresh-owned-short-root>",
+  "ray_parent_utf8_bytes": 22,
+  "members": {
+    "bootstrap-repair-provenance.json": {
+      "bytes": 1939,
+      "sha256": "a41fcb882bd0b8cf0719536c10f3f3c5ea7bbff2727c1ce827305b73d400f993"
+    },
+    "harness-identity.json": {
+      "bytes": 717,
+      "sha256": "56d11a91932252cebfa5787f508882592a606d076ae7c39e0611f2548a6ad71a"
+    },
+    "reference-quality.json": {
+      "bytes": 742,
+      "sha256": "e48a86ca108bedda700fe11add527453da8c2d6f1bdbb64cfcbc3f14e58fbb17"
+    },
+    "state.json": {
+      "bytes": 3521,
+      "sha256": "586009b26c7b931756935b1a643afd25aaa5bfb6c3569ca8d2d0f168a56e0dd8"
+    },
+    "supplement-harness-identity.json": {
+      "bytes": 487,
+      "sha256": "0a982902f16249071ad89d6f43df8ce25b208501183feba062b8f2286887a6f3"
+    },
+    "supplement-plan.json": {
+      "bytes": 867,
+      "sha256": "5b82552c8a7be9cd52275274cbe107884546e94840854d597ee89ba343dea5ac"
+    },
+    "validation/asset_check.py": {
+      "bytes": 3719,
+      "sha256": "d2fb86550db9c0220a390b94a938be37cbf7837aec051fc74fd7fd2f118abadf"
+    },
+    "validation/pre_send_ledger.py": {
+      "bytes": 11044,
+      "sha256": "a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2"
+    },
+    "validation/query_observer.py": {
+      "bytes": 1881,
+      "sha256": "650f426cc68c5087eb3ede99753b43ef81c306d1dc1f227c480d047d5eb6e61d"
+    },
+    "validation/sitecustomize.py": {
+      "bytes": 995,
+      "sha256": "57f2d331add9a70ea3e8226b0f6b30d6f2c36fd2977049fc139a53b93269e9a8"
+    },
+    "validation/software.py": {
+      "bytes": 6148,
+      "sha256": "feb6f23d7d84c8f46c6aec66b627e8b32ed59ff8e5387160eff1eda70ced50b9"
+    },
+    "validation/software_runner.py": {
+      "bytes": 2045,
+      "sha256": "1479bec512aa447b3189ee94c358d1dec3e3d76b846c2c8c2a0d186c74cfcf57"
+    },
+    "validation/supplement_runner.py": {
+      "bytes": 4239,
+      "sha256": "9bdb54743ab8a038b04a05802dd00c87fbc1e64dc2eb00265f74a0bd61cb5a67"
+    },
+    "validation/supplement_supervisor.py": {
+      "bytes": 26063,
+      "sha256": "329652e8713fc69434500d5ca3d107f5a8cd796086e5ee2ba7d8e416fac3dea1"
+    },
+    "validation/support.py": {
+      "bytes": 13876,
+      "sha256": "8db7493f0355d904a07d82f5e8f7e07c322c10e40febf18cd0a64ec6595b55c6"
+    }
+  },
+  "entrypoints": {
+    "prepare.py": {
+      "bytes": 11619,
+      "sha256": "e72e60eaf5c7c60606f24d2f9bb3debb38a04a269a613a03922d8b71315d81aa"
+    },
+    "launch.py": {
+      "bytes": 3401,
+      "sha256": "d787c715868ace3a8c76cd490bf13d0c5c20a9aa822e51b1ed02c0242c300779"
+    }
+  },
+  "payload_bytes": 23401,
+  "payload_sha256": "45d674c4b72af5451f8a892346bd55436b3ecfd8fc69efc3385e301e9794b378",
+  "planned_logical": 480,
+  "planned_posts": 1440,
+  "max_logical": 512,
+  "max_posts": 1536,
+  "max_seconds": 600,
+  "max_startup_seconds": 180,
+  "previous_clock_sha256": "379c14d21cff9cb1e20fb95183c406558bbfa5f0ef596cac89b5cfc4f72066d0",
+  "unchanged_software_helpers": 7,
+  "model_calls": 480,
+  "posts": 1440,
+  "authorization": "direct human approved private state/plan/controllers/identities/preparation/launcher and only S/R"
+}

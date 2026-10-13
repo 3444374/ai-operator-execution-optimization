@@ -1,0 +1,146 @@
+test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session) ... ERROR
+test_pooled_redirect_cookies_match_request_local_default_jar (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_pooled_redirect_cookies_match_request_local_default_jar) ... FAIL
+test_standalone_capacity_error_survives_pool_close_failure (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_standalone_capacity_error_survives_pool_close_failure) ... FAIL
+test_transport_error_retains_its_cause_and_close_diagnostic (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_transport_error_retains_its_cause_and_close_diagnostic) ... ERROR
+test_async_udf_arguments_follow_the_selected_options_and_preserve_outcomes (tests.baselines.test_native_dataset_configuration.DaftConfigurationTests.test_async_udf_arguments_follow_the_selected_options_and_preserve_outcomes) ... ok
+test_multirow_udf_input_is_rejected_before_a_request (tests.baselines.test_native_dataset_configuration.DaftConfigurationTests.test_multirow_udf_input_is_rejected_before_a_request) ... ok
+test_udf_failure_is_visible_and_not_retried (tests.baselines.test_native_dataset_configuration.DaftConfigurationTests.test_udf_failure_is_visible_and_not_retried) ... ok
+test_wrong_version_or_runner_is_rejected_before_graph_creation (tests.baselines.test_native_dataset_configuration.DaftConfigurationTests.test_wrong_version_or_runner_is_rejected_before_graph_creation) ... ok
+test_duplicate_mismatched_and_incomplete_outcomes_do_not_pass (tests.baselines.test_native_dataset_configuration.GraphConsumerIdentityTests.test_duplicate_mismatched_and_incomplete_outcomes_do_not_pass) ... ok
+test_graph_failure_remains_the_first_error_without_resubmission (tests.baselines.test_native_dataset_configuration.GraphConsumerIdentityTests.test_graph_failure_remains_the_first_error_without_resubmission) ... ok
+test_out_of_order_complete_calls_keep_duplicate_input_occurrences (tests.baselines.test_native_dataset_configuration.GraphConsumerIdentityTests.test_out_of_order_complete_calls_keep_duplicate_input_occurrences) ... ok
+test_batch_actor_and_source_parameters_are_forwarded_separately (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_batch_actor_and_source_parameters_are_forwarded_separately) ... ERROR
+test_import_time_async_mismatch_fails_before_any_dataset_is_created (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_import_time_async_mismatch_fails_before_any_dataset_is_created) ... ok
+test_postprocess_rejects_changed_call_or_row_identity (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_postprocess_rejects_changed_call_or_row_identity) ... ok
+test_successful_carrier_keeps_real_http_error_and_transport_failure (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_successful_carrier_keeps_real_http_error_and_transport_failure) ... ERROR
+test_wrong_version_or_unowned_runtime_is_rejected_before_graph_creation (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_wrong_version_or_unowned_runtime_is_rejected_before_graph_creation) ... ok
+
+======================================================================
+ERROR: test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 91, in test_concurrent_calls_keep_distinct_redirect_cookies_on_one_session
+    asyncio.run(run())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 87, in run
+    await asyncio.gather(request(0), request(1))
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 85, in request
+    self.assertEqual(session.cookie_jar.filter_cookies(url)['redirect'].value, str(index))
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+KeyError: 'redirect'
+
+======================================================================
+ERROR: test_transport_error_retains_its_cause_and_close_diagnostic (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_transport_error_retains_its_cause_and_close_diagnostic)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 179, in _http_session
+    yield owned.session
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 209, in _request
+    async with session.post(call.endpoint, data=call.payload, headers=call.headers,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 36, in post
+    raise ConnectionResetError('request fixture')
+ConnectionResetError: request fixture
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 42, in test_transport_error_retains_its_cause_and_close_diagnostic
+    outcome = asyncio.run(native._request(self.call()))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 204, in _request
+    async with _http_session(client) as session:
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 231, in __aexit__
+    await self.gen.athrow(value)
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 181, in _http_session
+    await owned.close()
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 163, in close
+    await self.session.close()
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 39, in close
+    raise RuntimeError('pool close fixture')
+RuntimeError: pool close fixture
+
+======================================================================
+ERROR: test_batch_actor_and_source_parameters_are_forwarded_separately (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_batch_actor_and_source_parameters_are_forwarded_separately)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_dataset_configuration.py", line 160, in test_batch_actor_and_source_parameters_are_forwarded_separately
+    selections = (NativeGraphOptions(concurrency=4, ray_actors=1, ray_async_batches_per_actor=3,
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 9, in __init__
+  File "<integration-checkout>/code/src/baselines/text/frameworks/prepared_map.py", line 59, in __post_init__
+    raise ValueError('native Ray batch request envelope exceeds the declared HTTP allowance')
+ValueError: native Ray batch request envelope exceeds the declared HTTP allowance
+
+======================================================================
+ERROR: test_successful_carrier_keeps_real_http_error_and_transport_failure (tests.baselines.test_native_dataset_configuration.RayConfigurationTests.test_successful_carrier_keeps_real_http_error_and_transport_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_dataset_configuration.py", line 207, in test_successful_carrier_keeps_real_http_error_and_transport_failure
+    asyncio.run(check())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/tests/baselines/test_native_dataset_configuration.py", line 201, in check
+    response = await native._ProcessorSession().post(native._PROCESSOR_URL,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/src/baselines/text/frameworks/native_calls.py", line 273, in post
+    raise RuntimeError("native Ray HTTP session was not entered")
+RuntimeError: native Ray HTTP session was not entered
+
+======================================================================
+FAIL: test_pooled_redirect_cookies_match_request_local_default_jar (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_pooled_redirect_cookies_match_request_local_default_jar)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 68, in test_pooled_redirect_cookies_match_request_local_default_jar
+    asyncio.run(run())
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 63, in run
+    self.assertEqual(jar.filter_cookies(url), reference.filter_cookies(url))
+AssertionError: <SimpleCookie: > != <BaseCookie: redirect='0'>
+
+======================================================================
+FAIL: test_standalone_capacity_error_survives_pool_close_failure (tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests.test_standalone_capacity_error_survives_pool_close_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<integration-checkout>/code/tests/baselines/test_native_http_lifecycle.py", line 28, in test_standalone_capacity_error_survives_pool_close_failure
+    with self.assertRaisesRegex(ValueError, 'byte allowance') as observed:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 16 tests in 0.132s
+
+FAILED (failures=2, errors=4)

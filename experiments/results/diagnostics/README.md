@@ -1,12 +1,25 @@
 # Feasibility Results
 
+[原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。
+
+[固定发布版实库软件核查](native_release_actual_software_20261012/README.md)：首轮失败与第二窗口3组通过分别保存；后者173POST／104.662秒，含真实3.14.5、两图关闭与12个原Q2/Q3软件单元，不作模型性能资格。
+后续公开CLI四路径原Q2/Q3及一模式配对共1080逻辑调用、2160传输POST／359.252秒通过，原120行与错误评价保持；模型计划和IMLane作者Q1由各自清单继续。
+
+[LOTUS原生观测准备核查](lotus_observation_modes_20261012/README.md)：默认资格模式保持，显式性能模式省去预期请求重复准备；真实计数／额度／结果保留，本地观测成本只作替身证据。
+
+[SemBench Movie原查询准备](sembench_lotus_readiness_20261012/README.md)：固定唯一2000行CSV与清单，六条LOTUS接点保留Q1/Q2/Q3及官方评价；软件16 pass／2 unsupported／0 notrun，128POST、模型0，失败及当前IMLane适配器Q1拒绝分别登记。
+
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [已封口Job共享机会](query_sharing_burst_20261013/README.md)：真实Core/双串行fixture、同容量合理控制、独立资源复算和估计偏差反例；不代表原生多查询或模型性能。
 
+[IMLane作者构建与Arrow检查](imlane_build_20261012/README.md)：固定作者源码，两个模式630行／132次无模型调用及正常退出；完整方法接入见对应原生执行报告。
+
 [执行稳定性与多副本组合](semloom_stability_composition_20261012/README.md)：runtime已知失败与未知责任隔离、暂停派发、入口停止证明／写出期限及合成监听身份；固定来源本机组合回归，实际库与设备资格待验证。
 
 [SQuAD原生完整请求长度检查](squad_native_length_20261011/README.md)：实际LOTUS formatter与本地tokenizer全量画像；自然调参切片未满足本轮选样条件，未进入模型比较。补同一调参元数据的静态次序描述，原件与复算保留。
+
+[待准备尾块追加](map_queued_preparation_20261008/README.md)：原逐行补充记录、可关闭原型、本地高/低成本对照及服务器147项检查；后续PG与8224次模型验证仍慢于即时默认，全部证据归同一报告。
 
 [文本Map准备分段原型](map_input_preparation_20261004/README.md)：单Job输入借用/阶段持有、本地替身与服务器实际库检查；默认与模型请求保持原用途，失败和补测来源归同一报告。
 

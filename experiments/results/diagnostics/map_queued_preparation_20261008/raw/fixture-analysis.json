@@ -1,0 +1,1098 @@
+{
+  "status": "passed",
+  "verified_simulated_calls": 24672,
+  "http_requests": 0,
+  "model_requests": 0,
+  "pg_queries": 0,
+  "private_request_hash_checks": "passed",
+  "queries": [
+    {
+      "case": "0.0005-check-0-coalesced",
+      "arm": "coalesced",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 16,
+      "query_seconds": 0.036572708,
+      "first_result_seconds": 0.024140166,
+      "case_seconds": 0.0383695,
+      "prepared_blocks": 4,
+      "prepared_group_sizes": {
+        "4": 4
+      },
+      "core_active_mean": 11.784550244406294,
+      "worker_active_mean": 10.014615926170958,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 2726,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-check-0-original",
+      "arm": "original",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 16,
+      "query_seconds": 0.034840959,
+      "first_result_seconds": 0.023475,
+      "case_seconds": 0.036760958,
+      "prepared_blocks": 4,
+      "prepared_group_sizes": {
+        "4": 4
+      },
+      "core_active_mean": 11.71902067908062,
+      "worker_active_mean": 10.484853014522361,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 2726,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-check-0-immediate",
+      "arm": "immediate",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 16,
+      "query_seconds": 0.035049916,
+      "first_result_seconds": 0.024669291,
+      "case_seconds": 0.036457375,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 12.933410710599135,
+      "worker_active_mean": 10.46640767983581,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 1,
+        "peak_arrow_buffer_bytes": 2702,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-warmup-0-coalesced",
+      "arm": "coalesced",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.995511167,
+      "first_result_seconds": 0.044104709,
+      "case_seconds": 1.003980958,
+      "prepared_blocks": 147,
+      "prepared_group_sizes": {
+        "1": 18,
+        "2": 6,
+        "3": 9,
+        "4": 46,
+        "5": 2,
+        "6": 1,
+        "7": 6,
+        "8": 6,
+        "9": 8,
+        "10": 8,
+        "11": 2,
+        "12": 6,
+        "13": 9,
+        "14": 2,
+        "15": 2,
+        "16": 16
+      },
+      "core_active_mean": 59.5136305738698,
+      "worker_active_mean": 24.53430020338486,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 147,
+        "peak_arrow_buffer_bytes": 24462,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-warmup-0-original",
+      "arm": "original",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.957086792,
+      "first_result_seconds": 0.053197292,
+      "case_seconds": 0.966001709,
+      "prepared_blocks": 293,
+      "prepared_group_sizes": {
+        "1": 26,
+        "2": 19,
+        "3": 32,
+        "4": 216
+      },
+      "core_active_mean": 57.351428420924236,
+      "worker_active_mean": 25.811085387959256,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 293,
+        "peak_arrow_buffer_bytes": 22574,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-warmup-0-immediate",
+      "arm": "immediate",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.776333416,
+      "first_result_seconds": 0.035221208,
+      "case_seconds": 0.783768084,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 60.62653572289358,
+      "worker_active_mean": 31.03062631919479,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 91,
+        "peak_arrow_buffer_bytes": 11098,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-1-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.79493075,
+      "first_result_seconds": 0.037819833,
+      "case_seconds": 0.802882,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 60.30275143841146,
+      "worker_active_mean": 30.337707760078473,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 91,
+        "peak_arrow_buffer_bytes": 11522,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-1-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 1.031763333,
+      "first_result_seconds": 0.055576,
+      "case_seconds": 1.040686666,
+      "prepared_blocks": 291,
+      "prepared_group_sizes": {
+        "1": 22,
+        "2": 23,
+        "3": 28,
+        "4": 218
+      },
+      "core_active_mean": 56.51637464809965,
+      "worker_active_mean": 23.731390842128327,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 291,
+        "peak_arrow_buffer_bytes": 22606,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-1-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.816888,
+      "first_result_seconds": 0.048241834,
+      "case_seconds": 0.825386583,
+      "prepared_blocks": 110,
+      "prepared_group_sizes": {
+        "1": 8,
+        "2": 5,
+        "3": 2,
+        "4": 34,
+        "5": 1,
+        "7": 2,
+        "8": 2,
+        "10": 5,
+        "12": 4,
+        "13": 2,
+        "14": 5,
+        "15": 5,
+        "16": 35
+      },
+      "core_active_mean": 56.65289084794978,
+      "worker_active_mean": 29.551598627963685,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 110,
+        "peak_arrow_buffer_bytes": 24406,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-2-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.870027667,
+      "first_result_seconds": 0.050602917,
+      "case_seconds": 0.879759584,
+      "prepared_blocks": 120,
+      "prepared_group_sizes": {
+        "1": 13,
+        "2": 7,
+        "3": 4,
+        "4": 37,
+        "7": 1,
+        "8": 5,
+        "9": 2,
+        "10": 1,
+        "12": 4,
+        "13": 3,
+        "14": 6,
+        "15": 1,
+        "16": 36
+      },
+      "core_active_mean": 57.14257211776692,
+      "worker_active_mean": 27.915777078385716,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 120,
+        "peak_arrow_buffer_bytes": 24446,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-2-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.952838084,
+      "first_result_seconds": 0.053071792,
+      "case_seconds": 0.962252292,
+      "prepared_blocks": 305,
+      "prepared_group_sizes": {
+        "1": 25,
+        "2": 43,
+        "3": 35,
+        "4": 202
+      },
+      "core_active_mean": 58.924449732636845,
+      "worker_active_mean": 25.745558665138326,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 305,
+        "peak_arrow_buffer_bytes": 23116,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-2-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.762425166,
+      "first_result_seconds": 0.032968791,
+      "case_seconds": 0.770275917,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 60.89740709713142,
+      "worker_active_mean": 31.50153657703371,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 92,
+        "peak_arrow_buffer_bytes": 12715,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-3-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.759441042,
+      "first_result_seconds": 0.037816583,
+      "case_seconds": 0.766947417,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 60.627940805969764,
+      "worker_active_mean": 31.710448623607572,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 86,
+        "peak_arrow_buffer_bytes": 11439,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-3-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.902268709,
+      "first_result_seconds": 0.0489405,
+      "case_seconds": 0.911210042,
+      "prepared_blocks": 293,
+      "prepared_group_sizes": {
+        "1": 27,
+        "2": 24,
+        "3": 19,
+        "4": 223
+      },
+      "core_active_mean": 57.26839290843677,
+      "worker_active_mean": 27.06876750948037,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 293,
+        "peak_arrow_buffer_bytes": 23084,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.0005-measurement-3-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.0005,
+      "rows": 1024,
+      "query_seconds": 0.858780667,
+      "first_result_seconds": 0.048323084,
+      "case_seconds": 0.867598666,
+      "prepared_blocks": 114,
+      "prepared_group_sizes": {
+        "1": 9,
+        "2": 5,
+        "3": 4,
+        "4": 34,
+        "5": 2,
+        "7": 1,
+        "8": 5,
+        "9": 1,
+        "10": 4,
+        "12": 5,
+        "14": 4,
+        "15": 5,
+        "16": 35
+      },
+      "core_active_mean": 56.67168446399132,
+      "worker_active_mean": 28.257644108096812,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 114,
+        "peak_arrow_buffer_bytes": 24438,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-check-0-coalesced",
+      "arm": "coalesced",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 16,
+      "query_seconds": 0.0836115,
+      "first_result_seconds": 0.041429208,
+      "case_seconds": 0.08519725,
+      "prepared_blocks": 3,
+      "prepared_group_sizes": {
+        "4": 2,
+        "8": 1
+      },
+      "core_active_mean": 4.815415152221884,
+      "worker_active_mean": 4.385182265597436,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 3,
+        "peak_arrow_buffer_bytes": 2038,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-check-0-original",
+      "arm": "original",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 16,
+      "query_seconds": 0.101616584,
+      "first_result_seconds": 0.041269375,
+      "case_seconds": 0.103458208,
+      "prepared_blocks": 4,
+      "prepared_group_sizes": {
+        "4": 4
+      },
+      "core_active_mean": 3.88550011679196,
+      "worker_active_mean": 3.604974646658069,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 4,
+        "peak_arrow_buffer_bytes": 1366,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-check-0-immediate",
+      "arm": "immediate",
+      "phase": "check",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 16,
+      "query_seconds": 0.072302667,
+      "first_result_seconds": 0.047006209,
+      "case_seconds": 0.074053209,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 14.062177775544573,
+      "worker_active_mean": 5.063873273167088,
+      "object_accounting": {
+        "completed_requests": 16,
+        "object_blocks": 2,
+        "peak_arrow_buffer_bytes": 2710,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-warmup-0-coalesced",
+      "arm": "coalesced",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.172999125,
+      "first_result_seconds": 0.045516791,
+      "case_seconds": 1.181730458,
+      "prepared_blocks": 66,
+      "prepared_group_sizes": {
+        "4": 2,
+        "8": 1,
+        "16": 63
+      },
+      "core_active_mean": 27.724991533987716,
+      "worker_active_mean": 20.757647836267566,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 66,
+        "peak_arrow_buffer_bytes": 10912,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-warmup-0-original",
+      "arm": "original",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 17.134785333,
+      "first_result_seconds": 0.043580458,
+      "case_seconds": 17.154212666,
+      "prepared_blocks": 923,
+      "prepared_group_sizes": {
+        "1": 886,
+        "3": 10,
+        "4": 27
+      },
+      "core_active_mean": 1.5650907037248962,
+      "worker_active_mean": 1.4078660733228108,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 923,
+        "peak_arrow_buffer_bytes": 1376,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-warmup-0-immediate",
+      "arm": "immediate",
+      "phase": "warmup",
+      "repeat": 0,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.539659542,
+      "first_result_seconds": 0.047700667,
+      "case_seconds": 1.547337208,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 62.03782533437512,
+      "worker_active_mean": 15.521932438359805,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 77,
+        "peak_arrow_buffer_bytes": 7868,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-1-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.52137425,
+      "first_result_seconds": 0.054524208,
+      "case_seconds": 1.529238583,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 61.98348182901084,
+      "worker_active_mean": 15.66661307695986,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 77,
+        "peak_arrow_buffer_bytes": 7868,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-1-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 17.053615917,
+      "first_result_seconds": 0.043720709,
+      "case_seconds": 17.076273375,
+      "prepared_blocks": 923,
+      "prepared_group_sizes": {
+        "1": 886,
+        "3": 10,
+        "4": 27
+      },
+      "core_active_mean": 1.57379285036234,
+      "worker_active_mean": 1.4150756525449664,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 923,
+        "peak_arrow_buffer_bytes": 1883,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-1-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 1,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.194807584,
+      "first_result_seconds": 0.04279625,
+      "case_seconds": 1.203436084,
+      "prepared_blocks": 66,
+      "prepared_group_sizes": {
+        "4": 2,
+        "8": 1,
+        "16": 63
+      },
+      "core_active_mean": 26.519543121681423,
+      "worker_active_mean": 20.240865321624874,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 66,
+        "peak_arrow_buffer_bytes": 10912,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-2-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.198524208,
+      "first_result_seconds": 0.043568208,
+      "case_seconds": 1.206810541,
+      "prepared_blocks": 66,
+      "prepared_group_sizes": {
+        "4": 2,
+        "8": 1,
+        "16": 63
+      },
+      "core_active_mean": 27.174512937330675,
+      "worker_active_mean": 20.309212325897384,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 66,
+        "peak_arrow_buffer_bytes": 8184,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-2-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 17.056159917,
+      "first_result_seconds": 0.043441125,
+      "case_seconds": 17.072127583,
+      "prepared_blocks": 922,
+      "prepared_group_sizes": {
+        "1": 884,
+        "2": 1,
+        "3": 10,
+        "4": 27
+      },
+      "core_active_mean": 1.574702003364196,
+      "worker_active_mean": 1.415825155516452,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 922,
+        "peak_arrow_buffer_bytes": 1376,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-2-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 2,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.547215792,
+      "first_result_seconds": 0.049945083,
+      "case_seconds": 1.555404416,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 61.83600484346659,
+      "worker_active_mean": 15.397455888299257,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 77,
+        "peak_arrow_buffer_bytes": 5804,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-3-immediate",
+      "arm": "immediate",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.577491833,
+      "first_result_seconds": 0.057780208,
+      "case_seconds": 1.586854791,
+      "prepared_blocks": 0,
+      "prepared_group_sizes": {},
+      "core_active_mean": 61.14592453614306,
+      "worker_active_mean": 15.121086751768939,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 78,
+        "peak_arrow_buffer_bytes": 6314,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-3-original",
+      "arm": "original",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 16.82058225,
+      "first_result_seconds": 0.043573584,
+      "case_seconds": 16.836075792,
+      "prepared_blocks": 913,
+      "prepared_group_sizes": {
+        "1": 870,
+        "2": 3,
+        "3": 12,
+        "4": 28
+      },
+      "core_active_mean": 1.6123221043671065,
+      "worker_active_mean": 1.438669932487028,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 913,
+        "peak_arrow_buffer_bytes": 2052,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    },
+    {
+      "case": "0.015-measurement-3-coalesced",
+      "arm": "coalesced",
+      "phase": "measurement",
+      "repeat": 3,
+      "prepare_seconds": 0.015,
+      "rows": 1024,
+      "query_seconds": 1.195261708,
+      "first_result_seconds": 0.044366708,
+      "case_seconds": 1.204585208,
+      "prepared_blocks": 66,
+      "prepared_group_sizes": {
+        "4": 2,
+        "8": 1,
+        "16": 63
+      },
+      "core_active_mean": 27.057094807390918,
+      "worker_active_mean": 20.308911575204583,
+      "object_accounting": {
+        "completed_requests": 1024,
+        "object_blocks": 66,
+        "peak_arrow_buffer_bytes": 10912,
+        "final_arrow_buffer_bytes": 0,
+        "scope": "owned Arrow backing buffers; not total process or Ray object-store memory"
+      }
+    }
+  ],
+  "metrics": {
+    "0.0005": {
+      "immediate": {
+        "query_seconds": {
+          "values": [
+            0.79493075,
+            0.762425166,
+            0.759441042
+          ],
+          "median": 0.762425166
+        },
+        "first_result_seconds": {
+          "values": [
+            0.037819833,
+            0.032968791,
+            0.037816583
+          ],
+          "median": 0.037816583
+        },
+        "case_seconds": {
+          "values": [
+            0.802882,
+            0.770275917,
+            0.766947417
+          ],
+          "median": 0.770275917
+        },
+        "prepared_blocks": {
+          "values": [
+            0,
+            0,
+            0
+          ],
+          "median": 0
+        },
+        "core_active_mean": {
+          "values": [
+            60.30275143841146,
+            60.89740709713142,
+            60.627940805969764
+          ],
+          "median": 60.627940805969764
+        },
+        "worker_active_mean": {
+          "values": [
+            30.337707760078473,
+            31.50153657703371,
+            31.710448623607572
+          ],
+          "median": 31.50153657703371
+        }
+      },
+      "original": {
+        "query_seconds": {
+          "values": [
+            1.031763333,
+            0.952838084,
+            0.902268709
+          ],
+          "median": 0.952838084
+        },
+        "first_result_seconds": {
+          "values": [
+            0.055576,
+            0.053071792,
+            0.0489405
+          ],
+          "median": 0.053071792
+        },
+        "case_seconds": {
+          "values": [
+            1.040686666,
+            0.962252292,
+            0.911210042
+          ],
+          "median": 0.962252292
+        },
+        "prepared_blocks": {
+          "values": [
+            291,
+            305,
+            293
+          ],
+          "median": 293
+        },
+        "core_active_mean": {
+          "values": [
+            56.51637464809965,
+            58.924449732636845,
+            57.26839290843677
+          ],
+          "median": 57.26839290843677
+        },
+        "worker_active_mean": {
+          "values": [
+            23.731390842128327,
+            25.745558665138326,
+            27.06876750948037
+          ],
+          "median": 25.745558665138326
+        }
+      },
+      "coalesced": {
+        "query_seconds": {
+          "values": [
+            0.816888,
+            0.870027667,
+            0.858780667
+          ],
+          "median": 0.858780667
+        },
+        "first_result_seconds": {
+          "values": [
+            0.048241834,
+            0.050602917,
+            0.048323084
+          ],
+          "median": 0.048323084
+        },
+        "case_seconds": {
+          "values": [
+            0.825386583,
+            0.879759584,
+            0.867598666
+          ],
+          "median": 0.867598666
+        },
+        "prepared_blocks": {
+          "values": [
+            110,
+            120,
+            114
+          ],
+          "median": 114
+        },
+        "core_active_mean": {
+          "values": [
+            56.65289084794978,
+            57.14257211776692,
+            56.67168446399132
+          ],
+          "median": 56.67168446399132
+        },
+        "worker_active_mean": {
+          "values": [
+            29.551598627963685,
+            27.915777078385716,
+            28.257644108096812
+          ],
+          "median": 28.257644108096812
+        }
+      }
+    },
+    "0.015": {
+      "immediate": {
+        "query_seconds": {
+          "values": [
+            1.52137425,
+            1.547215792,
+            1.577491833
+          ],
+          "median": 1.547215792
+        },
+        "first_result_seconds": {
+          "values": [
+            0.054524208,
+            0.049945083,
+            0.057780208
+          ],
+          "median": 0.054524208
+        },
+        "case_seconds": {
+          "values": [
+            1.529238583,
+            1.555404416,
+            1.586854791
+          ],
+          "median": 1.555404416
+        },
+        "prepared_blocks": {
+          "values": [
+            0,
+            0,
+            0
+          ],
+          "median": 0
+        },
+        "core_active_mean": {
+          "values": [
+            61.98348182901084,
+            61.83600484346659,
+            61.14592453614306
+          ],
+          "median": 61.83600484346659
+        },
+        "worker_active_mean": {
+          "values": [
+            15.66661307695986,
+            15.397455888299257,
+            15.121086751768939
+          ],
+          "median": 15.397455888299257
+        }
+      },
+      "original": {
+        "query_seconds": {
+          "values": [
+            17.053615917,
+            17.056159917,
+            16.82058225
+          ],
+          "median": 17.053615917
+        },
+        "first_result_seconds": {
+          "values": [
+            0.043720709,
+            0.043441125,
+            0.043573584
+          ],
+          "median": 0.043573584
+        },
+        "case_seconds": {
+          "values": [
+            17.076273375,
+            17.072127583,
+            16.836075792
+          ],
+          "median": 17.072127583
+        },
+        "prepared_blocks": {
+          "values": [
+            923,
+            922,
+            913
+          ],
+          "median": 922
+        },
+        "core_active_mean": {
+          "values": [
+            1.57379285036234,
+            1.574702003364196,
+            1.6123221043671065
+          ],
+          "median": 1.574702003364196
+        },
+        "worker_active_mean": {
+          "values": [
+            1.4150756525449664,
+            1.415825155516452,
+            1.438669932487028
+          ],
+          "median": 1.415825155516452
+        }
+      },
+      "coalesced": {
+        "query_seconds": {
+          "values": [
+            1.194807584,
+            1.198524208,
+            1.195261708
+          ],
+          "median": 1.195261708
+        },
+        "first_result_seconds": {
+          "values": [
+            0.04279625,
+            0.043568208,
+            0.044366708
+          ],
+          "median": 0.043568208
+        },
+        "case_seconds": {
+          "values": [
+            1.203436084,
+            1.206810541,
+            1.204585208
+          ],
+          "median": 1.204585208
+        },
+        "prepared_blocks": {
+          "values": [
+            66,
+            66,
+            66
+          ],
+          "median": 66
+        },
+        "core_active_mean": {
+          "values": [
+            26.519543121681423,
+            27.174512937330675,
+            27.057094807390918
+          ],
+          "median": 27.057094807390918
+        },
+        "worker_active_mean": {
+          "values": [
+            20.240865321624874,
+            20.309212325897384,
+            20.308911575204583
+          ],
+          "median": 20.308911575204583
+        }
+      }
+    }
+  }
+}

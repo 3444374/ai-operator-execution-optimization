@@ -7,6 +7,7 @@ namespace duckdb {
 namespace duckdb_ai {
 // Only complete, already-prepared single-model calls enter the external executor.
 void DispatchSemLoomBatch(const std::vector<PreparedCompletion> &prepared, const std::vector<uint64_t> &rows,
-                         const std::function<bool(uint64_t, const CompletionResponse &)> &consume);
+                         const std::function<bool(uint64_t, const CompletionResponse &)> &consume,
+                         const std::string &executor = "semloom");
 } // namespace duckdb_ai
 } // namespace duckdb

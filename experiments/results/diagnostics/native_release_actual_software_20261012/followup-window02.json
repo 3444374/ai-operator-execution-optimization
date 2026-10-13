@@ -1,0 +1,1143 @@
+{
+  "source_head": "6629846a9a159b4af0500d30519cb95cb8e1c0d0",
+  "source_files_verified": 1003,
+  "tests_run": 3,
+  "passed": 3,
+  "skipped": 0,
+  "elapsed_seconds": 104.66214978974313,
+  "fixture_posts": 101,
+  "additional_proxy_posts": 72,
+  "total_localhost_posts": 173,
+  "accounting": "HTTPServer fixture counter excludes aiohttp.web gateways; count 72 unique gateway arrivals separately",
+  "allowance": 256,
+  "planned_upper_posts": 174,
+  "within_post_and_time_limits": true,
+  "modes": 2,
+  "main_paths": 3,
+  "original_queries": [
+    2,
+    3
+  ],
+  "units": 12,
+  "posts_per_unit": 6,
+  "upstream_bodies_match_proxy_sha256_multiset": true,
+  "all_mode_bodies_results_and_quality_equal": true,
+  "all_units_closed_and_reclaim_refused": true,
+  "repeated_owner_and_lm_identical_for_two_queries": true,
+  "quality_scope": "software_fixture with intentional false_positive=1 and false_negative=1 in every unit; no model quality equivalence",
+  "public_cli_preflight_before_failed": 4,
+  "public_cli_preflight_after_passed": 4,
+  "public_cli_execute_not_run": true,
+  "aiohttp_version": "3.14.5",
+  "cookie_posts": 18,
+  "cookie_gets": 6,
+  "process_identities_checked": 68,
+  "owned_residual_processes": [],
+  "cpu_affinity": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "models": 0,
+  "gpu_compute_rows": [],
+  "timing_subtraction": false,
+  "privacy": {
+    "archive_members": 265,
+    "decoded_post_bodies": 101,
+    "violations": 0
+  },
+  "public_archive": {
+    "path": "window02-observations.tar.gz",
+    "bytes": 191363,
+    "sha256": "3125c038c349ed751e6a5260177927ec2247211d7fef4bab2ad687432e76e246",
+    "members_manifest": "window02-members-sha256.json"
+  },
+  "private_archive": {
+    "bytes": 240071,
+    "sha256": "f9b2662046aff51af709f9d5f605fb57d5129a9544b411b3a79fb7bbfb6867bb"
+  },
+  "schema": "semloom.native_release_actual_software.window02.v1",
+  "state": "passed within explicitly limited software scope; no model or aggregate release qualification",
+  "source_policy": "two bounded source repairs only: readonly source path and raw cookie header delegation",
+  "reviews": {
+    "standards_required": 0,
+    "standards_new_smells": 0,
+    "spec_required": 0,
+    "executed_by_reviewers": false
+  },
+  "local_affected_regressions": {
+    "run": 41,
+    "passed": 41,
+    "skipped": 0
+  },
+  "software_versions": {
+    "lotus": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "daft": "0.7.21",
+    "ray": "2.56.1",
+    "pyarrow": "24.0.0",
+    "pandas": "2.3.3",
+    "driver_aiohttp": "3.14.3",
+    "cookie_aiohttp": "3.14.5"
+  },
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/native_calls.py": "4d8832597c016885a411ad30e4ba68ca9042fd3b369dbb3184d123a831e0c2a8",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "0aa682550c124e9798283af31525a2fada31c11a8ef3e58faf457337611f5f78",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "9a2bf40e7a35294b3c85f324a3d4723040e08c2e93dbccd7ef782ab3dc39c47a",
+    "code/src/semantic_methods/lotus/native.py": "bd16b420ad70be0b0ec3b9b499899e6a5c6b4447749fc5aa3aa3fa7cbc9795ba",
+    "code/src/semantic_methods/lotus/sdk.py": "9ed2e00df7d5529f3b3c4b4bcc9b0bf11552604d3f545bc4c3ae103e1cc9fe27",
+    "code/tests/baselines/test_native_http_lifecycle.py": "d8bfef2380f0e0170f40111a306d23b8ea0f17ef103804b1e6c4e42ad1402f30",
+    "code/tests/experiments/test_sembench_queries.py": "69bd9bbffef5783e54e4096612361a7f9e1a8f9155e57bb5b0179994dd8ed6a7"
+  },
+  "groups": {
+    "cookie-followup": {
+      "group": "cookie-followup",
+      "tests_run": 1,
+      "skipped": [],
+      "errors": [],
+      "failures": [],
+      "timings": {
+        "__main__.ActualHttpSessionTests.test_redirect_cookies_are_call_local_across_concurrency_and_two_loops": {
+          "seconds": 1.4033132987096906,
+          "posts": 18
+        }
+      },
+      "subtests": [],
+      "log": "test_redirect_cookies_are_call_local_across_concurrency_and_two_loops (__main__.ActualHttpSessionTests.test_redirect_cookies_are_call_local_across_concurrency_and_two_loops) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 1.404s\n\nOK\n",
+      "success": true,
+      "total_posts": 18
+    },
+    "close-followup": {
+      "group": "close-followup",
+      "tests_run": 1,
+      "skipped": [],
+      "errors": [],
+      "failures": [],
+      "timings": {
+        "__main__.CloseFollowupTests.test_real_graphs_close_without_new_request_start_and_keep_remote_unknown": {
+          "seconds": 24.57589287403971,
+          "posts": 11
+        }
+      },
+      "subtests": [
+        {
+          "test": "__main__.CloseFollowupTests.test_real_graphs_close_without_new_request_start_and_keep_remote_unknown",
+          "parameters": "_OrderedChainMap({'backend': 'daft'})",
+          "passed": true
+        },
+        {
+          "test": "__main__.CloseFollowupTests.test_real_graphs_close_without_new_request_start_and_keep_remote_unknown",
+          "parameters": "_OrderedChainMap({'backend': 'ray-data'})",
+          "passed": true
+        }
+      ],
+      "log": "test_real_graphs_close_without_new_request_start_and_keep_remote_unknown (__main__.CloseFollowupTests.test_real_graphs_close_without_new_request_start_and_keep_remote_unknown) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 24.577s\n\nOK\n",
+      "success": true,
+      "total_posts": 29
+    },
+    "observation-modes": {
+      "group": "observation-modes",
+      "tests_run": 1,
+      "skipped": [],
+      "errors": [],
+      "failures": [],
+      "timings": {
+        "__main__.ActualObservationModes.test_real_lotus_modes_keep_two_queries_values_outputs_and_closed_budget": {
+          "seconds": 74.53474969090894,
+          "posts": 72
+        }
+      },
+      "subtests": [],
+      "log": "test_real_lotus_modes_keep_two_queries_values_outputs_and_closed_budget (__main__.ActualObservationModes.test_real_lotus_modes_keep_two_queries_values_outputs_and_closed_budget) ... ok\n\n----------------------------------------------------------------------\nRan 1 test in 74.535s\n\nOK\n",
+      "success": true,
+      "total_posts": 101
+    }
+  },
+  "close": [
+    {
+      "backend": "daft",
+      "close_enter_ns": 2965284928343293,
+      "close_return_ns": 2965284932243371,
+      "arrivals_at_close_return": 5,
+      "arrivals_after_settle": 5,
+      "request_starts_after_close_return": [],
+      "report": {
+        "graph_consumer_stopped": true,
+        "clean": false,
+        "received": 1,
+        "prepared": 6,
+        "remote_http_stopped": "unavailable",
+        "owned_ray_actors": 0,
+        "ray_actor_shutdown_requested": 0,
+        "http_pool_scope": "graph_event_loop",
+        "http_pool_count": 1,
+        "http_pools_closed": true,
+        "owned_ray_actor_ids": [],
+        "declared_options": {
+          "concurrency": 4,
+          "num_threads": 8,
+          "ray_actors": 2,
+          "ray_async_batches_per_actor": 2,
+          "ray_batch_rows": 1,
+          "source_blocks": 2
+        },
+        "native_graph_parameters": {
+          "batch_size": 1,
+          "max_concurrency": 3
+        },
+        "worker_errors_complete": true,
+        "worker_errors": [],
+        "cleanup_errors": []
+      },
+      "active_after_settle": 0
+    },
+    {
+      "backend": "ray-data",
+      "close_enter_ns": 2965293388338126,
+      "close_return_ns": 2965293388641903,
+      "arrivals_at_close_return": 6,
+      "arrivals_after_settle": 6,
+      "request_starts_after_close_return": [],
+      "report": {
+        "graph_consumer_stopped": true,
+        "clean": false,
+        "received": 1,
+        "prepared": 6,
+        "remote_http_stopped": "unavailable",
+        "owned_ray_actors": 0,
+        "ray_actor_shutdown_requested": 0,
+        "http_pool_scope": "native_processor_batch",
+        "http_pool_count": "unavailable",
+        "http_pools_closed": "unavailable",
+        "owned_ray_actor_ids": [],
+        "declared_options": {
+          "concurrency": 4,
+          "num_threads": 8,
+          "ray_actors": 2,
+          "ray_async_batches_per_actor": 2,
+          "ray_batch_rows": 1,
+          "source_blocks": 2
+        },
+        "native_graph_parameters": {
+          "actor_pool_range": [
+            2,
+            2
+          ],
+          "http_batch_rows": 1,
+          "async_batches_setting": 2,
+          "stage_max_concurrency": 1,
+          "source_blocks": 2
+        },
+        "worker_errors_complete": true,
+        "worker_errors": [],
+        "cleanup_errors": []
+      },
+      "active_after_settle": 0
+    }
+  ],
+  "observation_modes": {
+    "role": "software_fixture",
+    "method": "original SemBench Movie Q2/Q3 and official evaluator",
+    "query_units": [
+      {
+        "unit": "qualification-lotus-adapted-native-q2",
+        "mode": "qualification",
+        "arm": "lotus-adapted-native",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "qualification-lotus-adapted-native-q3",
+        "mode": "qualification",
+        "arm": "lotus-adapted-native",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "qualification-lotus-method-native-daft-q2",
+        "mode": "qualification",
+        "arm": "lotus-method-native-daft",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "qualification-lotus-method-native-daft-q3",
+        "mode": "qualification",
+        "arm": "lotus-method-native-daft",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "qualification-lotus-method-native-ray-data-q2",
+        "mode": "qualification",
+        "arm": "lotus-method-native-ray-data",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "qualification-lotus-method-native-ray-data-q3",
+        "mode": "qualification",
+        "arm": "lotus-method-native-ray-data",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "performance-lotus-adapted-native-q2",
+        "mode": "performance",
+        "arm": "lotus-adapted-native",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "unavailable",
+          "logical_calls": 6,
+          "reason": "performance observation omits expected native HTTP construction; actual POST values and counts remain recorded"
+        }
+      },
+      {
+        "unit": "performance-lotus-adapted-native-q3",
+        "mode": "performance",
+        "arm": "lotus-adapted-native",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "unavailable",
+          "logical_calls": 6,
+          "reason": "performance observation omits expected native HTTP construction; actual POST values and counts remain recorded"
+        }
+      },
+      {
+        "unit": "performance-lotus-method-native-daft-q2",
+        "mode": "performance",
+        "arm": "lotus-method-native-daft",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "performance-lotus-method-native-daft-q3",
+        "mode": "performance",
+        "arm": "lotus-method-native-daft",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "performance-lotus-method-native-ray-data-q2",
+        "mode": "performance",
+        "arm": "lotus-method-native-ray-data",
+        "query_id": 2,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1_score": 0.75
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "supplement": {
+            "returned_rows": 5,
+            "unique_rows": 4,
+            "duplicates": 1,
+            "invalid_rows": 1,
+            "required_rows": 4,
+            "limit_exceeded": false
+          },
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 2,
+          "dataframe": {
+            "columns": [
+              "reviewId"
+            ],
+            "index": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "data": [
+              [
+                "same-original-id"
+              ],
+              [
+                "same-original-id"
+              ],
+              [
+                "review-2"
+              ],
+              [
+                "review-3"
+              ],
+              [
+                "review-5"
+              ]
+            ]
+          },
+          "row_occurrences": [
+            "movie-row-0",
+            "movie-row-1",
+            "movie-row-2",
+            "movie-row-3",
+            "movie-row-5"
+          ],
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      },
+      {
+        "unit": "performance-lotus-method-native-ray-data-q3",
+        "mode": "performance",
+        "arm": "lotus-method-native-ray-data",
+        "query_id": 3,
+        "posts": 6,
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 4,
+            "false_positive": 1,
+            "true_negative": 0,
+            "false_negative": 1,
+            "invalid": 0,
+            "evaluated_rows": 6,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          },
+          "dataset_role": "software_fixture",
+          "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+          "quality_equivalence_proven": false
+        },
+        "result": {
+          "query_id": 3,
+          "dataframe": {
+            "columns": [
+              "positive_review_cnt"
+            ],
+            "index": [
+              0
+            ],
+            "data": [
+              [
+                5
+              ]
+            ]
+          },
+          "row_occurrences": null,
+          "result_scope": "unchanged upstream projection or aggregate; recorder pairs are a separate audit"
+        },
+        "audit": {
+          "status": "passed",
+          "logical_calls": 6
+        }
+      }
+    ],
+    "budget": {
+      "schema": "semloom.cell_budget.v1",
+      "budget_id": "sdk9-movie-modes",
+      "limit": 72,
+      "allocated_requests": 72,
+      "deadline_utc": 1791817343.8197215,
+      "units": [
+        {
+          "unit_id": "qualification-lotus-adapted-native-q2",
+          "first_attempt": 1,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "qualification-lotus-adapted-native-q3",
+          "first_attempt": 7,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "qualification-lotus-method-native-daft-q2",
+          "first_attempt": 13,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "qualification-lotus-method-native-daft-q3",
+          "first_attempt": 19,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "qualification-lotus-method-native-ray-data-q2",
+          "first_attempt": 25,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "qualification-lotus-method-native-ray-data-q3",
+          "first_attempt": 31,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-adapted-native-q2",
+          "first_attempt": 37,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-adapted-native-q3",
+          "first_attempt": 43,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-method-native-daft-q2",
+          "first_attempt": 49,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-method-native-daft-q3",
+          "first_attempt": 55,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-method-native-ray-data-q2",
+          "first_attempt": 61,
+          "requests": 6,
+          "claimed": 1
+        },
+        {
+          "unit_id": "performance-lotus-method-native-ray-data-q3",
+          "first_attempt": 67,
+          "requests": 6,
+          "claimed": 1
+        }
+      ]
+    },
+    "timing_subtraction": false
+  },
+  "cookie_scope": "standalone shared NativeCall aiohttp HTTP only, using existing 3.14.5 environment; no author runtime started",
+  "close_scope": "actual vendor graphs with pass-through aiohttp trace callbacks; raw send and close timestamps retained; no production scheduler changes",
+  "budget_guard_scope": "supervisor HTTPServer counter covers fixture arrivals; owner gateway pre-forward ledger caps proxy forwards at 72; conservative total group bound 174 is below 256; offline unique gateway and upstream hashes verify 173",
+  "not_run": [
+    "full public SemBench CLI execution",
+    "latest fixed publisher source IMLane author lifecycle and complete Q1",
+    "real model Q1/Q2/Q3 quality, cost, and interleaved performance",
+    "non-main-path Ray Core CPU and termination diagnostic"
+  ],
+  "prior_window": {
+    "source_head": "4566f1fc3839cb6149ebb1cf7d76a64c3d4cf04a",
+    "state": "partial_failed",
+    "fixture_posts": 154,
+    "elapsed_seconds": 363.191963496618,
+    "archive_unchanged": true
+  },
+  "async_candidate": {
+    "commit": "02a75cc40aad3c49566e4f8d6b4238001d889589",
+    "qualified": false,
+    "default_enabled": false,
+    "historical_2000_row_capacity_retained": true
+  },
+  "evidence_review": {
+    "standards_required": 0,
+    "spec_required": 0,
+    "new_sync_or_privacy_issues": 0,
+    "scope": "second-window facts only; no source re-review or aggregate/model qualification",
+    "tests_services_and_network_run_by_reviewers": false
+  }
+}

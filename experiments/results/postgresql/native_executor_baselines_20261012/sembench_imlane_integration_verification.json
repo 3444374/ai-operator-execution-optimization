@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "published_base": "1e96935610069d17430c6fb75fe37a75659aa84e",
+  "original_capacity_commit": "7bb10980032e984f8f60ccaed4732c39bc168a1c",
+  "original_evidence_commit": "5820dc375246e32420c62f969dbe05984a929a8f",
+  "integrated_capacity_commit": "060a070aec03840984ddb836e989fc3bc9e1705b",
+  "integrated_evidence_commit": "0ca883c0bbfb7e192657f711e29c4611a7707a95",
+  "offline_recompute": {
+    "passed": true,
+    "server_posts": 4559,
+    "local_posts": 4,
+    "total_posts": 4563,
+    "retained_failed_attempts": 2
+  },
+  "capacity_field": "IMLaneCallConfig.max_batch_rows",
+  "legacy_default_rows": 128,
+  "qualified_explicit_rows": 2000,
+  "capacity_path": [
+    "MovieQuery",
+    "CLI data-preflight",
+    "CLI preflight",
+    "supplier query",
+    "NativeCallExecutor",
+    "IMLaneCallExecutor"
+  ],
+  "ownership": {
+    "synthetic_counterexample": true,
+    "historical_leak_inferred": false,
+    "bridge_started_recorded": true,
+    "unconfirmed_started_bridge_blocks_new_same_coordinator": true,
+    "pre_creation_failure_has_no_author_responsibility": true,
+    "four_states": [
+      "not_created",
+      "normal_exit",
+      "nonzero_exit",
+      "created_without_confirmed_stop"
+    ]
+  },
+  "review": {
+    "base": "1e96935610069d17430c6fb75fe37a75659aa84e",
+    "source_candidate": "59b86fd2b88909f025863ae51cf670e1c83f6094",
+    "independent_axes": [
+      "Standards",
+      "Spec"
+    ],
+    "standards": {
+      "code_required": 0,
+      "document_required_initial": 1,
+      "corrected_document_locations": [
+        "code/README.md:24",
+        "code/src/semantic_methods/lotus/README.md:149"
+      ],
+      "document_correction_readonly_followup_confirmed": true,
+      "remaining_required": 0
+    },
+    "spec": {
+      "required": 0
+    },
+    "reviewers_started_no_tests_services_or_http": true
+  },
+  "privacy": {
+    "source_candidate_full_tracked_scan": {
+      "files": 7293,
+      "violations": 0,
+      "existing_baseline_suppressions": 10
+    },
+    "archive_members_separately_scanned": 84,
+    "archive_secret_or_external_runtime_url_hits": 0
+  },
+  "local": {
+    "tests": {
+      "run": 119,
+      "passed": 105,
+      "skipped": 14,
+      "errors": 0,
+      "failures": 0
+    },
+    "targeted_tests": {
+      "run": 30,
+      "passed": 30,
+      "skipped": 0
+    },
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "tests.baselines.test_native_dataset_configuration",
+      "tests.baselines.test_native_call_cleanup",
+      "tests.baselines.test_imlane_error_categories",
+      "tests.baselines.test_native_ray_configuration",
+      "tests.semantic_methods.test_lotus_call_limits",
+      "tests.semantic_methods.test_lotus_cleanup",
+      "tests.semantic_methods.test_lotus_control",
+      "tests.semantic_methods.test_lotus_response_replay",
+      "tests.experiments.test_sembench_queries",
+      "tests.experiments.test_sembench_movie",
+      "tests.execution_provider.test_native_tasks",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpFailureAndCookieTests",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_graph_reuses_one_client_with_per_call_timeouts_and_closes",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_ray_batch_factory_reuses_client_and_closes_on_error",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_no_client_crosses_event_loops",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_stopped_control_sends_no_request",
+      "tests.baselines.test_native_http_lifecycle.NativeHttpLifecycleTests.test_owner_loop_exit_before_close_is_reported",
+      "tests.baselines.test_imlane_bridge_ownership",
+      "tests.baselines.test_imlane_capacity",
+      "tests.experiments.test_imlane_query_entry",
+      "-v"
+    ],
+    "output": "sembench_imlane_integration_tests.txt"
+  },
+  "new_runs": {
+    "server": 0,
+    "fixture_posts": 0,
+    "models": 0,
+    "gpu": 0,
+    "server_cpu_16_23": false
+  },
+  "source_sha256": {
+    "code/integrations/sema/imlane_http.cpp": "1e27ee6e7d7a370c0235582564c3941bdbeb15a14259a4e608a03c8b7f1e7984",
+    "code/src/baselines/text/frameworks/imlane_calls.py": "f84756be4e566a6069eb5571342b9b9550cedb34c2f07bfa64ee10167aa2d542",
+    "code/src/baselines/text/frameworks/imlane_limits.py": "bedc60d5b966cf3b0da27837b014cfd62922987e5499860b75a72d10700dd2a0",
+    "code/src/baselines/text/frameworks/native_calls.py": "101f8ce14d0b8e1140d3da17f41182b2e789f8a62c369045a2c8cfc73bc408ec",
+    "code/src/execution_provider/adapters/sema_imlane.py": "a171ff8c502cd812fafcfde8b591ec1c0166f64cefe7996a1f0de48bdc998a3e",
+    "code/src/experiments/postgresql/imlane_query.py": "c59466eab4db8986788cd6381f95b2e9af1e26a20539e304f2ab411d6b4ec2d5",
+    "code/src/experiments/postgresql/sembench_queries.py": "828feb1f8c4cf71f392d174623964bb657aa2df95629e01c159cffd0d8f38088",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "e4fa423b454fa4c83a624c81ee17fd65b348828f7c5e386f44bb6a8c3bb76dbc",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "3a5332e756cb75dea82a187949471b7b743827541f005b864e0422393e454088",
+    "code/tests/baselines/test_imlane_2000_protocol.py": "3670ce07a62b6c7be75267afb78256de3f59369e5b757a86d2c0a596206fa752",
+    "code/tests/baselines/test_imlane_bridge_ownership.py": "b2d5305e8efbd5fb7e2d49ec03c6fd410650b9a1773d72471fdfa1f6defb3183",
+    "code/tests/baselines/test_imlane_calls.py": "1eec35f587cc5c74d5dd583e71f1bb02f04668652c71948205889eff1fd40d6b",
+    "code/tests/baselines/test_imlane_capacity.py": "ab237a86228d4643783eac5ec03c98ac7f8ab595283efeb37de8b613501e86de",
+    "code/tests/experiments/test_imlane_query_entry.py": "d0fa82fba81161b462e23094170974ea76cbd339464a761d931ca10d7128c8fd",
+    "code/tests/experiments/test_sembench_queries.py": "35b0a7986d43a32d81811fde4781b8c7b8c8305f5990727d8ae2bea3a02e725c"
+  },
+  "observed_2000_source": "2cca502df43e1401284b33ac14862ba945c7c55d; original full Q1 and later combination exception/cancel checks kept separate",
+  "not_run": [
+    "full actual author Q1 replay on the latest publisher source",
+    "real model or GPU",
+    "performance or quality comparison",
+    "DuckDB/Sema 2000 rows",
+    "shared-Coordinator query isolation"
+  ]
+}

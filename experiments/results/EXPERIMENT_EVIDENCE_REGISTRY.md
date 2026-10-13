@@ -10,6 +10,100 @@
 SDK源码/现有Arrow/Pandas通过，108请求smoke及主协议9个完整cell/1384 POST独立对拍通过；四臂主场景分别long256/short8。
 原30分钟窗口令后续cell退出1，原件和释放证明保留，不能称全协议完成；无模型/GPU/SQL，单样本不能外推性能。
 
+2026-10-13：[原Q2阶段复算与私有账本诊断](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+72个已有性能查询分解同机墙钟及匹配服务计数；三个服务器账本只读确认无索引、四条计数全表扫描。正／反顺序localhost三跳fixture的扫描CPU及完整请求随历史增长，机制在本地成立；现场因果占比未测，旧真实9360逻辑／28080POST不减估计开销。同事务持久计数修订已通过14项回归；12组相同条件配对中23000行完整fixture请求从约97–105降至39–43毫秒，小账本略慢保留。上述诊断本身模型新增0；修订随后已部署到[四组匹配原Q2](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)，独立完成48槽／96查询、11520逻辑／34560POST，全部原值、两个服务历史与质量限制保持；后续工作点与长测仍待各自方案。
+
+2026-10-13接续：[原Q2最后S／R独立补测](diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
+固定3bd／原模型与参数，短Ray父目录22字节，四次真实零模型预检通过；只S／R各预热1测量1，480逻辑／1440POST、完整150.487／600秒。每副本240请求、337身份退出、CPU违规0／GPU空，两个旧时钟与账本保持。双卡三波11＋5＋2覆盖18／18，分波样本与旧失败保留；LIMIT5 F1=1.0／逐行recall0.5，不宣称连续n3或稳定排名。
+
+2026-10-13：[Q2双卡五项独立补测与两项阻塞](diagnostics/native_sembench_model_dual_supplement_20261012/README.md)。
+固定3bd53587，原双卡11项之外只补第二轮J与第三轮D／N／J／I，五个预热＋五个测量；实际1200逻辑／3600三跳POST、209.108秒，独立1800秒窗口。第三轮S因新Ray父目录38字节超过24字节预检退出1，R未运行。原时钟及账本保持；493组身份复查无存活、CPU违规0、GPU空。原LIMIT5 F1=1.0／完整recall0.5并列，两个窗口不合成连续n3或排名。
+
+2026-10-12：[原Q2真实模型单／双卡有限观察](diagnostics/native_sembench_model_20261012/README.md)。
+固定3bd53587，原sf2000／120完整出现／14原gold正例；质量6槽、单卡18槽、双卡11槽共7680模型／23040POST。
+64个完成查询的决策／质量一致，官方LIMIT5 F1=1.0；完整FN7及召回0.5保留，不能称完整过滤满分。
+单卡n3／请求n360，双卡J n1／其余n2，所有原值、错误、服务计数／token／GPU采样与资源归零保持。
+旧质量父决定等待超时及接续CLI bootstrap JSON异常各退出1，双卡剩7槽未运行；源码、原首次85分钟计时和额度未重置。
+质量480成员／960解码、性能2815成员／9120解码载荷隐私0，两stdlib重核无模型／网络；二进制SDK wire私有原件保留和公开摘要分开。
+
+2026-10-12：[同步IMLane原Q2公开入口补充](diagnostics/native_release_actual_software_20261012/README.md#imlane-sync-public-q2-software)。
+固定3bd53587，两作者模式各原Q2完整120请求、CLI退出0，240逻辑／480传输POST，49.861/300秒，模型/GPU0。
+原2000行关系、SDK/parser/evaluator、真实worker/计数身份、31进程清理及错误替身质量均保存；1001源码未改。
+232成员公开观测、逐成员双摘要、720解码payload隐私扫描及离线核查通过；旧桥preflight失败与导出补齐记录保留，未重跑窗口。
+同步六路径原Q2最低软件公开入口已有证据；真实Q2模型质量／单卡完成及双卡部分见本页开头，完整Q1/Q3／可选async CLI及未完成模型项分别保留。
+
+
+2026-10-12：[IMLane原生async接续](../../code/integrations/sema/README.md#imlane薄客户端)。
+发布者d004e720包含已实际aiohttp3.14.5核验的共享cookie修补；五个async文件与旧a54e1456一致。
+旧[失败原件与脱敏观测](postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-http)保留；
+修后固定77cc1ed0的[两作者模式及完整Q1](postgresql/native_executor_baselines_20261012/README.md#imlane-native-async-followup)均通过。
+新生命周期347/384 POST、53.543/600秒、2GET；原Q1各2000调用/一个DBEnd批次，共4000/4096 POST、90.019/900秒，模型/GPU0。
+本机67项无跳过；公共配置/容量/工厂/实际delegate及完整payload/wire、响应、稳定循环有实库证据；最终143组进程身份/10实例清理及库摘要通过。
+完整CLI/观测代理/官方质量评价、Q2/Q3和性能/RSS未运行；旧失败、未知责任及独立预算记录保持。
+发布者[本地组合与有限整合](postgresql/native_executor_baselines_20261012/README.md#imlane-async-publisher-integration)95独立用例通过/0跳过，初7项沙箱bind错误及仅7项重验另记；同步默认保持，原第三窗口CLI原件不改。
+
+2026-10-12：[固定发布版实库软件核查](diagnostics/native_release_actual_software_20261012/README.md)。
+4566f1fc的共享SDK解释、真实LOTUS＋Daft／Ray Data及原生图分项保存，首轮整体未通过；有效源码、POST、失败与清理见同题记录。
+公开CLI只读来源路径修补与aiohttp原始cookie header委派另以固定源码复核，未运行模型／GPU、未改变IMLane默认，也不借旧容量资格为async候选背书。
+固定6629846a另授第二窗口3项通过／0跳过，104.662/600秒；fixture101＋唯一代理72＝173/256POST，监督计数器仅覆盖前者。
+实库3.14.5重定向与两loop、Daft／Ray Data发送／关闭时间戳、两观察模式×三主路径×原Q2/Q3的12个software_fixture单元通过，原官方评价保留误报／漏报。
+四次公开CLI原2000行数据／运行时预检通过、完整CLI执行未跑；源码1003摘要核对、68个登记进程身份无残留，模型/GPU0。准确范围及两份原始档案见同题报告。
+后续第三窗口固定d004e720经实际公开--execute完成四路径原Q2/Q3八查询及原LOTUS performance Q2配对；1080逻辑调用＝1080上游fixture，另1080网关POST，总2160/2560，359.252/900秒含首次预检与准备间隔。
+原2000行关系与每查询120行保持，实际原parser/evaluator与四路径库运行；Q2 FP54/FN5、Q3 FP52/FN8和绝对误差44均留存，只支持软件差分。
+45登记身份、269归档成员与1080收据分别核对，模型/GPU0，早停未知责任保持；真实模型[同任务单双卡计划](../plans/语义系统对照.md#sembench-native-model-next)实际质量／完整单卡与部分双卡见本页开头，async不作为其他baseline的启动条件。
+
+2026-10-12：[LOTUS原生观测准备核查](diagnostics/lotus_observation_modes_20261012/README.md)。
+固定发布版1e969356确认原请求池前观测逐条预期构造，替换臂观察实际准备值；显式性能选项省去前者，默认资格模式保持。
+交付方57项本机通过／25项跳过、16次localhost替身POST，真实模型/GPU0；源码摘要、失败及模式元数据保留。
+128／2000行的JSON-only准备替身局部测量不支持实际LOTUS／模型性能结论；真实SDK、厂商图与官方评价验证另列。
+
+2026-10-12：[IMLane原Q1完整2000行软件容量](postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)。
+2cca502d的七文件原样接到1e969356形成7bb10980；两作者模式完整128/129/2000调用、持续供给、身份、慢消费、拒绝及错误取消/清理后下一查询通过，组合异常路径另核12POST。
+服务器4559＋本机4＝4563/5000软件POST，作者测试从首次启动计时783.993/900秒；自有进程/共享内存归零，作者库未重建，模型/GPU0。
+Q1完整payload与原wire摘要匹配，两个模式各一个2000行DBEnd批次；旧拒绝、监督记录缺失及两次脚本断言失败均保留。
+只支持该软件容量与生命周期；发布者已贯通MovieQuery与执行器的显式行配置，并补桥已创建但无退出码的同Coordinator未知责任保护。
+[发布接续](postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)记录105通过／14缺依赖跳过、四态合成回归及旧默认；新服务器／POST／模型／GPU0。
+真实模型/质量/性能和共享Coordinator独立取消尚未验证。
+
+2026-10-12：[原生消费关闭诊断修补](postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
+5项真实消费循环／图替身回归通过，HTTP与模型0；提前关闭附加异常可见，首错及未知远端状态保持。实际厂商库复验pending。
+共享SDK响应重放接入五条替换批次，11项控制及2项入口检查通过、13项SDK差分/清理缺依赖跳过；HTTP/模型0。
+IMLane执行错误分类5项替身检查通过，正常wire兼容，未运行作者过程、构建或模型；不外推全部异常类型等价。
+共享SDK客户端按替换批次复用，3项入口/关闭检查通过，3项实际SDK检查本机缺依赖跳过；指定CPU首次采样未满足空闲条件，未启动服务器测试。
+后续指定CPU空闲后，c4f7f157真实SDK/清理20项、12次localhost POST通过；模型/GPU0、自有进程退出。
+原生池6项本机检查通过，含4次真实HTTP及同一连接；Daft EOF loop仍运行的实库零POST探针通过，实际新池图资格pending。
+共同容量/期限profile历史6项本机检查通过；旧IMLane128为项目桥接范围，当时2000/512未支持。
+桥源码在完整输出后释放完成调用引用；97af50c5和新扩容源码2cca502d的编译分别记录，新增作者资格见上述2000行记录。
+不声称32MiB聚合驻留保证或新增作者并发能力；未借编译证明2000行能力。
+
+2026-10-12：[SemBench Movie原查询与评价准备](diagnostics/sembench_lotus_readiness_20261012/README.md)。
+基线fd8c00bc只接消费提示与确定失败两项稳定性依赖，原方法与六执行接点不复制核心。
+CSV ad5def7d、清单内容e753baa5固定2000行／1865唯一reviewId／135次额外重复，taken_3为120行、正向14行。
+LOTUS原生／Daft／Ray Data各Q1/Q2/Q3正常，累计60次CPU8–15替身POST；进度文件、旧Ray目录及token参数键断言失败均保留，原生Q3换owner单列。
+父授权追加85.6秒窗口后，软件16 pass／2 unsupported／0 notrun：SemLoom三条和两种IMLane各Q2/Q3正常，原Q1两个适配器发送前拒绝；模型/GPU/PG0。
+累计128POST：正常104、作者完整HTTP/超时/取消16、原生授权错误8；进程/共享内存归零。保留远端HTTP状态unavailable、底层容量归属待独立追溯；C4/C6及旧C8来源分别登记，不排名。
+发布净变更已在原生分支组合检查；首四块独立发布后，追加后两块与两项HTTP需求复审修正。
+最终本机86项通过、14项缺LOTUS／OpenAI／LiteLLM依赖跳过，跳过未计为通过；新服务器／HTTP／模型／GPU运行0。
+[发布组合记录](postgresql/native_executor_baselines_20261012/README.md#native-release-composition)保留来源与待验证项，不增加服务器或模型资格。
+
+2026-10-12：[原生执行接续整合](postgresql/native_executor_baselines_20261012/README.md)。
+保留LOTUS／DuckDB原交付及作者IMLane630行／132次Arrow调用，公共三方法IMLane两个模式成功轮48软件POST；前轮21／11／14失败及归档符号链接拒绝保留，累计94、模型0。
+同driver Daft重设runner反例与中立修复通过54次软件调用；较早源码单GPU只完成三条warmup／24真实POST，32名额占用、测量0、服务已退出。
+公共关联保持原方法，Sema HTTP序号不作源行；固定native／stability组合247项无失败／29项跳过，真实公共入口追加32软件POST通过，累计126。
+新独立单GPU轮`lotus-six-model01/attempt02`六条LOTUS路径18查询／144模型POST全部通过，三种计数一致、0错误／超时／重试及自有资源退出核对通过。
+完整18查询／144请求原值可从同一报告离线复算；人工8行、每条测量n=2／16、固定路径次序，只支持真实模型接线，P99为样本最大值。
+本轮192上限占用144、剩48未用；旧轮24实际／32占用独立保留，累计168实际／176占用。首次连接相关启动失败0POST／0分配及其退出记录保留。
+双GPU公共固定路由软件资格累计62POST／64上限、模型0；随后唯一模型轮六路径18查询／144真实POST通过，内层／路由／SQLite均144、两份vLLM日志各72。
+两TP1服务实际GPU UUID／engine PID已核，每GPU测试区间241利用样本、全部原值与慢样本保留；API退出0，自有存活／GPU进程0。新288上限剩144未用，累计312真实／320占用。
+SDK响应解释、逐call连接与容量／关闭诊断差异保留并由独立owner修补，旧源码不支持公平排名、稳定P99或饱和结论；DuckDB／Sema模型未完成。
+
+
+2026-10-12：[Sema后置Daft、Ray Data和IMLane检查](postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
+实际原生库及完整响应服务检查通过；三条作者SQL各8行，共24次确定性HTTP，真实模型0。
+IMLane采用作者Python执行器与实测原生任务线程数，未证明原生Ray配置；容量、CPU、首次图创建与池后身份分别保留。
+正常输入结束与取消分开，最终响应后继续核对EOF和清理；准备失败、原始日志和源码摘要均保留在仓库外。
+LOTUS/DuckDB旧接入的36项受控检查通过，13项实际LOTUS库未启用，不替代新编译扩展或模型验证。
+
 2026-10-12：[执行稳定性与多副本组合](diagnostics/semloom_stability_composition_20261012/README.md)。
 固定runtime／副本／入口修补及必要祖先，本机270项中249通过／21跳过；同execution已知失败归还与未知RPC／HTTP的C/W及37字节对象留存并置通过。
 来源与跳过原因保留，入口定点独立复审9项通过；修后实库、真实设备、模型及PG资格未增加。
@@ -155,6 +249,25 @@ Sema修订JSON编码和Daft8192临时文件额度通过512行评价，LOTUS本�
 [主实现返回诊断](postgresql/semantic_system_comparison_20261008/README.md#main-return-observation)完成20次／16,448行受控actor处理，模型0；线程登记减少局部返回等待但完整消费更慢，默认保持。
 分支审查的失败响应保留修订通过170项文本baseline与6项观察器检查，旧服务器源码和实验身份保持。
 展开记录已按原路径归档，144份公开文件恢复与六组离线复算通过；获取入口统一见[保存说明](postgresql/semantic_system_comparison_20261008/README.md#保存与核验)。
+
+2026-10-08：[返回等待离线及本地隔离](diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)、[实际Ray返回分段](diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)。
+原六次1024行记录复算，追加的同步guard重叠中位范围78.088%–80.260%，2512项独立区间检查通过；未作单因素归因。
+两行最小复现及五次重复、记录控制与40case扩展共71个case/4107次模拟，通过原始行/连续登记/future时序/资源复算。
+无登记等待时线程控制仍更慢，CPU控制的同进程GIL资格单列；生产源码及默认保持，新增HTTP/PG/模型/GPU0。
+真实Ray/Daft与SQLite新增20个case/16,448次模拟actor调用通过，future回调时刻、行/持久登记/资源及跨机器备份复算。
+回调至读取缩短，线程控制完整消费在即时/追加中仍分别慢79.774%/8.902%；供给和排队变化单列，不启用。
+原件251份与公开55份观察独立恢复核对，正式开始前的其他GPU进程条件保留；原模型额度继续结束，不借组件数据推算GPU收益。
+
+2026-10-08：[待准备尾块追加](diagnostics/map_queued_preparation_20261008/README.md)。
+三份原公开事件字节/SHA核对与3,072行接受/借用复算通过，后三段各896次候选均为1；未采用Core动作份额修订。
+新增默认False的有限队尾追加及broker编码前段扩展，保留每行请求、资源与取消；有效最小复现原先失败，全部失败及装配错误保留。
+本地30个case/24,672次模拟调用完成，独立逐行计费摘要、生命周期、对象和阶段时间复算通过；HTTP/模型/PG0。
+0.5毫秒准备下追加0.859秒、即时0.762秒，慢12.638%；15毫秒准备下追加1.195秒、即时1.547秒，少22.748%，不外推真实GPU。
+861份源码独立上传核对、只读环境检查通过；最终本地147项中136通过/11跳过，服务器实际库147项全部通过。
+库检查阶段的Ray调用替身、稀疏立即启动、取消及压力另建块分别核对；其后独立PG16项/26次本机HTTP及10查询/8224次真实请求通过。
+即时与追加完整查询中位数10.069/12.686秒，追加慢25.987%，首行变慢；准备块中位数319，PSS没有支持改善，默认保持。
+全部行/持久计费/服务成功/对象和RSS/PSS复算通过，配对输出差3/2/3行；独立清理确认GPU空闲，不推荐启用。
+计时源码与最后形状检查修订分别登记，公开紧凑原始事件/复算归主报告，私有SQLite及原件保持仓库外。
 
 2026-10-04：[准备分段的PG、模型与物理内存验证](postgresql/text_map_preparation_validation_20261004/README.md)。
 main `380824f2`通过16个不同PG生命周期检查、累计26次本机HTTP；230项Linux检查通过。

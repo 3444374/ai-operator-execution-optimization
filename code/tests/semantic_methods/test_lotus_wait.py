@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
-from src.semantic_methods.lotus.sdk import lotus_response
+from src.semantic_methods.lotus.sdk import parse_lotus_response
 from tests.execution_provider.test_native_tasks import fixture
 from tests.semantic_methods.test_lotus_adapter import completion, config, encode, model
 
@@ -70,9 +70,9 @@ class LotusWaitTests(unittest.TestCase):
         def observe(_index, _full):
             inspect_owner("observation")
 
-        def convert(full):
+        def convert(*args, **kwargs):
             inspect_owner("conversion")
-            return lotus_response(full)
+            return parse_lotus_response(*args, **kwargs)
 
         def complete(flow, progress):
             if progress.deliveries:
@@ -89,7 +89,7 @@ class LotusWaitTests(unittest.TestCase):
         try:
             with lotus.settings.context(enable_cache=False), lotus_executor(lm, selected), \
                  patch.object(NativeTaskSession, "wait", complete), \
-                 patch("src.semantic_methods.lotus.batch.lotus_response", convert):
+                 patch("src.semantic_methods.lotus.batch.parse_lotus_response", convert):
                 value = lm([[{"role": "user", "content": "bounded result"}]], show_progress_bar=False)
             self.assertEqual(len(value.outputs), 1)
             self.assertEqual(stages, ["observation", "conversion"])

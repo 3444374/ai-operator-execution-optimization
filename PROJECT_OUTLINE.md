@@ -1,5 +1,17 @@
 # 项目大纲
 
+当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，新增持久计数修订的四组匹配观察仍使用该算法／适配源码。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
+
+本次LOTUS线的近期任务按以下顺序推进，详细量与停止条件归[同题阶段分析](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，不再另建总计划：
+
+1. 处理私有发送账本的历史增长成本。实际三个账本四条计数均全表扫描，有界零模型并发诊断已确认本地扰动；预算组件局部修订已通过14项无模型回归与配对诊断，四组串行匹配Q2已完成，实际原值与阶段见[本轮记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)，不改SemLoom补偿观察成本。
+2. 建立合理单／双卡工作点。Q2保留小成本参照，原Q1完整2000行与Q3 COUNT分别承担持续供给和质量；各后端少量自身配置，核对实际并发，扩副本供给与固定总预算的方法比较分别设计。
+3. 推进一个双副本长短查询共享实验，使用真实多Job入口，面对合理原生共享、工作守恒简单分配和已修强静态版本。复用现有责任机制；图像及多节点按后续实际需要开展。
+
+[IMLane显式2000行能力与同步／可选async软件证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md)已提供；旧默认128配置仍作兼容选择，原Q1／Q3完整真实模型与共享Coordinator并发分别待对应方案。持久计数修订已在有限匹配窗口部署；本次未实施后续长测。
+
+已结束的小轮、两次补测及较早接线检查以[项目日志](PROJECT_LOG.md)和各原报告保存历史；缺7项／缺2项及早期128行拒绝不再作为当前待办。PG、其他前端及其余研究状态仍按下文各自来源解释。
+
 更新时间：2026-10-13
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
@@ -16,6 +28,11 @@
 完整小Job信息在两个串行服务的后到场景有改善，估计偏差可使长Job退化超过允许值；不代表模型或SQL性能。
 实际LOTUS主场景、DuckDB复现路径、新适配器策略关闭对照及有限模型预算集中在[M4](experiments/plans/数据组织.md#query-sharing-burst)，
 共同native/stability来源和真实窗口由主协调，生产默认保持。
+
+[Sema后置原生执行检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)
+已补Daft Native、Ray Data及IMLane Python完整调用入口，三条作者SQL各8行通过，真实模型0。
+原算子策略和上游请求池保持，仍属HTTP之后的执行比较；原池前交接与数据库执行器替换尚未实现。
+分阶段观测、实际容量及清理证据分别保留，不将本轮无模型正确性检查解释为性能收益。
 
 [异质问答的原生请求画像](experiments/results/diagnostics/squad_native_length_20261011/README.md)已完成全量离线检查，
 当前自然调参切片未达到原方案选样条件，模型比较未启动；比值2不作为数据组织研究的通用要求。
@@ -66,6 +83,17 @@ Sema格式与Daft文件容量修订通过扩大规模验证，原32次及8,009�
 扩测已在请求数FIFO第137轮的HTTP读取错误后停止，五系统各137轮、三控制各136轮；
 原失败与无模型诊断归[同题报告](experiments/results/postgresql/semantic_system_comparison_20261008/README.md#tail-transport-failure)，未完成各200轮。
 [完整应用分析](experiments/results/postgresql/semantic_system_comparison_20261008/README.md#tail-comparison)已核验全部完成样本；不建议为凑满200轮重跑，数据就绪后的SQL／API比较由独立计时工作补充。
+
+[返回等待隔离](experiments/results/diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)已完成原记录复算及本地71个case/4107次模拟。
+追加的等待与同步实验guard时段约78%–80%重叠；两行最小复现确认同步等待能拖住已就绪结果，零等待的线程控制负例保留。
+实际Ray/Daft与SQLite新增20个case/16,448次模拟actor调用通过，HTTP/PG/模型/GPU调用0；等待缩短却使线程控制完整消费更慢，默认保持。
+[实际Ray分段](experiments/results/diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)拥有时序、供给变化及资源复算；下一步核对实验I/O与既有共享预付计数，不自动追加模型额度。
+
+[逐行补充输入与待准备尾块](experiments/results/diagnostics/map_queued_preparation_20261008/README.md)已完成原事件核对、可关闭原型及实际库检查。
+原三次1024行测量的后续896次借用均只有一行候选；新接法只追加尚未开始准备的同session/Job尾块，Core动作与每行完整请求保持。
+本地24,672次模拟调用中，高准备成本出现改善、低准备成本仍慢于即时12.638%；最终服务器147项检查通过。
+新PG16项/26次本机HTTP及10查询/8224次真实请求通过，行/计费/资源与RSS/PSS独立复算；真实完整查询10.069→12.686秒，追加慢25.987%。
+即时默认与追加选项的False默认均保持，不推荐启用；多模态、跨Job与通用收益仍待验证，实施与结果见[查询调优](experiments/plans/查询调优.md#queued-preparation-coalescing)。
 
 [批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)已完成组件、替身与真实模型对照。
 原真实对照与审查修订后复测分别慢7.31%和40.52%，各自三次重复均变慢；候选仅保留诊断，默认同步保持。

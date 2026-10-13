@@ -37,8 +37,11 @@ class SupplierAdapterLibraryTests(unittest.TestCase):
                 ledger=ledger,unit_id='supplier-fixture',root=root/'query',
                 options=NativeGraphOptions(num_threads=4),
                 physical=RayMapConfig('resolved',2,2,2097152,8388608) if core else None,
-                ray_temp_root=Path('/root/autodl-tmp/rsni.'+uuid.uuid4().hex[:8]) if core else None,
+                ray_temp_root=Path('/root/autodl-tmp/rsni.'+uuid.uuid4().hex[:8]) if (
+                    core or arm.endswith(('native-ray','native-ray-data'))) else None,
                 query_timeout_s=120,
+                lotus_observation_mode=os.environ.get('SEMLOOM_LOTUS_OBSERVATION_MODE','qualification')
+                    if arm.startswith('lotus-') else 'qualification',
                 stages=[dict(instruction='Summarize {text}.',output_column='summary'),
                         dict(instruction='Classify {summary}.',output_column='label')] if chain else None,
                 sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']) if arm.startswith('sema-') else None,
@@ -48,6 +51,10 @@ class SupplierAdapterLibraryTests(unittest.TestCase):
             self.assertEqual(result['actual_posts'],count)
             self.assertEqual(len(requests),count)
             self.assertEqual(result['execution']['recorded_rows'],4)
+            if '-method-native-' in arm:
+                self.assertIsNone(result['semloom_capacity'])
+                self.assertEqual(result['identity']['executor'],
+                    {'daft':'daft','ray':'ray','ray-data':'ray-data'}[arm.split('native-')[-1]])
             bodies=[json.loads(line) for line in (root/'query/upstream-response-bodies.jsonl').read_text().splitlines()]
             self.assertEqual(len(bodies),count)
             for body in bodies:

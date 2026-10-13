@@ -266,10 +266,12 @@ class PersistentSupplierLibraries(unittest.TestCase):
     def test_changed_inputs_and_scale_keep_the_native_owner_and_reset_query_state(self):
         arm=os.environ['SEMLOOM_PERSISTENT_SUPPLIER']
         self.assertIn(arm,('duckdb-adapted-native','duckdb-method-semloom','duckdb-method-semloom-local-diagnostic',
+            'duckdb-method-native-daft','duckdb-method-native-ray','duckdb-method-native-ray-data',
             'sema-native-direct','sema-native-transparent','sema-method-semloom-request-service',
             'sema-bounded-forward-diagnostic',
             'sema-bounded-pipeline-diagnostic','sema-method-semloom-local-diagnostic',
-            'lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom'))
+            'lotus-adapted-native','lotus-method-semloom-local-diagnostic','lotus-method-semloom',
+            'lotus-method-native-daft','lotus-method-native-ray','lotus-method-native-ray-data'))
         root=Path(os.environ['SEMLOOM_PERSISTENT_OUTPUT'])
         root.mkdir(mode=0o700,parents=True,exist_ok=False)
         inputs=[tuple(dict(row_id='query-'+str(number)+'-row-'+str(i),
@@ -308,8 +310,8 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     physical=RayMapConfig('unused',2,2,2**21+24,2**23),
                     ray_temp_root=Path(os.environ['SEMLOOM_PERSISTENT_RAY_ROOT']),
                     tokenizer_path=Path(os.environ['SEMLOOM_TOKENIZER']) if os.environ.get('SEMLOOM_TOKENIZER') else None,
-                    duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']),
-                    sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']),
+                    duckdb_library=Path(os.environ['SEMLOOM_DUCKDB_LIBRARY']) if arm.startswith('duckdb-') else None,
+                    sema_binary=Path(os.environ['SEMLOOM_SEMA_BINARY']) if arm.startswith('sema-') else None,
                     adapter_timings=os.environ.get('SEMLOOM_ADAPTER_TIMINGS')=='1',
                     duckdb_offer_diagnostic=os.environ.get('SEMLOOM_DUCKDB_OFFER_DIAGNOSTIC','original'),
                     sema_executor_scope=os.environ.get('SEMLOOM_SEMA_EXECUTOR_SCOPE', 'query')) as group:
@@ -322,7 +324,12 @@ class PersistentSupplierLibraries(unittest.TestCase):
                     self.assertEqual(result['rows'],len(values))
                     self.assertEqual(result['actual_posts'],len(values))
                     self.assertEqual(len(requests)-before,len(values))
-                    if arm.startswith('duckdb-method-') and group.adapter_timings:
+                    if '-method-native-' in arm:
+                        self.assertIsNone(group.owners[arm].execution)
+                        self.assertIsNone(result['semloom_capacity'])
+                        self.assertIsNone(result['persistent_lifecycle']['core_usage'])
+                        self.assertIsNone(result['persistent_lifecycle']['core_jobs'])
+                    if arm.startswith('duckdb-method-semloom') and group.adapter_timings:
                         details=result['identity']['adapter_timings']
                         self.assertEqual(details['vector_rows'],len(values))
                         self.assertEqual(details['bridge']['phases']['native_consume']['count'],len(values))

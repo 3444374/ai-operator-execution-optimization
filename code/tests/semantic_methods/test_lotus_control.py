@@ -75,7 +75,7 @@ class LotusControlTests(unittest.TestCase):
              patch('src.semantic_methods.lotus.sdk.prepare_call', prepare), \
              patch('src.semantic_methods.lotus.batch.check_model_config', check), \
              patch('src.semantic_methods.lotus.batch.prepare_native_task', native), \
-             patch('src.semantic_methods.lotus.batch.lotus_response', return_value=SimpleNamespace()), \
+             patch('src.semantic_methods.lotus.batch.parse_lotus_response', return_value=SimpleNamespace()), \
              patch('src.semantic_methods.lotus.batch.time', SimpleNamespace(monotonic=lambda: state['now'])):
             yield selected, execution, state
 
@@ -121,6 +121,18 @@ class LotusControlTests(unittest.TestCase):
             with patch.object(batch, 'NativeTaskSession', side_effect=AssertionError('default flow used')):
                 self.assertEqual(len(self.run_batch(selected)), 2)
             self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_shared_parser_receives_the_dispatched_prepared_values(self):
+        parsed = []
+        def replay(lm, messages, kwargs, prepared, full, **options):
+            self.assertEqual(json.loads(prepared.payload)['messages'], messages)
+            parsed.append(prepared.payload)
+            return SimpleNamespace()
+        with self.batch() as (selected, execution, state), \
+             patch('src.semantic_methods.lotus.batch.parse_lotus_response', replay):
+            self.assertEqual(len(self.run_batch(selected)), 2)
+            self.assertEqual(parsed, state['actual'])
+            self.assertEqual(execution.engine.capacity.usage(), Usage())
 
     def test_prevalidation_is_timed_and_cancelled_before_flow_creation(self):
         for expired in (False, True):

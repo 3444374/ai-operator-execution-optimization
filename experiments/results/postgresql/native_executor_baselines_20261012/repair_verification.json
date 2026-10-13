@@ -1,0 +1,79 @@
+{
+  "sdk_qualification": {
+    "source_commit": "c4f7f15742d3473274b75c42556c2d75be423060",
+    "source_archive_sha256": "3b7ae4469dcbfd86591d06a36df96f3f7f987bbce4a30b6129ac608217f36429",
+    "evidence_archive_sha256": "cd1a288cf19d0a4caef39fabeca4ca1083240f2ebf2ea7b13012ad8ac95f4ac4",
+    "tests": {
+      "run": 20,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0,
+      "passed": true
+    },
+    "localhost_posts": 12,
+    "model_posts": 0,
+    "gpu_operations": 0,
+    "elapsed_seconds": 15.738809945061803,
+    "cpu_affinity": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "fixture_servers_closed": true,
+    "owned_processes_observed_after_exit": []
+  },
+  "daft_loop_probe": {
+    "rows": 4,
+    "loops": [
+      {
+        "id": 140670718716256,
+        "running": true,
+        "closed": false
+      }
+    ],
+    "http_posts": 0
+  },
+  "new_pool_qualification": {
+    "local_lifecycle_tests_passed": 6,
+    "local_real_keepalive_posts": 4,
+    "same_tcp_connection": true,
+    "close_regressions_passed": 5,
+    "ray_configuration_stand_in_tests_passed": 2,
+    "actual_vendor_pool_fixture": "pending",
+    "source_commit": "5e0390ec5a40cf0cd7d0e7ba7cc93083b42f33a5",
+    "current_source_qualification": "bounded local regression only; no new vendor graph or HTTP run"
+  },
+  "imlane_scope": {
+    "effective_client_snapshot_rows": 128,
+    "capacity_origin_project_commit": "5ee1b90c3",
+    "author_natural_row_capacity": "not established by the client guard",
+    "target_rows_512_or_2000": "unsupported",
+    "new_author_builds": 0,
+    "saved_bridge_build": {
+      "source_commit": "97af50c59d1eae4e6e6b324414f9111b85a579f2",
+      "source_archive_sha256": "c5ef6a2b4b27c5222cb57174ac43633cb17ffb2d834beff0ef0dce163fe04260",
+      "source_archive_verified": true,
+      "current_cpp_matches_saved_compiled_source": true,
+      "build": {
+        "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "returncode": 0,
+        "compiler_output": "",
+        "source_sha256": "04e721d3451aa57759dbe040638e1e6e84efc4cf48587241b494c6d51f645eaf",
+        "binary_sha256": "1e46520aa363b9aacdd87996359737c81351c0186da0a33a7dc85d22962ac780",
+        "real_model_requests": 0
+      },
+      "new_builds": 0,
+      "new_author_system_builds": 0,
+      "author_runtime": "pending",
+      "imlane_2000_rows": "pending"
+    },
+    "new_author_runtime_runs": 0
+  },
+  "historical_model_results": "old source, retained independently, not qualification of these repairs",
+  "integration_verification": "integration_verification.json"
+}

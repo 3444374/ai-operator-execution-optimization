@@ -24,6 +24,12 @@ from .native_adapter_metrics import summarize_calls, executor_phase_observations
 from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows,resolve_adapter_limits
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
+from .sema_native_query import (
+    SEMA_NATIVE_ARMS, gateway_phase_summary, open_native_service, service_phase_summary, validate_native_options,
+)
+from .imlane_query import (
+    IMLANE_METHOD_MODES, imlane_config_for_arm, imlane_runtime_identity, load_imlane_call_configs,
+)
 
 
 SUPPLIER_ARMS = (
@@ -34,8 +40,62 @@ SUPPLIER_ARMS = (
     'sema-bounded-forward-diagnostic',
     'sema-bounded-pipeline-diagnostic',
     'sema-method-semloom-local-diagnostic',
+    *SEMA_NATIVE_ARMS,
     'duckdb-adapted-native', 'duckdb-method-semloom', 'duckdb-method-semloom-local-diagnostic',
+    'lotus-method-native-daft', 'lotus-method-native-ray', 'lotus-method-native-ray-data',
+    'duckdb-method-native-daft', 'duckdb-method-native-ray', 'duckdb-method-native-ray-data',
+    'lotus-method-native-imlane', 'lotus-method-native-imlane-ray',
+    'duckdb-method-native-imlane', 'duckdb-method-native-imlane-ray',
 )
+
+NATIVE_SUPPLIER_BACKENDS = {
+    'lotus-method-native-daft': 'daft',
+    'lotus-method-native-ray': 'ray',
+    'lotus-method-native-ray-data': 'ray-data',
+    'duckdb-method-native-daft': 'daft',
+    'duckdb-method-native-ray': 'ray',
+    'duckdb-method-native-ray-data': 'ray-data',
+    **{arm: 'imlane' for arm in IMLANE_METHOD_MODES if not arm.startswith('sema-')},
+}
+
+
+LOTUS_OBSERVATION_MODES = ('qualification', 'performance')
+
+
+def validate_lotus_observation_mode(mode):
+    if mode not in LOTUS_OBSERVATION_MODES:
+        raise ValueError('LOTUS observation mode must be qualification or performance')
+    return mode
+
+
+def _record_supplier_http(stream, body, response, status):
+    """Keep original response bytes for the supplier's own parser."""
+    record=dict(request=json.loads(body),http_status=status)
+    try:
+        record['response']=json.loads(response)
+    except (json.JSONDecodeError,UnicodeDecodeError):
+        record.update(response=None,response_bytes_base64=base64.b64encode(response).decode())
+    stream.write(json.dumps(record,ensure_ascii=False)+'\n')
+
+
+def _supplier_runtime(arm, owner):
+    shared=owner.group.runtime
+    backend=NATIVE_SUPPLIER_BACKENDS.get(arm) or SEMA_NATIVE_ARMS.get(arm)
+    runtime=dict(getattr(owner.group,'daft_runtime',None) or shared) if backend=='daft' else dict(shared)
+    if backend is not None:
+        if backend == 'imlane' and arm in IMLANE_METHOD_MODES:
+            runtime = imlane_runtime_identity(imlane_config_for_arm(arm, owner.group.imlane_call_configs))
+        elif backend == 'imlane':
+            runtime = dict(owner='IMLane author Coordinator', execution_backend='imlane',
+                imlane_runtime='legacy bridge configuration; runtime not verified')
+        else:
+            runtime.update(owner={'daft':'Daft Native','ray':'Ray Core','ray-data':'Ray Data'}[backend],
+                execution_backend=backend,shared_runtime_owner=shared.get('owner'))
+    elif arm.startswith('lotus-') and 'semloom' not in arm:
+        runtime.update(owner='LOTUS/LiteLLM',shared_runtime_owner=shared.get('owner'))
+    elif arm=='duckdb-adapted-native':
+        runtime.update(owner='DuckDB AI native',shared_runtime_owner=shared.get('owner'))
+    return runtime
 
 
 class MethodObservations:
@@ -55,8 +115,10 @@ class MethodObservations:
         if identity in self.calls:
             raise ValueError('method generated a duplicate complete call')
         call=dict(row_id=row_id,stage_id=str(stage),stage_ordinal=stage,call_id=call_id,
-                  model_role='main',request_values_sha256=content_digest(json.loads(payload)),
+                  model_role='main',request_values_sha256=None if payload is None else content_digest(json.loads(payload)),
                   response_representation=response_representation)
+        if payload is None:
+            call['request_values_scope']='not constructed before the native SDK; actual outbound values are retained by the common proxy'
         if native_ready_ns is not None:
             call['native_ready_ns']=native_ready_ns
             call['readiness_scope']='complete call received by the trusted batch callback; native steady clock retained separately'
@@ -78,27 +140,38 @@ class MethodObservations:
 
 class _LotusBatchObservation:
     """Measure the original LM's complete batch return; native pools remain native."""
-    def __init__(self,lm,rows,observations,executor=None):
+    def __init__(self,lm,rows,observations,executor=None,*,executor_label=None,call_id='lotus-map',
+                 observation_mode='qualification'):
+        self.observation_mode=validate_lotus_observation_mode(observation_mode)
         self.original=lm._process_uncached_messages
         self.executor,self.rows,self.observations=executor,rows,observations
         self.stage=0
+        self.call_id=call_id
+        self.executor_label=executor_label or ('native' if executor is None else 'semloom')
 
     def __call__(self,lm,data,kwargs,show_progress_bar,description):
-        from src.semantic_methods.lotus.sdk import prepare_call
         ready_ns=time.monotonic_ns()
         stage=self.stage;self.stage+=1
         if len(data)!=len(self.rows):
             raise ValueError('cache-disabled LOTUS batch differs from the source row set')
         def prepared(index,call):
             self.observations.ready(self.rows[index]['row_id'],stage,call.payload,
+                call_id=self.call_id,
                 response_representation='complete native SDK ModelResponse values',ready_ns=ready_ns,
                 readiness_scope='complete messages and effective parameters received by the original uncached batch entry; HTTP encoding follows')
             self.observations.record(dict(event='lotus_http_call_prepared',row_id=self.rows[index]['row_id'],
                 stage_id=str(stage),clock_domain=self.observations.domain,
                 scope='expected native HTTP encoding' if self.executor is None else 'HTTP encoding used by execution'))
         if self.executor is None:
-            for index,item in enumerate(data):
-                prepared(index,prepare_call(lm,item[0],kwargs))
+            if self.observation_mode=='qualification':
+                from src.semantic_methods.lotus.sdk import prepare_call
+                for index,item in enumerate(data):
+                    prepared(index,prepare_call(lm,item[0],kwargs))
+            else:
+                for row in self.rows:
+                    self.observations.ready(row['row_id'],stage,None,call_id=self.call_id,
+                        response_representation='complete native SDK ModelResponse values',ready_ns=ready_ns,
+                        readiness_scope='complete messages and effective parameters received by the original uncached batch entry; HTTP encoding follows')
             results=self.original(data,kwargs,show_progress_bar,description)
         else:
             self.executor.on_prepared=prepared
@@ -109,14 +182,18 @@ class _LotusBatchObservation:
         returned=time.monotonic_ns()
         self.observations.record(dict(event='lotus_batch_return',monotonic_ns=returned,
             stage_id=str(stage),response_count=len(results),
-            executor='native' if self.executor is None else 'semloom',
+            executor=self.executor_label,
             scope='complete SDK response list returned before observation serialization and LOTUS statistics'))
         for row,response in zip(self.rows,results):
+            if isinstance(response,Exception):
+                self.observations.record(dict(event='caller_error',row_id=row['row_id'],stage_id=str(stage),
+                    call_id=self.call_id,error_type=type(response).__name__,monotonic_ns=returned))
+                continue
             if not callable(getattr(response,'model_dump',None)):
                 raise ValueError('LOTUS returned a failed complete SDK response')
             response_values=response.model_dump()
             body=json.dumps(response_values,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()
-            self.observations.received(row['row_id'],stage,body,when=returned)
+            self.observations.received(row['row_id'],stage,body,when=returned,call_id=self.call_id)
             self.observations.raw.write(json.dumps(dict(row_id=row['row_id'],stage_id=str(stage),
                 response_representation='complete native SDK ModelResponse values',
                 response_values=response_values),ensure_ascii=False,allow_nan=False)+'\n')
@@ -148,7 +225,7 @@ class _LotusMethodObservation:
         return step
 
 
-def prepare_lotus_lm(plan, model, options, tokenizer_path):
+def prepare_lotus_lm(plan, model, options, tokenizer_path, *, sembench=False):
     os.environ['LITELLM_LOCAL_MODEL_COST_MAP']='True'
     import lotus
     from lotus.models import LM
@@ -159,13 +236,14 @@ def prepare_lotus_lm(plan, model, options, tokenizer_path):
     if tokenizer_path is not None:
         from tokenizers import Tokenizer
         tokenizer=Tokenizer.from_file(str(tokenizer_path))
+    generation={'stop':['\n']} if sembench else {}
     return LM('openai/'+model.model_id,api_base=model.endpoint_url.removesuffix('/chat/completions'),
         api_key=token,max_batch_size=options.concurrency,temperature=0,top_p=1,max_tokens=plan.max_tokens,
-        num_retries=0,max_retries=0,timeout=model.timeout_ms/1000,tokenizer=tokenizer)
+        num_retries=0,max_retries=0,timeout=model.timeout_ms/1000,tokenizer=tokenizer,**generation)
 
 
 @contextmanager
-def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None):
+def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None,query_timeout_s=120,imlane_call_configs=None,sembench_result=None,lotus_observation_mode='qualification'):
     import lotus
     import pandas as pd
     from src.semantic_methods.lotus.batch import LotusBatchExecutor,lotus_executor
@@ -176,12 +254,25 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
     token=model.bearer_token or 'local-fixture'
     configured=replace(model,bearer_token=token)
     if lm is None:
-        lm=prepare_lotus_lm(plan,model,options,tokenizer_path)
-    frame=pd.DataFrame({'row_id':[v['row_id'] for v in values],'text':[v['text'] for v in values]})
+        lm=prepare_lotus_lm(plan,model,options,tokenizer_path,sembench=sembench_result is not None)
+    frame=(pd.DataFrame({'row_id':[v['row_id'] for v in values],'text':[v['text'] for v in values]})
+           if sembench_result is None else None)
+    operator='lotus-map' if sembench_result is None else 'lotus-filter'
     context=stack.enter_context(lotus.settings.context(lm=lm,enable_cache=False))
     selected=None if execution is None else LotusBatchExecutor(execution,configured,
-        query_id=unit_id,operator_id='lotus-map',cancelled=stop.is_set,
+        query_id=unit_id,operator_id=operator,cancelled=stop.is_set,
         prevalidate_batch=True,retain_full_responses=False)
+    backend=NATIVE_SUPPLIER_BACKENDS.get(arm)
+    if backend is not None:
+        from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+        from src.semantic_methods.lotus.native import LotusNativeBatchExecutor
+        graph=NativeCallExecutor(backend,options,
+            imlane_config=imlane_config_for_arm(arm,imlane_call_configs or {}))
+        if backend == 'imlane':
+            stack.callback(graph.close)
+        selected=LotusNativeBatchExecutor(graph,configured,
+            query_id=unit_id,operator_id=operator,cancelled=stop.is_set,
+            timeout_s=query_timeout_s,retain_full_responses=False)
     chain=arm.startswith('lotus-two-map')
     if chain:
         if stages is None:
@@ -204,9 +295,14 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
             finally:
                 iterator.close()
     else:
-        observer=_LotusBatchObservation(lm,values,observations,selected)
+        observer=_LotusBatchObservation(lm,values if sembench_result is None else sembench_result.model_rows,
+            observations,selected,executor_label=backend,call_id=operator,
+            observation_mode=lotus_observation_mode)
         stack.enter_context(lotus_executor(lm,observer))
         def execute():
+            if sembench_result is not None:
+                yield from sembench_result.execute()
+                return
             if chain:
                 result=staged_two_map(frame,lm,stages)
                 column=stages[-1].output_column
@@ -216,9 +312,23 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
             yield from zip(result['row_id'],result[column])
     yield execute,dict(supplier='LOTUS1.2.4',source_commit='b1a85fd7a66fabed8a1585d44d7597d592b4433f',
         cache_policy='disabled',method_roles=['main'],two_map=chain,
+        observation_mode=lotus_observation_mode,
+        call_values_source=('method continuation payload' if arm.endswith('incremental') else
+            'execution-prepared payload' if selected is not None else
+            'expected native HTTP encoding' if lotus_observation_mode=='qualification' else
+            'unavailable before native SDK encoding; actual HTTP values retained by proxy'),
+        observation_timing='all in-query observation work remains in measured query time; no estimated subtraction',
         caller_scope=('supplier resume callback receives complete HTTP response' if arm.endswith('incremental')
                       else 'original LM receives full uncached SDK response list; whole batch wait retained'),
-        native_supply='DataFrame formatting and complete uncached batch; native pool retained only on native arm')
+        native_supply='DataFrame formatting and complete uncached batch; native pool retained only on native arm',
+        executor=backend or ('semloom' if execution is not None else 'LOTUS/LiteLLM'),
+        imlane_runtime=IMLANE_METHOD_MODES.get(arm),
+        original_method_preserved=True,
+        original_query=(None if sembench_result is None else dict(benchmark='SemBench Movie',
+            query_id=sembench_result.query.query_id,commit='c814e3807e72d4cf876b852b17e77f3cc94575c2',
+            operator='sem_filter',relational_result='COUNT' if sembench_result.query.query_id==3 else 'LIMIT5 reviewId')),
+        execution_kind=('diagnostic_reference' if backend=='ray' else
+            'native_api' if backend is not None else 'supplier_native' if execution is None else 'semloom'))
 
 
 def _drain_execution(execution, *, close=True):
@@ -230,7 +340,7 @@ def _drain_execution(execution, *, close=True):
         raise RuntimeError('supplier execution retains unresolved model resources')
 
 
-def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=False):
+def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=False,batch_executor=None):
     import ctypes
     import duckdb
     import _duckdb
@@ -241,8 +351,12 @@ def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=F
     connection=stack.enter_context(duckdb.connect(config={'allow_unsigned_extensions':'true','threads':'1'}))
     connection.execute("LOAD '"+str(Path(library).resolve()).replace("'","''")+"'")
     version=connection.execute("SELECT extension_version FROM duckdb_extensions() WHERE extension_name='ai' AND loaded").fetchone()[0]
-    if duckdb.__version__!='1.5.4' or version!='0.4.14-semloom1':
+    if duckdb.__version__!='1.5.4' or version not in ('0.4.14-semloom1','0.4.14-native1','0.4.14-native2','0.4.14-native3','0.4.14-native4'):
         raise ValueError('DuckDB adapter binary does not match its compiled source identity')
+    if (batch_executor=='imlane' and version not in ('0.4.14-native3','0.4.14-native4') or
+            batch_executor=='ray' and version not in ('0.4.14-native2','0.4.14-native3','0.4.14-native4') or
+            batch_executor in ('daft','ray-data') and version not in ('0.4.14-native1','0.4.14-native2','0.4.14-native3','0.4.14-native4')):
+        raise ValueError('DuckDB adapter binary does not support its selected native executor')
     token=model.bearer_token or 'EMPTY'
     # The whole-vector callback bypasses ProviderExecutorState and its native pool.
     native_capacity=min(options.concurrency,64) if semloom_batch else options.concurrency
@@ -268,20 +382,31 @@ def replace_duckdb_inputs(connection,values,plan):
 
 @contextmanager
 def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,library,*,connection=None,
-                 adapter_timings=False,duckdb_offer_diagnostic='original'):
+                 adapter_timings=False,duckdb_offer_diagnostic='original',query_timeout_s=120,imlane_call_configs=None):
     from src.semantic_methods.duckdb_ai import DuckDBSemLoomBridge,DuckDBNativeTaskExecutor
+    backend=NATIVE_SUPPLIER_BACKENDS.get(arm)
+    batch_execution=execution is not None or backend is not None
     token=model.bearer_token or 'EMPTY'
     if connection is None:
-        connection=prepare_duckdb_connection(stack,plan,model,options,library,semloom_batch=execution is not None)
+        connection=prepare_duckdb_connection(stack,plan,model,options,library,semloom_batch=batch_execution,batch_executor=backend)
         replace_duckdb_inputs(connection,values,plan)
-    if execution is not None:
-        from src.execution_provider.adapters.native_tasks import NativeQueryJob
-        query_job=stack.enter_context(NativeQueryJob(execution,observations.unit_id))
-        native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token),
-            query_owner=query_job,
-            **({'collect_timings':True} if adapter_timings else {}),
-            **(dict(retry_offer_prefix=True,prepare_blocks=duckdb_offer_diagnostic=='prepared-blocks')
-               if duckdb_offer_diagnostic!='original' else {}))
+    if batch_execution:
+        if execution is not None:
+            from src.execution_provider.adapters.native_tasks import NativeQueryJob
+            query_job=stack.enter_context(NativeQueryJob(execution,observations.unit_id))
+            native=DuckDBNativeTaskExecutor(execution,replace(model,bearer_token=token),
+                query_owner=query_job,
+                **({'collect_timings':True} if adapter_timings else {}),
+                **(dict(retry_offer_prefix=True,prepare_blocks=duckdb_offer_diagnostic=='prepared-blocks')
+                   if duckdb_offer_diagnostic!='original' else {}))
+        else:
+            from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+            from src.semantic_methods.duckdb_native import DuckDBNativeExecutor
+            graph=NativeCallExecutor(backend,options,max_batch_rows=2048,
+                imlane_config=imlane_config_for_arm(arm,imlane_call_configs or {}))
+            if backend == 'imlane':
+                stack.callback(graph.close)
+            native=DuckDBNativeExecutor(graph,timeout_s=query_timeout_s)
         supplied_rows=0
         iterator_close_error=None
         def execute_batch(calls,cancelled):
@@ -314,7 +439,8 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
                     if primary_error is None:raise
                     primary_error.add_note('DuckDB observation iterator close also failed: '+type(error).__name__)
         bridge=stack.enter_context(DuckDBSemLoomBridge(library,execute_batch,
-            **({'collect_timings':True} if adapter_timings else {})));bridge.enable(connection)
+            **({'collect_timings':True} if adapter_timings else {}),
+            **({'executor':backend} if backend is not None else {})));bridge.enable(connection)
     statement=('WITH completed AS MATERIALIZED (SELECT row_id,ai_try_complete(prompt,max_tokens => '+str(plan.max_tokens)+
         ',temperature => 0.0) AS result FROM (SELECT * FROM adapter_inputs ORDER BY source_position)) '
         'SELECT row_id,result.response,result.error FROM completed ORDER BY row_id')
@@ -322,12 +448,18 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
         for row_id,value,error in connection.execute(statement).fetchall():
             if error is not None or value is None:raise ValueError('native DuckDB parser reported a failed complete call')
             yield row_id,value
-    identity=dict(supplier='DuckDB1.5.4/ai0.4.14-semloom1',source_commit='9b7b16a5d5bfa97180b8be48d69bd9a4a4106419',
-        native_provider_capacity=min(options.concurrency,64) if execution is not None else options.concurrency,
-        native_provider_pool_used=execution is None,
+    extension_version=connection.execute("SELECT extension_version FROM duckdb_extensions() WHERE extension_name='ai' AND loaded").fetchone()[0]
+    identity=dict(supplier='DuckDB1.5.4/ai'+extension_version,source_commit='9b7b16a5d5bfa97180b8be48d69bd9a4a4106419',
+        native_provider_capacity=min(options.concurrency,64) if batch_execution else options.concurrency,
+        native_provider_pool_used=not batch_execution,
         sql_threads=1,method_roles=['main'],request_cache=False,retry_count=0,
         caller_scope='complete body returned by native batch callback immediately before C++ response consumer',
-        native_supply='current SQL vector only; SQL results wait for complete vector return')
+        native_supply='current SQL vector only; SQL results wait for complete vector return',
+        executor=backend or ('semloom' if execution is not None else 'DuckDB AI native'),
+        imlane_runtime=IMLANE_METHOD_MODES.get(arm),
+        original_method_preserved=True,
+        execution_kind=('diagnostic_reference' if backend=='ray' else
+            'native_api' if backend is not None else 'supplier_native' if execution is None else 'semloom'))
     if execution is not None:
         identity['offer_diagnostic']=duckdb_offer_diagnostic
         identity['query_job']=dict(job_id=query_job.job.job_id,label=query_job.query_id,
@@ -335,27 +467,40 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
     try:
         yield execute,identity
     finally:
-        if execution is not None:
+        if batch_execution:
             identity['diagnostics']=dict(
                 bridge=dict(last_error=bridge.last_error,last_cleanup_error=bridge.last_cleanup_error),
                 iterator_close_error=iterator_close_error,
                 executor=dict(last_cleanup_error=native.last_cleanup_error,
-                    last_cleanup_errors=list(native.last_cleanup_errors),
-                    last_close_report=None if native.last_close_report is None else asdict(native.last_close_report)))
+                    last_cleanup_errors=list(getattr(native,'last_cleanup_errors',())),
+                    last_close_report=(graph.last_close_report if backend is not None else
+                        None if native.last_close_report is None else asdict(native.last_close_report))))
             if adapter_timings:
                 identity['adapter_timings']=dict(scope='last current SQL vector; nested spans cannot be added',
                     vector_rows=bridge.batch_sizes[-1] if bridge.batch_sizes else None,
-                    executor=native.last_timings,bridge=bridge.last_timings)
+                    executor=getattr(native,'last_timings',None),bridge=bridge.last_timings)
 
 
-def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,options,
+def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,options,
                        physical=None,ray_temp_root=None,ray_address=None,query_timeout_s=120,
                        stages=None,sema_binary=None,tokenizer_path=None,
                        reference_outputs=None,allowed_outputs=None,duckdb_library=None,
                        preparation_started_ns=None, owner=None,max_held_tasks=None,sema_native_threads=None,
-                       adapter_timings=False,duckdb_offer_diagnostic='original'):
+                       adapter_timings=False,duckdb_offer_diagnostic='original',imlane_config=None,
+                       imlane_call_configs=None,sembench_query=None,lotus_observation_mode='qualification'):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
+    validate_lotus_observation_mode(lotus_observation_mode)
+    if lotus_observation_mode!='qualification' and not arm.startswith('lotus-'):
+        raise ValueError('LOTUS performance observation requires a LOTUS arm')
+    if sembench_query is not None:
+        from .sembench_queries import MovieQuery, MovieQueryResult, LOTUS_MOVIE_ARMS
+        if (type(sembench_query) is not MovieQuery or arm not in LOTUS_MOVIE_ARMS
+                or load_source is not None or reference_outputs is not None or allowed_outputs is not None
+                or stages is not None or plan.max_tokens != 8):
+            raise ValueError('original Movie queries require their selected relation and fixed Filter generation')
+        if owner is not None and owner.group.sembench_dataset != sembench_query.dataset:
+            raise ValueError('persistent LOTUS owner was not prepared for this original Movie dataset')
     if (duckdb_offer_diagnostic not in ('original','validated-prefix','prepared-blocks')
             or (duckdb_offer_diagnostic!='original' and not arm.startswith('duckdb-method-semloom'))):
         raise ValueError('offer diagnostics require a DuckDB SemLoom path and a known mode')
@@ -371,18 +516,22 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
     if plan.model_id != model.model_id:
         raise ValueError('method and service model identities differ')
     held_tasks,native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
+    imlane_call_configs=load_imlane_call_configs(imlane_call_configs)
+    imlane_config_for_arm(arm,imlane_call_configs)
+    validate_native_options(arm,options,held_tasks,imlane_config,imlane_call_configs)
     invoked=time.monotonic_ns()
     started=invoked if preparation_started_ns is None else preparation_started_ns
     if type(started) is not int or not 0 < started <= invoked:
         raise ValueError('application preparation time must precede executor entry')
     root=Path(root);new_private_directory(root)
     errors=CellErrors();stop=threading.Event();lock=threading.Lock()
-    count=0;execution=None;reserved=False;prepared_native=None;service=None
+    count=0;execution=None;reserved=False;prepared_native=None;service=None;sembench_result=None
     predictions={};summary=dict(schema='semloom.supplier_adapter_query.v1',status='failed',arm=arm,
         unit_id=unit_id,performance_qualified=False,query_preparation_started_ns=started,
         source_identity='finite external raw input; no PG multi-Map',options=asdict(options),
         semloom_capacity=dict(held_tasks=held_tasks,active_requests=options.concurrency) if use_core else None,
         sema_native_threads=native_threads if arm.startswith('sema-') else None,
+        lotus_observation_mode=lotus_observation_mode if arm.startswith('lotus-') else None,
         request_budget_owner='common proxy before upstream POST',stages={})
     values=[];maximum=0
 
@@ -403,7 +552,11 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                     request_body_sha256=hashlib.sha256(body).hexdigest(),http_status=status,
                     response_body_sha256=hashlib.sha256(response).hexdigest(),
                     response_body_base64=base64.b64encode(response).decode()))+'\n')
-            record_native_response(protocols,body,response,status,model.model_id)
+            with lock:
+                if arm.startswith(('lotus-','duckdb-')):
+                    _record_supplier_http(protocols,body,response,status)
+                else:
+                    record_native_response(protocols,body,response,status,model.model_id)
         except BaseException as failure:
             stop.set();errors.record('http_failure',failure)
             if prepared_native is not None:errors.attempt('native_cancel',prepared_native.cancel)
@@ -411,15 +564,25 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
 
     try:
         source_started=time.monotonic_ns()
-        values=load_bounded_rows(load_source)
+        if sembench_query is None:
+            values=load_bounded_rows(load_source)
+        else:
+            summary['sembench_preflight']=sembench_query.dataset.preflight()
+            values=sembench_query.dataset.load_rows()
+            sembench_query.check_executor_shape(arm,values,
+                imlane_config=imlane_config_for_arm(arm,imlane_call_configs))
+            sembench_result=MovieQueryResult(sembench_query,values,root)
+            summary['source_identity']='selected original SemBench Movie finite relation; external source'
         summary['stages']['source_seconds']=(time.monotonic_ns()-source_started)/1e9
         row_ids={v['row_id'] for v in values}
         if reference_outputs is not None and (not isinstance(reference_outputs,dict)
                 or set(reference_outputs)!=row_ids
                 or any(not isinstance(v,str) for v in reference_outputs.values())):
             raise ValueError('evaluation references must match all external row occurrences')
-        maximum=len(values)*(2 if arm.startswith('lotus-two-map') else 1)
-        ledger.reserve_unit(unit_id,maximum);reserved=True;shared=ledger.claim_shared_unit(unit_id)
+        maximum=(len(values)*(2 if arm.startswith('lotus-two-map') else 1) if sembench_result is None
+                 else len(sembench_result.model_rows))
+        if maximum:
+            ledger.reserve_unit(unit_id,maximum);reserved=True;shared=ledger.claim_shared_unit(unit_id)
         with ExitStack() as stack:
             writer=stack.enter_context(BufferedEvents(root/'method-events.jsonl'))
             raw=stack.enter_context(open_private_text(root/'complete-responses.jsonl'))
@@ -427,14 +590,31 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             protocols=stack.enter_context(open_private_text(root/'protocols.jsonl'))
             observations=MethodObservations(writer,raw,unit_id)
             if owner is not None:
-                physical,runtime=owner.physical,owner.group.runtime
+                physical,runtime=owner.physical,_supplier_runtime(arm,owner)
                 summary['runtime']=runtime
             elif use_core and not local:
                 physical,runtime=_runtime(stack,'fixed-map-semloom',options,physical,ray_temp_root,ray_address)
                 summary['runtime']=runtime
+            elif arm in IMLANE_METHOD_MODES:
+                summary['runtime']=imlane_runtime_identity(imlane_config_for_arm(arm,imlane_call_configs))
+            elif arm in SEMA_NATIVE_ARMS and SEMA_NATIVE_ARMS[arm] != 'imlane':
+                runtime_started=time.monotonic_ns()
+                _,runtime=_runtime(stack,'fixed-map-native-daft' if SEMA_NATIVE_ARMS[arm]=='daft'
+                    else 'fixed-map-native-ray',options,None,ray_temp_root,ray_address)
+                summary['runtime']=runtime
+                summary['stages']['native_runtime_seconds']=(time.monotonic_ns()-runtime_started)/1e9
+            elif arm in NATIVE_SUPPLIER_BACKENDS:
+                if NATIVE_SUPPLIER_BACKENDS[arm] == 'imlane':
+                    summary['runtime']=imlane_runtime_identity(imlane_config_for_arm(arm,imlane_call_configs))
+                else:
+                    runtime_arm={'daft':'fixed-map-native-daft', 'ray':'supplier-native-ray',
+                                 'ray-data':'fixed-map-native-ray'}[NATIVE_SUPPLIER_BACKENDS[arm]]
+                    _,runtime=_runtime(stack,runtime_arm,options,None,ray_temp_root,ray_address)
+                    summary['runtime']=runtime
             if owner is None:
                 gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
                     trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
+                    preserve_http=arm.startswith(('lotus-','duckdb-')),
                     before_forward=before,after_forward=after))
                 routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
             else:
@@ -460,7 +640,9 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             if arm.startswith('lotus-'):
                 execute,identity=stack.enter_context(_lotus_rows(stack,arm,values,plan,routed,execution,
                     observations,options,unit_id,stages,stop,tokenizer_path,
-                    lm=owner.lotus_lm() if owner is not None else None,max_held_tasks=held_tasks))
+                    lm=owner.lotus_lm() if owner is not None else None,max_held_tasks=held_tasks,
+                    query_timeout_s=query_timeout_s,imlane_call_configs=imlane_call_configs,
+                    sembench_result=sembench_result,lotus_observation_mode=lotus_observation_mode))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
@@ -468,7 +650,8 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 execute,identity=stack.enter_context(_duckdb_rows(stack,arm,values,plan,routed,execution,
                     observations,options,duckdb_library,
                     connection=owner.duckdb_connection(values) if owner is not None else None,
-                    adapter_timings=adapter_timings,duckdb_offer_diagnostic=duckdb_offer_diagnostic))
+                    adapter_timings=adapter_timings,duckdb_offer_diagnostic=duckdb_offer_diagnostic,
+                    query_timeout_s=query_timeout_s,imlane_call_configs=imlane_call_configs))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
@@ -489,6 +672,12 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                         max_active_requests=options.concurrency,
                         local_diagnostic=local,
                         executor_owner=owner.sema_executor if owner is not None else None))
+                elif arm in SEMA_NATIVE_ARMS:
+                    service_started=time.monotonic_ns()
+                    service=open_native_service(stack,arm,query_id=unit_id,model=routed,limits=limits,
+                        trace_path=root/'sema-service.jsonl',options=options,held_tasks=held_tasks,
+                        imlane_config=imlane_config,imlane_call_configs=imlane_call_configs)
+                    summary['stages']['native_service_startup_seconds']=(time.monotonic_ns()-service_started)/1e9
                 if owner is not None:
                     owner.service=service
                 converted=[dict(source_example_id=v['row_id'],input_text=v['text'],source_position=i) for i,v in enumerate(values)]
@@ -509,13 +698,19 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 elif local:
                     summary['identity'].update(executor='SemLoom local complete-response diagnostic',
                         payload_backend='no Daft or Ray')
+                elif arm in SEMA_NATIVE_ARMS:
+                    summary['identity'].update(executor=SEMA_NATIVE_ARMS[arm],
+                        imlane_runtime=IMLANE_METHOD_MODES.get(arm),
+                        execution_owner='native vendor graph or ready IMLane Coordinator',
+                        intake_scope='already-arrived finite FIFO snapshots after Sema native request pool',
+                        held_request_capacity=held_tasks)
             ready=time.monotonic_ns()
             if count:raise ValueError('supplier preparation called the model before query submission')
             @contextmanager
             def open_rows():
                 def rows():
                     for row_id,output in execute():
-                        if row_id in predictions or row_id not in row_ids:
+                        if row_id in predictions or (sembench_result is None and row_id not in row_ids):
                             raise ValueError('supplier result lost source occurrence association')
                         if allowed_outputs is not None and output not in allowed_outputs:
                             stop.set();raise ValueError('supplier returned an undeclared application value')
@@ -535,15 +730,36 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
             if prepared_native is not None:summary['native_query']=prepared_native.summary
             if service is not None:summary['request_service']=service.summary
         traces=[json.loads(line) for line in (root/'http-trace.jsonl').read_text().splitlines()]
-        if (count!=maximum or len(predictions)!=len(values) or len(traces)!=count
+        expected_results=len(values) if sembench_result is None else len(sembench_result.result_rows)
+        if (count!=maximum or len(predictions)!=expected_results or len(traces)!=count
                 or any(t['status']!='completed' or t['request_body_sha256']!=t['forwarded_body_sha256'] for t in traces)):
             raise ValueError('supplier task, POST or row counts differ')
         events=[json.loads(line) for line in (root/'method-events.jsonl').read_text().splitlines()]
         calls=list(observations.calls.values());write_private_json(root/'calls.json',calls)
+        protocol_records=[json.loads(line) for line in (root/'protocols.jsonl').read_text().splitlines()]
+        if arm.startswith(('lotus-','duckdb-')):
+            decoded=[p['response'] for p in protocol_records if isinstance(p['response'],dict)]
+            unknown=len(protocol_records)-len(decoded)
+            qualified=(all(p['http_status']==200 for p in protocol_records)
+                and all(v.get('model')==model.model_id and len(v.get('choices',[]))==1
+                        and v['choices'][0].get('finish_reason')=='stop' for v in decoded))
+            summary['native_http_audit']=dict(http_status_counts=dict(Counter(str(p['http_status']) for p in protocol_records)),
+                readable_json_responses=len(decoded),qualification_scope='after native result consumption',
+                declared_single_stop_answer=qualified if unknown==0 else None,
+                observation_policy='record raw response; supplier parser owns response acceptance')
         if calls:
-            protocols=[json.loads(line) for line in (root/'protocols.jsonl').read_text().splitlines()]
-            if Counter(c['request_values_sha256'] for c in calls)!=Counter(content_digest(p['request']) for p in protocols):
-                raise ValueError('supplier actual HTTP values differ from method-prepared complete calls')
+            missing_values=sum(c['request_values_sha256'] is None for c in calls)
+            if missing_values:
+                if (lotus_observation_mode!='performance'
+                        or arm not in ('lotus-adapted-native','lotus-two-map-native-staged')
+                        or missing_values!=len(calls) or len(calls)!=maximum):
+                    raise ValueError('supplier lacks its declared method-prepared complete call values')
+                summary['method_http_values_audit']=dict(status='unavailable',logical_calls=len(calls),
+                    reason='performance observation omits expected native HTTP construction; actual POST values and counts remain recorded')
+            else:
+                if Counter(c['request_values_sha256'] for c in calls)!=Counter(content_digest(p['request']) for p in protocol_records):
+                    raise ValueError('supplier actual HTTP values differ from method-prepared complete calls')
+                summary['method_http_values_audit']=dict(status='passed',logical_calls=len(calls))
         summary.update(status='passed',rows=len(values),actual_posts=count,preparation_model_posts=0,
             full_query_seconds=(summary['execution']['t_query_terminal_ns']-started)/1e9,
             method_calls=calls,observed_peak_http=proxy_http_peak(traces),executor_phases=executor_phase_observations(events))
@@ -555,7 +771,24 @@ def run_supplier_query(arm, *, load_source,plan,model,ledger,unit_id,root,option
                 else 'author binary exposes no task readiness or per-row full response receipt'))
         if service is not None:
             summary['request_service']=service.summary
-        if reference_outputs is not None:
+            if arm in SEMA_NATIVE_ARMS:
+                summary['service_timing']=service_phase_summary(
+                    json.loads(line) for line in (root/'sema-service.jsonl').read_text().splitlines())
+                summary['gateway_timing']=gateway_phase_summary(traces)
+        if sembench_result is not None:
+            evaluated=time.monotonic_ns()
+            summary['quality']=sembench_result.quality()
+            summary['stages']['evaluation_seconds']=(time.monotonic_ns()-evaluated)/1e9
+            summary['sembench']=dict(query_id=sembench_query.query_id,dataset_role=sembench_query.dataset.role,
+                relation_rows=len(values),model_rows=maximum,result_rows=expected_results,
+                evaluator='unchanged original MovieEvaluator and gold SQL; after query consumer EOF',
+                manifest_content_digest=sembench_query.dataset.expected_manifest_digest,
+                comparison_prerequisites=['common response/aggregate resource policy',
+                    'matched response interpretation and error qualification',
+                    'separate HTTP client and SDK conversion cost evidence',
+                    'native early-close additional errors remain under independent repair'],
+                timing_scope='query timing excludes post-query official evaluation; preparation includes source verification')
+        elif reference_outputs is not None:
             if set(reference_outputs)!=set(predictions):raise ValueError('reference rows differ from supplier results')
             correct=sum(predictions[k]==v for k,v in reference_outputs.items())
             summary['quality']=dict(rows=len(values),correct=correct,accuracy=correct/len(values))

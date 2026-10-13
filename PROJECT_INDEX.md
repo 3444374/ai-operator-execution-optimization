@@ -5,6 +5,13 @@
 [多查询共享M4](experiments/plans/数据组织.md#query-sharing-burst)是本次已封口Job方案入口，
 实现与结果分别见[代码说明](code/README.md#query-sharing-burst)、[无模型报告](experiments/results/diagnostics/query_sharing_burst_20261013/README.md)。
 
+[同题阶段分析与账本修订](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)拥有离线阶段统计、无模型配对及后续计划；实现／调用入口见[发送计数说明](code/scripts/README.md#sembench-send-accounting)。
+
+[原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)与[双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)拥有原轮与两个独立窗口的实际观测、失败和离线核验。
+
+[SemBench Movie原查询准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)拥有原Q1/Q2/Q3接线、官方评价、唯一CSV/清单及3×6资格；运行入口见[脚本说明](code/scripts/README.md)。
+
+
 ## 内容与文档职责
 
 | 内容 | 维护位置 | 入口 |
@@ -33,6 +40,8 @@
 2. [代码状态](code/INFRA_STATUS.md)核对实际能力，再读对应源码。
 3. [主架构计划](experiments/plans/系统架构.md)核对设计与实施要求。
 4. [实验台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位原始报告与失败记录。
+Sema后置原生Daft／Ray Data／IMLane的调用接入与检查从[代码说明](code/integrations/sema/README.md)进入，
+对应设计和证据仍由上述既有入口维护。
 
 | 主题 | 入口 |
 |---|---|
@@ -47,6 +56,7 @@
 | 文本Map四路径比较 | [真实模型结果](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md) |
 | 同应用原生语义系统 | [清单与剩余方法要求](experiments/plans/语义系统对照.md)、[完整补测与失败记录](experiments/results/postgresql/semantic_system_comparison_20261008/README.md) |
 | 数据就绪后的查询计时 | [SQL／API方案](experiments/plans/SQL就绪计时.md)、[比较结果与恢复](experiments/results/postgresql/query_ready_timing_20261008/README.md) |
+| 原生执行接入与独立IMLane | [三种方法的统一接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)、[IMLane构建](code/integrations/imlane/README.md)、[完整调用两模式](code/integrations/sema/imlane_calls.md) |
 | 原生／SemLoom常驻查询 | [调用入口](code/scripts/README.md#native-adapter-query)、[复用与首次物化检查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#persistent-fixture) |
 | worker与gateway调优 | [计划](experiments/plans/查询调优.md)、[worker](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway生命周期](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、[本地共享干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md) |
 | 同步/线程记账与Arrow分批 | [记账对照](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、[分批对照](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md) |

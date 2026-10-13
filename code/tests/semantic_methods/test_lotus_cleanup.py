@@ -10,7 +10,7 @@ from src.execution_provider.adapters.full_response import FullModelResponse, enc
 from src.execution_provider.adapters.native_tasks import NativeTaskSession
 from src.scheduling.core.session_contract import Usage
 from src.semantic_methods.lotus.batch import LotusBatchExecutor
-from src.semantic_methods.lotus.sdk import lotus_response, prepare_call
+from src.semantic_methods.lotus.sdk import parse_lotus_response, prepare_call
 from src.execution_provider.adapters.full_response import decode_full_response
 from tests.execution_provider.test_native_tasks import fixture
 from tests.semantic_methods.test_lotus_adapter import completion, config, encode, model
@@ -73,9 +73,13 @@ class LotusCleanupTests(unittest.TestCase):
                 state["errors"]["decode"] = error
                 raise
 
-        def convert(full):
+        def convert(*args, **kwargs):
             try:
-                return lotus_response(full)
+                if phase == "sdk":
+                    error = ValueError("fixture response conversion failed")
+                    error.full_response = args[-1]
+                    raise error
+                return parse_lotus_response(*args, **kwargs)
             except BaseException as error:
                 state["errors"]["sdk"] = error
                 raise
@@ -97,7 +101,7 @@ class LotusCleanupTests(unittest.TestCase):
         with patch("src.semantic_methods.lotus.batch.NativeTaskSession", Flow), \
              patch("src.semantic_methods.lotus.batch.prepare_call", prepare), \
              patch("src.semantic_methods.lotus.batch.decode_full_response", decode), \
-             patch("src.semantic_methods.lotus.batch.lotus_response", convert):
+             patch("src.semantic_methods.lotus.batch.parse_lotus_response", convert):
             yield selected, execution, state, run
 
     def assert_returned(self, execution):
@@ -150,10 +154,9 @@ class LotusCleanupTests(unittest.TestCase):
     def test_sdk_error_keeps_full_response_and_survives_cleanup_failures(self):
         releasing, closing = OSError("release failed"), RuntimeError("close failed")
         with self.scenario(phase="sdk", release_error=releasing, close_error=closing) as (selected, execution, state, run):
-            with self.assertRaisesRegex(ValueError, "could not be parsed") as caught:
+            with self.assertRaisesRegex(ValueError, "fixture response conversion failed") as caught:
                 run()
             self.assertIs(caught.exception, state["errors"]["sdk"])
-            self.assertIsInstance(caught.exception.__cause__, json.JSONDecodeError)
             self.assertEqual(caught.exception.full_response, state["raw"][0])
             self.assertEqual(selected.last_responses, (state["raw"][0],))
             self.assert_cleanup(selected, (("release", releasing), ("close", closing)))

@@ -1,0 +1,515 @@
+{
+  "source_head": "3bd5358706679b639e790585347133cd8d60b836",
+  "passed": true,
+  "run_passed": true,
+  "independent_window": true,
+  "completed_slots": 2,
+  "unrun_slots": [],
+  "warmup_queries": 2,
+  "measurement_queries": 2,
+  "logical_calls": 480,
+  "transmission_posts": 1440,
+  "elapsed_seconds": 150.303062957,
+  "outer_elapsed_seconds": 150.48652992211282,
+  "startup_seconds": 47.204914403147995,
+  "started_epoch": 1791855437.0131316,
+  "ended_epoch": 1791855587.4996614,
+  "limits": {
+    "seconds": 600,
+    "logical": 512,
+    "posts": 1536,
+    "startup_seconds": 180
+  },
+  "units": [
+    {
+      "arm": "lotus-method-semloom",
+      "round": 2,
+      "position": 4,
+      "phase": "warmup",
+      "path": "model-supplement/dual/round-2-position-4-lotus-method-semloom/output/a0-warmup-0-q2/",
+      "full_query_seconds": 6.572896905,
+      "ready_query_seconds": 6.468035077,
+      "full_slot_seconds": 43.32961714,
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.111542875,
+        "p95": 0.1412069349,
+        "p99": 0.15708412618,
+        "max": 0.162100735,
+        "min": 0.081162668,
+        "mean": 0.113337337675,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "observed_peak_http": 4,
+      "model_metric_delta": {
+        "http://127.0.0.1:57485": {
+          "requests": 60.0,
+          "prompt": 7442.0,
+          "generation": 240.0
+        },
+        "http://127.0.0.1:48513": {
+          "requests": 60.0,
+          "prompt": 7484.0,
+          "generation": 240.0
+        }
+      },
+      "errors": 0,
+      "request_values_source": "model-supplement/dual/round-2-position-4-lotus-method-semloom/output/a0-warmup-0-q2/http-trace.jsonl"
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "round": 2,
+      "position": 4,
+      "phase": "measurement",
+      "path": "model-supplement/dual/round-2-position-4-lotus-method-semloom/output/a0-measurement-0-q2/",
+      "full_query_seconds": 4.562968102,
+      "ready_query_seconds": 4.462607159,
+      "full_slot_seconds": 43.32961714,
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.1128660655,
+        "p95": 0.13146925945,
+        "p99": 0.13982438711000003,
+        "max": 0.146276002,
+        "min": 0.085057208,
+        "mean": 0.11269631928333333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "observed_peak_http": 4,
+      "model_metric_delta": {
+        "http://127.0.0.1:57485": {
+          "requests": 60.0,
+          "prompt": 7442.0,
+          "generation": 240.0
+        },
+        "http://127.0.0.1:48513": {
+          "requests": 60.0,
+          "prompt": 7484.0,
+          "generation": 240.0
+        }
+      },
+      "errors": 0,
+      "request_values_source": "model-supplement/dual/round-2-position-4-lotus-method-semloom/output/a0-measurement-0-q2/http-trace.jsonl"
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "round": 2,
+      "position": 5,
+      "phase": "warmup",
+      "path": "model-supplement/dual/round-2-position-5-lotus-method-native-ray-data/output/a0-warmup-0-q2/",
+      "full_query_seconds": 22.120686476,
+      "ready_query_seconds": 21.992579075,
+      "full_slot_seconds": 57.622268117,
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.11299630999999999,
+        "p95": 0.12985327045,
+        "p99": 0.13858729848999998,
+        "max": 0.155779608,
+        "min": 0.085072425,
+        "mean": 0.11156657460000001,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "observed_peak_http": 4,
+      "model_metric_delta": {
+        "http://127.0.0.1:57485": {
+          "requests": 60.0,
+          "prompt": 7442.0,
+          "generation": 240.0
+        },
+        "http://127.0.0.1:48513": {
+          "requests": 60.0,
+          "prompt": 7484.0,
+          "generation": 240.0
+        }
+      },
+      "errors": 0,
+      "request_values_source": "model-supplement/dual/round-2-position-5-lotus-method-native-ray-data/output/a0-warmup-0-q2/http-trace.jsonl"
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "round": 2,
+      "position": 5,
+      "phase": "measurement",
+      "path": "model-supplement/dual/round-2-position-5-lotus-method-native-ray-data/output/a0-measurement-0-q2/",
+      "full_query_seconds": 8.918875808,
+      "ready_query_seconds": 8.82964676,
+      "full_slot_seconds": 57.622268117,
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.0956518975,
+        "p95": 0.1124619775,
+        "p99": 0.11756331626000001,
+        "max": 0.119164659,
+        "min": 0.083560356,
+        "mean": 0.09707401633333333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "observed_peak_http": 2,
+      "model_metric_delta": {
+        "http://127.0.0.1:57485": {
+          "requests": 60.0,
+          "prompt": 7442.0,
+          "generation": 240.0
+        },
+        "http://127.0.0.1:48513": {
+          "requests": 60.0,
+          "prompt": 7484.0,
+          "generation": 240.0
+        }
+      },
+      "errors": 0,
+      "request_values_source": "model-supplement/dual/round-2-position-5-lotus-method-native-ray-data/output/a0-measurement-0-q2/http-trace.jsonl"
+    }
+  ],
+  "aggregates": [
+    {
+      "phase": "warmup",
+      "arm": "lotus-method-semloom",
+      "query_n": 1,
+      "request_n": 120,
+      "full_query_values_s": [
+        6.572896905
+      ],
+      "ready_query_values_s": [
+        6.468035077
+      ],
+      "full_query_stats_s": {
+        "n": 1,
+        "p50": 6.572896905,
+        "p95": 6.572896905,
+        "p99": 6.572896905,
+        "max": 6.572896905,
+        "min": 6.572896905,
+        "mean": 6.572896905,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 1,
+        "p50": 6.468035077,
+        "p95": 6.468035077,
+        "p99": 6.468035077,
+        "max": 6.468035077,
+        "min": 6.468035077,
+        "mean": 6.468035077,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.111542875,
+        "p95": 0.1412069349,
+        "p99": 0.15708412618,
+        "max": 0.162100735,
+        "min": 0.081162668,
+        "mean": 0.113337337675,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "max_observed_http": 4,
+      "full_query_throughput_per_s": 18.25679023030409,
+      "ready_query_throughput_per_s": 18.552775081061917,
+      "errors": 0
+    },
+    {
+      "phase": "measurement",
+      "arm": "lotus-method-semloom",
+      "query_n": 1,
+      "request_n": 120,
+      "full_query_values_s": [
+        4.562968102
+      ],
+      "ready_query_values_s": [
+        4.462607159
+      ],
+      "full_query_stats_s": {
+        "n": 1,
+        "p50": 4.562968102,
+        "p95": 4.562968102,
+        "p99": 4.562968102,
+        "max": 4.562968102,
+        "min": 4.562968102,
+        "mean": 4.562968102,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 1,
+        "p50": 4.462607159,
+        "p95": 4.462607159,
+        "p99": 4.462607159,
+        "max": 4.462607159,
+        "min": 4.462607159,
+        "mean": 4.462607159,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.1128660655,
+        "p95": 0.13146925945,
+        "p99": 0.13982438711000003,
+        "max": 0.146276002,
+        "min": 0.085057208,
+        "mean": 0.11269631928333333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "max_observed_http": 4,
+      "full_query_throughput_per_s": 26.29867167982232,
+      "ready_query_throughput_per_s": 26.890110584345074,
+      "errors": 0
+    },
+    {
+      "phase": "warmup",
+      "arm": "lotus-method-native-ray-data",
+      "query_n": 1,
+      "request_n": 120,
+      "full_query_values_s": [
+        22.120686476
+      ],
+      "ready_query_values_s": [
+        21.992579075
+      ],
+      "full_query_stats_s": {
+        "n": 1,
+        "p50": 22.120686476,
+        "p95": 22.120686476,
+        "p99": 22.120686476,
+        "max": 22.120686476,
+        "min": 22.120686476,
+        "mean": 22.120686476,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 1,
+        "p50": 21.992579075,
+        "p95": 21.992579075,
+        "p99": 21.992579075,
+        "max": 21.992579075,
+        "min": 21.992579075,
+        "mean": 21.992579075,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.11299630999999999,
+        "p95": 0.12985327045,
+        "p99": 0.13858729848999998,
+        "max": 0.155779608,
+        "min": 0.085072425,
+        "mean": 0.11156657460000001,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "max_observed_http": 4,
+      "full_query_throughput_per_s": 5.42478643825972,
+      "ready_query_throughput_per_s": 5.456385974140234,
+      "errors": 0
+    },
+    {
+      "phase": "measurement",
+      "arm": "lotus-method-native-ray-data",
+      "query_n": 1,
+      "request_n": 120,
+      "full_query_values_s": [
+        8.918875808
+      ],
+      "ready_query_values_s": [
+        8.82964676
+      ],
+      "full_query_stats_s": {
+        "n": 1,
+        "p50": 8.918875808,
+        "p95": 8.918875808,
+        "p99": 8.918875808,
+        "max": 8.918875808,
+        "min": 8.918875808,
+        "mean": 8.918875808,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "ready_query_stats_s": {
+        "n": 1,
+        "p50": 8.82964676,
+        "p95": 8.82964676,
+        "p99": 8.82964676,
+        "max": 8.82964676,
+        "min": 8.82964676,
+        "mean": 8.82964676,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "request_stats_s": {
+        "n": 120,
+        "p50": 0.0956518975,
+        "p95": 0.1124619775,
+        "p99": 0.11756331626000001,
+        "max": 0.119164659,
+        "min": 0.083560356,
+        "mean": 0.09707401633333333,
+        "percentile": "linear interpolation; descriptive"
+      },
+      "max_observed_http": 2,
+      "full_query_throughput_per_s": 13.454610489403063,
+      "ready_query_throughput_per_s": 13.5905776597568,
+      "errors": 0
+    }
+  ],
+  "quality": {
+    "original_metric": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0
+    },
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "supplement": {
+      "returned_rows": 5,
+      "unique_rows": 5,
+      "duplicates": 0,
+      "invalid_rows": 0,
+      "required_rows": 5,
+      "limit_exceeded": false
+    },
+    "classification_audit": {
+      "true_positive": 7,
+      "false_positive": 0,
+      "true_negative": 106,
+      "false_negative": 7,
+      "invalid": 0,
+      "evaluated_rows": 120,
+      "missing_rows": 0,
+      "count_error_from_classifications": -7
+    },
+    "dataset_role": "original_movie_sf2000",
+    "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+    "quality_equivalence_proven": false
+  },
+  "classification_recall": 0.5,
+  "completed_response_usage": {
+    "prompt": 59704,
+    "generation": 1920
+  },
+  "endpoint_totals": {
+    "http://127.0.0.1:57485": {
+      "requests": 240.0,
+      "prompt": 29768.0,
+      "generation": 960.0
+    },
+    "http://127.0.0.1:48513": {
+      "requests": 240.0,
+      "prompt": 29936.0,
+      "generation": 960.0
+    }
+  },
+  "gpu_timeseries_summary": {
+    "0": {
+      "samples": 471,
+      "utilization_mean_percent": 9.796178343949045,
+      "utilization_max_percent": 100.0,
+      "memory_max_mib": 19488.0
+    },
+    "1": {
+      "samples": 471,
+      "utilization_mean_percent": 9.78556263269639,
+      "utilization_max_percent": 100.0,
+      "memory_max_mib": 19494.0
+    }
+  },
+  "registered_process_identities": 219,
+  "watchdog_registered_process_identities": 240,
+  "independent_checked_union_process_identities": 337,
+  "fallback_processes_before_final_cleanup": 0,
+  "api_exit_codes": [
+    0,
+    0
+  ],
+  "final_lifetime_metrics": "actual final GET retained",
+  "owned_residuals": 0,
+  "affinity_violations": 0,
+  "gpu_compute_after": [],
+  "watchdog_returncode": 0,
+  "original_clock_unchanged": true,
+  "previous_supplement_clock_unchanged": true,
+  "zero_model_preflight": {
+    "passed": true,
+    "checks": [
+      {
+        "arm": "lotus-method-semloom",
+        "action": "--data-preflight",
+        "returncode": 0,
+        "config_sha256": "c54beeded54039918c38f4bb026597e988bee5bff5873174fa81a5753386de27",
+        "preflight_model_requests": 0
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "action": "--preflight",
+        "returncode": 0,
+        "config_sha256": "c54beeded54039918c38f4bb026597e988bee5bff5873174fa81a5753386de27",
+        "preflight_model_requests": 0
+      },
+      {
+        "arm": "lotus-method-native-ray-data",
+        "action": "--data-preflight",
+        "returncode": 0,
+        "config_sha256": "444b76f619b00d5cece41d9303beef08a2761c42a22740189d3cc964344f0abc",
+        "preflight_model_requests": 0
+      },
+      {
+        "arm": "lotus-method-native-ray-data",
+        "action": "--preflight",
+        "returncode": 0,
+        "config_sha256": "444b76f619b00d5cece41d9303beef08a2761c42a22740189d3cc964344f0abc",
+        "preflight_model_requests": 0
+      }
+    ],
+    "ray_parent_resolved_bytes": 22,
+    "model_services_started": 0,
+    "logical_calls": 0,
+    "transmission_posts": 0,
+    "window_clock_written": false,
+    "previous_window_clock_unchanged": true,
+    "original_first_clock_unchanged": true
+  },
+  "old_cohort": {
+    "logical_calls": 7680,
+    "posts": 23040,
+    "single_slots": 18,
+    "dual_slots": 11,
+    "failures_preserved": true
+  },
+  "previous_supplement": {
+    "logical_calls": 1200,
+    "posts": 3600,
+    "completed_slots": 5,
+    "failure_preserved": true
+  },
+  "continuous_n3_claimed": false,
+  "public_archive": {
+    "path": "sr-observations.tar.gz",
+    "bytes": 1221772,
+    "sha256": "68e92915ba6156553f8ce557028d062e96e62306f66e9ebbcb111024159fcdb0",
+    "members": 207
+  },
+  "privacy": {
+    "violations": 0,
+    "messages_omitted": 1920,
+    "request_payloads_omitted": 0,
+    "reviews_omitted": 0,
+    "decoded_payloads_scanned": 480,
+    "binary_encoded_response_wires_omitted": 480,
+    "unique_original_benchmark_messages_checked": 120
+  },
+  "private_archive": {
+    "bytes": 1541059,
+    "sha256": "8c5cdb5309f16c39c5f8dab26d4809f089ffbc4927e67fb956431a1eb402eb94",
+    "role": "Local private original; no model rerun"
+  },
+  "retention_compaction": {
+    "logical_members": 234,
+    "inline_members": 207,
+    "reused_identical_members": 25,
+    "derived_concat_members": 2,
+    "restored_all_members_identical": true,
+    "previous_full_public_archive": {
+      "git_commit": "42bfaf40372eb8c3d2612542f6de3b04da37243a",
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-observations.tar.gz",
+      "sha256": "c7a43560d6cbdf11b7270b206e601c58f249da32620ee7175f69b83de3f9c013",
+      "bytes": 1496040,
+      "members": 234
+    },
+    "raw_private_original_unchanged": true
+  }
+}

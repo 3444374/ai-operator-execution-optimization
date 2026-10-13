@@ -1,0 +1,90 @@
+diff --git a/include/backend/python/py_executor.hpp b/include/backend/python/py_executor.hpp
+index 461e49da..18b02035 100644
+--- a/include/backend/python/py_executor.hpp
++++ b/include/backend/python/py_executor.hpp
+@@ -79,0 +80 @@ namespace IMLane {
++        py::object owned_event_loop;
+diff --git a/include/common/parameter.hpp b/include/common/parameter.hpp
+index 79814eff..633dbee7 100644
+--- a/include/common/parameter.hpp
++++ b/include/common/parameter.hpp
+@@ -12,0 +13,2 @@
++#include <cstdlib>
++#include <stdexcept>
+@@ -35 +37,11 @@ namespace IMLane {
+-            return std::string(lane_prefix) + "-" + std::to_string(lane_id);
++            const char* instance = std::getenv("IMLANE_NAMESPACE");
++            std::string prefix;
++            if (instance && *instance) {
++                prefix = instance;
++                if (prefix.size() > 64 || prefix.find_first_not_of(
++                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_") != std::string::npos) {
++                    throw std::invalid_argument("IMLANE_NAMESPACE must use at most 64 letters, digits, hyphens or underscores");
++                }
++                prefix += "-";
++            }
++            return prefix + std::string(lane_prefix) + "-" + std::to_string(lane_id);
+diff --git a/src/backend/python/py_executor.cpp b/src/backend/python/py_executor.cpp
+index f0481bbf..dc04f677 100644
+--- a/src/backend/python/py_executor.cpp
++++ b/src/backend/python/py_executor.cpp
+@@ -26,0 +27,4 @@ namespace IMLane {
++        if (owned_event_loop && !owned_event_loop.is_none()) {
++            owned_event_loop.attr("close")();
++            owned_event_loop = py::object();
++        }
+@@ -70 +74,7 @@ namespace IMLane {
+-        asyncio = py::module_::import("asyncio");
++        try {
++            asyncio = py::module_::import("asyncio");
++            owned_event_loop = asyncio.attr("new_event_loop")();
++            asyncio.attr("set_event_loop")(owned_event_loop);
++        } catch (const py::error_already_set& error) {
++            throw BackendException(error.what());
++        }
+diff --git a/src/coordinator/coordinator.cpp b/src/coordinator/coordinator.cpp
+index 13ce60a1..17da21ef 100644
+--- a/src/coordinator/coordinator.cpp
++++ b/src/coordinator/coordinator.cpp
+@@ -8,0 +9 @@
++#include <csignal>
+@@ -285 +286,2 @@ namespace IMLane {
+-            gateway_server->Serve("0.0.0.0", sys_config.gateway_port);
++            const char* bind_host = std::getenv("IMLANE_GATEWAY_HOST");
++            gateway_server->Serve(bind_host ? bind_host : "0.0.0.0", sys_config.gateway_port);
+@@ -402,6 +404,21 @@ namespace IMLane {
+-        ray.attr("init")(
+-            py::arg("address")=ray_options.address,
+-            py::arg("log_to_driver")=ray_options.log_to_driver,
+-            py::arg("logging_level")=ray_options.logging_level,
+-            py::arg("runtime_env")=runtime_env
+-        );
++        struct sigaction interrupt_handler{}, termination_handler{};
++        if (sigaction(SIGINT, nullptr, &interrupt_handler) != 0 ||
++            sigaction(SIGTERM, nullptr, &termination_handler) != 0) {
++            throw CoordException("Cannot save Coordinator signal handlers");
++        }
++        auto restore_handlers = [&]() {
++            sigaction(SIGINT, &interrupt_handler, nullptr);
++            sigaction(SIGTERM, &termination_handler, nullptr);
++        };
++        try {
++            ray.attr("init")(
++                py::arg("address")=ray_options.address,
++                py::arg("log_to_driver")=ray_options.log_to_driver,
++                py::arg("logging_level")=ray_options.logging_level,
++                py::arg("runtime_env")=runtime_env
++            );
++        } catch (...) {
++            restore_handlers();
++            throw;
++        }
++        restore_handlers();
+diff --git a/src/main/main.cpp b/src/main/main.cpp
+index dcc96645..7b8c9b06 100644
+--- a/src/main/main.cpp
++++ b/src/main/main.cpp
+@@ -38,0 +39 @@ IMLane::IMConfig ProcessCmdline(cmdline::variables_map &vm, IMLane::IMConfig &ou
++    SET_IF_EXISTS(vm, output_config, gateway_port);
+@@ -91,0 +93 @@ int main(int argc, char* argv[]) {
++    ("gateway_port", cmdline::value<int>(), "Specify the Coordinator gateway port.")

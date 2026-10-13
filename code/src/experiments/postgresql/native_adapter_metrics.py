@@ -154,6 +154,8 @@ def compare_methods(first, second):
     def index(calls):
         result = {}
         for call in calls:
+            if call['request_values_sha256'] is None:
+                raise ValueError('complete method request values are unavailable; compare qualification observations')
             identity = (call['row_id'], call['stage_id'], call['call_id'])
             if identity in result:
                 raise ValueError('duplicate method call occurrence')

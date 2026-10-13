@@ -20,6 +20,8 @@ from src.semantic_methods.continuation import Continue,Final,Request
 from src.experiments.postgresql.native_adapter_metrics import summarize_calls
 from src.experiments.postgresql.supplier_adapter_query import (
     MethodObservations,_LotusBatchObservation,_LotusMethodObservation,run_supplier_query,_duckdb_rows,
+    _record_supplier_http,_supplier_runtime,
+    _record_supplier_http,_supplier_runtime,
 )
 
 
@@ -32,6 +34,83 @@ class SupplierObservationTests(unittest.TestCase):
     def observations(self):
         writer=Writer();raw=io.StringIO()
         return MethodObservations(writer,raw,'fixture'),writer,raw
+
+    def test_http_observation_retains_supplier_errors_and_length_without_interpretation(self):
+        stream=io.StringIO()
+        request=b'{"model":"fixture","messages":[]}'
+        for status,body in ((429,b'{"error":{"message":"original failure"}}'),
+                (200,b'{"broken":'),(200,b'{"model":"fixture","choices":[{"finish_reason":"length"}]}')):
+            _record_supplier_http(stream,request,body,status)
+        values=[json.loads(line) for line in stream.getvalue().splitlines()]
+        self.assertEqual([v['http_status'] for v in values],[429,200,200])
+        self.assertEqual(values[0]['response']['error']['message'],'original failure')
+        self.assertEqual(values[1]['response'],None)
+        import base64
+        self.assertEqual(base64.b64decode(values[1]['response_bytes_base64']),b'{"broken":')
+        self.assertEqual(values[2]['response']['choices'][0]['finish_reason'],'length')
+
+    def test_shared_ray_runtime_keeps_each_native_execution_owner(self):
+        group=SimpleNamespace(runtime=dict(owner='Ray Data',cluster_resources=dict(CPU=8)),
+            daft_runtime=dict(owner='Daft Native',version='0.7.21'))
+        owner=SimpleNamespace(group=group)
+        daft=_supplier_runtime('lotus-method-native-daft',owner)
+        core=_supplier_runtime('duckdb-method-native-ray',owner)
+        data=_supplier_runtime('lotus-method-native-ray-data',owner)
+        self.assertEqual(daft['owner'],'Daft Native')
+        self.assertEqual(daft['version'],'0.7.21')
+        self.assertEqual(core['owner'],'Ray Core')
+        self.assertEqual(data['owner'],'Ray Data')
+        self.assertEqual(core['cluster_resources'],dict(CPU=8))
+        self.assertEqual(core['shared_runtime_owner'],'Ray Data')
+        self.assertEqual(group.runtime['owner'],'Ray Data')
+
+    def test_protocol_observation_keeps_http_errors_malformed_json_and_length_for_native_parser(self):
+        cases=[(401,b'{"error":"auth"}'),(429,b'not-json'),
+               (200,b'{"choices":[{"finish_reason":"length"}]}')]
+        for status,response in cases:
+            with self.subTest(status=status,response=response):
+                raw=io.StringIO()
+                _record_supplier_http(raw,b'{"model":"fixture"}',response,status)
+                value=json.loads(raw.getvalue())
+                self.assertEqual(value['http_status'],status)
+                if response==b'not-json':
+                    self.assertEqual(value['response_bytes_base64'],'bm90LWpzb24=')
+                else:
+                    self.assertEqual(value['response'],json.loads(response))
+
+    def test_query_runtime_preserves_individual_owner_in_mixed_group(self):
+        group=SimpleNamespace(runtime=dict(owner='Ray Data',cluster_resources={'CPU':8}),
+                              daft_runtime=dict(owner='Daft Native',version='0.7.21'))
+        owner=SimpleNamespace(group=group)
+        for suffix,expected in [('daft','Daft Native'),('ray','Ray Core'),('ray-data','Ray Data')]:
+            with self.subTest(backend=suffix):
+                actual=_supplier_runtime('lotus-method-native-'+suffix,owner)
+                self.assertEqual(actual['owner'],expected)
+                self.assertEqual(actual['shared_runtime_owner'],'Ray Data')
+                self.assertEqual(actual['execution_backend'],suffix)
+        self.assertEqual(group.runtime['owner'],'Ray Data')
+        self.assertEqual(group.daft_runtime['owner'],'Daft Native')
+
+    def test_native_sdk_error_values_reach_original_lm_without_observer_replacement(self):
+        observations,writer,raw=self.observations()
+        failure=ValueError('original provider error value')
+        lm=SimpleNamespace(_process_uncached_messages=lambda *_:[failure])
+        observer=_LotusBatchObservation(lm,[dict(row_id='a')],observations)
+        with patch('src.semantic_methods.lotus.sdk.prepare_call',return_value=SimpleNamespace(payload=b'{}')):
+            self.assertIs(observer(lm,[([],None)],{},False,'fixture')[0],failure)
+        self.assertEqual([e['error_type'] for e in writer.events if e['event']=='caller_error'],['ValueError'])
+        self.assertEqual(raw.getvalue(),'')
+
+    def test_native_execution_label_does_not_report_semloom_for_vendor_graph(self):
+        observations,writer,raw=self.observations()
+        class Executor:
+            def __call__(self,lm,data,kwargs,show,description):
+                for index,_ in enumerate(data):self.on_prepared(index,SimpleNamespace(payload=b'{}'))
+                return [SimpleNamespace(model_dump=lambda:dict(value='ok'))]
+        lm=SimpleNamespace(_process_uncached_messages=lambda *_:None)
+        observer=_LotusBatchObservation(lm,[dict(row_id='a')],observations,Executor(),executor_label='ray-data')
+        observer(lm,[([],None)],{},False,'fixture')
+        self.assertEqual([e['executor'] for e in writer.events if e['event']=='lotus_batch_return'],['ray-data'])
 
     def test_duckdb_select_vectors_share_query_job_and_keep_global_source_rows(self):
         values=[dict(row_id=f'row-{i:04d}',text=f'input-{i}') for i in range(2051)]
@@ -56,6 +135,8 @@ class SupplierObservationTests(unittest.TestCase):
 
         class Connection:
             def execute(connection,_statement):
+                if _statement.startswith('SELECT extension_version'):
+                    return SimpleNamespace(fetchone=lambda:('0.4.14-semloom1',))
                 result=[]
                 for vector,start in enumerate((0,2048)):
                     rows=values[start:min(start+2048,len(values))]
@@ -137,8 +218,8 @@ class SupplierObservationTests(unittest.TestCase):
         with LotusControlTests().batch(prevalidate=True,retain=False) as (executor,execution,state):
             lm=SimpleNamespace(_process_uncached_messages=lambda *args: (_ for _ in ()).throw(AssertionError('native pool called')))
             observer=_LotusBatchObservation(lm,[dict(row_id='a'),dict(row_id='b')],observations,executor)
-            with patch('src.semantic_methods.lotus.batch.lotus_response',
-                side_effect=lambda full:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
+            with patch('src.semantic_methods.lotus.batch.parse_lotus_response',
+                side_effect=lambda *args,**kwargs:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
                 observer(lm,[([dict(role='user',content=str(i))],None) for i in range(2)],{},False,'fixture')
             self.assertEqual(state['events'].count('prepare'),2)
             self.assertEqual(executor.last_responses,())
@@ -226,6 +307,8 @@ class SupplierObservationTests(unittest.TestCase):
                     def enable(self,connection):connection.bridge=self
                 class Connection:
                     def execute(self,statement):
+                        if statement.startswith('SELECT extension_version'):
+                            return SimpleNamespace(fetchone=lambda:('0.4.14-semloom1',))
                         call=DuckDBCall(row=0,query_id='fixture',call_id='row-call',model='fixture',
                             endpoint='http://127.0.0.1:1/v1/chat/completions',
                             payload=b'{"model":"fixture","messages":[]}',headers=(),

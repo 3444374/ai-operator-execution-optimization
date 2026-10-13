@@ -56,7 +56,8 @@ def _daft(values, plan, model, concurrency, num_threads):
     from daft.functions import prompt
     if daft.__version__ != '0.7.21':
         raise RuntimeError('semantic Map comparison requires Daft0.7.21')
-    daft.set_runner_native(num_threads=num_threads)
+    from src.infrastructure.daft_runtime import configure_daft_runner
+    configure_daft_runner('native',num_threads=num_threads)
     provider = OpenAIProvider(base_url=model.endpoint_url.removesuffix('/chat/completions'),
                               api_key=model.bearer_token or 'local-fixture')
     frame = daft.from_pydict({'row_id': [v['source_example_id'] for v in values],
@@ -197,7 +198,8 @@ def _prepare_daft(values, plan, model, concurrency, num_threads):
     if daft.__version__ != '0.7.21':
         raise RuntimeError('semantic Map comparison requires Daft0.7.21')
     # Native SDK thread settings belong to the process and cannot be set twice.
-    daft.set_runner_native(num_threads=num_threads)
+    from src.infrastructure.daft_runtime import configure_daft_runner
+    configure_daft_runner('native',num_threads=num_threads)
     provider = OpenAIProvider(base_url=model.endpoint_url.removesuffix('/chat/completions'),
                               api_key=model.bearer_token or 'local-fixture')
     frame = daft.from_pydict({'row_id': [v['source_example_id'] for v in values],

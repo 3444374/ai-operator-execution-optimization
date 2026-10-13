@@ -16,7 +16,8 @@ def prepare_runtime(num_threads):
         raise RuntimeError('native Daft Map requires pinned Daft 0.7.21')
     if type(num_threads) is not int or num_threads < 1:
         raise ValueError('native Daft runtime needs positive threads')
-    daft.set_runner_native(num_threads=num_threads)
+    from src.infrastructure.daft_runtime import configure_daft_runner
+    configure_daft_runner('native',num_threads=num_threads)
 
 
 @contextmanager
@@ -32,7 +33,7 @@ def open_rows(inputs, plan, connection_factory, session_factory, *, concurrency,
     def rows():
         nonlocal iterator
         if not runtime_prepared:
-            daft.set_runner_native(num_threads=num_threads)
+            prepare_runtime(num_threads)
         statement, parameters = inputs.select_sql(ordered=False)
         if parameters:
             raise ValueError('native Daft Map does not interpolate SQL parameters')

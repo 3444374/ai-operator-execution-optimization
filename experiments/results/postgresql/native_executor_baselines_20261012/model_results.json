@@ -1,0 +1,442 @@
+{
+  "schema": "semloom.lotus.six.model.result.v1",
+  "run_id": "lotus-six-model01/attempt02",
+  "passed": true,
+  "source_commit": "9c2fdefac94811b18a1f6f097a855786350fe31f",
+  "source_archive_sha256": "d90eb58cca214a81935b538137a6fce3bd71554d6c0e63f4dc2d0235bd7e0ab5",
+  "evidence_archive_sha256": "b5b92075e09bfee3d68ff4e95af1a9c47c2f6a2dde8ebf97f08716f2ff60a623",
+  "model_manifest_sha256": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+  "new_round": {
+    "post_cap": 192,
+    "actual_model_posts": 144,
+    "allocated_slots": 144,
+    "unused_slots": 48,
+    "queries": 18,
+    "warmup_queries": 6,
+    "measured_queries": 12,
+    "fixture_posts": 0,
+    "fixture_cap_separate": 64,
+    "retries": 0
+  },
+  "previous_round": {
+    "actual_model_posts": 24,
+    "allocated_slots": 32,
+    "measured_queries": 0,
+    "included_in_current_statistics": false
+  },
+  "all_rounds": {
+    "actual_model_posts": 168,
+    "allocated_slots": 176
+  },
+  "three_counter_audit": {
+    "gateway": 144,
+    "sqlite": 144,
+    "vllm_log": 144,
+    "closed_units": 18
+  },
+  "model_readiness_seconds": 48.09862150903791,
+  "driver_test_seconds": 76.20315596880391,
+  "supervisor_test_seconds": 79.36147517710924,
+  "cleanup": {
+    "api_server_exit": 0,
+    "own_survivors": [],
+    "gpu_after": []
+  },
+  "measured_statistics": {
+    "lotus-adapted-native": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.213361137,
+        "P95": 0.254204468,
+        "P99": 0.254204468,
+        "max": 0.254204468,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.11280526,
+          "P95": 0.132864006,
+          "P99": 0.132864006,
+          "max": 0.132864006,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.107353978,
+          "P95": 0.117801942,
+          "P99": 0.117801942,
+          "max": 0.117801942,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.00106144,
+          "P95": 0.021328594,
+          "P99": 0.021328594,
+          "max": 0.021328594,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.109810926,
+          "P95": 0.126452342,
+          "P99": 0.126452342,
+          "max": 0.126452342,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 34.21979681332633,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-daft": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.223028466,
+        "P95": 0.231552716,
+        "P99": 0.231552716,
+        "max": 0.231552716,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.11062264,
+          "P95": 0.118905535,
+          "P99": 0.118905535,
+          "max": 0.118905535,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.102196849,
+          "P95": 0.109196734,
+          "P99": 0.109196734,
+          "max": 0.109196734,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.000935546,
+          "P95": 0.00225156,
+          "P99": 0.00225156,
+          "max": 0.00225156,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.108322816,
+          "P95": 0.117129941,
+          "P99": 0.117129941,
+          "max": 0.117129941,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 35.19723348336932,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-ray-data": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 1.438762872,
+        "P95": 5.439133439,
+        "P99": 5.439133439,
+        "max": 5.439133439,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.06722765,
+          "P95": 0.078621356,
+          "P99": 0.078621356,
+          "max": 0.078621356,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.064258222,
+          "P95": 0.07702844,
+          "P99": 0.07702844,
+          "max": 0.07702844,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001252832,
+          "P95": 0.003339785,
+          "P99": 0.003339785,
+          "max": 0.003339785,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.064684287,
+          "P95": 0.077176234,
+          "P99": 0.077176234,
+          "max": 0.077176234,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 2.326292702960756,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-semloom": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.177222622,
+        "P95": 0.181206911,
+        "P99": 0.181206911,
+        "max": 0.181206911,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.103109841,
+          "P95": 0.113719896,
+          "P99": 0.113719896,
+          "max": 0.113719896,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.097330742,
+          "P95": 0.10250821,
+          "P99": 0.10250821,
+          "max": 0.10250821,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001197812,
+          "P95": 0.00520066,
+          "P99": 0.00520066,
+          "max": 0.00520066,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.102013318,
+          "P95": 0.109812031,
+          "P99": 0.109812031,
+          "max": 0.109812031,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 44.639178769903424,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-imlane": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.33121907,
+        "P95": 0.384606972,
+        "P99": 0.384606972,
+        "max": 0.384606972,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.063437226,
+          "P95": 0.074942044,
+          "P99": 0.074942044,
+          "max": 0.074942044,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.061678242,
+          "P95": 0.071537916,
+          "P99": 0.071537916,
+          "max": 0.071537916,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001549784,
+          "P95": 0.002595054,
+          "P99": 0.002595054,
+          "max": 0.002595054,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.061836511,
+          "P95": 0.071782558,
+          "P99": 0.071782558,
+          "max": 0.071782558,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 22.35179926577748,
+      "errors": 0,
+      "timeouts": 0
+    },
+    "lotus-method-native-imlane-ray": {
+      "query_samples": 2,
+      "request_samples": 16,
+      "query": {
+        "n": 2,
+        "unit": "seconds",
+        "P50": 0.372149994,
+        "P95": 0.382980782,
+        "P99": 0.382980782,
+        "max": 0.382980782,
+        "quantile": "nearest rank",
+        "P99_is_sample_maximum": true,
+        "stable_tail_estimate": false
+      },
+      "requests": {
+        "gateway_request_e2e": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.060198038,
+          "P95": 0.068122234,
+          "P99": 0.068122234,
+          "max": 0.068122234,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "model_http": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.057589832,
+          "P95": 0.065906549,
+          "P99": 0.065906549,
+          "max": 0.065906549,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_before_dispatch": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.001418304,
+          "P95": 0.002135764,
+          "P99": 0.002135764,
+          "max": 0.002135764,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        },
+        "gateway_dispatch_to_body": {
+          "n": 16,
+          "unit": "seconds",
+          "P50": 0.057899489,
+          "P95": 0.066626406,
+          "P99": 0.066626406,
+          "max": 0.066626406,
+          "quantile": "nearest rank",
+          "P99_is_sample_maximum": true,
+          "stable_tail_estimate": false
+        }
+      },
+      "throughput_rows_per_second": 21.18838287157826,
+      "errors": 0,
+      "timeouts": 0
+    }
+  },
+  "original_values": {
+    "requests": "model_requests.csv",
+    "queries": "model_queries.csv",
+    "source": "model_source.json"
+  },
+  "sample_limit": "nearest-rank P95 and P99 are the sample maximum at n=2 queries and n=16 requests; no stable tail or population estimate",
+  "public_projections_sha256": {
+    "model_requests.csv": "b2d5ed95e79e782924cfa5a686f3037fefd04315ea35892fd17b2f55ea68bed7",
+    "model_queries.csv": "4b0e36ddee8779af7b228b13db657820c65734bc2a62da08e6cbafffe7ab0851",
+    "model_source.json": "b1e205569744d684673891b84de60a3ad260bc8ef0d72cceb29aad7121d210c0"
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "passed": true,
+  "mode": "SQLite mode=ro and query_only, no writes",
+  "cpu_affinity": [
+    72,
+    73,
+    74,
+    75,
+    76,
+    77,
+    78,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    89,
+    90,
+    91,
+    92,
+    93,
+    94,
+    95,
+    96,
+    97
+  ],
+  "model_calls": 0,
+  "results": [
+    {
+      "cohort": "original",
+      "sqlite_version": "3.45.3",
+      "sends_indexes": [],
+      "kind_counts": {
+        "fixture": 240,
+        "gateway": 7920,
+        "model": 7680,
+        "router": 7680
+      },
+      "row_count": 23520,
+      "query_plans": [
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ]
+      ],
+      "helper_sha256": "35691b3dc536079ec1c1ee864313c6281133eb8823f72fe92b3f9a669f815ac0"
+    },
+    {
+      "cohort": "first_supplement",
+      "sqlite_version": "3.45.3",
+      "sends_indexes": [],
+      "kind_counts": {
+        "gateway": 1200,
+        "model": 1200,
+        "router": 1200
+      },
+      "row_count": 3600,
+      "query_plans": [
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ]
+      ],
+      "helper_sha256": "a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2"
+    },
+    {
+      "cohort": "sr_supplement",
+      "sqlite_version": "3.45.3",
+      "sends_indexes": [],
+      "kind_counts": {
+        "gateway": 480,
+        "model": 480,
+        "router": 480
+      },
+      "row_count": 1440,
+      "query_plans": [
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ],
+        [
+          [
+            3,
+            0,
+            0,
+            "SCAN sends"
+          ]
+        ]
+      ],
+      "helper_sha256": "a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2"
+    }
+  ]
+}

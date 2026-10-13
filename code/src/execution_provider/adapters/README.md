@@ -107,6 +107,17 @@ mode, so a query cannot borrow a service with incompatible response behavior. Co
 pre-send failures have no invented HTTP status; decoding them raises `CompletionAdapterError`.
 Transport failures still use the Core's unknown-remote handling.
 
+Both transports retain one HTTPX client and connection pool. Cookies use one standard
+`CookieJar` per `execute` task, including any redirects within that request; parallel calls
+and later queries cannot inherit another call's cookies. The default still returns redirects
+without following them. Cancellation discards only that call's cookie context, and the owner
+closes the client. [Actual HTTPX regressions](../../../tests/execution_provider/test_httpx_request_cookies.py)
+cover consecutive calls, parallel redirect chains, full response metadata and cancellation.
+This applies to SemLoom's LOTUS, DuckDB and Sema complete-response transport, plus its ordinary
+completion callers. Native supplier SDKs and the separate aiohttp vendor kernels keep their own
+client implementations. Existing model runs without cookies have no demonstrated output change
+from this defect.
+
 ## Adopted source behavior and scope
 
 This is an engineering choice based on the fixed consumers in the

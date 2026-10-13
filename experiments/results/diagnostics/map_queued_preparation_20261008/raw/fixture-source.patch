@@ -1,0 +1,137 @@
+--- a/code/src/execution_provider/adapters/map_preparation.py
++++ b/code/src/execution_provider/adapters/map_preparation.py
+@@ -61,0 +62,12 @@
++    def _queued_tail(self, tasks):
++        if not tasks or not self.physical.coalesce_queued_preparation or not self.blocks:
++            return None
++        block = self.blocks[next(reversed(self.blocks))]
++        if (self.broker.state_of(block.descriptor.block_id) != 'encoded'
++                or not block.tasks or any(self.rows[t.key].cancelled for t in block.tasks)
++                or block.tasks[0].key.session_id != tasks[0].key.session_id
++                or block.tasks[0].spec != tasks[0].spec
++                or self._work_identity(block.tasks[0]) != self._work_identity(tasks[0])):
++            return None
++        return block
++
+@@ -70 +81,0 @@
+-            selected, size, work = [], 0, 0
+@@ -72,5 +83,26 @@
+-            for task in tasks[:min(available, self.physical.batch_rows)]:
+-                if task.key in self.rows:
+-                    raise ValueError('duplicate prepared Map row')
+-                if selected and (task.spec.job_id != selected[0].spec.job_id
+-                        or self._work_identity(task) != self._work_identity(selected[0])):
++            tail = self._queued_tail(tasks)
++            added = ()
++            for candidate in ((tail, None) if tail is not None else (None,)):
++                prefix = candidate.tasks if candidate is not None else ()
++                selected = list(prefix)
++                size = base_size = sum(len(t.task.payload) + 24 for t in prefix)
++                work = sum(t.task.estimated_work for t in prefix)
++                for task in tasks[:min(available, self.physical.batch_rows - len(prefix))]:
++                    if selected and (task.spec.job_id != selected[0].spec.job_id
++                            or self._work_identity(task) != self._work_identity(selected[0])):
++                        break
++                    if candidate is not None and (task.key.session_id != prefix[0].key.session_id
++                            or task.spec != prefix[0].spec):
++                        break
++                    amount = len(task.task.payload) + 24
++                    if (size + amount > self.physical.window_bytes
++                            or held + size + amount - base_size > self.broker.limits.encoded_bytes
++                            or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
++                            or work + task.task.estimated_work > self.broker.limits.ready_work):
++                        break
++                    selected.append(task)
++                    size += amount
++                    work += task.task.estimated_work
++                added = selected[len(prefix):]
++                if added:
++                    tail = candidate
+@@ -78,10 +110 @@
+-                amount = len(task.task.payload) + 24
+-                if (size + amount > self.physical.window_bytes
+-                        or held + size + amount > self.broker.limits.encoded_bytes
+-                        or 2 * (size + amount + 8) > self.broker.limits.ready_bytes
+-                        or work + task.task.estimated_work > self.broker.limits.ready_work):
+-                    break
+-                selected.append(task)
+-                size += amount
+-                work += task.task.estimated_work
+-            if not selected:
++            if not added:
+@@ -95 +118 @@
+-            block_id = f'map-prepared-{self.ordinal}'
++            block_id = tail.descriptor.block_id if tail is not None else f'map-prepared-{self.ordinal}'
+@@ -97 +120,2 @@
+-                block_id, selected[0].spec.job_id, self.ordinal,
++                block_id, selected[0].spec.job_id,
++                tail.descriptor.ordered_sequence if tail is not None else self.ordinal,
+@@ -104,6 +128,11 @@
+-                time.monotonic())
+-            self.broker.enqueue_encoded(descriptor)
+-            self.ordinal += 1
+-            self.blocks[block_id] = _PreparedBlock(
+-                descriptor, tuple(selected), {t.key for t in selected})
+-            for index, task in enumerate(selected):
++                tail.descriptor.created_at_s if tail is not None else time.monotonic())
++            if tail is not None:
++                self.broker.extend_encoded(descriptor)
++                tail.descriptor, tail.tasks = descriptor, tuple(selected)
++                tail.members.update(t.key for t in added)
++            else:
++                self.broker.enqueue_encoded(descriptor)
++                self.ordinal += 1
++                self.blocks[block_id] = _PreparedBlock(
++                    descriptor, tuple(selected), {t.key for t in selected})
++            for index, task in enumerate(added, start=len(selected) - len(added)):
+@@ -112 +141 @@
+-            return len(selected)
++            return len(added)
+--- a/code/src/execution_provider/adapters/ray_map_transport.py
++++ b/code/src/execution_provider/adapters/ray_map_transport.py
+@@ -33,0 +34 @@
++    coalesce_queued_preparation: bool = False
+@@ -35,0 +37,3 @@
++        if type(self.coalesce_queued_preparation) is not bool or (
++                self.coalesce_queued_preparation and self.preparation is None):
++            raise ValueError("queued preparation coalescing requires explicit preparation")
+--- a/code/src/scheduling/runtime/stage_broker.py
++++ b/code/src/scheduling/runtime/stage_broker.py
+@@ -141,0 +142,37 @@
++        self._assert_invariants()
++
++    def extend_encoded(self, descriptor: StageBlockDescriptor) -> None:
++        """Append rows to the unleased FIFO tail, preserving its existing prefix."""
++        previous = self._descriptors[descriptor.block_id]
++        if (self.state_of(descriptor.block_id) != "encoded"
++                or not self._encoded_queue or self._encoded_queue[-1] != descriptor.block_id):
++            raise ValueError("only the unleased encoded tail can grow")
++        fixed = ("job_id", "ordered_sequence", "representation", "layout", "dtype",
++                 "transform_signature", "model_signature", "created_at_s", "ready_at_s", "retry_count")
++        prefix = len(previous.row_ids)
++        if (any(getattr(previous, name) != getattr(descriptor, name) for name in fixed)
++                or len(descriptor.row_ids) <= prefix
++                or descriptor.row_ids[:prefix] != previous.row_ids
++                or descriptor.shape != (len(descriptor.row_ids), *previous.shape[1:])):
++            raise ValueError("encoded extension changed the existing row prefix or identity")
++        old_work, new_work = previous.work, descriptor.work
++        work_identity = ("primary_stage", "calibration_signature", "locality_key", "deadline_s",
++                         "lower_primary_units", "upper_primary_units")
++        if (any(getattr(old_work, name) != getattr(new_work, name) for name in work_identity)
++                or len(old_work.stages) != len(new_work.stages)
++                or any(a.stage != b.stage or a.unit != b.unit or b.units < a.units
++                       for a, b in zip(old_work.stages, new_work.stages))
++                or any(getattr(descriptor, name) < getattr(previous, name)
++                       for name in ("logical_bytes", "physical_bytes", "ready_bytes_estimate"))):
++            raise ValueError("encoded extension changed work identity or reduced reservations")
++        appended = descriptor.row_ids[prefix:]
++        if self._admitted_rows.intersection(appended):
++            raise ValueError("extension row_ids already admitted")
++        delta = descriptor.physical_bytes - previous.physical_bytes
++        if (self._encoded_held_bytes + delta > self._limits.encoded_bytes
++                or descriptor.ready_bytes_estimate > self._limits.ready_bytes
++                or descriptor.model_work_units > self._limits.ready_work):
++            raise BufferError("encoded extension exceeds stage capacity")
++        self._descriptors[descriptor.block_id] = descriptor
++        self._admitted_rows.update(appended)
++        self._encoded_held_bytes += delta

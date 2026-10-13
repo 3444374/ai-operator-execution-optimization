@@ -1,0 +1,280 @@
+{
+  "schema": "semloom.lotus_observation_substitute.v1",
+  "baseline_commit": "1e96935610069d17430c6fb75fe37a75659aa84e",
+  "source_sha256": {
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "0f6bd12c8aefe09862b32f7b5144e38ab01805402c746f5e8171e32d10c1dff6",
+    "code/tests/experiments/test_lotus_observation_modes.py": "99a244d9787678299500e332a7192fd9cdcc9f590562e3fac8d7e59834095023"
+  },
+  "python_version": "3.12.6",
+  "platform": "Darwin",
+  "machine": "arm64",
+  "identity": "local JSON preparation and native SDK response substitutes; in-memory event/raw writers",
+  "comparison_scope": "complete batch observer plus unchanged serial JSON-only native substitute",
+  "limitations": "not actual LOTUS/LiteLLM preparation, model latency, vendor scheduling or server performance",
+  "real_model_requests": 0,
+  "http_requests": 0,
+  "gpu_work": 0,
+  "warmups_per_mode": 1,
+  "repeats_per_mode": 7,
+  "timing_adjustment": "none; each sample is its directly measured full interval",
+  "cases": [
+    {
+      "rows": 128,
+      "prompt_characters": 2048,
+      "warmups_excluded": {
+        "qualification": {
+          "seconds": 0.003158458,
+          "expected_preparations": 128,
+          "native_substitute_preparations": 128,
+          "method_occurrences": 128,
+          "events": 385
+        },
+        "performance": {
+          "seconds": 0.001085708,
+          "expected_preparations": 0,
+          "native_substitute_preparations": 128,
+          "method_occurrences": 128,
+          "events": 257
+        }
+      },
+      "samples": {
+        "qualification": [
+          {
+            "seconds": 0.003014625,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.003095375,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.003298875,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.002992042,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.003036166,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.003216083,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          },
+          {
+            "seconds": 0.003100167,
+            "expected_preparations": 128,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 385
+          }
+        ],
+        "performance": [
+          {
+            "seconds": 0.001067916,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.001070917,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.001070458,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.001081959,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.001132375,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.001140709,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          },
+          {
+            "seconds": 0.0011285,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 128,
+            "method_occurrences": 128,
+            "events": 257
+          }
+        ]
+      },
+      "median_seconds": {
+        "qualification": 0.003095375,
+        "performance": 0.001081959
+      },
+      "median_difference_seconds": 0.002013416
+    },
+    {
+      "rows": 2000,
+      "prompt_characters": 2048,
+      "warmups_excluded": {
+        "qualification": {
+          "seconds": 0.049774375,
+          "expected_preparations": 2000,
+          "native_substitute_preparations": 2000,
+          "method_occurrences": 2000,
+          "events": 6001
+        },
+        "performance": {
+          "seconds": 0.020503083,
+          "expected_preparations": 0,
+          "native_substitute_preparations": 2000,
+          "method_occurrences": 2000,
+          "events": 4001
+        }
+      },
+      "samples": {
+        "qualification": [
+          {
+            "seconds": 0.046583834,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.04641075,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.048176708,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.048260375,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.047776875,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.04857725,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          },
+          {
+            "seconds": 0.051857208,
+            "expected_preparations": 2000,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 6001
+          }
+        ],
+        "performance": [
+          {
+            "seconds": 0.016700666,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.016794875,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.022195375,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.017133791,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.016418084,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.016688875,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          },
+          {
+            "seconds": 0.016522875,
+            "expected_preparations": 0,
+            "native_substitute_preparations": 2000,
+            "method_occurrences": 2000,
+            "events": 4001
+          }
+        ]
+      },
+      "median_seconds": {
+        "qualification": 0.048176708,
+        "performance": 0.016700666
+      },
+      "median_difference_seconds": 0.031476041999999996
+    }
+  ]
+}

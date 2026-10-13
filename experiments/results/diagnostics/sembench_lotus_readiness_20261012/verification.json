@@ -1,0 +1,2190 @@
+{
+  "schema": "semloom.sembench_readiness.v1",
+  "baseline": "fd8c00bca70804075cc7f527d24e27eaea2c60c5",
+  "stability_dependencies": [
+    "2a7558097855befbda77f3302815433804247e34",
+    "a21fc084cf648df7118595013f51f41c129a6361"
+  ],
+  "source_archive_sha256": "da537711b8d4b15819af0003b24ad287cc4d137b3dc0600eaf4eade341c526d7",
+  "source_files": {
+    "code/scripts/experiments/run_sembench_lotus_queries.py": "7ea060a2b5fef7380a08c7baa1bd886eb9ef8b156a9476e82036e2cff9c8e10d",
+    "code/src/experiments/postgresql/sembench_queries.py": "d97d62e80fa524ff4a32e99918ff1cb55eb5406b196a936291ffc8ae785ba3e8",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "ab61af91b08e5232686b6796bd59f79b1e83a41b6decfd299e3796f5a2d31561",
+    "code/tests/experiments/test_sembench_lotus_libraries.py": "3f497d3b98fd2a68c9d878b20feec63ec5dd807a1f1cb51593392606a65bb805",
+    "code/tests/experiments/test_sembench_queries.py": "ac8abddbdb0bd42bbee550456e54e70b0a4e2b254cb5d32f5294deac9e6c8017",
+    "deploy/autodl/sembench_lotus_queries.example.json": "ba8d799e259a84419434a187f14f9f22ef4e001d36c101e4445da97da3a03eab",
+    "code/scripts/baselines/run_persistent_native_adapter_query.py": "dbef28314a2c2d5eef1810d93fa8226f02d17948e448c1873ec3ab437827c6a3",
+    "code/src/baselines/text/sembench_movie.py": "d21f3933a83429b5b870abc352a268a3c3241a20e7d0bc405e34cfac275f823d",
+    "code/src/execution_provider/adapters/incremental_session.py": "0b0baea54597b414abc6b46226cc7e08fd2e4af461f5960817982c3c92f6aeb9",
+    "code/src/execution_provider/adapters/ray_map_transport.py": "56649fc7f9c3a50f039caa5b4a73b4cc40200e89404b04f02013465d87e429ea",
+    "code/src/execution_provider/adapters/semantic_session.py": "698f934171cd46a5b839e288d5b11bc36ee51378ed7ef38aca878810d714ce65",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "0e460893c570dc0f1411d1e52dce076a781760f9cbf850712482de3f7dc6bae2",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "797a1b18c166e7e73f76da418a8e4b74331b1cd86ac2f77aa9072274b8948ee4",
+    "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+    "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+    "code/tests/execution_provider/test_incremental_session.py": "e887493a2cc75f40b4edb233df25e8256cebddea04be2bf0c4b2fd817a8ab883",
+    "code/tests/execution_provider/test_ray_map_transport.py": "19469db0897e250e2e9556f1c56a4fddc205bbb1fe3ffe650ccc12384456b4af",
+    "code/tests/experiments/test_persistent_native_adapter_query.py": "35425b7f1fb9fba24357af0aad7f20fa5a9f077a619afeffc20b133f9562df56",
+    "code/tests/experiments/test_sembench_movie.py": "2f27c46badd0cea6b460e20c641d32e1eee36ecc5c091f04f49c52dbf5374dae",
+    "code/tests/scheduling/test_async_backend.py": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b",
+    "code/tests/scheduling/test_incremental_session.py": "cf361514628b6cab1b0a51ac7a294835bc8a8166f0957871f8603879385f9031",
+    "code/tests/scheduling/test_multisession.py": "e08a6c9df7e509d11b74835d4f2fb6d8fbefd72c4c8da1729ef4966225606717",
+    "code/tests/scheduling/test_organized_session.py": "62718ceb663b765d905b8469bd9dc52e9a147393f9b6f6aacf43e829fee12f94"
+  },
+  "status": "supported_software_qualified",
+  "real_model_requests": 0,
+  "gpu_resources": 0,
+  "postgresql_queries": 0,
+  "fixture_posts": 128,
+  "post_limit": 144,
+  "remaining_post_allowance": 16,
+  "software_verified_cells": 16,
+  "software_unverified_cells": 0,
+  "complete_matrix_ready": false,
+  "performance_qualified": false,
+  "native_original_three_queries_same_owner": false,
+  "native_first_two_queries_same_owner": true,
+  "source_identity": {
+    "schema": "semloom.sembench_movie_preflight.v1",
+    "status": "passed",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "upstream_lotus_version": "1.1.3",
+    "selected_lotus_version": "1.2.4",
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "pandas": "2.3.3",
+      "duckdb": "1.5.4",
+      "scipy": "1.17.1",
+      "litellm": "1.95.0"
+    },
+    "libraries_verified": true,
+    "role": "original_movie_sf2000",
+    "manifest_content_digest": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+    "manifest_file": {
+      "sha256": "3e8066677e0c9d85005f612b188227ed60354eccd37523e624d9af6359146f97",
+      "bytes": 1677
+    },
+    "files": {
+      "raw.jsonl": {
+        "sha256": "88eceb0f234a54fd38e874b49e627406434716c6b4096c0925befa0b1213eade",
+        "bytes": 414520
+      },
+      "references.jsonl": {
+        "sha256": "4f61423c016ca467a4f538dcdc9d935080678b20adc05875b37f8a86f2a30059",
+        "bytes": 225142
+      }
+    },
+    "csv": {
+      "sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+      "bytes": 654765
+    },
+    "source_files": {
+      "src/scenario/movie/runner/lotus_runner/lotus_runner.py": {
+        "sha256": "943e29556b94ad5ef5e81c8c8bc43146d07b7144834868f3ab526e19392d3de5",
+        "bytes": 22438
+      },
+      "src/scenario/movie/evaluation/evaluate.py": {
+        "sha256": "10308033fcc4b298905d90536a882dbdba95577d60fff40c3d1501c106a38576",
+        "bytes": 15850
+      },
+      "src/runner/generic_runner.py": {
+        "sha256": "8adf80b5817de78bd6f182d2d850815675140151498e5139d2c6024f01dcda96",
+        "bytes": 11623
+      },
+      "src/evaluator/generic_evaluator.py": {
+        "sha256": "86ecdcc408e86fb95eaa81bdc01cf2b274c80784a0d915f8943190a427dead3d",
+        "bytes": 25204
+      },
+      "files/movie/query/gold_sql/Q1.sql": {
+        "sha256": "847621f0ed626e03c56dee06b73b7bff5cd587fe2f8b38d1e41e2049e9f4de66",
+        "bytes": 63
+      },
+      "files/movie/query/gold_sql/Q2.sql": {
+        "sha256": "5ab598444ef58794879227734873d370636dbc89ec9b29d4529d33dd4d5f2965",
+        "bytes": 82
+      },
+      "files/movie/query/gold_sql/Q3.sql": {
+        "sha256": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5",
+        "bytes": 105
+      }
+    },
+    "relation_rows": 2000,
+    "independent_row_ids": 2000,
+    "unique_review_ids": 1865,
+    "duplicate_review_id_occurrences": 135,
+    "movie_ids": 105,
+    "positive_rows": 1485,
+    "taken_3_rows": 120,
+    "taken_3_positive_rows": 14,
+    "cache": false,
+    "retries": 0,
+    "max_tokens": 8,
+    "stop": [
+      "\n"
+    ],
+    "source_scope": "finite external prepared relation; no PostgreSQL execution claim"
+  },
+  "cases": [
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 1,
+      "status": "passed",
+      "fixture_posts": 8,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 8,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.6,
+          "f1_score": 0.6666666666666665
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 5,
+          "false_positive": 1,
+          "true_negative": 1,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.922422551,
+      "full_query_seconds": 0.970204268,
+      "source_summary": "software01/native/lotus-adapted-native-q1/summary.json",
+      "summary_sha256": "a3b570257f9a9629af8ce16b39aba1eec17004e6c0e5b2470f4a6973e84f23fb",
+      "persistent_lifecycle": {
+        "owner_id": "9ddb603db040471caace45ea6a759b4c",
+        "ray_session_id": "bfc16f70f94f4955907f396903eb35be",
+        "execution_id": null,
+        "lm_id": "140375169310048",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.099286589,
+      "full_query_seconds": 0.136576693,
+      "source_summary": "software01/native/lotus-adapted-native-q2/summary.json",
+      "summary_sha256": "241ad4bd716c3a3fbde44181bb11aaaa5663c9f9155dbb8292e36e7893137f0b",
+      "persistent_lifecycle": {
+        "owner_id": "9ddb603db040471caace45ea6a759b4c",
+        "ray_session_id": "bfc16f70f94f4955907f396903eb35be",
+        "execution_id": null,
+        "lm_id": "140375169310048",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 1,
+      "status": "passed",
+      "fixture_posts": 8,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 8,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.6,
+          "f1_score": 0.6666666666666665
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 5,
+          "false_positive": 1,
+          "true_negative": 1,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 15.301857344,
+      "full_query_seconds": 15.33802158,
+      "source_summary": "software03/native/lotus-method-native-ray-data-q1/summary.json",
+      "summary_sha256": "7c971dd0efdac0a415fb851019ca79611e5f1967f0a84b53a0ff428c81864810",
+      "persistent_lifecycle": {
+        "owner_id": "f9d4a5a4413b41dbad01c7a6d0bb1bf3",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140343489984800",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "original Ray Data graph creates its own actors",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 1,
+      "status": "passed",
+      "fixture_posts": 8,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 8,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.6,
+          "f1_score": 0.6666666666666665
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 5,
+          "false_positive": 1,
+          "true_negative": 1,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 3.017724454,
+      "full_query_seconds": 3.064769531,
+      "source_summary": "software03/native/lotus-method-native-daft-q1/summary.json",
+      "summary_sha256": "e934bdfca5fedd2133a80011f21f464ae995d75a0f7a198e965894b6bd70a15f",
+      "persistent_lifecycle": {
+        "owner_id": "ea4e5bcda7da46aaa2c18f904fdd9a14",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140351815359744",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "Daft Native owns per-query batch function graph",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.537532028,
+      "full_query_seconds": 0.577763694,
+      "source_summary": "software03/native/lotus-adapted-native-q3/summary.json",
+      "summary_sha256": "97fa98807e43c50094a636bb37f6f7267af47d03918354e96d14aab5326a34d8",
+      "persistent_lifecycle": {
+        "owner_id": "090d4db204234956b67b70b4aa8a4864",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140343718418272",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.10973304,
+      "full_query_seconds": 0.145394832,
+      "source_summary": "software03/native/lotus-method-native-daft-q3/summary.json",
+      "summary_sha256": "eb72b52c2469e9a55c1d6832bc4fd26f176be12340598a5acfaccc66c3926a2b",
+      "persistent_lifecycle": {
+        "owner_id": "ea4e5bcda7da46aaa2c18f904fdd9a14",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140351815359744",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 3,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "Daft Native owns per-query batch function graph",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 6.059031996,
+      "full_query_seconds": 6.090490331,
+      "source_summary": "software03/native/lotus-method-native-ray-data-q2/summary.json",
+      "summary_sha256": "fdd8cbd1163fa2a51194d11d52b15944afd9234a69820471c4fddc25f8b90142",
+      "persistent_lifecycle": {
+        "owner_id": "f9d4a5a4413b41dbad01c7a6d0bb1bf3",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140343489984800",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "original Ray Data graph creates its own actors",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 4.821445551,
+      "full_query_seconds": 4.853675338,
+      "source_summary": "software03/native/lotus-method-native-ray-data-q3/summary.json",
+      "summary_sha256": "23bb352484df97f624edeed38b6853e530c3d18ee0b93ea9273a47274476baf4",
+      "persistent_lifecycle": {
+        "owner_id": "f9d4a5a4413b41dbad01c7a6d0bb1bf3",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140343489984800",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 3,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "original Ray Data graph creates its own actors",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.110517291,
+      "full_query_seconds": 0.146067558,
+      "source_summary": "software03/native/lotus-method-native-daft-q2/summary.json",
+      "summary_sha256": "428bb6fc9046b77ee59335938451b386bbe6ca2e42738da5a9175ff606292033",
+      "persistent_lifecycle": {
+        "owner_id": "ea4e5bcda7da46aaa2c18f904fdd9a14",
+        "ray_session_id": "9b43969202c74a45b83d62e87be69fdf",
+        "execution_id": null,
+        "lm_id": "140351815359744",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "Daft Native owns per-query batch function graph",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 1,
+      "status": "passed",
+      "fixture_posts": 8,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 8,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.6,
+          "f1_score": 0.6666666666666665
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 5,
+          "false_positive": 1,
+          "true_negative": 1,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 8,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 2.913448442,
+      "full_query_seconds": 2.952850378,
+      "source_summary": "software05/semloom/lotus-method-semloom-q1/summary.json",
+      "summary_sha256": "73b03cba417f781ccefc5bd54bbc070996efb93b9ba176e374ceae16b0e91ae3",
+      "persistent_lifecycle": {
+        "owner_id": "06121c66841e4e8bad420fc8fa276de7",
+        "ray_session_id": "8b112b9192814f5b8c234cc29cded6b1",
+        "execution_id": "140715886714064",
+        "lm_id": "140717269127520",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "core_jobs": 0,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 4,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.085574106,
+      "full_query_seconds": 0.12172821,
+      "source_summary": "software05/semloom/lotus-method-semloom-q2/summary.json",
+      "summary_sha256": "e78abe366a94ecfdaf29e99c9652175324010aac4fb688792abe2c22f5f6716e",
+      "persistent_lifecycle": {
+        "owner_id": "06121c66841e4e8bad420fc8fa276de7",
+        "ray_session_id": "8b112b9192814f5b8c234cc29cded6b1",
+        "execution_id": "140715886714064",
+        "lm_id": "140717269127520",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "core_jobs": 0,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 4,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.096908621,
+      "full_query_seconds": 0.132205637,
+      "source_summary": "software05/semloom/lotus-method-semloom-q3/summary.json",
+      "summary_sha256": "b782af6ae2f2891c126570286e8130101d6424cd9deb256551328bf433c73e54",
+      "persistent_lifecycle": {
+        "owner_id": "06121c66841e4e8bad420fc8fa276de7",
+        "ray_session_id": "8b112b9192814f5b8c234cc29cded6b1",
+        "execution_id": "140715886714064",
+        "lm_id": "140717269127520",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 3,
+        "result_cache": false,
+        "core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "core_jobs": 0,
+        "sema_executor": null,
+        "native_ray_actor_scope": "supplier SDK/client owns execution",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 4,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.452746838,
+      "full_query_seconds": 0.49502646,
+      "source_summary": "software05/cpython-ac180b425c/movie-queries/lotus-method-native-imlane-q2/summary.json",
+      "summary_sha256": "4ab835e3665becfe94a27bc35024eb6df0cc626328e59f22ad8a9246881b5a1d",
+      "persistent_lifecycle": {
+        "owner_id": "e9ea2f69b8e447498e1105fa7d8e2ea9",
+        "ray_session_id": null,
+        "execution_id": null,
+        "lm_id": "139872672368304",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "IMLane author cpython executor",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 6,
+        "num_threads": 8,
+        "ray_actors": 1,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.110078938,
+      "full_query_seconds": 0.148211579,
+      "source_summary": "software05/cpython-ac180b425c/movie-queries/lotus-method-native-imlane-q3/summary.json",
+      "summary_sha256": "7a1a68a34fb4c8765fc63c6b9e29bcc8cb1a6a66818a609bfdbdb9ad5fd391a8",
+      "persistent_lifecycle": {
+        "owner_id": "e9ea2f69b8e447498e1105fa7d8e2ea9",
+        "ray_session_id": null,
+        "execution_id": null,
+        "lm_id": "139872672368304",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "IMLane author cpython executor",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 6,
+        "num_threads": 8,
+        "ray_actors": 1,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_id": 2,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 5,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1_score": 0.75
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 4,
+          "duplicates": 1,
+          "invalid_rows": 1,
+          "required_rows": 4,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "reviewId"
+        ],
+        "index": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "data": [
+          [
+            "same-original-id"
+          ],
+          [
+            "same-original-id"
+          ],
+          [
+            "review-2"
+          ],
+          [
+            "review-3"
+          ],
+          [
+            "review-5"
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.552881939,
+      "full_query_seconds": 0.595679667,
+      "source_summary": "software05/ray-46ef45ffd6/movie-queries/lotus-method-native-imlane-ray-q2/summary.json",
+      "summary_sha256": "478ec97ec4b0f7d3aa401ef0dbc4841f3a0e8ac0e47c9670cb285e19109e34f0",
+      "persistent_lifecycle": {
+        "owner_id": "5e8f99ca2537437c9f25ec993a09d4a6",
+        "ray_session_id": null,
+        "execution_id": null,
+        "lm_id": "140411551222000",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 1,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "IMLane author ray executor",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 5,
+      "errors": {},
+      "options": {
+        "concurrency": 6,
+        "num_threads": 8,
+        "ray_actors": 1,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_id": 3,
+      "status": "passed",
+      "fixture_posts": 6,
+      "result_rows": 1,
+      "relation_rows": 8,
+      "model_rows": 6,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 4,
+          "false_positive": 1,
+          "true_negative": 0,
+          "false_negative": 1,
+          "invalid": 0,
+          "evaluated_rows": 6,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "dataset_role": "software_fixture",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "result": {
+        "columns": [
+          "positive_review_cnt"
+        ],
+        "index": [
+          0
+        ],
+        "data": [
+          [
+            5
+          ]
+        ]
+      },
+      "ready_query_seconds": 0.173754088,
+      "full_query_seconds": 0.249938065,
+      "source_summary": "software05/ray-46ef45ffd6/movie-queries/lotus-method-native-imlane-ray-q3/summary.json",
+      "summary_sha256": "4efff2edfc2e9828b33481959f806f676d11990c0acff1ab472077fc9e942f3b",
+      "persistent_lifecycle": {
+        "owner_id": "5e8f99ca2537437c9f25ec993a09d4a6",
+        "ray_session_id": null,
+        "execution_id": null,
+        "lm_id": "140411551222000",
+        "duckdb_connection_id": null,
+        "sema_pid": null,
+        "completed_queries": 2,
+        "result_cache": false,
+        "core_usage": null,
+        "core_jobs": null,
+        "sema_executor": null,
+        "native_ray_actor_scope": "IMLane author ray executor",
+        "request_service_scope": "no Sema request service",
+        "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+      },
+      "execution_rows": 1,
+      "errors": {},
+      "options": {
+        "concurrency": 6,
+        "num_threads": 8,
+        "ray_actors": 1,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "source_blocks": 4
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 8,
+      "original_model_rows": 2000,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-adapted-native",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 8,
+      "original_model_rows": 2000,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 8,
+      "original_model_rows": 2000,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-ray-data",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 8,
+      "original_model_rows": 2000,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "unsupported",
+      "fixture_posts": 0,
+      "original_model_rows": 2000,
+      "original_row_shape": "blocked_current_128_row_limit",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_id": 1,
+      "implementation": "original method wired",
+      "software_library_status": "unsupported",
+      "fixture_posts": 0,
+      "original_model_rows": 2000,
+      "original_row_shape": "blocked_current_128_row_limit",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_id": 2,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    },
+    {
+      "arm": "lotus-method-native-imlane-ray",
+      "query_id": 3,
+      "implementation": "original method wired",
+      "software_library_status": "passed",
+      "fixture_posts": 6,
+      "original_model_rows": 120,
+      "original_row_shape": "within_declared_row_allowance_only",
+      "original_data_model_run": "not_run",
+      "performance_qualified": false
+    }
+  ],
+  "failures": [
+    {
+      "stage": "initial",
+      "kind": "FileExistsError",
+      "source": "diagnostic progress publisher",
+      "posts_after": 14
+    },
+    {
+      "stage": "continuation",
+      "kind": "ValueError",
+      "source": "existing Ray temporary directory",
+      "additional_posts": 0
+    },
+    {
+      "stage": "native_libraries",
+      "kind": "KeyError",
+      "source": "test assumed max_tokens; SDK uses max_completion_tokens",
+      "posts_after": 60
+    },
+    {
+      "stage": "remaining_attempt",
+      "kind": "TimeoutError",
+      "source": "approved extended time window ended before launch",
+      "additional_posts": 0
+    }
+  ],
+  "remaining_checks": [
+    "original-data model query quality/cost",
+    "common resource/response/error qualification handled independently",
+    "underlying native/bridge capacity provenance handled by task8"
+  ],
+  "resource_scope": "all actual software processes bound to CPU8-15; no surviving tagged process in recorded supervisor exits",
+  "current_source_files": {
+    "code/scripts/experiments/run_sembench_lotus_queries.py": "7ea060a2b5fef7380a08c7baa1bd886eb9ef8b156a9476e82036e2cff9c8e10d",
+    "code/src/experiments/postgresql/sembench_queries.py": "d97d62e80fa524ff4a32e99918ff1cb55eb5406b196a936291ffc8ae785ba3e8",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "865b89a19668984676174dcc0badad746c2ae3bf26e49ae311388b8526ec4df8",
+    "code/tests/experiments/test_sembench_lotus_libraries.py": "5eb78a9a7439763dda56744c8fca0628ecd8056713fcbcb6c9545aaf6cdd23af",
+    "code/tests/experiments/test_sembench_queries.py": "e979bbb40bcbe5859ec9eaa84fc4d8f034edaa131465bd5344493c8e00cc8370",
+    "deploy/autodl/sembench_lotus_queries.example.json": "494a40a2c49c88ca559f54929f28d99d1210457c911b58ad1d8a30495fea19a8",
+    "code/scripts/baselines/run_persistent_native_adapter_query.py": "dbef28314a2c2d5eef1810d93fa8226f02d17948e448c1873ec3ab437827c6a3",
+    "code/src/baselines/text/sembench_movie.py": "d21f3933a83429b5b870abc352a268a3c3241a20e7d0bc405e34cfac275f823d",
+    "code/src/execution_provider/adapters/incremental_session.py": "0b0baea54597b414abc6b46226cc7e08fd2e4af461f5960817982c3c92f6aeb9",
+    "code/src/execution_provider/adapters/ray_map_transport.py": "56649fc7f9c3a50f039caa5b4a73b4cc40200e89404b04f02013465d87e429ea",
+    "code/src/execution_provider/adapters/semantic_session.py": "698f934171cd46a5b839e288d5b11bc36ee51378ed7ef38aca878810d714ce65",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "0e460893c570dc0f1411d1e52dce076a781760f9cbf850712482de3f7dc6bae2",
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "797a1b18c166e7e73f76da418a8e4b74331b1cd86ac2f77aa9072274b8948ee4",
+    "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+    "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+    "code/tests/execution_provider/test_incremental_session.py": "e887493a2cc75f40b4edb233df25e8256cebddea04be2bf0c4b2fd817a8ab883",
+    "code/tests/execution_provider/test_ray_map_transport.py": "19469db0897e250e2e9556f1c56a4fddc205bbb1fe3ffe650ccc12384456b4af",
+    "code/tests/experiments/test_persistent_native_adapter_query.py": "35425b7f1fb9fba24357af0aad7f20fa5a9f077a619afeffc20b133f9562df56",
+    "code/tests/experiments/test_sembench_movie.py": "2f27c46badd0cea6b460e20c641d32e1eee36ecc5c091f04f49c52dbf5374dae",
+    "code/tests/scheduling/test_async_backend.py": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b",
+    "code/tests/scheduling/test_incremental_session.py": "cf361514628b6cab1b0a51ac7a294835bc8a8166f0957871f8603879385f9031",
+    "code/tests/scheduling/test_multisession.py": "e08a6c9df7e509d11b74835d4f2fb6d8fbefd72c4c8da1729ef4966225606717",
+    "code/tests/scheduling/test_organized_session.py": "62718ceb663b765d905b8469bd9dc52e9a147393f9b6f6aacf43e829fee12f94"
+  },
+  "source_deltas": {
+    "code/tests/experiments/test_sembench_lotus_libraries.py": "945c6444ff9e8ff269c10c16d7a93b1ec5a559a6dfa32b324aa28987c981807f",
+    "code/src/experiments/postgresql/sembench_query_cli.py": "60ba795745227209d3ee3b17ba3484b2e1985f217ea33fcc8f381e907ef6ca76"
+  },
+  "current_source_actual_run_note": "query implementation unchanged; remaining tests select supported Q2/Q3 and assert original Q1 adapter rejection; CLI per-arm controls added after test",
+  "offline_actual_http_reaudit": {
+    "status": "passed",
+    "requests": 104,
+    "all_three_queries_request_value_multisets_match_across_three_arms": true,
+    "effective_generation_tokens": 8,
+    "actual_token_field": "max_completion_tokens",
+    "stop": [
+      "\n"
+    ],
+    "temperature": 0,
+    "top_p": 1,
+    "source": "saved actual HTTP protocol records; no new library or service execution",
+    "all_supported_arms_request_value_multisets_match_per_query": true
+  },
+  "local_regression": {
+    "tests": 45,
+    "passed": 42,
+    "skipped": 3,
+    "errors": 0,
+    "failures": 0
+  },
+  "local_components": {
+    "tests": 39,
+    "passed": 11,
+    "skipped": 28,
+    "errors": 0,
+    "failures": 0,
+    "source": "tool completion; fixed optional LOTUS/native runtimes not enabled"
+  },
+  "final_owned_state": {
+    "tagged_processes": 0,
+    "query_fixture_posts": 112,
+    "query_fixture_limit": 128,
+    "overall_post_limit": 144,
+    "other_fixture_posts": 16,
+    "models": 0,
+    "gpu_resources": 0,
+    "time_windows_ended": true,
+    "cpu8_15_processes": 0
+  },
+  "software_unsupported_cells": 2,
+  "qualification_split": {
+    "pass_count": 16,
+    "unsupported_count": 2,
+    "notrun_count": 0
+  },
+  "fixture_post_breakdown": {
+    "normal_original_method_queries": 104,
+    "author_http_timeout_cancel_checks": 16,
+    "native_auth_error": 8
+  },
+  "original_imlane_q1_rejections": [
+    {
+      "status": "unsupported",
+      "query_id": 1,
+      "arm": "lotus-method-native-imlane",
+      "original_model_rows": 2000,
+      "native_effective_max_batch_rows": 128,
+      "fixture_posts": 0,
+      "allocated_attempts": 0,
+      "model_requests": 0,
+      "source": "original selected dataset; current complete-call adapter",
+      "errors": {
+        "query": {
+          "type": "ValueError",
+          "sqlstate": null,
+          "message": "original Movie Q1 needs one 2000-row uncached batch; current IMLane supports at most 128 rows; no chunking fallback",
+          "observed_ns": 2943799777135667
+        }
+      },
+      "source_evidence": "software05/cpython-ac180b425c/original-q1-unsupported/unsupported-verification.json",
+      "evidence_sha256": "940db653db92962c028543b8338e330c24c4b3c35d3ebe5c1c2cb4ce8a554f1d"
+    },
+    {
+      "status": "unsupported",
+      "query_id": 1,
+      "arm": "lotus-method-native-imlane-ray",
+      "original_model_rows": 2000,
+      "native_effective_max_batch_rows": 128,
+      "fixture_posts": 0,
+      "allocated_attempts": 0,
+      "model_requests": 0,
+      "source": "original selected dataset; current complete-call adapter",
+      "errors": {
+        "query": {
+          "type": "ValueError",
+          "sqlstate": null,
+          "message": "original Movie Q1 needs one 2000-row uncached batch; current IMLane supports at most 128 rows; no chunking fallback",
+          "observed_ns": 2943824385065404
+        }
+      },
+      "source_evidence": "software05/ray-46ef45ffd6/original-q1-unsupported/unsupported-verification.json",
+      "evidence_sha256": "6edaea2c18d67c76373006b81f3ddbbee4a1db411fd631eb78ab0980baef3d30"
+    }
+  ],
+  "author_mode_checks": [
+    {
+      "runtime": "cpython",
+      "passed": true,
+      "fixture_posts": 8,
+      "native_task_threads": 6,
+      "kernel_worker_pids": [
+        200474,
+        200477
+      ],
+      "ray_actor_ids": [],
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "ray_owner_shutdown": null,
+      "pre_dispatch_cancel": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "cpython",
+        "author_dispatch_started": false,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": false,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432
+      },
+      "timeout": {
+        "clean": true,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 1,
+        "runtime": "cpython",
+        "author_dispatch_started": true,
+        "author_batches_drained": true,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": false,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432,
+        "coordinator_pid": 200471,
+        "coordinator_start_ticks": 294379759,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": 0,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "concurrency_allowance": 8,
+        "executor_poisoned": false,
+        "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check",
+        "error_type": "TimeoutError"
+      },
+      "cancel_after_send": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "cpython",
+        "author_dispatch_started": true,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": true,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432,
+        "coordinator_pid": 200471,
+        "coordinator_start_ticks": 294379759,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": -15,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "concurrency_allowance": 8,
+        "executor_poisoned": true,
+        "author_lane_release": "unconfirmed; caller owns cleanup",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+      },
+      "source_evidence": "software05/cpython-ac180b425c/result.json",
+      "sha256": "58d27540e05de2a6a335fffb4114e0794e0b3ce13d7c1f847d243c02aff7ce8a"
+    },
+    {
+      "runtime": "ray",
+      "passed": true,
+      "fixture_posts": 8,
+      "native_task_threads": 6,
+      "kernel_worker_pids": [
+        201341,
+        201348
+      ],
+      "ray_actor_ids": [
+        "5cd570b8bb8f2c8eb0c4a3b102000000",
+        "e7f8ff5fd7b2ce3cae7ee4d502000000"
+      ],
+      "owned_survivors": [],
+      "remaining_shm": {},
+      "coordinator_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "ray_owner_shutdown": {
+        "returncode": 0,
+        "forced": false
+      },
+      "pre_dispatch_cancel": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "ray",
+        "author_dispatch_started": false,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": false,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432
+      },
+      "timeout": {
+        "clean": true,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 1,
+        "runtime": "ray",
+        "author_dispatch_started": true,
+        "author_batches_drained": true,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": false,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432,
+        "coordinator_pid": 201275,
+        "coordinator_start_ticks": 294381899,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": 0,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "concurrency_allowance": 8,
+        "executor_poisoned": false,
+        "author_lane_release": "DBEnd returned all batches and sends RestoreLane",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check",
+        "error_type": "TimeoutError"
+      },
+      "cancel_after_send": {
+        "clean": false,
+        "graph_consumer_stopped": true,
+        "prepared": 1,
+        "received": 0,
+        "runtime": "ray",
+        "author_dispatch_started": true,
+        "author_batches_drained": false,
+        "remote_http_stopped": "unavailable",
+        "external_coordinator_stopped": false,
+        "external_coordinator_requires_cleanup": true,
+        "effective_max_batch_rows": 128,
+        "effective_max_batch_bytes": 33554432,
+        "coordinator_pid": 201275,
+        "coordinator_start_ticks": 294381899,
+        "actual_coordinator_executors": 2,
+        "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+        "author_binary_sha256": "0ee40312bfd42a87a949652ad167fa5ce2af663b78f274d8a77bbbe1a319ce3b",
+        "bridge_stopped": true,
+        "forced": false,
+        "returncode": -15,
+        "coordinator_owner": "caller",
+        "scheduler_owner": "IMLane author implementation",
+        "native_settings": {
+          "native_executors": 4,
+          "native_task_threads": 6
+        },
+        "concurrency_allowance": 8,
+        "executor_poisoned": true,
+        "author_lane_release": "unconfirmed; caller owns cleanup",
+        "native_settings_are_physical_executor_count": false,
+        "author_query_job_id": "empty in existing bridge; caller occurrence IDs retained",
+        "resident_output_limit": "existing bridge has no aggregate 32MiB resident-output check"
+      },
+      "source_evidence": "software05/ray-46ef45ffd6/result.json",
+      "sha256": "4ba911b0c2a0504268002751e89a5813e001681a94b55ecfeea1971d21e96cb0"
+    }
+  ],
+  "native_auth_error": {
+    "passed": true,
+    "model_requests": 0,
+    "fixture_posts": 8,
+    "first_error": "AuthenticationError",
+    "owner_poisoned": true,
+    "errors": {
+      "query": {
+        "type": "AuthenticationError",
+        "sqlstate": null,
+        "message": "litellm.AuthenticationError: AuthenticationError: OpenAIException - software auth fixture",
+        "observed_ns": 2943849916229323
+      }
+    },
+    "retry_posts": 0,
+    "group_cleanup": {
+      "status": "failed",
+      "queries": 1,
+      "poisoned": true,
+      "ended_ns": 2943849921812848,
+      "cleanup_errors": {},
+      "owners": {
+        "lotus-adapted-native": {
+          "owner_id": "e384d77f9a5941a29f7c332212881f02",
+          "ray_session_id": null,
+          "execution_id": null,
+          "lm_id": "140470840447376",
+          "duckdb_connection_id": null,
+          "sema_pid": null,
+          "completed_queries": 0,
+          "result_cache": false,
+          "core_usage": null,
+          "core_jobs": null,
+          "sema_executor": null,
+          "native_ray_actor_scope": "supplier SDK/client owns execution",
+          "request_service_scope": "no Sema request service",
+          "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+        }
+      }
+    }
+  },
+  "latest_window": {
+    "software_seconds": 85.39604133088142,
+    "supervisor_seconds": 85.60693254088983,
+    "exit_code": 0,
+    "forced_cleanup": false,
+    "owned_survivors": []
+  },
+  "additional_source_archive": {
+    "sha256": "a1da2c11c37b2e5acf6340393292237f81cfbef01327a7b10759f0181c56380b",
+    "bytes": 217202,
+    "skipped_links": [
+      {
+        "name": "software05/ray-46ef45ffd6/ray/session_latest",
+        "target": "<private-ray-session-target>"
+      }
+    ],
+    "raw_archive_retained": true
+  },
+  "remaining_source_files": {
+    "software_remaining_runner.py": "1e62c14bb8b77aba210d5596d6d8c0d0e9f00f01dab5695858d148e620f50796",
+    "source/code/tests/experiments/test_sembench_lotus_libraries.py": "5eb78a9a7439763dda56744c8fca0628ecd8056713fcbcb6c9545aaf6cdd23af"
+  },
+  "native_control_scope": "old native/Daft/Ray Data C8 retained; remaining SemLoom C4 and IMLane actual author six-task-thread C6; no native concurrency upgrade or performance ranking"
+}

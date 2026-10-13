@@ -1,0 +1,153 @@
+{
+  "payload_bytes": 22954,
+  "payload_sha256": "ee34365e09f41e09f5b84d1fe8ebf559f21eabc32a9f9001e600e0444bfefcdc",
+  "members": [
+    {
+      "path": "bootstrap-repair-provenance.json",
+      "bytes": 1939,
+      "sha256": "a41fcb882bd0b8cf0719536c10f3f3c5ea7bbff2727c1ce827305b73d400f993",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "harness-identity.json",
+      "bytes": 717,
+      "sha256": "56d11a91932252cebfa5787f508882592a606d076ae7c39e0611f2548a6ad71a",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "reference-quality.json",
+      "bytes": 742,
+      "sha256": "e48a86ca108bedda700fe11add527453da8c2d6f1bdbb64cfcbc3f14e58fbb17",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "state.json",
+      "bytes": 3388,
+      "sha256": "a1e004f25945efa03f49a302ff149066468b1fa629f13824d15e46f539a8c871",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "supplement-harness-identity.json",
+      "bytes": 378,
+      "sha256": "a7d5aa316a86350ee08c30a25299a07ba0fd8a079b33e941da91f229c18464ae",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "supplement-plan.json",
+      "bytes": 1126,
+      "sha256": "952139f67eaabb992ae78b1b920a9c936e834b5775d1f8612bb14774d3394d48",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/asset_check.py",
+      "bytes": 3719,
+      "sha256": "d2fb86550db9c0220a390b94a938be37cbf7837aec051fc74fd7fd2f118abadf",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/pre_send_ledger.py",
+      "bytes": 11044,
+      "sha256": "a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/query_observer.py",
+      "bytes": 1881,
+      "sha256": "650f426cc68c5087eb3ede99753b43ef81c306d1dc1f227c480d047d5eb6e61d",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/sitecustomize.py",
+      "bytes": 995,
+      "sha256": "57f2d331add9a70ea3e8226b0f6b30d6f2c36fd2977049fc139a53b93269e9a8",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/software.py",
+      "bytes": 6148,
+      "sha256": "feb6f23d7d84c8f46c6aec66b627e8b32ed59ff8e5387160eff1eda70ced50b9",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/software_runner.py",
+      "bytes": 2045,
+      "sha256": "1479bec512aa447b3189ee94c358d1dec3e3d76b846c2c8c2a0d186c74cfcf57",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/supplement_runner.py",
+      "bytes": 4247,
+      "sha256": "d684a7bb06fba4fb2ae550369daa8be378fac294b6dffd3453b59a6152f99a9c",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/supplement_supervisor.py",
+      "bytes": 24127,
+      "sha256": "1d2d49aed56fd2b0dcc600050411352da9ef2b15c2ece5b3574c4ebf45d7d6e7",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    },
+    {
+      "path": "validation/support.py",
+      "bytes": 13876,
+      "sha256": "8db7493f0355d904a07d82f5e8f7e07c322c10e40febf18cd0a64ec6595b55c6",
+      "credential_violations": 0,
+      "has_benchmark_messages": false,
+      "contains_env_file_contents": false
+    }
+  ],
+  "credentials_or_tokens_violations": 0,
+  "benchmark_texts_or_request_messages_present": false,
+  "model_weights_or_data_files_present": false,
+  "ssh_config_or_credentials_present": false,
+  "runtime_env_file_contents_present": false,
+  "state_path_fields": [
+    "driver_python",
+    "remote_root",
+    "ray_parent",
+    "source_path",
+    "model_path",
+    "service_python",
+    "runtime_env",
+    "author_root",
+    "bridge_binary",
+    "original_model_root"
+  ],
+  "path_role": "references to existing assets on the same authorized server; no asset or env file contents",
+  "destination_role": "one newly allocated own directory on the same existing project server; fixed prior source/data/dependencies reused",
+  "public_comparison_source": "3bd5358706679b639e790585347133cd8d60b836",
+  "planned_logical": 1680,
+  "hard_logical": 2048,
+  "planned_posts": 5040,
+  "hard_posts": 6144,
+  "hard_seconds": 1800,
+  "upload_attempt_rejected_before_execution": true,
+  "model_calls": 0
+}

@@ -1,0 +1,94 @@
+{
+  "passed": true,
+  "expected": "old-fails",
+  "rows": [
+    {
+      "target_bytes_during_write": 0,
+      "error_type": "JSONDecodeError",
+      "error": "Expecting value: line 1 column 1 (char 0)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "empty",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    },
+    {
+      "target_bytes_during_write": 0,
+      "error_type": "JSONDecodeError",
+      "error": "Expecting value: line 1 column 1 (char 0)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "empty",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    },
+    {
+      "target_bytes_during_write": 0,
+      "error_type": "JSONDecodeError",
+      "error": "Expecting value: line 1 column 1 (char 0)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "empty",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    },
+    {
+      "target_bytes_during_write": 68,
+      "error_type": "JSONDecodeError",
+      "error": "Unterminated string starting at: line 1 column 55 (char 54)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "truncated",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    },
+    {
+      "target_bytes_during_write": 68,
+      "error_type": "JSONDecodeError",
+      "error": "Unterminated string starting at: line 1 column 55 (char 54)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "truncated",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    },
+    {
+      "target_bytes_during_write": 68,
+      "error_type": "JSONDecodeError",
+      "error": "Unterminated string starting at: line 1 column 55 (char 54)",
+      "reader_finished_while_writer_paused": true,
+      "writer_shape": "truncated",
+      "model_calls": 0,
+      "http_posts": 0,
+      "gpu": 0
+    }
+  ],
+  "refusals": [
+    {
+      "case": "dead-child",
+      "rejected": true,
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "wrong-helper",
+      "rejected": true,
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "wrong-birth",
+      "rejected": true,
+      "error_type": "RuntimeError"
+    },
+    {
+      "case": "persistent-bad-json",
+      "rejected": true,
+      "error_type": "JSONDecodeError"
+    }
+  ],
+  "elapsed_seconds": 0.2310959161259234,
+  "model_calls": 0,
+  "http_posts": 0,
+  "gpu": 0,
+  "seam": "actual await_cli_release and release_cli functions; controlled pause after write-open/truncate or partial-write; real filesystem",
+  "historical_root_cause_scope": "reproduced source mechanism; old supervisor did not save read bytes or full traceback, so exact original read remains an inference"
+}

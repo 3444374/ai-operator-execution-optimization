@@ -1,0 +1,11 @@
+{
+  "schema": "semloom.evidence_storage.v2",
+  "result": "experiments/results/diagnostics/map_queued_preparation_20261008",
+  "files_verified": 295,
+  "bytes_verified": 2476180,
+  "cases_verified": 71,
+  "simulated_calls_verified": 4107,
+  "http_requests": 0,
+  "model_requests": 0,
+  "pg_queries": 0
+}
