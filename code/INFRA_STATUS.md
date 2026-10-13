@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：统一分支按来源整合DuckDB专属交付`3f0b62d6`，公共修补去重；
+[LOTUS可选session工厂](src/semantic_methods/lotus/README.md)接受typed容量声明，默认本地路径与SDK重放保持。
+Ray退出报告现在保留上下文更新的同一字典。本地组合120通过／32实际库或opt-in跳过，
+公共接口组合另有15通过／21固定SDK跳过，两组重叠；没有在新统一HEAD重跑服务器。
+DuckDB实库证据按下方固定source解释，Sema新版R／S成功退出字段仍待其自身补证。
+公共Core、路由、计数与副本策略在本阶段未改。
+
 2026-10-13：完整调用与query／Job接口是共同研究平台，stability停止责任和租约归还是正确性基础。
 [跨Job组合反例](tests/execution_provider/test_replica_failure_composition.py)、
 [消费者提前关闭](tests/scheduling/test_multisession.py)和[共享对象持有](tests/execution_provider/test_map_preparation.py)

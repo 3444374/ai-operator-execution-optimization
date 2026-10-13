@@ -1,5 +1,20 @@
 # 项目日志
 
+## 2026-10-13：统一基线整合DuckDB专属交付与最小公共接口
+
+- 按来源顺序移植DuckDB七个专属提交，最终交付为`3f0b62d6`；专属实现、测试和来源清单与该交付逐文件一致。
+  已有容量、生命周期、HTTPX及native4标签修补按原提交去重，保留统一分支最新原生预算和阶段记录。
+- 精确移植`cc8b09bc`的Ray退出报告修补，返回实际上下文更新的同一字典；
+  `e4677b4c`只提供[LOTUS可选session工厂与typed容量](code/src/semantic_methods/lotus/README.md)，默认本地执行及SDK响应重放保持。
+  多Job机会选择和副本自适应仍由各独立研究分支验证。
+- 统一分支本地受影响组合152项，120通过、32项实际库或opt-in检查跳过；此前公共接口组合36项，15通过、21项固定SDK缺库跳过，
+  两组存在重叠，不相加。没有新增服务器、模型或GPU执行。
+- DuckDB[已发布实库与公开CLI证据](experiments/results/postgresql/native_executor_baselines_20261012/README.md#duckdb-paths-20261013)
+  保留逐次来源、失败和清理记录；这是接入owner固定版本的证据，未在新统一HEAD重跑服务器。
+  Sema新版R／S成功消费后的退出字段仍待其自身补证，不用DuckDB结果补写。
+- 容量沿[现有模块说明](code/integrations/duckdb_ai/README.md)逐层取交集：DuckDB向量最多2048行、C单响应8MiB，
+  SemLoom单项约1MiB，IMLane另受所选配置限制；已验证2000行不等于已验证完整2048行向量。
+
 ## 2026-10-13：收敛研究定位与执行能力表述
 
 - [现有研究定位](docs/research/研究定位.md#platform-and-work-contract)集中说明数据库需求、依赖、消费与取消约束的机制作用，

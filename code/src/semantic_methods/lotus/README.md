@@ -47,6 +47,11 @@ API base、key、超时和model必须与传入的`FixedModelConfig`相同；连�
 成对运行要求显式API base、认证及有限超时、重试为0；未知参数和隐藏的全局OpenAI配置会被拒绝。
 
 `LotusBatchExecutor`只借用公共execution，按公共offer数量与容量提交，不创建执行线程池。
+调用方也可传入`session_factory(query_id, operator_id)`提供每批session。
+当`execution=None`时须同时提供typed `SessionLimits`，调用字节额度先按该声明检查，
+打开session后再核对其实际单项输入／结果容量；有本地execution时容量继续来自其Engine。
+默认仍创建`NativeTaskSession`，完整请求准备、SDK响应重放和批次关闭责任保持。
+该接口不选择多Job策略；跨进程桥接和调度候选的资格由各自固定研究版本记录。
 输入miss最多4096行，原始响应的批次留存默认最多16MiB；这些是编码字节额度，不是RSS测量。
 `last_responses`默认只保存最近一次miss批次；`retain_full_responses=False`不保存这份原始响应列表，
 `on_response(index, full)`仍在解析前交给调用方保存证据。SDK结果、错误中的完整响应和批次字节额度继续保留。
