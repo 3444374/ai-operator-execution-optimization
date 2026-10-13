@@ -13,6 +13,9 @@
 复用环境检查、模型identity和ProcessSampler，不安装／下载／补发／重置额度。
 配置及820次边界见[模型计划](../../experiments/plans/查询调优.md#replica-adaptation)。
 
+`benchmarks/summarize_replica_model_replay.py`只读保留的数值metadata，核对manifest、持久POST／服务端计数、逐出现、硬上限与释放，输出去载荷／去真实行ID原件。
+[实际模型结果](../../experiments/results/diagnostics/replica_adaptation_20261013/model_replay/README.md)保持内部配对和原Q2子集边界。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

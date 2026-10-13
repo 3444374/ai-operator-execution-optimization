@@ -1,5 +1,8 @@
 # 单查询副本供给与路由的软件验证
 
+后续[固定请求子集模型小轮](model_replay/README.md)已完成820模型POST，保留原软件结果和准备失败；
+真实RR静态点已利用两副本余量，online／压力候选没有净收益，默认保持RR。
+
 本报告仅是实际Core、HTTP客户端和localhost服务的**软件fixture**，GPU／模型／PG／原生LOTUS SDK均未运行。
 源码共同基点`28093954`，四个被测模块的精确SHA-256见[完整观测](raw/probe.json.gz)的`source_sha256`；
 全部比较使用同一代码、请求字节、到达、Core记账及完整响应适配器。[计划](../../../plans/查询调优.md#replica-adaptation)先于探测落盘。

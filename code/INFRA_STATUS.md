@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[固定请求子集模型小轮](../experiments/results/diagnostics/replica_adaptation_20261013/model_replay/README.md)
+固定82bd400b，单／双四臂n3，820模型POST/576评价，原时钟813.827/1080秒、加载82.349秒，完整响应／计数／清理一致。
+两次0POST准备失败保留；请求原件在服务器内部复用，无本地载荷外传。单/双RR中位0.871/0.479秒，在线0.891/0.506秒，无净收益；GPU活动高而waiting0，D供给未变。
+默认RR保持；此为完整请求固定回放子集，原SQL、LOTUS parser/evaluator、PG、共享准备和跨query总容量仍未取得新资格；joint欠供给／尾风险控制pending。
+
+
 2026-10-13：[固定原Q2请求子集模型计划](../experiments/plans/查询调优.md#replica-adaptation)的有限驱动已接已有Core／完整响应HTTP与持久POST账本。
 同一completion accumulator边界记录固定／在线request-count rate；四臂同开销GPU／服务／Core时间线。
 16次localhost四臂fixture及静态K回退测试通过；模型尚未执行，不称原SQL／parser／evaluator资格。

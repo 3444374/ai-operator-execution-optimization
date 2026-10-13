@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-13：[副本固定请求子集模型诊断](diagnostics/replica_adaptation_20261013/model_replay/README.md)。
+实际820POST、40单元、576评价，canonical内容／finish／usage一致，账本／服务端计数与释放独立复核。原T0未重置，两次0POST准备失败保留。
+RR选点K4/8已填满各副本硬4；online／压力诊断无净收益，waiting0同时GPU活动高。非原SQL／原质量评价，模型饱和、P99与joint闭环pending。
+
+
 2026-10-13：固定请求重放驱动四臂16次localhost检查通过，完成rate统一既有transport时钟、Core供给观测、持久计数与清理。
 模型窗口尚未运行；[具体计划](../plans/查询调优.md#replica-adaptation)保持820总额度，不借旧软件供给结果归因。
 

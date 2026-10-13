@@ -1,6 +1,6 @@
 {
   "schema": "semloom.replica_model_validation_plan.v1",
-  "status": "resource_receipts_complete_driver_freezing",
+  "status": "completed_model_request_subset_replay",
   "scope": "original_q2_complete_request_fixed_subset_replay",
   "original_q2_query": false,
   "original_parser_evaluator_qualification": false,
@@ -178,5 +178,7 @@
     "cleanup_reserved_s": 180,
     "request_timeout_s": 30,
     "extend_or_reset_window": false
-  }
+  },
+  "execution_sha": "82bd400ba3225a5b7ed737c40bb4758764dfda35",
+  "results": "../results/diagnostics/replica_adaptation_20261013/model_replay/README.md"
 }

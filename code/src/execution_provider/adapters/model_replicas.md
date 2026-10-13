@@ -243,3 +243,29 @@ actors/endpoints, full consumption, cancellation, query reuse and cleanup.
 Controlled fixture timing supplies no model performance conclusion. Real model,
 GPU-process qualification, PG18.3 database runs and matched native performance
 comparisons require their own current signatures and authorized run plans.
+
+## 2026-10-13复用审查与闭环边界
+
+[固定原Q2请求子集模型证据](../../../../experiments/results/diagnostics/replica_adaptation_20261013/model_replay/README.md)已有单Core→真实两副本完整HTTP，820POST一致，默认RR未改变。
+
+| 已有源码机制 | 已实现 | 本路径接线／仍缺 |
+|---|---|---|
+| `DynamicAdmissionGate` | ObservationProvider→WindowController→admission limit与trace | 可复用外壳，不应再叠加一个同时改本ReplicaPolicy limits的controller |
+| `AimdAdmissionController/EwmaAimdAdmissionController` | fresh服务running/waiting/KV、deadband、AIMD，EWMA | `waiting>0`仍直接降压；没有ready＋GPU活动＋完成吞吐联合验证 |
+| `HolAgeAimdAdmissionController` | oldest in-flight age信号与校准阈值 | 包含正常model服务时间，不能当纯服务队列时间或P99 |
+| runtime `NonBlockingMetricsObservationProvider` | 独立后台采样、缓存、年龄／stale、caller关闭 | 已接pressure；token/s tracker不能与本路径request-count work rate混用 |
+| `LeastQueued/LeastWork` | 请求数或work/rate预计排空排序 | LeastWork已复用；排名不等于物理GPU余量证明 |
+| `StaticReplicaRouter/ReplicaTransport` | skip-full轮转、endpoint transport、真实完整请求 | 静态已经可因不同完成速度利用空位；本轮硬K填满后四臂均12/12 |
+| Core `SessionCapacity/SessionPolicies` | 唯一权威request/work、QUEUED/INFLIGHT/UNKNOWN、取消/lease责任 | 保持；服务running不再加进Core已计费在途，GPU利用率不能释放credit |
+| `ReplicaCompletionFeedback/ReplicaAdaptivePolicy` | 有界transport完成估计work rate、typed反馈、软endpoint限额 | online接线已完成；压力缺失全局回到已校准静态K，缺joint欠供给／尾风险控制 |
+
+已有控制器有通用增减和低负载规则，并没有用户要求的完整联合判断；不新建独立调度框架或第二个竞争C/W的控制器。
+当前`waiting>0`一槽降压只保留为显式诊断候选，模型小轮未触发，不能宣称已完成欠供给／P99闭环。
+
+后续合同：从Core已合法选到的ready任务判断有需求，按endpoint保持一份limit状态；采样器提供GPU活动、服务完成request/token计数、queue-time与service-time等真实窗口数据。
+只有自身降压后，合法ready仍在且GPU活动／完成吞吐同步下降、等待下降、硬C/W仍允许，才形成欠供给候选；限幅回升／恢复已校准点，稳定区间内保持。
+没有ready的自然尾部、外部干扰不明、client瓶颈、KV／硬容量风险不能仅凭低利用率归因；缺失／过期回到已校准静态点。
+排队控制结合真实等待时间和充分样本的请求尾风险，不直接用waiting>0，也不拿小样本噪声P99调参。
+队列／请求尾目标由部署配置；用户未给数值时只报告同静态点相对风险，不擅设5%阈值、不保证任意到达率满足SLO。
+服务请求P99与完整query P99分开，背压等待／拒绝包含在完整计时和结果中。
+这些joint信号合同与生产控制尚待独立实现／验证，本轮没有新增这些字段或改变Core／query-sharing owner接口。
