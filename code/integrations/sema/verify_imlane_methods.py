@@ -309,7 +309,8 @@ def parse_arguments(argv=None):
     for name in ('author-root','output','bridge-binary'):
         parser.add_argument('--'+name, type=Path, required=True)
     parser.add_argument('--driver-python', '--lotus-python', dest='lotus_python', type=Path, required=True)
-    for name in ('lotus-native-source','tokenizer','duckdb-extension','sema-binary','ray-temp-root'):
+    for name in ('lotus-native-source','tokenizer','duckdb-extension','sema-binary','ray-temp-root',
+                 'ray-worker-trace-root'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--methods', type=parse_methods, default=('lotus','duckdb','sema'))
     for name in ('fixture-port','model-fixture-port','service-port','observation-port'):

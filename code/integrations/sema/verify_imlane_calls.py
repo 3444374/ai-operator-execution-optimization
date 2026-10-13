@@ -144,6 +144,8 @@ def check_mode(args, runtime, helper, fixture):
         "lib=pyarrow.get_library_dirs()[0],base=sys.base_prefix)))"], text=True))
     cpp = Path(subprocess.check_output(["g++", "-print-file-name=libstdc++.so.6"], text=True).strip()).resolve()
     namespace = "ic-" + runtime + "-" + token
+    trace_root = (getattr(args, "ray_worker_trace_root", None) if runtime == "ray" else None) or out/"worker-traces"
+    trace_root = Path(trace_root)
     declared_ports = getattr(args, "coordinator_ports", {})
     port = declared_ports[runtime] if runtime in declared_ports else helper.free_port()
     env = dict(os.environ, CUDA_VISIBLE_DEVICES="", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
@@ -153,7 +155,7 @@ def check_mode(args, runtime, helper, fixture):
             str(author/"source/third_party/fmt/dist/lib"),str(author/"source/third_party/boost/dist/lib"),
             info["base"]+"/lib"]),
         TMPDIR=str(out/"tmp"), IMLANE_NAMESPACE=namespace, IMLANE_GATEWAY_HOST="127.0.0.1",
-        IMLANE_HTTP_TRACE_DIR=str(out/"worker-traces"),
+        IMLANE_HTTP_TRACE_DIR=str(trace_root),
         RAY_USAGE_STATS_ENABLED="0",RAY_DEDUP_LOGS="0")
     Path(env["TMPDIR"]).mkdir()
     env.pop("PYTHONHOME",None)
@@ -339,7 +341,7 @@ def check_mode(args, runtime, helper, fixture):
         report["remaining_shm"]=helper.resources(namespace)
         report["fixture_posts"]=len(fixture.receipts)-before
         traces=[]
-        for path in (out/"worker-traces").glob("*.jsonl"):
+        for path in trace_root.glob("*.jsonl"):
             traces.extend(json.loads(line) for line in path.read_text().splitlines())
         report["kernel_traces"]=traces
         report["actual_worker_pids"]=sorted({row["worker_pid"] for row in traces})
