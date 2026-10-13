@@ -21,7 +21,7 @@
 
 `benchmarks/replica_persistent_probe.py <new-private-directory-outside-git>`复用同一execution跨查询，五臂8156计划／8200硬预算、120秒监督；
 `--causal-pair`只作RR／online的1808计划／1920硬预算、30秒小对子。完整请求和持久预算保留，服务器／GPU／模型0。
-[实际源码overlay与结果](../../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)保留原窗口保护缺口、首样本stale与无净收益；修后对子尚待执行。
+[实际源码overlay与结果](../../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)保留原窗口保护缺口、首样本stale与无净收益；修后1808对子已独立完成，0/3 online首过期且仍无净收益。
 
 ## SemBench Movie原始查询
 

@@ -1,0 +1,109 @@
+{
+  "evidence_type": "software_fixture_persistent_owner",
+  "model_requests": 0,
+  "gpu_count": 0,
+  "server_load": false,
+  "completed_cell_posts": 1808,
+  "durable_reserved_attempts": 1808,
+  "failed_cell": null,
+  "budget": {
+    "schema": "semloom.cell_budget.v1",
+    "budget_id": "persistent-replica",
+    "limit": 1920,
+    "allocated_requests": 1808,
+    "deadline_utc": 1791889869.062902,
+    "units": [
+      {
+        "unit_id": "change-cal-k2",
+        "first_attempt": 1,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-cal-k4",
+        "first_attempt": 81,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-cal-k8",
+        "first_attempt": 161,
+        "requests": 80,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-round_robin",
+        "first_attempt": 241,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-warm-adaptive_route",
+        "first_attempt": 257,
+        "requests": 16,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-round_robin",
+        "first_attempt": 273,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-0-adaptive_route",
+        "first_attempt": 529,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-adaptive_route",
+        "first_attempt": 785,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-1-round_robin",
+        "first_attempt": 1041,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-adaptive_route",
+        "first_attempt": 1297,
+        "requests": 256,
+        "claimed": 1
+      },
+      {
+        "unit_id": "change-measure-2-round_robin",
+        "first_attempt": 1553,
+        "requests": 256,
+        "claimed": 1
+      }
+    ]
+  },
+  "duration_s": 10.897330045700073,
+  "all_owners_clean": true,
+  "cleanup": [
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "source_hashes": {
+    "src/experiments/replica_model_replay.py": "9fede9c88679cc3119d3c579bc2da61bb0641c18fe79978a4183335347bce273",
+    "src/experiments/replica_adaptation_probe.py": "85b7ddac7f9b14c42e41933e149baf0399d1070681dc0d0214e8f861520fd584",
+    "src/execution_provider/adapters/replica_feedback.py": "1c2a3d808bdc6d547eae79b8563b6d8a62e916fecd613c5bb39969fbc65bca84",
+    "src/scheduling/endpoint_routing/replica_adaptation.py": "ec837083f40dbbbe1cbfd31b9e42f81c28ec6c12e9a68fb04767a2cacdb1a2c0",
+    "scripts/benchmarks/replica_persistent_probe.py": "d7ba7ba66d3fca14fd712eaf875b05247ab52d5a9e2e2fd53a8a2c1ea2ef3374"
+  },
+  "base_sha": "ad4b2b556d8e226007d5363a0432a5bc11a538c1",
+  "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "platform": "macOS-15.6.1-arm64-arm-64bit",
+  "causal_pair": true,
+  "deadlines": {
+    "post": 1791889854.062902,
+    "cleanup": 1791889864.062902,
+    "process": 1791889869.062902
+  }
+}

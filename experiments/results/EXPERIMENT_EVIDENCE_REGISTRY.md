@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-13：[精确副本反馈关联对子](diagnostics/replica_adaptation_20261013/persistent_feedback/README.md#精确反馈关联的独立小对子)。
+ad4b2b55的全部五源摘要吻合，1808 durable/0未闭/11批/owner清理；首rate新鲜0/3过期、六条sample→原route→服务→响应，K8强RR仍优。原矩阵和模型结果不替换；软件证据不扩为物理容量或PG/质量资格，GPU模型服务器0。
+
 2026-10-13：[持久副本反馈配对](diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)。
 实际123批/8156原localhost请求、0未闭unit/owner清理确认；五臂三重复、独立先验与多有效变化周期，K8强RR仍优。首样本stale和旧route缺精确sample绑定限制保留；buffer诊断降低不宣称稳定JCT收益，修后guard故障测试独立于旧测量来源。
 

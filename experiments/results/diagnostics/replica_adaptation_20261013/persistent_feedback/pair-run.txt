@@ -1,0 +1,11 @@
+{"label": "change-cal-k2", "count": 80, "k": 2, "jct_s": 0.9416165829170495, "allocated": 80}
+{"label": "change-cal-k4", "count": 80, "k": 4, "jct_s": 0.5181013750843704, "allocated": 160}
+{"label": "change-cal-k8", "count": 80, "k": 8, "jct_s": 0.3745287908241153, "allocated": 240}
+{"label": "change-warm-round_robin", "count": 16, "k": 8, "jct_s": 0.0972353748511523, "allocated": 256}
+{"label": "change-warm-adaptive_route", "count": 16, "k": 8, "jct_s": 0.09560191701166332, "allocated": 272}
+{"label": "change-measure-0-round_robin", "count": 256, "k": 8, "jct_s": 1.3252019588835537, "allocated": 528}
+{"label": "change-measure-0-adaptive_route", "count": 256, "k": 8, "jct_s": 1.3313033329322934, "allocated": 784}
+{"label": "change-measure-1-adaptive_route", "count": 256, "k": 8, "jct_s": 1.3191545840818435, "allocated": 1040}
+{"label": "change-measure-1-round_robin", "count": 256, "k": 8, "jct_s": 1.3004815001040697, "allocated": 1296}
+{"label": "change-measure-2-adaptive_route", "count": 256, "k": 8, "jct_s": 1.3265501658897847, "allocated": 1552}
+{"label": "change-measure-2-round_robin", "count": 256, "k": 8, "jct_s": 1.3145272501278669, "allocated": 1808}

@@ -2,6 +2,7 @@
   "evidence_type": "offline_retained_software_fixture",
   "raw_sha256": "afe7c48e6223ccbdee41644c5979ad725bb6ee2573699d7591a188e4639ee7a3",
   "actual_source_overlay_sha256": "1456fd28ff16daf7601bd01dc7fa7104d3fd0805f7049ecc32fd7df9155ae3fe",
+  "actual_source_overlay_artifact_sha256": "625057ec6f8cc691cbaaff150cd692cd2e3675de47b3549bd1bb2e27ce846788",
   "base_sha": "e3532cfb04ee3413ba823c25fcf4580033e6be68",
   "durable_reserved_attempts": 8156,
   "unclosed_units": 0,

@@ -77,8 +77,11 @@ def summarize(raw_path, receipt_path, *, budget_path=None, overlay_path=None, ba
             for lo, hi in ((0, .2), (.2, .7), (.7, 99))], chains=phases))
     stale = {a: sum(any(v["age_s"] is not None and v["age_s"] > 2 for v in e["first_supply_feedback"].values())
         for e in evaluations if e["arm"] == a) for a in ("adaptive_route", "adaptive_supply", "fixed_rate")}
+    overlay = None if overlay_path is None else Path(overlay_path).read_bytes()
+    decoded_overlay = gzip.decompress(overlay) if overlay is not None and str(overlay_path).endswith(".gz") else overlay
     return dict(evidence_type="offline_retained_software_fixture", raw_sha256=hashlib.sha256(raw).hexdigest(),
-        actual_source_overlay_sha256=None if overlay_path is None else hashlib.sha256(Path(overlay_path).read_bytes()).hexdigest(),
+        actual_source_overlay_sha256=None if decoded_overlay is None else hashlib.sha256(decoded_overlay).hexdigest(),
+        actual_source_overlay_artifact_sha256=None if overlay is None else hashlib.sha256(overlay).hexdigest(),
         base_sha=receipt.get("base_sha", base_sha), durable_reserved_attempts=durable, unclosed_units=unclosed, cells=len(cells),
         canonical_and_fixture_response_body_hashes_equal=True, http_envelope_bytes_equal="not_qualified",
         stale_first_measurements=stale, evaluations=evaluations, change_chains=chains, summary=data["summary"],

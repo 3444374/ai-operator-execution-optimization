@@ -1,0 +1,1921 @@
+{
+  "evidence_type": "offline_retained_software_fixture",
+  "raw_sha256": "525f9360032f31f884b409a4b5f8f3dd7c3c9dc7e9d3399bb5f14d1f6d8f9761",
+  "actual_source_overlay_sha256": null,
+  "actual_source_overlay_artifact_sha256": null,
+  "base_sha": "ad4b2b556d8e226007d5363a0432a5bc11a538c1",
+  "durable_reserved_attempts": 1808,
+  "unclosed_units": 0,
+  "cells": 11,
+  "canonical_and_fixture_response_body_hashes_equal": true,
+  "http_envelope_bytes_equal": "not_qualified",
+  "stale_first_measurements": {
+    "adaptive_route": 0,
+    "adaptive_supply": 0,
+    "fixed_rate": 0
+  },
+  "evaluations": [
+    {
+      "label": "change-measure-0-round_robin",
+      "arm": "round_robin",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "1:0",
+        "decision": {
+          "endpoint_id": "1",
+          "pool_id": "model",
+          "reason": "replica_round_robin"
+        },
+        "routing_feedback": {},
+        "monotonic_s": 1863927.929970083,
+        "utc_s": 1791889841.3072178
+      },
+      "first_supply_feedback": {},
+      "route_reasons": {
+        "replica_round_robin": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 146,
+          "successful_requests": 146
+        },
+        "1": {
+          "rate_updates": 23,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 110,
+          "successful_requests": 110
+        }
+      },
+      "supply_counts": {},
+      "no_ready_snapshots": 13
+    },
+    {
+      "label": "change-measure-0-adaptive_route",
+      "arm": "adaptive_route",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "1:0",
+        "decision": {
+          "endpoint_id": "0",
+          "pool_id": "model",
+          "reason": "replica_adaptive_least_work"
+        },
+        "routing_feedback": {
+          "0": {
+            "rate_observed_at_s": 1863927.908493708,
+            "service_rate_work_units_s": 150.64257743526625,
+            "pressure_observed_at_s": 1863929.304267708,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08580762497149408,
+            "rate_completed_requests": 10,
+            "rate_completed_work": 10,
+            "rate_mean_active_requests": 2.8953710795709338,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863927.822686083,
+            "rate_provenance": "transport"
+          },
+          "1": {
+            "rate_observed_at_s": 1863927.917189875,
+            "service_rate_work_units_s": 77.23055454338343,
+            "pressure_observed_at_s": 1863929.304283291,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08340529189445078,
+            "rate_completed_requests": 6,
+            "rate_completed_work": 6,
+            "rate_mean_active_requests": 2.989194320327856,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863927.833784583,
+            "rate_provenance": "transport"
+          }
+        },
+        "monotonic_s": 1863929.304375791,
+        "utc_s": 1791889842.68162
+      },
+      "first_supply_feedback": {
+        "0": {
+          "age_s": 1.3958820831030607,
+          "sample": {
+            "rate_observed_at_s": 1863927.908493708,
+            "service_rate_work_units_s": 150.64257743526625,
+            "pressure_observed_at_s": 1863929.304267708,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08580762497149408,
+            "rate_completed_requests": 10,
+            "rate_completed_work": 10,
+            "rate_mean_active_requests": 2.8953710795709338,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863927.822686083,
+            "rate_provenance": "transport"
+          }
+        },
+        "1": {
+          "age_s": 1.3871859160717577,
+          "sample": {
+            "rate_observed_at_s": 1863927.917189875,
+            "service_rate_work_units_s": 77.23055454338343,
+            "pressure_observed_at_s": 1863929.304283291,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08340529189445078,
+            "rate_completed_requests": 6,
+            "rate_completed_work": 6,
+            "rate_mean_active_requests": 2.989194320327856,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863927.833784583,
+            "rate_provenance": "transport"
+          }
+        }
+      },
+      "route_reasons": {
+        "replica_adaptive_least_work": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 145,
+          "successful_requests": 145
+        },
+        "1": {
+          "rate_updates": 23,
+          "tail_corrections": 0,
+          "low_support_holds": 0,
+          "successful_work": 111,
+          "successful_requests": 111
+        }
+      },
+      "supply_counts": {
+        "0": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        },
+        "1": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        }
+      },
+      "no_ready_snapshots": 16
+    },
+    {
+      "label": "change-measure-1-adaptive_route",
+      "arm": "adaptive_route",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "2:0",
+        "decision": {
+          "endpoint_id": "0",
+          "pool_id": "model",
+          "reason": "replica_adaptive_least_work"
+        },
+        "routing_feedback": {
+          "0": {
+            "rate_observed_at_s": 1863930.59358975,
+            "service_rate_work_units_s": 162.42161888739477,
+            "pressure_observed_at_s": 1863930.706030125,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08606954198330641,
+            "rate_completed_requests": 14,
+            "rate_completed_work": 14,
+            "rate_mean_active_requests": 3.49828069060463,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863930.507520208,
+            "rate_provenance": "transport"
+          },
+          "1": {
+            "rate_observed_at_s": 1863930.631147041,
+            "service_rate_work_units_s": 80.91614613686231,
+            "pressure_observed_at_s": 1863930.706046708,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.050042874878272414,
+            "rate_completed_requests": 4,
+            "rate_completed_work": 4,
+            "rate_mean_active_requests": 2.003094003773119,
+            "rate_peak_active_requests": 3,
+            "rate_sample_started_at_s": 1863930.581104166,
+            "rate_provenance": "transport"
+          }
+        },
+        "monotonic_s": 1863930.706137583,
+        "utc_s": 1791889844.083377
+      },
+      "first_supply_feedback": {
+        "0": {
+          "age_s": 0.11254783300682902,
+          "sample": {
+            "rate_observed_at_s": 1863930.59358975,
+            "service_rate_work_units_s": 162.42161888739477,
+            "pressure_observed_at_s": 1863930.706030125,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.08606954198330641,
+            "rate_completed_requests": 14,
+            "rate_completed_work": 14,
+            "rate_mean_active_requests": 3.49828069060463,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863930.507520208,
+            "rate_provenance": "transport"
+          }
+        },
+        "1": {
+          "age_s": 0.07499054190702736,
+          "sample": {
+            "rate_observed_at_s": 1863930.631147041,
+            "service_rate_work_units_s": 80.91614613686231,
+            "pressure_observed_at_s": 1863930.706046708,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.050042874878272414,
+            "rate_completed_requests": 4,
+            "rate_completed_work": 4,
+            "rate_mean_active_requests": 2.003094003773119,
+            "rate_peak_active_requests": 3,
+            "rate_sample_started_at_s": 1863930.581104166,
+            "rate_provenance": "transport"
+          }
+        }
+      },
+      "route_reasons": {
+        "replica_adaptive_least_work": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 146,
+          "successful_requests": 146
+        },
+        "1": {
+          "rate_updates": 23,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 110,
+          "successful_requests": 110
+        }
+      },
+      "supply_counts": {
+        "0": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        },
+        "1": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        }
+      },
+      "no_ready_snapshots": 17
+    },
+    {
+      "label": "change-measure-1-round_robin",
+      "arm": "round_robin",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "2:0",
+        "decision": {
+          "endpoint_id": "0",
+          "pool_id": "model",
+          "reason": "replica_round_robin"
+        },
+        "routing_feedback": {},
+        "monotonic_s": 1863932.093526541,
+        "utc_s": 1791889845.470762
+      },
+      "first_supply_feedback": {},
+      "route_reasons": {
+        "replica_round_robin": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 146,
+          "successful_requests": 146
+        },
+        "1": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 110,
+          "successful_requests": 110
+        }
+      },
+      "supply_counts": {},
+      "no_ready_snapshots": 17
+    },
+    {
+      "label": "change-measure-2-adaptive_route",
+      "arm": "adaptive_route",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "3:0",
+        "decision": {
+          "endpoint_id": "0",
+          "pool_id": "model",
+          "reason": "replica_adaptive_least_work"
+        },
+        "routing_feedback": {
+          "0": {
+            "rate_observed_at_s": 1863931.996698916,
+            "service_rate_work_units_s": 168.70701464888177,
+            "pressure_observed_at_s": 1863933.451803875,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.09681849996559322,
+            "rate_completed_requests": 17,
+            "rate_completed_work": 17,
+            "rate_mean_active_requests": 3.5564140063379543,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863931.899880416,
+            "rate_provenance": "transport"
+          },
+          "1": {
+            "rate_observed_at_s": 1863932.0204905,
+            "service_rate_work_units_s": 87.09164304161014,
+            "pressure_observed_at_s": 1863933.451820666,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.07095499988645315,
+            "rate_completed_requests": 6,
+            "rate_completed_work": 6,
+            "rate_mean_active_requests": 3.2213221949402073,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863931.9495355,
+            "rate_provenance": "transport"
+          }
+        },
+        "monotonic_s": 1863933.451919791,
+        "utc_s": 1791889846.829151
+      },
+      "first_supply_feedback": {
+        "0": {
+          "age_s": 1.4552208750974387,
+          "sample": {
+            "rate_observed_at_s": 1863931.996698916,
+            "service_rate_work_units_s": 168.70701464888177,
+            "pressure_observed_at_s": 1863933.451803875,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.09681849996559322,
+            "rate_completed_requests": 17,
+            "rate_completed_work": 17,
+            "rate_mean_active_requests": 3.5564140063379543,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863931.899880416,
+            "rate_provenance": "transport"
+          }
+        },
+        "1": {
+          "age_s": 1.4314292911440134,
+          "sample": {
+            "rate_observed_at_s": 1863932.0204905,
+            "service_rate_work_units_s": 87.09164304161014,
+            "pressure_observed_at_s": 1863933.451820666,
+            "waiting": 0,
+            "kv_usage": 0.2,
+            "rate_support_s": 0.07095499988645315,
+            "rate_completed_requests": 6,
+            "rate_completed_work": 6,
+            "rate_mean_active_requests": 3.2213221949402073,
+            "rate_peak_active_requests": 4,
+            "rate_sample_started_at_s": 1863931.9495355,
+            "rate_provenance": "transport"
+          }
+        }
+      },
+      "route_reasons": {
+        "replica_adaptive_least_work": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 146,
+          "successful_requests": 146
+        },
+        "1": {
+          "rate_updates": 23,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 110,
+          "successful_requests": 110
+        }
+      },
+      "supply_counts": {
+        "0": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        },
+        "1": {
+          "down": 0,
+          "recovery": 0,
+          "hold": 0,
+          "fallback": 0
+        }
+      },
+      "no_ready_snapshots": 13
+    },
+    {
+      "label": "change-measure-2-round_robin",
+      "arm": "round_robin",
+      "case": "change",
+      "first_route": {
+        "event": "route_decision",
+        "request_id": "3:0",
+        "decision": {
+          "endpoint_id": "1",
+          "pool_id": "model",
+          "reason": "replica_round_robin"
+        },
+        "routing_feedback": {},
+        "monotonic_s": 1863934.847341708,
+        "utc_s": 1791889848.224569
+      },
+      "first_supply_feedback": {},
+      "route_reasons": {
+        "replica_round_robin": 256
+      },
+      "feedback_counts": {
+        "0": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 146,
+          "successful_requests": 146
+        },
+        "1": {
+          "rate_updates": 22,
+          "tail_corrections": 1,
+          "low_support_holds": 0,
+          "successful_work": 110,
+          "successful_requests": 110
+        }
+      },
+      "supply_counts": {},
+      "no_ready_snapshots": 13
+    }
+  ],
+  "change_chains": [
+    {
+      "label": "change-measure-0-round_robin",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 50,
+            "payload_sha256": "607851ba56c44992eb66c7f4a85a2f5abf4385baacf1bfe5d0fbbda2fda881e7",
+            "arrived_at_s": 1863928.119266541,
+            "service_at_s": 1863928.127590375,
+            "done_at_s": 1863928.189827416,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863928.190169208,
+              "service_rate_work_units_s": 134.55098420424105,
+              "pressure_observed_at_s": 1863928.190193958,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.09602479194290936,
+              "rate_completed_requests": 7,
+              "rate_completed_work": 7,
+              "rate_mean_active_requests": 3.901273318087979,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863928.094144416,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 6,
+              "tail_corrections": 1,
+              "low_support_holds": 0,
+              "successful_work": 43,
+              "successful_requests": 43,
+              "busy_s": 0.34530183323659003,
+              "last_segment_work": 10,
+              "last_segment_completed": 10,
+              "last_segment_busy_s": 0.08757433318533003,
+              "last_segment_rate": 114.18870845225167
+            },
+            "monotonic_s": 1863928.190211583,
+            "utc_s": 1791889841.567459
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "1:60",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863928.190526958,
+            "utc_s": 1791889841.567774
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 60,
+            "payload_sha256": "36793c19490f4ddba58a4fc77f9faf34794881262ee59c02c3f1fad40b7da082",
+            "arrived_at_s": 1863928.19407125,
+            "service_at_s": 1863928.254922125,
+            "done_at_s": 1863928.316529208,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 60,
+            "source_row_id": 60,
+            "source_call_id": "fixture-60",
+            "result_at_s": 1863928.318301333,
+            "body_sha256": "b533c1c82ceae7e576609e4d1360bd51cd23dceb924e2b49a8f38f317e99ef4c",
+            "content_sha256": "23ef3626a3505bbeab4d3c8d5a0caef6854e28f832e3e0bf0d89e940b6873b1f",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 104,
+            "payload_sha256": "5c1703f7e29112af66865a9ccbd206dd2a1917cac260609f9b24cabfc05de471",
+            "arrived_at_s": 1863928.585033083,
+            "service_at_s": 1863928.635615333,
+            "done_at_s": 1863928.648136916,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863928.686350083,
+              "service_rate_work_units_s": 73.39657715616721,
+              "pressure_observed_at_s": 1863928.686376125,
+              "waiting": 0,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.050438249949365854,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.819302181426474,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863928.635911833,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 14,
+              "tail_corrections": 1,
+              "low_support_holds": 0,
+              "successful_work": 65,
+              "successful_requests": 65,
+              "busy_s": 0.8414827082306147,
+              "last_segment_work": 10,
+              "last_segment_completed": 10,
+              "last_segment_busy_s": 0.08757433318533003,
+              "last_segment_rate": 114.18870845225167
+            },
+            "monotonic_s": 1863928.686393625,
+            "utc_s": 1791889842.063639
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "1:124",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863928.686725458,
+            "utc_s": 1791889842.063971
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 124,
+            "payload_sha256": "87d79423e48bc7ee2dc11de183f6ca29480d88e306cc7661b5160149c8e2b7c4",
+            "arrived_at_s": 1863928.689265708,
+            "service_at_s": 1863928.698315166,
+            "done_at_s": 1863928.710825541,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 124,
+            "source_row_id": 124,
+            "source_call_id": "fixture-124",
+            "result_at_s": 1863928.711876541,
+            "body_sha256": "ab03ff0a3ee1c751f20d89898967b44d18528bed4c742b8bd301c6a4fb658ebf",
+            "content_sha256": "7199efac0dbb74d38941c0999f6546af59514f3576abf1d08195b30d7f8d88d6",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "change-measure-0-adaptive_route",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 50,
+            "payload_sha256": "607851ba56c44992eb66c7f4a85a2f5abf4385baacf1bfe5d0fbbda2fda881e7",
+            "arrived_at_s": 1863929.497831708,
+            "service_at_s": 1863929.504981375,
+            "done_at_s": 1863929.569992291,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863929.570379625,
+              "service_rate_work_units_s": 133.41601653641032,
+              "pressure_observed_at_s": 1863929.524210916,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10102683398872614,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.8883485613141184,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863929.469352791,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 6,
+              "tail_corrections": 1,
+              "low_support_holds": 0,
+              "successful_work": 43,
+              "successful_requests": 43,
+              "busy_s": 0.3514182500075549,
+              "last_segment_work": 10,
+              "last_segment_completed": 10,
+              "last_segment_busy_s": 0.08580762497149408,
+              "last_segment_rate": 116.53975976286576
+            },
+            "monotonic_s": 1863929.570417625,
+            "utc_s": 1791889842.9476612
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "1:60",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863929.570379625,
+                "service_rate_work_units_s": 133.41601653641032,
+                "pressure_observed_at_s": 1863929.524210916,
+                "waiting": 2,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.10102683398872614,
+                "rate_completed_requests": 8,
+                "rate_completed_work": 8,
+                "rate_mean_active_requests": 3.8883485613141184,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863929.469352791,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863929.548471166,
+                "service_rate_work_units_s": 78.69065791612394,
+                "pressure_observed_at_s": 1863929.523685083,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.06585037498734891,
+                "rate_completed_requests": 5,
+                "rate_completed_work": 5,
+                "rate_mean_active_requests": 3.9217607502714564,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863929.482620791,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863929.57080625,
+            "utc_s": 1791889842.9480488
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863929.570379625,
+              "service_rate_work_units_s": 133.41601653641032,
+              "pressure_observed_at_s": 1863929.524210916,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10102683398872614,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.8883485613141184,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863929.469352791,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863929.548471166,
+              "service_rate_work_units_s": 78.69065791612394,
+              "pressure_observed_at_s": 1863929.523685083,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.06585037498734891,
+              "rate_completed_requests": 5,
+              "rate_completed_work": 5,
+              "rate_mean_active_requests": 3.9217607502714564,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863929.482620791,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 60,
+            "payload_sha256": "36793c19490f4ddba58a4fc77f9faf34794881262ee59c02c3f1fad40b7da082",
+            "arrived_at_s": 1863929.574053,
+            "service_at_s": 1863929.633964166,
+            "done_at_s": 1863929.698002791,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 60,
+            "source_row_id": 60,
+            "source_call_id": "fixture-60",
+            "result_at_s": 1863929.700417958,
+            "body_sha256": "b533c1c82ceae7e576609e4d1360bd51cd23dceb924e2b49a8f38f317e99ef4c",
+            "content_sha256": "23ef3626a3505bbeab4d3c8d5a0caef6854e28f832e3e0bf0d89e940b6873b1f",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 105,
+            "payload_sha256": "1e44826667731c24148bec03e820cbfa5176c6f6bfc5140f47be453acaec56a0",
+            "arrived_at_s": 1863929.954413041,
+            "service_at_s": 1863930.014848708,
+            "done_at_s": 1863930.026088666,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863930.071405458,
+              "service_rate_work_units_s": 80.20265740032325,
+              "pressure_observed_at_s": 1863930.026961333,
+              "waiting": 0,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05636824993416667,
+              "rate_completed_requests": 10,
+              "rate_completed_work": 10,
+              "rate_mean_active_requests": 3.709191342132102,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.015037208,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 14,
+              "tail_corrections": 1,
+              "low_support_holds": 0,
+              "successful_work": 67,
+              "successful_requests": 67,
+              "busy_s": 0.8524440829642117,
+              "last_segment_work": 10,
+              "last_segment_completed": 10,
+              "last_segment_busy_s": 0.08580762497149408,
+              "last_segment_rate": 116.53975976286576
+            },
+            "monotonic_s": 1863930.071608291,
+            "utc_s": 1791889843.44885
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "1:128",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863930.071405458,
+                "service_rate_work_units_s": 80.20265740032325,
+                "pressure_observed_at_s": 1863930.026961333,
+                "waiting": 0,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.05636824993416667,
+                "rate_completed_requests": 10,
+                "rate_completed_work": 10,
+                "rate_mean_active_requests": 3.709191342132102,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863930.015037208,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863930.0648285,
+                "service_rate_work_units_s": 82.55996786057311,
+                "pressure_observed_at_s": 1863930.070843208,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.06316679180599749,
+                "rate_completed_requests": 5,
+                "rate_completed_work": 5,
+                "rate_mean_active_requests": 3.8687304856899654,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863930.001661708,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863930.0723285,
+            "utc_s": 1791889843.44957
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863930.071405458,
+              "service_rate_work_units_s": 80.20265740032325,
+              "pressure_observed_at_s": 1863930.026961333,
+              "waiting": 0,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05636824993416667,
+              "rate_completed_requests": 10,
+              "rate_completed_work": 10,
+              "rate_mean_active_requests": 3.709191342132102,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.015037208,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863930.0648285,
+              "service_rate_work_units_s": 82.55996786057311,
+              "pressure_observed_at_s": 1863930.070843208,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.06316679180599749,
+              "rate_completed_requests": 5,
+              "rate_completed_work": 5,
+              "rate_mean_active_requests": 3.8687304856899654,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.001661708,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 128,
+            "payload_sha256": "2c4f852f3a3f3588b48a520881b62cd02746eb6243d07a5d7bccb2ef4b6e79b9",
+            "arrived_at_s": 1863930.076136625,
+            "service_at_s": 1863930.081566833,
+            "done_at_s": 1863930.094079125,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 128,
+            "source_row_id": 128,
+            "source_call_id": "fixture-128",
+            "result_at_s": 1863930.095108625,
+            "body_sha256": "ca896f39ec2af87bc52b4458995b992fce4bb847650409e1f972047b380f966a",
+            "content_sha256": "c6514cd87b1b582a814370ce59525d65add5bf2f77837a2748ce420c04be525e",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "change-measure-1-adaptive_route",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 50,
+            "payload_sha256": "607851ba56c44992eb66c7f4a85a2f5abf4385baacf1bfe5d0fbbda2fda881e7",
+            "arrived_at_s": 1863930.896787208,
+            "service_at_s": 1863930.9056695,
+            "done_at_s": 1863930.970679,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863930.971023125,
+              "service_rate_work_units_s": 123.98080502547828,
+              "pressure_observed_at_s": 1863930.924023791,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10268629202619195,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.92500823960921,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.868336833,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 28,
+              "tail_corrections": 2,
+              "low_support_holds": 0,
+              "successful_work": 188,
+              "successful_requests": 188,
+              "busy_s": 1.638945834012702,
+              "last_segment_work": 145,
+              "last_segment_completed": 145,
+              "last_segment_busy_s": 1.2888207498472184,
+              "last_segment_rate": 112.50594779544699
+            },
+            "monotonic_s": 1863930.971055416,
+            "utc_s": 1791889844.3482938
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "2:60",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863930.971023125,
+                "service_rate_work_units_s": 123.98080502547828,
+                "pressure_observed_at_s": 1863930.924023791,
+                "waiting": 2,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.10268629202619195,
+                "rate_completed_requests": 8,
+                "rate_completed_work": 8,
+                "rate_mean_active_requests": 3.92500823960921,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863930.868336833,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863930.948542833,
+                "service_rate_work_units_s": 80.90527390545563,
+                "pressure_observed_at_s": 1863930.923522541,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.06690662517212331,
+                "rate_completed_requests": 5,
+                "rate_completed_work": 5,
+                "rate_mean_active_requests": 3.8980189490552513,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863930.881636208,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863930.971570125,
+            "utc_s": 1791889844.348809
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863930.971023125,
+              "service_rate_work_units_s": 123.98080502547828,
+              "pressure_observed_at_s": 1863930.924023791,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10268629202619195,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.92500823960921,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.868336833,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863930.948542833,
+              "service_rate_work_units_s": 80.90527390545563,
+              "pressure_observed_at_s": 1863930.923522541,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.06690662517212331,
+              "rate_completed_requests": 5,
+              "rate_completed_work": 5,
+              "rate_mean_active_requests": 3.8980189490552513,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863930.881636208,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 60,
+            "payload_sha256": "36793c19490f4ddba58a4fc77f9faf34794881262ee59c02c3f1fad40b7da082",
+            "arrived_at_s": 1863930.977400416,
+            "service_at_s": 1863931.031573041,
+            "done_at_s": 1863931.096684666,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 60,
+            "source_row_id": 60,
+            "source_call_id": "fixture-60",
+            "result_at_s": 1863931.100403958,
+            "body_sha256": "b533c1c82ceae7e576609e4d1360bd51cd23dceb924e2b49a8f38f317e99ef4c",
+            "content_sha256": "23ef3626a3505bbeab4d3c8d5a0caef6854e28f832e3e0bf0d89e940b6873b1f",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 104,
+            "payload_sha256": "5c1703f7e29112af66865a9ccbd206dd2a1917cac260609f9b24cabfc05de471",
+            "arrived_at_s": 1863931.351558458,
+            "service_at_s": 1863931.409829208,
+            "done_at_s": 1863931.422340583,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863931.460875666,
+              "service_rate_work_units_s": 70.45901675083108,
+              "pressure_observed_at_s": 1863931.435795416,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05080029089003801,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.8341864678981454,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863931.410075375,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 36,
+              "tail_corrections": 2,
+              "low_support_holds": 0,
+              "successful_work": 210,
+              "successful_requests": 210,
+              "busy_s": 2.1287983749061823,
+              "last_segment_work": 145,
+              "last_segment_completed": 145,
+              "last_segment_busy_s": 1.2888207498472184,
+              "last_segment_rate": 112.50594779544699
+            },
+            "monotonic_s": 1863931.460942458,
+            "utc_s": 1791889844.83818
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "2:124",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863931.460875666,
+                "service_rate_work_units_s": 70.45901675083108,
+                "pressure_observed_at_s": 1863931.435795416,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.05080029089003801,
+                "rate_completed_requests": 8,
+                "rate_completed_work": 8,
+                "rate_mean_active_requests": 3.8341864678981454,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863931.410075375,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863931.457037916,
+                "service_rate_work_units_s": 82.3897542925244,
+                "pressure_observed_at_s": 1863931.432133625,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.05015833303332329,
+                "rate_completed_requests": 4,
+                "rate_completed_work": 4,
+                "rate_mean_active_requests": 3.9331342571360137,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863931.406879583,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863931.461517916,
+            "utc_s": 1791889844.8387551
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863931.460875666,
+              "service_rate_work_units_s": 70.45901675083108,
+              "pressure_observed_at_s": 1863931.435795416,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05080029089003801,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.8341864678981454,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863931.410075375,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863931.457037916,
+              "service_rate_work_units_s": 82.3897542925244,
+              "pressure_observed_at_s": 1863931.432133625,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05015833303332329,
+              "rate_completed_requests": 4,
+              "rate_completed_work": 4,
+              "rate_mean_active_requests": 3.9331342571360137,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863931.406879583,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 124,
+            "payload_sha256": "87d79423e48bc7ee2dc11de183f6ca29480d88e306cc7661b5160149c8e2b7c4",
+            "arrived_at_s": 1863931.465118,
+            "service_at_s": 1863931.471043875,
+            "done_at_s": 1863931.482605708,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 124,
+            "source_row_id": 124,
+            "source_call_id": "fixture-124",
+            "result_at_s": 1863931.486514166,
+            "body_sha256": "ab03ff0a3ee1c751f20d89898967b44d18528bed4c742b8bd301c6a4fb658ebf",
+            "content_sha256": "7199efac0dbb74d38941c0999f6546af59514f3576abf1d08195b30d7f8d88d6",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "change-measure-1-round_robin",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 53,
+            "payload_sha256": "5645ddabfb317b4e0060fe8431995b4704406bea4f5e869e664f7a0fc93a341f",
+            "arrived_at_s": 1863932.295537583,
+            "service_at_s": 1863932.30088475,
+            "done_at_s": 1863932.364950833,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863932.3659465,
+              "service_rate_work_units_s": 128.83873874871418,
+              "pressure_observed_at_s": 1863932.365969041,
+              "waiting": 0,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.09996525011956692,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.8770214489205808,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863932.26598125,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 28,
+              "tail_corrections": 2,
+              "low_support_holds": 0,
+              "successful_work": 191,
+              "successful_requests": 191,
+              "busy_s": 1.6549281664192677,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2952733330894262,
+              "last_segment_rate": 112.71752167688618
+            },
+            "monotonic_s": 1863932.365984125,
+            "utc_s": 1791889845.743219
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "2:64",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863932.366708333,
+            "utc_s": 1791889845.743943
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 64,
+            "payload_sha256": "e1c846d4972005eba3be7491fc18404d13b971ae7a2133cde621b5820ea4c961",
+            "arrived_at_s": 1863932.369448708,
+            "service_at_s": 1863932.426665458,
+            "done_at_s": 1863932.491724958,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 64,
+            "source_row_id": 64,
+            "source_call_id": "fixture-64",
+            "result_at_s": 1863932.494727083,
+            "body_sha256": "4b9d0e5a90a1b4426cfff7c2b3f4797c7944d956facdd6da2cdee9eef2a273f1",
+            "content_sha256": "128a46703b2a2f77a34ae81c9843b73a60730b81d2a35b1eaced1212b4befb50",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 107,
+            "payload_sha256": "3c9f0c08c1e1424d6de5e78fcf14c77e7dac2f7cc6f19a3f656b12c429cface2",
+            "arrived_at_s": 1863932.744798875,
+            "service_at_s": 1863932.800220875,
+            "done_at_s": 1863932.81042225,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863932.8565875,
+              "service_rate_work_units_s": 74.66578445845953,
+              "pressure_observed_at_s": 1863932.856624666,
+              "waiting": 0,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05373812513425946,
+              "rate_completed_requests": 9,
+              "rate_completed_work": 9,
+              "rate_mean_active_requests": 3.8415161139894374,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863932.802849375,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 36,
+              "tail_corrections": 2,
+              "low_support_holds": 0,
+              "successful_work": 214,
+              "successful_requests": 214,
+              "busy_s": 2.145569166401401,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2952733330894262,
+              "last_segment_rate": 112.71752167688618
+            },
+            "monotonic_s": 1863932.856644791,
+            "utc_s": 1791889846.233878
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "2:128",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863932.857238833,
+            "utc_s": 1791889846.234472
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 128,
+            "payload_sha256": "2c4f852f3a3f3588b48a520881b62cd02746eb6243d07a5d7bccb2ef4b6e79b9",
+            "arrived_at_s": 1863932.860015958,
+            "service_at_s": 1863932.868457375,
+            "done_at_s": 1863932.880968375,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 128,
+            "source_row_id": 128,
+            "source_call_id": "fixture-128",
+            "result_at_s": 1863932.882534291,
+            "body_sha256": "ca896f39ec2af87bc52b4458995b992fce4bb847650409e1f972047b380f966a",
+            "content_sha256": "c6514cd87b1b582a814370ce59525d65add5bf2f77837a2748ce420c04be525e",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "change-measure-2-adaptive_route",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 51,
+            "payload_sha256": "9874d7c4052ab83595f1a1804fdfb4cb4cd834add803a612b8d4979453d7943e",
+            "arrived_at_s": 1863933.643886375,
+            "service_at_s": 1863933.657756791,
+            "done_at_s": 1863933.722167625,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863933.722505541,
+              "service_rate_work_units_s": 124.05107799501563,
+              "pressure_observed_at_s": 1863933.715382458,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10440245806239545,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.9047703741435456,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863933.618103083,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 50,
+              "tail_corrections": 3,
+              "low_support_holds": 0,
+              "successful_work": 334,
+              "successful_requests": 334,
+              "busy_s": 2.934806374832988,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2899932500440627,
+              "last_segment_rate": 113.1788867848828
+            },
+            "monotonic_s": 1863933.72255,
+            "utc_s": 1791889847.099781
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "3:61",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863933.722505541,
+                "service_rate_work_units_s": 124.05107799501563,
+                "pressure_observed_at_s": 1863933.715382458,
+                "waiting": 2,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.10440245806239545,
+                "rate_completed_requests": 8,
+                "rate_completed_work": 8,
+                "rate_mean_active_requests": 3.9047703741435456,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863933.618103083,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863933.681796833,
+                "service_rate_work_units_s": 82.27698953192301,
+                "pressure_observed_at_s": 1863933.715092625,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.060642333002761006,
+                "rate_completed_requests": 5,
+                "rate_completed_work": 5,
+                "rate_mean_active_requests": 3.8907996030067737,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863933.6211545,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863933.723061791,
+            "utc_s": 1791889847.1002932
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863933.722505541,
+              "service_rate_work_units_s": 124.05107799501563,
+              "pressure_observed_at_s": 1863933.715382458,
+              "waiting": 2,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.10440245806239545,
+              "rate_completed_requests": 8,
+              "rate_completed_work": 8,
+              "rate_mean_active_requests": 3.9047703741435456,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863933.618103083,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863933.681796833,
+              "service_rate_work_units_s": 82.27698953192301,
+              "pressure_observed_at_s": 1863933.715092625,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.060642333002761006,
+              "rate_completed_requests": 5,
+              "rate_completed_work": 5,
+              "rate_mean_active_requests": 3.8907996030067737,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863933.6211545,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 61,
+            "payload_sha256": "e216ab7420cfc53957de34e5f3f16ca81d1d7f9761258beb6c07a83369b12ce6",
+            "arrived_at_s": 1863933.726557041,
+            "service_at_s": 1863933.785220083,
+            "done_at_s": 1863933.8481215,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 61,
+            "source_row_id": 61,
+            "source_call_id": "fixture-61",
+            "result_at_s": 1863933.849809833,
+            "body_sha256": "f4ae33ed2d9247f2028319df4a353631ffbbb86c68393b5a9ca5e55ca8813c17",
+            "content_sha256": "aaee12e1102c263afbe108a95a32517f3a69ef40ed682d37b5b648864332f9a3",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 104,
+            "payload_sha256": "5c1703f7e29112af66865a9ccbd206dd2a1917cac260609f9b24cabfc05de471",
+            "arrived_at_s": 1863934.1045025,
+            "service_at_s": 1863934.162258916,
+            "done_at_s": 1863934.173269458,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863934.215956125,
+              "service_rate_work_units_s": 74.3674455430788,
+              "pressure_observed_at_s": 1863934.174230708,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05260808393359184,
+              "rate_completed_requests": 9,
+              "rate_completed_work": 9,
+              "rate_mean_active_requests": 3.73705324186767,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863934.163348041,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 58,
+              "tail_corrections": 3,
+              "low_support_holds": 0,
+              "successful_work": 357,
+              "successful_requests": 357,
+              "busy_s": 3.4282569587230682,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2899932500440627,
+              "last_segment_rate": 113.1788867848828
+            },
+            "monotonic_s": 1863934.216014916,
+            "utc_s": 1791889847.5932438
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "3:126",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_adaptive_least_work"
+            },
+            "routing_feedback": {
+              "0": {
+                "rate_observed_at_s": 1863934.215956125,
+                "service_rate_work_units_s": 74.3674455430788,
+                "pressure_observed_at_s": 1863934.174230708,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.05260808393359184,
+                "rate_completed_requests": 9,
+                "rate_completed_work": 9,
+                "rate_mean_active_requests": 3.73705324186767,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863934.163348041,
+                "rate_provenance": "transport"
+              },
+              "1": {
+                "rate_observed_at_s": 1863934.190274666,
+                "service_rate_work_units_s": 87.11470591166675,
+                "pressure_observed_at_s": 1863934.17464175,
+                "waiting": 1,
+                "kv_usage": 0.2,
+                "rate_support_s": 0.05005137505941093,
+                "rate_completed_requests": 5,
+                "rate_completed_work": 5,
+                "rate_mean_active_requests": 3.8825956497480227,
+                "rate_peak_active_requests": 4,
+                "rate_sample_started_at_s": 1863934.140223291,
+                "rate_provenance": "transport"
+              }
+            },
+            "monotonic_s": 1863934.21651975,
+            "utc_s": 1791889847.593749
+          },
+          "actual_routing_feedback": {
+            "0": {
+              "rate_observed_at_s": 1863934.215956125,
+              "service_rate_work_units_s": 74.3674455430788,
+              "pressure_observed_at_s": 1863934.174230708,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05260808393359184,
+              "rate_completed_requests": 9,
+              "rate_completed_work": 9,
+              "rate_mean_active_requests": 3.73705324186767,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863934.163348041,
+              "rate_provenance": "transport"
+            },
+            "1": {
+              "rate_observed_at_s": 1863934.190274666,
+              "service_rate_work_units_s": 87.11470591166675,
+              "pressure_observed_at_s": 1863934.17464175,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.05005137505941093,
+              "rate_completed_requests": 5,
+              "rate_completed_work": 5,
+              "rate_mean_active_requests": 3.8825956497480227,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863934.140223291,
+              "rate_provenance": "transport"
+            }
+          },
+          "subsequent_original_service": {
+            "row": 126,
+            "payload_sha256": "7f46d41f2aef44e76a1dd2d8ea9dbd63178fafd38f559e5a060d50f09ba9d7b4",
+            "arrived_at_s": 1863934.218448791,
+            "service_at_s": 1863934.2273685,
+            "done_at_s": 1863934.239875541,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 126,
+            "source_row_id": 126,
+            "source_call_id": "fixture-126",
+            "result_at_s": 1863934.240859916,
+            "body_sha256": "e05ca1c23d30389126b2ea3b529aa9d1029a9845edb49dae13aa9c4223e8206e",
+            "content_sha256": "259a85111f0da665583e2109a6fb26c146610defc3ceb0027c5e0c7a84bae0d6",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "label": "change-measure-2-round_robin",
+      "updates_by_phase": [
+        3,
+        7,
+        12
+      ],
+      "chains": [
+        {
+          "phase": "degrade",
+          "original_service": {
+            "row": 54,
+            "payload_sha256": "549f2603b3631b122e04f5b7c428a23e0056cf51bae171327f280bb6a02f8da1",
+            "arrived_at_s": 1863935.045348416,
+            "service_at_s": 1863935.054813875,
+            "done_at_s": 1863935.118686333,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863935.119004625,
+              "service_rate_work_units_s": 130.08411466061736,
+              "pressure_observed_at_s": 1863935.119028541,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.1101967089343816,
+              "rate_completed_requests": 10,
+              "rate_completed_work": 10,
+              "rate_mean_active_requests": 3.890228116846637,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863935.008807916,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 50,
+              "tail_corrections": 3,
+              "low_support_holds": 0,
+              "successful_work": 337,
+              "successful_requests": 337,
+              "busy_s": 2.9321329582016915,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2800067500211298,
+              "last_segment_rate": 114.06189849982422
+            },
+            "monotonic_s": 1863935.119046083,
+            "utc_s": 1791889848.4962728
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "3:64",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863935.119639541,
+            "utc_s": 1791889848.496866
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 64,
+            "payload_sha256": "e1c846d4972005eba3be7491fc18404d13b971ae7a2133cde621b5820ea4c961",
+            "arrived_at_s": 1863935.123140833,
+            "service_at_s": 1863935.181974416,
+            "done_at_s": 1863935.244798125,
+            "actual_work": 1,
+            "seconds_per_work": 0.06
+          },
+          "subsequent_result": {
+            "source_sequence": 64,
+            "source_row_id": 64,
+            "source_call_id": "fixture-64",
+            "result_at_s": 1863935.248243208,
+            "body_sha256": "4b9d0e5a90a1b4426cfff7c2b3f4797c7944d956facdd6da2cdee9eef2a273f1",
+            "content_sha256": "128a46703b2a2f77a34ae81c9843b73a60730b81d2a35b1eaced1212b4befb50",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        },
+        {
+          "phase": "restore",
+          "original_service": {
+            "row": 108,
+            "payload_sha256": "e748f0384e22587b00a3d6236c91909387e49b58e57b1556d42694309a32df83",
+            "arrived_at_s": 1863935.501561583,
+            "service_at_s": 1863935.559296458,
+            "done_at_s": 1863935.571807666,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "feedback": {
+            "event": "feedback_updated",
+            "endpoint_id": "0",
+            "sample": {
+              "rate_observed_at_s": 1863935.613599875,
+              "service_rate_work_units_s": 79.540288981713,
+              "pressure_observed_at_s": 1863935.61362525,
+              "waiting": 1,
+              "kv_usage": 0.2,
+              "rate_support_s": 0.051060291938483715,
+              "rate_completed_requests": 10,
+              "rate_completed_work": 10,
+              "rate_mean_active_requests": 3.743007227412187,
+              "rate_peak_active_requests": 4,
+              "rate_sample_started_at_s": 1863935.562539583,
+              "rate_provenance": "transport"
+            },
+            "diagnostics": {
+              "active": 3,
+              "rate_updates": 58,
+              "tail_corrections": 3,
+              "low_support_holds": 0,
+              "successful_work": 361,
+              "successful_requests": 361,
+              "busy_s": 3.42672820831649,
+              "last_segment_work": 146,
+              "last_segment_completed": 146,
+              "last_segment_busy_s": 1.2800067500211298,
+              "last_segment_rate": 114.06189849982422
+            },
+            "monotonic_s": 1863935.61364125,
+            "utc_s": 1791889848.990866
+          },
+          "subsequent_original_route": {
+            "event": "route_decision",
+            "request_id": "3:130",
+            "decision": {
+              "endpoint_id": "0",
+              "pool_id": "model",
+              "reason": "replica_round_robin"
+            },
+            "routing_feedback": {},
+            "monotonic_s": 1863935.613891166,
+            "utc_s": 1791889848.991116
+          },
+          "actual_routing_feedback": {},
+          "subsequent_original_service": {
+            "row": 130,
+            "payload_sha256": "c13da35019bd27170040657577de5baa1ab9ba4ee129bd3506d8ab4730dd695f",
+            "arrived_at_s": 1863935.615699708,
+            "service_at_s": 1863935.625876708,
+            "done_at_s": 1863935.638386958,
+            "actual_work": 1,
+            "seconds_per_work": 0.01
+          },
+          "subsequent_result": {
+            "source_sequence": 130,
+            "source_row_id": 130,
+            "source_call_id": "fixture-130",
+            "result_at_s": 1863935.639588458,
+            "body_sha256": "76b0e21fa65fc07eb7210fbe3b75ba789206e7496b520cedc8819dc244694483",
+            "content_sha256": "7f69968fbe9509f2d651bc87eaf00d45f85b58c48368a0663b8379567259bd30",
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 1,
+              "completion_tokens": 1,
+              "total_tokens": 2
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "summary": [
+    {
+      "case": "change",
+      "arm": "round_robin",
+      "k": 8,
+      "jct_s": [
+        1.3252019588835537,
+        1.3004815001040697,
+        1.3145272501278669
+      ],
+      "median_jct_s": 1.3145272501278669,
+      "policy_us": [
+        3.37955859375,
+        3.327869140625,
+        3.35977734375
+      ],
+      "diagnostics_s": [
+        0.106901207,
+        0.079050988,
+        0.09366037
+      ],
+      "feedback_s": [
+        0.031633384,
+        0.024784169,
+        0.028183752
+      ]
+    },
+    {
+      "case": "change",
+      "arm": "adaptive_route",
+      "k": 8,
+      "jct_s": [
+        1.3313033329322934,
+        1.3191545840818435,
+        1.3265501658897847
+      ],
+      "median_jct_s": 1.3265501658897847,
+      "policy_us": [
+        24.460447265625,
+        23.916365234375,
+        23.927330078125
+      ],
+      "diagnostics_s": [
+        0.087693395,
+        0.088408766,
+        0.083842215
+      ],
+      "feedback_s": [
+        0.025712128,
+        0.024634465,
+        0.023667759
+      ]
+    }
+  ],
+  "observer": []
+}

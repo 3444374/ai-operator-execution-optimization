@@ -1,10 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[精确副本反馈关联小对子](../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md#精确反馈关联的独立小对子)。
+固定ad4b2b55、11批/1808 localhost POST、10.897秒/30秒全部清理；online首rate过期0/3，每次A初始/下降/恢复独特更新3/7/12、六条实际读取样本回执。K8 RR1.314527/online1.326550仍无收益，默认RR；原8156/820与限定保持。归档overlay gzip解压SHA不变；服务器新预留0。
+
 2026-10-13：[持久副本反馈五臂配对](../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md)。
-123批/8156 localhost POST、68.798秒全部清理；change K8 RR1.4203/online1.4352/压力约1.56，仍无净收益。明确6/15和7/15首样本stale、日志开销与实际source overlay；开户/准备/绝对截止修后8项检查通过，1808精确反馈小对子pending，GPU/模型/服务器0。
+123批/8156 localhost POST、68.798秒全部清理；change K8 RR1.4203/online1.4352/压力约1.56，仍无净收益。明确6/15和7/15首样本stale、日志开销与实际source overlay；开户/准备/绝对截止修后8项检查通过，1808精确反馈小对子随后独立完成（见上方），GPU/模型/服务器0。
 
 2026-10-13：[副本反馈支持与证据审计修订](../experiments/results/diagnostics/replica_adaptation_20261013/README.md#反馈支持与证据审计修订)。
-短尾/零时尾、串行K1/失败busy支持和候选合法性修复，37项确定性及3项replay通过；压力供给显式opt-in，默认RR不变。审计正常/-O各9项、47种损坏拒绝，原820 metadata两模式只读复核；不是新性能/GPU证据，持久同先验两因素配对pending。
+短尾/零时尾、串行K1/失败busy支持和候选合法性修复，37项确定性及3项replay通过；压力供给显式opt-in，默认RR不变。审计正常/-O各9项、47种损坏拒绝，原820 metadata两模式只读复核；不是新性能/GPU证据；后续持久配对与信息年龄限制见上方。
 
 2026-10-13：[能力变化／恢复软件检查](../experiments/results/diagnostics/replica_adaptation_20261013/capacity_change/README.md)
 复用既有HTTP fixture和同transport边界，1800POST；K2在线0.8301／固定0.8942，而K8 RR0.4888／在线0.4958，保留强静态反例与反馈滞后。模型/GPU0，joint欠供给控制仍pending。
