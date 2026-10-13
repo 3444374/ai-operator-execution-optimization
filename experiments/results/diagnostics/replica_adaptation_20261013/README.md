@@ -63,7 +63,7 @@
 [策略](raw/policy-tests.txt)、[扩展](raw/scheduling-tests.txt)保留。已测试满副本跳过、硬work/global限制、
 单K探测、取消仍计费、disconnect/timeout未知责任、不重试和完整HTTP错误响应。
 
-实际Ray/Daft库、PG和模型性能尚未在此新接线验证。独立分支不合并main。
+本软件阶段未验证实际Ray/Daft库、PG或模型；后续模型子集资格与负结果见[模型报告](model_replay/README.md)，不扩为原SQL／库路径资格。独立分支不合并main。
 后续模型预演先复用已下载Qwen与原公开数据，在同版本同适配器下分开路由与供给因素，
 先确认机器/模型/服务/协议签名、独立静态选点与资源空闲，再运行有限单／双卡配对；无净收益也发布原值。
 
@@ -77,7 +77,7 @@ Core供给与动作、250ms vLLM指标及1s逐卡GPU活动观察对所有臂启�
 [四臂fixture](model-replay-driver-tests.txt)共16次localhost POST，逐出现完整响应关联、原请求字节、持久累计额度、Core待提交／在途及清理通过。
 [10项策略](model-replay-policy-tests.txt)包含压力过期回到已选静态K2，而不是两副本物理上限8。
 [早期驱动失败](model-replay-initial-failure.txt)保留：测试误要求每个fixed-rate评价臂都触及所有副本；修正为只从独立RR校准取冻结rate，没有重发模型。
-此处仍无新模型性能数据；后续窗口与控制改进分别登记。
+此小节保留模型执行前的本地资格；后续[模型窗口](model_replay/README.md)已独立登记，控制改进未借本地资格自动完成。
 
 07:45:29 UTC开始有限窗口；本地载荷传输被自动审批拒绝后，已安全复用服务器原件且两SHA一致，无本地payload传输。
 07:48:59准备因驱动额外T0+120秒截止立即停止：[0 POST失败原件](model-preparation-failure.txt)，预留0、unit0、未加载模型。

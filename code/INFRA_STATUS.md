@@ -12,13 +12,13 @@
 
 2026-10-13：[固定原Q2请求子集模型计划](../experiments/plans/查询调优.md#replica-adaptation)的有限驱动已接已有Core／完整响应HTTP与持久POST账本。
 同一completion accumulator边界记录固定／在线request-count rate；四臂同开销GPU／服务／Core时间线。
-16次localhost四臂fixture及静态K回退测试通过；模型尚未执行，不称原SQL／parser／evaluator资格。
+该准备阶段16次localhost四臂fixture及静态K回退测试通过；后续模型子集资格见上方，不称原SQL／parser／evaluator资格。
 
 2026-10-13：[单查询副本供给／路由](../experiments/results/diagnostics/replica_adaptation_20261013/README.md)
 从统一28093954复用真实副本组装与既有硬C/W，增加显式adaptive反馈和独立gateway的非阻塞metrics选项；
 旧默认与静态签名保持。31项localhost生命周期＋9项策略通过，扩展435项通过／1个旧pyarrow模块缺依赖。
 五场景四臂各三重复、3096软件POST核对；同速与单副本供给退化，保持round-robin默认。
-当前仅软件fixture，实际库／PG／模型新接线未验证；共享准备继续拒绝，跨owner服务总硬容量pending。
+该软件阶段未验证实际库／PG／模型；后续仅完整模型请求子集取得资格，见上方。共享准备继续拒绝，跨owner服务总硬容量pending。
 
 2026-10-13：[LOTUS文本输入校验](src/semantic_methods/lotus/README.md)在JSON复制前拒绝不可UTF-8编码的原始消息，
 轻量本地预检4项通过，21项固定SDK回归缺库跳过；图像profile和数据组织仍保留在独立研究分支。
