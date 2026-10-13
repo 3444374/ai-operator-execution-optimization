@@ -525,3 +525,124 @@ static vs real-ready/byte-bounded static broker”；packed uint8、pinned ring�
 只有 static HSE 在 matched-resource 下超过 current project frozen-static，动态 SAOR-HSE 又超过
 static HSE/简单 controller，才能分别声称 data-path 与动态控制增量。否则保留 Ray/Daft 原生
 执行和当前静态 project，收缩方案而不是继续叠加机制。
+
+<a id="frontend-stage-audit"></a>
+## 11. 从语义查询核对准备复用：2026-10-13独立切片
+
+本节研究 PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化中的数据准备问题。
+来源为固定源码、既有原始图像记录和本地无模型检查；没有执行新的数据库、HTTP模型或GPU实验。
+专用分支为`exp/semloom-stage-execution`，从native提交`62445a7e7774e51108cfda194210cf8b72951002`建立。
+它与stability提交`9bb6c4154a3fa321c49a84f45eaeb6c7e12b129c`双向均非祖先，共同祖先为`2fad623e`。
+未合并stability；正式配对前由主任务协调共同来源及仍未整合的稳定性改动。
+仓库内未发现项目专属`.agents/skills`，本切片使用现有规则和下面的设计/源码。
+
+### 11.1 前端能力与实际接点
+
+| 固定来源 | 已核实的语义入口 | 准备与执行接点 | 本切片尚不能声称的能力 |
+|---|---|---|---|
+| LOTUS1.2.4，`b1a85fd7a66fabed8a1585d44d7597d592b4433f` | `ImageArray`列进入`sem_filter`和`sem_map`；图像可与普通文本列一起成为消息 | `df2multimodal_info`先取每行图像，再由formatter产生`image_url`内容列表，随后LM调用；现有SemLoom接点在`_process_uncached_messages` | 当前[SDK适配](../../code/src/semantic_methods/lotus/sdk.py)只接受字符串`content`，图像替换执行尚未接入；固定目录树未发现视频/音频类型或原生抽帧/窗口入口 |
+| DuckDB AI0.4.14，`9b7b16a5d5bfa97180b8be48d69bd9a4a4106419`；DuckDB1.5.4 | `ai_complete`/`ai_try_complete`及文本embedding；SQL completion输入是VARCHAR | `ChatMessagesJson`将prompt写为字符串`content`；[已有补丁](../../code/integrations/duckdb_ai/duckdb_ai_semloom.patch)在`PrepareCompletion`之后、`RunProviderJobs`之前交接完整调用 | 该固定completion路径不接受图像内容列表；把图片URL或base64当字符串并不增加视觉输入能力 |
+| Sema公开产物，仓库来源`3f2c7182bdaa26c1e8925f486585da25337e687e`，二进制`v0.0.1 8c2d3bd2` | 文本`WHERE s'…'`和`SELECT s'…'`，作者材料列出Filter/Map及其组合 | [现有请求服务](../../code/src/execution_provider/adapters/sema_request_service.md)在完整HTTP请求到达后接入，原SQL、请求池和提示已执行 | 尚无可核验图像/视频入口；OpenAI兼容格式不证明视觉支持。当前公开目录API返回404，复用已保存的二进制/归档核验，不补造新实库检查 |
+
+LOTUS依据：[图像示例Map](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/examples/op_examples/multimodal_ops/map.py)、
+[Filter](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/examples/op_examples/multimodal_ops/filter.py)、
+[ImageArray](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/dtype_extensions/image.py)、
+[图像加载](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/utils.py)、
+[消息格式化](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/templates/task_instructions.py)。
+DuckDB依据：[provider](https://github.com/leonardovida/duckdb-ai/blob/9b7b16a5d5bfa97180b8be48d69bd9a4a4106419/src/duckdb_ai_provider.cpp)
+§`ChatMessagesJson`/`RequestPayload`/`EmbeddingPayload`与
+[函数登记](https://github.com/leonardovida/duckdb-ai/blob/9b7b16a5d5bfa97180b8be48d69bd9a4a4106419/src/duckdb_ai_extension.cpp)。
+下载的provider与extension摘要分别匹配既有[source_identity.json](../../code/integrations/duckdb_ai/source_identity.json)，
+LOTUS的LM、Map和formatter摘要匹配既有adapter；没有复制供应商实现进项目。
+Sema依据：[固定README](https://github.com/BITQiKangK/SemaSystem/blob/3f2c7182bdaa26c1e8925f486585da25337e687e/README.md)
+及上述局部核验记录，公开README的示例与当前未取得的目录树分别解释。
+
+### 11.2 一个主场景和一个外部有效性场景
+
+**主场景：图库或商品条目的图文一致性审核。** 普通关系处理先得到`row_id, asset, listing_text`，
+同一资产可以关联多个条目；每条记录调用原生`sem_map`判断图片是否符合文字描述，分别保留其结果。
+最小原生形态为`ImageArray`图像列加文本列，指令引用`{image}`与`{listing_text}`。
+可优先用已有COCO图像和标签构造身份明确的图库核验输入；商品数据只是应用场景，不声称已有商品实测。
+初次比较使用一个Map，不引入代理、级联、少做调用或不同抽帧规则。
+Filter→Map可以作为后续消费者寿命验证，但须保留实际Filter选择和后继调用，当前原型未接入该组合。
+
+**外部有效性场景：文本记录审核。** LOTUS Map、Sema语义投影、DuckDB AI completion均有既有入口。
+比较各自原方法的native执行与SemLoom执行，保留原提示、SDK转换、NULL及parser。
+这里确定性准备可能很轻，预期可以得到“无收益”的反例；不为补齐表格给Sema或DuckDB增加视觉接口。
+跨前端只有输入、任务质量和必要模型工作可对齐时才比较；原提示或JSON解释不同则只报告各前端内部配对。
+
+共性问题是：同一有限合法输入中，多个逻辑调用如何共享确定性准备而保持独立调用与结果寿命。
+不同前端可以表达这个问题，但作用位置不相同：LOTUS视觉准备在LM之前，DuckDB完整调用在原池之前，
+Sema当前只能在收到正文之后管理留存，无法通过该接点减少已做过的前端解码或提示准备。
+未来轨迹帧筛选也可能共享相同帧/变换；须先定义必要帧、时序和随机变换语义，不能以逐图Map代替轨迹窗口。
+
+### 11.3 缺口、假设与反例
+
+现有[编码块](../../code/src/modalities/image/staged.py)的摘要包括`row_ids`，`block_id`又包括Job/序号，
+因此同一图片在不同逻辑行中的身份不同。[阶段broker](../../code/src/scheduling/runtime/stage_broker.py)
+已按块预留encoded和ready字节、区分prepare/model、处理lease及结果；这些已有能力不作为本切片新增贡献。
+LOTUS自己的`ImageArray._cached_images`按`(index,image_type)`缓存，复制可带缓存，`take`产生新数组；
+不能从“有缓存”推出不同条目/算子已按共同资产共享准备。
+
+**可证伪假设：** 当真实准备成本显著、资产复用能落在有限字节额度内，且producer能便宜地提供
+“内容身份＋确定性变换＋实际消费者寿命”，按资产管理准备可减少重复decode/编码和无消费者留存，
+并可能改善完整查询时间。新增信息是资产到逻辑调用的对应与未结束消费者；当前scheduler只知道任务/块身份、
+工作量和队列，HTTP正文也不天然说明谁还需要本地主机表示。
+producer取得内容摘要、版本及寿命信息的读取/计算成本必须计入。只有超出同信息的静态内容缓存和原生引擎，
+才能讨论额外决策价值；这仍是已有[准备复用候选](优化方法依据.md#query-specific-execution-opportunities)的小切片。
+
+| 需要分别测量的对象 | 当前实际情况与反证 |
+|---|---|
+| encoded与decode膨胀 | LOTUS`fetch_image`实际解码/转RGB、存PNG再base64，并非原JPEG的直接base64；压缩长度不能决定RGB暂存，PNG大小又依内容而变 |
+| frame与token工作量 | 一帧的编码字节、原分辨率、转换成本和模型视觉token并不相同；CLIP的固定224像素工作也不能代表原图decode成本 |
+| host、pinned、device驻留 | 现有CLIP actor显式处理Ray只读NumPy的主机复制，再`torch.as_tensor`入设备；没有本切片可控制的pinned/device复用。黑盒视觉HTTP服务内部decode/H2D不可观测，不补造GPU驻留信息 |
+| 背压与转换峰值 | 既有ready额度覆盖固定输出表示；原图decode、临时转换、PNG/base64及完整请求副本仍需另测。原型仅对调用者声明的host输出/临时空间预留，不能证明RSS或任意decoder分配受控 |
+| 数据移动与结果聚合 | 每行仍序列化并发送相同完整模型消息，base64共享不减少网络字节或必要模型调用；LOTUS仍整阶段合并。原型不持有模型输出，也未改变原聚合等待 |
+
+无重复资产、复用距离超出额度、摘要/lookup比准备更贵、准备远小于模型服务、原生缓存已覆盖、或新增消息副本
+抵消准备节约时，应无收益或更慢。原生Ray Data/Daft已经支持异构stage、资源配置和背压；普通内容缓存也能
+减少重复确定性准备。若同信息静态方案达到相同结果，应采用该方案，不再声称动态调度增量。
+
+### 11.4 最小原型、证据与后续配对
+
+[PreparedAssetWindow](../../code/src/data/materializers/prepared_assets.py)仅管理一个producer已许可的有限窗口，
+以内容摘要和变换签名独立标识准备资产；每个消费者有独立lease，模型请求/work仍由原有执行者逐项处理。
+准备前预留输出上限加临时空间，活跃lease不可淘汰，只有闲置数据按LRU（最近使用顺序）淘汰，最后一个实际
+消费者结束即归还；取消未取得lease的需求不释放已取得的使用者。跨Job/快照共享、随机变换、异步worker集成、
+真实内存上限及pinned/device管理均未实现。它没有接入生产入口，未改公共调度、HTTP或观察设施。
+
+本地证据：12项[资产检查](../../code/tests/data/test_prepared_assets.py)、2项
+[LOTUS源码函数fixture](../../code/tests/modalities/image/test_lotus_stage_preparation.py)、
+原4项stage descriptor及8项broker回归，共26项通过，无跳过，模型调用/GPU启动为0。
+源码fixture仅编译已核对摘要的`fetch_image`、`context_formatter`、`user_message_formatter`，没有运行完整LOTUS
+DataFrame、LM或供应商SDK；两文件摘要为`2d8d38af8230f447a354f460e25a8f523f1dc1aa5edebf977a8297ed04458ebe`
+与`059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3`。
+4条不同图文消息使用2个本地小图，原逐行准备4次，原型和同信息静态缓存均2次；完整消息值逐字节相同，
+逆序释放仍保留独立消费者。**静态缓存反例成立，不能据此宣称新增调度收益。**
+同一fixture还调用当前adapter的实际消息检查：文本通过，原生图像列表被明确拒绝；没有绕过该检查执行模型调用。
+另生成1024×1024纯色PNG，编码小于16KiB而RGB为3MiB；只有最终输出能容纳时仍拒绝启动需要更大暂存的准备。
+首次unittest模块路径命中了Python自带`code`模块，在测试加载前失败；使用既有目录的discover入口后上述检查全部通过。
+
+复核命令使用已有Python、NumPy/Pillow，不安装LOTUS或其他重依赖：
+
+```sh
+PYTHONPATH=code python3 -m unittest discover -s code/tests/data -p 'test_prepared_assets.py' -v
+PYTHONPATH=code SEMLOOM_LOTUS_SOURCE_ROOT=<pinned-checkout>/lotus \
+  python3 -m unittest discover -s code/tests/modalities/image -p 'test_lotus_stage_preparation.py' -v
+```
+
+最小兼容工作仍pending：在主任务协调后，为现有SDK增加独立版本的图文内容profile及`utils.py`/ImageArray摘要核对，
+由实际SDK产生并重放完整图像调用；再在图像格式化前增加query-local准备接点，不只改LM之后的执行器。
+保留原native入口、模型/processor修订、PNG/RGB与采样配置，核对全消息、响应、usage、错误、关联及退出。
+现有[151次真实CLIP前向](../../experiments/results/postgresql/capacity_organization_image_validation_20260920/raw/image-summary.json)
+及[清理](../../experiments/results/postgresql/capacity_organization_image_validation_20260920/raw/image-cleanup.json)
+确有`real_forward_attempts=151`，模型`openai/clip-vit-base-patch32`、修订`3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`、
+FP32/224/512维；只能复用该受限图像语义/生命周期依据，不能代替LOTUS视觉接入、质量或性能资格。
+
+后续先做零模型SDK与完整查询fixture。若通过且主任务另给视觉服务预算，建议最多32条图库记录、4个执行配置：
+原native、同方法SemLoom、SemLoom强静态有界内容缓存、显式消费者寿命候选；另保留原生Ray Data/Daft的相同方法
+执行图作分批扩展对照，不向它们注入本原型。输入资产/帧、原提示、模型修订、必要调用和结果规则完全相同。
+每配置预热1次/测量3次，加两条配对正确性检查，总计576个必要模型调用，上限640次/15分钟，单固定服务；
+这是建议预算，当前未获新模型运行授权，也未执行。小规模只作资格与stage画像，不作吞吐/P99结论。
+测完整查询、准备/PNG/base64、序列化、排队、服务、fan-in、释放，记录所有副本及实际内存；服务内部GPU时间
+不可取得时明示。先有资格与可解释准备占比，再决定是否扩大；收益仅来自静态缓存或完整查询更慢时停止候选。
