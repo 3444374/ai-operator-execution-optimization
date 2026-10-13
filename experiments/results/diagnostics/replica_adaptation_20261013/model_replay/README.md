@@ -15,6 +15,8 @@
 四臂均同Core、完整响应HTTP、每副本硬C/W4/4及全局已选K；neutral work每调用1。
 RR跳过满副本；固定rate和在线rate共用同一existing completion accumulator的transport起止clock和成功work计量。
 固定冻结独立校准整批rate；在线保留窗口／EWMA更新。所有臂soft work为None，背景metrics250ms、GPU1s及Core/策略记录口径一致，观察成本计入JCT。
+主指标是已准备payload首次offer到全部24完整响应校验、消费和lease释放；source64加载／task assembly另列，不能当原SQL任务到达计时。
+固定24任务的有效吞吐24/JCT只是完成时间的换算，不计为第二个独立收益；均分请求、单请求更短或低队列都不能单独证明完整任务加速。
 
 | 拓扑 | 策略 | K | 三次完整消费JCT秒 | 中位秒 |
 |---|---|---:|---|---:|
@@ -42,6 +44,7 @@ RR跳过满副本；固定rate和在线rate共用同一existing completion accum
 服务样本running最高每副本4、waiting最高0，KV最高单卡0.00794、双卡0.00816。
 同时，Core评价在途峰值单4／双8，供给目标全程4／8；D没有降压或恢复动作，故本轮不能证明降压收益或欠供给修复。
 低waiting与高GPU活动、持续完成并存，直接把低waiting当容量闲置会误读此轮。Core待提交／硬容量下可提交、在途、策略与服务／GPU样本的时间线均在[数值原件](raw.json.gz)。
+低GPU活动也可能来自减少重复工作；本轮每出现完整POST及token usage一致，没有这类工作量削减，不能把其他系统的低活动一概当供给不足。
 无待提交的自然尾部和API/模型加载间隙不当成错误节流。完整消费JCT包含Core背压等待及响应消费／lease释放，没有把上游等待藏到计时外。
 
 ## 语义、计数与释放

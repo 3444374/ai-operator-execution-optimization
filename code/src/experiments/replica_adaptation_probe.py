@@ -48,13 +48,15 @@ class _Endpoint:
                         site.waiting -= 1
                         site.running += 1
                         site.peak_running = max(site.peak_running, site.running)
-                    time.sleep(site.seconds_per_work * site.actual_work[row])
+                    duration = (site.seconds_per_work(service_at) if callable(site.seconds_per_work)
+                                else site.seconds_per_work)
+                    time.sleep(duration * site.actual_work[row])
                     done = time.monotonic()
                     with site.lock:
                         site.running -= 1
                         site.records.append(dict(row=row, payload_sha256=hashlib.sha256(payload).hexdigest(),
                             arrived_at_s=started, service_at_s=service_at, done_at_s=done,
-                            actual_work=site.actual_work[row]))
+                            actual_work=site.actual_work[row], seconds_per_work=duration))
                 body = json.dumps(dict(model="fixture", choices=[dict(message=dict(content=f"row-{row}"),
                     finish_reason="stop")], usage=dict(prompt_tokens=1, completion_tokens=1, total_tokens=2)),
                     separators=(",", ":")).encode()

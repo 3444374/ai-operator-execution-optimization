@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-13：[副本能力变化／恢复软件检查](diagnostics/replica_adaptation_20261013/capacity_change/README.md)。
+1800localhostPOST、13.949秒，模型/GPU0；固定work／请求及变更时刻、同completion transport边界。K2在线局部收益未超过K8强静态RR，服务恢复不等于稳定capacity已学到。
+
+
 2026-10-13：[副本固定请求子集模型诊断](diagnostics/replica_adaptation_20261013/model_replay/README.md)。
 实际820POST、40单元、576评价，canonical内容／finish／usage一致，账本／服务端计数与释放独立复核。原T0未重置，两次0POST准备失败保留。
 RR选点K4/8已填满各副本硬4；online／压力诊断无净收益，waiting0同时GPU活动高。非原SQL／原质量评价，模型饱和、P99与joint闭环pending。

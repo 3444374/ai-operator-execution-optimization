@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-13：[能力变化／恢复软件检查](../experiments/results/diagnostics/replica_adaptation_20261013/capacity_change/README.md)
+复用既有HTTP fixture和同transport边界，1800POST；K2在线0.8301／固定0.8942，而K8 RR0.4888／在线0.4958，保留强静态反例与反馈滞后。模型/GPU0，joint欠供给控制仍pending。
+
+
 2026-10-13：[固定请求子集模型小轮](../experiments/results/diagnostics/replica_adaptation_20261013/model_replay/README.md)
 固定82bd400b，单／双四臂n3，820模型POST/576评价，原时钟813.827/1080秒、加载82.349秒，完整响应／计数／清理一致。
 两次0POST准备失败保留；请求原件在服务器内部复用，无本地载荷外传。单/双RR中位0.871/0.479秒，在线0.891/0.506秒，无净收益；GPU活动高而waiting0，D供给未变。

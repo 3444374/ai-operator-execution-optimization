@@ -1,0 +1,258 @@
+{
+  "receipt": {
+    "evidence_type": "software_fixture",
+    "gpu_count": 0,
+    "model_requests": 0,
+    "localhost_posts": 1800,
+    "budget": {
+      "schema": "semloom.cell_budget.v1",
+      "budget_id": "capacity-change",
+      "limit": 1800,
+      "allocated_requests": 1800,
+      "deadline_utc": 1791879393.144984,
+      "units": [
+        {
+          "unit_id": "cal-k2",
+          "first_attempt": 1,
+          "requests": 24,
+          "claimed": 1
+        },
+        {
+          "unit_id": "cal-k4",
+          "first_attempt": 25,
+          "requests": 24,
+          "claimed": 1
+        },
+        {
+          "unit_id": "cal-k8",
+          "first_attempt": 49,
+          "requests": 24,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat0-round_robin",
+          "first_attempt": 73,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat0-fixed_rate",
+          "first_attempt": 169,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat0-adaptive_route",
+          "first_attempt": 265,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat1-adaptive_route",
+          "first_attempt": 361,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat1-fixed_rate",
+          "first_attempt": 457,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat1-round_robin",
+          "first_attempt": 553,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat2-fixed_rate",
+          "first_attempt": 649,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat2-round_robin",
+          "first_attempt": 745,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k2-repeat2-adaptive_route",
+          "first_attempt": 841,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat0-round_robin",
+          "first_attempt": 937,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat0-fixed_rate",
+          "first_attempt": 1033,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat0-adaptive_route",
+          "first_attempt": 1129,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat1-adaptive_route",
+          "first_attempt": 1225,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat1-fixed_rate",
+          "first_attempt": 1321,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat1-round_robin",
+          "first_attempt": 1417,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat2-fixed_rate",
+          "first_attempt": 1513,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat2-round_robin",
+          "first_attempt": 1609,
+          "requests": 96,
+          "claimed": 1
+        },
+        {
+          "unit_id": "k8-repeat2-adaptive_route",
+          "first_attempt": 1705,
+          "requests": 96,
+          "claimed": 1
+        }
+      ]
+    },
+    "duration_s": 13.949026107788086,
+    "a_service_seconds": [
+      0.006,
+      0.04,
+      0.006
+    ],
+    "transitions_s": [
+      0.12,
+      0.4
+    ],
+    "b_service_seconds": 0.018,
+    "fixed_work_per_call": 1,
+    "post_count_per_measurement": 96,
+    "repeats": 3,
+    "static_selected_k": 8,
+    "k2_is_mechanism_diagnostic_not_optimal_static": true,
+    "target_drain_s": null,
+    "rates_boundary": "same_existing_completion_accumulator_transport_clock",
+    "source_hashes": {
+      "src/experiments/replica_model_replay.py": "576df07094d3898cc3373ed64d4cdd4562617028d566a5a380fdb4f8246bbc69",
+      "src/experiments/replica_adaptation_probe.py": "1b4442cbabe6b033cb91a3f692d11e5435b868ccb93d6c59f19cbf4751ad9829",
+      "scripts/benchmarks/replica_capacity_change_probe.py": "365c20dad56dca7363326eca0630ea4c28c7c3ee05a1baee41299f86ecd0d6f3"
+    }
+  },
+  "summary": [
+    {
+      "k": 2,
+      "arm": "round_robin",
+      "jct_s": [
+        1.0270554998423904,
+        1.0427114588674158,
+        1.0627421659883112
+      ],
+      "median_jct_s": 1.0427114588674158,
+      "policy_us_per_call": [
+        4.742177083333334,
+        5.244395833333334,
+        5.019286458333333
+      ]
+    },
+    {
+      "k": 2,
+      "arm": "fixed_rate",
+      "jct_s": [
+        0.8947744169272482,
+        0.8891143340151757,
+        0.8941898329649121
+      ],
+      "median_jct_s": 0.8941898329649121,
+      "policy_us_per_call": [
+        18.495864583333333,
+        18.117427083333332,
+        18.859604166666667
+      ]
+    },
+    {
+      "k": 2,
+      "arm": "adaptive_route",
+      "jct_s": [
+        0.8176170829683542,
+        0.8372617079876363,
+        0.8300647500436753
+      ],
+      "median_jct_s": 0.8300647500436753,
+      "policy_us_per_call": [
+        19.1071875,
+        21.079395833333333,
+        19.349796875
+      ]
+    },
+    {
+      "k": 8,
+      "arm": "round_robin",
+      "jct_s": [
+        0.4888276250567287,
+        0.48172050016000867,
+        0.4941675830632448
+      ],
+      "median_jct_s": 0.4888276250567287,
+      "policy_us_per_call": [
+        3.305505208333333,
+        3.22790625,
+        3.2745520833333335
+      ]
+    },
+    {
+      "k": 8,
+      "arm": "fixed_rate",
+      "jct_s": [
+        0.5016624999698251,
+        0.5053155422210693,
+        0.4987300829961896
+      ],
+      "median_jct_s": 0.5016624999698251,
+      "policy_us_per_call": [
+        11.416708333333334,
+        11.277953125,
+        10.663807291666666
+      ]
+    },
+    {
+      "k": 8,
+      "arm": "adaptive_route",
+      "jct_s": [
+        0.492946958867833,
+        0.49747337494045496,
+        0.49584091710858047
+      ],
+      "median_jct_s": 0.49584091710858047,
+      "policy_us_per_call": [
+        13.693151041666667,
+        13.573744791666666,
+        13.081354166666667
+      ]
+    }
+  ]
+}

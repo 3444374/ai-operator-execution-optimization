@@ -16,6 +16,9 @@
 `benchmarks/summarize_replica_model_replay.py`只读保留的数值metadata，核对manifest、持久POST／服务端计数、逐出现、硬上限与释放，输出去载荷／去真实行ID原件。
 [实际模型结果](../../experiments/results/diagnostics/replica_adaptation_20261013/model_replay/README.md)保持内部配对和原Q2子集边界。
 
+`benchmarks/replica_capacity_change_probe.py <new-private-directory-outside-git>`只运行90秒／1800 localhost POST的固定能力变化／恢复检查；
+复用现有HTTP fixture和同一Core replay，不访问服务器、GPU或模型。[结果](../../experiments/results/diagnostics/replica_adaptation_20261013/capacity_change/README.md)区分K2机制诊断与K8强静态参照。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

@@ -148,7 +148,7 @@ def endpoint_rates(events, endpoint_ids):
 
 
 def replay_batch(config, directory, calls, *, arm, requests, unit, output,
-                 stop_new_post_utc, providers=None, fixed_rates=None):
+                 stop_new_post_utc, providers=None, fixed_rates=None, query_started=None):
     """One sealed batch, one original POST per occurrence; every response stays private."""
     output = Path(output)
     output.mkdir(exist_ok=False)
@@ -203,6 +203,8 @@ def replay_batch(config, directory, calls, *, arm, requests, unit, output,
         observer(dict(event="durable_post_reserved", attempt=attempt, payload_sha256=digest))
 
     query_start = time.monotonic()
+    if query_started is not None:
+        query_started(query_start)
     try:
         with observe_async_http_posts(unit, before_send):
             offer = flow.offer(tasks)

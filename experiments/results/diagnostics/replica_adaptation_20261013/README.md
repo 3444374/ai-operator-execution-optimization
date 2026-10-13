@@ -1,5 +1,8 @@
 # 单查询副本供给与路由的软件验证
 
+后续[能力变化／恢复的软件检查](capacity_change/README.md)复用相同transport边界，
+1800 localhost POST；K2有局部在线机会，K8强静态RR更快，完整轨迹和无收益反例保留。
+
 后续[固定请求子集模型小轮](model_replay/README.md)已完成820模型POST，保留原软件结果和准备失败；
 真实RR静态点已利用两副本余量，online／压力候选没有净收益，默认保持RR。
 
