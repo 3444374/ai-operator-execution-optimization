@@ -159,6 +159,36 @@ class NativeCallCleanupTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
                 list(executor.iter_batch(calls[:1]))
 
+    def test_complete_transport_errors_keep_remote_work_unconfirmed(self):
+        calls = (native.NativeCall('timeout', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        def graph(values, options, control):
+            for call in values:
+                yield native.NativeCallOutcome(call.call_id, call.row_id, None, 'TimeoutError: fixture')
+        executor = native.NativeCallExecutor('daft')
+        with patch.object(native, '_daft_rows', graph):
+            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
+        report = executor.last_close_report
+        self.assertEqual(report['received'], report['prepared'])
+        self.assertTrue(report['graph_consumer_stopped'])
+        self.assertFalse(report['clean'])
+        self.assertTrue(report['transport_completion_uncertain'])
+        self.assertTrue(report['unconfirmed_work'])
+        with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+            list(executor.iter_batch(calls))
+
+    def test_full_http_error_response_does_not_mark_transport_unknown(self):
+        calls = (native.NativeCall('http-error', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        def graph(values, options, control):
+            for call in values:
+                yield native.NativeCallOutcome(call.call_id, call.row_id,
+                    native.FullModelResponse(429, (), b'{"error":"known HTTP result"}'))
+        executor = native.NativeCallExecutor('daft')
+        with patch.object(native, '_daft_rows', graph):
+            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
+            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
+        self.assertTrue(executor.last_close_report['clean'])
+        self.assertFalse(executor.last_close_report['transport_completion_uncertain'])
+
 
 if __name__ == "__main__":
     unittest.main()
