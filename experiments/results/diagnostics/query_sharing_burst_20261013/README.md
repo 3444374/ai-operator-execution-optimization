@@ -217,3 +217,25 @@ python3 code/scripts/analysis/audit_query_sharing_lotus.py \
   --input experiments/results/diagnostics/query_sharing_burst_20261013/raw/lotus_remaining_01c28df1.json.gz \
   --output /tmp/lotus-remaining-new-audit.json
 ```
+
+<a id="bridge-review-repairs"></a>
+## 当前桥接源码的三项审查修复
+
+审查线索基于01c；复核本线`507572ee`仍存在三项问题，未将附件方法当成当前事实。
+成本回调的未发布改动先保留，本阶段只提交桥、runner和对应回归，不启动服务器。
+[本地证据](raw/lotus_bridge_review_local_20261013.json)保存旧源码失败、修后检查及日志校验值。
+
+1. 实际RemoteNativeTaskSession通过继承Pipe送入真实Core：16个不同600000字节任务截到13，
+   无效metadata的0/REJECTED被旧前端改成BACKPRESSURE。现仅Core全接纳所传prefix时标记未传suffix；
+   拒绝、部分接纳和原backpressure原因保留。合法13+3的重试在Core/backend恰好提交/完成0–15各一次。
+2. 直接加载507源码并用真实Core、无新RPC的20项工作验证：8步预算后仍ready，旧owner在8、16项处再次阻塞RPC。
+   新owner最多连续4个有界Core tick，每步非阻塞检查RPC；预算内不多等，40项反例在32项处按上限让出I/O。
+   没有永久空队列忙等，也没有更改Core预算、admission/router或C/W。此项是普通等待开销修补。
+3. 在实际run_pair方法注入setup/join/control/bridge-close/snapshot组合失败，旧finally遮首错并漏收记录。
+   现每步独立收集phase/type，保留第一异常为PairFailure原因；请求、HTTP错误、退出码和parent CPU继续采集。
+   清理单独失败同样标记failed，snapshot未知保持None，不宣称释放；启动中的两端Pipe也独立关闭。
+
+修后32项全部通过（18桥、4清理、10审计/预算），只用4个本机loopback模拟请求；服务器、模型/GPU/SQL负载0。
+首轮状态回归的额外清理失败及一次测试重复close错误都保留；修正测试的自有flow teardown后18项桥回归通过。
+机会bypass是补偿触发阈值，单次估计工作可跨过它，不是8work的绝对等待、token公平或墙钟保障。
+历史9d/01c原件和1909/4240累计不变；这些正确性修补不支持新版本模型性能，下一RR/候选必须同桥同版。

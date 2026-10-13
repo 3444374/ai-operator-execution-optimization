@@ -4,11 +4,12 @@ from ..core.session_jobs import round_robin_flow
 
 
 class BoundedShortJobBurst:
-    """Prefer small sealed Jobs; bound bypassed *estimated selection work*.
+    """Prefer small sealed Jobs; compensate at an estimated selection-work threshold.
 
     This is a differentiated-service experiment, not token-service fairness or a
     wall-time guarantee. Counters cover continuously eligible Jobs only. Failed
     submissions also consume opportunities; no accepted request is preempted.
+    One selection can cross the threshold; it is not an absolute work-wait bound.
     """
 
     def __init__(self, *, work_unit, short_work_limit, bypass_work_limit):

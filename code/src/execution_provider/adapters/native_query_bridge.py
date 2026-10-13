@@ -18,6 +18,7 @@ from .native_tasks import NativeTaskSession
 
 
 MAX_BRIDGE_FRAME_BYTES = 8 * 1024 * 1024
+MAX_OWNER_READY_TICKS = 4
 
 
 def _encode(value):
@@ -229,8 +230,9 @@ class NativeTaskBridge:
                     peer.flow.close(clean=False)
                     peer.closed = True
                     self._emit('frontend_stop_reaped', peer)
-        self._execution.engine.advance()
+        progress = self._execution.engine.advance()
         self._last_snapshot = self._snapshot()
+        return progress
 
     def _run(self):
         try:
@@ -244,9 +246,16 @@ class NativeTaskBridge:
             return
         self._ready.set()
         try:
+            progress, ready_ticks = None, 0
             while True:
                 try:
-                    peer, op, args, future = self._requests.get(timeout=self._poll_s)
+                    if progress is not None and progress.has_immediate_work and ready_ticks < MAX_OWNER_READY_TICKS:
+                        peer, op, args, future = self._requests.get_nowait()
+                    else:
+                        # Bound each ready burst, and let pipe readers/backend
+                        # I/O run even if an immediate-work hint persists.
+                        ready_ticks = 0
+                        peer, op, args, future = self._requests.get(timeout=self._poll_s)
                 except queue.Empty:
                     future = None
                 if future is not None:
@@ -261,7 +270,8 @@ class NativeTaskBridge:
                     # Transport copies may outlive a lease only until the reader
                     # sends this reply. The owner retains no previous RPC body.
                     del args, peer, op
-                self._tick()
+                progress = self._tick()
+                ready_ticks += 1
                 if self._stop.is_set() and not self._execution.engine.capacity.records and not self._execution.engine.jobs.jobs:
                     if not self._execution.close():
                         raise RuntimeError('native bridge backend close unconfirmed')
@@ -351,7 +361,10 @@ class RemoteNativeTaskSession:
         if not prefix:
             raise ValueError('one complete request exceeds native bridge frame limit')
         result = self.client._call('offer', tuple(tasks[:prefix]))
-        return replace(result, status='BACKPRESSURE', reason='bridge_frame_bytes') if prefix < len(tasks) else result
+        if (prefix < len(tasks) and result.status == 'ACCEPTED'
+                and result.accepted_prefix_count == prefix):
+            return replace(result, status='BACKPRESSURE', reason='bridge_frame_bytes')
+        return result  # Preserve Core rejection/backpressure and its original reason.
 
     def advance(self, max_deliveries=1):
         return self.client._call('advance', max_deliveries)

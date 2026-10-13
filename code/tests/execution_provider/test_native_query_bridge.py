@@ -2,6 +2,7 @@
 
 import asyncio
 import multiprocessing as mp
+import queue
 import threading
 import time
 import unittest
@@ -9,8 +10,9 @@ import unittest
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.native_query_bridge import NativeTaskBridge, NativeTaskClient, _encode
-from src.execution_provider.adapters.native_tasks import build_native_execution, prepare_native_task
-from src.scheduling.core.session_contract import State
+from src.execution_provider.adapters.native_query_bridge import RemoteNativeTaskSession
+from src.execution_provider.adapters.native_tasks import NativeTaskSession, build_native_execution, prepare_native_task
+from src.scheduling.core.session_contract import OfferResult, State
 from src.scheduling.core.session_jobs import round_robin_flow, shared_compute_job_budget
 from src.scheduling.submission_control.query_sharing import BoundedShortJobBurst
 
@@ -46,13 +48,13 @@ def eventually(predicate, timeout=4):
 
 
 class NativeQueryBridgeTests(unittest.TestCase):
-    def bridge(self, counts, *, execute=None, candidate=False):
+    def bridge(self, counts, *, execute=None, candidate=False, max_tasks=8):
         async def immediate(task, endpoint):
             await asyncio.sleep(.005)
             return response()
         def factory():
             execution = build_native_execution(FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
-                physical=None, execute=execute or immediate, max_tasks=8, max_active_requests=2,
+                physical=None, execute=execute or immediate, max_tasks=max_tasks, max_active_requests=2,
                 max_jobs=len(counts), allocate_job=shared_compute_job_budget,
                 choose_flow=BoundedShortJobBurst(work_unit='work_units', short_work_limit=2,
                                                 bypass_work_limit=2) if candidate else
@@ -231,6 +233,59 @@ class NativeQueryBridgeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             _encode(b'x' * (9 * 1024 * 1024))
 
+    def large_tasks(self, *, invalid=False):
+        return tuple(prepare_native_task(b'x' * 599999 + bytes([i]), i, row_sequence=i,
+            call_id='x' * 257 if invalid else 'map', max_result_bytes=4096) for i in range(16))
+
+    def test_frame_truncation_preserves_actual_core_permanent_rejection(self):
+        bridge = self.bridge({'a': 16}, max_tasks=32)
+        _, flow = self.open(bridge, 'a')
+        self.addCleanup(flow.close, clean=False)
+        result = flow.offer(self.large_tasks(invalid=True))
+        self.assertEqual(result.accepted_prefix_count, 0)
+        self.assertEqual(result.status, 'REJECTED')
+        self.assertNotEqual(result.reason, 'bridge_frame_bytes')
+        self.assertEqual(bridge.snapshot()['peers']['a']['accepted'], 0)
+        self.assertEqual(bridge.snapshot()['usage']['held_tasks'], 0)
+
+    def test_only_fully_accepted_transport_prefix_reports_untransmitted_suffix(self):
+        tasks = self.large_tasks()
+        results = (OfferResult(0, 'REJECTED', 'invalid_metadata', 7),
+            OfferResult(0, 'BACKPRESSURE', 'held_tasks', 7),
+            OfferResult(4, 'BACKPRESSURE', 'input_bytes', 7),
+            OfferResult(0, 'ACCEPTED', 'inconsistent_core_reply', 7),
+            OfferResult(4, 'OTHER', 'original_reason', 7))
+        for expected in results:
+            with self.subTest(expected=expected):
+                calls = []
+                class Client:
+                    _sequence = 1
+                    def _call(self, operation, sent):
+                        calls.append(sent)
+                        return expected
+                flow = RemoteNativeTaskSession(Client(), None)
+                self.assertEqual(flow.offer(tasks), expected)
+                self.assertEqual(len(calls[0]), 13)
+                self.assertEqual(flow.offer(tasks[:1]), expected)
+
+    def test_accepted_frame_prefix_and_retried_suffix_do_not_duplicate_submission(self):
+        submitted = []
+        async def complete(task, endpoint):
+            submitted.append(task.key.sequence)
+            return response()
+        bridge = self.bridge({'a': 16}, execute=complete, max_tasks=32)
+        _, flow = self.open(bridge, 'a')
+        tasks = self.large_tasks()
+        first = flow.offer(tasks)
+        self.assertEqual((first.accepted_prefix_count, first.status, first.reason),
+                         (13, 'BACKPRESSURE', 'bridge_frame_bytes'))
+        second = flow.offer(tasks[first.accepted_prefix_count:])
+        self.assertEqual((second.accepted_prefix_count, second.status), (3, 'ACCEPTED'))
+        flow.end_input()
+        deliveries = self.consume(flow)
+        self.assertEqual(sorted(submitted), list(range(16)))
+        self.assertEqual(sorted(d.key.sequence for d in deliveries), list(range(16)))
+
     def test_delivery_batch_respects_frame_reservation(self):
         async def large(task, endpoint):
             return encode_full_response(FullModelResponse(200, (), b'x' * 900_000))
@@ -243,6 +298,59 @@ class NativeQueryBridgeTests(unittest.TestCase):
         self.assertLess(len(_encode(first)), 8 * 1024 * 1024)
         a.release(tuple(d.lease_id for d in first))
         self.assertEqual(len(self.consume(a)), 1)
+
+    def ready_bridge(self, rows):
+        state = dict(submitted=0, ready=False, ready_waits=[])
+        release = threading.Event()
+        async def held(task, endpoint):
+            while not release.is_set():
+                await asyncio.sleep(.001)
+            return response()
+        def factory():
+            execution = build_native_execution(FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                physical=None, execute=held, max_tasks=64, max_active_requests=rows,
+                max_jobs=1, allocate_job=shared_compute_job_budget)
+            flow = NativeTaskSession(execution, 'a', 'map')
+            self.assertEqual(flow.offer(tuple(task(i) for i in range(rows))).accepted_prefix_count, rows)
+            flow.end_input(); execution.engine.seal_job(flow.job)
+            peer = bridge._peers['a']
+            peer.flow, peer.opened, peer.accepted = flow, True, rows
+            advance = execution.engine.advance
+            def observed(*args):
+                progress = advance(*args)
+                state['ready'] = progress.has_immediate_work
+                state['submitted'] = execution.engine.capacity.usage().active_requests
+                return progress
+            execution.engine.advance = observed
+            return execution
+        class Requests(queue.Queue):
+            def get(self, block=True, timeout=None):
+                if block and timeout and state['ready']:
+                    state['ready_waits'].append(state['submitted'])
+                return super().get(block, timeout)
+        bridge = NativeTaskBridge(factory, {'a': rows}, poll_s=.05)
+        bridge._requests = Requests(maxsize=2)
+        bridge.start()
+        self.addCleanup(self.finish, bridge)
+        return bridge, state, release
+
+    def test_core_ready_after_action_budget_advances_without_a_new_rpc_wait(self):
+        bridge, state, release = self.ready_bridge(20)
+        try:
+            eventually(lambda: state['submitted'] == 20)
+            self.assertEqual(state['ready_waits'], [])
+        finally:
+            release.set()
+            NativeTaskClient(bridge.client_connection('a'), 'a')._call('close', False)
+
+    def test_ready_burst_is_bounded_and_yields_io_before_more_than_32_submissions(self):
+        bridge, state, release = self.ready_bridge(40)
+        try:
+            eventually(lambda: state['submitted'] == 40)
+            self.assertEqual(state['ready_waits'], [32])
+        finally:
+            release.set()
+            NativeTaskClient(bridge.client_connection('a'), 'a')._call('close', False)
 
     def test_concurrent_teardown_closes_actual_pipe_descriptor_once(self):
         bridge = NativeTaskBridge(lambda: None, {'a':1})

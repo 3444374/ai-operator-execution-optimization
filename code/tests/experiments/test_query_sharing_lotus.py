@@ -7,7 +7,11 @@ import hashlib
 import io
 import json
 import os
+import multiprocessing as mp
 from pathlib import Path
+import sys
+import threading
+from types import SimpleNamespace
 import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -138,6 +142,89 @@ class LotusPairAuditTests(unittest.TestCase):
         run=traced_pair()
         run['core_events'].append(dict(event='http_response',status=200))
         self.assertEqual(audit([run])[0]['count'],2)
+
+
+class LotusPairCleanupTests(unittest.TestCase):
+    def failure(self, *, first=None, join_error=None, control_error=None, close_error=None, snapshot_error=None):
+        observed = []
+        service = SimpleNamespace(base='http://127.0.0.1/fixture', delay_s=0, active=0,
+                                  calls=[dict(old=True)], errors=[])
+        def operation(name, error=None):
+            observed.append(name)
+            if error is not None: raise error
+        class Connection:
+            def __init__(self, name): self.name, self.received = name, 0
+            def close(self): operation(self.name, control_error if self.name=='control-close' else None)
+            def send(self, value): pass
+            def poll(self, timeout): return True
+            def recv(self):
+                self.received += 1
+                return dict(event='ready', pid=42) if self.received==1 else dict(event='finished', rows=[(0,'POSITIVE')])
+        class Process:
+            pid = 42
+            def start(self):
+                service.calls.append(dict(fixture_observation='during-start'))
+                operation('start', first)
+            def join(self, timeout): operation('join', join_error)
+            def is_alive(self): return False
+            @property
+            def exitcode(self): operation('exitcode'); return 0
+        class Bridge:
+            def start(self): return self
+            def client_connection(self, query): return Connection('task-close')
+            def bind_process(self, query, process): pass
+            def close(self, timeout): operation('bridge-close', close_error); return True
+            def snapshot(self):
+                operation('bridge-snapshot', snapshot_error)
+                return dict(usage=dict(active_requests=0), jobs=0)
+        context = SimpleNamespace(Event=threading.Event, Pipe=lambda: (Connection('control-close'), Connection('child-close')),
+                                  Process=lambda **kwargs: Process())
+        module = sys.modules[run_pair.__module__]
+        with patch.object(mp,'get_context',return_value=context), patch.object(module,'NativeTaskBridge',return_value=Bridge()):
+            with self.assertRaises(PairFailure) as error:
+                run_pair(service,'strong_static',long_rows=1,short_rows=0)
+        return error.exception, observed
+
+    def test_setup_error_survives_independent_join_control_bridge_and_snapshot_failures(self):
+        first=ValueError('first setup cause')
+        error, observed = self.failure(first=first,join_error=OSError('join'),control_error=RuntimeError('control'),
+            close_error=LookupError('bridge'),snapshot_error=KeyError('snapshot'))
+        self.assertIs(error.__cause__,first)
+        self.assertEqual(error.evidence['error_type'],'ValueError')
+        self.assertEqual(error.evidence['calls'],[dict(fixture_observation='during-start')])
+        self.assertEqual(error.evidence['exitcodes'],dict(long=0))
+        self.assertEqual(error.evidence['http_errors'],[])
+        self.assertIsNone(error.evidence['bridge_closed'])
+        self.assertIsNone(error.evidence['final_core'])
+        for phase in ('join','control-close','bridge-close','bridge-snapshot','exitcode'):
+            self.assertIn(phase,observed)
+        self.assertEqual({e['phase'] for e in error.evidence['cleanup_errors']},
+                         {'join-long','control-long','bridge-close','bridge-snapshot'})
+
+    def test_cleanup_only_first_cause_is_retained_and_snapshot_still_attempted(self):
+        first=LookupError('first cleanup cause')
+        error, observed = self.failure(close_error=first,snapshot_error=KeyError('snapshot'))
+        self.assertIs(error.__cause__,first)
+        self.assertIn('bridge-snapshot',observed)
+        self.assertIn('exitcode',observed)
+        self.assertEqual(error.evidence['calls'],[dict(fixture_observation='during-start')])
+
+    def test_snapshot_failure_is_a_failed_run_even_after_confirmed_close(self):
+        first=KeyError('snapshot failed')
+        error, observed = self.failure(snapshot_error=first)
+        self.assertIs(error.__cause__,first)
+        self.assertEqual(error.evidence['status'],'failed')
+        self.assertTrue(error.evidence['bridge_closed'])
+        self.assertIsNone(error.evidence['final_core'])
+        self.assertIn('exitcode',observed)
+
+    def test_first_failure_with_successful_cleanup_still_keeps_calls_and_exit(self):
+        first=ValueError('first setup cause')
+        error, _ = self.failure(first=first)
+        self.assertIs(error.__cause__,first)
+        self.assertEqual(error.evidence['cleanup_errors'],[])
+        self.assertTrue(error.evidence['bridge_closed'])
+        self.assertEqual(error.evidence['exitcodes'],dict(long=0))
 
 
 @unittest.skipUnless(find_spec('lotus') is not None,'actual pinned LOTUS is unavailable')

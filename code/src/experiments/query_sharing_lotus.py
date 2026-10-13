@@ -225,7 +225,8 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
     service.run_id = evidence['run_id']
     start_calls, start_errors = len(service.calls), len(service.errors)
     parent_cpu = time.process_time()
-    bridge, children, controls = None, {}, {}
+    bridge, children, controls, outbound = None, {}, {}, []
+    primary = None
     release = ctx.Event()
     cancellations = {query:ctx.Event() for query in counts}
     if arm != 'native_shared':
@@ -240,11 +241,16 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
                 choose_flow=selector, allocate_job=shared_compute_job_budget, observer=observe)
             execution.engine.observe_job_work = True
             return execution
-        bridge = NativeTaskBridge(factory, counts, observer=evidence['bridge_events'].append, context=ctx).start()
     try:
+        if arm != 'native_shared':
+            bridge = NativeTaskBridge(factory, counts, observer=evidence['bridge_events'].append, context=ctx)
+            bridge.start()
         for query, count in counts.items():
             parent, child = ctx.Pipe()
+            outbound.append((query+'-child', child))
             connection = bridge.client_connection(query) if bridge else None
+            if connection is not None:
+                outbound.append((query+'-task', connection))
             process = ctx.Process(target=_frontend,
                 args=(child,connection,query,count,service.base,arm,release,cancellations[query]))
             children[query], controls[query] = process, parent
@@ -300,28 +306,49 @@ def run_pair(service, arm, *, long_rows=256, short_rows=8, delay_s=.5, active=2,
         evidence['status'] = 'passed'
     except BaseException as error:
         evidence['status'], evidence['error_type'] = 'failed', type(error).__name__
-        raise PairFailure(evidence) from error
+        primary = error
     finally:
-        for process in children.values():
+        evidence['cleanup_errors'] = []
+        def attempt(phase, operation):
+            nonlocal primary
+            try:
+                return operation()
+            except BaseException as error:
+                evidence['cleanup_errors'].append(dict(phase=phase, error_type=type(error).__name__))
+                if primary is None:
+                    primary = error
+                return None
+        for query, process in children.items():
             if process.pid is None: continue
-            process.join(3)
-            if process.is_alive(): process.terminate(); process.join(2)
-        for control in controls.values(): control.close()
+            attempt('join-'+query, lambda: process.join(3))
+            if attempt('alive-'+query, process.is_alive):
+                attempt('terminate-'+query, process.terminate)
+                attempt('join-terminated-'+query, lambda: process.join(2))
+        for label, connection in outbound:
+            attempt('channel-'+label, connection.close)
+        for query, control in controls.items():
+            attempt('control-'+query, control.close)
         if bridge:
-            evidence['bridge_closed'] = bridge.close(7)
-            evidence['final_core'] = bridge.snapshot()
+            evidence['bridge_closed'] = attempt('bridge-close', lambda: bridge.close(7))
+            evidence['final_core'] = attempt('bridge-snapshot', bridge.snapshot)
         deadline = time.monotonic()+7
         while service.active and time.monotonic()<deadline: time.sleep(.01)
         evidence['calls'] = service.calls[start_calls:]
         evidence['http_errors'] = service.errors[start_errors:]
-        evidence['exitcodes'] = {q:p.exitcode for q,p in children.items()}
+        evidence['exitcodes'] = {q:attempt('exitcode-'+q, lambda: p.exitcode) for q,p in children.items()}
+        evidence['final_alive'] = {q:attempt('final-alive-'+q, p.is_alive) for q,p in children.items()}
         # Parent includes Core, fixture HTTP and orchestration threads; this is
         # an observed control cost, not an isolated scheduler CPU attribution.
         evidence['parent_cpu_s'] = time.process_time()-parent_cpu
-        if (any(p.is_alive() or p.exitcode!=0 for p in children.values()) or service.active or evidence['http_errors']
+        if (any(evidence['final_alive'].values())
+                or any(code!=0 for code in evidence['exitcodes'].values()) or service.active or evidence['http_errors']
                 or (bridge and not evidence['bridge_closed'])):
             evidence['status'] = 'failed'
-            raise PairFailure(evidence)
+            if primary is None:
+                primary = RuntimeError('LOTUS pair cleanup unconfirmed')
+    if primary is not None:
+        evidence['status'], evidence['error_type'] = 'failed', type(primary).__name__
+        raise PairFailure(evidence) from primary
     return evidence
 
 

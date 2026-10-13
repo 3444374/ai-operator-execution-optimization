@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "review_target_commit": "507572eeb783dec56b18e1749be24bd93c5d208a",
+  "scope": "local actual bridge/Core and real runner method with injected failures; no model/server/performance claim",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/native_query_bridge.py": "dc727900abe9153796dbb334b20e81be50032e51c6361e2206bf681b661773ac",
+    "code/src/experiments/query_sharing_lotus.py": "75176deebb5f99cc9d80644829f4d92e13ad94fadc81467a94cce389771497d3",
+    "code/tests/execution_provider/test_native_query_bridge.py": "936a14afce57d44207ec098f762b917fbe7b5059bb73af576433f11c759320ca",
+    "code/tests/experiments/test_query_sharing_lotus.py": "1a541e950d3e4ea00971bcf4e783eeea68b8e834c2b14f53e990f7ca80731922",
+    "code/src/scheduling/submission_control/query_sharing.py": "bf364c6eb570fb5d2872eb0936148289848488ec203e0c717687646c86606e85"
+  },
+  "previous_source_reproductions": {
+    "frame": {
+      "test_methods": 3,
+      "subtest_or_cleanup_failures": 7,
+      "actual_core_rejected_prefix": 13,
+      "one_failure_was_early_assertion_cleanup": true
+    },
+    "owner": {
+      "test_methods": 1,
+      "failures": 1,
+      "blocking_rpc_at_submissions": [
+        8,
+        16
+      ]
+    },
+    "runner": {
+      "test_methods": 2,
+      "errors": 2,
+      "first_causes_obscured": true
+    }
+  },
+  "intermediate_bridge": {
+    "total": 18,
+    "passed": 17,
+    "errors": 1,
+    "reason": "test registered flow.close and also called it explicitly; fixed test teardown"
+  },
+  "final": {
+    "total": 32,
+    "passed": 32,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_s": 2.156,
+    "bridge_tests": 18,
+    "runner_cleanup_tests": 4,
+    "audit_budget_tests": 10
+  },
+  "local_http_fixture_posts": 4,
+  "server_load": false,
+  "server_fixture_cumulative_charged_posts": 1909,
+  "server_fixture_limit": 4240,
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "log_sha256": {
+    "bridge-prefix-before-fix.log": "c8302c5ea396347d76e46563a4e7b65c0cd788704394b448a2f36331ae2b8e54",
+    "bridge-ready-before-fix.log": "7a49b346191010e7257c6e32fe2513eb000ec100ed772eeca41ba4b30ad7f73a",
+    "bridge-prefix-ready-after-fix.log": "906aed26a54fd3d57167a149cc4e193ffbcee1956074124c7ae5a1f037963a13",
+    "bridge-prefix-ready-final.log": "e24bd7dc45483d99dce39eda0b7104f4073c22c24a2925c1cc81bb10084e6578",
+    "lotus-cleanup-before-fix.log": "0c2106b0b651e50090211772162a5b9045ce1d3cc4868af65e1904f809ab6e6b",
+    "bridge-review-final-checks.log": "bd1c8a70c23e67a4bac3e8364410f9b7cae67fcea85e570de1fafb8db45df2d3"
+  },
+  "remaining": [
+    "actual SDK/library with repaired bridge not rerun",
+    "no new-source scheduling/model performance claim",
+    "cost callback changes remain separate and unpublished at this repair stage"
+  ]
+}
