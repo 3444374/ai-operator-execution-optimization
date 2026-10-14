@@ -1,0 +1,357 @@
+{
+  "schema": "semloom.native_http_library_verification.v1",
+  "run_id": "native-http-libraries-20261014-81a38e52",
+  "source_commit": "81a38e522f7923ba1db5bcc2d1e9ac63e2d1f3ab",
+  "execution": "actual pinned Daft native runner and Ray Data HTTP Processor; synthetic localhost fixtures",
+  "start_utc": "2026-10-14T03:06:12.839444+00:00",
+  "elapsed_seconds": 36.84023333201185,
+  "input_bundle": {
+    "files": 65,
+    "expanded_bytes": 342349,
+    "compressed_bytes": 84610,
+    "sha256": "9bd561b136e94db99c33d760d92ab61d89ff356368a71659869c651ebf451e01",
+    "all_inputs_unchanged": true,
+    "input_manifest_member": "bundle-manifest.json",
+    "retrieval": "original approved package retained by project maintainer under this run_id"
+  },
+  "environment": {
+    "python": "3.12.3",
+    "versions": {
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "pyarrow": "24.0.0",
+      "aiohttp": "3.14.3",
+      "psutil": "7.2.2"
+    },
+    "core_text_preflight_status": "ok",
+    "preflight_scope": "existing checkout environment checker; library execution source is source_commit",
+    "cgroup_cpu_quota": 16,
+    "allowed_host_cpu_ids": 128,
+    "reserved_cpu_ids": [
+      37,
+      39,
+      45,
+      47,
+      50,
+      53,
+      57,
+      61
+    ],
+    "ray_num_cpus": 8,
+    "ray_num_gpus": 0,
+    "ray_object_store_bytes": 134217728
+  },
+  "groups": [
+    {
+      "name": "fresh-import",
+      "tests_run": 1,
+      "success": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "log_member": "fresh-import.log",
+      "outcome_member": "fresh-import-result.json"
+    },
+    {
+      "name": "daft-activity",
+      "tests_run": 1,
+      "success": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "log_member": "daft-activity.log",
+      "outcome_member": "daft-activity-result.json"
+    },
+    {
+      "name": "ray-activity",
+      "tests_run": 3,
+      "success": true,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "log_member": "ray-activity.log",
+      "outcome_member": "ray-activity-result.json"
+    }
+  ],
+  "actual_posts": 120,
+  "fresh_import": {
+    "upstream_default": 4,
+    "environment_override": 2,
+    "evidence": "fresh-import.log plus source test assertions in code/tests/baselines/test_native_ray_configuration.py",
+    "ray_runtime_started": false
+  },
+  "daft": {
+    "declared_concurrency": 4,
+    "batch_size": 1,
+    "native_max_concurrency": 3,
+    "prepared_rows": 24,
+    "requests": 24,
+    "http_status_counts": {
+      "200": 20,
+      "429": 4
+    },
+    "observed_peak_http": 4,
+    "observed_active_counts": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "prepared_before_first_dispatch": true,
+    "result_consumption": "without deliberate waits",
+    "http_pool_count": 1,
+    "http_pools_closed": true,
+    "clean": true,
+    "events_member": "fixtures/daft-activity/0000-daft-http-service.json",
+    "report_member": "fixtures/daft-activity/0001-daft-http-activity.json"
+  },
+  "ray_data": [
+    {
+      "test_id": "tests.baselines.test_native_calls.RayDataHttpActivityTests.test_one_actor_single_row_batches",
+      "actors": 1,
+      "batch_rows": 1,
+      "imported_async_batches": 2,
+      "request_row_envelope": 2,
+      "active_http_upper_bound": 2,
+      "observed_peak_http": 2,
+      "actual_posts": 32,
+      "clean": true,
+      "fixture_member": "fixtures/ray-activity/0002-ray-data-http-activity.json",
+      "http_pool_count": "unavailable",
+      "http_pools_closed": "unavailable",
+      "per_request_timestamps": "unavailable; server lock peak counter retained"
+    },
+    {
+      "test_id": "tests.baselines.test_native_calls.RayDataHttpActivityTests.test_one_actor_multirow_batches",
+      "actors": 1,
+      "batch_rows": 4,
+      "imported_async_batches": 2,
+      "request_row_envelope": 8,
+      "active_http_upper_bound": 2,
+      "observed_peak_http": 1,
+      "actual_posts": 32,
+      "clean": true,
+      "fixture_member": "fixtures/ray-activity/0000-ray-data-http-activity.json",
+      "http_pool_count": "unavailable",
+      "http_pools_closed": "unavailable",
+      "per_request_timestamps": "unavailable; server lock peak counter retained"
+    },
+    {
+      "test_id": "tests.baselines.test_native_calls.RayDataHttpActivityTests.test_two_actors_multirow_batches",
+      "actors": 2,
+      "batch_rows": 4,
+      "imported_async_batches": 2,
+      "request_row_envelope": 16,
+      "active_http_upper_bound": 4,
+      "observed_peak_http": 2,
+      "actual_posts": 32,
+      "clean": true,
+      "fixture_member": "fixtures/ray-activity/0004-ray-data-http-activity.json",
+      "http_pool_count": "unavailable",
+      "http_pools_closed": "unavailable",
+      "per_request_timestamps": "unavailable; server lock peak counter retained"
+    }
+  ],
+  "observation_scope": "active localhost server handlers through complete response write; not GPU kernels or proxy dispatch intervals",
+  "resources": {
+    "max_sampled_summed_rss_bytes": 3913281536,
+    "rss_limit_bytes": 4294967296,
+    "sample_count": 346,
+    "sampled_sum_includes_shared_pages": true,
+    "sampling_may_miss_short_peaks": true,
+    "affinity_violations": 0,
+    "fault_timeout_seconds": 300,
+    "timeout_scope": "software fault protection, not server rental deadline",
+    "fixture_post_limit_scope": "completed server observations checked after groups and at exit; no pre-send counter; fixed tests plan exactly 120 POST with max_retries=0"
+  },
+  "cleanup": {
+    "owned_pid_birth_identities": 26,
+    "independent_postflight_owned_alive": [],
+    "common_lease_exists": false,
+    "common_lease_released": true,
+    "forced_cleanup": [],
+    "errors": [],
+    "ray_processes_remaining": [],
+    "input_and_dependency_versions_unchanged": true
+  },
+  "real_model_requests": 0,
+  "gpu_starts": 0,
+  "scope_limits": [
+    "one software run per fixed configuration",
+    "no real model, model quality, throughput comparison, or GPU concurrency claim",
+    "no expanded cancellation, timeout, SDK/parser, IMLane, Ray Core or query-end-to-end qualification",
+    "Daft observed peak C does not imply continuously full activity; Ray time-series recomputation is unavailable"
+  ],
+  "public_archive": {
+    "name": "native-http-library-evidence.tar.gz",
+    "bytes": 21045,
+    "sha256": "9d04aa7d19a4ac01d70e61c279b50aab7b85bb1161bdabafb0c7d4ddff0132d0",
+    "members": 26
+  },
+  "private_remote_archive": {
+    "bytes": 18734,
+    "sha256": "30ea06cd5287052dc32d99af21d3e044cf698c976a2910b5c15a9b4c68f1bf43",
+    "members": 23,
+    "retrieval": "retained by project maintainer under run_id; duplicate source-manifest omitted only from public copy because bundle manifest contains source hashes"
+  },
+  "redaction": "credentials scrubbed with common.redact; private paths and non-local IPv4 replaced; metric/event/test values retained",
+  "member_mapping": {
+    "bundle-manifest.json": {
+      "raw_bytes": 10829,
+      "raw_sha256": "d805a1284cbc8c90c4db5bfccdf33fca7727ce6e0a79110a1d0181f4f3199cce",
+      "public_bytes": 10829,
+      "public_sha256": "d805a1284cbc8c90c4db5bfccdf33fca7727ce6e0a79110a1d0181f4f3199cce"
+    },
+    "daft-activity-result.json": {
+      "raw_bytes": 142,
+      "raw_sha256": "c77f768b89e435c36e7ab8cd903961f08b7293b71afee027c9dc4bdddb31ed97",
+      "public_bytes": 142,
+      "public_sha256": "c77f768b89e435c36e7ab8cd903961f08b7293b71afee027c9dc4bdddb31ed97"
+    },
+    "daft-activity.log": {
+      "raw_bytes": 318,
+      "raw_sha256": "562ee88d9a89dc4b2ee6e8463217b588baa72762b332a94af0727517c488954a",
+      "public_bytes": 318,
+      "public_sha256": "562ee88d9a89dc4b2ee6e8463217b588baa72762b332a94af0727517c488954a"
+    },
+    "fixtures/daft-activity/0000-daft-http-service.json": {
+      "raw_bytes": 11283,
+      "raw_sha256": "c06745793bdd299eb1cf8eab14f9176449fd15dbd5e92833177872af89bc01ec",
+      "public_bytes": 11283,
+      "public_sha256": "c06745793bdd299eb1cf8eab14f9176449fd15dbd5e92833177872af89bc01ec"
+    },
+    "fixtures/daft-activity/0001-daft-http-activity.json": {
+      "raw_bytes": 1342,
+      "raw_sha256": "22a43f77ec1d301a5c2db963556bf7428777c1bc56b653267ab5c145b56947b6",
+      "public_bytes": 1342,
+      "public_sha256": "22a43f77ec1d301a5c2db963556bf7428777c1bc56b653267ab5c145b56947b6"
+    },
+    "fixtures/ray-activity/0000-ray-data-http-activity.json": {
+      "raw_bytes": 1368,
+      "raw_sha256": "ba8c6f5fc14c2eec3d92e96d6e53b0f4e23cc887bfec7c97986f24c1e2b8d356",
+      "public_bytes": 1368,
+      "public_sha256": "ba8c6f5fc14c2eec3d92e96d6e53b0f4e23cc887bfec7c97986f24c1e2b8d356"
+    },
+    "fixtures/ray-activity/0001-complete-http.json": {
+      "raw_bytes": 5915,
+      "raw_sha256": "78ecf0cbc773658aa8d3b41b916d401c33328b3565c4b7610790af7e4dc33c68",
+      "public_bytes": 5915,
+      "public_sha256": "78ecf0cbc773658aa8d3b41b916d401c33328b3565c4b7610790af7e4dc33c68"
+    },
+    "fixtures/ray-activity/0002-ray-data-http-activity.json": {
+      "raw_bytes": 1370,
+      "raw_sha256": "939ff616a920458269ec1a1db6a070cf56cb8f7ec3eb57d8890d1bc484e4b6d7",
+      "public_bytes": 1370,
+      "public_sha256": "939ff616a920458269ec1a1db6a070cf56cb8f7ec3eb57d8890d1bc484e4b6d7"
+    },
+    "fixtures/ray-activity/0003-complete-http.json": {
+      "raw_bytes": 5917,
+      "raw_sha256": "a7d5d2e6e6d68fcfed6233aeff723813f0905d4782a52f787f91f13aba003644",
+      "public_bytes": 5917,
+      "public_sha256": "a7d5d2e6e6d68fcfed6233aeff723813f0905d4782a52f787f91f13aba003644"
+    },
+    "fixtures/ray-activity/0004-ray-data-http-activity.json": {
+      "raw_bytes": 1370,
+      "raw_sha256": "4bdbd7117ff1e6d62b262849e5fdc24a5e7774d708af06193105d503a02a8016",
+      "public_bytes": 1370,
+      "public_sha256": "4bdbd7117ff1e6d62b262849e5fdc24a5e7774d708af06193105d503a02a8016"
+    },
+    "fixtures/ray-activity/0005-complete-http.json": {
+      "raw_bytes": 5916,
+      "raw_sha256": "7c96d035153fecb6442db458d93b379a58ba7d7c417a3fc69649ca7941da2137",
+      "public_bytes": 5916,
+      "public_sha256": "7c96d035153fecb6442db458d93b379a58ba7d7c417a3fc69649ca7941da2137"
+    },
+    "fresh-import-result.json": {
+      "raw_bytes": 141,
+      "raw_sha256": "3166b52c70e8316a06b9caab096956a5bd92a060303c16287f726bf388be74fc",
+      "public_bytes": 141,
+      "public_sha256": "3166b52c70e8316a06b9caab096956a5bd92a060303c16287f726bf388be74fc"
+    },
+    "fresh-import.log": {
+      "raw_bytes": 320,
+      "raw_sha256": "cf423fd5af47d829dad29e8352d9987d7d647b77379368c08f02799600196a4f",
+      "public_bytes": 320,
+      "public_sha256": "cf423fd5af47d829dad29e8352d9987d7d647b77379368c08f02799600196a4f"
+    },
+    "lease-acquired.json": {
+      "raw_bytes": 106,
+      "raw_sha256": "b793ebe9bbda6aa508b8105654eda5a857f76ac6ac450f35b2a77efb49dcbe88",
+      "public_bytes": 106,
+      "public_sha256": "b793ebe9bbda6aa508b8105654eda5a857f76ac6ac450f35b2a77efb49dcbe88"
+    },
+    "plan.json": {
+      "raw_bytes": 1551,
+      "raw_sha256": "6c75478015c9ab6aafcaab7ed6461841a657aa5636f4cfe15e9055199fa64ca6",
+      "public_bytes": 1491,
+      "public_sha256": "7482c2baa808406cf899f61a906295059f23eb6095104aa850931a6aa25c23d2"
+    },
+    "postflight.json": {
+      "raw_bytes": 3798,
+      "raw_sha256": "af69d270b3533204781ef72a405d106d3339decd278bfdd99a375944f74961c2",
+      "public_bytes": 3798,
+      "public_sha256": "af69d270b3533204781ef72a405d106d3339decd278bfdd99a375944f74961c2"
+    },
+    "preupload.json": {
+      "raw_bytes": 1806,
+      "raw_sha256": "ea3825751eac4baf04a09df9313de146d25983cbfe7366251cf666519f727fed",
+      "public_bytes": 1799,
+      "public_sha256": "7a2dbc2b0df98b657042a44e75e9f2468c3dbd1a76a751adea76b4740351da8f"
+    },
+    "qualify_native.py": {
+      "raw_bytes": 1393,
+      "raw_sha256": "c1677e8e0b8ccdad5da00800e737a5df646d661396e9f4dc25eb0a810e0a1d78",
+      "public_bytes": 1393,
+      "public_sha256": "c1677e8e0b8ccdad5da00800e737a5df646d661396e9f4dc25eb0a810e0a1d78"
+    },
+    "ray-activity-result.json": {
+      "raw_bytes": 141,
+      "raw_sha256": "fa969873d04da6bd689c57633b38fc5b0d2750674541106b8f95b1ae866d5a0d",
+      "public_bytes": 141,
+      "public_sha256": "fa969873d04da6bd689c57633b38fc5b0d2750674541106b8f95b1ae866d5a0d"
+    },
+    "ray-activity.log": {
+      "raw_bytes": 7018,
+      "raw_sha256": "7e0bc14218c91c7a6de9cf0b56e384ae8d7ca617c0e52d1e9a83e860f5224816",
+      "public_bytes": 6997,
+      "public_sha256": "190ddd3c18e9b1935af95212548105cf72b6c48d348d78c6292d68f6b9f5dd99"
+    },
+    "runtime-preflight.json": {
+      "raw_bytes": 4413,
+      "raw_sha256": "ac07a536ceaf6b51a14bb6a23cf5b5acc26c0f9f66052e08aaff0026cf19bee6",
+      "public_bytes": 4333,
+      "public_sha256": "563c27806f714e2166b17b7c49d0781b9334441874c5bdfd0ec99db1c316a868"
+    },
+    "upload.json": {
+      "raw_bytes": 247,
+      "raw_sha256": "fc06d32b740dd21029b9c2879a1e31e70f3882cc5dafd11c27bc8e4f4a29b749",
+      "public_bytes": 247,
+      "public_sha256": "fc06d32b740dd21029b9c2879a1e31e70f3882cc5dafd11c27bc8e4f4a29b749"
+    },
+    "window-resources.json": {
+      "raw_bytes": 33561,
+      "raw_sha256": "0e73800fc6914fe5d3c22a8be176e127f75b8b08841df8ee4523da2cf749a3ea",
+      "public_bytes": 33561,
+      "public_sha256": "0e73800fc6914fe5d3c22a8be176e127f75b8b08841df8ee4523da2cf749a3ea"
+    },
+    "window-result.json": {
+      "raw_bytes": 839,
+      "raw_sha256": "c08f78edae1299f01a60ee8f44c1815d041d47281582656c817af47ff4ab45ae",
+      "public_bytes": 839,
+      "public_sha256": "c08f78edae1299f01a60ee8f44c1815d041d47281582656c817af47ff4ab45ae"
+    },
+    "window-started.json": {
+      "raw_bytes": 195,
+      "raw_sha256": "3d848c0eb8d9945406cbfe31e9608e1fc5e2effd0b06ec158d1fc15fe83d2c3b",
+      "public_bytes": 195,
+      "public_sha256": "3d848c0eb8d9945406cbfe31e9608e1fc5e2effd0b06ec158d1fc15fe83d2c3b"
+    },
+    "window.py": {
+      "raw_bytes": 13018,
+      "raw_sha256": "966f16a85ba1f51ec90de3dad93563eff274b67ab2493405774652848d327ea9",
+      "public_bytes": 13018,
+      "public_sha256": "966f16a85ba1f51ec90de3dad93563eff274b67ab2493405774652848d327ea9"
+    }
+  }
+}

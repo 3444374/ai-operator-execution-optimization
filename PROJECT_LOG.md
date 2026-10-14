@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-14：完成固定Daft／Ray HTTP软件补验
+
+- 批准65文件输入包逐项上传核验，固定`81a38e52`的5项实库检查全部通过、120localhost POST；源码与依赖版本前后相同，无模型／GPU。
+- Daft及Ray行数、上界与实测峰值、原件与独立退出检查集中于[同题报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)；保留本地失败及跳过来源，不改作者图或容量校验。
+
 ## 2026-10-14：补齐原生HTTP并发证据与所选后端检查
 
 - Ray关闭报告区分行数包络、活跃HTTP上界及声明／导入异步批次数；复用已有统一代理峰值，不改作者图或请求调度。

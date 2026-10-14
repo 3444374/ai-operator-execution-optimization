@@ -2,7 +2,8 @@
 
 2026-10-14：[原生HTTP活动核查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)
 补齐Ray行数包络／活跃HTTP上界／导入B及既有实测峰值口径；Daft与Ray校验仅用于所选后端。
-IMLane／Ray Core C1的公共接入检查通过，作者实库及实际Daft／Ray活动验证分别待完成。
+IMLane／Ray Core C1的公共接入检查通过，作者IMLane实库C1仍待核查；固定`81a38e52`的
+Daft／Ray Data活动及Ray新进程导入5项实库检查已通过、0跳过，仅localhost fixture、无模型／GPU。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
