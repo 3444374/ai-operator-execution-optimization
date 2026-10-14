@@ -1,5 +1,18 @@
 # 实验与机制证据台账
 
+2026-10-14：[LOTUS／Daft 图像集成接纳](diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)：四运行文件关闭与证据优先级修补，105本地通过／14条件跳过；96条原查询完整复算，source-d/f 数值和失败保持，未追加融合版模型／性能资格。
+
+2026-10-14：[原生 LOTUS 图像检索资格](diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+保留实际模型参数／预处理身份、图片输入负例、完整图库／在线向量及原生top10；六臂12／64／256图和已有索引通过。
+24个模型CLI、96条完整查询及所有保存矩阵可独立重算，Daft原交付blob保持、两次模型前失败逐运行登记；
+原件与逐次物理退出及lease释放保留，不提供性能排名或P99／P99.99。
+
+2026-10-14：[Daft 本地 CLIP 原生批次资格](diagnostics/daft_clip_native_20261014/README.md)。
+固定0.7.21真实图及 RGB decode，CPU kernel 替身本机／匹配 Linux 各 13 项、旧图像回归 39 项通过；软件 fixture 模型／GPU／HTTP 0。
+独立9图GPU复测四次完整512维FP32向量同批形状Direct逐位一致，398参数／2buffers恰好终结一次，CLI／lease正常退出；
+只支持batch32下9行未满批次的数值及正常生命周期，不支持完整LOTUS耗时、持续稳态或尾分位。
+最初SDK重载假设及首GPU错误清理判据失败均保留；生产后端两轮未改，可选计时借用原模块。
+
 2026-10-14：[HSE可选设备组选择](diagnostics/hse_device_dispatch_20261014/README.md)：A上显式策略的本树187通过／2缺驻留切片跳过，
 固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录。
 随后固定4c7efa79单节点CPU实际Ray软件11/11通过，4 CPU／0 GPU／512MiB，49 PID与控制器退出、lease释放；首轮fixture失败保留。

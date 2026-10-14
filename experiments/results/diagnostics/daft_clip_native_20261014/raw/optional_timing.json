@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "events": 10,
+  "operations": [
+    "daft_image.batch",
+    "daft_image.graph_consume",
+    "daft_image.model_embed",
+    "daft_image.model_load",
+    "daft_image.preprocess"
+  ],
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "timing_source_sha256": "f2cb3b20b3fe40bbe497269f88cb9cd488c500c7466d60cc668d5e26ec6c5f5c",
+  "timing_branch_sha": "bbbd8a1b3ed2456e97f0d1b766484991be4ac5c9",
+  "scope": "borrowed existing timing module through importlib in CPU SDK fixture process; no file copy or branch merge",
+  "run_id": "daft-cpu-sdk-optional-timing",
+  "process_instance": "14732e88bd934f208e1a43e3d99c9a55",
+  "start_utc": "unavailable: not captured",
+  "ready_utc": "unavailable: not separately sampled",
+  "completion_observed_utc": "2026-10-14T10:03:16.857179+00:00",
+  "originals": [
+    {
+      "member": "timing-14732e88bd934f208e1a43e3d99c9a55.jsonl",
+      "sha256": "38d1a8478deb7b3d606b77f41625b879c75b57e4c37f8d4d86f80e124b8b6c09",
+      "bytes": 4067
+    },
+    {
+      "member": "timing-14732e88bd934f208e1a43e3d99c9a55.closed.json",
+      "sha256": "31d6f393c6ab8993b1c41e80f8161de53a1d51bfe75c452461fef212ebd0d26f",
+      "bytes": 495
+    }
+  ],
+  "originals_location": "task-local artifacts/optional-timing-probe; request by run_id and member SHA from execution owner; full events remain outside Git"
+}

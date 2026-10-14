@@ -1,5 +1,32 @@
 # LOTUS方法与SemLoom执行适配
 
+## 原生 CLIP 图像检索
+
+`image_workflow.py`保留 LOTUS1.2.4 的`sem_index`、`load_sem_index`、`sem_search`与原生
+`FaissVS(Flat, inner product)`。图库固定原始 RangeIndex，业务ID另列；输入使用一维object列中的
+RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，stock RM不会把list解码为图片，
+因此路径示例不足以证明图像编码。在线PIL查询会编码一张图片，文本`bird`查询只编码文本。
+
+`image_rm.ImageBatchExecutor`公开`semantics`、`embed_batch(doc_ids: tuple[str,...], images: Sequence[bytes])`
+与`close()`。RM以无损PNG传输同一RGB像素，按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
+finite值与单位范数。原生建索引需要完整矩阵，显式限制图库至5000行；这不是流式PG执行。
+Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE，Ray Data保留原生图与调度；
+`--arm daft_native`接入[独立Daft后端](../../baselines/image/frameworks/daft_clip.py)，
+保留其原生RGB解码、stateful batch UDF与生命周期，不复制执行代码。外部工厂也可使用同一协议。
+原生算子与作者源码均不修改，固定来源、资格及精简证据见[本轮记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+
+[资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
+组合workflow、模型启动和结果写出分别记录。Ray Data每次RM调用的原生图含模型冷加载；其他内置路径
+在workflow内驻留模型，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU，文本耗时另列。
+默认只读低开销单调时钟；`SEMLOOM_DETAILED_TIMING_DIR`借用已集成的可选计时模块，缺模块时明确失败。
+原生缓存关闭；串行入口拒绝同进程第二个owner，尚未资格跨查询并发。失败查询与RM调用保留时间、状态和阶段。
+
+先用[模型身份CLI](../../../scripts/experiments/qualify_lotus_clip.py)核对固定ST与cached OpenAI CLIP的实际
+参数内容、有效PIL像素张量、tokenizer与完整向量；序列化文件哈希不同不等于参数不同。
+当前只公布float32，索引sidecar绑定有序像素、模型资格与原生文件哈希。小样本不输出P99或P99.99。
+已有索引查询复用同一qualification identity文件与原始图库顺序；新生成的资格文件不自动替换旧sidecar。
+本任务是CLIP检索，不是VLM `sem_filter/sem_map`；`sem_sim_join`的子集索引和缺邻居行为尚未纳入资格。
+
 五条替换批次共用`sdk.LotusResponseReplay`，每批次惰性创建一个客户端并复用，
 在已有消费线程执行固定SDK解释，完整响应重放不产生实际HTTP。关闭失败保留第一异常及其他失败的类型注记。
 原LOTUS调用仍使用原执行入口；实际SDK/厂商验证进度见[修补记录](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。
@@ -207,3 +234,8 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 登记独立57项／组合59项检查、来源提交、原件摘要及公开恢复入口。
 [历史诊断样本](https://github.com/3444374/ai-operator-execution-optimization/blob/60c45593b8d837684c24f6f29375c15af3495f76/code/src/semantic_methods/lotus/README.md#单map等待循环修复)
 保留独立分支原数值与CPU设置，来源对应原提交，便于与后续整合样本分别核对。
+
+原生图像执行器的关闭与失败责任见[集成接纳](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)：
+同一 executor 互斥批次，关闭先封口，未知工作拒绝复用；部分启动 actor 只保留清理用途。
+Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭，caller-owned runtime
+与物理退出证明仍归调用方。两个资格 CLI 保留执行／取消首错及独立证据写入失败。

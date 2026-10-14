@@ -1,5 +1,21 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：固定 `06332d4f` 六图像接点已普通接纳；集成四运行文件补生命周期／计时／证据错误责任，105本地通过／14条件跳过，原 source-d/f 实测保持。融合版 SDK／GPU 异常未重验，见[核查](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)。
+
+2026-10-14：[原生 LOTUS CLIP 图像检索](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)
+已实现公开 RM 图片执行协议、固定源核对、完整原生索引／检索与 index/search/combined CLI。
+stock／Direct／SemLoom static／HSE static／Ray Data／Daft native六条路径12／64／256图及已有索引新进程查询通过。
+24个模型CLI的96条完整查询与完整向量保留；整合实库／fixture检查为39个测试项及21个通过子测试、0跳过。
+两个模型前失败保留，逐次物理退出和lease释放核验完成；独立Daft三份源码保持原交付blob。
+仅支持固定FP32 CLIP检索，不增加VLM、PG、性能排名或可靠尾分位结论。
+
+2026-10-14：[Daft 本地 CLIP 批次接口](../experiments/results/diagnostics/daft_clip_native_20261014/README.md)
+导出 `DaftClipExecutor.embed_batch(tuple[str,...], Sequence[bytes])`，复用共享结果类型及 CLIP 计算，
+由固定 Daft0.7.21 原生 RGB decode／有状态 UDF 拥有图与批次；完整归一化 float32 512 维和原 ID 保留。
+本机和匹配 Linux 的真实 SDK／CPU kernel 替身各 13 项、相关图像回归 39 项通过，独立审核完成；软件检查真实模型／GPU／HTTP 0。
+9图真实GPU复测四次完整向量与同批形状Direct逐位一致，模型／398参数／2buffers释放、CLI物理退出和lease释放核验通过；
+首GPU错误清理判据失败保留，小样本不提供P99／P99.99。完整LOTUS查询与公共CLI／注册已接入，见上方整合记录。
+
 2026-10-14：[HSE可选设备组派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)
 在固定A增加每actor/group逻辑额度、完成work速率及先选择后lease；默认static和CLI保持。
 本树187通过／2缺独立驻留切片跳过，固定42186dbe临时组合另2通过；两名独立源码审查完成。

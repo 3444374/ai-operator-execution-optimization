@@ -1,0 +1,89 @@
+{
+  "atol": 1e-05,
+  "candidate": {
+    "files": {
+      "config.json": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+      "merges.txt": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+      "preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd",
+      "pytorch_model.bin": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+      "special_tokens_map.json": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+      "tokenizer.json": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+      "tokenizer_config.json": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad",
+      "vocab.json": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"
+    },
+    "repo": "openai/clip-vit-base-patch32",
+    "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
+  },
+  "candidate_parameters": {
+    "parameter_tensors": 398,
+    "sha256": "968f8926f4522526f88da56b4d5f47aa41d7cc28220136e3ab830666a70c56e6"
+  },
+  "changed_pixels_change_embedding": true,
+  "changed_pixels_max_abs_difference": 0.1600715070962906,
+  "decode": "eager RGB PIL; transport lossless PNG",
+  "device": "cuda",
+  "effective_pixels_equal": true,
+  "elapsed_s": 18.623572536744177,
+  "embedding_max_abs_error": 0.0,
+  "lotus_source": {
+    "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "source_sha256": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+      "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+      "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+      "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+      "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+      "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+      "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+    },
+    "version": "1.2.4"
+  },
+  "manifest_sha256": "2e3020c2f152fe053ea77b2474404d4b68efbb7de1fc3fbd88e80f161553be90",
+  "min_cosine": 0.9999997615814209,
+  "model_dtype": "float32",
+  "normalized_outputs_equivalent": true,
+  "parameters_equal": true,
+  "pixel_max_abs_error": 0.0,
+  "processor_backend": "slow PIL",
+  "qualified": true,
+  "rows": 12,
+  "rtol": 1e-05,
+  "same_pixels_different_names_equal": true,
+  "schema": "lotus.clip_identity.v1",
+  "status": "succeeded",
+  "stock": {
+    "files": {
+      "0_CLIPModel/config.json": "f77ab2f54a03090c5dcac397670c254c39cd7a311611cafb5a79de3b07cd13ff",
+      "0_CLIPModel/merges.txt": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "0_CLIPModel/preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd",
+      "0_CLIPModel/pytorch_model.bin": "a62934cf6216e42859223aed2df08b4f1bd0042cb31be80d2db5cd54f71c0d16",
+      "0_CLIPModel/special_tokens_map.json": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+      "0_CLIPModel/tokenizer_config.json": "3edc310a85caaac28f2bfbd70be572f8b52c1b8661a4f92c25d8810ef29a3224",
+      "0_CLIPModel/vocab.json": "3f0c4f7d2086b61b38487075278ea9ed04edb53a03cbb045b86c27190fa8fb69",
+      "config_sentence_transformers.json": "7ce74d59a1f531a538d4daf3df7058d4a6ab724768da0929a38deabe90fabd3b",
+      "modules.json": "c05ee467d00d460b77a264597d9af76121e3e87300ae0777f3c8fdb9babaaa79"
+    },
+    "repo": "sentence-transformers/clip-ViT-B-32",
+    "revision": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f"
+  },
+  "stock_encode_default_batch_size": 32,
+  "stock_outer_batch_size": 64,
+  "stock_parameters": {
+    "parameter_tensors": 398,
+    "sha256": "968f8926f4522526f88da56b4d5f47aa41d7cc28220136e3ab830666a70c56e6"
+  },
+  "task_quality": "self-image retrieval checked separately; captions/semantic relevance unavailable",
+  "tokenizer_equal": true,
+  "versions": {
+    "faiss-cpu": "1.15.0",
+    "lotus-ai": "1.2.4",
+    "numpy": "1.26.4",
+    "pillow": "12.2.0",
+    "sentence-transformers": "3.4.1",
+    "torch": "2.12.1+cu130",
+    "transformers": "4.57.6"
+  }
+}

@@ -1,5 +1,11 @@
 # Baseline and comparison harnesses
 
+[`image/frameworks/daft_clip.py`](image/frameworks/daft_clip.py)提供本地 CLIP 的原生 Daft 有状态 UDF 批次接点。
+`DaftClipExecutor.embed_batch(doc_ids, encoded_images)`接收稳定 ID 和 encoded bytes，返回共享 `ImageEmbeddingResult`，
+完整归一化 `float32[N,512]`；语义 revision 为实际本地路径，内容 SHA 与版本另记于 `identity`。
+图与批次归 Daft，不接 HTTP／SemLoom 调度；自写图登记为 `diagnostic_reference`。
+本机／Linux 软件资格、9 图真实 GPU 向量与模型释放核验、计时依赖见[独立报告](../../../experiments/results/diagnostics/daft_clip_native_20261014/README.md)。
+
 NativeLOTUS、Daft、Ray Data、SemLoom、IMLane 两模式及现有图像 CLI 共用可选外层诊断。
 设置 `SEMLOOM_DETAILED_TIMING_DIR` 后采集，未设置时保持原总时与输出；图构建／session 初始化等只按实际操作命名，
 不推定厂商排队、actor 初始化或 GPU 计算。[字段与验证](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)

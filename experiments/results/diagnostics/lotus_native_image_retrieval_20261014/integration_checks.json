@@ -1,0 +1,165 @@
+{
+  "schema": "semloom.lotus_image_integration_checks.v1",
+  "previous_integration": "da379b2577118d58b890cff3fca6400af7bda8f2",
+  "fixed_LOTUS_source": "06332d4f01876efa10b7dc23acbeeeaf44ece7b4",
+  "Daft_owner_source": "adf8ea10141b59aca5ed2f41107eb26e2f8c881f",
+  "Daft_source_pick": "8959175ddbb8a57afb0bf341f104624b32f7a3b4",
+  "Daft_three_blobs_match_before_integration_repairs": true,
+  "source_f_to_candidate": [
+    {
+      "path": "code/scripts/experiments/qualify_lotus_clip.py",
+      "original": "99d93e1efd4873480bb96aee0c89175ea243a42512a269761fa2e4ecfdec4566",
+      "candidate": "950ad692fa19d2e3f65bb0d9203fa15255e8b3eec26ef17cc24d8956145c14b5",
+      "same": false
+    },
+    {
+      "path": "code/scripts/experiments/run_lotus_image_retrieval.py",
+      "original": "e59b2caf89707f595c33336ef32838a8686ed9ed3b26c64d92110ef4ab3d182c",
+      "candidate": "4630171476cb91855cef52e991e37523902e59ebeaf0c3f453670ebfb2649305",
+      "same": false
+    },
+    {
+      "path": "code/src/baselines/image/frameworks/daft_clip.py",
+      "original": "dd6e6a5e534dab91af5e7bae72288528ffe03e354647535022fe6f6d86382c1a",
+      "candidate": "881d7969c84ce50626729649dc201f2b2b851328ce08a4bdd00b10ab4820a744",
+      "same": false
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/image_backend.py",
+      "original": "d8d9a15ed440bd4e4738a6804ab83c2da8e685cbbcc4156f54abc18d0f3c9eee",
+      "candidate": "124afa466078c5e957839d5de44487a7e7fadc7fc51ff2437382a0775fc4ef03",
+      "same": false
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/image_identity.py",
+      "original": "44f167d96586b4da99b808e4a99ef760957da549c8288bf43a15d94f95dcdd03",
+      "candidate": "44f167d96586b4da99b808e4a99ef760957da549c8288bf43a15d94f95dcdd03",
+      "same": true
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/image_rm.py",
+      "original": "0ee19ed581b76436880c275c535f5f414d0c758b8b37ecf7e0192429bacafe74",
+      "candidate": "0ee19ed581b76436880c275c535f5f414d0c758b8b37ecf7e0192429bacafe74",
+      "same": true
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/image_source.py",
+      "original": "6ae35e2c2750fded14d3e93eb16d2b7df63ce6c2a56104aa92025c1b0a1369b1",
+      "candidate": "6ae35e2c2750fded14d3e93eb16d2b7df63ce6c2a56104aa92025c1b0a1369b1",
+      "same": true
+    },
+    {
+      "path": "code/src/semantic_methods/lotus/image_workflow.py",
+      "original": "ebab6e4c56d3b3d2a4c51dcfaa2f5600a002e644ba967c23dd080c3e2037d2ae",
+      "candidate": "ebab6e4c56d3b3d2a4c51dcfaa2f5600a002e644ba967c23dd080c3e2037d2ae",
+      "same": true
+    },
+    {
+      "path": "code/tests/baselines/image/test_daft_clip_executor.py",
+      "original": "cc1df9c79d2180f7dbe6154b8ebe2d28ebccfbb55613ae0f74521394ccaf1456",
+      "candidate": "cc1df9c79d2180f7dbe6154b8ebe2d28ebccfbb55613ae0f74521394ccaf1456",
+      "same": true
+    },
+    {
+      "path": "code/tests/baselines/image/verify_daft_clip_gpu.py",
+      "original": "d362ea02f6082987b277e5de535f20b5a98ef1ec2d8422d4d64ac7c6868a4ca5",
+      "candidate": "d362ea02f6082987b277e5de535f20b5a98ef1ec2d8422d4d64ac7c6868a4ca5",
+      "same": true
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_image_cli.py",
+      "original": "0198989c8865215adc530c1d17ca586f36d000cbcda0ba342664eb0cfd26fc65",
+      "candidate": "0198989c8865215adc530c1d17ca586f36d000cbcda0ba342664eb0cfd26fc65",
+      "same": true
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_image_identity.py",
+      "original": "3be49eb56c474fdc81eb36264d0686360c2774f23644d26fe5c07cf62674a665",
+      "candidate": "3be49eb56c474fdc81eb36264d0686360c2774f23644d26fe5c07cf62674a665",
+      "same": true
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_image_native.py",
+      "original": "4c5e8589800f866df6efe1f21ad6f6603f41df7c02bb8fd3cd9c85a8ab2a16a7",
+      "candidate": "4c5e8589800f866df6efe1f21ad6f6603f41df7c02bb8fd3cd9c85a8ab2a16a7",
+      "same": true
+    },
+    {
+      "path": "code/tests/semantic_methods/test_lotus_image_rm.py",
+      "original": "785a6fa24abfa7d5846dd988a9c75e0e642266a33e7526276725abbb86258f4b",
+      "candidate": "785a6fa24abfa7d5846dd988a9c75e0e642266a33e7526276725abbb86258f4b",
+      "same": true
+    }
+  ],
+  "repairs": [
+    "request partial startup actor termination; retain cleanup-only ownership and unknown physical exit",
+    "seal SemLoom close before termination and refuse failed/active executor reuse",
+    "close Ray Data iterator and current executor on EOF/error/cancel; failed work remains unknown",
+    "mark Daft iterator-open work unknown before call; preserve real close/synchronize errors over timing diagnostics",
+    "preserve execution/cancel/real-cleanup priority across NPZ, JSON and receipt failures in both CLIs"
+  ],
+  "new_lifecycle_tests_and_source_fixtures": {
+    "selected_tests": 61,
+    "passed": 48,
+    "skipped": 13,
+    "failures": 0,
+    "new_lifecycle_test_methods": 22,
+    "actual_SDK_cases_enabled": false,
+    "scope": "local fault, identity, matrix and CLI fixtures; 5 missing LOTUS SDK + 8 opt-in Daft SDK cases remain skipped",
+    "log_sha256": "922e2877d9c2dfca38e42b89428250e2a39b88902a18fb3540a53d2b2376eb70"
+  },
+  "existing_paths": {
+    "selected_test_methods": 58,
+    "passed": 57,
+    "skipped": 1,
+    "failures": 0,
+    "loopback_fixture_POST": 24,
+    "scope": "existing image startup/close/HSE identity and optional timing contracts; disjoint test paths",
+    "log_sha256": "9267e0f61d11ac59ec19c061c0cd779f7408c4f4aa8ff7a7eb5a43dcf30189dd"
+  },
+  "disjoint_total": {
+    "selected": 119,
+    "passed": 105,
+    "skipped": 14,
+    "failure": 0
+  },
+  "public_source_evidence_recompute": {
+    "successful_queries_checked": 96,
+    "image_queries": 72,
+    "text_queries": 24,
+    "failed_runs_retained": [],
+    "recorded_preparation_failures": 2,
+    "gallery_max_abs_error": 0.0,
+    "unique_full_matrices": 12
+  },
+  "public_blob_sha256": {
+    "observations.json.gz": "e89e0c0d47847ae002c0da7e6b029bd9fa45fbfb81146f8068fcac36575812c1",
+    "vectors.npz": "fd6e9dafc88f774373925127edddc240743a337df41bd6c1019812d5b9cd5cf1",
+    "vector_map.json": "809f41b1ba0ffd22bdb0c6b91813afbdb5f817f2065ce4f417eb0cef7806bed0",
+    "source_manifest.json": "ab9f4d5a50aeba92dc2e6355ae048a1d9436b424b3a8ae3f1c50376bc9164668",
+    "source_identity.json": "cfedaa904750b8f9dd57f4a332bac9f0e0abc3f3f4cc0466faf7a1ae24919cb4",
+    "verify_evidence.py": "9d7ecf02748c9f08022a802efb0398889a90400bb2741daa004b8bf6190294e8"
+  },
+  "actual_model_runs_remain_bound_to_source_d_f": true,
+  "new_server_model_GPU_execution": false,
+  "new_optional_HSE_dispatch_enabled": false,
+  "physical_exit_not_proven_by_termination_requests": true,
+  "source_pre_model_failures_retained": 2,
+  "historical_sources_and_numbers_preserved": true,
+  "independent_final_review": {
+    "frozen_tree": "b3183c32b55e87cf0c9a7d7f8ce666e84fe0d90b",
+    "decision": "publishable_with_original_source_qualification_limits",
+    "reviews": [
+      {
+        "axis": "standards",
+        "must_fix_count": 0,
+        "report_sha256": "9541fbebc1382b2a4aaab479c201ac3a6821ade14ee77dc4b861244bc8b6c08a"
+      },
+      {
+        "axis": "spec",
+        "must_fix_count": 0,
+        "report_sha256": "6ded4edbed552a9fa614b3b50173c0a535638bd51a3af84858da833ac57c6ee6"
+      }
+    ]
+  }
+}

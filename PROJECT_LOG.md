@@ -1,5 +1,30 @@
 # 项目日志
 
+2026-10-14：固定原生 LOTUS／Daft 图片交付普通接纳后补启动、关闭禁复用与两CLI证据错误优先级；105本地通过／14条件跳过，原六路径模型来源保持。见[接纳核查](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)。
+
+## 2026-10-14：Daft 本地 CLIP 原生批次后端资格
+
+- 从 `58462a0d` 在独立 `feat/daft-native-image-clip` 工作树实现 native RGB decode／stateful batch UDF；
+  复用 CLIP 计算与共享结果类型，保持512维FP32归一化、稳定ID及完整结果消费。
+- 真实 Daft0.7.21 CPU 替身本机／匹配Linux各13项、相关旧图像39项通过，设计／代码均由独立代理审核；
+  原模型重载假设失败保留，可选计时借用原模块验证，未复制平台。
+- [接口与证据](experiments/results/diagnostics/daft_clip_native_20261014/README.md)交接给 LOTUS 原生图像负责人；
+  公共 CLI／注册和上游实现未改。源码传输曾两次被拒，补充明确授权后成功；首GPU清理检查失败保留，
+  修订验证器后batch32的9图四次完整向量逐位同Direct、398参数／2buffers及CLI／lease退出核验通过。小样本不提供尾分位。
+
+
+
+## 2026-10-14 原生 LOTUS CLIP 图片检索接入
+
+在独立职责分支上从 `integration/baselines@58462a0d` 接入公开 RM 批次协议和原生
+`sem_index`／`sem_search`。图片使用显式 RGB PIL，避免固定版本路径 list 走文本分支。
+未修改作者源码或现有图像 owner 工作树。六条路径12／64／256图及已有索引新进程查询通过，
+24个模型CLI保存72图片／24文本完整查询；完整矩阵与原生top10核对。独立Daft交付`adf8ea10`
+在本分支接纳为`8959175d`，三份源码blob保持。首次资产预检和后续JUnit计数判定失败均保留，
+后续资格共用原预算，逐次自有物理退出与lease释放核验。模型／完整输出、独立审核与计时统一见
+[本轮记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+运行代码用实际摘要记录，原件／失败保留、只提交精简公开证据；不合并 main。
+
 ## 2026-10-14：实现默认关闭的HSE设备组选择
 
 - 基于A独立完成actor/group逻辑容量、确认后pixels速率反馈与FIFO目的地选择，复用EndpointSnapshot和LeastWork；默认源先行／minfree、CLI、source及原生baseline保持。

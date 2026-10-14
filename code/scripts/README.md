@@ -1,5 +1,30 @@
 # SemLoom 脚本入口
 
+## LOTUS 原生图像检索
+
+`experiments/qualify_lotus_clip.py`先对固定ST／cached CLIP检查实际参数、PIL预处理与数值资格；
+`experiments/run_lotus_image_retrieval.py`通过原生LOTUS建索引与查询。两者要求仓库外的新输出目录，
+保留失败，不自动重试。模型、manifest与身份文件来自本机运行配置；所有图库输入为真实RGB PIL。
+
+```sh
+PYTHONPATH=code python code/scripts/experiments/qualify_lotus_clip.py \
+  --stock-model "$ST_CLIP_MODEL" --model "$CLIP_MODEL" --manifest "$IMAGE_MANIFEST" \
+  --image-root "$IMAGE_ROOT" --output-dir "$QUALIFICATION_DIR" --rows 12 --device cuda
+PYTHONPATH=code python code/scripts/experiments/run_lotus_image_retrieval.py \
+  --stock-model "$ST_CLIP_MODEL" --model "$CLIP_MODEL" --manifest "$IMAGE_MANIFEST" \
+  --image-root "$IMAGE_ROOT" --embedding-identity "$QUALIFICATION_DIR/identity.json" \
+  --arm direct --rows 64 --k 10 --index-dir "$INDEX_DIR" --output-dir "$RUN_DIR"
+```
+
+`--arm stock/direct/semloom_static/semloom_hse/ray_data/daft_native`保持LOTUS索引与结果组装。
+Daft臂惰性加载独立后端，要求固定0.7.21 native runner；RGB PIL由RM无损编码为PNG，
+原生Daft解码及stateful batch UDF拥有执行与模型生命周期。它不经过HTTP／SemLoom Core。
+Ray路径还需独立`--ray-temp-dir`；`--arm external --executor-factory module:factory --executor-config`
+接纳独立后端的`embed_batch`接口。`--mode index/search/combined`分别保存建库、已有索引和组合耗时；
+在线默认使用图库首张PIL查询，可用`--query-doc-id`选多张，`--text-query bird`只触发文本编码。
+输入/完整输出、模型启动、原生图冷加载与证据写出口径见[LOTUS说明](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
+固定来源及完整12／64／256图和已有索引资格见[本轮记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+
 ## 固定 JPEG 文件源的 CLIP 比较
 
 [build_image_file_manifest.py](data/build_image_file_manifest.py)复用 COCO importer 的文件选择和行 ID，
