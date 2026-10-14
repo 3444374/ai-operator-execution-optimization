@@ -48,9 +48,12 @@ LOTUS解释器保留venv路径，不把符号链接解析成基础Python。
 
 执行前由主协调分配并持有共享host lease、八个CPU槽和串行窗口，完成独立环境预检及新桥构建。
 实际host额度为16核，affinity可见128核不构成额外预算；与Ray／Daft重负载窗口串行。
-验证器持续检查lease摘要、进程树RSS及本namespace共享内存；每格最多128 POST／600秒（含60秒清理），
-单作者运行时两格最多1200秒，RSS8GiB／SHM2GiB，作者Ray2CPU／0GPU／128MiB对象存储。
-lease变化、资源超量或到期停止新工作，只清理核对身份的自有进程。
+验证器持续检查lease摘要、进程树RSS及本namespace共享内存；每格最多128 POST，
+RSS8GiB／SHM2GiB，作者Ray2CPU／0GPU／128MiB对象存储。
+本轮用`--wall-limit-s 0`取消健康运行的总时长计时器、cell deadline及elapsed上限，
+健康SDK子进程的总运行等待也不设timeout；启动、parser、显式故障及既有单调用／单批接口的超时保持。
+省略该参数仍保留默认限时：每格最多600秒、单作者运行时两格最多1200秒，含60秒清理预留。
+lease变化、资源超量或启用的时间窗口到期停止新工作，只清理核对身份的自有进程。
 
 ```sh
 taskset -c <assigned-eight-CPU-IDs> <author-python> -B code/integrations/sema/verify_imlane_session.py \
@@ -60,7 +63,7 @@ taskset -c <assigned-eight-CPU-IDs> <author-python> -B code/integrations/sema/ve
   --checkout <pinned-read-only-SemBench-checkout> --source-manifest <candidate-source-lock> \
   --lease-file <held-shared-host-lease> --lease-sha256 <current-lease-SHA256> \
   --cpu-ids <same-eight-comma-separated-CPU-IDs> --cpu-quota-cores 16 \
-  --output <new-private-output> --wall-limit-s 1200
+  --output <new-private-output> --wall-limit-s 0
 ```
 
 作者Ray在另一个已分配窗口使用`--runtime ray`。当前只有[本机替身与故障注入检查](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)，

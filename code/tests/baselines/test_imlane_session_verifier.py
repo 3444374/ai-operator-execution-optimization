@@ -154,7 +154,7 @@ class SessionVerifierTests(unittest.TestCase):
                 output=self.root/reason;output.mkdir()
                 stop=threading.Event()
                 args=SimpleNamespace(output=output,scopes=[],stop_budget=verifier.tools.StopBudget(stop),
-                    resource_errors=[],cell_deadline=time.monotonic()+100,
+                    resource_errors=[],cell_deadline=None,
                     check_lease=Mock(side_effect=RuntimeError('lease changed') if reason=='lease' else None))
                 if reason=='deadline':args.cell_deadline=time.monotonic()-1
                 helper=SimpleNamespace(resources=Mock(return_value={'own':3*1024**3} if reason=='shm' else {}))
@@ -168,6 +168,66 @@ class SessionVerifierTests(unittest.TestCase):
                 self.assertEqual(len(args.resource_errors),1)
                 self.assertIn('lease changed' if reason=='lease' else 'deadline' if reason=='deadline' else 'RSS/SHM',
                               args.resource_errors[0]['error'])
+
+    def test_zero_wall_limit_disables_cell_deadline_and_elapsed_bound_only(self):
+        for limit,expected_pass in ((0,True),(1200,False)):
+            with self.subTest(limit=limit):
+                args=SimpleNamespace(scopes=[],wall_limit_s=limit,check_lease=Mock(),
+                    stop_budget=verifier.tools.StopBudget(threading.Event()))
+                fixture=SimpleNamespace(posts=12,allowance=SimpleNamespace(reserved=12,violations=[]),journal_errors=[],
+                    connections=set(),closed_connections=set(),close=Mock())
+                report={'cells':[]}
+                def sdk(_args,_scope,case):return {'fixture':{'actual_posts':28 if case=='healthy' else 4}}
+                with patch.object(verifier.tools,'Fixture',return_value=fixture),patch.object(verifier,'SessionScope'), \
+                     patch.object(verifier,'healthy_batches',return_value={'passed':True}), \
+                     patch.object(verifier,'fault_batch',return_value={'passed':True}), \
+                     patch.object(verifier,'check_workers',return_value={'passed':True}), \
+                     patch.object(verifier,'run_sdk',side_effect=sdk),patch.object(verifier.time,'monotonic',side_effect=[0,2000]):
+                    result=verifier.run_cell(args,'cpython',True,None,report)
+                self.assertEqual(result['passed'],expected_pass)
+                self.assertEqual(args.cell_deadline,None if limit==0 else 540)
+                self.assertEqual(result['wall_limit_s'],0 if limit==0 else 600)
+                self.assertEqual(result['elapsed_seconds'],2000)
+                self.assertEqual(result['post_limit'],128)
+                fixture.close.assert_called_once()
+
+    def test_sdk_zero_wall_limit_removes_healthy_wait_timeout_but_keeps_parser_limit(self):
+        for limit,case,expected in ((0,'healthy',None),(1200,'healthy',120),(0,'parser',120)):
+            with self.subTest(limit=limit,case=case):
+                root=self.root/('sdk-wait-'+str(limit)+'-'+case);root.mkdir()
+                output=root/('sdk-'+case);output.mkdir()
+                result=dict(passed=True,runtime='cpython',reuse_bridge=True,models=0,gpu=0,
+                    fixture=dict(actual_posts=28 if case=='healthy' else 4,reserved=28 if case=='healthy' else 4,violations=[]),
+                    source=dict(candidate_commit='0'*40))
+                (output/'summary.json').write_text(json.dumps(result))
+                process=SimpleNamespace(wait=Mock(return_value=0));writer=SimpleNamespace(join=Mock())
+                config=IMLaneCallConfig('cpython',str(root/'bridge.json'),123,456,str(root/'build.json'),reuse_bridge=True)
+                scope=SimpleNamespace(root=root,config=config,env={},children=[],mode='cpython',track_root=Mock(),
+                    helper=SimpleNamespace(spawn=Mock(return_value=(process,writer))))
+                args=SimpleNamespace(wall_limit_s=limit,lotus_python=self.root/'venv/bin/python',tokenizer=self.root/'tokenizer',
+                    checkout=self.root/'checkout',source_manifest=self.root/'source-lock.json',candidate_commit='0'*40)
+                self.assertEqual(verifier.run_sdk(args,scope,case),result)
+                process.wait.assert_called_once_with(timeout=expected)
+                scope.track_root.assert_called_once_with(process)
+
+    def test_zero_wall_limit_does_not_arm_total_timer_or_fail_on_elapsed_time(self):
+        for limit,expected_pass in ((0,True),(1200,False)):
+            with self.subTest(limit=limit):
+                args=SimpleNamespace(output=self.root/('main-wall-'+str(limit)),runtime='cpython',path_mode='both',
+                    candidate_commit='0'*40,wall_limit_s=limit,cpu_quota_cores=16,check_lease=Mock(),
+                    source_manifest=self.root/'source-lock.json',bridge_binary=self.root/'bridge')
+                with patch.object(verifier,'parse_args',return_value=args), \
+                     patch.object(verifier,'verify_inputs',return_value=(None,{},list(range(8)))), \
+                     patch.object(verifier,'run_cell',return_value={'passed':True}), \
+                     patch.object(verifier.tools,'digest',return_value='0'*64), \
+                     patch.object(verifier.signal,'signal'),patch.object(verifier.signal,'setitimer') as timer, \
+                     patch.object(verifier.time,'monotonic',side_effect=[0,2000]),patch('builtins.print'):
+                    code=verifier.main([])
+                self.assertEqual(code,0 if expected_pass else 1)
+                self.assertEqual([call.args[1] for call in timer.call_args_list],[0] if limit==0 else [1140,0])
+                summary=json.loads((args.output/'summary.json').read_text())
+                self.assertEqual(summary['passed'],expected_pass)
+                self.assertEqual(summary['elapsed_seconds'],2000)
 
     def test_changed_or_released_shared_lease_rejects_before_author_preflight(self):
         for exists in (False,True):
@@ -194,15 +254,17 @@ class SessionVerifierTests(unittest.TestCase):
 
     def test_sdk_manifest_requirements_are_checked_before_any_author_start(self):
         lease=self.root/'active-lease.json';lease.write_text('{"owner":"this-window"}')
-        args=SimpleNamespace(execute=True,cpu_ids='0,1,2,3,4,5,6,7',cpu_quota_cores=16,wall_limit_s=1200,
-            lease_sha256=hashlib.sha256(lease.read_bytes()).hexdigest())
-        for name in ('author_root','bridge_binary','lotus_python','tokenizer','checkout','source_manifest','output','lease_file'):
-            setattr(args,name,lease)
-        with patch.object(verifier.sys,'platform','linux'),patch.object(verifier.os,'sched_getaffinity',return_value=set(range(8)),create=True), \
-             patch.object(verifier,'verify_source_manifest',side_effect=ValueError('SDK child source manifest is incomplete')) as sdk_source, \
-             patch.object(verifier,'verify_checkout') as checkout,patch.object(verifier,'SessionScope') as scope:
-            with self.assertRaisesRegex(ValueError,'SDK child source manifest is incomplete'):verifier.verify_inputs(args)
-        sdk_source.assert_called_once_with(lease.resolve());checkout.assert_not_called();scope.assert_not_called()
+        for limit in (0,1200):
+            args=SimpleNamespace(execute=True,cpu_ids='0,1,2,3,4,5,6,7',cpu_quota_cores=16,wall_limit_s=limit,
+                lease_sha256=hashlib.sha256(lease.read_bytes()).hexdigest())
+            for name in ('author_root','bridge_binary','lotus_python','tokenizer','checkout','source_manifest','output','lease_file'):
+                setattr(args,name,lease)
+            with self.subTest(limit=limit),patch.object(verifier.sys,'platform','linux'), \
+                 patch.object(verifier.os,'sched_getaffinity',return_value=set(range(8)),create=True), \
+                 patch.object(verifier,'verify_source_manifest',side_effect=ValueError('SDK child source manifest is incomplete')) as sdk_source, \
+                 patch.object(verifier,'verify_checkout') as checkout,patch.object(verifier,'SessionScope') as scope:
+                with self.assertRaisesRegex(ValueError,'SDK child source manifest is incomplete'):verifier.verify_inputs(args)
+            sdk_source.assert_called_once_with(lease.resolve());checkout.assert_not_called();scope.assert_not_called()
 
     def test_venv_python_symlink_keeps_its_selected_environment_path(self):
         venv=self.root/'selected-venv/bin';venv.mkdir(parents=True)

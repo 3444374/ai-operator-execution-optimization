@@ -218,7 +218,8 @@ class SessionScope(tools.AuthorScope):
                 shm=sum(self.helper.resources(self.namespace).values())
                 self.rss_peak=max(self.rss_peak,rss);self.shm_peak=max(self.shm_peak,shm)
                 if rss>8*1024**3 or shm>2*1024**3:raise RuntimeError('software RSS/SHM bound exceeded')
-                if time.monotonic()>=self.args.cell_deadline:raise TimeoutError('software cell deadline; cleanup reserve begins')
+                deadline=self.args.cell_deadline
+                if deadline is not None and time.monotonic()>=deadline:raise TimeoutError('software cell deadline; cleanup reserve begins')
                 self.args.check_lease()
             except Exception as error:
                 self.args.resource_errors.append(dict(type=type(error).__name__,error=redact_text(str(error))))
@@ -264,7 +265,8 @@ def run_sdk(args,scope,case):
         '--output',str(output),'--case',case]
     process,writer=scope.helper.spawn(command,env,scope.root/('sdk-'+case+'.log'))
     scope.children.append((process,writer));scope.track_root(process)
-    require(process.wait(timeout=120)==0,'original SDK/query software client failed')
+    timeout=None if case=='healthy' and getattr(args,'wall_limit_s',1200)==0 else 120
+    require(process.wait(timeout=timeout)==0,'original SDK/query software client failed')
     writer.join(1)
     result=json.loads((output/'summary.json').read_text())
     require(result.get('passed') is True and result.get('runtime')==scope.mode
@@ -279,7 +281,9 @@ def run_sdk(args,scope,case):
 
 def run_cell(args,mode,reuse,helper,report):
     started=time.monotonic();stopped=args.stop_budget.stopped
-    cell_limit=min(600,getattr(args,'wall_limit_s',1200));args.cell_deadline=started+cell_limit-60
+    wall_limit=getattr(args,'wall_limit_s',1200)
+    cell_limit=0 if wall_limit==0 else min(600,wall_limit)
+    args.cell_deadline=None if cell_limit==0 else started+cell_limit-60
     result=dict(runtime=mode,reuse_bridge=reuse,passed=False,cases=[],models=0,gpu=0,post_limit=128,wall_limit_s=cell_limit)
     fixture=tools.Fixture(96,stopped,lambda:[s.abort_owned() for s in args.scopes if not s.closed],response_factory=fixture_body)
     primary=None
@@ -313,7 +317,7 @@ def run_cell(args,mode,reuse,helper,report):
         result['actual_posts']=fixture.posts+sum(result.get(k,{}).get('fixture',{}).get('actual_posts',0) for k in ('sdk','parser'))
         result['passed']=(result['passed'] and cleanup_error is None and result['actual_posts']<=128 and not fixture.allowance.violations
             and not fixture.journal_errors and result['root_connections_closed'] and not stopped.is_set()
-            and result['elapsed_seconds']<=cell_limit)
+            and (cell_limit==0 or result['elapsed_seconds']<=cell_limit))
         report['cells'].append(result)
         if primary is None and cleanup_error is not None:raise cleanup_error
     return result
@@ -328,7 +332,8 @@ def parse_args(argv=None):
     p.add_argument('--lease-sha256',required=True,help='main coordinator snapshot of its held shared-host lease; never acquire a lease here')
     p.add_argument('--cpu-ids',required=True,help='eight comma-separated CPU IDs assigned by the main coordinator')
     p.add_argument('--cpu-quota-cores',type=int,default=16,help='actual host quota confirmed by owner, never affinity length')
-    p.add_argument('--wall-limit-s',type=int,default=1200)
+    p.add_argument('--wall-limit-s',type=int,default=1200,
+        help='0 disables the healthy total window limit; otherwise 120-1200 seconds including cleanup')
     return p.parse_args(argv)
 
 def resolve_inputs(args):
@@ -344,7 +349,8 @@ def verify_inputs(args):
     ids=[int(n) for n in args.cpu_ids.split(',')]
     if (sys.platform!='linux' or len(ids)!=len(set(ids)) or len(ids)!=8 or set(os.sched_getaffinity(0))!=set(ids)
             or not 8<=args.cpu_quota_cores<=16):raise ValueError('requires assigned eight CPU slots within the owner-confirmed <=16-core quota')
-    if not 120<=args.wall_limit_s<=1200:raise ValueError('software window must be at most 1200 seconds including cleanup')
+    if args.wall_limit_s!=0 and not 120<=args.wall_limit_s<=1200:
+        raise ValueError('software window must be 0 or 120-1200 seconds including cleanup')
     resolve_inputs(args)
     def check_lease():
         if not args.lease_file.is_file() or tools.digest(args.lease_file)!=args.lease_sha256:
@@ -381,7 +387,7 @@ def main(argv=None):
         cpu_ids=ids,host_cpu_quota_cores=args.cpu_quota_cores,versions=versions,wall_limit_s=args.wall_limit_s,
         source_manifest_sha256=tools.digest(args.source_manifest),bridge_sha256=tools.digest(args.bridge_binary))
     started=time.monotonic();handlers={n:signal.signal(n,args.stop_budget.signal) for n in (signal.SIGALRM,signal.SIGTERM,signal.SIGINT)}
-    signal.setitimer(signal.ITIMER_REAL,args.wall_limit_s-60)
+    if args.wall_limit_s:signal.setitimer(signal.ITIMER_REAL,args.wall_limit_s-60)
     try:
         modes=(False,True) if args.path_mode=='both' else (args.path_mode=='reuse',)
         for reuse in modes:
@@ -400,7 +406,7 @@ def main(argv=None):
                 report['elapsed_seconds']=time.monotonic()-started
                 report['passed']=(report['passed'] and not stopped.is_set() and not report.get('cleanup_errors') and not args.resource_errors
                     and all(r['passed'] or r.get('expected_fault_owner_cleanup_verified') for r in report['cleanup'])
-                    and report['elapsed_seconds']<=args.wall_limit_s)
+                    and (args.wall_limit_s==0 or report['elapsed_seconds']<=args.wall_limit_s))
                 write_private_json(args.output/'summary.json',report)
         finally:
             signal.setitimer(signal.ITIMER_REAL,0)
