@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：公共计时上接续固定Ray Data低CPU检查
+
+- 从`58e15328`普通合入`ed1867eb`，生产只追加所选Data的两行CPU检查；原计时、runtime／EOF和图像错误修补保持，main及模型运行版本不变。
+- [定向验收](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-completion-integration)8模块98通过／13明确跳过；三份源码包与结果包摘要、各181清单成员及公开158成员离线复算通过。
+- 三份实库来源、7尝试5通过及两次失败原件保持；两轴无必修，未新增服务器、模型或GPU执行。原实库资格不改标为公共计时整合版。
+
 ## 2026-10-14：集成可选详细计时及关联runtime修复
 
 - 从`58462a0d`普通合入固定`bbbd8a1b`及其`ea6c9184`依赖，默认关闭、作者执行图／并发／预算与原错误优先级保持；main和活动模型源码不变。
@@ -24,6 +30,13 @@
 - 固定`45da0a54`完成[独立A-only实际资格](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)：Ray5项＋真实Daft/Arrow数据适配1项通过、0跳过，179 Git输入核验；其Ray输送为替身，CPU模拟model不当CUDA完成证明。
 - 本地63项62通过／1固定依赖跳过另列；实际复用两个driver、无安装／模型／GPU／HTTP。12fixture actor、27自有子进程与controller出生身份退出确认，共同lease释放，原件及预期错误通知保留。
 - 不改native测量源码、main文档候选或新Daft/Ray owner的公共runtime区域；仅补受影响正确性，不重做历史矩阵或新增性能结论。
+## 2026-10-14：补验原生低CPU配置与实库EOF
+
+- 接续`ea6c9184`，五个目标用例按各自固定源码通过；三轮14逻辑／28两跳localhost POST，完整响应与身份关联通过，模型／GPU／安装0。
+- 首次Ray Iterable工具断言失败及CPU1 Data零HTTP超时保留；后者原非clean与消费线程未确认退出保持，controller最终清理分别记录。
+- 仅为所选Data增加`num_threads > ray_actors`两行项目校验，原生图、UDF、kernel、调度和方法不变；Core／SemLoom CPU1保留，CPU2／A1实库图与12项本地定向检查通过。
+- 三轮分别73.446／112.521／45.417秒；40／45／17登记身份全部退出、0强制清理、lease释放，预留20／发送14／6未发送预留未退款。
+- [同题主报告与公开原件](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)记录完整源码与测试修订；旧模型性能、PG及公共计时来源分别解释。
 
 ## 2026-10-14：接续Daft／Ray公共启动与EOF关闭修补
 

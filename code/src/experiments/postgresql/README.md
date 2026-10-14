@@ -38,6 +38,8 @@ LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查
 Daft在Ray初始化前显式设置Native runner，Ray入口仍需要新的短私有暂存目录；所有HTTP结果交回原方法。
 准备调用的Ray连接只核地址、CPU、object-store字节和导入异步批次数；
 Ray Core与SemLoom不借未选用的Ray Data参数拒绝小容量配置，准备调用也不套用SQL reader所需的额外CPU。
+所选Ray Data仍须满足`num_threads > ray_actors`，供原SDK预处理／后处理task使用；
+CPU1／A1在导入、修改异步批次环境和runtime启动前拒绝，Core与SemLoom的CPU1继续允许。
 Ray Data仍在启动前核对自己的A×B×R行数容量，原SQL reader的`QueryConfig`检查保持。
 
 `native_adapter_query.py`提供外部有限输入的共同固定Map参照，`supplier_adapter_query.py`装配已交付的供应商方法。

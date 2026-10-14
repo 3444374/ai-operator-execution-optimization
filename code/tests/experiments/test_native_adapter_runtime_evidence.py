@@ -22,7 +22,7 @@ class NativeAdapterRuntimeEvidenceTests(unittest.TestCase):
         cases = (
             ('supplier-native-ray', NativeGraphOptions(concurrency=1, num_threads=1, ray_batch_rows=256), None),
             ('fixed-map-semloom', NativeGraphOptions(concurrency=1, num_threads=1, ray_batch_rows=256), physical),
-            ('fixed-map-native-ray', NativeGraphOptions(concurrency=1, num_threads=1, ray_actors=1,
+            ('fixed-map-native-ray', NativeGraphOptions(concurrency=1, num_threads=2, ray_actors=1,
                 ray_async_batches_per_actor=1, source_blocks=2), None),
             ('fixed-map-native-ray', NativeGraphOptions(concurrency=4, num_threads=8, source_blocks=2), None),
         )
@@ -56,6 +56,20 @@ class NativeAdapterRuntimeEvidenceTests(unittest.TestCase):
                 with ExitStack() as stack, self.assertRaisesRegex(ValueError, 'batch request envelope'):
                     _runtime(stack, 'fixed-map-native-ray', options, None, None, None)
                 runtime.assert_not_called()
+                self.assertEqual(os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY'], '4')
+
+    def test_ray_data_without_spare_cpu_is_rejected_before_import_environment_or_runtime(self):
+        for options in (NativeGraphOptions(concurrency=1, num_threads=1, ray_actors=1,
+                            ray_async_batches_per_actor=1, ray_batch_rows=1, source_blocks=2),
+                        NativeGraphOptions(concurrency=4, num_threads=2)):
+            with self.subTest(options=options), mock.patch.dict(os.environ,
+                    {'RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY': '4'}), \
+                    mock.patch('src.experiments.postgresql.native_adapter_query.native_ray_runtime') as runtime, \
+                    mock.patch('builtins.__import__') as imports:
+                with ExitStack() as stack, self.assertRaisesRegex(ValueError, 'spare CPU slot'):
+                    _runtime(stack, 'fixed-map-native-ray', options, None, None, None)
+                runtime.assert_not_called()
+                imports.assert_not_called()
                 self.assertEqual(os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY'], '4')
 
     def test_invalid_addresses_are_rejected_before_runtime_start(self):

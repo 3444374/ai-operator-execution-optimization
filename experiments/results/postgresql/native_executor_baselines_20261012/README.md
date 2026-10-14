@@ -1,7 +1,7 @@
 # 三种原方法的原生执行接入
 
 <a id="native-adapter-completion"></a>
-## 公共Ray启动与正常EOF关闭修补
+## 公共Ray启动、正常EOF关闭与实库补验
 
 2026-10-14从实际远端`integration/baselines@1b90c1ea39e12c9fff2e2265aae003e25aa9d618`接续。
 该版本已包含`0be63a19`及整合`d1f5ef74`，Daft／Ray图、LOTUS SDK与公共native查询入口
@@ -9,7 +9,7 @@
 只读审查及零模型复现另发现两处公共适配缺口：
 
 - 准备调用的Ray启动恒使用SQL reader的`QueryConfig`，误拒绝Ray Core／SemLoom的C1、CPU1，
-  也误拒绝没有SQL reader的单CPU准备调用。现用只含地址、CPU、object-store和导入异步批次数的
+  也将SQL reader校验带到准备调用。现用只含地址、CPU、object-store和导入异步批次数的
   `NativeRayRuntimeConfig`；所选Ray Data仍在启动前核A×B×R≤C，原SQL reader检查保持。
 - 全部结果已交付后，厂商生成器正常EOF的内部关闭异常登记为`graph_consume`，旧复用判定却只识别
   显式`graph_close`。现任意worker错误均保留未确认责任，下一批零图进入；原异常和关闭诊断继续保留，
@@ -21,12 +21,65 @@ runtime专项9项、EOF责任专项24项与最终组合重叠，不相加。两�
 12个原生图／HTTP kernel／SDK／查询runtime符号或文件与旧交付摘要一致；
 [机器核验](native-adapter-completion-verification.json)及[脱敏检查原件](native-adapter-completion-evidence.tar.gz)
 保留修前失败、修后结果、全部成员摘要和独立审核。本机Python3.12.6、aiohttp3.14.1、httpx0.28.1；
-未安装依赖，低CPU新配置的实际厂商图执行及实库EOF注入仍未覆盖。
+该本地阶段未安装依赖；当时低CPU新配置的实际厂商图执行及实库EOF注入未覆盖，补验见下文。
 既有[5项实库活动检查](#native-http-activity)继续绑定`81a38e52`及120localhost POST，
 [单卡原Q1／Q2八查询证据](https://github.com/3444374/ai-operator-execution-optimization/commit/4f392c3652803c7786e56245c0bbc18a3e6e9bd6)
 仍绑定模型owner的原来源：8480行请求／SDK响应关联通过，原解析重放零差异，Ray Q1／Q2峰值4。
 既有实库与模型证据仅只读复核；本轮另做本地替身和localhost HTTP回归，
-未新增远端服务器、厂商图、模型或GPU执行，也没有新性能结论。
+该本地阶段未新增远端服务器、厂商图、模型或GPU执行，也没有新性能结论。
+
+### 低CPU与实库EOF补验
+
+随后按三个独立时钟、账本和源码包执行有限localhost软件检查，使用既有Python3.12.3、
+Ray2.56.1、Daft0.7.21、Arrow24.0.0；没有依赖安装、模型或GPU启动。
+源码基于`ea6c9184a1d30639a87432f32381bab40067353e`，第三包另含下述两行项目适配校验。
+每包和测试修订的完整SHA-256见[机器记录](native-adapter-completion-sdk-verification.json)，
+原日志、完整响应、账本只读导出、失败、资源采样和复算入口见[公开原件](native-adapter-completion-sdk-evidence.tar.gz)。
+
+| 独立窗口 | 实际用例结果 | 逻辑／两跳物理POST | 秒／采样合计RSS峰值字节 | 最终登记进程身份 |
+|---|---|---:|---:|---:|
+| 首次 | Core CPU1、SemLoom Arrow CPU1、Daft EOF通过；Ray EOF工具断言失败，Data CPU1未启动 | 8／16 | 73.446／2798657536 | 40全部退出 |
+| 受影响补验 | Ray EOF通过；Data CPU1在HTTP前超时 | 4／8 | 112.521／3751063552 | 45全部退出 |
+| CPU声明修补后 | Data CPU1提前拒绝；CPU2／A1／B1／R1／source blocks2通过 | 2／4 | 45.417／2805182464 | 17全部退出 |
+
+七次用例尝试为五次通过、一次断言失败、一次错误，0跳过。五个目标用例按各自固定来源通过，
+不称三个源码包为同一完整通过轮。全部14逻辑／14代理／14fixture／28物理POST，
+429／500状态、二进制完整正文、重复header顺序、HTTP版本及call_id／row_id关联均通过。
+这里的重复header检查针对响应；请求侧X-Input在既有native映射中仅保留最后值，
+SemLoom使用自身默认header，不增加请求重复header保留资格。
+三账本共预留20、实际发送14，失败单位中6个未发送额度保持已关闭预留，未退款或改写旧账本。
+每窗口持有同一共享lease，quota16、固定8核亲和和4GiB采样RSS停止条件；最终0强制清理、
+无自有PID／出生身份残留、lease已释放。采样合计RSS不表示PSS或未采样瞬时内存上界。
+
+首次Ray工具假定`Dataset.iter_rows()`的公开Iterable本身有close；该版本实际须由`iter()`取得厂商生成器。
+工具修正后在自然EOF、实际生成器关闭后注入一次错误；Daft亦在实际iterator关闭后注入。
+两路径均先交付完整结果，再保留原关闭错误和不可复用状态；同一执行器下一批零图／零HTTP，
+另建执行器的正常两调用通过。厂商图、UDF、HTTP kernel与原方法不变。
+
+Data CPU1原日志显示固定HTTP actor占1CPU，原SDK预处理task仍需1CPU，因而零HTTP超时。
+该失败的`clean=False`、消费线程未确认停止及`consumer_stop RuntimeError`原样保留；
+controller退出后的45身份清理是另一项事实。项目只在`validate_backend('ray-data')`增加
+`num_threads > ray_actors`，在导入、环境修改和runtime启动前拒绝这类声明。
+Core／SemLoom CPU1保留；CPU2正向实际图通过，另有12项定向本地检查通过、0跳过。
+第三包179份生产源码与EA字节一致，另1份为这两行候选校验；12个原生图／kernel符号、
+4份原支持文件及剔除该校验方法后的模块AST保持。独立源码、计划与结果审查无待修项。
+
+CPU2查询末尾CPU2已全额可用，仍有内部actor存活，`object_store_memory`可用额度比声明少34,297字节；
+driver关闭后的17身份全部退出，不将查询末尾的CPU释放说成所有厂商资源已关闭。
+本轮没有新PG载体、模型质量、性能或高并发结论；现有A2／B2／R1／blocks2、stage max_concurrency1
+工作点及旧HTTP峰值4继续按原证据解释，模型冷／热配对由原模型owner负责。
+
+<a id="native-completion-integration"></a>
+### 公共计时整合后的定向验收
+
+从`integration/baselines@58e1532888ad7da11bf99854803dac1d94a1c611`普通合入
+`ed1867eb696848b68c571d77bd5caf07768ca86d`，只在生产适配层追加上述两行所选Ray Data检查。
+现有默认关闭计时、runtime／EOF及图像错误优先级修补保持；不修改main或模型owner的运行源码。
+整合版8模块Ran111，98通过／13缺实际Ray或未启用实库检查而跳过，0失败；覆盖低CPU启动拒绝、
+Core／SemLoom CPU1、原图参数、EOF不可复用及计时开关契约。该本地组合与此前专项存在重叠，不相加。
+独立读取三个源码包和三个结果包核对原摘要；各包181份清单逐SHA通过，第三包仅候选适配两行不同。
+公开158成员的完整响应、身份与账本离线复算和机器记录逐字段一致，三份来源与7次尝试继续分列。
+两轴独立审查无必修项；整合版未复跑服务器、模型或GPU，不将原`ea6c9184`及候选的实库资格改标为计时整合版。
 
 <a id="native-http-activity"></a>
 ## 原生参数与HTTP活动核查
