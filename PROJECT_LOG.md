@@ -4,7 +4,7 @@
 
 - 普通合入固定四提交及原作者／SDK证据；222软件POST、六项Ray原始nonclean和305进程出生身份退出核对，默认桥复用继续关闭。
 - 整合独立审查复现默认桥启动／close竞态，改为关闭锁内取得pending和子进程快照；修前失败／修后通过，unknown拒绝复用及远端停止未知保持。
-- [整合回归与资格边界](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#integration-close-snapshot)：210项中194通过、16跳过、0失败，新增修复仅有本地资格；非IMLane生产保持，当前固定模型源码不变，新增服务器／模型／GPU执行0。
+- [整合回归与资格边界](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#integration-close-snapshot)：unittest Ran210，195测试通过、15测试跳过，另1个C++类级跳过，0失败；新增修复仅有本地资格。非IMLane生产保持，当前固定模型源码不变，新增服务器／模型／GPU执行0。
 
 ## 2026-10-14：完成固定Daft／Ray HTTP软件补验
 
