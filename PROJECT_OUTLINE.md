@@ -12,7 +12,12 @@
 
 已结束的小轮、两次补测及较早接线检查以[项目日志](PROJECT_LOG.md)和各原报告保存历史；缺7项／缺2项及早期128行拒绝不再作为当前待办。PG、其他前端及其余研究状态仍按下文各自来源解释。
 
-更新时间：2026-10-13
+图像后续按[已有三条路径](docs/research/研究定位.md#existing-image-execution-paths)与
+[单GPU关键路径诊断](experiments/plans/数据组织.md#single-gpu-image-critical-path)复用现成batch/流水及强静态控制。
+近期只围绕有证据的表示/驻留、阶段work和后继消费者联合选择；多卡、跨卡搬运、拓扑执行组与训练按真实需要决定。
+本次是文档收敛，没有新增模型实验或实现资格。
+
+更新时间：2026-10-14
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。

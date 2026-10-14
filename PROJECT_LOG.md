@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-14：收敛已有图像路径与后续表示研究
+
+- [研究定位](docs/research/研究定位.md#existing-image-execution-paths)区分已构造HTTP payload、PG增量单图及已有多图batch/常驻worker/ObjectRef静态/HSE流水；核对`8862c813`与stage`5a785142`四个关键文件同blob，独立研究原型的host表示复用不扩称GPU驻留或全物理内存计费。
+- [单GPU诊断顺序](experiments/plans/数据组织.md#single-gpu-image-critical-path)复用现有两条SemLoom流水，以batch64与原生Ray Data/高效静态作强控制；保留历史运行SHA、消费者缓存负结果、完成同步与未知责任，不把utilization或synthetic ceiling差距当调度收益。
+- 研究范围保持表示/驻留、阶段work及后继消费者的有证据联合决策；多卡局部性/负载为候选，不将拓扑、跨卡搬运或训练设为必做里程碑。架构、方法依据和总纲仅同步相应边界。
+- [现有文献条目](docs/research/ai_operator_literature_inventory.md#heterogeneous-data-sources-20261003)重排近期核查优先级，补官方Cachew题录与PRESTO作者/arXiv资料；ACM本次403及阅读层次明确记录，未新增完成式精读或运行artifact。
+- 仅修改已有文档，不改生产源码、活跃worker或历史原件；本次新增测试、模型与GPU运行均0。
+
 ## 2026-10-13：集成文本预检最小实际SDK资格
 
 - 固定完整执行SHA`1afa8e325278077a846180997e2db75275631a89`，独立owner复用原driver与共同host lease，6项受影响SDK检查全部通过／0跳过，13localhost POST，模型／GPU0。

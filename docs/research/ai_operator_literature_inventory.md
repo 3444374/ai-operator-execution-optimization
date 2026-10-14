@@ -232,12 +232,19 @@ MaxWeight的原始定理本次未核验，不用于这次分析的保证性结�
 用于[异构需求分析](优化方法依据.md#heterogeneous-demand-supplement)。以下为题录和指定章节核查，
 没有新增完成式精读笔记、Top15排名或已运行baseline；正式版本与实际阅读版本分别记录。
 
+近期审查顺序为已有Ray Data streaming batch→cedar→Scanner→VStore→Plumber→IMLane，
+服务多卡候选先面对Preble；题录复用本清单已有条目，不由该顺序推定方法优势。
+Ray Data机制仍按arXiv:2501.12407v5解释，精读目录中的NSDI2027字样不证明正式发表。
+2026-10-14在下表补Cachew与PRESTO：仅新增题录/摘要及作者资料核对，不新增训练里程碑或运行artifact。
+
 | 正式题录 / 核对资料 | 阅读范围、覆盖与迁移限制 |
 |---|---|
 | [Scanner: Efficient Video Analysis at Scale，ACM TOG37(4)，Article138，2018；DOI10.1145/3197517.3201394](https://graphics.stanford.edu/papers/scanner/)；[arXiv:1805.07339v1](https://arxiv.org/html/1805.07339) | §3.2/§4.1–4.3/Appendix A：增量需求反推、读取/解码/计算粒度与关键帧依赖；数据相关sequence长度变化与每帧可变长列表分开，有状态warmup不能当逐元素等价 |
 | [VStore: A Data Store for Analytics on Large Videos，EuroSys2019，Article16，17页；DOI10.1145/3302424.3303971](https://thexsel.github.io/p/vstore/)；[arXiv:1810.01794v3](https://arxiv.org/html/1810.01794v3) | §2.2–2.4/§4.1–4.3：消费者保真度、存储配置与周期profile；未联合建模query cascade依赖，允许的采样/分辨率取舍不等于固定输入；[作者README](https://github.com/tiantuxu/VStore)说明配置推导等未公开，完整artifact运行待核对 |
 | [cedar: Optimized and Unified Machine Learning Input Data Pipelines，PVLDB18(2):488–502，2024；DOI10.14778/3705829.3705861](https://www.vldb.org/pvldb/vol18/p488-zhao.pdf)；[arXiv:2401.08895v4](https://arxiv.org/html/2401.08895v4) | 机制按v4的§3.2/§5.1/§6.2及Table3核对：缓存/重排/融合/offload组合、随机语义、表示膨胀及ASR不缓存反例；正式PDF本次获取超时，未重新逐字比对两个版本 |
 | [Plumber: Diagnosing and Removing Performance Bottlenecks in Machine Learning Data Pipelines，MLSys2022，Proceedings of Machine Learning and Systems4](https://proceedings.mlsys.org/paper_files/paper/2022/hash/d0e90e9a9310570dfa643aa3b2da6e89-Abstract.html)；[正式全文](https://proceedings.mlsys.org/paper_files/paper/2022/file/d0e90e9a9310570dfa643aa3b2da6e89-Paper.pdf) | §4.1–4.4/§5.1及Appendix：访问比例、CPU/I/O/物化画像及资源选择；网络/GPU传输观测当时列为扩展，RCNN预测高估不能当可达吞吐保证 |
+| [Cachew: Machine Learning Input Data Processing as a Service，USENIX ATC2022:689–706](https://www.usenix.org/conference/atc22/presentation/graur)；[正式PDF](https://www.usenix.org/system/files/atc22-graur.pdf) | 官方题录/摘要及PDF摘要核对：以worker/训练消费者指标选择数据处理资源与缓存，复用转换仍受确定性、存储和端到端成本约束；不等于本项目具备训练接入或GPU输入cache |
+| [Where Is My Training Bottleneck? Hidden Trade-Offs in Deep Learning Preprocessing Pipelines，SIGMOD2022，DOI10.1145/3514221.3517848](https://doi.org/10.1145/3514221.3517848)；[arXiv:2202.08679v3](https://arxiv.org/abs/2202.08679v3)；[作者PRESTO](https://github.com/cirquit/presto) | arXiv题录/摘要及作者README核对预处理/存储/吞吐取舍与profiling工具；会议身份来自作者出版题录，ACM页本次403未获取。未逐节新读全文或运行artifact，不把PRESTO当新的GPU调度器 |
 | [FlexGen: High-Throughput Generative Inference of Large Language Models with a Single GPU，ICML2023，PMLR202:31094–31116](https://proceedings.mlr.press/v202/sheng23a.html)；[正式全文](https://proceedings.mlr.press/v202/sheng23a/sheng23a.pdf) | §4核对weights/KV/activations的GPU/CPU/disk放置和移动；用来区分模型内部卸载与输入/派生缓存，不纳入当前外部HTTP动作 |
 
 工程资料单独解释为接口事实：
