@@ -1,12 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：固定融合源码`2afcaf47`的[LOTUS图像十格实际资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)完成；六路径64图组合及四格已有索引查询的完整数值、SDK与逐次物理退出核验通过，单次资格不提供性能排名或尾分位。
+
 2026-10-14：[原Movie任务完成期限兼容](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。
 
 2026-10-14：独立 LOTUS PNG 候选提供显式压缩等级与固定 HSE encoded 容量／块上限，默认保持。
 本地94项及服务器99项SDK检查通过；[两12图与四256图资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
 核对30个完整矩阵和24条原生查询，HSE未扩大固定容量；本次在`e50dd2b9`后可选接纳。
 融合版本地103项全通过；首轮四项fixture兼容失败和新增观测getter取消反例保留并修复，关闭逻辑保持。
-Direct／HSE共享编码成本改善只属`eab9f11a`单轮应用区间，启动另计；其他路径新参数的模型资格仍待验证。
+Direct／HSE共享编码成本改善只属`eab9f11a`单轮应用区间，启动另计；该轮未测的其他路径新参数资格由上方`2afcaf47`后续记录单独保存。
 
 2026-10-14：[文本 Ray Data 清理配对](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
 已用仓库函数复现默认／详细计时的异常差异并统一清理；保留实际 iterator、业务首错、全部已知清理次错及未确认责任。

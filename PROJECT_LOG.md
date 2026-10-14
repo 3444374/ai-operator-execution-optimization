@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：接纳最终融合源码图像资格
+
+固定`2afcaf47`的[LOTUS十格实际资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)接入原报告：151个SDK测试项及37个通过子测试、40条完整查询／46份完整矩阵与逐次退出证据均保留。
+只接纳精简结果与必要入口，完整NPZ／索引／命令／日志留在Git外；新文档提交不替代实测源码身份。
+旧失败和来源保持，单次资格不形成性能排名或可靠尾分位；本次整合不重跑模型，也不合main。
+
 ## 2026-10-14：完成基线收尾与证据精简
 
 接纳固定`1d`的Ray四图软件证据并封闭诊断`--case`绕过lease；原Movie空总期限兼容通过融合版本地检查，

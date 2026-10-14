@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-14：[融合源码LOTUS图像资格](diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)固定`2afcaf47`；十格完整原生查询、全量数值及物理清理核验通过，参数、SDK子测试口径与缺失观测见同题结果。仅支持该固定配置的单次资格；旧轮数值及失败身份保持。
+
 2026-10-14：[原Movie任务完成期限兼容](postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。
 
 2026-10-14：[LOTUS PNG 参数](diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)在`e50dd2b9`后可选接纳；

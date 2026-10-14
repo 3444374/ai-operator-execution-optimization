@@ -1,8 +1,8 @@
 # 原生 LOTUS CLIP 图像检索接入
 
-下方六路径资格绑定 `06332d4f`。PNG 编码候选 `eab9f11a` 已独立完成 Direct／HSE 最小模型资格，
-现已作为显式可选参数接纳；见[候选观测](#png-candidate)与[RM／CLI说明](../../../../code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
-原六路径证据保持自己的来源，新候选不增加其他后端的模型资格。
+当前融合源码 `2afcaf47` 的[十格实际资格](#final-integrated-qualification)已完成，绑定六路径64图组合工作流和四格已有索引查询。
+下方较早的六路径12／64／256图资格绑定 `06332d4f`，[PNG候选观测](#png-candidate)绑定 `eab9f11a`；
+各轮保留自己的输入、配置与来源，见[RM／CLI说明](../../../../code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
 
 本轮接通固定 LOTUS1.2.4 的图片建索引及图文检索。图库、原生 Faiss 索引、在线图像／文本编码、
 完整 top10 输出均经过 LOTUS；Direct、SemLoom static、SemLoom HSE static、Ray Data 和 Daft Native
@@ -239,3 +239,39 @@ batch32、每格一次，既有默认观察及CPU失败均未覆盖或删除。
 融合后的模型／完整SDK资格未新增；文本Ray清理实库补验由原owner接续，本次没有调用或干扰。
 
 Standards／Spec两轴对`3e4af0bc`终审均0必修；终审后只填写核验收据，生产、测试与原观测保持冻结内容。
+
+<a id="final-integrated-qualification"></a>
+
+## 最终融合源码的实际资格
+
+`lotus-final-image-2afcaf-20261014-j` 使用固定源码
+`2afcaf475b8a22a7467f11f4d2303c9c124bd32f`，不把旧模型结果转记到新提交。
+实际 LOTUS／Daft SDK 与确定性 fixture 共 151 个测试项、37 个通过的子测试，零跳过、失败或错误；
+JUnit 的 `tests` 汇总为188（含37个子测试），实际 `testcase` 节点151个。源码归档含1078个文件，
+17份图像运行文件与先前检查版本逐字节一致。
+
+本次十个模型 CLI 为六路径各一次 64 图组合工作流，以及 SemLoom static／HSE static、Ray Data、Daft
+各一次新进程已有索引查询；后四格共用本轮 stock64 原生索引，前后文件摘要不变。
+每格三个在线图片查询（ID 139／2587／6723）和一个 `bird` 文本查询，完整经过原生 LOTUS
+`sem_index`／`sem_search`／FaissVS，仅公开 RM 执行接口接入替换后端。
+
+独立离线复核全部 46 份完整矩阵和 40 条完整 top10：六份 `[64,512]` 图库及 30 份图片查询
+相对旧、本轮同形状 stock 向量差为 0；10 份文本查询最大差 `5.96046448e-8`。
+排序、位置、业务 ID 与分数均通过原容差，三个图片查询各自 top1 找回源 ID。
+复核原生 index／vecs 与 RM 全量矩阵一致，没有相关性标签或召回率评估。
+
+[精简结果](final_image_qualification.json)保留每格启动、源核查／解码、建索引或注册、四条完整查询、
+组合应用、CLI、监督调用及结果写出耗时，另有逐 RM PNG 墙钟／进程 CPU 与已有流水线观测。
+替换臂 PNG 等级1、stock 原生 RGB PIL，FP32／batch32、Torch 线程1／1；HSE 容量及块上限为
+58,110,400／29,055,200 bytes。Ray Data 图片 RM 每次声明新原生图，Daft 声明跨图 stateful wrapper；
+本轮没有独立模型载入／销毁计数，不从查询顺序推定复用次数。stock 文本在 CUDA，替换臂文本在 CPU。
+每格仅一次、无预热，P99／P99.99 为空，不据此作性能排名；纯解码、transport、H2D／kernel／D2H 未分拆。
+
+三个 CPU 监督调用及十个模型 CLI 全部退出0，逐次物理清理、两个控制器的进程出生身份退出、
+最终 GPU compute 为空及共享 lease 释放已确认。CPU 阶段37.468秒、模型阶段411.811秒，合计449.278秒；
+健康工作不设累计或单格墙钟中止时限，30秒清理窗口只用于退出、故障或取消后。
+
+命令、日志、完整 NPZ、原生索引及计时原件留在 Git 外；结果记录三个归档的成员数、字节数与 SHA。
+CPU 归档23个成员、模型原归档93个成员，另补10份既有写出计时记录；补取未重跑模型或改写原归档。
+独立复核摘要已绑定到结果，旧失败及旧测量保持各自运行身份。当前结论只覆盖上述固定源码、输入与配置。
+仓库外原件可按本轮运行标识向项目维护者获取，并以精简结果中三个归档的SHA-256核验。

@@ -2,7 +2,8 @@
 
 [原生 LOTUS CLIP 接入](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)
 已将图片建索引与图文检索贯通固定 LOTUS，而非只运行本地 CLIP 流水线。
-公开 RM 执行接点保留原生索引与查询语义；六条路径12／64／256图及已有索引资格完成，完整向量和96条查询保存。
+公开 RM 执行接点保留原生索引与查询语义；历史六路径12／64／256图及已有索引资格保留原来源与96条完整查询。
+融合源码`2afcaf47`的[十格64图实际资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)已完成；各轮输入、配置和数值核对分列。
 当前证据支持固定配置正确性，不支持性能或可靠完整查询尾分位结论。
 PNG等级1与固定HSE字节容量的[独立候选](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
 已作为显式可选共享适配参数接纳，省略时保持原PNG默认；保留Direct／HSE最小匹配资格与完整查询观测。

@@ -3,7 +3,8 @@
 [单GPU文件CLIP冷算子](image_clip_file_operator_20261014/README.md)：静态／HSE／原生Ray Data的全部重复、部署失败、退出及已完成的[257图逐行补测](image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)归同一报告。
 
 2026-10-14：[原生 LOTUS CLIP 图片建索引及图文检索](lotus_native_image_retrieval_20261014/README.md)：
-公开RM接入、固定模型身份、六条路径12／64／256图及已有索引资格完成；24个模型CLI、96条完整原生查询与独立审核见同题记录。
+公开RM接入、固定模型身份、历史六路径12／64／256图及已有索引资格完成；24个模型CLI、96条完整原生查询与独立审核见同题记录。
+后续固定`2afcaf47`的[融合版十格资格](lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)按独立来源保存。
 
 [Daft 本地 CLIP 原生批次资格](daft_clip_native_20261014/README.md)：本机／匹配Linux各13项真实 SDK／CPU kernel 替身与39项旧图像回归通过；
 9图四次完整512向量同Direct及正常释放核验通过。首次失败和可选计时依赖保留；完整LOTUS接入见上方整合记录。
