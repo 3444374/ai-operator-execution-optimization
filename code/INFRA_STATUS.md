@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE可选设备组派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)
+在固定A增加每actor/group逻辑额度、完成work速率及先选择后lease；默认static和CLI保持。
+本树187通过／2缺独立驻留切片跳过，固定42186dbe临时组合另2通过；两名独立源码审查完成。
+实际Ray／GPU性能未运行，未知位置成本不参与排序；重复handle拒绝仍归独立集成修补。
+
 2026-10-14：[HSE A正确性切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
 保留source先行、全终态历史扫描及CLI默认；B历史扫描优化与C ready优先分别待纳入。
 owner／引用持有、异常完成确认／未知池、时间原子校验与单块ready拒绝由本地回归核对，实际Ray／GPU待运行。

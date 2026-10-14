@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：实现默认关闭的HSE设备组选择
+
+- 基于A独立完成actor/group逻辑容量、确认后pixels速率反馈与FIFO目的地选择，复用EndpointSnapshot和LeastWork；默认源先行／minfree、CLI、source及原生baseline保持。
+- 本树187通过／2项缺驻留切片跳过；固定42186dbe临时组合2通过，保留完整forward、重复内容新行身份及两层unknown责任。
+- 独立审核发现并修复元数据清理跳过fence及零速率采样饥饿，失败及最终用例由[同题记录](experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)定位。
+- 复用驻留原estimate签名并保留unknown；新策略无实际Ray／GPU／多卡性能资格，重复handle拒绝继续由集成owner处理。
+
 ## 2026-10-14：拆分HSE static正确性集成
 
 从3e保留已发布47f，独立构造[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)。

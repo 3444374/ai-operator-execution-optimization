@@ -1,5 +1,10 @@
 # SemLoom Code
 
+[HSE可选设备组选择](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)在A之上提供
+`model_dispatch=StageModelDispatcher(actors, groups)`；默认`None`保持static。
+actor/group声明额度与完成速率分开，live model calls派生占用，unknown继续持有；无新增模型或source语义。
+驻留`estimate(descriptor,destination,now_s)`目前只记unknown；位置成本排序、实际Ray／多卡／GPU性能仍待验证。
+
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。
 当前仅A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
 
