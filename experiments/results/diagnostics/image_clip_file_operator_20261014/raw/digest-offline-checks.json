@@ -1,0 +1,16 @@
+{
+  "status": "passed_offline_source_behavior_checks",
+  "source_sha256": "c870a897cd17379e3d1f6f7e571c7ba5a43cc66b8c001d7c1c79fe5eebb2de76",
+  "numpy_version": "2.5.0",
+  "model_GPU_SDK_server_runs": 0,
+  "checks": {
+    "row_order_invariant": true,
+    "consumer_chunking_invariant": true,
+    "lossless_float64_container_invariant": true,
+    "big_endian_float32_container_invariant": true,
+    "signed_zero_can_change_hash_without_value_change": true,
+    "same_id_set_wrong_id_vector_association_changes_hash": true
+  },
+  "definition": "BLAKE2b128(UTF8(doc_id)+NUL+bytes(round(float32(row),5).astype('<f4'))), XOR across rows",
+  "conclusion": "mere output order, consumer grouping and lossless dtype/endian representation cannot explain the observed mismatch; signed zero/rounding or numerical/input association differences remain possible; source contract matches, pointwise error and cause remain unverified"
+}

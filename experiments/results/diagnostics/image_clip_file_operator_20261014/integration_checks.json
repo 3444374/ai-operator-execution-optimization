@@ -1,0 +1,103 @@
+{
+  "fixed_delivery": "7faba425fb4a6969be5adf881a6659a84a0a83a0",
+  "archive_integrity": [
+    {
+      "sha256": "e2fe329b739ba46ee1702325b132beae0cd3fb83a252e12d6f4ad7c4c84670ff",
+      "bytes": 492252,
+      "members_including_index": 86,
+      "indexed_members_verified": 85
+    },
+    {
+      "sha256": "919192fc74643040593ade4a4f7e981c4ae8d7238ff0db96096d6ca22279515c",
+      "bytes": 1741917,
+      "members_including_index": 123,
+      "indexed_members_verified": 122
+    }
+  ],
+  "private_npz_hashes_verified": 3,
+  "full_csv_rows_recomputed": 257,
+  "all_model_images_verified_from_trace": 963,
+  "model_batch_rows": {
+    "direct": [
+      56,
+      56,
+      56,
+      56,
+      33
+    ],
+    "hse": [
+      56,
+      56,
+      56,
+      56,
+      33
+    ],
+    "ray_data": [
+      64,
+      64,
+      1,
+      64,
+      64
+    ]
+  },
+  "comparisons": {
+    "hse": {
+      "bitwise_equal_rows": 257,
+      "input_fp32_equal_rows": 257,
+      "cpu_cast_fp16_equal_rows": 257,
+      "max_abs_error": 0.0,
+      "mean_abs_error": 0.0,
+      "max_row_l2_error": 0.0,
+      "min_cosine": 0.9999999999999998,
+      "absolute_1e_3_outside_rows": 0,
+      "absolute_1e_3_outside_components": 0
+    },
+    "ray_data": {
+      "bitwise_equal_rows": 0,
+      "input_fp32_equal_rows": 257,
+      "cpu_cast_fp16_equal_rows": 257,
+      "max_abs_error": 0.0011827051639556885,
+      "mean_abs_error": 5.482503624393567e-05,
+      "max_row_l2_error": 0.0030373222574328843,
+      "min_cosine": 0.9999953873362398,
+      "absolute_1e_3_outside_rows": 1,
+      "absolute_1e_3_outside_components": 1
+    }
+  },
+  "original_15_rows_summary_match": true,
+  "original_repeat_medians": {
+    "direct": 21.118473371025175,
+    "hse": 20.575613962486386,
+    "ray_data": 39.64305949723348
+  },
+  "fixed_exported_source_files_equal_45da_58462": 387,
+  "offline_digest_checks": {
+    "row_order_invariant": true,
+    "consumer_chunking_invariant": true,
+    "lossless_float64_container_invariant": true,
+    "big_endian_float32_container_invariant": true,
+    "signed_zero_can_change_hash_without_value_change": true,
+    "same_id_set_wrong_id_vector_association_changes_hash": true
+  },
+  "new_SDK_server_GPU_model_execution": false,
+  "original_JPEG_manifest_not_independently_retrieved": true,
+  "scope": "Original private vectors, traces and index integrity plus all public per-ID fields recomputed offline. Source encoded/pixel maps match across three captures; original JPEG manifest and physical PID/birth postcheck remain owner evidence, not newly repeated.",
+  "previous_integration": "015a3855e79fe853f49cff40d00e375d6ca3abb3",
+  "production_tests_and_configuration_unchanged": true,
+  "independent_final_review": {
+    "frozen_tree": "644b97368da7f5ccbe65c2bb7d27e7a98681da71",
+    "decision": "publishable_evidence_only_with_original_source_limits",
+    "reviews": [
+      {
+        "axis": "standards",
+        "must_fix_count": 0,
+        "report_sha256": "9dddfb1409a8787eb84d80ad29a1dee614cbf97f7f01d6589bfc1954bb2de7b3"
+      },
+      {
+        "axis": "spec",
+        "must_fix_count": 0,
+        "report_sha256": "770a731d2d431a96a0eef7b2d5e983cd9c3a3f5a38abed0e344dda9d7067336c"
+      }
+    ]
+  }
+}

@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[单GPU文件CLIP复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)固定实际45da0a54，387个导出文件与发布58462a0d同字节，原CLI archive Git字段unknown保持。
+原静态／HSE A／原生Ray Data共15次健康GPU调用及18次子进程退出核查完成；同输入、512维FP32 L2与exactly-once合同通过，原性能值／失败／私有原包保持。
+[257图另窗捕获](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)已完成963模型图及5次退出核查：Direct/HSE逐位相同；Ray输入指纹一致、返回向量不同。实际forward批形态不同，差异定位至FP16模型调用／返回边界，未证明具体浮点来源或5000图等价；新增诊断时间不入原性能汇总。
+这是已有外部文件算子在固定来源的健康资格；没有改公共执行源码，不转为当前HEAD、PG E2E、稳态非劣或GPU异常责任资格。
+
 2026-10-14：固定 `06332d4f` 六图像接点已普通接纳；集成四运行文件补生命周期／计时／证据错误责任，105本地通过／14条件跳过，原 source-d/f 实测保持。融合版 SDK／GPU 异常未重验，见[核查](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)。
 
 2026-10-14：[原生 LOTUS CLIP 图像检索](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)

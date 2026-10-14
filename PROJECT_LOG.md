@@ -1,5 +1,20 @@
 # 项目日志
 
+2026-10-14：[文件CLIP数值证据独立接纳](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#集成接纳核查)：只接纳固定7f证据，生产／测试未变；两原包逐SHA、257行差异与963计数离线复算一致，原15性能行和失败保持，新增模型／服务器0。
+
+## 2026-10-14：完成单GPU文件CLIP最小逐行诊断
+
+- 原公开准备`4806da28`之后取得共同lease，固定原45da0a54来源，串行三臂257图＋各64预热，共963模型图；CPU-only worker观察器验证与三次捕获完成，5次退出确认后释放lease，随后独立postcheck确认controller退出与lease缺席。
+- [同题补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)保留全部257行：Direct/HSE逐位相同；Ray输入指纹一致，模型返回已不同，最大分量差0.001182705且1e−3有1行／1分量超界。实际模型批形态及Arrow tensor消费元数据已核实，具体浮点因果、5000图等价及下游质量仍未证实。
+- 独立离线复算核对私有123文件包与来源；公开紧凑补充保留失败修复史、全差异与计算入口。未改公共执行源码或dtype／batch，未重跑性能矩阵，新增诊断时间不进入原15行及原汇总。
+
+## 2026-10-14：公开单GPU文件CLIP复验与离线数值限制
+
+- [同题主报告](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保留固定45da0a54（导出387文件同发布58462a0d）的15次原CLI结果，3资格／3scale／9轮转重复，61,731模型图；18个子进程的退出0与物理退出、共同lease释放及独立postcheck分别记录。
+- 两次模型前部署失败、Ray Data的55.553秒慢重复、原Git unknown与全部数值差异保留；私有原包不入Git，公开record有独立SHA与来源映射，未修改公共执行源码。
+- 独立离线审核确认共同FP32／小端rounded5 XOR digest不随到达顺序变化；Direct/HSE摘要一致、Ray Data不同，原输出缺逐ID向量，不能声称仅排序或已证明数值等价。
+- 同输入257图的原生capture及按ID比较在`4806da28`发布时已准备、尚未运行；该次收尾分析新增模型／GPU／服务器调用0，不重跑性能矩阵，不以诊断时间替代原时间。后续实际诊断见上方新记录。
+
 2026-10-14：固定原生 LOTUS／Daft 图片交付普通接纳后补启动、关闭禁复用与两CLI证据错误优先级；105本地通过／14条件跳过，原六路径模型来源保持。见[接纳核查](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)。
 
 ## 2026-10-14：Daft 本地 CLIP 原生批次后端资格

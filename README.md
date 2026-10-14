@@ -1,5 +1,7 @@
 # SemLoom
 
+[单GPU文件CLIP冷算子复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保存现有静态、HSE与原生Ray Data的全部重复、部署失败及[257图逐行数值补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)；外部文件入口保持原身份。
+
 [原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
 
 当前LOTUS线已完成[持久计数匹配复测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)。[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)保留观察成本的诊断；后续建立少量合理的单／双卡工作点，再设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。

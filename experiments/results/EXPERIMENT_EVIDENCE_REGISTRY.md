@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-14：[单GPU文件CLIP三条已有路径](diagnostics/image_clip_file_operator_20261014/README.md)。
+实际来源45da0a54／发布同字节58462a0d，3资格＋3scale＋9轮转重复，共61,731模型图；全部原row、18次退出收据及两次模型前部署失败保留。
+固定冷算子数据只作这一工作点观察；原15轮没有逐ID向量，其摘要差异不由单纯输出顺序解释。[最小另窗诊断](diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)随后完成963模型图与5次退出核查：257行Direct/HSE逐位相同，Ray输入指纹一致、模型返回不同，实际批形态不同；全部差异及1e−3超界保留。5000图逐行等价、具体浮点因果及下游质量仍未证实；诊断不改原15性能值，未重跑性能矩阵。
+私有原包按run ID＋SHA保留，公开只保存脱敏紧凑观测／来源和复算；PG、稳态最优、HSE非劣及GPU异常责任未由健康轮追加。
+
 2026-10-14：[LOTUS／Daft 图像集成接纳](diagnostics/lotus_native_image_retrieval_20261014/README.md#集成接纳与关闭修补)：四运行文件关闭与证据优先级修补，105本地通过／14条件跳过；96条原查询完整复算，source-d/f 数值和失败保持，未追加融合版模型／性能资格。
 
 2026-10-14：[原生 LOTUS 图像检索资格](diagnostics/lotus_native_image_retrieval_20261014/README.md)。

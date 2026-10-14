@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "source_identity": {
+    "measured45_files_verified": 387,
+    "published584_files_verified": 387,
+    "SHA_mismatches": 0
+  },
+  "offline_source_digest_checks": "raw/digest-offline-checks.json",
+  "pure_numpy_compare_fixtures": [
+    "reordered outputs align byID; identical values and bitwise representation",
+    "one component error counted with explicit synthetic tolerance; no semantic verdict",
+    "signed zero reports numeric equality and bitwise difference",
+    "duplicateIDs reject before comparison"
+  ],
+  "local_ast_syntax": [
+    "summarize.py",
+    "audit_digest.py",
+    "capture_ray_data.py",
+    "compare_vectors.py"
+  ],
+  "SDK_model_GPU_server_execution": false,
+  "new_primary_or_diagnostic_model_calls": 0,
+  "private_bytecode_scan_note": "initial generic file scan included regenerable local __pycache__ bytes; bytecode excluded/deleted, text scan rerun0 private path/host/IP findings; no raw evidence altered"
+}

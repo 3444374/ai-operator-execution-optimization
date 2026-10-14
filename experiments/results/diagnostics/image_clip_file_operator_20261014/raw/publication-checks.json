@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "publication_content_independently_reviewed_generated_metadata_completed",
+  "independent_review_original_and_public_SHA256": "8b69e5de99d856b3562a87ce8b9387f9d5191f7ca992eee2b96bd1eaa9a5b3f1",
+  "all_reviewed_files_byte_identical_at_final_metadata_refresh": true,
+  "reviewed_files": 25,
+  "original_findings": "two preparation P2 retained with resolved status in independent review; no remaining P1/P2",
+  "storage_scope": "every public result member except storage manifest itself; complete coverage and byte/SHA checked",
+  "private_original_package_staged": false,
+  "new_model_GPU_server_calls": 0,
+  "actual_numerical_captures": 0,
+  "limitations_unchanged": [
+    "per-ID numerical equivalence and root cause unverified",
+    "native capture plan and SDK/GPU diagnostics not executed",
+    "healthy exits do not qualify actualGPU error/cancel/unknown completion"
+  ]
+}

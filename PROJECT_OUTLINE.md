@@ -20,7 +20,8 @@
 图像后续按[已有三条路径](docs/research/研究定位.md#existing-image-execution-paths)与
 [单GPU关键路径诊断](experiments/plans/数据组织.md#single-gpu-image-critical-path)复用现成batch/流水及强静态控制。
 近期只围绕有证据的表示/驻留、阶段work和后继消费者联合选择；多卡、跨卡搬运、拓扑执行组与训练按真实需要决定。
-本次是文档收敛，没有新增模型实验或实现资格。
+该次文档收敛本身没有新增模型实验或实现资格。随后[固定来源的单GPU文件CLIP复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)
+已完成已有静态／HSE／原生Ray Data的冷算子观察，全部重复和失败保留；[另窗257图补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)确认Direct/HSE逐位相同、Ray输入一致但模型返回有数值差异。批形态因果、5000图逐行等价和下游质量仍未验证，未形成方法优势、稳态最优或PG接入结论。
 
 更新时间：2026-10-14
 

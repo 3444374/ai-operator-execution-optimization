@@ -1,0 +1,103 @@
+{
+  "reviewed_utc": "2026-10-14T10:28:02.174443+00:00",
+  "status": "passed_private_control_review",
+  "scope": "Offline standard-library/static/protocol mock review only. No SDK/model/GPU/server access; no public source/worktree changes.",
+  "blocking_code_findings": [],
+  "finding_history": [
+    {
+      "priority": "P2",
+      "location": "run_numeric_clip.py:87",
+      "initial_sha256": "2efc3193f6d101d532cf9d8a91f07eec1ab5f32ef0890f265b0cf3b9ebaf3b0d",
+      "finding": "dict(os.environ, **commands[env], PYTHONDONTWRITEBYTECODE=1) duplicated the existing command env key, raising TypeError before lease acquire.",
+      "reproduced": true,
+      "resolution": "Parent used single env merge, then assigned env[PYTHONDONTWRITEBYTECODE]=1.",
+      "resolution_verified": "Current command env full-main foreign-lease mock reaches acquire and returns2 waiting_host_lease with no child/probe/GPU/proc query/Ray tmp creation.",
+      "status": "fixed_and_verified",
+      "fixed_sha256": "faf63315a5be30c9d07ca0eb45b36835748ed8c4dd3e8b01205bfbec5ffaa84c"
+    }
+  ],
+  "identity": {
+    "measured_candidate": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+    "published_source": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+    "published_existing_result": "4806da28095301ffed81782888c79cdfb3d3d963",
+    "source_mapping_files": 387,
+    "source_mapping_equals_prepared_public_helper": true,
+    "CLI_git_commit": "honestly unknown in archive; outer full candidate/per-file SHA fixed",
+    "hashes": {
+      "run_numeric_clip.py": "faf63315a5be30c9d07ca0eb45b36835748ed8c4dd3e8b01205bfbec5ffaa84c",
+      "execution-binding.json": "7d4fc4839dc9fa97c8f46c03716162e8ddbbfa2281eed7556c76b7a508cbd223",
+      "resolved-commands.json": "e80d074d5ce759d64233f3796e4f0fff623e7d1596f506a18076588505b9846a",
+      "source-package-manifest.json": "9e9b2ca21c084d6fb9992247847b06dfba8722deb8ebccaa69958d7e0c7be075",
+      "resource-snapshot-before.json": "5e8a91ff9a296b7bdbe2bcf7016b690f99a84bb3a7eeca54c969a3a55b94617f",
+      "analyze_numeric.py": "5eb8b460ba043244379f3ee3525f81c3de870b249b5e6cf941ad4228dc078468",
+      "helpers/capture_ray_data.py": "f1b14496038df1199e0c0a6e74f655af6fcd5127972026ad9b84348865091bb7",
+      "helpers/clip_trace_hooks.py": "e5e17816f2f8ca6d7f6f1757934bc2b4ddb3268ff3a59c84414f87d46cc3a6be",
+      "helpers/compare_vectors.py": "3c1db5c41c91aac6a46acb93f4ef882a5906e1153a3108d7af6b09f16fca0056",
+      "helpers/probe_observer_worker.py": "07070beba3f222d24e66aaf64dcb1d629decd575dc2c0fc41e275b23bf31d134",
+      "helpers/provenance.json": "b4834c0ff5a68ad9f570aab106194ad50e2b71551b12ded65ee424b20651ee8d",
+      "helpers/raw/source-files.json": "b124b92576fd353347f8a6e7b9242d2e02a290f7f76ee5b9e237d2f6e80268b0",
+      "helpers/sitecustomize.py": "3ee439344c39e628144dec4b8d2b303782408da9bd421dbcebb8b583f2710c2f",
+      "helpers/trace_entry.py": "9860190e943b3799f5e44b3e6ead850ebf9d99b4ff5111261a4dc5784779d032"
+    }
+  },
+  "checks_passed": [
+    "All diagnostic Python compiled in memory without SDK import.",
+    "Actual3 argv checked through original parse_args AST: source files,257/offset0/pass1,warm64,batch64,FP16,224,512 L2,CPU4/source2/GPU1,Torch1,local isolated Ray,autoscaling false,expected IDs532dbd... and41184449 bytes. Same manifest/model/processor paths; HSE caps/window4 unchanged.",
+    "Original standard-library CPU budget: project Ray5+Daft2=7; native Ray7=7; host quota reference16. No cpu-workers16 substitution.",
+    "AST-identical processes/gpu_processes/collect/monitor/survivors/confirm_exit versus qualified9fc controller preserves PID/birth/unknown-state and30s exit-observation boundary.",
+    "Explicit NumPy protocol substitute: observed preprocess/embed original called exactly once; exact original return/input object identities; installation idempotent; emitted metadata JSON serializes.",
+    "Standard pickle top-level observer function byreference and closure-free checked. Actual Ray cloudpickle qualification remains pending.",
+    "Dataset/column substitutes: same iter_batches pyarrow,prefetch2 kwargs and order, doc_id identity; vendor to_pylist once, exact returned list/row objects; stats unchanged. Original np.asarray(float32) not changed or timed.",
+    "CLI setup/build/execute each delegates once; only trace dir extends existing worker_runtime_env; no owner token in explicit Ray runtime metadata/trace; original exception and restore preserved.",
+    "Fresh standard Python sitecustomize startup with explicitly fake CPU modules activates both methods. Actual Ray worker environment still requires planned CPU-only probe.",
+    "Private capture helper differs from public4806 only by observer import/attach/restore. Original formal257 audit capture, warm64 exclusion, manifest/model/lease guards and exclusive outputs retained; native source/map graph unchanged.",
+    "Post-fix full-main blocked-lease mock: recover_stale false; return2/no model, no probe/Popen/GPU/proc/bulk-preflight/Ray-temp work; no foreign release/recovery.",
+    "Observer AST has no added GPU transfer/synchronize/model invocation. Probe never constructs ClipTensorActor; GPU1 typed definition is serialized only.",
+    "Noncache helper SHA entries match binding;387 source manifest SHA map equals prepared public helper source map. Previously audited original algorithms retained."
+  ],
+  "planned_budget": {
+    "model_calls": 3,
+    "formal_per_arm": 257,
+    "warmup_per_arm": 64,
+    "total_model_images": 963,
+    "CPU_probe": {
+      "CPU": 1,
+      "GPU": 0,
+      "model_images": 0,
+      "actor_constructors": 0
+    },
+    "performance_matrix_rerun": false,
+    "diagnostic_only": true,
+    "timing_not_performance_eligible": true
+  },
+  "lease_boundary": {
+    "canonical_shared_native_lease": true,
+    "recover_stale": false,
+    "bulk_source_hashes_after_lease": true,
+    "owner_token": "child env only; not argv/status/trace or explicit Ray metadata",
+    "next_call": "Only after prior successful child and confirmed own PID/birth exit plus empty GPU compute boundary.",
+    "unknown": "Stop, retain lease and evidence; no automatic foreign kill/recovery/retry/server shutdown.",
+    "order": "environment preflight -> CPU1/GPU0 observer/serialization probe ->3 original model CLI calls"
+  },
+  "privacy": {
+    "trace": "IDs/fingerprints/shapes/dtypes/PID/time/Arrow schema metadata; no raw encoded/pixel/vector values, env dump or token.",
+    "logs": "Existing native redact_text before persistence; interrupted logs may be missing, not complete.",
+    "snapshot": "Current private resource-snapshot-before.json contains real foreign hostname/PID/birth; no owner_token. Preserve private original, redact hostname/private paths before public copy.",
+    "publication": "Actual traces/schema/logs still need independent privacy/public-result review."
+  },
+  "remaining_actual_evidence": [
+    "Native CPU-only worker activation and typed actor cloudpickle serialization must pass under owned canonical lease before model calls; local mock does not qualify Ray SDK.",
+    "Three actual model captures and receipts/physical exit proof pending. CPU probe proves no GPU completion/failure/cancel behavior.",
+    "963 traced model rows including warmup,257 formal per arm, actual batch/Arrow/to_pylist metadata and ID-aligned vectors/fingerprints must be audited after execution.",
+    "CPU FP16-cast SHA is a CPU proxy, not actual CUDA tensor evidence. Unchanged FP16 output differences may be localized by per-ID evidence, but batch causality and5000-row equivalence remain unproven.",
+    "No diagnostic timing replaces existing15 measurements. Retain all failures. Independent post-execution numerical/publication review remains assigned to this reviewer."
+  ],
+  "local_fixture_history": [
+    "First lease mock had unresolved macOS /var alias vs resolved /private/var; corrected fixture exposed real P2, then passed after parent fix.",
+    "Reviewer-created3 exact private .pyc caches removed; later checks use PYTHONDONTWRITEBYTECODE=1."
+  ],
+  "binding_cache_refresh": {
+    "pending_cache_entries": [],
+    "required": "Exclude reviewer-generated __pycache__/pyc from helper bundle/list; parent regenerates binding. This is artifact cleanup, not source/algorithm revision."
+  }
+}

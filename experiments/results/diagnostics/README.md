@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[单GPU文件CLIP冷算子](image_clip_file_operator_20261014/README.md)：静态／HSE／原生Ray Data的全部重复、部署失败、退出及已完成的[257图逐行补测](image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)归同一报告。
+
 2026-10-14：[原生 LOTUS CLIP 图片建索引及图文检索](lotus_native_image_retrieval_20261014/README.md)：
 公开RM接入、固定模型身份、六条路径12／64／256图及已有索引资格完成；24个模型CLI、96条完整原生查询与独立审核见同题记录。
 

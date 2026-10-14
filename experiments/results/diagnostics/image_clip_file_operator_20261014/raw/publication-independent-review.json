@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "reviewed_utc": "2026-10-14T09:52:38.550193+00:00",
+  "reviewer": "independent file_source_review subagent",
+  "status": "publication_content_review_passed_final_storage_refresh_pending",
+  "public_directory": "experiments/results/diagnostics/image_clip_file_operator_20261014",
+  "measured_source": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+  "published_equivalent": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "scope": {
+    "server_access": false,
+    "SDK_GPU_model_execution": false,
+    "performance_matrix_rerun": false,
+    "public_file_changes_by_reviewer": false,
+    "NumPy_execution_by_reviewer": false
+  },
+  "initial_P2_findings_preserved": [
+    {
+      "target": "numerical-validation-plan.json commands",
+      "issue": "Expected ID SHA set but encoded-byte flag omitted; default0 rejected all three in original preflight.",
+      "fix": "expected-input-encoded-bytes41184449 added to all templates",
+      "current_status": "resolved; original parse_args AST checked"
+    },
+    {
+      "target": "capture_ray_data.py diagnostic binding",
+      "issue": "Literal flag checks allowed --limit=5000 / --lim 5000 / GPU2 to override fixed budget/resources.",
+      "fix": "Validate original resolved Namespace and local-Ray/native-pool/thread controls, fixed manifest/model/processor identities",
+      "current_status": "resolved; nine invalid resolved argument/environment cases rejected"
+    }
+  ],
+  "remaining_P1_P2_findings": [],
+  "verified_retention_and_numbers": {
+    "measurement_rows": 15,
+    "full_original_fields_each": 197,
+    "only_replaced_row_fields": [
+      "model_revision",
+      "processor_revision"
+    ],
+    "all_other_original_row_values_identical": true,
+    "all_original_contracts_reconstructed": 15,
+    "original_and_public_record_SHA_mapping_count": 15,
+    "receipts_preserved": 18,
+    "all_exitcode0_and_confirmed_empty_owned_survivors_GPU_compute": true,
+    "original_index_members_SHA_verified": 85,
+    "archive_regular_files": 86,
+    "index_file_additional": true,
+    "archive_bytes_and_SHA_match": true,
+    "archive_SHA256": "e2fe329b739ba46ee1702325b132beae0cd3fb83a252e12d6f4ad7c4c84670ff",
+    "source_files_matched_local_pack_plus_eight_completion_files_and_public_git_blobs": 387,
+    "summary_recomputed_exactly": true,
+    "primary_timed_rows": 60771,
+    "primary_warmup_rows": 960,
+    "primary_total_model_images": 61731,
+    "slow_native55_55321142775938_retained": true,
+    "two_before_model_deployment_failures_retained": true,
+    "all_nonargv_fields_match_original": true
+  },
+  "diagnostic_pure_mock_and_static_checks": {
+    "three_templates_parse_and_ID_encoded_bytes_bind": true,
+    "planned_calls": 3,
+    "planned_formal_rows": 771,
+    "planned_warmup_rows": 192,
+    "planned_total_model_images": 963,
+    "actual_diagnostic_calls": 0,
+    "status": "prepared_not_executed",
+    "invalid_Namespace_or_foreign_RAY_ADDRESS_cases_rejected": 9,
+    "canonical_lease_parent_PID_token_host_scope_source_birth_invalid_cases_rejected": 8,
+    "manifest_model_config_processor_file_SHA_guard_checked": true,
+    "warmup64_audit_not_captured": true,
+    "formal257_expected_set_captured_once": true,
+    "wrong_or_repeated_formal_set_rejected": true,
+    "driver_audit_hook_restored_on_success_and_error": true,
+    "native_graph_function_unchanged": true,
+    "wrapper_acquires_recovers_or_releases_lease": false,
+    "comparison_static_review": "exact ID alignment; duplicate/missing/shape/finite validation; FP32 values losslessly converted toFP64 for differences without renormalization; explicit symmetric tolerance only descriptive, no overall semantic verdict"
+  },
+  "publication_privacy_navigation_and_text": {
+    "README_and_eight_fact_navigation_changes_reviewed": true,
+    "new_changed_local_links_exist": true,
+    "secret_scan_files_without_suppression": 26,
+    "secret_findings": 0,
+    "private_path_IP_scope": "entire new result directory and added/changed navigation text; unrelated historical lines excluded",
+    "new_private_absolute_paths_or_IPs_found": 0,
+    "staged_and_working_diff_check_passed": true,
+    "measured45_vs_public584_vs_current_HEAD_distinguished": true,
+    "original_CLI_git_unknown_kept": true,
+    "no_HSE_noninferiority_stable_advantage_or_native_optimality_claim": true,
+    "native_digest_mismatch_and_unverified_pointwise_equivalence_preserved": true
+  },
+  "unexecuted_validation_boundaries": [
+    "Actual SDK/GPU execution of the prepared capture/compare plan is not covered; mock tests only exercise the examined controls and formal driver hook.",
+    "Original15 outputs have no per-ID vectors; discrepancy root cause, pointwise errors and semantic equivalence remain unverified.",
+    "Healthy recorded process/device exit does not qualify GPU cancel/error/unknown-device completion or future host availability.",
+    "No PG E2E, steady-state/native optimum, HSE advantage/noninferiority, cache/residency, topology or training conclusion is added."
+  ],
+  "final_generated_metadata_action": {
+    "target": "raw/storage-manifest.json",
+    "state": "pending owner regeneration after final audit copy",
+    "known_current_mismatches": [
+      "README.md",
+      "compare_vectors.py"
+    ],
+    "before_commit": "regenerate and verify file bytes/SHA/coverage after adding public audit copy, exclude manifest self-reference, stage current changed files",
+    "input_hashes_exclude_generated_storage_and_future_audit_copy": true
+  },
+  "reviewed_file_SHA256": {
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/summary.json": "2fc820328f2f95483ddf387b8bf7cc2b3de54181aa9a4bdbb4b08cfae75dec84",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/provenance.json": "b4834c0ff5a68ad9f570aab106194ad50e2b71551b12ded65ee424b20651ee8d",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/summarize.py": "c6029a4981eb803147fe7b2f181e95892e76d54b9e6d83b4e24152dc9de0886c",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/compare_vectors.py": "3c1db5c41c91aac6a46acb93f4ef882a5906e1153a3108d7af6b09f16fca0056",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/README.md": "63cb2a4d70366e16e507ad51d62655b6cf306071c3d4d485c4530e268d709ece",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/capture_ray_data.py": "173577d60471dd2d99b66dc10a8b0e8be55ef3d059a2251ecc518d2ff50348b8",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numerical-validation-plan.json": "96e72dcf08915b6e2d9b37cc25bdad7a4d1214fee6e88e454c97e3364a686a03",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/audit_digest.py": "f7cc74dad229751a451361e234f318fac031bda21ed28006450c198fd2e17d61",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/failures.json": "c2a5d1135f314173fbaa2f4d4051e46f5a907145a44a5c8f0906ce66cee4c781",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/digest-independent-review.json": "53c807ff8efe06eefa4d28c853aa68d8465d1af18ae14ef568dde6510bcd8aab",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/lifecycle.json": "335dceb79507d50c0e4e2f97217bfc6d8a75a50365116ff3602e5a87912e5e85",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/digest-offline-checks.json": "17cfc90fde5478f0dff4a823f146069f4acbd44871d88ab22dca7f406c8e5e47",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/measurements.jsonl": "4ec025a269567074fd65260f4642ec8731fb2b71bf577522f20b4807a774169b",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/contracts.json": "c3484c7fafa541103871f9303d53b84f1bdec89ac9adf085a5c5c6c7c7194bcf",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/analysis-local-checks.json": "421fd560a6937c70d5e1c0c0cef3cab7495be7b79836b7f3e6255fc9973cd2d3",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/source-files.json": "b124b92576fd353347f8a6e7b9242d2e02a290f7f76ee5b9e237d2f6e80268b0",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/raw/preflight.json": "870e29a200c61f95a7c0c8fa05547c233018f4da1d9c98ba7e660cbbf0d422d5",
+    "PROJECT_INDEX.md": "588ed2c04e5c056bae17ecab111390714ecaa8c6e1567166913cb7944648e54d",
+    "PROJECT_LOG.md": "8a8b14ed10c01b010dd0106d877da2e27f469bcf1e260b75705b4e19e909ba15",
+    "PROJECT_OUTLINE.md": "1aff30f47bb34a94b56541d8dcb6d6a334a1d571dca995ee9a5485915585fc0c",
+    "README.md": "78ca4558cb0c987441cd25e70f18a0a80c887004afb9eebe8eb9c211c812717d",
+    "code/INFRA_STATUS.md": "9abb71f783fb9ecdd72808a40bdafeaee95af0e0fd65cd37f6819793216d59b0",
+    "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md": "4674da67e547bb0ccbff86a53313b9322395e01c0220a720caf8f9403bc15d73",
+    "experiments/results/README.md": "4d4c19e64d08849efc7eaacb36fc1fd34a03e279a7aa4fc906ed777b9c530f7f",
+    "experiments/results/diagnostics/README.md": "05204bf4cc8c27e73901b6bba0ebd8b1e036e1354307e456d5dcf9632bf29faa"
+  }
+}

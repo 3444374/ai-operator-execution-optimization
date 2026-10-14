@@ -1,0 +1,25 @@
+{
+  "model_runtime_failures_observed": 0,
+  "deployment_failures": [
+    {
+      "attempt_id": "source-fetch",
+      "action": "public Git fetch of measured45 ref",
+      "before_model_launch": true,
+      "exitcode": 128,
+      "reason": "ref unavailable (not our ref)",
+      "original_file_sha256": "487f1c56c256a1a6b8b8f17981be103cc4787460a7a79543e61d92f4325cb7a8",
+      "retained_excerpt": "{\"status\": \"source_checkout_failed\", \"step\": 4, \"returncode\": 128, \"stderr\": \"fatal: remote error: upload-pack: not our ref 45da0a5451bfcf785d98b9ab5336054bdbaf199f\\n\"}"
+    },
+    {
+      "attempt_id": "controller-1",
+      "controller_pid": 62223,
+      "action": "fixed-source guard",
+      "before_shared_lease_or_model_launch": true,
+      "reason": "eight referenced test files missing from uploaded source; exact original files added before restart",
+      "original_relative_path": "launcher.log",
+      "original_file_sha256": "056e2aeac5ca8af41280550fc4d493fcf65908954e0bc7b61e91ffe9f1c9ec5c",
+      "retained_log": "Traceback (most recent call last):\n  File \"<RUN_ROOT>/run_fixed_clip.py\", line 257, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"<RUN_ROOT>/run_fixed_clip.py\", line 80, in main\n    assert hashlib.sha256((source / name).read_bytes()).hexdigest() == expected, name\n                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<DRIVER_ENV>/lib/python3.12/pathlib.py\", line 1019, in read_bytes\n    with self.open(mode='rb') as f:\n         ^^^^^^^^^^^^^^^^^^^^\n  File \"<DRIVER_ENV>/lib/python3.12/pathlib.py\", line 1013, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '<SOURCE_ROOT>/code/tests/__init__.py'\n",
+      "recovery": "deployment attempt2 with same checked controller; zero model calls before successful attempt"
+    }
+  ]
+}
