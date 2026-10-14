@@ -3,7 +3,7 @@
 ## 2026-10-14：集成可选详细计时及关联runtime修复
 
 - 从`58462a0d`普通合入固定`bbbd8a1b`及其`ea6c9184`依赖，默认关闭、作者执行图／并发／预算与原错误优先级保持；main和活动模型源码不变。
-- [集成验收](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#integration-acceptance)核对390源文件和公开事件／关闭计数，38模块最终源码回归312通过／22明确跳过；首轮本地沙盒监听拒绝原件保留。
+- [集成验收](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#integration-acceptance)核对390源文件和公开事件／关闭计数，固定`bbbd8a1b`输入的38模块回归312通过／22明确跳过；首轮本地沙盒监听拒绝原件保留。
 - 只复算已有四图8软件HTTP原件，不重启服务器；48worker尾部未知和旧测试来源分别保留，不新增完整尾部或模型性能结论。
 - 两轴集成审查补出图像工厂计时后handle丢失与清理错误优先级反例；保留修前失败，最小修补后定向56通过／1共享窗口opt-in跳过，不与334项相加或借原服务器资格。
 
