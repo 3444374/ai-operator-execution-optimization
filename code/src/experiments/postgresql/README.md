@@ -1,5 +1,10 @@
 # PostgreSQL resource measurement tools
 
+公共单查询、常驻查询及 SemBench CLI 可设置 `SEMLOOM_DETAILED_TIMING_DIR` 启用详细诊断，默认关闭。
+它复用原查询／HTTP／调用身份，另记准备、图 API、完整消费与清理，不重写基础总时或原生执行生命周期。
+字段、结束核验、私有 helper 源码对应及不可见阶段见
+[可选计时报告](../../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)。
+
 ## 原始SemBench Movie方法
 
 `sembench_queries.py`保存唯一原始准备集、独立行身份和原查询结果；`sembench_query_cli.py`只编排已有LOTUS执行路径。
@@ -31,6 +36,9 @@ LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查
 新路径不创建SemLoom Core；Ray Core与Ray Data分别命名，旧`fixed-map-native-ray`仍表示Ray Data。
 单查询和`PersistentAdapterGroup`共用新名字，后者保留LM／连接及调用方Ray runtime，查询各建自己的图／actor。
 Daft在Ray初始化前显式设置Native runner，Ray入口仍需要新的短私有暂存目录；所有HTTP结果交回原方法。
+准备调用的Ray连接只核地址、CPU、object-store字节和导入异步批次数；
+Ray Core与SemLoom不借未选用的Ray Data参数拒绝小容量配置，准备调用也不套用SQL reader所需的额外CPU。
+Ray Data仍在启动前核对自己的A×B×R行数容量，原SQL reader的`QueryConfig`检查保持。
 
 `native_adapter_query.py`提供外部有限输入的共同固定Map参照，`supplier_adapter_query.py`装配已交付的供应商方法。
 输入加载与组件准备计入完整应用；`record_prepared_execution`直接记录实际API入口至消费结束，方法／图构建留在查询内。

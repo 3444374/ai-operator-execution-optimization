@@ -142,6 +142,34 @@ class NativeCallCleanupTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
             list(executor.iter_batch(()))
 
+    def test_normal_eof_cleanup_failure_with_all_results_prevents_reuse(self):
+        calls = (native.NativeCall('eof-close', 0, b'{}', 'http://localhost/fixture', (), 1),)
+        for backend, graph_name in (('daft', '_daft_rows'), ('ray-data', '_ray_rows')):
+            with self.subTest(backend=backend):
+                closing = GraphCloseError('fixture graph finally close')
+                def graph(values, options, control):
+                    try:
+                        for call in values:
+                            yield native.NativeCallOutcome(call.call_id, call.row_id,
+                                native.FullModelResponse(200, (), b'{}'))
+                    finally:
+                        raise closing
+                executor = native.NativeCallExecutor(backend)
+                with patch.object(native, graph_name, graph), self.assertRaises(GraphCloseError) as caught:
+                    list(executor.iter_batch(calls, timeout_s=2))
+                self.assertIs(caught.exception, closing)
+                report = executor.last_close_report
+                self.assertEqual(report['received'], report['prepared'])
+                self.assertEqual(report['worker_errors'], [dict(stage='graph_consume',
+                    type=GraphCloseError.__module__ + '.' + GraphCloseError.__name__)])
+                self.assertTrue(report['graph_consumer_stopped'])
+                self.assertFalse(report['clean'])
+                self.assertTrue(report['unconfirmed_work'])
+                self.assertFalse(report['reuse_allowed'])
+                with patch.object(native, graph_name) as later_graph, self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+                    list(executor.iter_batch(calls))
+                later_graph.assert_not_called()
+
     def test_overlapping_batch_cannot_replace_an_active_or_unconfirmed_batch(self):
         calls = tuple(native.NativeCall(str(i), i, b'{}', 'http://localhost/fixture', (), 1) for i in range(2))
         def graph(values, options, control):
@@ -178,16 +206,20 @@ class NativeCallCleanupTests(unittest.TestCase):
 
     def test_full_http_error_response_does_not_mark_transport_unknown(self):
         calls = (native.NativeCall('http-error', 0, b'{}', 'http://localhost/fixture', (), 1),)
-        def graph(values, options, control):
-            for call in values:
-                yield native.NativeCallOutcome(call.call_id, call.row_id,
-                    native.FullModelResponse(429, (), b'{"error":"known HTTP result"}'))
-        executor = native.NativeCallExecutor('daft')
-        with patch.object(native, '_daft_rows', graph):
-            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
-            self.assertEqual(len(list(executor.iter_batch(calls))), 1)
-        self.assertTrue(executor.last_close_report['clean'])
-        self.assertFalse(executor.last_close_report['transport_completion_uncertain'])
+        for status in (429, 500):
+            with self.subTest(status=status):
+                response = native.FullModelResponse(status, (), b'{"error":"known HTTP result"}')
+                def graph(values, options, control):
+                    for call in values:
+                        yield native.NativeCallOutcome(call.call_id, call.row_id, response)
+                expected = native.NativeCallOutcome(calls[0].call_id, calls[0].row_id, response)
+                executor = native.NativeCallExecutor('daft')
+                with patch.object(native, '_daft_rows', graph):
+                    self.assertEqual(list(executor.iter_batch(calls)), [expected])
+                    self.assertEqual(list(executor.iter_batch(calls)), [expected])
+                self.assertTrue(executor.last_close_report['clean'])
+                self.assertFalse(executor.last_close_report['unconfirmed_work'])
+                self.assertFalse(executor.last_close_report['transport_completion_uncertain'])
 
 
 if __name__ == "__main__":

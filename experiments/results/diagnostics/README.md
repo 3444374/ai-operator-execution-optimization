@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[可选执行计时与零模型核验](optional_execution_timing_20261014/README.md)：六条文本接点及现有图像外层，
+复用身份／时钟／有界 writer，默认关闭；账本分段、开关配对、原件来源和未观测项分别保存。
+
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
 [HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。

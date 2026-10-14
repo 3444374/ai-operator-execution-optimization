@@ -15,6 +15,7 @@ from .prepared_map import NativeGraphOptions
 from .imlane_limits import IMLaneBatchLimits
 from src.execution_provider.adapters.sema_imlane import SemaIMLaneExecutor
 from src.baselines.common.private_artifacts import write_private_json
+from src.experiments.execution_timing import get_timing, timing_span
 
 AUTHOR_COMMIT = "072f8257db80569e42c9f5727d839587df529652"
 
@@ -118,8 +119,9 @@ class IMLaneCallExecutor:
                                                      if value is not None})
         self.max_batch_rows = self.limits.max_batch_rows
         self.max_batch_bytes = self.limits.max_input_payload_bytes
-        self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits,
-                                          reuse_bridge=config.reuse_bridge)
+        with timing_span('imlane.delegate_create', backend='imlane', kind=config.runtime):
+            self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits,
+                                              reuse_bridge=config.reuse_bridge)
         self.last_close_report = None
         self.last_preflight = None
         self._facts = None
@@ -128,10 +130,12 @@ class IMLaneCallExecutor:
             f'.uncertain-{bridge["namespace"]}-{config.coordinator_pid}-{config.coordinator_start_ticks}.json')
 
     def start(self):
-        if self._uncertain.exists():
-            raise RuntimeError('author work is unsettled; explicit owner cleanup required')
-        self._facts = verify_coordinator(self.config, self.delegate.config)
-        self.delegate.start()
+        with timing_span('imlane.start', backend='imlane', kind=self.config.runtime,
+                         scope='verify caller-owned ready Coordinator and bridge prerequisites'):
+            if self._uncertain.exists():
+                raise RuntimeError('author work is unsettled; explicit owner cleanup required')
+            self._facts = verify_coordinator(self.config, self.delegate.config)
+            self.delegate.start()
         return self
 
     def __enter__(self):
@@ -146,6 +150,11 @@ class IMLaneCallExecutor:
             error.add_note('IMLane close error: ' + type(cleanup).__name__)
 
     def close(self):
+        with timing_span('imlane.close', backend='imlane', kind=self.config.runtime,
+                         scope='caller bridge close; remote HTTP stop unavailable'):
+            self._close()
+
+    def _close(self):
         primary = None
         pending, process = self.delegate.begin_close()
         if pending:
@@ -181,6 +190,29 @@ class IMLaneCallExecutor:
         return self.iter_batch(calls, cancelled=cancelled)
 
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        with timing_span('imlane.batch', backend='imlane', kind=self.config.runtime,
+                         scope='caller bridge batch through result yields; includes consumer yield wait'):
+            primary = None
+            try:
+                yield from self._iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
+            except BaseException as error:
+                primary = error
+                raise
+            finally:
+                try:
+                    timing = get_timing()
+                    if timing is not None:
+                        report = self.last_close_report or {}
+                        for stage, elapsed in (report.get('timing_ns') or {}).items():
+                            timing.mark('imlane.caller_stage', backend='imlane', kind=self.config.runtime,
+                                source_event=stage, elapsed_ns=elapsed,
+                                scope='retained caller duration; overlaps batch and consumer waits')
+                except BaseException as observation:
+                    if primary is None:
+                        raise
+                    primary.add_note('Detailed IMLane timing also failed: ' + type(observation).__name__)
+
+    def _iter_batch(self, calls, *, cancelled=None, timeout_s=120):
         self.last_close_report = self.last_preflight = None
         self.delegate.last_close_report = None
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:

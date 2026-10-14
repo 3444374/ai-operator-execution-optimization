@@ -1,0 +1,191 @@
+{
+  "schema": "semloom.native_adapter_completion_verification.v1",
+  "run_id": "native-adapter-completion-local-20261014",
+  "prepared_utc": "2026-10-14T07:41:07.032518+00:00",
+  "base_commit": "1b90c1ea39e12c9fff2e2265aae003e25aa9d618",
+  "branch": "fix/native-concurrency-evidence",
+  "implementation_diff_sha256": "7493616ab1725a120ef86628adf9fe5915d051fc0d789f7918f33cc800441b4e",
+  "implementation_and_test_sha256": {
+    "code/src/baselines/text/frameworks/native_calls.py": "2c3c6321269d55295dbf9b0183ee772a8b88f42c1f4855e432d08acaa2310df2",
+    "code/src/experiments/postgresql/native_adapter_query.py": "1a6b6c47cd9eb0bc5e5347eb43e4274bc6119da9c4bfe02f200149b18d3401cb",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "e95f1c2ffa5b15a610e22950276fee9668763b82bb83bb86bf49542b77bc9f8b",
+    "code/src/experiments/postgresql/query_config.py": "e440482571f34512384cd9423818922c4b213200bdf37ed9607e7d4fc54f7af8",
+    "code/tests/baselines/test_native_call_cleanup.py": "3ab2590c96008406ed5616a3a94a3a2f009eec48f345123726230fa8ff584d5a",
+    "code/tests/experiments/test_native_adapter_runtime_evidence.py": "bc602ae82d02d3d4aa5f4f33c41d2cd987800b110805fab8265700ac643222b6",
+    "code/tests/experiments/test_persistent_native_adapter_query.py": "d9e79ee4005a4deab6f3582015618900f2ffb1302ae391398916ae92387350b2"
+  },
+  "environment": {
+    "python": "3.12.6",
+    "aiohttp": "3.14.1",
+    "httpx": "0.28.1",
+    "pinned_Ray_Daft_LOTUS": "unavailable locally",
+    "installed_packages": 0
+  },
+  "before": {
+    "tests_run": 76,
+    "passed": 75,
+    "skipped": 1,
+    "runtime_selection": "three false rejections; one valid working point accepted",
+    "EOF_close": "both backends allow a second graph after internal EOF close failure"
+  },
+  "final": {
+    "tests_run": 90,
+    "passed": 89,
+    "skipped": [
+      {
+        "test": "tests.baselines.test_native_ray_configuration.NativeRayConfigurationTests.test_fresh_ray_import_reads_environment_override_and_upstream_default",
+        "reason": "pinned Ray is unavailable for fresh-import validation"
+      }
+    ],
+    "failures": [],
+    "errors": [],
+    "elapsed_seconds": 13.499,
+    "source_unchanged": true
+  },
+  "targeted_checks": {
+    "runtime": 9,
+    "EOF_lifecycle": 24,
+    "overlap": "included in final suite; not added to its total"
+  },
+  "independent_reviews": {
+    "runtime": "runtime-independent-review.json",
+    "EOF": "eof-independent-review.json",
+    "final_documents": "final-documents-review.json",
+    "remaining_findings": 0
+  },
+  "preservation": {
+    "native_graph_kernel_SDK_runtime_scopes": 12,
+    "all_unchanged": true,
+    "old_actual_software_source": "81a38e522f7923ba1db5bcc2d1e9ac63e2d1f3ab",
+    "old_actual_software_checks": 5,
+    "old_actual_software_POSTs": 120,
+    "old_Q1_Q2_evidence_commit": "4f392c3652803c7786e56245c0bbc18a3e6e9bd6",
+    "old_queries": 8,
+    "old_associated_rows": 8480,
+    "scope": "read existing evidence; no repeat vendor or model execution"
+  },
+  "new_execution": {
+    "remote_server_runs": 0,
+    "vendor_graphs": 0,
+    "model_requests": 0,
+    "GPU_starts": 0,
+    "local_HTTP": "localhost fixture only; total POST count was not centrally collected"
+  },
+  "limitations": [
+    "Fresh Ray import skipped locally; prior fixed-source qualification remains separate.",
+    "Low CPU actual vendor graph execution and real-vendor EOF failure injection were not run.",
+    "Local verifier recorded elapsed time, not UTC start/end points or RSS samples.",
+    "No new performance, saturation, GPU concurrency or PostgreSQL end-to-end claim."
+  ],
+  "public_archive": {
+    "file": "native-adapter-completion-evidence.tar.gz",
+    "bytes": 15375,
+    "sha256": "1488feaf70372c9b820adf3da8703fc2d55d3e771d5e4a620e0722d7298c8477",
+    "members": 17
+  },
+  "member_mapping": {
+    "runtime-selection-before.json": {
+      "raw_bytes": 989,
+      "raw_sha256": "5020eac1303ecc110c8ddaddf0876b2924de353e28d855e200657662b9bfab8a",
+      "public_bytes": 989,
+      "public_sha256": "5020eac1303ecc110c8ddaddf0876b2924de353e28d855e200657662b9bfab8a"
+    },
+    "eof-close-before.py": {
+      "raw_bytes": 2642,
+      "raw_sha256": "9679cd92febdaa6e95f86e8051877aedc1a36c8eb53e1010edf0e2d7225ffa9b",
+      "public_bytes": 2642,
+      "public_sha256": "9679cd92febdaa6e95f86e8051877aedc1a36c8eb53e1010edf0e2d7225ffa9b"
+    },
+    "eof-close-before.json": {
+      "raw_bytes": 3041,
+      "raw_sha256": "4f75b7c6bf2cbd109dc5cba3301cf6c4bd113cf3ff5d65e882533a39b11876a8",
+      "public_bytes": 3041,
+      "public_sha256": "4f75b7c6bf2cbd109dc5cba3301cf6c4bd113cf3ff5d65e882533a39b11876a8"
+    },
+    "eof-close-before.log": {
+      "raw_bytes": 3376,
+      "raw_sha256": "945d92e9b3c70a7dc33a465006afdb3ec98298ac1b3e74ff356b9cf51322f65b",
+      "public_bytes": 3344,
+      "public_sha256": "a954f43d6a87f1b556029fe5eb16800720c7f123edf0d04e7934669921fa61a8"
+    },
+    "eof-close-after.json": {
+      "raw_bytes": 1577,
+      "raw_sha256": "86f35a40a403fdde47bf7ba6a9d46f7bc7622d878bfd1d2e6c0bcbff6cd500bb",
+      "public_bytes": 1577,
+      "public_sha256": "86f35a40a403fdde47bf7ba6a9d46f7bc7622d878bfd1d2e6c0bcbff6cd500bb"
+    },
+    "eof-close-after.log": {
+      "raw_bytes": 4631,
+      "raw_sha256": "a06c664965d01edaf3837e5cb32d6242455adb5cd71f89b534330437d1b50244",
+      "public_bytes": 4631,
+      "public_sha256": "a06c664965d01edaf3837e5cb32d6242455adb5cd71f89b534330437d1b50244"
+    },
+    "local-adapter-tests.json": {
+      "raw_bytes": 2348,
+      "raw_sha256": "046807154e8579e7a467f6ffb85789fecc050bced434050bb5332f735ec43ae1",
+      "public_bytes": 2348,
+      "public_sha256": "046807154e8579e7a467f6ffb85789fecc050bced434050bb5332f735ec43ae1"
+    },
+    "local-adapter-tests.log": {
+      "raw_bytes": 17987,
+      "raw_sha256": "0c2ea7b158176696e8fed2b779e215c65aeaa973726556ad8a9fb0a4264485e8",
+      "public_bytes": 17827,
+      "public_sha256": "a3ae6bcdf909333e81781106d775293acb28d33150c3de2da053986c8fbc279b"
+    },
+    "final-adapter-tests.json": {
+      "raw_bytes": 2704,
+      "raw_sha256": "6d6354e335063f798322dc35dcbd460e7080d0de68ca7c2f398c5986c011f2d5",
+      "public_bytes": 2704,
+      "public_sha256": "6d6354e335063f798322dc35dcbd460e7080d0de68ca7c2f398c5986c011f2d5"
+    },
+    "final-adapter-tests.log": {
+      "raw_bytes": 26376,
+      "raw_sha256": "869ce7a04e1c4981d42c96e4d6fbc4877ca4a6184aa0764975fd3b48ab124b98",
+      "public_bytes": 26088,
+      "public_sha256": "3fb528401238901e2b97926fb57286fd45af86b371554d974bbb1aa0a9dd17c6"
+    },
+    "native-runtime-targeted.log": {
+      "raw_bytes": 2150,
+      "raw_sha256": "3307068fd7b77e4de136676394a4a6c8a6519729d308008b90eab7500e711763",
+      "public_bytes": 2150,
+      "public_sha256": "3307068fd7b77e4de136676394a4a6c8a6519729d308008b90eab7500e711763"
+    },
+    "native-graph-preservation.json": {
+      "raw_bytes": 3230,
+      "raw_sha256": "17072a830541f82dcd045b6572410cf657cf1d44c9374327a5e8d42970d27766",
+      "public_bytes": 3230,
+      "public_sha256": "17072a830541f82dcd045b6572410cf657cf1d44c9374327a5e8d42970d27766"
+    },
+    "original-evidence-read-check.json": {
+      "raw_bytes": 5574,
+      "raw_sha256": "98529d4f6632a7c80b86edaecd2ac9f5dd64ed119771c4074b3122d0e1ce3fe5",
+      "public_bytes": 5574,
+      "public_sha256": "98529d4f6632a7c80b86edaecd2ac9f5dd64ed119771c4074b3122d0e1ce3fe5"
+    },
+    "runtime-independent-review.json": {
+      "raw_bytes": 5796,
+      "raw_sha256": "1b4249a5af50fa8a020539946098f0593f2ca79b082f4d717149ee755b43d168",
+      "public_bytes": 5796,
+      "public_sha256": "1b4249a5af50fa8a020539946098f0593f2ca79b082f4d717149ee755b43d168"
+    },
+    "eof-independent-review.json": {
+      "raw_bytes": 2494,
+      "raw_sha256": "3cf3b02ff36f3188c2f5ff2990a62ab0d192de0ed1643f125b07e49c2689540c",
+      "public_bytes": 2494,
+      "public_sha256": "3cf3b02ff36f3188c2f5ff2990a62ab0d192de0ed1643f125b07e49c2689540c"
+    },
+    "final-documents-review.json": {
+      "raw_bytes": 6597,
+      "raw_sha256": "b4f67d8df8d176cbc451cc1edfc2e2b7b7ea7c573996d63b2b8794c388ce99b8",
+      "public_bytes": 6597,
+      "public_sha256": "b4f67d8df8d176cbc451cc1edfc2e2b7b7ea7c573996d63b2b8794c388ce99b8"
+    },
+    "run_local.py": {
+      "raw_bytes": 3834,
+      "raw_sha256": "92d6a38ae0b010930f1bc785e778c55bfa9c08b34a4cd9e1568171a8729ac862",
+      "public_bytes": 3834,
+      "public_sha256": "92d6a38ae0b010930f1bc785e778c55bfa9c08b34a4cd9e1568171a8729ac862"
+    }
+  },
+  "raw_retention": "Original local checks retained by the task owner under the run_id; no original evidence removed."
+}

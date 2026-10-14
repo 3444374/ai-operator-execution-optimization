@@ -1,5 +1,9 @@
 # 组件测量与历史模拟
 
+[可选 Ray 图诊断](probe_optional_ray_timing.py)默认只打印有限计划，`--execute` 才执行四个独立新 owner、
+0／2520 行副本和总计最多 8 次 localhost 响应；不启动模型、不改原账本。环境、lease、停止条件及结果见
+[计时报告](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)。
+
 [本轮私有发送hook](sembench_pre_send_ledger.py)配合[持久计数组件](../../src/experiments/send_counts.py)，没有模型启动或预算授权功能；部署导入名、指纹与离线迁移要求见[脚本入口](../README.md#sembench-send-accounting)。原件、本地配对及复算入口统一在[Q2补测主报告](../../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
 原组件和动机命令入口统一在这里。它们用于组件测量、fake/CPU历史复算及机制诊断，证据用途由对应报告说明。

@@ -3,6 +3,31 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class NativeRayRuntimeConfig:
+    """Driver connection settings independent of a SQL reader or execution graph."""
+    ray_num_cpus: int
+    ray_async_batches_per_actor: int
+    ray_address: str | None = None
+    ray_object_store_bytes: int = 268435456
+
+    def __post_init__(self):
+        import re
+        from ipaddress import IPv4Address
+        if any(type(value) is not int or not 1 <= value <= 256 for value in (
+                self.ray_num_cpus, self.ray_async_batches_per_actor)):
+            raise ValueError('native Ray CPU and async batch settings must be positive and bounded')
+        if (type(self.ray_object_store_bytes) is not int
+                or not 80*1048576 <= self.ray_object_store_bytes <= 4*1073741824):
+            raise ValueError('Ray object store allocation exceeds the supported range')
+        if self.ray_address is not None:
+            address = re.fullmatch(r'(localhost|[0-9.]+):([0-9]{1,5})', self.ray_address) if isinstance(self.ray_address, str) else None
+            if address is None or not 1 <= int(address[2]) <= 65535:
+                raise ValueError('native Ray requires an explicit existing local cluster address')
+            if address[1] != 'localhost':
+                IPv4Address(address[1])
+
+
+@dataclass(frozen=True)
 class QueryConfig:
     unit_id: str
     arm: str

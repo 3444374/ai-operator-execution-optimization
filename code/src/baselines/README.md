@@ -1,5 +1,10 @@
 # Baseline and comparison harnesses
 
+NativeLOTUS、Daft、Ray Data、SemLoom、IMLane 两模式及现有图像 CLI 共用可选外层诊断。
+设置 `SEMLOOM_DETAILED_TIMING_DIR` 后采集，未设置时保持原总时与输出；图构建／session 初始化等只按实际操作命名，
+不推定厂商排队、actor 初始化或 GPU 计算。[字段与验证](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)
+同时说明原图生命周期、图像未知首批／EOF及计时开销。
+
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
@@ -29,6 +34,8 @@ HTTP错误与网络失败分别交回原算子；响应超量和身份错误直�
 即使本地收到全部错误结果、线程与连接池已退出，也不能据此确认远端停止。完整HTTP错误响应（如429）仍可复用。
 IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对象也要求先清理；发送前取消仍可复用。
 替换执行器前由调用者核清其运行时，报告保留`remote_http_stopped='unavailable'`，不把消费结束当作模型停止。
+厂商生成器在正常EOF的内部关闭中抛错也保留未确认责任，即使全部结果已交付；
+`worker_errors`继续记录原错误，后续批次不再进入图。
 
 `NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
 Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C。

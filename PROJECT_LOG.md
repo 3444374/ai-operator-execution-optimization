@@ -1,11 +1,40 @@
 # 项目日志
 
+## 2026-10-14：集成可选详细计时及关联runtime修复
+
+- 从`58462a0d`普通合入固定`bbbd8a1b`及其`ea6c9184`依赖，默认关闭、作者执行图／并发／预算与原错误优先级保持；main和活动模型源码不变。
+- [集成验收](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#integration-acceptance)核对390源文件和公开事件／关闭计数，38模块最终源码回归312通过／22明确跳过；首轮本地沙盒监听拒绝原件保留。
+- 只复算已有四图8软件HTTP原件，不重启服务器；48worker尾部未知和旧测试来源分别保留，不新增完整尾部或模型性能结论。
+- 两轴集成审查补出图像工厂计时后handle丢失与清理错误优先级反例；保留修前失败，最小修补后定向56通过／1共享窗口opt-in跳过，不与334项相加或借原服务器资格。
+
+## 2026-10-14：补齐默认关闭的执行计时
+
+- 以独立工作树承接计时任务，先普通合入已发布 `ea6c9184`，日志冲突保留双方记录；不改 main。
+- 复用现有身份、clock domain 和有界 writer，追加账本初始化／历史核验、BEGIN 调用、事务体、提交、finish，
+  及 NativeLOTUS／Daft／Ray Data／SemLoom／IMLane 双模式和图像实际外层操作。
+- [报告与开关配对](experiments/results/diagnostics/optional_execution_timing_20261014/README.md)保留失败、来源和开销，
+  不将 process bootstrap、session 初始化、actor 构造混称，不修改原生图／EOF 生命周期或回写旧模型原值。
+- 本地 259 项方法与最后共同层 54 项定向分别通过；两组重叠不相加。服务器原子取得 lease 后执行一次
+  四个新 owner 的 0／2520 行 Ray 图，恰好 8 次固定响应、模型／GPU 为 0，结果／计数／清理通过后释放 lease；
+  48 个 worker 缺关闭标记继续保留为未完整采集，不能替代旧模型变慢原因的证据。
+
 ## 2026-10-14：图像集成上完成独立HSE A最小资格
 
 - 只普通合入`d307bb92`正确性，四份代码／测试逐blob保持；B历史扫描和C ready优先不合入，source先行、FIFO、CLI默认及其他379生产文件保持。
 - 固定`45da0a54`完成[独立A-only实际资格](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)：Ray5项＋真实Daft/Arrow数据适配1项通过、0跳过，179 Git输入核验；其Ray输送为替身，CPU模拟model不当CUDA完成证明。
 - 本地63项62通过／1固定依赖跳过另列；实际复用两个driver、无安装／模型／GPU／HTTP。12fixture actor、27自有子进程与controller出生身份退出确认，共同lease释放，原件及预期错误通知保留。
 - 不改native测量源码、main文档候选或新Daft/Ray owner的公共runtime区域；仅补受影响正确性，不重做历史矩阵或新增性能结论。
+
+## 2026-10-14：接续Daft／Ray公共启动与EOF关闭修补
+
+- 核对实际远端`integration/baselines@1b90c1ea`已含旧接入交付`0be63a19`与整合`d1f5ef74`，
+  使用本任务独立副本，保留其他工作树改动；未联系旧会话。
+- 两项独立审查和零模型复现发现公共Ray启动的SQL reader误校验，以及正常EOF内部关闭失败后仍允许复用；
+  仅修中性连接配置和适配层未确认责任，原native图、UDF、批处理、并发与完整SDK语义保持。
+- [同题报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)
+  定位本次检查；旧5项实库／120POST与模型owner八查询／8480行关联按原来源保留，没有新增服务器或模型执行。
+- 最终受影响本地组合89通过／1缺Ray导入检查跳过，专项9项及24项与其重叠；两个实现交叉审核无待修项，
+  12项原图／HTTP kernel／SDK／查询runtime摘要未变，修前失败及精简原件均保留。
 
 ## 2026-10-14：整合固定 JPEG 文件源与实际 SDK 证据
 

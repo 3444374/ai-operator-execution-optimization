@@ -7,6 +7,7 @@ Full history verification belongs to initialization or explicit offline migratio
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 PHASES = ('software', 'quality', 'single', 'dual')
 MODEL = '__model__'
@@ -76,7 +77,20 @@ def _require_transaction(connection):
         raise RuntimeError('send counters require the caller write transaction')
 
 
-def _history(connection):
+def _history(connection, *, timings=None):
+    started = time.monotonic_ns() if timings is not None else None
+    failure = None
+    try:
+        return _history_counts(connection)
+    except BaseException as error:
+        failure = type(error).__name__
+        raise
+    finally:
+        if timings is not None:
+            timings.append(('history_group_by_and_fold', started, time.monotonic_ns(), failure))
+
+
+def _history_counts(connection):
     values = {scope: [0, 0] for scope in SCOPES}
     for phase, kind, count in connection.execute('SELECT phase,kind,count(*) FROM sends GROUP BY phase,kind'):
         if phase not in PHASES or kind not in KINDS:
@@ -108,7 +122,7 @@ def snapshot(connection):
     return values
 
 
-def initialize_counts(connection, *, migrate=False, expected_rows=None):
+def initialize_counts(connection, *, migrate=False, expected_rows=None, timings=None):
     """Initialize an empty ledger or explicitly migrate a checked offline copy.
 
     Existing counters are verified, never rebuilt automatically. The caller must
@@ -117,7 +131,8 @@ def initialize_counts(connection, *, migrate=False, expected_rows=None):
     """
     _require_transaction(connection)
     exists = connection.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='send_totals'").fetchone()
-    history = _history(connection)
+    # Raw samples only: the caller publishes them after leaving its transaction.
+    history = _history(connection, timings=timings)
     total = sum(history[phase][0] for phase in PHASES)
     if migrate and (type(expected_rows) is not int or expected_rows != total):
         raise RuntimeError('offline migration snapshot changed')

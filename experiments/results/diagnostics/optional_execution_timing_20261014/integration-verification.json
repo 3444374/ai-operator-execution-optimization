@@ -1,0 +1,299 @@
+{
+  "schema": "semloom.optional_timing_integration_verification.v1",
+  "input_commit": "bbbd8a1b3ed2456e97f0d1b766484991be4ac5c9",
+  "integration_base": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "dependency_commit": "ea6c9184a1d30639a87432f32381bab40067353e",
+  "source_files_matched": 390,
+  "local_collection": {
+    "modules": 38,
+    "test_methods": 334,
+    "passed": 312,
+    "skipped": 22,
+    "failed": 0,
+    "fresh_process_per_module": true,
+    "source_scope": "bbbd8a1b input before the independent image failure-path fixes; no sum with later directed regressions.",
+    "records": [
+      {
+        "module": "tests.experiments.test_execution_timing_contract",
+        "passed": 24,
+        "skipped": 0,
+        "log_sha256": "c41048719822b8d41726ff5c9709f8b444579c43b6019ab855c214b240720c2d"
+      },
+      {
+        "module": "tests.experiments.test_buffered_events",
+        "passed": 5,
+        "skipped": 0,
+        "log_sha256": "08726182faf39ee0fad6ae2c843c1dabab4eb3205cf7302df18850490e4c1a04"
+      },
+      {
+        "module": "tests.experiments.test_native_adapter_metrics",
+        "passed": 7,
+        "skipped": 0,
+        "log_sha256": "a0940c4b67ba1086e9b47854cfe84ff674f43aa577686788db3c6a6794cdf2f3"
+      },
+      {
+        "module": "tests.experiments.test_native_query_entry",
+        "passed": 5,
+        "skipped": 0,
+        "log_sha256": "63f34c5b4902dc0bc52c0a4fcabcbd195dba90eb8811b875d91234ae56e6c179"
+      },
+      {
+        "module": "tests.experiments.test_imlane_query_entry",
+        "passed": 9,
+        "skipped": 0,
+        "log_sha256": "b644149cbb4d890e70ed0de406466dc4d29e578a8fb07a80ef1a52dc52dd2fb0"
+      },
+      {
+        "module": "tests.experiments.test_lotus_observation_modes",
+        "passed": 12,
+        "skipped": 0,
+        "log_sha256": "5c18c58d3666e2c4f4beb97ed4ac8190242d9a74f092012d3c85fedc8c2925d4"
+      },
+      {
+        "module": "tests.experiments.test_supplier_adapter_observation",
+        "passed": 12,
+        "skipped": 0,
+        "log_sha256": "bada31eb47822bf1c0de39c71f49ff14fed1cb1bbd9bf990e09624f71df2db75"
+      },
+      {
+        "module": "tests.experiments.test_ready_query_recording",
+        "passed": 11,
+        "skipped": 0,
+        "log_sha256": "a8b13fa4c4e9a76890185901bec77928428b8388454edaa31e0ae96e4e056213"
+      },
+      {
+        "module": "tests.experiments.test_ready_native_lifecycle",
+        "passed": 4,
+        "skipped": 0,
+        "log_sha256": "c20b310e319c236c46be94d1d40ab059fd4bf12d2be87290c2a804281685eea5"
+      },
+      {
+        "module": "tests.experiments.test_native_adapter_query",
+        "passed": 8,
+        "skipped": 0,
+        "log_sha256": "a2f057953db1d696f0dc545887c06001aae62f22bb0ff062c7877b65cffddd30"
+      },
+      {
+        "module": "tests.experiments.test_persistent_native_adapter_query",
+        "passed": 8,
+        "skipped": 3,
+        "log_sha256": "700785a8ea083a68c57a3569580c8cee73748da88062b81fd69ae17d81e9056e"
+      },
+      {
+        "module": "tests.experiments.test_native_http_observer",
+        "passed": 3,
+        "skipped": 0,
+        "log_sha256": "e9d0c514fa42847f1ef2831e9df3db3d5cb5290a11bf6ebf56f7454dc7e5717c"
+      },
+      {
+        "module": "tests.experiments.test_supplier_http_preservation",
+        "passed": 0,
+        "skipped": 1,
+        "log_sha256": "5e70d512f03491bd5b6d4b19d6a0e723a1f18c60e8b3e6f513df09f7018e8627"
+      },
+      {
+        "module": "tests.experiments.test_native_adapter_libraries",
+        "passed": 0,
+        "skipped": 1,
+        "log_sha256": "d10420af808302a27c39798fc2f1234f14cb8a1ee24603a29e8be9f3a00aa6c8"
+      },
+      {
+        "module": "tests.experiments.test_supplier_adapter_libraries",
+        "passed": 0,
+        "skipped": 1,
+        "log_sha256": "a2f9b7be4653a7b2eb35b72a939f66503915fc85b27d5852d280d50cfd2cb707"
+      },
+      {
+        "module": "tests.baselines.test_native_calls",
+        "passed": 0,
+        "skipped": 12,
+        "log_sha256": "ae8c6434b0589801fdef1ed099a61120ecc1fdb38263bd8f4924bab2a1588a3d"
+      },
+      {
+        "module": "tests.baselines.test_native_http_lifecycle",
+        "passed": 11,
+        "skipped": 0,
+        "log_sha256": "9423a6d8baa38c0b2b9eb3ad67ff4445ab3fd1052d34f1bc41d08c05aaa935e3"
+      },
+      {
+        "module": "tests.baselines.test_native_call_cleanup",
+        "passed": 13,
+        "skipped": 0,
+        "log_sha256": "415ff2b0100b90a8d495144b95c9a59ba01d31851f59e2785c4b1426a6b29dcc"
+      },
+      {
+        "module": "tests.baselines.test_imlane_calls",
+        "passed": 11,
+        "skipped": 1,
+        "log_sha256": "0c9eb3004f8b44ba79b66fca4eddd95141d045a674c165918133d52986ff1ea0"
+      },
+      {
+        "module": "tests.baselines.test_imlane_bridge_ownership",
+        "passed": 4,
+        "skipped": 0,
+        "log_sha256": "ecab9f575a8852e9b50407309834fe238cc3bb9e667a872b8117e1284c43f8c7"
+      },
+      {
+        "module": "tests.baselines.test_imlane_async_call",
+        "passed": 12,
+        "skipped": 0,
+        "log_sha256": "dd6dbbcf36c7b626e17a2d537266083b6bde4a17793e9ca2d78d5c230bff6622"
+      },
+      {
+        "module": "tests.baselines.test_imlane_session_sdk_client",
+        "passed": 8,
+        "skipped": 0,
+        "log_sha256": "6556de86ca0ee401c461576107df8a159c3b053453b3757d920510399bd53399"
+      },
+      {
+        "module": "tests.modalities.image.test_image_runner_lifecycle",
+        "passed": 7,
+        "skipped": 0,
+        "log_sha256": "8c6011d63d7118f7c0f64a8bf66b45acb98d7e1da5b31b97239c676dbfb27b9f"
+      },
+      {
+        "module": "tests.modalities.image.test_image_worker_startup",
+        "passed": 6,
+        "skipped": 1,
+        "log_sha256": "a7c1763e71a4f3f6ede0f8fe71aab031ffa6457ff863f390de0d363398306d7b"
+      },
+      {
+        "module": "tests.modalities.image.test_image_metrics",
+        "passed": 6,
+        "skipped": 0,
+        "log_sha256": "e3e670e9f58a1aadeb8e928a01459d5055c2cd1f9cf2245e89e7cce892bc06c1"
+      },
+      {
+        "module": "tests.modalities.image.test_image_contracts",
+        "passed": 15,
+        "skipped": 0,
+        "log_sha256": "e04430817a0dbbe53695027e646c17e4873ef0c6eca34899434f12e6279796cc"
+      },
+      {
+        "module": "tests.experiments.test_lotus_runtime_composition",
+        "passed": 0,
+        "skipped": 1,
+        "log_sha256": "4d27940a6292318acb8fba0f52b5360873fa04ccf8d08a7c59fe0a375da0ba9b"
+      },
+      {
+        "module": "tests.experiments.test_native_adapter_runtime_evidence",
+        "passed": 7,
+        "skipped": 0,
+        "log_sha256": "b76c47d1b488f59bfce6739c157e17308aa8d4d0c3b8ad6b10222931db2682e2"
+      },
+      {
+        "module": "tests.baselines.test_native_call_detailed_timing",
+        "passed": 11,
+        "skipped": 0,
+        "log_sha256": "d0afe49c3cfdc3fe2000e1941cf29e3bf795ed6f167507efca2f99419ebd9165"
+      },
+      {
+        "module": "tests.baselines.test_adapter_detailed_timing",
+        "passed": 6,
+        "skipped": 0,
+        "log_sha256": "1a0e605ef03b18cc863e4ed8e98be33e77ca64d926e42b5507d261febb230a4e"
+      },
+      {
+        "module": "tests.experiments.test_common_timing_error_priority",
+        "passed": 12,
+        "skipped": 0,
+        "log_sha256": "9dcfec51a1318cde5a157435eec8b5e6c7243ce064737c26580fa21c79026f1f"
+      },
+      {
+        "module": "tests.experiments.test_send_counts",
+        "passed": 14,
+        "skipped": 0,
+        "log_sha256": "0c0aaf5f2f4aaa1d366cad9801d6cbcc0dea861e592a96c6756c2a0189685bee"
+      },
+      {
+        "module": "tests.experiments.test_send_ledger_timing",
+        "passed": 11,
+        "skipped": 0,
+        "log_sha256": "6119246b5c7cf202c2538c28b8cdbe9595aa61b9fcde3058d4c61da18ee5d56a"
+      },
+      {
+        "module": "tests.observability.test_gateway_detailed_timing",
+        "passed": 5,
+        "skipped": 0,
+        "log_sha256": "a6294c7d7bd74fd085b4f8aefca46808423d26fbaa2716edf81ab2ae25f276cd"
+      },
+      {
+        "module": "tests.experiments.test_image_detailed_timing",
+        "passed": 4,
+        "skipped": 0,
+        "log_sha256": "b5f39fa50ac292fbd1c9331afa339f81a6b21374a43164d4cfa82e49e76fb525"
+      },
+      {
+        "module": "tests.experiments.test_optional_ray_timing_probe",
+        "passed": 20,
+        "skipped": 0,
+        "log_sha256": "ad213b7daff3b6ed2e929886f9630eb0595936b0dcbaa41da8d0cf495bbe1f33"
+      },
+      {
+        "module": "tests.baselines.test_native_dataset_configuration",
+        "passed": 19,
+        "skipped": 0,
+        "log_sha256": "aebf4847d3dd61475ea5fce0a8778d82f1807ecf54c0096bbb824b8066240216"
+      },
+      {
+        "module": "tests.baselines.test_native_ray_configuration",
+        "passed": 2,
+        "skipped": 1,
+        "log_sha256": "6657da8a617a9e0a8d5a012628f3ae517ad5c32b6f7acb4f07a79c6309ebeda8"
+      }
+    ],
+    "final_code_after_image_fixes": false
+  },
+  "initial_failure": {
+    "phase": "local sandbox check",
+    "reason": "Loopback fixture socket bind was denied before HTTP request execution.",
+    "retained_private": true,
+    "source_changed_to_resolve": false
+  },
+  "public_evidence_recomputed": {
+    "observed_timing_events": 1796,
+    "span_started": 828,
+    "span_ended": 828,
+    "observed_process_traces": 60,
+    "verified_closed_traces": 12,
+    "unclosed_traces_unknown": 48,
+    "fixture_HTTP": 8
+  },
+  "root_server_model_GPU_execution": false,
+  "limits": [
+    "Counts and source hashes recomputed from published observations, no physical original ledger reread.",
+    "48 worker traces remain incomplete/unknown; paired observed spans do not certify complete process tails.",
+    "No GPU performance or historical model drift attribution."
+  ],
+  "image_fault_path_repairs": {
+    "production": "code/scripts/experiments/run_image_clip_e2e.py",
+    "tests": "code/tests/experiments/test_image_detailed_timing.py",
+    "issues": [
+      "Retain acquired worker handles before factory timing boundary exits.",
+      "Promote actual resource cleanup failures over diagnostic-only errors; preserve execution/cancel priority."
+    ],
+    "before_fix": {
+      "test_methods": 8,
+      "failures": 3,
+      "errors": 1,
+      "logs_retained_private": true
+    },
+    "directed_after_fix": {
+      "test_methods": 57,
+      "passed": 56,
+      "skipped": 1,
+      "failed": 0,
+      "skip_reason": "Opt-in actual Ray CPU process-exit evidence requires a shared window.",
+      "overlaps_prior_collection": true,
+      "log_sha256": "8921b809e74ca77def867725a2b0c8aa2019edfbb264d70dfc5e952a03872e52"
+    },
+    "new_server_model_GPU_execution": false
+  },
+  "measured_manifest_files_changed_after_run": [],
+  "actual_server_qualification_not_transferred_to_image_fixes": true,
+  "image_repair_paths_outside_server_input_manifest": [
+    "code/scripts/experiments/run_image_clip_e2e.py",
+    "code/tests/experiments/test_image_detailed_timing.py"
+  ],
+  "server_input_manifest_still_matches_after_image_repairs": true
+}

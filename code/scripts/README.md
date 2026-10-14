@@ -67,6 +67,11 @@ Linux 上设置 `SEMLOOM_IMAGE_WORKER_SDK_TESTS=1`，运行
 
 ### 本轮逐跳发送预算
 
+可选详细诊断使用 `SEMLOOM_DETAILED_TIMING_DIR`，默认关闭。启用私有 helper 前还需把
+`execution_timing.py`、`buffered_events.py`、`ray_map_transport.py` 的实际导入源码及 validation 副本 SHA
+登记进原 `harness-identity.json`；不覆盖正在运行的旧包。初始化／BEGIN 调用／SQL／原提交／finish 的
+字段与本地配对见[可选计时报告](../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)。
+
 [sembench_pre_send_ledger.py](benchmarks/sembench_pre_send_ledger.py)是上述模型小轮私有harness的发送hook，配合[send_counts.py](../src/experiments/send_counts.py)。部署时分别复制为validation/pre_send_ledger.py与validation/send_counts.py，并将两者SHA写入既有harness-identity.json；它不是独立查询CLI，启动、额度和新窗口由唯一owner提供。普通初始化只接受新账本或已带核验计数的账本；旧非空格式需要显式离线副本迁移及预计行数，不能直接重置真实窗口。14项回归、源码签名、完整配对数据与已执行的有限匹配方案见[同题报告](../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
 ## 原生语义系统单查询

@@ -1,5 +1,6 @@
 """Private pass-through accounting; no request values or retry policy changed."""
 from collections import Counter
+from contextlib import contextmanager
 import hashlib,json,os,sqlite3,time,uuid
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -7,26 +8,97 @@ import send_counts as _send_counts
 ROOT=Path(os.environ['MODELRUN_ROOT']);STATE=json.loads((ROOT/'state.json').read_text());DB=ROOT/'sends.sqlite'
 _installed=False
 _hooks={}
+def _get_timing():
+ if not os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'):return None
+ from src.experiments.execution_timing import get_timing
+ return get_timing()
+def _emit_timing(timing,operation,samples,error=None,**fields):
+ if timing is None:return
+ try:
+  for stage,started,ended,failure in samples:
+   timing.record_interval('send_ledger.'+operation+('.'+stage if stage else ''),started,ended,
+    status=('cancelled' if failure in ('CancelledError','GeneratorExit','KeyboardInterrupt') else 'error') if failure else 'completed',
+    error_type=failure,context_exit_includes_failed_commit_rollback=stage=='context_exit_commit' and failure is not None,**fields)
+ except BaseException as failure:
+  if error is None:raise
+  if error is not None:error.add_note('Send ledger timing also failed: '+type(failure).__name__)
+def _timed_call(samples,stage,call,*args,**kwargs):
+ if samples is None:return call(*args,**kwargs)
+ started=time.monotonic_ns();failure=None
+ try:return call(*args,**kwargs)
+ except BaseException as error:
+  failure=type(error).__name__;raise
+ finally:samples.append((stage,started,time.monotonic_ns(),failure))
+def _outside_call(operation,call,*args,**kwargs):
+ timing=_get_timing()
+ if timing is None:return call(*args,**kwargs)
+ samples=[];error=None
+ try:return _timed_call(samples,'',call,*args,**kwargs)
+ except BaseException as failure:
+  error=failure;raise
+ finally:_emit_timing(timing,operation,samples,error)
+@contextmanager
+def _ledger_connection(operation,*,execution_error=None,**fields):
+ """Keep SQLite's original commit/rollback context; publish only after exit."""
+ try:timing=_get_timing()
+ except BaseException as failure:
+  if execution_error is None:raise
+  execution_error.add_note('Send ledger timing also failed: '+type(failure).__name__);timing=None
+ samples=[] if timing is not None else None
+ started=time.monotonic_ns() if timing is not None else None
+ entered=exit_started=None;body_error=error=None;exiting_transaction=False;db=None
+ try:
+  with sqlite3.connect(DB,timeout=10) as db:
+   if timing is not None:entered=time.monotonic_ns()
+   try:yield db,samples,fields
+   except BaseException as failure:
+    body_error=failure;raise
+   finally:
+    if timing is not None:
+     exiting_transaction=db.in_transaction;exit_started=time.monotonic_ns()
+ except BaseException as failure:
+  error=failure;raise
+ finally:
+  if timing is not None:
+   ended=time.monotonic_ns()
+   # A failed rollback may retain its lock: do not run observers in that case.
+   if db is None or not db.in_transaction:
+    if entered is not None:samples.append(('connection_open',started,entered,None))
+    if exit_started is not None:
+     begin=next((row for row in samples if row[0]=='begin_immediate_call'),None)
+     body_started=begin[2] if begin is not None and begin[3] is None else entered
+     body_stage='transaction_body' if exiting_transaction or begin is not None and begin[3] is None else 'connection_body'
+     samples.append((body_stage,body_started,exit_started,type(body_error).__name__ if body_error else None))
+     stage='context_exit_rollback' if body_error else 'context_exit_commit' if exiting_transaction else 'context_exit_read_only'
+     samples.append((stage,exit_started,ended,type(error).__name__ if error else None))
+    samples.append(('connection_scope',started,ended,type(error).__name__ if error else None))
+    _emit_timing(timing,operation,samples,error if error is not None else execution_error,**fields)
 def start_ticks(pid):
  return int((Path('/proc')/str(pid)/'stat').read_text().rsplit(')',1)[1].split()[19])
 def harness_identity():
  target=ROOT/'harness-identity.json';expected=json.loads(target.read_text())
  counter_digest=expected['files'].get('send_counts.py')
  if not counter_digest or hashlib.sha256(Path(_send_counts.__file__).read_bytes()).hexdigest()!=counter_digest:raise RuntimeError('send counter helper differs from fixed identity')
+ if os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'):
+  from src.experiments import execution_timing,buffered_events
+  from src.execution_provider.adapters import ray_map_transport
+  for module in (execution_timing,buffered_events,ray_map_transport):
+   source=Path(module.__file__);digest=expected['files'].get(source.name)
+   if not digest or hashlib.sha256(source.read_bytes()).hexdigest()!=digest:raise RuntimeError('timing helper differs from fixed identity: '+source.name)
  for name,digest in expected['files'].items():
   if hashlib.sha256((ROOT/'validation'/name).read_bytes()).hexdigest()!=digest:raise RuntimeError('run helper source differs from fixed identity')
  return hashlib.sha256(target.read_bytes()).hexdigest()
 def initialize():
- existing=_send_counts.check_identity(ROOT,DB,initializing=True)
- with sqlite3.connect(DB,timeout=10) as db:
+ existing=_outside_call('initialize.identity_check',_send_counts.check_identity,ROOT,DB,initializing=True)
+ with _ledger_connection('initialize') as (db,samples,details):
   if existing and not {'control','sends','gateways','fixture_received','send_totals'}<=set(r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")):raise RuntimeError('initialized send ledger schema is missing')
   db.execute('CREATE TABLE IF NOT EXISTS control (id INTEGER PRIMARY KEY,phase TEXT,slot TEXT,unit TEXT,started REAL,deadline REAL,reserve REAL,deadline_ns INTEGER)')
   db.execute('CREATE TABLE IF NOT EXISTS sends (sequence INTEGER PRIMARY KEY,phase TEXT,slot TEXT,unit TEXT,kind TEXT,pid INTEGER,url TEXT,at_epoch REAL,at_ns INTEGER,body_sha256 TEXT,values_sha256 TEXT,returned_ns INTEGER,status INTEGER,error_type TEXT)')
   db.execute('CREATE TABLE IF NOT EXISTS gateways (url TEXT PRIMARY KEY,pid INTEGER,start_ticks INTEGER,upstream TEXT,helper_identity TEXT)')
   db.execute('CREATE TABLE IF NOT EXISTS fixture_received (sequence INTEGER PRIMARY KEY,received_ns INTEGER)')
-  db.execute('BEGIN IMMEDIATE')
-  _send_counts.initialize_counts(db)
- _send_counts.mark_initialized(ROOT,DB)
+  _timed_call(samples,'begin_immediate_call',db.execute,'BEGIN IMMEDIATE')
+  _timed_call(samples,'initialize_counts',_send_counts.initialize_counts,db,timings=samples)
+ _outside_call('initialize.identity_publish',_send_counts.mark_initialized,ROOT,DB)
 def activate(phase,slot,started,seconds,reserve):
  with sqlite3.connect(DB,timeout=10) as db:
   deadline_ns=time.monotonic_ns()+int((started+seconds-time.time())*1e9)
@@ -36,9 +108,9 @@ def slot(value):
 def unit(value):
  with sqlite3.connect(DB,timeout=10) as db:db.execute('UPDATE control SET unit=? WHERE id=1',(value,))
 def counts(phase=None):
- with sqlite3.connect(DB,timeout=10) as db:
+ with _ledger_connection('counts',phase=phase) as (db,samples,details):
   sql='SELECT kind,count(*) FROM sends'+(' WHERE phase=?' if phase else '')+' GROUP BY kind'
-  rows=dict(db.execute(sql,(phase,) if phase else ()))
+  rows=_timed_call(samples,'group_by_fetch',lambda:dict(db.execute(sql,(phase,) if phase else ())))
  return dict(total=sum(rows.values()),gateway=rows.get('gateway',0),router=rows.get('router',0),model=rows.get('model',0),fixture=rows.get('fixture',0))
 def select(method,url):
  if str(method).upper()!='POST':return None
@@ -55,14 +127,15 @@ def select(method,url):
  raise RuntimeError('unidentified localhost POST refused before send')
 def reserve(kind,url,body):
  _send_counts.check_identity(ROOT,DB)
- with sqlite3.connect(DB,timeout=10) as db:
+ with _ledger_connection('reserve',kind=kind) as (db,samples,details):
   assert_hooks()
-  db.execute('BEGIN IMMEDIATE');_send_counts.check_identity(ROOT,DB);control=db.execute('SELECT phase,slot,unit,started,deadline,reserve,deadline_ns FROM control WHERE id=1').fetchone()
+  _timed_call(samples,'begin_immediate_call',db.execute,'BEGIN IMMEDIATE');_send_counts.check_identity(ROOT,DB);control=_timed_call(samples,'control_select',lambda:db.execute('SELECT phase,slot,unit,started,deadline,reserve,deadline_ns FROM control WHERE id=1').fetchone())
   if control is None:raise RuntimeError('POST before independent allowance activated')
   phase,case,query,at,deadline,cleanup,deadline_ns=control
+  if samples is not None:details.update(phase=phase,slot=case,query_id=query)
   if time.monotonic_ns()>=deadline_ns-int(cleanup*1e9):raise TimeoutError('phase preserves cleanup reserve')
   maximum,post_max=(STATE['minimal_sync_public_cli_software']['max_logical'],STATE['minimal_sync_public_cli_software']['max_posts']) if phase=='software' else STATE['matrix']['stages'][phase][:2]
-  before=_send_counts.snapshot(db)
+  before=_timed_call(samples,'counter_snapshot',_send_counts.snapshot,db)
   total,logical=before[phase]
   if total>=post_max or kind=='gateway' and logical>=maximum:raise RuntimeError('independent phase allowance exhausted before send')
   if phase!='software':
@@ -74,12 +147,14 @@ def reserve(kind,url,body):
   if isinstance(body,bytes):
    try:value_digest=hashlib.sha256(json.dumps(json.loads(body),sort_keys=True,ensure_ascii=False,separators=(',',':'),allow_nan=False).encode()).hexdigest()
    except (ValueError,UnicodeError):pass
-  cur=db.execute('INSERT INTO sends(phase,slot,unit,kind,pid,url,at_epoch,at_ns,body_sha256,values_sha256) VALUES(?,?,?,?,?,?,?,?,?,?)',(phase,case,query,kind,os.getpid(),str(url),time.time(),time.monotonic_ns(),hashlib.sha256(body).hexdigest() if isinstance(body,bytes) else None,value_digest))
-  _send_counts.verify_increment(db,before,phase,kind,cur.lastrowid)
+  cur=_timed_call(samples,'insert_sql',db.execute,'INSERT INTO sends(phase,slot,unit,kind,pid,url,at_epoch,at_ns,body_sha256,values_sha256) VALUES(?,?,?,?,?,?,?,?,?,?)',(phase,case,query,kind,os.getpid(),str(url),time.time(),time.monotonic_ns(),hashlib.sha256(body).hexdigest() if isinstance(body,bytes) else None,value_digest))
+  if samples is not None:details['request_id']=cur.lastrowid
+  _timed_call(samples,'verify_increment',_send_counts.verify_increment,db,before,phase,kind,cur.lastrowid)
   return cur.lastrowid
 
 def finish(seq,response=None,error=None):
- with sqlite3.connect(DB,timeout=10) as db:db.execute('UPDATE sends SET returned_ns=?,status=?,error_type=? WHERE sequence=?',(time.monotonic_ns(),getattr(response,'status',getattr(response,'status_code',None)),type(error).__name__ if error else '',seq))
+ with _ledger_connection('finish',execution_error=error,request_id=seq) as (db,samples,details):
+  _timed_call(samples,'update_sql',db.execute,'UPDATE sends SET returned_ns=?,status=?,error_type=? WHERE sequence=?',(time.monotonic_ns(),getattr(response,'status',getattr(response,'status_code',None)),type(error).__name__ if error else '',seq))
 def claim_fixture(body):
  """The fixture refuses a send without its matching durable outgoing reserve."""
  with sqlite3.connect(DB,timeout=10) as db:
@@ -123,6 +198,18 @@ def install_gateway_registration():
  ObservationGateway.endpoint_url=registered
  _hooks['gateway_registration']=(ObservationGateway,'endpoint_url',registered)
 def install():
+ timing=_get_timing()
+ if timing is None:return _install()
+ started=time.monotonic_ns();error=None;was_installed=_installed
+ try:return _install()
+ except BaseException as failure:
+  error=failure;raise
+ finally:
+  ended=time.monotonic_ns()
+  _emit_timing(timing,'install',[('',started,ended,type(error).__name__ if error else None)],error)
+  if error is None and not was_installed:
+   timing.mark('send_ledger.install.first_ready',monotonic_ns=ended)
+def _install():
  global _installed
  if _installed:assert_hooks();return
  identity=harness_identity()

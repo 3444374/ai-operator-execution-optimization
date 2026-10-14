@@ -18,6 +18,7 @@ from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.buffered_events import BufferedEvents
+from src.experiments.execution_timing import is_timing_error, timed_call, timing_span
 from src.experiments.shared_request_budget import CellBudgetLedger
 from src.observability.request_gateway import GatewayRoute, ObservationGateway
 from src.scheduling.core.session_contract import SessionTimeouts
@@ -77,6 +78,9 @@ class _ArmOwner:
         except BaseException as failure:
             self._close_errors.attempt('owner_components_close', self.stack.close)
             if self._close_errors.first is not None:
+                if is_timing_error(failure) and not is_timing_error(self._close_errors.first):
+                    self._close_errors.first.add_note('Detailed timing also failed: '+type(failure).__name__)
+                    raise self._close_errors.first
                 failure.add_note('Persistent owner initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
         self.started_ns = time.monotonic_ns()
@@ -181,6 +185,9 @@ class _ArmOwner:
             if errors.first is not None:
                 self.group.poisoned = True
                 if primary is not None:
+                    if is_timing_error(primary) and not is_timing_error(errors.first):
+                        errors.first.add_note('Detailed timing also failed: '+type(primary).__name__)
+                        errors.raise_if_failed()
                     primary.add_note('Persistent query cleanup also failed: ' + type(errors.first).__name__)
                 else:
                     errors.raise_if_failed()
@@ -213,6 +220,7 @@ class _ArmOwner:
                 binary=self.group.sema_binary, root=root, num_threads=self.group.sema_native_threads), 'owner_sema_close')
         return self.native
 
+    @timed_call('owner.arm_close')
     def close(self):
         if self._closed:
             return
@@ -255,6 +263,9 @@ class PersistentAdapterGroup:
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
         self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
         for arm in self.arms:
+            if (arm == 'fixed-map-native-ray' or NATIVE_SUPPLIER_BACKENDS.get(arm) == 'ray-data'
+                    or SEMA_NATIVE_ARMS.get(arm) == 'ray-data'):
+                options.validate_backend('ray-data')
             imlane_config_for_arm(arm,self.imlane_call_configs)
             validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs)
         self.imlane_config = imlane_config
@@ -290,45 +301,51 @@ class PersistentAdapterGroup:
         self.deadline = time.monotonic()+self.owner_timeout_s
         new_private_directory(self.root)
         try:
-            if ('fixed-map-native-daft' in self.arms
-                    or 'sema-native-daft-request-service' in self.arms
-                    or any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='daft' for arm in self.arms)):
-                _,self.daft_runtime = _runtime(self.stack, 'fixed-map-native-daft', self.options, None, None, None)
-            core = any('semloom' in arm and not arm.endswith('diagnostic') for arm in self.arms)
-            if (core or 'fixed-map-native-ray' in self.arms
-                    or 'sema-native-ray-data-request-service' in self.arms
-                    or any(NATIVE_SUPPLIER_BACKENDS.get(arm) in ('ray','ray-data') for arm in self.arms)):
-                if core and self.physical is None:
-                    raise ValueError('persistent SemLoom requires the existing physical configuration')
-                self.physical, self.runtime = _runtime(self.stack,
-                    'fixed-map-semloom' if core else ('supplier-native-ray'
-                        if 'fixed-map-native-ray' not in self.arms
-                        and 'sema-native-ray-data-request-service' not in self.arms
-                        and not any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='ray-data' for arm in self.arms)
-                        else 'fixed-map-native-ray'), self.options,
-                    self.physical, self.ray_temp_root, self.ray_address)
-                self.ray_session_id = uuid.uuid4().hex
-            for arm in self.arms:
-                owner = _ArmOwner(self, arm)
-                self.owners[arm] = owner
-                self.stack.callback(self._close_errors.attempt, 'group_owner_close.'+arm, owner.close)
-            self.ready_ns = time.monotonic_ns()
-            write_private_json(self.root/'startup.json', redact_json_values(dict(
-                schema='semloom.persistent_adapter_group.v1', arms=self.arms, started_ns=self.started_ns,
-                ready_ns=self.ready_ns, startup_seconds=(self.ready_ns-self.started_ns)/1e9,
-                runtime=self.runtime, ray_session_id=self.ray_session_id,
-                owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
-                max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
-                sema_executor_scope=self.sema_executor_scope,
-                lotus_observation_mode=self.lotus_observation_mode,
-                hard_timeout_owner='calling process supervisor', result_cache=False)))
-            return self
+            with timing_span('owner.startup'):
+                if ('fixed-map-native-daft' in self.arms
+                        or 'sema-native-daft-request-service' in self.arms
+                        or any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='daft' for arm in self.arms)):
+                    _,self.daft_runtime = _runtime(self.stack, 'fixed-map-native-daft', self.options, None, None, None)
+                core = any('semloom' in arm and not arm.endswith('diagnostic') for arm in self.arms)
+                if (core or 'fixed-map-native-ray' in self.arms
+                        or 'sema-native-ray-data-request-service' in self.arms
+                        or any(NATIVE_SUPPLIER_BACKENDS.get(arm) in ('ray','ray-data') for arm in self.arms)):
+                    if core and self.physical is None:
+                        raise ValueError('persistent SemLoom requires the existing physical configuration')
+                    self.physical, self.runtime = _runtime(self.stack,
+                        'fixed-map-semloom' if core else ('supplier-native-ray'
+                            if 'fixed-map-native-ray' not in self.arms
+                            and 'sema-native-ray-data-request-service' not in self.arms
+                            and not any(NATIVE_SUPPLIER_BACKENDS.get(arm)=='ray-data' for arm in self.arms)
+                            else 'fixed-map-native-ray'), self.options,
+                        self.physical, self.ray_temp_root, self.ray_address)
+                    self.ray_session_id = uuid.uuid4().hex
+                for arm in self.arms:
+                    with timing_span('owner.arm_prepare', arm=arm):
+                        owner = _ArmOwner(self, arm)
+                        self.owners[arm] = owner
+                        self.stack.callback(self._close_errors.attempt, 'group_owner_close.'+arm, owner.close)
+                self.ready_ns = time.monotonic_ns()
+                write_private_json(self.root/'startup.json', redact_json_values(dict(
+                    schema='semloom.persistent_adapter_group.v1', arms=self.arms, started_ns=self.started_ns,
+                    ready_ns=self.ready_ns, startup_seconds=(self.ready_ns-self.started_ns)/1e9,
+                    runtime=self.runtime, ray_session_id=self.ray_session_id,
+                    owner_timeout_s=self.owner_timeout_s, cleanup_reserve_s=120,
+                    max_held_tasks=self.max_held_tasks,sema_native_threads=self.sema_native_threads,
+                    sema_executor_scope=self.sema_executor_scope,
+                    lotus_observation_mode=self.lotus_observation_mode,
+                    hard_timeout_owner='calling process supervisor', result_cache=False)))
+                return self
         except BaseException as failure:
             self._close_errors.attempt('group_close', self.stack.close)
             if self._close_errors.first is not None:
+                if is_timing_error(failure) and not is_timing_error(self._close_errors.first):
+                    self._close_errors.first.add_note('Detailed timing also failed: '+type(failure).__name__)
+                    raise self._close_errors.first
                 failure.add_note('Persistent group initialization cleanup also failed: '+type(self._close_errors.first).__name__)
             raise
 
+    @timed_call('owner.query_call')
     def run(self, arm, *, unit_id, root, load_source=None, phase, reference_outputs=None, allowed_outputs=None,
             sembench_query=None):
         if phase not in ('qualification', 'warmup', 'measurement'):
@@ -409,6 +426,7 @@ class PersistentAdapterGroup:
                         for arm,owner in self.owners.items() if owner.physical is not None
                             and (owner.execution is not None or owner.sema_executor is not None)])
 
+    @timed_call('owner.close', finalize=True)
     def __exit__(self, error_type, error, traceback):
         errors = self._close_errors
         errors.attempt('group_close', self.stack.close)
@@ -420,11 +438,15 @@ class PersistentAdapterGroup:
             owners=owners))))
         if errors.first is not None:
             if error is not None:
+                if is_timing_error(error) and not is_timing_error(errors.first):
+                    errors.first.add_note('Detailed timing also failed: '+type(error).__name__)
+                    errors.raise_if_failed()
                 error.add_note('Persistent group cleanup also failed: '+type(errors.first).__name__)
             else:
                 errors.raise_if_failed()
 
 
+@timed_call('persistent_adapter.cli', finalize=True)
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('schedule','plan','model','budget','output'):

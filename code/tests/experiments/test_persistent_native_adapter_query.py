@@ -13,6 +13,7 @@ from unittest import mock
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
+from src.execution_provider.wire.framing import MAX_FRAME_BYTES
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.shared_request_budget import CellBudgetLedger
@@ -22,6 +23,44 @@ from tests.experiments.test_native_adapter_query import fixture_server
 
 def raw_rows(count):
     return tuple(dict(row_id=str(i),text='same fixture text') for i in range(count))
+
+
+class PersistentNativeOptionsTests(unittest.TestCase):
+    def test_mixed_groups_reject_selected_ray_data_envelopes_before_any_startup(self):
+        with mock.patch('src.experiments.postgresql.persistent_native_adapter_query._runtime') as runtime, \
+                mock.patch('src.experiments.postgresql.persistent_native_adapter_query.new_private_directory') as directory, \
+                mock.patch('src.experiments.postgresql.persistent_native_adapter_query.ObservationGateway') as gateway:
+            for arm in ('fixed-map-native-ray', 'lotus-method-native-ray-data', 'sema-native-ray-data-request-service'):
+                for options in (NativeGraphOptions(concurrency=1, num_threads=1),
+                                NativeGraphOptions(concurrency=4, num_threads=1, ray_batch_rows=2)):
+                    with self.subTest(arm=arm, options=options), \
+                            self.assertRaisesRegex(ValueError, 'batch request envelope'):
+                        PersistentAdapterGroup(('fixed-map-semloom', arm),
+                            plan=SemanticMapPlan('Return ok.', 'fixture', 16),
+                            model=FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                            ledger=None, root=Path('/tmp/native-group-fixture'), options=options)
+            runtime.assert_not_called()
+            directory.assert_not_called()
+            gateway.assert_not_called()
+
+    def test_core_and_semloom_only_groups_ignore_unselected_ray_data_sizes(self):
+        options = NativeGraphOptions(concurrency=1, num_threads=1, ray_batch_rows=256)
+        physical = RayMapConfig('127.0.0.1:46520', 1, 1, MAX_FRAME_BYTES+24, 4*MAX_FRAME_BYTES,
+                                payload_backend='arrow', response_mode='full')
+        with mock.patch('src.experiments.postgresql.persistent_native_adapter_query._runtime') as runtime, \
+                mock.patch('src.experiments.postgresql.persistent_native_adapter_query.new_private_directory') as directory, \
+                mock.patch('src.experiments.postgresql.persistent_native_adapter_query.ObservationGateway') as gateway:
+            for arm in ('lotus-method-native-ray', 'fixed-map-semloom'):
+                with self.subTest(arm=arm):
+                    group = PersistentAdapterGroup((arm,), plan=SemanticMapPlan('Return ok.', 'fixture', 16),
+                        model=FixedModelConfig('http://localhost/fixture', 'fixture', 1000),
+                        ledger=None, root=Path('/tmp/native-group-fixture'), options=options,
+                        physical=physical if arm == 'fixed-map-semloom' else None)
+                    self.assertIs(group.options, options)
+                    self.assertIsNone(group.ray_session_id)
+            runtime.assert_not_called()
+            directory.assert_not_called()
+            gateway.assert_not_called()
 
 
 class PersistentAdapterTests(unittest.TestCase):

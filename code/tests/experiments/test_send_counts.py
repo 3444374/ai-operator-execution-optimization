@@ -1,5 +1,6 @@
 """Focused budget regressions: actual patched reserve and SQLite transactions."""
 import ast
+from contextlib import contextmanager
 import hashlib
 import importlib.util
 import json
@@ -31,11 +32,13 @@ def load(root, *, limit=64, post_limit=192, global_limit=128, global_posts=384):
            'matrix':{'stages':{phase:[limit,post_limit,300] for phase in ['quality','single','dual']},
                      'hard_logical_total':global_limit,'hard_transmission_total':global_posts}}
     functions=[node for node in ast.parse(HELPER.read_text()).body if isinstance(node,ast.FunctionDef)
-               and node.name in ['initialize','reserve','finish','assert_hooks']]
+               and node.name in ['_get_timing','_emit_timing','_timed_call','_outside_call','_ledger_connection',
+                                  'initialize','reserve','finish','counts','assert_hooks']]
     hooks={'aiohttp':(marker,'request',marker.request)}
     hooks.update({'send_counts_'+name:(counts,name,getattr(counts,name)) for name in ['snapshot','verify_increment','initialize_counts','check_identity','mark_initialized']})
     values=dict(ROOT=Path(root),DB=Path(root)/'sends.sqlite',STATE=state,_send_counts=counts,
-                sqlite3=sqlite3,time=time,os=os,hashlib=hashlib,json=json,_installed=True,_hooks=hooks)
+                sqlite3=sqlite3,time=time,os=os,hashlib=hashlib,json=json,contextmanager=contextmanager,
+                _installed=True,_hooks=hooks)
     exec(compile(ast.Module(body=functions,type_ignores=[]),'actual-fixed-send-ledger','exec'),values)
     return values
 

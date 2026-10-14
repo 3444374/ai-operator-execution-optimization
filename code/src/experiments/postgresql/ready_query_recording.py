@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 
 from src.baselines.common.private_artifacts import write_private_json
+from src.experiments.execution_timing import timed_call
 from .map_query_recording import record_execution, record_async_execution
 from .cell_evidence import CellErrors
 
@@ -69,6 +70,7 @@ def _save_ready_timing(directory, execution, submitted, backend_ready_ns,
     return execution
 
 
+@timed_call('query.consume_and_record')
 def record_prepared_execution(directory, open_rows, *, backend_ready_ns,
                               preparation_started_ns=None, clock=time.monotonic_ns,
                               **options):

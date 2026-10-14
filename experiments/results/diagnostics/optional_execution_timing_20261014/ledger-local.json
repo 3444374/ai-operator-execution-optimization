@@ -1,0 +1,509 @@
+{
+  "schema": "semloom.ledger_optional_timing_local.v1",
+  "purpose": "Optional diagnostic behavior and software overhead only",
+  "environment": {
+    "python": "3.12.6",
+    "platform": "macOS-15.6.1-arm64-arm-64bit",
+    "sqlite": "3.45.3"
+  },
+  "protocol": {
+    "histories": [
+      0,
+      2520
+    ],
+    "orderings": [
+      "AB",
+      "BA"
+    ],
+    "A": "diagnostics disabled",
+    "B": "diagnostics enabled",
+    "operations_per_case": "One checked initialize then 120 reserve/finish pairs and one counts read",
+    "writer_setup_and_close": "Measured separately from reserve_finish_ns; writer close includes evidence parsing in this probe and is not a pure fsync duration",
+    "budgets": "Fresh synthetic software-only ledger per case; synthetic retained rows inserted by SQLite without network sends",
+    "retention": "Both waves and all repeats retained; v1 excluded, v2 has eight completed cases and zero known unfinished cases"
+  },
+  "claims": {
+    "http_requests": 0,
+    "model_requests": 0,
+    "gpu_operations": 0,
+    "server_operations": 0,
+    "results": "Counter totals, reservation sequence, stored status and request digests matched for all v2 cases",
+    "events": "Each v2 enabled case retained 3388 events in complete span pairs; disabled cases retained zero detailed events",
+    "limitations": [
+      "Local macOS SQLite software fixture is not GPU or Ray performance evidence.",
+      "Only two orderings per history size; no statistical equivalence claim.",
+      "Diagnostics cost is reported directly and is never subtracted from prior model query times.",
+      "history_group_by_and_fold includes the complete GROUP BY cursor and bounded Python fold; BEGIN is a call duration rather than pure lock wait.",
+      "Nested or concurrent spans are not summed into query wall time.",
+      "Local interval aggregates do not preserve a per-request latency distribution; no tail claim is made."
+    ]
+  },
+  "waves": [
+    {
+      "wave": "v1",
+      "analysis_eligible": false,
+      "source_sha256": {
+        "code/src/experiments/send_counts.py": "ed955119010b65faab4532b73de8b07a0248d37c9f0c048ed1f292093e9620d3",
+        "code/scripts/benchmarks/sembench_pre_send_ledger.py": "a23ef86d580eb309123c94fbc00233355bd64726352b9a1cb5052a09f4b903ef",
+        "code/src/experiments/execution_timing.py": "73fa6775903acb2b9bb0ce64adc1b57c50a520da7b3094b09316187897cfe596"
+      },
+      "runs": [
+        {
+          "history_rows": 0,
+          "order": "AB",
+          "mode": "disabled",
+          "writer_setup_ns": 4208,
+          "initialize_ns": 743959,
+          "reserve_finish_ns": 108719625,
+          "writer_close_ns": 18458,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-0",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 0,
+          "order": "AB",
+          "mode": "enabled",
+          "writer_setup_ns": 161205958,
+          "initialize_ns": 932334,
+          "reserve_finish_ns": 117668125,
+          "writer_close_ns": 7724500,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3384,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-1",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 0,
+          "order": "BA",
+          "mode": "enabled",
+          "writer_setup_ns": 12291,
+          "initialize_ns": 773083,
+          "reserve_finish_ns": 136618792,
+          "writer_close_ns": 8297417,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3398,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-2",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 0,
+          "order": "BA",
+          "mode": "disabled",
+          "writer_setup_ns": 10000,
+          "initialize_ns": 802875,
+          "reserve_finish_ns": 165439250,
+          "writer_close_ns": 32416,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-3",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 2520,
+          "order": "AB",
+          "mode": "disabled",
+          "writer_setup_ns": 2875,
+          "initialize_ns": 1014042,
+          "reserve_finish_ns": 121125000,
+          "writer_close_ns": 14625,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-4",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 2520,
+          "order": "AB",
+          "mode": "enabled",
+          "writer_setup_ns": 12209,
+          "initialize_ns": 1222292,
+          "reserve_finish_ns": 130527167,
+          "writer_close_ns": 8833000,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3398,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-5",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 2520,
+          "order": "BA",
+          "mode": "enabled",
+          "writer_setup_ns": 16417,
+          "initialize_ns": 1275125,
+          "reserve_finish_ns": 150926709,
+          "writer_close_ns": 8289125,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3398,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-6",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        },
+        {
+          "history_rows": 2520,
+          "order": "BA",
+          "mode": "disabled",
+          "writer_setup_ns": 6541,
+          "initialize_ns": 1068958,
+          "reserve_finish_ns": 95431500,
+          "writer_close_ns": 30250,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v1-7",
+          "analysis_eligible": false,
+          "status": "excluded_scope_error"
+        }
+      ],
+      "correction_reason": "The enablement environment remained set after closing a writer. The next case pre-initialization reopened the previous case writer before switching the directory; get_timing caches per process. The original values are retained and excluded. v2 clears the enablement environment after every case.",
+      "original_json_sha256": "d52296fb469f27215120c01a9587ba0d7a3cc756fc16563aa28bde5556778f2a",
+      "probe_source_sha256": "fe888d3783646975b61d37baa44626d47b9eb26f63473996a41152c08f109305",
+      "probe_source_provenance": "reconstructed by reverting the only recorded script edit"
+    },
+    {
+      "wave": "v2",
+      "analysis_eligible": true,
+      "source_sha256": {
+        "code/src/experiments/send_counts.py": "ed955119010b65faab4532b73de8b07a0248d37c9f0c048ed1f292093e9620d3",
+        "code/scripts/benchmarks/sembench_pre_send_ledger.py": "23bc181e9231f10e1a4b10cbdceea750c0c8e073d7e8877212bead4e644e78a2",
+        "code/src/experiments/execution_timing.py": "73fa6775903acb2b9bb0ce64adc1b57c50a520da7b3094b09316187897cfe596"
+      },
+      "runs": [
+        {
+          "history_rows": 0,
+          "order": "AB",
+          "mode": "disabled",
+          "writer_setup_ns": 3458,
+          "initialize_ns": 683750,
+          "reserve_finish_ns": 94840791,
+          "writer_close_ns": 16916,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-0",
+          "analysis_eligible": true,
+          "status": "completed"
+        },
+        {
+          "history_rows": 0,
+          "order": "AB",
+          "mode": "enabled",
+          "writer_setup_ns": 33059125,
+          "initialize_ns": 1020500,
+          "reserve_finish_ns": 112482333,
+          "writer_close_ns": 7838708,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3388,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-1",
+          "analysis_eligible": true,
+          "status": "completed",
+          "observed_operation_ns": {
+            "send_ledger.initialize.history_group_by_and_fold": {
+              "count": 1,
+              "median": 8958,
+              "total": 8958
+            },
+            "send_ledger.initialize.identity_publish": {
+              "count": 1,
+              "median": 493416,
+              "total": 493416
+            },
+            "send_ledger.reserve.begin_immediate_call": {
+              "count": 120,
+              "median": 8417.0,
+              "total": 1226172
+            },
+            "send_ledger.reserve.transaction_body": {
+              "count": 120,
+              "median": 183271.0,
+              "total": 24444866
+            },
+            "send_ledger.reserve.context_exit_commit": {
+              "count": 120,
+              "median": 119750.0,
+              "total": 14991048
+            },
+            "send_ledger.finish.update_sql": {
+              "count": 120,
+              "median": 98166.5,
+              "total": 11963075
+            },
+            "send_ledger.finish.context_exit_commit": {
+              "count": 120,
+              "median": 114937.5,
+              "total": 14173830
+            }
+          }
+        },
+        {
+          "history_rows": 0,
+          "order": "BA",
+          "mode": "enabled",
+          "writer_setup_ns": 339291,
+          "initialize_ns": 810125,
+          "reserve_finish_ns": 112445291,
+          "writer_close_ns": 8002583,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3388,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-2",
+          "analysis_eligible": true,
+          "status": "completed",
+          "observed_operation_ns": {
+            "send_ledger.initialize.history_group_by_and_fold": {
+              "count": 1,
+              "median": 7875,
+              "total": 7875
+            },
+            "send_ledger.initialize.identity_publish": {
+              "count": 1,
+              "median": 404083,
+              "total": 404083
+            },
+            "send_ledger.reserve.begin_immediate_call": {
+              "count": 120,
+              "median": 7708.5,
+              "total": 1100793
+            },
+            "send_ledger.reserve.transaction_body": {
+              "count": 120,
+              "median": 182312.5,
+              "total": 24729956
+            },
+            "send_ledger.reserve.context_exit_commit": {
+              "count": 120,
+              "median": 119896.0,
+              "total": 14666171
+            },
+            "send_ledger.finish.update_sql": {
+              "count": 120,
+              "median": 97125.5,
+              "total": 11813416
+            },
+            "send_ledger.finish.context_exit_commit": {
+              "count": 120,
+              "median": 112833.0,
+              "total": 14526544
+            }
+          }
+        },
+        {
+          "history_rows": 0,
+          "order": "BA",
+          "mode": "disabled",
+          "writer_setup_ns": 3000,
+          "initialize_ns": 594792,
+          "reserve_finish_ns": 82015708,
+          "writer_close_ns": 25584,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-3",
+          "analysis_eligible": true,
+          "status": "completed"
+        },
+        {
+          "history_rows": 2520,
+          "order": "AB",
+          "mode": "disabled",
+          "writer_setup_ns": 1833,
+          "initialize_ns": 1011084,
+          "reserve_finish_ns": 87897417,
+          "writer_close_ns": 17041,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-4",
+          "analysis_eligible": true,
+          "status": "completed"
+        },
+        {
+          "history_rows": 2520,
+          "order": "AB",
+          "mode": "enabled",
+          "writer_setup_ns": 377000,
+          "initialize_ns": 1307625,
+          "reserve_finish_ns": 120758000,
+          "writer_close_ns": 7912875,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3388,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-5",
+          "analysis_eligible": true,
+          "status": "completed",
+          "observed_operation_ns": {
+            "send_ledger.initialize.history_group_by_and_fold": {
+              "count": 1,
+              "median": 401625,
+              "total": 401625
+            },
+            "send_ledger.initialize.identity_publish": {
+              "count": 1,
+              "median": 459500,
+              "total": 459500
+            },
+            "send_ledger.reserve.begin_immediate_call": {
+              "count": 120,
+              "median": 7541.5,
+              "total": 1008835
+            },
+            "send_ledger.reserve.transaction_body": {
+              "count": 120,
+              "median": 190145.5,
+              "total": 26297043
+            },
+            "send_ledger.reserve.context_exit_commit": {
+              "count": 120,
+              "median": 129354.0,
+              "total": 18151757
+            },
+            "send_ledger.finish.update_sql": {
+              "count": 120,
+              "median": 102250.0,
+              "total": 12465113
+            },
+            "send_ledger.finish.context_exit_commit": {
+              "count": 120,
+              "median": 116062.5,
+              "total": 14796535
+            }
+          }
+        },
+        {
+          "history_rows": 2520,
+          "order": "BA",
+          "mode": "enabled",
+          "writer_setup_ns": 318333,
+          "initialize_ns": 1155958,
+          "reserve_finish_ns": 116042833,
+          "writer_close_ns": 8681875,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 3388,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-6",
+          "analysis_eligible": true,
+          "status": "completed",
+          "observed_operation_ns": {
+            "send_ledger.initialize.history_group_by_and_fold": {
+              "count": 1,
+              "median": 395750,
+              "total": 395750
+            },
+            "send_ledger.initialize.identity_publish": {
+              "count": 1,
+              "median": 387083,
+              "total": 387083
+            },
+            "send_ledger.reserve.begin_immediate_call": {
+              "count": 120,
+              "median": 7625.0,
+              "total": 997414
+            },
+            "send_ledger.reserve.transaction_body": {
+              "count": 120,
+              "median": 190521.0,
+              "total": 25513997
+            },
+            "send_ledger.reserve.context_exit_commit": {
+              "count": 120,
+              "median": 127562.0,
+              "total": 15947007
+            },
+            "send_ledger.finish.update_sql": {
+              "count": 120,
+              "median": 103104.0,
+              "total": 12509783
+            },
+            "send_ledger.finish.context_exit_commit": {
+              "count": 120,
+              "median": 116145.5,
+              "total": 14028754
+            }
+          }
+        },
+        {
+          "history_rows": 2520,
+          "order": "BA",
+          "mode": "disabled",
+          "writer_setup_ns": 4833,
+          "initialize_ns": 1159167,
+          "reserve_finish_ns": 116450000,
+          "writer_close_ns": 32958,
+          "requests": 120,
+          "logical_sends": 120,
+          "http_requests": 0,
+          "model_requests": 0,
+          "event_count": 0,
+          "pairs_complete": true,
+          "run_id": "local-ledger-v2-7",
+          "analysis_eligible": true,
+          "status": "completed"
+        }
+      ],
+      "correction_reason": null,
+      "original_json_sha256": "4552a149131bc655179d9743d15147b524e4b6770f8b1794fc41b0d16577af99",
+      "probe_source_sha256": "a14a0e5d574f7e79da1f067d261d075b6107d4fe14357ee74abd033a199180a1",
+      "probe_source_provenance": "retained exact v2"
+    }
+  ]
+}
