@@ -41,6 +41,7 @@ def graph_postprocess(row):
 
 @dataclass(frozen=True)
 class NativeGraphOptions:
+    """Declared allowances and vendor graph settings, not measured parallelism."""
     concurrency: int = 4
     num_threads: int = 8
     ray_actors: int = 2
@@ -53,14 +54,25 @@ class NativeGraphOptions:
                   self.ray_async_batches_per_actor, self.ray_batch_rows, self.source_blocks)
         if any(type(v) is not int or not 1 <= v <= 256 for v in values):
             raise ValueError('native graph sizes must be positive and bounded')
-        if self.concurrency < 2:
+    def validate_backend(self, backend):
+        if backend == 'daft' and self.concurrency < 2:
             raise ValueError('pinned native Daft needs at least two request slots')
-        if self.ray_actors * self.ray_async_batches_per_actor * self.ray_batch_rows > self.concurrency:
+        if backend == 'ray-data' and self.ray_request_row_envelope > self.concurrency:
             raise ValueError('native Ray batch request envelope exceeds the declared HTTP allowance')
+
+    @property
+    def ray_request_row_envelope(self):
+        return self.ray_actors * self.ray_async_batches_per_actor * self.ray_batch_rows
+
+    @property
+    def ray_active_http_upper_bound(self):
+        # Pinned HTTP batches await each lazy post in turn; actor max_concurrency=1.
+        return self.ray_actors * self.ray_async_batches_per_actor
 
 
 @contextmanager
 def open_daft_calls(calls, options, session_factory, *, headers=None):
+    options.validate_backend('daft')
     import daft
     if daft.__version__ != '0.7.21':
         raise RuntimeError('prepared native Map requires pinned Daft 0.7.21')
@@ -113,6 +125,7 @@ def open_daft_calls(calls, options, session_factory, *, headers=None):
 
 @contextmanager
 def open_ray_calls(calls, options, session_factory, *, headers=None, record_stats=None):
+    options.validate_backend('ray-data')
     import ray
     from ray.data.llm import HttpRequestProcessorConfig, build_processor
     from ray.data._internal.planner.plan_udf_map_op import DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY

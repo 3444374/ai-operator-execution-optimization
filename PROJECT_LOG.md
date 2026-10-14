@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-14：完成固定Daft／Ray HTTP软件补验
+
+- 批准65文件输入包逐项上传核验，固定`81a38e52`的5项实库检查全部通过、120localhost POST；源码与依赖版本前后相同，无模型／GPU。
+- Daft及Ray行数、上界与实测峰值、原件与独立退出检查集中于[同题报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)；保留本地失败及跳过来源，不改作者图或容量校验。
+
+## 2026-10-14：补齐原生HTTP并发证据与所选后端检查
+
+- Ray关闭报告区分行数包络、活跃HTTP上界及声明／导入异步批次数；复用已有统一代理峰值，不改作者图或请求调度。
+- 公共配置的跨后端耦合已复现并修补；Daft C≥2与Ray Data包络检查移到选中后端入口，IMLane／Ray Core C1不再被无关参数拒绝。
+- Daft子代理补充独立活动及双事件循环客户端检查，保持batch1／C−1。验证、失败和实库缺项集中在[既有报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)，不把软件替身写成厂商供给或性能结论。
+
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
 - [研究定位](docs/research/研究定位.md#existing-image-execution-paths)区分已构造HTTP payload、PG增量单图及已有多图batch/常驻worker/ObjectRef静态/HSE流水；核对`8862c813`与stage`5a785142`四个关键文件同blob，独立研究原型的host表示复用不扩称GPU驻留或全物理内存计费。

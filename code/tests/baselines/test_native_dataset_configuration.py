@@ -8,6 +8,8 @@ from contextlib import contextmanager
 from dataclasses import replace
 import inspect
 import json
+import os
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import AsyncMock, Mock, patch
@@ -113,6 +115,16 @@ def ray_graph(records, *, async_batches=2, version="2.56.1", initialized=True):
 
 
 class DaftConfigurationTests(unittest.TestCase):
+    def test_daft_keeps_its_slot_rule_without_using_unselected_ray_sizes(self):
+        with self.assertRaisesRegex(ValueError, 'at least two request slots'):
+            native.NativeCallExecutor('daft', NativeGraphOptions(concurrency=1))
+        options = NativeGraphOptions(concurrency=2, ray_batch_rows=256)
+        records = {}
+        with daft_graph(records), patch.object(native, '_request', AsyncMock(side_effect=lambda call, control: outcome(call))):
+            returned = tuple(native.NativeCallExecutor('daft', options).iter_batch(calls()))
+        self.assertEqual(len(returned), 3)
+        self.assertEqual(records['udf_options']['max_concurrency'], 1)
+
     def test_async_udf_arguments_follow_the_selected_options_and_preserve_outcomes(self):
         for concurrency in (4, 8):
             with self.subTest(concurrency=concurrency):
@@ -156,6 +168,30 @@ class DaftConfigurationTests(unittest.TestCase):
 
 
 class RayConfigurationTests(unittest.TestCase):
+    def test_ray_envelope_is_checked_before_graph_creation_and_c1_can_be_selected(self):
+        with ray_graph(records := {}, async_batches=1):
+            with self.assertRaisesRegex(ValueError, 'batch request envelope'):
+                native.NativeCallExecutor('ray-data', NativeGraphOptions(concurrency=1))
+            options = NativeGraphOptions(concurrency=1, ray_actors=1, ray_async_batches_per_actor=1)
+            returned = tuple(native.NativeCallExecutor('ray-data', options).iter_batch(calls()))
+        self.assertEqual(len(returned), 3)
+        self.assertEqual(records['config']['concurrency'], (1, 1))
+
+
+    def test_close_report_separates_rows_slots_and_the_imported_setting(self):
+        for batch_rows in (1, 4):
+            options = NativeGraphOptions(concurrency=16, ray_batch_rows=batch_rows)
+            # Changing the environment after import cannot change Ray's constant.
+            with self.subTest(batch_rows=batch_rows), ray_graph({}), \
+                    patch.dict(os.environ, {'RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY': '4'}):
+                executor = native.NativeCallExecutor('ray-data', options)
+                tuple(executor.iter_batch(calls()))
+            report = executor.last_close_report['native_graph_parameters']
+            self.assertEqual(report['async_batches_setting'], 2)
+            self.assertEqual(report['async_batches_effective'], 2)
+            self.assertEqual(report['request_row_envelope'], 4 * batch_rows)
+            self.assertEqual(report['active_http_upper_bound'], 4)
+
     def test_batch_actor_and_source_parameters_are_forwarded_separately(self):
         selections = (NativeGraphOptions(concurrency=9, ray_actors=1, ray_async_batches_per_actor=3,
                                         ray_batch_rows=3, source_blocks=2),
@@ -182,8 +218,12 @@ class RayConfigurationTests(unittest.TestCase):
     def test_import_time_async_mismatch_fails_before_any_dataset_is_created(self):
         with ray_graph(records := {}, async_batches=4):
             with self.assertRaisesRegex(RuntimeError, "asynchronous batch limit differs"):
-                tuple(native._ray_rows(calls(), NativeGraphOptions(), native._GraphControl()))
+                executor = native.NativeCallExecutor('ray-data')
+                tuple(executor.iter_batch(calls()))
         self.assertEqual(records, {})
+        report = executor.last_close_report['native_graph_parameters']
+        self.assertEqual(report['async_batches_effective'], 4)
+        self.assertIsNone(report['active_http_upper_bound'])
 
     def test_wrong_version_or_unowned_runtime_is_rejected_before_graph_creation(self):
         for settings in ({"version": "2.55.0"}, {"initialized": False}):
@@ -218,6 +258,36 @@ class RayConfigurationTests(unittest.TestCase):
                          {"call_id": call.call_id, "row_id": call.row_id+1}):
             with self.subTest(identity=identity), self.assertRaisesRegex(ValueError, "occurrence identity"):
                 native._ray_postprocess(dict(identity, http_response={"native_outcome": wire}))
+
+
+class SharedConfigurationTests(unittest.TestCase):
+    def test_prepared_graph_contexts_apply_their_own_checks_before_import(self):
+        from src.baselines.text.frameworks.prepared_map import open_daft_calls, open_ray_calls
+        for graph, message in ((open_daft_calls, 'at least two request slots'),
+                               (open_ray_calls, 'batch request envelope')):
+            with self.subTest(graph=graph.__name__), self.assertRaisesRegex(ValueError, message):
+                with graph((), NativeGraphOptions(concurrency=1), None):
+                    self.fail('an invalid selected graph must not be opened')
+
+    def test_imlane_c1_is_not_rejected_by_daft_or_unused_ray_parameters(self):
+        from src.baselines.text.frameworks.imlane_calls import IMLaneCallConfig
+        options = NativeGraphOptions(concurrency=1, ray_batch_rows=256)
+        config = IMLaneCallConfig('cpython', '/tmp/fixture-bridge.json', 123, 456, '/tmp/fixture-author.json')
+        with patch('src.baselines.text.frameworks.imlane_calls.SemaIMLaneExecutor',
+                side_effect=lambda *args, **kwargs: SimpleNamespace(config={'namespace': 'fixture'},
+                    work_root=Path('/tmp'), limits=kwargs['limits'])):
+            executor = native.NativeCallExecutor('imlane', options, imlane_config=config)
+        self.assertIs(executor.options, options)
+        self.assertIs(executor._imlane.delegate.limits, executor._imlane.limits)
+
+    def test_common_sizes_still_reject_nonpositive_noninteger_and_unbounded_values(self):
+        for values in ({'concurrency': 0}, {'num_threads': True}, {'ray_batch_rows': 257}):
+            with self.subTest(values=values), self.assertRaisesRegex(ValueError, 'positive and bounded'):
+                NativeGraphOptions(**values)
+
+    def test_ray_core_c1_ignores_ray_data_batch_parameters(self):
+        options = NativeGraphOptions(concurrency=1, ray_batch_rows=256)
+        self.assertIs(native.NativeCallExecutor('ray', options).options, options)
 
 
 class GraphConsumerIdentityTests(unittest.TestCase):

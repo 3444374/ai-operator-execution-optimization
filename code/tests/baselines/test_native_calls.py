@@ -1,5 +1,6 @@
 """Complete-call HTTP behavior and opt-in actual Daft/Ray Data graphs; no models."""
 from contextlib import contextmanager
+import asyncio
 import base64
 import gzip
 import itertools
@@ -15,9 +16,11 @@ import unittest
 
 from src.baselines.text.frameworks.native_calls import (
     NativeCall, NativeCallExecutor, _DAFT_CONTROLS, _GraphControl, _request,
+    _ProcessorSession, _PROCESSOR_URL, _call_wire, _outcome_from_wire,
 )
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.baselines.common.redact import redact_json_values
+from src.experiments.postgresql.ready_query_recording import proxy_http_peak
 
 
 _FIXTURE_SEQUENCE = itertools.count()
@@ -131,8 +134,57 @@ class NativeHttpTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(calls, [])
 
 
+class NativeRaySessionTests(unittest.IsolatedAsyncioTestCase):
+    """Real localhost HTTP; the batch loop is a stand-in, not a Ray scheduler."""
+    def setUp(self):
+        os.environ['SEMLOOM_NATIVE_CALL_CASE'] = self.id()
+
+    async def batch(self, endpoint, first, rows, intervals, *, before_await=None):
+        async with _ProcessorSession() as session:
+            pending = [session.post(_PROCESSOR_URL,
+                data=json.dumps({'native_call': _call_wire(call(endpoint, first+i))}),
+                headers={}) for i in range(rows)]
+            try:
+                if before_await is not None:
+                    before_await()
+                outcomes = []
+                for request in pending:
+                    started = time.monotonic_ns()
+                    async with await request as response:
+                        intervals.append(dict(upstream_dispatch_started_monotonic_ns=started,
+                            upstream_response_body_read_completed_monotonic_ns=time.monotonic_ns()))
+                        self.assertEqual(response.status, 200)
+                        outcomes.append(_outcome_from_wire((await response.json())['native_outcome']))
+                return outcomes
+            finally:
+                for request in pending:
+                    request.close()
+
+    async def test_creating_pending_posts_is_lazy_and_error_carriers_do_not_retry(self):
+        with complete_server(429) as (endpoint, calls, raw):
+            intervals = []
+            outcomes = await self.batch(endpoint, 0, 4, intervals,
+                before_await=lambda: self.assertEqual(len(calls), 0))
+            self.assertEqual([outcome.row_id for outcome in outcomes], list(range(4)))
+            self.assertTrue(all(outcome.response.status_code == 429 for outcome in outcomes))
+            self.assertEqual((len(calls), proxy_http_peak(intervals), calls.active), (4, 1, 0))
+
+    async def test_more_rows_keep_one_http_per_batch_while_batches_can_overlap(self):
+        for batches, rows in ((1, 4), (4, 1), (4, 4)):
+            with self.subTest(batches=batches, rows=rows), complete_server(delay=.1) as (endpoint, calls, raw):
+                intervals = []
+                values = await asyncio.gather(*(self.batch(endpoint, batch*rows, rows, intervals)
+                    for batch in range(batches)))
+                self.assertEqual(sum(map(len, values)), batches*rows)
+                self.assertEqual(len(calls), batches*rows)
+                self.assertEqual(proxy_http_peak(intervals), batches)
+                self.assertEqual(calls.active, 0)
+
+
 ENABLED = os.environ.get("SEMLOOM_NATIVE_CALL_TEST") == "1" and all(
     find_spec(name) is not None for name in ("daft", "ray", "pyarrow"))
+RAY_ENABLED = os.environ.get("SEMLOOM_NATIVE_CALL_TEST") == "1" and all(
+    find_spec(name) is not None for name in ("ray", "pyarrow"))
 _DAFT_TEST_RUNTIME_READY = False
 
 
@@ -225,6 +277,53 @@ class NativeGraphTests(unittest.TestCase):
                         time.sleep(0.01)
                     self.assertEqual(calls.active, 0)
                     self.assertTrue(executor.last_close_report["graph_consumer_stopped"])
+
+
+@unittest.skipUnless(RAY_ENABLED, "actual pinned Ray HTTP activity validation is explicitly opt-in")
+class RayDataHttpActivityTests(unittest.TestCase):
+    def setUp(self):
+        os.environ['SEMLOOM_NATIVE_CALL_CASE'] = self.id()
+
+    @classmethod
+    def setUpClass(cls):
+        import ray
+        if ray.__version__ != '2.56.1' or ray.is_initialized():
+            raise RuntimeError('HTTP activity tests require their own pinned Ray 2.56.1 runtime')
+        root = Path(os.environ['SEMLOOM_NATIVE_CALL_RAY_TMP'])
+        root.mkdir(parents=True, exist_ok=True)
+        ray.init(num_cpus=8, num_gpus=0, include_dashboard=False, object_store_memory=134217728,
+                 _temp_dir=str(root))
+
+    @classmethod
+    def tearDownClass(cls):
+        import ray
+        ray.shutdown()
+
+    def check_activity(self, actors, rows):
+        options = NativeGraphOptions(concurrency=16, ray_actors=actors,
+            ray_async_batches_per_actor=2, ray_batch_rows=rows, source_blocks=8)
+        with complete_server(delay=.05) as (endpoint, calls, raw):
+            executor = NativeCallExecutor('ray-data', options)
+            outcomes = tuple(executor.iter_batch(tuple(call(endpoint, i) for i in range(32))))
+            self.assertEqual({outcome.row_id for outcome in outcomes}, set(range(32)))
+            self.assertEqual(len(calls), 32)
+            self.assertGreater(calls.peak, 0)
+            self.assertLessEqual(calls.peak, actors*2)
+            self.assertEqual(calls.active, 0)
+            report = executor.last_close_report
+            self.assertTrue(report['clean'])
+            record_fixture('ray-data-http-activity', dict(report=report,
+                actual_posts=len(calls), peak_active=calls.peak,
+                observation_scope='localhost server handlers through complete response write'))
+
+    def test_one_actor_single_row_batches(self):
+        self.check_activity(1, 1)
+
+    def test_one_actor_multirow_batches(self):
+        self.check_activity(1, 4)
+
+    def test_two_actors_multirow_batches(self):
+        self.check_activity(2, 4)
 
 
 @unittest.skipUnless(ENABLED, "actual pinned Ray Core reference validation is explicitly opt-in")

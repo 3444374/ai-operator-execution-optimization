@@ -1,5 +1,9 @@
 """Capture actual adapter API arguments; Ray API is an explicit stand-in."""
 from types import ModuleType, SimpleNamespace
+from importlib.util import find_spec
+import os
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -45,8 +49,26 @@ class NativeRayConfigurationTests(unittest.TestCase):
 
     def test_batch_rows_must_fit_the_declared_request_envelope(self):
         with self.assertRaisesRegex(ValueError, 'batch request envelope'):
-            NativeGraphOptions(concurrency=8, ray_actors=2, ray_async_batches_per_actor=2, ray_batch_rows=4)
-        NativeGraphOptions(concurrency=16, ray_actors=2, ray_async_batches_per_actor=2, ray_batch_rows=4)
+            NativeGraphOptions(concurrency=8, ray_actors=2, ray_async_batches_per_actor=2,
+                ray_batch_rows=4).validate_backend('ray-data')
+        NativeGraphOptions(concurrency=16, ray_actors=2, ray_async_batches_per_actor=2,
+            ray_batch_rows=4).validate_backend('ray-data')
+
+    @unittest.skipUnless(find_spec('ray') is not None, 'pinned Ray is unavailable for fresh-import validation')
+    def test_fresh_ray_import_reads_environment_override_and_upstream_default(self):
+        command = ('import ray\n'
+            'from ray.data._internal.planner.plan_udf_map_op import DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY as batches\n'
+            'if ray.__version__ != "2.56.1": raise RuntimeError("pinned Ray 2.56.1 required")\n'
+            'print(batches)')
+        for configured, expected in ((None, 4), ('2', 2)):
+            environment = dict(os.environ)
+            environment.pop('RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY', None)
+            if configured is not None:
+                environment['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY'] = configured
+            with self.subTest(configured=configured):
+                imported = subprocess.run([sys.executable, '-c', command], env=environment,
+                    check=True, capture_output=True, text=True, timeout=30)
+                self.assertEqual(imported.stdout.strip(), str(expected))
 
 
 if __name__ == '__main__':

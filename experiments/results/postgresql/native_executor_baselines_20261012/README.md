@@ -1,5 +1,51 @@
 # 三种原方法的原生执行接入
 
+<a id="native-http-activity"></a>
+## 原生参数与HTTP活动核查
+
+2026-10-14基于`integration/baselines@8862c813`补充[参数口径](../../../../code/src/baselines/README.md)：
+Ray Data分别记录声明B、导入B、行数包络及活跃HTTP上界，实际峰值沿用统一代理的逐请求区间。
+公共配置构造不再把Daft C≥2及Ray包络检查施加到IMLane／Ray Core；选中后端的额度检查保留。
+原实现4组不合理拒绝已复现，修后IMLane／Ray Core C1、Daft C2及Ray Data C1的对应检查通过；
+IMLane只核公共接入及作者调用桥替身，不增加作者实库C1资格。
+受影响本地检查合计79项，74通过、5缺实际库或未启用实际图检查而跳过。
+两项新增Ray批次循环检查单次28localhost POST，1／4／4峰值随批次数而非批内行数变化；
+该循环为明确替身，不作为Ray actor调度实测。首次沙箱socket错误与随后获准检查分别保留。
+[Daft独立检查](../../../../code/tests/baselines/test_native_daft_activity.py)新增双live loop客户端责任回归，
+该本地阶段跳过实际Daft的24调用活动用例、Ray三种图配置及新进程导入检查；随后实库结果见下文。
+本地阶段未占服务器／GPU或调用模型；Daft batch1／C−1、Ray官方图与各运行预算保持。
+原件运行标识为`native-concurrency-local-20261014`，由本任务保管，可按该标识向项目维护者取得
+`native-concurrency-local-20261014.tar.gz`；SHA-256为`62d1acead648b095018a043c388c3dcc09ca5bb9a6b619e0d0af4979a8d82668`。
+存档的`checks.json`记录6份实现／测试源码摘要及逐成员字节／摘要：`shared-configuration-final.log`对应57通过／1跳过，
+`http-and-lifecycle-final.log`对应16通过，`daft-ray-activity-final.log`对应1通过／4跳过；三组不重叠。
+四份`http-fixtures/`记录28POST及峰值，首次socket错误、跨后端错误复现和两项活动重验的日志另列，重复运行不相加。
+
+随后固定执行源码`81a38e522f7923ba1db5bcc2d1e9ac63e2d1f3ab`，运行上述5项实际库检查，全部通过、0跳过。
+使用既有Python3.12.3、Daft0.7.21、Ray2.56.1、Arrow24.0.0及aiohttp3.14.3，无安装或环境修改。
+新进程导入核对上游B默认4／环境覆盖2；实际Ray图导入B=2，max_concurrency=1、source_blocks=8、声明C=16。
+
+| Ray actors A | batch_rows R | 行数包络 A×B×R | 活跃HTTP上界 A×B | 服务端实测峰值 | POST |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1 | 2 | 2 | 2 | 32 |
+| 1 | 4 | 8 | 2 | 1 | 32 |
+| 2 | 4 | 16 | 4 | 2 | 32 |
+
+本次固定图中增加批内行数没有同比增加活跃请求，也未使所有配置达到HTTP上界；保守行数容量检查保留。
+Daft C4／batch1／原max_concurrency3完成24调用，20个200与4个429保持完整响应、重复请求头和独立行身份。
+输入在迭代前全部准备，消费没有故意等待；服务端活动出现0／1／2／3／4，峰值4，仍有请求间空闲。
+查询所持一个HTTP客户端池已关闭；峰值不代表持续供给饱和，也不据此定位作者调度限制。
+上述峰值覆盖localhost handler开始至完整响应写完；Ray保存锁内计数，逐请求时间曲线及批次池关闭计数未采集，
+不能把它们当统一代理区间、GPU并发或完整语义查询性能；取消／到期／SDK解析实库检查未扩为本轮资格。
+
+运行标识`native-http-libraries-20261014-81a38e52`，03:06:12.839444 UTC开始，36.840秒内完成，实际120POST、模型／GPU0。
+cgroup配额16核，执行固定8核、4GiB采样RSS上限；300秒保留为软件故障保护，不是服务器租用截止。
+346份资源样本的RSS加总峰值3,913,281,536字节，含共享页面且可能漏短峰；未发现CPU亲和性超额。
+独立核对26组PID／出生时间均已退出，Ray进程与共同lease为空，无强制清理或清理错误；输入及固定版本前后相同。
+[机器事实与逐成员映射](native-http-library-verification.json)定位[脱敏原件](native-http-library-evidence.tar.gz)，
+26成员、21,045字节、SHA-256 `9d04aa7d19a4ac01d70e61c279b50aab7b85bb1161bdabafb0c7d4ddff0132d0`。
+配置、全部fixture、资源样本、用例日志与前后核查保留；批准输入包及23成员私有原件由维护者按运行标识提供，
+其摘要和恢复来源均在同一机器事实中，不重复保存同份源码摘要清单。
+
 <a id="duckdb-paths-20261013"></a>
 ## DuckDB六路径源码、实库与公开SQL检查
 

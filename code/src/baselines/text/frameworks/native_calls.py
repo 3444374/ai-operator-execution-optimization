@@ -335,6 +335,7 @@ class _GraphControl:
         self._stopped_executor = None
         self._actors = []
         self._killed_actors = set()
+        self.ray_async_batches_effective = None
 
     def register_actor(self, actor):
         with self._lock:
@@ -412,6 +413,7 @@ def _ray_core_rows(calls, options, control):
 def _daft_rows(calls, options, control):
     if control.stopped.is_set():
         return
+    options.validate_backend('daft')
     import daft
     from daft.runners import get_or_create_runner
     if daft.__version__ != "0.7.21" or get_or_create_runner().name != "native":
@@ -452,11 +454,13 @@ def _daft_rows(calls, options, control):
 def _ray_rows(calls, options, control):
     if control.stopped.is_set():
         return
+    options.validate_backend('ray-data')
     import ray
     from ray.data.llm import HttpRequestProcessorConfig, build_processor
     from ray.data._internal.planner.plan_udf_map_op import DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
     if ray.__version__ != "2.56.1" or not ray.is_initialized():
         raise RuntimeError("native complete calls require caller-owned Ray 2.56.1")
+    control.ray_async_batches_effective = DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
     if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != options.ray_async_batches_per_actor:
         raise RuntimeError("native Ray asynchronous batch limit differs from its import-time setting")
     inputs = [dict(call_id=call.call_id, row_id=call.row_id, native_call=_call_wire(call)) for call in calls]
@@ -508,6 +512,7 @@ class NativeCallExecutor:
             options = self._imlane.options
             max_batch_rows, max_batch_bytes = self._imlane.max_batch_rows, self._imlane.max_batch_bytes
         self.backend, self.options = backend, options or NativeGraphOptions()
+        self.options.validate_backend(backend)
         self.max_batch_rows, self.max_batch_bytes = max_batch_rows, max_batch_bytes
         self.last_close_report = None
         self.last_cleanup_errors = ()
@@ -687,6 +692,10 @@ class NativeCallExecutor:
                     dict(actor_pool_range=[self.options.ray_actors, self.options.ray_actors],
                          http_batch_rows=self.options.ray_batch_rows,
                          async_batches_setting=self.options.ray_async_batches_per_actor,
+                         async_batches_effective=control.ray_async_batches_effective,
+                         request_row_envelope=self.options.ray_request_row_envelope,
+                         active_http_upper_bound=(self.options.ray_active_http_upper_bound
+                             if control.ray_async_batches_effective == self.options.ray_async_batches_per_actor else None),
                          stage_max_concurrency=1, source_blocks=min(len(calls), self.options.source_blocks))
                     if self.backend == "ray-data" else dict(actor_count=self.options.concurrency)),
                 worker_errors_complete=stopped,

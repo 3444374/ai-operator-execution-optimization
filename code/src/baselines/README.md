@@ -30,6 +30,39 @@ HTTP错误与网络失败分别交回原算子；响应超量和身份错误直�
 IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对象也要求先清理；发送前取消仍可复用。
 替换执行器前由调用者核清其运行时，报告保留`remote_http_stopped='unavailable'`，不把消费结束当作模型停止。
 
+`NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
+Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C。
+IMLane和Ray Core可声明C=1，不借未选用的Daft或Ray Data参数拒绝；实际作者线程数、
+Ray逻辑CPU及调用／结果字节额度继续由各自入口核对。这不修改任何已登记运行的额度或配置。
+
+Ray Data完整调用路径的A为HTTP stage actor数，B为每actor的异步批次数，R为`ray_batch_rows`。
+[Ray2.56.1 planner](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/_internal/planner/plan_udf_map_op.py)
+在导入时读取`RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY`，上游默认B=4；
+项目入口在导入前按所选配置设置该变量，默认B=2。导入后修改环境不会改变已加载的常量，
+执行前仍须与声明值一致。关闭报告分别保存`async_batches_setting`与`async_batches_effective`；
+未读取或不匹配时，活跃HTTP上界写`null`，不借配置推断执行已经发生。
+[固定HTTP stage](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/batch/stages/http_request_stage.py)
+逐个await批内的惰性`session.post`。当前stage的actor `max_concurrency=1`时，
+`active_http_upper_bound=A×B`，R增加单批保留行数与串行工作量；
+`request_row_envelope=A×B×R`继续用于原有保守容量检查，不因此放宽C。
+行数包络不是RSS或整个执行图的内存保证，活跃上界也不是已测峰值。
+实际`observed_peak_http`复用查询入口的统一代理记录，由同一monotonic时钟上的
+上游发送至完整正文读完区间计算，原件为`http-trace.jsonl`；不从C或参数乘积补造。
+数据量、source blocks与原生背压可以使实测峰值更小；该HTTP指标不表示GPU内核并发。
+无真实图验证的配置／批次循环替身检查，只说明调用与报告行为。
+
+Daft已有按事件循环复用客户端、各调用保留期限、关闭失败与未知工作不可直接复用的检查。
+这些责任检查与“请求充分时是否持续供给”分别验证；`peak≤C`只说明未超额度，
+完整响应消费及准备等待也可能减少活动请求。低成本替身检查不据此改写固定Daft配置。
+[独立Daft检查](../../tests/baselines/test_native_daft_activity.py)提供24条预先准备的完整请求、
+连续消费和服务端活动时序，另核同一control在两个live loop上的客户端拥有与关闭。
+实际图用例需要固定0.7.21及显式`SEMLOOM_NATIVE_CALL_TEST=1`，无需Ray；缺库时保留跳过。
+
+Ray stage看到的`status=200`表示完整调用结果载体，实际状态、原始正文及传输错误仍由原算子SDK解释。
+`max_retries=0`，原图的task重试与actor重启也关闭；这条适配没有保留Ray HTTP stage
+对模型原始状态的全部错误处理行为。固定方法的执行比较与各系统自有方法的完整任务比较分别报告，
+已经准备的HTTP调用不能代替读取、准备和消费的完整数据流对照。
+
 [`text/controls/ray_core_calls.py`](text/controls/ray_core_calls.py)另用Ray Core原生actor和`ray.wait`，
 固定数量、每actor单调用的静态分片拓扑明确登记为`diagnostic_reference`。
 原生actor队列拥有串行执行，Ray拥有actor调度；没有SemLoom策略或Python HTTP请求池。
