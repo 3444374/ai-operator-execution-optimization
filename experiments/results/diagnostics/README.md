@@ -1,6 +1,8 @@
 # Feasibility Results
 
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
+[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
+原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。
 
 [原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。
 

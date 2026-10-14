@@ -44,6 +44,71 @@ def _descriptor(
 
 
 class BoundedStageBrokerTest(unittest.TestCase):
+    def test_invalid_lease_time_keeps_queued_work_and_capacity(self):
+        for stage in ("prepare", "model"):
+            for now_s in (-1.0, float("nan"), float("inf")):
+                with self.subTest(stage=stage, now_s=now_s):
+                    broker = BoundedStageBroker(self.broker.limits)
+                    descriptor = _descriptor(0)
+                    broker.enqueue_encoded(descriptor)
+                    if stage == "model":
+                        prepare = broker.lease_prepare(now_s=1)
+                        broker.complete_prepare(prepare.lease_id,
+                            replace(descriptor, representation="ready"), now_s=2)
+                    before = broker.snapshot()
+                    with self.assertRaisesRegex(ValueError, "lease time"):
+                        getattr(broker, "lease_" + stage)(now_s=now_s)
+                    self.assertEqual(broker.snapshot(), before)
+                    self.assertFalse(broker.is_drained())
+                    self.assertEqual(getattr(broker, "lease_" + stage)(now_s=3)
+                                     .descriptor.block_id, descriptor.block_id)
+
+    def test_rejects_permanently_oversized_ready_demand_before_admission(self):
+        for descriptor in (
+            _descriptor(0, ready_bytes=81),
+            replace(_descriptor(0), work=WorkDescriptor(
+                stages=(StageWork("prepare", 12, "tensor_values"),
+                        StageWork("model", 9, "pixels")),
+                primary_stage="model", calibration_signature="sig")),
+        ):
+            with self.subTest(descriptor=descriptor):
+                broker = BoundedStageBroker(self.broker.limits)
+                before = broker.snapshot()
+                with self.assertRaises(BufferError):
+                    broker.enqueue_encoded(descriptor)
+                self.assertEqual(broker.snapshot(), before)
+                self.assertTrue(broker.is_drained())
+        self.broker.enqueue_encoded(_descriptor(1))
+        self.assertIsNotNone(self.broker.lease_prepare(now_s=2))
+
+    def test_fifo_waits_for_temporary_byte_or_work_occupancy(self):
+        for byte_limited in (True, False):
+            with self.subTest(byte_limited=byte_limited):
+                broker = BoundedStageBroker(StageBrokerLimits(30, 10, 10, 2, 1))
+                descriptors = []
+                for sequence, demand in enumerate((6, 8, 4)):
+                    descriptor = _descriptor(sequence, ready_bytes=demand if byte_limited else 1)
+                    if not byte_limited:
+                        descriptor = replace(descriptor, work=WorkDescriptor(
+                            stages=(StageWork("prepare", 12, "tensor_values"),
+                                    StageWork("model", demand, "pixels")),
+                            primary_stage="model", calibration_signature="sig"))
+                    descriptors.append(descriptor)
+                broker.enqueue_encoded(descriptors[0])
+                prepare = broker.lease_prepare(now_s=3)
+                prepared = replace(descriptors[0], representation="ready",
+                    physical_bytes=descriptors[0].ready_bytes_estimate)
+                broker.complete_prepare(prepare.lease_id, prepared, now_s=4)
+                model = broker.lease_model(now_s=5)
+                for descriptor in descriptors[1:]:
+                    broker.enqueue_encoded(descriptor)
+                held = broker.snapshot()
+                self.assertIsNone(broker.lease_prepare(now_s=6))
+                self.assertIsNone(broker.lease_prepare(now_s=6, preferred_job_id="job-a"))
+                self.assertEqual(broker.snapshot(), held)
+                broker.complete_model(model.lease_id, output_row_ids=descriptors[0].row_ids)
+                self.assertEqual(broker.lease_prepare(now_s=7).descriptor, descriptors[1])
+
     def test_extended_tail_is_charged_once_and_leased_with_all_rows(self):
         original = _descriptor(0)
         extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),

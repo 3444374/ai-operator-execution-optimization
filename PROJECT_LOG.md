@@ -22,6 +22,11 @@
 - Ray关闭报告区分行数包络、活跃HTTP上界及声明／导入异步批次数；复用已有统一代理峰值，不改作者图或请求调度。
 - 公共配置的跨后端耦合已复现并修补；Daft C≥2与Ray Data包络检查移到选中后端入口，IMLane／Ray Core C1不再被无关参数拒绝。
 - Daft子代理补充独立活动及双事件循环客户端检查，保持batch1／C−1。验证、失败和实库缺项集中在[既有报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)，不把软件替身写成厂商供给或性能结论。
+## 2026-10-14：拆分HSE static正确性集成
+
+从3e保留已发布47f，独立构造[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)。
+当前A只修owner／引用／异常归还、lease时间与永久超大块，补admission峰值；历史扫描和ready优先留B／C。
+A保持原source先行顺序；29项定向通过，实库／GPU尚未在A运行；CLI与source由原owner处理。
 
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
