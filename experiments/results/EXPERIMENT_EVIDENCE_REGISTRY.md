@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-14：[Ray首次／连续Q2机制核查](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#ray-first-use-warm-q2-20261014)完成同模型服务的2独立owner×4完整Q2，960模型请求／2880逐跳POST；固定原A2/async2/rows1/C8，实测峰值4/2，保留全部首次与连续原值。后两次较慢主要在首HTTP前；旧逐请求COUNT修复保持，worker启动／initialize全历史扫描仍核查、现场锁与commit跨度缺测，因果未知。result/prefix cache关闭、actor图每query重建，原生生命周期与实际连接复用逐层核对；无公平排名／查询P99声明。原parser960行重放与响应绑定、所有时间点和清理通过，无额外模型重跑。
+
 2026-10-14：[单卡四路径完整Q1/Q2](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-gpu-full-q1-q2-20261014)。固定d1及相同私有计时补丁，N/D/R/S八查询执行核验通过；Q1相对Native的Daft/R/S分别3/2/1行变化、Q2完全等价，原HTTP答案已不同、根因未知，官方LIMIT5与全量质量分开。8480查询+16协议模型POST、8500逻辑尝试/25492逐跳POST包含首次4失败；旧strict拒绝与两主要服务历史不改写。所有HTTP时间点及现有操作span精简公开可复算，原parser8480行离线重放0差异、无新模型调用；单轮/并发4vs8/不同热态不支持公平排名、查询P99或S调度收益。私有原件用run-ID/SHA获取，正常释放GPU/lease。
 
 2026-10-13：[第二独立N/S A资源停限](diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-rss-scope)。源码8862c813/controller6bdffeaa，原4248计划/4608hard/600秒；79.520秒0逻辑/0POST，监督器未确认ready。80帧服务EngineCore误计、两API KILL/4 fallback、195身份/194PID独立释放、五史与时钟保持。12离线行为/80已知子集回放仅软件证据，新采样候选未模型运行，Q1质量/task-ready/供给仍pending。

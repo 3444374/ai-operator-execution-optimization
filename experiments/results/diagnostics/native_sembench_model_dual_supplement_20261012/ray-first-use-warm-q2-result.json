@@ -1,0 +1,1236 @@
+{
+  "schema": "semloom.ray_first_use_warm_pair_qualification.v2",
+  "passed": true,
+  "source_head": "d1f5ef74c04906ec6cec5cf0f10336e0b0953240",
+  "run_id": "native-workpoint-20261014-ray-cold-warm-d394dfcb",
+  "plan": {
+    "queries": [
+      2
+    ],
+    "warmups": 1,
+    "repeats": 3,
+    "owner_count": 2,
+    "planned_logical": 960,
+    "planned_posts": 2880,
+    "max_logical": 1024,
+    "max_posts": 3072,
+    "workpoints": {
+      "lotus-method-native-ray-data": {
+        "concurrency": 8,
+        "num_threads": 8,
+        "actor_range": [
+          2,
+          2
+        ],
+        "async_batches": 2,
+        "batch_rows": 1,
+        "source_blocks": 2,
+        "request_row_envelope": 4,
+        "active_http_upper_bound": 4
+      }
+    },
+    "time_policy": "fixed-task-completion",
+    "max_seconds": null
+  },
+  "startup_model_service_seconds": 45.77593495696783,
+  "scope_elapsed_seconds": 214.976607681,
+  "model_service_lifetimes": 1,
+  "independent_owner_lifetimes": 2,
+  "owners": [
+    {
+      "owner": "RayOwner-1",
+      "startup_seconds": 19.416775554,
+      "runtime_driver_connect_seconds": 8.925929449,
+      "cluster_resources": {
+        "CPU": 8.0,
+        "GPU": 0,
+        "object_store_memory": 268435456.0
+      },
+      "queries": 4,
+      "result_cache": false,
+      "native_actor_scope": "original Ray Data graph creates its own actors",
+      "model_history_before": 0,
+      "model_history_after": 480
+    },
+    {
+      "owner": "RayOwner-2",
+      "startup_seconds": 18.340841363,
+      "runtime_driver_connect_seconds": 8.321416544,
+      "cluster_resources": {
+        "CPU": 8.0,
+        "GPU": 0,
+        "object_store_memory": 268435456.0
+      },
+      "queries": 4,
+      "result_cache": false,
+      "native_actor_scope": "original Ray Data graph creates its own actors",
+      "model_history_before": 480,
+      "model_history_after": 960
+    }
+  ],
+  "queries": [
+    {
+      "owner": "RayOwner-1",
+      "unit_id": "a0-warmup-0-q2",
+      "role": "first-use",
+      "repeat": 0,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 21.1099673,
+      "ready_completion_seconds": 20.973412572,
+      "public_query_seconds": 21.074054686,
+      "source_preparation_seconds": 0.072511177,
+      "arrival_to_ready_seconds": 0.136554728,
+      "arrival_to_first_http_seconds": 15.741875868,
+      "first_to_last_http_seconds": 4.34237974,
+      "http_activity_covered_seconds": 4.34237974,
+      "http_activity_gap_seconds": 0.0,
+      "http_gap_count": 0,
+      "maximum_http_gap_seconds": 0.0,
+      "last_http_to_consumer_eof_seconds": 1.025711692,
+      "observed_peak_http": 4,
+      "post_query_evaluation_seconds": 0.571215648,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.105865229,
+          "maximum": 0.195900011,
+          "mean": 0.13257072234166667,
+          "p50": 0.129341188,
+          "p95": 0.159954173,
+          "p99": 0.180341234,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000820513,
+          "maximum": 0.033507272,
+          "mean": 0.00147221245,
+          "p50": 0.001055051,
+          "p95": 0.002416035,
+          "p99": 0.004072204,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.104389242,
+          "maximum": 0.194488956,
+          "mean": 0.13069263749166668,
+          "p50": 0.127598111,
+          "p95": 0.152280901,
+          "p99": 0.178967291,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000239228,
+          "maximum": 0.000928154,
+          "mean": 0.0004058724,
+          "p50": 0.000344022,
+          "p95": 0.000782789,
+          "p99": 0.00090025,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 20.920829703,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-1",
+      "unit_id": "a0-measurement-0-q2",
+      "role": "warm",
+      "repeat": 0,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 8.65900599,
+      "ready_completion_seconds": 8.565875707,
+      "public_query_seconds": 8.649809786,
+      "source_preparation_seconds": 0.070824912,
+      "arrival_to_ready_seconds": 0.093130283,
+      "arrival_to_first_http_seconds": 1.178389056,
+      "first_to_last_http_seconds": 6.847643581,
+      "http_activity_covered_seconds": 6.798422369,
+      "http_activity_gap_seconds": 0.049221212,
+      "http_gap_count": 3,
+      "maximum_http_gap_seconds": 0.038653386,
+      "last_http_to_consumer_eof_seconds": 0.632973353,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.05466347,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.095692002,
+          "maximum": 0.129791061,
+          "mean": 0.10791441311666666,
+          "p50": 0.106804969,
+          "p95": 0.12044263,
+          "p99": 0.124240827,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000873617,
+          "maximum": 0.006030038,
+          "mean": 0.0011880413,
+          "p50": 0.001057161,
+          "p95": 0.001790964,
+          "p99": 0.002797244,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.09440737,
+          "maximum": 0.12833492,
+          "mean": 0.106251843975,
+          "p50": 0.105440372,
+          "p95": 0.119004056,
+          "p99": 0.122450638,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000256475,
+          "maximum": 0.000959631,
+          "mean": 0.0004745278416666667,
+          "p50": 0.000383821,
+          "p95": 0.000874988,
+          "p99": 0.000923389,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 8.519053319,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-1",
+      "unit_id": "a0-measurement-1-q2",
+      "role": "warm",
+      "repeat": 1,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 12.448237108,
+      "ready_completion_seconds": 12.35204582,
+      "public_query_seconds": 12.439054592,
+      "source_preparation_seconds": 0.076557198,
+      "arrival_to_ready_seconds": 0.096191288,
+      "arrival_to_first_http_seconds": 5.08274266,
+      "first_to_last_http_seconds": 6.743050683,
+      "http_activity_covered_seconds": 6.667407654,
+      "http_activity_gap_seconds": 0.075643029,
+      "http_gap_count": 5,
+      "maximum_http_gap_seconds": 0.033395245,
+      "last_http_to_consumer_eof_seconds": 0.622443765,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.048760955,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.088036561,
+          "maximum": 0.172935777,
+          "mean": 0.10581220591666667,
+          "p50": 0.104242503,
+          "p95": 0.115874122,
+          "p99": 0.171948897,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000856002,
+          "maximum": 0.004251862,
+          "mean": 0.0011847664916666667,
+          "p50": 0.00106472,
+          "p95": 0.001714304,
+          "p99": 0.003042761,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.086618594,
+          "maximum": 0.171584474,
+          "mean": 0.10414746365,
+          "p50": 0.10265497,
+          "p95": 0.113897473,
+          "p99": 0.170468343,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000251491,
+          "maximum": 0.001213548,
+          "mean": 0.000479975775,
+          "p50": 0.000383461,
+          "p95": 0.000906927,
+          "p99": 0.001068564,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 12.306657034,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-1",
+      "unit_id": "a0-measurement-2-q2",
+      "role": "warm",
+      "repeat": 2,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 13.087217987,
+      "ready_completion_seconds": 12.567193203,
+      "public_query_seconds": 13.078045904,
+      "source_preparation_seconds": 0.495898472,
+      "arrival_to_ready_seconds": 0.520024784,
+      "arrival_to_first_http_seconds": 5.692047739,
+      "first_to_last_http_seconds": 6.705276172,
+      "http_activity_covered_seconds": 6.625536042,
+      "http_activity_gap_seconds": 0.07974013,
+      "http_gap_count": 8,
+      "maximum_http_gap_seconds": 0.04165197,
+      "last_http_to_consumer_eof_seconds": 0.689894076,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.054627573,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.087930573,
+          "maximum": 0.128110341,
+          "mean": 0.10493058593333333,
+          "p50": 0.104123047,
+          "p95": 0.117751244,
+          "p99": 0.127272281,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000875749,
+          "maximum": 0.0041327,
+          "mean": 0.0011195465583333333,
+          "p50": 0.001000614,
+          "p95": 0.00162564,
+          "p99": 0.002398336,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.086054794,
+          "maximum": 0.126804705,
+          "mean": 0.10333400315,
+          "p50": 0.102663198,
+          "p95": 0.115681399,
+          "p99": 0.125923132,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000248941,
+          "maximum": 0.002663767,
+          "mean": 0.000477036225,
+          "p50": 0.000347919,
+          "p95": 0.000931197,
+          "p99": 0.001203267,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 12.516226691,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-2",
+      "unit_id": "a0-warmup-0-q2",
+      "role": "first-use",
+      "repeat": 0,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 22.980964176,
+      "ready_completion_seconds": 22.844861357,
+      "public_query_seconds": 22.946918789,
+      "source_preparation_seconds": 0.073300117,
+      "arrival_to_ready_seconds": 0.136102819,
+      "arrival_to_first_http_seconds": 15.22075601,
+      "first_to_last_http_seconds": 6.658328467,
+      "http_activity_covered_seconds": 6.60612485,
+      "http_activity_gap_seconds": 0.052203617,
+      "http_gap_count": 3,
+      "maximum_http_gap_seconds": 0.04037584,
+      "last_http_to_consumer_eof_seconds": 1.101879699,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.670596442,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.093300158,
+          "maximum": 0.124066903,
+          "mean": 0.1047235108,
+          "p50": 0.104367458,
+          "p95": 0.11138052,
+          "p99": 0.118099226,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000839379,
+          "maximum": 0.004122058,
+          "mean": 0.0011781811166666667,
+          "p50": 0.001059109,
+          "p95": 0.001755922,
+          "p99": 0.003448667,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.091726507,
+          "maximum": 0.121628707,
+          "mean": 0.10306114438333333,
+          "p50": 0.102636616,
+          "p95": 0.109948496,
+          "p99": 0.116134464,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000256873,
+          "maximum": 0.000969374,
+          "mean": 0.00048418530000000003,
+          "p50": 0.000413039,
+          "p95": 0.000909651,
+          "p99": 0.00096364,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 22.782786457,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-2",
+      "unit_id": "a0-measurement-0-q2",
+      "role": "warm",
+      "repeat": 0,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 8.580382853,
+      "ready_completion_seconds": 8.472733057,
+      "public_query_seconds": 8.571354328,
+      "source_preparation_seconds": 0.087628851,
+      "arrival_to_ready_seconds": 0.107649796,
+      "arrival_to_first_http_seconds": 1.191623089,
+      "first_to_last_http_seconds": 6.692310523,
+      "http_activity_covered_seconds": 6.603498778,
+      "http_activity_gap_seconds": 0.088811745,
+      "http_gap_count": 8,
+      "maximum_http_gap_seconds": 0.035258705,
+      "last_http_to_consumer_eof_seconds": 0.696449241,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.061323345,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.090837301,
+          "maximum": 0.130749731,
+          "mean": 0.10489677174166667,
+          "p50": 0.104467289,
+          "p95": 0.115317988,
+          "p99": 0.122530291,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000859959,
+          "maximum": 0.002614801,
+          "mean": 0.0010973810083333333,
+          "p50": 0.00102359,
+          "p95": 0.00144187,
+          "p99": 0.00254058,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.089387582,
+          "maximum": 0.129014372,
+          "mean": 0.103372328975,
+          "p50": 0.102953411,
+          "p95": 0.114081427,
+          "p99": 0.120888041,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000252686,
+          "maximum": 0.001458833,
+          "mean": 0.0004270617583333333,
+          "p50": 0.000363877,
+          "p95": 0.000853087,
+          "p99": 0.000958543,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 8.417591211,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-2",
+      "unit_id": "a0-measurement-1-q2",
+      "role": "warm",
+      "repeat": 1,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 12.32249336,
+      "ready_completion_seconds": 12.22467466,
+      "public_query_seconds": 12.313479705,
+      "source_preparation_seconds": 0.077531185,
+      "arrival_to_ready_seconds": 0.0978187,
+      "arrival_to_first_http_seconds": 4.992470012,
+      "first_to_last_http_seconds": 6.657799137,
+      "http_activity_covered_seconds": 6.589147474,
+      "http_activity_gap_seconds": 0.068651663,
+      "http_gap_count": 6,
+      "maximum_http_gap_seconds": 0.036279526,
+      "last_http_to_consumer_eof_seconds": 0.672224211,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.056911235,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.09109305,
+          "maximum": 0.125644023,
+          "mean": 0.10438550521666666,
+          "p50": 0.10389248,
+          "p95": 0.113160069,
+          "p99": 0.116499882,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000869341,
+          "maximum": 0.003842483,
+          "mean": 0.0011348042,
+          "p50": 0.001030927,
+          "p95": 0.001584571,
+          "p99": 0.002291301,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.089316392,
+          "maximum": 0.12444092,
+          "mean": 0.1028118926,
+          "p50": 0.102485656,
+          "p95": 0.111682156,
+          "p99": 0.114353303,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000263989,
+          "maximum": 0.000998682,
+          "mean": 0.00043880841666666667,
+          "p50": 0.000349913,
+          "p95": 0.000837276,
+          "p99": 0.000880285,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 12.174031169,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    },
+    {
+      "owner": "RayOwner-2",
+      "unit_id": "a0-measurement-2-q2",
+      "role": "warm",
+      "repeat": 2,
+      "query": 2,
+      "requests": 120,
+      "task_completion_seconds": 13.555099424,
+      "ready_completion_seconds": 13.445199036,
+      "public_query_seconds": 13.544961158,
+      "source_preparation_seconds": 0.08996139,
+      "arrival_to_ready_seconds": 0.109900388,
+      "arrival_to_first_http_seconds": 5.334679743,
+      "first_to_last_http_seconds": 7.078724415,
+      "http_activity_covered_seconds": 7.037035042,
+      "http_activity_gap_seconds": 0.041689373,
+      "http_gap_count": 1,
+      "maximum_http_gap_seconds": 0.041689373,
+      "last_http_to_consumer_eof_seconds": 1.141695266,
+      "observed_peak_http": 2,
+      "post_query_evaluation_seconds": 0.04869932,
+      "request_statistics": {
+        "owner_proxy_request": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.09303987,
+          "maximum": 0.12460573,
+          "mean": 0.11112587078333333,
+          "p50": 0.112098703,
+          "p95": 0.119210995,
+          "p99": 0.122852336,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_before_dispatch": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000888429,
+          "maximum": 0.002901804,
+          "mean": 0.0012954296666666666,
+          "p50": 0.001144255,
+          "p95": 0.002073573,
+          "p99": 0.00268614,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "upstream_roundtrip": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.091313062,
+          "maximum": 0.123067015,
+          "mean": 0.10924221824166666,
+          "p50": 0.109963721,
+          "p95": 0.117637664,
+          "p99": 0.121012089,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        },
+        "gateway_after_upstream": {
+          "count": 120,
+          "unit": "seconds",
+          "minimum": 0.000281734,
+          "maximum": 0.003363225,
+          "mean": 0.0005882228750000001,
+          "p50": 0.000493323,
+          "p95": 0.000896118,
+          "p99": 0.00099063,
+          "method": "nearest rank ceil(n*p), descriptive observations; not population tail"
+        }
+      },
+      "execution_correctness": {
+        "passed": true,
+        "complete_requests": 120,
+        "complete_responses": 120,
+        "row_associations": {
+          "rows_bound": 120,
+          "unique_response_ids": true,
+          "original_row_request_hashes": true,
+          "sdk_and_raw_content_equal": true,
+          "scope": "unique SDK/HTTP response IDs bind each row to its complete original request values; identical input occurrences share their declared request hash"
+        }
+      },
+      "answer_equivalence": {
+        "strict_passed": true,
+        "comparison_arm": "lotus-adapted-native",
+        "changed_rows": 0,
+        "total_rows": 120,
+        "decision_differences": [],
+        "returned_result_equal": true,
+        "quality_equal": true
+      },
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "executor_phases": {
+        "payload_generation": {},
+        "representation_and_transfer": {},
+        "organization": {
+          "status": "unavailable",
+          "reason": "selection events have no separate start/end probe"
+        },
+        "aggregation_scope": "individual measured spans; nested or parallel durations are not deducted from query time"
+      },
+      "query_p99": {
+        "status": "unavailable",
+        "reason": "two owner first-use and six serial warm observations do not establish population tail"
+      },
+      "sdk_batch_wait": {
+        "seconds": 13.397881798,
+        "row_labels": 120,
+        "distinct_measured_spans": 1,
+        "request_quantiles": "unavailable: one original SDK batch wait repeated as row labels"
+      }
+    }
+  ],
+  "counts": {
+    "total": 2880,
+    "gateway": 960,
+    "router": 960,
+    "model": 960,
+    "fixture": 0
+  },
+  "prior_spend": {
+    "prior_gateway_attempts": 8500,
+    "prior_transmission_posts": 25492,
+    "prior_model_posts": 8496,
+    "prior_failed_gateway_only_attempts": 4,
+    "scope_planned_logical": 960,
+    "scope_planned_posts": 2880,
+    "scope_max_logical": 1024,
+    "scope_max_posts": 3072,
+    "cumulative_planned_logical": 9460,
+    "cumulative_planned_posts": 28372,
+    "cumulative_max_logical": 9524,
+    "cumulative_max_posts": 28564,
+    "original_four_arm_remaining_logical": 716,
+    "original_four_arm_remaining_posts": 2156,
+    "no_refund": true,
+    "no_reset": true,
+    "all_historical_ledgers_retained": true
+  },
+  "actual_cumulative": {
+    "logical": 9460,
+    "physical": 28372,
+    "model": 9456,
+    "prior_failed_gateway_only": 4
+  },
+  "cleanup": {
+    "watchdog_returncode": 0,
+    "no_stop_sent": true,
+    "no_forced_cleanup": true,
+    "no_gpu_after": true,
+    "old_histories_unchanged": true,
+    "clock_unchanged": true,
+    "owned_survivors": []
+  },
+  "retention": {
+    "archive_sha256": "a2127fb95445e472d2e11b1b1871bc6f3c89d5067858ed2dc7cb6cfbc1e1183c",
+    "archive_bytes": 5849216,
+    "regular_files": 742,
+    "controller_sha256": "5377dc182fbdbaf10dcb93733144d8fb364be5fde6e6b76aac91397ce5c7a1a2",
+    "payload_sha256": "fe31dc6cf9511e4bacfd489440bbd815d65d868b9642b6a56186a11e14240594",
+    "timing_observations": {
+      "file": "ray-first-use-warm-q2-timings.json.gz",
+      "bytes": 26052,
+      "sha256": "a66a9740e7415a6f45d1c0884b92c0730e7706fef13f5ea3e9601ce81badb416",
+      "decoded_sha256": "283c36f04d9b900fb5e23f6e9b0b9bfa7bec0813ad4fed3a99f3227aefe1621c",
+      "requests": 960
+    },
+    "model_identity_configuration_and_all_answers_retained": true,
+    "model_weight_bytes_in_archive": false
+  },
+  "definitions": {
+    "first_use": "first actual Q2 in each independent Ray driver/owner; fresh model service shared across both owners",
+    "warm": "three successive Q2 in the same original owner, no mixed first/warm mean",
+    "http_activity": "union of successful owner-proxy handler entry through response write EOF; transport/audit included",
+    "request_quantiles": "nearest rank per completed query, descriptive only, not model kernel or query tail",
+    "no_native_implementation_changes": true,
+    "no_higher_concurrency": true,
+    "owner_reuse": "same original query owner and Ray session; original Ray Data graph can create its own actors per query"
+  },
+  "comparative_claim": "diagnostic first-use/warm observations; no fair baseline ranking, attribution or population/query P99 claim"
+}

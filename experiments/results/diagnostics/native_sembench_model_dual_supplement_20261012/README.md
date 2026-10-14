@@ -594,3 +594,30 @@ client仍计supervisor／watchdog并保持8GiB；服务spawn／register／publis
 Q1真实质量、完整task／ready端到端时间、持续供给和N/S工作点仍未取得，原因是协议／query未运行，
 指标记unavailable而非性能0。旧Q2 LIMIT5官方F1=1.0、逐行recall0.5保留，不宣称稳定P99或性能排名。
 后续仍仅需同一最小N/S A点，更新包须另冻结身份及新独立窗口，保留两次失败；本次没有扩24配置矩阵。
+
+<a id="ray-first-use-warm-q2-20261014"></a>
+
+## 单卡 Ray Data 首次与连续 Q2 的机制核查
+
+固定同一d1源码、原任务计时补丁与A2／async2／rows1／blocks2／声明C8／各stage max_concurrency1，未调高并发或修改原生实现。一个新就绪模型服务跨两个独立Ray owner，每owner首次Q2加连续三次；所有8次原始120调用、完整响应／出现绑定、原parser及质量一致，实际960模型请求／2880逐跳POST。首次与随后运行单列，不与其他臂首次查询作公平排名。模型启动45.776秒，两个owner启动19.417／18.341秒另计。
+
+| owner／次序 | query完整秒 | query到首HTTP秒 | HTTP覆盖秒 | 空隙秒 | 末HTTP到EOF秒 | 实际HTTP峰值 | 实际发送进程数 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| RayOwner-1／首次 | 21.109967 | 15.741876 | 4.342380 | 0.000000 | 1.025712 | 4 | 2 |
+| RayOwner-1／连续1 | 8.659006 | 1.178389 | 6.798422 | 0.049221 | 0.632973 | 2 | 1 |
+| RayOwner-1／连续2 | 12.448237 | 5.082743 | 6.667408 | 0.075643 | 0.622444 | 2 | 1 |
+| RayOwner-1／连续3 | 13.087218 | 5.692048 | 6.625536 | 0.079740 | 0.689894 | 2 | 1 |
+| RayOwner-2／首次 | 22.980964 | 15.220756 | 6.606125 | 0.052204 | 1.101880 | 2 | 1 |
+| RayOwner-2／连续1 | 8.580383 | 1.191623 | 6.603499 | 0.088812 | 0.696449 | 2 | 1 |
+| RayOwner-2／连续2 | 12.322493 | 4.992470 | 6.589147 | 0.068652 | 0.672224 | 2 | 1 |
+| RayOwner-2／连续3 | 13.555099 | 5.334680 | 7.037035 | 0.041689 | 1.141695 | 2 | 1 |
+
+每次查询仍重新创建原Ray处理图及actor pool并请求关闭；同owner不代表actor长期保留。一个HTTP发送进程的async2也只能形成实测峰值2，声明pool2不能证明两个进程都处理HTTP。原SDK的session-factory在每UDF batch进入／退出，rows1对应一请求session；其实际socket身份未逐个记录。owner网关对象保留、上游pool每query重建；共同router到模型pool每owner重建，首个连续query记录0新连接／120复用事件，后两次各2新／118复用，因此不假定全部连接永久保留。模型权重／服务跨8次保留，Ray runtime在每owner内保留、owner之间重建。查询result cache与prefix cache关闭；操作系统输入页缓存未清空、命中未测。
+
+连续8.6→12→13秒的主要增加位于首HTTP之前，HTTP覆盖约6.6–7.0秒。固定send_counts SHA与旧持久计数修复完全一致，59个bootstrap绑定该身份；reserve读五行与主键MAX，原四次无索引COUNT没有恢复。各query账本分别0→360→720→1080→1440→1800→2160→2520→2880；新owner在较大历史下首个连续query又回到8.58秒，是纯历史量解释的反证。两个最快连续query的HTTPworker在arrival前已完成bootstrap，随后较慢query的worker在arrival后新建并完成bootstrap；第一reservation标记到网关首HTTP仅4.5–5.9毫秒。该标记位于BEGIN／核对之后，不能据此测出之前锁等待。install仍按新进程initialize，初始化GROUP BY全历史及持久提交保留；现场缺reserve／初始化扫描／锁等待／commit独立探针，保持因果未知。
+
+零网络、零模型的本地SQLite副本核对保存全部192初始化样本；固定reserve未发COUNT／GROUP BY，初始化仍扫描。它只有同种send-kind历史及三列合成布局、无现场并发，不能替代服务器I/O／锁耗时或从query扣成本。首次复现脚本回滚后误递增sequence而被原子计数断言拒绝，修正后完成；原件SHA保持，无任何模型或HTTP重跑。
+
+[完整八查询结果](ray-first-use-warm-q2-result.json)、[960请求的3840时间点](ray-first-use-warm-q2-timings.json.gz)、[账本／worker／连接／缓存核查及全部副本样本](ray-first-use-warm-q2-diagnostic.json)和[独立审核](ray-first-use-warm-q2-review.json)同题保存；[stdlib离线重算](recompute_ray_first_use_warm.py)核对120个统计字段，模型／网络0。请求P50/P95/P99只描述各查询120已完成HTTP观察；查询总体P99、纯GPU／纯队列及公平排名不可得。原LIMIT5 F1=1.0同时保留全量TP7／FP0／TN106／FN7。5.85MB私有归档保留模型身份／配置和全部完整响应，未包含权重；用run-ID／SHA向owner获取。
+
+监督与API正常退出，无强制清理，GPU和lease释放；旧9账本／clock不变。该日四臂加本次实际累计9460逻辑尝试／28372逐跳POST／9456模型请求，包括旧4次gateway-only失败。后续横向对照须保持同等模型服务状态、相同预热工作、各路径原生生命周期及交错顺序，冷／热分别报告，不擅自保留原生会销毁的资源。IMLane固定ab3的两个同步默认模式另按已授权方案验证完整Q2/Q1，未以此Ray诊断替代它。
