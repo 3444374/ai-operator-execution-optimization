@@ -159,3 +159,30 @@ SEMLOOM_RUN_HSE_RAY=1 CUDA_VISIBLE_DEVICES= PYTHONPATH=code \
 退出证明超时／再次中断和部分初始化失败。实际结果仍为`prepared_not_run`。
 运行后原始日志放私有artifact目录，公开材料先脱敏和复核
 host／路径／凭据，再登记实际版本、逐项状态、引用释放及独立进程退出证据。
+
+<a id="integration-slices"></a>
+
+## 独立集成提交与挑选顺序
+
+原47f及本分支历史不改写；三片在`fix/hse-static-integration-slices`从3e重新构造，
+[该分支的交接与逐片记录](https://github.com/3444374/ai-operator-execution-optimization/blob/d1db2ea9117e97db68bfa5be2c685b13d4d815d4/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
+区分当前树与原组合证据。共同候选可先挑A，B／C分别另行决定。
+
+| 片／提交 | 生产与测试的精确分配 | 依赖／验证 |
+|---|---|---|
+| A `d307bb9265a32e516052f3bea7d8206f8906c288` | staged_execution的owner／ref／异常确认／未知池、局部寿命及admission峰值；broker的时间原子校验／永久超大块拒绝；10 lifecycle＋broker时间／超大块／临时FIFO三项 | 直接从3e；保留source→CPU→model→wait和全历史扫描；29定向通过，共享478 run／477pass／1skip |
+| B `7c47e2cc1c8e0e0e5afdf71f7f388019e3f574f3` | 仅broker活动集合／终态计数及转换、snapshot／release／invariant；不重扫历史＋retry/cancel两项；CPU成本原件／复算入口 | 在A上加入，不依赖C；31定向通过，共享480 run／479pass／1skip；仅CPU机制收益 |
+| C `d1db2ea9117e97db68bfa5be2c685b13d4d815d4` | 仅提取A的model提交循环并在source前调用；1项派发顺序测试及局部fixture | 依赖A，不依赖B；32定向通过，共享481 run／480pass／1skip；A+C内存组合另有15／15通过 |
+
+各提交同时同步事实入口，不改source／CLI／pool factory或主路线图。A+B+C四个生产／测试文件
+与47f逐字节相同，均完成独立只读最终diff审查、隐私扫描和远端核对；未合并main。
+正常路径完成屏障与强static对照保持，B／C实GPU及完整性能结论仍未验证。
+已审核实际Ray包仍取`ed20923876d668d6b11b0e4005cca2c7caa89c12`；其五项实库检查目前等待共同lease，
+不能据本地成功认领实际Ray通过。模型owner优先，无服务器资源抢占。
+
+首次上传／启动调用被自动审批按任务最初禁令拒绝，动作未执行。主会话随后转发用户实际授权原文并
+解除原排期限制；相同调用只重试一次获准，未更换路径规避。26成员及摘要核对后原子取得lease，
+只读预检发现服务器旧资产清单没有`imlane-runtime`组，因此停在Ray之前；3个自有进程退出并释放lease。
+公开四模块清单已在私有控制中补齐，不修改共享仓库；第二个新目录尝试因模型owner先持有lease而停止，
+本任务0自有进程存活／无lease／未启动Ray。两次原件、最初SSH旧配置连接失败及审批拒绝均留私有记录。
+实际Ray仍`prepared_not_run`，等待主会话释放通知；0GPU及无正常总墙钟截断保持。
