@@ -29,6 +29,8 @@ HTTP错误与网络失败分别交回原算子；响应超量和身份错误直�
 即使本地收到全部错误结果、线程与连接池已退出，也不能据此确认远端停止。完整HTTP错误响应（如429）仍可复用。
 IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对象也要求先清理；发送前取消仍可复用。
 替换执行器前由调用者核清其运行时，报告保留`remote_http_stopped='unavailable'`，不把消费结束当作模型停止。
+厂商生成器在正常EOF的内部关闭中抛错也保留未确认责任，即使全部结果已交付；
+`worker_errors`继续记录原错误，后续批次不再进入图。
 
 `NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
 Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C。

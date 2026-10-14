@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[Daft／Ray接续适配修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)
+分开公共Ray连接配置与SQL reader检查，保留所选图的容量校验；正常EOF内部关闭异常也拒绝复用。
+最终本地组合89通过／1缺Ray导入检查跳过，两个实现交叉审核无待修项；
+原图、UDF、并发、SDK及方法保持，原活动与Q1／Q2证据仍按各固定来源解释；本轮没有新增模型或服务器执行。
+
 2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
 在 `964e70ef` 上三项通过、0 跳过，覆盖 Daft／Ray reader 与两个 CPU 替身工厂 actor 的 shutdown 前退出。
 保持原 PG 及 direct_dependency 默认；真实 CLIP／GPU／HSE、完整 CLI 退出及厂商总 I/O 并发仍待验证。
