@@ -1,10 +1,11 @@
-# HSE static 本地正确性与 broker 历史开销审查
+# HSE static 正确性与 broker 历史开销审查
 
 本轮审查已有异构分阶段执行（HSE）的 static runner 与共享 broker，以
 `integration/baselines` 的 `3e7bd54bbc0e3416dfca991fcaaa2ffc41270a71` 为源码基点；
 远端 stage 分支核对为 `5a7851426b9d4412a3d20192a84a72cd1acf1c6c`。
 保留多图 batch、常驻 CPU/GPU actor、ObjectRef 依赖、FIFO 与 direct-dependency 强静态对照。
-只验证本地生产 Core/broker 与受控 actor/source 替身，不要求 PostgreSQL 接入。
+先验证本地生产 Core/broker 与受控 actor/source 替身，随后完成固定包的实际 Ray CPU actor 检查；
+不要求 PostgreSQL 接入。
 
 ## 已复现并修复
 
@@ -23,7 +24,7 @@
 borrowed pool 的后续 HSE 调用会被拒绝；正常热路径不增加 CPU/device 确认 RPC。
 该完成证明使用既有同步、串行、同一提交方、无自动重试的 actor 设定；
 [Ray 官方执行顺序说明](https://docs.ray.io/en/latest/ray-core/actors/task-orders.html)支持这项设计前提，
-本轮尚未在固定 Ray 版本执行实库故障测试。
+固定 Ray 2.56.1 的 CPU actor 故障检查已通过，见下方实库记录；真实 GPU 完成语义仍未验证。
 
 ## 已确认的开销与未验证的收益
 
@@ -55,7 +56,7 @@ borrowed pool 的后续 HSE 调用会被拒绝；正常热路径不增加 CPU/de
 共享 scheduling 完整发现首先因缺 `pyarrow` 产生1个 import error，
 [失败日志](discovery_missing_arrow.log)保留。排除该无法导入模块后运行现有 scheduling 全集、
 HSE/descriptor、incremental image 和 Map preparation；最终范围、计数、跳过项与源码摘要见
-[机器记录](local_checks.json)和[输出](local_checks.log)。没有混装依赖或启动服务器。
+[机器记录](local_checks.json)和[输出](local_checks.log)。该本地轮没有混装依赖或启动服务器。
 
 HSE 本路径使用 Ray Core actor；broker管理自己的 encoded/preparing/ready/modeling payload
 账本，Ray管理实际 actor/task 排程，Daft source 与其缓冲仍由数据源执行方管理。原生 Ray Data
@@ -67,7 +68,7 @@ writable host copy、device tensor、模型缓存或全部 RSS；这几类物理
 `ray.shutdown()`；调用方应在异常后终止/丢弃本次池，不能改用 direct-dependency 重用未知池，
 因为那条路径不读取 HSE 的保护记录。停止池的外层 finally 与 sampler 清理应由 CLI owner处理。
 
-后续最小实库需求交主会话排期：4 CPU、约512 MiB object store，采用串行 CPU/模拟模型
+固定包实库检查已按主会话排期完成：4 CPU、512 MiB object store，采用串行 CPU/模拟模型
 actor验证真实多返回 ObjectRef、部分完成、错误确认及未知池拒绝，模型/GPU/POST均0。
 健康运行没有300秒或其他总墙钟截断；单操作无完成等待60秒、故障确认30秒、自有actor退出核对30秒。
 真实性能验证需要单4090与最多16 CPU，复用既有本地模型和同一 source/输出语义；从已有batch64
@@ -145,8 +146,8 @@ Ray与sampler生命周期。这些函数已由独立审查者做CPU异常注入�
 核对进程退出；driver连接结束，短`/tmp/hs*`下的原始Ray日志留给owner私下保存。若退出无法确认，
 保留故障状态并停止后续资格判断。逻辑额度和该object-store配置均不代表总RSS上限。
 
-共同lease由主会话协调，IMLane及随后N/S验证优先。本任务尚未启动服务器／Ray／GPU或上传文件。
-内容审核后可按既有授权在获得共同窗口时执行，无需逐包再确认。建议调用如下，不包总墙钟timeout：
+共同lease由主会话协调，内容审核后按既有上传及服务器授权在空闲窗口执行；没有逐包重新授权。
+固定包已完成下方五项检查，没有启动GPU／模型。公开复现入口如下，不包总墙钟timeout：
 
 ```bash
 SEMLOOM_RUN_HSE_RAY=1 CUDA_VISIBLE_DEVICES= PYTHONPATH=code \
@@ -156,9 +157,52 @@ SEMLOOM_RUN_HSE_RAY=1 CUDA_VISIBLE_DEVICES= PYTHONPATH=code \
 仅在获窗口后以`address=local`启动自有零GPU Ray，避免环境变量使测试误连其他人的runtime。
 单操作无完成60秒、生产故障确认30秒、自有actor退出30秒分别计时；
 健康运行总时长不截断。本地28项回归通过，5项实库用例默认跳过；另以离线异常注入核对逐actor清理、
-退出证明超时／再次中断和部分初始化失败。实际结果仍为`prepared_not_run`。
-运行后原始日志放私有artifact目录，公开材料先脱敏和复核
-host／路径／凭据，再登记实际版本、逐项状态、引用释放及独立进程退出证据。
+退出证明超时／再次中断和部分初始化失败。随后固定包显式启用，实际结果为`passed_5_of_5`。
+原始失败、控制、日志及PID/birth证明保存在私有artifact目录；公开记录移除连接目标、主机、地址与路径。
+
+<a id="actual-ray-checks"></a>
+
+## 固定ed209238的实际Ray检查
+
+[机器记录](ray_checks.json)与[脱敏测试输出](ray_checks.log)对应
+`ed20923876d668d6b11b0e4005cca2c7caa89c12`的26成员固定包，生产source仍是47f。
+2026-10-14 06:07:36–06:08:12 UTC运行，5通过／0失败／0错误／0跳过。
+unittest记录35.576秒，只是软件检查耗时，没有预热或性能比较。
+Ray日志保留两条预期的`fixture prepare failed`异步通知，没有通过屏蔽错误取得成功。
+
+| 实际版本／配置 | 值 |
+|---|---|
+| Python／NumPy | 3.12.3／1.26.4 |
+| Arrow／Ray／psutil | 16.1.0／2.56.1／7.0.0 |
+| Ray CPU／GPU／object store | 4／0／536,870,912 bytes |
+| 同时actor上限／自动重启／task重试 | 3／0／0 |
+
+只读机器预检和四模块检查后，在Ray初始化前核对Arrow／Ray／psutil精确版本及NumPy的`>=1.25,<2`范围。
+NumPy、Arrow、psutil来源均在新私有
+driver venv；Ray复用base driver。运行后base的2.4.6／24.0.0／7.2.2／2.56.1保持原样。
+依赖安装与Ray原件均在数据盘，没有访问模型或数据库。后续私有依赖准备补禁pip配置和
+安装目标／额外索引覆盖；已经执行的控制与原件保留原样。
+
+五项结果确认正常5行／batch2的三个块完成且driver不get prepared tensor；CPU及模拟model异常
+先确认、后归还；部分确认失败保留48字节／4 work与payload引用并拒绝同池HSE；真实submit后
+丢driver确认由串行actor fence收尾，确认后同HSE可恢复。模拟model的`synchronize`没有执行CUDA。
+各项快照、driver get类型及确认／归还事件顺序保存在机器记录。
+
+五项共创建12个actor，每项PID/birth退出核对通过。包含依赖准备、预检、driver与Ray运行时的
+35个自有PID/birth均退出；释放lease前Ray head为0，随后独立复查确认controller及本任务lease也已退出。
+正常运行无总墙钟截断；逻辑额度和512 MiB object store不等于全部RSS／pinned／device内存上限。
+
+此前原件分别保留：首次旧能力清单缺组，Ray前停止并释放lease；第二次因其他owner持锁，
+controller尝试准入但未取得lease，未启动依赖准备／预检／测试／Ray子进程；第三次base版本不符，
+0个用例执行、Ray前停止并释放lease。
+第二次旧观察器把外部Ray head误记为`cleanup_unconfirmed`，第三次setup错误的旧计数算成-1通过；
+公开记录同时保留原值与正确分类，后续私有控制修正显示，未改生产source或掩盖失败。
+最初SSH旧配置失败及自动审批拒绝均未执行上传／测试；后续可信授权解除原限制后，相同拒绝调用
+只重试一次获准。原始归档的SHA与每次状态在机器记录中可对应。
+
+本次只支持固定47f组合代码的实际Ray Core软件／故障语义，不验证GPU吞吐、完整延迟、物理副本、
+CLI／pool factory、Daft source或PG接入。A+B+C生产代码与47f相同；A单独HEAD没有实际Ray运行，
+不把本次成功移作A单独资格。
 
 <a id="integration-slices"></a>
 
@@ -177,12 +221,5 @@ host／路径／凭据，再登记实际版本、逐项状态、引用释放及�
 各提交同时同步事实入口，不改source／CLI／pool factory或主路线图。A+B+C四个生产／测试文件
 与47f逐字节相同，均完成独立只读最终diff审查、隐私扫描和远端核对；未合并main。
 正常路径完成屏障与强static对照保持，B／C实GPU及完整性能结论仍未验证。
-已审核实际Ray包仍取`ed20923876d668d6b11b0e4005cca2c7caa89c12`；其五项实库检查目前等待共同lease，
-不能据本地成功认领实际Ray通过。模型owner优先，无服务器资源抢占。
-
-首次上传／启动调用被自动审批按任务最初禁令拒绝，动作未执行。主会话随后转发用户实际授权原文并
-解除原排期限制；相同调用只重试一次获准，未更换路径规避。26成员及摘要核对后原子取得lease，
-只读预检发现服务器旧资产清单没有`imlane-runtime`组，因此停在Ray之前；3个自有进程退出并释放lease。
-公开四模块清单已在私有控制中补齐，不修改共享仓库；第二个新目录尝试因模型owner先持有lease而停止，
-本任务0自有进程存活／无lease／未启动Ray。两次原件、最初SSH旧配置连接失败及审批拒绝均留私有记录。
-实际Ray仍`prepared_not_run`，等待主会话释放通知；0GPU及无正常总墙钟截断保持。
+已审核实际Ray包取`ed20923876d668d6b11b0e4005cca2c7caa89c12`；五项实际Ray检查与退出证明见上节。
+共同候选仍分别决定A／B／C，本轮没有合并main或启动GPU性能验证。

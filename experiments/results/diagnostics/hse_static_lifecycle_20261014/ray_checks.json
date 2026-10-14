@@ -1,0 +1,340 @@
+{
+  "actual_control_sha256": {
+    "controller.py": "8726c2c24a3ff02d3396f3d571854ff8e10751fe3cee9518b495d3362aa5d523",
+    "prepare_driver.sh": "7a97fc9faa11c89459df21cbb54375eec0aac82353e096eb50ac2b708cd83f0f",
+    "run_fixture.py": "4fe09fa51fc18c80c350b593dd2affab43a5783e0df17bf6278eb6c415bbb2b2",
+    "runtime-assets.json": "9f6c3784c1571e82d9bae36049e2cc2b60837871d00091fde4c06eb24a32f798"
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "finished_utc": "2026-10-14T05:39:24.009015+00:00",
+      "lease_acquired": true,
+      "lease_released": true,
+      "outcome": "preflight_failed_missing_capability_group",
+      "owned_processes_observed": 3,
+      "owned_processes_unconfirmed": 0,
+      "raw_archive_bytes": 56695,
+      "raw_archive_sha256": "70ede2be6dde0a0650596f46d6a7a16392b0c356e5a17ed64bbd76d2037ca8bd",
+      "raw_observer_state": "failed",
+      "tests_run": 0
+    },
+    {
+      "attempt": 2,
+      "classification_note": "Old observer counted foreign Ray heads as cleanup_unconfirmed. The controller attempted admission; no lease or preparation/preflight/test/Ray child process was admitted. Later control corrects this label.",
+      "finished_utc": "2026-10-14T05:45:58.927508+00:00",
+      "foreign_ray_heads_observed": 2,
+      "lease_acquired": false,
+      "lease_released": false,
+      "outcome": "blocked_before_lease_other_owner",
+      "owned_processes_observed": 0,
+      "owned_processes_unconfirmed": 0,
+      "raw_archive_bytes": 56634,
+      "raw_archive_sha256": "e188be7c8a9dedb8b09929bf7982bb92f9792f039e07fa99ba601c94e9e4c989",
+      "raw_observer_state": "cleanup_unconfirmed",
+      "tests_run": 0
+    },
+    {
+      "attempt": 3,
+      "class_setup_errors": 1,
+      "classification_note": "Zero test cases ran. Old observer arithmetic reported -1 passed for the class-setup error; later private control clamps this to zero.",
+      "finished_utc": "2026-10-14T06:01:31.492623+00:00",
+      "lease_acquired": true,
+      "lease_released": true,
+      "outcome": "version_check_failed_before_ray",
+      "owned_processes_observed": 4,
+      "owned_processes_unconfirmed": 0,
+      "raw_archive_bytes": 58111,
+      "raw_archive_sha256": "61263668e4c63b2083465eb8a8d00f9f16a019663df563f3d22910a1eef09e4d",
+      "raw_observer_passed": -1,
+      "raw_observer_state": "failed",
+      "tests_run": 0
+    },
+    {
+      "attempt": 4,
+      "finished_utc": "2026-10-14T06:08:12.483034+00:00",
+      "lease_acquired": true,
+      "lease_released": true,
+      "outcome": "passed",
+      "owned_processes_observed": 35,
+      "owned_processes_unconfirmed": 0,
+      "raw_archive_bytes": 91433,
+      "raw_archive_sha256": "708b31d24ac9332d0b6282133090c738a1dce4ba8ba294441373a02f1eac487f",
+      "raw_observer_state": "passed",
+      "tests_run": 5
+    }
+  ],
+  "cases": [
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 1,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 1,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 48,
+          "ready_held_work": 4,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_failed_confirmation_retains_unknown_and_blocks_reuse",
+      "created_handles": 3,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "dict"
+      ],
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "known_identities": 3
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_model_error_confirms_serial_model_fence_before_release",
+      "created_handles": 2,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "dict"
+      ],
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "known_identities": 2
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 3,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 0,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_multi_return_dependency_and_tail_batch",
+      "created_handles": 3,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult",
+        "ImageEmbeddingResult",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult"
+      ],
+      "events": [],
+      "known_identities": 3
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_prepare_error_confirms_actor_before_release",
+      "created_handles": 2,
+      "driver_get_types": [
+        "dict"
+      ],
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "known_identities": 2
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        },
+        {
+          "completed": 1,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 0,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_submit_ack_loss_uses_ordered_actor_fence",
+      "created_handles": 2,
+      "driver_get_types": [
+        "dict",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult"
+      ],
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "known_identities": 2
+    }
+  ],
+  "classification": "actual_ray_core_with_cpu_fixtures",
+  "configuration": {
+    "actor_exit_confirmation_s": 30,
+    "actor_restarts": 0,
+    "actor_task_retries": 0,
+    "cuda_visible_devices": "",
+    "logical_quotas_and_object_store_setting_are_total_memory_limit": false,
+    "max_concurrent_fixture_actors": 3,
+    "object_store_memory_bytes": 536870912,
+    "operation_no_completion_s": 60,
+    "overall_wall_deadline_s": null,
+    "production_abort_confirmation_s": 30,
+    "ray_address": "local",
+    "ray_cpu_slots": 4,
+    "ray_gpu_slots": 0
+  },
+  "exit_proof": {
+    "all_case_actor_exits_confirmed": true,
+    "created_actor_identities": 12,
+    "independent_postcheck_utc": "2026-10-14T06:12:18.244625+00:00",
+    "lease_released": true,
+    "our_lease_held": false,
+    "own_controller_live": false,
+    "owned_pid_birth_pairs_checked": 35,
+    "owned_pid_birth_pairs_observed": 35,
+    "owned_processes_live": 0,
+    "owned_processes_unconfirmed_at_completion": 0,
+    "ray_heads_remaining_before_lease_release": 0
+  },
+  "expected_actor_fixture_error_notices_retained": 2,
+  "finished_utc": "2026-10-14T06:08:12.483034+00:00",
+  "fixture_started_utc": "2026-10-14T06:07:36.221654+00:00",
+  "integration_scope": "47f combined production is byte-identical to A+B+C; A-only HEAD was not executed on Ray.",
+  "not_validated": [
+    "GPU/model completion semantics",
+    "direct-dependency vs HSE throughput/latency",
+    "RSS or pinned/device memory bounds",
+    "physical Arrow/Ray/tensor copies",
+    "production pool builder/CLI cleanup",
+    "A-only actual Ray HEAD",
+    "Daft source or PostgreSQL integration"
+  ],
+  "package": {
+    "archive_sha256": "518f4b6e08c01d641f0f2987ed1e6712216b007f32ff61969c7bf19de62280d0",
+    "manifest_sha256": "940162baf8e76a0b607b84d0b5f076feabc4c268fd76186e04edcbb68cf409fc",
+    "members_verified": 26,
+    "production_source_sha256": {
+      "code/src/modalities/image/staged_execution.py": "2a6f9f58178c3d4f6198b6260965eaddad367e8ac458f0217beb877412fa5dfa",
+      "code/src/scheduling/runtime/stage_broker.py": "4ec743c3550b1f2cc4c802d377857135104cef6bf501a1dfc1597041831d49be"
+    },
+    "test_entry_sha256": "e363fe411099f32c41ece68c25102a30419b17ccf79d4c38f561583ec3b973dc"
+  },
+  "performance_benchmark": false,
+  "preflight": {
+    "base_versions_after": {
+      "numpy": "2.4.6",
+      "psutil": "7.2.2",
+      "pyarrow": "24.0.0",
+      "ray": "2.56.1"
+    },
+    "checked_requirements": {
+      "numpy": ">=1.25,<2.0",
+      "psutil": "==7.0.0",
+      "pyarrow": "==16.1.0",
+      "ray": "==2.56.1"
+    },
+    "declared_module_version_requirements_checked_before_ray": true,
+    "future_private_preparation": "Disable pip configuration and destination/index overrides before future reuse; executed control and raw records remain unchanged.",
+    "module_origin": {
+      "numpy": "private_driver_venv",
+      "psutil": "private_driver_venv",
+      "pyarrow": "private_driver_venv",
+      "ray": "base_driver"
+    },
+    "pip_destination_or_extra_index_env_override_present_at_postcheck": false,
+    "python_group": "imlane-runtime",
+    "status": "ok"
+  },
+  "prior_nonexecution": [
+    "Old SSH transport connection failed; no upload or workload started.",
+    "Initial automatic approval rejected upload/launch under earlier restriction; action did not execute. Later trusted authorization resolved it."
+  ],
+  "privacy": "Public records omit host/IP/PID/birth/actor IDs, connection information, runtime env, module absolute paths and raw Ray logs. Raw failures, controls, logs and identity proofs remain in private artifacts.",
+  "production_commit": "47f7800ce5fbe280c5075165453b2c6dec5437f4",
+  "repository_commit": "ed20923876d668d6b11b0e4005cca2c7caa89c12",
+  "result": {
+    "cleanup_incidents": [],
+    "cleanup_unconfirmed": false,
+    "diagnostic_errors": [],
+    "errors": 0,
+    "failures": 0,
+    "passed": 5,
+    "skipped": 0,
+    "successful": true,
+    "tests_run": 5
+  },
+  "schema_version": 1,
+  "unittest_elapsed_s": 35.576,
+  "versions": {
+    "numpy": "1.26.4",
+    "psutil": "7.0.0",
+    "pyarrow": "16.1.0",
+    "python": "3.12.3",
+    "ray": "2.56.1"
+  },
+  "warmup": "none; software/failure qualification only"
+}

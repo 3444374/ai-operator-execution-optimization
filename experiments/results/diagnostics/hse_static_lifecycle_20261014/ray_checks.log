@@ -1,0 +1,27 @@
+Fixed ed209238 actual Ray Core tests; CPU fixtures, 0 GPU/model/PG calls.
+Expected actor fixture exceptions are retained; elapsed time is not a performance benchmark.
+Raw Ray log timestamps use server local time (UTC+08:00); machine-record timestamps are UTC.
+
+2026-10-14 14:07:46,183	INFO worker.py:2024 -- Started a local Ray instance.
+test_real_failed_confirmation_retains_unknown_and_blocks_reuse (tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_failed_confirmation_retains_unknown_and_blocks_reuse) ... 2026-10-14 14:07:53,328	ERROR worker.py:437 -- Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): ray::_CpuFixture.preprocess_staged() (pid=<private>, ip=<private-address>, actor_id=<private>, repr=<tests.modalities.image.test_hse_static_ray._CpuFixture object at 0x<private>>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<private-artifact>/package/code/tests/modalities/image/test_hse_static_ray.py", line 57, in preprocess_staged
+    raise RuntimeError("fixture prepare failed")
+RuntimeError: fixture prepare failed
+ok
+test_real_model_error_confirms_serial_model_fence_before_release (tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_model_error_confirms_serial_model_fence_before_release) ... ok
+test_real_multi_return_dependency_and_tail_batch (tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_multi_return_dependency_and_tail_batch) ... ok
+test_real_prepare_error_confirms_actor_before_release (tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_prepare_error_confirms_actor_before_release) ... 2026-10-14 14:08:05,990	ERROR worker.py:437 -- Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): ray::_CpuFixture.preprocess_staged() (pid=<private>, ip=<private-address>, actor_id=<private>, repr=<tests.modalities.image.test_hse_static_ray._CpuFixture object at 0x<private>>)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<private-artifact>/package/code/tests/modalities/image/test_hse_static_ray.py", line 57, in preprocess_staged
+    raise RuntimeError("fixture prepare failed")
+RuntimeError: fixture prepare failed
+ok
+test_real_submit_ack_loss_uses_ordered_actor_fence (tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_submit_ack_loss_uses_ordered_actor_fence) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 35.576s
+
+OK

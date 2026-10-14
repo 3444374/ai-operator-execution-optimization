@@ -5,7 +5,9 @@
 异常通过现有CPU ready／GPU synchronize结清，未确认额度与引用保留并阻止同池HSE复用。
 broker终态计数及活动检查不再遍历全部历史；ready模型先于新增source读取派发，FIFO与强静态对照保留。
 最终本地组合480通过／1缺Daft/Arrow跳过；完整发现另有1个缺Arrow的import失败并保留日志。
-本轮服务器／Ray／模型／GPU均未启动；真实库、物理内存与GPU性能仍待主会话排期，CLI外层错误清理由其owner处理。
+随后[固定ed209238实际Ray检查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#actual-ray-checks)
+5通过／0跳过，4CPU／0GPU、CPU模拟actor；12 actor与35自有PID/birth退出、lease释放并独立复查。
+固定包生产仍为47f组合，A单独HEAD未运行Ray；失败原件保留，物理内存与GPU性能仍未验证，CLI清理由其owner处理。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。

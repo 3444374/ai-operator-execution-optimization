@@ -1,7 +1,8 @@
 # Feasibility Results
 
-[HSE static本地审查](hse_static_lifecycle_20261014/README.md)保存修前反例、Core／broker回归、
-历史扫描成本原值及物理内存／真实库／GPU的未验证项；原有static与原生引擎执行责任保持。
+[HSE static审查](hse_static_lifecycle_20261014/README.md)保存修前反例、Core／broker回归、
+历史扫描成本原值及固定组合5／5实际Ray CPU检查、失败与独立退出证明；物理内存／GPU仍未验证。
+原有static与原生引擎执行责任保持，A单独HEAD没有实际Ray运行。
 
 [原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。
 

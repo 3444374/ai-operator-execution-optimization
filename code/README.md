@@ -1,7 +1,8 @@
 # SemLoom Code
 
 [HSE static本地审查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
-修补已有stage broker的原子lease与错误完成确认，记录历史扫描成本及尚未验证的真实库／GPU收益。
+修补已有stage broker的原子lease与错误完成确认，记录历史扫描成本及固定组合的五项实际Ray CPU检查。
+实际Ray 5通过／0跳过，actor／driver退出及lease释放已核对；GPU收益和物理内存仍未验证，A单独HEAD未跑Ray。
 继续保留direct-dependency强静态路径与原生Ray Data自身的执行责任；image source和CLI由各自owner维护。
 
 [SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。

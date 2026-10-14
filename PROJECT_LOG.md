@@ -9,6 +9,9 @@
 - 未确认状态与引用保留，清理中断不替换原错误，同池后续HSE运行拒绝；共享Core旧路径与新增异常回归通过。
   本地CPU测量只解释历史扫描开销，不外推GPU吞吐、物理内存或完整查询性能。
 - image source、CLI、worker/model语义及路线图未修改；CLI外层错误清理交其owner，实库与单GPU运行由主会话统一排期。
+- 随后[固定ed209238无模型实际Ray检查](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#actual-ray-checks)
+  5通过／0跳过，CPU模拟actor验证ObjectRef、队尾及错误确认；12 actor／35自有PID/birth退出并释放lease，独立复查通过。
+  三次预检／持锁／版本失败及最初未执行的连接／审批事件保留；生产仍为47f组合，A单独HEAD未跑Ray，GPU性能及物理内存未验证。
 
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
