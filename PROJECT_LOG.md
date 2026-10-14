@@ -1,5 +1,7 @@
 # 项目日志
 
+2026-10-14：[IMLane两默认同步模式完整Q1/Q2](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#imlane-default-full-q1-q2-20261014)完成CPython→作者Ray、各原120／2000请求＋4实际协议，4248模型／12744逐跳POST；固定ab3、411执行源与相对d1的403共同方法文件核对。Q2严格一致；两Q1相同movie-row-879差异、LIMIT5与全量分类分列。全部16960时间点可离线复算，实际峰值2，顺序服务历史与未知测试器成本保留；自然退出／SHM／GPU／lease释放。与旧四臂／Ray来源单列，无正式排名或query-P99结论。
+
 2026-10-14：[Ray首次／连续Q2机制核查](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#ray-first-use-warm-q2-20261014)完成同模型服务的2独立owner×4完整Q2，960模型请求／2880逐跳POST；固定原A2/async2/rows1/C8，实测峰值4/2，保留全部首次与连续原值。后两次较慢主要在首HTTP前；旧逐请求COUNT修复保持，worker启动／initialize全历史扫描仍核查、现场锁与commit跨度缺测，因果未知。result/prefix cache关闭、actor图每query重建，原生生命周期与实际连接复用逐层核对；无公平排名／查询P99声明。原parser960行重放与响应绑定、所有时间点和清理通过，无额外模型重跑。
 
 ## 2026-10-14：单卡四路径原Q1/Q2完成与精简证据

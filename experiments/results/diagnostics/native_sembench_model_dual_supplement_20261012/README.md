@@ -485,7 +485,7 @@ S另有payload细分，以下是每查询记录的子跨度累加秒，依发生
 
 ### baseline接线与长测顺序
 
-已验证的接线是LOTUS六路径默认同步、原Movie Q2、固定模型及参数：单卡18槽和双卡18个不同位置完成，完整请求／行关联／决策一致，三个窗口退出与清理各自可核验。默认同步Q2目前没有观察到未解决的连接阻断；原启动JSON失败保留，原子发布的软件复现与后续两项J通过不是长期无故障证明。现有六路径是外部关系上的方法／执行接点，不等于PostgreSQL全部真实语义算子已验证；Q1全路径、Q3真实模型、async、同Coordinator并发与更大输入／token规模仍未覆盖；2026-10-14单卡N/D/R/S完整Q1/Q2见[新增工作点记录](#single-gpu-full-q1-q2-20261014)。没有必要在当前问题上重复全部工程资格测试。
+已验证的接线是LOTUS六路径默认同步、原Movie Q2、固定模型及参数：单卡18槽和双卡18个不同位置完成，完整请求／行关联／决策一致，三个窗口退出与清理各自可核验。默认同步Q2目前没有观察到未解决的连接阻断；原启动JSON失败保留，原子发布的软件复现与后续两项J通过不是长期无故障证明。现有六路径是外部关系上的方法／执行接点，不等于PostgreSQL全部真实语义算子已验证；2026-10-14单卡N/D/R/S完整Q1/Q2见[四路径工作点](#single-gpu-full-q1-q2-20261014)，IMLane两默认同步模式完整Q1/Q2见[独立追加](#imlane-default-full-q1-q2-20261014)；Q3真实模型、async、同Coordinator并发与更大输入／token规模继续按各自范围验证。没有必要在当前问题上重复全部工程资格测试。
 
 上表中等复测现已完成，原值与剩余成本见[本轮结果](#matched-budget-repair)。后续进入长测仍需本次相关软件核查通过、预算实现不再随历史明显变贵、详细ON／简略OFF成本已测且主模式固定、全部调用／质量／退出核对通过，以及N／D／S交错后没有尚未解释的约一倍漂移。若仍有明显漂移，保存该失败与相关时间段，针对原因修正，不将延长时间作为修复方法。
 
@@ -620,4 +620,29 @@ Q1真实质量、完整task／ready端到端时间、持续供给和N/S工作点
 
 [完整八查询结果](ray-first-use-warm-q2-result.json)、[960请求的3840时间点](ray-first-use-warm-q2-timings.json.gz)、[账本／worker／连接／缓存核查及全部副本样本](ray-first-use-warm-q2-diagnostic.json)和[独立审核](ray-first-use-warm-q2-review.json)同题保存；[stdlib离线重算](recompute_ray_first_use_warm.py)核对120个统计字段，模型／网络0。请求P50/P95/P99只描述各查询120已完成HTTP观察；查询总体P99、纯GPU／纯队列及公平排名不可得。原LIMIT5 F1=1.0同时保留全量TP7／FP0／TN106／FN7。5.85MB私有归档保留模型身份／配置和全部完整响应，未包含权重；用run-ID／SHA向owner获取。
 
-监督与API正常退出，无强制清理，GPU和lease释放；旧9账本／clock不变。该日四臂加本次实际累计9460逻辑尝试／28372逐跳POST／9456模型请求，包括旧4次gateway-only失败。后续横向对照须保持同等模型服务状态、相同预热工作、各路径原生生命周期及交错顺序，冷／热分别报告，不擅自保留原生会销毁的资源。IMLane固定ab3的两个同步默认模式另按已授权方案验证完整Q2/Q1，未以此Ray诊断替代它。
+监督与API正常退出，无强制清理，GPU和lease释放；旧9账本／clock不变。该日四臂加本次实际累计9460逻辑尝试／28372逐跳POST／9456模型请求，包括旧4次gateway-only失败。后续横向对照须保持同等模型服务状态、相同预热工作、各路径原生生命周期及交错顺序，冷／热分别报告，不擅自保留原生会销毁的资源。IMLane固定ab3的两个同步默认模式已完成[独立完整Q2/Q1](#imlane-default-full-q1-q2-20261014)，来源与服务历史另记。
+
+<a id="imlane-default-full-q1-q2-20261014"></a>
+
+## IMLane 两作者模式的完整原 Q2／Q1 模型核验
+
+固定公开来源ab3d80e6、已定向核验的作者构建与同步内核，显式容量2000、reuse_bridge=false、健康批次／query／owner总期限None；HTTP30秒、无活动故障120秒、客户端8GiB与发送硬额度仍保留。411个实际执行源码及相对保留Native d1的403个共同方法／请求／解析／评价文件逐字核对；两处IMLane adapter差异、计时allowlist和4个integration新增文件声明单列。此报告提交只加入结果与文档，执行源码身份仍为ab3，不用报告提交号替代它。
+
+一张4090／24564MiB、cgroup16核，原Qwen2.5-7B-Instruct模型指纹与服务配置保持，单服务在CPython→作者Ray两模式间连续保留。每模式先用实际作者执行图完成4个原Q1协议请求，再由原公开CLI按Q2→完整Q1执行，warmup0／repeat1。模型就绪45.805秒；两CLI owner启动8.306／8.893秒另计；全窗口390.153秒。默认同步内核、作者执行器与线程／调度实现保持；CLI声明C8，两个实际作者executor bootstrap和HTTP实测峰值2；作者meta native_executors4／task_threads6与继承allowance6只是各自字段，不推成4个真实executor或HTTP供给。
+
+| 模式／查询 | 准备到EOF秒 | 到首HTTP秒 | HTTP覆盖秒 | 空隙秒 | 末HTTP到EOF秒 | HTTP峰值 | 相对Native变化行 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| IMLane-CPython／Q2 | 7.941756 | 0.248119 | 7.640799 | 0.006305 | 0.046534 | 2 | 0 |
+| IMLane-CPython／Q1 | 121.205472 | 0.953320 | 119.376756 | 0.323562 | 0.551835 | 2 | 1 |
+| IMLane-Ray／Q2 | 8.314117 | 0.351869 | 7.803743 | 0.110029 | 0.048477 | 2 | 0 |
+| IMLane-Ray／Q1 | 124.406008 | 0.951219 | 122.332670 | 0.660359 | 0.461762 | 2 | 1 |
+
+两条完整2000请求Q1均正常超过120秒并消费EOF，执行请求／完整HTTP响应／SDK响应ID／源行绑定通过，未因健康总时长截断。Q2的120行请求、解析决策、原结果与质量严格一致；两Q1均在movie-row-879由Native true变为false，原返回LIMIT5关系相同，保留原HTTP答案和质量差异。每Q1完整审计为TP1048／FP11／TN504／FN437，invalid／missing0；每Q2为TP7／FP0／TN106／FN7。官方LIMIT5 P/R/F1为1.0只描述该原指标，不作全量分类正确声明。
+
+实际4240查询＋8协议＝4248模型请求／12744逐跳POST，处于4608／13824硬上限；本轮余量360／1080、旧四臂余716／2156及已闭Ray余64／192分别保留，无退款、重置或借额度。该日原四臂＋Ray八查询＋本轮累计13708逻辑尝试／41116逐跳POST／13704模型请求，含旧4次gateway-only失败；5项作者定向软件fixture单列，不混成模型。
+
+[四查询完整结果](imlane-default-q1-q2-result.json)、[4240请求的16960原时间点](imlane-default-q1-q2-timings.json.gz)、[stdlib离线复算](recompute_imlane_default_models.py)与[独立审核](imlane-default-q1-q2-review.json)同题保存。请求分位数由每query全部120／2000个owner代理entry→writeEOF跨度计算；原SDK整批等待只有一个计时区间，重复行标签不当逐请求分位数。原live账本initialize／锁／SQL／commit、纯GPU／纯queue仍缺测，未知项不填0、不扣query时间。13.77MB／877文件私有归档SHA8f3b9c2edb0940968309ef100df153a4811057664b2a2bcee5a9b9976820d866保留完整协议／响应、配置、来源、计时及失败历史；权重字节未包含，按run-ID／SHA向owner获取。
+
+作者CPython／Ray及桥接进程自然退出，SHM和自有线程清理通过，无强制fallback；GPU和共同lease释放，旧10份账本／clock及本轮独立clock保持。六外部LOTUS执行路径现在各有完整Q2／Q1记录，来源、并发、协议预热与服务历史各自标注；Q3、async模型、同Coordinator多query及PG真实算子资格按各自任务继续。此次单轮、d1／ab3分源和顺序热态只支持当前配置观察。后续公平对照保持相同资源／任务与模型服务状态，按各路径合理原生参数做少量有界校准、记录实际并发并交错；首次与连续分列，保留原生重建成本，测试器额外开销另测。
+
+另项固定版本静态核对指出：独立Ray Data路径使用的Ray2.56.1在未缓存Dataset每次执行时建立物理图／actor pool，正常EOF的shutdown(force=False)释放actor引用；finally请求force=True在executor已关闭时无效，不能把该wrapper请求说成失去跨query actor复用的原因。本轮模型归档审核核对了actor释放源码，未独立重放另项静态核对的完整EOF调用链；这段说明属于独立Ray Data路径，不表示本次IMLane-Ray作者图使用Dataset。Actor重建与本轮跨模式保留的模型服务／权重生命周期分别解释；materialize属于结果缓存，不代替重新执行真实query。

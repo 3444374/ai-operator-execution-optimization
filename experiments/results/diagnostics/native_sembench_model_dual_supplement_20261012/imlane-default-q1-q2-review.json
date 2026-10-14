@@ -1,0 +1,391 @@
+{
+  "schema": "semloom.imlane_default_full_q1_q2_independent_review_public.v1",
+  "passed": true,
+  "blocking_issues": [],
+  "independent_checks": 13765,
+  "original_private_report_sha256": "dd372a67e1aaf071ad047e0203fa005ae63466e447ba7477ddacdf469fec9aeb",
+  "actual_archive": {
+    "sha256": "8f3b9c2edb0940968309ef100df153a4811057664b2a2bcee5a9b9976820d866",
+    "bytes": 13770113,
+    "regular_members": 877
+  },
+  "executed_source": {
+    "commit": "ab3d80e6789fd64392c6e7e955d17499f327c8e2",
+    "files": 411,
+    "identity_sha256": "64985b4e30107789816ab84aacd8d8cdf7ddc802b55c335827f6a598f8d8c7dc",
+    "shared_retained_d1_execution_files": 403,
+    "public_adapter_difference_paths": [
+      "code/src/baselines/text/frameworks/imlane_calls.py",
+      "code/src/execution_provider/adapters/sema_imlane.py"
+    ],
+    "None_allowlist_extension_paths": [
+      "code/src/experiments/postgresql/persistent_native_adapter_query.py",
+      "code/src/experiments/postgresql/sembench_query_cli.py"
+    ],
+    "exact_public_additions": 4,
+    "controller_sha256": "a9ae71f2bc912b8664665bccc206952f83e6ce231a67158ec49ccd9c8f4544eb",
+    "payload_sha256": "d77d0fee82e53b6e0be9208cec112e1a4c998c2a79d50f8c5dbca94fec8b9ad2",
+    "postcleanup_source_verified": 411,
+    "no_baseline_author_vendor_scheduler_change": true
+  },
+  "full_queries": {
+    "queries": 4,
+    "SDK_complete_rows": 4240,
+    "original_requests_value_equal": true,
+    "unique_SDK_response_id_to_original_HTTP_id_to_original_row_hash": true,
+    "prepared_hashes_verified": true,
+    "HTTP_200_no_retry": true,
+    "parser_replay_rows": 4240,
+    "parser_provenance": {
+      "source_sha256": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+      "source_bytes": 7205,
+      "functions": [
+        "cot_postprocessor",
+        "deepseek_cot_postprocessor",
+        "get_cot_postprocessor",
+        "filter_postprocess"
+      ],
+      "original_function_AST_unchanged": true,
+      "future_annotations_only": true,
+      "selected_AST_sha256": "3e7db829f68d4a04ab7a5e20d47d07e302f27d5c690f4342f8646ca03b20b4c2",
+      "SDK_imported": false,
+      "logger_and_output_container": "memory-only stand-ins"
+    },
+    "fallback_rows": 0,
+    "original_evaluator_source_and_recorded_quality_verified": true,
+    "independent_evaluator_rerun": false,
+    "evaluator_scope": "original evaluator/runner/data identity retained in executed evidence and shared 403-file contract; original LIMIT relation and quality delta checked; external dataset/evaluator not imported or reexecuted"
+  },
+  "original_protocol": {
+    "actual_native_author_graph_calls": 8,
+    "first_four_Q1_occurrences_each_mode": true,
+    "complete_request_response_identity_and_ordered_output_checked": true,
+    "no_full_query_quality_claim": true
+  },
+  "lifecycles": {
+    "service_lifetimes": 1,
+    "model_resident_between_two_modes": true,
+    "owner_lifetimes": 2,
+    "AuthorScopes": [
+      {
+        "mode": "cpython",
+        "scope": "query",
+        "actual_executor_bootstraps": 2,
+        "natural_cleanup": true,
+        "forced_processes": 0,
+        "remaining_shm": 0
+      },
+      {
+        "mode": "cpython",
+        "scope": "protocol",
+        "actual_executor_bootstraps": 2,
+        "natural_cleanup": true,
+        "forced_processes": 0,
+        "remaining_shm": 0
+      },
+      {
+        "mode": "ray",
+        "scope": "query",
+        "actual_executor_bootstraps": 2,
+        "natural_cleanup": true,
+        "forced_processes": 0,
+        "remaining_shm": 0
+      },
+      {
+        "mode": "ray",
+        "scope": "protocol",
+        "actual_executor_bootstraps": 2,
+        "natural_cleanup": true,
+        "forced_processes": 0,
+        "remaining_shm": 0
+      }
+    ],
+    "bridge_batches": 6,
+    "natural_cleanup": true,
+    "no_forced_fallback": true,
+    "owned_process_survivors": 0,
+    "SHM_residual": 0,
+    "GPU_after": [],
+    "saved_lease_postcondition": "parent saved freshcheck; not remotely rechecked"
+  },
+  "counters": {
+    "scope": {
+      "total": 12744,
+      "gateway": 4248,
+      "router": 4248,
+      "model": 4248,
+      "fixture": 0
+    },
+    "cumulative": {
+      "logical": 13708,
+      "physical": 41116,
+      "model": 13704,
+      "prior_failed_gateway_only": 4
+    },
+    "hard_logical": 4608,
+    "hard_three_hop_POSTs": 13824,
+    "prior_history_guards": 10,
+    "append_triggers_checked": true,
+    "send_counter_sha256": "2b08c3f9a9e69845d236c29b8e532e85ba82b9a9473d58080d9b3a7907d33e25",
+    "no_refund_no_reset_no_borrow": true,
+    "author_directed_fixture_POSTs": 5,
+    "fixtures_separate_from_model_counts": true
+  },
+  "protections": {
+    "healthy_aggregate_deadline": null,
+    "request_HTTP_timeout": 30,
+    "backend_fault_timeout": 120,
+    "no_activity_fault_timeout": 120,
+    "startup_no_activity_timeout": 180,
+    "cleanup_grace": 120,
+    "client_RSS_bytes": 8589934592,
+    "object_store_bytes": 268435456
+  },
+  "statistical_scope": {
+    "all_HTTP_points": 16960,
+    "full_request_series": 16,
+    "nearest_rank_independently_recomputed": true,
+    "whole_SDK_batch_wait_one_span_per_query": true,
+    "query_P99": "unavailable",
+    "pure_queue": "unavailable",
+    "GPU_kernel": "unavailable",
+    "repeated_row_waits_not_independent_samples": true,
+    "no_mixed_cross_source_or_warm_family_ranking": true
+  },
+  "remaining_limits": [
+    "answer/quality differences retained; no unique model nondeterminism cause established",
+    "original evaluator source and recorded metrics checked, without importing original vendor/evaluator or dataset",
+    "live reserve/lock/commit and internal model/kernel costs not measured",
+    "saved closure postconditions do not constitute a new live SSH/resource check",
+    "model weights are not in the archive; model configuration/identity and all answer evidence are retained"
+  ],
+  "audit_execution": {
+    "standard_library_only": true,
+    "changed_AST_algorithms": false,
+    "SDK_imports": 0,
+    "network_calls": 0,
+    "model_requests": 0,
+    "source_candidate_or_old_evidence_writes": 0,
+    "SQLite": "memory-deserialized copies"
+  },
+  "queries": [
+    {
+      "arm": "IMLane-CPython",
+      "query": 2,
+      "rows": 120,
+      "SDK_raw_row_hash_binding": true,
+      "original_parser_replayed_rows": 120,
+      "raw_content_differences": [],
+      "decision_differences": [],
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "observed_peak_http": 2,
+      "actual_HTTP_sending_processes": 2,
+      "sdk_batch_distinct_spans": 1,
+      "task_completion_seconds": 7.941756433,
+      "ready_completion_seconds": 7.792401261,
+      "arrival_to_first_http_seconds": 0.248118546,
+      "first_to_last_http_seconds": 7.6471042,
+      "http_activity_covered_seconds": 7.640799409,
+      "http_activity_gap_seconds": 0.006304791,
+      "last_http_to_consumer_eof_seconds": 0.046533687,
+      "average_inflight_during_http_span": 1.824397649112719
+    },
+    {
+      "arm": "IMLane-CPython",
+      "query": 1,
+      "rows": 2000,
+      "SDK_raw_row_hash_binding": true,
+      "original_parser_replayed_rows": 2000,
+      "raw_content_differences": [
+        "movie-row-879"
+      ],
+      "decision_differences": [
+        {
+          "row_id": "movie-row-879",
+          "native": true,
+          "observed": false
+        }
+      ],
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1048,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 437,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -426
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "observed_peak_http": 2,
+      "actual_HTTP_sending_processes": 2,
+      "sdk_batch_distinct_spans": 1,
+      "task_completion_seconds": 121.205472062,
+      "ready_completion_seconds": 121.097046176,
+      "arrival_to_first_http_seconds": 0.953319551,
+      "first_to_last_http_seconds": 119.700317763,
+      "http_activity_covered_seconds": 119.376756261,
+      "http_activity_gap_seconds": 0.323561502,
+      "last_http_to_consumer_eof_seconds": 0.551834748,
+      "average_inflight_during_http_span": 1.8230954901145178
+    },
+    {
+      "arm": "IMLane-Ray",
+      "query": 2,
+      "rows": 120,
+      "SDK_raw_row_hash_binding": true,
+      "original_parser_replayed_rows": 120,
+      "raw_content_differences": [],
+      "decision_differences": [],
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "observed_peak_http": 2,
+      "actual_HTTP_sending_processes": 2,
+      "sdk_batch_distinct_spans": 1,
+      "task_completion_seconds": 8.314116806,
+      "ready_completion_seconds": 8.145766653,
+      "arrival_to_first_http_seconds": 0.351868789,
+      "first_to_last_http_seconds": 7.913771487,
+      "http_activity_covered_seconds": 7.80374259,
+      "http_activity_gap_seconds": 0.110028897,
+      "last_http_to_consumer_eof_seconds": 0.04847653,
+      "average_inflight_during_http_span": 1.7507019080294552
+    },
+    {
+      "arm": "IMLane-Ray",
+      "query": 1,
+      "rows": 2000,
+      "SDK_raw_row_hash_binding": true,
+      "original_parser_replayed_rows": 2000,
+      "raw_content_differences": [
+        "movie-row-879"
+      ],
+      "decision_differences": [
+        {
+          "row_id": "movie-row-879",
+          "native": true,
+          "observed": false
+        }
+      ],
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1048,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 437,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -426
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "observed_peak_http": 2,
+      "actual_HTTP_sending_processes": 2,
+      "sdk_batch_distinct_spans": 1,
+      "task_completion_seconds": 124.406008423,
+      "ready_completion_seconds": 124.295290876,
+      "arrival_to_first_http_seconds": 0.95121855,
+      "first_to_last_http_seconds": 122.993028264,
+      "http_activity_covered_seconds": 122.332669534,
+      "http_activity_gap_seconds": 0.66035873,
+      "last_http_to_consumer_eof_seconds": 0.461761609,
+      "average_inflight_during_http_span": 1.7692082053376963
+    }
+  ],
+  "retention": {
+    "model_identity_configuration_and_all_answers_retained": true,
+    "model_weight_bytes_in_archive": false,
+    "retrieval": "request private originals from experiment owner by run_id/archive SHA; no private paths or response bodies in public files"
+  },
+  "separate_static_finding_scope": "Ray2.56.1 uncached Dataset EOF chain was supplied by a separate static source audit; this closed IMLane result review did not independently replay it; IMLane author Ray graph is not asserted to use Ray Data Dataset"
+}

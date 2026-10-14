@@ -4,7 +4,7 @@
 
 当前LOTUS线已完成[持久计数匹配复测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)。[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)保留观察成本的诊断；后续建立少量合理的单／双卡工作点，再设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。
 
-[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
+[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置的旧128兼容选择保持；[固定ab3的两默认同步模式完整Q1/Q2模型记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#imlane-default-full-q1-q2-20261014)现已补齐，Q3与其他前端资格仍按各自来源。
 
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
 PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。

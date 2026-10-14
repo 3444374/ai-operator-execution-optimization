@@ -1,5 +1,7 @@
 # 项目导航
 
+[IMLane两默认同步模式完整原Q1/Q2](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#imlane-default-full-q1-q2-20261014)与[四路径完整查询](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-gpu-full-q1-q2-20261014)拥有分源的单卡模型资格及精简观测；[Ray首次／连续诊断](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#ray-first-use-warm-q2-20261014)保留原生重建、实际并发与尚未测定的额外计时成本。
+
 [同题阶段分析与账本修订](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)拥有离线阶段统计、无模型配对及后续计划；实现／调用入口见[发送计数说明](code/scripts/README.md#sembench-send-accounting)。
 
 [原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)与[双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)拥有原轮与两个独立窗口的实际观测、失败和离线核验。
