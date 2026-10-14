@@ -1,0 +1,484 @@
+{
+  "gpu-01/report.json": {
+    "schema": "daft.clip.native.qualification.v1",
+    "source_hash": "5dd425df845d84604b469e92b992a772aa014a3af8cc7dfc3546e30548c85740",
+    "baseline_sha": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+    "dtype": "float32",
+    "rows": 9,
+    "tolerance": {
+      "max_abs": 1e-05,
+      "min_cosine": 0.99999,
+      "max_norm_error": 1e-05
+    },
+    "tail_percentiles": "unavailable: nine-image backend qualification, four batch calls",
+    "status": "failed",
+    "shared_lease_acquired": true,
+    "hardware": {
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "torch_cuda": "13.0",
+      "gpu_count": 1
+    },
+    "inputs": [
+      {
+        "id": "000000000139",
+        "source_sha256": "ffe0f0cec3b2e27aab1967229cdf0a0d7751dcdd5800322f0b8ac0dffb3b8a8d",
+        "png_sha256": "23302688e48ade8533f96e50a07302845251b3178b904b73e2ddd25916144d3d"
+      },
+      {
+        "id": "000000000285",
+        "source_sha256": "f3a2974ce3686332609124c70e3e6a2e3aca43fccf1cd1bd7c5c03820977f57d",
+        "png_sha256": "f129f1aa71773c9a9c759a2395da79411f918017b95da4224ff411e7073b11ed"
+      },
+      {
+        "id": "000000000632",
+        "source_sha256": "a4cd7f45ac1ce27eaafb254b23af7c0b18a064be08870ceaaf03b2147f2ce550",
+        "png_sha256": "ef8bd23d468edd30cda7152ecb433c820322416a9c61359c0c0ac1d7db9911b0"
+      },
+      {
+        "id": "000000000724",
+        "source_sha256": "5c0e559c75d3969c8e3e297b61f61063f78045c9d4802b526ba616361f3823fd",
+        "png_sha256": "1aed783f2a8dcdd6440d4243d41135149b6721fb75ca2dd39a6026701c81d312"
+      },
+      {
+        "id": "000000000776",
+        "source_sha256": "1dd31e9059c491992be2f562624eb4093e17aee08b4f7baf5ff9ea24543b0a33",
+        "png_sha256": "35cda482b89a41dba85f6c1b5cf8e8cd44155c1dd8b13c4f87f1c91962ee02d8"
+      },
+      {
+        "id": "000000000785",
+        "source_sha256": "83981537a7baeafbeb9c8cb67b3484dc26433f574b3685d021fa537e277e4726",
+        "png_sha256": "0c2f2595348dc5f6d910184af678535e2ee3b88680aea0eeea0faea9b07935a5"
+      },
+      {
+        "id": "000000000802",
+        "source_sha256": "d5b79e7fa716f85ca86f46e5f518da9b6c5e26414925624d76e6476861aec495",
+        "png_sha256": "ce3ed9e832bbc16c64cb92ee8e51169f3386596fec0e719dcd00fd21b1b6ab42"
+      },
+      {
+        "id": "000000000872",
+        "source_sha256": "c2aa138ee3a59b057a7ba6fc5a6a18e62af531aa7dab78a7bfd33c1cd7e55eb6",
+        "png_sha256": "b9a653e37145b483fb68469e2223dea60cca8a0589daf7b04023ca357b73816a"
+      },
+      {
+        "id": "000000000885",
+        "source_sha256": "1c67b783f78b18ddb5dd20aaba4d4aacaf98e5277051688a96da096afa9cdf1f",
+        "png_sha256": "5466c8ded7beecd690535c69080990273fe748fda345e45bd2ab4eefe7ba8b2e"
+      }
+    ],
+    "input_sha256": "fdb25110a1c62ecd1c4c42c1bc72456df7f6f1e730a7398bd46a1fb77fd69a0b",
+    "pixels": {
+      "direct_sha256": "83115666139cf609e37ec0fa6b1dc97d7ff734adbcf6aefb4fe30ae28b9e7ccc",
+      "native_sha256": "83115666139cf609e37ec0fa6b1dc97d7ff734adbcf6aefb4fe30ae28b9e7ccc",
+      "max_abs": 0.0,
+      "shape": [
+        9,
+        3,
+        224,
+        224
+      ]
+    },
+    "direct_model_load_s": 0.5528677850961685,
+    "direct_prepared_tensor_batch_s": 0.38175115641206503,
+    "direct_memory_after_release": 8519680,
+    "native_constructor_s": 0.6304748649708927,
+    "identity": {
+      "scheduler_owner": "daft_native",
+      "implementation": "diagnostic_reference",
+      "model_revision": "<model-root>",
+      "processor_revision": "<processor-root>",
+      "artifacts_sha256": {
+        "weights": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+        "model_config": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+        "processor_config": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd"
+      },
+      "compute_dtype": "float32",
+      "output_dtype": "float32",
+      "dimension": 512,
+      "projected": true,
+      "normalized": true,
+      "processor": "CLIPImageProcessor",
+      "decode": "Daft RGB",
+      "batch_size": 4,
+      "model_workers": 1,
+      "gpus_per_worker": 1,
+      "device": "cuda",
+      "use_process_requested": true,
+      "max_retries": 0,
+      "max_batch_rows": 4096,
+      "torch_threads": 1,
+      "software": {
+        "daft": "0.7.21",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6",
+        "pyarrow": "24.0.0",
+        "numpy": "1.26.4",
+        "Pillow": "12.2.0"
+      },
+      "model_lifetime": "daft_owned_stateful_instance"
+    },
+    "runs": [
+      {
+        "iteration": 0,
+        "phase": "first_query",
+        "wall_s": 0.5245012841187418,
+        "service_s": 0.5243714670650661,
+        "rows": 9,
+        "max_abs": 0.0,
+        "min_cosine": 0.9999999999999999,
+        "max_norm_error": 1.1920928955078125e-07
+      },
+      {
+        "iteration": 1,
+        "phase": "reused_instance",
+        "wall_s": 0.1364310933277011,
+        "service_s": 0.13630066718906164,
+        "rows": 9,
+        "max_abs": 0.0,
+        "min_cosine": 0.9999999999999999,
+        "max_norm_error": 1.1920928955078125e-07
+      },
+      {
+        "iteration": 2,
+        "phase": "reused_instance",
+        "wall_s": 0.13008469017222524,
+        "service_s": 0.1299525168724358,
+        "rows": 9,
+        "max_abs": 0.0,
+        "min_cosine": 0.9999999999999999,
+        "max_norm_error": 1.1920928955078125e-07
+      },
+      {
+        "iteration": 3,
+        "phase": "reused_instance",
+        "wall_s": 0.11099587474018335,
+        "service_s": 0.11086563300341368,
+        "rows": 9,
+        "max_abs": 0.0,
+        "min_cosine": 0.9999999999999999,
+        "max_norm_error": 1.1920928955078125e-07
+      }
+    ],
+    "comparison": [
+      {
+        "iteration": 0,
+        "id": "000000000139",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 0,
+        "id": "000000000285",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 0,
+        "id": "000000000632",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 0,
+        "id": "000000000724",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 0,
+        "id": "000000000776",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 0,
+        "id": "000000000785",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 0,
+        "id": "000000000802",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 0,
+        "id": "000000000872",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 0,
+        "id": "000000000885",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 1,
+        "id": "000000000139",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 1,
+        "id": "000000000285",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 1,
+        "id": "000000000632",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 1,
+        "id": "000000000724",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 1,
+        "id": "000000000776",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 1,
+        "id": "000000000785",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 1,
+        "id": "000000000802",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 1,
+        "id": "000000000872",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 1,
+        "id": "000000000885",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 2,
+        "id": "000000000139",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 2,
+        "id": "000000000285",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 2,
+        "id": "000000000632",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 2,
+        "id": "000000000724",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 2,
+        "id": "000000000776",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 2,
+        "id": "000000000785",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 2,
+        "id": "000000000802",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 2,
+        "id": "000000000872",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 2,
+        "id": "000000000885",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 3,
+        "id": "000000000139",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 3,
+        "id": "000000000285",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 3,
+        "id": "000000000632",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 3,
+        "id": "000000000724",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 3,
+        "id": "000000000776",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 3,
+        "id": "000000000785",
+        "max_abs": 0.0,
+        "cosine": 0.9999999999999999
+      },
+      {
+        "iteration": 3,
+        "id": "000000000802",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 3,
+        "id": "000000000872",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      },
+      {
+        "iteration": 3,
+        "id": "000000000885",
+        "max_abs": 0.0,
+        "cosine": 1.0
+      }
+    ],
+    "close_s": 0.2364128609187901,
+    "native_memory_after_close": 34078720,
+    "model_events": [
+      {
+        "event": "model_loaded",
+        "pid": 133184,
+        "elapsed_s": 0.37666503293439746,
+        "device": "cuda",
+        "dtype": "torch.float32"
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.008924094028770924
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.004885791800916195
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 1,
+        "service_s": 0.005480526946485043
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.00920334318652749
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.00475012231618166
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 1,
+        "service_s": 0.005394412204623222
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.0050999256782233715
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.005606980994343758
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 1,
+        "service_s": 0.004489205311983824
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.007879416923969984
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 4,
+        "service_s": 0.004071130882948637
+      },
+      {
+        "event": "model_batch_completed",
+        "pid": 133184,
+        "rows": 1,
+        "service_s": 0.004579910077154636
+      },
+      {
+        "event": "model_destroyed",
+        "pid": 133184
+      }
+    ],
+    "cleanup": {
+      "graphs_fully_consumed": 4,
+      "models_loaded": 1,
+      "models_destroyed": 1,
+      "udf_process_location": "driver",
+      "remaining_owned_children": []
+    },
+    "error_type": "RuntimeError",
+    "error": "native model release or owned worker exit unconfirmed",
+    "traceback": "Traceback (most recent call last):\n  File \"<source>/code/tests/baselines/image/verify_daft_clip_gpu.py\", line 200, in main\n    run(args, report)\n  File \"<source>/code/tests/baselines/image/verify_daft_clip_gpu.py\", line 172, in run\n    raise RuntimeError('native model release or owned worker exit unconfirmed')\nRuntimeError: native model release or owned worker exit unconfirmed\n",
+    "shared_lease_released": false,
+    "complete_vector_bundle": "unavailable: save happened after the failed cleanup assertion; retained per-row comparisons cover all 512 values"
+  },
+  "gpu-01.exit.json": {
+    "start_utc": "2026-10-14T10:24:09.081794+00:00",
+    "end_utc": "2026-10-14T10:24:24.149191+00:00",
+    "exitcode": 1
+  }
+}

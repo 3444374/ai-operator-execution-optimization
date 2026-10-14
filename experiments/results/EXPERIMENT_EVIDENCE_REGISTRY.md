@@ -4,6 +4,13 @@
 保留实际模型参数／预处理身份、图片输入负例、完整图库／在线向量及原生top10；五臂12／64／256图和已有索引通过。
 原件及完整向量独立重算，Daft交付及失败逐运行登记；不提供性能排名或P99／P99.99。
 
+2026-10-14：[Daft 本地 CLIP 原生批次资格](diagnostics/daft_clip_native_20261014/README.md)。
+固定0.7.21真实图及 RGB decode，CPU kernel 替身本机／匹配 Linux 各 13 项、旧图像回归 39 项通过；软件 fixture 模型／GPU／HTTP 0。
+独立9图GPU复测四次完整512维FP32向量同批形状Direct逐位一致，398参数／2buffers恰好终结一次，CLI／lease正常退出；
+只支持batch32下9行未满批次的数值及正常生命周期，不支持完整LOTUS耗时、持续稳态或尾分位。
+最初SDK重载假设及首GPU错误清理判据失败均保留；生产后端两轮未改，可选计时借用原模块。
+
+
 2026-10-14：[JPEG 文件源及 CPU 工厂退出的固定 SDK 检查](diagnostics/image_file_sdk_20261014/README.md)。
 `964e70ef` 三项实际检查通过、0 跳过；reader 各 4 行顺序／编码字节与两个 CPU actor 的 shutdown 前物理退出分别核验。
 首次 lease 交接未进入 SDK，失败与成功及 66 Git 依赖摘要保留；仅支持这些组件，不增加 HSE／GPU／CLIP 性能或完整 CLI 退出资格。

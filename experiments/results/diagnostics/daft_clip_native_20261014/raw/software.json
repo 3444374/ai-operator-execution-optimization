@@ -1,0 +1,153 @@
+{
+  "schema": "daft.clip.native.software.v1",
+  "baseline_sha": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "source_sha256": {
+    "code/src/baselines/image/frameworks/daft_clip.py": "dd6e6a5e534dab91af5e7bae72288528ffe03e354647535022fe6f6d86382c1a",
+    "code/tests/baselines/image/test_daft_clip_executor.py": "cc1df9c79d2180f7dbe6154b8ebe2d28ebccfbb55613ae0f74521394ccaf1456",
+    "code/tests/baselines/image/verify_daft_clip_gpu.py": "d362ea02f6082987b277e5de535f20b5a98ef1ec2d8422d4d64ac7c6868a4ca5"
+  },
+  "software": {
+    "python": "3.12.6",
+    "os": "Darwin",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "numpy": "2.5.0",
+    "Pillow": "12.2.0",
+    "ruff": "0.16.0"
+  },
+  "local_sdk": {
+    "tests": 13,
+    "passed": 13,
+    "skipped": 0,
+    "scope": "actual Daft 0.7.21 graph and RGB decode; CPU fixture model; stateful execution in driver process; same wrapper reuses instance and close destroys it",
+    "run_id": "daft-native-sdk-local-20261014-v2",
+    "exit_status": 0,
+    "completion_observed_utc": "2026-10-14T10:37:10.353365+00:00",
+    "start_utc": "unavailable: not captured",
+    "ready_utc": "unavailable: test process readiness not separately sampled"
+  },
+  "image_regression": {
+    "tests": 39,
+    "passed": 39,
+    "skipped": 0,
+    "run_id": "daft-native-image-regression-20261014",
+    "exit_status": 0,
+    "completion_observed_utc": "2026-10-14T10:00:50.706145+00:00",
+    "start_utc": "unavailable: not captured",
+    "ready_utc": "unavailable: test process readiness not separately sampled"
+  },
+  "gpu_qualification": {
+    "status": "passed",
+    "run_id": "daft-native-20261014-b/gpu-02",
+    "evidence": "gpu_passed.json",
+    "first_run": "retained failed in gpu_first_failed.json; numeric comparisons passed but cleanup used a process-global allocation proxy",
+    "revision": "verifier-only own module/398 parameters/2 buffers exactly-once finalization; unchanged production backend and vector tolerances",
+    "configuration": "batch32 with matched Direct/native partial-nine shape; one model worker, one GPU, float32",
+    "accuracy_passed": true,
+    "cleanup_passed": true,
+    "native_graph_calls": 4,
+    "native_model_batches": 4,
+    "native_rows_per_batch": [
+      9,
+      9,
+      9,
+      9
+    ],
+    "remaining_blocker": "none for independent backend qualification; complete LOTUS integration is owned separately"
+  },
+  "source_transfer_attempts": [
+    {
+      "attempt": 1,
+      "status": "denied",
+      "source_tar_sha256": "1b945ff3cb5ab2a1ea88d6295705a8ef722f6c8bf71b428aebfb48a5cfb5b37f",
+      "reason": "possible non-public organization source in full source tar"
+    },
+    {
+      "attempt": 2,
+      "status": "denied",
+      "source_tar_sha256": "5dd425df845d84604b469e92b992a772aa014a3af8cc7dfc3546e30548c85740",
+      "reason": "new uncommitted self-authored source lacks explicit transfer authorization despite public repository verification"
+    },
+    {
+      "attempt": 3,
+      "status": "succeeded",
+      "source_tar_sha256": "5dd425df845d84604b469e92b992a772aa014a3af8cc7dfc3546e30548c85740",
+      "reason": "same action retried once after parent supplied explicit human authorization to upload required files for testing; remote source hashes matched"
+    }
+  ],
+  "initial_sdk_failure": {
+    "test": "test_models_reload_in_each_graph_not_each_native_batch",
+    "reason": "assumed two model constructions, observed one in two native graphs",
+    "assertion": "AssertionError: 1 != 2",
+    "tests": 10,
+    "failures": 1,
+    "run_id": "daft-native-sdk-local-20261014-initial",
+    "start_utc": "unavailable: not captured",
+    "ready_utc": "unavailable: not separately sampled",
+    "end_utc": "unavailable: initial stdout was returned by the task tool, not written to a timestamped run file"
+  },
+  "private_originals": "task-local artifacts; no source tar, image bytes, weights or embedding bundle committed",
+  "source_snapshots": [
+    {
+      "base_sha": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+      "source_tar_sha256": "5dd425df845d84604b469e92b992a772aa014a3af8cc7dfc3546e30548c85740",
+      "files": {
+        "code/src/baselines/image/frameworks/daft_clip.py": "dd6e6a5e534dab91af5e7bae72288528ffe03e354647535022fe6f6d86382c1a",
+        "code/tests/baselines/image/test_daft_clip_executor.py": "3655e5b238c891124a15cf9d58d510a4bdfe86bc3869b421e40f9caa07e34357",
+        "code/tests/baselines/image/verify_daft_clip_gpu.py": "aa984392e0ec3defba12ef4ad8a8932d6c72a8e1ffe4aa5646f254f06cb62f0e"
+      }
+    },
+    {
+      "base_sha": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+      "source_tar_sha256": "4b12f83cc9cf4113f6550f2dd75410e84513081bfbac98dde086944a24a39417",
+      "files": {
+        "code/src/baselines/image/frameworks/daft_clip.py": "dd6e6a5e534dab91af5e7bae72288528ffe03e354647535022fe6f6d86382c1a",
+        "code/tests/baselines/image/test_daft_clip_executor.py": "cc1df9c79d2180f7dbe6154b8ebe2d28ebccfbb55613ae0f74521394ccaf1456",
+        "code/tests/baselines/image/verify_daft_clip_gpu.py": "d362ea02f6082987b277e5de535f20b5a98ef1ec2d8422d4d64ac7c6868a4ca5"
+      }
+    }
+  ],
+  "linux_sdk": {
+    "run_id": "daft-native-sdk-linux-20261014-v2",
+    "start_utc": "2026-10-14T10:39:14.956453+00:00",
+    "end_utc": "2026-10-14T10:39:21.689952+00:00",
+    "exitcode": 0,
+    "gpu_visible": false,
+    "tests": 13,
+    "passed": 13,
+    "skipped": 0,
+    "source_tar_sha256": "4b12f83cc9cf4113f6550f2dd75410e84513081bfbac98dde086944a24a39417"
+  },
+  "preflight": {
+    "status": "ok",
+    "groups": [
+      "core",
+      "image",
+      "image-clip"
+    ],
+    "machine": {
+      "cpu_slots": 128,
+      "gpu_driver_versions": [
+        "595.71.05"
+      ],
+      "gpu_memory_mib": [
+        24564
+      ],
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4090"
+      ],
+      "machine_id": "machine-6cef8852a552d494",
+      "platform": "Linux",
+      "python": "3.12.3"
+    },
+    "checks": 28,
+    "source_tar_sha256": "5dd425df845d84604b469e92b992a772aa014a3af8cc7dfc3546e30548c85740",
+    "reuse_for_v2": "same asset manifest, environment and production backend; only verifier/fixture modified"
+  },
+  "software_fixture_calls": {
+    "real_clip": 0,
+    "gpu": 0,
+    "http": 0,
+    "scope": "CPU SDK tests only; real GPU qualifications recorded separately"
+  }
+}

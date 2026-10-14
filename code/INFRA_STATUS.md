@@ -5,6 +5,14 @@
 五条路径12／64／256图、已有索引新进程查询及26项实际SDK资格通过；独立Daft接入接续。
 仅支持固定FP32 CLIP检索，不增加VLM、PG、性能排名或可靠尾分位结论。
 
+2026-10-14：[Daft 本地 CLIP 批次接口](../experiments/results/diagnostics/daft_clip_native_20261014/README.md)
+导出 `DaftClipExecutor.embed_batch(tuple[str,...], Sequence[bytes])`，复用共享结果类型及 CLIP 计算，
+由固定 Daft0.7.21 原生 RGB decode／有状态 UDF 拥有图与批次；完整归一化 float32 512 维和原 ID 保留。
+本机和匹配 Linux 的真实 SDK／CPU kernel 替身各 13 项、相关图像回归 39 项通过，独立审核完成；软件检查真实模型／GPU／HTTP 0。
+9图真实GPU复测四次完整向量与同批形状Direct逐位一致，模型／398参数／2buffers释放、CLI物理退出和lease释放核验通过；
+首GPU错误清理判据失败保留，小样本不提供P99／P99.99。完整LOTUS查询与公共CLI／注册由独立负责人接续。
+
+
 2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
 在 `964e70ef` 上三项通过、0 跳过，覆盖 Daft／Ray reader 与两个 CPU 替身工厂 actor 的 shutdown 前退出。
 保持原 PG 及 direct_dependency 默认；真实 CLIP／GPU／HSE、完整 CLI 退出及厂商总 I/O 并发仍待验证。
