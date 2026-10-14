@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 
 from src.modalities.image.clip import ClipImagePreprocessor, ClipTensorActor
-from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult
+from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult, ImageBatchTelemetry
 
 
 class DirectImageExecutor:
@@ -17,6 +17,7 @@ class DirectImageExecutor:
                                     device=device, dtype=dtype, local_files_only=True,
                                     normalize=True, detailed_stage_timing=False)
         self.semantics = self.actor.semantics
+        self.execution_observations = []
 
     def embed_batch(self, doc_ids, images):
         if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
@@ -25,12 +26,21 @@ class DirectImageExecutor:
 
         started = time.perf_counter()
         chunks = []
+        costs = []
         for offset in range(0, len(doc_ids), self.batch_size):
             ids = doc_ids[offset:offset + self.batch_size]
+            at = time.perf_counter()
             pixels = self.processor.preprocess(images[offset:offset + self.batch_size])
+            preprocess_s = time.perf_counter() - at
             batch = ImageEmbeddingBatch(ids, pixels, "preprocessed_tensor",
                                         len(ids) * 224 * 224, "pixels")
-            chunks.append(self.actor.embed(batch).embeddings)
+            result = self.actor.embed(batch)
+            chunks.append(result.embeddings)
+            costs.append(dict(decode_resize_normalize_s=preprocess_s, actor_service_s=result.service_s,
+                host_copy_s=result.telemetry.host_copy_s, device_input_bytes=result.telemetry.device_input_bytes,
+                output_bytes=result.telemetry.output_bytes))
+        self.execution_observations.append(dict(batches=costs, detailed_cuda_timing=False,
+            transport_time_s=None))
         return ImageEmbeddingResult(tuple(doc_ids), np.concatenate(chunks), self.semantics,
                                     time.perf_counter() - started)
 
@@ -55,10 +65,14 @@ class SlowClipPrepare:
 
     def preprocess_staged(self, descriptor, encoded_images):
         from src.modalities.image.staged import build_prepared_image_block_descriptor
+        at = time.perf_counter()
         pixels = self.processor.preprocess(encoded_images)
+        preprocess_s = time.perf_counter() - at
         prepared = build_prepared_image_block_descriptor(descriptor, pixels, ready_at_s=time.perf_counter())
         batch = ImageEmbeddingBatch(descriptor.row_ids, pixels, "preprocessed_tensor",
-                                   descriptor.model_work_units, "pixels", work_descriptor=descriptor.work)
+                                   descriptor.model_work_units, "pixels", work_descriptor=descriptor.work,
+                                   telemetry=ImageBatchTelemetry(preprocess_s=preprocess_s,
+                                       encoded_bytes=sum(len(x) for x in encoded_images), input_tensor_bytes=pixels.nbytes))
         return prepared, batch
 
     def __call__(self, batch):
@@ -92,7 +106,13 @@ class OrderedMatrix:
 class SemLoomImageExecutor:
     """Adapt the existing SemLoom driver/HSE to the public image batch interface."""
     def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
-                 max_active_batches=2, hse=True):
+                 max_active_batches=2, hse=True, encoded_bytes_limit=None,
+                 encoded_block_bytes_upper_bound=None):
+        for value in (encoded_bytes_limit, encoded_block_bytes_upper_bound):
+            if value is not None and (type(value) is not int or value <= 0):
+                raise ValueError("HSE encoded byte settings must be positive integers")
+        if not hse and (encoded_bytes_limit is not None or encoded_block_bytes_upper_bound is not None):
+            raise ValueError("encoded byte settings require HSE")
         import ray
         from src.modalities.image.contracts import EmbeddingSemantics
         from src.modalities.image.execution import SemLoomRayWorkerPool, RayWorkerPoolStartupFailure
@@ -102,6 +122,9 @@ class SemLoomImageExecutor:
             raise ValueError("positive SemLoom batch and activity settings are required")
         self.batch_size, self.window, self.hse = batch_size, max_active_batches, hse
         self.model, self.processor, self.dtype = model, processor or model, dtype
+        self.encoded_bytes_limit = encoded_bytes_limit
+        self.encoded_block_bytes_upper_bound = encoded_block_bytes_upper_bound
+        self.execution_observations = []
         self.semantics = EmbeddingSemantics(model, self.processor, 512)
         self.pool = None
         handles = []
@@ -136,14 +159,22 @@ class SemLoomImageExecutor:
         started = time.perf_counter()
         if self.hse:
             encoded = max(len(x) for x in images) * self.batch_size
+            block_upper = self.encoded_block_bytes_upper_bound if self.encoded_block_bytes_upper_bound is not None else encoded
+            capacity = self.encoded_bytes_limit if self.encoded_bytes_limit is not None else encoded * self.window
             prepared = self.batch_size * 3 * 224 * 224 * 4
-            run_semloom_ray_hse_pipeline(source, **kwargs,
-                encoded_block_bytes_upper_bound=encoded,
-                limits=StageBrokerLimits(encoded_bytes=encoded * self.window,
+            execution = run_semloom_ray_hse_pipeline(source, **kwargs,
+                encoded_block_bytes_upper_bound=block_upper,
+                limits=StageBrokerLimits(encoded_bytes=capacity,
                     prepare_inflight=1, ready_bytes=prepared * self.window,
                     ready_work=self.batch_size * 224 * 224 * self.window,
                     model_inflight=1),
                 model_revision=self.model, processor_revision=self.processor, model_dtype=self.dtype)
+            self.execution_observations.append(dict(encoded_bytes_limit=capacity,
+                encoded_block_bytes_upper_bound=block_upper, encoded_bytes_peak=execution.encoded_bytes_peak,
+                ready_bytes_peak=execution.ready_bytes_peak, batch_preprocess_s=execution.batch_preprocess_s,
+                batch_host_copy_s=execution.batch_host_copy_s, batch_actor_service_s=execution.batch_actor_service_s,
+                batch_submit_s=execution.batch_submit_s, device_input_bytes=execution.device_input_bytes,
+                detailed_cuda_timing=False, transport_time_s=None))
         else:
             run_semloom_ray_pipeline(source, **kwargs)
         return ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,

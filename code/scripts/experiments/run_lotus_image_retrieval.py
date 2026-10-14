@@ -48,6 +48,10 @@ def parser():
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--stock-outer-batch-size", type=int, default=64)
     p.add_argument("--max-active-batches", type=int, default=2)
+    p.add_argument("--png-compress-level", type=int, choices=range(-1, 10), default=None,
+                   help="replacement RM only; omitted preserves Pillow defaults")
+    p.add_argument("--hse-encoded-bytes", type=int)
+    p.add_argument("--hse-encoded-block-bytes-upper-bound", type=int)
     p.add_argument("--ray-temp-dir", type=Path)
     p.add_argument("--device", choices=("cpu", "cuda"), default="cuda")
     p.add_argument("--dtype", choices=("float32",), default="float32")
@@ -60,6 +64,12 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.arm == "stock" and args.png_compress_level is not None:
+        raise ValueError("stock native PIL path does not accept PNG compression settings")
+    hse_bytes = (args.hse_encoded_bytes, args.hse_encoded_block_bytes_upper_bound)
+    if any(x is not None for x in hse_bytes):
+        if args.arm != "semloom_hse" or any(x is not None and x <= 0 for x in hse_bytes):
+            raise ValueError("positive HSE encoded byte settings require semloom_hse")
     if (not 0 < args.rows <= args.max_gallery_rows <= 5000
             or args.k < 1 or min(args.batch_size, args.stock_outer_batch_size) < 1):
         raise ValueError("invalid bounded qualification dimensions")
@@ -73,6 +83,9 @@ def main(argv=None):
                   stock_outer_batch_size=args.stock_outer_batch_size,
                   stock_encode_batch_size=32, direct_model_batch_size=args.batch_size,
                   private_vector_capture=args.retain_query_vectors,
+                  png_compress_level=args.png_compress_level,
+                  hse_encoded_bytes=args.hse_encoded_bytes,
+                  hse_encoded_block_bytes_upper_bound=args.hse_encoded_block_bytes_upper_bound,
                   detailed_timing=bool(os.environ.get("SEMLOOM_DETAILED_TIMING_DIR")))
     executor = None
     rm = None
@@ -121,7 +134,9 @@ def main(argv=None):
                         executor = RayDataImageExecutor(**settings)
                     else:
                         executor = SemLoomImageExecutor(**settings, hse=args.arm == "semloom_hse",
-                                                       max_active_batches=args.max_active_batches)
+                                                       max_active_batches=args.max_active_batches,
+                            encoded_bytes_limit=args.hse_encoded_bytes,
+                            encoded_block_bytes_upper_bound=args.hse_encoded_block_bytes_upper_bound)
             elif args.arm == "daft_native":
                 if args.model is None:
                     raise ValueError("Daft arm requires its qualified CLIP checkpoint")
@@ -145,7 +160,8 @@ def main(argv=None):
             if args.arm in ("semloom_static", "semloom_hse", "ray_data", "daft_native"):
                 report["versions"].update({x: version(x) for x in ("ray", "daft", "pyarrow")})
             rm = make_image_rm(executor, stock, max_rows=args.max_gallery_rows,
-                               observation=RMObservation(capture_vectors=args.retain_query_vectors))
+                               observation=RMObservation(capture_vectors=args.retain_query_vectors),
+                               png_compress_level=args.png_compress_level)
         report["model_startup_s"] = (time.monotonic_ns() - started) / 1e9
         application_started = time.monotonic_ns()
         report["stage"] = "gallery_source_decode"
@@ -180,6 +196,10 @@ def main(argv=None):
         if rm is not None:
             report["rm_calls"] = rm.observation.calls
         if executor is not None:
+            try:
+                report["execution_observations"] = getattr(executor, "execution_observations", [])
+            except BaseException as exc:
+                report["execution_observation_error"] = type(exc).__name__
             try:
                 executor.close()
             except BaseException as exc:

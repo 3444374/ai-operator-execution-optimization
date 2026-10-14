@@ -33,12 +33,19 @@ def timing_span(operation, **fields):
     return existing_span(operation, **fields)
 
 
-def image_bytes(image: Image.Image) -> bytes:
+def validate_png_compress_level(level):
+    if level is not None and (type(level) is not int or not -1 <= level <= 9):
+        raise ValueError("PNG compression level must be None or an integer from -1 to 9")
+
+
+def image_bytes(image: Image.Image, *, png_compress_level=None) -> bytes:
     """Losslessly transport the exact RGB pixels supplied to native LOTUS."""
     if not isinstance(image, Image.Image) or image.mode != "RGB":
         raise TypeError("LOTUS image embedding requires RGB PIL images")
+    validate_png_compress_level(png_compress_level)
     with io.BytesIO() as stream:
-        image.save(stream, format="PNG")
+        options = {} if png_compress_level is None else {"compress_level": png_compress_level}
+        image.save(stream, format="PNG", **options)
         return stream.getvalue()
 
 
@@ -70,12 +77,13 @@ class RMObservation:
 
 
 def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
-                  max_output_bytes=32 * 1024 * 1024, observation=None):
+                  max_output_bytes=32 * 1024 * 1024, observation=None, png_compress_level=None):
     """Replace only RM._embed; native RM query conversion and FAISS stay intact.
 
     A sem_index call requires a complete N×D matrix. This explicitly bounded
     collection is distinct from the existing streaming benchmark's capture.
     """
+    validate_png_compress_level(png_compress_level)
     from lotus.models.rm import RM
 
     if (type(max_rows) is not int or max_rows < 1 or type(max_output_bytes) is not int
@@ -101,7 +109,16 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
                 if images:
                     ids = tuple(str(i) for i in images)
                     with timing_span("lotus.rm.image_embed", scope="rm_call"):
-                        result = executor.embed_batch(ids, [image_bytes(docs[i]) for i in images])
+                        encode_at, cpu_at = time.monotonic_ns(), time.process_time_ns()
+                        try:
+                            encoded = [image_bytes(docs[i], png_compress_level=png_compress_level) for i in images]
+                        finally:
+                            record.update(png_compress_level=png_compress_level,
+                                image_encode_wall_ns=time.monotonic_ns() - encode_at,
+                                image_encode_cpu_ns=time.process_time_ns() - cpu_at)
+                        record.update(encoded_total_bytes=sum(len(x) for x in encoded),
+                                      encoded_peak_single_bytes=max(len(x) for x in encoded))
+                        result = executor.embed_batch(ids, encoded)
                     if result.semantics != semantics:
                         raise ValueError("executor changed its embedding semantics")
                     if (len(set(result.doc_ids)) != len(ids) or set(result.doc_ids) != set(ids)):

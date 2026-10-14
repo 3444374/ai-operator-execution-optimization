@@ -1,5 +1,8 @@
 # 原生 LOTUS CLIP 图像检索接入
 
+下方六路径资格绑定 `06332d4f`。新增 PNG 编码候选尚未整合，选项及固定容量语义见
+[RM／CLI说明](../../../../code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)；不将旧模型资格移给新配置。
+
 本轮接通固定 LOTUS1.2.4 的图片建索引及图文检索。图库、原生 Faiss 索引、在线图像／文本编码、
 完整 top10 输出均经过 LOTUS；Direct、SemLoom static、SemLoom HSE static、Ray Data 和 Daft Native
 接到公开 RM 执行接口。作者算子、索引、检索和框架源码保持。六条路径的 12／64／256 图及已有索引
