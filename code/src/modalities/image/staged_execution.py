@@ -200,9 +200,45 @@ def run_project_ray_hse_pipeline(
         prepare_inflight_peak = max(prepare_inflight_peak, snapshot.prepare_inflight)
         model_inflight_peak = max(model_inflight_peak, snapshot.model_inflight)
 
+    def submit_ready_models() -> bool:
+        progressed = False
+        while True:
+            if not available_gpu_actors:
+                break
+            lease = broker.lease_model(now_s=time.perf_counter())
+            if lease is None:
+                break
+            batch_ready_residence_s.append(
+                max(
+                    0.0,
+                    lease.issued_at_s
+                    - (lease.descriptor.ready_at_s or lease.issued_at_s),
+                )
+            )
+            actor_index = min(available_gpu_actors)
+            available_gpu_actors.remove(actor_index)
+            gpu_actor = worker_pool.gpu_actors[actor_index]
+            submit_started = time.perf_counter()
+            call = _ModelCall(
+                lease=lease,
+                source_admitted_at_s=admitted_at[lease.descriptor.block_id],
+                actor_index=actor_index,
+                payload_ref=prepared_payloads.pop(lease.descriptor.block_id),
+            )
+            active_calls[lease.lease_id] = call
+            call.reference = gpu_actor.embed.remote(call.payload_ref)
+            submitted_at_s = time.perf_counter()
+            batch_submit_s.append(submitted_at_s - submit_started)
+            model_calls[call.reference] = call
+            del call
+            progressed = True
+            record_peaks()
+
+        return progressed
+
     try:
         while not source_exhausted or not broker.is_drained():
-            progressed = False
+            progressed = submit_ready_models()
 
             while broker.snapshot().active_blocks < max_active_batches and not source_exhausted:
                 snapshot = broker.snapshot()
@@ -284,37 +320,7 @@ def run_project_ray_hse_pipeline(
                 del call
                 record_peaks()
 
-            while True:
-                if not available_gpu_actors:
-                    break
-                lease = broker.lease_model(now_s=time.perf_counter())
-                if lease is None:
-                    break
-                batch_ready_residence_s.append(
-                    max(
-                        0.0,
-                        lease.issued_at_s
-                        - (lease.descriptor.ready_at_s or lease.issued_at_s),
-                    )
-                )
-                actor_index = min(available_gpu_actors)
-                available_gpu_actors.remove(actor_index)
-                gpu_actor = worker_pool.gpu_actors[actor_index]
-                submit_started = time.perf_counter()
-                call = _ModelCall(
-                    lease=lease,
-                    source_admitted_at_s=admitted_at[lease.descriptor.block_id],
-                    actor_index=actor_index,
-                    payload_ref=prepared_payloads.pop(lease.descriptor.block_id),
-                )
-                active_calls[lease.lease_id] = call
-                call.reference = gpu_actor.embed.remote(call.payload_ref)
-                submitted_at_s = time.perf_counter()
-                batch_submit_s.append(submitted_at_s - submit_started)
-                model_calls[call.reference] = call
-                del call
-                progressed = True
-                record_peaks()
+            progressed = submit_ready_models() or progressed
 
             pending_refs = tuple(prepare_calls) + tuple(model_calls)
             if not pending_refs:

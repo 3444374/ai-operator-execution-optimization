@@ -105,6 +105,28 @@ class HSEStaticLifecycleTests(unittest.TestCase):
         self.assertEqual(live_at_creation, [[], []])
         self.assertTrue(all(ref() is None for ref in payload_refs))
 
+    def test_dispatches_existing_ready_work_before_reading_more_source(self):
+        events = []
+
+        class LoggedSource(fixture._Source):
+            def to_arrow_iter(self, *, results_buffer_size):
+                for batch in self._batches:
+                    events.append("source_" + batch["doc_id"][0].as_py())
+                    yield batch
+
+        class LoggedGpu(fixture._GpuActor):
+            def _embed(self, batch_ref):
+                events.append("model_" + batch_ref.value.doc_ids[0])
+                return super()._embed(batch_ref)
+
+        pool = ProjectRayWorkerPool((fixture._CpuActor(), fixture._CpuActor()), (LoggedGpu(),))
+        rows = ("a", "b", "c", "d")
+        with fixture._fake_ray_module(fixture._FakeRay()):
+            result = run(LoggedSource(source(rows)._batches), pool, rows=rows, active=3,
+                         encoded=3, ready=3)
+        self.assertTrue(result.audit["exactly_once"])
+        self.assertLess(events.index("model_b"), events.index("source_d"), events)
+
     def test_records_admission_peak_when_preparing_is_capacity_blocked(self):
         rows = ("a", "b", "c", "d", "e")
         pool = ProjectRayWorkerPool((fixture._CpuActor(),), (fixture._GpuActor(),))

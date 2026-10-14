@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE C派发顺序片](diagnostics/hse_static_lifecycle_20261014/README.md)：A+B+C的32项定向通过，
+四生产／测试源码与原47f逐字节一致；C只验证已有ready先派发，不授予真实GPU收益、RSS或端到端性能结论。
+
 2026-10-14：[HSE B独立成本片](diagnostics/hse_static_lifecycle_20261014/README.md)：A+B的31项定向通过。
 broker源码与47f CPU原值／复算入口逐字节一致；原n3中位值只说明终态历史扫描开销，不外推实库／GPU／端到端。
 

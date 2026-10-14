@@ -82,8 +82,68 @@
         "run": 31
       },
       "tests_run": 480
+    },
+    {
+      "actual_ray_started": false,
+      "errors": 0,
+      "extra_modules": [
+        "tests.modalities.image.test_hse_static_lifecycle",
+        "tests.modalities.image.test_staged_image_execution",
+        "tests.modalities.image.test_staged_image_blocks",
+        "tests.modalities.image.test_incremental_image_backend",
+        "tests.execution_provider.test_map_preparation"
+      ],
+      "failures": 0,
+      "gpu_runs": 0,
+      "included_slices": [
+        "A",
+        "B",
+        "C"
+      ],
+      "model_calls": 0,
+      "omitted_module": "unittest.loader._FailedTest.tests.scheduling.test_scheduling_daft_ray_contract",
+      "omitted_reason": "pyarrow missing at import; fixed 47f failure record retained",
+      "passed": 480,
+      "platform": "Darwin",
+      "python": "3.12.6",
+      "scheduling_discovery_count": 433,
+      "skipped": [
+        {
+          "reason": "Daft and Arrow are required for actual prepared batches",
+          "test": "tests.execution_provider.test_map_preparation.MapPreparationTests.test_actual_batch_adapters_keep_merged_row_identity_and_buffers"
+        }
+      ],
+      "slice": "C",
+      "source_sha256": {
+        "code/src/modalities/image/staged_execution.py": "2a6f9f58178c3d4f6198b6260965eaddad367e8ac458f0217beb877412fa5dfa",
+        "code/src/scheduling/runtime/stage_broker.py": "4ec743c3550b1f2cc4c802d377857135104cef6bf501a1dfc1597041831d49be",
+        "code/tests/modalities/image/test_hse_static_lifecycle.py": "eceef17b2272f521c357ea571fbc6c068ba6cdc9a61a6cca3a429dc0ce2a10c9",
+        "code/tests/scheduling/test_stage_broker.py": "53dfc7489c59ff19c9806abae301a6cd9b5e4c2017f8685720c506d17652dbe0"
+      },
+      "successful": true,
+      "targeted_tests": {
+        "passed": 32,
+        "run": 32
+      },
+      "tests_run": 481
     }
   ],
+  "independent_composition": {
+    "A_plus_C": {
+      "actual_ray_started": false,
+      "broker_source_commit": "d307bb9265a32e516052f3bea7d8206f8906c288",
+      "broker_source_sha256": "a5fc7cd65eaf3603ff59d34f06875d51f0486ab76f50dbfeca1275af1f01a92e",
+      "hse_source_sha256": "2a6f9f58178c3d4f6198b6260965eaddad367e8ac458f0217beb877412fa5dfa",
+      "passed": 15,
+      "scope": [
+        "tests.modalities.image.test_hse_static_lifecycle",
+        "tests.modalities.image.test_staged_image_execution"
+      ],
+      "skipped": 0,
+      "tests_run": 15,
+      "verification": "independent read-only in-memory module assembly; no B cached fields used"
+    }
+  },
   "reviewed_combined_commit": "47f7800ce5fbe280c5075165453b2c6dec5437f4",
   "schema": 1
 }

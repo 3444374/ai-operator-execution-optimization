@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：HSE ready优先独立片
+
+C只将A已修正的model提交循环提为helper，并在source.next前派发已有ready；不依赖B。
+[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)分别记录代码／测试，
+组合四源码与47f逐字节相同；32项定向通过。真实GPU收益与物理内存未验证，CLI默认保持。
+
 ## 2026-10-14：HSE broker历史扫描独立片
 
 B只维护活动集合与终态缓存及转换，保留全部默认历史与重复检测；31项定向通过。
