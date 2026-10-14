@@ -1,4 +1,4 @@
-# IMLane桥生命周期本机检查
+# IMLane桥生命周期检查
 
 本次在固定基线`8862c8130bfb53aaa4873ac83354b8afa4711d73`上实现可选常驻DBEnd桥，
 默认逐批桥保持。阶段定义、固定作者源码依据与采用决定集中于
@@ -38,7 +38,7 @@ PYTHONPATH=code python3 code/tests/baselines/test_imlane_cpp_primitives.py
 失败种类与实际范围记录于摘要，不把未执行写成运行失败或通过。
 
 本轮作者CPython／作者Ray运行0、模型请求0、GPU运行0，没有占用原单卡服务器。
-全桥链接／实际常驻多批、两作者模式的IPC与Lane复用、公开查询／原SDK消费及适配开销占比均待主协调安排。
+截至本机阶段，全桥链接／实际常驻多批、两作者模式的IPC与Lane复用、公开查询／原SDK消费及适配开销占比均待主协调安排；接续实库范围见[作者软件检查](#author-session)。
 HTTP client仍逐调用；阶段累计会重叠，未比较完整JCT、RSS排名或代表性性能。
 旧同步／async的真实作者软件证据继续保留在[既有报告](../../postgresql/native_executor_baselines_20261012/README.md)。
 
@@ -67,3 +67,50 @@ CPython／Ray四格在本地只是协议标签，没有启动作者运行时；S
 本轮服务器上传／负载、作者CPython／Ray、实际LOTUS SDK、模型／GPU均为0。
 完整新桥编译、作者两运行时×默认／复用及原SDK完整消费仍pending，须在主协调分配的独立窗口验证；
 实际host额度16核，拟分配8槽与Ray／Daft重负载串行。薄runner的实现与本机替身不能提升常驻候选的实库资格。
+
+<a id="author-session"></a>
+
+## 作者与原SDK的有限软件资格
+
+固定生产适配提交`9766e784ea9d1f0c16a56a0b81a369847081bbce`，验证器来自
+`f788a094fd5270607294b2303e309a09450e399e`；原178文件包上传摘要核验通过。
+按最新指令只在原173源码成员范围更新两个验证文件，执行源锁绑定
+`6916ebe5bda5fc1d6826df09db0950bfeff1231f`，`--wall-limit-s 0`取消健康总时长截断；
+内存、lease、POST、单批／请求及显式故障保护保持。8项定点本地回归和独立补丁审查通过。
+原包、旧源码、控制指令截断及只读汇总字段错误记录留在仓外；确认初次控制指令未启动进程后才重发，未重跑作者矩阵。
+
+复用既有作者`072f8257`、Arrow16.1.0和LOTUS1.2.4环境；两个独立解释器预检均通过。
+完整桥在单编译器下构建成功，源码／二进制摘要见[机器摘要](author-summary.json)。
+四格按默认→复用、CPython→作者Ray顺序执行，全部软件检查通过：
+
+| 作者模式 | 桥路径 | root POST | 原SDK健康／parser POST | 总POST |
+|---|---|---:|---:|---:|
+| CPython | 默认逐批 | 24 | 28／4 | 56 |
+| CPython | 显式复用 | 24 | 28／4 | 56 |
+| Ray | 默认逐批 | 23 | 28／4 | 55 |
+| Ray | 显式复用 | 23 | 28／4 | 55 |
+
+每格同一个root执行器连跑三批×4行，重复源行、完整字节／重复头、乱序、429和结束记录通过；
+context与注册计数分别为默认`[1,1,1]`、复用`[1,0,0]`，复用同桥PID与独立batch ID。
+原SDK四批为Map4／Q1 12／Q2 6／Q3 6，保留原Filter、顺序、LIMIT5／COUNT6及重复reviewId；
+两种作者模式均核对实际两个worker，Ray进一步核对两个actor身份。gateway元数据中的`native_executors=4`
+不代表四个物理执行器；实际Coordinator声明及worker数均为2，实际task threads为6。
+首批四个完整响应在后续批次后仍正确，输出深复制继续保留。
+独立重算128条SDK请求的正文摘要／长度和原headers，以及116条已消费完整响应的34,244字节、
+状态／HTTP version／重复头；parser探针每格只消费首1／4条即以原SDK异常停止，不能称完整消费该故障批。
+
+transport／timeout／consumer／cancel／crash和parser各使用新Coordinator／namespace；
+unknown持久记录、同身份新拥有者拒绝、首错及首条marker保留均通过。杀桥仍不表示远端HTTP取消。
+28个实例中CPython14项原始clean；Ray8项原始clean，另外6项为默认／复用各自的
+timeout、consumer、cancel故障，退出后需要清理各自namespace的6个SHM成员。
+这6项保留原始`passed=False`，在PID、线程与SHM出口核对后另记
+`expected_fault_owner_cleanup_verified=True`；没有把强制SHM清理当成健康退出，没有强制进程兜底样本。
+最终305组PID／start ticks复核无存活，lease已释放，作者资产及173成员摘要未变；RSS／SHM／lease保护无违规。
+
+[批次与清理观测](author-observations.json)只保存必要统计，不复制正文、环境或完整日志。
+仓外原件的文件大小／摘要登记在机器摘要，以运行标识`cpython01`／`ray01`获取；
+[复算入口](summarize_author.py)从原件生成这两份公开记录，不连接服务器或重跑测试。
+独立审核核对源锁、完整请求／响应和6项非clean故障边界，未发现阻塞问题。
+本轮模型／GPU／重试均0，只支持同步HTTP内核的有限作者及原SDK软件资格；
+原2000行完整CLI、PG新session接入、async与reuse组合、模型质量及同口径性能仍待验证。
+默认`reuse_bridge=False`保持，阶段累计重叠，软件检查时长不作模型性能或调度创新结论。

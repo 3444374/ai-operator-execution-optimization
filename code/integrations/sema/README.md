@@ -66,8 +66,39 @@ taskset -c <assigned-eight-CPU-IDs> <author-python> -B code/integrations/sema/ve
   --output <new-private-output> --wall-limit-s 0
 ```
 
-作者Ray在另一个已分配窗口使用`--runtime ray`。当前只有[本机替身与故障注入检查](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)，
-作者两模式／原SDK／新桥的实库资格仍pending；下方旧验证器的main不作为新常驻方案的资格入口。
+作者Ray在另一个已分配窗口使用`--runtime ray`。[本机替身检查](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)
+与[四格实库软件资格](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)分开记录；
+新桥／同步内核／原SDK有限消费已核验，原2000行完整CLI、PG、async与reuse组合及模型仍pending。
+下方旧验证器的main不作为新常驻方案的资格入口，默认`reuse_bridge=False`保持。
+
+<a id="imlane-model-contract"></a>
+
+### 下一轮两作者模式真实Q2／Q1的配置契约
+
+使用同一已冻结模型owner的服务、权重／tokenizer及GPU签名，原Movie数据／清单和固定SemBench源码；
+复用原formatter、完整HTTP调用、原parser／官方评价，不继承软件fixture正文、时长或旧窗口预算。
+原Q2每模式120调用，保留WHERE与LIMIT5；原Q1每模式完整2000调用，不能拆成诊断小批或用本轮12行证明规模资格。
+Q2按原查询核对temperature0、top_p1、max_tokens8、stop换行；Q1从固定原查询取得并核对自己的实际生成参数。
+缓存关闭、重试0，完整响应和实际调用账本分别核查；模型质量与执行成功分开解释。
+
+公开arm分别为`lotus-method-native-imlane`与`lotus-method-native-imlane-ray`，
+私有`IMLaneCallConfig`的`runtime`分别绑定`cpython`／`ray`及新Coordinator PID／start ticks。
+两者先采用同步`imlane_complete_call.py`和默认`reuse_bridge=False`；桥源码／构建身份、作者库及UDF摘要按
+本轮执行提交`6916ebe5`和实际二进制固定。不能复用已清理实例的配置或unknown身份。
+显式设置`max_batch_rows=2000`，其余五项容量保持32MiB输入、48MiB wire、
+8MiB单项、128 pending、32MiB总响应，并在发送前核对本轮真实完整输入是否装入。
+pending是宿主存储窗口，不是作者执行并发；两物理worker与实际6 task threads分别核对，不按gateway的4误报worker数。
+
+由主协调匹配模型服务及最多8个IMLane CPU槽、独立lease与资源额度；模型机器profile重新检查，
+不以本轮软件8槽预检代替模型资格。作者Ray继续独立2CPU／0GPU／128MiB对象存储，作者进程树RSS8GiB／SHM2GiB保护保持。
+健康运行不按总时长截断，保留适合真实请求的超时、无进展／取消与资源保护。
+单轮无预热各一次时，两模式Q2为240逻辑调用，Q1为4000；预热、重复、失败、未知及网关路由的每一跳
+另行计入主协调的新账本，不借用本轮222软件POST额度。
+发送后出现未知工作或消费／解析中止时停止该query，保留账本与uncertain记录；确认自有runtime／SHM退出，
+并由模型owner核对服务队列后才选择新Coordinator，杀桥不说明远端模型调用已取消。
+
+若下一轮比较显式`reuse_bridge=True`，使用相同模型／查询／容量和新实例作为独立臂，先核对原规模公开入口、
+完整响应与清理，再做匹配测量；保持默认关闭，不混合flag后作排名。async与reuse组合单独取得资格。
 
 [原生async任务函数](imlane_async_complete_call.py)作为独立候选，在作者循环上直接`await _request(call)`。
 CPython通过作者`run_until_complete`执行，作者Ray通过原`AsyncActorWrapper`执行；两模式使用同一函数。

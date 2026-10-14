@@ -2,10 +2,11 @@
 
 2026-10-14：[IMLane桥阶段计时与可选context复用](integrations/sema/imlane_calls.md#bridge-lifecycle)已实现，
 默认逐批桥保持；结果按批ID、完整出现身份和结束记录核对，未知工作继续隔离。
-本地[协议及真实Arrow原语检查](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
-不包含作者CPython／Ray运行；完整新桥编译及两模式实库检查仍pending，不表示HTTP连接复用或调度创新。
+本地协议／真实Arrow原语与[四格作者及原SDK软件检查](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)
+分开记录；完整新桥、同步内核及两模式有限多批已通过，原2000行完整CLI／PG／async组合及模型仍pending。
 同一执行器多批、错误隔离及原SDK消费的[薄资格验证器](integrations/sema/README.md#imlane-session-verifier)已实现，
-本地替身、资源／lease和首错回归见同一[报告](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)；未上传或启动服务器负载。
+本地替身、资源／lease和首错回归见同一报告；接续实库保留6项Ray故障SHM清理的非clean记录，最终自有资源退出、lease释放。
+同步生产适配来自`9766e784`，实际执行`6916ebe5`，默认复用仍关闭；下一轮真实Q2／Q1按[配置契约](integrations/sema/README.md#imlane-model-contract)执行。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。

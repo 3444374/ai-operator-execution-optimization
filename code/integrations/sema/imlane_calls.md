@@ -107,7 +107,8 @@ HTTP超时可正常回送一条错误值；即使DBEnd已排空，远端HTTP停�
 
 本次只改变LOTUS／IMLane适配的初始化寿命，并增加阶段观测；不改变作者调度、HTTP函数、
 逐行独立请求、物理Arrow批次或HTTP client寿命。既有同步默认与可选async的实库资格保留，
-本次常驻候选的作者CPython、作者Ray及完整桥编译另列pending，不能继承旧路径资格或据此做性能排名。
+本次常驻候选已通过[完整桥及两作者模式的有限软件资格](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)，
+原2000行完整CLI、PG、async与reuse组合及真实模型另列pending，不能据软件资格做性能排名。
 
 来源核对固定作者`072f8257`原始源码：
 [C++示例](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/demo/cpp_example/dbend_cpp_example.cpp)
@@ -152,9 +153,10 @@ future／复制计数及批次序号后才允许下一批；它只证明本地�
 当成精确模型或IPC时间，也不能把上述重叠累计项相加成查询完成时间（JCT）。
 编码容量不是聚合RSS上限，Bridge存活、回调完成和远端请求停止分别解释。
 本机[检查记录](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
-只支持协议和复制行为，实库窗口由主协调另行安排；原生LOTUS／SemLoom单卡验证可以独立继续。
+区分初期本机与接续实库范围；原生LOTUS／SemLoom单卡验证可以独立继续。
 独立[默认／复用资格验证器](README.md#imlane-session-verifier)现已实现，同一执行器多批与原SDK消费分别核验，
-错误后使用新Coordinator隔离；本轮只完成本机替身检查，实库结果尚未产生。
+错误后使用新Coordinator隔离；[接续实库结果](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)
+保留6项Ray故障SHM清理的原始非clean记录，默认复用仍关闭。
 
 ## 已完成的软件检查
 

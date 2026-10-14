@@ -1,0 +1,1593 @@
+{
+  "schema": "semloom.imlane.bridge_author_observations.v1",
+  "batches": [
+    {
+      "cell": "cpython-default",
+      "root_batches": [
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1833,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 977104670,
+              "batch_wall_ns": 469741678,
+              "context_setup_ns": 522964,
+              "function_register_ns": 300535,
+              "input_arrow_ns": 230715,
+              "input_read_parse_ns": 145297,
+              "output_copy_decode_ns": 89314,
+              "output_copy_encode_ns": 516930,
+              "output_wire_ns": 297919,
+              "stdout_write_ns": 40523
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 129729,
+            "call_encoding_ns": 61146,
+            "input_file_write_ns": 539552,
+            "popen_ns": 604168,
+            "outcome_decode_ns": 629225,
+            "consumer_wait_ns": 169299,
+            "process_to_metadata_ns": 13714913,
+            "cleanup_ns": 23740,
+            "batch_wall_ns": 488562633
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 330492052,
+              "batch_wall_ns": 313504207,
+              "context_setup_ns": 565961,
+              "function_register_ns": 275030,
+              "input_arrow_ns": 185613,
+              "input_read_parse_ns": 142156,
+              "output_copy_decode_ns": 55345,
+              "output_copy_encode_ns": 318834,
+              "output_wire_ns": 263995,
+              "stdout_write_ns": 33060
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 117573,
+            "call_encoding_ns": 57659,
+            "input_file_write_ns": 575901,
+            "popen_ns": 608442,
+            "outcome_decode_ns": 495285,
+            "consumer_wait_ns": 118630,
+            "process_to_metadata_ns": 14906502,
+            "cleanup_ns": 22406,
+            "batch_wall_ns": 332332302
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 1960,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 334646596,
+              "batch_wall_ns": 307718557,
+              "context_setup_ns": 603809,
+              "function_register_ns": 342111,
+              "input_arrow_ns": 192038,
+              "input_read_parse_ns": 142371,
+              "output_copy_decode_ns": 40690,
+              "output_copy_encode_ns": 220217,
+              "output_wire_ns": 181444,
+              "stdout_write_ns": 26951
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 121214,
+            "call_encoding_ns": 60933,
+            "input_file_write_ns": 602703,
+            "popen_ns": 616345,
+            "outcome_decode_ns": 431000,
+            "consumer_wait_ns": 123973,
+            "process_to_metadata_ns": 14377139,
+            "cleanup_ns": 20158,
+            "batch_wall_ns": 325637925
+          }
+        }
+      ],
+      "sdk_batches": [
+        {
+          "label": "sem_map",
+          "rows": 4,
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2220,
+            "input_payload_bytes": 1464,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 3280,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 443545986,
+              "batch_wall_ns": 417695455,
+              "context_setup_ns": 847658,
+              "function_register_ns": 470343,
+              "input_arrow_ns": 224883,
+              "input_read_parse_ns": 173723,
+              "output_copy_decode_ns": 78770,
+              "output_copy_encode_ns": 367102,
+              "output_wire_ns": 260878,
+              "stdout_write_ns": 35190
+            }
+          }
+        },
+        {
+          "label": "q1",
+          "rows": 12,
+          "stats": {
+            "delivered": 12,
+            "delivered_response_bytes": 6653,
+            "input_payload_bytes": 7692,
+            "lifecycle": {
+              "author_calls": 12,
+              "context_creations": 1,
+              "output_copies": 12,
+              "registrations": 1
+            },
+            "pending_peak": 12,
+            "stdin_wire_bytes": 14260,
+            "submitted": 12,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 1236140204,
+              "batch_wall_ns": 410283468,
+              "context_setup_ns": 749799,
+              "function_register_ns": 342362,
+              "input_arrow_ns": 277589,
+              "input_read_parse_ns": 488496,
+              "output_copy_decode_ns": 240555,
+              "output_copy_encode_ns": 772562,
+              "output_wire_ns": 779812,
+              "stdout_write_ns": 93558
+            }
+          }
+        },
+        {
+          "label": "q2",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3846,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 1,
+              "output_copies": 6,
+              "registrations": 1
+            },
+            "pending_peak": 6,
+            "stdin_wire_bytes": 7128,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 532730802,
+              "batch_wall_ns": 439006646,
+              "context_setup_ns": 677887,
+              "function_register_ns": 330472,
+              "input_arrow_ns": 240781,
+              "input_read_parse_ns": 283514,
+              "output_copy_decode_ns": 95968,
+              "output_copy_encode_ns": 532602,
+              "output_wire_ns": 397764,
+              "stdout_write_ns": 50871
+            }
+          }
+        },
+        {
+          "label": "q3",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3780,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 1,
+              "output_copies": 6,
+              "registrations": 1
+            },
+            "pending_peak": 6,
+            "stdin_wire_bytes": 7032,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 517414870,
+              "batch_wall_ns": 434618838,
+              "context_setup_ns": 759943,
+              "function_register_ns": 456721,
+              "input_arrow_ns": 234528,
+              "input_read_parse_ns": 270931,
+              "output_copy_decode_ns": 89499,
+              "output_copy_encode_ns": 507915,
+              "output_wire_ns": 306886,
+              "stdout_write_ns": 42504
+            }
+          }
+        }
+      ],
+      "faults": [
+        {
+          "case": "transport",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "8bb45fab644de5dd01380e54bc7fe27effaa4d2b73cc85d1f9da583d2907d108",
+          "new_owner_rejected": true,
+          "first_error_type": null
+        },
+        {
+          "case": "timeout",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "3c763127ec4fa34328043e8da6119a1a422b49784f6334787c8c15982b0339f5",
+          "new_owner_rejected": true,
+          "first_error_type": "TimeoutError"
+        },
+        {
+          "case": "consumer",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "510ca5b9a06464306fd05d5673280aa9515e9a377582ae5704ccaf5d97aedbb1",
+          "new_owner_rejected": true,
+          "first_error_type": "ValueError"
+        },
+        {
+          "case": "cancel",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "e4cd286e87bf673b49754f3173a91a59749ce8a9471b16a29f15760d8f60cb33",
+          "new_owner_rejected": true,
+          "first_error_type": "InterruptedError"
+        },
+        {
+          "case": "crash",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "a2a18ee7798dbea1ed4ef7b543a74626546b0ab0bde5b251ad3cd136f38d3874",
+          "new_owner_rejected": true,
+          "first_error_type": "RuntimeError"
+        }
+      ]
+    },
+    {
+      "cell": "cpython-reuse",
+      "root_batches": [
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "session_batches": 1,
+            "stdin_wire_bytes": 1833,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 863016705,
+              "batch_wall_ns": 441419060,
+              "context_setup_ns": 593437,
+              "function_register_ns": 273805,
+              "input_arrow_ns": 214553,
+              "input_read_parse_ns": 94014,
+              "output_copy_decode_ns": 70973,
+              "output_copy_encode_ns": 354727,
+              "output_wire_ns": 432149,
+              "stdout_write_ns": 41195
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 142602,
+            "call_encoding_ns": 94863,
+            "input_file_write_ns": 935334,
+            "outcome_decode_ns": 573004,
+            "consumer_wait_ns": 167131,
+            "popen_ns": 741646,
+            "process_to_ready_ns": 11195373,
+            "cleanup_ns": 5375,
+            "batch_wall_ns": 457242988
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 0,
+              "output_copies": 4,
+              "registrations": 0
+            },
+            "pending_peak": 4,
+            "session_batches": 2,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 432341721,
+              "batch_wall_ns": 314245802,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 93311,
+              "input_read_parse_ns": 267436,
+              "output_copy_decode_ns": 73846,
+              "output_copy_encode_ns": 270394,
+              "output_wire_ns": 289043,
+              "stdout_write_ns": 30886
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 115135,
+            "call_encoding_ns": 76383,
+            "input_file_write_ns": 665931,
+            "outcome_decode_ns": 549168,
+            "consumer_wait_ns": 147645,
+            "popen_ns": 0,
+            "cleanup_ns": 12376,
+            "batch_wall_ns": 336072653
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 1960,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 0,
+              "output_copies": 4,
+              "registrations": 0
+            },
+            "pending_peak": 4,
+            "session_batches": 3,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 361973130,
+              "batch_wall_ns": 325779149,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 94117,
+              "input_read_parse_ns": 271286,
+              "output_copy_decode_ns": 95129,
+              "output_copy_encode_ns": 276898,
+              "output_wire_ns": 320602,
+              "stdout_write_ns": 30211
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 104221,
+            "call_encoding_ns": 58639,
+            "input_file_write_ns": 589156,
+            "outcome_decode_ns": 439863,
+            "consumer_wait_ns": 134247,
+            "popen_ns": 0,
+            "cleanup_ns": 5405,
+            "batch_wall_ns": 328550905
+          }
+        }
+      ],
+      "sdk_batches": [
+        {
+          "label": "sem_map",
+          "rows": 4,
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2220,
+            "input_payload_bytes": 1464,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "session_batches": 1,
+            "stdin_wire_bytes": 3280,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 550842791,
+              "batch_wall_ns": 409358516,
+              "context_setup_ns": 786905,
+              "function_register_ns": 613472,
+              "input_arrow_ns": 248418,
+              "input_read_parse_ns": 159238,
+              "output_copy_decode_ns": 82421,
+              "output_copy_encode_ns": 397389,
+              "output_wire_ns": 483781,
+              "stdout_write_ns": 40498
+            }
+          }
+        },
+        {
+          "label": "q1",
+          "rows": 12,
+          "stats": {
+            "delivered": 12,
+            "delivered_response_bytes": 6653,
+            "input_payload_bytes": 7692,
+            "lifecycle": {
+              "author_calls": 12,
+              "context_creations": 0,
+              "output_copies": 12,
+              "registrations": 0
+            },
+            "pending_peak": 12,
+            "session_batches": 2,
+            "stdin_wire_bytes": 14260,
+            "submitted": 12,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 1233605092,
+              "batch_wall_ns": 420202851,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 241225,
+              "input_read_parse_ns": 1113095,
+              "output_copy_decode_ns": 214855,
+              "output_copy_encode_ns": 670575,
+              "output_wire_ns": 1043068,
+              "stdout_write_ns": 96689
+            }
+          }
+        },
+        {
+          "label": "q2",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3846,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 0,
+              "output_copies": 6,
+              "registrations": 0
+            },
+            "pending_peak": 6,
+            "session_batches": 3,
+            "stdin_wire_bytes": 7128,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 762449688,
+              "batch_wall_ns": 410684700,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 127348,
+              "input_read_parse_ns": 636572,
+              "output_copy_decode_ns": 118282,
+              "output_copy_encode_ns": 367608,
+              "output_wire_ns": 494517,
+              "stdout_write_ns": 57372
+            }
+          }
+        },
+        {
+          "label": "q3",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3780,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 0,
+              "output_copies": 6,
+              "registrations": 0
+            },
+            "pending_peak": 6,
+            "session_batches": 4,
+            "stdin_wire_bytes": 7032,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 683937124,
+              "batch_wall_ns": 416840999,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 139113,
+              "input_read_parse_ns": 647944,
+              "output_copy_decode_ns": 139403,
+              "output_copy_encode_ns": 354040,
+              "output_wire_ns": 700838,
+              "stdout_write_ns": 61643
+            }
+          }
+        }
+      ],
+      "faults": [
+        {
+          "case": "transport",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "bd49ffa348618c5463e98199d422520dad6a66b2675a6fc0dc57b70de4813575",
+          "new_owner_rejected": true,
+          "first_error_type": null
+        },
+        {
+          "case": "timeout",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "9ed28bc02f68798c9bea2782790ad0e695033468fc178d1e1b1da40706010890",
+          "new_owner_rejected": true,
+          "first_error_type": "TimeoutError"
+        },
+        {
+          "case": "consumer",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "c456e4646046cf46202928e331d307602f444761f7458a411e44848757db8249",
+          "new_owner_rejected": true,
+          "first_error_type": "ValueError"
+        },
+        {
+          "case": "cancel",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "0ed83317234bb2d72c339d2dd3b62c547e052946d1d576cdab20ba53474df198",
+          "new_owner_rejected": true,
+          "first_error_type": "InterruptedError"
+        },
+        {
+          "case": "crash",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "ce7a3d6823601b32e9e78d9a08a01e045f6b5a47b01f7538dce55b2b64bb1b15",
+          "new_owner_rejected": true,
+          "first_error_type": "RuntimeError"
+        }
+      ]
+    },
+    {
+      "cell": "ray-default",
+      "root_batches": [
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1833,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 5872038773,
+              "batch_wall_ns": 1648091483,
+              "context_setup_ns": 637623,
+              "function_register_ns": 20539939,
+              "input_arrow_ns": 221848,
+              "input_read_parse_ns": 139002,
+              "output_copy_decode_ns": 78471,
+              "output_copy_encode_ns": 418079,
+              "output_wire_ns": 325216,
+              "stdout_write_ns": 49055
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 150285,
+            "call_encoding_ns": 72991,
+            "input_file_write_ns": 589813,
+            "popen_ns": 538015,
+            "outcome_decode_ns": 578200,
+            "consumer_wait_ns": 181398,
+            "process_to_metadata_ns": 32702224,
+            "cleanup_ns": 28880,
+            "batch_wall_ns": 1666579897
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 380553627,
+              "batch_wall_ns": 351865304,
+              "context_setup_ns": 729741,
+              "function_register_ns": 21938052,
+              "input_arrow_ns": 192663,
+              "input_read_parse_ns": 139811,
+              "output_copy_decode_ns": 57612,
+              "output_copy_encode_ns": 393200,
+              "output_wire_ns": 213957,
+              "stdout_write_ns": 30551
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 122108,
+            "call_encoding_ns": 56733,
+            "input_file_write_ns": 552792,
+            "popen_ns": 715907,
+            "outcome_decode_ns": 375363,
+            "consumer_wait_ns": 119759,
+            "process_to_metadata_ns": 36073253,
+            "cleanup_ns": 22763,
+            "batch_wall_ns": 369574745
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 1960,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 389706345,
+              "batch_wall_ns": 359454369,
+              "context_setup_ns": 758429,
+              "function_register_ns": 22628064,
+              "input_arrow_ns": 206720,
+              "input_read_parse_ns": 142262,
+              "output_copy_decode_ns": 72147,
+              "output_copy_encode_ns": 465843,
+              "output_wire_ns": 233956,
+              "stdout_write_ns": 35693
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 123546,
+            "call_encoding_ns": 63871,
+            "input_file_write_ns": 528237,
+            "popen_ns": 567829,
+            "outcome_decode_ns": 533671,
+            "consumer_wait_ns": 154343,
+            "process_to_metadata_ns": 35539096,
+            "cleanup_ns": 38639,
+            "batch_wall_ns": 375892879
+          }
+        }
+      ],
+      "sdk_batches": [
+        {
+          "label": "sem_map",
+          "rows": 4,
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2220,
+            "input_payload_bytes": 1464,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "stdin_wire_bytes": 3280,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 504263533,
+              "batch_wall_ns": 463838945,
+              "context_setup_ns": 632732,
+              "function_register_ns": 25000071,
+              "input_arrow_ns": 223653,
+              "input_read_parse_ns": 163519,
+              "output_copy_decode_ns": 59690,
+              "output_copy_encode_ns": 381226,
+              "output_wire_ns": 219238,
+              "stdout_write_ns": 26397
+            }
+          }
+        },
+        {
+          "label": "q1",
+          "rows": 12,
+          "stats": {
+            "delivered": 12,
+            "delivered_response_bytes": 6653,
+            "input_payload_bytes": 7692,
+            "lifecycle": {
+              "author_calls": 12,
+              "context_creations": 1,
+              "output_copies": 12,
+              "registrations": 1
+            },
+            "pending_peak": 12,
+            "stdin_wire_bytes": 14260,
+            "submitted": 12,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 1475619609,
+              "batch_wall_ns": 444742065,
+              "context_setup_ns": 639847,
+              "function_register_ns": 24560228,
+              "input_arrow_ns": 268581,
+              "input_read_parse_ns": 492044,
+              "output_copy_decode_ns": 158273,
+              "output_copy_encode_ns": 721336,
+              "output_wire_ns": 705442,
+              "stdout_write_ns": 105732
+            }
+          }
+        },
+        {
+          "label": "q2",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3846,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 1,
+              "output_copies": 6,
+              "registrations": 1
+            },
+            "pending_peak": 6,
+            "stdin_wire_bytes": 7128,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 714317271,
+              "batch_wall_ns": 437257889,
+              "context_setup_ns": 733763,
+              "function_register_ns": 20424760,
+              "input_arrow_ns": 226831,
+              "input_read_parse_ns": 276914,
+              "output_copy_decode_ns": 105916,
+              "output_copy_encode_ns": 562543,
+              "output_wire_ns": 367994,
+              "stdout_write_ns": 51814
+            }
+          }
+        },
+        {
+          "label": "q3",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3780,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 1,
+              "output_copies": 6,
+              "registrations": 1
+            },
+            "pending_peak": 6,
+            "stdin_wire_bytes": 7032,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 580399472,
+              "batch_wall_ns": 467476184,
+              "context_setup_ns": 712246,
+              "function_register_ns": 20214506,
+              "input_arrow_ns": 236452,
+              "input_read_parse_ns": 273619,
+              "output_copy_decode_ns": 92567,
+              "output_copy_encode_ns": 533457,
+              "output_wire_ns": 300516,
+              "stdout_write_ns": 45907
+            }
+          }
+        }
+      ],
+      "faults": [
+        {
+          "case": "transport",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "57d15bd63911f198a478973a40d47a66a10b6876aee4c8e571a94baa05912c46",
+          "new_owner_rejected": true,
+          "first_error_type": null
+        },
+        {
+          "case": "timeout",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "f395f1f45756f4c2dfd84b183fdbb0b38e5d7d7ebe4d962a1efae0c58ea2f93d",
+          "new_owner_rejected": true,
+          "first_error_type": "TimeoutError"
+        },
+        {
+          "case": "consumer",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "5f9492e5c5606124ba2110cc69c1597a192ec457f83a58f9cc0482fe3d87ab14",
+          "new_owner_rejected": true,
+          "first_error_type": "ValueError"
+        },
+        {
+          "case": "cancel",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "38b1a28fad1949c18d5ffb89d5a28c3534eda1e478fd560eee861e14a5855a5a",
+          "new_owner_rejected": true,
+          "first_error_type": "InterruptedError"
+        },
+        {
+          "case": "crash",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "90d609ec91a02c0cc0a8c497b651169cc8b0f2effe6b581702e08b6319e877e6",
+          "new_owner_rejected": true,
+          "first_error_type": "RuntimeError"
+        }
+      ]
+    },
+    {
+      "cell": "ray-reuse",
+      "root_batches": [
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "session_batches": 1,
+            "stdin_wire_bytes": 1833,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 5422448391,
+              "batch_wall_ns": 1600994045,
+              "context_setup_ns": 715166,
+              "function_register_ns": 19579305,
+              "input_arrow_ns": 284573,
+              "input_read_parse_ns": 139158,
+              "output_copy_decode_ns": 87327,
+              "output_copy_encode_ns": 470391,
+              "output_wire_ns": 569848,
+              "stdout_write_ns": 56792
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 123214,
+            "call_encoding_ns": 81548,
+            "input_file_write_ns": 710584,
+            "outcome_decode_ns": 517511,
+            "consumer_wait_ns": 130007,
+            "popen_ns": 824724,
+            "process_to_ready_ns": 34036868,
+            "cleanup_ns": 6085,
+            "batch_wall_ns": 1639498232
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2360,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 0,
+              "output_copies": 4,
+              "registrations": 0
+            },
+            "pending_peak": 4,
+            "session_batches": 2,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 511502121,
+              "batch_wall_ns": 314231271,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 83350,
+              "input_read_parse_ns": 255187,
+              "output_copy_decode_ns": 54288,
+              "output_copy_encode_ns": 217334,
+              "output_wire_ns": 346412,
+              "stdout_write_ns": 32670
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 123147,
+            "call_encoding_ns": 68916,
+            "input_file_write_ns": 744097,
+            "outcome_decode_ns": 491090,
+            "consumer_wait_ns": 132051,
+            "popen_ns": 0,
+            "cleanup_ns": 7520,
+            "batch_wall_ns": 317695114
+          }
+        },
+        {
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 1960,
+            "input_payload_bytes": 168,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 0,
+              "output_copies": 4,
+              "registrations": 0
+            },
+            "pending_peak": 4,
+            "session_batches": 3,
+            "stdin_wire_bytes": 1841,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 430370262,
+              "batch_wall_ns": 331224297,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 67013,
+              "input_read_parse_ns": 186850,
+              "output_copy_decode_ns": 88174,
+              "output_copy_encode_ns": 317080,
+              "output_wire_ns": 388425,
+              "stdout_write_ns": 36275
+            }
+          },
+          "python_timing_ns": {
+            "input_preflight_ns": 136656,
+            "call_encoding_ns": 74679,
+            "input_file_write_ns": 656437,
+            "outcome_decode_ns": 395530,
+            "consumer_wait_ns": 98362,
+            "popen_ns": 0,
+            "cleanup_ns": 3193,
+            "batch_wall_ns": 334283862
+          }
+        }
+      ],
+      "sdk_batches": [
+        {
+          "label": "sem_map",
+          "rows": 4,
+          "stats": {
+            "delivered": 4,
+            "delivered_response_bytes": 2220,
+            "input_payload_bytes": 1464,
+            "lifecycle": {
+              "author_calls": 4,
+              "context_creations": 1,
+              "output_copies": 4,
+              "registrations": 1
+            },
+            "pending_peak": 4,
+            "session_batches": 1,
+            "stdin_wire_bytes": 3280,
+            "submitted": 4,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 497334602,
+              "batch_wall_ns": 438957126,
+              "context_setup_ns": 777818,
+              "function_register_ns": 18344896,
+              "input_arrow_ns": 294910,
+              "input_read_parse_ns": 204517,
+              "output_copy_decode_ns": 55663,
+              "output_copy_encode_ns": 327175,
+              "output_wire_ns": 366157,
+              "stdout_write_ns": 33896
+            }
+          }
+        },
+        {
+          "label": "q1",
+          "rows": 12,
+          "stats": {
+            "delivered": 12,
+            "delivered_response_bytes": 6653,
+            "input_payload_bytes": 7692,
+            "lifecycle": {
+              "author_calls": 12,
+              "context_creations": 0,
+              "output_copies": 12,
+              "registrations": 0
+            },
+            "pending_peak": 12,
+            "session_batches": 2,
+            "stdin_wire_bytes": 14260,
+            "submitted": 12,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 1398009070,
+              "batch_wall_ns": 430176387,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 278285,
+              "input_read_parse_ns": 1221889,
+              "output_copy_decode_ns": 160466,
+              "output_copy_encode_ns": 628486,
+              "output_wire_ns": 835013,
+              "stdout_write_ns": 98727
+            }
+          }
+        },
+        {
+          "label": "q2",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3846,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 0,
+              "output_copies": 6,
+              "registrations": 0
+            },
+            "pending_peak": 6,
+            "session_batches": 3,
+            "stdin_wire_bytes": 7128,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 715340453,
+              "batch_wall_ns": 452166859,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 72345,
+              "input_read_parse_ns": 258469,
+              "output_copy_decode_ns": 143214,
+              "output_copy_encode_ns": 394134,
+              "output_wire_ns": 642299,
+              "stdout_write_ns": 70537
+            }
+          }
+        },
+        {
+          "label": "q3",
+          "rows": 6,
+          "stats": {
+            "delivered": 6,
+            "delivered_response_bytes": 3324,
+            "input_payload_bytes": 3780,
+            "lifecycle": {
+              "author_calls": 6,
+              "context_creations": 0,
+              "output_copies": 6,
+              "registrations": 0
+            },
+            "pending_peak": 6,
+            "session_batches": 4,
+            "stdin_wire_bytes": 7032,
+            "submitted": 6,
+            "timing_ns": {
+              "author_execute_inclusive_ns": 795055517,
+              "batch_wall_ns": 414411971,
+              "context_setup_ns": 0,
+              "function_register_ns": 0,
+              "input_arrow_ns": 91054,
+              "input_read_parse_ns": 424391,
+              "output_copy_decode_ns": 84658,
+              "output_copy_encode_ns": 276832,
+              "output_wire_ns": 493576,
+              "stdout_write_ns": 60187
+            }
+          }
+        }
+      ],
+      "faults": [
+        {
+          "case": "transport",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "467bf159438a70e2827a48fa04be6b8a64c23fbfdb55df5bd81f67e5a371be66",
+          "new_owner_rejected": true,
+          "first_error_type": null
+        },
+        {
+          "case": "timeout",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "d4703eee7298617d49a5baa61062099d6f65e1300805d1d538b808c334c88273",
+          "new_owner_rejected": true,
+          "first_error_type": "TimeoutError"
+        },
+        {
+          "case": "consumer",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "32a058e63883f385c8b11cdd3d6a5c32d79e9f0f92a69119cbbd2a481429cf5a",
+          "new_owner_rejected": true,
+          "first_error_type": "ValueError"
+        },
+        {
+          "case": "cancel",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "c692e022134a330c40e39f7a1e293c0856bc7444f79a03ecbcaccbbbecf2127f",
+          "new_owner_rejected": true,
+          "first_error_type": "InterruptedError"
+        },
+        {
+          "case": "crash",
+          "passed": true,
+          "clean": false,
+          "bridge_stopped": true,
+          "remote_http_stopped": "unavailable",
+          "marker_sha256": "2e14df9d50ee53d101df0b522fac34eafebbf02880a75b3ff239a45ba5968651",
+          "new_owner_rejected": true,
+          "first_error_type": "RuntimeError"
+        }
+      ]
+    }
+  ],
+  "cleanup": [
+    {
+      "cell": "cpython-default",
+      "case": "healthy",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1439526912,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "transport",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 251297792,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "timeout",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 251752448,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "consumer",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 247795712,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "cancel",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 248303616,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "crash",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 261332992,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-default",
+      "case": "parser",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1441497088,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "healthy",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1405091840,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "transport",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 264237056,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "timeout",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 263733248,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "consumer",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 249643008,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "cancel",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 258248704,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "crash",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 263299072,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "cpython-reuse",
+      "case": "parser",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1437822976,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "healthy",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 2685419520,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "transport",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1535168512,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "timeout",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1525477376,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "consumer",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1450246144,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "cancel",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1441705984,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "crash",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1379676160,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-default",
+      "case": "parser",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 2575929344,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "healthy",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 2605006848,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "transport",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1401085952,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "timeout",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1479147520,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "consumer",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1439760384,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "cancel",
+      "original_passed": false,
+      "expected_fault_owner_cleanup_verified": true,
+      "forced_process_count": 0,
+      "shm_fallback_members": 6,
+      "shm_bytes_before_fallback": 268469824,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1460015104,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "crash",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 1451393024,
+      "shm_peak_bytes": 268469824
+    },
+    {
+      "cell": "ray-reuse",
+      "case": "parser",
+      "original_passed": true,
+      "expected_fault_owner_cleanup_verified": false,
+      "forced_process_count": 0,
+      "shm_fallback_members": 0,
+      "shm_bytes_before_fallback": 0,
+      "owned_survivors": 0,
+      "remaining_shm_bytes": 0,
+      "threads_stopped": true,
+      "rss_peak_bytes": 2575929344,
+      "shm_peak_bytes": 268469824
+    }
+  ]
+}

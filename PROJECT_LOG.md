@@ -13,6 +13,11 @@
   本地替身与独立审查修复了只读Git输入、源锁依赖预检、消费清理首错及venv符号链接选择问题；
   [新检查记录](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)明确保留失败历史和待验证项。
   本轮只准备本地最小验证包，host实际16核／拟分配8槽须与Ray／Daft窗口串行，没有上传或服务器负载。
+- 接续批准的固定包上传／单编译器构建及两解释器预检完成，按新指令以`6916ebe5`关闭健康总时长截断，
+  原173源码范围只更新两个验证文件，生产适配`9766e784`未再修改。作者两模式默认／复用及原SDK
+  [四格有限软件资格](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)通过。
+  保留Ray6项故障SHM清理原始非clean记录，最终自有资源退出、lease释放；独立审核通过，模型／GPU均0。
+  默认复用保持关闭；下一轮真实Q2／Q1的[配置契约](code/integrations/sema/README.md#imlane-model-contract)绑定原查询与模型owner签名，不借软件结果作性能判断。
 
 ## 2026-10-13：集成文本预检最小实际SDK资格
 
