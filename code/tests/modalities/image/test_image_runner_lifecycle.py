@@ -95,6 +95,39 @@ class ImageRunnerLifecycleTest(unittest.TestCase):
         self.assertEqual(shared.shutdowns, 0)
         self.assertTrue(shared.initialized)
 
+    def test_partial_startup_ownership_is_retained_through_initial_and_formal_failures(self):
+        for phase in ("initial", "formal"):
+            with self.subTest(phase=phase):
+                ray = _RayClient()
+                error = RuntimeError("fixture partial worker startup failure")
+                cleanup = SimpleNamespace(actor_handles=(object(),), physical_exit_status="unconfirmed",
+                                          request_termination=Mock(side_effect=OSError("fixture termination error")))
+                error.image_worker_pool_startup = cleanup
+                if phase == "initial":
+                    with patch.object(RUNNER, "build_semloom_ray_worker_pool", side_effect=error):
+                        with self.assertRaises(RuntimeError) as raised:
+                            RUNNER._ImageExecution(self.args(), self.setup(),
+                                                  daft_module=SimpleNamespace(set_runner_native=Mock()), ray_module=ray)
+                    execution = error.image_execution_owner
+                    cleanup.request_termination.assert_called_once()
+                    self.assertEqual(ray.shutdowns, 1)
+                    self.assertTrue(any("OSError" in note for note in error.__notes__))
+                else:
+                    execution, _, ray = self.execution()
+                    with patch.object(RUNNER, "stop_semloom_ray_worker_pool"):
+                        execution.stop_project_workers()
+                    with patch.object(RUNNER, "build_semloom_ray_worker_pool", side_effect=error):
+                        with self.assertRaises(RuntimeError) as raised: execution.start_formal_workers()
+                    with self.assertRaisesRegex(OSError, "termination error"): execution.close()
+                    cleanup.request_termination.assert_called_once()
+                    self.assertEqual(ray.shutdowns, 1)
+                self.assertIs(raised.exception, error)
+                self.assertIs(execution.startup_failure, cleanup)
+                self.assertIsNone(execution.worker_pool)
+                self.assertEqual(cleanup.physical_exit_status, "unconfirmed")
+                with self.assertRaisesRegex(RuntimeError, "must not reuse"):
+                    execution.execute(2, frozenset({"1", "2"}))
+
     def test_warmup_and_formal_errors_cleanup_samplers_and_preserve_original_error(self):
         for phase in ("warmup", "formal"):
             with self.subTest(phase=phase):

@@ -357,7 +357,7 @@ def parse_args():
         type=int,
         default=0,
         help=("PostgreSQL source shards or native Ray file reader concurrency; "
-              "Daft files use this as download connections per batch, not partitions; "
+              "Daft files pass this as download(max_connections), documented per thread in 0.7.21; "
               "0 follows model worker count"),
     )
     parser.add_argument(
@@ -877,6 +877,7 @@ class _ImageExecution:
         self.daft = daft_module
         self.ray = ray_module
         self.worker_pool = None
+        self.startup_failure = None
         self.embedder = None
         self.preprocessor = None
         self._failed = False
@@ -909,16 +910,22 @@ class _ImageExecution:
             )
 
     def _build_project_workers(self):
-        return build_semloom_ray_worker_pool(
-            model_revision=self.args.model,
-            processor_revision=self.setup.processor,
-            cpu_workers=self.args.cpu_workers,
-            gpu_workers=self.args.gpu_workers,
-            dtype=self.args.dtype,
-            detailed_stage_timing=self.args.detailed_stage_timing,
-            torch_intraop_threads=self.args.torch_intraop_threads,
-            torch_interop_threads=self.args.torch_interop_threads,
-        )
+        try:
+            return build_semloom_ray_worker_pool(
+                model_revision=self.args.model,
+                processor_revision=self.setup.processor,
+                cpu_workers=self.args.cpu_workers,
+                gpu_workers=self.args.gpu_workers,
+                dtype=self.args.dtype,
+                detailed_stage_timing=self.args.detailed_stage_timing,
+                torch_intraop_threads=self.args.torch_intraop_threads,
+                torch_interop_threads=self.args.torch_interop_threads,
+            )
+        except BaseException as error:
+            self.startup_failure = getattr(error, "image_worker_pool_startup", None)
+            self._failed = True
+            error.image_execution_owner = self
+            raise
 
     def _initialize_arm(self) -> None:
         args = self.args
@@ -993,8 +1000,11 @@ class _ImageExecution:
 
     def close(self) -> None:
         self._closed = True
-        _cleanup_image_run((("worker_pool", self.stop_project_workers),
-                            ("owned_ray_client", self._disconnect_owned_ray)))
+        actions = [("worker_pool", self.stop_project_workers)]
+        if self.startup_failure is not None:
+            actions.append(("partial_startup_actors", self.startup_failure.request_termination))
+        actions.append(("owned_ray_client", self._disconnect_owned_ray))
+        _cleanup_image_run(actions)
 
     def start_formal_workers(self) -> float:
         if self._failed or self._closed:
@@ -1358,7 +1368,8 @@ def _build_image_result_row(
         if native_ray_files else
         {"reader": "daft.functions.url.download", "source_shards_requested": setup.source_shards,
          "metadata_partitions": 1, "input_batch_rows_requested": args.batch_size,
-         "max_connections_per_batch": setup.source_shards,
+         "download_max_connections_requested": setup.source_shards,
+         "download_max_connections_documented_scope": "per_thread_daft_0.7.21",
          "prefetch_and_parallelism": "framework_owned_not_measured"}
         if file_source else None
     )

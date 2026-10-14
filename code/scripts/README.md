@@ -31,14 +31,21 @@ python code/scripts/experiments/run_image_clip_e2e.py \
 
 同入口以 `--project-execution-mode hse_static` 复用已有 HSE；原生 Ray Data 使用 `--arm ray_data_staged`。
 每臂单独运行，声明 CPU 预算均为13；框架的 CPU slots 不等于 OS 配额。
-Daft 文件源的 `--source-shards` 表示每批原生下载连接上限，不声称源分片数；实际 reader 配置单列。
+Daft 文件源把 `--source-shards` 作为 `download(max_connections)` 请求参数单列；
+[Daft 0.7.21](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/daft/functions/url.py) 将其定义为 per-thread。
+总 I/O 并发和预取由厂商执行器控制，实际并发需另测。
 路径/ID 元数据可在 driver 构造，JPEG 由原生 reader 惰性读取，不全量解码或在 adapter 缓存。
 文件模式计时包含源装配、实际读取、preparation/model、完整消费和最终元数据审计；保留 cold-worker
 口径，Ray startup、清单准备及写回另计。新 CSV schema 与文件清单身份不得混入历史结果文件。
 本地协议替身测试不构成实际 SDK／GPU 资格；固定 SDK CPU 检查可在独立进程设置
 `SEMLOOM_IMAGE_FILE_SDK_TESTS=1` 运行 `tests.modalities.image.test_image_file_source` 的两项 `test_real_*`。
 入口对 warmup／正式执行／审计异常执行采样器、worker 与自有 Ray 连接清理；失败池不可切换执行
-模式或重新用于查询，清理失败保留原异常和未确认的池句柄。实际进程／设备停止仍需 SDK 检查。
+模式或重新用于查询。工厂在部分创建／readiness 失败时逐个请求终止已知 actor，保留首错与
+仅供清理的失败记录，移交给 CLI；终止请求不证明进程已退出。固定 Ray 无模型检查另记 PID／
+start ticks 和退出证据，实际 SDK 检查前保持未确认状态。
+Linux 上设置 `SEMLOOM_IMAGE_WORKER_SDK_TESTS=1`，运行
+`tests.modalities.image.test_image_worker_startup.ImageWorkerStartupRealRayTest.test_real_ray_factory_failure_records_process_exit_before_client_shutdown`；
+该检查使用 CPU2／GPU0 无模型替身，以 `IMAGE_WORKER_EXIT_EVIDENCE` 输出退出证据 JSON。
 
 ## SemBench Movie原始查询
 

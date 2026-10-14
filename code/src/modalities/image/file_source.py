@@ -197,8 +197,8 @@ def build_daft_image_file_source(
 ):
     """Build metadata only, then use Daft's lazy batched binary download.
 
-    ``max_connections`` caps native I/O per batch; it is not a source partition
-    or CPU worker count. Runtime prefetch and scheduling remain Daft-owned.
+    ``max_connections`` is an upstream request parameter, documented per thread
+    in Daft 0.7.21. Runtime prefetch and total concurrency remain Daft-owned.
     """
     if min(batch_size, max_connections) <= 0:
         raise ValueError("file reader batch size and connection count must be positive")

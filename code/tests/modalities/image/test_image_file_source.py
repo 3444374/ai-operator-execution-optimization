@@ -278,6 +278,10 @@ class ImageFileSourceTest(unittest.TestCase):
             reader = json.loads(row["source_reader_config_json"])
             self.assertEqual(reader["source_shards_requested"], 2)
             self.assertEqual(row["source_shards"], 2 if arm == "ray_data_staged" else "")
+            if arm == "project_ray":
+                self.assertEqual(reader["download_max_connections_requested"], 2)
+                self.assertEqual(reader["download_max_connections_documented_scope"], "per_thread_daft_0.7.21")
+                self.assertNotIn("max_connections_per_batch", reader)
             self.assertNotIn("sql_readers", row["resource_budget_semantics"])
             self.assertEqual(row["operator_e2e_s"], 7)
             contract = RUNNER._build_image_manifest(args, setup, row)["file_source_contract"]
