@@ -1,0 +1,422 @@
+{
+  "arms": [
+    {
+      "application_e2e_s": 0.666282635,
+      "arm": "stock",
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_s": 0.366092182,
+      "online_query_s": [
+        0.038890074,
+        0.018484344,
+        0.015859789,
+        0.131696957
+      ],
+      "queries": [
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "text",
+          "positions_and_ids_aligned": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 8.940696716308594e-08,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": null,
+          "vector_max_abs_error": 0.0
+        }
+      ],
+      "rm_counts": [
+        12,
+        1,
+        1,
+        1,
+        1
+      ],
+      "stock_rm_device": "cuda"
+    },
+    {
+      "application_e2e_s": 2.344698622,
+      "arm": "direct",
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_s": 1.779639721,
+      "online_query_s": [
+        0.152407516,
+        0.137074999,
+        0.132874482,
+        0.047525791
+      ],
+      "queries": [
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "text",
+          "positions_and_ids_aligned": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.043081283569336e-07,
+          "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+          "self_image_top1": null,
+          "vector_max_abs_error": 5.960464477539063e-08
+        }
+      ],
+      "rm_counts": [
+        12,
+        1,
+        1,
+        1,
+        1
+      ],
+      "stock_rm_device": "cpu"
+    },
+    {
+      "application_e2e_s": 5.773489763,
+      "arm": "semloom_static",
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_s": 5.028905092,
+      "online_query_s": [
+        0.211698649,
+        0.170612855,
+        0.181479743,
+        0.056992063
+      ],
+      "queries": [
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "text",
+          "positions_and_ids_aligned": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.043081283569336e-07,
+          "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+          "self_image_top1": null,
+          "vector_max_abs_error": 5.960464477539063e-08
+        }
+      ],
+      "rm_counts": [
+        12,
+        1,
+        1,
+        1,
+        1
+      ],
+      "stock_rm_device": "cpu"
+    },
+    {
+      "application_e2e_s": 5.950591934,
+      "arm": "semloom_hse",
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_s": 5.303586255,
+      "online_query_s": [
+        0.175618287,
+        0.156430424,
+        0.153658159,
+        0.045322784
+      ],
+      "queries": [
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "text",
+          "positions_and_ids_aligned": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.043081283569336e-07,
+          "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+          "self_image_top1": null,
+          "vector_max_abs_error": 5.960464477539063e-08
+        }
+      ],
+      "rm_counts": [
+        12,
+        1,
+        1,
+        1,
+        1
+      ],
+      "stock_rm_device": "cpu"
+    },
+    {
+      "application_e2e_s": 38.453872399,
+      "arm": "ray_data",
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "image_model_lifecycle": "cold_native_graph_per_rm_call",
+      "index_s": 9.57503353,
+      "online_query_s": [
+        9.463024047,
+        9.748355709,
+        9.515609054,
+        0.045479499
+      ],
+      "queries": [
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "image",
+          "positions_and_ids_aligned": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+          "score_max_abs_error_vs_stock": 0.0,
+          "self_image_top1": true,
+          "vector_max_abs_error": 0.0
+        },
+        {
+          "kind": "text",
+          "positions_and_ids_aligned": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "score_max_abs_error_recomputed": 1.043081283569336e-07,
+          "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+          "self_image_top1": null,
+          "vector_max_abs_error": 5.960464477539063e-08
+        }
+      ],
+      "rm_counts": [
+        12,
+        1,
+        1,
+        1,
+        1
+      ],
+      "stock_rm_device": "cpu"
+    }
+  ],
+  "baseline_commit": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "batch_size_sensitivity": {
+    "max_abs_error": {
+      "image-139": 0.00011841952800750732,
+      "image-285": 9.42721962928772e-05,
+      "image-632": 0.00024185329675674438
+    },
+    "scope": "same image stock gallery model batch12 vs online batch1, same across all arms"
+  },
+  "caveats": [
+    "Five real GPU arms only: stock, Direct RM, SemLoom static, SemLoom HSE, Ray Data. Daft not present.",
+    "Every arm native sem_index plus 3 PIL image sem_search and one bird text sem_search; image encoding and top1 self-retrieval qualified, caption/semantic relevance quality unavailable.",
+    "Each query has exactly one native RM call on full unfiltered gallery; filtered refill loops and sem_sim_join subset behavior are not qualified.",
+    "All runs combined mode; persistent already-indexed fresh-process GPU search mode only has SDK fixture coverage, not a measured GPU run here.",
+    "Stock text tower executes CUDA; other arms use stock SentenceTransformers text on CPU. Text vector/scores allclose only, not byte equal.",
+    "Ray Data GPU model is cold per image RM graph; stock/Direct/SemLoom images reside through workflow. Reported startup includes identity hashing, stock model construction and chosen runtime, not pure GPU model load.",
+    "12 rows fit one model batch and do not qualify multibatch scheduling, saturation, steady state, latency ranking, cross-query concurrency or reliable P99/P99.99.",
+    "Parameter/pixel/rename controls have recorded summaries and reproducible source but their raw tensors are not retained; tokenizer equality tests only three prompts.",
+    "No runtime failure/timeout in small-d. SDK failure-preservation tests use deterministic fixtures; prior preparation/run failures are outside this archive and must remain separately retained.",
+    "Ray logs contain CPU/GPU resource and startup warnings; all runs completed, so warnings are observations rather than failures.",
+    "The compact archive retains index-file digests but not the actual Faiss index/vecs binaries. Full RM call0 vectors and rank/score arithmetic were independently recomputed.",
+    "No PostgreSQL carrier or VLM sem_map/sem_filter claim."
+  ],
+  "evidence_archive_sha256": "0604e0ba0e3c84fa1838fffd74583b5da4d1b0f45e678c2ca4430a91f0630f37",
+  "identity_vector_max_abs_error_recomputed": 0.0,
+  "method": "read-only local archive/source audit; independent full NPZ, row identity, rank and inner-product recomputation; no model/SDK/GPU rerun",
+  "model_parameter_digest_recorded": {
+    "parameter_tensors": 398,
+    "sha256": "968f8926f4522526f88da56b4d5f47aa41d7cc28220136e3ab830666a70c56e6"
+  },
+  "model_revisions": {
+    "candidate": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "stock": "327ab6726d33c0e22f920c83f2ff9e4bd38ca37f"
+  },
+  "native_lotus": {
+    "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "source_sha256": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+      "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+      "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+      "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+      "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+      "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+      "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+    },
+    "version": "1.2.4"
+  },
+  "next_required_before_broader_claims": [
+    "Scale per existing plan to 64 then 256 rows only after small-d acceptance; preserve actual batch boundaries and same-shape comparison.",
+    "Integrate independently qualified Daft via public executor seam, then qualify native LOTUS complete vectors/results.",
+    "For existing-index timing claims, qualify search mode in a new process against the unchanged persisted index.",
+    "Before any performance/tail claim, define and match device and lifecycle scope and retain sufficient independent full-query observations and failures."
+  ],
+  "outcome": "passed_with_scope_limits",
+  "recorded_controls": {
+    "changed_pixel_embedding_max_abs_error": 0.1600715070962906,
+    "effective_pixel_max_abs_error": 0.0,
+    "evidence_scope": "loaded parameter/pixel/sentinel controls verified through executed source and recorded identity; raw parameter tensors/effective pixel tensors/sentinel vectors not in this compact archive",
+    "parameters_equal": true,
+    "rename_equal": true
+  },
+  "retained_members_verified": 49,
+  "schema": "lotus.small_d.independent_evidence_review.v1",
+  "sdk_fixture_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 26
+  },
+  "source_archive_sha256": "41a2b38444fbcb08b3adf2c9474374af5b1e9270fc653dadfe99ee1b0bbd27cd",
+  "source_python_files_matching_current_workspace": 879,
+  "supervision": {
+    "all_cleanup_confirmed": true,
+    "all_exit_zero": true,
+    "cleanup_wall_s": 16.806035757996142,
+    "lease_released": true,
+    "run_count": 8,
+    "whole_wall_s": 257.74734768411145
+  },
+  "supervisor_script_sha256": "0b0cb26c88f0b1b7b39d3e6c3bbeeaff5dcbebf0f09343ba0911ee49dd5ffead"
+}

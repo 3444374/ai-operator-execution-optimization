@@ -1,5 +1,8 @@
 # Feasibility Results
 
+2026-10-14：[原生 LOTUS CLIP 图片建索引及图文检索](lotus_native_image_retrieval_20261014/README.md)：
+公开RM接入、固定模型身份、完整向量／原生检索及独立审核；规模和Daft状态见同题记录。
+
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
 [HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。

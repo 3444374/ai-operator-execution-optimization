@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[原生 LOTUS CLIP 图像检索](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)
+已实现公开 RM 图片执行协议、固定源核对、完整原生索引／检索与 index/search/combined CLI。
+五条路径12／64／256图、已有索引新进程查询及26项实际SDK资格通过；独立Daft接入接续。
+仅支持固定FP32 CLIP检索，不增加VLM、PG、性能排名或可靠尾分位结论。
+
 2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
 在 `964e70ef` 上三项通过、0 跳过，覆盖 Daft／Ray reader 与两个 CPU 替身工厂 actor 的 shutdown 前退出。
 保持原 PG 及 direct_dependency 默认；真实 CLIP／GPU／HSE、完整 CLI 退出及厂商总 I/O 并发仍待验证。

@@ -1,0 +1,37 @@
+{
+  "base_commit": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "new_runtime_files": {
+    "code/scripts/experiments/qualify_lotus_clip.py": "99d93e1efd4873480bb96aee0c89175ea243a42512a269761fa2e4ecfdec4566",
+    "code/scripts/experiments/run_lotus_image_retrieval.py": "e59b2caf89707f595c33336ef32838a8686ed9ed3b26c64d92110ef4ab3d182c",
+    "code/src/semantic_methods/lotus/image_backend.py": "d8d9a15ed440bd4e4738a6804ab83c2da8e685cbbcc4156f54abc18d0f3c9eee",
+    "code/src/semantic_methods/lotus/image_identity.py": "44f167d96586b4da99b808e4a99ef760957da549c8288bf43a15d94f95dcdd03",
+    "code/src/semantic_methods/lotus/image_rm.py": "0ee19ed581b76436880c275c535f5f414d0c758b8b37ecf7e0192429bacafe74",
+    "code/src/semantic_methods/lotus/image_source.py": "6ae35e2c2750fded14d3e93eb16d2b7df63ce6c2a56104aa92025c1b0a1369b1",
+    "code/src/semantic_methods/lotus/image_workflow.py": "ebab6e4c56d3b3d2a4c51dcfaa2f5600a002e644ba967c23dd080c3e2037d2ae",
+    "code/tests/semantic_methods/test_lotus_image_cli.py": "0198989c8865215adc530c1d17ca586f36d000cbcda0ba342664eb0cfd26fc65",
+    "code/tests/semantic_methods/test_lotus_image_identity.py": "3be49eb56c474fdc81eb36264d0686360c2774f23644d26fe5c07cf62674a665",
+    "code/tests/semantic_methods/test_lotus_image_native.py": "4c5e8589800f866df6efe1f21ad6f6603f41df7c02bb8fd3cd9c85a8ab2a16a7",
+    "code/tests/semantic_methods/test_lotus_image_rm.py": "785a6fa24abfa7d5846dd988a9c75e0e642266a33e7526276725abbb86258f4b"
+  },
+  "source_d_archive_sha256": "41a2b38444fbcb08b3adf2c9474374af5b1e9270fc653dadfe99ee1b0bbd27cd",
+  "source_d_groups": [
+    "lotus-retrieval-20261014-d",
+    "lotus-retrieval-20261014-e"
+  ],
+  "upstream_lotus": {
+    "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "source_sha256": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+      "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+      "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+      "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+      "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+      "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+      "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+    },
+    "version": "1.2.4"
+  }
+}

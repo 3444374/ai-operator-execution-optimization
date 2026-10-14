@@ -1,0 +1,992 @@
+{
+  "schema": "lotus.scale_e.public_evidence_independent_review.v1",
+  "outcome": "passed_with_scope_limits",
+  "method": "read-only local integrity/source audit, raw/public field comparison, byte-exact matrix restoration and independent full-query inner-product recomputation; no server or GPU; no repository edits",
+  "baseline_commit": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "source_archive_sha256": "41a2b38444fbcb08b3adf2c9474374af5b1e9270fc653dadfe99ee1b0bbd27cd",
+  "source_runtime_files_checked": 11,
+  "public_snapshot_files": {
+    "observations.json.gz": {
+      "bytes": 11158,
+      "sha256": "188946b1fdb82980cea43767b5cbcf80f13a43be28bb10cfc2e8d4876e7efe34"
+    },
+    "vectors.npz": {
+      "bytes": 654161,
+      "sha256": "fd6e9dafc88f774373925127edddc240743a337df41bd6c1019812d5b9cd5cf1"
+    },
+    "vector_map.json": {
+      "bytes": 18029,
+      "sha256": "4ad892e8f9c1ff653459339591a0220cb4dedb57160716c059679019a7d25e6b"
+    },
+    "source_manifest.json": {
+      "bytes": 47199,
+      "sha256": "ab9f4d5a50aeba92dc2e6355ae048a1d9436b424b3a8ae3f1c50376bc9164668"
+    },
+    "source_identity.json": {
+      "bytes": 2792,
+      "sha256": "bb5b4ae0f0aa158db4c9f33fedf671a22f9dd5a527f136b5ae49ad70e0004354"
+    },
+    "embedding_identity.json": {
+      "bytes": 4566,
+      "sha256": "2d06e322d3244aacf69c496ebed810ace016984826b51d77bb3059bd7f3a60b5"
+    },
+    "originals.json": {
+      "bytes": 34995,
+      "sha256": "e9491171cd1ba3688f9aa9dd7f4a2249bb1decb3d634837b382f38f8b5bc368c"
+    },
+    "verify_evidence.py": {
+      "bytes": 4132,
+      "sha256": "9d7ecf02748c9f08022a802efb0398889a90400bb2741daa004b8bf6190294e8"
+    },
+    "README.md": {
+      "bytes": 9892,
+      "sha256": "9dca4a0b578b4a73da3c5641a0c22e27432fd012625af2a4d6716c10735077d0"
+    }
+  },
+  "original_archives_sha256": {
+    "small-d-originals.tar.gz": "0604e0ba0e3c84fa1838fffd74583b5da4d1b0f45e678c2ca4430a91f0630f37",
+    "scale-e-originals.tar.gz": "3efde99e1015cb238894873fe6fb31e196bdef5ad1b823920122ec3d4d32a473",
+    "preparation-originals.tar.gz": "c8de1782fbb59684c5682cd013893411b0811132679943f67127e98f66e472fd"
+  },
+  "raw_public_checks": {
+    "member_hashes_and_byte_counts_verified": {
+      "d": 49,
+      "e": 124,
+      "preparation": 9
+    },
+    "model_identity_original_bytes_preserved": true,
+    "all_20_result_fields_preserved_except_deduplicated_identical_embedding_identity": true,
+    "group_supervision_plan_and_public_preflight_fields_equal": true,
+    "all_256_source_entries_ids_paths_sizes_hashes_equal_both_raw_manifests": true,
+    "all_vector_map_runs_and_calls_present": true,
+    "all_97_numeric_matrices_restored_byte_exact": true,
+    "no_unused_unique_arrays": true,
+    "preserved_identity_doc_ids_equal": true,
+    "source_code_archive_public_hashes_and_current_11_runtime_files_equal": true,
+    "sidecar_hashes_ordered_ids_checked": true,
+    "shared_stock256_index_in_all_search_commands_checked": true
+  },
+  "arithmetic": {
+    "checks": [
+      {
+        "run_id": "lotus-retrieval-20261014-d/direct-12",
+        "arm": "direct",
+        "mode": "combined",
+        "gallery_rows": 12,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-285",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-632",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 1.043081283569336e-07,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-d/ray_data-12",
+        "arm": "ray_data",
+        "mode": "combined",
+        "gallery_rows": 12,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-285",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-632",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 1.043081283569336e-07,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-d/semloom_hse-12",
+        "arm": "semloom_hse",
+        "mode": "combined",
+        "gallery_rows": 12,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-285",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-632",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 1.043081283569336e-07,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-d/semloom_static-12",
+        "arm": "semloom_static",
+        "mode": "combined",
+        "gallery_rows": 12,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-285",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-632",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 1.043081283569336e-07,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-d/stock-12",
+        "arm": "stock",
+        "mode": "combined",
+        "gallery_rows": 12,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-285",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-632",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 8.940696716308594e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/direct-256",
+        "arm": "direct",
+        "mode": "combined",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/direct-256-search",
+        "arm": "direct",
+        "mode": "search",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/direct-64",
+        "arm": "direct",
+        "mode": "combined",
+        "gallery_rows": 64,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-2587",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-6723",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/ray_data-256",
+        "arm": "ray_data",
+        "mode": "combined",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/ray_data-256-search",
+        "arm": "ray_data",
+        "mode": "search",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/ray_data-64",
+        "arm": "ray_data",
+        "mode": "combined",
+        "gallery_rows": 64,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-2587",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-6723",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_hse-256",
+        "arm": "semloom_hse",
+        "mode": "combined",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_hse-256-search",
+        "arm": "semloom_hse",
+        "mode": "search",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_hse-64",
+        "arm": "semloom_hse",
+        "mode": "combined",
+        "gallery_rows": 64,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-2587",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-6723",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_static-256",
+        "arm": "semloom_static",
+        "mode": "combined",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_static-256-search",
+        "arm": "semloom_static",
+        "mode": "search",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/semloom_static-64",
+        "arm": "semloom_static",
+        "mode": "combined",
+        "gallery_rows": 64,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-2587",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-6723",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 5.960464477539063e-08,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 2.9802322387695312e-08,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/stock-256",
+        "arm": "stock",
+        "mode": "combined",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/stock-256-search",
+        "arm": "stock",
+        "mode": "search",
+        "gallery_rows": 256,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-13201",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-26564",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      },
+      {
+        "run_id": "lotus-retrieval-20261014-e/stock-64",
+        "arm": "stock",
+        "mode": "combined",
+        "gallery_rows": 64,
+        "gallery_max_abs_error": 0.0,
+        "queries": [
+          {
+            "query_id": "image-139",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 1.1920928955078125e-07,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-2587",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "image-6723",
+            "kind": "image",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 5.960464477539063e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          },
+          {
+            "query_id": "text-0",
+            "kind": "text",
+            "vector_max_abs_error": 0.0,
+            "score_max_abs_error_recomputed": 2.9802322387695312e-08,
+            "score_max_abs_error_vs_stock": 0.0,
+            "ranks_ids_positions_equal": true
+          }
+        ]
+      }
+    ],
+    "counts": {
+      "image": 60,
+      "text": 20
+    },
+    "gallery_max_abs_error": 0.0,
+    "image_query_max_abs_error": 0.0,
+    "text_query_max_abs_error": 5.960464477539063e-08,
+    "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+    "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+    "restored_complete_numeric_matrices": 97,
+    "unique_arrays": 12,
+    "raw_public_result_parity": true,
+    "raw_public_groups_parity": true,
+    "raw_public_vector_bytes_parity": true,
+    "original_members_verified": {
+      "d": 49,
+      "e": 124,
+      "preparation": 9
+    }
+  },
+  "contexts": [
+    {
+      "gallery_rows": 12,
+      "mode": "combined",
+      "runs": 5
+    },
+    {
+      "gallery_rows": 64,
+      "mode": "combined",
+      "runs": 5
+    },
+    {
+      "gallery_rows": 256,
+      "mode": "combined",
+      "runs": 5
+    },
+    {
+      "gallery_rows": 256,
+      "mode": "search",
+      "runs": 5
+    }
+  ],
+  "supervision": [
+    {
+      "run_id": "lotus-retrieval-20261014-d",
+      "supervised_calls": 8,
+      "whole_wall_s": 257.74734768411145,
+      "cleanup_wall_s": 16.806035757996142,
+      "lease_released": true
+    },
+    {
+      "run_id": "lotus-retrieval-20261014-e",
+      "supervised_calls": 16,
+      "whole_wall_s": 763.5104901264422,
+      "cleanup_wall_s": 33.393942673224956,
+      "lease_released": true
+    }
+  ],
+  "new_process_search": {
+    "runs": 5,
+    "shared_index": "stock-256",
+    "rm_calls_per_run": 4,
+    "image_rows_per_run": 3,
+    "text_rows_per_run": 1,
+    "gallery_reembedding": false,
+    "source_check_and_decode_of_full_gallery_still_in_application_time": true
+  },
+  "failure_retention": {
+    "preparation_failures": 1,
+    "actual_model_cli_failures": 0,
+    "actual_model_cli_timeouts": 0,
+    "first_failure_outer_error_type": "RuntimeError",
+    "nested_preflight_error": "UnicodeDecodeError: UTF-8 invalid byte 0xa3 at position45",
+    "apple_double_source_json_sidecars": 10,
+    "source_b_json_sidecars": 0,
+    "first_failure_lease_released": true,
+    "first_failure_model_work_started": false,
+    "scope": "private original preparation logs and result fields, CPU-only prepare code, initial source sidecar decode bytes independently checked; failure is retained separately from successful retrieval results"
+  },
+  "readme_table_256_raw_times_correct": true,
+  "scope_limits": [
+    "20 retrieval CLI runs yield 80 complete queries: 60 image and 20 text. These are not 80 independent performance samples; each size/arm/mode cell runs once with zero explicit warmups.",
+    "All gallery and online image matrices are byte equal to stock for the same qualified batch configuration; text vectors have maximum difference5.960464477539063e-08 and text scores4.470348358154297e-08.",
+    "Local NumPy2.5 inner-product recomputation maximum difference from runtime NumPy1.26.4 scores is1.7881393432617188e-07, below the fixed1e-5 tolerance; ranks and ordered row IDs match exactly.",
+    "Stock directly embeds RGB PIL. Replacement RM serializes lossless PNG and executors decode it; this additional work remains inside index/query timing and cannot be assigned wholly to scheduler overhead.",
+    "Ray Data launches cold image model graphs per image RM call; stock/Direct/SemLoom image models reside during a workflow. Stock text runs CUDA; other arms use the stock text RM on CPU. Combined gallery embedding also changes natural warm state versus fresh-process search.",
+    "index_load_s measures load_sem_index registration, while actual native Faiss loading remains in first sem_search. source checks/decode remain in search application timing despite no gallery GPU reembedding.",
+    "Startup includes model/identity hashing, stock construction and runtime startup; process_wall_s excludes initial Python imports and evidence write, while supervisor wall includes process and physical cleanup. Raw separate fields are preserved.",
+    "No throughput, saturation, matched performance ranking or reliable P99/P99.99 claim is supported. Every recorded tail quantile is unavailable.",
+    "The earlier batch12-vs-batch1 drift and raw parameter/pixel/sentinel summaries remain bounded evidence; control tensors and native index/vecs binaries are not in the compact local/public archives. The remote originals are identified by recorded digests.",
+    "Task is native CLIP image retrieval with self-image top1 checks. Caption/relevance quality, VLM sem_map/filter, PG carrier, filtered refill, sem_sim_join and cross-query concurrency are not qualified.",
+    "Current public20 runs exclude Daft; its separate nine-image qualification and pending delivery SHA cannot be counted as native LOTUS evidence in this export.",
+    "Optional timing_hook_local is a separate local fixture; all actual model CLI runs have detailed_timing=false. It does not establish GPU timing-hook qualification."
+  ],
+  "blockers": [],
+  "remaining_items_before_broader_claims": [
+    "Accept Daft source/review SHA independently, then qualify its public executor through native LOTUS before adding a Daft row.",
+    "Define and match device, preprocessing/PNG work and model residence/warm state before any scheduling-performance comparison.",
+    "For tail latency, collect sufficient independent complete queries under a fixed workload/configuration with failures and timeouts retained."
+  ]
+}

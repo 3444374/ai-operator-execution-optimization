@@ -1,0 +1,65 @@
+{
+  "disabled_writer_created": false,
+  "original_sha256": "394a798f724a42fb08d4f0a92f2ce3459cf29d3a3c2f446ca5a3a93ea3589074",
+  "primary_body_error_retained": true,
+  "records": [
+    {
+      "clock_domain": "process-313532ea137f4da6b917b4ad91e18ea7",
+      "clock_verified": false,
+      "event": "span_started",
+      "monotonic_ns": 1949102283709750,
+      "operation": "lotus.rm.image_embed",
+      "process_instance": "313532ea137f4da6b917b4ad91e18ea7",
+      "run_id": "b48c626f5f1bbb2c256b8cb2",
+      "schema": "semloom.execution_timing.v1",
+      "scope": "rm_call",
+      "span_id": "19cb5ff9912a493794f3c46e0478bb44"
+    },
+    {
+      "clock_domain": "process-313532ea137f4da6b917b4ad91e18ea7",
+      "clock_verified": false,
+      "event": "span_ended",
+      "monotonic_ns": 1949102283741375,
+      "operation": "lotus.rm.image_embed",
+      "process_instance": "313532ea137f4da6b917b4ad91e18ea7",
+      "run_id": "b48c626f5f1bbb2c256b8cb2",
+      "schema": "semloom.execution_timing.v1",
+      "scope": "rm_call",
+      "span_id": "19cb5ff9912a493794f3c46e0478bb44",
+      "status": "completed"
+    },
+    {
+      "clock_domain": "process-313532ea137f4da6b917b4ad91e18ea7",
+      "clock_verified": false,
+      "event": "span_started",
+      "monotonic_ns": 1949102283854833,
+      "operation": "lotus.sem_search",
+      "process_instance": "313532ea137f4da6b917b4ad91e18ea7",
+      "query_id": "fixture-image-1",
+      "run_id": "b48c626f5f1bbb2c256b8cb2",
+      "schema": "semloom.execution_timing.v1",
+      "scope": "native_operator",
+      "span_id": "1c7aaea39bb545cb99d6d02442a97243"
+    },
+    {
+      "clock_domain": "process-313532ea137f4da6b917b4ad91e18ea7",
+      "clock_verified": false,
+      "error_type": "ValueError",
+      "event": "span_ended",
+      "monotonic_ns": 1949102283870708,
+      "operation": "lotus.sem_search",
+      "process_instance": "313532ea137f4da6b917b4ad91e18ea7",
+      "query_id": "fixture-image-1",
+      "run_id": "b48c626f5f1bbb2c256b8cb2",
+      "schema": "semloom.execution_timing.v1",
+      "scope": "native_operator",
+      "span_id": "1c7aaea39bb545cb99d6d02442a97243",
+      "status": "error"
+    }
+  ],
+  "schema": "lotus.timing_hook_local.v1",
+  "scope": "local exact existing timing module API with public LOTUS hook; no LOTUS model/workflow/GPU execution",
+  "source_commit": "bbbd8a1b3ed2456e97f0d1b766484991be4ac5c9",
+  "source_sha256": "f2cb3b20b3fe40bbe497269f88cb9cd488c500c7466d60cc668d5e26ec6c5f5c",
+  "status": "succeeded"
+}

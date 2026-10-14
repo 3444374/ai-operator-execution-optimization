@@ -11004,3 +11004,11 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 实际库、正常结束、取消、失败响应和清理记录见[原整合报告新增节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
 服务和网关阶段及分位分别记录；原池前时刻不可观测，IMLane实际容量及首次图成本独立解释。
 实现、紧凑验证摘要和调用说明进入独立分支；原始证据、失败、构建和运行配置在仓库外保存。
+
+## 2026-10-14 原生 LOTUS CLIP 图片检索接入
+
+在独立职责分支上从 `integration/baselines@58462a0d` 接入公开 RM 批次协议和原生
+`sem_index`／`sem_search`。图片使用显式 RGB PIL，避免固定版本路径 list 走文本分支。
+未修改作者源码或现有图像 owner 工作树。模型／完整输出、独立审核、规模与 Daft 接点进展统一见
+[本轮记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+运行代码用实际摘要记录，原件／失败保留、只提交精简公开证据；不合并 main。

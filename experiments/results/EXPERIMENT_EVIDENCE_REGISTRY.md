@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-14：[原生 LOTUS 图像检索资格](diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+保留实际模型参数／预处理身份、图片输入负例、完整图库／在线向量及原生top10；五臂12／64／256图和已有索引通过。
+原件及完整向量独立重算，Daft交付及失败逐运行登记；不提供性能排名或P99／P99.99。
+
 2026-10-14：[JPEG 文件源及 CPU 工厂退出的固定 SDK 检查](diagnostics/image_file_sdk_20261014/README.md)。
 `964e70ef` 三项实际检查通过、0 跳过；reader 各 4 行顺序／编码字节与两个 CPU actor 的 shutdown 前物理退出分别核验。
 首次 lease 交接未进入 SDK，失败与成功及 66 Git 依赖摘要保留；仅支持这些组件，不增加 HSE／GPU／CLIP 性能或完整 CLI 退出资格。

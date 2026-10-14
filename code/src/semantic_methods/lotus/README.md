@@ -1,5 +1,29 @@
 # LOTUS方法与SemLoom执行适配
 
+## 原生 CLIP 图像检索
+
+`image_workflow.py`保留 LOTUS1.2.4 的`sem_index`、`load_sem_index`、`sem_search`与原生
+`FaissVS(Flat, inner product)`。图库固定原始 RangeIndex，业务ID另列；输入使用一维object列中的
+RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，stock RM不会把list解码为图片，
+因此路径示例不足以证明图像编码。在线PIL查询会编码一张图片，文本`bird`查询只编码文本。
+
+`image_rm.ImageBatchExecutor`公开`semantics`、`embed_batch(doc_ids: tuple[str,...], images: Sequence[bytes])`
+与`close()`。RM以无损PNG传输同一RGB像素，按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
+finite值与单位范数。原生建索引需要完整矩阵，显式限制图库至5000行；这不是流式PG执行。
+Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE，Ray Data保留原生图与调度；
+外部工厂可接入独立Daft后端，不复制它的执行代码。原生算子与作者源码均不修改。
+
+[资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
+组合workflow、模型启动和结果写出分别记录。Ray Data每次RM调用的原生图含模型冷加载；其他内置路径
+在workflow内驻留模型，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU，文本耗时另列。
+默认只读低开销单调时钟；`SEMLOOM_DETAILED_TIMING_DIR`借用已集成的可选计时模块，缺模块时明确失败。
+原生缓存关闭；串行入口拒绝同进程第二个owner，尚未资格跨查询并发。失败查询与RM调用保留时间、状态和阶段。
+
+先用[模型身份CLI](../../../scripts/experiments/qualify_lotus_clip.py)核对固定ST与cached OpenAI CLIP的实际
+参数内容、有效PIL像素张量、tokenizer与完整向量；序列化文件哈希不同不等于参数不同。
+当前只公布float32，索引sidecar绑定有序像素、模型资格与原生文件哈希。小样本不输出P99或P99.99。
+本任务是CLIP检索，不是VLM `sem_filter/sem_map`；`sem_sim_join`的子集索引和缺邻居行为尚未纳入资格。
+
 五条替换批次共用`sdk.LotusResponseReplay`，每批次惰性创建一个客户端并复用，
 在已有消费线程执行固定SDK解释，完整响应重放不产生实际HTTP。关闭失败保留第一异常及其他失败的类型注记。
 原LOTUS调用仍使用原执行入口；实际SDK/厂商验证进度见[修补记录](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md#execution-repairs)。

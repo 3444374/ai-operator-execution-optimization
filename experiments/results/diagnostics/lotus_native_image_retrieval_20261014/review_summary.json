@@ -1,0 +1,40 @@
+{
+  "reviews": [
+    {
+      "material_role": "independent_report",
+      "outcome": "passed_with_stated_scope",
+      "phase": "design",
+      "reviewed_material_sha256": "84e1c612c506c61025f7175ee0809f9e6b565ef7dafd4b7c212a2f06efa6dd8c",
+      "scope": "native source/PIL branch/model/index/interface design adopted and checked by SDK and 12-image run"
+    },
+    {
+      "material_role": "supervisor_source",
+      "outcome": "passed_with_stated_scope",
+      "phase": "scale_plan",
+      "reviewed_material_sha256": "4bcdc5d5291d119dad15905ba5ef363b22b68fe403bfbb9dd27a9746b606c2c6",
+      "scope": "read-only independent AST/lease/owned-physical-exit and full-matrix plan audit; GPU result pending"
+    },
+    {
+      "material_role": "independent_report",
+      "outcome": "passed_with_stated_scope",
+      "phase": "small_evidence",
+      "reviewed_material_sha256": "a444e9e7c9a520647911bf49c6646cc36308e04674b41af30ef03cdaa746700e",
+      "scope": "independent verified compact backup integrity and complete matrices, ranks and scores; fixed 12-image scope"
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "implementation_release",
+      "scope": "read-only source hash/AST/exception/identity/complete-matrix/native-semantics review plus CPU fixture; fixed FP32 source-d serial workflow; excludes pending Daft, filtered refill, sim_join, concurrency and performance",
+      "source_identity": "source_identity.json",
+      "verified_runtime_files": 11
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "scale_evidence_release",
+      "report": "scale_e_independent_review.json",
+      "report_sha256": "69c15f48dbd40872a7a1f51853371430c19ec2af58cf9c98e41c48d8d9b07262",
+      "scope": "complete original/public integrity, 97 restored matrices and 80 full native queries; fixed five-arm source-d; excludes Daft and performance/tail conclusions"
+    }
+  ],
+  "schema": "lotus.image_independent_reviews.v1"
+}
