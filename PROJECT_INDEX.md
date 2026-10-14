@@ -1,6 +1,6 @@
 # 项目导航
 
-[单GPU文件CLIP复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)拥有静态／HSE／原生Ray Data冷计时、来源、全部值与独立数值核查；最小逐行诊断从同报告进入，尚未执行。
+[单GPU文件CLIP复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)拥有静态／HSE／原生Ray Data冷计时、来源及全部值；已完成的[257图逐行诊断](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)及其数值、批形态与消费边界归同一报告。
 
 [同题阶段分析与账本修订](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)拥有离线阶段统计、无模型配对及后续计划；实现／调用入口见[发送计数说明](code/scripts/README.md#sembench-send-accounting)。
 

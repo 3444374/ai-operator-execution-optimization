@@ -1,0 +1,200 @@
+{
+  "reviewed_utc": "2026-10-14T11:07:22.436418+00:00",
+  "status": "passed_final_LF_and_staged_publication_review",
+  "scope": "Independent offline review of numeric_diagnostic public additions, main README numeric-diagnostic-20261014 section, numerical-validation-plan and8 narrow factual/navigation updates. No public file edits/server/model/GPU/SDK execution. Final narrow CRLF-to-LF normalization and29-file staged review included; no numeric/source/script change.",
+  "current_blocking_content_findings": [],
+  "finding_history": [
+    {
+      "priority": "P2",
+      "location": "numeric_diagnostic/provenance.json:executed_helpers; numerical-validation-plan.json:comparison_commands",
+      "finding": "Hash-bound package list labeled executed included uninvoked compare_vectors.py and JSON guard data; completed plan still contained uninvoked comparison templates without explicit status.",
+      "resolution": "Renamed bound_helper_files and scope; comparison_templates_invoked false; explicit prepared template status; actual analyze_numeric.py entry/output/source SHA documented.",
+      "status": "fixed_and_verified"
+    },
+    {
+      "priority": "P3",
+      "location": "main README initial summary",
+      "finding": "Opening still described per-ID diagnostic as pending after actual963 capture completion.",
+      "resolution": "Opening now distinguishes15 original performance runs from completed257-image separate diagnostic.",
+      "status": "fixed_and_verified"
+    },
+    {
+      "priority": "P2",
+      "location": "PROJECT_LOG.md:new963 diagnostic entry",
+      "finding": "Initially said lease released after independent postcheck; actual lease released after10:32 child/final exit proof, and10:35 postcheck subsequently confirmed controller exit/lease absence.",
+      "resolution": "Entry now states5 exits confirmed then release, followed by independent postcheck.",
+      "status": "fixed_and_verified"
+    },
+    {
+      "priority": "P3",
+      "location": "numeric_diagnostic/per_id.csv; final git diff --cached --check",
+      "finding": "Final staged check included previously untracked new CSV;258 CRLF records triggered trailing-whitespace failure exit2. Prior ordinary unstaged diff check had not covered this file.",
+      "failure_evidence": {
+        "private_log": "publication-staged-check-crlf.txt",
+        "sha256": "aaabefb3497077115a46301279c2fc4a2907211a2e5f9933b1a4709047431c19",
+        "trailing_whitespace_lines": 258,
+        "initial_exitcode": 2
+      },
+      "resolution": "Only public CSV258 CRLF sequences replaced by LF; private original retained;257 dictionaries and every field/value/order identical; provenance/checks retain both SHA/size and failure/repair history.",
+      "final_evidence": {
+        "original_relative_path": "analysis/per_id.csv",
+        "original_bytes": 33508,
+        "original_sha256": "94115a0be6dc05551f463114dff52bec1e1af5123bd0ebb97cd84a415c1024dd",
+        "public_relative_path": "per_id.csv",
+        "public_bytes": 33250,
+        "public_sha256": "8cedf77902549060b25b41da1319683dfe1407871611e12dbb5981f1aa9d0ca0",
+        "transformation": "CRLF line endings normalized to LF in public copy only; all257 parsed rows/fields identical, no numeric recomputation/change",
+        "original_preserved": true
+      },
+      "status": "fixed_and_verified",
+      "final_cached_diff_check_exitcode": 0
+    }
+  ],
+  "evidence_correspondence": {
+    "actual_run_id": "clip-parity-45-36b74095",
+    "measured_source": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+    "published_equal_source": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+    "primary_public_base": "4806da28095301ffed81782888c79cdfb3d3d963",
+    "actual_private_archive_SHA256": "919192fc74643040593ade4a4f7e981c4ae8d7238ff0db96096d6ca22279515c",
+    "archive_bytes": 1741917,
+    "index_members": 122,
+    "physical_files_including_index": 123,
+    "public_runs": "3 records preserve all197 original row fields and numerical values; only model_revision/processor_revision path becomes MODEL_ROOT placeholder. Explicit primary_performance_eligible false on each outer record.",
+    "row_origin_public_SHA": "All3 original/public row mapping SHA/size validated; public record SHA covers compact JSONL record with newline.",
+    "CSV_observations_probe": "Public CSV is original analysis CSV after CRLF-to-LF only;257 parsed dict rows/fields/order identical. Observations JSON and worker probe retain original bytes. Vector/numerical analysis/script unchanged.",
+    "lifecycle": "All5 receipt IDs/UTC/exit0/physical exit values preserved; argv only named private-path substitutions. Final exit/lease/postcheck matches actual source.",
+    "code": "All7 new public Python files byte-identical executed controls/helpers or actual offline analysis file; compiled in memory only.",
+    "guards": "Deduplicated public provenance/source-files/compare_vectors copies match exact8 package binding hashes; guard JSON is data and compare template is explicitly uninvoked.",
+    "reviews": "Execution/pre-run and postrun original/public hashes checked; postrun report original bytes preserved, SHA1e5a00dd245384c962b0cd2cbe338964233ec2be04d27a0f61ca9479130375c2.",
+    "resource_snapshots": "3 private retained resource snapshot identities byte/size/SHA checked; actual hostname/paths stay private.",
+    "primary15": "raw/measurements.jsonl unchanged SHA4ec025a269567074fd65260f4642ec8731fb2b71bf577522f20b4807a774169b; original summary, failures,18-receipt lifecycle,contracts,source mapping and digest audit byte-identical4806."
+  },
+  "wording_verified": [
+    "771 formal plus192 warmup=963 actual model images; zero-model preparations separately described; original61,731-image performance matrix preserved.",
+    "Direct/HSE257/257 bitwise same, Ray0/257; all257 FP32/CPU-cast FP16 input hashes match, model-return hashes match each arm consumer vectors.",
+    "All error distributions and1e-3 exceedance1 row/1 component retained; descriptive counts not automatic acceptance gate.",
+    "Actual model rows56,56,56,56,33 versus64,64,1,64,64; requested64 is distinguished from actual forward batches. Different shapes compatible with floating-point differences, not proven batch causality.",
+    "No direct device-input bit qualification,5000 per-ID equivalence/downstream semantic-quality extrapolation orGPU error/cancel qualification.",
+    "Actual native Arrow256+1 rows/extension ChunkedArray/to_pylist numpy.ndarray512;0.00177249s vendor conversion only, np.asarray and full consumer not separately measured; no5000 consumer bottleneck claim.",
+    "Healthy actual cleanup recognized separately from CPU-only worker activation/typed-actor serialization; no transfer of currentHEAD/PG/performance superiority qualification."
+  ],
+  "privacy": {
+    "public_files_fully_scanned": 19,
+    "existing_nav_files": 8,
+    "nav_added_lines_scanned": 15,
+    "project_scan_line_no_suppressions_findings": 0,
+    "manual_real_private_path_host_or_token_findings": 0,
+    "reviewed_actual_fields": "Normalized command/preflight/row paths; PID/time, Arrow schema, fingerprints, numeric observations and code contain no real external host/credential/owner-token value. No raw NPZ/JPEG/model payload committed.",
+    "historical_navigation": "Only new/changed lines scanned/reviewed; unrelated historical content not expanded."
+  },
+  "reproducibility": {
+    "README_local_links_and_numeric_anchor": "All referenced local files and numeric-diagnostic-20261014 anchors resolved.",
+    "full_vector_recompute": "Explicit analyze_numeric.py command; owner obtains private archive and original JPEG manifest by runID+SHA. NPZ and full CPU/GPU traces availability boundary stated.",
+    "execution_reconstruction": "Private binding/resolved-commands/source-package-manifest preserved; source fixed SHA and helper snapshots/guard copy paths documented.",
+    "public_only_limit": "Public compact data supports full per-ID error/metadata/lifecycle inspection; public alone cannot independently rerun full vector comparisons without private NPZ/traces/manifest."
+  },
+  "finalization": {
+    "current_storage": "All37 current members except storage manifest verified after LF repair.",
+    "remaining_metadata_only": "Parent replaces final review copy/SHA mapping, refreshes storage and repeats cached diff check for those metadata changes before commit. No numeric/source/model/GPU changes or performance rerun required.",
+    "self_hash_boundary": "Current audit file excluded from its own hash list; provenance+storage record final private/public copy SHA. Earlier public ac479 copy is the retained prior snapshot until replaced."
+  },
+  "checks_summary": {
+    "all3_original197_rows_values_preserved": true,
+    "all257_CSV_and_actual_metadata_preserved": true,
+    "all5_receipts_preserved": true,
+    "helper_guard_source_and_audit_SHA_match": true,
+    "all8_nav_facts_and_links_checked": true,
+    "git_diff_check_exitcode": 0,
+    "publication_checks_json_inspected": true,
+    "current_storage_inventory_sizes_SHA_verified": true,
+    "parent_link_checks_claim_scope": "Parent records983 links; reviewer independently checked local references in actual main report and8 added fact/navigation lines. No claim all983 personally rechecked.",
+    "git_diff_cached_check_exitcode": 0,
+    "CSV_LF_only_and_all257_dict_rows_equal": true
+  },
+  "reviewed_public_file_SHA256": {
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/README.md": "749ce6eccc61e824b9f0f430f993876f4d4f50a664f50948ef3cee83e117b5f9",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/analyze_numeric.py": "5eb8b460ba043244379f3ee3525f81c3de870b249b5e6cf941ad4228dc078468",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/execution-extension-review.json": "b5d052b1b8ac27bdcbbcfccf2331821e7bc29607e29837fbea1756f9cfab42b4",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/helpers/capture_ray_data.py": "f1b14496038df1199e0c0a6e74f655af6fcd5127972026ad9b84348865091bb7",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/helpers/clip_trace_hooks.py": "e5e17816f2f8ca6d7f6f1757934bc2b4ddb3268ff3a59c84414f87d46cc3a6be",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/helpers/probe_observer_worker.py": "07070beba3f222d24e66aaf64dcb1d629decd575dc2c0fc41e275b23bf31d134",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/helpers/sitecustomize.py": "3ee439344c39e628144dec4b8d2b303782408da9bd421dbcebb8b583f2710c2f",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/helpers/trace_entry.py": "9860190e943b3799f5e44b3e6ead850ebf9d99b4ff5111261a4dc5784779d032",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/lifecycle.json": "a8b4f29f78e998fe763c220f377b35ec132ca48fec51fc7bef0e72a58393ebe1",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/observations.json": "dc81c918154156fa728d0921c5c64d36c4fae3c18cfb3b4746e9654158bfacdf",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/per_id.csv": "8cedf77902549060b25b41da1319683dfe1407871611e12dbb5981f1aa9d0ca0",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/postrun-independent-review.json": "1e5a00dd245384c962b0cd2cbe338964233ec2be04d27a0f61ca9479130375c2",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/preflight.json": "bc8e335cfac417137d81c3f1de1036b150ca77ddd44fe027dc442af8edcebd91",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/provenance.json": "cfafb68c57d14f7204a6a7ffa1421204c029a2eb2b5851a60d5a86e6ab77012d",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/publication-checks.json": "88a22b5f4a57b07e8988f34d8345825e17fa1e0698ea649a677969c0245de0b3",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/run_numeric_clip.py": "faf63315a5be30c9d07ca0eb45b36835748ed8c4dd3e8b01205bfbec5ffaa84c",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/runs.jsonl": "5cb2bff3f9ef025f3fe808e23598ed30333a59148725c95457cd71a47f0332cc",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numeric_diagnostic/worker_probe.json": "8c1fce16e34f56645ddbe69c5e213768a4c97bb1f37ded966e0804c73e50372b",
+    "experiments/results/diagnostics/image_clip_file_operator_20261014/numerical-validation-plan.json": "f31a6bda5b45ce9f767a262b4aa113464c61069f487b017d45e246ea727fea0e"
+  },
+  "reviewed8_navigation_file_SHA256": {
+    "README.md": "80408c65e12ba15a50270662bebf28b08af0199e7e05d0b0a1237a4f0b3ebd32",
+    "PROJECT_INDEX.md": "dc57fca2b942e4b1f1b4784f7d0e6a71673529d19a585dfdbbe8ab6a421ba838",
+    "PROJECT_LOG.md": "70515648b95a10c9cde46fee00a505b376ab605f48a0c7ae6ab2539236c5d75e",
+    "PROJECT_OUTLINE.md": "484c4a7689bd74db33e86414930a76564d65734964ae83d222472893f7214c57",
+    "code/INFRA_STATUS.md": "b543e058a583423506b679b59f22720343ce69ee3e78e7f7e061e3ea352080e8",
+    "experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md": "f6208afb9ac092568d44c56fea04a169da7d4bc3d60585ec2b64bf19c5abfc3f",
+    "experiments/results/README.md": "773618834e16a138eeb096859b1054878a2d14c2b2c8c610ea2c61cc98b6c5a9",
+    "experiments/results/diagnostics/README.md": "896a42d1812ad68b2b52ca4c9b3933d3cc4445bfd36bd761acebf11475844d66"
+  },
+  "storage_check_history": [
+    {
+      "status": "known_parent_finalization_pending",
+      "initial_private_review_sha256": "31b5d1755a6892860a7b2f3614a78171ce534ac0087b26d85022711c20fecc1e",
+      "state": {
+        "mismatches": [
+          "README.md",
+          "numerical-validation-plan.json"
+        ],
+        "unindexed_count": 16
+      }
+    },
+    {
+      "status": "refreshed_and_independently_verified",
+      "members_excluding_manifest": 36,
+      "member_bytes": 498552,
+      "all_inventory_sizes_SHA_match": true,
+      "manifest_sha256": "435d3d2d90df549af9e86efbb097ff611cd426b658b6c11b3530d3048322c708"
+    },
+    {
+      "status": "after_LF_refresh_independently_verified",
+      "members_excluding_manifest": 37,
+      "member_bytes": 513573,
+      "all_inventory_sizes_SHA_match": true,
+      "manifest_sha256": "8ee1ef223a972c586fb5551d45055b7589c3269bc639561a2a9b359a5f742d6e"
+    }
+  ],
+  "prior_review_snapshot": {
+    "path": "publication-independent-review-pre-lf.json",
+    "sha256": "ac479a00e4e5037ea32daa524cf2a55392f6492c5b48b08b7d7371141ef22b64",
+    "scope": "Previously passed wording/privacy/content snapshot before final staged CSV line-ending check; original bytes retained privately.",
+    "not_current_final_review": true
+  },
+  "CSV_line_ending_mapping": {
+    "original_relative_path": "analysis/per_id.csv",
+    "original_bytes": 33508,
+    "original_sha256": "94115a0be6dc05551f463114dff52bec1e1af5123bd0ebb97cd84a415c1024dd",
+    "public_relative_path": "per_id.csv",
+    "public_bytes": 33250,
+    "public_sha256": "8cedf77902549060b25b41da1319683dfe1407871611e12dbb5981f1aa9d0ca0",
+    "transformation": "CRLF line endings normalized to LF in public copy only; all257 parsed rows/fields identical, no numeric recomputation/change",
+    "original_preserved": true
+  },
+  "staged_review": {
+    "files": 29,
+    "added_lines_scanned": 2741,
+    "project_scan_line_no_suppressions_findings": 0,
+    "manual_private_path_host_findings": 0,
+    "git_diff_cached_check_exitcode": 0,
+    "all_new_CSV_now_in_staged_scope": true,
+    "staged_CSV_blob_equals_public_LF": true,
+    "no_unstaged_delta_at_check": true,
+    "no_source_or_test_public_changes": true,
+    "old15_primary_summary_failures_lifecycle_byte_identical4806": true
+  }
+}

@@ -1,6 +1,6 @@
 {
-  "status": "prepared_not_executed",
-  "reason": "no per-row vectors in existing15 outputs; exclusive GPU slot coordinated by parent",
+  "status": "completed_in_separate_diagnostic_window",
+  "reason": "three captures completed, original15 performance matrix unchanged; see numeric_diagnostic/provenance.json",
   "source_candidate": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
   "same_inputs": "first257 rows, offset0, existing shared file manifest; same source shards2/model/processor/FP16/normalize/batch64",
   "calls": 3,
@@ -95,7 +95,7 @@
         "--expected-input-encoded-bytes",
         "41184449"
       ],
-      "status": "not_executed"
+      "status": "executed_once_with_delegating_diagnostic_observers"
     },
     {
       "label": "hse",
@@ -179,7 +179,7 @@
         "--expected-input-encoded-bytes",
         "41184449"
       ],
-      "status": "not_executed"
+      "status": "executed_once_with_delegating_diagnostic_observers"
     },
     {
       "label": "ray_data",
@@ -252,7 +252,7 @@
         "--expected-input-encoded-bytes",
         "41184449"
       ],
-      "status": "not_executed"
+      "status": "executed_once_with_delegating_diagnostic_observers"
     }
   ],
   "wrapper_required_environment": [
@@ -303,5 +303,24 @@
     "RAY_DEFAULT_OBJECT_STORE_MAX_MEMORY_BYTES": "2147483648",
     "RAY_TMPDIR": "<NEW_SHORT_LOCAL_RAY_TMPDIR>",
     "DB_urls": "cleared for each file/model CLI as in original qualified coordinator"
+  },
+  "completed_run_id": "clip-parity-45-36b74095",
+  "actual_model_images": 963,
+  "actual_metadata_observers": "CPU encoded/pixel/expectedFP16/model-return fingerprints, model batch shape, Arrow tensor schema/to_pylist; no baseline algorithm or additional model call",
+  "comparison_commands_status": "prepared_compare_vectors_templates_not_executed_in_this_window",
+  "actual_analysis_entry": {
+    "script": "numeric_diagnostic/analyze_numeric.py",
+    "command_template": [
+      "<ANALYSIS_PYTHON>",
+      "numeric_diagnostic/analyze_numeric.py",
+      "--evidence-root",
+      "<EXTRACTED_DIAGNOSTIC_ARCHIVE>",
+      "--input-manifest",
+      "<ORIGINAL_COCO_FILE_MANIFEST>",
+      "--out-dir",
+      "<NEW_ANALYSIS_OUTPUT>"
+    ],
+    "status": "executed_offline_on_actual_vectors_and_traces",
+    "evidence": "numeric_diagnostic/provenance.json"
   }
 }

@@ -1,0 +1,44 @@
+{
+  "schema": "semloom.numeric_publication_checks.v1",
+  "run_id": "clip-parity-45-36b74095",
+  "public_files_checked": 26,
+  "new_python_ast_parse": true,
+  "JSON_and_JSONL_parse": true,
+  "per_ID_CSV_rows": 257,
+  "primary15_and_summary_byte_identical_to_4806": true,
+  "primary_measurements_sha256": "4ec025a269567074fd65260f4642ec8731fb2b71bf577522f20b4807a774169b",
+  "primary_summary_sha256": "2fc820328f2f95483ddf387b8bf7cc2b3de54181aa9a4bdbb4b08cfae75dec84",
+  "introduced_private_path_or_external_target_findings": [],
+  "path_check_scope": "full new files; changed tracked files compared against existing HEAD;2 unchanged historic doc strings observed and not added by this supplement",
+  "unchanged_historic_path_tokens": 2,
+  "initial_check_scope_correction": "initial whole-file path check flagged2 historic strings; both byte strings preexist in4806, confirmed before using introduced-only scope; no new file exclusion",
+  "secret_scan_no_suppressions": {
+    "returncode": 0,
+    "output": "scan_git_secrets: no violations across 26 file(s)"
+  },
+  "changed_Markdown_local_link_count": 983,
+  "broken_changed_Markdown_local_paths": [],
+  "new_numeric_anchor_exists": true,
+  "private_vectors_not_published": true,
+  "GPU_model_server_calls_during_publication": 0,
+  "scope": "local publication checks only; full actual vector verification is in postrun-independent-review.json",
+  "final_staged_whitespace_finding": {
+    "initial_exitcode": 2,
+    "file": "numeric_diagnostic/per_id.csv",
+    "CRLF_lines": 258,
+    "reason": "previous unstaged diff check did not include new untracked CSV; final staged check included all new files",
+    "fix": "public LF-only normalization; original private bytes retained",
+    "parsed_all257_rows_fields_identical": true,
+    "private_failure_log_sha256": "aaabefb3497077115a46301279c2fc4a2907211a2e5f9933b1a4709047431c19"
+  },
+  "public_CSV_original_mapping": {
+    "original_relative_path": "analysis/per_id.csv",
+    "original_bytes": 33508,
+    "original_sha256": "94115a0be6dc05551f463114dff52bec1e1af5123bd0ebb97cd84a415c1024dd",
+    "public_relative_path": "per_id.csv",
+    "public_bytes": 33250,
+    "public_sha256": "8cedf77902549060b25b41da1319683dfe1407871611e12dbb5981f1aa9d0ca0",
+    "transformation": "CRLF line endings normalized to LF in public copy only; all257 parsed rows/fields identical, no numeric recomputation/change",
+    "original_preserved": true
+  }
+}

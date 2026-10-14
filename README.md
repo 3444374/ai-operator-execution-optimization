@@ -1,6 +1,6 @@
 # SemLoom
 
-[单GPU文件CLIP冷算子复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保存现有静态、HSE与原生Ray Data的全部重复、部署失败和数值等价限制；外部文件入口保持原身份。
+[单GPU文件CLIP冷算子复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保存现有静态、HSE与原生Ray Data的全部重复、部署失败及[257图逐行数值补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)；外部文件入口保持原身份。
 
 [原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
 

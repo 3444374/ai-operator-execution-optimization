@@ -1,0 +1,240 @@
+{
+  "scope": "one fixed257-image diagnostic each plus64 warmup each; original15 primary measurements unchanged",
+  "total_model_images_verified": 963,
+  "arms": {
+    "direct": {
+      "formal_model_batch_rows": [
+        56,
+        56,
+        56,
+        56,
+        33
+      ],
+      "formal_preprocess_batch_rows": [
+        33,
+        56,
+        56,
+        56,
+        56
+      ],
+      "all_model_images_including_warmup": 321,
+      "encoded_content_and_bytes_match_shared_manifest": true,
+      "prepared_pixels_equal_model_inputs_per_id": true,
+      "GPU_return_values_equal_captured_consumer_FP32_per_id": true,
+      "native_arrow_schema": [],
+      "native_arrow_to_pylist": [],
+      "native_arrow_to_pylist_total_s": 0,
+      "numpy_asarray_conversion_s": null,
+      "numpy_asarray_reason": "original call remains unmodified and unmeasured"
+    },
+    "hse": {
+      "formal_model_batch_rows": [
+        56,
+        56,
+        56,
+        56,
+        33
+      ],
+      "formal_preprocess_batch_rows": [
+        33,
+        56,
+        56,
+        56,
+        56
+      ],
+      "all_model_images_including_warmup": 321,
+      "encoded_content_and_bytes_match_shared_manifest": true,
+      "prepared_pixels_equal_model_inputs_per_id": true,
+      "GPU_return_values_equal_captured_consumer_FP32_per_id": true,
+      "native_arrow_schema": [],
+      "native_arrow_to_pylist": [],
+      "native_arrow_to_pylist_total_s": 0,
+      "numpy_asarray_conversion_s": null,
+      "numpy_asarray_reason": "original call remains unmodified and unmeasured"
+    },
+    "ray_data": {
+      "formal_model_batch_rows": [
+        64,
+        64,
+        1,
+        64,
+        64
+      ],
+      "formal_preprocess_batch_rows": [
+        1,
+        64,
+        64,
+        64,
+        64
+      ],
+      "all_model_images_including_warmup": 321,
+      "encoded_content_and_bytes_match_shared_manifest": true,
+      "prepared_pixels_equal_model_inputs_per_id": true,
+      "GPU_return_values_equal_captured_consumer_FP32_per_id": true,
+      "native_arrow_schema": [
+        {
+          "kind": "arrow_schema",
+          "pid": 139274,
+          "time_ns": 1791973929664185169,
+          "rows": 256,
+          "schema": "doc_id: string\nembedding: extension<ray.data.arrow_tensor_v2<ArrowTensorTypeV2>>",
+          "embedding_type": "ArrowTensorTypeV2(shape=(512,), dtype=float)",
+          "extension_name": "ray.data.arrow_tensor_v2",
+          "storage_type": "large_list<item: float>",
+          "array_class": "pyarrow.lib.ChunkedArray",
+          "embedding_chunks": 4
+        },
+        {
+          "kind": "arrow_schema",
+          "pid": 139274,
+          "time_ns": 1791973929672614341,
+          "rows": 1,
+          "schema": "doc_id: string\nembedding: extension<ray.data.arrow_tensor_v2<ArrowTensorTypeV2>>",
+          "embedding_type": "ArrowTensorTypeV2(shape=(512,), dtype=float)",
+          "extension_name": "ray.data.arrow_tensor_v2",
+          "storage_type": "large_list<item: float>",
+          "array_class": "pyarrow.lib.ChunkedArray",
+          "embedding_chunks": 1
+        }
+      ],
+      "native_arrow_to_pylist": [
+        {
+          "kind": "arrow_to_pylist",
+          "pid": 139274,
+          "time_ns": 1791973929666489150,
+          "rows": 256,
+          "seconds": 0.001722794,
+          "container_type": "builtins.list",
+          "first_item_type": "numpy.ndarray",
+          "first_item_shape": [
+            512
+          ]
+        },
+        {
+          "kind": "arrow_to_pylist",
+          "pid": 139274,
+          "time_ns": 1791973929672920942,
+          "rows": 1,
+          "seconds": 4.9696e-05,
+          "container_type": "builtins.list",
+          "first_item_type": "numpy.ndarray",
+          "first_item_shape": [
+            512
+          ]
+        }
+      ],
+      "native_arrow_to_pylist_total_s": 0.0017724899999999998,
+      "numpy_asarray_conversion_s": null,
+      "numpy_asarray_reason": "original call remains unmodified and unmeasured"
+    }
+  },
+  "direct_comparisons": {
+    "hse": {
+      "rows": 257,
+      "bitwise_equal_rows": 257,
+      "input_FP32_identical_rows": 257,
+      "CPU_cast_FP16_identical_rows": 257,
+      "max_abs_error": 0.0,
+      "mean_abs_error": 0.0,
+      "max_row_l2_error": 0.0,
+      "per_row_max_abs_percentiles": {
+        "0": 0.0,
+        "1": 0.0,
+        "50": 0.0,
+        "99": 0.0,
+        "100": 0.0
+      },
+      "cosine_percentiles": {
+        "0": 0.9999999999999998,
+        "1": 0.9999999999999998,
+        "50": 1.0,
+        "99": 1.0000000000000002,
+        "100": 1.0000000000000002
+      },
+      "explicit_absolute_tolerance_counts": {
+        "0": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-07": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-06": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-05": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "0.0001": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "0.001": {
+          "components_outside": 0,
+          "rows_outside": 0
+        }
+      },
+      "tolerance_purpose": "descriptive error-scale counts only; no new overall pass gate",
+      "performance_eligible": false
+    },
+    "ray_data": {
+      "rows": 257,
+      "bitwise_equal_rows": 0,
+      "input_FP32_identical_rows": 257,
+      "CPU_cast_FP16_identical_rows": 257,
+      "max_abs_error": 0.0011827051639556885,
+      "mean_abs_error": 5.482503624393567e-05,
+      "max_row_l2_error": 0.0030373222574328843,
+      "per_row_max_abs_percentiles": {
+        "0": 0.00015332922339439392,
+        "1": 0.00016468748450279236,
+        "50": 0.0003362298011779785,
+        "99": 0.0008582988381385801,
+        "100": 0.0011827051639556885
+      },
+      "cosine_percentiles": {
+        "0": 0.9999953873362398,
+        "1": 0.9999968088453881,
+        "50": 0.9999987425436495,
+        "99": 0.9999994267711484,
+        "100": 0.9999995547125818
+      },
+      "explicit_absolute_tolerance_counts": {
+        "0": {
+          "components_outside": 131584,
+          "rows_outside": 257
+        },
+        "1e-07": {
+          "components_outside": 131280,
+          "rows_outside": 257
+        },
+        "1e-06": {
+          "components_outside": 128399,
+          "rows_outside": 257
+        },
+        "1e-05": {
+          "components_outside": 114581,
+          "rows_outside": 257
+        },
+        "0.0001": {
+          "components_outside": 18444,
+          "rows_outside": 257
+        },
+        "0.001": {
+          "components_outside": 1,
+          "rows_outside": 1
+        }
+      },
+      "tolerance_purpose": "descriptive error-scale counts only; no new overall pass gate",
+      "performance_eligible": false
+    }
+  },
+  "inference_limits": [
+    "Matching fingerprints excludes observed source/preprocessing/consumer changes only on this257 subset.",
+    "If identical per-ID inputs yield differing GPU-return vectors under the unchanged FP16 kernel, difference is localized to model computation/output; batch shapes may explain it but no causal replay was run.",
+    "No dtype/batch change or additional model call to force equality; no automatic semantic or5000-row equivalence verdict."
+  ]
+}

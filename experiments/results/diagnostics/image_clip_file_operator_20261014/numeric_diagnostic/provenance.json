@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "run_id": "clip-parity-45-36b74095",
+  "actual_source_candidate": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+  "published_source_equivalent": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+  "prepared_public_revision": "4806da28095301ffed81782888c79cdfb3d3d963",
+  "executed_controller_sha256": "faf63315a5be30c9d07ca0eb45b36835748ed8c4dd3e8b01205bfbec5ffaa84c",
+  "kernel_and_native_graph_source_unmodified": true,
+  "new_environment_observer": "same original worker runtime env with trace directory added, no token in Ray job metadata",
+  "planned_and_actual_model_images": 963,
+  "configuration_scope": "same model/processor/input manifest/FP16/requested batch64/CPU7/GPU1 as prepared; actual native forwarding batch shapes observed, not forced",
+  "private_original": {
+    "archive_sha256": "919192fc74643040593ade4a4f7e981c4ae8d7238ff0db96096d6ca22279515c",
+    "archive_bytes": 1741917,
+    "index_members_SHA_verified": 122,
+    "regular_files_including_index": 123,
+    "location": "retained owner-controlled local/server artifacts; not committed",
+    "access": "project owner can retrieve by run_id and SHA; private NPZ and full traces required for full independent vector recomputation"
+  },
+  "NPZ_identity": [
+    {
+      "relative_path": "diagnostic/direct.npz",
+      "bytes": 471504,
+      "sha256": "0488722333ec8396606f96fafc4c9ba61cbc11418153818a9b737db5e0992156"
+    },
+    {
+      "relative_path": "diagnostic/hse.npz",
+      "bytes": 471491,
+      "sha256": "1a8f626a4a27d8d6d02b2efbac8eb248e6483c50f31a04f42c994508c5830745"
+    },
+    {
+      "relative_path": "diagnostic/ray_data.npz",
+      "bytes": 471677,
+      "sha256": "0964ee7fa6898010363aee2042fd5dd22ee1630faec33daae6cf281c815736f8"
+    }
+  ],
+  "original_to_public_rows": [
+    {
+      "original_relative_path": "diagnostic/direct.json",
+      "original_sha256": "c33dcc0f74696d6faa719780f1dfffc2c22338fddf99003dd4aceea0f63d76dc",
+      "original_bytes": 19658,
+      "public_record": "numeric_diagnostic/runs.jsonl#direct",
+      "public_record_sha256": "8d8e2ecee9e9e7cc92ca905ca32537e18aa4b9884c4c16634724fe0c1590e0c0"
+    },
+    {
+      "original_relative_path": "diagnostic/hse.json",
+      "original_sha256": "91da206c46f1acd8c7ebda576276b054a14cc430e6b3033329f9ef94897886f5",
+      "original_bytes": 19960,
+      "public_record": "numeric_diagnostic/runs.jsonl#hse",
+      "public_record_sha256": "88e86202a42b327570a773272c847107ebffc96486107c6a15613b91922e5830"
+    },
+    {
+      "original_relative_path": "diagnostic/ray_data.json",
+      "original_sha256": "8fbae5431ad27bbc63e295df931d5ed35e8529d2ad1e423da9458d189a14bd03",
+      "original_bytes": 21629,
+      "public_record": "numeric_diagnostic/runs.jsonl#ray_data",
+      "public_record_sha256": "e5db46f572c53de36a014a08abb9e37a54ac179ebdc19084ae1546cc8a4d6242"
+    }
+  ],
+  "source_input_manifest": {
+    "original_run_id": "clip-45da0a54-22bde476",
+    "sha256": "762710a19f608dd290b02f68537195bc08731fa661149ec723e7789aa65ccec2",
+    "first257_encoded_bytes": 41184449,
+    "doc_ids_sha256": "532dbd946317ae8629dde9d7fda5a26c8c83a781ddf7d4ca29b6a25007d3ce03"
+  },
+  "primary_measurements_jsonl_SHA256_unchanged": "4ec025a269567074fd65260f4642ec8731fb2b71bf577522f20b4807a774169b",
+  "new_failures": "one local pre-execution env merge TypeError found by independent mock and fixed before upload; no actual model run failure observed; full review finding history retained",
+  "numerical_interpretation": "257 inputs/prepared pixels match across all3; GPU-return fingerprints already differ for Ray and match its captured consumer vectors. Localized to unchanged FP16 model path; actual batch shapes differ. No causal batch/dtype replay and no claim of exact or5000-vector equivalence.",
+  "timing_scope": "all new capture/trace times diagnostic-only; original15 performance rows and summary unchanged",
+  "deployment_guard_inputs": [
+    {
+      "expected_helper_path": "helpers/provenance.json",
+      "public_single_copy": "../provenance.json",
+      "source_revision": "4806da28095301ffed81782888c79cdfb3d3d963"
+    },
+    {
+      "expected_helper_path": "helpers/raw/source-files.json",
+      "public_single_copy": "../raw/source-files.json",
+      "source_revision": "4806da28095301ffed81782888c79cdfb3d3d963"
+    },
+    {
+      "expected_helper_path": "helpers/compare_vectors.py",
+      "public_single_copy": "../compare_vectors.py",
+      "source_revision": "4806da28095301ffed81782888c79cdfb3d3d963",
+      "executed_in_this_window": false
+    }
+  ],
+  "bound_helper_files": [
+    {
+      "path": "helpers/capture_ray_data.py",
+      "bytes": 7387,
+      "sha256": "f1b14496038df1199e0c0a6e74f655af6fcd5127972026ad9b84348865091bb7"
+    },
+    {
+      "path": "helpers/clip_trace_hooks.py",
+      "bytes": 6237,
+      "sha256": "e5e17816f2f8ca6d7f6f1757934bc2b4ddb3268ff3a59c84414f87d46cc3a6be"
+    },
+    {
+      "path": "helpers/compare_vectors.py",
+      "bytes": 4557,
+      "sha256": "3c1db5c41c91aac6a46acb93f4ef882a5906e1153a3108d7af6b09f16fca0056"
+    },
+    {
+      "path": "helpers/probe_observer_worker.py",
+      "bytes": 1829,
+      "sha256": "07070beba3f222d24e66aaf64dcb1d629decd575dc2c0fc41e275b23bf31d134"
+    },
+    {
+      "path": "helpers/provenance.json",
+      "bytes": 10281,
+      "sha256": "b4834c0ff5a68ad9f570aab106194ad50e2b71551b12ded65ee424b20651ee8d"
+    },
+    {
+      "path": "helpers/raw/source-files.json",
+      "bytes": 69913,
+      "sha256": "b124b92576fd353347f8a6e7b9242d2e02a290f7f76ee5b9e237d2f6e80268b0"
+    },
+    {
+      "path": "helpers/sitecustomize.py",
+      "bytes": 208,
+      "sha256": "3ee439344c39e628144dec4b8d2b303782408da9bd421dbcebb8b583f2710c2f"
+    },
+    {
+      "path": "helpers/trace_entry.py",
+      "bytes": 2614,
+      "sha256": "9860190e943b3799f5e44b3e6ead850ebf9d99b4ff5111261a4dc5784779d032"
+    }
+  ],
+  "bound_helper_files_scope": "All helper package inputs were hash bound before execution; compare_vectors.py was packaged but not invoked in this window, and JSON guard inputs are data, not executed code.",
+  "actual_analysis_entry": {
+    "public_path": "analyze_numeric.py",
+    "original_relative_path": "analyze_numeric.py",
+    "sha256": "5eb8b460ba043244379f3ee3525f81c3de870b249b5e6cf941ad4228dc078468",
+    "executed_offline": true,
+    "outputs": [
+      "observations.json",
+      "per_id.csv"
+    ],
+    "comparison_templates_invoked": false,
+    "requires": "original diagnostic private archive and original 5000-row JPEG file manifest (only first257 used)"
+  },
+  "independent_reviews": [
+    {
+      "public_path": "execution-extension-review.json",
+      "original_relative_path": "execution-extension-review.json",
+      "original_sha256": "b5d052b1b8ac27bdcbbcfccf2331821e7bc29607e29837fbea1756f9cfab42b4",
+      "public_sha256": "b5d052b1b8ac27bdcbbcfccf2331821e7bc29607e29837fbea1756f9cfab42b4",
+      "scope": "pre-execution independent control review, failure fix history preserved"
+    },
+    {
+      "public_path": "postrun-independent-review.json",
+      "original_relative_path": "postrun-independent-review.json",
+      "original_sha256": "1e5a00dd245384c962b0cd2cbe338964233ec2be04d27a0f61ca9479130375c2",
+      "public_sha256": "1e5a00dd245384c962b0cd2cbe338964233ec2be04d27a0f61ca9479130375c2",
+      "scope": "independent offline actual vector/trace/lifecycle audit after retrieval; separate review file retained outside123-member run archive"
+    },
+    {
+      "public_path": "publication-independent-review.json",
+      "original_relative_path": "publication-independent-review.json",
+      "original_sha256": "5e6cd35e0c2116b41cbc09b56b03a1833c8bd22f37cb2933b60969e1b8e8f8c8",
+      "public_sha256": "5e6cd35e0c2116b41cbc09b56b03a1833c8bd22f37cb2933b60969e1b8e8f8c8",
+      "scope": "independent public facts/privacy/source/metadata/lifecycle/storage review, plus final staged CSV LF-only normalization with all257 fields unchanged; original ac479 review retained privately; self-report mapping and deterministic manifest refresh follow"
+    }
+  ],
+  "resource_schedule": {
+    "policy": "waited for valid foreign lease; never recovered/modified it; acquired canonical shared lease before preflight/probe/model; sequential1GPU/7CPU arms",
+    "private_snapshot_identities": [
+      {
+        "file": "resource-snapshot-before.json",
+        "bytes": 672,
+        "sha256": "5e8a91ff9a296b7bdbe2bcf7016b690f99a84bb3a7eeca54c969a3a55b94617f"
+      },
+      {
+        "file": "resource-snapshot-101918.json",
+        "bytes": 445,
+        "sha256": "f61ec82e2b7f6cca785102234ae214091dd15591e5f1d9773a06918f4963b7ad"
+      },
+      {
+        "file": "resource-snapshot-102700.json",
+        "bytes": 115,
+        "sha256": "0c41f488a1378d7ef9126cdadd5a9ebf48a20c43597ea01d18f092a7318db6ed"
+      }
+    ],
+    "private_snapshots_preserved": true
+  },
+  "public_analysis_artifacts_mapping": [
+    {
+      "original_relative_path": "analysis/per_id.csv",
+      "original_bytes": 33508,
+      "original_sha256": "94115a0be6dc05551f463114dff52bec1e1af5123bd0ebb97cd84a415c1024dd",
+      "public_relative_path": "per_id.csv",
+      "public_bytes": 33250,
+      "public_sha256": "8cedf77902549060b25b41da1319683dfe1407871611e12dbb5981f1aa9d0ca0",
+      "transformation": "CRLF line endings normalized to LF in public copy only; all257 parsed rows/fields identical, no numeric recomputation/change",
+      "original_preserved": true
+    }
+  ],
+  "publication_review_history": [
+    {
+      "previous_original_relative_path": "publication-independent-review-pre-lf.json",
+      "sha256": "ac479a00e4e5037ea32daa524cf2a55392f6492c5b48b08b7d7371141ef22b64",
+      "status": "passed_content_privacy_review_before_staged_CSV_line_ending_normalization; private original retained"
+    }
+  ]
+}

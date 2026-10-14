@@ -5,7 +5,7 @@
 
 | 内容 | 报告入口 |
 |---|---|
-| 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与数值限制](diagnostics/image_clip_file_operator_20261014/README.md) |
+| 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与257图数值补测](diagnostics/image_clip_file_operator_20261014/README.md) |
 | 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](postgresql/native_executor_baselines_20261012/README.md) |
 | 独立IMLane构建 | [无模型Arrow往返](diagnostics/imlane_build_20261012/README.md) |
 | 原生方法与SemLoom执行接入 | [固定版本工程核对](postgresql/native_adapter_integration_20261009/README.md) |

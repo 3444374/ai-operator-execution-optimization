@@ -1,0 +1,9 @@
+{
+  "pid": 136352,
+  "preprocess_observer": true,
+  "model_observer": true,
+  "trace_env_exists": true,
+  "model_constructed": false,
+  "typed_actor_serialized_bytes": 8706,
+  "declared_GPU_for_actual_probe": 0
+}

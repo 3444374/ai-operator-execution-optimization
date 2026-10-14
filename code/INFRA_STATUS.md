@@ -1,8 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
 2026-10-14：[单GPU文件CLIP复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)固定实际45da0a54，387个导出文件与发布58462a0d同字节，原CLI archive Git字段unknown保持。
-原静态／HSE A／原生Ray Data共15次健康GPU调用及18次子进程退出核查完成；同输入、512维FP32 L2与exactly-once合同通过，三臂逐行数值等价仍未证实。
-Direct/HSE的rounded digest匹配，Ray Data不同；共享digest不随到达顺序改变。原性能值／失败／私有原包保持，准备的257图逐行capture未运行。
+原静态／HSE A／原生Ray Data共15次健康GPU调用及18次子进程退出核查完成；同输入、512维FP32 L2与exactly-once合同通过，原性能值／失败／私有原包保持。
+[257图另窗捕获](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)已完成963模型图及5次退出核查：Direct/HSE逐位相同；Ray输入指纹一致、返回向量不同。实际forward批形态不同，差异定位至FP16模型调用／返回边界，未证明具体浮点来源或5000图等价；新增诊断时间不入原性能汇总。
 这是已有外部文件算子在固定来源的健康资格；没有改公共执行源码，不转为当前HEAD、PG E2E、稳态非劣或GPU异常责任资格。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，

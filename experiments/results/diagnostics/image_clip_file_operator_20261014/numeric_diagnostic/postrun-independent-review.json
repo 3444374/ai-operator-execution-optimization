@@ -1,0 +1,287 @@
+{
+  "reviewed_utc": "2026-10-14T10:46:24.311174+00:00",
+  "status": "passed_independent_offline_actual_evidence_review",
+  "blocking_findings": [],
+  "scope": "Read-only local audit of actual963-image diagnostic; standard-library ZIP/NPY float32-byte parser and math. No SDK import/new model/GPU/server calls/public source changes.",
+  "identity": {
+    "measured_candidate": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+    "published_identical_source": "58462a0d19dbf6e2a7d010edde27225d98471ac2",
+    "original_primary_result": "4806da28095301ffed81782888c79cdfb3d3d963",
+    "source_files": 387,
+    "source_map_matches_original_measured_package": true,
+    "critical_source_hashes": 75,
+    "helper_hashes_match_pre_execution_review": true,
+    "controller_sha256": "faf63315a5be30c9d07ca0eb45b36835748ed8c4dd3e8b01205bfbec5ffaa84c",
+    "helper_sha256": {
+      "helpers/capture_ray_data.py": "f1b14496038df1199e0c0a6e74f655af6fcd5127972026ad9b84348865091bb7",
+      "helpers/clip_trace_hooks.py": "e5e17816f2f8ca6d7f6f1757934bc2b4ddb3268ff3a59c84414f87d46cc3a6be",
+      "helpers/compare_vectors.py": "3c1db5c41c91aac6a46acb93f4ef882a5906e1153a3108d7af6b09f16fca0056",
+      "helpers/probe_observer_worker.py": "07070beba3f222d24e66aaf64dcb1d629decd575dc2c0fc41e275b23bf31d134",
+      "helpers/provenance.json": "b4834c0ff5a68ad9f570aab106194ad50e2b71551b12ded65ee424b20651ee8d",
+      "helpers/raw/source-files.json": "b124b92576fd353347f8a6e7b9242d2e02a290f7f76ee5b9e237d2f6e80268b0",
+      "helpers/sitecustomize.py": "3ee439344c39e628144dec4b8d2b303782408da9bd421dbcebb8b583f2710c2f",
+      "helpers/trace_entry.py": "9860190e943b3799f5e44b3e6ead850ebf9d99b4ff5111261a4dc5784779d032"
+    },
+    "archive": {
+      "sha256": "919192fc74643040593ade4a4f7e981c4ae8d7238ff0db96096d6ca22279515c",
+      "bytes": 1741917,
+      "indexed_members": 122,
+      "physical_files_including_index": 123,
+      "every_member_bytes_SHA_verified": true
+    },
+    "analysis_sha256": {
+      "analysis/numeric-analysis.json": "dc81c918154156fa728d0921c5c64d36c4fae3c18cfb3b4746e9654158bfacdf",
+      "analysis/per_id.csv": "94115a0be6dc05551f463114dff52bec1e1af5123bd0ebb97cd84a415c1024dd",
+      "analyze_numeric.py": "5eb8b460ba043244379f3ee3525f81c3de870b249b5e6cf941ad4228dc078468"
+    },
+    "original_CLI_git_commit": "honestly unknown in archive; outer full SHA/per-file identities retained"
+  },
+  "integrity": {
+    "indexed122_plus_self123_all_bytes_SHA_and_archive_copy_match": true,
+    "NPZ_arms": 3,
+    "formal_rows_per_arm": 257,
+    "dimension": 512,
+    "dtype": "little-endian FP32",
+    "unique_expected_IDs_and_finite": true,
+    "doc_ID_sha256": "532dbd946317ae8629dde9d7fda5a26c8c83a781ddf7d4ca29b6a25007d3ce03",
+    "file_manifest_sha256": "762710a19f608dd290b02f68537195bc08731fa661149ec723e7789aa65ccec2",
+    "formal_encoded_bytes_per_arm": 41184449,
+    "all257_per_ID_CSV_values_recomputed": true,
+    "analysis_summary_recomputed": true
+  },
+  "budget": {
+    "formal_model_images": 771,
+    "warmup_model_images": 192,
+    "total_actual_traced_model_images": 963,
+    "per_arm_including_warmup": {
+      "direct": 321,
+      "hse": 321,
+      "ray_data": 321
+    },
+    "CPU_probe_model_rows": 0,
+    "requested_batch_size": 64,
+    "formal_model_batch_rows": {
+      "direct": [
+        56,
+        56,
+        56,
+        56,
+        33
+      ],
+      "hse": [
+        56,
+        56,
+        56,
+        56,
+        33
+      ],
+      "ray_data": [
+        64,
+        64,
+        1,
+        64,
+        64
+      ]
+    },
+    "formal_preprocess_batch_rows": {
+      "direct": [
+        33,
+        56,
+        56,
+        56,
+        56
+      ],
+      "hse": [
+        33,
+        56,
+        56,
+        56,
+        56
+      ],
+      "ray_data": [
+        1,
+        64,
+        64,
+        64,
+        64
+      ]
+    },
+    "actual_ID_phase_boundaries_and_shapes_verified": true,
+    "all_model_start_and_return_timestamps_within_driver_phase": true,
+    "all_trace_PIDs_in115_owned_observations": true,
+    "trace_PID_count": 69
+  },
+  "numerical_findings": {
+    "method": "Align by doc ID, original FP32 bytes/values; no renormalization or dtype/batch manipulation.",
+    "direct_vs_hse": {
+      "rows": 257,
+      "bitwise_equal_rows": 257,
+      "input_FP32_identical_rows": 257,
+      "CPU_cast_FP16_identical_rows": 257,
+      "max_abs_error": 0.0,
+      "mean_abs_error": 0.0,
+      "max_row_l2_error": 0.0,
+      "per_row_max_abs_percentiles": {
+        "0": 0.0,
+        "1": 0.0,
+        "50": 0.0,
+        "99": 0.0,
+        "100": 0.0
+      },
+      "cosine_percentiles": {
+        "0": 0.9999999999999998,
+        "1": 0.9999999999999998,
+        "50": 1.0,
+        "99": 1.0000000000000002,
+        "100": 1.0000000000000002
+      },
+      "explicit_absolute_tolerance_counts": {
+        "0": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-07": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-06": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "1e-05": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "0.0001": {
+          "components_outside": 0,
+          "rows_outside": 0
+        },
+        "0.001": {
+          "components_outside": 0,
+          "rows_outside": 0
+        }
+      }
+    },
+    "direct_vs_ray_data": {
+      "rows": 257,
+      "bitwise_equal_rows": 0,
+      "input_FP32_identical_rows": 257,
+      "CPU_cast_FP16_identical_rows": 257,
+      "max_abs_error": 0.0011827051639556885,
+      "mean_abs_error": 5.482503624393567e-05,
+      "max_row_l2_error": 0.0030373222574328843,
+      "per_row_max_abs_percentiles": {
+        "0": 0.00015332922339439392,
+        "1": 0.00016468748450279236,
+        "50": 0.0003362298011779785,
+        "99": 0.0008582988381385801,
+        "100": 0.0011827051639556885
+      },
+      "cosine_percentiles": {
+        "0": 0.9999953873362399,
+        "1": 0.999996808845388,
+        "50": 0.9999987425436495,
+        "99": 0.9999994267711484,
+        "100": 0.999999554712582
+      },
+      "explicit_absolute_tolerance_counts": {
+        "0": {
+          "components_outside": 131584,
+          "rows_outside": 257
+        },
+        "1e-07": {
+          "components_outside": 131280,
+          "rows_outside": 257
+        },
+        "1e-06": {
+          "components_outside": 128399,
+          "rows_outside": 257
+        },
+        "1e-05": {
+          "components_outside": 114581,
+          "rows_outside": 257
+        },
+        "0.0001": {
+          "components_outside": 18444,
+          "rows_outside": 257
+        },
+        "0.001": {
+          "components_outside": 1,
+          "rows_outside": 1
+        }
+      }
+    },
+    "original_NumPy_min_cosine": 0.9999953873362398,
+    "independent_min_cosine": 0.9999953873362399,
+    "reduction_note": "Independent math.fsum gives0.9999953873362399 vs NumPy0.9999953873362398. All recomputed CSV/summary values agree within2e-15 absolute or1e-13 relative reduction tolerance; this is not an embedding acceptance gate.",
+    "source_preparation": "All257 observed JPEG SHA+bytes match manifest in each arm; CPU-prepared FP32 SHA equals model-input SHA per ID. Across arms all257 FP32 and CPU-cast FP16 hashes match.",
+    "producer_consumer": "Each arm model-return FP32 SHA equals exact consumer NPZ row bytes for all257 IDs. Differences already occur at model return, before native Arrow/to_pylist consumer.",
+    "conclusion": "Ray vectors actually differ per ID, beyond stream ordering or lossless container representation. Given matching observed CPU inputs and preserved returned bytes, difference is localized to unchanged FP16 model-call/return boundary on this subset.",
+    "causal_limit": "Actual model batch membership/shapes differ and are compatible with floating-point differences; no causal matched-batch replay was run. CPU FP16-cast SHA is a CPU proxy, not direct CUDA tensor observation.",
+    "tolerance_limit": "Absolute1e-3 still exceeded by1 row/1 component; counts descriptive only. No automatic semantic acceptance or5000-row equivalence."
+  },
+  "native_consumer": {
+    "formal_Arrow_rows": [
+      256,
+      1
+    ],
+    "extension": "ray.data.arrow_tensor_v2",
+    "embedding_type": "ArrowTensorTypeV2(shape=(512,), dtype=float)",
+    "storage_type": "large_list<item: float>",
+    "column": "pyarrow.lib.ChunkedArray",
+    "chunks": [
+      4,
+      1
+    ],
+    "to_pylist_container": "builtins.list",
+    "to_pylist_first_item": "numpy.ndarray",
+    "first_item_shape": [
+      512
+    ],
+    "formal_to_pylist_s": 0.0017724899999999998,
+    "numpy_asarray_s": null,
+    "numpy_asarray_status": "Original float32 conversion unchanged and not separately measured.",
+    "performance_limit": "Instrumented257-row observation only; no claim native bottleneck or general throughput."
+  },
+  "lifecycle": {
+    "receipt_count": 5,
+    "all_exit0": true,
+    "all_recorded_own_PID_birth_physical_exits_confirmed": true,
+    "owned_observed_PID_birth_pairs": 115,
+    "final_shared_lease_absent_postcheck": true,
+    "controller_postcheck_identity": {
+      "pid": 135925,
+      "start_ticks": "312229278",
+      "checked_utc": "2026-10-14T10:35:24.959715+00:00"
+    },
+    "actual_CPU_probe": {
+      "pid": 136352,
+      "preprocess_observer": true,
+      "model_observer": true,
+      "trace_env_exists": true,
+      "model_constructed": false,
+      "typed_actor_serialized_bytes": 8706,
+      "declared_GPU_for_actual_probe": 0
+    },
+    "CPU_probe_trace_model_rows": 0,
+    "no_failure_cancel_path_extrapolation": true
+  },
+  "primary_performance_preserved": {
+    "primary_rows": 15,
+    "byte_identical_to_published_4806": true,
+    "sha256": "4ec025a269567074fd65260f4642ec8731fb2b71bf577522f20b4807a774169b",
+    "diagnostic_CSV_rows": 3,
+    "ineligibility_evidence": "Direct/HSE capture sidecars timing_valid_for_performance=false; native capture sidecar performance_eligible=false; execution binding diagnostic_only/timing_not_primary true. Original197-field row/CSV schema has no new eligibility flags.",
+    "diagnostic_timing": "Excluded from unchanged15 primary comparisons."
+  },
+  "qualification_limits": [
+    "Actual CPU-only Ray probe verifies worker observer identities/env and8706-byte typed actor serialization with0 model rows; CPU probe itself proves no GPU completion.",
+    "Separate3 model runs have exit0/empty own-process/GPU receipts.115 owned PID/birth observations and10:35 postcheck support successful cleanup only, not GPU error/cancel qualification.",
+    "No dtype/batch/native graph alteration, causal batch replay, new acceptance threshold,5000 per-ID equivalence or performance-matrix rerun."
+  ],
+  "privacy_and_followup": {
+    "raw_originals": "Private paths/host/process metadata and vectors retained in private123-file archive. Public additions require path/hostname normalization and actual metadata review.",
+    "next": "Independent concise public-addition/wording/privacy review remains assigned to this reviewer when parent supplies files.",
+    "prior_failure_history": "Duplicate env-key P2 and verified repair retained in execution-extension-review.json."
+  }
+}
