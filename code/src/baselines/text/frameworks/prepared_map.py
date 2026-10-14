@@ -59,6 +59,8 @@ class NativeGraphOptions:
             raise ValueError('pinned native Daft needs at least two request slots')
         if backend == 'ray-data' and self.ray_request_row_envelope > self.concurrency:
             raise ValueError('native Ray batch request envelope exceeds the declared HTTP allowance')
+        if backend == 'ray-data' and self.num_threads <= self.ray_actors:
+            raise ValueError('native Ray Data needs a spare CPU slot for preprocessing and postprocessing')
 
     @property
     def ray_request_row_envelope(self):

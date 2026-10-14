@@ -2,8 +2,11 @@
 
 2026-10-14：[Daft／Ray接续适配修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)
 分开公共Ray连接配置与SQL reader检查，保留所选图的容量校验；正常EOF内部关闭异常也拒绝复用。
-最终本地组合89通过／1缺Ray导入检查跳过，两个实现交叉审核无待修项；
-原图、UDF、并发、SDK及方法保持，原活动与Q1／Q2证据仍按各固定来源解释；本轮没有新增模型或服务器执行。
+首阶段本地组合89通过／1缺Ray导入检查跳过；随后五个目标实库用例按三个固定源码包通过，
+共14逻辑／28两跳localhost POST，保留一次工具失败及CPU1 Data零HTTP超时。新增两行所选Data的
+`num_threads > ray_actors`校验；CPU1提前零启动拒绝、CPU2／A1正向图通过，本地定向12项通过。
+每次自有进程退出、lease释放，查询非clean失败与最终进程清理分开；原图、UDF、并发、SDK及方法保持。
+原活动与Q1／Q2证据按既有来源解释，本轮新增模型／GPU／依赖安装均0；公共计时整合另按其来源验证。
 
 2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
 在 `964e70ef` 上三项通过、0 跳过，覆盖 Daft／Ray reader 与两个 CPU 替身工厂 actor 的 shutdown 前退出。

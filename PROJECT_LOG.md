@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-14：补验原生低CPU配置与实库EOF
+
+- 接续`ea6c9184`，五个目标用例按各自固定源码通过；三轮14逻辑／28两跳localhost POST，完整响应与身份关联通过，模型／GPU／安装0。
+- 首次Ray Iterable工具断言失败及CPU1 Data零HTTP超时保留；后者原非clean与消费线程未确认退出保持，controller最终清理分别记录。
+- 仅为所选Data增加`num_threads > ray_actors`两行项目校验，原生图、UDF、kernel、调度和方法不变；Core／SemLoom CPU1保留，CPU2／A1实库图与12项本地定向检查通过。
+- 三轮分别73.446／112.521／45.417秒；40／45／17登记身份全部退出、0强制清理、lease释放，预留20／发送14／6未发送预留未退款。
+- [同题主报告与公开原件](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)记录完整源码与测试修订；旧模型性能、PG及公共计时来源分别解释。
+
 ## 2026-10-14：接续Daft／Ray公共启动与EOF关闭修补
 
 - 核对实际远端`integration/baselines@1b90c1ea`已含旧接入交付`0be63a19`与整合`d1f5ef74`，

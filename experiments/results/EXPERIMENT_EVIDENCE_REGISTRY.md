@@ -1,9 +1,12 @@
 # 实验与机制证据台账
 
-2026-10-14：[公共Ray启动与正常EOF关闭修补](postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)。
+2026-10-14：[公共Ray启动、正常EOF关闭及实库补验](postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)。
 从实际整合`1b90c1ea`恢复，仅修项目适配层的跨后端误拒与EOF关闭异常复用；原图、执行器和方法保持。
 受影响本地Ran90，89通过／1缺Ray导入检查跳过；两项修前反例、专项重叠关系、摘要及交叉审核归于同一报告。
-原5项／120POST软件证据及单卡八查询／8480行关联另按既有固定来源解释；本轮没有新增厂商图或模型资格。
+随后五个目标用例按各自源码通过，三次窗口共14逻辑／28两跳localhost POST；七次尝试中的
+工具断言失败和CPU1 Data零发送超时保留。CPU声明两行修补后，CPU1在runtime前拒绝、CPU2／A1实际图通过；
+原生图与kernel保持，源码包与各测试修订、完整响应／发送账本复算和独立退出由同一报告定位。
+原5项／120POST软件证据及单卡八查询／8480行关联另按既有固定来源解释；新增模型／GPU／安装均0。
 
 2026-10-14：[JPEG 文件源及 CPU 工厂退出的固定 SDK 检查](diagnostics/image_file_sdk_20261014/README.md)。
 `964e70ef` 三项实际检查通过、0 跳过；reader 各 4 行顺序／编码字节与两个 CPU actor 的 shutdown 前物理退出分别核验。

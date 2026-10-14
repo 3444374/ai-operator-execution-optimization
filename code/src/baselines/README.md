@@ -33,7 +33,9 @@ IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对
 `worker_errors`继续记录原错误，后续批次不再进入图。
 
 `NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
-Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C。
+Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C，
+并要求`num_threads > ray_actors`，为原SDK的预处理／后处理task留出CPU。
+CPU1／A1会在导入和启动前拒绝；这项检查不改变原图或调度。
 IMLane和Ray Core可声明C=1，不借未选用的Daft或Ray Data参数拒绝；实际作者线程数、
 Ray逻辑CPU及调用／结果字节额度继续由各自入口核对。这不修改任何已登记运行的额度或配置。
 
