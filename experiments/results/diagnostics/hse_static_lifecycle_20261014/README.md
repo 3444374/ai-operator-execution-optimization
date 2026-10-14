@@ -67,8 +67,95 @@ writable host copy、device tensor、模型缓存或全部 RSS；这几类物理
 `ray.shutdown()`；调用方应在异常后终止/丢弃本次池，不能改用 direct-dependency 重用未知池，
 因为那条路径不读取 HSE 的保护记录。停止池的外层 finally 与 sampler 清理应由 CLI owner处理。
 
-后续最小实库需求交主会话排期：4 CPU、约512 MiB object store、300秒，采用串行 CPU/模拟模型
+后续最小实库需求交主会话排期：4 CPU、约512 MiB object store，采用串行 CPU/模拟模型
 actor验证真实多返回 ObjectRef、部分完成、错误确认及未知池拒绝，模型/GPU/POST均0。
+健康运行没有300秒或其他总墙钟截断；单操作无完成等待60秒、故障确认30秒、自有actor退出核对30秒。
 真实性能验证需要单4090与最多16 CPU，复用既有本地模型和同一 source/输出语义；从已有batch64
 强静态配置开始，direct-dependency/HSE先做正确性，再做预热及至少三次交错重复，独立采集
 source、prepare、ready、model、fan-in与实际内存。准确运行配置和停止条件由主会话排期前确定。
+
+<a id="integration-handoff"></a>
+
+## 固定47f7800c的逐文件集成交接
+
+CLI默认仍为`direct_dependency`，HSE需显式选择。HSE的ready优先、引用持有及异常确认自动生效；
+正常热路径没有新增完成确认RPC。共享broker的合法调用、FIFO、batch、额度、输出schema、默认历史
+及重复检测保持；永久超大ready需求改为入队前抛`BufferError`。两项性能行为只支持本地机制结论。
+
+| 固定提交的文件 | 正确性／证据作用 | 性能或默认行为影响 |
+|---|---|---|
+| `code/src/modalities/image/staged_execution.py` | 提交前登记owner；payload持有到完成确认；异常保留未确认lease/ref并拒绝同池HSE；入队峰值补记 | 已有ready工作先于source.next派发；及时删除局部ref及完成的admission时间；仅HSE选择生效 |
+| `code/src/scheduling/runtime/stage_broker.py` | lease时间校验先于队列修改；永久超大ready bytes/work拒绝 | 终态计数缓存、活动检查不遍历终态历史；对所有broker调用方生效 |
+| `code/tests/modalities/image/test_hse_static_lifecycle.py` | 11项owner、异常、中断、ref、峰值回归 | 检查ready先派发，无生产默认变化 |
+| `code/tests/scheduling/test_stage_broker.py` | 补时间、超大块、暂时FIFO等待、retry/cancel计数 | 检查不重扫终态历史，无生产默认变化 |
+| `PROJECT_LOG.md` | 记录该实现切片 | 无运行影响 |
+| `code/INFRA_STATUS.md` | 实现状态及尚未验证内容 | 无运行影响 |
+| `code/README.md` | 报告与owner责任入口 | 无运行影响 |
+| `experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md` | 登记CPU／替身证据身份 | 无运行影响 |
+| `experiments/results/diagnostics/README.md` | 报告入口 | 无运行影响 |
+| 本目录`README.md` | 审查结果与适用范围 | 不改变运行配置 |
+| 本目录`before_fix.log` | 修前失败原件的脱敏文本 | 无运行影响 |
+| 本目录`broker_cost.json` | 18个CPU broker原值 | 不提供GPU资格 |
+| 本目录`probe_broker.py` | 同源码基点的离线复算 | 仅显式调用时运行CPU broker |
+| 本目录`discovery_missing_arrow.log` | 缺Arrow导入失败 | 无运行影响 |
+| 本目录`local_checks.json` | 481项范围、状态与4个源码摘要 | 无运行影响 |
+| 本目录`local_checks.log` | 本地检查输出 | 无运行影响 |
+
+CLI交接行号属于固定47f源码，后续file source增量可能改变位置；由函数名和调用点定位：
+
+| 触发路径 | 所需owner清理 |
+|---|---|
+| `main:1506` → `_ImageExecution.__init__:788` → `_initialize_arm:868–870`初始化失败 | 外层Ray退出；生产worker构建的部分handle另见下段 |
+| `_run_observed_image_execution:1091`的warmup异常／`:1092`停止异常 | warmup pool逐actor处理；保留原错误，保证剩余退出清理继续 |
+| `:1093` → `_wait_for_formal_start`文件／JSON／等待／中断异常 | warmup已停止；仍需Ray退出 |
+| `:1099–1100`任一sampler启动失败 | 停止已经启动的sampler；Ray退出 |
+| `:1101` → `start_formal_workers:880`构建失败 | sampler停止、部分新handle处理、Ray退出；旧pool变量不能代表部分新actor |
+| `:1103` → `_ImageExecution.execute:918、960`source或正式HSE异常 | sampler停止，丢弃本次pool；HSE未知记录不能通过切换direct-dependency绕过 |
+| `:1114` → `_write_embedding_capture`校验／文件／`SystemExit`异常 | sampler、pool与Ray继续退出清理 |
+| `:1124–1126`sampler stop或pool stop自身异常 | 继续其余独立清理，保留原始执行异常 |
+| `main:1521、1530–1538`结果行／CSV／manifest／print异常 | 此时正常pool/sampler已停止，仍需Ray退出 |
+
+`main:1540`目前只在成功路径`ray.shutdown()`。另一个实际源码缺口在
+`code/src/modalities/image/execution.py::build_project_ray_worker_pool`：`:288–307`创建actor，
+`:308–309`readiness及`:319–323`线程校验任何一步抛错时，已创建handle尚未组成返回pool。
+因此只给CLI添加`stop_project_workers()`不足；builder应自行保留创建列表并异常处理，外层仍应负责
+Ray与sampler生命周期。这些函数已由独立审查者做CPU异常注入核对，本分支不修改CLI或builder。
+
+<a id="ray-validation-package"></a>
+
+## 最小无模型实际Ray验证包
+
+[包清单与逐文件SHA-256](ray_package_manifest.json)包含实际加载所需的项目source／test模块，
+入口为[专属opt-in测试](../../../../code/tests/modalities/image/test_hse_static_ray.py)。
+生产source逐一匹配47f7800c；新增测试入口取包含本清单的提交。
+没有runtime.env、连接目标、凭据、数据集、模型、原始服务日志或Git metadata；仅生成a–e五个虚拟行。
+复制或固定GitHub提交取得这些成员后，先按清单核对摘要；不混入原生IMLane作者文件或GPU依赖。
+依赖只需NumPy、Arrow、Ray、psutil，可复用已有`imlane-runtime`四模块版本检查，不加载作者库。
+
+| 实际Ray用例 | 核对内容 |
+|---|---|
+| 多返回ObjectRef及队尾 | 5行、batch2、两prepare actor／一零GPU模拟model actor；driver只get descriptor/result |
+| prepare真实异常 | serial CPU ready成功之后才归还prepare额度 |
+| 模拟model真实异常 | serial synchronize成功之后才归还ready额度；不宣称CUDA完成证明 |
+| 部分完成／确认报错 | 未确认块48字节及payload ref继续持有；同pool再次HSE拒绝 |
+| 真实提交后丢driver确认 | 一次返回丢失注入；真实actor队列里的ready晚于prepare完成；确认后同HSE可恢复 |
+
+默认opt-in关闭；显式启用后缺依赖报错，不能以skip认领实库通过。每次只用3个自有串行actor，
+资源上限4 CPU／0 GPU／512 MiB object store。测试结束只kill本测试创建的handle，按同节点PID＋birth
+核对进程退出；driver连接结束，短`/tmp/hs*`下的原始Ray日志留给owner私下保存。若退出无法确认，
+保留故障状态并停止后续资格判断。逻辑额度和该object-store配置均不代表总RSS上限。
+
+共同lease由主会话协调，IMLane及随后N/S验证优先。本任务尚未启动服务器／Ray／GPU或上传文件。
+内容审核后可按既有授权在获得共同窗口时执行，无需逐包再确认。建议调用如下，不包总墙钟timeout：
+
+```bash
+SEMLOOM_RUN_HSE_RAY=1 CUDA_VISIBLE_DEVICES= PYTHONPATH=code \
+  <driver-python> -m unittest tests.modalities.image.test_hse_static_ray -v
+```
+
+仅在获窗口后以`address=local`启动自有零GPU Ray，避免环境变量使测试误连其他人的runtime。
+单操作无完成60秒、生产故障确认30秒、自有actor退出30秒分别计时；
+健康运行总时长不截断。本地28项回归通过，5项实库用例默认跳过；另以离线异常注入核对逐actor清理、
+退出证明超时／再次中断和部分初始化失败。实际结果仍为`prepared_not_run`。
+运行后原始日志放私有artifact目录，公开材料先脱敏和复核
+host／路径／凭据，再登记实际版本、逐项状态、引用释放及独立进程退出证据。
