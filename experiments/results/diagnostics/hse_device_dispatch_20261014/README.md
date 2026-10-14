@@ -68,3 +68,8 @@ cache OFF/ON都执行4次完整forward和8行唯一输出；ON模拟转换为2�
 
 复现本地新策略：`PYTHONPATH=code python3 -m unittest tests.scheduling.test_stage_dispatch tests.modalities.image.test_hse_device_dispatch`。
 驻留组合用例在[专属测试](../../../../code/tests/modalities/image/test_hse_residency_dispatch.py)，仅在对应切片存在时执行。
+
+实际Ray软件用例见[CPU fixture测试](../../../../code/tests/modalities/image/test_hse_device_dispatch_ray.py)，
+复用`ed209238`发布的五项默认路径检查，另检查完成反馈、共享group容量、两种到期唤醒、零时长和异常责任。
+共11项，仅在已排期的共同lease下设置`SEMLOOM_RUN_HSE_RAY=1`执行；未设置时明确跳过。
+测试actor使用CPU数组与启动握手，无Torch、真实模型或GPU执行，当前执行结果仍pending。
