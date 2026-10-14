@@ -71,3 +71,31 @@ PYTHONPATH=code python3 -B -m unittest \
 
 真实Ray、单GPU CLIP及性能、双卡容量/速率/选择、跨卡直接搬运、decode复用和选择前prepared身份传播均为pending。
 没有占用共享lease、改变厂商baseline或启用默认策略。当前保持actor本地组件；调度主循环接线由选择owner维护。
+
+## 实际设备验收准备
+
+接续`42186dbed22c9c70cf0d22285afe4698c97bc714`，输入驻留owner承接实际Torch、完整CLIP、Ray生命周期、
+CUDA完成及物理内存核验。当前IMLane/图像baseline先执行，本项继续完成[最小单卡计划](../../../plans/数据组织.md#clip-input-device-validation)
+与独立审核；单/双卡实测和设备间直接搬运状态分别登记，不把计划或CPU替身当作物理证据。
+
+2026-10-14 08:28 UTC只读核对：1张RTX4090、设备总显存24,564 MiB、已用1 MiB、GPU利用率0%；
+CPU quota16，共享lease不存在，未见Ray/模型进程。已有COCO val2017共5,000 JPEG、CLIP权重605,247,071 bytes。
+driver的Torch2.12.1+cu130、torchvision0.27.1+cu130、Transformers5.14.1、Ray2.56.1、Daft0.7.21可复用；
+这次快照没有启动模型、建立CUDA context或取得执行lease。依赖/资产与图像owner固定CLI的准备记录对齐，
+实际开跑前仍核对其baseline结果、runtime preflight和资产摘要。
+
+正常缓存完成从全设备同步改为当次current-stream CUDA事件等待，事件/引用在确认失败后继续持有；
+未知恢复仍使用明确的设备完成确认。相关24项CPU替身检查通过，CUDA事件用法依据
+[PyTorch 2.12 Event API](https://docs.pytorch.org/docs/2.12/generated/torch.cuda.Event.html)，尚未在设备上执行。
+主off/on比较使用完整5,000图与已有dataset_passes，单独保留无重复输入成本及0-hit结果；
+主计时不启用逐阶段全设备同步，CUDA阶段事件诊断另跑，全部hash、拷贝、管理、forward及完整返回计入原operator耗时。
+原CLI最终审计摘要、文件落盘和worker/Ray退出另列，wrapper的整次调用墙钟同时保留，不能将两种口径混用。
+Torch allocated/reserved/峰值、NVML设备总体与缓存逻辑bytes分别记录；详细参数、累计工作上限及停止方式由上述计划维护。
+
+验收工具[`validate_clip_input_residency.py`](../../../../code/scripts/profiling/validate_clip_input_residency.py)
+分别提供实际64图资格、仅SemLoom的原CLI wrapper和只读拓扑声明。wrapper没有改变原厂商代码或标准builder，
+缓存off/on均调用完整forward，模型和processor从已有本地目录离线加载。
+[准备机器记录](device_preparation.json)保存本轮120项本地检查与实际载入源码摘要；独立审查覆盖24项生产fixture、
+11项不写文件的工具fixture及未完成/已完成事件快照，写者完整13项工具测试通过，各组有重叠。
+当前实际Ray/cloudpickle/Torch/CUDA仍pending。09:04 UTC只读确认先行图像15次调用complete、进程退出已确认、
+原lease已释放且当前无GPU/Ray进程；后续以执行时的原子lease领取为准，不从空闲快照推断已获执行名额。

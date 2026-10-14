@@ -55,6 +55,8 @@ class _Torch:
         self.cuda = self
         self.conversions = self.fences = 0
         self.fail_fence = self.fail_conversion = False
+        self.global_fences = self.event_fences = 0
+        self.recorded_streams = []
 
     def as_tensor(self, values, dtype, device):
         self.conversions += 1
@@ -67,9 +69,29 @@ class _Torch:
         return contextlib.nullcontext()
 
     def synchronize(self, _device=None):
+        self.global_fences += 1
+        self._fence()
+
+    def event_synchronize(self):
+        self.event_fences += 1
+        self._fence()
+
+    def _fence(self):
         self.fences += 1
         if self.fail_fence:
             raise RuntimeError("device fence unavailable")
+
+    def current_stream(self, device):
+        return "stream-for-" + device
+
+    def Event(self):
+        owner = self
+        class Event:
+            def record(self, stream):
+                owner.recorded_streams.append(stream)
+            def synchronize(self):
+                owner.event_synchronize()
+        return Event()
 
 
 class _Model:
@@ -241,7 +263,7 @@ class ReusableClipTests(unittest.TestCase):
         clock = [0.0]
         def fence(_device=None):
             clock[0] += 2.0
-        actor._torch.synchronize = fence
+        actor._torch.event_synchronize = fence
         with patch("src.modalities.image.reusable_clip.time.perf_counter", lambda: clock[0]):
             result = actor.embed(self.batch())
         self.assertEqual(result.service_s, 2.0)
@@ -251,7 +273,7 @@ class ReusableClipTests(unittest.TestCase):
         for interruption in (asyncio.CancelledError(), KeyboardInterrupt()):
             with self.subTest(interruption=type(interruption).__name__):
                 actor = self.actor()
-                with patch.object(actor._torch, "synchronize", side_effect=interruption):
+                with patch.object(actor._torch, "event_synchronize", side_effect=interruption):
                     with self.assertRaises(type(interruption)):
                         actor.embed(self.batch())
                 snapshot = actor.input_residency_snapshot()
@@ -263,6 +285,14 @@ class ReusableClipTests(unittest.TestCase):
                 self.assertEqual(actor.input_residency_snapshot().held_references, 0)
                 actor.embed(self.batch())
                 self.assertEqual(actor.input_residency_snapshot().held_references, 0)
+
+    def test_normal_reuse_confirms_only_its_actor_stream(self):
+        actor = self.actor()
+        actor.embed(self.batch())
+        actor.embed(self.batch())
+        self.assertEqual((actor._torch.global_fences, actor._torch.event_fences), (0, 2))
+        self.assertEqual(actor._torch.recorded_streams, ["stream-for-cuda", "stream-for-cuda"])
+        self.assertIsNone(actor._input_completion_event)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "scope": "device validation preparation only; no actual Ray/Torch/GPU execution",
+  "base_residency_commit": "42186dbed22c9c70cf0d22285afe4698c97bc714",
+  "python_version": "3.12.6",
+  "local_tests": {
+    "run": 120,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "log": "tmp/hse-input-residency/device-local-tests.log"
+  },
+  "independent_review": {
+    "production_fixture_tests": 24,
+    "probe_no_file_tests": 11,
+    "event_snapshot_check": true,
+    "required_fixes_remaining": [],
+    "actual_libraries_verified": false
+  },
+  "source_sha256": {
+    "code/src/modalities/image/reusable_clip.py": "d0408a67d739c667a17a7121fa8c7dd31977acf92a6a01130882ff25cdf3a694",
+    "code/scripts/profiling/validate_clip_input_residency.py": "980bd458514fd922b961d4180ec453bac50f250573c6195cc7b0bc2ce1671718",
+    "code/tests/modalities/image/test_reusable_clip.py": "76f419eda8a001570c9a3fdca30c641442b8e617bc609d72379be6a9f91937b3",
+    "code/tests/modalities/image/test_clip_input_residency_validation.py": "f34ab2199d43c80d58c0adb6a207efe199df2b419bdb27c775b44fdbf3e886a2"
+  },
+  "actual_execution_status": "pending shared host lease after current baselines",
+  "future_two_gpu": {
+    "direct_transfer_implemented": false,
+    "locality_estimate": null,
+    "fallback": "host_reload_on_destination"
+  }
+}

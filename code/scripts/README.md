@@ -1,5 +1,15 @@
 # SemLoom 脚本入口
 
+## CLIP输入驻留的实际验收
+
+[`profiling/validate_clip_input_residency.py`](profiling/validate_clip_input_residency.py)有三个显式模式：
+`qualify`以固定清单前64张真实JPEG验证实际Torch/完整CLIP输出及Ray取消/未知完成责任；
+`wrap`只观察原图像CLI的单GPU `project_ray`，保存输入缓存、allocator与设备总体内存，CUDA事件可单独启用；
+`topology`只检查设备及双向peer-access声明，不实现设备间搬运。`--help`和`--preview`不导入模型SDK。
+模型与processor要求已有本地目录，观测/embedding文件不覆盖旧结果。资源、完整任务和交错次序以
+[实际单卡计划](../../experiments/plans/数据组织.md#clip-input-device-validation)为准；运行前执行原runtime preflight，
+外层协调器取得空闲共享lease并确认自身进程实际退出。工具本身不授予服务器执行名额。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

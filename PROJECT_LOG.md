@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-14：准备输入驻留的真实单卡验收
+
+[实际验收工具](code/scripts/profiling/validate_clip_input_residency.py)使用固定图像CLI和64张真实JPEG资格，
+对照完整5,000图的无重复/已有重复输入，保留off/on全部值和0-hit成本；独立CUDA-event诊断与原operator时间分列。
+正常缓存完成改为当次stream事件，未知恢复仍由owner显式同步。120项本地检查及独立源码/计划审查通过。
+当前仅只读核对单4090/CPU quota16与既有资产；共享lease仍按baseline优先串行取得，实际库、模型和物理内存证据待运行。
+源码来源、有限调用清单、失败保留和退出责任见[单卡计划](experiments/plans/数据组织.md#clip-input-device-validation)及[驻留报告](experiments/results/diagnostics/hse_input_residency_20261014/README.md)。
+
 ## 2026-10-14：默认关闭的CLIP actor输入驻留组件
 
 从A的`d307bb92`独立添加[输入复用与只读代价](experiments/results/diagnostics/hse_input_residency_20261014/README.md)，

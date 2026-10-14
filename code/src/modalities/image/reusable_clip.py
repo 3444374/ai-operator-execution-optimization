@@ -47,6 +47,7 @@ class ReusableClipTensorActor(ClipTensorActor):
         self._input_element_bytes = {"float16": 2, "float32": 4, "bfloat16": 2}.get(
             kwargs.get("dtype", "float16"))
         self._active_input = None
+        self._input_completion_event = None
         self._last_input_observation = None
         super().__init__(model_revision, **kwargs)
 
@@ -67,6 +68,7 @@ class ReusableClipTensorActor(ClipTensorActor):
     def synchronize(self) -> None:
         super().synchronize()
         self._inputs.confirm_synchronized()
+        self._input_completion_event = None
 
     def embed(self, batch):
         if not self._cache_enabled:
@@ -139,7 +141,7 @@ class ReusableClipTensorActor(ClipTensorActor):
         if lease is None and not self._inputs.snapshot().reserved_bytes:
             return
         try:
-            super().synchronize()
+            self._confirm_input_completion()
         except BaseException as error:
             if lease is not None:
                 self._inputs.mark_unknown(lease)
@@ -154,3 +156,19 @@ class ReusableClipTensorActor(ClipTensorActor):
                 self._inputs.release(lease, retain=succeeded)
             self._inputs.confirm_synchronized()
             self._active_input = None
+            self._input_completion_event = None
+
+    def _confirm_input_completion(self):
+        """Fence this serial CLIP call's stream, retaining its event on error.
+
+        CLIP and input conversion run on the actor's current Torch stream. A
+        stream event avoids waiting for unrelated device work on every normal
+        call. Explicit synchronize remains the recovery fence for unknown work.
+        """
+        if self._device.startswith("cuda"):
+            event = self._torch.cuda.Event()
+            self._input_completion_event = event
+            event.record(self._torch.cuda.current_stream(self._device))
+            event.synchronize()
+        else:
+            super().synchronize()
