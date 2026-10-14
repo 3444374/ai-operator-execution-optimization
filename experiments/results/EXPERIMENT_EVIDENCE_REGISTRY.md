@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-14：[原Movie任务完成期限兼容](postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。
+
 2026-10-14：[LOTUS PNG 参数](diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)在`e50dd2b9`后可选接纳；
 融合版本地103项全通过，保留关闭／未知责任、默认容量与拒复用，补观测取消首错及清理错误优先级。
 固定`eab9f11a`的Direct／HSE两12图及四256图格保存30矩阵／24完整原生查询，固定字节容量及退出检查通过。
@@ -9,7 +11,11 @@
 2026-10-14：[文本 Ray Data 默认／详细计时清理差异修补](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)。
 基于固定`da379b2577118d58b890cff3fca6400af7bda8f2`，实际导入仓库函数复现首错被close替换、shutdown跳过及Iterable未关闭实际iterator。
 最终本地定向57通过／1缺Ray导入跳过，审查发现的次错交接与异常notes自复制反例已修复；修前失败及源码摘要保留。
-较早修订的共享计时42项与24次localhost替身POST独立记录，不合计为最终源码或真实Ray资格；模型／GPU0，实库最小计划待统一排队。
+较早修订的共享计时42项与24次localhost替身POST独立记录，不合计为最终源码或真实Ray资格。
+接续固定`1d6453d`的[限定实库核验](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)：
+Ray2.56.1／Arrow24.0.0、393份输入前后匹配，唯一四图／8次localhost POST、4 CPU／0模型／0GPU。
+预定清理／writer故障首错与notes通过，查询仍non-clean／unconfirmed拒绝复用；controller及60份已登记自有出生身份absent、lease释放。
+4份可见计时文件46事件／22对span／2个注入未配对边界保持；不新增模型、GPU性能或活动worker ValueError组合资格。
 
 2026-10-14：[HSE源关闭核查](diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)：
 固定da379b完整函数的traceback／gc反例及修前16组失败保留；修后10模块102项本地替身通过，源关闭不代替actor／device完成证明。未运行服务器、真实SDK或模型。

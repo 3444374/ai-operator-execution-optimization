@@ -64,8 +64,8 @@ N/D/R/S沿C4／线程8，R actors2／async2／batch1，S workers2／batch2／hel
 
 ## 原件与独立重核
 
-- [质量核验JSON](quality-verification.json)、[质量原件公开包](quality-observations.tar.gz)、[成员摘要](quality-members-sha256.json)、[质量重核脚本](recompute_quality.py)。
-- [单卡与双卡部分核验JSON](performance-verification.json)、[完整观测公开包](performance-observations.tar.gz)、[成员摘要](performance-members-sha256.json)、[性能重核脚本](recompute_performance.py)。
+- [质量核验JSON](quality-verification.json)、[质量原件公开包](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/quality-observations.tar.gz)、[成员摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/quality-members-sha256.json)、[质量重核脚本](recompute_quality.py)。
+- [单卡与双卡部分核验JSON](performance-verification.json)、[完整观测公开包](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/performance-observations.tar.gz)、[成员摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/performance-members-sha256.json)、[性能重核脚本](recompute_performance.py)。
 - 所有Benchmark消息内容改为原SHA／字节数；编码请求同样处理，完整JSON模型响应保留。二进制SDK wire保留私有原件和摘要，公开不提供不可完整隐私扫描的二进制内容。480个质量成员／960个解码载荷，2815个性能成员／9120个解码载荷已检查，隐私命中0；原完整私有包和补充router trace下载保持，不重跑生成证据。
 
 首次性能导出的router trace因18.18MB超过单文件16MB导出限额而明确未导出，随后只读补取完整原件及摘要并并入公开包；原不足导出记录保持。公开源码1001个文件与固定3bd的Git blob逐字节核对，实际使用七个软件helper原摘要不变。

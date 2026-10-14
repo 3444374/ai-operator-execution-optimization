@@ -30,7 +30,7 @@ cached OpenAI revision 为 `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`。两个�
 使用单卡 RTX4090、FP32、512 维 projected／L2-normalized 完整输出，Torch 线程池 1／1。
 LOTUS1.2.4、SentenceTransformers3.4.1、Transformers4.57.6、Torch2.12.1+cu130、NumPy1.26.4、
 Pillow12.2.0、Faiss1.15.0；其他包按逐次原始观测记录。图库来自 COCO val2017 JPEG，先 eager RGB PIL
-解码，再无损 PNG 传入批次执行器。输入文件摘要见[公开源清单](source_manifest.json)，不保存图片或权重。
+解码，再无损 PNG 传入批次执行器。输入文件摘要见[公开源清单](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/source_manifest.json)，不保存图片或权重。
 stock 的外层 max_batch_size=64，原 ST encode 默认 batch_size=32；替换臂模型 batch_size=32。
 
 ## 公共接点与执行职责
@@ -124,7 +124,7 @@ Daft 后续 f2 的单次 256 图建索引为 33.247 秒、组合应用 35.124 �
 [精简原始观测](observations.json.gz)保留完整逐次时间、RM 计数、top10 输出与监督状态。
 [向量 NPZ](vectors.npz)按实际内容 SHA 无损去重，[逐运行映射](vector_map.json)可以恢复所有保存的完整矩阵；
 没有挑选有利元素或只比较截断输出。运行原件、命令、日志、原生 index／vecs、未公开的控制材料在独立
-artifact 目录保留；[原件映射](originals.json)按运行 ID、成员名、字节数与 SHA 定位，不上传私有大包。
+artifact 目录保留；[原件映射](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/originals.json)按运行 ID、成员名、字节数与 SHA 定位，不上传私有大包。
 
 首次 `lotus-retrieval-20261014-a` 在资产预检失败，源 tar 中的 macOS AppleDouble JSON sidecar 导致
 UnicodeDecodeError，未进入模型／GPU；原失败保留。新 source-b 排除该元数据，预检及实际 SDK 通过，

@@ -318,36 +318,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -447,36 +418,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -576,36 +518,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -705,36 +618,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -834,36 +718,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -963,36 +818,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1183,36 +1009,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1403,36 +1200,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1532,36 +1300,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1661,36 +1400,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1790,36 +1500,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -1919,36 +1600,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2048,36 +1700,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2177,36 +1800,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2306,36 +1900,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2435,36 +2000,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2655,36 +2191,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -2875,36 +2382,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3004,36 +2482,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3133,36 +2582,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3262,36 +2682,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3391,36 +2782,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3520,36 +2882,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "single-a",
@@ -3649,36 +2982,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-a"
     },
     {
       "cohort": "dual-a",
@@ -3783,36 +3087,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -3917,36 +3192,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4051,36 +3297,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4185,36 +3402,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4410,36 +3598,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4635,36 +3794,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4769,36 +3899,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -4903,36 +4004,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5037,36 +4109,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5171,36 +4214,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5305,36 +4319,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5439,36 +4424,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5573,36 +4529,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5707,36 +4634,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5841,36 +4739,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -5975,36 +4844,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6109,36 +4949,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6243,36 +5054,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6468,36 +5250,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6693,36 +5446,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6827,36 +5551,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -6961,36 +5656,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -7095,36 +5761,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-a",
@@ -7229,36 +5866,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-a",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-a"
     },
     {
       "cohort": "dual-b",
@@ -7363,36 +5971,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -7497,36 +6076,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -7722,36 +6272,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -7947,36 +6468,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8081,36 +6573,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8215,36 +6678,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8349,36 +6783,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8483,36 +6888,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8617,36 +6993,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8751,36 +7098,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -8885,36 +7203,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9019,36 +7308,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9153,36 +7413,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9287,36 +7518,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9421,36 +7623,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9555,36 +7728,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9689,36 +7833,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9823,36 +7938,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -9957,36 +8043,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -10091,36 +8148,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -10316,36 +8344,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -10541,36 +8540,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -10675,36 +8645,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "dual-b",
@@ -10809,36 +8750,7 @@
           "generation": 240.0
         }
       },
-      "group": "dual-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "dual-b"
     },
     {
       "cohort": "single-b",
@@ -10938,36 +8850,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11067,36 +8950,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11196,36 +9050,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11325,36 +9150,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11454,36 +9250,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11583,36 +9350,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11712,36 +9450,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -11841,36 +9550,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12061,36 +9741,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12281,36 +9932,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12410,36 +10032,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12539,36 +10132,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12668,36 +10232,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -12797,36 +10332,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13017,36 +10523,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13237,36 +10714,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13366,36 +10814,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13495,36 +10914,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13624,36 +11014,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13753,36 +11114,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -13882,36 +11214,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -14011,36 +11314,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -14140,36 +11414,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     },
     {
       "cohort": "single-b",
@@ -14269,36 +11514,7 @@
           "generation": 480.0
         }
       },
-      "group": "single-b",
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      }
+      "group": "single-b"
     }
   ],
   "slots_observed": [
@@ -16299,5 +13515,6 @@
     "response_wires_omitted": 9600,
     "decoded_fields_scanned": 15360
   },
-  "private_archive_sha256": "54460bd4addac05cea25692d623b2e17622a58d61c61fc5df88ae053866c9448"
+  "private_archive_sha256": "54460bd4addac05cea25692d623b2e17622a58d61c61fc5df88ae053866c9448",
+  "units_share_quality": true
 }

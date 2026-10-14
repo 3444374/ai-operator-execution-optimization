@@ -6,6 +6,9 @@ import math
 import tarfile
 from collections import Counter, defaultdict
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, read_json, open_archive
 
 from recompute_phases import ARMS, query_fact, mean
 
@@ -216,12 +219,12 @@ def main():
     parser.add_argument('--write',type=Path)
     args=parser.parse_args()
     root=args.result_dir
-    proof=json.loads((root/'matched-verification.json').read_text())
+    proof=read_json(root/'matched-verification.json')
     path=root/'matched-observations.tar.gz'
-    assert hashlib.sha256(path.read_bytes()).hexdigest()==proof['public_archive']['sha256']
-    with tarfile.open(path) as archive:
+    assert hashlib.sha256(read_bytes(path)).hexdigest()==proof['public_archive']['sha256']
+    with open_archive(path) as archive:
         raw={m.name:archive.extractfile(m).read() for m in archive if m.isfile()}
-    manifest=json.loads((root/'matched-members-sha256.json').read_text())
+    manifest=read_json(root/'matched-members-sha256.json')
     restoring=set()
     def restore(name):
         if name in raw:return raw[name]

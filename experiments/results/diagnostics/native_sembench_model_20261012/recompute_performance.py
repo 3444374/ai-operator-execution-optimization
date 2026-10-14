@@ -2,11 +2,14 @@
 import base64,hashlib,json,tarfile
 from collections import Counter,defaultdict
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, read_json, open_archive
 
 ROOT=Path(__file__).resolve().parent
-proof=json.loads((ROOT/'performance-verification.json').read_text());manifest=json.loads((ROOT/'performance-members-sha256.json').read_text());archive=ROOT/'performance-observations.tar.gz'
-assert hashlib.sha256(archive.read_bytes()).hexdigest()==proof['public_archive']['sha256']
-with tarfile.open(archive) as t:raw={m.name:t.extractfile(m).read() for m in t if m.isfile()}
+proof=read_json(ROOT/'performance-verification.json');manifest=read_json(ROOT/'performance-members-sha256.json');archive=ROOT/'performance-observations.tar.gz'
+assert hashlib.sha256(read_bytes(archive)).hexdigest()==proof['public_archive']['sha256']
+with open_archive(archive) as t:raw={m.name:t.extractfile(m).read() for m in t if m.isfile()}
 assert set(raw)==set(manifest['members'])
 for n,m in manifest['members'].items():assert hashlib.sha256(raw[n]).hexdigest()==m['public_sha256'],n
 load=lambda n:json.loads(raw[n]);rows=lambda n:[json.loads(l) for l in raw[n].splitlines()]

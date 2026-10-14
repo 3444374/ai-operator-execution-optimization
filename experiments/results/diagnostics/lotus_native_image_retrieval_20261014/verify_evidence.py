@@ -1,5 +1,8 @@
 """Recompute complete vectors, original row IDs and native top-K from compact evidence."""
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, read_json, open_archive
 import gzip
 import hashlib
 import json
@@ -10,8 +13,8 @@ import numpy as np
 def verify(directory):
     directory = Path(directory)
     evidence = json.loads(gzip.decompress((directory / "observations.json.gz").read_bytes()))
-    mapping = json.loads((directory / "vector_map.json").read_text())["runs"]
-    manifest = json.loads((directory / "source_manifest.json").read_text())["entries"]
+    mapping = read_json(directory/"vector_map.json")["runs"]
+    manifest = read_json(directory/"source_manifest.json")["entries"]
     arrays = np.load(directory / "vectors.npz", allow_pickle=False)
     for name in arrays.files:
         value = arrays[name]
@@ -83,7 +86,7 @@ def verify(directory):
 
 def verify_png_candidate(directory, evidence, mapping, arrays, manifest):
     """Check the separate candidate using exact restored matrices and native output."""
-    candidate = json.loads((directory / "png_candidate.json").read_text())
+    candidate = read_json(directory/"png_candidate.json")
     review_path = directory / "png_candidate_independent_review.json"
     if review_path.exists():
         review = json.loads(review_path.read_text())

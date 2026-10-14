@@ -7,6 +7,9 @@ import re
 import tarfile
 from collections import defaultdict
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, read_json, open_archive
 
 SOURCE_HEAD = '3bd5358706679b639e790585347133cd8d60b836'
 ARMS = ['lotus-adapted-native', 'lotus-method-native-daft', 'lotus-method-native-ray-data',
@@ -25,8 +28,8 @@ METRICS = {key: 'vllm:'+name+'_seconds' for key, name in {
 
 
 def archive(path, digest):
-    assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, path.name
-    with tarfile.open(path) as source:
+    assert hashlib.sha256(read_bytes(path)).hexdigest() == digest, path.name
+    with open_archive(path) as source:
         return {member.name: source.extractfile(member).read() for member in source if member.isfile()}
 
 
@@ -160,13 +163,13 @@ def mean(values):
 
 def analyse(root):
     original = root.parent/'native_sembench_model_20261012'
-    proofs = [json.loads((directory/name).read_text()) for directory, name in [
+    proofs = [read_json(directory/name) for directory, name in [
         (original, 'performance-verification.json'), (root, 'supplement-verification.json'), (root, 'sr-verification.json')]]
     names = ['original', 'first_supplement', 'sr_supplement']
     paths = [original/'performance-observations.tar.gz', root/'supplement-observations.tar.gz', root/'sr-observations.tar.gz']
     raws = [archive(path, proof['public_archive']['sha256']) for path, proof in zip(paths, proofs)]
     physical_counts = [len(raw) for raw in raws]
-    manifest = json.loads((root/'sr-members-sha256.json').read_text())
+    manifest = read_json(root/'sr-members-sha256.json')
     assert manifest['reused_archive']['sha256'] == proofs[1]['public_archive']['sha256']
     for name, item in manifest['members'].items():
         storage = item['storage']
@@ -262,7 +265,7 @@ def main():
     if args.write:
         args.write.write_text(json.dumps(actual, ensure_ascii=False, indent=2)+'\n')
     else:
-        assert actual == json.loads((args.result_dir/'stage-analysis.json').read_text())
+        assert actual == read_json(args.result_dir/'stage-analysis.json')
     print(json.dumps({'passed': True, 'retained_queries': len(actual['units']), 'warmups': 36,
                       'measurements': 36, 'slots': len(actual['slots']), 'cohorts': 3,
                       'new_model_or_network_calls': 0, 'source_head': SOURCE_HEAD}))

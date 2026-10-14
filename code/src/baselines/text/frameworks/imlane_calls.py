@@ -215,9 +215,10 @@ class IMLaneCallExecutor:
     def _iter_batch(self, calls, *, cancelled=None, timeout_s=120):
         self.last_close_report = self.last_preflight = None
         self.delegate.last_close_report = None
-        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
-            raise ValueError('IMLane batch timeout must be at most 120 seconds')
-        deadline = time.monotonic() + timeout_s
+        if (timeout_s is None and self.config.reuse_bridge or timeout_s is not None and (
+                type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120)):
+            raise ValueError('IMLane requires a finite session deadline or supervised per-batch completion')
+        deadline = None if timeout_s is None else time.monotonic() + timeout_s
         calls = tuple(calls)
         self.last_preflight = self.limits.inspect_calls(calls, include_wire=False)
         report = dict(clean=False, graph_consumer_stopped=True, prepared=len(calls), received=0,
@@ -237,8 +238,8 @@ class IMLaneCallExecutor:
             raise RuntimeError('author work is unsettled; explicit owner cleanup required')
         self._facts = verify_coordinator(self.config, self.delegate.config)
         report.update(self._facts)
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
+        remaining = None if deadline is None else deadline - time.monotonic()
+        if remaining is not None and remaining <= 0:
             raise TimeoutError('IMLane preparation used the batch deadline')
         iterator = self.delegate.iter_batch(calls, cancelled=cancelled, timeout_s=remaining)
         primary = None

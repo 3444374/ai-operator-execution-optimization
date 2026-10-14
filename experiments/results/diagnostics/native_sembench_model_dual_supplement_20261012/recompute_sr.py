@@ -4,6 +4,9 @@ import json
 import tarfile
 from collections import Counter, defaultdict
 from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, read_json, open_archive
 
 SOURCE_HEAD = '3bd5358706679b639e790585347133cd8d60b836'
 EXPECTED = [(2, 4, 3), (2, 5, 2)]
@@ -191,16 +194,16 @@ def audit(raw, original=False):
 
 def main():
     root = Path(__file__).resolve().parent
-    proof = json.loads((root / 'sr-verification.json').read_text())
-    manifest = json.loads((root / 'sr-members-sha256.json').read_text())
+    proof = read_json(root/'sr-verification.json')
+    manifest = read_json(root/'sr-members-sha256.json')
     members = manifest['members']
     archive = root / 'sr-observations.tar.gz'
-    assert hashlib.sha256(archive.read_bytes()).hexdigest() == proof['public_archive']['sha256']
-    with tarfile.open(archive) as source:
+    assert hashlib.sha256(read_bytes(archive)).hexdigest() == proof['public_archive']['sha256']
+    with open_archive(archive) as source:
         raw = {m.name: source.extractfile(m).read() for m in source if m.isfile()}
     source_archive = root / manifest['reused_archive']['path']
-    assert hashlib.sha256(source_archive.read_bytes()).hexdigest() == manifest['reused_archive']['sha256']
-    with tarfile.open(source_archive) as source:
+    assert hashlib.sha256(read_bytes(source_archive)).hexdigest() == manifest['reused_archive']['sha256']
+    with open_archive(source_archive) as source:
         shared = {m.name: source.extractfile(m).read() for m in source if m.isfile()}
     for name, value in members.items():
         storage = value['storage']

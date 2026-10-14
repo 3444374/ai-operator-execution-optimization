@@ -18,6 +18,7 @@ from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.execution_timing import timed_call
 from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 from .persistent_native_adapter_query import PersistentAdapterGroup
+from .query_deadline import validate_owner_timeouts
 from .sembench_queries import LOTUS_MOVIE_ARMS, MovieDataset, MovieQuery, MOVIE_MANIFEST_DIGEST
 from .supplier_adapter_query import validate_lotus_observation_mode
 
@@ -96,6 +97,8 @@ def preflight(config):
     imlane = _imlane_configs(config)
     for arm in config['arms']:
         selected = imlane_config_for_arm(arm, imlane)
+        if config['query_timeout_s'] is None and selected is not None and selected.reuse_bridge:
+            raise ValueError('reusable IMLane bridge sessions require a finite batch deadline')
         for q in config['queries']:
             MovieQuery(dataset, q).check_executor_shape(arm, rows, imlane_config=selected)
     options = NativeGraphOptions(**config['native_options'])
@@ -103,8 +106,8 @@ def preflight(config):
     model = load_fixed_model_config(_env_path(config['model_config_env']))
     if not model.endpoint_url.endswith('/chat/completions'):
         raise ValueError('original LOTUS requires an explicit OpenAI chat endpoint')
-    if not 0 < config['query_timeout_s'] <= 120 or not config['query_timeout_s']+120 < config['owner_timeout_s'] <= 1800:
-        raise ValueError('owner duration must include the existing 120-second cleanup reserve')
+    validate_owner_timeouts(config['query_timeout_s'], config['owner_timeout_s'],
+                            completion_allowed=all(arm in LOTUS_MOVIE_ARMS for arm in config['arms']))
     expected = sum(len(MovieQuery(dataset, q).model_rows(rows)) for q in config['queries'])
     expected *= len(config['arms'])*(config['warmups']+config['repeats'])
     if config['max_attempts'] != expected:
@@ -163,9 +166,9 @@ def run(config):
     new_private_directory(output)
     write_private_json(output/'preflight.json', redact_json_values(evidence))
     write_private_json(output/'config.json', config)
-    duration = config['owner_timeout_s']*len(config['arms'])+120
+    duration = None if config['owner_timeout_s'] is None else config['owner_timeout_s']*len(config['arms'])+120
     ledger = CellBudgetLedger.create(output/'budget.sqlite', AttemptBudget('sembench-movie', config['max_attempts']),
-                                    deadline_utc=time.time()+duration)
+                                    deadline_utc=None if duration is None else time.time()+duration)
     result = dict(schema='semloom.sembench_lotus_matrix.v1', status='failed', cells=[],
                   model_execution='caller-declared external service; inspect separate model evidence',
                   source_identity=evidence, performance_qualified=False)

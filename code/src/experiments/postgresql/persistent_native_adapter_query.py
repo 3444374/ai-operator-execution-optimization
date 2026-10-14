@@ -9,6 +9,8 @@ import threading
 import time
 import uuid
 
+from .query_deadline import validate_owner_timeouts
+
 from src.baselines.common.private_artifacts import new_private_directory, open_private_text, write_private_json
 from src.baselines.common.redact import redact_json_values
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
@@ -50,7 +52,8 @@ class _ArmOwner:
             self.gateway = self._enter_component(ObservationGateway(
                 routes=(GatewayRoute(self.identity, 'model', group.model.endpoint_url),),
                 trace_path=self.root / 'http-trace.jsonl',
-                request_timeout_s=min(group.query_timeout_s, group.model.timeout_ms/1000),
+                request_timeout_s=(group.model.timeout_ms/1000 if group.query_timeout_s is None
+                                   else min(group.query_timeout_s, group.model.timeout_ms/1000)),
                 preserve_http=arm.startswith(('lotus-','duckdb-')),
                 before_forward=self.before, after_forward=self.after,
                 query_identity=lambda: self.binding['unit_id'] if self.binding else None), 'owner_gateway_close')
@@ -64,7 +67,7 @@ class _ArmOwner:
             if 'semloom' in arm and not arm.startswith('sema-'):
                 self.execution = build_native_execution(self.model, physical=self.physical,
                     max_tasks=group.max_held_tasks, max_active_requests=group.options.concurrency,
-                    observer=self.observe, timeouts=SessionTimeouts(backend_s=max(45, group.query_timeout_s)))
+                    observer=self.observe, timeouts=SessionTimeouts(backend_s=120 if group.query_timeout_s is None else max(45, group.query_timeout_s)))
                 self.stack.callback(self._close_errors.attempt, 'owner_execution_close',
                                     lambda: _drain_execution(self.execution))
             elif arm in ('sema-method-semloom-request-service','sema-method-semloom-local-diagnostic') and group.sema_executor_scope == 'group-diagnostic':
@@ -250,8 +253,6 @@ class PersistentAdapterGroup:
         self.lotus_observation_mode=validate_lotus_observation_mode(lotus_observation_mode)
         if lotus_observation_mode!='qualification' and not any(arm.startswith('lotus-') for arm in self.arms):
             raise ValueError('LOTUS performance observation requires a LOTUS arm')
-        if not 0 < query_timeout_s <= 120 or not query_timeout_s+120 < owner_timeout_s <= 1800:
-            raise ValueError('query and owner durations must leave 120 seconds for final cleanup')
         self.plan, self.model, self.ledger = plan, model, ledger
         self.sembench_dataset = sembench_dataset
         if sembench_dataset is not None:
@@ -259,6 +260,8 @@ class PersistentAdapterGroup:
             if (type(sembench_dataset) is not MovieDataset or any(a not in LOTUS_MOVIE_ARMS for a in self.arms)
                     or plan.max_tokens != 8 or stages is not None):
                 raise ValueError('original Movie owners require the selected dataset and Filter generation')
+        validate_owner_timeouts(query_timeout_s, owner_timeout_s,
+                                completion_allowed=sembench_dataset is not None)
         self.root, self.options, self.physical = Path(root), options, physical
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
         self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
@@ -266,7 +269,9 @@ class PersistentAdapterGroup:
             if (arm == 'fixed-map-native-ray' or NATIVE_SUPPLIER_BACKENDS.get(arm) == 'ray-data'
                     or SEMA_NATIVE_ARMS.get(arm) == 'ray-data'):
                 options.validate_backend('ray-data')
-            imlane_config_for_arm(arm,self.imlane_call_configs)
+            selected_imlane = imlane_config_for_arm(arm,self.imlane_call_configs)
+            if query_timeout_s is None and selected_imlane is not None and selected_imlane.reuse_bridge:
+                raise ValueError('reusable IMLane bridge sessions require a finite batch deadline')
             validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs)
         self.imlane_config = imlane_config
         if sema_executor_scope not in ('query', 'group-diagnostic'):
@@ -298,7 +303,7 @@ class PersistentAdapterGroup:
         if self.sembench_dataset is not None:
             self.sembench_preflight = self.sembench_dataset.preflight()
         self.started_ns = time.monotonic_ns()
-        self.deadline = time.monotonic()+self.owner_timeout_s
+        self.deadline = None if self.owner_timeout_s is None else time.monotonic()+self.owner_timeout_s
         new_private_directory(self.root)
         try:
             with timing_span('owner.startup'):
@@ -355,7 +360,7 @@ class PersistentAdapterGroup:
         with self._lock:
             if self.poisoned or arm not in self.owners or unit_id in self.used_units:
                 raise RuntimeError('persistent group stopped or query identity already used')
-            if time.monotonic()+self.query_timeout_s+120 >= self.deadline:
+            if self.deadline is not None and time.monotonic()+self.query_timeout_s+120 >= self.deadline:
                 raise TimeoutError('persistent group cannot fit another query and final cleanup')
             self.used_units.add(unit_id)
             owner = self.owners[arm]

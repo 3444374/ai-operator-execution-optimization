@@ -10,11 +10,14 @@ import multiprocessing as mp
 import os
 import sqlite3
 import statistics
-import tarfile
+import sys
 import tempfile
 import time
 from pathlib import Path
 from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retained_evidence import read_bytes, open_archive
 
 SOURCE_SHA = 'a32a7f57b7cc5b6733411e8518fa5ffbe980c713aff05014077042f691dba7a2'
 WORKERS, PER_WORKER = 4, 24
@@ -65,7 +68,7 @@ def context(root, records):
         source=Path(fixed).read_bytes()
         assert hashlib.sha256(source).hexdigest()==os.environ['SEMLOOM_LEDGER_FIXED_SHA']
     else:
-        with tarfile.open(os.environ['SEMLOOM_LEDGER_SOURCE_ARCHIVE']) as bundle:
+        with open_archive(Path(os.environ['SEMLOOM_LEDGER_SOURCE_ARCHIVE'])) as bundle:
             source = bundle.extractfile('validation/pre_send_ledger.py').read()
         assert hashlib.sha256(source).hexdigest() == SOURCE_SHA
     functions = [node for node in ast.parse(source).body if isinstance(node, ast.FunctionDef)
@@ -240,7 +243,7 @@ def main():
     parser.add_argument('--compare',action='store_true')
     args=parser.parse_args()
     source_archive=args.result_dir/'supplement-observations.tar.gz'
-    assert hashlib.sha256(source_archive.read_bytes()).hexdigest()=='8450aeb1521d9142e3ee200088daa5d55e7fc3a410d9117c85c18a7d5d85335e'
+    assert hashlib.sha256(read_bytes(source_archive)).hexdigest()=='8450aeb1521d9142e3ee200088daa5d55e7fc3a410d9117c85c18a7d5d85335e'
     os.environ['SEMLOOM_LEDGER_SOURCE_ARCHIVE']=str(source_archive.resolve())
     for key in ['SEMLOOM_LEDGER_FIXED_HELPER','SEMLOOM_LEDGER_FIXED_SHA','SEMLOOM_LEDGER_COUNTER_SOURCE','SEMLOOM_LEDGER_COUNTER_SHA']:
         os.environ.pop(key,None)

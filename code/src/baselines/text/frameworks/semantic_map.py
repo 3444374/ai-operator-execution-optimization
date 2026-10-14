@@ -197,7 +197,7 @@ def _prepare_daft(values, plan, model, concurrency, num_threads):
     from daft.functions import prompt
     if daft.__version__ != '0.7.21':
         raise RuntimeError('semantic Map comparison requires Daft0.7.21')
-    # Native SDK thread settings belong to the process and cannot be set twice.
+    # Reuse the process-owned runner; reject conflicting thread settings.
     from src.infrastructure.daft_runtime import configure_daft_runner
     configure_daft_runner('native',num_threads=num_threads)
     provider = OpenAIProvider(base_url=model.endpoint_url.removesuffix('/chat/completions'),
@@ -257,9 +257,9 @@ def prepare_rows(role, values, plan, model, *, concurrency, num_threads=8,
     Source reads and raw relation construction finish before this context yields.
     Prompt assembly, native operators and their result iteration start only when
     execute() is consumed. No adapter scheduler or model warm-up is introduced.
-    Daft owns its process-wide thread configuration: use one prepare per fresh
-    driver and reuse execute(). A second prepare in that process is rejected by
-    the native SDK rather than silently accepting an unknown thread setting.
+    Daft shares one process-owned runner across adapters. Repeated prepare calls
+    reuse the same runner and thread configuration; conflicting configuration
+    is rejected before invoking native SDK setup again.
     """
     if role not in ROLES or type(concurrency) is not int or not 1 <= concurrency <= 64:
         raise ValueError('unsupported semantic Map role or native concurrency')

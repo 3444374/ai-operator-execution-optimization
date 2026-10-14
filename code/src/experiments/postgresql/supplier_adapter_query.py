@@ -263,7 +263,7 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
     context=stack.enter_context(lotus.settings.context(lm=lm,enable_cache=False))
     selected=None if execution is None else LotusBatchExecutor(execution,configured,
         query_id=unit_id,operator_id=operator,cancelled=stop.is_set,
-        prevalidate_batch=True,retain_full_responses=False)
+        timeout_s=query_timeout_s,prevalidate_batch=True,retain_full_responses=False)
     backend=NATIVE_SUPPLIER_BACKENDS.get(arm)
     if backend is not None:
         from src.baselines.text.frameworks.native_calls import NativeCallExecutor
@@ -496,6 +496,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                        imlane_call_configs=None,sembench_query=None,lotus_observation_mode='qualification'):
     if arm not in SUPPLIER_ARMS:
         raise ValueError('supplier arm has not been integrated')
+    if query_timeout_s is None and sembench_query is None:
+        raise ValueError('completion deadlines require an explicit original Movie query')
     validate_lotus_observation_mode(lotus_observation_mode)
     if lotus_observation_mode!='qualification' and not arm.startswith('lotus-'):
         raise ValueError('LOTUS performance observation requires a LOTUS arm')
@@ -620,7 +622,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                     summary['runtime']=runtime
             if owner is None:
                 gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
-                    trace_path=root/'http-trace.jsonl',request_timeout_s=min(query_timeout_s,model.timeout_ms/1000),
+                    trace_path=root/'http-trace.jsonl',request_timeout_s=model.timeout_ms/1000 if query_timeout_s is None else min(query_timeout_s,model.timeout_ms/1000),
                     preserve_http=arm.startswith(('lotus-','duckdb-')),
                     before_forward=before,after_forward=after))
                 routed=replace(model,endpoint_url=gateway.endpoint_url(unit_id,'model'))
@@ -637,7 +639,7 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                 with timing_span('semloom.executor_create'):
                     execution=build_native_execution(replace(routed,bearer_token=token),
                         physical=physical,max_tasks=held_tasks,max_active_requests=options.concurrency,
-                        observer=core_record,timeouts=SessionTimeouts(backend_s=max(45,query_timeout_s)))
+                        observer=core_record,timeouts=SessionTimeouts(backend_s=120 if query_timeout_s is None else max(45,query_timeout_s)))
                 def close_execution():
                     nonlocal execution
                     summary['core_cleanup']=dict(final_core_usage=asdict(execution.engine.capacity.usage()))

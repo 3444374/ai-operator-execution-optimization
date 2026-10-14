@@ -191,5 +191,23 @@
     "added_local_links_checked": 19,
     "wording_link_errors": 0,
     "git_diff_check": true
+  },
+  "original_movie_completion_integration": {
+    "patch_sha256": "cc83f60f63729dc6204a75dd7d218223c3579e183cc14b1a6f0292b562e8b537",
+    "historical_execution_base": "ab3d80e6789fd64392c6e7e955d17499f327c8e2",
+    "historical_derived_source": "64985b4e30107789816ab84aacd8d8cdf7ddc802b55c335827f6a598f8d8c7dc",
+    "historical_reporting_commit": "614c8e218685ee76ce7bb89078dfe908d79d3e0f",
+    "historical_helpers_identity_sha256": "39f8afc4ff1165ce5c10e5260d5010d4aca334e49ec319c0b4cc94c08ab38dc5",
+    "local_tests": {
+      "passed": 49,
+      "skipped": 0,
+      "localhost_synthetic_posts": 2,
+      "log_sha256": "f74b6d4488daa376c3e3efd75e6b5f97258f3bdb9f90df18652bc88d2861a4d3"
+    },
+    "new_actual_sdk_server_models_gpu": 0,
+    "default_finite_policy_preserved": true,
+    "nullable_policy_installs_supervisor": false,
+    "fresh_bounded_fault_supervision_required_for_long_run": true,
+    "closed_historical_supervisor_not_relaunched": true
   }
 }

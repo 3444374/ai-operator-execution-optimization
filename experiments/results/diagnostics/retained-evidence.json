@@ -1,0 +1,111 @@
+{
+  "schema": "semloom.retained_evidence.v1",
+  "scope": "Redundant expanded manifests, derived phase snapshot and full raw observations; final values and failure summaries remain in their reports.",
+  "network_on_read": false,
+  "files": {
+    "experiments/results/diagnostics/native_sembench_model_20261012/quality-members-sha256.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_20261012/quality-members-sha256.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 138446,
+      "sha256": "b6a97525b3210f1f28ee16ece6237c8863d20df50f3cf6af145ba9701b1d6452",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/quality-members-sha256.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/native_sembench_model_20261012/performance-members-sha256.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_20261012/performance-members-sha256.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 840771,
+      "sha256": "fa887bd5775785a700ae606bfdbb195e9383c705171f0fc00429681159200eb1",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/performance-members-sha256.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/native_sembench_model_20261012/quality-observations.tar.gz": {
+      "path": "experiments/results/diagnostics/native_sembench_model_20261012/quality-observations.tar.gz",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 1855969,
+      "sha256": "8b6df9b41c6277171c26bba342a049eea5c183b833b539c78fba5456497cf89f",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/quality-observations.tar.gz",
+      "kind": "raw_observations"
+    },
+    "experiments/results/diagnostics/native_sembench_model_20261012/performance-observations.tar.gz": {
+      "path": "experiments/results/diagnostics/native_sembench_model_20261012/performance-observations.tar.gz",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 14702136,
+      "sha256": "9fd4fffc25d5d33c9e4ce59324d54078589a2722df40de4147fc8ca4d01df618",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_20261012/performance-observations.tar.gz",
+      "kind": "raw_observations"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-members-sha256.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-members-sha256.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 207806,
+      "sha256": "ccbcfd2bffa5c42fad58e056974e108939f945e4edad76dc6d5ac9f8fed1f83c",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-members-sha256.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-members-sha256.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-members-sha256.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 85893,
+      "sha256": "667532cd46f11d9d4ac78bd61d453efccd134dfe088eb88e55e1b5401527148d",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-members-sha256.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-members-sha256.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-members-sha256.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 2087939,
+      "sha256": "e98a3ae625d7059ba1bf3116b92b83a360320e8df4a1b519f2e88b0d5e2ca0cc",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-members-sha256.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/stage-analysis.json": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/stage-analysis.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 291758,
+      "sha256": "28fad7183058dce8000fd41bbefe6de61fe9bceecaccdf48de3ca344ac8b7e98",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/stage-analysis.json",
+      "kind": "recomputable_phase_snapshot"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-observations.tar.gz": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-observations.tar.gz",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 2676085,
+      "sha256": "8450aeb1521d9142e3ee200088daa5d55e7fc3a410d9117c85c18a7d5d85335e",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-observations.tar.gz",
+      "kind": "raw_observations"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-observations.tar.gz": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-observations.tar.gz",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 1221772,
+      "sha256": "68e92915ba6156553f8ce557028d062e96e62306f66e9ebbcb111024159fcdb0",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-observations.tar.gz",
+      "kind": "raw_observations"
+    },
+    "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-observations.tar.gz": {
+      "path": "experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-observations.tar.gz",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 22818141,
+      "sha256": "9cfbce185a8c2e085a0579d4e7d6b6fd14200f6c93048f69d68591a2909a5d56",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-observations.tar.gz",
+      "kind": "raw_observations"
+    },
+    "experiments/results/diagnostics/lotus_native_image_retrieval_20261014/source_manifest.json": {
+      "path": "experiments/results/diagnostics/lotus_native_image_retrieval_20261014/source_manifest.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 47199,
+      "sha256": "ab9f4d5a50aeba92dc2e6355ae048a1d9436b424b3a8ae3f1c50376bc9164668",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/source_manifest.json",
+      "kind": "expanded_manifest"
+    },
+    "experiments/results/diagnostics/lotus_native_image_retrieval_20261014/originals.json": {
+      "path": "experiments/results/diagnostics/lotus_native_image_retrieval_20261014/originals.json",
+      "commit": "08e02fd00336164f940546e2fbb73e3f4773de4c",
+      "bytes": 44241,
+      "sha256": "4173152846d17e79d5ea8d5bf7f80ad1beb0c966a29c5fada33ec9a5bf876396",
+      "url": "https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/originals.json",
+      "kind": "expanded_manifest"
+    }
+  }
+}

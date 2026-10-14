@@ -659,15 +659,17 @@ class NativeCallExecutor:
                         self.last_close_report = dict(report, unconfirmed_work=self._unsettled,
                                                       reuse_allowed=not self._unsettled)
             return
-        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
-            raise ValueError("native complete-call batch timeout must be at most 120 seconds")
+        if (timeout_s is None and self.backend not in ("daft", "ray-data")
+                or timeout_s is not None and (type(timeout_s) not in (int, float)
+                or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120)):
+            raise ValueError("native complete-call batch requires a finite deadline or supervised vendor completion")
         calls = tuple(calls)
         if any(type(call) is not NativeCall for call in calls) or len({call.call_id for call in calls}) != len(calls):
             raise ValueError("native complete-call batch repeats or changes occurrence identity")
         if len(calls) > self.max_batch_rows or sum(len(call.payload) for call in calls) > self.max_batch_bytes:
             raise ValueError("native complete-call input batch exceeds its declared allowance")
         expected = {call.call_id: call.row_id for call in calls}
-        deadline = time.monotonic() + timeout_s
+        deadline = None if timeout_s is None else time.monotonic() + timeout_s
         self.last_close_report = None
         if not calls:
             return
@@ -713,10 +715,10 @@ class NativeCallExecutor:
             while True:
                 if cancelled and cancelled():
                     raise InterruptedError("native complete-call batch cancelled")
-                if time.monotonic() >= deadline:
+                if deadline is not None and time.monotonic() >= deadline:
                     raise TimeoutError("native complete-call batch deadline exceeded")
                 try:
-                    outcome = queue.get(timeout=min(0.01, max(0.001, deadline - time.monotonic())))
+                    outcome = queue.get(timeout=0.01 if deadline is None else min(0.01, max(0.001, deadline - time.monotonic())))
                 except Empty:
                     if not finished.is_set():
                         continue

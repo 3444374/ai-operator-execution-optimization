@@ -26,7 +26,8 @@ class LotusBatchExecutor:
                  session_factory=None, session_limits=None):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
-        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
+        if timeout_s is not None and (
+                type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120):
             raise ValueError("LOTUS batch timeout must be at most 120 seconds")
         if type(prevalidate_batch) is not bool or type(retain_full_responses) is not bool:
             raise ValueError("LOTUS preparation and retention choices must be boolean")
@@ -79,7 +80,7 @@ class LotusBatchExecutor:
         prepared_calls = {}
         sealed = False
         clean = False
-        deadline = time.monotonic() + self.timeout_s
+        deadline = None if self.timeout_s is None else time.monotonic() + self.timeout_s
         primary = None
         replay = LotusResponseReplay()
         def check_stop():
@@ -87,7 +88,7 @@ class LotusBatchExecutor:
                 if flow is not None:
                     flow.request_cancel()
                 raise RuntimeError("LOTUS batch cancelled")
-            if time.monotonic() >= deadline:
+            if deadline is not None and time.monotonic() >= deadline:
                 if flow is not None:
                     flow.request_cancel()
                 raise TimeoutError("LOTUS batch deadline exceeded")

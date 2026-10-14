@@ -78,35 +78,6 @@
       "ready_query_throughput_per_s": 22.751105199396527,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -206,35 +177,6 @@
       "ready_query_throughput_per_s": 26.890357517765786,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -334,35 +276,6 @@
       "ready_query_throughput_per_s": 19.31162687011304,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -461,35 +374,6 @@
       "ready_query_throughput_per_s": 26.34342020902745,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -588,35 +472,6 @@
       "ready_query_throughput_per_s": 5.521821340919437,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -869,35 +724,6 @@
       "ready_query_throughput_per_s": 9.507685947043097,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -1129,35 +955,6 @@
       "ready_query_throughput_per_s": 14.89579133405487,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -1367,35 +1164,6 @@
       "ready_query_throughput_per_s": 23.5096020531169,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -1605,35 +1373,6 @@
       "ready_query_throughput_per_s": 14.861990615127024,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -1739,35 +1478,6 @@
       "ready_query_throughput_per_s": 14.696140340942087,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -1873,35 +1583,6 @@
       "ready_query_throughput_per_s": 13.424485576976519,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2007,35 +1688,6 @@
       "ready_query_throughput_per_s": 14.46944459916166,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2141,35 +1793,6 @@
       "ready_query_throughput_per_s": 13.408266856919127,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2275,35 +1898,6 @@
       "ready_query_throughput_per_s": 14.18705899748779,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2409,35 +2003,6 @@
       "ready_query_throughput_per_s": 13.715013106855709,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2543,35 +2108,6 @@
       "ready_query_throughput_per_s": 14.34024689175734,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2677,35 +2213,6 @@
       "ready_query_throughput_per_s": 18.4803702431296,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -2915,35 +2422,6 @@
       "ready_query_throughput_per_s": 22.32791728182141,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -3153,35 +2631,6 @@
       "ready_query_throughput_per_s": 5.5058829490987495,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -3441,35 +2890,6 @@
       "ready_query_throughput_per_s": 11.631820764330891,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -3701,35 +3121,6 @@
       "ready_query_throughput_per_s": 19.76637861470121,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -3828,35 +3219,6 @@
       "ready_query_throughput_per_s": 23.48095993189332,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -3955,35 +3317,6 @@
       "ready_query_throughput_per_s": 20.43974987100691,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -4083,35 +3416,6 @@
       "ready_query_throughput_per_s": 22.32084108821975,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -4211,35 +3515,6 @@
       "ready_query_throughput_per_s": 5.638575927810059,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -4492,35 +3767,6 @@
       "ready_query_throughput_per_s": 11.464270508558402,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -4752,35 +3998,6 @@
       "ready_query_throughput_per_s": 15.962960351333967,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -4990,35 +4207,6 @@
       "ready_query_throughput_per_s": 17.619120841736656,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -5228,35 +4416,6 @@
       "ready_query_throughput_per_s": 13.26586384113622,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -5362,35 +4521,6 @@
       "ready_query_throughput_per_s": 13.627601628974498,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -5496,35 +4626,6 @@
       "ready_query_throughput_per_s": 12.018062119821781,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -5630,35 +4731,6 @@
       "ready_query_throughput_per_s": 12.673644096855208,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -5764,35 +4836,6 @@
       "ready_query_throughput_per_s": 15.403330808732122,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -5892,35 +4935,6 @@
       "ready_query_throughput_per_s": 17.18328434676571,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -6020,35 +5034,6 @@
       "ready_query_throughput_per_s": 14.799488031986833,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6147,35 +5132,6 @@
       "ready_query_throughput_per_s": 16.378395848859103,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6274,35 +5230,6 @@
       "ready_query_throughput_per_s": 12.312066490689629,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6413,35 +5340,6 @@
       "ready_query_throughput_per_s": 13.192175345089673,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6552,35 +5450,6 @@
       "ready_query_throughput_per_s": 13.233401024653487,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6691,35 +5560,6 @@
       "ready_query_throughput_per_s": 13.77444339030772,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -6830,35 +5670,6 @@
       "ready_query_throughput_per_s": 14.301984587741385,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -7073,35 +5884,6 @@
       "ready_query_throughput_per_s": 15.697985282749748,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -7316,35 +6098,6 @@
       "ready_query_throughput_per_s": 5.071890165423518,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -7609,35 +6362,6 @@
       "ready_query_throughput_per_s": 11.57354012844304,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -7867,35 +6591,6 @@
       "ready_query_throughput_per_s": 13.962575752165789,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -7999,35 +6694,6 @@
       "ready_query_throughput_per_s": 16.307446648636365,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -8131,35 +6797,6 @@
       "ready_query_throughput_per_s": 14.44996397625787,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -8264,35 +6901,6 @@
       "ready_query_throughput_per_s": 15.6684445776947,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -8397,35 +7005,6 @@
       "ready_query_throughput_per_s": 14.06306024979748,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -8530,35 +7109,6 @@
       "ready_query_throughput_per_s": 14.577725167307566,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "unavailable",
         "logical_calls": 120,
@@ -8663,35 +7213,6 @@
       "ready_query_throughput_per_s": 12.70145623882955,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -8795,35 +7316,6 @@
       "ready_query_throughput_per_s": 14.18290095089354,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -8927,35 +7419,6 @@
       "ready_query_throughput_per_s": 4.945904020830899,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -9220,35 +7683,6 @@
       "ready_query_throughput_per_s": 11.320036692393373,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -9478,35 +7912,6 @@
       "ready_query_throughput_per_s": 12.048199006874084,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -9721,35 +8126,6 @@
       "ready_query_throughput_per_s": 13.544798677848227,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -9964,35 +8340,6 @@
       "ready_query_throughput_per_s": 12.404193704534322,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -10103,35 +8450,6 @@
       "ready_query_throughput_per_s": 12.71366367705547,
       "query_errors": 0,
       "request_errors": 0,
-      "original_quality": {
-        "original_metric": {
-          "precision": 1.0,
-          "recall": 1.0,
-          "f1_score": 1.0
-        },
-        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
-        "supplement": {
-          "returned_rows": 5,
-          "unique_rows": 5,
-          "duplicates": 0,
-          "invalid_rows": 0,
-          "required_rows": 5,
-          "limit_exceeded": false
-        },
-        "classification_audit": {
-          "true_positive": 7,
-          "false_positive": 0,
-          "true_negative": 106,
-          "false_negative": 7,
-          "invalid": 0,
-          "evaluated_rows": 120,
-          "missing_rows": 0,
-          "count_error_from_classifications": -7
-        },
-        "dataset_role": "original_movie_sf2000",
-        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
-        "quality_equivalence_proven": false
-      },
       "method_values_audit": {
         "status": "passed",
         "logical_calls": 120
@@ -11194,5 +9512,6 @@
   "whole_model_response_usage": {
     "prompt": 955264,
     "generation": 30720
-  }
+  },
+  "units_share_quality": true
 }

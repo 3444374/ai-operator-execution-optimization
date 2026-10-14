@@ -29,7 +29,8 @@ class LotusNativeBatchExecutor:
                  call_limits=None):
         if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS native batch limits must be positive integers")
-        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
+        if timeout_s is not None and (
+                type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120):
             raise ValueError("LOTUS native batch timeout must be at most 120 seconds")
         if type(retain_full_responses) is not bool or type(follow_redirects) is not bool:
             raise ValueError("LOTUS raw response retention choice must be boolean")
@@ -69,12 +70,12 @@ class LotusNativeBatchExecutor:
         import litellm
         if litellm.cache is not None:
             raise ValueError("LOTUS native execution requires an independently specified LiteLLM cache policy")
-        deadline = time.monotonic() + self.timeout_s
+        deadline = None if self.timeout_s is None else time.monotonic() + self.timeout_s
 
         def check_stop():
             if self.cancelled and self.cancelled():
                 raise InterruptedError("LOTUS native batch cancelled")
-            if time.monotonic() >= deadline:
+            if deadline is not None and time.monotonic() >= deadline:
                 raise TimeoutError("LOTUS native batch deadline exceeded")
 
         check_stop()
@@ -112,7 +113,7 @@ class LotusNativeBatchExecutor:
         replay = LotusResponseReplay()
         try:
             iterator = self.native.iter_batch(tuple(calls), cancelled=self.cancelled,
-                                              timeout_s=deadline - time.monotonic())
+                                              timeout_s=None if deadline is None else deadline - time.monotonic())
             for outcome in iterator:
                 check_stop()
                 index = outcome.row_id

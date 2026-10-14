@@ -75,7 +75,7 @@ supervisor登记345组、watchdog登记361组，独立合并493组PID／出生�
 
 ### 原件、隐私与离线重核
 
-- [实际核验JSON](supplement-verification.json)、[公开观测包](supplement-observations.tar.gz)、[成员双摘要](supplement-members-sha256.json)、[stdlib重核脚本](recompute_supplement.py)。
+- [实际核验JSON](supplement-verification.json)、[公开观测包](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-observations.tar.gz)、[成员双摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/supplement-members-sha256.json)、[stdlib重核脚本](recompute_supplement.py)。
 - 完整私有包614成员、2789521字节、SHA00ebad9f保持；公开610成员，五个SQLite原件保留私有摘要，960个二进制SDK响应wire保留私有原件与公开摘要。6240处原Benchmark消息内容及720个编码请求已转为原内容SHA／字节数，1920个解码载荷隐私检查0。公开包未包含凭据、真实env或服务器身份。
 - 离线重核只使用保留文件，不连网络／模型／GPU；核对成员摘要、五项坐标、十查询、原120调用与决策、三跳账本、每副本600请求、token、异常前零发送及493身份退出。`passed=true`表示证据核验通过；实际`run_passed=false`和watchdog退出1明确保留。
 
@@ -105,7 +105,7 @@ supervisor登记345组、watchdog登记361组，独立合并493组PID／出生�
 
 ### 本次原件与独立重核
 
-- [S／R核验JSON](sr-verification.json)、[公开观测包](sr-observations.tar.gz)、[成员双摘要](sr-members-sha256.json)、[stdlib重核脚本](recompute_sr.py)、[载荷来源与摘要](sr-payload-provenance.json)。
+- [S／R核验JSON](sr-verification.json)、[公开观测包](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-observations.tar.gz)、[成员双摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/sr-members-sha256.json)、[stdlib重核脚本](recompute_sr.py)、[载荷来源与摘要](sr-payload-provenance.json)。
 - 本次完整私有包236成员／1541059字节，SHA8c5cdb53；公开234个逻辑成员（207个实际存储、25个复用与2个拼接），两个SQLite与480个二进制SDK响应wire保留私有原件及公开摘要。1920处原消息内容已改为SHA／字节数，480解码载荷及120个唯一原消息内容检查通过，隐私命中0。两份旧公开包和私有原件保持，不重跑生成证据。
 - stdlib离线重核实际成员、两坐标、四查询、原完整值／决策／质量、三跳POST、每副本240与token、两旧时钟／账本及337身份退出；网络／模型／GPU调用0。本窗口`run_passed=true`，两份旧失败记录分别保持。
 
@@ -182,7 +182,7 @@ supervisor登记345组、watchdog登记361组，独立合并493组PID／出生�
 
 ## 已有三波的阶段耗时与观察成本
 
-2026-10-13新增离线分析：原性能58查询、第一补测10查询、最后S／R4查询，共36预热＋36测量；没有新增模型请求。质量资格六查询仍见原报告。数据集中在[阶段分析JSON](stage-analysis.json)，[stdlib复算](recompute_phases.py)核对三份归档SHA、S／R去重恢复、全部72查询及每查询120个服务计数。另有有界localhost预算诊断，模型／GPU调用0；原真实小轮仍为9360逻辑／28080POST，执行源码3bd与报告发布来源624分别记录，不以新报告提交号替换执行来源。
+2026-10-13新增离线分析：原性能58查询、第一补测10查询、最后S／R4查询，共36预热＋36测量；没有新增模型请求。质量资格六查询仍见原报告。数据集中在[阶段分析JSON](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/stage-analysis.json)，[stdlib复算](recompute_phases.py)核对三份归档SHA、S／R去重恢复、全部72查询及每查询120个服务计数。另有有界localhost预算诊断，模型／GPU调用0；原真实小轮仍为9360逻辑／28080POST，执行源码3bd与报告发布来源624分别记录，不以新报告提交号替换执行来源。
 
 ### 口径及可分解范围
 
@@ -400,7 +400,7 @@ S另有payload细分，以下是每查询记录的子跨度累加秒，依发生
 
 ### 原件、隐私与离线重核
 
-- [本轮核验与阶段数值](matched-verification.json)、[紧凑公开观测](matched-observations.tar.gz)、[成员双摘要](matched-members-sha256.json)、[stdlib复算](recompute_matched.py)。复算复用已有[阶段计算入口](recompute_phases.py)，只读保留文件，网络／模型／GPU调用0。
+- [本轮核验与阶段数值](matched-verification.json)、[紧凑公开观测](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-observations.tar.gz)、[成员双摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/08e02fd00336164f940546e2fbb73e3f4773de4c/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/matched-members-sha256.json)、[stdlib复算](recompute_matched.py)。复算复用已有[阶段计算入口](recompute_phases.py)，只读保留文件，网络／模型／GPU调用0。
 - 私有完整原件保持；公开输出省去完整Benchmark消息及SDK二进制wire，保留原内容SHA与字节数、parsed response、全部请求时间戳／重复值／服务计数及失败来源。53760处原消息内容、3840编码请求及9600 SDK wire已分别处理，15360解码字段隐私检查命中0。公开4576逻辑成员以3093实际成员和1483同包复用项恢复，逐成员原字节数／SHA全量核对。载荷逐项解码后检查私有路径、服务器身份与凭据；公开成员摘要及原件摘要分开。
 - 离线核对四组顺序、48槽／96查询、11520完整值与决策、三跳账本、固定五行计数、六API历史、相同token、原三个窗口摘要和退出身份；导出前私有核对与导出后公开重核结论相同。
 

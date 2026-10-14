@@ -174,9 +174,10 @@ class SemaIMLaneExecutor:
                 session = self._session
             yield from session.iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
             return
-        if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
-            raise ValueError('Sema IMLane batch requires a finite deadline at most 120 seconds')
-        deadline = time.monotonic() + timeout_s
+        if timeout_s is not None and (
+                type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120):
+            raise ValueError('Sema IMLane batch deadline must be at most 120 seconds or explicit completion')
+        deadline = None if timeout_s is None else time.monotonic() + timeout_s
         wall_started = time.monotonic_ns()
         calls = tuple(calls)
         self.last_close_report = None
@@ -220,7 +221,7 @@ class SemaIMLaneExecutor:
                 with self._lock:
                     if self._process is not None or self._closed:
                         raise RuntimeError('Sema IMLane requires one live snapshot owner')
-                    if time.monotonic() >= deadline:
+                    if deadline is not None and time.monotonic() >= deadline:
                         raise TimeoutError('Sema IMLane preparation used the batch deadline')
                     command = [self.config['bridge_binary'],
                         str(self.config['gateway_port']), self.config['udf_path'],
@@ -241,9 +242,9 @@ class SemaIMLaneExecutor:
                     while not eof:
                         if self._closed or cancelled and cancelled():
                             raise InterruptedError('Sema IMLane batch cancelled')
-                        if time.monotonic() >= deadline:
+                        if deadline is not None and time.monotonic() >= deadline:
                             raise TimeoutError('Sema IMLane batch deadline exceeded')
-                        if not selector.select(min(.02, max(0, deadline - time.monotonic()))):
+                        if not selector.select(.02 if deadline is None else min(.02, max(0, deadline - time.monotonic()))):
                             continue
                         chunk = os.read(process.stdout.fileno(), 65536)
                         if not chunk:
@@ -305,7 +306,7 @@ class SemaIMLaneExecutor:
                 while process.poll() is None:
                     if self._closed or cancelled and cancelled():
                         raise InterruptedError('Sema IMLane batch cancelled while bridge was closing')
-                    if time.monotonic() >= deadline:
+                    if deadline is not None and time.monotonic() >= deadline:
                         raise TimeoutError('Sema IMLane bridge exit deadline exceeded')
                     time.sleep(.01)
                 if process.returncode != 0 or len(received) != len(calls):

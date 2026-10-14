@@ -56,5 +56,22 @@
       }
     },
     "production_and_tests_unchanged_after_review": true
+  },
+  "actual_sdk_handoff": {
+    "report_commit": "96a85f954fcadb7e1713e153689ac82dbacf060c",
+    "execution_source": "1d6453d31b9e59123148d22c85f57086c8f7ccad",
+    "evidence_sha256": "63169e3c08d2891ea19ea03394db64d0167ea3b245d60eedf4aa110bd89c3bf3",
+    "actual_graphs": 4,
+    "localhost_posts": 8,
+    "caller_rows": 6,
+    "graphs_non_clean_unconfirmed_reuse_refused": true,
+    "same_closed_callback_probe_not_active_worker_error_qualification": true,
+    "qualified_functions_unchanged_after_nullable_compatibility": [
+      "_ray_rows",
+      "_observed_graph_cleanup"
+    ],
+    "current_native_file_sha256": "ff94bc9cee610ee998db60f0b8cd77059ac3efe46797d108da65761ac6d80061",
+    "qualification_not_transferred_to_entire_integration": true,
+    "new_internal_case_guard_only_local_no_start_tests": 5
   }
 }

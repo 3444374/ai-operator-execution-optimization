@@ -726,3 +726,23 @@ IMLane128行／32MiB输入、C++聚合驻留输出无32MiB保证继续保留，�
 仓库外恢复根分别为`native-executor-20261012`、`native-executor-baselines-20261012`及接续任务的`evidence/`。
 先按紧凑事实核source archive和binary摘要，再读取`source-identity.json`、query summaries、原始HTTP／worker trace、SQLite记账及所有失败轮。
 IMLane新交付原件另保存在`imlane-call-evidence/`，接续整合原件在`evidence/imlane-entry01/`；配置、进程身份及大日志不进入Git。
+
+<a id="original-movie-completion-integration"></a>
+
+### 原Movie显式任务完成期限的集成兼容
+
+原通过IMLane运行绑定`ab3d80e6789fd64392c6e7e955d17499f327c8e2`与八份私有适配文件，
+派生源码身份为`64985b4e30107789816ab84aacd8d8cdf7ddc802b55c335827f6a598f8d8c7dc`；
+`614c8e21`只发布报告。原Q1两模式121.205472062／124.406008423秒与失败原件保持，
+不能用融合版默认120秒宣称复现该配置。
+
+已接纳13文件最小兼容补丁：原Movie六路径可显式成对空query／owner总期限，默认120／1800不变；
+逐批IMLane可透传空批期限，复用桥session仍拒绝。有限SQLite账本保留v1及NOT NULL，
+显式空期限另用v2，不迁移旧文件。非原Movie在读源、建输出和领预算前拒绝。
+融合版49项本地检查通过（44个兼容／旧路径方法与5个诊断入口方法），只有两次合成localhost回复；
+实际SDK／服务器／模型／GPU0。原owner多轮44项记录和测试编写失败另保留，不相加。
+
+空总期限不会安装监督器。后续调用方必须另持有限的HTTP30秒、backend／工作无活动120秒、
+启动无活动180秒、清理120秒、RSS8GiB、至多4608逻辑调用／13824传输POST及自有出生身份、
+共享lease与退出核验契约；不能重新启动已闭合的历史supervisor或用旧overlay整文件覆盖新计时／关闭修订。
+当前兼容与本地资格不授权新模型任务，新控制器／资源与实际SDK资格须在新运行前单独绑定。

@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[原Movie任务完成期限兼容](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。
+
 2026-10-14：独立 LOTUS PNG 候选提供显式压缩等级与固定 HSE encoded 容量／块上限，默认保持。
 本地94项及服务器99项SDK检查通过；[两12图与四256图资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
 核对30个完整矩阵和24条原生查询，HSE未扩大固定容量；本次在`e50dd2b9`后可选接纳。
@@ -9,7 +11,9 @@ Direct／HSE共享编码成本改善只属`eab9f11a`单轮应用区间，启动�
 2026-10-14：[文本 Ray Data 清理配对](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
 已用仓库函数复现默认／详细计时的异常差异并统一清理；保留实际 iterator、业务首错、全部已知清理次错及未确认责任。
 最终定向57通过／1缺Ray导入跳过；独立审查两个反例已修补，较早修订的共享计时补验另按来源保存。
-本轮无服务器模型／GPU运行或性能矩阵；最终实际Ray 2.56.1软件资格仍待统一排队，不沿用旧源码资格。
+接续固定`1d6453d`的[实际Ray 2.56.1软件核验](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)
+完成唯一四图／8次localhost POST，4 CPU／0模型／0GPU，ON/OFF首错及次错保持、失败责任仍拒绝复用。
+独立确认controller与60个已登记自有出生身份退出、lease释放；393份输入未变，性能矩阵未重跑。
 
 2026-10-14：[HSE上游迭代器关闭](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
 统一源close，首执行错误优先且关闭失败继续actor确认／未知保留；完整函数本地替身102项通过。实际源／设备退出未测，默认及FIFO保持。

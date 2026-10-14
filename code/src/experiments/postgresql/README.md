@@ -7,6 +7,18 @@
 
 ## 原始SemBench Movie方法
 
+默认query 120秒、owner 1800秒及清理预留保持。原始Movie六路径可显式同时设
+`query_timeout_s=null`、`owner_timeout_s=null`，表示由调用进程监督固定任务完成。
+这是总时限兼容接口，不会安装监督器：使用前须冻结调用方有限的启动/工作无进展、
+单次HTTP、取消与清理保护。历史通过运行使用HTTP 30秒、工作无活动120秒、
+启动无活动180秒、清理120秒；这些值来自独立运行器，不是此CLI默认保证。
+上述CLI、常驻owner和supplier查询入口拒绝混合空/有限期限及非原Movie空期限。
+默认逐批IMLane可透传空批期限，
+`reuse_bridge=true`的常驻桥会话仍要求有限期限。固定调用额度与 exactly-once 不变。
+新空期限账本使用`semloom.cell_budget.task_completion.v2`；有限期限仍新建v1，
+两种格式均可读取，旧文件不迁移。映射预算的二进制协议仍只支持有限期限，
+原始Movie六路径使用既有SQLite共享计数，不切换预算后端。
+
 `sembench_queries.py`保存唯一原始准备集、独立行身份和原查询结果；`sembench_query_cli.py`只编排已有LOTUS执行路径。
 保留公开reviewId重复出现，模型输入不含标签，官方评价在完整消费后执行；COUNT与分类错误分别记录。
 源码、配置、16个正常软件单元和两项原数据明确拒绝见[准备报告](../../../../experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)。
