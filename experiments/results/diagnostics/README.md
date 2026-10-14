@@ -1,7 +1,7 @@
 # Feasibility Results
 
 [HSE可选设备组选择](hse_device_dispatch_20261014/README.md)：默认关闭的逻辑额度／完成速率／FIFO派发，
-固定A及42186dbe驻留组合的本地检查与待实库项。
+固定A及42186dbe驻留组合的本地检查、4c7efa79单节点CPU实际Ray软件11/11通过与两轮清理记录；GPU性能／尾延迟仍待验证。
 
 [HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。

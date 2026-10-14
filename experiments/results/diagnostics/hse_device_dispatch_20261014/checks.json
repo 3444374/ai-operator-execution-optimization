@@ -877,7 +877,7 @@
   },
   "qualification": {
     "core_broker": "actual local implementations",
-    "ray_runtime": "not_run",
+    "ray_runtime": "passed_actual_single_node_cpu_fixture",
     "torch_cuda": "not_run",
     "physical_multi_device": "not_run",
     "performance_benefit": "not_measured",
@@ -889,7 +889,8 @@
     "object_store_bytes": 536870912,
     "host_lease": "required; parent schedules after baselines",
     "single_operation_or_no_progress_timeout_s": 60,
-    "healthy_run_total_wall_deadline_s": null
+    "healthy_run_total_wall_deadline_s": null,
+    "status": "completed_under_shared_host_lease"
   },
   "retained_private_logs_sha256": {
     "initial_integration.log": "fe8353820c979259c76fc335d8131d8c32b3c192d495c53d3783418c9b0b9042",
@@ -903,5 +904,20 @@
     "residency_composition.log": "844666b2d7d3405e685a57b2c95b2c5480d3255f5fea9a94f1082c0350e88d38",
     "final_regression.log": "6e941280d85e2634dac2bc7ae714875713aea6ef1162e1a4d11fa2dba931e2d0"
   },
-  "private_log_retrieval": "task workspace tmp/hse-device-dispatch; public cases and fixed source hashes reproduce final assertions"
+  "private_log_retrieval": "task workspace tmp/hse-device-dispatch; public cases and fixed source hashes reproduce final assertions",
+  "actual_ray": {
+    "evidence": "ray_checks.json",
+    "source_commit": "4c7efa79074ae564db1dfb6831bbe3a73063d5b1",
+    "tests_run": 11,
+    "passed": 11,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "driver_prepared_payload_gets": 0,
+    "actor_identity_pairs": 34,
+    "tracked_pid_birth_pairs": 49,
+    "owned_processes_live": 0,
+    "lease_released": true,
+    "retained_first_attempt": "11 run,10 pass,1 fixture failure; cleaned and retained"
+  }
 }

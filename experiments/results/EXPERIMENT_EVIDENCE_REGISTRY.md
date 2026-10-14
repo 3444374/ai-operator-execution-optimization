@@ -1,7 +1,9 @@
 # 实验与机制证据台账
 
 2026-10-14：[HSE可选设备组选择](diagnostics/hse_device_dispatch_20261014/README.md)：A上显式策略的本树187通过／2缺驻留切片跳过，
-固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录，无新策略实库／GPU性能结论。
+固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录。
+随后固定4c7efa79单节点CPU实际Ray软件11/11通过，4 CPU／0 GPU／512MiB，49 PID与控制器退出、lease释放；首轮fixture失败保留。
+Torch／CUDA、多卡／GPU性能及P99／P99.99仍未验证。
 
 2026-10-14：[HSE A集成检查](diagnostics/hse_static_lifecycle_20261014/README.md)：29项定向CPU／受控Ray替身通过，
 A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要；原47f完整CPU成本与失败证据独立保留，不提供A实库／GPU资格。

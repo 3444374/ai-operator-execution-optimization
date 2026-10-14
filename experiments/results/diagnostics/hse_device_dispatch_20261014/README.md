@@ -19,7 +19,8 @@
 可到期的容量反馈和完成速率。占用每次由HSE live `_ModelCall`派生；preparing/ready的预计work不是model-active占用。
 actor/node/accelerator观察与声明group标签分别保存；[actor内helper](../../../../code/src/modalities/image/hse_dispatch.py)
 使用[Ray 2.56.1公共runtime context源码](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/runtime_context.py)中的接口。
-本轮没有实际Ray身份采集，逻辑accelerator ID也不证明物理卡独立或可用HBM。
+本轮单节点CPU Ray实采10个model角色的runtime actor ID，accelerator ID为空；
+这些身份不证明物理GPU独立或可用HBM。
 
 [broker.peek_model](../../../../code/src/scheduling/runtime/stage_broker.py)只读同一FIFO头。
 先确定可容纳的actor，再取原model lease；暂时不足不requeue、不增加retry。
@@ -61,9 +62,9 @@ cache OFF/ON都执行4次完整forward和8行唯一输出；ON模拟转换为2�
 继承A的literal重复handle`(g,g)`仍可能被计为两个index；其拒绝检查已交集成owner，未在本分支重复修改。
 因此当前额度针对注册slot/group；实际不同actor身份的完整入口检查待组合该独立修补。
 
-新策略的实际Ray／Torch／CUDA、异构物理设备及GPU性能均未运行，也不借用旧47f或驻留单卡结果。
-最小实际Ray软件检查需求：共同host lease、4CPU、0GPU、512MiB object store，使用CPU模型替身；
-60秒仅作单操作／无进展诊断期限，健康运行不设总墙钟截止，由主任务在baseline后排期。
+新策略的单节点CPU实际Ray软件检查已完成；Torch／CUDA、异构物理设备及GPU性能仍未运行，
+不借用旧47f或驻留单卡结果。软件检查持有共同host lease，使用4个Ray CPU名额、0GPU、
+512MiB object store及CPU模型fixture；60秒仅作单操作／无进展诊断期限，健康运行不设总墙钟截止。
 真实异构设备比较另需匹配的独立设备及强static／原生对照。
 
 复现本地新策略：`PYTHONPATH=code python3 -m unittest tests.scheduling.test_stage_dispatch tests.modalities.image.test_hse_device_dispatch`。
@@ -72,4 +73,24 @@ cache OFF/ON都执行4次完整forward和8行唯一输出；ON模拟转换为2�
 实际Ray软件用例见[CPU fixture测试](../../../../code/tests/modalities/image/test_hse_device_dispatch_ray.py)，
 复用`ed209238`发布的五项默认路径检查，另检查完成反馈、共享group容量、两种到期唤醒、零时长和异常责任。
 共11项，仅在已排期的共同lease下设置`SEMLOOM_RUN_HSE_RAY=1`执行；未设置时明确跳过。
-测试actor使用CPU数组与启动握手，无Torch、真实模型或GPU执行，当前执行结果仍pending。
+测试actor使用CPU数组与启动／错误握手；实际执行11/11通过，Torch、真实模型、GPU和P99／P99.99均未测。
+
+## 实际Ray软件检查
+
+固定发布源码`4c7efa79074ae564db1dfb6831bbe3a73063d5b1`，29个生产成员与`081b3c17`相同；
+34个包成员逐字及SHA核对。实际Ray2.56.1、Arrow16.1.0，driver为Python3.12.3、NumPy1.26.4、psutil7.0.0。
+沿用已有独立driver，无安装或base环境修改。逐项结果、包摘要和原件摘要见[ray_checks.json](ray_checks.json)。
+
+五项默认static检查与六项可选策略检查均通过，0 failure／error／skip／诊断错误。
+共享group允许一项在途时，broker虽允许两项，实测model peak仍为1；有效完成后才进入least-work选择。
+容量反馈到期在无model pending或另一model仍pending时均能推进，两个case的lease retry保持0。
+零service按`0,1,0,1`轮换，只保留actor1有效样本；NaN结果成功返回driver，完成额度结清后被audit拒绝且不学习速率。
+模型异常与一侧fence失败时只保留该owner的真实ObjectRef、48逻辑字节／4pixels；
+另一owner经serial fence确认后归还自己的额度，unknown池再次调用被拒绝。
+流水driver的get类型不含prepared payload；14项可选model调用收到只读CPU数组，不能据此计算物理复制量。
+
+34个actor的PID／启动时间全部纳入49个owned进程记录。逐case清理及独立postcheck确认
+owned进程、控制器、Ray head均退出，lease释放，无强制清理。
+首轮`41639493`保留为10通过／1 fixture失败：NaN先于`dataclasses.replace`注入，actor构造校验提前拒绝。
+仅修测试注入顺序后完整重跑11项；两轮原件保留，不把首轮记作通过。
+本轮确认软件执行与归还行为；逻辑容量不提供RSS、pinned或device上限，也不产生模型性能或尾延迟结论。
