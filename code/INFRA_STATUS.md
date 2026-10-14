@@ -1,7 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
 2026-10-14：独立 LOTUS PNG 候选提供显式压缩等级与固定 HSE encoded 容量／块上限，默认保持。
-本地94项定向检查及独立源码审阅通过；最小匹配模型资格接续，尚未整合，不借用下方六路径发布资格。
+本地94项及服务器99项SDK检查通过；[两12图与四256图资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
+核对30个完整矩阵和24条原生查询，HSE未扩大固定容量。候选尚未整合，不借用下方六路径发布资格。
 
 2026-10-14：[原生 LOTUS CLIP 图像检索](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)
 已实现公开 RM 图片执行协议、固定源核对、完整原生索引／检索与 index/search/combined CLI。

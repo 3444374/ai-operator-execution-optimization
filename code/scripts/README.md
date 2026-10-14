@@ -19,7 +19,8 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_image_retrieval.py \
 `--arm stock/direct/semloom_static/semloom_hse/ray_data/daft_native`保持LOTUS索引与结果组装。
 独立 PNG 候选支持 `--png-compress-level 1`，省略时保持原默认，stock拒绝该参数；
 HSE的 `--hse-encoded-bytes`／`--hse-encoded-block-bytes-upper-bound` 可固定原容量而不随候选字节增大。
-候选尚未整合，参数与超限行为见[LOTUS接点](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
+候选尚未整合，参数与超限行为见[LOTUS接点](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)，
+Direct／HSE最小匹配模型资格及完整阶段观测见[候选记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
 Daft臂惰性加载独立后端，要求固定0.7.21 native runner；RGB PIL由RM无损编码为PNG，
 原生Daft解码及stateful batch UDF拥有执行与模型生命周期。它不经过HTTP／SemLoom Core。
 Ray路径还需独立`--ray-temp-dir`；`--arm external --executor-factory module:factory --executor-config`

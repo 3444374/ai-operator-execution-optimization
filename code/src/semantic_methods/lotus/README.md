@@ -3,6 +3,7 @@
 ## 原生 CLIP 图像检索
 
 PNG 候选独立于已发布的 `06332d4f` 六路径资格，尚未进入整合分支。
+固定`eab9f11a`的Direct／HSE最小匹配模型资格与阶段观测见[候选证据](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
 `--png-compress-level` 仅作用于替换 RM，接受 `-1..9` 的整数；省略时仍按原调用不传 Pillow 参数，
 stock 的原生 PIL 路径拒绝该选项。研究候选为1，0仅用于诊断；各替换后端通过同一 RM 编码接点接收字节。
 HSE 可用 `--hse-encoded-bytes` 与 `--hse-encoded-block-bytes-upper-bound` 固定已有

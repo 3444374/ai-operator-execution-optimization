@@ -1,0 +1,155 @@
+{
+  "schema": "lotus_png_candidate_independent_review.v1",
+  "outcome": "passed_with_stated_scope",
+  "blocking_findings": [],
+  "method": "Read-only local archive/source/JSON inspection, complete FP32 matrix restoration and dot/rank recomputation; no server, model or codec execution by this review.",
+  "implementation_commit": "eab9f11a0338ef632f208dd178edcf87cd0a9799",
+  "baseline_qualification_commit": "06332d4f01876efa10b7dc23acbeeeaf44ece7b4",
+  "integration_status": "independent_candidate_not_adopted",
+  "inputs": {
+    "public_candidate": {
+      "name": "png_candidate.json",
+      "sha256": "ada23e42aca084561e04fe1ce53f89eac54b20d2d414440b5c41ac4506c3707c"
+    },
+    "originals": {
+      "name": "png-candidate-i-originals.tar.gz",
+      "sha256": "09527b77e9ff4a2bb5ac2b1ac662d4fdb23e9953b5545a7aa9fee08c95583045",
+      "members_verified": 76,
+      "member_recovery": "Exact member names/bytes/SHA256 are recorded in png_candidate.json originals.members; run members include output/result.json, output/rm-vectors.npz and index/index, index/vecs."
+    },
+    "source": {
+      "name": "lotus-png-candidate-i-source.tar.gz",
+      "sha256": "6b6fcc7f46c1c3f54af53806e1db70d235af7cb4d18a00a84a41ec919d9a7d49",
+      "regular_files_equal_to_commit_git_blobs": 1054,
+      "runtime_sha256_files_verified": 4
+    },
+    "supervisor": {
+      "archive_member": "runner.py",
+      "sha256": "b112aa2a85a36e5f44d7e1fe236a7081000d957cb9f0e1d4ea8308a4ff20d653"
+    }
+  },
+  "public_equivalence": {
+    "all_six_results_original_fields_equal": true,
+    "only_result_identity_change": "Shared embedding_identity replaced by embedding_identity_ref.",
+    "supervision_redactions_verified": true,
+    "numerical_private_locations_replaced_by_relative_run_ids": true,
+    "fixed_model_processor_identity_matches_prior_stock_qualification": true,
+    "pins": {
+      "dtype": "float32",
+      "image_batch_size": 32,
+      "torch_threads": 1,
+      "torch_interop_threads": 1,
+      "detailed_cuda_timing": false
+    },
+    "native_lotus_index_and_search_preserved": true
+  },
+  "numerical": {
+    "model_cli_cells": 6,
+    "full_rm_matrices_restored": 30,
+    "native_vecs_matrices_checked": 6,
+    "native_index_and_vecs_digests_match_stock": true,
+    "unique_public_matrices_reused": 12,
+    "extra_public_arrays": 0,
+    "complete_queries": 24,
+    "image_queries": 18,
+    "text_queries": 6,
+    "all_ids_positions_ranks_recomputed_and_match": true,
+    "gallery_max_abs_error": 0.0,
+    "image_query_max_abs_error": 0.0,
+    "text_query_max_abs_error": 5.960464477539063e-08,
+    "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+    "local_dot_vs_saved_score_max_abs_error": 1.7881393432617188e-07,
+    "same_arm_256_default_level1_all_matrices_and_query_outputs_equal": true,
+    "text_scope": "Replacement text runs on CPU; stock gold uses CUDA. Local dot recomputation uses a different NumPy version from the recorded runtime."
+  },
+  "execution": {
+    "order": [
+      "preflight",
+      "sdk",
+      "direct-12-1",
+      "semloom_hse-12-1",
+      "direct-256-default",
+      "semloom_hse-256-1",
+      "semloom_hse-256-default",
+      "direct-256-1"
+    ],
+    "sdk_junit": {
+      "tests": 99,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "supervised_calls_exit0_and_physical_clear": 8,
+    "lease_released": true,
+    "whole_wall_s": 344.9890758879483,
+    "cleanup_wall_s": 16.71157553466037,
+    "whole_budget_s": 1200,
+    "one_occurrence_per_cell_no_explicit_warmup": true
+  },
+  "hse": {
+    "qualified_cli_cells": 3,
+    "image_execution_calls": 12,
+    "fixed_encoded_capacity_bytes": 58110400,
+    "fixed_encoded_block_upper_bytes": 29055200,
+    "all_blocks_and_observed_peaks_within_limits": true,
+    "256_default_peak_encoded_bytes": 32801033,
+    "256_level1_peak_encoded_bytes": 34348574,
+    "encoded_lengths_totals_checked_against_preserved_cpu_records": true,
+    "scope": "Broker blocks only; the RM full PNG list and serialization copies are outside this capacity."
+  },
+  "nonblocking_correction": {
+    "archive_member": "physical-check.json",
+    "excluded_field": "Lease-present Boolean used an incorrect basename.",
+    "corrected_snapshot": {
+      "name": "png-candidate-i-physical-corrected.json",
+      "sha256": "47284eb61d4a3e04fa69c6476a04c84b533df920301a525540793b03015b9870",
+      "lease_present": false,
+      "gpu_compute_process_count": 0
+    },
+    "scope": "The correction is a later snapshot, not a reconstruction of the earlier check. Both records are preserved; per-call physical exits and successful owner lease.release remain the primary cleanup evidence."
+  },
+  "preceding_cpu_diagnostic": {
+    "complete_cases": 5,
+    "default_cases": 1,
+    "level1_cases": 2,
+    "level0_cases": 2,
+    "preserved_failures": [
+      "G manifest-digest AssertionError with zero cases",
+      "G2 TimeoutError during the final second default case"
+    ],
+    "original_window_s": 300,
+    "candidate_window_separate_s": 1200,
+    "scope": "Incomplete second round; no partial final-case measurements or raw PNG/RGB controls are available for offline pixel re-verification."
+  },
+  "documentation_and_privacy": {
+    "changed_files_scanned": 15,
+    "secret_scan_passed": true,
+    "candidate_strings_checked": 1164,
+    "candidate_sensitive_strings_found": 0,
+    "local_markdown_paths_checked": 804,
+    "broken_local_paths": 0,
+    "diff_check_passed": true
+  },
+  "scope_limits": [
+    "Only Direct/HSE PNG default versus level1 candidate qualified here; defaults/protocol and prior six-arm results remain unchanged, and the candidate is not adopted.",
+    "Six cells with one occurrence each cannot establish a performance ranking, steady state or reliable P99/P99.99.",
+    "PNG encoding wall and process CPU intervals are measured; process CPU is not a main-thread-only codec timer.",
+    "Preprocess combines RGB decode, resize and normalization. Actor service and host-copy telemetry are aggregate existing intervals; HSE submit time is host submission, not transport.",
+    "Pure decode, transport, H2D/kernel/D2H subphase durations are unavailable. No prior JCT subtraction, PG or VLM map/filter claim.",
+    "Other candidate backends and end-to-end adoption remain unverified."
+  ],
+  "supporting_reports": [
+    {
+      "name": "png-candidate-i-review-arithmetic.json",
+      "sha256": "cca3c1032868ab1ac45dbda83a035d0a64ab0f58adb980a40648cb89a05224f3"
+    },
+    {
+      "name": "png-candidate-i-review-telemetry.json",
+      "sha256": "680079b28b9c25db702aa3ba5a6ed0c0d150160b504b036d27186cc60992b665"
+    },
+    {
+      "name": "png-candidate-i-review-basic.json",
+      "sha256": "0c95a6ecc890c7ca8cad5e62af0770d10e86fa97455309b2a238d7d3fb667432"
+    }
+  ]
+}

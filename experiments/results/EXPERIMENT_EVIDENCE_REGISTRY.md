@@ -1,7 +1,8 @@
 # 实验与机制证据台账
 
-2026-10-14：LOTUS PNG 候选独立研发，暂未整合；本地94项参数／像素／固定容量与旧图像回归通过，
-固定字节预算的 Direct／HSE 默认与等级1真实模型复验待执行，不借用原六路径结论。
+2026-10-14：[LOTUS PNG 候选](diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)独立资格完成，暂未整合。
+固定`eab9f11a`的Direct／HSE两12图及四256图格保存30矩阵／24完整原生查询，固定字节容量及退出检查通过。
+每格一次观测支持输入编码成本诊断，不支持性能排名或可靠尾分位；原六路径与CPU诊断失败来源分别保留。
 
 2026-10-14：[原生 LOTUS 图像检索资格](diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 保留实际模型参数／预处理身份、图片输入负例、完整图库／在线向量及原生top10；六臂12／64／256图和已有索引通过。

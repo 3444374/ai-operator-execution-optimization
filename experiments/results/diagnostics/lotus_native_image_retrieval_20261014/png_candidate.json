@@ -1,0 +1,4898 @@
+{
+  "baseline_qualification_commit": "06332d4f01876efa10b7dc23acbeeeaf44ece7b4",
+  "implementation_commit": "eab9f11a0338ef632f208dd178edcf87cd0a9799",
+  "integration_status": "independent_candidate_not_adopted",
+  "limits": [
+    "Six model CLI cells with one occurrence each, no explicit warmup.",
+    "Only Direct/HSE default and level1 candidate model qualification; other candidate backends pending.",
+    "Preprocess includes RGB decode, resize and normalize; pure decode and transport/CUDA subphases unavailable.",
+    "HSE capacity covers broker blocks, excludes RM full PNG list and serialization copies.",
+    "Detailed CUDA timing disabled; actor service/host copy are existing telemetry.",
+    "No reliable tail quantiles, throughput ranking, PG or VLM map/filter claim."
+  ],
+  "numerical": [
+    {
+      "atol": 1e-05,
+      "candidate": "direct-12-1",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-d/stock-12",
+      "rtol": 1e-05
+    },
+    {
+      "atol": 1e-05,
+      "candidate": "semloom_hse-12-1",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        12,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-285",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-632",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-d/stock-12",
+      "rtol": 1e-05
+    },
+    {
+      "atol": 1e-05,
+      "candidate": "direct-256-default",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        256,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-13201",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-26564",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-e/stock-256",
+      "rtol": 1e-05
+    },
+    {
+      "atol": 1e-05,
+      "candidate": "semloom_hse-256-1",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        256,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-13201",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-26564",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-e/stock-256",
+      "rtol": 1e-05
+    },
+    {
+      "atol": 1e-05,
+      "candidate": "semloom_hse-256-default",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        256,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-13201",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-26564",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-e/stock-256",
+      "rtol": 1e-05
+    },
+    {
+      "atol": 1e-05,
+      "candidate": "direct-256-1",
+      "gallery_equivalent": true,
+      "gallery_max_abs_error": 0.0,
+      "gallery_shape": [
+        256,
+        512
+      ],
+      "passed": true,
+      "queries": [
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-139",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-13201",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "image",
+          "positions_equal": true,
+          "query_id": "image-26564",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 0.0,
+          "vectors_equivalent": true
+        },
+        {
+          "kind": "text",
+          "positions_equal": true,
+          "query_id": "text-0",
+          "ranks_equal": true,
+          "scores_equivalent": true,
+          "vector_max_abs_error": 5.960464477539063e-08,
+          "vectors_equivalent": true
+        }
+      ],
+      "reference": "lotus-retrieval-20261014-e/stock-256",
+      "rtol": 1e-05
+    }
+  ],
+  "originals": {
+    "bytes": 6153937,
+    "local_backup_name": "png-candidate-i-originals.tar.gz",
+    "members": [
+      {
+        "bytes": 1082,
+        "name": "direct-12-1/command.json",
+        "sha256": "edfca5d2b29462c85cc3110b6add9ae8f16f496d1f0f702bcdabeeaabb02dca1"
+      },
+      {
+        "bytes": 5592,
+        "name": "direct-12-1/index/identity.json",
+        "sha256": "2b0422ebfd9438f4f2092150d35ddaf141caa6652ad9542e14f47acf559919b2"
+      },
+      {
+        "bytes": 24621,
+        "name": "direct-12-1/index/index",
+        "sha256": "b9c7f4f498947a84a98943a78f029f74d8260499f4b779552a3c43f7abf748f5"
+      },
+      {
+        "bytes": 24729,
+        "name": "direct-12-1/index/vecs",
+        "sha256": "d4ec0c492aeb5cf262b2410d39b364544dd35942032f6d335d015ee2573b91b6"
+      },
+      {
+        "bytes": 27,
+        "name": "direct-12-1/output/evidence-write.json",
+        "sha256": "ad239375369d435e8cf8ec8c553b6a8082ee3b87d947b8825e10cebe2b42ae02"
+      },
+      {
+        "bytes": 17684,
+        "name": "direct-12-1/output/result.json",
+        "sha256": "2de6cef996a317861f79df687300ae5e24338e4e572205f653b53f7c9f03b51f"
+      },
+      {
+        "bytes": 31671,
+        "name": "direct-12-1/output/rm-vectors.npz",
+        "sha256": "315f89a363488cc13aad06da0858403b9bfc1d13e20b37f17e4ed329db3c25d7"
+      },
+      {
+        "bytes": 945,
+        "name": "direct-12-1/stderr.log",
+        "sha256": "0582761db99574383e40a8d7d0a8f8189454f5a49a78b0edd55d87a45ef7b819"
+      },
+      {
+        "bytes": 95,
+        "name": "direct-12-1/stdout.log",
+        "sha256": "d0ae2f516423400b071acf9302aae3417c8dafe61ffbc2daaa00c548399e2875"
+      },
+      {
+        "bytes": 325,
+        "name": "direct-12-1/supervisor.json",
+        "sha256": "a404026c846c7cddf8825e7e2f61639b9020cf1eec51a8da2aaa38a834071dec"
+      },
+      {
+        "bytes": 1089,
+        "name": "direct-256-1/command.json",
+        "sha256": "a14422d0885e4db51ff526283176702dd2dc12ab0215449e34dd8f3be0c7a55d"
+      },
+      {
+        "bytes": 27707,
+        "name": "direct-256-1/index/identity.json",
+        "sha256": "13a39f670f9e055df6af1b331a61ea198ee276e7482c7616534b44dcac9b9d7a"
+      },
+      {
+        "bytes": 524333,
+        "name": "direct-256-1/index/index",
+        "sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042"
+      },
+      {
+        "bytes": 524451,
+        "name": "direct-256-1/index/vecs",
+        "sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b"
+      },
+      {
+        "bytes": 27,
+        "name": "direct-256-1/output/evidence-write.json",
+        "sha256": "2af9dea3fbabc6fa0b9da8a128ef565f14171d649f3cf27776a759a05ebd9c1a"
+      },
+      {
+        "bytes": 19767,
+        "name": "direct-256-1/output/result.json",
+        "sha256": "43f0bb8c404b1352f3718280f4e190dcf0177c38506817e37d110b8bde0e4f72"
+      },
+      {
+        "bytes": 496754,
+        "name": "direct-256-1/output/rm-vectors.npz",
+        "sha256": "406ae98814c5dce837437d8c26e22b3f20930869ca2518563d64c4ca2a5f4f6d"
+      },
+      {
+        "bytes": 962,
+        "name": "direct-256-1/stderr.log",
+        "sha256": "9595a5055fbf4a775afc3c84375e858f6d487600d96214071730c9acded890e9"
+      },
+      {
+        "bytes": 97,
+        "name": "direct-256-1/stdout.log",
+        "sha256": "7fa23a2c95159f818956634db5a25b35b0441d682fd2be4f21139cb6f5671df4"
+      },
+      {
+        "bytes": 328,
+        "name": "direct-256-1/supervisor.json",
+        "sha256": "9cb95e43d06070f552044676f8815e14e134e8be0277fe0a3d58e77ad90a351c"
+      },
+      {
+        "bytes": 1072,
+        "name": "direct-256-default/command.json",
+        "sha256": "d81746bff6f4e3ecdfc8fae4b71710f2ca5e2862515f4b2824157acdaf65ea5e"
+      },
+      {
+        "bytes": 27707,
+        "name": "direct-256-default/index/identity.json",
+        "sha256": "13a39f670f9e055df6af1b331a61ea198ee276e7482c7616534b44dcac9b9d7a"
+      },
+      {
+        "bytes": 524333,
+        "name": "direct-256-default/index/index",
+        "sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042"
+      },
+      {
+        "bytes": 524451,
+        "name": "direct-256-default/index/vecs",
+        "sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b"
+      },
+      {
+        "bytes": 27,
+        "name": "direct-256-default/output/evidence-write.json",
+        "sha256": "b8be31d1e3131e4d2dbd76a3b3e063786dd70aa03b826acfecfa323a1e0759d4"
+      },
+      {
+        "bytes": 19801,
+        "name": "direct-256-default/output/result.json",
+        "sha256": "5e4e577573b77d8e0c4c79d8e4110ba923154c2664fff1bbeb408c5903c77a44"
+      },
+      {
+        "bytes": 496754,
+        "name": "direct-256-default/output/rm-vectors.npz",
+        "sha256": "406ae98814c5dce837437d8c26e22b3f20930869ca2518563d64c4ca2a5f4f6d"
+      },
+      {
+        "bytes": 962,
+        "name": "direct-256-default/stderr.log",
+        "sha256": "16c2e2b7996c9872147883f87bef3dcf6c1b2776e60fad893d755d966bee4444"
+      },
+      {
+        "bytes": 97,
+        "name": "direct-256-default/stdout.log",
+        "sha256": "81cf885ca18e9ce83167db6b8754cdae9230d58171553cf0515921c562ec12a0"
+      },
+      {
+        "bytes": 339,
+        "name": "direct-256-default/supervisor.json",
+        "sha256": "67bedd7283bc13337ef4c6b242261cfc473306d1a324dff3b5b9575ba120e8a0"
+      },
+      {
+        "bytes": 67198,
+        "name": "manifest.json",
+        "sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6"
+      },
+      {
+        "bytes": 7983,
+        "name": "numerical.json",
+        "sha256": "57481290e2c63e8b5deadf505ade982ae05845637ff9d0ec10d6ba6bdbfefabc"
+      },
+      {
+        "bytes": 96,
+        "name": "physical-check.json",
+        "sha256": "db5a10ef25c1bec7f7803a4e65f2cf6f5f720e55cb9ce0be20432e7c38784a82"
+      },
+      {
+        "bytes": 963,
+        "name": "plan.json",
+        "sha256": "328eabeb86e18a4a0e89ec78330b6aa807b33dfb93b9e39a56cf17a59112a002"
+      },
+      {
+        "bytes": 4576,
+        "name": "preflight.json",
+        "sha256": "0dc45c0713704be41dd2504f633e3c5d3b63b2313a9ef9a2ad03a8b37000de8c"
+      },
+      {
+        "bytes": 677,
+        "name": "preflight/command.json",
+        "sha256": "da6682438f7bf220a669c0134f588cefd9d7c3924aab9c516a97282636ba8211"
+      },
+      {
+        "bytes": 0,
+        "name": "preflight/stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 4576,
+        "name": "preflight/stdout.log",
+        "sha256": "0dc45c0713704be41dd2504f633e3c5d3b63b2313a9ef9a2ad03a8b37000de8c"
+      },
+      {
+        "bytes": 321,
+        "name": "preflight/supervisor.json",
+        "sha256": "fccf78bb83e8c537a09a8d42ff5d7046e637454a6b88af8190014a998bd5c49d"
+      },
+      {
+        "bytes": 18224,
+        "name": "runner.py",
+        "sha256": "b112aa2a85a36e5f44d7e1fe236a7081000d957cb9f0e1d4ea8308a4ff20d653"
+      },
+      {
+        "bytes": 1565,
+        "name": "sdk/command.json",
+        "sha256": "bd8cb8c42d2beec3bddeba18a634d9b6fcbf622518edf5fed1c060602f21d6cd"
+      },
+      {
+        "bytes": 22848,
+        "name": "sdk/junit.xml",
+        "sha256": "72844ae6acf99814614b962eaebdffac2c4a8d88ab8b670e68cfb0149b6505d2"
+      },
+      {
+        "bytes": 0,
+        "name": "sdk/stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "bytes": 180,
+        "name": "sdk/stdout.log",
+        "sha256": "bd5a52cbcbb8c36a5e98d21f67eebb4033a45f8dc2d03dc6fc655bc07562ed24"
+      },
+      {
+        "bytes": 309,
+        "name": "sdk/supervisor.json",
+        "sha256": "be30abfaa7e9f33f9f3dfd743cbf709f434da0d4bd50600e4416307071a1a50b"
+      },
+      {
+        "bytes": 1235,
+        "name": "semloom_hse-12-1/command.json",
+        "sha256": "f75def18072fd32bf7774b57b496f9d90cf3ed9a62657eff13a7a4f47425e427"
+      },
+      {
+        "bytes": 5592,
+        "name": "semloom_hse-12-1/index/identity.json",
+        "sha256": "2b0422ebfd9438f4f2092150d35ddaf141caa6652ad9542e14f47acf559919b2"
+      },
+      {
+        "bytes": 24621,
+        "name": "semloom_hse-12-1/index/index",
+        "sha256": "b9c7f4f498947a84a98943a78f029f74d8260499f4b779552a3c43f7abf748f5"
+      },
+      {
+        "bytes": 24729,
+        "name": "semloom_hse-12-1/index/vecs",
+        "sha256": "d4ec0c492aeb5cf262b2410d39b364544dd35942032f6d335d015ee2573b91b6"
+      },
+      {
+        "bytes": 27,
+        "name": "semloom_hse-12-1/output/evidence-write.json",
+        "sha256": "f25bf71d33b7bd06be432c2e8504535cd6649743131a198618e7ef9e08b8be72"
+      },
+      {
+        "bytes": 18687,
+        "name": "semloom_hse-12-1/output/result.json",
+        "sha256": "1d8272e0ab44683d9f08ddfc6c8b2e6853f45fecb45e47c31f7e057149a2097a"
+      },
+      {
+        "bytes": 31671,
+        "name": "semloom_hse-12-1/output/rm-vectors.npz",
+        "sha256": "315f89a363488cc13aad06da0858403b9bfc1d13e20b37f17e4ed329db3c25d7"
+      },
+      {
+        "bytes": 1507,
+        "name": "semloom_hse-12-1/stderr.log",
+        "sha256": "50d20bbe6fbb1e1eac255f609cd88656fa0c4131495a654ed588b6f8e9e56efa"
+      },
+      {
+        "bytes": 100,
+        "name": "semloom_hse-12-1/stdout.log",
+        "sha256": "75e0b1a8c0d30a97ac971f18f0bae406d9d8396e57c133a8e0c87fad6385cd3c"
+      },
+      {
+        "bytes": 336,
+        "name": "semloom_hse-12-1/supervisor.json",
+        "sha256": "a05bd6ecd23a5211c8fd2b5bcde9b30e92286c8a9b796de6df0931e2183e8c86"
+      },
+      {
+        "bytes": 1243,
+        "name": "semloom_hse-256-1/command.json",
+        "sha256": "c3c3ff43746069e076541a5c87222d94ec198650300a1160d6b527d46f789a96"
+      },
+      {
+        "bytes": 27707,
+        "name": "semloom_hse-256-1/index/identity.json",
+        "sha256": "13a39f670f9e055df6af1b331a61ea198ee276e7482c7616534b44dcac9b9d7a"
+      },
+      {
+        "bytes": 524333,
+        "name": "semloom_hse-256-1/index/index",
+        "sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042"
+      },
+      {
+        "bytes": 524451,
+        "name": "semloom_hse-256-1/index/vecs",
+        "sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b"
+      },
+      {
+        "bytes": 27,
+        "name": "semloom_hse-256-1/output/evidence-write.json",
+        "sha256": "f3985acb59ec1e0843bfd493c32a95fda2aa99ce223b782883173f37d46cd930"
+      },
+      {
+        "bytes": 20035,
+        "name": "semloom_hse-256-1/output/result.json",
+        "sha256": "9559a5e4760b5ad52858118d8e40a70c5cd40b78de4cc1230dc06bbcee6075e1"
+      },
+      {
+        "bytes": 496754,
+        "name": "semloom_hse-256-1/output/rm-vectors.npz",
+        "sha256": "406ae98814c5dce837437d8c26e22b3f20930869ca2518563d64c4ca2a5f4f6d"
+      },
+      {
+        "bytes": 1490,
+        "name": "semloom_hse-256-1/stderr.log",
+        "sha256": "17234e1ab91aa2c5a02ebd83b145fe45990d472d85cf92cdfcc5b6049dc0dc14"
+      },
+      {
+        "bytes": 102,
+        "name": "semloom_hse-256-1/stdout.log",
+        "sha256": "2afa7437d784b92d61ac8244521c9558fecf4bf11048ba66c7023d1a6bc6ee56"
+      },
+      {
+        "bytes": 338,
+        "name": "semloom_hse-256-1/supervisor.json",
+        "sha256": "dab590bfcabce1aa660e3c43e6cda587110d32be25ed506ab543efaf0c49e1a8"
+      },
+      {
+        "bytes": 1225,
+        "name": "semloom_hse-256-default/command.json",
+        "sha256": "5a89127406ea58af4432982dcbc338ff7564e2a6ef624f6923f6d6ba311b7870"
+      },
+      {
+        "bytes": 27707,
+        "name": "semloom_hse-256-default/index/identity.json",
+        "sha256": "13a39f670f9e055df6af1b331a61ea198ee276e7482c7616534b44dcac9b9d7a"
+      },
+      {
+        "bytes": 524333,
+        "name": "semloom_hse-256-default/index/index",
+        "sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042"
+      },
+      {
+        "bytes": 524451,
+        "name": "semloom_hse-256-default/index/vecs",
+        "sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b"
+      },
+      {
+        "bytes": 27,
+        "name": "semloom_hse-256-default/output/evidence-write.json",
+        "sha256": "c775f44c9b72088d05fd2e1be7b979555c6eccf8a5d0f8ef2cbc0327c061548a"
+      },
+      {
+        "bytes": 20068,
+        "name": "semloom_hse-256-default/output/result.json",
+        "sha256": "af8ad663f4ed95563a9795aba67dcedbbeebede6ba8767b264e34c564657221c"
+      },
+      {
+        "bytes": 496754,
+        "name": "semloom_hse-256-default/output/rm-vectors.npz",
+        "sha256": "406ae98814c5dce837437d8c26e22b3f20930869ca2518563d64c4ca2a5f4f6d"
+      },
+      {
+        "bytes": 1490,
+        "name": "semloom_hse-256-default/stderr.log",
+        "sha256": "991f34f1a8e5ee85c86201f9c37a04b4056d6b3885d8fbfc76e89e3dc9125e4d"
+      },
+      {
+        "bytes": 102,
+        "name": "semloom_hse-256-default/stdout.log",
+        "sha256": "2d9e66f9de717d886cbc383ef711801aba31c4af65d6479520e665ea218d8684"
+      },
+      {
+        "bytes": 349,
+        "name": "semloom_hse-256-default/supervisor.json",
+        "sha256": "5f771d7cacc1f7bf41d1c77fe1cc79bfe8e7f30642157bd16c9054f24158963a"
+      },
+      {
+        "bytes": 12333,
+        "name": "supervision-result.json",
+        "sha256": "c1604528b2ccc53bf2785d8712820327160cd2a091331e2640ad2c0ee3ddefaf"
+      }
+    ],
+    "restore": "Private artifact store or operator task qualification backup; fetch by run ID and member hash.",
+    "run_id": "lotus-png-candidate-20261014-i",
+    "sha256": "09527b77e9ff4a2bb5ac2b1ac662d4fdb23e9953b5545a7aa9fee08c95583045"
+  },
+  "physical_check": {
+    "bytes": 167,
+    "record": {
+      "check": "corrected runner lease basename; earlier archive physical-check.json lease field not used",
+      "gpu_compute_pids": [],
+      "shared_lease_present_at_check": false
+    },
+    "scope": "Original backup lease-present field probed the wrong basename and is excluded. Supervised per-call physical exits and owner lease.release are retained; corrected read is a later snapshot.",
+    "sha256": "47284eb61d4a3e04fa69c6476a04c84b533df920301a525540793b03015b9870"
+  },
+  "plan": {
+    "batch": 32,
+    "correctness": "complete matrices and native ordered top10 allclose1e-5; reuse pinned JPEG/model/identity",
+    "cpu_threads": 1,
+    "each_model_cell": 1,
+    "fixed_block_upper": 29055200,
+    "fixed_hse_encoded_capacity": 58110400,
+    "gpu_count": 1,
+    "limits": "no six-arm rerun, no reliable tails or performance ranking; pure decode/transport timers unavailable; do not subtract oldJCT",
+    "matched256": [
+      [
+        "direct",
+        null,
+        256
+      ],
+      [
+        "semloom_hse",
+        1,
+        256
+      ],
+      [
+        "semloom_hse",
+        null,
+        256
+      ],
+      [
+        "direct",
+        1,
+        256
+      ]
+    ],
+    "per_call_max_s": 180,
+    "question": "Minimal PNG option and fixed-byte LOTUS qualification",
+    "small": [
+      [
+        "direct",
+        1,
+        12
+      ],
+      [
+        "semloom_hse",
+        1,
+        12
+      ]
+    ],
+    "source_commit": "eab9f11a0338ef632f208dd178edcf87cd0a9799",
+    "warmups": 0,
+    "whole_max_s": 1200,
+    "window": 2
+  },
+  "preceding_cpu_diagnostic": {
+    "both_leases_released": true,
+    "budget_was_not_reset": true,
+    "complete_cases": 5,
+    "default_encoder_config": {
+      "compress_level": -1,
+      "compress_type": -1,
+      "dictionary_bytes": 0,
+      "optimize": false
+    },
+    "default_explicit6_four_probes_byte_equal": true,
+    "g2_whole_wall_s": 91.54462990257889,
+    "g_failed_before_codec": true,
+    "incomplete_case": {
+      "error_type": "TimeoutError",
+      "level": "default",
+      "partial_rows_and_case_timings": "unavailable: full-list encoding interrupted before result and end stamps",
+      "round": 1
+    },
+    "inference_limits": [
+      "default only one complete case and unmatched final position; no stable distribution estimate",
+      "component CPU codec only, no CLIP/GPU/HSE execution and no originalJCT subtraction",
+      "variant capacities are calculated; do not automatically apply any increase; all-input PNG retention is outside stage-broker capacity"
+    ],
+    "max_observed_rss_bytes": 1121378304,
+    "original256_rgb_pixels_match": true,
+    "original_archive_sha256": "3ff46382aa1e95d22ff72dd2c3db715cbff6f02fc9cb23c27210b8fc6f558eb2",
+    "original_gallery_identity_sha256": "b32f1925953aeb4f5d870c2fbad28091ae8b61bb8303804e2a12d267828cc100",
+    "original_manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+    "original_members": {
+      "lotus-png-cpu-20261014-g/result.json": {
+        "bytes": 1213,
+        "sha256": "ccda2501b617af6dee092cab78a737fef878a27e390753d13d42a89a380a2076"
+      },
+      "lotus-png-cpu-20261014-g2/result.json": {
+        "bytes": 26695,
+        "sha256": "07623cd455106753051eaf37de33281373ca9e08f553ee6ca61c6816802d583d"
+      }
+    },
+    "original_window_max_s": 300,
+    "physical_verification": {
+      "note": "deadline fired during final full-list encode; failed result and release occur shortly after deadline, not a successful under-budget run",
+      "original_result_mtime_budget_reconstruction_matched": true,
+      "original_window_wall_at_g2_result_write_s": 300.01051139831543,
+      "own_runner_process_count": 0,
+      "shared_lease_present_at_check": false
+    },
+    "pixel_checks_total": 1280,
+    "planned_cases": 6,
+    "png_zlib_version": "1.2.13",
+    "remaining_at_resume_s": 91.53162693977356,
+    "rows": 256,
+    "schema": "lotus.png_cpu_diagnostic_analysis.v1",
+    "source_commit": "06332d4f01876efa10b7dc23acbeeeaf44ece7b4",
+    "status": "partial_with_retained_failures",
+    "summary": [
+      {
+        "complete_cases": 1,
+        "decode_cpu_s": [
+          3.066782229
+        ],
+        "decode_wall_s": [
+          3.067098253
+        ],
+        "encode_cpu_s": [
+          26.059540618
+        ],
+        "encode_wall_s": [
+          26.060942828
+        ],
+        "hse_derived_capacity_bytes": 58110400,
+        "hse_derived_capacity_change_percent": 0.0,
+        "level": "default",
+        "peak_input_order_batch32_bytes": 16713459,
+        "peak_single_bytes": 907975,
+        "pixel_equal_rows_per_case": 256,
+        "total_bytes": 121203712,
+        "total_size_change_percent": 0.0,
+        "within_fixed_default_block_upper": true,
+        "worst_any32_bytes": 23130722
+      },
+      {
+        "complete_cases": 2,
+        "decode_cpu_s": [
+          3.244343183,
+          3.263899308
+        ],
+        "decode_wall_s": [
+          3.244532888,
+          3.264161386
+        ],
+        "encode_cpu_s": [
+          11.592660906,
+          11.788759144
+        ],
+        "encode_wall_s": [
+          11.593365789,
+          11.790138686
+        ],
+        "hse_derived_capacity_bytes": 59092864,
+        "hse_derived_capacity_change_percent": 1.6906853162256708,
+        "level": 1,
+        "peak_input_order_batch32_bytes": 17382472,
+        "peak_single_bytes": 923326,
+        "pixel_equal_rows_per_case": 256,
+        "total_bytes": 127821765,
+        "total_size_change_percent": 5.4602725368675165,
+        "within_fixed_default_block_upper": true,
+        "worst_any32_bytes": 23603284
+      },
+      {
+        "complete_cases": 2,
+        "decode_cpu_s": [
+          1.563466537,
+          1.534016964
+        ],
+        "decode_wall_s": [
+          1.563551238,
+          1.534167474
+        ],
+        "encode_cpu_s": [
+          4.684191698,
+          4.699564171
+        ],
+        "encode_wall_s": [
+          4.684600471,
+          4.700084732
+        ],
+        "hse_derived_capacity_bytes": 78881280,
+        "hse_derived_capacity_change_percent": 35.74382554585753,
+        "level": 0,
+        "peak_input_order_batch32_bytes": 27966620,
+        "peak_single_bytes": 1232520,
+        "pixel_equal_rows_per_case": 256,
+        "total_bytes": 212010379,
+        "total_size_change_percent": 74.9206979733426,
+        "within_fixed_default_block_upper": false,
+        "worst_any32_bytes": 33686733
+      }
+    ],
+    "versions": {
+      "numpy": "1.26.4",
+      "pillow": "12.2.0"
+    }
+  },
+  "review_history": [
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "implementation",
+      "private_report_name": "png-candidate-code-review.json",
+      "report_sha256": "d4070864a5424d94b9f3fb6d769456e29835f692564532641f5838c99efcae17",
+      "scope": "Default bytes, levels, pixels, RM isolation, first error and fixed HSE pass/reject; no model/server execution."
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "qualification_plan",
+      "private_report_name": "png-candidate-i-plan-review.json",
+      "report_sha256": "1ac130f47be702b6670127a303a9d8ffdbf6fae8d25a2712e656fa63bc7f1abc",
+      "scope": "Fixed source/archive, two-small then four-scale calls, SDK99, short Ray paths, index identity, deadlines and owned exit; no model/server execution."
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "preceding_partial_cpu_evidence",
+      "private_report_name": "png-cpu-g-independent-review.json",
+      "report_sha256": "780d2583df27a63704db2bd81c436b4d88405c609a851667821c90ec89905822",
+      "scope": "Preserved G/G2 summaries and raw member integrity, 5 of 6 codec cases, failures and original budget; no codec/model/server rerun."
+    }
+  ],
+  "runs": {
+    "direct-12-1": {
+      "application_e2e_s": 1.595930015,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "direct",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.30592287983745337,
+              "decode_resize_normalize_s": 0.2516957940533757,
+              "device_input_bytes": 7225344,
+              "host_copy_s": 4.923902451992035e-06,
+              "output_bytes": 24576
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.020848343148827553,
+              "decode_resize_normalize_s": 0.019501970149576664,
+              "device_input_bytes": 602112,
+              "host_copy_s": 2.2905878722667694e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.004181775264441967,
+              "decode_resize_normalize_s": 0.02635183185338974,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.986045390367508e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.00417680200189352,
+              "decode_resize_normalize_s": 0.021300154738128185,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.5529803931713104e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 12,
+      "hse_encoded_block_bytes_upper_bound": null,
+      "hse_encoded_bytes": null,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "b9c7f4f498947a84a98943a78f029f74d8260499f4b779552a3c43f7abf748f5",
+      "index_identity_sha256": "1d0bb207f2f5ed1273fe01bef4a3f1642f581faa370f5eeb7749a04dc8acc01f",
+      "index_load_s": null,
+      "index_matrix_sha256": "d4ec0c492aeb5cf262b2410d39b364544dd35942032f6d335d015ee2573b91b6",
+      "index_s": 1.168503678,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 18.414550953,
+      "native_cache": false,
+      "native_workflow_s": 1.494868815,
+      "png_compress_level": 1,
+      "private_vector_capture": true,
+      "process_wall_s": 20.011172642,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "632",
+            "802",
+            "776",
+            "1268",
+            "285",
+            "785",
+            "1296",
+            "724",
+            "872"
+          ],
+          "elapsed_s": 0.086631551,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "632",
+            "802",
+            "776",
+            "1268",
+            "285",
+            "785",
+            "1296",
+            "724",
+            "872"
+          ],
+          "observed_positions": [
+            0,
+            2,
+            6,
+            4,
+            10,
+            1,
+            5,
+            11,
+            3,
+            7
+          ],
+          "observed_scores": [
+            1.0,
+            0.7213295698165894,
+            0.701168417930603,
+            0.6479557752609253,
+            0.6364905834197998,
+            0.6045188307762146,
+            0.5420660972595215,
+            0.5166219472885132,
+            0.4469570815563202,
+            0.430828332901001
+          ],
+          "positions": [
+            0,
+            2,
+            6,
+            4,
+            10,
+            1,
+            5,
+            11,
+            3,
+            7
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 84253780,
+              "encoded_peak_single_bytes": 456860,
+              "encoded_total_bytes": 456860,
+              "image_encode_cpu_ns": 43464070,
+              "image_encode_wall_ns": 43461987,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            1.0,
+            0.7213295698165894,
+            0.701168417930603,
+            0.6479557752609253,
+            0.6364905834197998,
+            0.6045188307762146,
+            0.5420660972595215,
+            0.5166219472885132,
+            0.4469570815563202,
+            0.430828332901001
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "285",
+            "776",
+            "139",
+            "785",
+            "1296",
+            "1268",
+            "632",
+            "802",
+            "872",
+            "724"
+          ],
+          "elapsed_s": 0.108775845,
+          "kind": "image",
+          "observed_doc_ids": [
+            "285",
+            "776",
+            "139",
+            "785",
+            "1296",
+            "1268",
+            "632",
+            "802",
+            "872",
+            "724"
+          ],
+          "observed_positions": [
+            1,
+            4,
+            0,
+            5,
+            11,
+            10,
+            2,
+            6,
+            7,
+            3
+          ],
+          "observed_scores": [
+            1.0,
+            0.7579619884490967,
+            0.6045010089874268,
+            0.5902495980262756,
+            0.5433921217918396,
+            0.5082371234893799,
+            0.5017646551132202,
+            0.4921639561653137,
+            0.4685780107975006,
+            0.45842280983924866
+          ],
+          "positions": [
+            1,
+            4,
+            0,
+            5,
+            11,
+            10,
+            2,
+            6,
+            7,
+            3
+          ],
+          "query_id": "image-285",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 107424739,
+              "encoded_peak_single_bytes": 879104,
+              "encoded_total_bytes": 879104,
+              "image_encode_cpu_ns": 76590516,
+              "image_encode_wall_ns": 76507409,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            1.0,
+            0.7579619884490967,
+            0.6045010089874268,
+            0.5902495980262756,
+            0.5433921217918396,
+            0.5082371234893799,
+            0.5017646551132202,
+            0.4921639561653137,
+            0.4685780107975006,
+            0.45842280983924866
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "632",
+            "139",
+            "802",
+            "1268",
+            "776",
+            "285",
+            "724",
+            "785",
+            "1296",
+            "885"
+          ],
+          "elapsed_s": 0.081383178,
+          "kind": "image",
+          "observed_doc_ids": [
+            "632",
+            "139",
+            "802",
+            "1268",
+            "776",
+            "285",
+            "724",
+            "785",
+            "1296",
+            "885"
+          ],
+          "observed_positions": [
+            2,
+            0,
+            6,
+            10,
+            4,
+            1,
+            3,
+            5,
+            11,
+            8
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7213634252548218,
+            0.6513412594795227,
+            0.5577550530433655,
+            0.555139422416687,
+            0.5017825365066528,
+            0.4414981007575989,
+            0.43704497814178467,
+            0.42982017993927,
+            0.3833479881286621
+          ],
+          "positions": [
+            2,
+            0,
+            6,
+            10,
+            4,
+            1,
+            3,
+            5,
+            11,
+            8
+          ],
+          "query_id": "image-632",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 80122048,
+              "encoded_peak_single_bytes": 640892,
+              "encoded_total_bytes": 640892,
+              "image_encode_cpu_ns": 54285406,
+              "image_encode_wall_ns": 54282918,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7213634252548218,
+            0.6513412594795227,
+            0.5577550530433655,
+            0.555139422416687,
+            0.5017825365066528,
+            0.4414981007575989,
+            0.43704497814178467,
+            0.42982017993927,
+            0.3833479881286621
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "1268",
+            "1296",
+            "139",
+            "632",
+            "724",
+            "802",
+            "872",
+            "285",
+            "885",
+            "785"
+          ],
+          "elapsed_s": 0.048866726,
+          "kind": "text",
+          "observed_doc_ids": [
+            "1268",
+            "1296",
+            "139",
+            "632",
+            "724",
+            "802",
+            "872",
+            "285",
+            "885",
+            "785"
+          ],
+          "observed_positions": [
+            10,
+            11,
+            0,
+            2,
+            3,
+            6,
+            7,
+            1,
+            8,
+            5
+          ],
+          "observed_scores": [
+            0.23800715804100037,
+            0.2010544240474701,
+            0.19277817010879517,
+            0.18809491395950317,
+            0.18608000874519348,
+            0.17984582483768463,
+            0.1793678104877472,
+            0.17763449251651764,
+            0.1748911291360855,
+            0.1739422082901001
+          ],
+          "positions": [
+            10,
+            11,
+            0,
+            2,
+            3,
+            6,
+            7,
+            1,
+            8,
+            5
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 45295531,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.23800715804100037,
+            0.2010544240474701,
+            0.19277817010879517,
+            0.18809491395950317,
+            0.18608000874519348,
+            0.17984582483768463,
+            0.1793678104877472,
+            0.17763449251651764,
+            0.1748911291360855,
+            0.1739422082901001
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 1167635505,
+          "encoded_peak_single_bytes": 879104,
+          "encoded_total_bytes": 6718212,
+          "image_encode_cpu_ns": 609721873,
+          "image_encode_wall_ns": 609202930,
+          "image_rows": 12,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 84253780,
+          "encoded_peak_single_bytes": 456860,
+          "encoded_total_bytes": 456860,
+          "image_encode_cpu_ns": 43464070,
+          "image_encode_wall_ns": 43461987,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 107424739,
+          "encoded_peak_single_bytes": 879104,
+          "encoded_total_bytes": 879104,
+          "image_encode_cpu_ns": 76590516,
+          "image_encode_wall_ns": 76507409,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 80122048,
+          "encoded_peak_single_bytes": 640892,
+          "encoded_total_bytes": 640892,
+          "image_encode_cpu_ns": 54285406,
+          "image_encode_wall_ns": 54282918,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 45295531,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 0.08728686,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    },
+    "direct-256-1": {
+      "application_e2e_s": 19.516162324,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "direct",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.2767530479468405,
+              "decode_resize_normalize_s": 0.6493083778768778,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 4.0209852159023285e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013746591284871101,
+              "decode_resize_normalize_s": 0.6076950137503445,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.857072442770004e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013863225001841784,
+              "decode_resize_normalize_s": 0.6663059652782977,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.187917172908783e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013702563010156155,
+              "decode_resize_normalize_s": 0.6485331389121711,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.6158598959445953e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013675734866410494,
+              "decode_resize_normalize_s": 0.635855183005333,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.0957162380218506e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013744117692112923,
+              "decode_resize_normalize_s": 0.6462388960644603,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 4.0940940380096436e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.01365454588085413,
+              "decode_resize_normalize_s": 0.5871081287041306,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.351829946041107e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.0155541249550879,
+              "decode_resize_normalize_s": 0.6147944312542677,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 3.5390257835388184e-06,
+              "output_bytes": 65536
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.014876672998070717,
+              "decode_resize_normalize_s": 0.02019145991653204,
+              "device_input_bytes": 602112,
+              "host_copy_s": 2.427026629447937e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.004115406423807144,
+              "decode_resize_normalize_s": 0.01960156112909317,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.2819655239582062e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.0041004871018230915,
+              "decode_resize_normalize_s": 0.018935187254101038,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.400243490934372e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 256,
+      "hse_encoded_block_bytes_upper_bound": null,
+      "hse_encoded_bytes": null,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042",
+      "index_identity_sha256": "b32f1925953aeb4f5d870c2fbad28091ae8b61bb8303804e2a12d267828cc100",
+      "index_load_s": null,
+      "index_matrix_sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b",
+      "index_s": 17.962081642,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 21.589178148,
+      "native_cache": false,
+      "native_workflow_s": 18.226656795,
+      "png_compress_level": 1,
+      "private_vector_capture": true,
+      "process_wall_s": 41.105534098,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "elapsed_s": 0.081450227,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "observed_positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 79246912,
+              "encoded_peak_single_bytes": 456860,
+              "encoded_total_bytes": 456860,
+              "image_encode_cpu_ns": 43808905,
+              "image_encode_wall_ns": 43785650,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "elapsed_s": 0.066874799,
+          "kind": "image",
+          "observed_doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "observed_positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "query_id": "image-13201",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 65488596,
+              "encoded_peak_single_bytes": 468805,
+              "encoded_total_bytes": 468805,
+              "image_encode_cpu_ns": 41504201,
+              "image_encode_wall_ns": 41430834,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "elapsed_s": 0.067439668,
+          "kind": "image",
+          "observed_doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "observed_positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "query_id": "image-26564",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 66167146,
+              "encoded_peak_single_bytes": 445333,
+              "encoded_total_bytes": 445333,
+              "image_encode_cpu_ns": 42845736,
+              "image_encode_wall_ns": 42795905,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "elapsed_s": 0.045922902,
+          "kind": "text",
+          "observed_doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "observed_positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "observed_scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 44660074,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 17959320120,
+          "encoded_peak_single_bytes": 923326,
+          "encoded_total_bytes": 127821765,
+          "image_encode_cpu_ns": 12529098343,
+          "image_encode_wall_ns": 12517477522,
+          "image_rows": 256,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 79246912,
+          "encoded_peak_single_bytes": 456860,
+          "encoded_total_bytes": 456860,
+          "image_encode_cpu_ns": 43808905,
+          "image_encode_wall_ns": 43785650,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 65488596,
+          "encoded_peak_single_bytes": 468805,
+          "encoded_total_bytes": 468805,
+          "image_encode_cpu_ns": 41504201,
+          "image_encode_wall_ns": 41430834,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 66167146,
+          "encoded_peak_single_bytes": 445333,
+          "encoded_total_bytes": 445333,
+          "image_encode_cpu_ns": 42845736,
+          "image_encode_wall_ns": 42795905,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 44660074,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 1.053472349,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    },
+    "direct-256-default": {
+      "application_e2e_s": 32.729005153,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "direct",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.3007181859575212,
+              "decode_resize_normalize_s": 0.6149253910407424,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 5.5711716413497925e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013645500876009464,
+              "decode_resize_normalize_s": 0.5591470082290471,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.5462359189987183e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013666699640452862,
+              "decode_resize_normalize_s": 0.589554799720645,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.544838935136795e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.01360415993258357,
+              "decode_resize_normalize_s": 0.5788736580871046,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.4689361453056335e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013611452654004097,
+              "decode_resize_normalize_s": 0.5776760531589389,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.5490298867225647e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013610912952572107,
+              "decode_resize_normalize_s": 0.5861730710603297,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.35019251704216e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.013574400916695595,
+              "decode_resize_normalize_s": 0.548949584364891,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.474989742040634e-06,
+              "output_bytes": 65536
+            },
+            {
+              "actor_service_s": 0.01358865201473236,
+              "decode_resize_normalize_s": 0.5595320672728121,
+              "device_input_bytes": 19267584,
+              "host_copy_s": 2.352055162191391e-06,
+              "output_bytes": 65536
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.01473158085718751,
+              "decode_resize_normalize_s": 0.018232058733701706,
+              "device_input_bytes": 602112,
+              "host_copy_s": 2.178829163312912e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.004221518058329821,
+              "decode_resize_normalize_s": 0.017501498106867075,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.667998731136322e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        },
+        {
+          "batches": [
+            {
+              "actor_service_s": 0.004170050844550133,
+              "decode_resize_normalize_s": 0.01703461306169629,
+              "device_input_bytes": 602112,
+              "host_copy_s": 1.2898817658424377e-06,
+              "output_bytes": 2048
+            }
+          ],
+          "detailed_cuda_timing": false,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 256,
+      "hse_encoded_block_bytes_upper_bound": null,
+      "hse_encoded_bytes": null,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042",
+      "index_identity_sha256": "b32f1925953aeb4f5d870c2fbad28091ae8b61bb8303804e2a12d267828cc100",
+      "index_load_s": null,
+      "index_matrix_sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b",
+      "index_s": 31.017281324,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 16.823888115,
+      "native_cache": false,
+      "native_workflow_s": 31.47112212,
+      "png_compress_level": null,
+      "private_vector_capture": true,
+      "process_wall_s": 49.553136676,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "elapsed_s": 0.147093086,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "observed_positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 144222997,
+              "encoded_peak_single_bytes": 400808,
+              "encoded_total_bytes": 400808,
+              "image_encode_cpu_ns": 110884964,
+              "image_encode_wall_ns": 110839640,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "elapsed_s": 0.141922671,
+          "kind": "image",
+          "observed_doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "observed_positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "query_id": "image-13201",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 140501704,
+              "encoded_peak_single_bytes": 436312,
+              "encoded_total_bytes": 436312,
+              "image_encode_cpu_ns": 118449902,
+              "image_encode_wall_ns": 118395205,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "elapsed_s": 0.116612996,
+          "kind": "image",
+          "observed_doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "observed_positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "query_id": "image-26564",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 115321440,
+              "encoded_peak_single_bytes": 413451,
+              "encoded_total_bytes": 413451,
+              "image_encode_cpu_ns": 93772111,
+              "image_encode_wall_ns": 93736697,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "elapsed_s": 0.045426938,
+          "kind": "text",
+          "observed_doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "observed_positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "observed_scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 44143384,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 31014601315,
+          "encoded_peak_single_bytes": 907975,
+          "encoded_total_bytes": 121203712,
+          "image_encode_cpu_ns": 26009028314,
+          "image_encode_wall_ns": 25993680384,
+          "image_rows": 256,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 144222997,
+          "encoded_peak_single_bytes": 400808,
+          "encoded_total_bytes": 400808,
+          "image_encode_cpu_ns": 110884964,
+          "image_encode_wall_ns": 110839640,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 140501704,
+          "encoded_peak_single_bytes": 436312,
+          "encoded_total_bytes": 436312,
+          "image_encode_cpu_ns": 118449902,
+          "image_encode_wall_ns": 118395205,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 115321440,
+          "encoded_peak_single_bytes": 413451,
+          "encoded_total_bytes": 413451,
+          "image_encode_cpu_ns": 93772111,
+          "image_encode_wall_ns": 93736697,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 44143384,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 1.025791974,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    },
+    "semloom_hse-12-1": {
+      "application_e2e_s": 5.247691778,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "semloom_hse",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batch_actor_service_s": [
+            0.28377541713416576
+          ],
+          "batch_host_copy_s": [
+            0.006192072294652462
+          ],
+          "batch_preprocess_s": [
+            0.30173210287466645
+          ],
+          "batch_submit_s": [
+            0.013714786618947983,
+            0.00048025092110037804
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 7225344,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 6718212,
+          "ready_bytes_peak": 7225344,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.030235239304602146
+          ],
+          "batch_host_copy_s": [
+            0.00016315001994371414
+          ],
+          "batch_preprocess_s": [
+            0.024821650236845016
+          ],
+          "batch_submit_s": [
+            0.0016059358604252338,
+            0.00044505996629595757
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 456860,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.006568999961018562
+          ],
+          "batch_host_copy_s": [
+            0.0008440408855676651
+          ],
+          "batch_preprocess_s": [
+            0.030254504643380642
+          ],
+          "batch_submit_s": [
+            0.0015547513030469418,
+            0.0002739918418228626
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 879104,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.005784465931355953
+          ],
+          "batch_host_copy_s": [
+            0.00022418098524212837
+          ],
+          "batch_preprocess_s": [
+            0.03404611023142934
+          ],
+          "batch_submit_s": [
+            0.0015402496792376041,
+            0.00028547411784529686
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 640892,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 12,
+      "hse_encoded_block_bytes_upper_bound": 29055200,
+      "hse_encoded_bytes": 58110400,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "b9c7f4f498947a84a98943a78f029f74d8260499f4b779552a3c43f7abf748f5",
+      "index_identity_sha256": "1d0bb207f2f5ed1273fe01bef4a3f1642f581faa370f5eeb7749a04dc8acc01f",
+      "index_load_s": null,
+      "index_matrix_sha256": "d4ec0c492aeb5cf262b2410d39b364544dd35942032f6d335d015ee2573b91b6",
+      "index_s": 4.657852725,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 33.765138429,
+      "native_cache": false,
+      "native_workflow_s": 5.125498196,
+      "png_compress_level": 1,
+      "private_vector_capture": true,
+      "process_wall_s": 40.572884568,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "632",
+            "802",
+            "776",
+            "1268",
+            "285",
+            "785",
+            "1296",
+            "724",
+            "872"
+          ],
+          "elapsed_s": 0.131105175,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "632",
+            "802",
+            "776",
+            "1268",
+            "285",
+            "785",
+            "1296",
+            "724",
+            "872"
+          ],
+          "observed_positions": [
+            0,
+            2,
+            6,
+            4,
+            10,
+            1,
+            5,
+            11,
+            3,
+            7
+          ],
+          "observed_scores": [
+            1.0,
+            0.7213295698165894,
+            0.701168417930603,
+            0.6479557752609253,
+            0.6364905834197998,
+            0.6045188307762146,
+            0.5420660972595215,
+            0.5166219472885132,
+            0.4469570815563202,
+            0.430828332901001
+          ],
+          "positions": [
+            0,
+            2,
+            6,
+            4,
+            10,
+            1,
+            5,
+            11,
+            3,
+            7
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 128178407,
+              "encoded_peak_single_bytes": 456860,
+              "encoded_total_bytes": 456860,
+              "image_encode_cpu_ns": 53380313,
+              "image_encode_wall_ns": 53280886,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            1.0,
+            0.7213295698165894,
+            0.701168417930603,
+            0.6479557752609253,
+            0.6364905834197998,
+            0.6045188307762146,
+            0.5420660972595215,
+            0.5166219472885132,
+            0.4469570815563202,
+            0.430828332901001
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "285",
+            "776",
+            "139",
+            "785",
+            "1296",
+            "1268",
+            "632",
+            "802",
+            "872",
+            "724"
+          ],
+          "elapsed_s": 0.149551331,
+          "kind": "image",
+          "observed_doc_ids": [
+            "285",
+            "776",
+            "139",
+            "785",
+            "1296",
+            "1268",
+            "632",
+            "802",
+            "872",
+            "724"
+          ],
+          "observed_positions": [
+            1,
+            4,
+            0,
+            5,
+            11,
+            10,
+            2,
+            6,
+            7,
+            3
+          ],
+          "observed_scores": [
+            1.0,
+            0.7579619884490967,
+            0.6045010089874268,
+            0.5902495980262756,
+            0.5433921217918396,
+            0.5082371234893799,
+            0.5017646551132202,
+            0.4921639561653137,
+            0.4685780107975006,
+            0.45842280983924866
+          ],
+          "positions": [
+            1,
+            4,
+            0,
+            5,
+            11,
+            10,
+            2,
+            6,
+            7,
+            3
+          ],
+          "query_id": "image-285",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 147680703,
+              "encoded_peak_single_bytes": 879104,
+              "encoded_total_bytes": 879104,
+              "image_encode_cpu_ns": 95203374,
+              "image_encode_wall_ns": 95065271,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            1.0,
+            0.7579619884490967,
+            0.6045010089874268,
+            0.5902495980262756,
+            0.5433921217918396,
+            0.5082371234893799,
+            0.5017646551132202,
+            0.4921639561653137,
+            0.4685780107975006,
+            0.45842280983924866
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "632",
+            "139",
+            "802",
+            "1268",
+            "776",
+            "285",
+            "724",
+            "785",
+            "1296",
+            "885"
+          ],
+          "elapsed_s": 0.133421603,
+          "kind": "image",
+          "observed_doc_ids": [
+            "632",
+            "139",
+            "802",
+            "1268",
+            "776",
+            "285",
+            "724",
+            "785",
+            "1296",
+            "885"
+          ],
+          "observed_positions": [
+            2,
+            0,
+            6,
+            10,
+            4,
+            1,
+            3,
+            5,
+            11,
+            8
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7213634252548218,
+            0.6513412594795227,
+            0.5577550530433655,
+            0.555139422416687,
+            0.5017825365066528,
+            0.4414981007575989,
+            0.43704497814178467,
+            0.42982017993927,
+            0.3833479881286621
+          ],
+          "positions": [
+            2,
+            0,
+            6,
+            10,
+            4,
+            1,
+            3,
+            5,
+            11,
+            8
+          ],
+          "query_id": "image-632",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 131138517,
+              "encoded_peak_single_bytes": 640892,
+              "encoded_total_bytes": 640892,
+              "image_encode_cpu_ns": 73528962,
+              "image_encode_wall_ns": 72877604,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7213634252548218,
+            0.6513412594795227,
+            0.5577550530433655,
+            0.555139422416687,
+            0.5017825365066528,
+            0.4414981007575989,
+            0.43704497814178467,
+            0.42982017993927,
+            0.3833479881286621
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "1268",
+            "1296",
+            "139",
+            "632",
+            "724",
+            "802",
+            "872",
+            "285",
+            "885",
+            "785"
+          ],
+          "elapsed_s": 0.052755439,
+          "kind": "text",
+          "observed_doc_ids": [
+            "1268",
+            "1296",
+            "139",
+            "632",
+            "724",
+            "802",
+            "872",
+            "285",
+            "885",
+            "785"
+          ],
+          "observed_positions": [
+            10,
+            11,
+            0,
+            2,
+            3,
+            6,
+            7,
+            1,
+            8,
+            5
+          ],
+          "observed_scores": [
+            0.23800715804100037,
+            0.2010544240474701,
+            0.19277817010879517,
+            0.18809491395950317,
+            0.18608000874519348,
+            0.17984582483768463,
+            0.1793678104877472,
+            0.17763449251651764,
+            0.1748911291360855,
+            0.1739422082901001
+          ],
+          "positions": [
+            10,
+            11,
+            0,
+            2,
+            3,
+            6,
+            7,
+            1,
+            8,
+            5
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 51206510,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.23800715804100037,
+            0.2010544240474701,
+            0.19277817010879517,
+            0.18809491395950317,
+            0.18608000874519348,
+            0.17984582483768463,
+            0.1793678104877472,
+            0.17763449251651764,
+            0.1748911291360855,
+            0.1739422082901001
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "ray_shutdown_returned": true,
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 4656854373,
+          "encoded_peak_single_bytes": 879104,
+          "encoded_total_bytes": 6718212,
+          "image_encode_cpu_ns": 752069014,
+          "image_encode_wall_ns": 750291773,
+          "image_rows": 12,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 128178407,
+          "encoded_peak_single_bytes": 456860,
+          "encoded_total_bytes": 456860,
+          "image_encode_cpu_ns": 53380313,
+          "image_encode_wall_ns": 53280886,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 147680703,
+          "encoded_peak_single_bytes": 879104,
+          "encoded_total_bytes": 879104,
+          "image_encode_cpu_ns": 95203374,
+          "image_encode_wall_ns": 95065271,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 131138517,
+          "encoded_peak_single_bytes": 640892,
+          "encoded_total_bytes": 640892,
+          "image_encode_cpu_ns": 73528962,
+          "image_encode_wall_ns": 72877604,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 51206510,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 0.106079439,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "daft": "0.7.21",
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "pyarrow": "24.0.0",
+        "ray": "2.56.1",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    },
+    "semloom_hse-256-1": {
+      "application_e2e_s": 21.666860378,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "semloom_hse",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batch_actor_service_s": [
+            0.3141362713649869,
+            0.03175888629630208,
+            0.018803996965289116,
+            0.01664815889671445,
+            0.017159885726869106,
+            0.016357974614948034,
+            0.016484761144965887,
+            0.01852720696479082
+          ],
+          "batch_host_copy_s": [
+            0.018433164805173874,
+            0.014794136863201857,
+            0.0036886068992316723,
+            0.0026033842004835606,
+            0.0027191611006855965,
+            0.0022753961384296417,
+            0.0024889791384339333,
+            0.0028811050578951836
+          ],
+          "batch_preprocess_s": [
+            0.6616796031594276,
+            0.6965552042238414,
+            0.6616252851672471,
+            0.6565026170574129,
+            0.6334397080354393,
+            0.7675851020030677,
+            0.60928561585024,
+            0.6109300893731415
+          ],
+          "batch_submit_s": [
+            0.053217191249132156,
+            0.03441314911469817,
+            0.00048512406647205353,
+            0.04115757578983903,
+            0.00045953597873449326,
+            0.02139603579416871,
+            0.00028134509921073914,
+            0.01436865609139204,
+            0.0002712360583245754,
+            0.04032046487554908,
+            0.00027224887162446976,
+            0.015313086099922657,
+            0.00023252004757523537,
+            0.00897819735109806,
+            0.00029344577342271805,
+            0.0003071972168982029
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 154140672,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 34348574,
+          "ready_bytes_peak": 38535168,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.0218305429443717
+          ],
+          "batch_host_copy_s": [
+            0.00012797676026821136
+          ],
+          "batch_preprocess_s": [
+            0.024939487222582102
+          ],
+          "batch_submit_s": [
+            0.001533751841634512,
+            0.0004112650640308857
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 456860,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.0055818697437644005
+          ],
+          "batch_host_copy_s": [
+            0.0006567509844899178
+          ],
+          "batch_preprocess_s": [
+            0.023305009584873915
+          ],
+          "batch_submit_s": [
+            0.0014041829854249954,
+            0.0003717229701578617
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 468805,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.0059930868446826935
+          ],
+          "batch_host_copy_s": [
+            0.00016709091141819954
+          ],
+          "batch_preprocess_s": [
+            0.02328810701146722
+          ],
+          "batch_submit_s": [
+            0.0011944868601858616,
+            0.0002919496037065983
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 445333,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 256,
+      "hse_encoded_block_bytes_upper_bound": 29055200,
+      "hse_encoded_bytes": 58110400,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042",
+      "index_identity_sha256": "b32f1925953aeb4f5d870c2fbad28091ae8b61bb8303804e2a12d267828cc100",
+      "index_load_s": null,
+      "index_matrix_sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b",
+      "index_s": 19.733543608,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 33.36076801,
+      "native_cache": false,
+      "native_workflow_s": 20.084148187,
+      "png_compress_level": 1,
+      "private_vector_capture": true,
+      "process_wall_s": 56.48887401,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "elapsed_s": 0.122802177,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "observed_positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 119608667,
+              "encoded_peak_single_bytes": 456860,
+              "encoded_total_bytes": 456860,
+              "image_encode_cpu_ns": 55230165,
+              "image_encode_wall_ns": 54969075,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "elapsed_s": 0.088286446,
+          "kind": "image",
+          "observed_doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "observed_positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "query_id": "image-13201",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 86726130,
+              "encoded_peak_single_bytes": 468805,
+              "encoded_total_bytes": 468805,
+              "image_encode_cpu_ns": 42992182,
+              "image_encode_wall_ns": 42925327,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "elapsed_s": 0.088588467,
+          "kind": "image",
+          "observed_doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "observed_positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "query_id": "image-26564",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 87098969,
+              "encoded_peak_single_bytes": 445333,
+              "encoded_total_bytes": 445333,
+              "image_encode_cpu_ns": 42533788,
+              "image_encode_wall_ns": 42453866,
+              "image_rows": 1,
+              "png_compress_level": 1,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "elapsed_s": 0.047532108,
+          "kind": "text",
+          "observed_doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "observed_positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "observed_scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 46197685,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "ray_shutdown_returned": true,
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 19731051839,
+          "encoded_peak_single_bytes": 923326,
+          "encoded_total_bytes": 127821765,
+          "image_encode_cpu_ns": 12017802164,
+          "image_encode_wall_ns": 11981322840,
+          "image_rows": 256,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 119608667,
+          "encoded_peak_single_bytes": 456860,
+          "encoded_total_bytes": 456860,
+          "image_encode_cpu_ns": 55230165,
+          "image_encode_wall_ns": 54969075,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 86726130,
+          "encoded_peak_single_bytes": 468805,
+          "encoded_total_bytes": 468805,
+          "image_encode_cpu_ns": 42992182,
+          "image_encode_wall_ns": 42925327,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 87098969,
+          "encoded_peak_single_bytes": 445333,
+          "encoded_total_bytes": 445333,
+          "image_encode_cpu_ns": 42533788,
+          "image_encode_wall_ns": 42453866,
+          "image_rows": 1,
+          "png_compress_level": 1,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 46197685,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 1.298461594,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "daft": "0.7.21",
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "pyarrow": "24.0.0",
+        "ray": "2.56.1",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    },
+    "semloom_hse-256-default": {
+      "application_e2e_s": 36.357765854,
+      "application_scope": "source content check/decode through native index/search and output validation; model startup and evidence serialization separate",
+      "arm": "semloom_hse",
+      "detailed_timing": false,
+      "direct_model_batch_size": 32,
+      "embedding_identity_ref": "embedding_identity.json",
+      "execution_observations": [
+        {
+          "batch_actor_service_s": [
+            0.3703047428280115,
+            0.026679012924432755,
+            0.01694540213793516,
+            0.016994007863104343,
+            0.01658135186880827,
+            0.018120992928743362,
+            0.01597435725852847,
+            0.01588179776445031
+          ],
+          "batch_host_copy_s": [
+            0.019937059842050076,
+            0.01276860199868679,
+            0.003094932995736599,
+            0.003100728150457144,
+            0.0026728413067758083,
+            0.0029846676625311375,
+            0.0020141019485890865,
+            0.002060667145997286
+          ],
+          "batch_preprocess_s": [
+            0.5947130769491196,
+            0.5297225299291313,
+            0.7350093587301672,
+            0.590362454764545,
+            0.7151538971811533,
+            0.6326980185694993,
+            0.5824001338332891,
+            0.5686098439618945
+          ],
+          "batch_submit_s": [
+            0.03205494908615947,
+            0.03603998385369778,
+            0.00038726115599274635,
+            0.039428950287401676,
+            0.000297709833830595,
+            0.026085881050676107,
+            0.0005611618980765343,
+            0.02100420370697975,
+            0.00034399470314383507,
+            0.03989318013191223,
+            0.0003037392161786556,
+            0.013638781383633614,
+            0.00027971481904387474,
+            0.0073133958503603935,
+            0.00030457740649580956,
+            0.00023214798420667648
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 154140672,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 32801033,
+          "ready_bytes_peak": 38535168,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.024651464074850082
+          ],
+          "batch_host_copy_s": [
+            0.00015277322381734848
+          ],
+          "batch_preprocess_s": [
+            0.02398022823035717
+          ],
+          "batch_submit_s": [
+            0.001575239934027195,
+            0.0004510669969022274
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 400808,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.006027539726346731
+          ],
+          "batch_host_copy_s": [
+            0.00043084099888801575
+          ],
+          "batch_preprocess_s": [
+            0.024050799664109945
+          ],
+          "batch_submit_s": [
+            0.0021869689226150513,
+            0.0005025900900363922
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 436312,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        },
+        {
+          "batch_actor_service_s": [
+            0.004472006112337112
+          ],
+          "batch_host_copy_s": [
+            0.00011588400229811668
+          ],
+          "batch_preprocess_s": [
+            0.02210861025378108
+          ],
+          "batch_submit_s": [
+            0.0020097773522138596,
+            0.0003205901011824608
+          ],
+          "detailed_cuda_timing": false,
+          "device_input_bytes": 602112,
+          "encoded_block_bytes_upper_bound": 29055200,
+          "encoded_bytes_limit": 58110400,
+          "encoded_bytes_peak": 413451,
+          "ready_bytes_peak": 602112,
+          "transport_time_s": null
+        }
+      ],
+      "gallery_rows": 256,
+      "hse_encoded_block_bytes_upper_bound": 29055200,
+      "hse_encoded_bytes": 58110400,
+      "image_model_lifecycle": "resident_for_workflow",
+      "index_file_sha256": "00c1f91bda2a0e96664da825c164c012a05101c0993bbfa324c55bed84f0f042",
+      "index_identity_sha256": "b32f1925953aeb4f5d870c2fbad28091ae8b61bb8303804e2a12d267828cc100",
+      "index_load_s": null,
+      "index_matrix_sha256": "7cc8276b3c19b58da8707717d529c5f5060abcb0dd827aba36dbe90031bfc77b",
+      "index_s": 34.252398608,
+      "input_kind": "RGB_PIL",
+      "k": 10,
+      "lotus_source": {
+        "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+        "source_sha256": {
+          "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+          "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+          "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+          "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+          "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+          "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+          "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+          "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+          "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+          "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+        },
+        "version": "1.2.4"
+      },
+      "manifest_sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6",
+      "mode": "combined",
+      "model_dtype": "float32",
+      "model_startup_s": 39.28611342,
+      "native_cache": false,
+      "native_workflow_s": 34.803681685,
+      "png_compress_level": null,
+      "private_vector_capture": true,
+      "process_wall_s": 77.102369083,
+      "queries": [
+        {
+          "doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "elapsed_s": 0.183442951,
+          "kind": "image",
+          "observed_doc_ids": [
+            "139",
+            "13923",
+            "7574",
+            "10977",
+            "14038",
+            "10995",
+            "16439",
+            "12280",
+            "7795",
+            "24610"
+          ],
+          "observed_positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "observed_scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "positions": [
+            0,
+            135,
+            75,
+            106,
+            137,
+            107,
+            161,
+            119,
+            77,
+            238
+          ],
+          "query_id": "image-139",
+          "rm_calls": [
+            {
+              "call_index": 1,
+              "elapsed_ns": 180350284,
+              "encoded_peak_single_bytes": 400808,
+              "encoded_total_bytes": 400808,
+              "image_encode_cpu_ns": 113722497,
+              "image_encode_wall_ns": 113329367,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999997615814209,
+            0.7749640941619873,
+            0.7667723894119263,
+            0.760269284248352,
+            0.7570205330848694,
+            0.7478522062301636,
+            0.7421249151229858,
+            0.738579511642456,
+            0.734740138053894,
+            0.7288467884063721
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "elapsed_s": 0.172357486,
+          "kind": "image",
+          "observed_doc_ids": [
+            "13201",
+            "22479",
+            "13546",
+            "18519",
+            "23359",
+            "3553",
+            "4765",
+            "15597",
+            "6460",
+            "7977"
+          ],
+          "observed_positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "positions": [
+            127,
+            214,
+            130,
+            183,
+            227,
+            38,
+            45,
+            153,
+            60,
+            81
+          ],
+          "query_id": "image-13201",
+          "rm_calls": [
+            {
+              "call_index": 2,
+              "elapsed_ns": 170804220,
+              "encoded_peak_single_bytes": 436312,
+              "encoded_total_bytes": 436312,
+              "image_encode_cpu_ns": 123233570,
+              "image_encode_wall_ns": 122505083,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.9141980409622192,
+            0.8927863240242004,
+            0.8798524737358093,
+            0.7811020612716675,
+            0.7674503326416016,
+            0.7487920522689819,
+            0.7485936284065247,
+            0.746077299118042,
+            0.7453339099884033
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "elapsed_s": 0.14198581,
+          "kind": "image",
+          "observed_doc_ids": [
+            "26564",
+            "16439",
+            "1503",
+            "24610",
+            "13659",
+            "11813",
+            "4795",
+            "7574",
+            "22371",
+            "12667"
+          ],
+          "observed_positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "observed_scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "positions": [
+            255,
+            161,
+            15,
+            238,
+            132,
+            116,
+            46,
+            75,
+            212,
+            122
+          ],
+          "query_id": "image-26564",
+          "rm_calls": [
+            {
+              "call_index": 3,
+              "elapsed_ns": 140007060,
+              "encoded_peak_single_bytes": 413451,
+              "encoded_total_bytes": 413451,
+              "image_encode_cpu_ns": 96884086,
+              "image_encode_wall_ns": 96542489,
+              "image_rows": 1,
+              "png_compress_level": null,
+              "status": "succeeded",
+              "text_rows": 0
+            }
+          ],
+          "scores": [
+            0.9999996423721313,
+            0.8420702219009399,
+            0.8352144360542297,
+            0.7337846755981445,
+            0.7232688665390015,
+            0.7208845615386963,
+            0.7170453071594238,
+            0.7084506750106812,
+            0.7057487964630127,
+            0.7036212682723999
+          ],
+          "status": "succeeded"
+        },
+        {
+          "doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "elapsed_s": 0.050764846,
+          "kind": "text",
+          "observed_doc_ids": [
+            "7888",
+            "1268",
+            "19042",
+            "19221",
+            "14831",
+            "23230",
+            "7977",
+            "22396",
+            "15272",
+            "17115"
+          ],
+          "observed_positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "observed_scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "positions": [
+            80,
+            10,
+            189,
+            191,
+            142,
+            225,
+            81,
+            213,
+            146,
+            168
+          ],
+          "query_id": "text-0",
+          "rm_calls": [
+            {
+              "call_index": 4,
+              "elapsed_ns": 49240013,
+              "image_rows": 0,
+              "status": "succeeded",
+              "text_rows": 1
+            }
+          ],
+          "scores": [
+            0.25875505805015564,
+            0.23800718784332275,
+            0.23050203919410706,
+            0.2298932522535324,
+            0.22912907600402832,
+            0.22661133110523224,
+            0.22626197338104248,
+            0.22502945363521576,
+            0.22320744395256042,
+            0.22288377583026886
+          ],
+          "status": "succeeded"
+        }
+      ],
+      "ray_shutdown_returned": true,
+      "rm_calls": [
+        {
+          "call_index": 0,
+          "elapsed_ns": 34250262333,
+          "encoded_peak_single_bytes": 907975,
+          "encoded_total_bytes": 121203712,
+          "image_encode_cpu_ns": 26895420116,
+          "image_encode_wall_ns": 26830174865,
+          "image_rows": 256,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 1,
+          "elapsed_ns": 180350284,
+          "encoded_peak_single_bytes": 400808,
+          "encoded_total_bytes": 400808,
+          "image_encode_cpu_ns": 113722497,
+          "image_encode_wall_ns": 113329367,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 2,
+          "elapsed_ns": 170804220,
+          "encoded_peak_single_bytes": 436312,
+          "encoded_total_bytes": 436312,
+          "image_encode_cpu_ns": 123233570,
+          "image_encode_wall_ns": 122505083,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 3,
+          "elapsed_ns": 140007060,
+          "encoded_peak_single_bytes": 413451,
+          "encoded_total_bytes": 413451,
+          "image_encode_cpu_ns": 96884086,
+          "image_encode_wall_ns": 96542489,
+          "image_rows": 1,
+          "png_compress_level": null,
+          "status": "succeeded",
+          "text_rows": 0
+        },
+        {
+          "call_index": 4,
+          "elapsed_ns": 49240013,
+          "image_rows": 0,
+          "status": "succeeded",
+          "text_rows": 1
+        }
+      ],
+      "schema": "lotus.image_workflow.v1",
+      "source_decode_s": 1.270189388,
+      "stage": "complete",
+      "status": "succeeded",
+      "stock_encode_batch_size": 32,
+      "stock_outer_batch_size": 64,
+      "stock_rm_device": "cpu",
+      "tail_quantiles": {
+        "p99": null,
+        "p99_99": null,
+        "reason": "qualification has too few independent complete queries"
+      },
+      "task": "native_clip_image_retrieval",
+      "torch_thread_pools": {
+        "torch_interop_threads": 1,
+        "torch_intraop_threads": 1
+      },
+      "versions": {
+        "daft": "0.7.21",
+        "faiss-cpu": "1.15.0",
+        "lotus-ai": "1.2.4",
+        "numpy": "1.26.4",
+        "pandas": "2.3.3",
+        "pillow": "12.2.0",
+        "pyarrow": "24.0.0",
+        "ray": "2.56.1",
+        "sentence-transformers": "3.4.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "4.57.6"
+      }
+    }
+  },
+  "schema": "lotus.png_candidate.v1",
+  "source_archive": {
+    "bytes": 2375214,
+    "runtime_sha256": {
+      "code/scripts/experiments/run_lotus_image_retrieval.py": "e43a02927fc0d574d4277c89487dc9b8c56484de1680082914563e881848b06a",
+      "code/src/semantic_methods/lotus/image_backend.py": "c80e0ff8b2a2e99ac4b0ec240193f9be10bbad53011650dcc3c47443029728fc",
+      "code/src/semantic_methods/lotus/image_rm.py": "ae79c2fc1a2760209625f775b92c427b077087d3a10f84f97c0def93e1c0cb54",
+      "code/src/semantic_methods/lotus/image_workflow.py": "ebab6e4c56d3b3d2a4c51dcfaa2f5600a002e644ba967c23dd080c3e2037d2ae"
+    },
+    "sha256": "6b6fcc7f46c1c3f54af53806e1db70d235af7cb4d18a00a84a41ec919d9a7d49"
+  },
+  "supervision": {
+    "cleanup": [
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.101452717091888,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "preflight",
+        "live_owned_processes": [],
+        "tracked_processes": 1
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.058234824799001,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "sdk",
+        "live_owned_processes": [],
+        "tracked_processes": 1
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.076774553861469,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "direct-12-1",
+        "live_owned_processes": [],
+        "tracked_processes": 1
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.1026190146803856,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "semloom_hse-12-1",
+        "live_owned_processes": [],
+        "tracked_processes": 13
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.078367976937443,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "direct-256-default",
+        "live_owned_processes": [],
+        "tracked_processes": 1
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.0821144049987197,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "semloom_hse-256-1",
+        "live_owned_processes": [],
+        "tracked_processes": 14
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.106263034977019,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "semloom_hse-256-default",
+        "live_owned_processes": [],
+        "tracked_processes": 13
+      },
+      {
+        "cleanup_error": null,
+        "cleanup_grace_s": 30,
+        "cleanup_wall_s": 2.1057490073144436,
+        "confirmed": true,
+        "gpu_compute_pids": [],
+        "label": "direct-256-1",
+        "live_owned_processes": [],
+        "tracked_processes": 1
+      }
+    ],
+    "cleanup_wall_s": 16.71157553466037,
+    "lease_acquired": true,
+    "lease_released": true,
+    "per_run_timeout_s": 180,
+    "runs": [
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "preflight",
+        "timed_out": false,
+        "wall_s": 10.137248232960701
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "sdk",
+        "timed_out": false,
+        "wall_s": 21.150064771063626
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "direct-12-1",
+        "timed_out": false,
+        "wall_s": 24.688543792814016
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "semloom_hse-12-1",
+        "timed_out": false,
+        "wall_s": 45.32577691273764
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "direct-256-default",
+        "timed_out": false,
+        "wall_s": 53.806762418244034
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "semloom_hse-256-1",
+        "timed_out": false,
+        "wall_s": 61.93698260327801
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "semloom_hse-256-default",
+        "timed_out": false,
+        "wall_s": 82.05273450817913
+      },
+      {
+        "error_type": null,
+        "exit_code": 0,
+        "label": "direct-256-1",
+        "timed_out": false,
+        "wall_s": 45.808645624201745
+      }
+    ],
+    "sdk_items": 99,
+    "small_passed_before_scale": true,
+    "status": "succeeded",
+    "whole_budget_s": 1200,
+    "whole_wall_s": 344.9890758879483
+  },
+  "supervisor_sha256": "b112aa2a85a36e5f44d7e1fe236a7081000d957cb9f0e1d4ea8308a4ff20d653",
+  "vector_map": {
+    "direct-12-1": {
+      "call_0": {
+        "array": "v_9d79b147fa76df4dacebd2c76008b8115d156ef5805188b319d813fa1628f947",
+        "shape": [
+          12,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_5eb79eb9f9c9f355148730bdeac36f2f342437fa56ec9d1378cfc48ce7a85b37",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_c9bb6db72d806949e6f1ab0acef5868cc6889b1756296aaf91d63561ca07c29a",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    },
+    "direct-256-1": {
+      "call_0": {
+        "array": "v_afd728ebac6e2a06c7eff1034904266ec01584c1b7cf50f82a5c3b99c3233341",
+        "shape": [
+          256,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_c36df9c330e0c40940e379e6ac9c3e0ebdf52bd01d385361e10a013b66abe70c",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_0bd7d40bfb5a025b897d794206bfd64eaca5a082be4bdda7162934a243400cb4",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    },
+    "direct-256-default": {
+      "call_0": {
+        "array": "v_afd728ebac6e2a06c7eff1034904266ec01584c1b7cf50f82a5c3b99c3233341",
+        "shape": [
+          256,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_c36df9c330e0c40940e379e6ac9c3e0ebdf52bd01d385361e10a013b66abe70c",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_0bd7d40bfb5a025b897d794206bfd64eaca5a082be4bdda7162934a243400cb4",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    },
+    "semloom_hse-12-1": {
+      "call_0": {
+        "array": "v_9d79b147fa76df4dacebd2c76008b8115d156ef5805188b319d813fa1628f947",
+        "shape": [
+          12,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_5eb79eb9f9c9f355148730bdeac36f2f342437fa56ec9d1378cfc48ce7a85b37",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_c9bb6db72d806949e6f1ab0acef5868cc6889b1756296aaf91d63561ca07c29a",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    },
+    "semloom_hse-256-1": {
+      "call_0": {
+        "array": "v_afd728ebac6e2a06c7eff1034904266ec01584c1b7cf50f82a5c3b99c3233341",
+        "shape": [
+          256,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_c36df9c330e0c40940e379e6ac9c3e0ebdf52bd01d385361e10a013b66abe70c",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_0bd7d40bfb5a025b897d794206bfd64eaca5a082be4bdda7162934a243400cb4",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    },
+    "semloom_hse-256-default": {
+      "call_0": {
+        "array": "v_afd728ebac6e2a06c7eff1034904266ec01584c1b7cf50f82a5c3b99c3233341",
+        "shape": [
+          256,
+          512
+        ]
+      },
+      "call_1": {
+        "array": "v_c8d3c938a8e20e5452ceca5ebeb49da02a2c50b976335e7100f2c60f11d72a07",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_2": {
+        "array": "v_c36df9c330e0c40940e379e6ac9c3e0ebdf52bd01d385361e10a013b66abe70c",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_3": {
+        "array": "v_0bd7d40bfb5a025b897d794206bfd64eaca5a082be4bdda7162934a243400cb4",
+        "shape": [
+          1,
+          512
+        ]
+      },
+      "call_4": {
+        "array": "v_de8b106159eee2f5b3113a88097f96beda07b59ee06e8dee699eeffcf8c9f71b",
+        "shape": [
+          1,
+          512
+        ]
+      }
+    }
+  },
+  "vectors_ref": "vectors.npz"
+}

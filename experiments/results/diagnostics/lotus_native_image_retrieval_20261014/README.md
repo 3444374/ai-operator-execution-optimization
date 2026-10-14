@@ -1,7 +1,8 @@
 # 原生 LOTUS CLIP 图像检索接入
 
-下方六路径资格绑定 `06332d4f`。新增 PNG 编码候选尚未整合，选项及固定容量语义见
-[RM／CLI说明](../../../../code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)；不将旧模型资格移给新配置。
+下方六路径资格绑定 `06332d4f`。PNG 编码候选 `eab9f11a` 已独立完成 Direct／HSE 最小模型资格，
+尚未整合；见[候选观测](#png-candidate)与[RM／CLI说明](../../../../code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
+原六路径证据保持自己的来源，新候选不增加其他后端的模型资格。
 
 本轮接通固定 LOTUS1.2.4 的图片建索引及图文检索。图库、原生 Faiss 索引、在线图像／文本编码、
 完整 top10 输出均经过 LOTUS；Direct、SemLoom static、SemLoom HSE static、Ray Data 和 Daft Native
@@ -141,3 +142,52 @@ python experiments/results/diagnostics/lotus_native_image_retrieval_20261014/ver
 [任务 CLI](../../../../code/scripts/experiments/run_lotus_image_retrieval.py)支持 `index/search/combined`；
 模型及运行路径放 Git 外，[模型资格 CLI](../../../../code/scripts/experiments/qualify_lotus_clip.py)
 先生成实际摘要匹配的 embedding identity。完整调用说明见[LOTUS 目录](../../../../code/src/semantic_methods/lotus/README.md)。
+
+<a id="png-candidate"></a>
+
+## PNG 等级1与固定 HSE 容量候选
+
+实现 `eab9f11a0338ef632f208dd178edcf87cd0a9799` 保持省略参数时的原 Pillow 调用；
+`--png-compress-level 1` 只在替换 RM 的无损编码处传入等级。stock 继续使用原生 PIL。
+所有替换后端共用该接点，本次真实模型资格只覆盖 Direct／HSE。HSE 容量及块上限显式固定为
+58,110,400／29,055,200 bytes；不按新 PNG 大小推高，也不改变 batch、窗口或输入。
+超大块沿用原驱动 `BufferError`，实际通过／拒绝由软件回归覆盖。
+
+本地94项回归与独立源码审核通过；匹配服务器实际99项 SDK／fixture 测试通过，零跳过、零失败。
+两个等级1的12图资格通过后，依序运行 Direct 默认→HSE 等级1→HSE 默认→Direct 等级1四个256图格。
+单卡、FP32、batch32、HSE窗口2／模型worker1、Torch线程1／1、图像／模型／slow processor身份与旧资格相同。
+每格一次、无显式预热。8个监督调用（含两个CPU检查）全部正常退出，逐次物理清理确认，lease释放；
+总墙钟344.989秒／1200秒，包含16.712秒监督清理。每次模型调用限180秒，未超时。
+
+[候选原始观测与恢复映射](png_candidate.json)保留每格结果、全部阶段时间、配置、原件成员摘要和实际源码身份。
+30个完整矩阵逐字节恢复自原[向量库](vectors.npz)，不新增重复数组。六个图库及18个图片查询相对stock差为0；
+6个文本查询相对stock CUDA最大差5.96046448e-8。24条完整原生top10排名、位置和业务ID相同，分数在原1e-5容差内。
+同臂256图默认／等级1的五个完整矩阵逐字节相同。原生图库matrix也在私有备份中，已与RM完整输出核对。
+[独立证据审核](png_candidate_independent_review.json)核对76个原件成员、1054个Git源码blob及上述全部输出，无必修问题。
+
+下表为当次256图观测，单位秒；预处理是各批 decode／resize／normalize 墙钟之和，不是独立纯解码或应用关键路径。
+组合应用包含源核查／解码、建索引和三图片＋一文本完整查询；启动及证据写出另计。
+
+| 路径 | PNG | 图库编码墙钟／CPU | 预处理累计 | 建索引 | 组合应用 | 启动 |
+|---|---|---:|---:|---:|---:|---:|
+| Direct | 默认 | 25.994／26.009 | 4.615 | 31.017 | 32.729 | 16.824 |
+| Direct | 等级1 | 12.517／12.529 | 5.056 | 17.962 | 19.516 | 21.589 |
+| HSE | 默认 | 26.830／26.895 | 4.949 | 34.252 | 36.358 | 39.286 |
+| HSE | 等级1 | 11.981／12.018 | 5.298 | 19.734 | 21.667 | 33.361 |
+
+编码CPU记录使用进程累计时钟，包含该进程并发线程的CPU用时，不是独立主线程计时。
+图库 PNG 从121,203,712增至127,821,765 bytes（+5.4603%）；HSE默认／等级1的实际encoded峰值为
+32,801,033／34,348,574 bytes，均在固定容量内。RM仍先保存完整PNG列表，broker额度不涵盖该列表或序列化复制。
+Direct／HSE继续使用已有 host copy、actor service telemetry，HSE另记录submit；纯解码、跨进程 transport、
+H2D／kernel／D2H未分拆，详细CUDA计时关闭。原始四条查询与完整CLI时间均在候选JSON中，不能只拿短查询代表建库工作。
+这些单次值提供输入编码成本的观测依据，不作后端性能排名、可靠P99／P99.99或吞吐结论，也不从旧JCT扣除CPU差值。
+
+候选前的CPU诊断仅完成5个格（默认一次、等级1与0各两次）。默认图库编码26.061秒，等级1为11.593／11.790秒；
+等级0为4.685／4.700秒但总字节增74.9207%，未做等级0模型资格。1280次像素相等检查和4个默认／显式6字节探针
+来自执行源码及原摘要，PNG／RGB控制张量未保存，不称这些控制的离线逐字节重算。
+首次错误将E清单与D文件摘要比较，模型／编码前失败；修订共用原300秒窗口，末个默认格超时，未完成两整轮。
+两份失败原件、全部完成格和剩余额度算式在候选JSON中映射；后续GPU是另行授权的1200秒窗口。
+
+私有备份含76个成员、完整NPZ、原生index／vecs、命令及日志；Git只保留紧凑观测和复算入口。
+备份后的即时lease检查误用文件名，原字段不用于结论；后续正确文件名的只读快照及监督器正常释放记录均保留。
+候选尚未被整合分支采用；原六路径资格、厂商源码及其他正在测试的工作树保持原来源。

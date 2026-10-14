@@ -48,6 +48,13 @@
       "report": "daft_lotus_independent_review.json",
       "report_sha256": "d40caecf1ab1c69583b78866690770676255f3d030862a1fde6345c06242ee48",
       "scope": "read-only independent original/public integrity, source14 and unchanged Daft owner blobs, 19 new complete matrices and16 new native queries, original failure and reused SDK counts, six physical exits and original budget arithmetic; prior80 queries inherited after exact parity checks; all24 CLI/96 queries qualified, excludes performance and reliable tails"
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "png_candidate_evidence_release",
+      "report": "png_candidate_independent_review.json",
+      "report_sha256": "bc228e1ac27f2fe0c6c3850cc373524e594765b6205bf3d1b32c2e996f33bf66",
+      "scope": "Separate eab9f11a candidate:76 raw members/1054 source blobs,30 full RM matrices/6 native vecs/24 queries,SDK99,8 physical exits,fixed HSE bytes and original failures; unadopted,single occurrences,no performance or reliable tails."
     }
   ],
   "schema": "lotus.image_independent_reviews.v1"
