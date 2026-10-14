@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-14：IMLane桥生命周期与可选context复用
+
+- 在固定原生基线`8862c813`之上增加[阶段统计及可选常驻桥](code/integrations/sema/imlane_calls.md#bridge-lifecycle)，
+  保留作者TaskThreadPool／Lane、输出深复制、逐行HTTP函数和默认逐批路径；无共享执行配置或作者调度修改。
+- 固定context／函数、有限批ID与本地结束记录使健康批次可连续复用；取消、错误和消费中止继续隔离未知工作。
+  作者RestoreLane成功没有ACK，不报告远端取消或Coordinator排空。
+- [本机验证](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)保留初次命令／沙箱／缺头文件问题，
+  新方案未运行作者CPython／Ray、模型／GPU或性能比较；已有同步／async资格不重做，单卡验证独立继续。
+
 ## 2026-10-13：集成文本预检最小实际SDK资格
 
 - 固定完整执行SHA`1afa8e325278077a846180997e2db75275631a89`，独立owner复用原driver与共同host lease，6项受影响SDK检查全部通过／0跳过，13localhost POST，模型／GPU0。

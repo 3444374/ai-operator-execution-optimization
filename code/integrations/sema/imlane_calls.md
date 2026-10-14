@@ -25,6 +25,7 @@
 | `max_item_payload_bytes` | 单项payload容量；省略时8MiB |
 | `max_pending_calls` | 桥内待交付数量；省略时128，不表示作者执行并发 |
 | `max_batch_response_bytes` | 全批次完整响应累计容量；省略时32MiB |
+| `reuse_bridge` | 默认`False`；显式`True`选择下述固定函数的常驻桥候选，作者CPython／Ray资格分别待验证 |
 
 六项均由`IMLaneCallConfig.batch_limits`校验并传到既有DBEnd桥；公开单查询、常驻和MovieQuery的配置文件
 读取同一组字段。省略构造参数时使用配置字段，显式参数可选择合法额度；公共`NativeCallExecutor`将自身
@@ -33,6 +34,7 @@
 本地47项回归通过、1项缺实际库条件跳过，只证明配置／协议fixture行为，不替代作者库、模型或性能核验。
 SemBench的MovieQuery、数据／运行时预检和实际LOTUS执行器读取同一配置，不按128行拆开原Q1。
 新配置须指向已验证桥二进制，摘要为`b201be8891493a2885ff9faae6d755bfe1eb7c20e10bdb2cda3f5f25c56cf5c6`。
+该摘要对应已验证的逐批桥；`reuse_bridge=True`须另建本次候选二进制及独立配置，不能给旧二进制添加会话参数。
 Coordinator PID/start ticks、端口、namespace和产物目录由新的拥有者重新建立，不能复用已结束的证据配置。
 
 适配器在发送前核对PID/start ticks、实际二进制摘要、作者提交、运行模式、端口、
@@ -98,6 +100,59 @@ HTTP超时可正常回送一条错误值；即使DBEnd已排空，远端HTTP停�
 
 当前原桥未向作者IPC传入非空查询Job ID；调用方出现身份及源行身份仍保留。
 因此本切片不能证明作者查询间隔离、多查询公平性或独立取消。
+
+<a id="bridge-lifecycle"></a>
+
+## 桥生命周期与阶段测量候选
+
+本次只改变LOTUS／IMLane适配的初始化寿命，并增加阶段观测；不改变作者调度、HTTP函数、
+逐行独立请求、物理Arrow批次或HTTP client寿命。既有同步默认与可选async的实库资格保留，
+本次常驻候选的作者CPython、作者Ray及完整桥编译另列pending，不能继承旧路径资格或据此做性能排名。
+
+来源核对固定作者`072f8257`原始源码：
+[C++示例](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/demo/cpp_example/dbend_cpp_example.cpp)
+在同一context上Setup／Register一次，再连续执行三次两行表；
+`DBEndContext::ExecuteAsyncFuncPush`进入作者TaskThreadPool，future返回只说明宿主已接收任务，
+不代表已经拿到Lane。项目有限pending窗口是宿主选择，不声称复现论文Algorithm 2的全部机制。
+`ExecuteFunction`在输出转换后销毁共享内存，再异步发送RestoreLane；成功归还没有ACK。
+作者Coordinator和执行器等待归还后才复用Lane。本次继续调用这些接口，不重写作者执行器。
+
+默认`reuse_bridge=False`仍每个非空批次写私有`input.jsonl`、新建桥／context、等待EOF与零退出码。
+可选实现位于[会话消费器](../../src/execution_provider/adapters/imlane_session.py)，
+仍逐批写同一完整调用文件，串行提交已完成预检的批次，只复用固定进程／context／函数注册。
+每批独立32位十六进制ID；stdin只传最多1024字节的控制帧，文件只接受
+`batch-<同ID>/input.jsonl`，拒绝符号链接、非普通文件和超量输入。同一会话最多4096批，
+六项原容量仍逐批生效。以后若比较文件与管道传输，应作为独立消融，不与本次复用混在一起。
+
+启动握手确认META、六项容量及协议版本；结果包含batch ID和原始完整outcome，
+保留重复源行而拒绝重复出现身份、错行及旧批结果。`BATCH_END`须核对全部结果、字节数、
+future／复制计数及批次序号后才允许下一批；它只证明本地作者回调返回、输出复制和交付完成，
+不是Coordinator排空或远端HTTP取消的确认。固定函数文件／二进制摘要每批重查，不能通过重复注册实现热更新。
+正常完整429响应可消费并复用；transport／执行错误、取消、提前结束消费、桥崩溃或协议错误会停止桥并隔离会话，
+不自动重启或回退。公共适配器保留同Coordinator的仓外uncertain记录；杀桥不表示远端HTTP停止。
+消费者仍停在yield时，公开`close()`／context退出也会先记录未知工作，不能等旧迭代器回收后再阻止新拥有者。
+输出仍通过IPC复制获得调用方所有权，防止共享Lane归还后覆盖既有结果。
+
+计时采用单调时钟，在内存累计后随结束记录一次回送，不增加逐事件写盘：
+
+| 实际观测 | 口径 |
+|---|---|
+| Python `input_preflight_ns`, `call_encoding_ns`, `input_file_write_ns` | 预检、完整调用编码、文件写入与flush／fsync；预检本身也会编码，分别记录两次成本 |
+| `popen_ns`, `process_to_metadata_ns`／`process_to_ready_ns` | Popen返回与从创建开始到首次META／会话握手；包含子进程启动、准备和context初始化，不是纯进程启动时间 |
+| C++ `input_read_parse_ns`, `input_arrow_ns` | 文件读取／JSON核对与逐行Arrow表构造；前者剔除本地Arrow构造计时 |
+| `context_setup_ns`, `function_register_ns` | DBEnd构造／Setup与固定函数注册；会话首批携带一次，随后为0 |
+| `author_execute_inclusive_ns` | 各调用ExecuteFunction累计，包括作者调度、IPC、等待、下列输出复制和RestoreLane发送；并发调用会重叠 |
+| `output_copy_encode_ns`, `output_copy_decode_ns` | 共享输出序列化到自有IPC缓冲，再读取为自有Arrow表；包含局部形状／容量核查 |
+| `output_wire_ns`, `stdout_write_ns`, Python `outcome_decode_ns` | 结果身份／wire核对及封装、RESULT帧写出／flush、调用方解码；stdout项不含统计帧自身 |
+| Python `consumer_wait_ns`, `cleanup_ns`, `batch_wall_ns` | generator交付后直到恢复的消费等待、清理与完整调用方批次；消费等待不等于纯parser时间 |
+| C++ `batch_wall_ns` | 逐批桥含输入读取与初始化；会话从本批控制帧验证后开始，不含首批携带的会话初始化时间 |
+
+生命周期记录包括bridge PID、batch ID、context／注册／作者调用／输出复制次数及已发送批次数。
+作者内部IPC与模型执行的独立耗时未采集，因为既有API没有对应钩子；不能把ExecuteFunction差分
+当成精确模型或IPC时间，也不能把上述重叠累计项相加成查询完成时间（JCT）。
+编码容量不是聚合RSS上限，Bridge存活、回调完成和远端请求停止分别解释。
+本机[检查记录](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
+只支持协议和复制行为，实库窗口由主协调另行安排；原生LOTUS／SemLoom单卡验证可以独立继续。
 
 ## 已完成的软件检查
 

@@ -1,0 +1,49 @@
+{
+  "schema": "semloom.imlane.bridge_local_checks.v1",
+  "base_commit": "8862c8130bfb53aaa4873ac83354b8afa4711d73",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "date": "2026-10-14",
+  "tests_run": 98,
+  "passed": 97,
+  "failures": 0,
+  "errors": 0,
+  "skips": [
+    {
+      "test": "test_imlane_calls.IMLaneThinKernelTests.test_original_loop_is_restored_after_original_kernel_success_or_http_failure",
+      "reason": "requires real Arrow"
+    }
+  ],
+  "elapsed_s": 39.316,
+  "source_sha256": {
+    "code/integrations/sema/imlane_http.cpp": "c726cbb806dc458461ac5517e586d7e4b170f41e32920c60f167e722c4e48e58",
+    "code/src/execution_provider/adapters/imlane_session.py": "5ea622908b3268b92896fe24d4c7f9d72c4013e64365d55ac2574aa97939ade3",
+    "code/src/execution_provider/adapters/sema_imlane.py": "bc473c8d7c969bb222af00e79bf5f1ead23adf7510645bb7fd28453c7a6e4b09",
+    "code/src/baselines/text/frameworks/imlane_calls.py": "4333f2f064e572b85900f81b698e17cfbebe2bde6fcf09879193af1e19abed0f",
+    "code/tests/baselines/test_imlane_cpp_primitives.py": "4732b48d04b50e97e36f33e919e04bd6dc01f1638540eb7c1a850490a9d6b3c4",
+    "code/tests/execution_provider/test_imlane_session.py": "1b0c12342c519eddab460a6c3167d8173112edb803c038d81e478faa91fe5a7d"
+  },
+  "local_scope": [
+    "Python subprocess/localhost HTTP fixtures",
+    "real Arrow 16.1.0 C++ primitives"
+  ],
+  "log_sha256": "02b6ef6d2f2a72749afebe5ed2868a40b48d91bac770c98c435a713114e4a347",
+  "author_cpython_runs": 0,
+  "author_ray_runs": 0,
+  "model_requests": 0,
+  "gpu_runs": 0,
+  "full_bridge_compile": "pending: nlohmann/json.hpp unavailable in this local environment",
+  "failure_history": [
+    {
+      "action": "initial unittest module invocation",
+      "result": "code module collision, no tests ran"
+    },
+    {
+      "action": "initial localhost fixture invocation",
+      "result": "sandbox bind denied before requests"
+    },
+    {
+      "action": "full C++ syntax check",
+      "result": "missing nlohmann/json.hpp"
+    }
+  ]
+}

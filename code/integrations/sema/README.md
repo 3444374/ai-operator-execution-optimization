@@ -25,6 +25,9 @@ PYTHONPATH=code <driver-python> code/integrations/sema/verify_native.py \
 
 ## IMLane薄客户端
 
+新增[桥生命周期与阶段测量候选](imlane_calls.md#bridge-lifecycle)，显式`reuse_bridge=True`才选择常驻context。
+仍保留逐调用HTTP client和逐批私有输入文件，默认旧路径保持；新会话的两作者模式实库资格单独验证。
+
 [原生async任务函数](imlane_async_complete_call.py)作为独立候选，在作者循环上直接`await _request(call)`。
 CPython通过作者`run_until_complete`执行，作者Ray通过原`AsyncActorWrapper`执行；两模式使用同一函数。
 每次仍只有一份完整NativeCall，每调用session由既有kernel关闭，cookie与错误诊断采用发布组合的共享实现。

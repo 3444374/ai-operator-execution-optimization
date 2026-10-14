@@ -51,7 +51,12 @@ class SemaIMLaneExecutor:
 
     backend = 'imlane'
 
-    def __init__(self, config_path: Path, options: NativeGraphOptions | None = None, *, limits=None):
+    def __init__(self, config_path: Path, options: NativeGraphOptions | None = None, *, limits=None,
+                 reuse_bridge=False):
+        if type(reuse_bridge) is not bool:
+            raise TypeError('IMLane reuse_bridge requires an explicit boolean')
+        self.reuse_bridge = reuse_bridge
+        self._session = None
         self.options = options or NativeGraphOptions()
         self.limits = limits or IMLaneBatchLimits()
         if type(self.limits) is not IMLaneBatchLimits:
@@ -142,18 +147,42 @@ class SemaIMLaneExecutor:
         with self._lock:
             self._closed = True
             process = self._process
+        if self._session is not None:
+            return self._session.close()
         self._stop(process)
+
+    @property
+    def author_submission_pending(self):
+        return (self._session.command_active if self._session is not None
+                else self._process is not None)
+
+    def begin_close(self):
+        with self._lock:
+            self._closed = True
+            return self.author_submission_pending
 
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)
 
     def iter_batch(self, calls, *, cancelled=None, timeout_s=120):
+        if self.reuse_bridge:
+            with self._lock:
+                if self._session is None:
+                    from .imlane_session import IMLaneBridgeSession
+                    self._session = IMLaneBridgeSession(self)
+                session = self._session
+            yield from session.iter_batch(calls, cancelled=cancelled, timeout_s=timeout_s)
+            return
         if type(timeout_s) not in (int, float) or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120:
             raise ValueError('Sema IMLane batch requires a finite deadline at most 120 seconds')
         deadline = time.monotonic() + timeout_s
+        wall_started = time.monotonic_ns()
         calls = tuple(calls)
         self.last_close_report = None
         self.last_preflight = self.limits.inspect_calls(calls)
+        timings = dict(input_preflight_ns=time.monotonic_ns() - wall_started,
+                       call_encoding_ns=0, input_file_write_ns=0, popen_ns=0,
+                       outcome_decode_ns=0, consumer_wait_ns=0)
         if self.poisoned:
             raise RuntimeError('Sema IMLane executor retained an uncertain previous batch')
         if self._closed or cancelled and cancelled():
@@ -175,9 +204,14 @@ class SemaIMLaneExecutor:
         self.last_close_report = None
         out = self.work_root / ('batch-' + uuid.uuid4().hex)
         new_private_directory(out)
+        file_started = time.monotonic_ns()
         with open_private_text(out / 'input.jsonl') as stream:
             for call in calls:
-                stream.write(_call_wire(call) + '\n')
+                started = time.monotonic_ns()
+                wire = _call_wire(call) + '\n'
+                timings['call_encoding_ns'] += time.monotonic_ns() - started
+                stream.write(wire)
+        timings['input_file_write_ns'] = time.monotonic_ns() - file_started - timings['call_encoding_ns']
         env = dict(os.environ, **self.config.get('env', {}),
                    IMLANE_NAMESPACE=self.config['namespace'], CUDA_VISIBLE_DEVICES='')
         try:
@@ -192,9 +226,11 @@ class SemaIMLaneExecutor:
                         str(self.config['native_task_threads'])]
                     if not self.limits.legacy:
                         command += self.limits.cpp_arguments()
+                    launched = time.monotonic_ns()
                     process = subprocess.Popen(command,
                         stdin=source, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                         env=env, cwd=out, start_new_session=True)
+                    timings['popen_ns'] = time.monotonic_ns() - launched
                     self._process = process
                 os.set_blocking(process.stdout.fileno(), False)
                 with selectors.DefaultSelector() as selector:
@@ -222,7 +258,9 @@ class SemaIMLaneExecutor:
                                     raise ValueError('Sema IMLane result preceded native settings')
                                 if not self.limits.legacy and bridge_limits is None:
                                     raise ValueError('IMLane configured bridge did not confirm its capacity')
+                                started = time.monotonic_ns()
                                 outcome = _outcome_from_wire(line[len(_RESULT):])
+                                timings['outcome_decode_ns'] += time.monotonic_ns() - started
                                 call = expected.get(outcome.call_id)
                                 if call is None or call.row_id != outcome.row_id or outcome.call_id in received:
                                     raise ValueError('Sema IMLane result changed occurrence identity')
@@ -233,8 +271,13 @@ class SemaIMLaneExecutor:
                                 if size > call.max_response_bytes or total_bytes > self.limits.max_batch_response_bytes:
                                     raise ValueError('Sema IMLane results exceed their byte allowance')
                                 received.add(outcome.call_id)
-                                yield outcome
+                                started = time.monotonic_ns()
+                                try:
+                                    yield outcome
+                                finally:
+                                    timings['consumer_wait_ns'] += time.monotonic_ns() - started
                             elif line.startswith(_META):
+                                timings['process_to_metadata_ns'] = time.monotonic_ns() - launched
                                 native_settings = json.loads(line[len(_META):])
                                 if (type(native_settings) is not dict or set(native_settings) !=
                                         {'native_executors', 'native_task_threads'}
@@ -278,6 +321,7 @@ class SemaIMLaneExecutor:
             primary = error
             raise
         finally:
+            cleanup_started = time.monotonic_ns()
             try:
                 forced = self._stop(process)
                 if process is not None:
@@ -301,6 +345,11 @@ class SemaIMLaneExecutor:
                 self.last_close_report['native_settings'] = native_settings
                 self.last_close_report.update(snapshot=self.last_preflight, bridge_limits=bridge_limits,
                                               bridge_stats=bridge_stats)
+                timings.update(cleanup_ns=time.monotonic_ns() - cleanup_started,
+                               batch_wall_ns=time.monotonic_ns() - wall_started)
+                self.last_close_report.update(timing_ns=timings,
+                    timing_scope='caller stages; consumer waits included; do not sum with overlapping bridge stages',
+                    bridge_lifecycle='per_batch')
                 self.last_close_report['concurrency_allowance'] = self.options.concurrency
                 self.poisoned = self.poisoned or not clean
                 self.last_close_report['executor_poisoned'] = self.poisoned

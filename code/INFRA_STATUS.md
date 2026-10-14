@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[IMLane桥阶段计时与可选context复用](integrations/sema/imlane_calls.md#bridge-lifecycle)已实现，
+默认逐批桥保持；结果按批ID、完整出现身份和结束记录核对，未知工作继续隔离。
+本地[协议及真实Arrow原语检查](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
+不包含作者CPython／Ray运行；完整新桥编译及两模式实库检查仍pending，不表示HTTP连接复用或调度创新。
+
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
 本地定向66项，31通过／35固定SDK或缺依赖跳过；随后[固定1afa受影响SDK资格](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)6项通过、0跳过，13localhost POST、模型／GPU0。
