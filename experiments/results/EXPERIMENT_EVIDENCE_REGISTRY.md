@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE static正确性与broker历史开销](diagnostics/hse_static_lifecycle_20261014/README.md)。
+以固定集成`3e7bd54b`复现无效lease时间、超大块、引用暂留、峰值漏记、异常确认和source先行派发。
+最终本地生产Core／broker及受控actor/source组合481项，480通过／1缺Daft/Arrow跳过；
+完整scheduling发现缺Arrow的import失败保留。1k／2k／4k块各三次CPU测量及源码摘要已保存，
+只支持历史扫描成本下降；Ray实库、RSS／pinned／device与真实GPU性能未验证，服务器／模型／POST新增0。
+当前FIFO与direct-dependency控制不改，未知池不得切换执行路径重用；CLI owner仍需外层错误清理。
+
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
 旧实现12组后窗口反例已复现；修后显式预检零flow／零发送，默认分块的合法前缀及未消费责任保留。该本地轮SDK／HTTP／服务器／模型均0。

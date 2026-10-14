@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-10-14：HSE static正确性与本地开销审查
+
+- 独立分支从集成`3e7bd54b`复用已有多图batch、常驻actor及ObjectRef阶段执行；
+  [主报告](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)保存最小反例、失败、复算入口和实际验证范围。
+- broker先验证lease时间与单块ready容量，再修改队列；终态计数和活动检查保留默认重复检测历史。
+  runner补入队峰值、model payload持有及先派发ready工作；CPU／device完成确认继续决定异常额度归还。
+- 未确认状态与引用保留，清理中断不替换原错误，同池后续HSE运行拒绝；共享Core旧路径与新增异常回归通过。
+  本地CPU测量只解释历史扫描开销，不外推GPU吞吐、物理内存或完整查询性能。
+- image source、CLI、worker/model语义及路线图未修改；CLI外层错误清理交其owner，实库与单GPU运行由主会话统一排期。
+
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
 - [研究定位](docs/research/研究定位.md#existing-image-execution-paths)区分已构造HTTP payload、PG增量单图及已有多图batch/常驻worker/ObjectRef静态/HSE流水；核对`8862c813`与stage`5a785142`四个关键文件同blob，独立研究原型的host表示复用不扩称GPU驻留或全物理内存计费。

@@ -1,0 +1,123 @@
+{
+  "active_window": 1,
+  "baseline_sha": "3e7bd54bbc0e3416dfca991fcaaa2ffc41270a71",
+  "baseline_source_sha256": "a6c2b825e67affe5d139e616aa1ab5bcb32514120ecda75bf2176e37091705e3",
+  "changed_source_sha256": "4ec743c3550b1f2cc4c802d377857135104cef6bf501a1dfc1597041831d49be",
+  "gpu_runs": 0,
+  "kind": "local_cpu_broker_mechanism",
+  "model_calls": 0,
+  "platform": "Darwin",
+  "python": "3.12.6",
+  "ray_started": false,
+  "retained_duplicate_history": true,
+  "samples": [
+    {
+      "arm": "baseline",
+      "blocks": 1000,
+      "elapsed_s": 0.07222462492063642,
+      "repeat": 0
+    },
+    {
+      "arm": "changed",
+      "blocks": 1000,
+      "elapsed_s": 0.030906541971489787,
+      "repeat": 0
+    },
+    {
+      "arm": "baseline",
+      "blocks": 1000,
+      "elapsed_s": 0.07147275004535913,
+      "repeat": 1
+    },
+    {
+      "arm": "changed",
+      "blocks": 1000,
+      "elapsed_s": 0.030962625052779913,
+      "repeat": 1
+    },
+    {
+      "arm": "baseline",
+      "blocks": 1000,
+      "elapsed_s": 0.07076162495650351,
+      "repeat": 2
+    },
+    {
+      "arm": "changed",
+      "blocks": 1000,
+      "elapsed_s": 0.030513291945680976,
+      "repeat": 2
+    },
+    {
+      "arm": "baseline",
+      "blocks": 2000,
+      "elapsed_s": 0.22898312495090067,
+      "repeat": 0
+    },
+    {
+      "arm": "changed",
+      "blocks": 2000,
+      "elapsed_s": 0.06079929182305932,
+      "repeat": 0
+    },
+    {
+      "arm": "baseline",
+      "blocks": 2000,
+      "elapsed_s": 0.22759883292019367,
+      "repeat": 1
+    },
+    {
+      "arm": "changed",
+      "blocks": 2000,
+      "elapsed_s": 0.0642580830026418,
+      "repeat": 1
+    },
+    {
+      "arm": "baseline",
+      "blocks": 2000,
+      "elapsed_s": 0.2290268330834806,
+      "repeat": 2
+    },
+    {
+      "arm": "changed",
+      "blocks": 2000,
+      "elapsed_s": 0.061171457869932055,
+      "repeat": 2
+    },
+    {
+      "arm": "baseline",
+      "blocks": 4000,
+      "elapsed_s": 0.7939450000412762,
+      "repeat": 0
+    },
+    {
+      "arm": "changed",
+      "blocks": 4000,
+      "elapsed_s": 0.12397370883263648,
+      "repeat": 0
+    },
+    {
+      "arm": "baseline",
+      "blocks": 4000,
+      "elapsed_s": 0.7963510840199888,
+      "repeat": 1
+    },
+    {
+      "arm": "changed",
+      "blocks": 4000,
+      "elapsed_s": 0.12349891709163785,
+      "repeat": 1
+    },
+    {
+      "arm": "baseline",
+      "blocks": 4000,
+      "elapsed_s": 0.793499416904524,
+      "repeat": 2
+    },
+    {
+      "arm": "changed",
+      "blocks": 4000,
+      "elapsed_s": 0.12189024989493191,
+      "repeat": 2
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+test_explicit_model_selection_rejects_unprepared_or_other_job_block (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_explicit_model_selection_rejects_unprepared_or_other_job_block) ... ok
+test_explicit_ready_block_preserves_fifo_for_the_remaining_blocks (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_explicit_ready_block_preserves_fifo_for_the_remaining_blocks) ... ok
+test_extended_tail_is_charged_once_and_leased_with_all_rows (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extended_tail_is_charged_once_and_leased_with_all_rows) ... ok
+test_extension_cannot_change_a_leased_or_non_tail_block (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extension_cannot_change_a_leased_or_non_tail_block) ... ok
+test_extension_rejects_rows_owned_by_another_block (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extension_rejects_rows_owned_by_another_block) ... ok
+test_fifo_waits_for_temporary_byte_or_work_occupancy (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_fifo_waits_for_temporary_byte_or_work_occupancy) ... ok
+test_invalid_extension_preserves_queue_bytes_and_original_lease (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_extension_preserves_queue_bytes_and_original_lease) ... ok
+test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) ...
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=-1.0) ... FAIL
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=nan) ... FAIL
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=inf) ... FAIL
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=-1.0) ... FAIL
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=nan) ... FAIL
+  test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=inf) ... FAIL
+test_invalid_prepare_completion_does_not_destroy_lease (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_prepare_completion_does_not_destroy_lease) ... ok
+test_model_completion_is_exactly_once_and_order_checked (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_model_completion_is_exactly_once_and_order_checked) ... ok
+test_observation_and_transitions_do_not_rescan_terminal_history (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_observation_and_transitions_do_not_rescan_terminal_history) ... FAIL
+test_prepare_reserves_ready_bytes_before_work_completes (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_prepare_reserves_ready_bytes_before_work_completes) ... ok
+test_real_ready_lifecycle_preserves_identity_and_releases_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_real_ready_lifecycle_preserves_identity_and_releases_capacity) ... ok
+test_rejects_duplicate_rows_across_completed_blocks (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_duplicate_rows_across_completed_blocks) ... ok
+test_rejects_permanently_oversized_ready_demand_before_admission (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission) ...
+  test_rejects_permanently_oversized_ready_demand_before_admission (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission) (descriptor=StageBlockDescriptor(block_id='block-0', job_id='job-a', ordered_sequence=0, row_ids=('row-0',), representation='encoded', shape=(1,), layout='variable_binary', dtype='uint8_bytes', logical_bytes=10, physical_bytes=10, ready_bytes_estimate=81, content_digest='digest-0', transform_signature='transform', model_signature='model', work=WorkDescriptor(stages=(StageWork(stage='prepare', units=12, unit='tensor_values'), StageWork(stage='model', units=4, unit='pixels')), primary_stage='model', calibration_signature='sig', locality_key='', deadline_s=None, lower_primary_units=None, upper_primary_units=None), created_at_s=0.0, ready_at_s=None, retry_count=0)) ... FAIL
+  test_rejects_permanently_oversized_ready_demand_before_admission (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission) (descriptor=StageBlockDescriptor(block_id='block-0', job_id='job-a', ordered_sequence=0, row_ids=('row-0',), representation='encoded', shape=(1,), layout='variable_binary', dtype='uint8_bytes', logical_bytes=10, physical_bytes=10, ready_bytes_estimate=40, content_digest='digest-0', transform_signature='transform', model_signature='model', work=WorkDescriptor(stages=(StageWork(stage='prepare', units=12, unit='tensor_values'), StageWork(stage='model', units=9, unit='pixels')), primary_stage='model', calibration_signature='sig', locality_key='', deadline_s=None, lower_primary_units=None, upper_primary_units=None), created_at_s=0.0, ready_at_s=None, retry_count=0)) ... FAIL
+test_runtime_snapshot_uses_true_stage_queues (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_runtime_snapshot_uses_true_stage_queues) ... ok
+test_dispatches_existing_ready_work_before_reading_more_source (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_dispatches_existing_ready_work_before_reading_more_source) ... FAIL
+test_drops_settled_payload_refs_before_next_prepare (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_drops_settled_payload_refs_before_next_prepare) ... FAIL
+test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse) ... FAIL
+test_records_admission_peak_when_preparing_is_capacity_blocked (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_records_admission_peak_when_preparing_is_capacity_blocked) ... FAIL
+test_submit_failure_fences_actor_before_releasing_lease (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease) ...
+  test_submit_failure_fences_actor_before_releasing_lease (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease) (stage='prepare') ... ERROR
+  test_submit_failure_fences_actor_before_releasing_lease (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease) (stage='model') ... ERROR
+
+======================================================================
+ERROR: test_submit_failure_fences_actor_before_releasing_lease (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease) (stage='prepare')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 151, in test_submit_failure_fences_actor_before_releasing_lease
+    self.assertLess(events.index("cpu_fence" if stage == "prepare" else "gpu_fence"),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: 'cpu_fence' is not in list
+
+======================================================================
+ERROR: test_submit_failure_fences_actor_before_releasing_lease (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease) (stage='model')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 151, in test_submit_failure_fences_actor_before_releasing_lease
+    self.assertLess(events.index("cpu_fence" if stage == "prepare" else "gpu_fence"),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: 'gpu_fence' is not in list
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=-1.0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[25 chars]eued=0, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8) != Stage[25 chars]eued=1, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8)
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=nan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[25 chars]eued=0, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8) != Stage[25 chars]eued=1, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8)
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='prepare', now_s=inf)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[25 chars]eued=0, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8) != Stage[25 chars]eued=1, prepare_inflight=0, ready_queued=0, mo[161 chars]it=8)
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=-1.0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[61 chars]eued=0, model_inflight=0, completed=0, failed=[125 chars]it=8) != Stage[61 chars]eued=1, model_inflight=0, completed=0, failed=[125 chars]it=8)
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=nan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[61 chars]eued=0, model_inflight=0, completed=0, failed=[125 chars]it=8) != Stage[61 chars]eued=1, model_inflight=0, completed=0, failed=[125 chars]it=8)
+
+======================================================================
+FAIL: test_invalid_lease_time_keeps_queued_work_and_capacity (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity) (stage='model', now_s=inf)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 61, in test_invalid_lease_time_keeps_queued_work_and_capacity
+    self.assertEqual(broker.snapshot(), before)
+AssertionError: Stage[61 chars]eued=0, model_inflight=0, completed=0, failed=[125 chars]it=8) != Stage[61 chars]eued=1, model_inflight=0, completed=0, failed=[125 chars]it=8)
+
+======================================================================
+FAIL: test_observation_and_transitions_do_not_rescan_terminal_history (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_observation_and_transitions_do_not_rescan_terminal_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 130, in test_observation_and_transitions_do_not_rescan_terminal_history
+    self.assertEqual(self.broker.snapshot().completed, 20)
+                     ^^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/src/scheduling/runtime/stage_broker.py", line 321, in snapshot
+    for state in self._states.values():
+                 ^^^^^^^^^^^^^^^^^^^^^
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 127, in values
+    raise AssertionError("observation rescanned terminal history")
+AssertionError: observation rescanned terminal history
+
+======================================================================
+FAIL: test_rejects_permanently_oversized_ready_demand_before_admission (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission) (descriptor=StageBlockDescriptor(block_id='block-0', job_id='job-a', ordered_sequence=0, row_ids=('row-0',), representation='encoded', shape=(1,), layout='variable_binary', dtype='uint8_bytes', logical_bytes=10, physical_bytes=10, ready_bytes_estimate=81, content_digest='digest-0', transform_signature='transform', model_signature='model', work=WorkDescriptor(stages=(StageWork(stage='prepare', units=12, unit='tensor_values'), StageWork(stage='model', units=4, unit='pixels')), primary_stage='model', calibration_signature='sig', locality_key='', deadline_s=None, lower_primary_units=None, upper_primary_units=None), created_at_s=0.0, ready_at_s=None, retry_count=0))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 77, in test_rejects_permanently_oversized_ready_demand_before_admission
+    with self.assertRaises(BufferError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BufferError not raised
+
+======================================================================
+FAIL: test_rejects_permanently_oversized_ready_demand_before_admission (tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission) (descriptor=StageBlockDescriptor(block_id='block-0', job_id='job-a', ordered_sequence=0, row_ids=('row-0',), representation='encoded', shape=(1,), layout='variable_binary', dtype='uint8_bytes', logical_bytes=10, physical_bytes=10, ready_bytes_estimate=40, content_digest='digest-0', transform_signature='transform', model_signature='model', work=WorkDescriptor(stages=(StageWork(stage='prepare', units=12, unit='tensor_values'), StageWork(stage='model', units=9, unit='pixels')), primary_stage='model', calibration_signature='sig', locality_key='', deadline_s=None, lower_primary_units=None, upper_primary_units=None), created_at_s=0.0, ready_at_s=None, retry_count=0))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/scheduling/test_stage_broker.py", line 77, in test_rejects_permanently_oversized_ready_demand_before_admission
+    with self.assertRaises(BufferError):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: BufferError not raised
+
+======================================================================
+FAIL: test_dispatches_existing_ready_work_before_reading_more_source (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_dispatches_existing_ready_work_before_reading_more_source)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 116, in test_dispatches_existing_ready_work_before_reading_more_source
+    self.assertLess(events.index("model_b"), events.index("source_d"), events)
+AssertionError: 5 not less than 4 : ['source_a', 'source_b', 'source_c', 'model_a', 'source_d', 'model_b', 'model_c', 'model_d']
+
+======================================================================
+FAIL: test_drops_settled_payload_refs_before_next_prepare (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_drops_settled_payload_refs_before_next_prepare)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 93, in test_drops_settled_payload_refs_before_next_prepare
+    self.assertEqual(live_at_creation, [[], []])
+AssertionError: Lists differ: [[], [('a',)]] != [[], []]
+
+First differing element 1:
+[('a',)]
+[]
+
+- [[], [('a',)]]
++ [[], []]
+
+======================================================================
+FAIL: test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 172, in test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse
+    self.assertEqual(brokers[0].snapshot().prepare_inflight, 1)
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_records_admission_peak_when_preparing_is_capacity_blocked (tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_records_admission_peak_when_preparing_is_capacity_blocked)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/code/tests/modalities/image/test_hse_static_lifecycle.py", line 123, in test_records_admission_peak_when_preparing_is_capacity_blocked
+    self.assertEqual(result.pending_batches_peak, 4)
+AssertionError: 3 != 4
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.006s
+
+FAILED (failures=13, errors=2)

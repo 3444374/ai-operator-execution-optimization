@@ -1,5 +1,12 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE static审查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
+修复无效lease时间破坏队列、永久超大ready需求与峰值漏记；model call保留payload引用至完成确认。
+异常通过现有CPU ready／GPU synchronize结清，未确认额度与引用保留并阻止同池HSE复用。
+broker终态计数及活动检查不再遍历全部历史；ready模型先于新增source读取派发，FIFO与强静态对照保留。
+最终本地组合480通过／1缺Daft/Arrow跳过；完整发现另有1个缺Arrow的import失败并保留日志。
+本轮服务器／Ray／模型／GPU均未启动；真实库、物理内存与GPU性能仍待主会话排期，CLI外层错误清理由其owner处理。
+
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
 本地定向66项，31通过／35固定SDK或缺依赖跳过；随后[固定1afa受影响SDK资格](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)6项通过、0跳过，13localhost POST、模型／GPU0。
