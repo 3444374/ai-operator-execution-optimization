@@ -122,6 +122,8 @@ def run_project_ray_hse_pipeline(
     The pool is borrowed exclusively for this run. On error the owner must
     dispose it before using another execution path; unconfirmed work blocks
     subsequent HSE runs on the same pool and is retained on the exception.
+    GPU slots require distinct Python handle objects. This does not identify
+    separately deserialized handles or shared physical GPU assignments.
     """
     if worker_pool in _unconfirmed_runs:
         raise RuntimeError("HSE worker pool has unconfirmed work; dispose its actors")
@@ -135,6 +137,8 @@ def run_project_ray_hse_pipeline(
         raise ValueError("HSE batch, window, and image dimensions must be positive")
     if not worker_pool.preprocessors or not worker_pool.gpu_actors:
         raise ValueError("worker_pool must contain CPU and GPU actors")
+    if len({id(actor) for actor in worker_pool.gpu_actors}) != len(worker_pool.gpu_actors):
+        raise ValueError("HSE GPU actor handles must be distinct Python objects")
     if limits.prepare_inflight > len(worker_pool.preprocessors):
         raise ValueError("prepare inflight cannot exceed the prestarted CPU actor count")
     if limits.model_inflight > len(worker_pool.gpu_actors):

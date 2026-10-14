@@ -21,6 +21,8 @@ A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要�
 接续[独立45da A-only资格](diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
 5项实际Ray和1项真实Daft/Arrow准备数据适配通过、0跳过；源码、两环境与27进程／controller／lease退出另记，模型／GPU／HTTP0。
 原ABC五项保留原source；本轮CPU synchronize不增加CUDA、CLIP性能或完整CLI资格。
+独立[重复GPU handle校验](diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)
+仅有本地拒绝与正常分派回归，未新增实际Ray／GPU资格；原固定A测量不转移至新guard。
 
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
