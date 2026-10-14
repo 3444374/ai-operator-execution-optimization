@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE上游迭代器关闭](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
+统一源close，首执行错误优先且关闭失败继续actor确认／未知保留；完整函数本地替身102项通过。实际源／设备退出未测，默认及FIFO保持。
+
 2026-10-14：[单GPU文件CLIP复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)固定实际45da0a54，387个导出文件与发布58462a0d同字节，原CLI archive Git字段unknown保持。
 原静态／HSE A／原生Ray Data共15次健康GPU调用及18次子进程退出核查完成；同输入、512维FP32 L2与exactly-once合同通过，原性能值／失败／私有原包保持。
 [257图另窗捕获](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)已完成963模型图及5次退出核查：Direct/HSE逐位相同；Ray输入指纹一致、返回向量不同。实际forward批形态不同，差异定位至FP16模型调用／返回边界，未证明具体浮点来源或5000图等价；新增诊断时间不入原性能汇总。

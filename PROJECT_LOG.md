@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：修补HSE上游迭代器关闭
+
+固定da379b核实完整函数的保留traceback反例，统一源close并保留首错、actor fence与未知owner；
+[修前失败及修后102项本地回归](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)保存。
+source先行、FIFO、历史扫描和默认保持；原生baseline未改，没有新增真实SDK／模型／GPU执行。
+
 2026-10-14：[文件CLIP数值证据独立接纳](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#集成接纳核查)：只接纳固定7f证据，生产／测试未变；两原包逐SHA、257行差异与963计数离线复算一致，原15性能行和失败保持，新增模型／服务器0。
 
 ## 2026-10-14：完成单GPU文件CLIP最小逐行诊断

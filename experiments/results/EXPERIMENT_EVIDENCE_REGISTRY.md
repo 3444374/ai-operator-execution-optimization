@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE源关闭核查](diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)：
+固定da379b完整函数的traceback／gc反例及修前16组失败保留；修后10模块102项本地替身通过，源关闭不代替actor／device完成证明。未运行服务器、真实SDK或模型。
+
 2026-10-14：[单GPU文件CLIP三条已有路径](diagnostics/image_clip_file_operator_20261014/README.md)。
 实际来源45da0a54／发布同字节58462a0d，3资格＋3scale＋9轮转重复，共61,731模型图；全部原row、18次退出收据及两次模型前部署失败保留。
 固定冷算子数据只作这一工作点观察；原15轮没有逐ID向量，其摘要差异不由单纯输出顺序解释。[最小另窗诊断](diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)随后完成963模型图与5次退出核查：257行Direct/HSE逐位相同，Ray输入指纹一致、模型返回不同，实际批形态不同；全部差异及1e−3超界保留。5000图逐行等价、具体浮点因果及下游质量仍未证实；诊断不改原15性能值，未重跑性能矩阵。

@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "run_id": "local_hse_source_closure_20261014",
+  "base_commit": "da379b2577118d58b890cff3fca6400af7bda8f2",
+  "source_blob_before": "926ba2c4a0fe1a6fa2c4e424f9e133c4c36a9e91",
+  "remote_integration_checked": "015a3855e79fe853f49cff40d00e375d6ca3abb3",
+  "remote_hse_changed_since_base": false,
+  "git_blobs_tested": {
+    "code/src/modalities/image/staged_execution.py": "0532aa8fbf2d8a2ed4258824a86ac9446f7011a5",
+    "code/tests/modalities/image/test_hse_source_closure.py": "13f9f298386d1e2bb716be07222e6ada87a742b9",
+    "code/tests/modalities/image/test_staged_image_execution.py": "bc7566e2da012d8c401273e74d38faa47be105b1",
+    "code/tests/modalities/image/test_hse_static_lifecycle.py": "6d7bb88435daae00ad26620a4161a38a7f989881",
+    "code/src/scheduling/runtime/stage_broker.py": "eb54d07f7091582b445d56ef76ff1f6dc953d05b"
+  },
+  "environment": {
+    "python": "3.12.6",
+    "numpy": "2.5.0",
+    "ray": "not installed; deterministic substitute",
+    "daft": "not installed; deterministic substitute",
+    "arrow": "not installed; deterministic substitute"
+  },
+  "runs": {
+    "original_regression_before": {
+      "tests": 32,
+      "passed": 32
+    },
+    "new_tests_before": {
+      "test_methods": 8,
+      "condition_failures": 16,
+      "log": "tests_before.txt"
+    },
+    "final_regression": {
+      "modules": 10,
+      "tests": 102,
+      "passed": 102,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "unittest_elapsed_s": 0.033,
+      "log": "regression_after.txt"
+    },
+    "standards_independent": {
+      "tests": 8,
+      "passed": 8,
+      "required_findings": 0
+    },
+    "spec_independent": {
+      "tests": 40,
+      "passed": 40,
+      "required_findings": 0
+    }
+  },
+  "test_command": "PYTHONPATH=code python3 -m unittest -v tests.modalities.image.test_hse_source_closure tests.modalities.image.test_staged_image_execution tests.modalities.image.test_hse_static_lifecycle tests.modalities.image.test_hse_device_dispatch tests.modalities.image.test_hse_pool_resource_identity tests.modalities.image.test_image_execution tests.modalities.image.test_image_runner_lifecycle tests.modalities.image.test_staged_image_blocks tests.scheduling.test_stage_broker tests.scheduling.test_stage_dispatch",
+  "reproducer_command": "PYTHONPATH=code python3 reproduce.py",
+  "reproduction_before": {
+    "events_after_explicit_close": [
+      "source_finalized"
+    ],
+    "events_after_gc": [],
+    "exception_identity_preserved": true,
+    "generator_state_after_gc": "GEN_SUSPENDED",
+    "iterator_alive_after_gc": true,
+    "traceback_retained": true
+  },
+  "reproduction_after": {
+    "events_after_explicit_close": [
+      "source_finalized"
+    ],
+    "events_after_gc": [
+      "source_finalized"
+    ],
+    "exception_identity_preserved": true,
+    "generator_state_after_gc": "GEN_CLOSED",
+    "iterator_alive_after_gc": true,
+    "traceback_retained": true
+  },
+  "scope": "Full HSE function and actual broker/audit with deterministic source/Arrow/Ray substitutes",
+  "unmeasured": [
+    "real Daft/Ray source resource shutdown",
+    "actor physical exit",
+    "CUDA completion",
+    "model quality/performance",
+    "full CLI exit"
+  ],
+  "new_external_runs": {
+    "server": 0,
+    "real_sdk": 0,
+    "model": 0,
+    "gpu": 0,
+    "http": 0
+  },
+  "archive": {
+    "path": "raw/source-closure-local.tar.gz",
+    "bytes": 6283,
+    "sha256": "7042b166b5676ae10d8a93c5668bda59d9e0fa4e392b5e9e6b74968c0d858eb6",
+    "members": {
+      "reproduce.py": {
+        "bytes": 1837,
+        "sha256": "716fb18e8c11b4e33322cb0bd0ed83dacd0b2666db633d9336ee7d546784675c"
+      },
+      "run_checks.py": {
+        "bytes": 527,
+        "sha256": "05a00271322923bad266f7db96fd56ef674355475944f211fdaf9bf080145808"
+      },
+      "reproduction_before.json": {
+        "bytes": 221,
+        "sha256": "cdc3a2056a792dde61de79d387ddc17390bbd4f496f57709eb2e2d680446c12b"
+      },
+      "reproduction_after.json": {
+        "bytes": 236,
+        "sha256": "199c61517cc823374ad8dade7b766c4440416d0471791f0b7d328fddff53d722"
+      },
+      "tests_before.txt": {
+        "bytes": 14492,
+        "sha256": "5c27d76d856efc81dca504b93f2d67b751a8618523ddd98ebb4e36400f55f01a"
+      },
+      "regression_after.txt": {
+        "bytes": 20106,
+        "sha256": "343afaad4861a6d89c3d82ccf382b8485be6b691e991d28aa1d342783613f01c"
+      },
+      "standards_review.txt": {
+        "bytes": 604,
+        "sha256": "960971939724466dc44025a01a8050064d814affced73a36e406e97ac5ac5da0"
+      },
+      "spec_review.txt": {
+        "bytes": 631,
+        "sha256": "787a553644b8b49638a1a17f4db009ee68078626cef9136132ff233d0d9c3003"
+      }
+    }
+  }
+}

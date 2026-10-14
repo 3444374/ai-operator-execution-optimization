@@ -1,0 +1,46 @@
+{
+  "schema": "semloom.hse_source_closure_integration.v1",
+  "previous_integration": "4db1aec25d5f9437c4fa9b7784395af955658520",
+  "fixed_source": "91803fe8f880b6804ebbb2c74f569c7dcc95624a",
+  "source_parent": "da379b2577118d58b890cff3fca6400af7bda8f2",
+  "production_path": "code/src/modalities/image/staged_execution.py",
+  "production_blob_before": "926ba2c4a0fe1a6fa2c4e424f9e133c4c36a9e91",
+  "production_blob_after": "0532aa8fbf2d8a2ed4258824a86ac9446f7011a5",
+  "production_blob_matches_fixed_source": true,
+  "test_modules": 11,
+  "tests": 124,
+  "passed": 124,
+  "failed": 0,
+  "skipped": 0,
+  "includes_original_10_modules_102_and_22_LOTUS_lifecycle_methods": true,
+  "overlaps_previous_integration_checks_do_not_sum": true,
+  "test_log_sha256": "d0da49414b0d049f9468b09e9af15d07324deb94071fd29fd7a60c91ace3a231",
+  "source_archive": {
+    "fixed_source": "91803fe8f880b6804ebbb2c74f569c7dcc95624a",
+    "archive_sha256": "7042b166b5676ae10d8a93c5668bda59d9e0fa4e392b5e9e6b74968c0d858eb6",
+    "members_verified": 8,
+    "new_model_GPU_server_HTTP_runs": 0
+  },
+  "new_actual_SDK_server_HTTP_model_GPU_execution": false,
+  "default_source_first_FIFO_static_dispatch_and_existing_fences_retained": true,
+  "independent_final_review": {
+    "frozen_tree": "01b0e34face5e37c87584b71971957860f3a9f2a",
+    "decision": "publishable_local_correctness_scope",
+    "reviews": [
+      {
+        "axis": "standards",
+        "must_fix_count": 0,
+        "report_sha256": "bbba8b31da51ca86b76df702417fb85ba1acf99e593a8b1d6e89f90d0b653645"
+      },
+      {
+        "axis": "spec",
+        "must_fix_count": 0,
+        "report_sha256": "bbad238a689d6ed16d8a3d713a18e772fdd4c9c88c12d5179199c1778944dd65"
+      }
+    ]
+  },
+  "limits": [
+    "source close and mocked actor fences do not prove physical source/actor/device completion",
+    "actual library, CUDA/full CLI exit and performance remain untested by this integration"
+  ]
+}
