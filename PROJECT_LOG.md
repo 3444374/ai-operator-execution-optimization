@@ -1,5 +1,8 @@
 # 项目日志
 
+2026-10-14：[shared-vLLM未知waiting正确性修复](code/src/experiments/shared_vllm/README.md)。
+从4991a73b独立复现空值被转零并误升到(4,40)，修后保留未知及校准静态供给；已有控制器和baseline身份保持，非新算法或性能收益。
+
 2026-10-13：[精确副本反馈关联与最终归档](experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md#精确反馈关联的独立小对子)。
 固定已推ad4源码，1808本地原请求在10.897秒完成，精确读取sample且三首路由新鲜；RR中位1.3145/online1.3266，无净收益。旧source overlay无损gzip纠正staged格式报警，SHA/恢复路径保持；不合main、无新服务器或模型窗口。
 

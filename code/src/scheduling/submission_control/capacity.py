@@ -24,6 +24,8 @@ class BoundedCapacityController:
     is queued, the current request credit is substantially occupied, the model
     queue is clear, and measured service rate is below the calibrated target.
     Congestion must persist for multiple samples before a downshift.
+    Unknown waiting uses calibrated static supply unless fresh KV pressure
+    independently supports the existing congestion guard.
     """
 
     def __init__(
@@ -95,14 +97,16 @@ class BoundedCapacityController:
         snapshot: RuntimeStateSnapshot,
         *,
         active_requests: int,
-        service_waiting_requests: int,
+        service_waiting_requests: int | None,
         service_rate_tokens_s: float | None,
         kv_usage: float | None = None,
         now_s: float,
         max_age_s: float,
         calibration_signature: str,
     ) -> CapacityDecision:
-        if active_requests < 0 or service_waiting_requests < 0:
+        if active_requests < 0 or (
+            service_waiting_requests is not None and service_waiting_requests < 0
+        ):
             raise ValueError("request counts must be non-negative")
         if (
             snapshot.calibration_signature != calibration_signature
@@ -113,21 +117,28 @@ class BoundedCapacityController:
         upstream = snapshot.for_stage(self.upstream_stage)
         if model is None or upstream is None:
             return self._fallback("missing_stage", service_rate_tokens_s)
+        if upstream.queued_work is None:
+            return self._fallback("missing_upstream_queue", service_rate_tokens_s)
         if kv_usage is None or not math.isfinite(kv_usage) or not 0 <= kv_usage <= 1:
             return self._fallback(
                 "missing_or_invalid_kv_usage",
                 service_rate_tokens_s,
             )
+        has_backlog = upstream.queued_work > 0
+        congested = has_backlog and (
+            (service_waiting_requests is not None and service_waiting_requests > 0)
+            or kv_usage >= self.congestion_kv_usage
+        )
+        if service_waiting_requests is None and not congested:
+            return self._fallback("missing_service_waiting", service_rate_tokens_s)
         if self._cooldown:
             self._cooldown -= 1
             self._clear_streaks()
             return self._decision("hold", "cooldown", service_rate_tokens_s)
 
-        has_backlog = upstream.queued_work > 0
-        congested = has_backlog and (
-            service_waiting_requests > 0
-            or kv_usage >= self.congestion_kv_usage
-        )
+        self._decrease_streak = self._decrease_streak + 1 if congested else 0
+        if self._decrease_streak >= self.consecutive_samples:
+            return self._move(-1, "persistent_service_queue", service_rate_tokens_s)
         occupied = (
             active_requests
             >= self.current_arm.request_limit * self.occupied_fraction
@@ -137,9 +148,9 @@ class BoundedCapacityController:
                 has_backlog
                 and occupied
                 and service_waiting_requests == 0
+                and not congested
                 and self._index < len(self.candidates) - 1
             )
-            self._decrease_streak = 0
             self._increase_streak = (
                 self._increase_streak + 1 if bootstrap_feed_limited else 0
             )
@@ -158,12 +169,10 @@ class BoundedCapacityController:
             has_backlog
             and occupied
             and service_waiting_requests == 0
+            and not congested
             and below_target
         )
-        self._decrease_streak = self._decrease_streak + 1 if congested else 0
         self._increase_streak = self._increase_streak + 1 if feed_limited else 0
-        if self._decrease_streak >= self.consecutive_samples:
-            return self._move(-1, "persistent_service_queue", service_rate_tokens_s)
         if self._increase_streak >= self.increase_consecutive_samples:
             return self._move(1, "ready_backlog_below_target", service_rate_tokens_s)
         return self._decision("hold", "hysteresis_or_deadband", service_rate_tokens_s)

@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[缺失waiting的真实helper回归](../../code/tests/experiments/test_shared_vllm_runtime.py)。
+默认四样本中未知回到(2,20)，已知0仍升到(4,40)、已知1仍降到(1,10)；另核有效KV／恢复及typed消费者，155项本地通过，HTTP／模型／GPU／服务器0。仅正确性证据。
+
 2026-10-13：[精确副本反馈关联对子](diagnostics/replica_adaptation_20261013/persistent_feedback/README.md#精确反馈关联的独立小对子)。
 ad4b2b55的全部五源摘要吻合，1808 durable/0未闭/11批/owner清理；首rate新鲜0/3过期、六条sample→原route→服务→响应，K8强RR仍优。原矩阵和模型结果不替换；软件证据不扩为物理容量或PG/质量资格，GPU模型服务器0。
 

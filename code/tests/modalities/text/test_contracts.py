@@ -13,6 +13,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.modalities.text.contracts import (  # noqa: E402
     build_text_runtime_snapshot,
     build_text_work_descriptor,
+    parse_service_waiting_requests,
     text_work_calibration_signature,
 )
 
@@ -58,6 +59,35 @@ class TextWorkContractTests(unittest.TestCase):
         self.assertEqual(snapshot.for_stage("model").active_work, 1024)
         self.assertEqual(snapshot.for_stage("model").queued_work, 512)
         self.assertEqual(snapshot.for_stage("model").capacity_work, 2048)
+
+    def test_unknown_waiting_preserves_other_typed_observations(self) -> None:
+        snapshot = build_text_runtime_snapshot(
+            active_work=20, upstream_queued_work=100, service_waiting_requests=None,
+            active_requests=2, oldest_upstream_age_s=2, observed_at_s=3,
+            capacity_work=20, calibration_signature=self.signature,
+            service_rate_tokens_s=1,
+        )
+        model = snapshot.for_stage("model")
+        self.assertIsNone(model.queued_work)
+        self.assertEqual(
+            (model.active_work, model.capacity_work, model.service_rate_units_s), (20, 20, 1),
+        )
+        self.assertEqual(snapshot.for_stage("organizer").queued_work, 100)
+        self.assertEqual(snapshot.observed_at_s, 3)
+        self.assertEqual(model.observed_at_s, 3)
+
+    def test_waiting_parser_preserves_counts_and_unknowns_without_truncation(self) -> None:
+        for raw, expected in (
+            (None, None), ("", None), (0, 0), ("0", 0), (1., 1), ("2.0", 2),
+            (2**53 + 1, 2**53 + 1),
+            ("9007199254740993", 9007199254740993),
+            ("9007199254740993.0", 9007199254740993),
+        ):
+            with self.subTest(raw=raw):
+                self.assertEqual(parse_service_waiting_requests(raw), expected)
+        for raw in (-1, True, 1.5, "nan", "inf", "bad", "1.00000000000000001"):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                parse_service_waiting_requests(raw)
 
 
 if __name__ == "__main__":

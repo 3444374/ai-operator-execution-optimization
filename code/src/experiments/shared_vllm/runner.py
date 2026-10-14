@@ -17,6 +17,7 @@ from src.infrastructure.runner_lease import acquire_runner_lease
 from src.infrastructure.runtime_env import subprocess_env
 from src.modalities.text.contracts import (
     build_text_runtime_snapshot,
+    parse_service_waiting_requests,
     text_work_calibration_signature,
 )
 from src.observability.metrics import (
@@ -319,12 +320,7 @@ def _apply_state_control(
     for row in rows:
         endpoint_id = str(row["endpoint_id"])
         controller = controllers[endpoint_id]
-        waiting_raw = row.get("vllm_waiting")
-        waiting = (
-            int(float(waiting_raw))
-            if waiting_raw not in (None, "")
-            else 0
-        )
+        waiting = parse_service_waiting_requests(row.get("vllm_waiting"))
         rate_raw = row.get("service_rate_tokens_s")
         service_rate = (
             float(rate_raw) if rate_raw not in (None, "") else None
@@ -403,8 +399,7 @@ def _apply_saor_capacity_control(
         observed_at_s = float(row["observed_epoch_s"])
         rate_raw = row.get("service_rate_tokens_s")
         service_rate = float(rate_raw) if rate_raw not in (None, "") else None
-        waiting_raw = row.get("vllm_waiting")
-        waiting = int(float(waiting_raw)) if waiting_raw not in (None, "") else 0
+        waiting = parse_service_waiting_requests(row.get("vllm_waiting"))
         snapshot = build_text_runtime_snapshot(
             active_work=int(row["model_active_work"]),
             upstream_queued_work=int(row["organizer_queued_work"]),

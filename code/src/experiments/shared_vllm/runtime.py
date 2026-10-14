@@ -10,7 +10,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 from src.infrastructure.runtime_env import ray_runtime_env
-from src.modalities.text.contracts import build_text_runtime_snapshot
+from src.modalities.text.contracts import (
+    build_text_runtime_snapshot,
+    parse_service_waiting_requests,
+)
 from src.observability.metrics import gpu_metadata, scrape_prometheus_metrics
 from src.scheduling.runtime.shared_credit_ray import get_or_create_shared_credit_client
 from src.scheduling.submission_control.saor import SaorReleaseConfig
@@ -322,12 +325,7 @@ def build_observe_only_text_state_rows(
         resource = resources.get(endpoint_id)
         if resource is None:
             continue
-        waiting_raw = resource.get("waiting")
-        waiting = (
-            int(float(waiting_raw))
-            if waiting_raw not in (None, "")
-            else 0
-        )
+        waiting = parse_service_waiting_requests(resource.get("waiting"))
         observed_at_s = float(credit["observed_epoch_s"])
         service_rate = (service_rates or {}).get(endpoint_id)
         snapshot = build_text_runtime_snapshot(

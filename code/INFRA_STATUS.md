@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[缺失服务排队观测语义](src/experiments/shared_vllm/README.md)。
+真实helper保留未知waiting／queue估计，恢复已有校准供给而不误上调；有效waiting／KV保护与已知零队列bootstrap保持。155项本地零模型回归通过，未启动服务器或性能实验。
+
 2026-10-13：[精确副本反馈关联小对子](../experiments/results/diagnostics/replica_adaptation_20261013/persistent_feedback/README.md#精确反馈关联的独立小对子)。
 固定ad4b2b55、11批/1808 localhost POST、10.897秒/30秒全部清理；online首rate过期0/3，每次A初始/下降/恢复独特更新3/7/12、六条实际读取样本回执。K8 RR1.314527/online1.326550仍无收益，默认RR；原8156/820与限定保持。归档overlay gzip解压SHA不变；服务器新预留0。
 

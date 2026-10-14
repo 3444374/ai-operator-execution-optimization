@@ -80,11 +80,11 @@ class WorkDescriptor:
 
 @dataclass(frozen=True)
 class StageStateSnapshot:
-    """One observation of work at an execution stage."""
+    """One stage observation; unknown queue work is distinct from zero."""
 
     stage: str
     active_work: int
-    queued_work: int
+    queued_work: int | None
     service_rate_units_s: float | None
     oldest_queue_age_s: float
     observed_at_s: float
@@ -97,6 +97,8 @@ class StageStateSnapshot:
             ("active_work", self.active_work),
             ("queued_work", self.queued_work),
         ):
+            if name == "queued_work" and value is None:
+                continue
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 raise ValueError(f"{name} must be a non-negative integer")
         if self.capacity_work is not None and (

@@ -172,6 +172,10 @@ class SaorCapacityController:
                 else "stale_observation"
             )
 
+        upstream = snapshot.for_stage("organizer")
+        if upstream is not None and upstream.queued_work is None:
+            return self._fallback("missing_queue_observation")
+
         current = self.current_arm
         alpha = self._ewma_alpha
         self._estimates[self._current_name] = replace(
@@ -195,7 +199,6 @@ class SaorCapacityController:
         eligible_names = self._names[
             max(0, current_index - 1) : min(len(self._names), current_index + 2)
         ]
-        upstream = snapshot.for_stage("organizer")
         queued_work = upstream.queued_work if upstream is not None else 0
         queue_units = (
             math.ceil(queued_work / self._queue_work_scale)

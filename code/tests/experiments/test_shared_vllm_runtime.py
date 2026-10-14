@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 CODE_ROOT = next(
     parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir()
@@ -168,6 +169,84 @@ class SharedVllmRuntimeStateTests(unittest.TestCase):
         self.assertEqual(controlled[0]["control_action"], "increase")
         self.assertEqual(controlled[0]["control_applied_request_limit"], 160)
         self.assertEqual(observer.updates[0][1]["work_limit"], 131072)
+
+    def test_real_helper_distinguishes_unknown_clear_and_queued_waiting(self) -> None:
+        class Observer:
+            def __init__(self):
+                self.updates = []
+
+            def update_capacity(self, endpoint_id, **limits):
+                self.updates.append((endpoint_id, limits))
+                return limits
+
+        for waiting, action, arm in (
+            ("", "fallback", (2, 20)),
+            (None, "fallback", (2, 20)),
+            (0, "increase", (4, 40)),
+            (1, "decrease", (1, 10)),
+        ):
+            with self.subTest(waiting=waiting):
+                controller = BoundedCapacityController(
+                    (CapacityArm(1, 10), CapacityArm(2, 20), CapacityArm(4, 40)),
+                    fallback=CapacityArm(2, 20),
+                    target_service_rate_tokens_s=100,
+                )
+                observer = Observer()
+                with patch.object(controller, "select", wraps=controller.select) as select:
+                    for t in range(4):
+                        row = {
+                            "endpoint_id": "e", "vllm_waiting": waiting,
+                            "service_rate_tokens_s": 1, "vllm_kv_usage": .1,
+                            "model_active_work": 20, "organizer_queued_work": 100,
+                            "active_requests": 2, "organizer_oldest_queue_age_s": 2,
+                            "model_capacity_work": 20, "request_limit": 2,
+                            "observed_epoch_s": t,
+                        }
+                        with patch("src.experiments.shared_vllm.runner.time.time", return_value=t):
+                            _apply_state_control(
+                                [row], controllers={"e": controller}, observer=observer,
+                                calibration_signature="fixture", max_state_age_s=1,
+                            )
+                        self.assertEqual(row["vllm_waiting"], waiting)
+                        self.assertEqual(row["endpoint_id"], "e")
+                        self.assertEqual(row["observed_epoch_s"], t)
+                        snapshot = select.call_args.args[0]
+                        self.assertEqual(snapshot.observed_at_s, t)
+                        self.assertEqual(snapshot.calibration_signature, "fixture")
+                        model_queue = snapshot.for_stage("model").queued_work
+                        self.assertEqual(
+                            model_queue, None if waiting in (None, "") else waiting * 10,
+                        )
+                        self.assertEqual(
+                            select.call_args.kwargs["service_waiting_requests"],
+                            None if waiting == "" else waiting,
+                        )
+                self.assertEqual(row["control_action"], action)
+                self.assertEqual(
+                    (row["control_applied_request_limit"], row["control_applied_work_limit"]),
+                    arm,
+                )
+                self.assertEqual(len(observer.updates), 0 if action == "fallback" else 1)
+
+    def test_observe_only_missing_queue_is_not_an_estimated_zero(self) -> None:
+        for resource in ({}, {"waiting": None}, {"waiting": ""}, {"waiting": 0}):
+            with self.subTest(resource=resource):
+                row = build_observe_only_text_state_rows(
+                    [{
+                        "endpoint_id": "e", "observed_epoch_s": 10.0, "elapsed_s": 2,
+                        "request_limit": 2, "work_limit": 20, "active_requests": 2,
+                        "active_work": 20, "waiting_work": 100, "oldest_waiting_age_s": 2,
+                    }],
+                    [{"endpoint_index": 0, "kv_usage": .1, **resource}],
+                    endpoint_ids=("e",), calibration_signature="fixture",
+                )[0]
+                self.assertEqual(
+                    row["model_queued_work_estimated"],
+                    0 if resource.get("waiting") == 0 else None,
+                )
+                self.assertEqual(row["vllm_waiting"], resource.get("waiting", ""))
+                self.assertEqual((row["endpoint_id"], row["observed_epoch_s"]), ("e", 10.0))
+                self.assertEqual(row["organizer_queued_work"], 100)
 
 
 if __name__ == "__main__":

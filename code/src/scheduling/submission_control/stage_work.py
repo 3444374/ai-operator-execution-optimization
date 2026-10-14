@@ -77,6 +77,8 @@ class BoundedStageWorkController:
         upstream = snapshot.for_stage(self.upstream_stage)
         if controlled is None or upstream is None or controlled.capacity_work is None:
             return self._fallback("missing_stage_or_capacity")
+        if controlled.queued_work is None or upstream.queued_work is None:
+            return self._fallback("missing_queue_observation")
 
         congested = (
             controlled.queued_work

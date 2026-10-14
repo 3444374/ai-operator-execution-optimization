@@ -17,3 +17,14 @@ This package keeps experiment orchestration separate from reusable metric deriva
 
 Callers should continue importing the public metric functions from `metrics.py` or the package
 `__init__.py`; the focused modules are implementation seams and test targets.
+
+Missing `vllm_waiting` stays unknown through observe-only rows and capacity
+actuation: its estimated model queue work is `None`, not zero. Endpoint scope,
+the original count/unknown marker and sampling time remain unchanged. Without
+queue-clear evidence, bounded capacity control restores its calibrated static
+arm and resets upshift hysteresis; fresh KV pressure can still support the
+existing downshift guard even before a service rate is available. Known zero
+waiting retains backlog/rate bootstrap, and positive waiting retains congestion
+protection. [Helper tests](../../../tests/experiments/test_shared_vllm_runtime.py)
+exercise the actual four-sample path; this is a correctness fix, not a new
+controller or performance result.
