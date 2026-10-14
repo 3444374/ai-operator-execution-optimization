@@ -54,11 +54,14 @@ class _DispatchModelFixture(base._ModelFixture):
                 record["release_confirmed"] = True
             time.sleep(self.delay_s)
             result = super().embed(batch)
-            if self.invalid_output:
-                result.embeddings[0, 0] = float("nan")
             service_s = 0.0 if self.zero_service else time.perf_counter() - started
             record["service_s"] = service_s
-            return dataclasses.replace(result, service_s=service_s)
+            result = dataclasses.replace(result, service_s=service_s)
+            if self.invalid_output:
+                # Inject after construction to exercise the driver's output
+                # audit rather than the actor-side result constructor.
+                result.embeddings[0, 0] = float("nan")
+            return result
         finally:
             record["finished_epoch_s"] = time.time()
 
