@@ -1,5 +1,43 @@
 # SemLoom 脚本入口
 
+## 固定 JPEG 文件源的 CLIP 比较
+
+[build_image_file_manifest.py](data/build_image_file_manifest.py)复用 COCO importer 的文件选择和行 ID，
+对已有解压 JPEG 生成固定清单；不需要 PG、模型或 GPU：
+
+```sh
+python code/scripts/data/build_image_file_manifest.py \
+  --image-root /path/to/coco/val2017 --workload-name coco_val2017 --limit 5000 \
+  --output /path/to/new-coco-file-manifest.json
+```
+
+准备步骤实际读取全部选中 JPEG 的编码字节并做 SHA256，耗时与字节数写入清单，可能暖化 page cache。
+各臂共用该清单；保持源目录不变，配平各臂 warmup 和运行顺序。正式预检只读清单并核对
+size/mtime/ctime，不重读 JPEG payload；它不提供文件系统快照或冷 page cache 保证。
+
+[run_image_clip_e2e.py](experiments/run_image_clip_e2e.py)新增 `--source-kind files`；旧 PG 默认入口保留。
+以下是独占单 GPU 窗口中的候选命令，需先完成目标固定 SDK 的 CPU reader 检查与小规模正确性复验：
+
+```sh
+python code/scripts/experiments/run_image_clip_e2e.py \
+  --arm project_ray --source-kind files \
+  --source-manifest /path/to/coco-file-manifest.json --image-root /path/to/coco/val2017 \
+  --model /path/to/fixed-clip-model --processor /path/to/fixed-clip-model \
+  --limit 5000 --batch-size 64 --cpu-workers 8 --gpu-workers 1 \
+  --dtype float16 --input-size 224 --embedding-dimension 512 --warmup-rows 64 \
+  --source-cpu-threads 4 --source-shards 4 --max-active-batches 8 \
+  --phase formal --out-csv /path/to/new-runs.csv --out-manifest /path/to/new-run.json
+```
+
+同入口以 `--project-execution-mode hse_static` 复用已有 HSE；原生 Ray Data 使用 `--arm ray_data_staged`。
+每臂单独运行，声明 CPU 预算均为13；框架的 CPU slots 不等于 OS 配额。
+Daft 文件源的 `--source-shards` 表示每批原生下载连接上限，不声称源分片数；实际 reader 配置单列。
+路径/ID 元数据可在 driver 构造，JPEG 由原生 reader 惰性读取，不全量解码或在 adapter 缓存。
+文件模式计时包含源装配、实际读取、preparation/model、完整消费和最终元数据审计；保留 cold-worker
+口径，Ray startup、清单准备及写回另计。新 CSV schema 与文件清单身份不得混入历史结果文件。
+本地协议替身测试不构成实际 SDK／GPU 资格；固定 SDK CPU 检查可在独立进程设置
+`SEMLOOM_IMAGE_FILE_SDK_TESTS=1` 运行 `tests.modalities.image.test_image_file_source` 的两项 `test_real_*`。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。

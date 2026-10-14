@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run comparable PostgreSQL -> data engine -> CLIP operator-E2E arms.
+"""Run comparable encoded-image source -> data engine -> CLIP execution arms.
 
 The arms keep the input table, model, GPU count, output validation, and timing
 boundary fixed:
@@ -14,8 +14,8 @@ boundary fixed:
   preprocessing actors feeding tensor-only GPU actors, with the source kept
   lazy and streamed from Daft.
 
-This gate excludes pgvector writeback so that it measures the operator execution
-path. A later system-E2E layer must add the same sink to every arm.
+File runs include source construction, reading and final audit; historical PG
+runs retain their old timing definition. Ray startup and writeback are excluded.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ import os
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import NamedTuple
 
@@ -42,6 +43,9 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.modalities.image import DaftImageSource, ImageSourceConfig  # noqa: E402
 from src.modalities.image.source import read_image_source_metadata  # noqa: E402
+from src.modalities.image.file_source import (  # noqa: E402
+    ImageFileManifest, build_daft_image_file_source, load_image_file_manifest,
+)
 from src.baselines.image.provenance import (  # noqa: E402
     image_arm_provenance,
     require_formal_arm_allowed,
@@ -94,6 +98,12 @@ CSV_FIELDS = (
     "phase",
     "repeat_index",
     "workload_name",
+    "source_kind",
+    "file_manifest_sha256",
+    "source_preflight_metadata_s",
+    "source_open_s",
+    "file_manifest_preparation_json",
+    "source_reader_config_json",
     "source_doc_ids_sha256",
     "expected_source_doc_ids_sha256",
     "source_manifest_match",
@@ -305,6 +315,9 @@ def embedding_output_contract_metadata(
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--arm", choices=ARMS, required=True)
+    parser.add_argument("--source-kind", choices=("postgres", "files"), default="postgres")
+    parser.add_argument("--source-manifest", default="", help="Fixed COCO JPEG file manifest; required for files")
+    parser.add_argument("--image-root", default="", help="Existing JPEG directory for the fixed file manifest")
     parser.add_argument(
         "--pg-dsn",
         default=os.environ.get("DATABASE_URL") or os.environ.get("PG_DSN", ""),
@@ -343,7 +356,9 @@ def parse_args():
         "--source-shards",
         type=int,
         default=0,
-        help="PostgreSQL lazy source shards; 0 follows model worker count",
+        help=("PostgreSQL source shards or native Ray file reader concurrency; "
+              "Daft files use this as download connections per batch, not partitions; "
+              "0 follows model worker count"),
     )
     parser.add_argument(
         "--source-cpu-threads",
@@ -542,6 +557,15 @@ def logical_bandwidth_gbps(byte_count: int, durations_s: tuple[float, ...]) -> f
 def append_csv(path: Path, row: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     exists = path.exists() and path.stat().st_size > 0
+    if exists:
+        with path.open(newline="", encoding="utf-8") as handle:
+            previous = csv.DictReader(handle)
+            first = next(previous, None)
+            if previous.fieldnames != list(CSV_FIELDS) or first is None:
+                raise ValueError("use a new output CSV for the current image schema")
+            if (first["source_kind"], first["file_manifest_sha256"]) != (
+                    row["source_kind"], str(row["file_manifest_sha256"])):
+                raise ValueError("use separate output CSVs for different source identities")
     with path.open("a", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS, lineterminator="\n")
         if not exists:
@@ -579,6 +603,36 @@ class _ImageRunSetup(NamedTuple):
     cpu_budget: object
     ray_cluster_num_cpus: int
     worker_runtime_env: dict[str, object]
+    file_manifest: ImageFileManifest | None = None
+    source_preflight_metadata_s: float = 0.0
+
+
+def _validate_file_output_paths(args, embedding_target, embedding_sidecar, source_paths):
+    protected = {Path(path).resolve() for path in source_paths}
+    if args.formal_start_barrier_file:
+        protected.add(Path(args.formal_start_barrier_file).resolve())
+    outputs = [Path(args.out_csv), Path(args.out_manifest)]
+    if args.formal_ready_file:
+        ready = Path(args.formal_ready_file)
+        outputs.extend((ready, ready.with_suffix(ready.suffix + ".tmp")))
+    if embedding_target is not None:
+        outputs.extend((embedding_target, embedding_sidecar))
+    resolved = [path.resolve() for path in outputs]
+    if len(set(resolved)) != len(resolved) or protected.intersection(resolved):
+        raise SystemExit("file run output paths must be separate and must not overwrite fixed inputs")
+    protected_inodes = set()
+    for path in protected:
+        if path.exists():
+            info = path.stat()
+            protected_inodes.add((info.st_dev, info.st_ino))
+    output_inodes = set()
+    for path in resolved:
+        if path.exists():
+            info = path.stat()
+            identity = (info.st_dev, info.st_ino)
+            if identity in protected_inodes or identity in output_inodes:
+                raise SystemExit("file run outputs must not alias fixed inputs or other outputs")
+            output_inodes.add(identity)
 
 
 def _validate_image_run_args(
@@ -608,8 +662,17 @@ def _validate_image_run_args(
         args.gpu_sample_interval_s,
         args.cpu_sample_interval_s,
     )
-    if not args.pg_dsn:
+    if args.source_kind == "postgres" and not args.pg_dsn:
         raise SystemExit("--pg-dsn is required (or set DATABASE_URL/PG_DSN)")
+    if args.source_kind == "files" and (not args.source_manifest or not args.image_root):
+        raise SystemExit("files source requires --source-manifest and --image-root")
+    if args.source_kind == "files":
+        manifest_path = Path(args.source_manifest).resolve()
+        output_path = Path(args.out_manifest).resolve()
+        if output_path.exists() or output_path in (manifest_path, Path(args.out_csv).resolve()):
+            raise SystemExit("file runs require a new, separate --out-manifest path")
+    if args.source_kind == "postgres" and (args.source_manifest or args.image_root):
+        raise SystemExit("file source arguments require --source-kind files")
     if min(positive) <= 0 or args.offset < 0:
         raise SystemExit("row, batch, worker, and dimension values must be positive")
     if min(args.daft_model_workers, args.source_shards, args.source_cpu_threads) < 0:
@@ -663,6 +726,8 @@ def _validate_image_run_args(
                 "ERROR: --save-embeddings target or sidecar already exists; "
                 f"refuse overwrite: {embedding_target}, {embedding_sidecar}"
             )
+    if args.source_kind == "files":
+        _validate_file_output_paths(args, embedding_target, embedding_sidecar, [args.source_manifest])
     return args.processor or args.model, embedding_target, embedding_sidecar, provenance
 
 
@@ -674,13 +739,23 @@ def _load_image_run_setup(
     embedding_sidecar: Path | None,
     provenance: object,
 ) -> _ImageRunSetup:
-    formal_ids, database_metadata = read_database_metadata(
-        args.pg_dsn,
-        workload_name=args.workload_name,
-        limit=args.limit,
-        offset=args.offset,
-        dataset_passes=args.dataset_passes,
-    )
+    file_manifest = None
+    preflight_started = time.perf_counter()
+    if args.source_kind == "files":
+        file_manifest = load_image_file_manifest(args.source_manifest, args.image_root)
+        _validate_file_output_paths(
+            args, embedding_target, embedding_sidecar,
+            [file_manifest.path, *(file_manifest.root / entry.path for entry in file_manifest.entries)],
+        )
+        formal_ids, database_metadata = file_manifest.metadata(
+            ImageSourceConfig(args.workload_name, args.limit, args.offset, args.dataset_passes)
+        )
+    else:
+        formal_ids, database_metadata = read_database_metadata(
+            args.pg_dsn, workload_name=args.workload_name, limit=args.limit,
+            offset=args.offset, dataset_passes=args.dataset_passes,
+        )
+    source_preflight_metadata_s = time.perf_counter() - preflight_started
     source_doc_ids_sha256 = hashlib.sha256(
         ("\n".join(sorted(formal_ids)) + "\n").encode("utf-8")
     ).hexdigest()
@@ -693,7 +768,7 @@ def _load_image_run_setup(
         )
         if not source_manifest_match:
             raise ValueError(
-                "PostgreSQL image source no longer matches the immutable manifest"
+                "image source no longer matches the fixed source identity"
             )
     hse_limits = StageBrokerLimits(
         encoded_bytes=args.hse_encoded_bytes_limit or max(
@@ -723,12 +798,12 @@ def _load_image_run_setup(
         model_inflight=args.hse_model_inflight_limit or args.gpu_workers,
     )
     warmup_count = min(args.warmup_rows, args.limit)
-    warmup_ids, _ = read_database_metadata(
-        args.pg_dsn,
-        workload_name=args.workload_name,
-        limit=warmup_count,
-        offset=args.offset,
-    )
+    if file_manifest is not None:
+        warmup_ids, _ = file_manifest.metadata(ImageSourceConfig(args.workload_name, warmup_count, args.offset))
+    else:
+        warmup_ids, _ = read_database_metadata(
+            args.pg_dsn, workload_name=args.workload_name, limit=warmup_count, offset=args.offset,
+        )
     if args.arm in ("daft_native", "daft_ray", "daft_staged"):
         model_workers = args.daft_model_workers or args.gpu_workers
         gpus_per_model_worker = args.gpu_workers / model_workers
@@ -771,6 +846,8 @@ def _load_image_run_setup(
         cpu_budget=cpu_budget,
         ray_cluster_num_cpus=cpu_budget.cluster_slots,
         worker_runtime_env=ray_runtime_env(CODE_ROOT),
+        file_manifest=file_manifest,
+        source_preflight_metadata_s=source_preflight_metadata_s,
     )
 
 
@@ -888,6 +965,28 @@ class _ImageExecution:
         dataset_passes: int = 1,
         embedding_capture: EmbeddingCapture | None = None,
     ) -> ExecutionResult:
+        if self.setup.file_manifest is None:
+            return self._execute_source(limit, expected_ids, dataset_passes=dataset_passes,
+                                        embedding_capture=embedding_capture)
+        started = time.perf_counter()
+        manifest = load_image_file_manifest(self.args.source_manifest, self.args.image_root)
+        if manifest.sha256 != self.setup.file_manifest.sha256:
+            raise ValueError("file manifest changed after preflight")
+        result = self._execute_source(limit, expected_ids, dataset_passes=dataset_passes,
+                                      embedding_capture=embedding_capture, file_manifest=manifest,
+                                      source_started_s=started)
+        # Include the final file metadata check and full output audit in this
+        # file experiment's timer; keep historical PostgreSQL timing unchanged.
+        final = load_image_file_manifest(self.args.source_manifest, self.args.image_root)
+        if final.sha256 != manifest.sha256:
+            raise ValueError("file manifest changed during execution")
+        return replace(result, total_s=time.perf_counter() - started,
+                       first_output_s=result.first_output_s + self.source_open_s)
+
+    def _execute_source(
+        self, limit, expected_ids, *, dataset_passes=1, embedding_capture=None,
+        file_manifest=None, source_started_s=None,
+    ) -> ExecutionResult:
         args = self.args
         setup = self.setup
         if args.arm == "ray_data_staged":
@@ -909,20 +1008,23 @@ class _ImageExecution:
                 autoscaling_actor_pools=args.ray_data_autoscaling_actor_pools,
                 torch_intraop_threads=args.torch_intraop_threads,
                 torch_interop_threads=args.torch_interop_threads,
+                file_manifest=file_manifest,
             )
+            self.source_open_s = time.perf_counter() - source_started_s if source_started_s is not None else 0.0
             return run_ray_data_clip_baseline(
                 dataset,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
             )
-        source = make_source(
-            args.pg_dsn,
-            args.workload_name,
-            limit,
-            args.offset,
-            source_shards=setup.source_shards,
-            dataset_passes=dataset_passes,
+        source = (
+            build_daft_image_file_source(file_manifest, ImageSourceConfig(
+                args.workload_name, limit, args.offset, dataset_passes),
+                batch_size=args.batch_size, max_connections=setup.source_shards)
+            if file_manifest is not None else
+            make_source(args.pg_dsn, args.workload_name, limit, args.offset,
+                        source_shards=setup.source_shards, dataset_passes=dataset_passes)
         )
+        self.source_open_s = time.perf_counter() - source_started_s if source_started_s is not None else 0.0
         if args.arm == "daft_builtin_embed":
             return run_daft_builtin_image_embedding(
                 source,
@@ -1037,6 +1139,8 @@ def _write_embedding_capture(
     )
     manifest = {
         "arm": args.arm,
+        "source_kind": args.source_kind,
+        "file_manifest_sha256": setup.file_manifest.sha256 if setup.file_manifest is not None else "",
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "model_revision": args.model,
@@ -1076,6 +1180,7 @@ class _ObservedImageRun(NamedTuple):
     cpu_metrics: dict[str, object]
     gpu_metrics: dict[str, object]
     output_contract_metadata: dict[str, object]
+    source_open_s: float = 0.0
 
 
 def _run_observed_image_execution(
@@ -1132,6 +1237,7 @@ def _run_observed_image_execution(
         cpu_metrics=cpu_metrics,
         gpu_metrics=gpu_metrics,
         output_contract_metadata=output_contract_metadata,
+        source_open_s=execution.source_open_s,
     )
 
 
@@ -1178,6 +1284,19 @@ def _build_image_result_row(
         host_net_sent_bytes=int(observed.cpu_metrics["host_net_sent_bytes"]),
     )
     cpu_budget = setup.cpu_budget
+    file_source = setup.file_manifest is not None
+    native_ray_files = file_source and args.arm == "ray_data_staged"
+    reader_config = (
+        {"reader": "ray.data.read_binary_files", "source_shards_requested": setup.source_shards,
+         "override_num_blocks_per_pass": setup.source_shards, "concurrency_per_pass": setup.source_shards,
+         "read_task_num_cpus": 1, "preserve_order": True, "shuffle": None}
+        if native_ray_files else
+        {"reader": "daft.functions.url.download", "source_shards_requested": setup.source_shards,
+         "metadata_partitions": 1, "input_batch_rows_requested": args.batch_size,
+         "max_connections_per_batch": setup.source_shards,
+         "prefetch_and_parallelism": "framework_owned_not_measured"}
+        if file_source else None
+    )
     return {
         "arm": args.arm,
         "baseline_role": setup.provenance.role,
@@ -1189,6 +1308,14 @@ def _build_image_result_row(
         "phase": args.phase,
         "repeat_index": args.repeat_index,
         "workload_name": args.workload_name,
+        "source_kind": args.source_kind,
+        "file_manifest_sha256": setup.file_manifest.sha256 if setup.file_manifest is not None else "",
+        "source_preflight_metadata_s": setup.source_preflight_metadata_s,
+        "source_open_s": observed.source_open_s if args.source_kind == "files" else "",
+        "file_manifest_preparation_json": (
+            json.dumps(setup.file_manifest.preparation, sort_keys=True) if setup.file_manifest is not None else ""
+        ),
+        "source_reader_config_json": json.dumps(reader_config, sort_keys=True) if reader_config else "",
         "source_doc_ids_sha256": setup.source_doc_ids_sha256,
         "expected_source_doc_ids_sha256": args.expected_source_doc_ids_sha256,
         "source_manifest_match": setup.source_manifest_match,
@@ -1202,7 +1329,7 @@ def _build_image_result_row(
         "gpu_workers": args.gpu_workers,
         "model_workers": setup.model_workers,
         "gpus_per_model_worker": setup.gpus_per_model_worker,
-        "source_shards": setup.source_shards,
+        "source_shards": "" if file_source and not native_ray_files else setup.source_shards,
         "source_cpu_threads": setup.source_cpu_threads,
         "max_active_batches": args.max_active_batches if project_metrics else "",
         "ray_cluster_num_cpus": setup.ray_cluster_num_cpus or "",
@@ -1220,7 +1347,10 @@ def _build_image_result_row(
             cpu_budget.model_slots if cpu_budget.model_slots is not None else ""
         ),
         "declared_total_cpus": cpu_budget.declared_total_slots,
-        "resource_budget_semantics": cpu_budget.semantics,
+        "resource_budget_semantics": (
+            cpu_budget.semantics.replace("sql_readers", "native_file_source_tasks")
+            if file_source else cpu_budget.semantics
+        ),
         "ray_address_mode": (
             "external_shared" if args.ray_address else "isolated_local"
         ),
@@ -1435,11 +1565,27 @@ def _build_image_manifest(
 ) -> dict[str, object]:
     provenance = setup.provenance
     return {
-        "schema_version": 13,
-        "timing_boundary": "per_query_model_worker_setup_to_last_embedding_batch_returned",
+        "schema_version": 14,
+        "source_kind": args.source_kind,
+        "timing_boundary": (
+            "cold_workers_plus_source_open_read_prepare_to_complete_output_and_file_audit"
+            if args.source_kind == "files" else "per_query_model_worker_setup_to_last_embedding_batch_returned"
+        ),
         "worker_lifecycle": "per_query_cold_model_worker",
         "ray_framework_startup_included": False,
         "writeback_included": False,
+        "file_source_contract": (
+            {"manifest_preparation": "outside_operator_timer_full_encoded_content_hash",
+             "manifest_preparation_may_warm_page_cache": True,
+             "run_preflight": "manifest_hash_and_file_metadata_only_no_jpeg_payload",
+             "timed_source": "native_lazy_encoded_read_to_full_consumption_and_final_metadata_audit",
+             "adapter_payload_cache": False,
+             "os_page_cache_condition": "uncontrolled",
+             "warmup_unique_images": setup.warmup_count,
+             "warmup_may_warm_page_cache": True,
+             "comparison_requirement": "shared_manifest_preparation_equal_warmup_and_balanced_run_order"}
+            if setup.file_manifest is not None else None
+        ),
         "preprocessing": (
             "daft_builtin_decode_and_transformers_provider"
             if args.arm == "daft_builtin_embed"

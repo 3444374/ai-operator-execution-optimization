@@ -1,4 +1,4 @@
-"""Ray Data-native SQL -> CPU ``map_batches`` -> GPU actor baseline."""
+"""Ray Data-native SQL/files -> CPU ``map_batches`` -> GPU actor baseline."""
 
 from __future__ import annotations
 
@@ -13,10 +13,51 @@ from src.modalities.image.source import (
     image_documents_query,
     split_image_source_config,
 )
+from src.modalities.image.file_source import ImageFileManifest, file_doc_id
+
+
+def _bind_file_rows(batch, *, rows_by_path, pass_index, passes):
+    """Attach fixed identities to native binary-reader output without decoding."""
+    from pathlib import Path
+
+    ids = []
+    for path, encoded in zip(batch["path"], batch["bytes"], strict=True):
+        key = str(Path(str(path)).resolve())
+        if key not in rows_by_path:
+            raise ValueError("native file reader returned an unexpected path")
+        doc_id, size = rows_by_path[key]
+        if len(encoded) != size:
+            raise ValueError("native file reader returned a changed encoded size")
+        ids.append(file_doc_id(doc_id, pass_index, passes))
+    return {"doc_id": np.asarray(ids), "image": np.asarray(batch["bytes"], dtype=object)}
+
+
+def _read_ray_image_files(manifest, config, source_shards):
+    import ray.data
+
+    entries = manifest.select(config)
+    rows_by_path = {str(manifest.root / entry.path): (entry.doc_id, entry.image_bytes) for entry in entries}
+    datasets = []
+    for pass_index in range(1, config.dataset_passes + 1):
+        dataset = ray.data.read_binary_files(
+            list(rows_by_path), include_paths=True, ignore_missing_paths=False,
+            shuffle=None, override_num_blocks=source_shards, concurrency=source_shards, num_cpus=1,
+        )
+        dataset.context.execution_options.preserve_order = True
+        dataset = dataset.map_batches(
+            functools.partial(_bind_file_rows, rows_by_path=rows_by_path,
+                              pass_index=pass_index, passes=config.dataset_passes),
+            batch_format="numpy", num_cpus=1,
+        )
+        datasets.append(dataset)
+    dataset = datasets[0]
+    for other in datasets[1:]:
+        dataset = dataset.union(other)
+    return dataset
 
 
 class RayDataClipPreprocessor:
-    """Stateful CPU ``map_batches`` callable for encoded PostgreSQL images."""
+    """Stateful CPU ``map_batches`` callable for encoded JPEG images."""
 
     def __init__(
         self,
@@ -95,15 +136,16 @@ def build_ray_data_clip_pipeline(
     autoscaling_actor_pools: bool = False,
     torch_intraop_threads: int = 1,
     torch_interop_threads: int = 1,
+    file_manifest: ImageFileManifest | None = None,
 ):
     """Return one lazy Ray Data staged inference pipeline.
 
-    The SQL reader, CPU callable actors, GPU actor pool, backpressure, and task
+    The native source, CPU callable actors, GPU actor pool, backpressure, and task
     dispatch all remain inside Ray Data. The adapter defines only workload
     UDFs and native worker/batch configuration; it does not implement project
     admission or in-flight scheduling.
     """
-    if not database_url:
+    if not database_url and file_manifest is None:
         raise ValueError("database_url must be non-empty")
     if min(
         source_config.limit,
@@ -114,26 +156,25 @@ def build_ray_data_clip_pipeline(
     ) <= 0:
         raise ValueError("row, shard, batch, and worker values must be positive")
 
-    import psycopg
     import ray.data
 
-    connection_factory = functools.partial(psycopg.connect, database_url)
-    # Ray SQL's hash sharding does not support this ordered LIMIT/OFFSET query
-    # reliably across PostgreSQL types.  Use the exact same non-overlapping
-    # contiguous ranges as the Daft source and union their lazy read tasks.
-    source_datasets = [
-        ray.data.read_sql(
-            image_documents_query(shard),
-            connection_factory,
-            override_num_blocks=1,
-            concurrency=1,
-            num_cpus=1,
-        )
-        for shard in split_image_source_config(source_config, source_shards)
-    ]
-    dataset = source_datasets[0]
-    for shard_dataset in source_datasets[1:]:
-        dataset = dataset.union(shard_dataset)
+    if file_manifest is not None:
+        dataset = _read_ray_image_files(file_manifest, source_config, source_shards)
+    else:
+        import psycopg
+
+        connection_factory = functools.partial(psycopg.connect, database_url)
+        # Use the same non-overlapping ordered SQL ranges as the Daft source.
+        source_datasets = [
+            ray.data.read_sql(
+                image_documents_query(shard), connection_factory,
+                override_num_blocks=1, concurrency=1, num_cpus=1,
+            )
+            for shard in split_image_source_config(source_config, source_shards)
+        ]
+        dataset = source_datasets[0]
+        for shard_dataset in source_datasets[1:]:
+            dataset = dataset.union(shard_dataset)
     cpu_pool = (
         ray.data.ActorPoolStrategy(min_size=1, max_size=cpu_workers)
         if autoscaling_actor_pools
