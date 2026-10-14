@@ -46,6 +46,8 @@ owner／引用持有、异常完成确认／未知池、时间原子校验与单
 [独立A-only固定45da资格](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
 实际Ray5项和真实Daft/Arrow数据适配1项通过、0跳过；27自有子进程与controller独立退出、lease释放。
 仅CPU fixture／数据适配，CUDA／CLIP性能及完整CLI退出仍待验证；不借原ABC实库结果。
+接续独立[重复GPU handle入口校验](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)
+在读取source／RPC前拒绝同一Python对象重复占槽；仅本地资格，实际Ray别名与物理设备身份仍未识别。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。

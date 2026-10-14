@@ -4,6 +4,8 @@
 图像基点上的[独立A-only资格](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
 已完成5项CPU Ray和1项真实Daft/Arrow数据适配，B/C仍未加入；CUDA与CLIP性能另验。
 当前仅A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
+独立补[重复GPU handle入口校验](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)，
+只拒绝同一Python对象重复占槽，不认领实际Ray别名或物理GPU身份。
 
 [SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 

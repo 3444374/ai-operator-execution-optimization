@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：独立拒绝 HSE 借用池的重复 GPU handle
+
+- 从已发布`58462a0d`单独补[入口校验](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)：同一Python handle对象重复占GPU槽时，在source读取／RPC前拒绝，不去重或调额度。
+- 专属反例修前可读取source；修后两个回归及旧生命周期／部分确认／broker共31项本地通过、0跳过，标准builder与其他执行路径保持。
+- 不识别反序列化／包装handle或物理GPU身份；新增服务器／模型／GPU／HTTP执行0，图像+A已发布的固定源码和实际资格独立保留。
+
 2026-10-14：[shared-vLLM未知waiting正确性修复](code/src/experiments/shared_vllm/README.md)。
 从4991a73b独立复现空值被转零并误升到(4,40)，修后保留未知及校准静态供给；已有控制器和baseline身份保持，非新算法或性能收益。
 整合只取`482778bc`，基于`81228bdd`另核四处队列消费者与JSON／CSV保存重读，13模块196项全通过；两轴无必修，未引入副本研究或新服务器／模型／GPU执行。

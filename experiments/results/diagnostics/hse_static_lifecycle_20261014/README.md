@@ -68,3 +68,16 @@ CPU模拟model的synchronize不证明CUDA完成；弱引用记录被回收也不
 `5e0d58c93808108aba6871ca10e806684a1eb97b44795d2c0506577e8a92ea52`；公开19成员副本逐项映射原始与脱敏摘要。
 最初只读探测包装器返回1、未保留stderr，原因未确认，记录该限制；当时没有上传或执行SDK。
 随后只读确认外部owner持lease时未启动；其释放后由本controller原子取得共同lease，未抢占窗口。
+
+<a id="literal-gpu-handle-guard"></a>
+
+## 借用池的重复 GPU handle 入口校验
+
+在已发布 `58462a0d` 之后单独补 HSE 入口：同一 Python handle 对象重复出现在
+`gpu_actors` 中时，在 source 读取及 actor RPC 前抛出 `ValueError`。不静默去重或改变额度，
+broker、标准 pool builder、默认 direct_dependency 和本节之前的固定测量源码保持。
+[两项专属回归](../../../../code/tests/modalities/image/test_hse_pool_resource_identity.py)修前一项因读取
+source 而失败，另一项正常；修后连同旧 HSE 生命周期、部分确认及 broker 回归共31项通过、0跳过。
+两个不同替身 actor 的四行输出仍恰好一次。这里只核对重复 Python 对象；反序列化或包装后仍指向
+同一 Ray actor 的不同 handle、实际设备身份与共享物理 GPU 未识别。新增服务器／模型／GPU／HTTP
+执行均0，新 guard没有借用上方 `45da0a54` 的实际 SDK 资格。
