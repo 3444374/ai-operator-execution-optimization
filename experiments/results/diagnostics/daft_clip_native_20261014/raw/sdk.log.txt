@@ -1,0 +1,20 @@
+test_batch_rejects_ids_payloads_and_limit_before_native_graph (tests.baselines.image.test_daft_clip_executor.DaftClipOptionsTests.test_batch_rejects_ids_payloads_and_limit_before_native_graph) ... ok
+test_invalid_resources_rejected_without_sdk_or_model_access (tests.baselines.image.test_daft_clip_executor.DaftClipOptionsTests.test_invalid_resources_rejected_without_sdk_or_model_access) ... ok
+test_native_release_checks_model_parameters_and_buffers_without_gpu (tests.baselines.image.test_daft_clip_executor.DaftClipOptionsTests.test_native_release_checks_model_parameters_and_buffers_without_gpu) ... ok
+test_native_release_rejects_missing_load_or_duplicate_finalization (tests.baselines.image.test_daft_clip_executor.DaftClipOptionsTests.test_native_release_rejects_missing_load_or_duplicate_finalization) ... ok
+test_verifier_saves_completed_results_when_lease_release_fails (tests.baselines.image.test_daft_clip_executor.DaftClipOptionsTests.test_verifier_saves_completed_results_when_lease_release_fails) ... ok
+test_close_rejects_an_active_batch (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_close_rejects_an_active_batch) ... ok
+test_decode_error_is_preserved_and_never_treated_as_a_missing_row (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_decode_error_is_preserved_and_never_treated_as_a_missing_row) ... Error when running pipeline node image_decode(image, "raise", PyObject(RGB)) as __TruncateRootUDF_0-1-0__
+ok
+test_empty_batch_does_not_load_a_model (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_empty_batch_does_not_load_a_model) ... ok
+test_invalid_norm_is_reported_after_complete_graph_consumption (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_invalid_norm_is_reported_after_complete_graph_consumption) ... ok
+test_model_error_preserves_failure_and_refuses_unknown_worker_exit (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_model_error_preserves_failure_and_refuses_unknown_worker_exit) ... Error when running pipeline node UDF embed
+ok
+test_native_rgb_decode_batches_tail_ids_and_full_output (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_native_rgb_decode_batches_tail_ids_and_full_output) ... ok
+test_native_stateful_instance_reused_across_graphs_and_released_on_close (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_native_stateful_instance_reused_across_graphs_and_released_on_close) ... ok
+test_pinned_version_and_native_runner_required (tests.baselines.image.test_daft_clip_executor.DaftClipSdkTests.test_pinned_version_and_native_runner_required) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.385s
+
+OK

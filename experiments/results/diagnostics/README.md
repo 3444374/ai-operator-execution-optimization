@@ -1,5 +1,9 @@
 # Feasibility Results
 
+[Daft 本地 CLIP 原生批次资格](daft_clip_native_20261014/README.md)：本机／匹配Linux各13项真实 SDK／CPU kernel 替身与39项旧图像回归通过；
+9图四次完整512向量同Direct及正常释放核验通过。首次失败和可选计时依赖保留；完整LOTUS接入由独立负责人接续。
+
+
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
 [HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。

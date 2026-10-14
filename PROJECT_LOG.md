@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-14：Daft 本地 CLIP 原生批次后端资格
+
+- 从 `58462a0d` 在独立 `feat/daft-native-image-clip` 工作树实现 native RGB decode／stateful batch UDF；
+  复用 CLIP 计算与共享结果类型，保持512维FP32归一化、稳定ID及完整结果消费。
+- 真实 Daft0.7.21 CPU 替身本机／匹配Linux各13项、相关旧图像39项通过，设计／代码均由独立代理审核；
+  原模型重载假设失败保留，可选计时借用原模块验证，未复制平台。
+- [接口与证据](experiments/results/diagnostics/daft_clip_native_20261014/README.md)交接给 LOTUS 原生图像负责人；
+  公共 CLI／注册和上游实现未改。源码传输曾两次被拒，补充明确授权后成功；首GPU清理检查失败保留，
+  修订验证器后batch32的9图四次完整向量逐位同Direct、398参数／2buffers及CLI／lease退出核验通过。小样本不提供尾分位。
+
+
 ## 2026-10-14：图像集成上完成独立HSE A最小资格
 
 - 只普通合入`d307bb92`正确性，四份代码／测试逐blob保持；B历史扫描和C ready优先不合入，source先行、FIFO、CLI默认及其他379生产文件保持。

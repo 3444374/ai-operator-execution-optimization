@@ -1,0 +1,5 @@
+First actual Daft SDK attempt: 10 tests, 1 failure.
+FAIL: test_models_reload_in_each_graph_not_each_native_batch
+AssertionError: 1 != 2
+Assumption: two model constructors for two graphs. Observation: one stateful native instance, six complete UDF batches.
+Full execution output retained by the task tool log; this is the necessary sanitized excerpt.

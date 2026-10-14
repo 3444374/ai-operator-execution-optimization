@@ -1,5 +1,12 @@
 # Baseline and comparison harnesses
 
+[`image/frameworks/daft_clip.py`](image/frameworks/daft_clip.py)提供本地 CLIP 的原生 Daft 有状态 UDF 批次接点。
+`DaftClipExecutor.embed_batch(doc_ids, encoded_images)`接收稳定 ID 和 encoded bytes，返回共享 `ImageEmbeddingResult`，
+完整归一化 `float32[N,512]`；语义 revision 为实际本地路径，内容 SHA 与版本另记于 `identity`。
+图与批次归 Daft，不接 HTTP／SemLoom 调度；自写图登记为 `diagnostic_reference`。
+本机／Linux 软件资格、9 图真实 GPU 向量与模型释放核验、计时依赖见[独立报告](../../../experiments/results/diagnostics/daft_clip_native_20261014/README.md)。
+
+
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
