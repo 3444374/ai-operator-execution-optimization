@@ -5,7 +5,9 @@
 - 从固定`da379b2577118d58b890cff3fca6400af7bda8f2`建立独立修复分支，用导入的仓库函数核实附件线索；默认close遮住执行首错且跳过shutdown，详细模式遗漏次错说明，公开Iterable也不代表实际iterator。
 - 复用现有清理helper，显式持有实际iterator并逐项尝试close／shutdown；业务首错保持，正常提前关闭的真实清理错可见，纯计时故障让位于真实清理失败。并发、行数包络、厂商实现与其他owner文件不改。
 - 独立审查新增caller parser首错丢失worker shutdown次错、同异常对象notes无限复制两个反例，修前失败保留后最小修补；[来源及回归](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)分列最终57通过／1缺Ray导入跳过与较早共享计时补验。
-- localhost补验首次沙箱监听失败保留，仅重验一个既有用例后24次替身POST通过；本轮无服务器模型／GPU或性能矩阵，实际Ray 2.56.1补验计划交统一排队，main不合入。
+- localhost补验首次沙箱监听失败保留，仅重验一个既有用例后24次替身POST通过；初次发布后，用户授权同一任务的实库最小补验，main不合入。
+- 固定已发布`1d6453d`，执行前独立审阅修复未知birth释放lease及墙钟watchdog缺口；现有Ray2.56.1环境core/text预检和393份摘要核对通过，未混装依赖或改原生实现。
+- [限定软件核验](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)唯一四图共8次localhost POST、4 CPU／0模型／0GPU，错误notes和未确认责任保持。独立确认controller及60个已登记自有出生身份absent、lease释放，无强制停止或性能矩阵；早停及已关闭回调probe的资格边界如实保留。
 
 ## 2026-10-14：实现默认关闭的HSE设备组选择
 

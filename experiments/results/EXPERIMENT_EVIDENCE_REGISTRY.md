@@ -3,7 +3,11 @@
 2026-10-14：[文本 Ray Data 默认／详细计时清理差异修补](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)。
 基于固定`da379b2577118d58b890cff3fca6400af7bda8f2`，实际导入仓库函数复现首错被close替换、shutdown跳过及Iterable未关闭实际iterator。
 最终本地定向57通过／1缺Ray导入跳过，审查发现的次错交接与异常notes自复制反例已修复；修前失败及源码摘要保留。
-较早修订的共享计时42项与24次localhost替身POST独立记录，不合计为最终源码或真实Ray资格；模型／GPU0，实库最小计划待统一排队。
+较早修订的共享计时42项与24次localhost替身POST独立记录，不合计为最终源码或真实Ray资格。
+接续固定`1d6453d`的[限定实库核验](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)：
+Ray2.56.1／Arrow24.0.0、393份输入前后匹配，唯一四图／8次localhost POST、4 CPU／0模型／0GPU。
+预定清理／writer故障首错与notes通过，查询仍non-clean／unconfirmed拒绝复用；controller及60份已登记自有出生身份absent、lease释放。
+4份可见计时文件46事件／22对span／2个注入未配对边界保持；不新增模型、GPU性能或活动worker ValueError组合资格。
 
 2026-10-14：[HSE可选设备组选择](diagnostics/hse_device_dispatch_20261014/README.md)：A上显式策略的本树187通过／2缺驻留切片跳过，
 固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录。

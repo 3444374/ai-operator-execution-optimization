@@ -11,7 +11,8 @@ Ray 每次 Dataset 执行的生命周期或模型参数。
 此接续修补从 `integration/baselines@da379b2577118d58b890cff3fca6400af7bda8f2` 单独建立
 `fix/native-ray-cleanup-parity`。初始远端仍为该提交，附件所指 `native_calls.py` 的 blob
 `821e46eec29520d41885e5759052ef179822c930` 与实际源码一致；附件转录与替身记录只作线索。
-本次从仓库导入 `_ray_rows`，使用现有厂商 API 替身，不运行实际 Ray／Daft／IMLane。
+初次修补从仓库导入 `_ray_rows`，使用现有厂商 API 替身，未运行实际 Ray／Daft／IMLane；
+随后限定的实际Ray核验另列下节。
 发布前远端已推进到 `4db1aec25d5f9437c4fa9b7784395af955658520`；只读核对新增图像工作，
 本题文本清理与公共计时源码未变。本分支仍基于指定提交，共同入口文档的新记录交集成owner保留双方内容。
 
@@ -46,13 +47,62 @@ writer 独立失败仍保留。清理中一次失败即使后续重复 shutdown 
 定向失败／回归、共享计时的首次监听失败与单项重验、独立审查和结果来源。
 较早测试采样、入口误用等本地过程原件按运行身份与摘要保留于仓库外，不改写旧实验失败或旧性能原值。
 
-最终实际 Ray 2.56.1 软件资格仍 pending。本机现有虚拟环境是 Ray 2.56.0，缺所需 Daft／aiohttp，
-不为本次混装依赖或借其版本宣称实库通过。供统一排队的最小无模型计划是：复用已核验的
-Ray 2.56.1／Arrow环境，部署独立固定源码包并取得共享lease；沿既有图参数，OFF/ON 各核对正常EOF与提前停止，
-共四图、每图两行、最多8次localhost固定响应POST，4 CPU／0 GPU；单图60秒、含退出累计300秒。
-在实际 iterator close 与 shutdown 后注入预定失败，核对首错／次错与未知责任；独立确认本次拥有的
-consumer、HTTP handler、Ray进程退出再释放lease。超时、超POST上限、结果身份变化或未知清理即停止并保留证据。
-此计划尚未执行，不授予模型、GPU或性能资格。
+首次发布时实际 Ray 2.56.1 软件资格 pending。本机 Ray 2.56.0 缺所需 Daft／aiohttp，
+没有混装依赖或借其版本宣称通过。原最小计划的单图60秒／累计300秒候选限制未执行；
+随后在同一任务获得服务器无模型核验授权，实际方案只保留单图60秒无进度保护，
+沿用适配调用的120秒超时，不设置累计wall deadline。初版计划与本地失败原件保持。
+
+<a id="ray-cleanup-sdk"></a>
+
+### 实际 Ray 2.56.1 的限定软件核验
+
+固定已发布 `1d6453d31b9e59123148d22c85f57086c8f7ccad`，生产源码摘要仍为上方值。
+复用服务器现有 Python3.12.3／Ray2.56.1／Arrow24.0.0／aiohttp3.14.3／psutil7.2.2，
+没有修改依赖、原生库或服务器现有checkout。自动选择 `generic_linux_nvidia` 的core/text预检通过，
+27项ok、一项可选nvcc缺失；独立固定包392份原文件及一份核验脚本共393项，在执行前后逐项摘要一致。
+源码清单SHA-256为 `9e01c5b1c0a4b7881698faf093b501ba64413ce36569419500de1348a99f6a38`。
+
+[核验脚本](../../../../code/scripts/benchmarks/probe_native_ray_cleanup.py)的实际执行SHA-256为
+`70887e6a51b47d86b919ba7983b1f6ff92cc4255f2d73518bc84a0bf66008cb6`。
+默认只打印计划；`--execute`要求独立源码、清单、新仓库外输出、共享artifact根和短Ray临时目录。
+执行前独立审查发现出生身份未知时错误释放lease、停滞检测使用墙钟两个缺口，零启动反例修复后通过；
+另复核父出生身份枚举前后检查、pidfd复用保护、ESRCH继续和真实清理错误记录，最终零必修才上传运行。
+控制器复用现有lease helper，不恢复或删除别人的lease；仅对已确认自有出生身份使用pidfd。
+遥测关闭、模型离线、CUDA不可见；每图实际Ray资源4 CPU／0 GPU，driver affinity4，object store512MiB。
+图参数沿既有concurrency8、actors2、async batches2、batch rows1、source blocks2，未扩大行包络。
+
+唯一四图各准备两行，共8次localhost固定响应POST、0模型／0GPU请求；EOF各返回两行，
+提前停止各在首个结果后向caller iterator抛同一个InterruptedError并返回一行。
+每次真实iterator close和已知executor shutdown返回后，才分别注入OSError、RuntimeError；
+任何真实回调失败都会令核验失败，不能按预定注入通过。
+
+| 用例 | caller结果行 | fixture POST | caller首错 | notes中的次错 |
+|---|---:|---:|---|---|
+| OFF EOF | 2 | 2 | OSError（close注入） | shutdown RuntimeError |
+| ON EOF | 2 | 2 | OSError（close注入） | shutdown RuntimeError、计时OSError |
+| OFF提前停止 | 1 | 2 | 原InterruptedError | close OSError、shutdown RuntimeError |
+| ON提前停止 | 1 | 2 | 原InterruptedError | close OSError、shutdown RuntimeError、计时OSError |
+
+ON EOF在consume结束写出先注入计时故障，真实清理错误仍优先；ON提前停止在cleanup起点写出失败，
+caller取消首错仍保持。四图查询报告均为 `clean=false`、`unconfirmed_work=true`、`reuse_allowed=false`，
+`remote_http_stopped=unavailable`；核验状态 `expected_fault_verified` 不表示查询clean成功。
+每图再用同一组已关闭真实回调做ValueError首错／双清理次错probe，没有新增图或POST，
+也不认领活动Ray worker执行ValueError的实库组合资格。
+
+实际公开类型为无next／close的 `_IterableFromIterator`，保存的真实iterator为Python generator。
+EOF清理前为GEN_CLOSED，提前停止为GEN_SUSPENDED；公开类型检查没有迭代或额外执行。
+close或幂等shutdown返回本身不证明全部actor／GPU退出；caller提前停止也不证明在HTTP完成前取消了请求。
+控制器单独完成fixture HTTP线程／handler、native consumer和自身Ray连接的退出，四图无真实退出错误、
+无60秒停滞或强制停止。另一服务器只读进程随后确认controller及60个已登记自有出生身份全部absent，
+共享lease不存在；只核验已观察的自有身份，不升级为所有actor身份或整机GPU退出证明。
+
+ON两图各捕获driver和实际HTTP actor两份可见计时文件，共4份已核对关闭标记、46事件、22对span。
+两次预定writer故障分别留下consume缺结束、cleanup缺开始，原事件保持，不补造终点。
+这四份文件不代表覆盖了全部Ray运行时进程，也不授予性能或actor就绪时刻资格。
+[紧凑实库证据](ray-cleanup-sdk.json.gz)保留四图实际回调、错误notes、报告、事件、执行前审查及独立退出核验；
+34份服务器原件与源码清单在仓库外保留，旧 `ray-cleanup-parity.json.gz` 和历史失败未改写。
+私有原件归档SHA-256为 `2c954d2a66adb7aa62f627650bbcaae5cb6c02fa5c98220821d2cd3b42fd70ab`；
+可按本节固定源码及该校验值向项目维护者请求原件，不在公开入口写私有机器路径。
 
 ## 来源与问题
 

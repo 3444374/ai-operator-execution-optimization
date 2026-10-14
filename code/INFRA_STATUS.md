@@ -3,7 +3,9 @@
 2026-10-14：[文本 Ray Data 清理配对](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
 已用仓库函数复现默认／详细计时的异常差异并统一清理；保留实际 iterator、业务首错、全部已知清理次错及未确认责任。
 最终定向57通过／1缺Ray导入跳过；独立审查两个反例已修补，较早修订的共享计时补验另按来源保存。
-本轮无服务器模型／GPU运行或性能矩阵；最终实际Ray 2.56.1软件资格仍待统一排队，不沿用旧源码资格。
+接续固定`1d6453d`的[实际Ray 2.56.1软件核验](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)
+完成唯一四图／8次localhost POST，4 CPU／0模型／0GPU，ON/OFF首错及次错保持、失败责任仍拒绝复用。
+独立确认controller与60个已登记自有出生身份退出、lease释放；393份输入未变，性能矩阵未重跑。
 
 2026-10-14：[HSE可选设备组派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)
 在固定A增加每actor/group逻辑额度、完成work速率及先选择后lease；默认static和CLI保持。

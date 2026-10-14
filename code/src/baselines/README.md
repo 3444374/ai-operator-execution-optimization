@@ -7,7 +7,9 @@ NativeLOTUS、Daft、Ray Data、SemLoom、IMLane 两模式及现有图像 CLI �
 
 文本 Ray Data 的 [清理配对修补](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
 在计时 ON/OFF 下均保留实际 iterator，独立尝试 close／shutdown；业务首错与清理次错说明保持，
-真实清理失败优先于纯计时故障，失败或未确认责任继续拒绝复用。实际 Ray 2.56.1 软件补验仍待排队。
+真实清理失败优先于纯计时故障，失败或未确认责任继续拒绝复用。
+固定`1d6453d`的[实际Ray2.56.1限定核验](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)
+完成四图／8次localhost POST、0模型／0GPU，独立退出及lease检查通过；不将close返回等同于全部actor／GPU退出。
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
