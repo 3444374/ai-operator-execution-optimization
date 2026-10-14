@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-14：[可选执行计时](diagnostics/optional_execution_timing_20261014/README.md)。
+在已发布 runtime／EOF 修补之上增加默认关闭的账本与公共适配计时；复用原调用身份和局部时钟，
+六文本接点／图像外层的 fixture、开销、失败及原件对应分别保存。未采集的内部阶段保持未知，
+服务器四个独立 Ray 图恰好 8 次固定响应、结果／计数／EOF 清理通过，缺 worker 关闭标记如实保留。
+软件结果不作为模型／GPU 性能证据，原模型窗口及账本不改。
+
 2026-10-14：[公共Ray启动与正常EOF关闭修补](postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)。
 从实际整合`1b90c1ea`恢复，仅修项目适配层的跨后端误拒与EOF关闭异常复用；原图、执行器和方法保持。
 受影响本地Ran90，89通过／1缺Ray导入检查跳过；两项修前反例、专项重叠关系、摘要及交叉审核归于同一报告。

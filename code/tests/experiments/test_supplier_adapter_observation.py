@@ -212,7 +212,7 @@ class SupplierObservationTests(unittest.TestCase):
         self.assertEqual(result['request_e2e']['count'],2)
         self.assertEqual(result['calls'][0]['response_representation'],'complete native SDK ModelResponse values')
 
-    def test_semloom_observation_uses_each_execution_payload_once_and_batch_entry_time(self):
+    def test_semloom_observation_records_dispatched_payloads_after_bounded_prevalidation(self):
         from tests.semantic_methods.test_lotus_control import LotusControlTests
         observations,writer,raw=self.observations()
         with LotusControlTests().batch(prevalidate=True,retain=False) as (executor,execution,state):
@@ -221,11 +221,14 @@ class SupplierObservationTests(unittest.TestCase):
             with patch('src.semantic_methods.lotus.batch.parse_lotus_response',
                 side_effect=lambda *args,**kwargs:SimpleNamespace(model_dump=lambda:dict(value='ok'))):
                 observer(lm,[([dict(role='user',content=str(i))],None) for i in range(2)],{},False,'fixture')
-            self.assertEqual(state['events'].count('prepare'),2)
+            # Guarded validation retains only the first call; the suffix is rebuilt for dispatch.
+            self.assertEqual(state['events'].count('prepare'),3)
+            self.assertEqual(state['events'].count('native'),2)
             self.assertEqual(executor.last_responses,())
             self.assertEqual(execution.engine.capacity.usage(),Usage())
         ready=[e for e in writer.events if e['event']=='task_ready']
         prepared=[e for e in writer.events if e['event']=='lotus_http_call_prepared']
+        self.assertEqual(len(prepared),2)
         self.assertEqual(ready[0]['monotonic_ns'],ready[1]['monotonic_ns'])
         self.assertTrue(all(e['scope']=='HTTP encoding used by execution' for e in prepared))
         self.assertTrue(all(ready[0]['monotonic_ns']<=e['monotonic_ns'] for e in prepared))

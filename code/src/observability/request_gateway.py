@@ -27,10 +27,13 @@ import json
 import math
 import threading
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import quote
+
+from src.experiments.execution_timing import get_timing, is_timing_error, _timing_error
 
 
 _HOP_BY_HOP_HEADERS = {
@@ -141,13 +144,24 @@ class ObservationGateway:
         self._ready = threading.Event()
         self._startup_error: BaseException | None = None
         self._port: int | None = None
+        self._detailed_timing: Any = None
+        self._detailed_timing_error: BaseException | None = None
+        self._detailed_owner_id: str | None = None
 
     def __enter__(self) -> "ObservationGateway":
         self.start()
         return self
 
     def __exit__(self, *_error: object) -> None:
-        self.stop()
+        try:
+            self.stop()
+        except BaseException as cleanup_error:
+            if _error[1] is None or self._detailed_timing_error is None:
+                raise
+            if is_timing_error(_error[1]) and not is_timing_error(cleanup_error):
+                cleanup_error.add_note("Detailed timing also failed: " + type(_error[1]).__name__)
+                raise
+            _error[1].add_note("Gateway cleanup also failed: " + type(cleanup_error).__name__)
 
     def start(self) -> None:
         """Bind the gateway before a measured Job release occurs."""
@@ -159,6 +173,11 @@ class ObservationGateway:
                 f"observation gateway trace already exists: {self._trace_path}"
             )
         self._trace_path.parent.mkdir(parents=True, exist_ok=True)
+        # Capture the process recorder before crossing the background-thread
+        # boundary; query identity still comes from each request's trace row.
+        self._detailed_timing = get_timing()
+        if self._detailed_timing is not None:
+            self._detailed_owner_id = "gateway-" + uuid.uuid4().hex
         self._thread = threading.Thread(
             target=self._run,
             name="observation-gateway",
@@ -183,6 +202,54 @@ class ObservationGateway:
         self._thread = None
         self._loop = None
         self._reset_upstream = None
+        if self._detailed_timing_error is not None:
+            raise _timing_error(RuntimeError("detailed gateway timing failed")) from self._detailed_timing_error
+
+    def _record_detailed_request(self, row: dict[str, Any]) -> None:
+        """Reuse settled clocks after callbacks and local writing release control.
+
+        A response write is local write_eof completion, not proof of client
+        receipt or parsing. Missing body/write completion remains an open span.
+        Observation failures never replace an HTTP execution failure; stop()
+        reports them after the gateway has cleaned up.
+        """
+        timing = self._detailed_timing
+        if timing is None or row.get("detailed_timing_recorded"):
+            return
+        row["detailed_timing_recorded"] = True
+        fields = dict(query_id=row.get("query_id"), request_id=row["detailed_timing_request_id"],
+            gateway_request_id=row["gateway_request_id"], job_id=row["job_id"],
+            endpoint_id=row["endpoint_id"], owner_id=self._detailed_owner_id,
+            scope="proxy_http_handler")
+        status = "cancelled" if row["error_type"] == "CancelledError" else row["status"]
+        try:
+            for operation, first, last in (
+                ("gateway.handler_to_terminal", "received_monotonic_ns", "request_terminal_monotonic_ns"),
+                ("gateway.upstream_dispatch_to_body_read", "upstream_dispatch_started_monotonic_ns",
+                 "upstream_response_body_read_completed_monotonic_ns"),
+                ("gateway.local_response_write", "response_write_started_monotonic_ns",
+                 "response_write_completed_monotonic_ns"),
+            ):
+                if row[first] is not None:
+                    completed = row[last] is not None
+                    outcome = status if operation == "gateway.handler_to_terminal" or not completed else "completed"
+                    timing.record_interval(operation, row[first], row[last], **fields,
+                        status=outcome,
+                        error_type=row["error_type"] if outcome != "completed" else None,
+                        reason=None if completed else "completion_not_observed")
+            for operation, source_event in (
+                ("gateway.upstream_headers_send_started", "upstream_headers_send_started_monotonic_ns"),
+                ("gateway.upstream_response_headers_received", "upstream_response_headers_received_monotonic_ns"),
+            ):
+                if row.get(source_event) is not None:
+                    timing.mark(operation, monotonic_ns=row[source_event], **fields, source_event=source_event)
+            if row["request_terminal_monotonic_ns"] is not None:
+                timing.mark("gateway.request_terminal", monotonic_ns=row["request_terminal_monotonic_ns"],
+                            **fields, status=status, error_type=row["error_type"] or None)
+        except BaseException as error:
+            row["detailed_timing_error_type"] = type(error).__name__
+            if self._detailed_timing_error is None:
+                self._detailed_timing_error = error
 
     def endpoint_url(self, job_id: str, endpoint_id: str) -> str:
         """Return the Job-labelled Chat Completions URL for one route."""
@@ -240,6 +307,7 @@ class ObservationGateway:
             trace_stream = self._trace_path.open("x", encoding="utf-8")
             session: Any = None
             sequence = iter(range(2**63))
+            self_gateway = self
 
             class ObservedResponse(web.Response):
                 """Observe the framework's existing writer without replacing it."""
@@ -256,6 +324,7 @@ class ObservationGateway:
                         _record_failure(row, error, "response_prepare")
                         row["response_write_status"] = "failed"
                         row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        self_gateway._record_detailed_request(row)
                         raise
 
                 async def write_eof(self, data: bytes = b"") -> None:
@@ -271,11 +340,13 @@ class ObservationGateway:
                         _record_failure(row, error, "response_write")
                         row["response_write_status"] = "failed"
                         row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                        self_gateway._record_detailed_request(row)
                         raise
                     completed = time.monotonic_ns()
                     row["response_write_completed_monotonic_ns"] = completed
                     row["request_terminal_monotonic_ns"] = completed
                     row["response_write_status"] = "completed"
+                    self_gateway._record_detailed_request(row)
 
             class DisconnectedResponse(web.StreamResponse):
                 """Let aiohttp finish a closed connection without sending HTTP."""
@@ -378,6 +449,13 @@ class ObservationGateway:
                 }
                 if self._query_identity is not None:
                     row["query_id"] = self._query_identity()
+                if self._detailed_timing is not None:
+                    timing = self._detailed_timing
+                    row.update(pid=timing.pid, clock_domain=timing.clock_domain,
+                        clock_verified=timing.clock_verified, run_id=timing.run_id,
+                        owner_id=self._detailed_owner_id,
+                        detailed_timing_request_id=f"{self._detailed_owner_id}:{request_id}",
+                        upstream_response_headers_received_monotonic_ns=None)
                 if self._preserve_http:
                     row.update(preserve_http=True, transport_error="", caller_connection_closed=False)
                 # The evidence buffer also retains failures during body reading.
@@ -389,6 +467,7 @@ class ObservationGateway:
                 except BaseException as error:
                     _record_failure(row, error, "request_body_read")
                     row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    self._record_detailed_request(row)
                     raise
                 body_sha256 = hashlib.sha256(body).hexdigest()
                 row["request_body_sha256"] = body_sha256
@@ -427,6 +506,8 @@ class ObservationGateway:
                         allow_redirects=not self._preserve_http,
                         trace_request_ctx=row,
                     ) as response:
+                        if self._detailed_timing is not None:
+                            row["upstream_response_headers_received_monotonic_ns"] = time.monotonic_ns()
                         upstream_status = int(response.status)
                         row["upstream_response_status"] = upstream_status
                         phase = "upstream_response_read"
@@ -474,6 +555,8 @@ class ObservationGateway:
                         row["upstream_attempt_finished_monotonic_ns"] = time.monotonic_ns()
                         if row["request_terminal_monotonic_ns"] is not None:
                             row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    if row["request_terminal_monotonic_ns"] is not None:
+                        self._record_detailed_request(row)
                 upstream_response_epoch_s = time.time()
                 row["upstream_response_epoch_s"] = upstream_response_epoch_s
                 client_status = upstream_status
@@ -488,6 +571,7 @@ class ObservationGateway:
                 except asyncio.CancelledError as error:
                     _record_failure(row, error, "after_forward")
                     row["request_terminal_monotonic_ns"] = time.monotonic_ns()
+                    self._record_detailed_request(row)
                     raise
                 except Exception as error:
                     row["callback_error_type"] = type(error).__name__
@@ -569,6 +653,7 @@ class ObservationGateway:
                     trace_rows,
                     key=lambda item: int(item["gateway_request_id"]),
                 ):
+                    self._record_detailed_request(row)
                     trace_stream.write(
                         json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
                     )

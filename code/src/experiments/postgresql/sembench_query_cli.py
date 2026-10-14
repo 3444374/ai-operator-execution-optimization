@@ -15,6 +15,7 @@ from src.execution_provider.adapters.ray_map_transport import RayMapConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
+from src.experiments.execution_timing import timed_call
 from .imlane_query import IMLANE_METHOD_MODES, imlane_config_for_arm, load_imlane_call_configs
 from .persistent_native_adapter_query import PersistentAdapterGroup
 from .sembench_queries import LOTUS_MOVIE_ARMS, MovieDataset, MovieQuery, MOVIE_MANIFEST_DIGEST
@@ -156,6 +157,7 @@ def preflight(config):
     return dataset, model, options, physical, ray_parent, imlane, output, tokenizer, evidence
 
 
+@timed_call('sembench.run', finalize=True)
 def run(config):
     dataset, model, options, physical, ray_parent, imlane, output, tokenizer, evidence = preflight(config)
     new_private_directory(output)
@@ -199,6 +201,7 @@ def run(config):
     return result
 
 
+@timed_call('sembench.cli', finalize=True)
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, required=True)

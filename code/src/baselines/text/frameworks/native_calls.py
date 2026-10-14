@@ -13,7 +13,9 @@ from contextvars import ContextVar
 from dataclasses import dataclass, field
 import json
 import math
+import os
 from queue import Empty, Full, Queue
+import sys
 import threading
 import time
 from urllib.parse import urlsplit
@@ -22,12 +24,53 @@ from src.baselines.common.redact import redact_text
 from src.execution_provider.adapters.full_response import (
     FullModelResponse, decode_full_response, encode_full_response,
 )
+from src.experiments.execution_timing import is_timing_error, timing_span, timing_thread_target
 from .prepared_map import NativeGraphOptions
 
 
 _PROCESSOR_URL = "http://localhost/native-complete-call"
 _DAFT_CONTROLS = {}
 _HTTP_CALL_COOKIES = ContextVar('native_http_call_cookies', default=None)
+
+
+def _observed_graph_cleanup(backend, actions):
+    """Finish known cleanup actions before reporting an optional timing error."""
+    if not actions:
+        return
+    primary = sys.exception()
+    try:
+        with timing_span('native_call.graph_cleanup', backend=backend,
+                         scope='adapter iterator and graph resource cleanup calls'):
+            failures = []
+            for stage, action in actions:
+                try:
+                    action()
+                except BaseException as error:
+                    failures.append((stage, error))
+            if failures:
+                first = failures[0][1]
+                for stage, error in failures[1:]:
+                    first.add_note('Native ' + stage + ' also failed: ' + type(error).__name__)
+                raise first
+    except BaseException as cleanup:
+        if primary is None:
+            raise
+        if is_timing_error(primary) and not is_timing_error(cleanup):
+            cleanup.add_note('Detailed timing also failed: ' + type(primary).__name__)
+            raise
+        primary.add_note('Native graph cleanup also failed: ' + type(cleanup).__name__)
+
+
+def _processor_timing_fields():
+    ray = sys.modules.get('ray')
+    try:
+        if ray is not None and ray.is_initialized():
+            actor = ray.get_runtime_context().get_actor_id()
+            if actor is not None:
+                return {'actor_id': str(actor)}
+    except Exception:
+        pass
+    return {}
 
 
 def _daft_control(key):
@@ -291,15 +334,38 @@ class _ProcessorSession:
         self._client = None
 
     async def __aenter__(self):
-        self._client = _new_http_client()
+        if not os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'):
+            self._client = _new_http_client()
+            return self
+        self._timing_fields = _processor_timing_fields()
+        try:
+            with timing_span('native_call.http_session_init', backend='ray-data',
+                             scope='local HTTP client and session creation; actor readiness unavailable',
+                             **self._timing_fields):
+                self._client = _new_http_client()
+        except BaseException as error:
+            if self._client is not None:
+                try:
+                    await _close_http_client(self._client)
+                except BaseException as cleanup:
+                    if is_timing_error(error) and not is_timing_error(cleanup):
+                        cleanup.add_note('Detailed timing also failed: ' + type(error).__name__)
+                        raise
+                    error.add_note('Native HTTP pool close also failed: ' + type(cleanup).__name__)
+            raise
         return self
 
     async def __aexit__(self, *error):
         if self._client is not None:
             try:
-                await _close_http_client(self._client)
+                with timing_span('native_call.http_session_close', backend='ray-data',
+                                 **getattr(self, '_timing_fields', {})):
+                    await _close_http_client(self._client)
             except BaseException as cleanup:
                 if error[1] is None:
+                    raise
+                if is_timing_error(error[1]) and not is_timing_error(cleanup):
+                    cleanup.add_note('Detailed timing also failed: ' + type(error[1]).__name__)
                     raise
                 error[1].add_note("Native HTTP pool close also failed: " + type(cleanup).__name__)
 
@@ -309,7 +375,10 @@ class _ProcessorSession:
         call = _call_from_wire(json.loads(data)["native_call"])
         if self._client is None:
             raise RuntimeError("native Ray HTTP session was not entered")
-        return _ProcessorResponse(await _request(call, client=self._client))
+        with timing_span('native_call.http_call', backend='ray-data', call_id=call.call_id,
+                         row_id=call.row_id, scope='request kernel await through complete response consumption',
+                         **getattr(self, '_timing_fields', {})):
+            return _ProcessorResponse(await _request(call, client=self._client))
 
 
 def _ray_preprocess(row):
@@ -418,37 +487,55 @@ def _daft_rows(calls, options, control):
     from daft.runners import get_or_create_runner
     if daft.__version__ != "0.7.21" or get_or_create_runner().name != "native":
         raise RuntimeError("native complete calls require Daft 0.7.21 with its native runner")
-    frame = daft.from_pydict({"native_call": [_call_wire(call) for call in calls]})
-    # Daft validates serialization even for use_process=False. Keep only the
-    # primitive key in its function closure; actual stop/session state is local.
-    control_key = id(control)
-    _DAFT_CONTROLS[control_key] = control
-
-    @daft.func.batch(return_dtype=daft.DataType.string(), use_process=False,
-                    batch_size=1, max_concurrency=options.concurrency - 1,
-                    max_retries=0, on_error="raise")
-    async def complete(wires):
-        if len(wires) != 1:
-            raise ValueError("native Daft requires one complete call per batch")
-        outcome = await _request(_call_from_wire(wires.to_pylist()[0]), _daft_control(control_key))
-        return daft.Series.from_pylist([_outcome_wire(outcome)])
-
-    iterator = None
+    detailed = bool(os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'))
+    iterator = control_key = None
+    cleanup_started = False
     try:
-        result = frame.with_column("native_outcome", complete(daft.col("native_call"))).select("native_outcome")
+        with timing_span('native_call.graph_input', backend='daft'):
+            inputs = {"native_call": [_call_wire(call) for call in calls]}
+        with timing_span('native_call.graph_build', backend='daft', scope='adapter vendor graph API calls'):
+            frame = daft.from_pydict(inputs)
+            # Daft validates serialization even for use_process=False. Keep only the
+            # primitive key in its function closure; actual stop/session state is local.
+            control_key = id(control)
+            _DAFT_CONTROLS[control_key] = control
+
+            @daft.func.batch(return_dtype=daft.DataType.string(), use_process=False,
+                            batch_size=1, max_concurrency=options.concurrency - 1,
+                            max_retries=0, on_error="raise")
+            async def complete(wires):
+                if len(wires) != 1:
+                    raise ValueError("native Daft requires one complete call per batch")
+                outcome = await _request(_call_from_wire(wires.to_pylist()[0]), _daft_control(control_key))
+                return daft.Series.from_pylist([_outcome_wire(outcome)])
+
+            cleanup_started = True
+            result = frame.with_column("native_outcome", complete(daft.col("native_call"))).select("native_outcome")
         if control.stopped.is_set():
             return
-        iterator = result.iter_rows(results_buffer_size=1)
-        for row in iterator:
-            if control.stopped.is_set():
-                return
-            yield _outcome_from_wire(row["native_outcome"])
+        with timing_span('native_call.iterator_open', backend='daft',
+                         scope='vendor iterator API call; actor readiness unavailable'):
+            iterator = result.iter_rows(results_buffer_size=1)
+        with timing_span('native_call.consume', backend='daft',
+                         scope='native iterator through caller yields; includes consumer yield and backpressure wait'):
+            for row in iterator:
+                if control.stopped.is_set():
+                    return
+                yield _outcome_from_wire(row["native_outcome"])
     finally:
-        try:
+        if detailed:
+            actions = []
             if iterator is not None:
-                iterator.close()
-        finally:
-            _DAFT_CONTROLS.pop(control_key, None)
+                actions.append(('iterator_close', iterator.close))
+            if control_key is not None:
+                actions.append(('control_release', lambda: _DAFT_CONTROLS.pop(control_key, None)))
+            _observed_graph_cleanup('daft', actions)
+        elif cleanup_started:
+            try:
+                if iterator is not None:
+                    iterator.close()
+            finally:
+                _DAFT_CONTROLS.pop(control_key, None)
 
 
 def _ray_rows(calls, options, control):
@@ -463,31 +550,51 @@ def _ray_rows(calls, options, control):
     control.ray_async_batches_effective = DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
     if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != options.ray_async_batches_per_actor:
         raise RuntimeError("native Ray asynchronous batch limit differs from its import-time setting")
-    inputs = [dict(call_id=call.call_id, row_id=call.row_id, native_call=_call_wire(call)) for call in calls]
-    dataset = ray.data.from_items(inputs, override_num_blocks=min(len(inputs), options.source_blocks))
-    processor = build_processor(HttpRequestProcessorConfig(url=_PROCESSOR_URL,
-        batch_size=options.ray_batch_rows, concurrency=(options.ray_actors, options.ray_actors),
-        max_retries=0, session_factory=_ProcessorSession), preprocess=_ray_preprocess,
-        postprocess=_ray_postprocess, preprocess_map_kwargs={"max_retries": 0},
-        postprocess_map_kwargs={"max_retries": 0})
-    for stage in processor.stages.values():
-        stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0, max_concurrency=1)
-    result = control.result = processor(dataset)
-    if control.stopped.is_set():
-        return
-    iterator = result.iter_rows()
+    detailed = bool(os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'))
+    iterator = result = None
+    cleanup_started = False
     try:
-        for row in iterator:
-            if control.stopped.is_set():
-                return
-            yield _outcome_from_wire(row["native_outcome"])
+        with timing_span('native_call.graph_input', backend='ray-data'):
+            inputs = [dict(call_id=call.call_id, row_id=call.row_id, native_call=_call_wire(call)) for call in calls]
+        with timing_span('native_call.graph_build', backend='ray-data', scope='adapter vendor graph API calls'):
+            dataset = ray.data.from_items(inputs, override_num_blocks=min(len(inputs), options.source_blocks))
+            processor = build_processor(HttpRequestProcessorConfig(url=_PROCESSOR_URL,
+                batch_size=options.ray_batch_rows, concurrency=(options.ray_actors, options.ray_actors),
+                max_retries=0, session_factory=_ProcessorSession), preprocess=_ray_preprocess,
+                postprocess=_ray_postprocess, preprocess_map_kwargs={"max_retries": 0},
+                postprocess_map_kwargs={"max_retries": 0})
+            for stage in processor.stages.values():
+                stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0, max_concurrency=1)
+            result = control.result = processor(dataset)
+        if control.stopped.is_set():
+            return
+        with timing_span('native_call.iterator_open', backend='ray-data',
+                         scope='vendor iterator API call; actor readiness unavailable'):
+            iterator = result.iter_rows()
+            cleanup_started = True
+        with timing_span('native_call.consume', backend='ray-data',
+                         scope='native iterator through caller yields; includes consumer yield and backpressure wait'):
+            for row in iterator:
+                if control.stopped.is_set():
+                    return
+                yield _outcome_from_wire(row["native_outcome"])
     finally:
-        close = getattr(iterator, "close", None)
-        if close is not None:
-            close()
-        executor = getattr(result, "_current_executor", None)
-        if executor is not None:
-            executor.shutdown(force=True)
+        if detailed:
+            actions = []
+            close = getattr(iterator, 'close', None)
+            if close is not None:
+                actions.append(('iterator_close', close))
+            executor = getattr(result, '_current_executor', None)
+            if executor is not None:
+                actions.append(('executor_shutdown', lambda: executor.shutdown(force=True)))
+            _observed_graph_cleanup('ray-data', actions)
+        elif cleanup_started:
+            close = getattr(iterator, "close", None)
+            if close is not None:
+                close()
+            executor = getattr(result, "_current_executor", None)
+            if executor is not None:
+                executor.shutdown(force=True)
 
 
 class NativeCallExecutor:
@@ -600,7 +707,7 @@ class NativeCallExecutor:
                     failures.append(("graph_close", error))
                 finished.set()
 
-        thread = threading.Thread(target=consume, name="native-call-consumer", daemon=True)
+        thread = threading.Thread(target=timing_thread_target(consume), name="native-call-consumer", daemon=True)
         primary = None
         received = set()
         total_bytes = 0

@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[可选执行计时](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)
+复用现有 writer／时钟／查询及调用身份，默认关闭，覆盖 NativeLOTUS、Daft、Ray Data、SemLoom、
+IMLane 两模式与现有图像外层。账本初始化／历史核验、BEGIN 调用、事务体、提交与 finish 分开采集；
+本地 fixture、开销、来源映射及仍未观测的内部阶段按报告解释；服务器四个原 Ray 图共 8 次固定响应通过，
+48 个 worker 缺关闭标记仍按未完整采集保存，不新增模型／GPU 性能结论。
+
 2026-10-14：[Daft／Ray接续适配修补](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)
 分开公共Ray连接配置与SQL reader检查，保留所选图的容量校验；正常EOF内部关闭异常也拒绝复用。
 最终本地组合89通过／1缺Ray导入检查跳过，两个实现交叉审核无待修项；

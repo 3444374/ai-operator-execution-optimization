@@ -41,6 +41,7 @@ from .native_adapter_metrics import summarize_calls, executor_phase_observations
 from .query_config import NativeRayRuntimeConfig
 from .query_execution import native_ray_runtime
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
+from src.experiments.execution_timing import timed_call
 from .semantic_system_query import record_native_response
 
 
@@ -196,6 +197,7 @@ def open_semloom_calls(calls, execution, unit_id, record, *, cleanup_report):
                 cleanup.raise_if_failed()
 
 
+@timed_call('runtime.prepare_call')
 def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     if arm == 'fixed-map-native-daft':
         from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
@@ -224,6 +226,7 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     return physical,runtime
 
 
+@timed_call('query.invocation', query=True, finalize=True)
 def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, root,
                            options=NativeGraphOptions(), physical=None,
                            ray_temp_root=None, ray_address=None, query_timeout_s=120,
@@ -462,6 +465,7 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
     return summary
 
 
+@timed_call('native_adapter.cli', finalize=True)
 def main(argv=None):
     started=time.monotonic_ns()
     from .supplier_adapter_query import SUPPLIER_ARMS,LOTUS_OBSERVATION_MODES,run_supplier_query

@@ -1,5 +1,10 @@
 # PostgreSQL resource measurement tools
 
+公共单查询、常驻查询及 SemBench CLI 可设置 `SEMLOOM_DETAILED_TIMING_DIR` 启用详细诊断，默认关闭。
+它复用原查询／HTTP／调用身份，另记准备、图 API、完整消费与清理，不重写基础总时或原生执行生命周期。
+字段、结束核验、私有 helper 源码对应及不可见阶段见
+[可选计时报告](../../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)。
+
 ## 原始SemBench Movie方法
 
 `sembench_queries.py`保存唯一原始准备集、独立行身份和原查询结果；`sembench_query_cli.py`只编排已有LOTUS执行路径。

@@ -1,5 +1,10 @@
 # Baseline and comparison harnesses
 
+NativeLOTUS、Daft、Ray Data、SemLoom、IMLane 两模式及现有图像 CLI 共用可选外层诊断。
+设置 `SEMLOOM_DETAILED_TIMING_DIR` 后采集，未设置时保持原总时与输出；图构建／session 初始化等只按实际操作命名，
+不推定厂商排队、actor 初始化或 GPU 计算。[字段与验证](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)
+同时说明原图生命周期、图像未知首批／EOF及计时开销。
+
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。

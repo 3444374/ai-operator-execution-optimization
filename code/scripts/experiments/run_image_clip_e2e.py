@@ -21,6 +21,7 @@ runs retain their old timing definition. Ray startup and writeback are excluded.
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import csv
 import hashlib
 import json
@@ -77,6 +78,7 @@ from src.baselines.image.frameworks.ray_data import (  # noqa: E402
 from src.modalities.image.resource_budget import build_ray_cpu_budget  # noqa: E402
 from src.modalities.image.resource_sampling import NvidiaSmiSampler, SystemCpuSampler  # noqa: E402
 from src.infrastructure.runtime_env import ray_runtime_env  # noqa: E402
+from src.experiments.execution_timing import get_timing, timed_call, timing_span  # noqa: E402
 
 
 ARMS = (
@@ -891,6 +893,7 @@ class _ImageExecution:
             _cleanup_image_run((("execution", self.close),), error=error)
             raise
 
+    @timed_call("image.ray_client_initialize")
     def _init_ray(self) -> None:
         if self.ray.is_initialized():
             raise RuntimeError("image runner requires an uninitialized Ray client")
@@ -909,6 +912,7 @@ class _ImageExecution:
                 runtime_env=self.setup.worker_runtime_env,
             )
 
+    @timed_call("image.project_worker_initialize")
     def _build_project_workers(self):
         try:
             return build_semloom_ray_worker_pool(
@@ -927,6 +931,7 @@ class _ImageExecution:
             error.image_execution_owner = self
             raise
 
+    @timed_call("image.arm_initialize")
     def _initialize_arm(self) -> None:
         args = self.args
         setup = self.setup
@@ -982,6 +987,7 @@ class _ImageExecution:
             self.daft.set_runner_native(num_threads=setup.source_cpu_threads)
             self.worker_pool = self._build_project_workers()
 
+    @timed_call("image.project_worker_cleanup_call")
     def stop_project_workers(self) -> None:
         if self.worker_pool is not None:
             try:
@@ -998,6 +1004,7 @@ class _ImageExecution:
             self.ray.shutdown()
         self._ray_owned = False
 
+    @timed_call("image.execution_close")
     def close(self) -> None:
         self._closed = True
         actions = [("worker_pool", self.stop_project_workers)]
@@ -1006,6 +1013,7 @@ class _ImageExecution:
         actions.append(("owned_ray_client", self._disconnect_owned_ray))
         _cleanup_image_run(actions)
 
+    @timed_call("image.formal_worker_prepare_call")
     def start_formal_workers(self) -> float:
         if self._failed or self._closed:
             raise RuntimeError("failed or closed image execution cannot start another worker pool")
@@ -1021,6 +1029,7 @@ class _ImageExecution:
             raise
         return time.perf_counter() - started
 
+    @timed_call("image.execute")
     def execute(
         self,
         limit: int,
@@ -1032,8 +1041,17 @@ class _ImageExecution:
         if self._failed or self._closed:
             raise RuntimeError("failed or closed image execution must not reuse its worker pool")
         try:
-            return self._execute_once(limit, expected_ids, dataset_passes=dataset_passes,
-                                      embedding_capture=embedding_capture)
+            result = self._execute_once(limit, expected_ids, dataset_passes=dataset_passes,
+                                        embedding_capture=embedding_capture)
+            timing = get_timing()
+            if timing is not None:
+                timing.mark("image.full_output_audit_returned", status="completed")
+                # The adapters expose relative first_output_s/total_s only.
+                # Do not manufacture absolute clocks from a different anchor.
+                for boundary in ("first_batch", "raw_eof"):
+                    timing.mark("image.boundary_unavailable", source_event=boundary,
+                                status="unknown", reason="boundary_not_exposed_by_adapter")
+            return result
         except BaseException as error:
             self._failed = True
             error.image_execution_owner = self
@@ -1067,40 +1085,42 @@ class _ImageExecution:
         args = self.args
         setup = self.setup
         if args.arm == "ray_data_staged":
-            dataset = build_ray_data_clip_pipeline(
-                database_url=args.pg_dsn,
-                source_config=ImageSourceConfig(
-                    workload_name=args.workload_name,
-                    limit=limit,
-                    offset=args.offset,
-                    dataset_passes=dataset_passes,
-                ),
-                source_shards=setup.source_shards,
-                processor_revision=setup.processor,
-                model_revision=args.model,
-                dtype=args.dtype,
-                batch_size=args.batch_size,
-                cpu_workers=args.cpu_workers,
-                gpu_workers=args.gpu_workers,
-                autoscaling_actor_pools=args.ray_data_autoscaling_actor_pools,
-                torch_intraop_threads=args.torch_intraop_threads,
-                torch_interop_threads=args.torch_interop_threads,
-                file_manifest=file_manifest,
-            )
+            with timing_span("image.source_graph_build", arm=args.arm):
+                dataset = build_ray_data_clip_pipeline(
+                    database_url=args.pg_dsn,
+                    source_config=ImageSourceConfig(
+                        workload_name=args.workload_name,
+                        limit=limit,
+                        offset=args.offset,
+                        dataset_passes=dataset_passes,
+                    ),
+                    source_shards=setup.source_shards,
+                    processor_revision=setup.processor,
+                    model_revision=args.model,
+                    dtype=args.dtype,
+                    batch_size=args.batch_size,
+                    cpu_workers=args.cpu_workers,
+                    gpu_workers=args.gpu_workers,
+                    autoscaling_actor_pools=args.ray_data_autoscaling_actor_pools,
+                    torch_intraop_threads=args.torch_intraop_threads,
+                    torch_interop_threads=args.torch_interop_threads,
+                    file_manifest=file_manifest,
+                )
             self.source_open_s = time.perf_counter() - source_started_s if source_started_s is not None else 0.0
             return run_ray_data_clip_baseline(
                 dataset,
                 expected_doc_ids=expected_ids,
                 embedding_dimension=args.embedding_dimension,
             )
-        source = (
-            build_daft_image_file_source(file_manifest, ImageSourceConfig(
-                args.workload_name, limit, args.offset, dataset_passes),
-                batch_size=args.batch_size, max_connections=setup.source_shards)
-            if file_manifest is not None else
-            make_source(args.pg_dsn, args.workload_name, limit, args.offset,
-                        source_shards=setup.source_shards, dataset_passes=dataset_passes)
-        )
+        with timing_span("image.source_graph_build", arm=args.arm):
+            source = (
+                build_daft_image_file_source(file_manifest, ImageSourceConfig(
+                    args.workload_name, limit, args.offset, dataset_passes),
+                    batch_size=args.batch_size, max_connections=setup.source_shards)
+                if file_manifest is not None else
+                make_source(args.pg_dsn, args.workload_name, limit, args.offset,
+                            source_shards=setup.source_shards, dataset_passes=dataset_passes)
+            )
         self.source_open_s = time.perf_counter() - source_started_s if source_started_s is not None else 0.0
         if args.arm == "daft_builtin_embed":
             return run_daft_builtin_image_embedding(
@@ -1271,9 +1291,13 @@ def _run_observed_image_execution(
     transformers_module,
 ) -> _ObservedImageRun:
     cleanup = [("worker_pool", execution.stop_project_workers)]
+    timing = get_timing()
+    last_phase = "warmup"
     try:
-        execution.execute(setup.warmup_count, setup.warmup_ids)
-        execution.stop_project_workers()
+        with (timing.bind(arm=args.arm, phase="warmup", query_id=f"image-warmup-{args.repeat_index}")
+              if timing is not None else nullcontext()):
+            execution.execute(setup.warmup_count, setup.warmup_ids)
+            execution.stop_project_workers()
         planned_start_epoch_s, actual_start_epoch_s = _wait_for_formal_start(args)
         gpu_sampler = NvidiaSmiSampler(
             args.gpu_sample_interval_s,
@@ -1284,14 +1308,17 @@ def _run_observed_image_execution(
         gpu_sampler.start()
         cleanup.insert(1, ("cpu_sampler", cpu_sampler.stop))
         cpu_sampler.start()
-        worker_setup_s = execution.start_formal_workers()
-        capture = EmbeddingCapture() if args.save_embeddings else None
-        result = execution.execute(
-            args.limit,
-            setup.formal_ids,
-            dataset_passes=args.dataset_passes,
-            embedding_capture=capture,
-        )
+        last_phase = "formal"
+        with (timing.bind(arm=args.arm, phase="formal", query_id=f"image-formal-{args.repeat_index}")
+              if timing is not None else nullcontext()):
+            worker_setup_s = execution.start_formal_workers()
+            capture = EmbeddingCapture() if args.save_embeddings else None
+            result = execution.execute(
+                args.limit,
+                setup.formal_ids,
+                dataset_passes=args.dataset_passes,
+                embedding_capture=capture,
+            )
         output_contract_metadata = embedding_output_contract_metadata(
             args.arm,
             args.embedding_output_contract,
@@ -1303,7 +1330,9 @@ def _run_observed_image_execution(
                 torch_module=torch_module, transformers_module=transformers_module,
             )
     finally:
-        cleaned = _cleanup_image_run(cleanup, error=sys.exc_info()[1])
+        with (timing.bind(arm=args.arm, phase=last_phase, query_id=f"image-{last_phase}-{args.repeat_index}")
+              if timing is not None else nullcontext()):
+            cleaned = _cleanup_image_run(cleanup, error=sys.exc_info()[1])
     return _ObservedImageRun(
         result=result,
         worker_setup_s=worker_setup_s,
@@ -1707,6 +1736,7 @@ def _build_image_manifest(
     }
 
 
+@timed_call("image.cli", finalize=True)
 def main() -> None:
     args = parse_args()
     processor, embedding_target, embedding_sidecar, provenance = (

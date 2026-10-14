@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-14：补齐默认关闭的执行计时
+
+- 以独立工作树承接计时任务，先普通合入已发布 `ea6c9184`，日志冲突保留双方记录；不改 main。
+- 复用现有身份、clock domain 和有界 writer，追加账本初始化／历史核验、BEGIN 调用、事务体、提交、finish，
+  及 NativeLOTUS／Daft／Ray Data／SemLoom／IMLane 双模式和图像实际外层操作。
+- [报告与开关配对](experiments/results/diagnostics/optional_execution_timing_20261014/README.md)保留失败、来源和开销，
+  不将 process bootstrap、session 初始化、actor 构造混称，不修改原生图／EOF 生命周期或回写旧模型原值。
+- 本地 259 项方法与最后共同层 54 项定向分别通过；两组重叠不相加。服务器原子取得 lease 后执行一次
+  四个新 owner 的 0／2520 行 Ray 图，恰好 8 次固定响应、模型／GPU 为 0，结果／计数／清理通过后释放 lease；
+  48 个 worker 缺关闭标记继续保留为未完整采集，不能替代旧模型变慢原因的证据。
+
 ## 2026-10-14：图像集成上完成独立HSE A最小资格
 
 - 只普通合入`d307bb92`正确性，四份代码／测试逐blob保持；B历史扫描和C ready优先不合入，source先行、FIFO、CLI默认及其他379生产文件保持。

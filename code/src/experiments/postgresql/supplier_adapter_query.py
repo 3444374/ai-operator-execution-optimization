@@ -16,6 +16,7 @@ from src.execution_provider.adapters.full_response import decode_full_response, 
 from src.execution_provider.adapters.native_tasks import build_native_execution
 from src.execution_provider.wire.framing import MAX_FRAME_BYTES
 from src.experiments.buffered_events import BufferedEvents
+from src.experiments.execution_timing import timed_call, timing_span
 from src.experiments.process_sampling import ProcessSampler
 from src.scheduling.core.session_contract import Usage, SessionTimeouts
 from src.observability.request_gateway import GatewayRoute, ObservationGateway
@@ -225,6 +226,7 @@ class _LotusMethodObservation:
         return step
 
 
+@timed_call('lotus.lm_prepare')
 def prepare_lotus_lm(plan, model, options, tokenizer_path, *, sembench=False):
     os.environ['LITELLM_LOCAL_MODEL_COST_MAP']='True'
     import lotus
@@ -331,6 +333,7 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
             'native_api' if backend is not None else 'supplier_native' if execution is None else 'semloom'))
 
 
+@timed_call('semloom.executor_drain')
 def _drain_execution(execution, *, close=True):
     until=time.monotonic()+execution.drain_timeout_s
     while execution.engine.capacity.usage()!=Usage() and time.monotonic()<until:
@@ -340,6 +343,7 @@ def _drain_execution(execution, *, close=True):
         raise RuntimeError('supplier execution retains unresolved model resources')
 
 
+@timed_call('duckdb.connection_prepare')
 def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=False,batch_executor=None):
     import ctypes
     import duckdb
@@ -374,6 +378,7 @@ def prepare_duckdb_connection(stack,plan,model,options,library,*,semloom_batch=F
     return connection
 
 
+@timed_call('duckdb.input_replace')
 def replace_duckdb_inputs(connection,values,plan):
     from src.baselines.text.frameworks.semantic_map import application_prompt
     connection.execute('DELETE FROM adapter_inputs')
@@ -481,6 +486,7 @@ def _duckdb_rows(stack,arm,values,plan,model,execution,observations,options,libr
                     executor=getattr(native,'last_timings',None),bridge=bridge.last_timings)
 
 
+@timed_call('query.invocation', query=True, finalize=True)
 def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,options,
                        physical=None,ray_temp_root=None,ray_address=None,query_timeout_s=120,
                        stages=None,sema_binary=None,tokenizer_path=None,
@@ -564,15 +570,16 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
 
     try:
         source_started=time.monotonic_ns()
-        if sembench_query is None:
-            values=load_bounded_rows(load_source)
-        else:
-            summary['sembench_preflight']=sembench_query.dataset.preflight()
-            values=sembench_query.dataset.load_rows()
-            sembench_query.check_executor_shape(arm,values,
-                imlane_config=imlane_config_for_arm(arm,imlane_call_configs))
-            sembench_result=MovieQueryResult(sembench_query,values,root)
-            summary['source_identity']='selected original SemBench Movie finite relation; external source'
+        with timing_span('query.source_load'):
+            if sembench_query is None:
+                values=load_bounded_rows(load_source)
+            else:
+                summary['sembench_preflight']=sembench_query.dataset.preflight()
+                values=sembench_query.dataset.load_rows()
+                sembench_query.check_executor_shape(arm,values,
+                    imlane_config=imlane_config_for_arm(arm,imlane_call_configs))
+                sembench_result=MovieQueryResult(sembench_query,values,root)
+                summary['source_identity']='selected original SemBench Movie finite relation; external source'
         summary['stages']['source_seconds']=(time.monotonic_ns()-source_started)/1e9
         row_ids={v['row_id'] for v in values}
         if reference_outputs is not None and (not isinstance(reference_outputs,dict)
@@ -627,9 +634,10 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                 execution=owner.execution
             elif use_core and not arm.startswith('sema-'):
                 token=routed.bearer_token or ('EMPTY' if arm.startswith('duckdb-') else 'local-fixture')
-                execution=build_native_execution(replace(routed,bearer_token=token),
-                    physical=physical,max_tasks=held_tasks,max_active_requests=options.concurrency,
-                    observer=core_record,timeouts=SessionTimeouts(backend_s=max(45,query_timeout_s)))
+                with timing_span('semloom.executor_create'):
+                    execution=build_native_execution(replace(routed,bearer_token=token),
+                        physical=physical,max_tasks=held_tasks,max_active_requests=options.concurrency,
+                        observer=core_record,timeouts=SessionTimeouts(backend_s=max(45,query_timeout_s)))
                 def close_execution():
                     nonlocal execution
                     summary['core_cleanup']=dict(final_core_usage=asdict(execution.engine.capacity.usage()))

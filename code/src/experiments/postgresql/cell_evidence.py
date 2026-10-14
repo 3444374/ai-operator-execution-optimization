@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import json
 import time
 
+from src.experiments.execution_timing import is_timing_error
 from .map_query_recording import _error_details
 
 
@@ -14,6 +15,9 @@ class CellErrors:
 
     def record(self, phase, failure):
         if self.first is None:
+            self.first = failure
+        elif is_timing_error(self.first) and not is_timing_error(failure):
+            failure.add_note('Detailed timing also failed: ' + type(self.first).__name__)
             self.first = failure
         self.details.setdefault(phase, dict(_error_details(failure), observed_ns=time.monotonic_ns()))
 
