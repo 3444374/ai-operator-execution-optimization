@@ -255,6 +255,9 @@ class PersistentAdapterGroup:
         self.max_held_tasks,self.sema_native_threads=resolve_adapter_limits(options,max_held_tasks,sema_native_threads)
         self.imlane_call_configs = load_imlane_call_configs(imlane_call_configs)
         for arm in self.arms:
+            if (arm == 'fixed-map-native-ray' or NATIVE_SUPPLIER_BACKENDS.get(arm) == 'ray-data'
+                    or SEMA_NATIVE_ARMS.get(arm) == 'ray-data'):
+                options.validate_backend('ray-data')
             imlane_config_for_arm(arm,self.imlane_call_configs)
             validate_native_options(arm,options,self.max_held_tasks,imlane_config,self.imlane_call_configs)
         self.imlane_config = imlane_config

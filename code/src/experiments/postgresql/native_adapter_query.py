@@ -38,7 +38,7 @@ from .cell_evidence import CellErrors
 from .map_direct import request_body
 from .native_adapter_http import PreparedSessionFactory, bind_native_http_events
 from .native_adapter_metrics import summarize_calls, executor_phase_observations
-from .query_config import QueryConfig
+from .query_config import NativeRayRuntimeConfig
 from .query_execution import native_ray_runtime
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
@@ -207,11 +207,12 @@ def _runtime(stack, arm, options, physical, ray_temp_root, ray_address):
     if arm == 'fixed-map-semloom' and physical is not None and physical.payload_backend == 'daft':
         from src.baselines.text.frameworks.daft_pg_http import prepare_runtime
         prepare_runtime(options.num_threads)
+    if arm == 'fixed-map-native-ray':
+        options.validate_backend('ray-data')
+    config = NativeRayRuntimeConfig(ray_num_cpus=options.num_threads,
+        ray_async_batches_per_actor=options.ray_async_batches_per_actor,ray_address=ray_address)
     os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(options.ray_async_batches_per_actor)
     import ray
-    config = QueryConfig(unit_id='prepared-runtime',arm='ray-data',task='map',table='unused',
-        concurrency=options.concurrency,ray_num_cpus=options.num_threads,ray_actors=options.ray_actors,
-        ray_async_batches_per_actor=options.ray_async_batches_per_actor,ray_address=ray_address)
     runtime = stack.enter_context(native_ray_runtime(ray,config,ray_temp_root))
     if arm == 'fixed-map-semloom':
         physical = replace(physical,address=ray.get_runtime_context().gcs_address,response_mode='full')

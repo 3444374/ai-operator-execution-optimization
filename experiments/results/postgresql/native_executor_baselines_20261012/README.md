@@ -1,5 +1,33 @@
 # 三种原方法的原生执行接入
 
+<a id="native-adapter-completion"></a>
+## 公共Ray启动与正常EOF关闭修补
+
+2026-10-14从实际远端`integration/baselines@1b90c1ea39e12c9fff2e2265aae003e25aa9d618`接续。
+该版本已包含`0be63a19`及整合`d1f5ef74`，Daft／Ray图、LOTUS SDK与公共native查询入口
+相对旧接入交付无源码变化；IMLane和图像来源保持各自owner归属。
+只读审查及零模型复现另发现两处公共适配缺口：
+
+- 准备调用的Ray启动恒使用SQL reader的`QueryConfig`，误拒绝Ray Core／SemLoom的C1、CPU1，
+  也误拒绝没有SQL reader的单CPU准备调用。现用只含地址、CPU、object-store和导入异步批次数的
+  `NativeRayRuntimeConfig`；所选Ray Data仍在启动前核A×B×R≤C，原SQL reader检查保持。
+- 全部结果已交付后，厂商生成器正常EOF的内部关闭异常登记为`graph_consume`，旧复用判定却只识别
+  显式`graph_close`。现任意worker错误均保留未确认责任，下一批零图进入；原异常和关闭诊断继续保留，
+  完整HTTP错误响应仍由原SDK解释，正常成功与发送前取消的复用行为保持。
+
+两项修补仅涉及项目适配层；原生执行器、图、UDF、批处理、并发和原方法未改。
+修前同一整合版本的本地组合75通过／1缺Ray导入检查跳过；修后受影响组合Ran90，89通过／1同项跳过，0失败。
+runtime专项9项、EOF责任专项24项与最终组合重叠，不相加。两个实现由另一审查者交叉核对，均无待修项。
+12个原生图／HTTP kernel／SDK／查询runtime符号或文件与旧交付摘要一致；
+[机器核验](native-adapter-completion-verification.json)及[脱敏检查原件](native-adapter-completion-evidence.tar.gz)
+保留修前失败、修后结果、全部成员摘要和独立审核。本机Python3.12.6、aiohttp3.14.1、httpx0.28.1；
+未安装依赖，低CPU新配置的实际厂商图执行及实库EOF注入仍未覆盖。
+既有[5项实库活动检查](#native-http-activity)继续绑定`81a38e52`及120localhost POST，
+[单卡原Q1／Q2八查询证据](https://github.com/3444374/ai-operator-execution-optimization/commit/4f392c3652803c7786e56245c0bbc18a3e6e9bd6)
+仍绑定模型owner的原来源：8480行请求／SDK响应关联通过，原解析重放零差异，Ray Q1／Q2峰值4。
+既有实库与模型证据仅只读复核；本轮另做本地替身和localhost HTTP回归，
+未新增远端服务器、厂商图、模型或GPU执行，也没有新性能结论。
+
 <a id="native-http-activity"></a>
 ## 原生参数与HTTP活动核查
 

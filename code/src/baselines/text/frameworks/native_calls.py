@@ -665,10 +665,11 @@ class NativeCallExecutor:
                 clean = False
             worker_errors = tuple(failures)
             clean = clean and stopped and cleanup is None
+            # Normal EOF can run graph cleanup and report its failure as graph_consume.
             self._unsettled = self._unsettled or (thread.ident is not None and (
                 not stopped or len(received) != len(calls) or cleanup is not None
                 or transport_uncertain
-                or any(stage == 'graph_close' for stage, _ in worker_errors)))
+                or bool(worker_errors)))
             clean = clean and not self._unsettled
             self.last_cleanup_errors = tuple((stage, error) for stage, error in worker_errors
                                              if stage == "graph_close")

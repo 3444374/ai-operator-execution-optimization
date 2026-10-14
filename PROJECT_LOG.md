@@ -7,6 +7,17 @@
 - 本地63项62通过／1固定依赖跳过另列；实际复用两个driver、无安装／模型／GPU／HTTP。12fixture actor、27自有子进程与controller出生身份退出确认，共同lease释放，原件及预期错误通知保留。
 - 不改native测量源码、main文档候选或新Daft/Ray owner的公共runtime区域；仅补受影响正确性，不重做历史矩阵或新增性能结论。
 
+## 2026-10-14：接续Daft／Ray公共启动与EOF关闭修补
+
+- 核对实际远端`integration/baselines@1b90c1ea`已含旧接入交付`0be63a19`与整合`d1f5ef74`，
+  使用本任务独立副本，保留其他工作树改动；未联系旧会话。
+- 两项独立审查和零模型复现发现公共Ray启动的SQL reader误校验，以及正常EOF内部关闭失败后仍允许复用；
+  仅修中性连接配置和适配层未确认责任，原native图、UDF、批处理、并发与完整SDK语义保持。
+- [同题报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-adapter-completion)
+  定位本次检查；旧5项实库／120POST与模型owner八查询／8480行关联按原来源保留，没有新增服务器或模型执行。
+- 最终受影响本地组合89通过／1缺Ray导入检查跳过，专项9项及24项与其重叠；两个实现交叉审核无待修项，
+  12项原图／HTTP kernel／SDK／查询runtime摘要未变，修前失败及精简原件均保留。
+
 ## 2026-10-14：整合固定 JPEG 文件源与实际 SDK 证据
 
 - 图像来源 `2f116d4a` 在固定集成候选 `964e70ef` 完成[三项实际 SDK 检查](experiments/results/diagnostics/image_file_sdk_20261014/README.md)，0 失败／0 跳过；66 个 Git 依赖逐字节一致，测量后生产源码及测试未改。
