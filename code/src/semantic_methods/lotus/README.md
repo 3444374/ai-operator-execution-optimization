@@ -2,6 +2,18 @@
 
 ## 原生 CLIP 图像检索
 
+PNG 参数已在`e50dd2b9`后作为显式可选项接纳，原默认与stock PIL保持。
+该共享适配开销作用于Direct／HSE等替换路径，不作为SemLoom独有创新；模型证据仍独立于`06332d4f`六路径资格。
+固定`eab9f11a`的Direct／HSE最小匹配模型资格与阶段观测见[候选证据](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
+`--png-compress-level` 仅作用于替换 RM，接受 `-1..9` 的整数；省略时仍按原调用不传 Pillow 参数，
+stock 的原生 PIL 路径拒绝该选项。研究候选为1，0仅用于诊断；各替换后端通过同一 RM 编码接点接收字节。
+HSE 可用 `--hse-encoded-bytes` 与 `--hse-encoded-block-bytes-upper-bound` 固定已有
+`StageBrokerLimits.encoded_bytes` 和原驱动块上限；省略两者保持原推导。显式值不会按新 PNG 大小增大，
+块上限超过容量或实际块超过上限时沿用原驱动 `BufferError`，不改输入、batch 或调度。
+容量只覆盖 broker 持有的块；RM 全量 PNG 列表与序列化复制仍是另计的成本。
+观测记录 PNG 编码 CPU／墙钟及字节量；Direct／HSE 使用已有 telemetry 记录包含解码的预处理、
+host copy、actor service、提交与张量字节。纯解码、跨进程传输及 CUDA 分项未独立计时，不能把聚合时间当这些分项。
+
 `image_workflow.py`保留 LOTUS1.2.4 的`sem_index`、`load_sem_index`、`sem_search`与原生
 `FaissVS(Flat, inner product)`。图库固定原始 RangeIndex，业务ID另列；输入使用一维object列中的
 RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，stock RM不会把list解码为图片，

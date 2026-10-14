@@ -122,3 +122,52 @@ def test_entry_rejects_another_owner_and_releases_after_error(monkeypatch):
             raise RuntimeError("boom")
     with native_settings(None, None):
         pass
+
+
+@pytest.mark.parametrize("level", [None, -1, *range(10)])
+def test_png_levels_preserve_all_rgb_pixels(level):
+    image = Image.fromarray(np.random.default_rng(42).integers(0, 256, (29, 31, 3), dtype=np.uint8))
+    encoded = image_bytes(image, png_compress_level=level)
+    np.testing.assert_array_equal(np.asarray(decode_rgb_image(encoded)), np.asarray(image))
+
+
+def test_png_default_recovers_after_other_settings_and_rm_options_are_isolated(rm_module):
+    image = Image.fromarray(np.random.default_rng(23).integers(0, 256, (37, 31, 3), dtype=np.uint8))
+    original = image_bytes(image)
+    for level in (1, 0, -1, 9):
+        image_bytes(image, png_compress_level=level)
+        assert image_bytes(image) == original
+    first, second = ReverseExecutor(), ReverseExecutor()
+    one = make_image_rm(first, text_rm, png_compress_level=1)
+    default = make_image_rm(second, text_rm)
+    one([image])
+    default([image])
+    assert second.inputs == [original]
+    assert first.inputs == [image_bytes(image, png_compress_level=1)]
+    record = one.observation.calls[0]
+    assert record["png_compress_level"] == 1
+    assert record["encoded_total_bytes"] == record["encoded_peak_single_bytes"] == len(first.inputs[0])
+    assert record["image_encode_cpu_ns"] >= 0 and record["image_encode_wall_ns"] > 0
+
+
+@pytest.mark.parametrize("invalid", [True, False, -2, 10, 1.0, "1"])
+def test_invalid_png_level_rejected_before_execution(rm_module, invalid):
+    with pytest.raises(ValueError, match="compression level"):
+        image_bytes(Image.new("RGB", (1, 1)), png_compress_level=invalid)
+    with pytest.raises(ValueError, match="compression level"):
+        make_image_rm(ReverseExecutor(), text_rm, png_compress_level=invalid)
+
+
+def test_encoder_failure_keeps_original_error_and_failure_timing(rm_module, monkeypatch):
+    import src.semantic_methods.lotus.image_rm as module
+    executor = ReverseExecutor()
+    rm = make_image_rm(executor, text_rm, png_compress_level=1)
+    failure = OSError("PNG encoder failed")
+    def fail(*a, **k):
+        raise failure
+    monkeypatch.setattr(module, "image_bytes", fail)
+    with pytest.raises(OSError) as caught:
+        rm([Image.new("RGB", (1, 1))])
+    assert caught.value is failure and not executor.inputs
+    assert rm.observation.calls[0]["status"] == "failed"
+    assert rm.observation.calls[0]["image_encode_wall_ns"] > 0

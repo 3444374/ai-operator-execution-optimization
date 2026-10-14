@@ -73,6 +73,8 @@ class SemLoomImageLifecycleTests(unittest.TestCase):
         executor.hse = False
         executor.batch_size, executor.window = 1, 1
         executor.model, executor.processor, executor.dtype = "fixture", "fixture", "float32"
+        executor.encoded_bytes_limit = executor.encoded_block_bytes_upper_bound = None
+        executor.execution_observations = []
         return executor
 
     def test_failed_stop_seals_executor_but_retains_cleanup_handles(self):
@@ -117,6 +119,9 @@ class SemLoomImageLifecycleTests(unittest.TestCase):
         def run(source, **kwargs):
             self.assertIsNone(kwargs.get("model_dispatch"))
             kwargs["embedding_capture"].add(("a",), values)
+            return SimpleNamespace(encoded_bytes_peak=7, ready_bytes_peak=0,
+                batch_preprocess_s=(), batch_host_copy_s=(), batch_actor_service_s=(),
+                batch_submit_s=(), device_input_bytes=0)
 
         with patch.dict(sys.modules, {"daft": SimpleNamespace(from_pydict=lambda values: object())}), \
                 patch("src.modalities.image.staged_execution.run_semloom_ray_hse_pipeline", side_effect=run) as pipeline:

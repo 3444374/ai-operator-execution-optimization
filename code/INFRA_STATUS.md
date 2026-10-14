@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：独立 LOTUS PNG 候选提供显式压缩等级与固定 HSE encoded 容量／块上限，默认保持。
+本地94项及服务器99项SDK检查通过；[两12图与四256图资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
+核对30个完整矩阵和24条原生查询，HSE未扩大固定容量；本次在`e50dd2b9`后可选接纳。
+融合版本地103项全通过；首轮四项fixture兼容失败和新增观测getter取消反例保留并修复，关闭逻辑保持。
+Direct／HSE共享编码成本改善只属`eab9f11a`单轮应用区间，启动另计；其他路径新参数的模型资格仍待验证。
+
 2026-10-14：[文本 Ray Data 清理配对](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
 已用仓库函数复现默认／详细计时的异常差异并统一清理；保留实际 iterator、业务首错、全部已知清理次错及未确认责任。
 最终定向57通过／1缺Ray导入跳过；独立审查两个反例已修补，较早修订的共享计时补验另按来源保存。

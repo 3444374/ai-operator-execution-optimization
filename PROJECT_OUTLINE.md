@@ -4,6 +4,9 @@
 已将图片建索引与图文检索贯通固定 LOTUS，而非只运行本地 CLIP 流水线。
 公开 RM 执行接点保留原生索引与查询语义；六条路径12／64／256图及已有索引资格完成，完整向量和96条查询保存。
 当前证据支持固定配置正确性，不支持性能或可靠完整查询尾分位结论。
+PNG等级1与固定HSE字节容量的[独立候选](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)
+已作为显式可选共享适配参数接纳，省略时保持原PNG默认；保留Direct／HSE最小匹配资格与完整查询观测。
+单轮应用区间约40%的降低不含启动时间，不是SemLoom独有创新，也不扩为六路径性能资格或新调度。
 
 当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，新增持久计数修订的四组匹配观察仍使用该算法／适配源码。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
 

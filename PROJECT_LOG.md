@@ -11119,3 +11119,22 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 实际库、正常结束、取消、失败响应和清理记录见[原整合报告新增节](experiments/results/postgresql/native_adapter_integration_20261009/README.md#sema-native-executors)。
 服务和网关阶段及分位分别记录；原池前时刻不可观测，IMLane实际容量及首次图成本独立解释。
 实现、紧凑验证摘要和调用说明进入独立分支；原始证据、失败、构建和运行配置在仓库外保存。
+
+## 2026-10-14 LOTUS PNG 独立候选
+
+CPU诊断保留5个完整格、首次清单摘要错误及末格超时；组件成本促成可选压缩等级1候选，不从旧JCT扣差。
+RM／公共CLI接入显式等级和HSE固定字节容量／块上限，原默认与stock PIL保持，厂商源码和调度不改。
+本地94项参数、像素、隔离、固定容量通过／拒绝、首错与图像回归通过；独立源码及计划审阅完成。
+固定`eab9f11a`在服务器99项SDK零跳过通过，两12图资格后运行指定四256图格，六CLI保存30矩阵／24完整原生查询。
+HSE固定58,110,400／29,055,200 bytes，全部物理退出、lease释放；344.989秒内完成，精简证据与成本口径见
+[同题候选记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
+独立证据审阅核对全部原件、源码blob、完整矩阵／排名及公开恢复映射通过；旧CPU失败保留。
+独立候选交付时尚未整合，不覆盖`06332d4f`的六路径证据；原图、配置与过程日志继续保存在仓库外。
+
+## 2026-10-14 可选 PNG 参数集成接纳
+
+在`e50dd2b9`后接纳固定`0faf41eb`及实现`eab9f11a`，默认PNG与stock PIL保持。
+7模块103项本地回归全通过；四项fixture兼容失败与getter吞取消、timing先错反例保留并修复，生命周期不回退。
+只读核验76原件、1054源码blob、30完整RM矩阵／6原生vecs及24候选查询；原模型与默认结果保持原身份。
+固定58,110,400 bytes、batch32的Direct／HSE单轮应用区间改善不含启动，也不作SemLoom独有创新或六路径新性能资格。
+本次SDK／HTTP／服务器／模型／GPU0；独立审查与恢复材料见[同题集成记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#可选-png-参数的集成接纳)。

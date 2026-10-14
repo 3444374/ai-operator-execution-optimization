@@ -161,5 +161,166 @@
         "report_sha256": "6ded4edbed552a9fa614b3b50173c0a535638bd51a3af84858da833ac57c6ee6"
       }
     ]
+  },
+  "png_optional_integration": {
+    "previous_integration": "e50dd2b9fd0333bcca5880631e2100110d0ca926",
+    "fixed_source": "0faf41eb3c0ea39585ce34b5eae6ffb412f95388",
+    "implementation_commit": "eab9f11a0338ef632f208dd178edcf87cd0a9799",
+    "adoption": "explicit optional common RM encoding configuration; old PNG default and native LOTUS PIL remain",
+    "shared_adapter_cost_not_SemLoom_unique_innovation": true,
+    "production_source_identity": {
+      "code/src/semantic_methods/lotus/image_rm.py": "ae79c2fc1a2760209625f775b92c427b077087d3a10f84f97c0def93e1c0cb54",
+      "code/src/semantic_methods/lotus/image_backend.py": "43dfd87ab43adc1ceb3ea700d553a3586d2a90882cf08a6e75b760b7ae9319c6",
+      "code/scripts/experiments/run_lotus_image_retrieval.py": "27b525c220d4f3b0b935fb5e77a309f7e350845456bbd9faf936e5e0d33f0beb"
+    },
+    "initial_integration_tests": {
+      "passed": 85,
+      "failed": 4,
+      "reason": "source fixture missing previously integrated lock/state; prior lifecycle fixture missing candidate settings/returned telemetry",
+      "log_sha256": "9b07f54a2ca34488ee32ab704ac4855a0381d89f5f110ba3896b4de3401435ce",
+      "failure_preserved": true,
+      "repair": "only fixtures; add default capacity case and failed-batch unknown reuse refusal"
+    },
+    "current_tests": {
+      "tests": 103,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 103,
+      "modules": 7,
+      "log_sha256": "47e88f57c6aef2b58c058bb53d32a16998f39014d625e87054916a858f692a7d",
+      "local_fixed_HTTP_POST": 0,
+      "cross_phase_methods_overlap_do_not_sum": true
+    },
+    "offline_original_and_source_check": {
+      "public_candidate_sha256": "ada23e42aca084561e04fe1ce53f89eac54b20d2d414440b5c41ac4506c3707c",
+      "original_archive_sha256": "09527b77e9ff4a2bb5ac2b1ac662d4fdb23e9953b5545a7aa9fee08c95583045",
+      "original_members_verified": 76,
+      "source_archive_sha256": "6b6fcc7f46c1c3f54af53806e1db70d235af7cb4d18a00a84a41ec919d9a7d49",
+      "source_files_equal_to_fixed_implementation_git_blobs": 1054,
+      "full_RM_matrices_verified_against_private_originals": 30,
+      "native_vecs_matrices_verified_against_full_RM_matrices": 6,
+      "native_vecs_read_with_restricted_numpy_only_pickle_globals": true,
+      "all_six_public_results_equal_private_original_fields_except_shared_identity_ref": true,
+      "preceding_CPU_failure_member_hashes_verified": true,
+      "RayData_class_and_SemLoom_entry_close_AST_unchanged": true,
+      "PNG_RM_bytes_equal_eab9": true
+    },
+    "public_query_recompute": {
+      "failed_runs_retained": [],
+      "gallery_max_abs_error": 0.0,
+      "image_queries": 72,
+      "png_candidate": {
+        "complete_matrices": 30,
+        "extra_vector_arrays": 0,
+        "gallery_max_abs_error": 0.0,
+        "image_queries": 18,
+        "model_cli_cells": 6,
+        "query_max_abs_error_vs_stock": 5.960464477539063e-08,
+        "text_queries": 6
+      },
+      "recorded_preparation_failures": 2,
+      "successful_queries_checked": 96,
+      "text_queries": 24,
+      "unique_full_matrices": 12
+    },
+    "source_observation_arithmetic": {
+      "direct": {
+        "default_application_s": 32.729005153,
+        "level1_application_s": 19.516162324,
+        "application_reduction_percent": 40.37043829237471,
+        "default_startup_s": 16.823888115,
+        "level1_startup_s": 21.589178148,
+        "startup_excluded_from_reduction": true,
+        "repetitions_per_cell": 1
+      },
+      "semloom_hse": {
+        "default_application_s": 36.357765854,
+        "level1_application_s": 21.666860378,
+        "application_reduction_percent": 40.40651324669813,
+        "default_startup_s": 39.28611342,
+        "level1_startup_s": 33.36076801,
+        "startup_excluded_from_reduction": true,
+        "repetitions_per_cell": 1
+      }
+    },
+    "actual_model_qualification_scope": {
+      "source": "eab9f11a0338ef632f208dd178edcf87cd0a9799",
+      "arms": [
+        "direct",
+        "semloom_hse"
+      ],
+      "candidate_png_level": 1,
+      "HSE_encoded_capacity_bytes": 58110400,
+      "HSE_encoded_block_upper_bytes": 29055200,
+      "batch_size": 32,
+      "repetitions_per_cell": 1,
+      "startup_excluded_from_application_reduction": true,
+      "level0_or_new_six_path_qualification": false,
+      "original_default_results_and_CPU_failures_preserved": true
+    },
+    "protected_lifecycle_sources_unchanged": [
+      "code/src/modalities/image/staged_execution.py",
+      "code/src/baselines/text/frameworks/native_calls.py",
+      "code/src/semantic_methods/lotus/image_workflow.py",
+      "code/src/baselines/image/frameworks/daft_clip.py"
+    ],
+    "fixed_source_public_candidate_and_original_reviews_unchanged": true,
+    "new_actual_SDK_server_HTTP_model_GPU_execution": false,
+    "text_Ray_actual_cleanup_followup_owned_elsewhere_not_rerun": true,
+    "independent_final_review": {
+      "reviewed_tree": "3e4af0bcb480321112a1d6948844d0908d246065",
+      "reviewed_patch_sha256": "9f19916c5c16258446559a1aff04b011d21830e73d31371758cb7f1a13f5bd64",
+      "axes": {
+        "Standards": {
+          "mandatory_findings": 0,
+          "report": "png-standards-final.json",
+          "report_sha256": "e4710c3fd870b3bcba15c034f22271e63d897bbbc7520582b93f1a183cf063dc"
+        },
+        "Spec": {
+          "mandatory_findings": 0,
+          "report": "png-spec-final.json",
+          "report_sha256": "c0853e2c25d2299a49e63d8d066cd41dfdd128679ce19f6d45e58f573323ff6c"
+        }
+      },
+      "initial_98_review_blocker_resolved": true,
+      "initial_standards_report_sha256": "daadedd6e167468d471c57fc280137d3d70fa9cb4e9e1b2210168e3e8248ec0a",
+      "production_tests_and_source_observations_unchanged_after_review": true
+    },
+    "independent_review_repair": {
+      "initial_tree": "98b1890a9613c62abb547f390ea5af0b647f3446",
+      "finding": "new execution observation getter swallowed BaseException cancellation or retained a pure timing diagnostic ahead of real cancellation",
+      "minimal_production_delta": "two-line non-Exception control-exception retention via existing _retain_failure(cleanup=True); ordinary getter diagnostics remain nonfatal",
+      "before_failures_retained": [
+        {
+          "issue": "missing_primary_or_nested_cancel",
+          "tests": 7,
+          "failures": 6,
+          "errors": 0,
+          "skipped": 0,
+          "log_sha256": "a6cbb18cf3470688e1763b6ffda8b05ff2b789096376adee1c8d29d41ca1d068"
+        },
+        {
+          "issue": "cancel_swallowed_after_successful_cleanup",
+          "tests": 3,
+          "failures": 3,
+          "errors": 0,
+          "skipped": 0,
+          "log_sha256": "00f6761327084d681b42c2317ba1bf7b4f1530474b553add538eeac0df7b6584"
+        },
+        {
+          "issue": "pure_timing_error_wrongly_precedes_cancel",
+          "tests": 3,
+          "failures": 3,
+          "errors": 0,
+          "skipped": 0,
+          "log_sha256": "bb6be54b8ceb212069497b7c85da3b2d31330f95f3fe6e81c84ef05208e6f5c4"
+        }
+      ],
+      "new_fault_conditions_final": 13,
+      "original_execution_and_cancel_first_error_preserved": true,
+      "all_close_and_shutdown_attempted": true,
+      "new_actual_SDK_or_model_qualification": false
+    }
   }
 }

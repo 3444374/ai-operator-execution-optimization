@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-14：[LOTUS PNG 参数](diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)在`e50dd2b9`后可选接纳；
+融合版本地103项全通过，保留关闭／未知责任、默认容量与拒复用，补观测取消首错及清理错误优先级。
+固定`eab9f11a`的Direct／HSE两12图及四256图格保存30矩阵／24完整原生查询，固定字节容量及退出检查通过。
+每格一次观测支持输入编码成本诊断；Direct／HSE单轮应用区间约40%降低不含启动，不支持性能排名、六路径新资格或可靠尾分位。
+共享编码成本不作SemLoom独有创新；原六路径、默认结果与CPU诊断失败来源分别保留。
+
 2026-10-14：[文本 Ray Data 默认／详细计时清理差异修补](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)。
 基于固定`da379b2577118d58b890cff3fca6400af7bda8f2`，实际导入仓库函数复现首错被close替换、shutdown跳过及Iterable未关闭实际iterator。
 最终本地定向57通过／1缺Ray导入跳过，审查发现的次错交接与异常notes自复制反例已修复；修前失败及源码摘要保留。
