@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -15,6 +16,43 @@ import test_sema_imlane as bridge_fixture
 
 from src.baselines.text.frameworks.imlane_calls import IMLaneCallConfig, IMLaneCallExecutor
 from src.execution_provider.adapters.sema_imlane import SemaIMLaneExecutor
+
+
+class IMLaneCloseReportTests(unittest.TestCase):
+    def test_default_bridge_started_during_close_is_not_reported_stopped_after_stop_failure(self):
+        # Deterministically place a default bridge start just before close acquires
+        # the launch lock; no author process, HTTP fixture or model is started.
+        with tempfile.TemporaryDirectory() as directory:
+            delegate = object.__new__(SemaIMLaneExecutor)
+            delegate._lock = threading.Lock()
+            delegate._closed = False
+            delegate._session = delegate._process = None
+            executor = object.__new__(IMLaneCallExecutor)
+            executor.delegate = delegate
+            executor.last_close_report = None
+            executor._uncertain = Path(directory) / 'uncertain.json'
+            process = mock.Mock()
+            process.poll.return_value = None
+            begin_close = delegate.begin_close
+
+            def launch_before_close_lock():
+                with delegate._lock:
+                    delegate._process = process
+                return begin_close()
+
+            with mock.patch.object(delegate, 'begin_close', side_effect=launch_before_close_lock), \
+                 mock.patch.object(delegate, '_stop', side_effect=TimeoutError('bridge still alive')) as stop:
+                with self.assertRaisesRegex(TimeoutError, 'bridge still alive'):
+                    executor.close()
+            stop.assert_called_once_with(process)
+            self.assertFalse(executor.last_close_report['bridge_stopped'])
+            self.assertFalse(executor.last_close_report['clean'])
+            self.assertEqual(executor.last_close_report['remote_http_stopped'], 'unavailable')
+            self.assertFalse(json.loads(executor._uncertain.read_text())['bridge_stopped'])
+            another = object.__new__(IMLaneCallExecutor)
+            another._uncertain = executor._uncertain
+            with self.assertRaisesRegex(RuntimeError, 'unsettled'):
+                another.start()
 
 
 class IMLaneSessionTests(unittest.TestCase):

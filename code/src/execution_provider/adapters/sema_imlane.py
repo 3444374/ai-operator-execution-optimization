@@ -157,9 +157,10 @@ class SemaIMLaneExecutor:
                 else self._process is not None)
 
     def begin_close(self):
+        """Block new launches and capture pending work and its child together."""
         with self._lock:
             self._closed = True
-            return self.author_submission_pending
+            return self.author_submission_pending, self._process
 
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)

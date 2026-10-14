@@ -147,8 +147,8 @@ class IMLaneCallExecutor:
 
     def close(self):
         primary = None
-        process = self.delegate._process
-        if self.delegate.begin_close():
+        pending, process = self.delegate.begin_close()
+        if pending:
             if self.last_close_report is None:
                 self.last_close_report = {}
             self.last_close_report.update(clean=False,
