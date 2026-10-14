@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：公开单GPU文件CLIP复验与离线数值限制
+
+- [同题主报告](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保留固定45da0a54（导出387文件同发布58462a0d）的15次原CLI结果，3资格／3scale／9轮转重复，61,731模型图；18个子进程的退出0与物理退出、共同lease释放及独立postcheck分别记录。
+- 两次模型前部署失败、Ray Data的55.553秒慢重复、原Git unknown与全部数值差异保留；私有原包不入Git，公开record有独立SHA与来源映射，未修改公共执行源码。
+- 独立离线审核确认共同FP32／小端rounded5 XOR digest不随到达顺序变化；Direct/HSE摘要一致、Ray Data不同，原输出缺逐ID向量，不能声称仅排序或已证明数值等价。
+- 同输入257图的原生capture及按ID比较已准备，需主会话协调共同lease与独占资源，尚未运行；收尾分析新增模型／GPU／服务器调用0，不重跑性能矩阵，不以诊断时间替代原时间。
+
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
 - [研究定位](docs/research/研究定位.md#existing-image-execution-paths)区分已构造HTTP payload、PG增量单图及已有多图batch/常驻worker/ObjectRef静态/HSE流水；核对`8862c813`与stage`5a785142`四个关键文件同blob，独立研究原型的host表示复用不扩称GPU驻留或全物理内存计费。

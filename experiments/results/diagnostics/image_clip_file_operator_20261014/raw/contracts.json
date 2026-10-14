@@ -1,0 +1,530 @@
+{
+  "direct": {
+    "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
+    "baseline_provenance": {
+      "custom_scheduling_code": true,
+      "formal_baseline_eligible": false,
+      "implementation": "project_implementation",
+      "role": "project_method",
+      "scheduler_owner": "project_ray",
+      "upstream_source": "local_project"
+    },
+    "cross_scale_comparison_semantics": {
+      "absolute_jct_and_first_output": "matched workload scale required for ranking",
+      "first_output_fraction_of_e2e": "streaming/materialization diagnostic only; not normalized latency",
+      "rate_and_unit_resource_metrics": "descriptive comparison allowed after each arm independently reaches a steady throughput plateau"
+    },
+    "detailed_stage_timing_intrusive": false,
+    "file_source_contract": {
+      "adapter_payload_cache": false,
+      "comparison_requirement": "shared_manifest_preparation_equal_warmup_and_balanced_run_order",
+      "manifest_preparation": "outside_operator_timer_full_encoded_content_hash",
+      "manifest_preparation_may_warm_page_cache": true,
+      "os_page_cache_condition": "uncontrolled",
+      "run_preflight": "manifest_hash_and_file_metadata_only_no_jpeg_payload",
+      "timed_source": "native_lazy_encoded_read_to_full_consumption_and_final_metadata_audit",
+      "warmup_may_warm_page_cache": true,
+      "warmup_unique_images": 64
+    },
+    "hidden_batching": false,
+    "metric_definitions": {
+      "cpu_core_seconds_estimate": {
+        "comparison_scope": "same host and sampling contract; normalize per image across scale",
+        "formula": "host mean equivalent busy cores * operator_e2e_s",
+        "limitations": "includes unrelated host work and is not actor-attributed",
+        "meaning_zh": "整个主机在算子窗口内估算消耗的 CPU 核秒",
+        "measurement_kind": "sampled_estimate",
+        "source": "psutil host-wide per-core utilization samples",
+        "unit": "core_seconds"
+      },
+      "estimated_e2e_mfu": {
+        "comparison_scope": "only when both supplied constants are independently verified",
+        "formula": "rows * model_flops_per_image / (e2e * gpu_workers * peak_flops_per_s)",
+        "limitations": "blank by default; not measured FLOPs and includes non-model E2E stages",
+        "meaning_zh": "按给定模型每图 FLOPs 和对应 dtype GPU 峰值估算的端到端模型 FLOPs 利用率",
+        "measurement_kind": "model_based_estimate",
+        "source": "explicit CLI model FLOPs and dtype-matched hardware peak",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_fraction_of_e2e": {
+        "comparison_scope": "cross-scale descriptive streaming/materialization signal only",
+        "formula": "first_output_s / operator_e2e_s",
+        "limitations": "dimensionless does not mean workload-independent; not normalized latency",
+        "meaning_zh": "首批结果出现时已经消耗的算子总时间比例，越接近 1 越像先物化后返回",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_s": {
+        "comparison_scope": "absolute ranking requires matched workload scale",
+        "formula": "first completed output timestamp - operator start",
+        "limitations": "first batch size may differ; it is not LLM TTFT or per-image latency",
+        "meaning_zh": "从同一冷启动边界到第一个完整 Arrow record batch 返回的时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "stream iterator or first completed project Ray batch",
+        "unit": "seconds"
+      },
+      "gpu_active_util_mean_pct": {
+        "comparison_scope": "diagnostic starvation/busy signal",
+        "formula": "mean utilization over samples from active devices",
+        "limitations": "not MFU; short kernels and sub-sample idle gaps may be missed",
+        "meaning_zh": "按显存占用识别出的活跃 GPU 在采样点上的平均 nvidia-smi utilization",
+        "measurement_kind": "low_frequency_sample",
+        "source": "nvidia-smi utilization.gpu",
+        "unit": "percent"
+      },
+      "gpu_energy_estimate_j": {
+        "comparison_scope": "same sampler interval and timing boundary",
+        "formula": "mean summed active-device power watts * sampler wall seconds",
+        "limitations": "not hardware energy counter integration; misses pre/post-window energy",
+        "meaning_zh": "活跃 GPU 在算子采样窗口内的估算能耗",
+        "measurement_kind": "sampled_estimate",
+        "source": "nvidia-smi power.draw samples",
+        "unit": "joules"
+      },
+      "gpu_seconds_per_image": {
+        "comparison_scope": "per-image resource allocation comparison",
+        "formula": "gpu_workers * operator_e2e_s / processed rows",
+        "limitations": "allocation time, not active kernel time",
+        "meaning_zh": "每张图片分摊的已分配 GPU 墙钟秒数",
+        "measurement_kind": "derived_allocation_cost",
+        "source": "declared GPU workers and operator wall",
+        "unit": "allocated_gpu_seconds_per_image"
+      },
+      "host_io_bytes_per_image": {
+        "comparison_scope": "same isolated host; diagnostic cross-scale comparison",
+        "formula": "host counter delta / processed rows",
+        "limitations": "host-wide counters include unrelated traffic and are not process-attributed",
+        "meaning_zh": "算子窗口内主机磁盘或网络计数器增量除以处理图片数",
+        "measurement_kind": "derived_from_host_counter_delta",
+        "source": "psutil disk_io_counters and net_io_counters",
+        "unit": "bytes_per_image"
+      },
+      "images_per_cpu_core_second": {
+        "comparison_scope": "per-image resource comparison on the same host",
+        "formula": "processed rows / cpu_core_seconds_estimate",
+        "limitations": "inherits host-wide CPU sampling noise",
+        "meaning_zh": "每消耗一个 CPU 核秒完成的图片数",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "row count and host CPU estimate",
+        "unit": "images_per_core_second"
+      },
+      "images_per_s": {
+        "comparison_scope": "cross-scale only after each arm independently reaches a plateau",
+        "formula": "processed rows / operator_e2e_s",
+        "limitations": "short runs can be dominated by setup and are not steady-state capacity",
+        "meaning_zh": "处理图片行数吞吐，logical pass 会计入处理行数但不增加 unique images",
+        "measurement_kind": "derived",
+        "source": "workload row contract and operator monotonic clock",
+        "unit": "images_per_second"
+      },
+      "joules_per_1k_images": {
+        "comparison_scope": "per-image cross-scale resource comparison",
+        "formula": "gpu_energy_estimate_j * 1000 / processed rows",
+        "limitations": "inherits power-sampling error and excludes CPU/platform energy",
+        "meaning_zh": "每处理一千张图片的估算 GPU 能耗",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "GPU energy estimate and row count",
+        "unit": "joules_per_1000_images"
+      },
+      "logical_h2d_effective_gbps": {
+        "comparison_scope": "project diagnostic runs with identical tensor contract",
+        "formula": "input tensor bytes * 8 / H2D seconds / 1e9",
+        "limitations": "not a PCIe hardware-counter measurement; unavailable for hidden native engines",
+        "meaning_zh": "主机到 GPU 的逻辑 tensor 字节除以显式 H2D 阶段墙钟",
+        "measurement_kind": "derived_from_intrusive_stage_timing",
+        "source": "project telemetry with CUDA-synchronized detailed stage timing",
+        "unit": "decimal_gigabits_per_second"
+      },
+      "operator_e2e_s": {
+        "comparison_scope": "absolute ranking requires the same workload size and boundary",
+        "formula": "result.total_s + explicit_project_worker_setup_s",
+        "limitations": "excludes Ray cluster startup and pgvector writeback",
+        "meaning_zh": "算子执行从冷模型 worker 边界到最后一批 embedding 返回的墙钟时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "time.perf_counter in each execution arm",
+        "unit": "seconds"
+      },
+      "post_first_output_s": {
+        "comparison_scope": "matched workload for absolute ranking",
+        "formula": "operator_e2e_s - first_output_s",
+        "limitations": "does not reveal how many images were already materialized internally",
+        "meaning_zh": "首批结果返回后到整个算子结束的剩余墙钟时间",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "seconds"
+      },
+      "steady_state_duration_gate_met": {
+        "comparison_scope": "run validity guard",
+        "formula": "operator_e2e_s >= 60",
+        "limitations": "passing 60 seconds does not prove a throughput plateau",
+        "meaning_zh": "单次算子运行是否达到预注册的 60 秒最低稳态代理时长",
+        "measurement_kind": "derived_guard",
+        "source": "operator_e2e_s",
+        "unit": "boolean"
+      }
+    },
+    "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+    "preprocessing": "torchvision_tensor_decode_and_processor",
+    "project_execution_mode": "direct_dependency",
+    "ray_framework_startup_included": false,
+    "schema_version": 14,
+    "source_kind": "files",
+    "thread_budget_semantics": "explicit_torch_intraop_and_interop_per_worker; ray_num_cpus_is_admission_not_os_quota",
+    "timing_boundary": "cold_workers_plus_source_open_read_prepare_to_complete_output_and_file_audit",
+    "worker_lifecycle": "per_query_cold_model_worker",
+    "writeback_included": false
+  },
+  "hse": {
+    "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
+    "baseline_provenance": {
+      "custom_scheduling_code": true,
+      "formal_baseline_eligible": false,
+      "implementation": "project_implementation",
+      "role": "project_method",
+      "scheduler_owner": "project_ray",
+      "upstream_source": "local_project"
+    },
+    "cross_scale_comparison_semantics": {
+      "absolute_jct_and_first_output": "matched workload scale required for ranking",
+      "first_output_fraction_of_e2e": "streaming/materialization diagnostic only; not normalized latency",
+      "rate_and_unit_resource_metrics": "descriptive comparison allowed after each arm independently reaches a steady throughput plateau"
+    },
+    "detailed_stage_timing_intrusive": false,
+    "file_source_contract": {
+      "adapter_payload_cache": false,
+      "comparison_requirement": "shared_manifest_preparation_equal_warmup_and_balanced_run_order",
+      "manifest_preparation": "outside_operator_timer_full_encoded_content_hash",
+      "manifest_preparation_may_warm_page_cache": true,
+      "os_page_cache_condition": "uncontrolled",
+      "run_preflight": "manifest_hash_and_file_metadata_only_no_jpeg_payload",
+      "timed_source": "native_lazy_encoded_read_to_full_consumption_and_final_metadata_audit",
+      "warmup_may_warm_page_cache": true,
+      "warmup_unique_images": 64
+    },
+    "hidden_batching": false,
+    "metric_definitions": {
+      "cpu_core_seconds_estimate": {
+        "comparison_scope": "same host and sampling contract; normalize per image across scale",
+        "formula": "host mean equivalent busy cores * operator_e2e_s",
+        "limitations": "includes unrelated host work and is not actor-attributed",
+        "meaning_zh": "整个主机在算子窗口内估算消耗的 CPU 核秒",
+        "measurement_kind": "sampled_estimate",
+        "source": "psutil host-wide per-core utilization samples",
+        "unit": "core_seconds"
+      },
+      "estimated_e2e_mfu": {
+        "comparison_scope": "only when both supplied constants are independently verified",
+        "formula": "rows * model_flops_per_image / (e2e * gpu_workers * peak_flops_per_s)",
+        "limitations": "blank by default; not measured FLOPs and includes non-model E2E stages",
+        "meaning_zh": "按给定模型每图 FLOPs 和对应 dtype GPU 峰值估算的端到端模型 FLOPs 利用率",
+        "measurement_kind": "model_based_estimate",
+        "source": "explicit CLI model FLOPs and dtype-matched hardware peak",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_fraction_of_e2e": {
+        "comparison_scope": "cross-scale descriptive streaming/materialization signal only",
+        "formula": "first_output_s / operator_e2e_s",
+        "limitations": "dimensionless does not mean workload-independent; not normalized latency",
+        "meaning_zh": "首批结果出现时已经消耗的算子总时间比例，越接近 1 越像先物化后返回",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_s": {
+        "comparison_scope": "absolute ranking requires matched workload scale",
+        "formula": "first completed output timestamp - operator start",
+        "limitations": "first batch size may differ; it is not LLM TTFT or per-image latency",
+        "meaning_zh": "从同一冷启动边界到第一个完整 Arrow record batch 返回的时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "stream iterator or first completed project Ray batch",
+        "unit": "seconds"
+      },
+      "gpu_active_util_mean_pct": {
+        "comparison_scope": "diagnostic starvation/busy signal",
+        "formula": "mean utilization over samples from active devices",
+        "limitations": "not MFU; short kernels and sub-sample idle gaps may be missed",
+        "meaning_zh": "按显存占用识别出的活跃 GPU 在采样点上的平均 nvidia-smi utilization",
+        "measurement_kind": "low_frequency_sample",
+        "source": "nvidia-smi utilization.gpu",
+        "unit": "percent"
+      },
+      "gpu_energy_estimate_j": {
+        "comparison_scope": "same sampler interval and timing boundary",
+        "formula": "mean summed active-device power watts * sampler wall seconds",
+        "limitations": "not hardware energy counter integration; misses pre/post-window energy",
+        "meaning_zh": "活跃 GPU 在算子采样窗口内的估算能耗",
+        "measurement_kind": "sampled_estimate",
+        "source": "nvidia-smi power.draw samples",
+        "unit": "joules"
+      },
+      "gpu_seconds_per_image": {
+        "comparison_scope": "per-image resource allocation comparison",
+        "formula": "gpu_workers * operator_e2e_s / processed rows",
+        "limitations": "allocation time, not active kernel time",
+        "meaning_zh": "每张图片分摊的已分配 GPU 墙钟秒数",
+        "measurement_kind": "derived_allocation_cost",
+        "source": "declared GPU workers and operator wall",
+        "unit": "allocated_gpu_seconds_per_image"
+      },
+      "host_io_bytes_per_image": {
+        "comparison_scope": "same isolated host; diagnostic cross-scale comparison",
+        "formula": "host counter delta / processed rows",
+        "limitations": "host-wide counters include unrelated traffic and are not process-attributed",
+        "meaning_zh": "算子窗口内主机磁盘或网络计数器增量除以处理图片数",
+        "measurement_kind": "derived_from_host_counter_delta",
+        "source": "psutil disk_io_counters and net_io_counters",
+        "unit": "bytes_per_image"
+      },
+      "images_per_cpu_core_second": {
+        "comparison_scope": "per-image resource comparison on the same host",
+        "formula": "processed rows / cpu_core_seconds_estimate",
+        "limitations": "inherits host-wide CPU sampling noise",
+        "meaning_zh": "每消耗一个 CPU 核秒完成的图片数",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "row count and host CPU estimate",
+        "unit": "images_per_core_second"
+      },
+      "images_per_s": {
+        "comparison_scope": "cross-scale only after each arm independently reaches a plateau",
+        "formula": "processed rows / operator_e2e_s",
+        "limitations": "short runs can be dominated by setup and are not steady-state capacity",
+        "meaning_zh": "处理图片行数吞吐，logical pass 会计入处理行数但不增加 unique images",
+        "measurement_kind": "derived",
+        "source": "workload row contract and operator monotonic clock",
+        "unit": "images_per_second"
+      },
+      "joules_per_1k_images": {
+        "comparison_scope": "per-image cross-scale resource comparison",
+        "formula": "gpu_energy_estimate_j * 1000 / processed rows",
+        "limitations": "inherits power-sampling error and excludes CPU/platform energy",
+        "meaning_zh": "每处理一千张图片的估算 GPU 能耗",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "GPU energy estimate and row count",
+        "unit": "joules_per_1000_images"
+      },
+      "logical_h2d_effective_gbps": {
+        "comparison_scope": "project diagnostic runs with identical tensor contract",
+        "formula": "input tensor bytes * 8 / H2D seconds / 1e9",
+        "limitations": "not a PCIe hardware-counter measurement; unavailable for hidden native engines",
+        "meaning_zh": "主机到 GPU 的逻辑 tensor 字节除以显式 H2D 阶段墙钟",
+        "measurement_kind": "derived_from_intrusive_stage_timing",
+        "source": "project telemetry with CUDA-synchronized detailed stage timing",
+        "unit": "decimal_gigabits_per_second"
+      },
+      "operator_e2e_s": {
+        "comparison_scope": "absolute ranking requires the same workload size and boundary",
+        "formula": "result.total_s + explicit_project_worker_setup_s",
+        "limitations": "excludes Ray cluster startup and pgvector writeback",
+        "meaning_zh": "算子执行从冷模型 worker 边界到最后一批 embedding 返回的墙钟时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "time.perf_counter in each execution arm",
+        "unit": "seconds"
+      },
+      "post_first_output_s": {
+        "comparison_scope": "matched workload for absolute ranking",
+        "formula": "operator_e2e_s - first_output_s",
+        "limitations": "does not reveal how many images were already materialized internally",
+        "meaning_zh": "首批结果返回后到整个算子结束的剩余墙钟时间",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "seconds"
+      },
+      "steady_state_duration_gate_met": {
+        "comparison_scope": "run validity guard",
+        "formula": "operator_e2e_s >= 60",
+        "limitations": "passing 60 seconds does not prove a throughput plateau",
+        "meaning_zh": "单次算子运行是否达到预注册的 60 秒最低稳态代理时长",
+        "measurement_kind": "derived_guard",
+        "source": "operator_e2e_s",
+        "unit": "boolean"
+      }
+    },
+    "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+    "preprocessing": "torchvision_tensor_decode_and_processor",
+    "project_execution_mode": "hse_static",
+    "ray_framework_startup_included": false,
+    "schema_version": 14,
+    "source_kind": "files",
+    "thread_budget_semantics": "explicit_torch_intraop_and_interop_per_worker; ray_num_cpus_is_admission_not_os_quota",
+    "timing_boundary": "cold_workers_plus_source_open_read_prepare_to_complete_output_and_file_audit",
+    "worker_lifecycle": "per_query_cold_model_worker",
+    "writeback_included": false
+  },
+  "ray_data": {
+    "bandwidth_semantics": "logical_bytes_over_stage_wall_not_pcie_counter",
+    "baseline_provenance": {
+      "custom_scheduling_code": false,
+      "formal_baseline_eligible": true,
+      "implementation": "official_api_with_workload_udfs",
+      "role": "framework_native_api_baseline",
+      "scheduler_owner": "ray_data",
+      "upstream_source": "https://docs.ray.io/en/latest/data/batch_inference.html"
+    },
+    "cross_scale_comparison_semantics": {
+      "absolute_jct_and_first_output": "matched workload scale required for ranking",
+      "first_output_fraction_of_e2e": "streaming/materialization diagnostic only; not normalized latency",
+      "rate_and_unit_resource_metrics": "descriptive comparison allowed after each arm independently reaches a steady throughput plateau"
+    },
+    "detailed_stage_timing_intrusive": false,
+    "file_source_contract": {
+      "adapter_payload_cache": false,
+      "comparison_requirement": "shared_manifest_preparation_equal_warmup_and_balanced_run_order",
+      "manifest_preparation": "outside_operator_timer_full_encoded_content_hash",
+      "manifest_preparation_may_warm_page_cache": true,
+      "os_page_cache_condition": "uncontrolled",
+      "run_preflight": "manifest_hash_and_file_metadata_only_no_jpeg_payload",
+      "timed_source": "native_lazy_encoded_read_to_full_consumption_and_final_metadata_audit",
+      "warmup_may_warm_page_cache": true,
+      "warmup_unique_images": 64
+    },
+    "hidden_batching": false,
+    "metric_definitions": {
+      "cpu_core_seconds_estimate": {
+        "comparison_scope": "same host and sampling contract; normalize per image across scale",
+        "formula": "host mean equivalent busy cores * operator_e2e_s",
+        "limitations": "includes unrelated host work and is not actor-attributed",
+        "meaning_zh": "整个主机在算子窗口内估算消耗的 CPU 核秒",
+        "measurement_kind": "sampled_estimate",
+        "source": "psutil host-wide per-core utilization samples",
+        "unit": "core_seconds"
+      },
+      "estimated_e2e_mfu": {
+        "comparison_scope": "only when both supplied constants are independently verified",
+        "formula": "rows * model_flops_per_image / (e2e * gpu_workers * peak_flops_per_s)",
+        "limitations": "blank by default; not measured FLOPs and includes non-model E2E stages",
+        "meaning_zh": "按给定模型每图 FLOPs 和对应 dtype GPU 峰值估算的端到端模型 FLOPs 利用率",
+        "measurement_kind": "model_based_estimate",
+        "source": "explicit CLI model FLOPs and dtype-matched hardware peak",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_fraction_of_e2e": {
+        "comparison_scope": "cross-scale descriptive streaming/materialization signal only",
+        "formula": "first_output_s / operator_e2e_s",
+        "limitations": "dimensionless does not mean workload-independent; not normalized latency",
+        "meaning_zh": "首批结果出现时已经消耗的算子总时间比例，越接近 1 越像先物化后返回",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "ratio_0_to_1"
+      },
+      "first_output_s": {
+        "comparison_scope": "absolute ranking requires matched workload scale",
+        "formula": "first completed output timestamp - operator start",
+        "limitations": "first batch size may differ; it is not LLM TTFT or per-image latency",
+        "meaning_zh": "从同一冷启动边界到第一个完整 Arrow record batch 返回的时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "stream iterator or first completed project Ray batch",
+        "unit": "seconds"
+      },
+      "gpu_active_util_mean_pct": {
+        "comparison_scope": "diagnostic starvation/busy signal",
+        "formula": "mean utilization over samples from active devices",
+        "limitations": "not MFU; short kernels and sub-sample idle gaps may be missed",
+        "meaning_zh": "按显存占用识别出的活跃 GPU 在采样点上的平均 nvidia-smi utilization",
+        "measurement_kind": "low_frequency_sample",
+        "source": "nvidia-smi utilization.gpu",
+        "unit": "percent"
+      },
+      "gpu_energy_estimate_j": {
+        "comparison_scope": "same sampler interval and timing boundary",
+        "formula": "mean summed active-device power watts * sampler wall seconds",
+        "limitations": "not hardware energy counter integration; misses pre/post-window energy",
+        "meaning_zh": "活跃 GPU 在算子采样窗口内的估算能耗",
+        "measurement_kind": "sampled_estimate",
+        "source": "nvidia-smi power.draw samples",
+        "unit": "joules"
+      },
+      "gpu_seconds_per_image": {
+        "comparison_scope": "per-image resource allocation comparison",
+        "formula": "gpu_workers * operator_e2e_s / processed rows",
+        "limitations": "allocation time, not active kernel time",
+        "meaning_zh": "每张图片分摊的已分配 GPU 墙钟秒数",
+        "measurement_kind": "derived_allocation_cost",
+        "source": "declared GPU workers and operator wall",
+        "unit": "allocated_gpu_seconds_per_image"
+      },
+      "host_io_bytes_per_image": {
+        "comparison_scope": "same isolated host; diagnostic cross-scale comparison",
+        "formula": "host counter delta / processed rows",
+        "limitations": "host-wide counters include unrelated traffic and are not process-attributed",
+        "meaning_zh": "算子窗口内主机磁盘或网络计数器增量除以处理图片数",
+        "measurement_kind": "derived_from_host_counter_delta",
+        "source": "psutil disk_io_counters and net_io_counters",
+        "unit": "bytes_per_image"
+      },
+      "images_per_cpu_core_second": {
+        "comparison_scope": "per-image resource comparison on the same host",
+        "formula": "processed rows / cpu_core_seconds_estimate",
+        "limitations": "inherits host-wide CPU sampling noise",
+        "meaning_zh": "每消耗一个 CPU 核秒完成的图片数",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "row count and host CPU estimate",
+        "unit": "images_per_core_second"
+      },
+      "images_per_s": {
+        "comparison_scope": "cross-scale only after each arm independently reaches a plateau",
+        "formula": "processed rows / operator_e2e_s",
+        "limitations": "short runs can be dominated by setup and are not steady-state capacity",
+        "meaning_zh": "处理图片行数吞吐，logical pass 会计入处理行数但不增加 unique images",
+        "measurement_kind": "derived",
+        "source": "workload row contract and operator monotonic clock",
+        "unit": "images_per_second"
+      },
+      "joules_per_1k_images": {
+        "comparison_scope": "per-image cross-scale resource comparison",
+        "formula": "gpu_energy_estimate_j * 1000 / processed rows",
+        "limitations": "inherits power-sampling error and excludes CPU/platform energy",
+        "meaning_zh": "每处理一千张图片的估算 GPU 能耗",
+        "measurement_kind": "derived_from_sampled_estimate",
+        "source": "GPU energy estimate and row count",
+        "unit": "joules_per_1000_images"
+      },
+      "logical_h2d_effective_gbps": {
+        "comparison_scope": "project diagnostic runs with identical tensor contract",
+        "formula": "input tensor bytes * 8 / H2D seconds / 1e9",
+        "limitations": "not a PCIe hardware-counter measurement; unavailable for hidden native engines",
+        "meaning_zh": "主机到 GPU 的逻辑 tensor 字节除以显式 H2D 阶段墙钟",
+        "measurement_kind": "derived_from_intrusive_stage_timing",
+        "source": "project telemetry with CUDA-synchronized detailed stage timing",
+        "unit": "decimal_gigabits_per_second"
+      },
+      "operator_e2e_s": {
+        "comparison_scope": "absolute ranking requires the same workload size and boundary",
+        "formula": "result.total_s + explicit_project_worker_setup_s",
+        "limitations": "excludes Ray cluster startup and pgvector writeback",
+        "meaning_zh": "算子执行从冷模型 worker 边界到最后一批 embedding 返回的墙钟时间",
+        "measurement_kind": "direct_monotonic_clock",
+        "source": "time.perf_counter in each execution arm",
+        "unit": "seconds"
+      },
+      "post_first_output_s": {
+        "comparison_scope": "matched workload for absolute ranking",
+        "formula": "operator_e2e_s - first_output_s",
+        "limitations": "does not reveal how many images were already materialized internally",
+        "meaning_zh": "首批结果返回后到整个算子结束的剩余墙钟时间",
+        "measurement_kind": "derived",
+        "source": "operator_e2e_s and first_output_s",
+        "unit": "seconds"
+      },
+      "steady_state_duration_gate_met": {
+        "comparison_scope": "run validity guard",
+        "formula": "operator_e2e_s >= 60",
+        "limitations": "passing 60 seconds does not prove a throughput plateau",
+        "meaning_zh": "单次算子运行是否达到预注册的 60 秒最低稳态代理时长",
+        "measurement_kind": "derived_guard",
+        "source": "operator_e2e_s",
+        "unit": "boolean"
+      }
+    },
+    "mfu_semantics": "estimated_only_when_verified_flops_and_dtype_peak_are_supplied",
+    "preprocessing": "torchvision_tensor_decode_and_processor",
+    "project_execution_mode": "not_applicable",
+    "ray_framework_startup_included": false,
+    "schema_version": 14,
+    "source_kind": "files",
+    "thread_budget_semantics": "explicit_torch_intraop_and_interop_per_worker; ray_num_cpus_is_admission_not_os_quota",
+    "timing_boundary": "cold_workers_plus_source_open_read_prepare_to_complete_output_and_file_audit",
+    "worker_lifecycle": "per_query_cold_model_worker",
+    "writeback_included": false
+  }
+}

@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[单GPU文件CLIP复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)固定实际45da0a54，387个导出文件与发布58462a0d同字节，原CLI archive Git字段unknown保持。
+原静态／HSE A／原生Ray Data共15次健康GPU调用及18次子进程退出核查完成；同输入、512维FP32 L2与exactly-once合同通过，三臂逐行数值等价仍未证实。
+Direct/HSE的rounded digest匹配，Ray Data不同；共享digest不随到达顺序改变。原性能值／失败／私有原包保持，准备的257图逐行capture未运行。
+这是已有外部文件算子在固定来源的健康资格；没有改公共执行源码，不转为当前HEAD、PG E2E、稳态非劣或GPU异常责任资格。
+
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
 本地定向66项，31通过／35固定SDK或缺依赖跳过；随后[固定1afa受影响SDK资格](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)6项通过、0跳过，13localhost POST、模型／GPU0。

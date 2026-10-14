@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "reviewed_utc": "2026-10-14T09:28:36.779651+00:00",
+  "reviewer": "independent file_source_review",
+  "candidate": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+  "status": "offline_review_complete_numeric_parity_unconfirmed",
+  "scope": {
+    "server_access": false,
+    "SDK_model_GPU_execution": false,
+    "code_changes": false,
+    "performance_matrix_rerun": false,
+    "SDK_modules_imported": []
+  },
+  "source_SHA_verified_against_actual_package": {
+    "code/src/modalities/image/execution.py": "c870a897cd17379e3d1f6f7e571c7ba5a43cc66b8c001d7c1c79fe5eebb2de76",
+    "code/src/modalities/image/staged_execution.py": "3ab5621fcc375f719075a91a339783dbac0569bc14c3a51ea59324b714230c4d",
+    "code/src/modalities/image/clip.py": "e7ff28b276237cdc436cc58fda69b3ee072e25db5e52b342e98afca366ba88d4",
+    "code/src/modalities/image/file_source.py": "051163cc6e13288597d6a2551dac250feb7bbebe59d7b07ea3771eb29cd934c7",
+    "code/src/baselines/image/frameworks/ray_data.py": "ce39c2288c70e3e2e7718f0143b0cf1a77e2938e35c5109b37bd095e816a2b03",
+    "code/scripts/experiments/run_image_clip_e2e.py": "f8c8681a7d4646d71ac313bf05fd90ebbc734db014ea0c0de8c891295e026539"
+  },
+  "file_manifest_sha256": "762710a19f608dd290b02f68537195bc08731fa661149ec723e7789aa65ccec2",
+  "shared_contract": "15个manifest核对通过：同manifest切片/输入ID集合/编码字节；offset0/pass1来自实际argv；同FastClip准备FP32 NCHW，共用ClipTensorActor做FP16模型推理后FP32 projected512 L2归一化；完整ID/shape/finite/exactly-once审计。",
+  "source_order_and_batches": "两源使用同有序manifest；pass1保留数字字符串ID。Native read_binary_files设置preserve_order，CPU/GPU map_batches由Ray Data分组；Direct/HSE使用同Daft source和CPU/GPU函数，但completion/ready顺序可不同。逐ID的实际prepare/model微批组成未保存。",
+  "consumer_contract": "Direct/HSE ImageEmbeddingResult和native Arrow to_pylist都进入同EmbeddingAudit，统一np.asarray(float32)；payload布局/普通容器变化不会自行改变统一后的逐行值。",
+  "digest_definition": "XOR[int(BLAKE2b128(UTF8(doc_id)+NUL+np.round(float32_row,5).astype(<f4).tobytes()))]",
+  "digest_verdict": {
+    "pure_arrival_order_or_consumer_batch_regrouping_can_explain_mismatch": false,
+    "reason": "整数XOR可交换、可结合，每个hash绑定ID与行字节；固定每ID值时重排/消费分组不改变digest。",
+    "ordinary_dtype_endian_representation": "两臂审计统一FP32，hash统一little-endian；不能把本次不同归因普通Arrow/list/dtype/endian包装。",
+    "signed_zero_exception": "round5未清除零符号，+0/-0数值相等但hash不同；标准库反例成立，本轮向量未保存，不能断言差异只由signed zero造成。",
+    "mismatch_meaning": "至少一条按ID绑定的canonical hashed payload有差异（包括可能的rounded/zero-sign bits）；不定位行、差异数量、误差幅度或根因。",
+    "Direct_HSE_matching_digest": "仅为观测到的rounded聚合fingerprint一致，不能证明原始逐ID bitwise或数值容差等价。"
+  },
+  "observed": [
+    {
+      "images": 257,
+      "arms": {
+        "direct": {
+          "runs": 1,
+          "digest": "4f9fe873e1d7006ba72975df7386fce5",
+          "first_component_sum": -1.7759604140592273,
+          "all_values_sum": -61.835290932566295,
+          "max_norm_error": 1.1920928955078125e-07
+        },
+        "hse": {
+          "runs": 1,
+          "digest": "4f9fe873e1d7006ba72975df7386fce5",
+          "first_component_sum": -1.7759604140592273,
+          "all_values_sum": -61.835290932566295,
+          "max_norm_error": 1.1920928955078125e-07
+        },
+        "ray_data": {
+          "runs": 1,
+          "digest": "9ad6932456beab92162d29fc1d7341f0",
+          "first_component_sum": -1.775943276603357,
+          "all_values_sum": -61.85207131951188,
+          "max_norm_error": 1.1920928955078125e-07
+        }
+      },
+      "native_minus_direct_first_sum": 1.713745587039739e-05,
+      "native_minus_direct_all_sum": -0.016780386945583814
+    },
+    {
+      "images": 5000,
+      "arms": {
+        "direct": {
+          "runs": 4,
+          "digest": "2e357c1ee89a68479f8f65eba49e85a9",
+          "first_component_sum": -36.44171080313299,
+          "all_values_sum": -1004.8990153283116,
+          "max_norm_error": 1.1920928955078125e-07
+        },
+        "hse": {
+          "runs": 4,
+          "digest": "2e357c1ee89a68479f8f65eba49e85a9",
+          "first_component_sum": -36.44171080313299,
+          "all_values_sum": -1004.8990153283116,
+          "max_norm_error": 1.1920928955078125e-07
+        },
+        "ray_data": {
+          "runs": 4,
+          "digest": "b5cfe99ca3cbf03e88aae787ba31d925",
+          "first_component_sum": -36.4367401782024,
+          "all_values_sum": -1005.0556894620051,
+          "max_norm_error": 1.7881393432617188e-07
+        }
+      },
+      "native_minus_direct_first_sum": 0.004970624930592749,
+      "native_minus_direct_all_sum": -0.1566741336935138
+    }
+  ],
+  "per_ID_vector_availability": {
+    "saved_vector_files": false,
+    "primary_capture_flags": 0,
+    "evidence_file_count": 86,
+    "suffix_counts": {
+      ".csv": 3,
+      ".json": 44,
+      ".log": 37,
+      ".py": 1,
+      ".sha256": 1
+    },
+    "comparable_vectors_available": false,
+    "reason": "没有NPZ/NPY/Arrow/Parquet等向量文件；15个argv均未启用capture。CSV/manifest/stdout保存聚合和native stats，JPEG manifest只有输入ID/hash；原CLI不支持native Ray Data save-embeddings。"
+  },
+  "standard_library_checks": {
+    "post_canonical_hash_XOR_reordering": true,
+    "signed_zero_hash_counterexample": true,
+    "numpy_round_or_inference_not_executed": true
+  },
+  "unconfirmed_publication_points": [
+    "保留native digest差异，不能宣称仅由结果顺序、普通表示或已验证FP16微批噪声导致。",
+    "共有配置与审计通过不能代替按ID数值核验；误差幅度、root cause及三臂逐点数值等价仍未证实。",
+    "浮点checksum受累加分组影响，聚合差值不能转为逐点误差；norm接近1不能证明方向一致。",
+    "实际prepare/model微批变化与单纯输出顺序不同；现存证据不能事后确定哪个阶段引入差异。",
+    "保留15次性能原件；本审核不要求矩阵重跑、不引入新容差或通过门槛。"
+  ],
+  "evidence_SHA256": {
+    "qualification/runs.csv": "ee2dcb54605c4a04084e46257f98d1b7c14cb088b1025fce75c5a86f0ae86ffa",
+    "scale/runs.csv": "60643dbbb062246f6e2febf5e3567358182ee7604ecb2b1b2118cb0da597bf66",
+    "repeat/runs.csv": "928858caeea89488fa31bd61daa39f9cd57b47de2850f6a9a1e02e779f2ec5d3",
+    "resolved-commands.json": "2d8a8cf806cecb11ed1c1d737e9ad10fcf1d478de093303052b5ac19647b8579"
+  },
+  "private_original_review_sha256": "7507bcb6336650b1cf958f0a67d1e3d526dcc067aeda14e84ccc5b88b0b52e72",
+  "public_copy_transform": "omitted private local absolute artifact path; content and numerical conclusions unchanged"
+}

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "measurement_count": 15,
+  "timed_rows": 60771,
+  "warmup_rows": 960,
+  "summary_scope": "nine cold-operator repetitions only; qualification/scale retained separately",
+  "arms": {
+    "direct": {
+      "run_ids": [
+        "07_1_direct",
+        "12_2_direct",
+        "14_3_direct"
+      ],
+      "operator_e2e_s": [
+        21.227541075088084,
+        20.623728388454765,
+        21.118473371025175
+      ],
+      "median_operator_e2e_s": 21.118473371025175,
+      "sample_stdev_s": 0.32178101310971713,
+      "sample_cv": 0.015330268091855923,
+      "first_output_s": [
+        11.880404024850577,
+        11.076657122001052,
+        11.544157207012177
+      ],
+      "embedding_checksum": [
+        -36.44171080313299,
+        -36.44171080313299,
+        -36.44171080313299
+      ],
+      "embedding_sum_all": [
+        -1004.8990153283116,
+        -1004.8990153283116,
+        -1004.8990153283116
+      ],
+      "embedding_digest_xor_rounded5": [
+        "2e357c1ee89a68479f8f65eba49e85a9",
+        "2e357c1ee89a68479f8f65eba49e85a9",
+        "2e357c1ee89a68479f8f65eba49e85a9"
+      ],
+      "max_norm_error": 1.1920928955078125e-07
+    },
+    "hse": {
+      "run_ids": [
+        "08_1_hse",
+        "10_2_hse",
+        "15_3_hse"
+      ],
+      "operator_e2e_s": [
+        21.400042964611202,
+        20.360143897123635,
+        20.575613962486386
+      ],
+      "median_operator_e2e_s": 20.575613962486386,
+      "sample_stdev_s": 0.5488625509745072,
+      "sample_cv": 0.02641479905851667,
+      "first_output_s": [
+        11.596080590970814,
+        11.50836634915322,
+        11.506037381477654
+      ],
+      "embedding_checksum": [
+        -36.44171080313299,
+        -36.44171080313299,
+        -36.44171080313299
+      ],
+      "embedding_sum_all": [
+        -1004.8990153283116,
+        -1004.8990153283116,
+        -1004.8990153283116
+      ],
+      "embedding_digest_xor_rounded5": [
+        "2e357c1ee89a68479f8f65eba49e85a9",
+        "2e357c1ee89a68479f8f65eba49e85a9",
+        "2e357c1ee89a68479f8f65eba49e85a9"
+      ],
+      "max_norm_error": 1.1920928955078125e-07
+    },
+    "ray_data": {
+      "run_ids": [
+        "09_1_ray_data",
+        "11_2_ray_data",
+        "13_3_ray_data"
+      ],
+      "operator_e2e_s": [
+        55.55321142775938,
+        38.375772891100496,
+        39.64305949723348
+      ],
+      "median_operator_e2e_s": 39.64305949723348,
+      "sample_stdev_s": 9.572559257892625,
+      "sample_cv": 0.21499766682628121,
+      "first_output_s": [
+        17.301743897609413,
+        12.394511573016644,
+        12.963158396072686
+      ],
+      "embedding_checksum": [
+        -36.4367401782024,
+        -36.4367401782024,
+        -36.4367401782024
+      ],
+      "embedding_sum_all": [
+        -1005.0556894620051,
+        -1005.0556894620051,
+        -1005.0556894620051
+      ],
+      "embedding_digest_xor_rounded5": [
+        "b5cfe99ca3cbf03e88aae787ba31d925",
+        "b5cfe99ca3cbf03e88aae787ba31d925",
+        "b5cfe99ca3cbf03e88aae787ba31d925"
+      ],
+      "max_norm_error": 1.7881393432617188e-07
+    }
+  },
+  "ray_data_minus_direct": {
+    "first_column_sum": 0.004970624930592749,
+    "all_component_sum": -0.1566741336935138,
+    "per_row_vectors_available": false,
+    "pointwise_equivalence": "unverified"
+  }
+}
