@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：拆分HSE static正确性集成
+
+从3e保留已发布47f，独立构造[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)。
+当前A只修owner／引用／异常归还、lease时间与永久超大块，补admission峰值；历史扫描和ready优先留B／C。
+A保持原source先行顺序；29项定向通过，实库／GPU尚未在A运行；CLI与source由原owner处理。
+
 ## 2026-10-14：收敛已有图像路径与后续表示研究
 
 - [研究定位](docs/research/研究定位.md#existing-image-execution-paths)区分已构造HTTP payload、PG增量单图及已有多图batch/常驻worker/ObjectRef静态/HSE流水；核对`8862c813`与stage`5a785142`四个关键文件同blob，独立研究原型的host表示复用不扩称GPU驻留或全物理内存计费。

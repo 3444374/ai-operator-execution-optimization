@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE A集成检查](diagnostics/hse_static_lifecycle_20261014/README.md)：29项定向CPU／受控Ray替身通过，
+A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要；原47f完整CPU成本与失败证据独立保留，不提供A实库／GPU资格。
+
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
 旧实现12组后窗口反例已复现；修后显式预检零flow／零发送，默认分块的合法前缀及未消费责任保留。该本地轮SDK／HTTP／服务器／模型均0。

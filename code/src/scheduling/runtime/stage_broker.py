@@ -29,7 +29,11 @@ LeaseStage = Literal["prepare", "model"]
 
 @dataclass(frozen=True)
 class StageBrokerLimits:
-    """Hard limits applied to one static or dynamically selected safe arm."""
+    """Declared payload byte/work/inflight limits for one safe execution arm.
+
+    Source buffers, serialization copies and model/device allocations are
+    separate runtime-owner costs; these counters do not bound total memory.
+    """
 
     encoded_bytes: int
     ready_bytes: int
@@ -199,8 +203,8 @@ class BoundedStageBroker:
             > self._limits.ready_work
         ):
             return None
-        self._encoded_queue.remove(block_id)
         lease = self._new_lease("prepare", descriptor, now_s)
+        self._encoded_queue.remove(block_id)
         self._prepare_leases[lease.lease_id] = lease
         self._states[block_id] = "preparing"
         self._ready_held_bytes += descriptor.ready_bytes_estimate
@@ -270,9 +274,9 @@ class BoundedStageBroker:
             raise ValueError("requested model block is not ready for this Job")
         if block_id is None:
             return None
-        self._ready_queue.remove(block_id)
         descriptor = self._descriptors[block_id]
         lease = self._new_lease("model", descriptor, now_s)
+        self._ready_queue.remove(block_id)
         self._model_leases[lease.lease_id] = lease
         self._states[block_id] = "modeling"
         self._assert_invariants()
@@ -423,6 +427,9 @@ class BoundedStageBroker:
             raise ValueError(f"row_ids already admitted: {sorted(duplicates)[:5]}")
         if descriptor.representation != "encoded":
             raise ValueError("new broker admissions must use encoded representation")
+        if (descriptor.ready_bytes_estimate > self._limits.ready_bytes
+                or descriptor.model_work_units > self._limits.ready_work):
+            raise BufferError("one encoded block exceeds ready byte/work capacity")
 
     @staticmethod
     def _validate_transition(

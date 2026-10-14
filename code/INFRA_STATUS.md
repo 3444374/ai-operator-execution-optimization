@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE A正确性切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
+保留source先行、全终态历史扫描及CLI默认；B历史扫描优化与C ready优先分别待纳入。
+owner／引用持有、异常完成确认／未知池、时间原子校验与单块ready拒绝由本地回归核对，实际Ray／GPU待运行。
+
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
 本地定向66项，31通过／35固定SDK或缺依赖跳过；随后[固定1afa受影响SDK资格](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)6项通过、0跳过，13localhost POST、模型／GPU0。
