@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from decimal import Decimal, InvalidOperation
 
 from ...planning.work import (
     RuntimeStateSnapshot,
@@ -75,11 +76,28 @@ def build_text_work_descriptor(
     )
 
 
+def parse_service_waiting_requests(value: object) -> int | None:
+    """Preserve missing counts and reject lossy or invalid metric values."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        raise ValueError("service waiting count must be a non-negative integer")
+    if isinstance(value, int) and value >= 0:
+        return value
+    try:
+        count = Decimal(value)
+    except (InvalidOperation, TypeError) as exc:
+        raise ValueError("service waiting count must be a non-negative integer") from exc
+    if not count.is_finite() or count < 0 or count != count.to_integral_value():
+        raise ValueError("service waiting count must be a non-negative integer")
+    return int(count)
+
+
 def build_text_runtime_snapshot(
     *,
     active_work: int,
     upstream_queued_work: int,
-    service_waiting_requests: int,
+    service_waiting_requests: int | None,
     active_requests: int,
     oldest_upstream_age_s: float,
     observed_at_s: float,
@@ -92,22 +110,27 @@ def build_text_runtime_snapshot(
     vLLM exposes waiting request count rather than waiting token work. The
     conversion uses current mean active request work and is therefore an
     estimate; when no request is active it conservatively reports zero model
-    queue work instead of inventing a token size.
+    queue work instead of inventing a token size. A missing waiting count leaves
+    model queue work unknown rather than claiming the service queue is clear.
     """
     integer_values = (
         active_work,
         upstream_queued_work,
-        service_waiting_requests,
         active_requests,
         capacity_work,
     )
+    if service_waiting_requests is not None:
+        integer_values += (service_waiting_requests,)
     if any(
         not isinstance(value, int) or isinstance(value, bool) or value < 0
         for value in integer_values
     ) or capacity_work <= 0:
         raise ValueError("runtime work/count values must be valid non-negative integers")
     mean_active_work = active_work / active_requests if active_requests else 0.0
-    service_queued_work = int(round(service_waiting_requests * mean_active_work))
+    service_queued_work = (
+        None if service_waiting_requests is None
+        else int(round(service_waiting_requests * mean_active_work))
+    )
     stages = (
         StageStateSnapshot(
             stage="organizer",

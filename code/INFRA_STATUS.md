@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[缺失服务排队观测语义](src/experiments/shared_vllm/README.md)。
+真实helper保留未知waiting／queue估计，恢复已有校准供给而不误上调；有效waiting／KV保护与已知零队列bootstrap保持。155项本地零模型回归通过，未启动服务器或性能实验。
+`81228bdd`上的[独立整合验收](src/experiments/shared_vllm/README.md#unknown-waiting-integration)另为196项全通过／0跳过；原155项不代替或加到此最终组合，未引入研究分支策略。
+
 2026-10-14：[可选执行计时](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)
 复用现有 writer／时钟／查询及调用身份，默认关闭，覆盖 NativeLOTUS、Daft、Ray Data、SemLoom、
 IMLane 两模式与现有图像外层。账本初始化／历史核验、BEGIN 调用、事务体、提交与 finish 分开采集；

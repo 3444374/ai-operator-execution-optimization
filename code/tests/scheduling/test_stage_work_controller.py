@@ -24,9 +24,9 @@ from src.scheduling.submission_control.stage_work import (  # noqa: E402
 def _state(
     *,
     model_active: int,
-    model_queued: int,
+    model_queued: int | None,
     model_age_s: float,
-    upstream_queued: int,
+    upstream_queued: int | None,
     signature: str = "sig",
 ) -> RuntimeStateSnapshot:
     return RuntimeStateSnapshot(
@@ -79,6 +79,21 @@ class BoundedStageWorkControllerTest(unittest.TestCase):
         )
 
         self.assertEqual((decision.work_limit, decision.action), (100, "increase"))
+
+    def test_missing_queue_uses_static_supply_instead_of_clear_queue(self) -> None:
+        for model, upstream in ((None, 20), (0, None)):
+            with self.subTest(model=model, upstream=upstream):
+                decision = self.controller.select(
+                    _state(
+                        model_active=50, model_queued=model,
+                        model_age_s=0, upstream_queued=upstream,
+                    ),
+                    now_s=10.1, max_age_s=1, calibration_signature="sig",
+                )
+                self.assertEqual(
+                    (decision.work_limit, decision.action, decision.reason),
+                    (75, "fallback", "missing_queue_observation"),
+                )
 
     def test_decreases_one_step_on_aged_service_queue(self) -> None:
         decision = self.controller.select(

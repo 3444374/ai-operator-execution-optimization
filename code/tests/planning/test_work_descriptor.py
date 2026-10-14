@@ -78,6 +78,15 @@ class WorkDescriptorTest(unittest.TestCase):
         self.assertTrue(snapshot.is_fresh(now_s=10.5, max_age_s=1.0))
         self.assertFalse(snapshot.is_fresh(now_s=11.1, max_age_s=1.0))
 
+    def test_only_queue_work_accepts_an_explicit_unknown(self) -> None:
+        stage = StageStateSnapshot("model", 20, None, 1, 0, 3, 20)
+        self.assertIsNone(stage.queued_work)
+        for queued in (-1, False, 1.5):
+            with self.subTest(queued=queued), self.assertRaises(ValueError):
+                StageStateSnapshot("model", 20, queued, 1, 0, 3, 20)
+        with self.assertRaises(ValueError):
+            StageStateSnapshot("model", None, 0, 1, 0, 3, 20)
+
 
 if __name__ == "__main__":
     unittest.main()

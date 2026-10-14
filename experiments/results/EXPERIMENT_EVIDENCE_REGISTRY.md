@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-14：[缺失waiting的真实helper回归](../../code/tests/experiments/test_shared_vllm_runtime.py)。
+默认四样本中未知回到(2,20)，已知0仍升到(4,40)、已知1仍降到(1,10)；另核有效KV／恢复及typed消费者，155项本地通过，HTTP／模型／GPU／服务器0。仅正确性证据。
+最终[单提交整合](../../code/src/experiments/shared_vllm/README.md#unknown-waiting-integration)13模块196项全通过，覆盖保存重读与旧消费者；与155项重叠分列，没有新服务器或性能实验。
+
 2026-10-14：[可选执行计时](diagnostics/optional_execution_timing_20261014/README.md)。
 在已发布 runtime／EOF 修补之上增加默认关闭的账本与公共适配计时；复用原调用身份和局部时钟，
 六文本接点／图像外层的 fixture、开销、失败及原件对应分别保存。未采集的内部阶段保持未知，

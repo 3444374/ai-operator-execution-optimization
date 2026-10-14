@@ -11,8 +11,8 @@ from src.scheduling.runtime.saor_pipeline import (
 
 def _snapshot(
     *,
-    prepare_queued: int,
-    model_queued: int,
+    prepare_queued: int | None,
+    model_queued: int | None,
     observed_at_s: float = 1.0,
     signature: str = "image-sig",
 ) -> RuntimeStateSnapshot:
@@ -65,6 +65,20 @@ class SaorPipelineRuntimeTest(unittest.TestCase):
         )
         self.assertEqual(decision.arm.name, "prepare_boost")
         self.assertGreater(decision.prepare_backpressure, 0)
+
+    def test_unknown_queue_falls_back_without_queue_arithmetic(self) -> None:
+        for prepare, model in ((None, 100), (100, None)):
+            with self.subTest(prepare=prepare, model=model):
+                controller = self._controller()
+                decision = controller.select(
+                    _snapshot(prepare_queued=prepare, model_queued=model),
+                    observed_prepare_service_quanta=10, observed_model_service_quanta=10,
+                    now_s=1, max_age_s=0, calibration_signature="image-sig",
+                )
+                self.assertEqual(
+                    (decision.arm.name, decision.reason), ("balanced", "missing_queue_observation"),
+                )
+                self.assertEqual(controller.current_arm.prepare_service_quanta, 1)
 
     def test_ready_tensor_backlog_stops_extra_prepare_and_drains_model(self) -> None:
         decision = self._controller().select(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 from src.planning.work import RuntimeStateSnapshot, StageStateSnapshot
 from src.scheduling.core.control import CapacityArm
@@ -82,6 +83,23 @@ class SaorCapacityRuntimeTest(unittest.TestCase):
         self.assertEqual(decision.arm_name, "lower")
         self.assertEqual(decision.action, "fallback")
         self.assertEqual(decision.reason, "stale_observation")
+
+    def test_unknown_upstream_queue_falls_back_without_learning(self) -> None:
+        controller = self._controller()
+        snapshot = _snapshot()
+        snapshot = replace(
+            snapshot,
+            stages=(replace(snapshot.stages[0], queued_work=None), snapshot.stages[1]),
+        )
+        decision = controller.select(
+            snapshot, observed_goodput=10, observed_tail_risk=0, observed_energy=0,
+            now_s=1, max_age_s=0, calibration_signature="sig",
+        )
+        self.assertEqual(
+            (decision.arm_name, decision.action, decision.reason),
+            ("lower", "fallback", "missing_queue_observation"),
+        )
+        self.assertEqual(controller.current_arm.goodput, .7)
 
     def test_observation_model_requires_every_configured_feature(self) -> None:
         model = SaorObservationModel(

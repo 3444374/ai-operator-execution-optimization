@@ -149,6 +149,8 @@ class SaorPipelineController:
         model = snapshot.for_stage("model")
         if prepare is None or model is None:
             return self._fallback("missing_stage_observation")
+        if prepare.queued_work is None or model.queued_work is None:
+            return self._fallback("missing_queue_observation")
 
         current = self.current_arm
         alpha = self._ewma_alpha
