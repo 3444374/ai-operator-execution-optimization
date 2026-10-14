@@ -11,7 +11,9 @@ RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，st
 与`close()`。RM以无损PNG传输同一RGB像素，按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
 finite值与单位范数。原生建索引需要完整矩阵，显式限制图库至5000行；这不是流式PG执行。
 Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE，Ray Data保留原生图与调度；
-外部工厂可接入独立Daft后端，不复制它的执行代码。原生算子与作者源码均不修改。
+`--arm daft_native`接入[独立Daft后端](../../baselines/image/frameworks/daft_clip.py)，
+保留其原生RGB解码、stateful batch UDF与生命周期，不复制执行代码。外部工厂也可使用同一协议。
+原生算子与作者源码均不修改，固定来源、资格及精简证据见[本轮记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 
 [资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
 组合workflow、模型启动和结果写出分别记录。Ray Data每次RM调用的原生图含模型冷加载；其他内置路径
@@ -22,6 +24,7 @@ Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE�
 先用[模型身份CLI](../../../scripts/experiments/qualify_lotus_clip.py)核对固定ST与cached OpenAI CLIP的实际
 参数内容、有效PIL像素张量、tokenizer与完整向量；序列化文件哈希不同不等于参数不同。
 当前只公布float32，索引sidecar绑定有序像素、模型资格与原生文件哈希。小样本不输出P99或P99.99。
+已有索引查询复用同一qualification identity文件与原始图库顺序；新生成的资格文件不自动替换旧sidecar。
 本任务是CLIP检索，不是VLM `sem_filter/sem_map`；`sem_sim_join`的子集索引和缺邻居行为尚未纳入资格。
 
 五条替换批次共用`sdk.LotusResponseReplay`，每批次惰性创建一个客户端并复用，

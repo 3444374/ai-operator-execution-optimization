@@ -1,10 +1,10 @@
 # Feasibility Results
 
 2026-10-14：[原生 LOTUS CLIP 图片建索引及图文检索](lotus_native_image_retrieval_20261014/README.md)：
-公开RM接入、固定模型身份、完整向量／原生检索及独立审核；规模和Daft状态见同题记录。
+公开RM接入、固定模型身份、六条路径12／64／256图及已有索引资格完成；24个模型CLI、96条完整原生查询与独立审核见同题记录。
 
 [Daft 本地 CLIP 原生批次资格](daft_clip_native_20261014/README.md)：本机／匹配Linux各13项真实 SDK／CPU kernel 替身与39项旧图像回归通过；
-9图四次完整512向量同Direct及正常释放核验通过。首次失败和可选计时依赖保留；完整LOTUS接入由独立负责人接续。
+9图四次完整512向量同Direct及正常释放核验通过。首次失败和可选计时依赖保留；完整LOTUS接入见上方整合记录。
 
 
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。

@@ -1,0 +1,184 @@
+{
+  "schema": "lotus.daft_integration.independent_review.v1",
+  "outcome": "passed_with_scope_limits",
+  "method": "read-only local source/raw/public audit; new19 complete matrix restoration and16 full-query independent recomputation; prior d/e audit inherited after byte/field parity checks; no server/GPU/model/SDK rerun and no repository edits",
+  "daft_owner_commit": "adf8ea10141b59aca5ed2f41107eb26e2f8c881f",
+  "execution_commit": "8959175ddbb8a57afb0bf341f104624b32f7a3b4",
+  "source_f_archive_sha256": "bad9bf9e625f0d6bc520062d4504c32b16a095d7f6a19db7f402c49d8a886cd8",
+  "raw_public_integrity": {
+    "combined_original_members_verified": 48,
+    "separate_original_members_verified": {
+      "f": 13,
+      "f2": 35
+    },
+    "combined_split_members_same_bytes_and_sha256": true,
+    "public_originals_records_equal_raw_manifests": true,
+    "all_new_result_fields_equal_raw_except_two_role_path_values_and_shared_identity": true,
+    "role_path_values": {
+      "model_revision": "<candidate_model_root>",
+      "processor_revision": "<candidate_processor_root>"
+    },
+    "actual_weights_config_processor_sha_and_software_scheduler_fields_preserved": true,
+    "restored_new_rm_matrices": 19,
+    "unique_public_complete_matrices": 12,
+    "total_restorable_complete_numeric_matrices": 116,
+    "old20_result_fields_and21_map_entries_unchanged": true,
+    "old_vector_npz_file_sha_unchanged": true
+  },
+  "source": {
+    "runtime_files_matched": 14,
+    "lotus_runtime_files_unchanged": 11,
+    "daft3_blobs": {
+      "code/src/baselines/image/frameworks/daft_clip.py": {
+        "blob_sha1": "337f87aa88dd3dd43aaaa24d85d2528aee6dff48",
+        "sha256": "dd6e6a5e534dab91af5e7bae72288528ffe03e354647535022fe6f6d86382c1a"
+      },
+      "code/tests/baselines/image/test_daft_clip_executor.py": {
+        "blob_sha1": "bf8205e82408d3c3d4d9da0297f293d72c460223",
+        "sha256": "cc1df9c79d2180f7dbe6154b8ebe2d28ebccfbb55613ae0f74521394ccaf1456"
+      },
+      "code/tests/baselines/image/verify_daft_clip_gpu.py": {
+        "blob_sha1": "2064d6b337dc4bd8578ba60b98377dac12150580",
+        "sha256": "d362ea02f6082987b277e5de535f20b5a98ef1ec2d8422d4d64ac7c6868a4ca5"
+      }
+    },
+    "native_graph": "Daft0.7.21 native runner: into_batches32, native decode_imageRGB, stateful daft.cls/method.batch CLIP UDF with GPU resource declaration, complete to_arrow_iter consumption; original LOTUS RM/sem_index/sem_search/Faiss retained",
+    "scheduler_owner": "daft_native",
+    "implementation": "diagnostic_reference"
+  },
+  "arithmetic": {
+    "new_complete_rm_matrices": 19,
+    "new_complete_queries": 16,
+    "new_image_queries": 12,
+    "new_text_queries": 4,
+    "gallery_max_abs_error": 0.0,
+    "image_query_max_abs_error": 0.0,
+    "text_query_max_abs_error": 5.960464477539063e-08,
+    "score_max_abs_error_vs_stock": 4.470348358154297e-08,
+    "score_max_abs_error_recomputed": 1.7881393432617188e-07,
+    "fixed_atol": 1e-05,
+    "fixed_rtol": 1e-05,
+    "all_full_fp32_finite_normalized_matrices_checked": true,
+    "all_top10_positions_ids_ranks_scores_checked": true
+  },
+  "public_total": {
+    "retrieval_cli_runs": 24,
+    "complete_queries": 96,
+    "image_queries": 72,
+    "text_queries": 24,
+    "unique_complete_matrices": 12,
+    "prior80_queries_reused_after_exact_public_payload_parity": true,
+    "new16_queries_independently_recomputed": true
+  },
+  "sdk_and_failure": {
+    "f_status": "failed",
+    "f_outer_error_type": "ValueError",
+    "f_stage": "pre-model SDK accounting",
+    "f_model_work_started": false,
+    "f_preflight_and_sdk_process_exit_codes": [
+      0,
+      0
+    ],
+    "f_junit_suite_tests": 60,
+    "f_junit_testcase_items": 39,
+    "passing_unittest_subtests": 21,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "original_f_failure_and_original_cpu_files_retained": true,
+    "f2_reuses_checked_f_cpu_results": true,
+    "f2_status": "succeeded",
+    "new_model_cli_exit_codes": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "new_model_cli_timeouts": 0
+  },
+  "cleanup_and_budget": {
+    "supervised_f_cpu_calls": 2,
+    "supervised_f2_gpu_calls": 4,
+    "all_six_exit_zero_and_physical_clear": true,
+    "both_leases_released": true,
+    "f2_whole_wall_s": 136.42627540091053,
+    "f2_cleanup_wall_s": 8.315481861587614,
+    "original_max_s": 600,
+    "remaining_at_resume_s": 153.74470138549805,
+    "original_window_wall_s": 581.6815867424011,
+    "budget_remaining_s": 18.318413257598877,
+    "recorded_budget_arithmetic_difference_s": 1.2726988643407822e-05,
+    "original_plan_mtime_based_remaining_minus_one_second_source_checked": true,
+    "original_start_precedes_sdk_timestamp": true,
+    "scope": "Budget arithmetic includes original failed call and intervening gap. Compact archive tar mtime metadata is normalized to0; original server plan mtime is verified here through recorded start, SDK timestamp consistency and supervisor source, not by restoring tar mtime."
+  },
+  "existing_index": {
+    "mode": "new-process search",
+    "reference": "lotus-retrieval-20261014-e/stock-256",
+    "rm_call_count": 4,
+    "online_image_rows": 3,
+    "online_text_rows": 1,
+    "new_gallery_embedding_rows": 0,
+    "source_manifest_same_bytes_as_e": true,
+    "sidecar_ordered_ids_and_digest_match_stock": true
+  },
+  "basic_checks": {
+    "secret_scan_exit_code": 0,
+    "changed_files": 44,
+    "decompressed_json_strings_checked": 5675,
+    "decompressed_json_secret_findings": [],
+    "markdown_local_links_checked": 847,
+    "broken_links": [],
+    "three_daft_sources_ast_parse_passed": true,
+    "diff_check_passed": true
+  },
+  "current_document_facts_checked": {
+    "readme_f2_and_failure_facts": true,
+    "readme_256_daft_rounded_times_match_raw": true,
+    "outline_infra_registry_log_six_paths_and96_queries": true,
+    "no_stale_daft_pending_in_current_entry": true
+  },
+  "supporting_private_records": {
+    "daft-lotus-integration-review-arithmetic.json": {
+      "sha256": "852a78c981a5206eeedaa02d741ff77b94675d0c4dda5402ba2488320129b427",
+      "role": "complete new query and matrix restoration checks"
+    },
+    "daft-lotus-integration-review-source-budget.json": {
+      "sha256": "36ba55740c72f5f9246d076086439523325b2691b4fcee3fdcab33dc55590ef1",
+      "role": "source blobs, original failure, SDK counts and budget checks"
+    },
+    "daft-lotus-integration-review-basic.json": {
+      "sha256": "4941956e052169e53a409b1e2434d863fe39a70aa6124a47299d98364a0efdad",
+      "role": "source syntax, diff, privacy and local link checks"
+    }
+  },
+  "original_archives_sha256": {
+    "daft-integration-originals.tar.gz": "a3800eda958a22f569d5fdbd63329ffea8bf6ecf2fa8623bb51606af4b9f1424",
+    "scale-f-originals.tar.gz": "a5730e9616d7344b73e69ba21c107ba55c696301cf8e602ae2d42e8126e25db8",
+    "scale-f2-originals.tar.gz": "3d535262efb9042f37da9ec9d5525208bd8dde8f9668a202167b30cd9c645a80",
+    "source-f.tar.gz": "bad9bf9e625f0d6bc520062d4504c32b16a095d7f6a19db7f402c49d8a886cd8"
+  },
+  "public_evidence_snapshot_sha256": {
+    "observations.json.gz": "e89e0c0d47847ae002c0da7e6b029bd9fa45fbfb81146f8068fcac36575812c1",
+    "vectors.npz": "fd6e9dafc88f774373925127edddc240743a337df41bd6c1019812d5b9cd5cf1",
+    "vector_map.json": "809f41b1ba0ffd22bdb0c6b91813afbdb5f817f2065ce4f417eb0cef7806bed0",
+    "source_identity.json": "cfedaa904750b8f9dd57f4a332bac9f0e0abc3f3f4cc0466faf7a1ae24919cb4",
+    "source_manifest.json": "ab9f4d5a50aeba92dc2e6355ae048a1d9436b424b3a8ae3f1c50376bc9164668",
+    "originals.json": "4173152846d17e79d5ea8d5bf7f80ad1beb0c966a29c5fada33ec9a5bf876396",
+    "embedding_identity.json": "2d06e322d3244aacf69c496ebed810ace016984826b51d77bb3059bd7f3a60b5",
+    "README.md": "7f83336738d5d29dd6cb7c9e35551fce717ad3ab9d24620aa9699c0e0fdece55",
+    "verify_evidence.py": "9d7ecf02748c9f08022a802efb0398889a90400bb2741daa004b8bf6190294e8"
+  },
+  "scope_limits": [
+    "All24 CLI runs remain single semantic/numeric qualification cells, with no explicit warmups.96 queries include repeated sources and different arms/sizes/modes; no reliable P99/P99.99, saturation or performance ranking.",
+    "Replacement RM lossless PNG serialization and executor decode are real extra work versus stock direct PIL; keep them in measured timing and do not attribute all difference to scheduling.",
+    "Daft stateful wrapper persists across image graphs in a workflow; initial UDF model load belongs to the first native graph. Source requests use_process=True but physical supervision tracks only the owner process; actual placement must not be inferred from the request field.",
+    "Stock text CUDA versus all replacement text CPU is preserved. New image matrices0 difference; new text vectors5.960464477539063e-08 and scores4.470348358154297e-08 max difference remain within1e-5.",
+    "index_load_s is registration; actual native index load belongs to first sem_search. Search retains source gallery checks/decode but performs no gallery GPU embedding.",
+    "No caption/relevance quality, VLM sem_map/filter, PostgreSQL carrier, filtered refill, sem_sim_join, cross-query or multi-Job concurrency qualification.",
+    "Actual failure-preservation GPU/CUDA injection is not established by these successful four model CLIs; failure SDK fixtures and the pre-model accounting failure have distinct scope.",
+    "Prior parameter/pixel/sentinel controls retain executed source and summaries; their raw control tensors and native index/vecs binaries are outside compact public/local archives.",
+    "Optional timing module remains a separate local fixture; model detailed_timing remains false. No optional GPU timing qualification claim."
+  ],
+  "blockers": []
+}

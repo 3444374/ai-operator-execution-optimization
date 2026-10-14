@@ -1,9 +1,9 @@
 # 原生 LOTUS CLIP 图像检索接入
 
 本轮接通固定 LOTUS1.2.4 的图片建索引及图文检索。图库、原生 Faiss 索引、在线图像／文本编码、
-完整 top10 输出均经过 LOTUS；Direct、SemLoom static、SemLoom HSE static 和 Ray Data 只接到公开 RM
-执行接口。作者算子、索引、检索和框架源码保持。五条路径的 12／64／256 图及已有索引新进程查询
-资格已通过；独立 Daft 接入接续。当前结果用于语义与数值资格，不作性能排名。
+完整 top10 输出均经过 LOTUS；Direct、SemLoom static、SemLoom HSE static、Ray Data 和 Daft Native
+接到公开 RM 执行接口。作者算子、索引、检索和框架源码保持。六条路径的 12／64／256 图及已有索引
+新进程查询资格已通过。当前结果用于语义与数值资格，不作性能排名。
 
 ## 实际语义及模型身份
 
@@ -43,7 +43,7 @@ bytes 为同一 RGB 像素的 PNG；RM 接收完整 float32 `[N,512]`、按 ID �
 | Direct | 复用已有 slow `ClipImagePreprocessor` 和 `ClipTensorActor` |
 | SemLoom static／HSE static | 复用已有 image driver、typed pool 与 HSE driver，不复制内部调度 |
 | Ray Data | 原生 `map_batches` 解码／CLIP UDF 和 actor pool；原生图拥有执行与调度，自写图记录为诊断用途 |
-| Daft | 公共 CLI 已有惰性 `daft_native` 接点，独立 owner 交付及本入口资格另记 |
+| Daft | 惰性 `daft_native` 接纳独立 `adf8ea10` 后端；原生 RGB decode、stateful batch UDF、GPU 资源声明、完整消费和 close 保持 |
 
 这些采用为工程决策；架构参照沿用[现有接入计划](../../../plans/系统架构.md)。本入口串行拥有本进程 LOTUS
 settings，原生 cache 关闭。未资格跨查询并发、filtered refill 或 `sem_sim_join` 的子集及缺邻居行为。
@@ -67,8 +67,22 @@ settings，原生 cache 关闭。未资格跨查询并发、filtered refill 或 
 [规模与公开恢复独立审核](scale_e_independent_review.json)核对 49／124／9 原件成员、97 个完整矩阵及
 全部 80 条查询。图片向量差为 0，文本向量最大差 5.96e-8、分数最大差 4.47e-8。
 
+`lotus-retrieval-20261014-f2`：在整合源码 `8959175d` 上，Daft 原生图片执行通过 LOTUS 的
+12／64／256 图组合工作流及共享 stock256 索引的新进程 search，四次 CLI 全部成功。
+完整图库及在线图片向量相对同形状 stock 差为 0；原生 top10 的位置、ID、排序与分数通过。
+四次自有物理退出、GPU compute 空及 lease 释放已确认，136.426 秒含 8.315 秒清理。
+原 600 秒窗口包含首次 CPU 判定失败和修订间隔，总用时 581.682 秒；没有重新计时增加预算。
+合并 d／e／f2 为 24 个模型 CLI、72 图片／24 文本完整查询。
+
+首次 f 的预检和 SDK 都退出 0、物理退出及 lease 释放确认，但监督器错误要求 JUnit suite.tests=39，
+实际为 39 个测试项及 21 个通过的 unittest 子测试，suite.tests=60。其 ValueError 失败原件保留，
+当次尚未进入模型。f2 校验并复用这两份 CPU 证据，未重跑 CPU 检查或覆盖原失败。
+独立后端的 9 图 GPU 与 13 项 SDK 证据见[Daft 原记录](../daft_clip_native_20261014/README.md)，
+不计入上述 24 次 LOTUS CLI。当前 Daft 配置虽请求 `use_process=True`，实际原生模型在 driver PID
+复用，未产生 owned child；请求字段与实际观察分别保留。
+
 每格一次语义资格、无预热；前期准备方案中的性能重复在规模 run 前明确延后，不改变数值容差或失败判定。
-每次最多 180 秒，e 累计最多 1200 秒。GPU 使用严格共享 lease，`recover_stale=False`；不回收 foreign lease、
+每次最多 180 秒，e 累计最多 1200 秒、f／f2 共用最多 600 秒。GPU 使用严格共享 lease，`recover_stale=False`；不回收 foreign lease、
 不停止 foreign 进程。清理未确认时监督 owner 保持存活，不启动新工作，避免死 owner 被其他旧 runner 自动回收。
 
 CLI 分开记录 `index_s`、已有索引 `index_load_s`／每条完整 `sem_search`、`native_workflow_s`、
@@ -91,9 +105,12 @@ stock 直接使用 PIL，这些额外成本保持在实际计时内，不归因�
 | SemLoom HSE static | 33.703 | 35.829 | 5.855 |
 | Ray Data | 42.183 | 73.228 | 29.483 |
 
+Daft 后续 f2 的单次 256 图建索引为 33.247 秒、组合应用 35.124 秒、已有索引应用 4.571 秒。
+这四次使用新增后端后的 source-f，原始逐阶段观测单独保留，不用于跨时段性能排名。
+
 [可选计时接点本机核查](timing_hook_local.json)使用 `bbbd8a1b` 的原模块，两个实际 span 的成功／失败四事件
 保留，首个业务异常保持，默认未创建 writer。该核查只有本机 API／事件写出，无 LOTUS 模型或 GPU；
-可选模块需要先由整合分支接纳，本轮 source-d 的实际模型资格始终关闭细计时。
+可选模块需要先由整合分支接纳，本轮 source-d／source-f 的实际模型资格始终关闭细计时。
 
 同图 stock 图库 batch12 与在线 batch1 的向量最大差为 9.4e-5～2.4e-4，各臂匹配实际 batch 形状仍为 0 差。
 因此资格只要求同样 batch 形状的跨执行器数学等价，不宣称 CLIP 跨 batch 形状恒等。
@@ -107,8 +124,10 @@ artifact 目录保留；[原件映射](originals.json)按运行 ID、成员名�
 
 首次 `lotus-retrieval-20261014-a` 在资产预检失败，源 tar 中的 macOS AppleDouble JSON sidecar 导致
 UnicodeDecodeError，未进入模型／GPU；原失败保留。新 source-b 排除该元数据，预检及实际 SDK 通过，
-下载固定公开 ST snapshot 后释放自己的 lease。固定 source-d 的运行代码与测试摘要见
-[源码身份](source_identity.json)，基线 SHA 不代替未提交适配代码的身份。
+下载固定公开 ST snapshot 后释放自己的 lease。固定 source-d 的 11 个运行代码／测试摘要及
+source-f 的 14 个摘要见[源码身份](source_identity.json)。source-f 为 `8959175d` 的代码归档，
+其中 Daft 三份源码与已审核／实测的 `adf8ea10` 对应 blob 逐字节相同；source-d 的 11 份适配文件保持。
+基线 SHA 不代替当次适配代码的实际身份。
 
 公开证据可在安装 NumPy 的环境重算：
 

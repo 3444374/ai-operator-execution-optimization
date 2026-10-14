@@ -11020,6 +11020,9 @@ Filter v3/v4与Map v5的SELECT/INSERT、NULL零调用、输出/筛选、usage和
 
 在独立职责分支上从 `integration/baselines@58462a0d` 接入公开 RM 批次协议和原生
 `sem_index`／`sem_search`。图片使用显式 RGB PIL，避免固定版本路径 list 走文本分支。
-未修改作者源码或现有图像 owner 工作树。模型／完整输出、独立审核、规模与 Daft 接点进展统一见
+未修改作者源码或现有图像 owner 工作树。六条路径12／64／256图及已有索引新进程查询通过，
+24个模型CLI保存72图片／24文本完整查询；完整矩阵与原生top10核对。独立Daft交付`adf8ea10`
+在本分支接纳为`8959175d`，三份源码blob保持。首次资产预检和后续JUnit计数判定失败均保留，
+后续资格共用原预算，逐次自有物理退出与lease释放核验。模型／完整输出、独立审核与计时统一见
 [本轮记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 运行代码用实际摘要记录，原件／失败保留、只提交精简公开证据；不合并 main。

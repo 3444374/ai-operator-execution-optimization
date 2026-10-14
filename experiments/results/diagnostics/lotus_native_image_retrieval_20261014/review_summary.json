@@ -34,6 +34,20 @@
       "report": "scale_e_independent_review.json",
       "report_sha256": "69c15f48dbd40872a7a1f51853371430c19ec2af58cf9c98e41c48d8d9b07262",
       "scope": "complete original/public integrity, 97 restored matrices and 80 full native queries; fixed five-arm source-d; excludes Daft and performance/tail conclusions"
+    },
+    {
+      "material_role": "supervisor_source",
+      "outcome": "passed_with_stated_scope",
+      "phase": "daft_lotus_recovery_plan",
+      "reviewed_material_sha256": "71ab02896eae52f9b3ce4c49b350bffb407a64cf97c455d6ec0ab029844b0465",
+      "scope": "independent read-only F2 supervisor audit; exact fixed four CLI tasks, reused verified CPU evidence, unchanged first-failure retention, shared strict lease and physical exit checks; original 600-second window includes prior failure and repair gap, with no reset"
+    },
+    {
+      "outcome": "passed_with_stated_scope",
+      "phase": "daft_lotus_evidence_release",
+      "report": "daft_lotus_independent_review.json",
+      "report_sha256": "d40caecf1ab1c69583b78866690770676255f3d030862a1fde6345c06242ee48",
+      "scope": "read-only independent original/public integrity, source14 and unchanged Daft owner blobs, 19 new complete matrices and16 new native queries, original failure and reused SDK counts, six physical exits and original budget arithmetic; prior80 queries inherited after exact parity checks; all24 CLI/96 queries qualified, excludes performance and reliable tails"
     }
   ],
   "schema": "lotus.image_independent_reviews.v1"

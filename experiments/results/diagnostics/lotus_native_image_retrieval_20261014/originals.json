@@ -880,6 +880,260 @@
       "verified_members": 124
     },
     {
+      "archive_sha256": "a5730e9616d7344b73e69ba21c107ba55c696301cf8e602ae2d42e8126e25db8",
+      "members": [
+        {
+          "bytes": 1468,
+          "member": "supervision-result.json",
+          "sha256": "2f693b451efa5fed76d7d9ad3fe211e82ed3be1e7fdae458164ea8b5e9bcd995"
+        },
+        {
+          "bytes": 1276,
+          "member": "plan.json",
+          "sha256": "1c7b4a0238c46bbbcb676a2c3b5ce9b5f44df256feb0e0aed941181ad1bdf120"
+        },
+        {
+          "bytes": 4568,
+          "member": "preflight.json",
+          "sha256": "a637f2c92cbe33e5f1ca5f75777ff57cef1f4158d56c73fc240167a3b318fcce"
+        },
+        {
+          "bytes": 127,
+          "member": "failure.log",
+          "sha256": "072c83c5d4bf41140ecdf65951ffa85c41b465a45fe247e7629bbadbd2ffe4e0"
+        },
+        {
+          "bytes": 321,
+          "member": "preflight/supervisor.json",
+          "sha256": "c6073443290d7b02b6c8c93e4183abafc63ec6fa5eef317f8e8203b79d16abfd"
+        },
+        {
+          "bytes": 661,
+          "member": "preflight/command.json",
+          "sha256": "9e410e7433b7f2fd98c2042bda3a071f14a30853b62ac3daebb78f494ba2673e"
+        },
+        {
+          "bytes": 4568,
+          "member": "preflight/stdout.log",
+          "sha256": "a637f2c92cbe33e5f1ca5f75777ff57cef1f4158d56c73fc240167a3b318fcce"
+        },
+        {
+          "bytes": 0,
+          "member": "preflight/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 307,
+          "member": "sdk/supervisor.json",
+          "sha256": "63831d38b2a40eaf066f02f2a513edba47a790520cfd84a153087f1361e4e5ad"
+        },
+        {
+          "bytes": 857,
+          "member": "sdk/command.json",
+          "sha256": "65bd39d173ecae271c79225e40126d66d138f43a3ba0488b3c8b5fdee2e2090c"
+        },
+        {
+          "bytes": 99,
+          "member": "sdk/stdout.log",
+          "sha256": "7da79735d32cddda4f420e15ae4432a8e91c55d5de491251d6d9d0cd65f18195"
+        },
+        {
+          "bytes": 0,
+          "member": "sdk/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "bytes": 9070,
+          "member": "sdk/junit.xml",
+          "sha256": "015186ced637bda37933138095748769679012ede2fe7a223ac2e1e0a0b90f1a"
+        }
+      ],
+      "run_id": "lotus-retrieval-20261014-f",
+      "verified_members": 13
+    },
+    {
+      "archive_sha256": "3d535262efb9042f37da9ec9d5525208bd8dde8f9668a202167b30cd9c645a80",
+      "members": [
+        {
+          "bytes": 8106,
+          "member": "supervision-result.json",
+          "sha256": "bd52ae92fbc5e3bc32ab33c4f8147b11d21bdf510a1b1c548591443217dddc1b"
+        },
+        {
+          "bytes": 5117,
+          "member": "numerical.json",
+          "sha256": "dd87c79d4b604c83aeef1280cbe3d0c9578deecf57437288f2ca04035cc1fdd5"
+        },
+        {
+          "bytes": 1477,
+          "member": "plan.json",
+          "sha256": "f2c03ac9feb620632a288a573f4f28c75612ab8026df239ce3c393347055bd61"
+        },
+        {
+          "bytes": 67198,
+          "member": "manifest.json",
+          "sha256": "b3aceea1e7976299337f0516d8e59a97aa56a1ab230f54408938f4769b5182a6"
+        },
+        {
+          "bytes": 332,
+          "member": "daft_native-12/supervisor.json",
+          "sha256": "a42f520e31ea522975cc81aa8b7fa9955bdf33758a2d1146ce4da52e81d6ce4b"
+        },
+        {
+          "bytes": 1055,
+          "member": "daft_native-12/command.json",
+          "sha256": "599628ba922309e5516c9c1b635cc4c919089952aaa156a771f2e1124184122f"
+        },
+        {
+          "bytes": 100,
+          "member": "daft_native-12/stdout.log",
+          "sha256": "839ef4dca94a6c2ba1de61f07f581d507e30cd19172e1c71ed69cff04fc80c08"
+        },
+        {
+          "bytes": 2063,
+          "member": "daft_native-12/stderr.log",
+          "sha256": "a14e59b7dc2d932e63a7a044fd046a93df0f4b18ba91d0dd650ffe7baacc3684"
+        },
+        {
+          "bytes": 16011,
+          "member": "daft_native-12/output/result.json",
+          "sha256": "d9c0dc47ac1843b26e3c0f0caf6fec76a30877557e970aa6335a197ded4ac23e"
+        },
+        {
+          "bytes": 27,
+          "member": "daft_native-12/output/evidence-write.json",
+          "sha256": "ad7954409efea22f3a28605309c8c96d946e5b8e87b2883a7fdec75fb47c7b16"
+        },
+        {
+          "bytes": 31671,
+          "member": "daft_native-12/output/rm-vectors.npz",
+          "sha256": "315f89a363488cc13aad06da0858403b9bfc1d13e20b37f17e4ed329db3c25d7"
+        },
+        {
+          "bytes": 5592,
+          "member": "daft_native-12/index/identity.json",
+          "sha256": "2b0422ebfd9438f4f2092150d35ddaf141caa6652ad9542e14f47acf559919b2"
+        },
+        {
+          "bytes": 331,
+          "member": "daft_native-256/supervisor.json",
+          "sha256": "6501078760dff5052eed6a2a204aa8cee14ceac197ca9a88a55f97272fc5ab0e"
+        },
+        {
+          "bytes": 1062,
+          "member": "daft_native-256/command.json",
+          "sha256": "3b257c4f44da0f5228133bb764066a5659ca7a8e95b50b8c1a6e01cd5380f57e"
+        },
+        {
+          "bytes": 102,
+          "member": "daft_native-256/stdout.log",
+          "sha256": "5b1bce89b84aa2b71877593f2faa2c267312bc78f1f052e2accf2cca7810b5a5"
+        },
+        {
+          "bytes": 2861,
+          "member": "daft_native-256/stderr.log",
+          "sha256": "185f9491c0ce14391f51edb56f824bd13519bcd86b98413b989045d492c879d8"
+        },
+        {
+          "bytes": 16317,
+          "member": "daft_native-256/output/result.json",
+          "sha256": "6f6f2af16377b020a45bbdb89b0d0cd1f303fbd9f2333d10aa96995022ec383d"
+        },
+        {
+          "bytes": 27,
+          "member": "daft_native-256/output/evidence-write.json",
+          "sha256": "9d0796b4bfaf2f56873a4a1f9fb581329fdc99fc4884d8016dee795ca0a3108a"
+        },
+        {
+          "bytes": 496754,
+          "member": "daft_native-256/output/rm-vectors.npz",
+          "sha256": "406ae98814c5dce837437d8c26e22b3f20930869ca2518563d64c4ca2a5f4f6d"
+        },
+        {
+          "bytes": 27707,
+          "member": "daft_native-256/index/identity.json",
+          "sha256": "13a39f670f9e055df6af1b331a61ea198ee276e7482c7616534b44dcac9b9d7a"
+        },
+        {
+          "bytes": 348,
+          "member": "daft_native-256-search/supervisor.json",
+          "sha256": "2622974b1507228cf0670fc940d2a0f38d1c4612e3bea1d5298d30b91573a9c5"
+        },
+        {
+          "bytes": 1060,
+          "member": "daft_native-256-search/command.json",
+          "sha256": "215e5cb67f96f3b701ae2abc2798f51b5439d593418b340db63bb6b30df8f9c2"
+        },
+        {
+          "bytes": 94,
+          "member": "daft_native-256-search/stdout.log",
+          "sha256": "01fe121ad37f72b6073e1dc2b94050607dacd78f78c435f7b8eac595bf1ae209"
+        },
+        {
+          "bytes": 1590,
+          "member": "daft_native-256-search/stderr.log",
+          "sha256": "4d59535fbee335d4e600291828404b24ad6761f4cbb6a997ad1333ffc4cea574"
+        },
+        {
+          "bytes": 15986,
+          "member": "daft_native-256-search/output/result.json",
+          "sha256": "6e6fc541f9804330298cab0d0e79ce706312a643d97e3b41cc91480f0f9448e0"
+        },
+        {
+          "bytes": 27,
+          "member": "daft_native-256-search/output/evidence-write.json",
+          "sha256": "15b6b9a53763ea13eca794c46ad556479ce3959983290855614e09a32dc1244e"
+        },
+        {
+          "bytes": 8580,
+          "member": "daft_native-256-search/output/rm-vectors.npz",
+          "sha256": "2b596f6d6241e4eaa74a866cf7aacc13836b32eeb291a866dd8920e0d8799436"
+        },
+        {
+          "bytes": 330,
+          "member": "daft_native-64/supervisor.json",
+          "sha256": "ecb5b8350aa7126d25a59b9b5e5c38433f5e395bc1689a5c0afed0b200c40390"
+        },
+        {
+          "bytes": 1057,
+          "member": "daft_native-64/command.json",
+          "sha256": "621d79827ecb5532869df4715203a55f479034afaea063147108fcefc2bbf87c"
+        },
+        {
+          "bytes": 100,
+          "member": "daft_native-64/stdout.log",
+          "sha256": "1bdc12be82cc36ab2cb500a66cea4c29a8701206a8e7b38f91cd2da9eabbda70"
+        },
+        {
+          "bytes": 2177,
+          "member": "daft_native-64/stderr.log",
+          "sha256": "7fc0dfb270b871b1ec53f0bc6921df40938b95a24685adb75b537c9b26130def"
+        },
+        {
+          "bytes": 16179,
+          "member": "daft_native-64/output/result.json",
+          "sha256": "e9c4671a32a07f97b8fea8628d46658c99b602df4f5178bdb54a3783e0822a52"
+        },
+        {
+          "bytes": 27,
+          "member": "daft_native-64/output/evidence-write.json",
+          "sha256": "e8572932a64b6c3be8cb26387c4de58608fc1602a4f52ba9c1708403b5217143"
+        },
+        {
+          "bytes": 130771,
+          "member": "daft_native-64/output/rm-vectors.npz",
+          "sha256": "0548404553651a8d3137f9a0729332929e9ed35845924e5ae05253206fe598c4"
+        },
+        {
+          "bytes": 10272,
+          "member": "daft_native-64/index/identity.json",
+          "sha256": "dae623cbfe913fb888ea062f0b399e53d3e3d9fed03d23a45bd06913113861f7"
+        }
+      ],
+      "run_id": "lotus-retrieval-20261014-f2",
+      "verified_members": 35
+    },
+    {
       "archive_sha256": "c8de1782fbb59684c5682cd013893411b0811132679943f67127e98f66e472fd",
       "members": [
         {

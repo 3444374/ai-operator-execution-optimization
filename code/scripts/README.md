@@ -16,11 +16,14 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_image_retrieval.py \
   --arm direct --rows 64 --k 10 --index-dir "$INDEX_DIR" --output-dir "$RUN_DIR"
 ```
 
-`--arm stock/direct/semloom_static/semloom_hse/ray_data`保持LOTUS索引与结果组装。
+`--arm stock/direct/semloom_static/semloom_hse/ray_data/daft_native`保持LOTUS索引与结果组装。
+Daft臂惰性加载独立后端，要求固定0.7.21 native runner；RGB PIL由RM无损编码为PNG，
+原生Daft解码及stateful batch UDF拥有执行与模型生命周期。它不经过HTTP／SemLoom Core。
 Ray路径还需独立`--ray-temp-dir`；`--arm external --executor-factory module:factory --executor-config`
 接纳独立后端的`embed_batch`接口。`--mode index/search/combined`分别保存建库、已有索引和组合耗时；
 在线默认使用图库首张PIL查询，可用`--query-doc-id`选多张，`--text-query bird`只触发文本编码。
 输入/完整输出、模型启动、原生图冷加载与证据写出口径见[LOTUS说明](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
+固定来源及完整12／64／256图和已有索引资格见[本轮记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 
 ## 固定 JPEG 文件源的 CLIP 比较
 

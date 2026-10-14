@@ -2,7 +2,9 @@
 
 2026-10-14：[原生 LOTUS CLIP 图像检索](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)
 已实现公开 RM 图片执行协议、固定源核对、完整原生索引／检索与 index/search/combined CLI。
-五条路径12／64／256图、已有索引新进程查询及26项实际SDK资格通过；独立Daft接入接续。
+stock／Direct／SemLoom static／HSE static／Ray Data／Daft native六条路径12／64／256图及已有索引新进程查询通过。
+24个模型CLI的96条完整查询与完整向量保留；整合实库／fixture检查为39个测试项及21个通过子测试、0跳过。
+两个模型前失败保留，逐次物理退出和lease释放核验完成；独立Daft三份源码保持原交付blob。
 仅支持固定FP32 CLIP检索，不增加VLM、PG、性能排名或可靠尾分位结论。
 
 2026-10-14：[Daft 本地 CLIP 批次接口](../experiments/results/diagnostics/daft_clip_native_20261014/README.md)
@@ -10,7 +12,7 @@
 由固定 Daft0.7.21 原生 RGB decode／有状态 UDF 拥有图与批次；完整归一化 float32 512 维和原 ID 保留。
 本机和匹配 Linux 的真实 SDK／CPU kernel 替身各 13 项、相关图像回归 39 项通过，独立审核完成；软件检查真实模型／GPU／HTTP 0。
 9图真实GPU复测四次完整向量与同批形状Direct逐位一致，模型／398参数／2buffers释放、CLI物理退出和lease释放核验通过；
-首GPU错误清理判据失败保留，小样本不提供P99／P99.99。完整LOTUS查询与公共CLI／注册由独立负责人接续。
+首GPU错误清理判据失败保留，小样本不提供P99／P99.99。完整LOTUS查询与公共CLI／注册已接入，见上方整合记录。
 
 
 2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
