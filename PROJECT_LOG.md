@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：图像集成上完成独立HSE A最小资格
+
+- 只普通合入`d307bb92`正确性，四份代码／测试逐blob保持；B历史扫描和C ready优先不合入，source先行、FIFO、CLI默认及其他379生产文件保持。
+- 固定`45da0a54`完成[独立A-only实际资格](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)：Ray5项＋真实Daft/Arrow数据适配1项通过、0跳过，179 Git输入核验；其Ray输送为替身，CPU模拟model不当CUDA完成证明。
+- 本地63项62通过／1固定依赖跳过另列；实际复用两个driver、无安装／模型／GPU／HTTP。12fixture actor、27自有子进程与controller出生身份退出确认，共同lease释放，原件及预期错误通知保留。
+- 不改native测量源码、main文档候选或新Daft/Ray owner的公共runtime区域；仅补受影响正确性，不重做历史矩阵或新增性能结论。
+
 ## 2026-10-14：整合固定 JPEG 文件源与实际 SDK 证据
 
 - 图像来源 `2f116d4a` 在固定集成候选 `964e70ef` 完成[三项实际 SDK 检查](experiments/results/diagnostics/image_file_sdk_20261014/README.md)，0 失败／0 跳过；66 个 Git 依赖逐字节一致，测量后生产源码及测试未改。

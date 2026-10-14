@@ -1,0 +1,430 @@
+{
+  "schema": "semloom.hse_static_correctness_qualification.v1",
+  "measured_source": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+  "A_source": "d307bb9265a32e516052f3bea7d8206f8906c288",
+  "image_base": "1b90c1ea39e12c9fff2e2265aae003e25aa9d618",
+  "B_C_included": false,
+  "source_sha256": {
+    "code/src/modalities/image/staged_execution.py": "3ab5621fcc375f719075a91a339783dbac0569bc14c3a51ea59324b714230c4d",
+    "code/src/scheduling/runtime/stage_broker.py": "a5fc7cd65eaf3603ff59d34f06875d51f0486ab76f50dbfeca1275af1f01a92e",
+    "code/tests/modalities/image/test_hse_static_ray.py": "e363fe411099f32c41ece68c25102a30419b17ccf79d4c38f561583ec3b973dc",
+    "code/tests/modalities/image/test_hse_static_lifecycle.py": "5931cc2e1418df73ca7c7c21f6c74d8f3e23694225bc9a0a8c63f4a335d9ef2a",
+    "code/tests/scheduling/test_stage_broker.py": "b979edd300c26fa46781489bb394101c61fcddd2f0d969344b7567fdea23761f"
+  },
+  "git_inputs_verified": 179,
+  "local": {
+    "source_commit": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+    "modules": [
+      "tests.modalities.image.test_hse_static_lifecycle",
+      "tests.scheduling.test_stage_broker",
+      "tests.modalities.image.test_staged_image_execution",
+      "tests.modalities.image.test_staged_image_blocks",
+      "tests.modalities.image.test_incremental_image_backend",
+      "tests.execution_provider.test_map_preparation"
+    ],
+    "tests_run": 63,
+    "passed": 62,
+    "skipped": [
+      {
+        "test": "test_actual_batch_adapters_keep_merged_row_identity_and_buffers (tests.execution_provider.test_map_preparation.MapPreparationTests.test_actual_batch_adapters_keep_merged_row_identity_and_buffers)",
+        "reason": "Daft and Arrow are required for actual prepared batches"
+      }
+    ],
+    "failures": [],
+    "errors": [],
+    "elapsed_s": 0.0963164169806987,
+    "log_sha256": "67b1ee8cf2cae38c9171b5c25ad7269e6139031c54d1609df2a5af902d6e6cef",
+    "actual_Ray_SDK_run": false,
+    "server_model_GPU": false
+  },
+  "actual_Ray": {
+    "cleanup_incidents": [],
+    "cleanup_unconfirmed": false,
+    "diagnostic_errors": [],
+    "errors": 0,
+    "failures": 0,
+    "passed": 5,
+    "skipped": 0,
+    "successful": true,
+    "tests_run": 5
+  },
+  "actual_Ray_versions": {
+    "python": "3.12.3",
+    "numpy": "1.26.4",
+    "pyarrow": "16.1.0",
+    "psutil": "7.0.0",
+    "ray": "2.56.1"
+  },
+  "actual_shared_data_adapter": {
+    "tests_run": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "versions": {
+      "numpy": "1.26.4",
+      "pyarrow": "24.0.0",
+      "daft": "0.7.21",
+      "ray": "2.56.1",
+      "psutil": "7.2.2"
+    },
+    "scope": "real Daft/Arrow tables with fake Ray transport; no HTTP/model/GPU"
+  },
+  "actual_cases": [
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 1,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 1,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 48,
+          "ready_held_work": 4,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_failed_confirmation_retains_unknown_and_blocks_reuse",
+      "created_handles": 3,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "dict"
+      ],
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "known_identities": 3
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_model_error_confirms_serial_model_fence_before_release",
+      "created_handles": 2,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "dict"
+      ],
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "known_identities": 2
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 3,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 0,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_multi_return_dependency_and_tail_batch",
+      "created_handles": 3,
+      "driver_get_types": [
+        "StageBlockDescriptor",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult",
+        "ImageEmbeddingResult",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult"
+      ],
+      "events": [],
+      "known_identities": 3
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_prepare_error_confirms_actor_before_release",
+      "created_handles": 2,
+      "driver_get_types": [
+        "dict"
+      ],
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "known_identities": 2
+    },
+    {
+      "actor_exit_confirmed": true,
+      "broker_snapshots": [
+        {
+          "completed": 0,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 1,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        },
+        {
+          "completed": 1,
+          "encoded_bytes_limit": 6,
+          "encoded_held_bytes": 0,
+          "encoded_queued": 0,
+          "failed": 0,
+          "model_inflight": 0,
+          "prepare_inflight": 0,
+          "ready_bytes_limit": 192,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "ready_queued": 0,
+          "ready_work_limit": 16
+        }
+      ],
+      "case": "tests.modalities.image.test_hse_static_ray.HSEStaticActualRayTests.test_real_submit_ack_loss_uses_ordered_actor_fence",
+      "created_handles": 2,
+      "driver_get_types": [
+        "dict",
+        "StageBlockDescriptor",
+        "ImageEmbeddingResult"
+      ],
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "known_identities": 2
+    }
+  ],
+  "started_utc": "2026-10-14T07:26:44.382326+00:00",
+  "finished_utc": "2026-10-14T07:27:31.694777+00:00",
+  "controller_execution_s": 47.312451124191284,
+  "unittest_Ray_s": 36.762,
+  "unittest_shared_data_s": 3.078,
+  "resources": {
+    "Ray_cpus": 4,
+    "Ray_gpus": 0,
+    "object_store_bytes": 536870912,
+    "simultaneous_actors_max": 3,
+    "actor_restarts": 0,
+    "actor_task_retries": 0,
+    "OS_CPU_quota": "not_enforced_by_Ray_slots",
+    "total_RSS_limit": "not_measured_or_enforced"
+  },
+  "exit_proof": {
+    "fixture_actors": 12,
+    "actor_PID_birth_exits_confirmed": true,
+    "owned_child_PID_birth_pairs": 27,
+    "child_survivors": [],
+    "controller_live": false,
+    "own_lease_held": false,
+    "postcheck_utc": "2026-10-14T07:32:32.055281+00:00",
+    "no_forced_cleanup": true
+  },
+  "fixture_expected_actor_error_notices": 2,
+  "model_GPU_HTTP_calls": 0,
+  "dependencies_installed": 0,
+  "warmup": "none; correctness checks, no performance comparison",
+  "timeouts": {
+    "healthy_overall_s": null,
+    "operation_no_completion_s": 60,
+    "abort_confirmation_s": 30,
+    "actor_exit_confirmation_s": 30
+  },
+  "combined_ABC_evidence": "f735fa6a7f223ff55addd69c69907ffaabcf722e; separate five-case run, never relabelled as A-only",
+  "raw_private_archive": {
+    "members": 320,
+    "bytes": 599251,
+    "sha256": "5e0d58c93808108aba6871ca10e806684a1eb97b44795d2c0506577e8a92ea52"
+  },
+  "public_archive": {
+    "path": "raw/integration-a-sdk.tar.gz",
+    "bytes": 21106,
+    "sha256": "17b1f8ad42af63b01a6ed0961e248da59c52861400bbdc8618d908376cb2ee4f",
+    "members": 19,
+    "member_mapping": [
+      {
+        "member": "run/status.json",
+        "original_bytes": 1097,
+        "original_sha256": "5da8445d000a4b2361328416c58924c18b3b7ad6ace836dbf52a43f1f0f97592",
+        "retained_bytes": 1106,
+        "retained_sha256": "36bc00823dacb6083368db8391dcc2d43f89bbb39c1cc4af1fb3825e93518fcd"
+      },
+      {
+        "member": "run/test_result.json",
+        "original_bytes": 192,
+        "original_sha256": "8bb0dc8476f8c7fa20fbdcbab362ea1303553a8adc4aef197182d7ed5c491711",
+        "retained_bytes": 192,
+        "retained_sha256": "8bb0dc8476f8c7fa20fbdcbab362ea1303553a8adc4aef197182d7ed5c491711"
+      },
+      {
+        "member": "run/shared_result.json",
+        "original_bytes": 305,
+        "original_sha256": "8563daedcfca50e635de7ada4261db57fa7654728f0b5b2b0a227c715b62f188",
+        "retained_bytes": 305,
+        "retained_sha256": "8563daedcfca50e635de7ada4261db57fa7654728f0b5b2b0a227c715b62f188"
+      },
+      {
+        "member": "run/case_observations.json",
+        "original_bytes": 4383,
+        "original_sha256": "09187e88410426895d5ca7a8cdcceb0372b4c0c28c0feca26663d767ea18762d",
+        "retained_bytes": 4383,
+        "retained_sha256": "09187e88410426895d5ca7a8cdcceb0372b4c0c28c0feca26663d767ea18762d"
+      },
+      {
+        "member": "run/actor_identities.json",
+        "original_bytes": 3172,
+        "original_sha256": "25b93c7e0ebf0d69394c9172dfdeb28eca37947f6c87157d40543b6f725ffe20",
+        "retained_bytes": 2839,
+        "retained_sha256": "23e1d70dc52e311336683153b0dc3b8144664faa7ae8bdd81884bef08b71ed9c"
+      },
+      {
+        "member": "run/owned_processes.json",
+        "original_bytes": 4362,
+        "original_sha256": "99cfc167be5640c6306b3f06292fd475f5a444df35841cfada528539fefc55a4",
+        "retained_bytes": 4222,
+        "retained_sha256": "4e784ba9f9d84165032f8c12bb4e56cb8cc224327afe58f1421d192d65638268"
+      },
+      {
+        "member": "run/versions.json",
+        "original_bytes": 828,
+        "original_sha256": "a33838c7c2d9fafc7dafb1ddfb53e5bef61ab1dd5c08679231b69c112a2c10b4",
+        "retained_bytes": 709,
+        "retained_sha256": "439904cd8a5ce1a1edc8fdbbdeac158adde8de36778558ca3410d62a7e7c5787"
+      },
+      {
+        "member": "run/preflight.json",
+        "original_bytes": 3641,
+        "original_sha256": "b03528c1fc28b705d92b47efebac6773d2772ff02d1ed8f812a29d54bf7ff05e",
+        "retained_bytes": 3476,
+        "retained_sha256": "6e243349098d9e53ce9b3908d52a5fd17ae0d194bb82efc061792f3fb1cceb14"
+      },
+      {
+        "member": "run/shared_preflight.json",
+        "original_bytes": 3850,
+        "original_sha256": "381d04a75c86a841fc45a0d0507a3fed0444c01c5f63c64cad5ae9a23b3be0f1",
+        "retained_bytes": 3685,
+        "retained_sha256": "85d626f807d87f4aba0cbf80bfd3cbc4361bcab7a1aeff884e4546ba123c2e64"
+      },
+      {
+        "member": "run/independent-postcheck.json",
+        "original_bytes": 207,
+        "original_sha256": "d38669e61c6c60e41661e6e55a30fa35ed3b81b54935fd86138f940967566b12",
+        "retained_bytes": 207,
+        "retained_sha256": "d38669e61c6c60e41661e6e55a30fa35ed3b81b54935fd86138f940967566b12"
+      },
+      {
+        "member": "run/tests.stderr.log",
+        "original_bytes": 2434,
+        "original_sha256": "28380135cd141dc8ecfb5f51c01a04fe5e341c108c6a068f4c2c9081ba0d8d3c",
+        "retained_bytes": 2276,
+        "retained_sha256": "86d839fdb9131ca40a9058c379635f9f1ae0a2707f1f28488fc25ec7151d3b5b"
+      },
+      {
+        "member": "run/shared.stderr.log",
+        "original_bytes": 300,
+        "original_sha256": "fc6d6fbd5bec88545fd41fdb804c84bfeb98653dd2f3f014d93cd88359b8c61d",
+        "retained_bytes": 300,
+        "retained_sha256": "fc6d6fbd5bec88545fd41fdb804c84bfeb98653dd2f3f014d93cd88359b8c61d"
+      },
+      {
+        "member": "controller.py",
+        "original_bytes": 10215,
+        "original_sha256": "ee8a04e538244f0cf3aa66c833404e7ffcbfc7d77abfd369900b3caa4a8e9d2e",
+        "retained_bytes": 10161,
+        "retained_sha256": "a49cfeffd469cea01a8854f540c0c9e3324b13236483813f4543708262def242"
+      },
+      {
+        "member": "run_fixture.py",
+        "original_bytes": 4105,
+        "original_sha256": "4fe09fa51fc18c80c350b593dd2affab43a5783e0df17bf6278eb6c415bbb2b2",
+        "retained_bytes": 4105,
+        "retained_sha256": "4fe09fa51fc18c80c350b593dd2affab43a5783e0df17bf6278eb6c415bbb2b2"
+      },
+      {
+        "member": "run_shared_preparation.py",
+        "original_bytes": 1561,
+        "original_sha256": "af42737a98debb139ac2f657d80c0a98f7b09da1e896bc677295d986384baeb1",
+        "retained_bytes": 1561,
+        "retained_sha256": "af42737a98debb139ac2f657d80c0a98f7b09da1e896bc677295d986384baeb1"
+      },
+      {
+        "member": "package/ray_package_manifest.json",
+        "original_bytes": 31995,
+        "original_sha256": "621edfac9a5f7e381a7f4d66e7425c855090e06a8cf31cee0f13dc3530571fee",
+        "retained_bytes": 31995,
+        "retained_sha256": "621edfac9a5f7e381a7f4d66e7425c855090e06a8cf31cee0f13dc3530571fee"
+      },
+      {
+        "member": "local/local-tests.json",
+        "original_bytes": 977,
+        "original_sha256": "a27c2de381ea1ca2208e49706d46372e35f5bd022d8688f4d45aed30fcb701a2",
+        "retained_bytes": 977,
+        "retained_sha256": "a27c2de381ea1ca2208e49706d46372e35f5bd022d8688f4d45aed30fcb701a2"
+      },
+      {
+        "member": "local/local-tests.log",
+        "original_bytes": 12696,
+        "original_sha256": "67b1ee8cf2cae38c9171b5c25ad7269e6139031c54d1609df2a5af902d6e6cef",
+        "retained_bytes": 12696,
+        "retained_sha256": "67b1ee8cf2cae38c9171b5c25ad7269e6139031c54d1609df2a5af902d6e6cef"
+      },
+      {
+        "member": "local/readonly-probe-first-failure.json",
+        "original_bytes": 276,
+        "original_sha256": "a6df62301ecb3180a8c98461eccb6cb81e1ccdb0c3533d8b2b972bbd0a6e3ef6",
+        "retained_bytes": 276,
+        "retained_sha256": "a6df62301ecb3180a8c98461eccb6cb81e1ccdb0c3533d8b2b972bbd0a6e3ef6"
+      }
+    ]
+  },
+  "not_qualified": [
+    "CUDA/device completion and exit",
+    "CLIP quality/performance",
+    "full CLI/pool factory/sampler process-tree stop",
+    "total RSS/pinned/device memory bound",
+    "B or C performance/default enablement",
+    "PG or Daft source integration"
+  ]
+}

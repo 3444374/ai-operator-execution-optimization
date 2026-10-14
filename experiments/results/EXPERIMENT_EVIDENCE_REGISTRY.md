@@ -18,6 +18,9 @@ Python协议／localhost fixture与真实Arrow复制原语分别验证；
 保留6项Ray故障SHM清理的原始非clean记录；只支持同步内核与有限原SDK消费，不替代原规模模型／PG或async组合。
 2026-10-14：[HSE A集成检查](diagnostics/hse_static_lifecycle_20261014/README.md)：29项定向CPU／受控Ray替身通过，
 A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要；原47f完整CPU成本与失败证据独立保留，不提供A实库／GPU资格。
+接续[独立45da A-only资格](diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
+5项实际Ray和1项真实Daft/Arrow准备数据适配通过、0跳过；源码、两环境与27进程／controller／lease退出另记，模型／GPU／HTTP0。
+原ABC五项保留原source；本轮CPU synchronize不增加CUDA、CLIP性能或完整CLI资格。
 
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
