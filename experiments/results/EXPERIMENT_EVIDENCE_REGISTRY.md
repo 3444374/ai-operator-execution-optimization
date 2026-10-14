@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[原生参数与HTTP活动核查](postgresql/native_executor_baselines_20261012/README.md#native-http-activity)。
+本地配置、原生图替身及HTTP／事件循环责任检查与实际厂商图分开记录；没有新增模型、服务器或GPU执行。
+
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
 旧实现12组后窗口反例已复现；修后显式预检零flow／零发送，默认分块的合法前缀及未消费责任保留。该本地轮SDK／HTTP／服务器／模型均0。

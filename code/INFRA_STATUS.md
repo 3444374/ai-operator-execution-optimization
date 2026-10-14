@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[原生HTTP活动核查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)
+补齐Ray行数包络／活跃HTTP上界／导入B及既有实测峰值口径；Daft与Ray校验仅用于所选后端。
+IMLane／Ray Core C1的公共接入检查通过，作者实库及实际Daft／Ray活动验证分别待完成。
+
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
 本地定向66项，31通过／35固定SDK或缺依赖跳过；随后[固定1afa受影响SDK资格](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#lotus-text-sdk-preflight)6项通过、0跳过，13localhost POST、模型／GPU0。

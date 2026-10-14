@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：补齐原生HTTP并发证据与所选后端检查
+
+- Ray关闭报告区分行数包络、活跃HTTP上界及声明／导入异步批次数；复用已有统一代理峰值，不改作者图或请求调度。
+- 公共配置的跨后端耦合已复现并修补；Daft C≥2与Ray Data包络检查移到选中后端入口，IMLane／Ray Core C1不再被无关参数拒绝。
+- Daft子代理补充独立活动及双事件循环客户端检查，保持batch1／C−1。验证、失败和实库缺项集中在[既有报告](experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)，不把软件替身写成厂商供给或性能结论。
+
 ## 2026-10-13：集成文本预检最小实际SDK资格
 
 - 固定完整执行SHA`1afa8e325278077a846180997e2db75275631a89`，独立owner复用原driver与共同host lease，6项受影响SDK检查全部通过／0跳过，13localhost POST，模型／GPU0。

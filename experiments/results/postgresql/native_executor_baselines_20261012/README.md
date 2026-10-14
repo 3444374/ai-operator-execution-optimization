@@ -1,5 +1,25 @@
 # 三种原方法的原生执行接入
 
+<a id="native-http-activity"></a>
+## 原生参数与HTTP活动核查
+
+2026-10-14基于`integration/baselines@8862c813`补充[参数口径](../../../../code/src/baselines/README.md)：
+Ray Data分别记录声明B、导入B、行数包络及活跃HTTP上界，实际峰值沿用统一代理的逐请求区间。
+公共配置构造不再把Daft C≥2及Ray包络检查施加到IMLane／Ray Core；选中后端的额度检查保留。
+原实现4组不合理拒绝已复现，修后IMLane／Ray Core C1、Daft C2及Ray Data C1的对应检查通过；
+IMLane只核公共接入及作者调用桥替身，不增加作者实库C1资格。
+受影响本地检查合计79项，74通过、5缺实际库或未启用实际图检查而跳过。
+两项新增Ray批次循环检查单次28localhost POST，1／4／4峰值随批次数而非批内行数变化；
+该循环为明确替身，不作为Ray actor调度实测。首次沙箱socket错误与随后获准检查分别保留。
+[Daft独立检查](../../../../code/tests/baselines/test_native_daft_activity.py)新增双live loop客户端责任回归，
+实际Daft的24调用活动用例及Ray三种图配置、新进程导入检查仍待具备固定依赖的本地软件窗口。
+本次未占服务器／GPU或调用模型；Daft batch1／C−1、Ray官方图与各运行预算保持。
+原件运行标识为`native-concurrency-local-20261014`，由本任务保管，可按该标识向项目维护者取得
+`native-concurrency-local-20261014.tar.gz`；SHA-256为`62d1acead648b095018a043c388c3dcc09ca5bb9a6b619e0d0af4979a8d82668`。
+存档的`checks.json`记录6份实现／测试源码摘要及逐成员字节／摘要：`shared-configuration-final.log`对应57通过／1跳过，
+`http-and-lifecycle-final.log`对应16通过，`daft-ray-activity-final.log`对应1通过／4跳过；三组不重叠。
+四份`http-fixtures/`记录28POST及峰值，首次socket错误、跨后端错误复现和两项活动重验的日志另列，重复运行不相加。
+
 <a id="duckdb-paths-20261013"></a>
 ## DuckDB六路径源码、实库与公开SQL检查
 

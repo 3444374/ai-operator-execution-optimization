@@ -149,6 +149,7 @@ IMLane UDF的容量/身份等执行错误另存`execution_error`，不会重放�
 完整批次输入与返回均有编码字节额度，不将这些额度解释为RSS。
 Daft连接按查询和实际异步loop拥有及关闭；Ray Data沿原HTTP stage的批次session_factory复用，
 默认batch_rows=1不代表跨批次复用。实际厂商图参数与声明C分别进入关闭报告，C不表示观测并发。
+Ray行数包络、活跃HTTP上界、导入生效值及统一代理实测口径见[公共参数说明](../../baselines/README.md)。
 没有新增统一请求池或SemLoom准入策略；客户端连接器不再另设并发额度。
 
 两种批次入口接受可选`call_limits=LotusCallLimits(...)`；它声明请求字节、完整HTTP响应字节、
