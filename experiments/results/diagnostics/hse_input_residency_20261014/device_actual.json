@@ -1,0 +1,3244 @@
+{
+  "cuda_event_semantics": "device-stream elapsed intervals include allocation/conversion/launch gaps; not bus counters or compute utilization",
+  "final_physical_exit": {
+    "checked_utc": "2026-10-14T09:26:48.871906+00:00",
+    "confirmed": true,
+    "gpu_compute": [],
+    "survivors": []
+  },
+  "finished_utc": "2026-10-14T09:26:48.890055+00:00",
+  "first_failed_attempt": {
+    "error": "TypeError: dict() got multiple values for keyword argument 'CUDA_VISIBLE_DEVICES'",
+    "host_lease_released": true,
+    "model_images": 0,
+    "physical_exit": {
+      "checked_utc": "2026-10-14T09:11:55.558580+00:00",
+      "confirmed": true,
+      "gpu_compute": [],
+      "survivors": []
+    },
+    "status": "failed_or_unconfirmed",
+    "subprocesses_started": 0
+  },
+  "future_two_gpu": {
+    "direct_transfer_implemented": false,
+    "directional_peer_access": [],
+    "fallback": "host_reload_on_destination",
+    "status": "pending",
+    "visible_cuda_devices": 1
+  },
+  "host_lease_released": true,
+  "identity": "internal_single_gpu_clip_input_residency_diagnostic",
+  "known_measured_trace_issue": "9f top-level host_ownership_copy_bytes predicts readonly copy on hits; use input_reuse_observation actual bytes",
+  "machine": {
+    "cpu_quota_cores": 16,
+    "daft": "0.7.21",
+    "driver_python": "3.12.3",
+    "gpu_memory_total_mib": 24564,
+    "gpu_name": "NVIDIA GeForce RTX 4090",
+    "numpy": "2.4.6",
+    "pyarrow": "24.0.0",
+    "torchvision": "0.27.1+cu130",
+    "versions": {
+      "ray": "2.56.1",
+      "torch": "2.12.1+cu130",
+      "transformers": "5.14.1"
+    },
+    "visible_gpus": 1
+  },
+  "measured_source": {
+    "base_cli_sha256": "f8c8681a7d4646d71ac313bf05fd90ebbc734db014ea0c0de8c891295e026539",
+    "base_image_git_commit": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+    "clip_diff_from_base": "input conversion extracted verbatim to _device_input; complete forward/result preserved",
+    "controller_sha256": "8abe5baaf29d3a610a6066b8d24de5ec3be32944f91372f13ee1d16e4f3a44a9",
+    "overlay_files": [
+      {
+        "path": "code/src/data/materializers/__init__.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "b212603a5c5f8fbaba9dca4243d9a7df8a1fb90a02431d3115ad6ba179d8fb71"
+      },
+      {
+        "path": "code/src/data/materializers/prepared_assets.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "13ee281a5dfdd46737fd2b75a7caa1fa78d0dd38158da1055cadbbc1ba6590c0"
+      },
+      {
+        "path": "code/src/modalities/image/clip.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "c73d369835b3d1034d37350317fca55ee52cf28c8a675db2a40a3ae99d872cb9"
+      },
+      {
+        "path": "code/src/modalities/image/input_residency.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "5c9dcfdc6a47ebe50390e8710e2377c636cf97465f783f84733321c081bded6c"
+      },
+      {
+        "path": "code/src/modalities/image/reusable_clip.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "d0408a67d739c667a17a7121fa8c7dd31977acf92a6a01130882ff25cdf3a694"
+      },
+      {
+        "path": "code/scripts/profiling/validate_clip_input_residency.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "980bd458514fd922b961d4180ec453bac50f250573c6195cc7b0bc2ce1671718"
+      },
+      {
+        "path": "code/tests/modalities/image/test_input_residency.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "dc0082420291d517ac7c6181caa0f61302cc94c23b6d56e3b04ecfa5798f876b"
+      },
+      {
+        "path": "code/tests/modalities/image/test_reusable_clip.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "76f419eda8a001570c9a3fdca30c641442b8e617bc609d72379be6a9f91937b3"
+      },
+      {
+        "path": "code/tests/modalities/image/test_clip_input_residency_validation.py",
+        "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "sha256": "f34ab2199d43c80d58c0adb6a207efe199df2b419bdb27c775b44fdbf3e886a2"
+      }
+    ],
+    "post_measurement_tool_copy_label_fix": "local fixture validated separately; not claimed as GPU-measured source",
+    "residency_git_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567"
+  },
+  "memory_semantics": "logical cache bytes, Torch allocator peaks and sampled NVML device totals are distinct",
+  "model_images": {
+    "cap": 83000,
+    "cli_formal_plus_warmup": 80640,
+    "qualification": 704
+  },
+  "operator_time_semantics": "original worker_setup_s + pipeline.total_s; other finalization and invocation wall separate",
+  "primary_pairs": [
+    {
+      "dataset_passes": 1,
+      "mean_on_vs_off_percent": 2.4599049521846883,
+      "off_mean_s": 21.239018424181268,
+      "off_s": [
+        21.057897271122783,
+        21.420139577239752
+      ],
+      "on_mean_s": 21.761478090193123,
+      "on_s": [
+        21.80244592903182,
+        21.720510251354426
+      ],
+      "rounded5_row_id_digest_matches": true
+    },
+    {
+      "dataset_passes": 2,
+      "mean_on_vs_off_percent": 5.619117585788169,
+      "off_mean_s": 30.119199506472796,
+      "off_s": [
+        29.8006678102538,
+        30.437731202691793
+      ],
+      "on_mean_s": 31.81163274263963,
+      "on_s": [
+        31.28735715802759,
+        32.33590832725167
+      ],
+      "rounded5_row_id_digest_matches": true
+    }
+  ],
+  "provenance": {
+    "dataset": {
+      "dataset_passes": [
+        1,
+        2
+      ],
+      "full_manifest_sha256": "762710a19f608dd290b02f68537195bc08731fa661149ec723e7789aa65ccec2",
+      "name": "COCO val2017 JPEG files",
+      "qualification_selection": "fixed manifest first 64 entries",
+      "unique_images": 5000
+    },
+    "evidence_members": [
+      {
+        "member": "attempt1/controller.stderr.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt1/controller.stdout.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt1/owned-processes.json",
+        "normalization": true,
+        "original_bytes": 165,
+        "original_sha256": "2349c2b31d9ea10a0d4e2daa199987fbf2deb0684aeb59eda84dfddc31fc5c10",
+        "public_bytes": 165,
+        "public_sha256": "2349c2b31d9ea10a0d4e2daa199987fbf2deb0684aeb59eda84dfddc31fc5c10"
+      },
+      {
+        "member": "attempt1/status.json",
+        "normalization": true,
+        "original_bytes": 820,
+        "original_sha256": "db6af2bacb97d1a8cd2a26f8103afcc9522457bc9fd81f22e5f945828a67e656",
+        "public_bytes": 820,
+        "public_sha256": "db6af2bacb97d1a8cd2a26f8103afcc9522457bc9fd81f22e5f945828a67e656"
+      },
+      {
+        "member": "attempt2/controller.stderr.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/controller.stdout.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/diagnostic/09_passes2_off_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2471,
+        "original_sha256": "8c71d3a4f3ce665d6c2b5e7d8c48521181a29a72df4597d6ab587ee438705897",
+        "public_bytes": 2027,
+        "public_sha256": "0dabb69c1ac0d8093383ae347de2269e077d6aa0c282a74606daccd54985d6de"
+      },
+      {
+        "member": "attempt2/diagnostic/09_passes2_off_r1.json",
+        "normalization": true,
+        "original_bytes": 19606,
+        "original_sha256": "2995fa997d11323a1bde65ad1d7d649b9b118ce9ba27d769ae0e704dc927b759",
+        "public_bytes": 19540,
+        "public_sha256": "8416bca4e436d1b6461d87ed8f52b643dca59253f8814de8c5338c69c28879a5"
+      },
+      {
+        "member": "attempt2/diagnostic/09_passes2_off_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 167618,
+        "original_sha256": "19e5ffe67163dfda7d888f99a73edc6921d6b302e6f3a169b1ddfe69ad208cde",
+        "public_bytes": 167105,
+        "public_sha256": "ff792be9984f8426a58e34ece1bf54c1d6ff66d819e88f6a2d16710eee14231f"
+      },
+      {
+        "member": "attempt2/diagnostic/09_passes2_off_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 629,
+        "original_sha256": "f95fed0efee01f8602b0ae2adc9d720f2be8cdb3de1e1df39805ead87cb9fb89",
+        "public_bytes": 629,
+        "public_sha256": "f95fed0efee01f8602b0ae2adc9d720f2be8cdb3de1e1df39805ead87cb9fb89"
+      },
+      {
+        "member": "attempt2/diagnostic/09_passes2_off_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17908,
+        "original_sha256": "66ed734dda8c740a37d0c7901174fd7bf598d6adf50a35fd1b591dd63c1db642",
+        "public_bytes": 17842,
+        "public_sha256": "d33ffe211ca7d6ce88e5a6d80cdc4f7e062b762958120f67a6b0ddb706fd10ea"
+      },
+      {
+        "member": "attempt2/diagnostic/10_passes2_on_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2476,
+        "original_sha256": "f01220477de3d5b8a9f864ae8f7804883e0f664340be4818fdd9c878cd622b38",
+        "public_bytes": 2032,
+        "public_sha256": "0606de616aee5ebc611d83686c316fc8f85f00889259d868673cd831f8c5ce39"
+      },
+      {
+        "member": "attempt2/diagnostic/10_passes2_on_r1.json",
+        "normalization": true,
+        "original_bytes": 19624,
+        "original_sha256": "903ea16727e41858ee7e8aa29b519c74234e92654dea44c8487066e76f0a01d9",
+        "public_bytes": 19558,
+        "public_sha256": "4efdf28c27ee51fc5ba60925c3306351f289b71b1101c4175468dbbb52805e63"
+      },
+      {
+        "member": "attempt2/diagnostic/10_passes2_on_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 347228,
+        "original_sha256": "9d6cfdca9135be4fc5d17a450e6e9cfc6b1612c93ee517b23b2a2424f13ab609",
+        "public_bytes": 340412,
+        "public_sha256": "8e24ebc3a40faf49950dacc4580bb28203901822226280736df052db1e44594f"
+      },
+      {
+        "member": "attempt2/diagnostic/10_passes2_on_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 629,
+        "original_sha256": "ef4765205690b3fc4f80f10a6ec841b9dbb5a96f1903a924a2a7128b72bb61be",
+        "public_bytes": 629,
+        "public_sha256": "ef4765205690b3fc4f80f10a6ec841b9dbb5a96f1903a924a2a7128b72bb61be"
+      },
+      {
+        "member": "attempt2/diagnostic/10_passes2_on_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17926,
+        "original_sha256": "18f52b57ae1b2a38d5132faac99a048e9a451da219b3d1aec879d519051d2f9b",
+        "public_bytes": 17860,
+        "public_sha256": "1c70c4b87b06950627c9a7829cce7df199db5dad7c412f006df80425bb413c4d"
+      },
+      {
+        "member": "attempt2/diagnostic/runs.csv",
+        "normalization": true,
+        "original_bytes": 10756,
+        "original_sha256": "03d7ea75afae4b7572d69959fb4ae75acfc145a7b10bd70554cfa9199613356b",
+        "public_bytes": 10624,
+        "public_sha256": "6e6c28ae852a109ee10049b0a37b2305992669b3908d6c90d6fb06abcb9c2f8d"
+      },
+      {
+        "member": "attempt2/owned-processes.json",
+        "normalization": true,
+        "original_bytes": 89151,
+        "original_sha256": "2fca141f10fde99ea8aa59082d998e078e46fe0d3975d19119ef5e2d44bc8b07",
+        "public_bytes": 69771,
+        "public_sha256": "366b50225694b8b13096d4985f75a781bfd4c999ccad7ec45d95fad4783cc38e"
+      },
+      {
+        "member": "attempt2/preparation/model-files.exit.json",
+        "normalization": true,
+        "original_bytes": 633,
+        "original_sha256": "1564edcd50add12ff9c0378f5f67dcc72646e7887e2ae7fdc5e4fbad4624a8de",
+        "public_bytes": 534,
+        "public_sha256": "2274f978ddf265af4370f1a1210ffe87d5c18010763c9d84f422c391098161f0"
+      },
+      {
+        "member": "attempt2/preparation/model-files.sha256",
+        "normalization": true,
+        "original_bytes": 391,
+        "original_sha256": "653ed9f9ccf39aa5acd85b84bbac502b36baadcbf4d075f3168e2d0e798a05d3",
+        "public_bytes": 292,
+        "public_sha256": "95497970ad15dc2dd6633ce81d4e2953818de4410214bd3105f8e176254a1ce7"
+      },
+      {
+        "member": "attempt2/preparation/model-files.stderr.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/preparation/preflight.json",
+        "normalization": true,
+        "original_bytes": 4556,
+        "original_sha256": "4a26279640199142125f432279f51b98b9933a29114b6157e93d3038eed85515",
+        "public_bytes": 4338,
+        "public_sha256": "019e0a8213c8d6e7a0ac662fd8da0de085c992b1187fc66e6dfe9aa57b6953c3"
+      },
+      {
+        "member": "attempt2/preparation/preflight.stderr.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/preparation/preflight.stdout.exit.json",
+        "normalization": true,
+        "original_bytes": 1100,
+        "original_sha256": "6eca02da6cfe94f4e874307ea8e36f2fde1c51c7521415665b706618b6b3ecc3",
+        "public_bytes": 836,
+        "public_sha256": "03ed9f3060039e97fa954f856d0a584cd2fbf274249b44193862d6d08c49cfa5"
+      },
+      {
+        "member": "attempt2/preparation/preflight.stdout.log",
+        "normalization": true,
+        "original_bytes": 4556,
+        "original_sha256": "4a26279640199142125f432279f51b98b9933a29114b6157e93d3038eed85515",
+        "public_bytes": 4338,
+        "public_sha256": "019e0a8213c8d6e7a0ac662fd8da0de085c992b1187fc66e6dfe9aa57b6953c3"
+      },
+      {
+        "member": "attempt2/primary/01_passes1_off_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2440,
+        "original_sha256": "9cb5e925aee3269da0e5f1218459569066d8bbbd1ee3d60298f65911e4de7fd7",
+        "public_bytes": 1996,
+        "public_sha256": "8e90cb2a341ea3ff0f7deb9878a7231b910e41bcc87a241f668b1b911f9a9ad7"
+      },
+      {
+        "member": "attempt2/primary/01_passes1_off_r1.json",
+        "normalization": true,
+        "original_bytes": 19604,
+        "original_sha256": "e6e666838ed54f054e1d18767c7cd75b4f744d617bff2bc30abd8812e14e09fe",
+        "public_bytes": 19538,
+        "public_sha256": "ea4f6cc8e2f65bb4d8d21f63cc812eb4d2293937d03678fbc845febc27028b29"
+      },
+      {
+        "member": "attempt2/primary/01_passes1_off_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 75547,
+        "original_sha256": "c28fd822e7e2bad588c85d3c38e1201ae8b7a95fdcba27736545535db5157d6a",
+        "public_bytes": 75034,
+        "public_sha256": "53b91f0762e07a95b307b744e1777852e395afd2f51ffe25d03ed41baf2b9057"
+      },
+      {
+        "member": "attempt2/primary/01_passes1_off_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 580,
+        "original_sha256": "a205089f8b591713675b91814c75d63df09048ec7548da87c8fe894cc1afcc66",
+        "public_bytes": 580,
+        "public_sha256": "a205089f8b591713675b91814c75d63df09048ec7548da87c8fe894cc1afcc66"
+      },
+      {
+        "member": "attempt2/primary/01_passes1_off_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17906,
+        "original_sha256": "cc9d649879d5d3228807ef4cda93de7d9f52ca7714233055d5d7b4ee50f3fc8c",
+        "public_bytes": 17840,
+        "public_sha256": "25350d14705e778228cdddd3d550f0e251788697ec59d3ac3eb69d27d918853e"
+      },
+      {
+        "member": "attempt2/primary/02_passes1_on_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2446,
+        "original_sha256": "62e32da04bb7201a56b14abe9779691a98e4a7ed1e902a178303c7dd2af5ac61",
+        "public_bytes": 2002,
+        "public_sha256": "b511b863c29a2925a1fd39fc560fd3498867fcca288bbd0f9a9d7d12e1900161"
+      },
+      {
+        "member": "attempt2/primary/02_passes1_on_r1.json",
+        "normalization": true,
+        "original_bytes": 19567,
+        "original_sha256": "d88e4d7b94c653ca192e4c8125dde78566bd2b4f1c4d8a022fa0bb5dbb58d299",
+        "public_bytes": 19501,
+        "public_sha256": "787e6e7044095b5c219ca3859a09895d52f8530d93f9e59018135c09ec24054b"
+      },
+      {
+        "member": "attempt2/primary/02_passes1_on_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 169679,
+        "original_sha256": "20de9b6a61d1f7297b7980dfb741643fd40cb9f140f03150be1c4b12568cd919",
+        "public_bytes": 165800,
+        "public_sha256": "83b24a832d25466f6e435175cb7a93800fb67f3e9be87809e3bfd6b0cb720318"
+      },
+      {
+        "member": "attempt2/primary/02_passes1_on_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 580,
+        "original_sha256": "646b4702c552e125c612b4295a441e456ebf9e48dcb4701fafee62e1d8f45df1",
+        "public_bytes": 580,
+        "public_sha256": "646b4702c552e125c612b4295a441e456ebf9e48dcb4701fafee62e1d8f45df1"
+      },
+      {
+        "member": "attempt2/primary/02_passes1_on_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17869,
+        "original_sha256": "3d61ede8035d2d5f3597bffb442e322560685d47a4852c823e524ce32dbe0265",
+        "public_bytes": 17803,
+        "public_sha256": "7731864b337b0f1fe32838cd7daa08a4c6241940c69658a15c370eeae2f5939e"
+      },
+      {
+        "member": "attempt2/primary/03_passes1_on_r2.exit.json",
+        "normalization": true,
+        "original_bytes": 2446,
+        "original_sha256": "f5b58ada10ee4a4a3a92ed63685f6ea47ed133cf0e3bae559354922f16a6c91a",
+        "public_bytes": 2002,
+        "public_sha256": "04428e915a1edd847602da6a8916f54580aa777b45433826c09c30417c8d283b"
+      },
+      {
+        "member": "attempt2/primary/03_passes1_on_r2.json",
+        "normalization": true,
+        "original_bytes": 19617,
+        "original_sha256": "9144580cce65365a92b4267e4928d270b0e1170d5dfaa23de1996a4d3fd5df21",
+        "public_bytes": 19551,
+        "public_sha256": "aa2b4242ad18fcf695bc162c0042dbc2803f2aaa03417da0ede9ffd009c41327"
+      },
+      {
+        "member": "attempt2/primary/03_passes1_on_r2.observations.json",
+        "normalization": true,
+        "original_bytes": 169556,
+        "original_sha256": "9f1616ad61cc1e001efd5c079175ec6aa828d6784e805cd5b143645eddac0cc4",
+        "public_bytes": 165677,
+        "public_sha256": "18d30652074ba2f89c86a3571754beb4607570d7aa7117cb9c18ac9718984ce8"
+      },
+      {
+        "member": "attempt2/primary/03_passes1_on_r2.stderr.log",
+        "normalization": true,
+        "original_bytes": 580,
+        "original_sha256": "7ce51e44f470ee4eeaa89c92dd8e29c32053bbf8871e4ba0382feccc43f8695d",
+        "public_bytes": 580,
+        "public_sha256": "7ce51e44f470ee4eeaa89c92dd8e29c32053bbf8871e4ba0382feccc43f8695d"
+      },
+      {
+        "member": "attempt2/primary/03_passes1_on_r2.stdout.log",
+        "normalization": true,
+        "original_bytes": 17919,
+        "original_sha256": "36155aaff23198dc65c0d1c1d9cdce32646323ddc75e1373aafb091c035c8b08",
+        "public_bytes": 17853,
+        "public_sha256": "e720b9e5bab82fae607ec0cf1fc0f9a734ce065dc06be7e2d13b40139742c8a5"
+      },
+      {
+        "member": "attempt2/primary/04_passes1_off_r2.exit.json",
+        "normalization": true,
+        "original_bytes": 2441,
+        "original_sha256": "21ed8114e3dbd166fe2bfa879d1280065cdc3cb31eb4e7a598cbc637ba5c7488",
+        "public_bytes": 1997,
+        "public_sha256": "d6aa08c88641ec69b81f4f4d42bf3cbc1cf7aed1db084d365fc265190577880b"
+      },
+      {
+        "member": "attempt2/primary/04_passes1_off_r2.json",
+        "normalization": true,
+        "original_bytes": 19595,
+        "original_sha256": "a7e527a0c0a1f82e5a8f05f39c827dce069db0172d1798f764d18a58b298bd6d",
+        "public_bytes": 19529,
+        "public_sha256": "8a6204927863bc44b8904e917daa8bf6c380d802dc87b382b3ca81f7551a8f2e"
+      },
+      {
+        "member": "attempt2/primary/04_passes1_off_r2.observations.json",
+        "normalization": true,
+        "original_bytes": 75458,
+        "original_sha256": "ce7bea146c495fb90d6a6eada5262a52bcfafb0db30a963ebfb15ae02ee375bb",
+        "public_bytes": 74945,
+        "public_sha256": "0ced21b47d03c9ce428c11858777e15e57a7426ee210a7d54b9bb482220e837a"
+      },
+      {
+        "member": "attempt2/primary/04_passes1_off_r2.stderr.log",
+        "normalization": true,
+        "original_bytes": 580,
+        "original_sha256": "77d48c950611db7ee2a70c3fd5cb8f817691a5a9bfb27f45610e5949cb17e07d",
+        "public_bytes": 580,
+        "public_sha256": "77d48c950611db7ee2a70c3fd5cb8f817691a5a9bfb27f45610e5949cb17e07d"
+      },
+      {
+        "member": "attempt2/primary/04_passes1_off_r2.stdout.log",
+        "normalization": true,
+        "original_bytes": 17897,
+        "original_sha256": "282e20827501c8b875199ae62fa408a27ff0be86eb92472efafe203ad7be0ac7",
+        "public_bytes": 17831,
+        "public_sha256": "c81e087d8eaf930d60565db26a96cdb307377f9a6f670d2a6ad5cfed8da43ae6"
+      },
+      {
+        "member": "attempt2/primary/05_passes2_on_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2446,
+        "original_sha256": "5ce3ca15c96dc8f72cf9ebaeff167210c056fe712140a376effd7af030fd4fa0",
+        "public_bytes": 2002,
+        "public_sha256": "1a6f13b7e01b8e71f9783e67b157d03e29fd12e2933f80d321e24362b97e153a"
+      },
+      {
+        "member": "attempt2/primary/05_passes2_on_r1.json",
+        "normalization": true,
+        "original_bytes": 19599,
+        "original_sha256": "8ba66479ce8ef28f83ae5e465282d662351ea06c3755d58965cf9cf11aaf66f7",
+        "public_bytes": 19533,
+        "public_sha256": "2f0d024182289caea0999d93ead523d7eea0915afe9ab96b5777d5b218852ac6"
+      },
+      {
+        "member": "attempt2/primary/05_passes2_on_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 310178,
+        "original_sha256": "52e43b16903f63cde255dbc024126cac21394fd7cd0775b6825b47409057f832",
+        "public_bytes": 303362,
+        "public_sha256": "61057845005cd0feda7b7e4d9ac0c0dd856441cda84f9002f03b9a72bfc90911"
+      },
+      {
+        "member": "attempt2/primary/05_passes2_on_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 678,
+        "original_sha256": "8768a14a72725fc4213cdc84ba81084a40a38125bcc22863fe0dc5f5c4b300eb",
+        "public_bytes": 678,
+        "public_sha256": "8768a14a72725fc4213cdc84ba81084a40a38125bcc22863fe0dc5f5c4b300eb"
+      },
+      {
+        "member": "attempt2/primary/05_passes2_on_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17901,
+        "original_sha256": "0e710f3b018b1f2d57d93eb8c8843b163e6ec4248821320c5eeecd4b2d588811",
+        "public_bytes": 17835,
+        "public_sha256": "088b912b4f870825b4156b8dd07affd9a6fd11cf3904a41e0038c4dcd3f2adf2"
+      },
+      {
+        "member": "attempt2/primary/06_passes2_off_r1.exit.json",
+        "normalization": true,
+        "original_bytes": 2441,
+        "original_sha256": "2d27ad4e238552b4d3faad982985b77d8bf102ebd234232f8ad97a2dd3d486be",
+        "public_bytes": 1997,
+        "public_sha256": "c7dc0e76cd92de63713282660b6066d515b7a4d09bf467fab20fc642a27225e5"
+      },
+      {
+        "member": "attempt2/primary/06_passes2_off_r1.json",
+        "normalization": true,
+        "original_bytes": 19618,
+        "original_sha256": "91953a8e1279741fafc448772f53da0c993655820020f0ee39b0808ef6317a66",
+        "public_bytes": 19552,
+        "public_sha256": "cc37d207db3c7ae9651677b86c0633e208af0ebf5fd7bbd239fb785b493c8bb0"
+      },
+      {
+        "member": "attempt2/primary/06_passes2_off_r1.observations.json",
+        "normalization": true,
+        "original_bytes": 130449,
+        "original_sha256": "8cd240e90a0ea824cd25a5a4aa1997aabe9c0afd9e8e311daabfb55452e905fd",
+        "public_bytes": 129936,
+        "public_sha256": "76cc9420b2e4728597f7fe2ef3613821d431047485353714a12bffae32fc7fc5"
+      },
+      {
+        "member": "attempt2/primary/06_passes2_off_r1.stderr.log",
+        "normalization": true,
+        "original_bytes": 580,
+        "original_sha256": "4d405af14ff33f60fe2f3b3c782957a4c47f892589fcc38b21a60476258cd8a5",
+        "public_bytes": 580,
+        "public_sha256": "4d405af14ff33f60fe2f3b3c782957a4c47f892589fcc38b21a60476258cd8a5"
+      },
+      {
+        "member": "attempt2/primary/06_passes2_off_r1.stdout.log",
+        "normalization": true,
+        "original_bytes": 17920,
+        "original_sha256": "1f466ccdaec2a099fbccadec1a53a16ceefba47dba2cd067aa63a13886b40a01",
+        "public_bytes": 17854,
+        "public_sha256": "45dd051b9b15ab96f97bbc449b5c1fbaa0281e9a9043b978d26441fef9083667"
+      },
+      {
+        "member": "attempt2/primary/07_passes2_off_r2.exit.json",
+        "normalization": true,
+        "original_bytes": 2441,
+        "original_sha256": "66b96936590ad33344fdf57ba17cd4a3d624d54b42d8cb69d01ea2282e294b41",
+        "public_bytes": 1997,
+        "public_sha256": "97a10a63acb1f8a89ee1d0df129d7991a50bbe28f935c72f8ec541a9cc752235"
+      },
+      {
+        "member": "attempt2/primary/07_passes2_off_r2.json",
+        "normalization": true,
+        "original_bytes": 19603,
+        "original_sha256": "31ec01107834e24444d561aa991e29785f15aa1a4040a17a54c7f7c72e656a5f",
+        "public_bytes": 19537,
+        "public_sha256": "d37455dffec3eed99ed601f2501f21c034bbe689e12a8a6a7abb1a5d8db9e332"
+      },
+      {
+        "member": "attempt2/primary/07_passes2_off_r2.observations.json",
+        "normalization": true,
+        "original_bytes": 130408,
+        "original_sha256": "b4fb90eb48fc0619a3a947407b8dd6e5c616c16ca87367b083abbca1d8729293",
+        "public_bytes": 129895,
+        "public_sha256": "6d3edfe77bfe175ec90a38a4fe062d975c8de9ec0fb6e7518c9640819e78ba04"
+      },
+      {
+        "member": "attempt2/primary/07_passes2_off_r2.stderr.log",
+        "normalization": true,
+        "original_bytes": 629,
+        "original_sha256": "645fd881985f4f22d12f9d1248a15ba7a836e056c1586e1bdae7b326c39f5a49",
+        "public_bytes": 629,
+        "public_sha256": "645fd881985f4f22d12f9d1248a15ba7a836e056c1586e1bdae7b326c39f5a49"
+      },
+      {
+        "member": "attempt2/primary/07_passes2_off_r2.stdout.log",
+        "normalization": true,
+        "original_bytes": 17905,
+        "original_sha256": "5c7f66b73a8733880f2ad4c118856cc1deb60ef1ce26cf6b5dac30bd8f82e979",
+        "public_bytes": 17839,
+        "public_sha256": "62d2d77999cc4dcfd1083f97092172584e036ea36135fdd4e521ef7d34c4d314"
+      },
+      {
+        "member": "attempt2/primary/08_passes2_on_r2.exit.json",
+        "normalization": true,
+        "original_bytes": 2446,
+        "original_sha256": "31d51d812419cde6abc7d03460bcc8aa58509e327919e6fcd515f4955f682412",
+        "public_bytes": 2002,
+        "public_sha256": "613441318083467b15b28b49cd8119354610da39d121b1d45b37547acbee058d"
+      },
+      {
+        "member": "attempt2/primary/08_passes2_on_r2.json",
+        "normalization": true,
+        "original_bytes": 19606,
+        "original_sha256": "6c9807a76a67f0541cfd5ac20e44c0f6556116dbe42dbf498dc4228a96f7c350",
+        "public_bytes": 19540,
+        "public_sha256": "4d1e74c92361abf8ea931bf6ff1f2d681c91c3f972da3cd3d4661427b5654d31"
+      },
+      {
+        "member": "attempt2/primary/08_passes2_on_r2.observations.json",
+        "normalization": true,
+        "original_bytes": 310066,
+        "original_sha256": "366914d7c76540cd6313e219ee81679e13dc4b284f991036ff527c750acc5d0f",
+        "public_bytes": 303250,
+        "public_sha256": "25f7d19c27baac57421a825b17107ac59e23bc24367373808a57fc5f8722dbd7"
+      },
+      {
+        "member": "attempt2/primary/08_passes2_on_r2.stderr.log",
+        "normalization": true,
+        "original_bytes": 629,
+        "original_sha256": "edb70ae65b9a08840a3a7f54a3eeae413521b2f64e2aaa70a0131a464c9e54f3",
+        "public_bytes": 629,
+        "public_sha256": "edb70ae65b9a08840a3a7f54a3eeae413521b2f64e2aaa70a0131a464c9e54f3"
+      },
+      {
+        "member": "attempt2/primary/08_passes2_on_r2.stdout.log",
+        "normalization": true,
+        "original_bytes": 17908,
+        "original_sha256": "024fa90bd107e2723c13be6c02131c2acea4826f47b4e296395890a7fab19402",
+        "public_bytes": 17842,
+        "public_sha256": "715e8a2d469303df555e6b87707634bab3159edb4787de5c5b8f4b3d2a88eccd"
+      },
+      {
+        "member": "attempt2/primary/runs.csv",
+        "normalization": true,
+        "original_bytes": 30109,
+        "original_sha256": "3c3a6d7c75d0c5e1c0345152d89195b6e6b2ce5285b412f75c61a12adff48fa5",
+        "public_bytes": 29581,
+        "public_sha256": "8402626aab3e8f9890b4ca7ccff2f46f679812329119d5f421267b7e7b5a61a6"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.exit.json",
+        "normalization": true,
+        "original_bytes": 1209,
+        "original_sha256": "d9e87fa3f98985799494d2dd24e3f1c4b638ec0adcdf978cb2622729397c5ca6",
+        "public_bytes": 932,
+        "public_sha256": "daa224954b4e049cc02b5976843344033ae04837fa4ce4ba5c31288a7e3a6052"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.observations.cancel-marker",
+        "normalization": true,
+        "original_bytes": 25,
+        "original_sha256": "37a41434a558cdb951c6afcb3694ea3b9cbab4c3994b9d175318890ca94e7215",
+        "public_bytes": 25,
+        "public_sha256": "37a41434a558cdb951c6afcb3694ea3b9cbab4c3994b9d175318890ca94e7215"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.observations.embeddings.npz",
+        "normalization": false,
+        "original_bytes": 1182074,
+        "original_sha256": "5422702a6000ffa0732cb3e00cbafe66ff7f06f8478ff17ff4c39dba36d43462",
+        "public_bytes": 1182074,
+        "public_sha256": "5422702a6000ffa0732cb3e00cbafe66ff7f06f8478ff17ff4c39dba36d43462"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.observations.json",
+        "normalization": true,
+        "original_bytes": 48893,
+        "original_sha256": "be0b37125cb4a1294b0b18affca68f22cf03e7ace02309e882c4450a744f9ee0",
+        "public_bytes": 48151,
+        "public_sha256": "6ff73a91db479cb1a0822bf2181cbdb24503e8ea46929e6eb3aa6199eb1a9bec"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.stderr.log",
+        "normalization": true,
+        "original_bytes": 578,
+        "original_sha256": "b117a4f21e10621f7ac2d09254d8d7577db42c2a313fb92e1b3969a65e0f6020",
+        "public_bytes": 578,
+        "public_sha256": "b117a4f21e10621f7ac2d09254d8d7577db42c2a313fb92e1b3969a65e0f6020"
+      },
+      {
+        "member": "attempt2/qualification/actual_tensor_ray_lifecycle.stdout.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/qualification/hardware_topology.exit.json",
+        "normalization": true,
+        "original_bytes": 758,
+        "original_sha256": "ade2cd9efa1a2a8bfcd7ab97515c3b399a4b6724b1b6e33070639bc77d7e7fc7",
+        "public_bytes": 635,
+        "public_sha256": "64f2cceb4636c245c4fa8631a7bc99e4d9e13b2b66ac5dd6da4536573f511be7"
+      },
+      {
+        "member": "attempt2/qualification/hardware_topology.observations.json",
+        "normalization": true,
+        "original_bytes": 5494,
+        "original_sha256": "ba698e435d7d299dfa7c661b9495495c14c2c1aed3c0faa54cbf7b712a9c2036",
+        "public_bytes": 5434,
+        "public_sha256": "2b3173b388342103b5d48391f975b28c7dba71ef09872b354ba75f8e91afdcd1"
+      },
+      {
+        "member": "attempt2/qualification/hardware_topology.stderr.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/qualification/hardware_topology.stdout.log",
+        "normalization": true,
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "public_bytes": 0,
+        "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "attempt2/status.json",
+        "normalization": true,
+        "original_bytes": 36448,
+        "original_sha256": "8d3e3a3ae608c6c9c75ea7159adc5e99d2c3f48aab9810e920d1746c4c436cc3",
+        "public_bytes": 30645,
+        "public_sha256": "5f701a98baf05fd02f9ab08018dc694fb906bbf94c4d9308eb885841702eef79"
+      }
+    ],
+    "machine": {
+      "cpu_quota_cores": 16,
+      "daft": "0.7.21",
+      "driver_python": "3.12.3",
+      "gpu_memory_total_mib": 24564,
+      "gpu_name": "NVIDIA GeForce RTX 4090",
+      "numpy": "2.4.6",
+      "pyarrow": "24.0.0",
+      "torchvision": "0.27.1+cu130",
+      "versions": {
+        "ray": "2.56.1",
+        "torch": "2.12.1+cu130",
+        "transformers": "5.14.1"
+      },
+      "visible_gpus": 1
+    },
+    "measured_source": {
+      "base_cli_sha256": "f8c8681a7d4646d71ac313bf05fd90ebbc734db014ea0c0de8c891295e026539",
+      "base_image_git_commit": "45da0a5451bfcf785d98b9ab5336054bdbaf199f",
+      "clip_diff_from_base": "input conversion extracted verbatim to _device_input; complete forward/result preserved",
+      "controller_sha256": "8abe5baaf29d3a610a6066b8d24de5ec3be32944f91372f13ee1d16e4f3a44a9",
+      "overlay_files": [
+        {
+          "path": "code/src/data/materializers/__init__.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "b212603a5c5f8fbaba9dca4243d9a7df8a1fb90a02431d3115ad6ba179d8fb71"
+        },
+        {
+          "path": "code/src/data/materializers/prepared_assets.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "13ee281a5dfdd46737fd2b75a7caa1fa78d0dd38158da1055cadbbc1ba6590c0"
+        },
+        {
+          "path": "code/src/modalities/image/clip.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "c73d369835b3d1034d37350317fca55ee52cf28c8a675db2a40a3ae99d872cb9"
+        },
+        {
+          "path": "code/src/modalities/image/input_residency.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "5c9dcfdc6a47ebe50390e8710e2377c636cf97465f783f84733321c081bded6c"
+        },
+        {
+          "path": "code/src/modalities/image/reusable_clip.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "d0408a67d739c667a17a7121fa8c7dd31977acf92a6a01130882ff25cdf3a694"
+        },
+        {
+          "path": "code/scripts/profiling/validate_clip_input_residency.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "980bd458514fd922b961d4180ec453bac50f250573c6195cc7b0bc2ce1671718"
+        },
+        {
+          "path": "code/tests/modalities/image/test_input_residency.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "dc0082420291d517ac7c6181caa0f61302cc94c23b6d56e3b04ecfa5798f876b"
+        },
+        {
+          "path": "code/tests/modalities/image/test_reusable_clip.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "76f419eda8a001570c9a3fdca30c641442b8e617bc609d72379be6a9f91937b3"
+        },
+        {
+          "path": "code/tests/modalities/image/test_clip_input_residency_validation.py",
+          "repository_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+          "sha256": "f34ab2199d43c80d58c0adb6a207efe199df2b419bdb27c775b44fdbf3e886a2"
+        }
+      ],
+      "post_measurement_tool_copy_label_fix": "local fixture validated separately; not claimed as GPU-measured source",
+      "residency_git_commit": "9f1b4ef5eeab493bf38cb26147a371ac5483d567"
+    },
+    "model": {
+      "measured_file_sha256": {
+        "config.json": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+        "preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd",
+        "pytorch_model.bin": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f"
+      },
+      "repository": "openai/clip-vit-base-patch32",
+      "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"
+    },
+    "normalization": "portable path aliases and private IPv4/host removal after existing secret redaction; numerical fields unchanged",
+    "nvml_scope": "original CLI 0.5-second sampled summary plus outside-window snapshots; raw per-point time series unavailable",
+    "originals": [
+      {
+        "artifact_run_id": "clip-input-residency-20261014",
+        "attempt": "1",
+        "original_archive_sha256": "fd5fbe785aed3215ed10b22e721925b81f992cf3dcb6d8cc45b73f1baf70af4f",
+        "retained_original_files": 11
+      },
+      {
+        "artifact_run_id": "clip-input-residency-20261014-attempt2",
+        "attempt": "2",
+        "original_archive_sha256": "83f5e7f3220dc556b26105eddb5ad8a8f947d8da2f1d9b513693346947d1d13f",
+        "retained_original_files": 80
+      }
+    ],
+    "postcheck": {
+      "any_host_lease_held": false,
+      "checked_utc": "2026-10-14T09:34:13.646981+00:00",
+      "controller_live": false,
+      "controller_pid": 98338,
+      "cpu_cgroup_quota": "1600000 100000",
+      "gpu_compute": {
+        "exitcode": 0,
+        "rows": []
+      },
+      "own_lease_held": false
+    },
+    "resources": {
+      "batch_size": 64,
+      "cli_declared_cpus": 7,
+      "cpu_quota": 16,
+      "gpu_count": 1,
+      "max_entries": 8,
+      "max_logical_cache_bytes": 154140672,
+      "prepare_workers": 4,
+      "source_threads": 2,
+      "window_batches": 4
+    },
+    "schema_version": 1,
+    "source_package_archive_sha256": "87ae14da8f19c8a89ccf0dfd14507d8fa33d4371a9eb6a401e20135c2b63b4e3"
+  },
+  "qualification": {
+    "async_max_abs_diff": 0.0,
+    "checks": [
+      {
+        "case": "first_miss",
+        "dtype": "float32",
+        "mode": "off",
+        "norm_error_max": 1.1920928955078125e-07,
+        "row_count": 64,
+        "row_ids_sha256": "f5190bcbf62be61dd942bb6a71b304cd05a975bf599965ecf5e7d18b958f7d84",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "new_rows_hit",
+        "dtype": "float32",
+        "mode": "off",
+        "norm_error_max": 1.1920928955078125e-07,
+        "row_count": 64,
+        "row_ids_sha256": "5d74bcfc07c63b51de892f46992711fa7ce34f517d20aacaf759e03d184f346f",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "content_change_miss",
+        "dtype": "float32",
+        "mode": "off",
+        "norm_error_max": 1.1920928955078125e-07,
+        "row_count": 64,
+        "row_ids_sha256": "8f8567e658d42e6f0ce2a4080777bda3da5ae902fe10b1ff8440dfa93291d21b",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "original_reload",
+        "dtype": "float32",
+        "mode": "off",
+        "norm_error_max": 1.1920928955078125e-07,
+        "row_count": 64,
+        "row_ids_sha256": "f957991a94e9167cb7067ad6a62e6f6747f5e40e5c1e726a67911792c2e3ae2f",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "first_miss",
+        "dtype": "float32",
+        "mode": "on",
+        "norm_error_max": 1.1920928955078125e-07,
+        "off_on_allclose": true,
+        "row_count": 64,
+        "row_ids_sha256": "f5190bcbf62be61dd942bb6a71b304cd05a975bf599965ecf5e7d18b958f7d84",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "new_rows_hit",
+        "dtype": "float32",
+        "mode": "on",
+        "norm_error_max": 1.1920928955078125e-07,
+        "off_on_allclose": true,
+        "row_count": 64,
+        "row_ids_sha256": "5d74bcfc07c63b51de892f46992711fa7ce34f517d20aacaf759e03d184f346f",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "content_change_miss",
+        "dtype": "float32",
+        "mode": "on",
+        "norm_error_max": 1.1920928955078125e-07,
+        "off_on_allclose": true,
+        "row_count": 64,
+        "row_ids_sha256": "8f8567e658d42e6f0ce2a4080777bda3da5ae902fe10b1ff8440dfa93291d21b",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "case": "original_reload",
+        "dtype": "float32",
+        "mode": "on",
+        "norm_error_max": 1.1920928955078125e-07,
+        "off_on_allclose": true,
+        "row_count": 64,
+        "row_ids_sha256": "f957991a94e9167cb7067ad6a62e6f6747f5e40e5c1e726a67911792c2e3ae2f",
+        "shape": [
+          64,
+          512
+        ]
+      }
+    ],
+    "exit": {
+      "argv": [
+        "${CONDA_ROOT}/bin/python",
+        "-B",
+        "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+        "qualify",
+        "--model",
+        "${MODEL_DIR}",
+        "--processor",
+        "${MODEL_DIR}",
+        "--image-root",
+        "${IMAGE_ROOT}",
+        "--image-list",
+        "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+        "--cpu-budget",
+        "16",
+        "--ray-temp-dir",
+        "${RAY_TMP_ROOT}",
+        "--observations",
+        "${ATTEMPT2_ROOT}/qualification/actual_tensor_ray_lifecycle.observations.json"
+      ],
+      "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+      "child_pid": 98363,
+      "exitcode": 0,
+      "finished_utc": "2026-10-14T09:16:47.127219+00:00",
+      "id": "actual_tensor_ray_lifecycle",
+      "physical_exit": {
+        "checked_utc": "2026-10-14T09:16:47.127179+00:00",
+        "confirmed": true,
+        "gpu_compute": [],
+        "survivors": []
+      },
+      "started_utc": "2026-10-14T09:16:06.531009+00:00"
+    },
+    "lifecycle": [
+      {
+        "actor_error_type": "InputCompletionUnknown",
+        "after_actual_owner_synchronize": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [],
+          "evictions": 3,
+          "held_references": 0,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 3,
+          "reserved_bytes": 0,
+          "resident_bytes": 0,
+          "unknown_references": 0
+        },
+        "after_clear": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 1,
+              "reusable": false
+            }
+          ],
+          "evictions": 2,
+          "held_references": 1,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 3,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 1
+        },
+        "case": "acknowledgement",
+        "driver_error_type": "RayTaskError(InputCompletionUnknown)",
+        "hardware_fault_injected": false,
+        "held": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 1,
+              "reusable": false
+            }
+          ],
+          "evictions": 2,
+          "held_references": 1,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 3,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 1
+        },
+        "real_cancel_flag_observed": null,
+        "real_cuda_event_retained": true
+      },
+      {
+        "actor_error_type": "CancelledError",
+        "after_actual_owner_synchronize": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [],
+          "evictions": 4,
+          "held_references": 0,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 4,
+          "reserved_bytes": 0,
+          "resident_bytes": 0,
+          "unknown_references": 0
+        },
+        "after_clear": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 1,
+              "reusable": false
+            }
+          ],
+          "evictions": 3,
+          "held_references": 1,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 4,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 1
+        },
+        "case": "cooperative_cancel",
+        "driver_error_type": "RayTaskError(CancelledError)",
+        "hardware_fault_injected": false,
+        "held": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 1,
+              "reusable": false
+            }
+          ],
+          "evictions": 3,
+          "held_references": 1,
+          "hits": 2,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 4,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 1
+        },
+        "real_cancel_flag_observed": true,
+        "real_cuda_event_retained": true
+      },
+      {
+        "after_clear": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 2,
+              "reusable": false
+            }
+          ],
+          "evictions": 4,
+          "held_references": 2,
+          "hits": 3,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 5,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 0
+        },
+        "after_event_confirmation": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [],
+          "evictions": 5,
+          "held_references": 0,
+          "hits": 3,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 5,
+          "reserved_bytes": 0,
+          "resident_bytes": 0,
+          "unknown_references": 0
+        },
+        "artificial_cuda_delay": false,
+        "case": "async_full_forward_duplicate_reference",
+        "event_done_at_first_query": false,
+        "held": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [
+            {
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "logical_bytes": 19267584,
+              "references": 2,
+              "reusable": true
+            }
+          ],
+          "evictions": 4,
+          "held_references": 2,
+          "hits": 3,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 5,
+          "reserved_bytes": 0,
+          "resident_bytes": 19267584,
+          "unknown_references": 0
+        },
+        "off_on_allclose": true
+      }
+    ],
+    "matrices": [
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "off_first_miss",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "off_new_rows_hit",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "off_content_change_miss",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "off_original_reload",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "on_first_miss",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "on_new_rows_hit",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "on_content_change_miss",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "on_original_reload",
+        "shape": [
+          64,
+          512
+        ]
+      },
+      {
+        "dtype": "float32",
+        "finite": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "name": "async_full_forward",
+        "shape": [
+          64,
+          512
+        ]
+      }
+    ],
+    "matrix_sha256": "5422702a6000ffa0732cb3e00cbafe66ff7f06f8478ff17ff4c39dba36d43462",
+    "off_on_pairs": [
+      {
+        "case": "first_miss",
+        "max_abs_diff": 0.0
+      },
+      {
+        "case": "new_rows_hit",
+        "max_abs_diff": 0.0
+      },
+      {
+        "case": "content_change_miss",
+        "max_abs_diff": 0.0
+      },
+      {
+        "case": "original_reload",
+        "max_abs_diff": 0.0
+      }
+    ],
+    "passed": true,
+    "phases": [
+      {
+        "cache": {
+          "budget_bytes": 0,
+          "cache_id": "d0d964a3df454c119e90b620d80f3979",
+          "entries": [],
+          "evictions": 0,
+          "held_references": 0,
+          "hits": 0,
+          "location": "cuda",
+          "logical_bytes_peak": 0,
+          "max_entries": 1,
+          "misses": 0,
+          "reserved_bytes": 0,
+          "resident_bytes": 0,
+          "unknown_references": 0
+        },
+        "forward_calls": 4,
+        "mode": "off",
+        "normal_calls": [
+          {
+            "as_tensor_cuda_s": 0.016845535278320313,
+            "clip_forward_cuda_s": 0.3303702087402344,
+            "input_reuse_observation": null,
+            "row_count": 64,
+            "row_ids_sha256": "f5190bcbf62be61dd942bb6a71b304cd05a975bf599965ecf5e7d18b958f7d84",
+            "service_s": 0.44940808322280645
+          },
+          {
+            "as_tensor_cuda_s": 0.014480544090270995,
+            "clip_forward_cuda_s": 0.0068600959777832034,
+            "input_reuse_observation": null,
+            "row_count": 64,
+            "row_ids_sha256": "5d74bcfc07c63b51de892f46992711fa7ce34f517d20aacaf759e03d184f346f",
+            "service_s": 0.06297043105587363
+          },
+          {
+            "as_tensor_cuda_s": 0.006583775997161865,
+            "clip_forward_cuda_s": 0.006573023796081543,
+            "input_reuse_observation": null,
+            "row_count": 64,
+            "row_ids_sha256": "8f8567e658d42e6f0ce2a4080777bda3da5ae902fe10b1ff8440dfa93291d21b",
+            "service_s": 0.04109904495999217
+          },
+          {
+            "as_tensor_cuda_s": 0.006402080059051514,
+            "clip_forward_cuda_s": 0.0065382080078125,
+            "input_reuse_observation": null,
+            "row_count": 64,
+            "row_ids_sha256": "f957991a94e9167cb7067ad6a62e6f6747f5e40e5c1e726a67911792c2e3ae2f",
+            "service_s": 0.04113792721182108
+          }
+        ],
+        "nvml_device_memory": {
+          "devices": [
+            {
+              "index": 0,
+              "memory_total_mib": 24564.0,
+              "memory_used_mib": 930.0,
+              "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            }
+          ],
+          "source": "nvidia-smi_NVML_device_totals"
+        },
+        "ready": {
+          "accelerator_ids": {
+            "FURIOSA": [],
+            "GPU": [
+              "0"
+            ],
+            "HPU": [],
+            "NPU": [],
+            "RBLN": [],
+            "TPU": [],
+            "neuron_cores": []
+          },
+          "actor_type": "MeasuredReusableClipActor",
+          "actor_worker_pid": 99582,
+          "cuda_visible_devices": "0",
+          "embedding_dimension": 512,
+          "gpu_name": "NVIDIA GeForce RTX 4090",
+          "input_kind": "preprocessed_tensor",
+          "normalized": true,
+          "ray_actor_id": "84193505de77c2417d170cda01000000",
+          "ray_node_id": "16cb9a2968d2e7a964a412521beb0a94fa9c81877d2b1205f3a77078",
+          "semantics": {
+            "dimension": 512,
+            "dtype": "float32",
+            "model_revision": "${MODEL_DIR}",
+            "normalized": true,
+            "processor_revision": "${MODEL_DIR}",
+            "projected": true
+          },
+          "torch_device": "cuda",
+          "torch_interop_threads": 1,
+          "torch_intraop_threads": 1,
+          "versions": {
+            "ray": "2.56.1",
+            "torch": "2.12.1+cu130",
+            "transformers": "5.14.1"
+          }
+        },
+        "torch_initial_after_model_load": {
+          "allocated_bytes": 310420992,
+          "max_allocated_bytes": 310944768,
+          "max_reserved_bytes": 333447168,
+          "reserved_bytes": 333447168
+        },
+        "torch_memory": {
+          "allocated_bytes": 318940672,
+          "max_allocated_bytes": 416851456,
+          "max_reserved_bytes": 476053504,
+          "reserved_bytes": 476053504
+        }
+      },
+      {
+        "cache": {
+          "budget_bytes": 19267584,
+          "cache_id": "1964e497884642e89773cb18eb05159e",
+          "entries": [],
+          "evictions": 5,
+          "held_references": 0,
+          "hits": 3,
+          "location": "cuda",
+          "logical_bytes_peak": 19267584,
+          "max_entries": 1,
+          "misses": 5,
+          "reserved_bytes": 0,
+          "resident_bytes": 0,
+          "unknown_references": 0
+        },
+        "forward_calls": 7,
+        "mode": "on",
+        "normal_calls": [
+          {
+            "as_tensor_cuda_s": 0.01413907241821289,
+            "clip_forward_cuda_s": 0.2889776611328125,
+            "input_reuse_observation": {
+              "h2d_s": null,
+              "host_copy_s": 0.02583187585696578,
+              "host_ownership_copy_bytes": 38535168,
+              "identity_copy_bytes": 0,
+              "identity_s": 0.04104197584092617,
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "settle_s": 0.00015682494267821312,
+              "transfer": {
+                "device_copy_bytes": 19267584,
+                "host_reload_bytes": 38535168,
+                "p2p_supported": false,
+                "reuse_available": false,
+                "transfer_s": null
+              }
+            },
+            "row_count": 64,
+            "row_ids_sha256": "f5190bcbf62be61dd942bb6a71b304cd05a975bf599965ecf5e7d18b958f7d84",
+            "service_s": 0.43481365917250514
+          },
+          {
+            "clip_forward_cuda_s": 0.006934944152832031,
+            "input_reuse_observation": {
+              "h2d_s": null,
+              "host_copy_s": 0.0,
+              "host_ownership_copy_bytes": 0,
+              "identity_copy_bytes": 0,
+              "identity_s": 0.03275598119944334,
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "settle_s": 8.496688678860664e-05,
+              "transfer": {
+                "device_copy_bytes": 0,
+                "host_reload_bytes": 0,
+                "p2p_supported": false,
+                "reuse_available": true,
+                "transfer_s": null
+              }
+            },
+            "row_count": 64,
+            "row_ids_sha256": "5d74bcfc07c63b51de892f46992711fa7ce34f517d20aacaf759e03d184f346f",
+            "service_s": 0.04028575588017702
+          },
+          {
+            "as_tensor_cuda_s": 0.018776639938354493,
+            "clip_forward_cuda_s": 0.00666921615600586,
+            "input_reuse_observation": {
+              "h2d_s": null,
+              "host_copy_s": 0.034968560095876455,
+              "host_ownership_copy_bytes": 38535168,
+              "identity_copy_bytes": 0,
+              "identity_s": 0.03323026280850172,
+              "key": {
+                "content_digest": "51900f590d545f6390868ab0d20ff5aa0e3dd73105d66208246eef065b060679",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "settle_s": 7.869908586144447e-05,
+              "transfer": {
+                "device_copy_bytes": 19267584,
+                "host_reload_bytes": 38535168,
+                "p2p_supported": false,
+                "reuse_available": false,
+                "transfer_s": null
+              }
+            },
+            "row_count": 64,
+            "row_ids_sha256": "8f8567e658d42e6f0ce2a4080777bda3da5ae902fe10b1ff8440dfa93291d21b",
+            "service_s": 0.09797312691807747
+          },
+          {
+            "as_tensor_cuda_s": 0.0073426241874694825,
+            "clip_forward_cuda_s": 0.006600192070007324,
+            "input_reuse_observation": {
+              "h2d_s": null,
+              "host_copy_s": 0.023654960095882416,
+              "host_ownership_copy_bytes": 38535168,
+              "identity_copy_bytes": 0,
+              "identity_s": 0.034192314837127924,
+              "key": {
+                "content_digest": "7d0742cbeb16d491859dae7495c2bb92b567f2592bcd325fa69dfa584423eed0",
+                "transform_signature": "{\"device_dtype\":\"torch.float16\",\"dtype\":\"<f4\",\"layout\":\"NCHW\",\"processor_revision\":\"${MODEL_DIR}\",\"schema\":\"prepared-tensor-v1\",\"shape\":[64,3,224,224]}"
+              },
+              "settle_s": 6.923405453562737e-05,
+              "transfer": {
+                "device_copy_bytes": 19267584,
+                "host_reload_bytes": 38535168,
+                "p2p_supported": false,
+                "reuse_available": false,
+                "transfer_s": null
+              }
+            },
+            "row_count": 64,
+            "row_ids_sha256": "f957991a94e9167cb7067ad6a62e6f6747f5e40e5c1e726a67911792c2e3ae2f",
+            "service_s": 0.07524713687598705
+          }
+        ],
+        "nvml_device_memory": {
+          "devices": [
+            {
+              "index": 0,
+              "memory_total_mib": 24564.0,
+              "memory_used_mib": 930.0,
+              "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            }
+          ],
+          "source": "nvidia-smi_NVML_device_totals"
+        },
+        "ready": {
+          "accelerator_ids": {
+            "FURIOSA": [],
+            "GPU": [
+              "0"
+            ],
+            "HPU": [],
+            "NPU": [],
+            "RBLN": [],
+            "TPU": [],
+            "neuron_cores": []
+          },
+          "actor_type": "MeasuredReusableClipActor",
+          "actor_worker_pid": 99717,
+          "cuda_visible_devices": "0",
+          "embedding_dimension": 512,
+          "gpu_name": "NVIDIA GeForce RTX 4090",
+          "input_kind": "preprocessed_tensor",
+          "normalized": true,
+          "ray_actor_id": "ea961ff4f3b0586b97f5d7f701000000",
+          "ray_node_id": "16cb9a2968d2e7a964a412521beb0a94fa9c81877d2b1205f3a77078",
+          "semantics": {
+            "dimension": 512,
+            "dtype": "float32",
+            "model_revision": "${MODEL_DIR}",
+            "normalized": true,
+            "processor_revision": "${MODEL_DIR}",
+            "projected": true
+          },
+          "torch_device": "cuda",
+          "torch_interop_threads": 1,
+          "torch_intraop_threads": 1,
+          "versions": {
+            "ray": "2.56.1",
+            "torch": "2.12.1+cu130",
+            "transformers": "5.14.1"
+          }
+        },
+        "torch_initial_after_model_load": {
+          "allocated_bytes": 310420992,
+          "max_allocated_bytes": 310944768,
+          "max_reserved_bytes": 333447168,
+          "reserved_bytes": 333447168
+        },
+        "torch_memory": {
+          "allocated_bytes": 318940672,
+          "max_allocated_bytes": 416851456,
+          "max_reserved_bytes": 476053504,
+          "reserved_bytes": 476053504
+        }
+      }
+    ],
+    "physical_device_validation": true
+  },
+  "resources": {
+    "batch_size": 64,
+    "cli_declared_cpus": 7,
+    "cpu_quota": 16,
+    "gpu_count": 1,
+    "max_entries": 8,
+    "max_logical_cache_bytes": 154140672,
+    "prepare_workers": 4,
+    "source_threads": 2,
+    "window_batches": 4
+  },
+  "runs": [
+    {
+      "actor_service_s_sum": 2.209741531405598,
+      "actual_host_ownership_copy_bytes_sum": 3010560000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 0,
+        "evictions": 0,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 0,
+        "max_entries": 8,
+        "misses": 0,
+        "reserved_bytes": 0,
+        "resident_bytes": 0,
+        "unknown_references": 0
+      },
+      "cache_bytes": 0,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 1,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "0",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/01_passes1_off_r1.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "1",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/01_passes1_off_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 99879,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:17:41.621710+00:00",
+        "id": "01_passes1_off_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:17:41.621658+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:16:49.661944+00:00"
+      },
+      "formal_forward_calls": 90,
+      "group": "primary",
+      "host_copy_s_sum": 0.4839332243427634,
+      "id": "01_passes1_off_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 0,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 900.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 900.0,
+      "observed_formal_input_rows": 5000,
+      "operator_e2e_s": 21.057897271122783,
+      "quality": {
+        "embedding_checksum": -36.44171080313299,
+        "embedding_digest_xor_rounded5": "2e357c1ee89a68479f8f65eba49e85a9",
+        "embedding_sum_all": -1004.8990153283116,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 5000
+      },
+      "rows": 5000,
+      "settle_s_sum": 0,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 318940672,
+        "max_allocated_bytes": 404768256,
+        "max_reserved_bytes": 444596224,
+        "reserved_bytes": 444596224
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 50.7173359207809
+    },
+    {
+      "actor_service_s_sum": 5.646162649150938,
+      "actual_host_ownership_copy_bytes_sum": 3010560000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 154140672,
+        "evictions": 82,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 134873088,
+        "max_entries": 8,
+        "misses": 90,
+        "reserved_bytes": 0,
+        "resident_bytes": 122830848,
+        "unknown_references": 0
+      },
+      "cache_bytes": 154140672,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 1,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "154140672",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/02_passes1_on_r1.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "1",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/02_passes1_on_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 101849,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:18:35.879866+00:00",
+        "id": "02_passes1_on_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:18:35.879812+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:17:41.713570+00:00"
+      },
+      "formal_forward_calls": 90,
+      "group": "primary",
+      "host_copy_s_sum": 0.8515946478582919,
+      "id": "02_passes1_on_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 2.8409985075704753,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 1008.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 1008.0,
+      "observed_formal_input_rows": 5000,
+      "operator_e2e_s": 21.80244592903182,
+      "quality": {
+        "embedding_checksum": -36.44171080313299,
+        "embedding_digest_xor_rounded5": "2e357c1ee89a68479f8f65eba49e85a9",
+        "embedding_sum_all": -1004.8990153283116,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 5000
+      },
+      "rows": 5000,
+      "settle_s_sum": 0.011094747576862574,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 441771520,
+        "max_allocated_bytes": 522782208,
+        "max_reserved_bytes": 557842432,
+        "reserved_bytes": 557842432
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 52.625647539738566
+    },
+    {
+      "actor_service_s_sum": 6.680088798049837,
+      "actual_host_ownership_copy_bytes_sum": 3010560000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 154140672,
+        "evictions": 82,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 134873088,
+        "max_entries": 8,
+        "misses": 90,
+        "reserved_bytes": 0,
+        "resident_bytes": 122830848,
+        "unknown_references": 0
+      },
+      "cache_bytes": 154140672,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 1,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "154140672",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/03_passes1_on_r2.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "1",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "2",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/03_passes1_on_r2.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 103830,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:19:29.722082+00:00",
+        "id": "03_passes1_on_r2",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:19:29.722041+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:18:35.922542+00:00"
+      },
+      "formal_forward_calls": 90,
+      "group": "primary",
+      "host_copy_s_sum": 1.5874316920526326,
+      "id": "03_passes1_on_r2",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 2.8845059354789555,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 1008.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 1008.0,
+      "observed_formal_input_rows": 5000,
+      "operator_e2e_s": 21.720510251354426,
+      "quality": {
+        "embedding_checksum": -36.44171080313299,
+        "embedding_digest_xor_rounded5": "2e357c1ee89a68479f8f65eba49e85a9",
+        "embedding_sum_all": -1004.8990153283116,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 5000
+      },
+      "rows": 5000,
+      "settle_s_sum": 0.01332980114966631,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 441771520,
+        "max_allocated_bytes": 522782208,
+        "max_reserved_bytes": 557842432,
+        "reserved_bytes": 557842432
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 52.291128871031106
+    },
+    {
+      "actor_service_s_sum": 4.221748571377248,
+      "actual_host_ownership_copy_bytes_sum": 3010560000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 0,
+        "evictions": 0,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 0,
+        "max_entries": 8,
+        "misses": 0,
+        "reserved_bytes": 0,
+        "resident_bytes": 0,
+        "unknown_references": 0
+      },
+      "cache_bytes": 0,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 1,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "0",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/04_passes1_off_r2.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "1",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "2",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/04_passes1_off_r2.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 105802,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:20:23.384045+00:00",
+        "id": "04_passes1_off_r2",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:20:23.384003+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:19:29.759950+00:00"
+      },
+      "formal_forward_calls": 90,
+      "group": "primary",
+      "host_copy_s_sum": 2.2948725419119,
+      "id": "04_passes1_off_r2",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 0,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 900.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 900.0,
+      "observed_formal_input_rows": 5000,
+      "operator_e2e_s": 21.420139577239752,
+      "quality": {
+        "embedding_checksum": -36.44171080313299,
+        "embedding_digest_xor_rounded5": "2e357c1ee89a68479f8f65eba49e85a9",
+        "embedding_sum_all": -1004.8990153283116,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 5000
+      },
+      "rows": 5000,
+      "settle_s_sum": 0,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 318940672,
+        "max_allocated_bytes": 404768256,
+        "max_reserved_bytes": 444596224,
+        "reserved_bytes": 444596224
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 52.42146678920835
+    },
+    {
+      "actor_service_s_sum": 11.670478510670364,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 154140672,
+        "evictions": 171,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 134873088,
+        "max_entries": 8,
+        "misses": 179,
+        "reserved_bytes": 0,
+        "resident_bytes": 127647744,
+        "unknown_references": 0
+      },
+      "cache_bytes": 154140672,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "154140672",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/05_passes2_on_r1.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/05_passes2_on_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 107778,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:21:27.262657+00:00",
+        "id": "05_passes2_on_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:21:27.262604+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:20:23.443819+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "primary",
+      "host_copy_s_sum": 3.0222532120533288,
+      "id": "05_passes2_on_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 5.216619984712452,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 1008.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 1008.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 31.28735715802759,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0.021617026533931494,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 446588416,
+        "max_allocated_bytes": 522782208,
+        "max_reserved_bytes": 557842432,
+        "reserved_bytes": 557842432
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 62.3681574719958
+    },
+    {
+      "actor_service_s_sum": 5.291778701823205,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 0,
+        "evictions": 0,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 0,
+        "max_entries": 8,
+        "misses": 0,
+        "reserved_bytes": 0,
+        "resident_bytes": 0,
+        "unknown_references": 0
+      },
+      "cache_bytes": 0,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "0",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/06_passes2_off_r1.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/06_passes2_off_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 110336,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:22:30.086837+00:00",
+        "id": "06_passes2_off_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:22:30.086782+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:21:27.330277+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "primary",
+      "host_copy_s_sum": 1.8445549155585468,
+      "id": "06_passes2_off_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 0,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 900.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 900.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 29.8006678102538,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 318940672,
+        "max_allocated_bytes": 404768256,
+        "max_reserved_bytes": 444596224,
+        "reserved_bytes": 444596224
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 61.10440854495391
+    },
+    {
+      "actor_service_s_sum": 5.643102003727108,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 0,
+        "evictions": 0,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 0,
+        "max_entries": 8,
+        "misses": 0,
+        "reserved_bytes": 0,
+        "resident_bytes": 0,
+        "unknown_references": 0
+      },
+      "cache_bytes": 0,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "0",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/07_passes2_off_r2.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "2",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/07_passes2_off_r2.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 112893,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:23:33.493625+00:00",
+        "id": "07_passes2_off_r2",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:23:33.493600+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:22:30.155998+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "primary",
+      "host_copy_s_sum": 2.09735104162246,
+      "id": "07_passes2_off_r2",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 0,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 900.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 900.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 30.437731202691793,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 318940672,
+        "max_allocated_bytes": 404768256,
+        "max_reserved_bytes": 444596224,
+        "reserved_bytes": 444596224
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 61.899807655252516
+    },
+    {
+      "actor_service_s_sum": 13.564262814819813,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": null,
+      "as_tensor_cuda_event_s_sum": null,
+      "cache": {
+        "budget_bytes": 154140672,
+        "evictions": 171,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 134873088,
+        "max_entries": 8,
+        "misses": 179,
+        "reserved_bytes": 0,
+        "resident_bytes": 127647744,
+        "unknown_references": 0
+      },
+      "cache_bytes": 154140672,
+      "clip_forward_cuda_event_s_sum": null,
+      "cuda_events": false,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "154140672",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/primary/08_passes2_on_r2.observations.json",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "2",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/primary/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/primary/08_passes2_on_r2.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 115445,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:24:39.755842+00:00",
+        "id": "08_passes2_on_r2",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:24:39.755802+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:23:33.567444+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "primary",
+      "host_copy_s_sum": 4.434250160120428,
+      "id": "08_passes2_on_r2",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 5.770729034207761,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 1008.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 1008.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 32.33590832725167,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0.022658039815723896,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 446588416,
+        "max_allocated_bytes": 522782208,
+        "max_reserved_bytes": 557842432,
+        "reserved_bytes": 557842432
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 64.89861261798069
+    },
+    {
+      "actor_service_s_sum": 7.065500630997121,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": true,
+      "as_tensor_cuda_event_s_sum": 1.7627339825630188,
+      "cache": {
+        "budget_bytes": 0,
+        "evictions": 0,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 0,
+        "max_entries": 8,
+        "misses": 0,
+        "reserved_bytes": 0,
+        "resident_bytes": 0,
+        "unknown_references": 0
+      },
+      "cache_bytes": 0,
+      "clip_forward_cuda_event_s_sum": 1.4712691059112548,
+      "cuda_events": true,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "0",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/diagnostic/09_passes2_off_r1.observations.json",
+          "--cuda-events",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/diagnostic/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/diagnostic/09_passes2_off_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 118006,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:25:43.481008+00:00",
+        "id": "09_passes2_off_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:25:43.480976+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:24:39.831767+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "diagnostic",
+      "host_copy_s_sum": 3.354031837079674,
+      "id": "09_passes2_off_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 0,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 900.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 900.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 30.435130161698908,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 318940672,
+        "max_allocated_bytes": 404768256,
+        "max_reserved_bytes": 444596224,
+        "reserved_bytes": 444596224
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 62.323144144844264
+    },
+    {
+      "actor_service_s_sum": 13.266333723440766,
+      "actual_host_ownership_copy_bytes_sum": 6021120000,
+      "all_recorded_events_done": true,
+      "as_tensor_cuda_event_s_sum": 1.6053060841560365,
+      "cache": {
+        "budget_bytes": 154140672,
+        "evictions": 171,
+        "held_references": 0,
+        "hits": 0,
+        "location": "cuda",
+        "logical_bytes_peak": 134873088,
+        "max_entries": 8,
+        "misses": 179,
+        "reserved_bytes": 0,
+        "resident_bytes": 127647744,
+        "unknown_references": 0
+      },
+      "cache_bytes": 154140672,
+      "clip_forward_cuda_event_s_sum": 1.5013807621002198,
+      "cuda_events": true,
+      "dataset_passes": 2,
+      "exit": {
+        "argv": [
+          "${CONDA_ROOT}/bin/python",
+          "-B",
+          "${ATTEMPT2_ROOT}/source/code/scripts/profiling/validate_clip_input_residency.py",
+          "wrap",
+          "--base-cli",
+          "${ATTEMPT2_ROOT}/source/code/scripts/experiments/run_image_clip_e2e.py",
+          "--cache-bytes",
+          "154140672",
+          "--cache-entries",
+          "8",
+          "--observations",
+          "${ATTEMPT2_ROOT}/diagnostic/10_passes2_on_r1.observations.json",
+          "--cuda-events",
+          "--",
+          "--source-kind",
+          "files",
+          "--source-manifest",
+          "${BASE_IMAGE_ROOT}/preparation/coco-val2017-files.json",
+          "--image-root",
+          "${IMAGE_ROOT}",
+          "--workload-name",
+          "coco_val2017",
+          "--model",
+          "${MODEL_DIR}",
+          "--processor",
+          "${MODEL_DIR}",
+          "--offset",
+          "0",
+          "--dataset-passes",
+          "2",
+          "--warmup-rows",
+          "64",
+          "--batch-size",
+          "64",
+          "--input-size",
+          "224",
+          "--cpu-workers",
+          "4",
+          "--gpu-workers",
+          "1",
+          "--source-shards",
+          "2",
+          "--torch-intraop-threads",
+          "1",
+          "--torch-interop-threads",
+          "1",
+          "--dtype",
+          "float16",
+          "--embedding-dimension",
+          "512",
+          "--embedding-output-contract",
+          "l2_normalized",
+          "--gpu-sample-interval-s",
+          "0.5",
+          "--cpu-sample-interval-s",
+          "0.25",
+          "--arm",
+          "project_ray",
+          "--project-execution-mode",
+          "direct_dependency",
+          "--source-cpu-threads",
+          "2",
+          "--max-active-batches",
+          "4",
+          "--limit",
+          "5000",
+          "--phase",
+          "formal",
+          "--repeat-index",
+          "1",
+          "--out-csv",
+          "${ATTEMPT2_ROOT}/diagnostic/runs.csv",
+          "--out-manifest",
+          "${ATTEMPT2_ROOT}/diagnostic/10_passes2_on_r1.json"
+        ],
+        "candidate": "9f1b4ef5eeab493bf38cb26147a371ac5483d567",
+        "child_pid": 120561,
+        "exitcode": 0,
+        "finished_utc": "2026-10-14T09:26:48.797363+00:00",
+        "id": "10_passes2_on_r1",
+        "physical_exit": {
+          "checked_utc": "2026-10-14T09:26:48.797317+00:00",
+          "confirmed": true,
+          "gpu_compute": [],
+          "survivors": []
+        },
+        "started_utc": "2026-10-14T09:25:43.558100+00:00"
+      },
+      "formal_forward_calls": 179,
+      "group": "diagnostic",
+      "host_copy_s_sum": 3.824016997590661,
+      "id": "10_passes2_on_r1",
+      "identity_copy_bytes_sum": 0,
+      "identity_s_sum": 5.699053081218153,
+      "nvml_after_formal": {
+        "devices": [
+          {
+            "index": 0,
+            "memory_total_mib": 24564.0,
+            "memory_used_mib": 1008.0,
+            "uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+          }
+        ],
+        "source": "nvidia-smi_NVML_device_totals"
+      },
+      "nvml_sampled_peak_mib": 1008.0,
+      "observed_formal_input_rows": 10000,
+      "operator_e2e_s": 33.16000006580725,
+      "quality": {
+        "embedding_checksum": -72.8839984021015,
+        "embedding_digest_xor_rounded5": "cd889b9efcf9b397e00632de72422d06",
+        "embedding_sum_all": -2009.79735661069,
+        "exactly_once": true,
+        "max_norm_error": 1.1920928955078125e-07,
+        "output_rows": 10000
+      },
+      "rows": 10000,
+      "settle_s_sum": 0.014156977646052837,
+      "torch_initial_after_model_load": {
+        "allocated_bytes": 310420992,
+        "max_allocated_bytes": 310944768,
+        "max_reserved_bytes": 333447168,
+        "reserved_bytes": 333447168
+      },
+      "torch_memory": {
+        "allocated_bytes": 446588416,
+        "max_allocated_bytes": 522782208,
+        "max_reserved_bytes": 557842432,
+        "reserved_bytes": 557842432
+      },
+      "warmup_rows": 64,
+      "wrapper_invocation_wall_s": 63.62155426805839
+    }
+  ],
+  "schema_version": 1,
+  "started_utc": "2026-10-14T09:15:57.945395+00:00",
+  "status": "complete"
+}

@@ -2,8 +2,8 @@
 
 [CLIP actor输入复用组件](../experiments/results/diagnostics/hse_input_residency_20261014/README.md)
 提供默认0-byte关闭的`ReusableClipTensorActor`、有限输入tensor驻留及只读byte/引用/代价观测。
-每次完整forward和row ID保持，未知完成保留引用；120项CPU替身/旧路径及验收工具检查通过。
-正常CUDA完成等待当次stream事件，实际Ray/CUDA及收益按[单卡计划](../experiments/plans/数据组织.md#clip-input-device-validation)验证。
+每次完整forward和row ID保持，未知完成保留引用；本地检查及实际单4090 Torch/CLIP/Ray资格通过。
+正常CUDA完成等待当次stream事件；完整5k/重复两遍均0-hit并增加耗时/内存，继续默认关闭。
 标准builder与HSE主循环保持；共同locality estimate当前返回`None`，设备间直接搬运尚未实现。
 
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。

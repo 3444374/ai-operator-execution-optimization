@@ -15,7 +15,9 @@
 图像后续按[已有三条路径](docs/research/研究定位.md#existing-image-execution-paths)与
 [单GPU关键路径诊断](experiments/plans/数据组织.md#single-gpu-image-critical-path)复用现成batch/流水及强静态控制。
 近期只围绕有证据的表示/驻留、阶段work和后继消费者联合选择；多卡、跨卡搬运、拓扑执行组与训练按真实需要决定。
-本次是文档收敛，没有新增模型实验或实现资格。
+随后[CLIP输入驻留单卡诊断](experiments/results/diagnostics/hse_input_residency_20261014/README.md#actual-device-results)
+完成实际Tensor/完整CLIP/Ray生命周期核验；完整任务与已有重复输入均0-hit并增加耗时/内存，缓存保持默认关闭。
+该组件正确性不授予HSE集成、多卡选择或跨卡搬运资格；后续仍按实际复用/消费需求推进。
 
 更新时间：2026-10-14
 

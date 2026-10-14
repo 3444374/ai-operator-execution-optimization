@@ -1,8 +1,9 @@
 # CLIP actor 输入驻留与复用检查
 
 源码起点`d307bb9265a32e516052f3bea7d8206f8906c288`，职责分支`feat/hse-input-residency`。
-本项是CPU/确定性Torch与模型替身的软件检查；模型、GPU、服务器及厂商执行库运行均为0。
-[计划](../../../plans/数据组织.md)与[机器记录](checks.json)区分已检查的行为和待验证项。
+初版CPU/确定性替身检查见[机器记录](checks.json)，其模型/GPU运行均为0。
+随后完成[实际单卡验收](#actual-device-results)：真实Torch/CLIP/Ray生命周期通过，完整5,000图及重复两遍均0-hit，
+缓存增加时间与内存，保持默认关闭。设备间直接搬运和HSE选择接线仍pending；[计划](../../../plans/数据组织.md)保留后续范围。
 
 ## 已有需求与采用范围
 
@@ -40,7 +41,7 @@ matrix各项也使用独立进程。小容量整批缓存是否能命中取决�
 工程依据：PyTorch 2.14的[as_tensor文档](https://docs.pytorch.org/docs/2.14/generated/torch.as_tensor.html)
 说明同dtype的CPU NumPy转换可共享内存，因此CPU retained输入独立取所有权；
 [synchronize文档](https://docs.pytorch.org/docs/2.14/generated/torch.cuda.synchronize.html)说明设备完成等待范围。
-这些是API来源，未运行本机Torch/CUDA资格；LRU、逻辑budget与保守异常引用属于本次工程决策。
+这些是API来源；初版未运行本机Torch/CUDA，随后实际资格使用下文固定服务器版本。LRU、逻辑budget与保守异常引用属于本次工程决策。
 
 ## 本地结果与复现
 
@@ -69,8 +70,8 @@ PYTHONPATH=code python3 -B -m unittest \
 新增取消/KeyboardInterrupt fence用例后组合106项通过，独立复查23项驻留测试通过且未发现新增问题。
 源码/文档/隐私检查由同一机器记录定位。
 
-真实Ray、单GPU CLIP及性能、双卡容量/速率/选择、跨卡直接搬运、decode复用和选择前prepared身份传播均为pending。
-没有占用共享lease、改变厂商baseline或启用默认策略。当前保持actor本地组件；调度主循环接线由选择owner维护。
+初版未占用共享lease或启用默认策略。随后实际Ray/单GPU检查见下文；双卡容量/速率/选择、跨卡直接搬运、
+decode复用和选择前prepared身份传播仍pending。当前保持actor本地组件，调度主循环接线由选择owner维护。
 
 ## 实际设备验收准备
 
@@ -97,5 +98,78 @@ Torch allocated/reserved/峰值、NVML设备总体与缓存逻辑bytes分别记�
 缓存off/on均调用完整forward，模型和processor从已有本地目录离线加载。
 [准备机器记录](device_preparation.json)保存本轮120项本地检查与实际载入源码摘要；独立审查覆盖24项生产fixture、
 11项不写文件的工具fixture及未完成/已完成事件快照，写者完整13项工具测试通过，各组有重叠。
-当前实际Ray/cloudpickle/Torch/CUDA仍pending。09:04 UTC只读确认先行图像15次调用complete、进程退出已确认、
+准备阶段的实际Ray/cloudpickle/Torch/CUDA为pending。09:04 UTC只读确认先行图像15次调用complete、进程退出已确认、
 原lease已释放且当前无GPU/Ray进程；后续以执行时的原子lease领取为准，不从空闲快照推断已获执行名额。
+
+
+<a id="actual-device-results"></a>
+## 实际单卡结果
+
+测量驻留源码为`9f1b4ef5eeab493bf38cb26147a371ac5483d567`，原图像CLI与依赖图来自
+`45da0a5451bfcf785d98b9ab5336054bdbaf199f`。逐文件摘要、模型/清单、完整重复值和物理责任由
+[实际机器记录](device_actual.json)保存；[证据归档](device_evidence.tar.gz)有79个成员，SHA256为
+`29986373d3c80cf0816ca7831bdfbfcb908a884a293a67dc81b549aec5361a7f`。
+原件分别保留在仓库外运行`clip-input-residency-20261014`和`clip-input-residency-20261014-attempt2`，
+公开副本替换单机路径与私有网络信息，各成员的原件/公开bytes与SHA256及取回归档摘要写入归档的`provenance.json`。
+
+实际一张RTX4090、总显存24,564 MiB、CPU quota16；Torch2.12.1+cu130、Transformers5.14.1、Ray2.56.1、
+Daft0.7.21。模型为CLIP ViT-B/32，固定revision `3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268`；权重/config/processor
+均测量SHA256且与先行baseline一致，runtime core/image/image-clip检查通过。原CLI用CPU prepare4/source2、
+GPU actor1、batch上限64、window4，每次独立进程并在warmup64图后重建formal actor。标准builder、HSE主循环及厂商baseline均未改。
+
+64张真实JPEG资格中，四个off/on配对及真实异步完整forward的9个矩阵均为64×512 FP32、finite、归一误差最大
+`1.1920928955078125e-7`；四对及异步参考逐元素最大差为0。不同row ID复用相同输入，完整forward仍执行；
+单像素变化重新转换并只改变对应输出行，淘汰后的原输入重载。两个完成确认中断各保留19,267,584逻辑bytes、1个未知引用和真实CUDA事件，
+clear继续持有，同owner显式同步后归还。协作取消在确认阶段观察到真实Ray取消旗标及`CancelledError`；ack故障为明确的控制注入。
+真实异步CLIP事件首次query为False，两份引用继续计费，clear后仍持有，事件完成与两个归还后为0；未添加人为CUDA延迟。
+
+主任务继续使用同一5,000图清单，以下为原CLI operator耗时。缓存预算154,140,672逻辑bytes、最多8条；
+原source的实际分批产生90次forward（5k）与179次（10k），完整输入/输出行数一致，未按理论整批数改变source。
+
+| passes / 配对次序 | cache off 秒 | cache on 秒 | on增加 |
+|---|---:|---:|---:|
+| 1 / off→on | 21.057897 | 21.802446 | 3.54% |
+| 1 / on→off | 21.420140 | 21.720510 | 1.40% |
+| 2 / on→off | 29.800668 | 31.287357 | 4.99% |
+| 2 / off→on | 30.437731 | 32.335908 | 6.23% |
+
+两组均值分别增加2.46%和5.62%；只解释此固定单卡/工作负载的诊断。每个cache-on完整任务均0-hit，
+miss/eviction分别90/82与179/171，hash累计为2.841/2.885秒与5.217/5.771秒；identity临时连续拷贝为0。
+host ownership copy仍为每遍3,010,560,000 bytes，缓存未减少该完整任务的复制。全部10次CLI的512维、finite、
+exactly-once、归一检查通过，同passes的逐行ID＋rounded5向量摘要相同；主任务未另存全5k矩阵作逐元素比较。
+所有调用墙钟、worker设置和GPU/CPU汇总在机器记录与原manifest中分别保留，不能与operator时间混用或减去累计阶段来解释净收益。
+
+| 指标 | off | on |
+|---|---:|---:|
+| 缓存逻辑峰值 MiB | 0 | 128.625 |
+| Torch allocated峰值 MiB | 386.017 | 498.564 |
+| Torch reserved峰值 MiB | 424 | 532 |
+| 原CLI NVML采样最高 MiB | 900 | 1008 |
+
+逻辑峰值低于147 MiB预算，byte与8-entry两种限制及实际分批共同作用；它不表示物理显存。
+Torch峰值从actor模型加载后reset开始，NVML是0.5秒采样汇总及停止时snapshot；逐点NVML时序未保存，不能据此认领设备整体真正瞬时峰值或稳态。
+hash时长、host copy及CUDA事件各自保留，主时间不启用逐阶段全设备同步。单独passes2事件诊断off/on为
+30.435130/33.160000秒，as_tensor流区间累计1.763/1.605秒，forward区间1.471/1.501秒，全部事件已完成；
+这些区间包含分配/转换及提交间隙，不能当作总线字节计数、浮点效率或主性能重复。
+
+首次协调器在环境变量合并处报TypeError，子进程及模型0，物理退出/lease归还已确认；修正后使用独立attempt2，旧证据保留。
+attempt2的2项准备、64图资格、拓扑及10次CLI共14项退出码0，每项自身进程退出均确认；累计81,344图，未超过83,000。
+最终09:26:48 UTC确认全部自身进程与GPU计算结束后归还lease，09:34:13只读复查controller/自有lease/GPU计算均空。
+独立审核复算全部manifest/CSV、源摘要、矩阵、责任及内存；本地后置标签修正另验，不改变已固定的测量源码。
+[最终本地检查](device_final_checks.json)记录121项通过/0跳过、独立25项受影响软件检查、归档逐成员摘要及78文本成员隐私核对。
+
+测量工具9f的命中trace顶层`host_ownership_copy_bytes`按只读源预测，命中时会误记非零；本报告与复算使用内层
+`input_reuse_observation`的实际0-byte记录及无as_tensor事件。未来工具已改为在真实转换接点核对，readonly miss/hit、
+off readonly/writable的本地回归通过；生产驻留源码与9f相同，修后的观测工具未重跑GPU，原件未改写。
+
+当前采用决定：保持默认关闭和只读metadata接点。单批复用的真实正确性已核验，当前完整任务没有收益，
+不扩大缓存/缩小任务来制造命中。shared locality estimate仍返回`None`；HSE集成、选择前内容身份传播、跨actor重用、
+decode复用、双卡容量/速率/选择及设备间直接搬运继续pending。单卡拓扑检查的peer-access方向为空，硬件声明和未来验收计划不代表搬运实现。
+
+复算公开副本，不启动模型或服务器：
+
+```sh
+python3 -B code/scripts/analysis/summarize_clip_input_residency.py \
+  --evidence experiments/results/diagnostics/hse_input_residency_20261014/device_evidence.tar.gz \
+  --output /tmp/new-clip-residency-summary.json
+```

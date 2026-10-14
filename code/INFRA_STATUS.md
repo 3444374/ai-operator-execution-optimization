@@ -3,9 +3,10 @@
 2026-10-14：[CLIP actor输入驻留组件](../experiments/results/diagnostics/hse_input_residency_20261014/README.md)
 已提供默认关闭的byte/entry有界输入复用、内容/表示身份、只读驻留与host reload逻辑字节观测；
 未知完成持有引用/预留，完整forward及本次输出身份保持。正常CUDA完成使用当次stream事件；未知恢复保留device同步。
-120项本地CPU/确定性替身、旧HSE回归及实际验收工具参数/快照检查通过；计划和工具经独立审查。
+准备120项本地CPU/确定性替身、旧HSE回归与工具检查通过；实际单4090/完整CLIP/Ray资格和8主对照/2事件诊断完成。
 缓存字节不是物理显存；标准builder未启用，共同estimate因选择时无prepared内容映射返回`None`。
-实际Ray/CUDA、净收益、调度接线与跨卡直接搬运仍pending。服务器仅做只读核对，验收接续现有共享lease。
+完整5k及重复两遍0-hit，时间与allocator/NVML采样占用增加，默认仍关闭；物理退出及自有lease归还确认。
+生产组件的实际测量SHA为9f1b4ef5，工具复制字节标签在本地后置修正。HSE调度接线、跨卡直接搬运与净收益仍pending。
 
 2026-10-14：[HSE A正确性切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
 保留source先行、全终态历史扫描及CLI默认；B历史扫描优化与C ready优先分别待纳入。

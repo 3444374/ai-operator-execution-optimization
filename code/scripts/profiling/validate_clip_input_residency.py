@@ -161,6 +161,8 @@ def _nvml_device_memory():
 
 def make_measured_actor(cache_bytes, cache_entries=8, cuda_events=False):
     """Build one experiment-only actor class; never patch a native baseline."""
+    import numpy as np
+
     from src.modalities.image.reusable_clip import ReusableClipTensorActor
     from src.modalities.image.clip import extract_clip_image_features, l2_normalize_embeddings
 
@@ -172,6 +174,11 @@ def make_measured_actor(cache_bytes, cache_entries=8, cuda_events=False):
             return getattr(self.torch, name)
 
         def as_tensor(self, *args, **kwargs):
+            if self.owner._trace is not None:
+                # Observe the owned host buffer actually passed by _device_input.
+                # A read-only source alone does not imply a copy on a cache hit.
+                copied = not np.shares_memory(self.owner._host_input_source, args[0])
+                self.owner._trace["host_ownership_copy_bytes"] = int(args[0].nbytes) if copied else 0
             return self.owner._observe_stage("as_tensor", self.torch.as_tensor, *args, **kwargs)
 
     class ModelObserver:
@@ -239,16 +246,23 @@ def make_measured_actor(cache_bytes, cache_entries=8, cuda_events=False):
                         self._trace[stage + "_events"] = events
 
         def _device_input(self, payload):
-            result = super()._device_input(payload)
-            if self._trace is not None:
-                self._trace["host_copy_s"] = result[1]
-            return result
+            self._host_input_source = payload
+            try:
+                result = super()._device_input(payload)
+                if self._trace is not None:
+                    self._trace["host_copy_s"] = result[1]
+                    observation = self.input_reuse_observation()
+                    if self._cache_enabled and observation is not None:
+                        self._trace["host_ownership_copy_bytes"] = observation.host_ownership_copy_bytes
+                return result
+            finally:
+                self._host_input_source = None
 
         def embed(self, batch):
             self._trace = {"row_count": len(batch.doc_ids),
                            "row_ids_sha256": hashlib.sha256(json.dumps(batch.doc_ids).encode()).hexdigest(),
                            "input_host_bytes": int(batch.payload.nbytes),
-                           "host_ownership_copy_bytes": 0 if batch.payload.flags.writeable else int(batch.payload.nbytes)}
+                           "host_ownership_copy_bytes": 0}
             started = time.perf_counter()
             try:
                 result = super().embed(batch)

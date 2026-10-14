@@ -2,8 +2,10 @@
 
 2026-10-14：[CLIP actor输入驻留组件](diagnostics/hse_input_residency_20261014/README.md)：初版106项、实际验收准备120项CPU/确定性Torch与模型替身检查通过，
 覆盖默认关闭、实际内容/表示身份、有限预算/淘汰、完整forward、本次row ID及未知完成保留引用；
-仅支持actor本地机制判断，不能解释为物理HBM、实际H2D或多卡收益。正常CUDA完成改为当次stream事件，资格/交错完整任务/阶段观测工具经独立审查；
-HSE选择时无prepared内容映射，estimate返回`None`，实际库/GPU/跨卡直接搬运仍pending。
+随后[实际单卡补充](diagnostics/hse_input_residency_20261014/README.md#actual-device-results)绑定驻留9f1b4ef5＋原图像45da：
+真实Torch/CLIP/Ray命中/内容变化/未知完成/协作取消与完整512维输出核验通过；8主对照、2事件诊断完成。
+完整5k/重复两遍全部0-hit，耗时与物理内存增加，默认关闭；全部进程退出和lease归还已确认。
+HSE选择时无prepared内容映射，estimate返回`None`，多卡选择/跨卡直接搬运仍pending；不把缓存逻辑bytes解释为物理HBM。
 
 2026-10-14：[HSE A集成检查](diagnostics/hse_static_lifecycle_20261014/README.md)：29项定向CPU／受控Ray替身通过，
 A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要；原47f完整CPU成本与失败证据独立保留，不提供A实库／GPU资格。

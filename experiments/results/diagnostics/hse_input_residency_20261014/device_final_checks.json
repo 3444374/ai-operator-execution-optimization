@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "local_tests": {
+    "run": 121,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "log": "tmp/hse-input-residency/final-local-tests.log"
+  },
+  "independent_final_review": {
+    "required_fixes_remaining": [],
+    "software_tests_read_only": 25,
+    "actual_qualification_matrix_count": 9,
+    "actual_source_files_verified": 394,
+    "runtime_import_manifests_verified": 12,
+    "final_original_files": 80,
+    "actual_call_exits_confirmed": 14
+  },
+  "publication": {
+    "evidence_sha256": "29986373d3c80cf0816ca7831bdfbfcb908a884a293a67dc81b549aec5361a7f",
+    "public_members": 79,
+    "text_members_privacy_scanned": 78,
+    "summary_recomputed": true,
+    "numeric_fields_preserved": true,
+    "originals_retained": true,
+    "source_after_measurement_tool_only_fix": true
+  },
+  "source_sha256": {
+    "code/scripts/profiling/validate_clip_input_residency.py": "01ef8fd63ea3395ceec87094cd4c5f7de7aabbd93508e5b88baf3e1f1af4f53e",
+    "code/tests/modalities/image/test_clip_input_residency_validation.py": "0f2f55da5f1d78865440e5014e6391de34f57fa91dec219c193e19ae5b47a37a",
+    "code/scripts/analysis/summarize_clip_input_residency.py": "c5017cf41700f140a685ca7db4085deaf167098a79dcda9e0d30eeda9fd907b9"
+  },
+  "failures_preserved": [
+    {
+      "stage": "private coordinator attempt1",
+      "model_calls": 0,
+      "error": "environment merge TypeError; corrected in independent attempt2"
+    },
+    {
+      "stage": "local archive analysis first invocation",
+      "model_calls": 0,
+      "error": "guessed NPZ basename was absent; corrected to recorded artifact filename"
+    },
+    {
+      "stage": "final document/check tools",
+      "model_calls": 0,
+      "error": "exec-server disconnected temporarily; recovered and checked pending state before applying docs"
+    }
+  ]
+}

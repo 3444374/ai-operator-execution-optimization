@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-14：完成输入驻留实际单4090诊断并保留负结果
+
+驻留源码9f1b4ef5与固定图像45da逐文件绑定，原CLIP输入转换仅抽取接点，完整forward/输出、原CLI与厂商baseline保持。
+[实际结果](experiments/results/diagnostics/hse_input_residency_20261014/README.md#actual-device-results)完成真实64图资格、
+8次完整任务交错对照与2次独立事件诊断；生命周期与输出核验通过，全部自身进程退出且共享lease已归还。
+完整5k/重复两遍全部0-hit，时间与内存增加，缓存继续默认关闭；当前estimate仍None，HSE/双卡接线与搬运pending。
+首次零模型协调错误保留并在新attempt2修正；累计81,344图。复制字节观测标签仅后置本地修正，未改测量原件或重跑GPU。
+归档保留紧凑脱敏原始观测和矩阵、全部重复值、来源/恢复摘要及复算入口；总纲、代码状态与台账只同步相应判断。
+
 ## 2026-10-14：准备输入驻留的真实单卡验收
 
 [实际验收工具](code/scripts/profiling/validate_clip_input_residency.py)使用固定图像CLI和64张真实JPEG资格，

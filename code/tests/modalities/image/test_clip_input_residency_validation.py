@@ -124,6 +124,44 @@ class ClipInputResidencyValidationTests(unittest.TestCase):
         self.assertFalse(snapshot["calls"][1]["as_tensor_event_done"])
         json.dumps(snapshot)
 
+    def test_copy_observation_follows_readonly_miss_hit_and_uncached_paths(self):
+        sys.path.insert(0, str(CODE_ROOT))
+        from src.modalities.image.clip import ClipTensorActor
+        from src.modalities.image.contracts import ImageEmbeddingBatch
+        from tests.modalities.image.test_reusable_clip import _initialize
+
+        def initialize(actor, revision, **kwargs):
+            _initialize(actor, revision, **kwargs)
+            for name in ("memory_allocated", "memory_reserved", "max_memory_allocated",
+                         "max_memory_reserved", "reset_peak_memory_stats"):
+                setattr(actor._torch.cuda, name, lambda _device: 0)
+
+        for budget, writeable in ((96, False), (0, False), (0, True)):
+            with self.subTest(cache_bytes=budget, writeable=writeable):
+                actor_type = MODULE.make_measured_actor(budget)
+                with patch.object(ClipTensorActor, "__init__", initialize):
+                    actor = actor_type("fixture-model", dtype="float32")
+                pixels = np.arange(24, dtype=np.float32).reshape(2, 3, 2, 2)
+                pixels.flags.writeable = writeable
+                first = actor.embed(ImageEmbeddingBatch(("first", "second"), pixels,
+                                                        "preprocessed_tensor", 8, "pixels"))
+                second = actor.embed(ImageEmbeddingBatch(("new-first", "new-second"), pixels,
+                                                         "preprocessed_tensor", 8, "pixels"))
+                first_copy_bytes = 0 if writeable else pixels.nbytes
+                self.assertEqual(actor._records[0]["host_ownership_copy_bytes"], first_copy_bytes)
+                self.assertEqual(actor._records[1]["host_ownership_copy_bytes"],
+                                 0 if budget else first_copy_bytes)
+                self.assertEqual(actor._torch.conversions, 1 if budget else 2)
+                self.assertEqual(actor._forward_calls, 2)
+                self.assertEqual(second.doc_ids, ("new-first", "new-second"))
+                np.testing.assert_array_equal(first.embeddings, second.embeddings)
+                if budget:
+                    hit = actor._records[1]
+                    self.assertEqual(hit["input_reuse_observation"]["host_ownership_copy_bytes"], 0)
+                    self.assertTrue(hit["input_reuse_observation"]["transfer"]["reuse_available"])
+                    self.assertNotIn("as_tensor_host_call_s", hit)
+                self.assertIsNone(actor._host_input_source)
+
     def test_source_path_escape_is_rejected_before_read(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

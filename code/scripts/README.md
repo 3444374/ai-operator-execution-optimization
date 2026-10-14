@@ -9,6 +9,9 @@
 模型与processor要求已有本地目录，观测/embedding文件不覆盖旧结果。资源、完整任务和交错次序以
 [实际单卡计划](../../experiments/plans/数据组织.md#clip-input-device-validation)为准；运行前执行原runtime preflight，
 外层协调器取得空闲共享lease并确认自身进程实际退出。工具本身不授予服务器执行名额。
+[`analysis/summarize_clip_input_residency.py`](analysis/summarize_clip_input_residency.py)读取已保存的脱敏证据归档，
+复算各次时间/缓存/内存和资格矩阵；不导入设备或模型SDK，`--output`拒绝覆盖旧文件。实际范围与0-hit负结果见
+[同题报告](../../experiments/results/diagnostics/hse_input_residency_20261014/README.md#actual-device-results)。
 
 ## SemBench Movie原始查询
 
