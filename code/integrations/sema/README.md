@@ -25,6 +25,81 @@ PYTHONPATH=code <driver-python> code/integrations/sema/verify_native.py \
 
 ## IMLane薄客户端
 
+新增[桥生命周期与阶段测量候选](imlane_calls.md#bridge-lifecycle)，显式`reuse_bridge=True`才选择常驻context。
+仍保留逐调用HTTP client和逐批私有输入文件，默认旧路径保持；新会话的两作者模式实库资格单独验证。
+
+<a id="imlane-session-verifier"></a>
+
+### 默认／复用的软件资格验证器
+
+[verify_imlane_session.py](verify_imlane_session.py)复用既有`AuthorScope`与HTTP fixture，
+每个窗口只选择一个作者运行时，顺序检查默认及复用路径；不上传、不编译、不安装或加载模型。
+健康三批共用同一个执行器，核对完整请求／响应、重复源行、乱序、429、batch ID及结束栅栏，
+持有首批输出并在后续批次后复核。transport、超时、消费中止、发送后取消、桥崩溃及SDK parser中止
+各用独立Coordinator／namespace；保留首错与unknown记录，并拒绝同身份的新拥有者。
+故障后的强制清理仍保留原始`passed=False`，只有自有进程、线程和共享内存退出均确认才记录隔离完成。
+
+[独立SDK客户端](imlane_session_sdk_client.py)使用既有LOTUS解释器，经过公开执行器工厂、原LOTUS Map与
+`MovieQueryResult.execute`的原Q1/Q2/Q3完整消费；关系是有限合成`software_fixture`，不替代原2000行任务或模型质量。
+原batch adapter会将部分OpenAI解析错误作为结果值；parser中止探针显式在消费回调调用同一原SDK parser，
+以检查异常退出后的隔离，不改正常查询错误语义。
+整份源锁在作者启动前核对；只读SemBench Git checkout可以作为输入，配置及结果必须在Git仓库外。
+LOTUS解释器保留venv路径，不把符号链接解析成基础Python。
+
+执行前由主协调分配并持有共享host lease、八个CPU槽和串行窗口，完成独立环境预检及新桥构建。
+实际host额度为16核，affinity可见128核不构成额外预算；与Ray／Daft重负载窗口串行。
+验证器持续检查lease摘要、进程树RSS及本namespace共享内存；每格最多128 POST，
+RSS8GiB／SHM2GiB，作者Ray2CPU／0GPU／128MiB对象存储。
+本轮用`--wall-limit-s 0`取消健康运行的总时长计时器、cell deadline及elapsed上限，
+健康SDK子进程的总运行等待也不设timeout；启动、parser、显式故障及既有单调用／单批接口的超时保持。
+省略该参数仍保留默认限时：每格最多600秒、单作者运行时两格最多1200秒，含60秒清理预留。
+lease变化、资源超量或启用的时间窗口到期停止新工作，只清理核对身份的自有进程。
+
+```sh
+taskset -c <assigned-eight-CPU-IDs> <author-python> -B code/integrations/sema/verify_imlane_session.py \
+  --execute --runtime cpython --path-mode both \
+  --author-root <checked-author-build> --bridge-binary <new-checked-bridge> \
+  --lotus-python <existing-LOTUS-venv-python> --tokenizer <existing-local-tokenizer> \
+  --checkout <pinned-read-only-SemBench-checkout> --source-manifest <candidate-source-lock> \
+  --lease-file <held-shared-host-lease> --lease-sha256 <current-lease-SHA256> \
+  --cpu-ids <same-eight-comma-separated-CPU-IDs> --cpu-quota-cores 16 \
+  --output <new-private-output> --wall-limit-s 0
+```
+
+作者Ray在另一个已分配窗口使用`--runtime ray`。[本机替身检查](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)
+与[四格实库软件资格](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)分开记录；
+新桥／同步内核／原SDK有限消费已核验，原2000行完整CLI、PG、async与reuse组合及模型仍pending。
+下方旧验证器的main不作为新常驻方案的资格入口，默认`reuse_bridge=False`保持。
+
+<a id="imlane-model-contract"></a>
+
+### 下一轮两作者模式真实Q2／Q1的配置契约
+
+使用同一已冻结模型owner的服务、权重／tokenizer及GPU签名，原Movie数据／清单和固定SemBench源码；
+复用原formatter、完整HTTP调用、原parser／官方评价，不继承软件fixture正文、时长或旧窗口预算。
+原Q2每模式120调用，保留WHERE与LIMIT5；原Q1每模式完整2000调用，不能拆成诊断小批或用本轮12行证明规模资格。
+Q2按原查询核对temperature0、top_p1、max_tokens8、stop换行；Q1从固定原查询取得并核对自己的实际生成参数。
+缓存关闭、重试0，完整响应和实际调用账本分别核查；模型质量与执行成功分开解释。
+
+公开arm分别为`lotus-method-native-imlane`与`lotus-method-native-imlane-ray`，
+私有`IMLaneCallConfig`的`runtime`分别绑定`cpython`／`ray`及新Coordinator PID／start ticks。
+两者先采用同步`imlane_complete_call.py`和默认`reuse_bridge=False`；桥源码／构建身份、作者库及UDF摘要按
+本轮执行提交`6916ebe5`和实际二进制固定。不能复用已清理实例的配置或unknown身份。
+显式设置`max_batch_rows=2000`，其余五项容量保持32MiB输入、48MiB wire、
+8MiB单项、128 pending、32MiB总响应，并在发送前核对本轮真实完整输入是否装入。
+pending是宿主存储窗口，不是作者执行并发；两物理worker与实际6 task threads分别核对，不按gateway的4误报worker数。
+
+由主协调匹配模型服务及最多8个IMLane CPU槽、独立lease与资源额度；模型机器profile重新检查，
+不以本轮软件8槽预检代替模型资格。作者Ray继续独立2CPU／0GPU／128MiB对象存储，作者进程树RSS8GiB／SHM2GiB保护保持。
+健康运行不按总时长截断，保留适合真实请求的超时、无进展／取消与资源保护。
+单轮无预热各一次时，两模式Q2为240逻辑调用，Q1为4000；预热、重复、失败、未知及网关路由的每一跳
+另行计入主协调的新账本，不借用本轮222软件POST额度。
+发送后出现未知工作或消费／解析中止时停止该query，保留账本与uncertain记录；确认自有runtime／SHM退出，
+并由模型owner核对服务队列后才选择新Coordinator，杀桥不说明远端模型调用已取消。
+
+若下一轮比较显式`reuse_bridge=True`，使用相同模型／查询／容量和新实例作为独立臂，先核对原规模公开入口、
+完整响应与清理，再做匹配测量；保持默认关闭，不混合flag后作排名。async与reuse组合单独取得资格。
+
 [原生async任务函数](imlane_async_complete_call.py)作为独立候选，在作者循环上直接`await _request(call)`。
 CPython通过作者`run_until_complete`执行，作者Ray通过原`AsyncActorWrapper`执行；两模式使用同一函数。
 每次仍只有一份完整NativeCall，每调用session由既有kernel关闭，cookie与错误诊断采用发布组合的共享实现。

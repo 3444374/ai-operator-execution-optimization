@@ -5,6 +5,14 @@
 Daft／Ray Data活动及Ray新进程导入5项实库检查通过、120localhost POST，模型／GPU0。
 逐成员配置、观测、资源与独立退出核查由同一报告定位；单次软件检查不增加方法性能或端到端资格。
 
+2026-10-14：[IMLane桥生命周期检查](diagnostics/imlane_bridge_lifecycle_20261014/README.md)。
+Python协议／localhost fixture与真实Arrow复制原语分别验证；
+默认逐批桥保持，不将context复用当作HTTP连接复用或新调度算法。
+新增[薄验证器本机阶段](diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)覆盖同执行器多批、
+原SDK消费替身及错误隔离；源锁、资源／lease和首错保护已检查。
+接续[固定6916四格实库软件资格](diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)通过，生产适配来自9766，
+保留6项Ray故障SHM清理的原始非clean记录；只支持同步内核与有限原SDK消费，不替代原规模模型／PG或async组合。
+
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。
 旧实现12组后窗口反例已复现；修后显式预检零flow／零发送，默认分块的合法前缀及未消费责任保留。该本地轮SDK／HTTP／服务器／模型均0。

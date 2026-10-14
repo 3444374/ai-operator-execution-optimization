@@ -1,0 +1,1022 @@
+{
+  "schema": "semloom.imlane.bridge_author_checks.v1",
+  "date": "2026-10-14",
+  "approved_base_commit": "f788a094fd5270607294b2303e309a09450e399e",
+  "execution_commit": "6916ebe5bda5fc1d6826df09db0950bfeff1231f",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "source_file_count": 173,
+  "source_manifest_sha256": "875c80a57b97bc3fc88af9d071f328c820610f7e277811d05ae9092ff43b2582",
+  "source_delta": {
+    "code/integrations/sema/verify_imlane_session.py": {
+      "before_sha256": "d5dc0e71e6b51c2af73882cf3e201691086ebbf3cd8ec9beb240d1bf502ee7c5",
+      "after_sha256": "209f219c13dea671bf761bb4150d985fadfd718dd81502f219ec0e81a53d07a5"
+    },
+    "code/tests/baselines/test_imlane_session_verifier.py": {
+      "before_sha256": "5895f58a32c3c9c7569db6b3935174de623eab415558f8a80bfd21cef9ee1ece",
+      "after_sha256": "d0f9361c7d04543ba7dc6ecd6bf86b8b8851a6495b864eefa9489ebe189217bf"
+    }
+  },
+  "bridge": {
+    "source_sha256": "c726cbb806dc458461ac5517e586d7e4b170f41e32920c60f167e722c4e48e58",
+    "binary_sha256": "8f7d48aa3a73bd6ef35c2da7426c0b0f8e2cbc4dbc985dc15834de5d51de396d",
+    "compile_returncode": 0
+  },
+  "preflight": {
+    "author": "ok",
+    "lotus": "ok"
+  },
+  "input_records": {
+    "cpython01-complete.json": {
+      "bytes": 343180,
+      "sha256": "c8236392f601bdb52e869bab904a4f7a273e31d796fb94f567c48a2473d96c2f"
+    },
+    "ray01-complete.json": {
+      "bytes": 353939,
+      "sha256": "9e2341ef46722d349010823ce24ea3731572912bdeed1fb4c2911eeb6852aa2d"
+    },
+    "build-and-preflight.json": {
+      "bytes": 14300,
+      "sha256": "f92b3436c06f98166906ebfd9cd3f7d161ee64849dc8c0aa999725f99f900708"
+    },
+    "final-check02.json": {
+      "bytes": 1006,
+      "sha256": "1e77d0f1eb18cdaf647981b7013293c4eaab8000403f786f1f8467c7b4fd6a8a"
+    },
+    "delta01-check.stdout": {
+      "bytes": 799,
+      "sha256": "846f0dce90ce3128df484299674e74c47bb774422328a14e5d69193a75536a54"
+    }
+  },
+  "author_environment": {
+    "pyarrow": "16.1.0",
+    "ray": "2.56.1",
+    "psutil": "7.0.0",
+    "aiohttp": "3.14.5"
+  },
+  "sdk_environment": {
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "pandas": "2.3.3",
+      "tokenizers": "0.22.2",
+      "pyarrow": "24.0.0"
+    },
+    "source_sha256": {
+      "lotus/models/lm.py": "83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3",
+      "lotus/sem_ops/sem_map.py": "bfa7465c0cb2c0440e9c0cfb9ea3f394afa60b93c593472c2cab55994a456b16",
+      "lotus/templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3",
+      "lotus/sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+      "lotus/cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "lotus/settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "lotus/nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
+      "lotus/pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
+      "litellm/llms/openai/chat/gpt_transformation.py": "5a19feeb4b9957b8d2fb7c941ef0573e4e3b2931ae85db7609f876cff9e07016",
+      "litellm/utils.py": "8ef5db22a20cd45740788756aabc0e394efe20877311f0eff4ce491c94335d2a"
+    }
+  },
+  "scope": "actual author CPython/Ray and pinned original SDK, finite synthetic localhost software fixture",
+  "healthy_total_limit_s": 0,
+  "host_cpu_quota_cores": 16,
+  "assigned_cpu_slots": 8,
+  "rss_limit_bytes": 8589934592,
+  "namespace_shm_limit_bytes": 2147483648,
+  "cells": [
+    {
+      "id": "cpython-default",
+      "passed": true,
+      "root_posts": 24,
+      "root_reserved": 25,
+      "sdk_posts": 28,
+      "parser_posts": 4,
+      "actual_posts": 56,
+      "post_limit": 128,
+      "healthy_root_rows": [
+        4,
+        4,
+        4
+      ],
+      "context_creations": [
+        1,
+        1,
+        1
+      ],
+      "registrations": [
+        1,
+        1,
+        1
+      ],
+      "same_healthy_bridge_pid": null,
+      "independent_batch_ids": null,
+      "output_lifecycle_verified": true,
+      "sdk_rows": [
+        4,
+        12,
+        6,
+        6
+      ],
+      "sdk_context_creations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "query_results": [
+        {
+          "query_id": 1,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-1",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-3",
+              false
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-5",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-7",
+              false
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-9",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ],
+            [
+              "movie-row-11",
+              false
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-1",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-5",
+              "duplicate-review-2"
+            ]
+          ],
+          "source_rows": 12,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 2,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-6",
+              "duplicate-review-3"
+            ],
+            [
+              "movie-row-8",
+              "duplicate-review-4"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 3,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "positive_review_cnt",
+              "6"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        }
+      ],
+      "author_workers": 2,
+      "author_traced_healthy_calls": 40,
+      "faults": [
+        "transport",
+        "timeout",
+        "consumer",
+        "cancel",
+        "crash"
+      ],
+      "parser_consumed_responses": 1,
+      "parser_first_error_preserved": true,
+      "declared_coordinator_executors": 2,
+      "native_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "native_settings_are_physical_executor_count": false
+    },
+    {
+      "id": "cpython-reuse",
+      "passed": true,
+      "root_posts": 24,
+      "root_reserved": 25,
+      "sdk_posts": 28,
+      "parser_posts": 4,
+      "actual_posts": 56,
+      "post_limit": 128,
+      "healthy_root_rows": [
+        4,
+        4,
+        4
+      ],
+      "context_creations": [
+        1,
+        0,
+        0
+      ],
+      "registrations": [
+        1,
+        0,
+        0
+      ],
+      "same_healthy_bridge_pid": true,
+      "independent_batch_ids": true,
+      "output_lifecycle_verified": true,
+      "sdk_rows": [
+        4,
+        12,
+        6,
+        6
+      ],
+      "sdk_context_creations": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "query_results": [
+        {
+          "query_id": 1,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-1",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-3",
+              false
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-5",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-7",
+              false
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-9",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ],
+            [
+              "movie-row-11",
+              false
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-1",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-5",
+              "duplicate-review-2"
+            ]
+          ],
+          "source_rows": 12,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 2,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-6",
+              "duplicate-review-3"
+            ],
+            [
+              "movie-row-8",
+              "duplicate-review-4"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 3,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "positive_review_cnt",
+              "6"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        }
+      ],
+      "author_workers": 2,
+      "author_traced_healthy_calls": 40,
+      "faults": [
+        "transport",
+        "timeout",
+        "consumer",
+        "cancel",
+        "crash"
+      ],
+      "parser_consumed_responses": 1,
+      "parser_first_error_preserved": true,
+      "declared_coordinator_executors": 2,
+      "native_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "native_settings_are_physical_executor_count": false
+    },
+    {
+      "id": "ray-default",
+      "passed": true,
+      "root_posts": 23,
+      "root_reserved": 25,
+      "sdk_posts": 28,
+      "parser_posts": 4,
+      "actual_posts": 55,
+      "post_limit": 128,
+      "healthy_root_rows": [
+        4,
+        4,
+        4
+      ],
+      "context_creations": [
+        1,
+        1,
+        1
+      ],
+      "registrations": [
+        1,
+        1,
+        1
+      ],
+      "same_healthy_bridge_pid": null,
+      "independent_batch_ids": null,
+      "output_lifecycle_verified": true,
+      "sdk_rows": [
+        4,
+        12,
+        6,
+        6
+      ],
+      "sdk_context_creations": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "query_results": [
+        {
+          "query_id": 1,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-1",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-3",
+              false
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-5",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-7",
+              false
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-9",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ],
+            [
+              "movie-row-11",
+              false
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-1",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-5",
+              "duplicate-review-2"
+            ]
+          ],
+          "source_rows": 12,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 2,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-6",
+              "duplicate-review-3"
+            ],
+            [
+              "movie-row-8",
+              "duplicate-review-4"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 3,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "positive_review_cnt",
+              "6"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        }
+      ],
+      "author_workers": 2,
+      "author_traced_healthy_calls": 40,
+      "faults": [
+        "transport",
+        "timeout",
+        "consumer",
+        "cancel",
+        "crash"
+      ],
+      "parser_consumed_responses": 1,
+      "parser_first_error_preserved": true,
+      "declared_coordinator_executors": 2,
+      "native_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "native_settings_are_physical_executor_count": false
+    },
+    {
+      "id": "ray-reuse",
+      "passed": true,
+      "root_posts": 23,
+      "root_reserved": 25,
+      "sdk_posts": 28,
+      "parser_posts": 4,
+      "actual_posts": 55,
+      "post_limit": 128,
+      "healthy_root_rows": [
+        4,
+        4,
+        4
+      ],
+      "context_creations": [
+        1,
+        0,
+        0
+      ],
+      "registrations": [
+        1,
+        0,
+        0
+      ],
+      "same_healthy_bridge_pid": true,
+      "independent_batch_ids": true,
+      "output_lifecycle_verified": true,
+      "sdk_rows": [
+        4,
+        12,
+        6,
+        6
+      ],
+      "sdk_context_creations": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "query_results": [
+        {
+          "query_id": 1,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-1",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-3",
+              false
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-5",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-7",
+              false
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-9",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ],
+            [
+              "movie-row-11",
+              false
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-1",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-5",
+              "duplicate-review-2"
+            ]
+          ],
+          "source_rows": 12,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 2,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "movie-row-0",
+              "duplicate-review-0"
+            ],
+            [
+              "movie-row-2",
+              "duplicate-review-1"
+            ],
+            [
+              "movie-row-4",
+              "duplicate-review-2"
+            ],
+            [
+              "movie-row-6",
+              "duplicate-review-3"
+            ],
+            [
+              "movie-row-8",
+              "duplicate-review-4"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        },
+        {
+          "query_id": 3,
+          "decisions": [
+            [
+              "movie-row-0",
+              true
+            ],
+            [
+              "movie-row-2",
+              true
+            ],
+            [
+              "movie-row-4",
+              true
+            ],
+            [
+              "movie-row-6",
+              true
+            ],
+            [
+              "movie-row-8",
+              true
+            ],
+            [
+              "movie-row-10",
+              true
+            ]
+          ],
+          "result": [
+            [
+              "positive_review_cnt",
+              "6"
+            ]
+          ],
+          "source_rows": 6,
+          "independent_order_limit_count_verified": true
+        }
+      ],
+      "author_workers": 2,
+      "author_traced_healthy_calls": 40,
+      "faults": [
+        "transport",
+        "timeout",
+        "consumer",
+        "cancel",
+        "crash"
+      ],
+      "parser_consumed_responses": 1,
+      "parser_first_error_preserved": true,
+      "declared_coordinator_executors": 2,
+      "native_settings": {
+        "native_executors": 4,
+        "native_task_threads": 6
+      },
+      "native_settings_are_physical_executor_count": false
+    }
+  ],
+  "total_posts": 222,
+  "sdk_byte_audit": {
+    "requests": 128,
+    "consumed_responses": 116,
+    "consumed_response_bytes": 34244
+  },
+  "cleanup_scopes": 28,
+  "original_clean_scopes": 22,
+  "expected_fault_shm_cleanup_scopes": 6,
+  "owned_identities_exit_verified": 305,
+  "lease_released": true,
+  "resource_errors": [],
+  "models": 0,
+  "gpu": 0,
+  "retries": 0,
+  "failure_history": [
+    {
+      "stage": "control transport",
+      "outcome": "macOS PTY truncated initial command; no child or output; terminal fixed before one retry"
+    },
+    {
+      "stage": "record reduction",
+      "outcome": "field name mistakes in read-only summaries corrected; original stderr retained privately; no matrix rerun"
+    }
+  ],
+  "pending": [
+    "full original 2000-row workload/CLI",
+    "PG integration of the new session",
+    "async UDF combined with the new session",
+    "model quality and matched performance"
+  ],
+  "timing_rule": "overlapping inclusive stages are not summed as JCT; software program wall is not a performance comparison"
+}

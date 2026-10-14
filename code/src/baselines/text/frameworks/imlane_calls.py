@@ -44,9 +44,12 @@ class IMLaneCallConfig:
     max_item_payload_bytes: int = 8 * 1024**2
     max_pending_calls: int = 128
     max_batch_response_bytes: int = 32 * 1024**2
+    reuse_bridge: bool = False
 
     def __post_init__(self):
         self.batch_limits
+        if type(self.reuse_bridge) is not bool:
+            raise TypeError('IMLane reuse_bridge requires an explicit boolean')
         if self.runtime not in ('cpython', 'ray'):
             raise ValueError('IMLane requires explicit author cpython or ray mode')
         if any(type(v) is not int or v < 1 for v in
@@ -115,7 +118,8 @@ class IMLaneCallExecutor:
                                                      if value is not None})
         self.max_batch_rows = self.limits.max_batch_rows
         self.max_batch_bytes = self.limits.max_input_payload_bytes
-        self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits)
+        self.delegate = SemaIMLaneExecutor(Path(config.bridge_config_path), self.options, limits=self.limits,
+                                          reuse_bridge=config.reuse_bridge)
         self.last_close_report = None
         self.last_preflight = None
         self._facts = None
@@ -134,10 +138,44 @@ class IMLaneCallExecutor:
         return self.start()
 
     def __exit__(self, kind, error, traceback):
-        self.delegate.__exit__(kind, error, traceback)
+        try:
+            self.close()
+        except BaseException as cleanup:
+            if error is None:
+                raise
+            error.add_note('IMLane close error: ' + type(cleanup).__name__)
 
     def close(self):
-        self.delegate.close()
+        primary = None
+        process = self.delegate._process
+        if self.delegate.begin_close():
+            if self.last_close_report is None:
+                self.last_close_report = {}
+            self.last_close_report.update(clean=False,
+                graph_consumer_stopped=False, author_submission_possible=True,
+                author_dispatch_started=True, author_batches_drained=False,
+                bridge_started=True, bridge_stopped=False,
+                external_coordinator_requires_cleanup=True, remote_http_stopped='unavailable')
+            try:
+                self._record_uncertain(self.last_close_report)
+            except BaseException as error:
+                primary = error
+        try:
+            self.delegate.close()
+        except BaseException as cleanup:
+            if primary is None:
+                raise
+            primary.add_note('IMLane child close also failed: ' + type(cleanup).__name__)
+        finally:
+            if self.last_close_report is not None and self.last_close_report.get('external_coordinator_requires_cleanup'):
+                self.last_close_report['bridge_stopped'] = process is None or process.poll() is not None
+        if primary is not None:
+            raise primary
+
+    def _record_uncertain(self, report):
+        # Preserve the first record; a suspended iterator may later attempt the same close.
+        if not self._uncertain.exists():
+            write_private_json(self._uncertain, report)
 
     def __call__(self, calls, cancelled=None):
         return self.iter_batch(calls, cancelled=cancelled)
@@ -203,24 +241,25 @@ class IMLaneCallExecutor:
                 previous = self.delegate.last_close_report
                 if previous is not None:
                     report.update(previous)
-                    dispatched = previous.get('bridge_started') is True
+                    dispatched = previous.get('author_submission_possible', previous.get('bridge_started')) is True
                     clean = previous.get('clean') is True
+                    returned = previous.get('batch_callbacks_returned', clean)
                     report.update(runtime=self.config.runtime, author_dispatch_started=dispatched,
                         clean=clean and not transport_uncertain,
                         transport_completion_uncertain=transport_uncertain,
                         author_submission_possible=dispatched,
-                        author_batches_drained=clean,
+                        author_batches_drained=returned,
                         external_coordinator_stopped=False,
                         external_coordinator_requires_cleanup=dispatched and (not clean or transport_uncertain),
                         author_lane_release=('DBEnd returned all batches and sends RestoreLane'
-                                             if clean else 'unconfirmed; caller owns cleanup'
+                                             if returned else 'unconfirmed; caller owns cleanup'
                                              if dispatched else 'no bridge process created; no author submission'),
                         native_settings_are_physical_executor_count=False,
                         author_query_job_id='empty in existing bridge; caller occurrence IDs retained',
                         resident_output_limit='existing bridge has no aggregate 32MiB resident-output check')
                     if dispatched and (not clean or transport_uncertain):
                         try:
-                            write_private_json(self._uncertain, report)
+                            self._record_uncertain(report)
                         except BaseException as exc:
                             if primary is None:
                                 raise
