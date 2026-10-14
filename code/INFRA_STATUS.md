@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[固定 JPEG 文件源实际 SDK 检查](../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
+在 `964e70ef` 上三项通过、0 跳过，覆盖 Daft／Ray reader 与两个 CPU 替身工厂 actor 的 shutdown 前退出。
+保持原 PG 及 direct_dependency 默认；真实 CLIP／GPU／HSE、完整 CLI 退出及厂商总 I/O 并发仍待验证。
+
 2026-10-14：[原生HTTP活动核查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#native-http-activity)
 补齐Ray行数包络／活跃HTTP上界／导入B及既有实测峰值口径；Daft与Ray校验仅用于所选后端。
 IMLane／Ray Core C1的公共接入检查通过，作者IMLane实库C1仍待核查；固定`81a38e52`的

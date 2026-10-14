@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-14：[JPEG 文件源及 CPU 工厂退出的固定 SDK 检查](diagnostics/image_file_sdk_20261014/README.md)。
+`964e70ef` 三项实际检查通过、0 跳过；reader 各 4 行顺序／编码字节与两个 CPU actor 的 shutdown 前物理退出分别核验。
+首次 lease 交接未进入 SDK，失败与成功及 66 Git 依赖摘要保留；仅支持这些组件，不增加 HSE／GPU／CLIP 性能或完整 CLI 退出资格。
+
 2026-10-14：[原生参数与HTTP活动核查](postgresql/native_executor_baselines_20261012/README.md#native-http-activity)。
 本地配置、图替身与HTTP／事件循环责任检查按本地来源保留；随后固定`81a38e52`的
 Daft／Ray Data活动及Ray新进程导入5项实库检查通过、120localhost POST，模型／GPU0。

@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：整合固定 JPEG 文件源与实际 SDK 证据
+
+- 图像来源 `2f116d4a` 在固定集成候选 `964e70ef` 完成[三项实际 SDK 检查](experiments/results/diagnostics/image_file_sdk_20261014/README.md)，0 失败／0 跳过；66 个 Git 依赖逐字节一致，测量后生产源码及测试未改。
+- 保留首次 lease 交接的零 SDK 失败和成功原件；两条 reader 各 4 行编码字节／顺序、两个 CPU 替身 actor 的 shutdown 前 PID／出生身份退出分别记账，最终共同 lease 已释放。
+- 仅整合图像文件源、失败池清理与精简证据，原 PG／direct_dependency 默认保持；HSE A／B／C、main 文档候选及当前模型基点未改变，没有新增服务器／模型／GPU执行。
+
 ## 2026-10-14：整合IMLane来源并修正关闭快照
 
 - 普通合入固定四提交及原作者／SDK证据；222软件POST、六项Ray原始nonclean和305进程出生身份退出核对，默认桥复用继续关闭。

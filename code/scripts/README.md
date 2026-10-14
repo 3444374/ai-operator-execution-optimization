@@ -47,6 +47,10 @@ Linux 上设置 `SEMLOOM_IMAGE_WORKER_SDK_TESTS=1`，运行
 `tests.modalities.image.test_image_worker_startup.ImageWorkerStartupRealRayTest.test_real_ray_factory_failure_records_process_exit_before_client_shutdown`；
 该检查使用 CPU2／GPU0 无模型替身，以 `IMAGE_WORKER_EXIT_EVIDENCE` 输出退出证据 JSON。
 
+固定集成候选 `964e70ef` 的[三项实际 SDK 检查](../../experiments/results/diagnostics/image_file_sdk_20261014/README.md)
+已通过、0 跳过：两条 reader 的 4 行编码字节／顺序及两个 CPU 工厂 actor 的 shutdown 前退出。
+首次 lease 交接失败、固定版本与原件保留；真实 CLIP／GPU／HSE 和完整 CLI 退出仍待验证。
+
 ## SemBench Movie原始查询
 
 `experiments/run_sembench_lotus_queries.py`复用原Q1/Q2/Q3、LOTUS Filter和官方MovieEvaluator。
