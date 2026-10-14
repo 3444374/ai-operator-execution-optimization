@@ -1,0 +1,131 @@
+{
+  "base_commit": "d307bb9265a32e516052f3bea7d8206f8906c288",
+  "branch": "feat/hse-input-residency",
+  "environment": {
+    "numpy": "2.5.0",
+    "platform": "Darwin",
+    "python": "3.12.6",
+    "ray_installed": false,
+    "torch_installed": false
+  },
+  "final_test_modules": [
+    "tests.data.test_prepared_assets",
+    "tests.modalities.image.test_input_residency",
+    "tests.modalities.image.test_reusable_clip",
+    "tests.modalities.image.test_staged_image_execution",
+    "tests.modalities.image.test_hse_static_lifecycle",
+    "tests.modalities.image.test_image_execution",
+    "tests.modalities.image.test_image_contracts",
+    "tests.modalities.image.test_image_operator",
+    "tests.modalities.image.test_image_clip_preprocess_variants",
+    "tests.scheduling.test_stage_broker"
+  ],
+  "fixture_assertions": {
+    "equal_content_different_row_ids": {
+      "calls": 2,
+      "device_conversions": 1,
+      "full_forwards": 2,
+      "output_shape_per_call": [
+        2,
+        3
+      ]
+    },
+    "hse_locality_estimate": "None_without_descriptor_or_tensor_access",
+    "p2p_supported": false,
+    "resident_budget_and_peak_bytes": 96,
+    "unknown_completion": {
+      "retained_logical_bytes": 96,
+      "unknown_references": 1
+    }
+  },
+  "gpu_runs": 0,
+  "handoff": {
+    "default_input_cache_bytes": 0,
+    "shared_callback": "src.modalities.image.input_residency.estimate(descriptor, destination, now_s) -> None",
+    "worker_builder_enabled": false
+  },
+  "independent_review": {
+    "finding": "interrupted_completion_fence_left_a_reusable_reference",
+    "remaining_findings": 0,
+    "status": "fixed_and_rechecked"
+  },
+  "model_requests": 0,
+  "not_verified": [
+    "actual_torch",
+    "actual_ray",
+    "cuda_completion",
+    "physical_gpu_memory",
+    "h2d_performance",
+    "query_performance",
+    "multi_gpu",
+    "p2p",
+    "hse_locality_identity_mapping"
+  ],
+  "preserved_files": [
+    "code/src/modalities/image/staged_execution.py",
+    "code/src/modalities/image/execution.py",
+    "code/src/modalities/image/contracts.py",
+    "code/src/modalities/image/operator.py",
+    "code/src/modalities/image/incremental_backend.py"
+  ],
+  "recorded_utc": "2026-10-14T08:15:33.015791+00:00",
+  "reused_files_match_original": true,
+  "reused_host_prototype_commit": "92bcd05ae6714b563b8937c80f3276ff38ca6bd7",
+  "runs": [
+    {
+      "id": "initial-import-addressing-error",
+      "loader_errors": 3,
+      "reason": "code.tests resolved through the stdlib code module",
+      "status": "failed_before_behavior_tests"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "id": "initial-component-fixtures",
+      "skipped": 0,
+      "tests": 33
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "id": "pre-review-regression",
+      "skipped": 0,
+      "tests": 105
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "id": "final-regression",
+      "skipped": 0,
+      "tests": 106
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "id": "independent-review-recheck",
+      "skipped": 0,
+      "tests": 23
+    }
+  ],
+  "schema": "hse-input-residency-local-checks-v1",
+  "server_actions": 0,
+  "source_sha256": {
+    "code/src/data/materializers/prepared_assets.py": "13ee281a5dfdd46737fd2b75a7caa1fa78d0dd38158da1055cadbbc1ba6590c0",
+    "code/src/modalities/image/clip.py": "c73d369835b3d1034d37350317fca55ee52cf28c8a675db2a40a3ae99d872cb9",
+    "code/src/modalities/image/input_residency.py": "5c9dcfdc6a47ebe50390e8710e2377c636cf97465f783f84733321c081bded6c",
+    "code/src/modalities/image/reusable_clip.py": "a33d083477e30287e0a32fb98d1a657bb5b36de2a5e4d7489701e733667cd7c4",
+    "code/tests/data/test_prepared_assets.py": "591c8f8c69e0956da43b0e577c39419609d04101372fd92f70b5839f9d3c1edf",
+    "code/tests/modalities/image/test_input_residency.py": "dc0082420291d517ac7c6181caa0f61302cc94c23b6d56e3b04ecfa5798f876b",
+    "code/tests/modalities/image/test_reusable_clip.py": "9add67dab8442d37b489fe6e37ea940937f981ada0e9919a4f77cf305b9ffb3d"
+  },
+  "syntax_check": "passed",
+  "validation": {
+    "first_prose_check": "uppercase_peer_copy_acronym_rewritten",
+    "git_diff_check": "passed",
+    "local_links_checked": 14,
+    "local_markdown_links": "passed",
+    "new_prose_word_scan": "passed",
+    "paths_scanned": 15,
+    "secret_scan": "passed"
+  }
+}

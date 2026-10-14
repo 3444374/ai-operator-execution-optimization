@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[CLIP actor输入驻留组件](../experiments/results/diagnostics/hse_input_residency_20261014/README.md)
+已提供默认关闭的byte/entry有界输入复用、内容/表示身份、只读驻留与host reload逻辑字节观测；
+未知完成持有引用/预留，完整forward及本次输出身份保持。106项本地CPU/确定性替身与旧HSE回归通过。
+缓存字节不是物理显存；标准builder未启用，共同estimate因选择时无prepared内容映射返回`None`。
+实际Ray/CUDA、净收益、调度接线与跨卡直接搬运仍pending，未新增服务器运行。
+
 2026-10-14：[HSE A正确性切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
 保留source先行、全终态历史扫描及CLI默认；B历史扫描优化与C ready优先分别待纳入。
 owner／引用持有、异常完成确认／未知池、时间原子校验与单块ready拒绝由本地回归核对，实际Ray／GPU待运行。

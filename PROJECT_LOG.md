@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：默认关闭的CLIP actor输入驻留组件
+
+从A的`d307bb92`独立添加[输入复用与只读代价](experiments/results/diagnostics/hse_input_residency_20261014/README.md)，
+吸收`92bcd05a`的host原型身份/测试，保留完整forward和本次row ID。共同estimate因选择时无prepared内容映射返回`None`；
+不改主循环、标准builder或baseline。106项CPU替身/受影响旧路径检查通过，hash/临时拷贝/缓存逻辑峰值与完成确认成本单列。
+未运行服务器/模型/GPU，真实库、净收益和跨卡直接搬运待验证；调用需求及后续接点登记到[数据组织](experiments/plans/数据组织.md)。
+
 ## 2026-10-14：拆分HSE static正确性集成
 
 从3e保留已发布47f，独立构造[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)。

@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[CLIP actor输入驻留组件](hse_input_residency_20261014/README.md)：默认关闭的输入复用、引用及只读传输代价；
+CPU替身与旧HSE回归范围、来源及待验证项由报告定位。
+
 [HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。
 

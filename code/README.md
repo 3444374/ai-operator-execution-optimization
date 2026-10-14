@@ -1,5 +1,10 @@
 # SemLoom Code
 
+[CLIP actor输入复用组件](../experiments/results/diagnostics/hse_input_residency_20261014/README.md)
+提供默认0-byte关闭的`ReusableClipTensorActor`、有限输入tensor驻留及只读byte/引用/代价观测。
+每次完整forward和row ID保持，未知完成保留引用；106项CPU替身/旧路径检查通过，实际Ray/CUDA及收益待验证。
+标准builder与HSE主循环保持；共同locality estimate当前返回`None`，设备间直接搬运尚未实现。
+
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。
 当前仅A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
 

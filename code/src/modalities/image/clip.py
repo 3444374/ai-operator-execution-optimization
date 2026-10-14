@@ -255,30 +255,11 @@ class ClipTensorActor:
             )
         started = time.perf_counter()
         payload = np.asarray(batch.payload)
-        # Ray's zero-copy object-store view is intentionally read-only. Torch
-        # warns even though CLIP never mutates the input, so take ownership at
-        # this device-transfer boundary instead of relying on undefined write
-        # behavior in a future model implementation.
-        host_copy_started = time.perf_counter()
-        if not payload.flags.writeable:
-            payload = payload.copy()
-        host_copy_s = time.perf_counter() - host_copy_started
-
-        detailed_cuda_timing = self._detailed_stage_timing and self._device.startswith("cuda")
-        if detailed_cuda_timing:
-            self._torch.cuda.synchronize()
-        h2d_started = time.perf_counter()
-        pixel_values = self._torch.as_tensor(
-            payload,
-            dtype=self._dtype,
-            device=self._device,
-        )
-        if detailed_cuda_timing:
-            self._torch.cuda.synchronize()
-        h2d_s = time.perf_counter() - h2d_started if detailed_cuda_timing else 0.0
+        pixel_values, host_copy_s, h2d_s = self._device_input(payload)
         if pixel_values.ndim != 4 or pixel_values.shape[0] != len(batch.doc_ids):
             raise ValueError("pixel tensor must have shape (rows, channels, height, width)")
 
+        detailed_cuda_timing = self._detailed_stage_timing and self._device.startswith("cuda")
         if detailed_cuda_timing:
             self._torch.cuda.synchronize()
         forward_started = time.perf_counter()
@@ -316,3 +297,28 @@ class ClipTensorActor:
             service_s=time.perf_counter() - started,
             telemetry=telemetry,
         )
+
+    def _device_input(self, payload: np.ndarray):
+        """Take host ownership and convert one input to the model's device."""
+        # Ray's zero-copy object-store view is intentionally read-only. Torch
+        # warns even though CLIP never mutates the input, so take ownership at
+        # this device-transfer boundary instead of relying on undefined write
+        # behavior in a future model implementation.
+        host_copy_started = time.perf_counter()
+        if not payload.flags.writeable:
+            payload = payload.copy()
+        host_copy_s = time.perf_counter() - host_copy_started
+
+        detailed_cuda_timing = self._detailed_stage_timing and self._device.startswith("cuda")
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        h2d_started = time.perf_counter()
+        pixel_values = self._torch.as_tensor(
+            payload,
+            dtype=self._dtype,
+            device=self._device,
+        )
+        if detailed_cuda_timing:
+            self._torch.cuda.synchronize()
+        h2d_s = time.perf_counter() - h2d_started if detailed_cuda_timing else 0.0
+        return pixel_values, host_copy_s, h2d_s
