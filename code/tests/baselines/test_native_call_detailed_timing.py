@@ -179,7 +179,7 @@ class NativeCallDetailedTimingTests(unittest.TestCase):
                     records['executor'].shutdown.assert_called_once_with(force=True)
                 self.assertFalse(native._DAFT_CONTROLS)
 
-    def test_off_keeps_close_short_circuit_and_on_preserves_native_close_error(self):
+    def test_on_off_attempt_all_cleanup_and_preserve_native_close_error(self):
         for enabled in (False, True):
             closing = ValueError('original iterator close failed')
             with self.subTest(enabled=enabled), observations(enabled,
@@ -189,11 +189,9 @@ class NativeCallDetailedTimingTests(unittest.TestCase):
                     list(graph_rows('ray-data', native._GraphControl()))
                 self.assertIs(caught.exception, closing)
                 self.assertEqual(records['closes'], ['iterator.close'])
+                records['executor'].shutdown.assert_called_once_with(force=True)
                 if enabled:
-                    records['executor'].shutdown.assert_called_once_with(force=True)
                     self.assertIn('OSError', '\n'.join(caught.exception.__notes__))
-                else:
-                    records['executor'].shutdown.assert_not_called()
 
     def test_consume_record_error_does_not_replace_original_close_error(self):
         for backend in ('daft', 'ray-data'):

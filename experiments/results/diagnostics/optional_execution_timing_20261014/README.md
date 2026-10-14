@@ -4,6 +4,56 @@
 `ea6c9184` 的公共 runtime／EOF 修补，再追加诊断；没有重写厂商执行图、请求并发、SDK、
 Ray 每次 Dataset 执行的生命周期或模型参数。
 
+<a id="ray-cleanup-parity"></a>
+
+## 文本 Ray Data 默认与详细计时的清理修补
+
+此接续修补从 `integration/baselines@da379b2577118d58b890cff3fca6400af7bda8f2` 单独建立
+`fix/native-ray-cleanup-parity`。初始远端仍为该提交，附件所指 `native_calls.py` 的 blob
+`821e46eec29520d41885e5759052ef179822c930` 与实际源码一致；附件转录与替身记录只作线索。
+本次从仓库导入 `_ray_rows`，使用现有厂商 API 替身，不运行实际 Ray／Daft／IMLane。
+发布前远端已推进到 `4db1aec25d5f9437c4fa9b7784395af955658520`；只读核对新增图像工作，
+本题文本清理与公共计时源码未变。本分支仍基于指定提交，共同入口文档的新记录交集成owner保留双方内容。
+
+执行先报 ValueError、close 再报 OSError、shutdown 报 RuntimeError 时，修前 OFF 返回 OSError
+且未调用该层 shutdown；ON 保留 ValueError 并尝试两项，但只给首错附 OSError 说明。
+公开 Iterable 的替身形态还复现了实际 iterator 的 close 未调用。
+[固定 Ray 2.56.1 源码](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/iterator.py)
+表明 `iter_rows()` 返回 `_IterableFromIterator`，其 `__iter__` 才创建行生成器。
+因此适配层保存 `iter(result.iter_rows())`，计时 ON/OFF 都复用现有 helper，逐项尝试
+iterator close 与已知 executor shutdown；未新增调度器、并发或行数包络设置。
+
+规则为：进入适配层的业务／显式取消首错优先，全部清理次错留在异常 notes；没有业务首错时，
+第一个真实清理错误可见。正常提前关闭的 GeneratorExit 不遮住真实清理失败；纯计时故障优先级更低，
+writer 独立失败仍保留。清理中一次失败即使后续重复 shutdown 成功，查询报告仍保留
+`unconfirmed_work` 并拒绝复用；远端 HTTP 停止仍为 unavailable。
+
+独立子代理审阅新增两个反例：caller parser 首错原先只收到 worker close 类型，遗漏 shutdown 次错；
+执行和 close 复用同一异常对象时，新增 notes 复制可能反复扩充自身列表。两项修前共四个子断言失败，
+原输出保留后修正：向 caller 交接已有次错说明，复制前取 tuple 快照，避免复制自身 notes。
+共享 helper 的 Daft detailed 提前关闭／首错行为也已核对，未修改厂商或 IMLane 实现。
+
+[定向测试](../../../../code/tests/baselines/test_native_ray_cleanup_parity.py)覆盖执行／close／shutdown
+组合、两种 iterable 形态、EOF、提前关闭、显式取消、iterator 打开失败、writer 起止故障、
+次错交接、共享异常对象以及未确认责任／复用拒绝。
+最终五模块58项：57通过、1项因本机缺Ray而跳过导入检查，HTTP／模型／GPU0。
+生产源码 SHA-256 为 `ef7f7294a15e5463a8a8c6f89a9465e39f7f2c14cf80a7ba9952ed31955fa936`。
+较早修订的共享计时补查42项中41项直接通过，一项六路径fixture因沙箱禁止localhost监听而报六个子错误；
+仅重验该项后通过，六路径各ON/OFF两行，服务端断言合计24次localhost POST，模型／GPU0。
+该较早修订与最终定向来源分列，不相加为最终源码资格，也未重复原性能矩阵。
+
+[紧凑核验归档](ray-cleanup-parity.json.gz)保存实际函数修前／修后观测、各次源码摘要、
+定向失败／回归、共享计时的首次监听失败与单项重验、独立审查和结果来源。
+较早测试采样、入口误用等本地过程原件按运行身份与摘要保留于仓库外，不改写旧实验失败或旧性能原值。
+
+最终实际 Ray 2.56.1 软件资格仍 pending。本机现有虚拟环境是 Ray 2.56.0，缺所需 Daft／aiohttp，
+不为本次混装依赖或借其版本宣称实库通过。供统一排队的最小无模型计划是：复用已核验的
+Ray 2.56.1／Arrow环境，部署独立固定源码包并取得共享lease；沿既有图参数，OFF/ON 各核对正常EOF与提前停止，
+共四图、每图两行、最多8次localhost固定响应POST，4 CPU／0 GPU；单图60秒、含退出累计300秒。
+在实际 iterator close 与 shutdown 后注入预定失败，核对首错／次错与未知责任；独立确认本次拥有的
+consumer、HTTP handler、Ray进程退出再释放lease。超时、超POST上限、结果身份变化或未知清理即停止并保留证据。
+此计划尚未执行，不授予模型、GPU或性能资格。
+
 ## 来源与问题
 
 指定 `4f392c3652803c7786e56245c0bbc18a3e6e9bd6` 的

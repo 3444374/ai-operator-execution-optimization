@@ -34,7 +34,7 @@ _HTTP_CALL_COOKIES = ContextVar('native_http_call_cookies', default=None)
 
 
 def _observed_graph_cleanup(backend, actions):
-    """Finish known cleanup actions before reporting an optional timing error."""
+    """Attempt every known cleanup, preserving execution and real cleanup errors."""
     if not actions:
         return
     primary = sys.exception()
@@ -48,17 +48,21 @@ def _observed_graph_cleanup(backend, actions):
                 except BaseException as error:
                     failures.append((stage, error))
             if failures:
-                first = failures[0][1]
-                for stage, error in failures[1:]:
-                    first.add_note('Native ' + stage + ' also failed: ' + type(error).__name__)
+                first = next((error for _, error in failures if not is_timing_error(error)), failures[0][1])
+                for stage, error in failures:
+                    if error is not first:
+                        first.add_note('Native ' + stage + ' also failed: ' + type(error).__name__)
                 raise first
     except BaseException as cleanup:
-        if primary is None:
+        if primary is None or isinstance(primary, GeneratorExit):
             raise
         if is_timing_error(primary) and not is_timing_error(cleanup):
             cleanup.add_note('Detailed timing also failed: ' + type(primary).__name__)
             raise
         primary.add_note('Native graph cleanup also failed: ' + type(cleanup).__name__)
+        if cleanup is not primary:
+            for note in tuple(getattr(cleanup, '__notes__', ())):
+                primary.add_note(note)
 
 
 def _processor_timing_fields():
@@ -550,9 +554,7 @@ def _ray_rows(calls, options, control):
     control.ray_async_batches_effective = DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY
     if DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY != options.ray_async_batches_per_actor:
         raise RuntimeError("native Ray asynchronous batch limit differs from its import-time setting")
-    detailed = bool(os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'))
     iterator = result = None
-    cleanup_started = False
     try:
         with timing_span('native_call.graph_input', backend='ray-data'):
             inputs = [dict(call_id=call.call_id, row_id=call.row_id, native_call=_call_wire(call)) for call in calls]
@@ -570,8 +572,7 @@ def _ray_rows(calls, options, control):
             return
         with timing_span('native_call.iterator_open', backend='ray-data',
                          scope='vendor iterator API call; actor readiness unavailable'):
-            iterator = result.iter_rows()
-            cleanup_started = True
+            iterator = iter(result.iter_rows())
         with timing_span('native_call.consume', backend='ray-data',
                          scope='native iterator through caller yields; includes consumer yield and backpressure wait'):
             for row in iterator:
@@ -579,22 +580,14 @@ def _ray_rows(calls, options, control):
                     return
                 yield _outcome_from_wire(row["native_outcome"])
     finally:
-        if detailed:
-            actions = []
-            close = getattr(iterator, 'close', None)
-            if close is not None:
-                actions.append(('iterator_close', close))
-            executor = getattr(result, '_current_executor', None)
-            if executor is not None:
-                actions.append(('executor_shutdown', lambda: executor.shutdown(force=True)))
-            _observed_graph_cleanup('ray-data', actions)
-        elif cleanup_started:
-            close = getattr(iterator, "close", None)
-            if close is not None:
-                close()
-            executor = getattr(result, "_current_executor", None)
-            if executor is not None:
-                executor.shutdown(force=True)
+        actions = []
+        close = getattr(iterator, 'close', None)
+        if close is not None:
+            actions.append(('iterator_close', close))
+        executor = getattr(result, '_current_executor', None)
+        if executor is not None:
+            actions.append(('executor_shutdown', lambda: executor.shutdown(force=True)))
+        _observed_graph_cleanup('ray-data', actions)
 
 
 class NativeCallExecutor:
@@ -819,10 +812,19 @@ class NativeCallExecutor:
                 dict(stage=stage, type=type(error).__module__ + "." + type(error).__name__)
                 for stage, error in self.last_cleanup_errors]
             if additional:
-                if primary is None or isinstance(primary, GeneratorExit):
-                    first = additional[0][1]
-                    for stage, error in additional[1:]:
-                        first.add_note("Native " + stage + " also failed: " + type(error).__name__)
+                if (primary is None or isinstance(primary, GeneratorExit) or
+                        is_timing_error(primary) and any(not is_timing_error(error) for _, error in additional)):
+                    first = next((error for _, error in additional if not is_timing_error(error)), additional[0][1])
+                    for stage, error in additional:
+                        if error is not first:
+                            first.add_note("Native " + stage + " also failed: " + type(error).__name__)
+                            for note in tuple(getattr(error, '__notes__', ())):
+                                first.add_note(note)
+                    if primary is not None and is_timing_error(primary):
+                        first.add_note('Detailed timing also failed: ' + type(primary).__name__)
                     raise first
                 for stage, error in additional:
                     primary.add_note("Native " + stage + " also failed: " + type(error).__name__)
+                    if error is not primary:
+                        for note in tuple(getattr(error, '__notes__', ())):
+                            primary.add_note(note)
