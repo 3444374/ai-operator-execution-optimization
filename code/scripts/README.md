@@ -37,6 +37,8 @@ Daft 文件源的 `--source-shards` 表示每批原生下载连接上限，不�
 口径，Ray startup、清单准备及写回另计。新 CSV schema 与文件清单身份不得混入历史结果文件。
 本地协议替身测试不构成实际 SDK／GPU 资格；固定 SDK CPU 检查可在独立进程设置
 `SEMLOOM_IMAGE_FILE_SDK_TESTS=1` 运行 `tests.modalities.image.test_image_file_source` 的两项 `test_real_*`。
+入口对 warmup／正式执行／审计异常执行采样器、worker 与自有 Ray 连接清理；失败池不可切换执行
+模式或重新用于查询，清理失败保留原异常和未确认的池句柄。实际进程／设备停止仍需 SDK 检查。
 
 ## SemBench Movie原始查询
 

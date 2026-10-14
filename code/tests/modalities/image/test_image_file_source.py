@@ -318,6 +318,7 @@ class ImageFileSourceTest(unittest.TestCase):
             clock.now += 6
             return ExecutionResult(6, 2, {"exactly_once": True})
         obj = object.__new__(RUNNER._ImageExecution)
+        obj._failed = obj._closed = False
         obj.args = self.args()
         obj.setup = SimpleNamespace(file_manifest=self.manifest, source_shards=1, processor="unused",
                                     database_metadata={"max_encoded_bytes": 1000}, hse_limits=None)
@@ -351,6 +352,7 @@ class ImageFileSourceTest(unittest.TestCase):
 
     def test_changed_manifest_is_rejected_before_the_execution_kernel(self):
         obj = object.__new__(RUNNER._ImageExecution)
+        obj._failed = obj._closed = False
         obj.args = self.args()
         obj.setup = SimpleNamespace(file_manifest=self.manifest)
         self.path.write_text(self.path.read_text() + "\n")

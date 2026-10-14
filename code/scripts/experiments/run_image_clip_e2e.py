@@ -851,6 +851,23 @@ def _load_image_run_setup(
     )
 
 
+def _cleanup_image_run(actions, *, error=None):
+    """Attempt every owned cleanup, retaining the original failure if present."""
+    first_error = error
+    results = {}
+    for name, action in actions:
+        try:
+            results[name] = action()
+        except BaseException as cleanup_error:
+            if first_error is None:
+                first_error = cleanup_error
+            else:
+                first_error.add_note(f"image runner cleanup {name} raised {type(cleanup_error).__name__}")
+    if error is None and first_error is not None:
+        raise first_error
+    return results
+
+
 class _ImageExecution:
     """Own one arm's framework setup and warmup/formal worker lifecycle."""
 
@@ -862,9 +879,21 @@ class _ImageExecution:
         self.worker_pool = None
         self.embedder = None
         self.preprocessor = None
-        self._initialize_arm()
+        self._failed = False
+        self._closed = False
+        self._ray_owned = False
+        try:
+            self._initialize_arm()
+        except BaseException as error:
+            self._failed = True
+            error.image_execution_owner = self
+            _cleanup_image_run((("execution", self.close),), error=error)
+            raise
 
     def _init_ray(self) -> None:
+        if self.ray.is_initialized():
+            raise RuntimeError("image runner requires an uninitialized Ray client")
+        self._ray_owned = True
         if self.args.ray_address:
             self.ray.init(
                 address=self.args.ray_address,
@@ -948,13 +977,38 @@ class _ImageExecution:
 
     def stop_project_workers(self) -> None:
         if self.worker_pool is not None:
-            stop_semloom_ray_worker_pool(self.worker_pool)
+            try:
+                stop_semloom_ray_worker_pool(self.worker_pool)
+            except BaseException:
+                # Keep the handles for diagnostics/cleanup; never reuse a pool
+                # whose termination request failed or whose work is unknown.
+                self._failed = True
+                raise
+            self.worker_pool = None
+
+    def _disconnect_owned_ray(self) -> None:
+        if self._ray_owned and self.ray.is_initialized():
+            self.ray.shutdown()
+        self._ray_owned = False
+
+    def close(self) -> None:
+        self._closed = True
+        _cleanup_image_run((("worker_pool", self.stop_project_workers),
+                            ("owned_ray_client", self._disconnect_owned_ray)))
 
     def start_formal_workers(self) -> float:
-        if self.worker_pool is None:
+        if self._failed or self._closed:
+            raise RuntimeError("failed or closed image execution cannot start another worker pool")
+        if self.args.arm != "project_ray":
             return 0.0
+        if self.worker_pool is not None:
+            raise RuntimeError("dispose the warmup worker pool before starting formal workers")
         started = time.perf_counter()
-        self.worker_pool = self._build_project_workers()
+        try:
+            self.worker_pool = self._build_project_workers()
+        except BaseException:
+            self._failed = True
+            raise
         return time.perf_counter() - started
 
     def execute(
@@ -964,6 +1018,19 @@ class _ImageExecution:
         *,
         dataset_passes: int = 1,
         embedding_capture: EmbeddingCapture | None = None,
+    ) -> ExecutionResult:
+        if self._failed or self._closed:
+            raise RuntimeError("failed or closed image execution must not reuse its worker pool")
+        try:
+            return self._execute_once(limit, expected_ids, dataset_passes=dataset_passes,
+                                      embedding_capture=embedding_capture)
+        except BaseException as error:
+            self._failed = True
+            error.image_execution_owner = self
+            raise
+
+    def _execute_once(
+        self, limit, expected_ids, *, dataset_passes=1, embedding_capture=None,
     ) -> ExecutionResult:
         if self.setup.file_manifest is None:
             return self._execute_source(limit, expected_ids, dataset_passes=dataset_passes,
@@ -1193,49 +1260,47 @@ def _run_observed_image_execution(
     torch_module,
     transformers_module,
 ) -> _ObservedImageRun:
-    execution.execute(setup.warmup_count, setup.warmup_ids)
-    execution.stop_project_workers()
-    planned_start_epoch_s, actual_start_epoch_s = _wait_for_formal_start(args)
-    gpu_sampler = NvidiaSmiSampler(
-        args.gpu_sample_interval_s,
-        active_device_count=args.gpu_workers,
-    )
-    cpu_sampler = SystemCpuSampler(args.cpu_sample_interval_s)
-    gpu_sampler.start()
-    cpu_sampler.start()
-    worker_setup_s = execution.start_formal_workers()
-    capture = EmbeddingCapture() if args.save_embeddings else None
-    result = execution.execute(
-        args.limit,
-        setup.formal_ids,
-        dataset_passes=args.dataset_passes,
-        embedding_capture=capture,
-    )
-    output_contract_metadata = embedding_output_contract_metadata(
-        args.arm,
-        args.embedding_output_contract,
-    )
-    if capture is not None:
-        _write_embedding_capture(
-            args,
-            setup,
-            capture,
-            output_contract_metadata,
-            daft_module=daft_module,
-            ray_module=ray_module,
-            torch_module=torch_module,
-            transformers_module=transformers_module,
+    cleanup = [("worker_pool", execution.stop_project_workers)]
+    try:
+        execution.execute(setup.warmup_count, setup.warmup_ids)
+        execution.stop_project_workers()
+        planned_start_epoch_s, actual_start_epoch_s = _wait_for_formal_start(args)
+        gpu_sampler = NvidiaSmiSampler(
+            args.gpu_sample_interval_s,
+            active_device_count=args.gpu_workers,
         )
-    gpu_metrics = gpu_sampler.stop()
-    cpu_metrics = cpu_sampler.stop()
-    execution.stop_project_workers()
+        cpu_sampler = SystemCpuSampler(args.cpu_sample_interval_s)
+        cleanup.insert(0, ("gpu_sampler", gpu_sampler.stop))
+        gpu_sampler.start()
+        cleanup.insert(1, ("cpu_sampler", cpu_sampler.stop))
+        cpu_sampler.start()
+        worker_setup_s = execution.start_formal_workers()
+        capture = EmbeddingCapture() if args.save_embeddings else None
+        result = execution.execute(
+            args.limit,
+            setup.formal_ids,
+            dataset_passes=args.dataset_passes,
+            embedding_capture=capture,
+        )
+        output_contract_metadata = embedding_output_contract_metadata(
+            args.arm,
+            args.embedding_output_contract,
+        )
+        if capture is not None:
+            _write_embedding_capture(
+                args, setup, capture, output_contract_metadata,
+                daft_module=daft_module, ray_module=ray_module,
+                torch_module=torch_module, transformers_module=transformers_module,
+            )
+    finally:
+        cleaned = _cleanup_image_run(cleanup, error=sys.exc_info()[1])
     return _ObservedImageRun(
         result=result,
         worker_setup_s=worker_setup_s,
         planned_start_epoch_s=planned_start_epoch_s,
         actual_start_epoch_s=actual_start_epoch_s,
-        cpu_metrics=cpu_metrics,
-        gpu_metrics=gpu_metrics,
+        cpu_metrics=cleaned["cpu_sampler"],
+        gpu_metrics=cleaned["gpu_sampler"],
         output_contract_metadata=output_contract_metadata,
         source_open_s=execution.source_open_s,
     )
@@ -1649,30 +1714,20 @@ def main() -> None:
         embedding_sidecar=embedding_sidecar,
         provenance=provenance,
     )
-    execution = _ImageExecution(
-        args,
-        setup,
-        daft_module=daft,
-        ray_module=ray,
-    )
-    observed = _run_observed_image_execution(
-        args,
-        setup,
-        execution,
-        daft_module=daft,
-        ray_module=ray,
-        torch_module=torch,
-        transformers_module=transformers,
-    )
-    row = _build_image_result_row(
-        args,
-        setup,
-        observed,
-        daft_module=daft,
-        ray_module=ray,
-        torch_module=torch,
-        transformers_module=transformers,
-    )
+    execution = None
+    try:
+        execution = _ImageExecution(args, setup, daft_module=daft, ray_module=ray)
+        observed = _run_observed_image_execution(
+            args, setup, execution, daft_module=daft, ray_module=ray,
+            torch_module=torch, transformers_module=transformers,
+        )
+        row = _build_image_result_row(
+            args, setup, observed, daft_module=daft, ray_module=ray,
+            torch_module=torch, transformers_module=transformers,
+        )
+    finally:
+        if execution is not None:
+            _cleanup_image_run((("execution", execution.close),), error=sys.exc_info()[1])
     append_csv(Path(args.out_csv), row)
     manifest = _build_image_manifest(args, setup, row)
     manifest_path = Path(args.out_manifest)
@@ -1682,8 +1737,6 @@ def main() -> None:
         encoding="utf-8",
     )
     print(json.dumps(manifest, sort_keys=True))
-    if ray.is_initialized():
-        ray.shutdown()
 
 
 if __name__ == "__main__":
