@@ -41,3 +41,29 @@ PYTHONPATH=code python3 code/tests/baselines/test_imlane_cpp_primitives.py
 全桥链接／实际常驻多批、两作者模式的IPC与Lane复用、公开查询／原SDK消费及适配开销占比均待主协调安排。
 HTTP client仍逐调用；阶段累计会重叠，未比较完整JCT、RSS排名或代表性性能。
 旧同步／async的真实作者软件证据继续保留在[既有报告](../../postgresql/native_executor_baselines_20261012/README.md)。
+
+<a id="local-verifier"></a>
+
+## 薄资格验证器本机阶段
+
+在已推送桥实现`9766e784ea9d1f0c16a56a0b81a369847081bbce`上补齐
+[独立验证器及SDK客户端](../../../../code/integrations/sema/README.md#imlane-session-verifier)，
+没有再次修改生产适配器、C++桥、作者调度或共享`native_calls.py`／`prepared_map.py`。
+本轮定向45项全部通过，0失败／错误／跳过：既有helper23项、新验证器14项、SDK客户端8项。
+[逐项日志](verifier-tests.txt)及[机器摘要](verifier-summary.json)保存用例、实际源码摘要和失败历史；
+不与上方98项相加，受影响helper包含重叠用例。
+
+验证器使用真实Python适配器配合有限子进程／localhost HTTP替身，覆盖同一执行器三批、完整字节与重复头、
+重复源行、批ID、乱序、429、输出持有，以及transport／timeout／consumer／cancel／crash后的持久隔离。
+CPython／Ray四格在本地只是协议标签，没有启动作者运行时；SDK客户端测试也使用显式SDK／query替身。
+额外故障注入检查lease变化、RSS／SHM／期限、只清理自有身份、首错保留及强制清理不冒充健康退出。
+初次协议测试因错误fixture端口出现14项错误，修后通过；随后macOS路径别名导致一项mock断言失败，修正为规范化路径。
+故意取消／崩溃产生的localhost连接reset stderr保留在仓库外，本轮最终用例均通过。
+
+独立子代理审核修正了只读Git checkout被误拒、SDK依赖缺锁延后发现、消费清理覆盖首错的问题；
+同时保留venv解释器路径，避免符号链接选择基础Python环境。审核只读核对固定LOTUS源码与原Q1/Q2/Q3语义，
+独立复跑SDK及验证器的无HTTP子集通过，最终无阻塞发现。
+
+本轮服务器上传／负载、作者CPython／Ray、实际LOTUS SDK、模型／GPU均为0。
+完整新桥编译、作者两运行时×默认／复用及原SDK完整消费仍pending，须在主协调分配的独立窗口验证；
+实际host额度16核，拟分配8槽与Ray／Daft重负载串行。薄runner的实现与本机替身不能提升常驻候选的实库资格。

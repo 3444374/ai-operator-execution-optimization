@@ -1,0 +1,51 @@
+{
+  "schema": "semloom.imlane.verifier_local_checks.v1",
+  "date": "2026-10-14",
+  "implementation_parent_commit": "9766e784ea9d1f0c16a56a0b81a369847081bbce",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "tests_run": 45,
+  "passed": 45,
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "elapsed_s": 18.712,
+  "log_sha256": "9800f476cebef40ddb3c4058e46d5644038e0fa91a9256ad3392bcd36a19a97b",
+  "source_sha256": {
+    "code/integrations/sema/verify_imlane_async_calls.py": "e5470beef12c8db38570216843033bc953fe16807766c3a67a20567975eefa38",
+    "code/integrations/sema/verify_imlane_session.py": "d5dc0e71e6b51c2af73882cf3e201691086ebbf3cd8ec9beb240d1bf502ee7c5",
+    "code/integrations/sema/imlane_session_sdk_client.py": "97c3a17037926185d58c80ce4de85217b676d8ccbc0547c0eed0a7990a3f3294",
+    "code/tests/baselines/test_imlane_async_verifier.py": "5772d04858a43eae096cf7a322a8daa97b239068057d2ca1e8ef0d8c9e84e0f4",
+    "code/tests/baselines/test_imlane_session_verifier.py": "5895f58a32c3c9c7569db6b3935174de623eab415558f8a80bfd21cef9ee1ece",
+    "code/tests/baselines/test_imlane_session_sdk_client.py": "943fcdad0421ea0954a8e9e08b2ac6ade4212622955b65aec9c7542948a9201b"
+  },
+  "scope": [
+    "existing verifier helpers",
+    "subprocess and localhost HTTP protocol substitutes",
+    "SDK/query protocol substitutes",
+    "lease/resource/cleanup fault injection"
+  ],
+  "runtime_labels_are_substitutes": true,
+  "author_cpython_runs": 0,
+  "author_ray_runs": 0,
+  "actual_lotus_sdk_runs": 0,
+  "server_uploads": 0,
+  "server_load_runs": 0,
+  "model_requests": 0,
+  "gpu_runs": 0,
+  "pending": [
+    "full bridge build",
+    "actual author CPython and Ray default/reuse",
+    "fixed original LOTUS SDK consumption through the new bridge"
+  ],
+  "failure_history": [
+    {
+      "action": "initial protocol test invocation",
+      "result": "14 errors: test gateway_port=1 differed from dynamic localhost fixture; fixture corrected"
+    },
+    {
+      "action": "lease path mock assertion",
+      "result": "1 failure: macOS /var alias differed from canonical /private/var; assertion corrected"
+    }
+  ],
+  "expected_stderr": "Intentional bridge cancellation/crash may reset fixture localhost connections; stderr is retained privately."
+}

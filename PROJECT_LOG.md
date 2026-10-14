@@ -8,6 +8,11 @@
   作者RestoreLane成功没有ACK，不报告远端取消或Coordinator排空。
 - [本机验证](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)保留初次命令／沙箱／缺头文件问题，
   新方案未运行作者CPython／Ray、模型／GPU或性能比较；已有同步／async资格不重做，单卡验证独立继续。
+- 补齐[默认／复用薄验证器](code/integrations/sema/README.md#imlane-session-verifier)，复用原scope／fixture，
+  以独立LOTUS解释器完成原SDK与有限合成Q1/Q2/Q3消费入口；错误后隔离Coordinator，不复用未知实例。
+  本地替身与独立审查修复了只读Git输入、源锁依赖预检、消费清理首错及venv符号链接选择问题；
+  [新检查记录](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)明确保留失败历史和待验证项。
+  本轮只准备本地最小验证包，host实际16核／拟分配8槽须与Ray／Daft窗口串行，没有上传或服务器负载。
 
 ## 2026-10-13：集成文本预检最小实际SDK资格
 

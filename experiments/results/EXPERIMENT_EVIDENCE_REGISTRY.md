@@ -3,6 +3,8 @@
 2026-10-14：[IMLane桥生命周期本机检查](diagnostics/imlane_bridge_lifecycle_20261014/README.md)。
 Python协议／localhost fixture与真实Arrow复制原语分别验证；作者两模式及完整桥编译pending，
 默认逐批桥保持，不将context复用当作HTTP连接复用或新调度算法。
+新增[薄验证器本机阶段](diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)覆盖同执行器多批、
+原SDK消费替身及错误隔离；源锁、资源／lease和首错保护已检查，实库资格仍pending。
 
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。

@@ -153,6 +153,8 @@ future／复制计数及批次序号后才允许下一批；它只证明本地�
 编码容量不是聚合RSS上限，Bridge存活、回调完成和远端请求停止分别解释。
 本机[检查记录](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
 只支持协议和复制行为，实库窗口由主协调另行安排；原生LOTUS／SemLoom单卡验证可以独立继续。
+独立[默认／复用资格验证器](README.md#imlane-session-verifier)现已实现，同一执行器多批与原SDK消费分别核验，
+错误后使用新Coordinator隔离；本轮只完成本机替身检查，实库结果尚未产生。
 
 ## 已完成的软件检查
 

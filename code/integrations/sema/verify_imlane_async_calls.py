@@ -98,7 +98,7 @@ class PostAllowance:
 
 
 class Fixture:
-    def __init__(self, maximum, stopped, abort, *, q1=False, journal_root=None):
+    def __init__(self, maximum, stopped, abort, *, q1=False, journal_root=None, response_factory=None):
         self.receipts=[];self.responses=[];self.connections=set();self.closed_connections=set()
         self.lock=threading.Lock();self.active=0;self.peak=0;self.slow=threading.Event()
         self.allowance=PostAllowance(maximum,stopped,abort,payload_identity=q1)
@@ -121,7 +121,7 @@ class Fixture:
             def do_POST(self):self.respond()
             def respond(self):
                 raw=self.rfile.read(int(self.headers.get('Content-Length','0')))
-                receipt=dict(method=self.command,path=self.path,
+                receipt=dict(method=self.command,path=self.path,payload_bytes=len(raw),headers=list(self.headers.raw_items()),
                     payload_sha256=hashlib.sha256(raw).hexdigest(),connection=self.identity,
                     call_id=self.headers.get('X-Call-ID'),cookie=self.headers.get('Cookie',''))
                 with owner.lock:
@@ -147,6 +147,7 @@ class Fixture:
                                           finish_reason='length' if self.path=='/length' else 'stop')],
                             usage=dict(prompt_tokens=2,completion_tokens=1,total_tokens=3))).encode()
                         if self.path=='/bad-json':body=b'not-json\x00\n'
+                        if response_factory is not None:body=response_factory(self.path,receipt,body)
                         if self.path=='/gzip':body=gzip.compress(body,mtime=0)
                         self.send_response(status)
                         self.send_header('Content-Type','application/json')
@@ -157,6 +158,7 @@ class Fixture:
                                   if line for name,_separator,value in (line.partition(':'),))
                     with owner.lock:owner.responses.append(dict(call_id=receipt['call_id'],path=self.path,
                         status_code=status,headers=headers,http_version=self.protocol_version,
+                        request_payload_sha256=receipt['payload_sha256'],body_bytes=len(body),
                         body_sha256=hashlib.sha256(body).hexdigest()))
                     self.end_headers()
                     try:self.wfile.write(body);self.wfile.flush()
@@ -198,8 +200,10 @@ class Fixture:
 
 
 class AuthorScope:
-    def __init__(self,args,mode,helper,report):
+    def __init__(self,args,mode,helper,report,*,kernel=None,reuse_bridge=False,max_batch_rows=2000):
         self.args=args;self.mode=mode;self.helper=helper;self.report=report
+        self.kernel=Path(kernel) if kernel is not None else KERNEL
+        self.reuse_bridge=reuse_bridge;self.max_batch_rows=max_batch_rows
         self.namespace='ia-'+mode+'-'+uuid.uuid4().hex[:10]
         self.root=args.output/self.namespace;self.root.mkdir()
         self.service=self.owner=None;self.writer=self.owner_writer=None;self.short=None
@@ -250,7 +254,7 @@ class AuthorScope:
         self.env=dict(os.environ,CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',
             PYTHONDONTWRITEBYTECODE='1',
             PATH=str(python.parent)+os.pathsep+os.environ['PATH'],
-            PYTHONPATH=os.pathsep.join([info['site'],str(CODE),str(KERNEL.parent)]),
+            PYTHONPATH=os.pathsep.join([info['site'],str(CODE),str(self.kernel.parent)]),
             LD_LIBRARY_PATH=os.pathsep.join([str(cpp.parent),str(prefix/'lib'),info['lib'],
                 str(author/'source/third_party/fmt/dist/lib'),str(author/'source/third_party/boost/dist/lib'),info['base']+'/lib']),
             TMPDIR=str(temporary),IMLANE_NAMESPACE=self.namespace,IMLANE_GATEWAY_HOST='127.0.0.1',
@@ -284,19 +288,20 @@ class AuthorScope:
                 except OSError:
                     if time.monotonic()>=until:raise TimeoutError('Coordinator readiness failed')
                     time.sleep(.05)
-            probe=subprocess.run([str(self.args.bridge_binary),str(port),str(KERNEL),'0'],
+            probe=subprocess.run([str(self.args.bridge_binary),str(port),str(self.kernel),'0'],
                 env=self.env,input='',text=True,capture_output=True,timeout=20)
             (self.root/'probe.log').write_text(redact_text(probe.stdout+probe.stderr))
             if probe.returncode:raise RuntimeError('async function registration failed')
             meta=json.loads(next(line.partition(' ')[2] for line in probe.stdout.splitlines() if line.startswith('SEMA_IMLANE_META ')))
             if meta['native_task_threads']>8:raise ValueError('native task threads exceed this software allowance')
             bridge=dict(author_commit=AUTHOR,bridge_binary=str(self.args.bridge_binary),bridge_sha256=digest(self.args.bridge_binary),
-                gateway_port=port,udf_path=str(KERNEL),udf_sha256=digest(KERNEL),work_root=str(self.root/'batches'),
+                gateway_port=port,udf_path=str(self.kernel),udf_sha256=digest(self.kernel),work_root=str(self.root/'batches'),
                 namespace=self.namespace,native_task_threads=meta['native_task_threads'],
                 env={k:self.env[k] for k in ('PATH','PYTHONPATH','LD_LIBRARY_PATH','TMPDIR','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS')})
             path=self.root/'bridge-config.json';write_private_json(path,bridge)
             self.config=IMLaneCallConfig(self.mode,str(path),self.service.pid,process_start_ticks(self.service.pid),
-                str(author/'artifacts/build-patched/build-identity.json'),max_batch_rows=2000)
+                str(author/'artifacts/build-patched/build-identity.json'),max_batch_rows=self.max_batch_rows,
+                reuse_bridge=self.reuse_bridge)
             self.meta=meta
             return self
         except BaseException as error:

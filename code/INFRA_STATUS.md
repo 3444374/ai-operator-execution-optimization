@@ -4,6 +4,8 @@
 默认逐批桥保持；结果按批ID、完整出现身份和结束记录核对，未知工作继续隔离。
 本地[协议及真实Arrow原语检查](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md)
 不包含作者CPython／Ray运行；完整新桥编译及两模式实库检查仍pending，不表示HTTP连接复用或调度创新。
+同一执行器多批、错误隔离及原SDK消费的[薄资格验证器](integrations/sema/README.md#imlane-session-verifier)已实现，
+本地替身、资源／lease和首错回归见同一[报告](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)；未上传或启动服务器负载。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。

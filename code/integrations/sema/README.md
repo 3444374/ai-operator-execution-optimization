@@ -28,6 +28,44 @@ PYTHONPATH=code <driver-python> code/integrations/sema/verify_native.py \
 新增[桥生命周期与阶段测量候选](imlane_calls.md#bridge-lifecycle)，显式`reuse_bridge=True`才选择常驻context。
 仍保留逐调用HTTP client和逐批私有输入文件，默认旧路径保持；新会话的两作者模式实库资格单独验证。
 
+<a id="imlane-session-verifier"></a>
+
+### 默认／复用的软件资格验证器
+
+[verify_imlane_session.py](verify_imlane_session.py)复用既有`AuthorScope`与HTTP fixture，
+每个窗口只选择一个作者运行时，顺序检查默认及复用路径；不上传、不编译、不安装或加载模型。
+健康三批共用同一个执行器，核对完整请求／响应、重复源行、乱序、429、batch ID及结束栅栏，
+持有首批输出并在后续批次后复核。transport、超时、消费中止、发送后取消、桥崩溃及SDK parser中止
+各用独立Coordinator／namespace；保留首错与unknown记录，并拒绝同身份的新拥有者。
+故障后的强制清理仍保留原始`passed=False`，只有自有进程、线程和共享内存退出均确认才记录隔离完成。
+
+[独立SDK客户端](imlane_session_sdk_client.py)使用既有LOTUS解释器，经过公开执行器工厂、原LOTUS Map与
+`MovieQueryResult.execute`的原Q1/Q2/Q3完整消费；关系是有限合成`software_fixture`，不替代原2000行任务或模型质量。
+原batch adapter会将部分OpenAI解析错误作为结果值；parser中止探针显式在消费回调调用同一原SDK parser，
+以检查异常退出后的隔离，不改正常查询错误语义。
+整份源锁在作者启动前核对；只读SemBench Git checkout可以作为输入，配置及结果必须在Git仓库外。
+LOTUS解释器保留venv路径，不把符号链接解析成基础Python。
+
+执行前由主协调分配并持有共享host lease、八个CPU槽和串行窗口，完成独立环境预检及新桥构建。
+实际host额度为16核，affinity可见128核不构成额外预算；与Ray／Daft重负载窗口串行。
+验证器持续检查lease摘要、进程树RSS及本namespace共享内存；每格最多128 POST／600秒（含60秒清理），
+单作者运行时两格最多1200秒，RSS8GiB／SHM2GiB，作者Ray2CPU／0GPU／128MiB对象存储。
+lease变化、资源超量或到期停止新工作，只清理核对身份的自有进程。
+
+```sh
+taskset -c <assigned-eight-CPU-IDs> <author-python> -B code/integrations/sema/verify_imlane_session.py \
+  --execute --runtime cpython --path-mode both \
+  --author-root <checked-author-build> --bridge-binary <new-checked-bridge> \
+  --lotus-python <existing-LOTUS-venv-python> --tokenizer <existing-local-tokenizer> \
+  --checkout <pinned-read-only-SemBench-checkout> --source-manifest <candidate-source-lock> \
+  --lease-file <held-shared-host-lease> --lease-sha256 <current-lease-SHA256> \
+  --cpu-ids <same-eight-comma-separated-CPU-IDs> --cpu-quota-cores 16 \
+  --output <new-private-output> --wall-limit-s 1200
+```
+
+作者Ray在另一个已分配窗口使用`--runtime ray`。当前只有[本机替身与故障注入检查](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#local-verifier)，
+作者两模式／原SDK／新桥的实库资格仍pending；下方旧验证器的main不作为新常驻方案的资格入口。
+
 [原生async任务函数](imlane_async_complete_call.py)作为独立候选，在作者循环上直接`await _request(call)`。
 CPython通过作者`run_until_complete`执行，作者Ray通过原`AsyncActorWrapper`执行；两模式使用同一函数。
 每次仍只有一份完整NativeCall，每调用session由既有kernel关闭，cookie与错误诊断采用发布组合的共享实现。
