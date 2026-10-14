@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE源关闭核查](diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)：
+固定da379b完整函数的traceback／gc反例及修前16组失败保留；修后10模块102项本地替身通过，源关闭不代替actor／device完成证明。未运行服务器、真实SDK或模型。
+
 2026-10-14：[HSE可选设备组选择](diagnostics/hse_device_dispatch_20261014/README.md)：A上显式策略的本树187通过／2缺驻留切片跳过，
 固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录。
 随后固定4c7efa79单节点CPU实际Ray软件11/11通过，4 CPU／0 GPU／512MiB，49 PID与控制器退出、lease释放；首轮fixture失败保留。

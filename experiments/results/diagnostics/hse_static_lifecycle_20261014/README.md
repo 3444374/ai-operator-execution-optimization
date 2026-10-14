@@ -81,3 +81,34 @@ source 而失败，另一项正常；修后连同旧 HSE 生命周期、部分�
 两个不同替身 actor 的四行输出仍恰好一次。这里只核对重复 Python 对象；反序列化或包装后仍指向
 同一 Ray actor 的不同 handle、实际设备身份与共享物理 GPU 未识别。新增服务器／模型／GPU／HTTP
 执行均0，新 guard没有借用上方 `45da0a54` 的实际 SDK 资格。
+
+<a id="source-iterator-closure"></a>
+
+## HSE 上游迭代器关闭核查
+
+独立固定 `da379b2577118d58b890cff3fca6400af7bda8f2`，
+`staged_execution.py` 原 blob 为 `926ba2c4a0fe1a6fa2c4e424f9e133c4c36a9e91`。
+后续远端 `015a3855e79fe853f49cff40d00e375d6ca3abb3` 未修改该文件。
+完整函数创建的 `batches` 没有统一关闭；CLI 只拥有 DataFrame 和借用池，没有取得该迭代器的关闭责任。
+只读核对 [Daft v0.7.21 的 to_arrow_iter](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/daft/dataframe/dataframe.py#L556)
+及 [API 装饰器](https://github.com/Eventual-Inc/Daft/blob/v0.7.21/daft/api_annotations.py#L23)：
+没有针对消费方行物化异常的自动关闭处理。此项是源码核对，不是实际 SDK 运行。
+
+[新增行为测试](../../../../code/tests/modalities/image/test_hse_source_closure.py)调用完整 HSE 函数、真实 broker 和 audit，
+Arrow scalar／iterator 与 Ray actor／wait／get 使用确定性替身。
+原始附件的缩减控制流仅作线索；本轮完整函数中，行物化失败后保留同一异常及 traceback，再执行
+`gc.collect()`，修前 generator 仍为 `GEN_SUSPENDED`，显式 close 才执行 finalizer；修后已为 `GEN_CLOSED`。
+单个 `finally` 在正常 EOF、部分迭代失败和取消后尝试一次源 close；首执行错误优先，关闭再报错只附加异常类型。
+关闭失败后仍运行既有串行 actor fence、queued cleanup 和未知 lease／引用保留；正常运行不增加 actor fence。
+
+本机 Python 3.12.6／NumPy 2.5.0：新增8个测试方法、16组行为条件在修前全部失败，
+修后连同既有 HSE／可选派发、actor identity、image audit／CLI owner、descriptor 和 broker／dispatch
+共10模块102项通过，0失败／0跳过。正常／空源、保留 traceback、部分读取、next 错误、
+prepare／model取消、close再次抛普通异常／取消，以及已有pending model的失败确认与同池拒绝均覆盖。
+[机器记录](source_closure_checks.json)绑定源码blob、版本与逐成员摘要；
+独立规范和需求两轴审阅另列于[脱敏原件归档](raw/source-closure-local.tar.gz)，与主回归不相加。
+
+修补只改 HSE 编排与新增测试；source先行、FIFO、全终态历史扫描、CLI direct_dependency默认和
+可选设备派发 `None` 保持。原生baseline、文本native_calls和LOTUS图像backend未修改。
+本轮服务器／真实Daft与Ray／模型／GPU／HTTP运行均0。源 close 返回、generator关闭和替身
+fence不证明设备完成或actor物理退出；真实源内部资源停止、CUDA完成、完整CLI退出及性能仍待其独立验证。

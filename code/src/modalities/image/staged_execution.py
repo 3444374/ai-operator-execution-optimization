@@ -129,6 +129,8 @@ def run_project_ray_hse_pipeline(
     GPU slots require distinct Python handle objects. This does not identify
     separately deserialized handles or shared physical GPU assignments.
     model_dispatch is opt-in; None preserves static min-free actor selection.
+    This run closes its source iterator when supported. Source closure does
+    not confirm actor or device completion.
     """
     if worker_pool in _unconfirmed_runs:
         raise RuntimeError("HSE worker pool has unconfirmed work; dispose its actors")
@@ -211,6 +213,7 @@ def run_project_ray_hse_pipeline(
         prepare_inflight_peak = max(prepare_inflight_peak, snapshot.prepare_inflight)
         model_inflight_peak = max(model_inflight_peak, snapshot.model_inflight)
 
+    execution_error: BaseException | None = None
     try:
         while not source_exhausted or not broker.is_drained():
             progressed = False
@@ -420,6 +423,20 @@ def run_project_ray_hse_pipeline(
             record_peaks()
 
     except BaseException as error:
+        execution_error = error
+    finally:
+        try:
+            close_source = getattr(batches, "close", None)
+            if close_source is not None:
+                close_source()
+        except BaseException as close_error:
+            if execution_error is None:
+                execution_error = close_error
+            else:
+                execution_error.add_note(f"HSE source close raised {type(close_error).__name__}")
+
+    if execution_error is not None:
+        error = execution_error
         # Queued blocks have no worker owner; leased work needs a serial actor
         # fence, including device completion after a GPU method exception.
         cleanup_failed = False
@@ -453,7 +470,7 @@ def run_project_ray_hse_pipeline(
                 f"block(s), {len(active_calls)} retained call(s); "
                 "leases and refs remain held. Dispose the borrowed worker pool."
             )
-        raise
+        raise error
 
     total_s = time.perf_counter() - started
     final_snapshot = broker.snapshot()

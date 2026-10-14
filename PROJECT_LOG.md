@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：修补HSE上游迭代器关闭
+
+固定da379b核实完整函数的保留traceback反例，统一源close并保留首错、actor fence与未知owner；
+[修前失败及修后102项本地回归](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)保存。
+source先行、FIFO、历史扫描和默认保持；原生baseline未改，没有新增真实SDK／模型／GPU执行。
+
 ## 2026-10-14：实现默认关闭的HSE设备组选择
 
 - 基于A独立完成actor/group逻辑容量、确认后pixels速率反馈与FIFO目的地选择，复用EndpointSnapshot和LeastWork；默认源先行／minfree、CLI、source及原生baseline保持。

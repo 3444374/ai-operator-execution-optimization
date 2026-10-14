@@ -1,5 +1,8 @@
 # SemLoom Code
 
+[HSE源迭代器关闭核查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
+覆盖正常、取消与双错，源close和actor确认分别执行；原默认保持，实际SDK／设备退出仍需独立验证。
+
 [HSE可选设备组选择](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)在A之上提供
 `model_dispatch=StageModelDispatcher(actors, groups)`；默认`None`保持static。
 接续[整合验收](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md#integration-acceptance)

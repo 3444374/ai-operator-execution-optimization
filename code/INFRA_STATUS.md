@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE上游迭代器关闭](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
+统一源close，首执行错误优先且关闭失败继续actor确认／未知保留；完整函数本地替身102项通过。实际源／设备退出未测，默认及FIFO保持。
+
 2026-10-14：[HSE可选设备组派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)
 在固定A增加每actor/group逻辑额度、完成work速率及先选择后lease；默认static和CLI保持。
 本树187通过／2缺独立驻留切片跳过，固定42186dbe临时组合另2通过；两名独立源码审查完成。
