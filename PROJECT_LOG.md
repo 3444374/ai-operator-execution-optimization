@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：HSE broker历史扫描独立片
+
+B只维护活动集合与终态缓存及转换，保留全部默认历史与重复检测；31项定向通过。
+[原CPU成本与复算入口](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)按相同broker源码复用，
+仅支持历史扫描开销；A的source先行顺序保持，C与真实Ray／GPU另行核验。
+
 ## 2026-10-14：拆分HSE static正确性集成
 
 从3e保留已发布47f，独立构造[三片交接](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)。

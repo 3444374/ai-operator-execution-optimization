@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
+[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：A正确性与B历史扫描已分片，C ready优先待加入；
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。
 
 [原Q2模型小轮](native_sembench_model_20261012/README.md)与[双卡两次独立补测](native_sembench_model_dual_supplement_20261012/README.md)分别保存原轮和两个独立窗口、全部值、质量及失败。

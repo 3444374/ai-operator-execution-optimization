@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE B独立成本片](diagnostics/hse_static_lifecycle_20261014/README.md)：A+B的31项定向通过。
+broker源码与47f CPU原值／复算入口逐字节一致；原n3中位值只说明终态历史扫描开销，不外推实库／GPU／端到端。
+
 2026-10-14：[HSE A集成检查](diagnostics/hse_static_lifecycle_20261014/README.md)：29项定向CPU／受控Ray替身通过，
 A不含历史扫描优化和ready优先。机器记录逐片绑定source摘要；原47f完整CPU成本与失败证据独立保留，不提供A实库／GPU资格。
 

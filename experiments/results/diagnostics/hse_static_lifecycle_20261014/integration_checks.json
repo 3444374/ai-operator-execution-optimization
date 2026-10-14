@@ -39,6 +39,49 @@
         "run": 29
       },
       "tests_run": 478
+    },
+    {
+      "actual_ray_started": false,
+      "errors": 0,
+      "extra_modules": [
+        "tests.modalities.image.test_hse_static_lifecycle",
+        "tests.modalities.image.test_staged_image_execution",
+        "tests.modalities.image.test_staged_image_blocks",
+        "tests.modalities.image.test_incremental_image_backend",
+        "tests.execution_provider.test_map_preparation"
+      ],
+      "failures": 0,
+      "gpu_runs": 0,
+      "included_slices": [
+        "A",
+        "B"
+      ],
+      "model_calls": 0,
+      "omitted_module": "unittest.loader._FailedTest.tests.scheduling.test_scheduling_daft_ray_contract",
+      "omitted_reason": "pyarrow missing at import; fixed 47f failure record retained",
+      "passed": 479,
+      "platform": "Darwin",
+      "python": "3.12.6",
+      "scheduling_discovery_count": 433,
+      "skipped": [
+        {
+          "reason": "Daft and Arrow are required for actual prepared batches",
+          "test": "tests.execution_provider.test_map_preparation.MapPreparationTests.test_actual_batch_adapters_keep_merged_row_identity_and_buffers"
+        }
+      ],
+      "slice": "B",
+      "source_sha256": {
+        "code/src/modalities/image/staged_execution.py": "3ab5621fcc375f719075a91a339783dbac0569bc14c3a51ea59324b714230c4d",
+        "code/src/scheduling/runtime/stage_broker.py": "4ec743c3550b1f2cc4c802d377857135104cef6bf501a1dfc1597041831d49be",
+        "code/tests/modalities/image/test_hse_static_lifecycle.py": "5931cc2e1418df73ca7c7c21f6c74d8f3e23694225bc9a0a8c63f4a335d9ef2a",
+        "code/tests/scheduling/test_stage_broker.py": "53dfc7489c59ff19c9806abae301a6cd9b5e4c2017f8685720c506d17652dbe0"
+      },
+      "successful": true,
+      "targeted_tests": {
+        "passed": 31,
+        "run": 31
+      },
+      "tests_run": 480
     }
   ],
   "reviewed_combined_commit": "47f7800ce5fbe280c5075165453b2c6dec5437f4",

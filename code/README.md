@@ -1,7 +1,7 @@
 # SemLoom Code
 
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。
-当前仅A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
+A正确性可先挑选；B缓存终态计数及活动检查独立加入，保留原source先行，C ready优先待纳入。
 
 [SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 

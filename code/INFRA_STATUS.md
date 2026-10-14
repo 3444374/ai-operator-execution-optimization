@@ -1,8 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
-2026-10-14：[HSE A正确性切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
-保留source先行、全终态历史扫描及CLI默认；B历史扫描优化与C ready优先分别待纳入。
-owner／引用持有、异常完成确认／未知池、时间原子校验与单块ready拒绝由本地回归核对，实际Ray／GPU待运行。
+2026-10-14：[HSE A+B切片](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)
+A正确性可先挑选，B只优化broker全历史扫描；保留source先行及CLI默认，C ready优先待独立纳入。
+31项定向通过，B broker与原CPU成本测量源码相同；实际Ray／GPU资格和完整查询性能未取得。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。
