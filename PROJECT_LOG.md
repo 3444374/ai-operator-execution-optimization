@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：统一文本 Ray Data 默认与详细计时清理
+
+- 从固定`da379b2577118d58b890cff3fca6400af7bda8f2`建立独立修复分支，用导入的仓库函数核实附件线索；默认close遮住执行首错且跳过shutdown，详细模式遗漏次错说明，公开Iterable也不代表实际iterator。
+- 复用现有清理helper，显式持有实际iterator并逐项尝试close／shutdown；业务首错保持，正常提前关闭的真实清理错可见，纯计时故障让位于真实清理失败。并发、行数包络、厂商实现与其他owner文件不改。
+- 独立审查新增caller parser首错丢失worker shutdown次错、同异常对象notes无限复制两个反例，修前失败保留后最小修补；[来源及回归](experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)分列最终57通过／1缺Ray导入跳过与较早共享计时补验。
+- localhost补验首次沙箱监听失败保留，仅重验一个既有用例后24次替身POST通过；本轮无服务器模型／GPU或性能矩阵，实际Ray 2.56.1补验计划交统一排队，main不合入。
+
 ## 2026-10-14：修补HSE上游迭代器关闭
 
 固定da379b核实完整函数的保留traceback反例，统一源close并保留首错、actor fence与未知owner；

@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[文本 Ray Data 清理配对](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
+已用仓库函数复现默认／详细计时的异常差异并统一清理；保留实际 iterator、业务首错、全部已知清理次错及未确认责任。
+最终定向57通过／1缺Ray导入跳过；独立审查两个反例已修补，较早修订的共享计时补验另按来源保存。
+本轮无服务器模型／GPU运行或性能矩阵；最终实际Ray 2.56.1软件资格仍待统一排队，不沿用旧源码资格。
+
 2026-10-14：[HSE上游迭代器关闭](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
 统一源close，首执行错误优先且关闭失败继续actor确认／未知保留；完整函数本地替身102项通过。实际源／设备退出未测，默认及FIFO保持。
 

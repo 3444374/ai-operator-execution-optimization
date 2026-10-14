@@ -1,0 +1,60 @@
+{
+  "schema": "semloom.ray_cleanup_parity_integration.v1",
+  "previous_integration": "4f0d05cf4514473e4ca304f9ec62282127e9156a",
+  "fixed_source": "1d6453d31b9e59123148d22c85f57086c8f7ccad",
+  "text_production_sha256": "ef7f7294a15e5463a8a8c6f89a9465e39f7f2c14cf80a7ba9952ed31955fa936",
+  "text_production_matches_fixed_source": true,
+  "image_neighbor_repair": "hold iter(data.iter_batches(...)) actual generator; graph/batching/parameters unchanged",
+  "primary_API_source": "https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/data/iterator.py",
+  "test_evidence": {
+    "modules": [
+      "tests.baselines.test_native_ray_cleanup_parity",
+      "tests.baselines.test_native_call_detailed_timing",
+      "tests.baselines.test_native_call_cleanup",
+      "tests.baselines.test_native_dataset_configuration",
+      "tests.baselines.test_native_ray_configuration",
+      "tests.experiments.test_execution_timing_contract",
+      "tests.experiments.test_common_timing_error_priority",
+      "tests.baselines.test_adapter_detailed_timing",
+      "tests.semantic_methods.test_lotus_image_lifecycle",
+      "tests.modalities.image.test_hse_source_closure"
+    ],
+    "selected_methods": 131,
+    "passed": 130,
+    "skipped": [
+      {
+        "test": "test_fresh_ray_import_reads_environment_override_and_upstream_default (tests.baselines.test_native_ray_configuration.NativeRayConfigurationTests.test_fresh_ray_import_reads_environment_override_and_upstream_default)",
+        "reason": "pinned Ray is unavailable for fresh-import validation"
+      }
+    ],
+    "failures": [],
+    "errors": [],
+    "success": true,
+    "elapsed_s": 5.571851333137602,
+    "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "new_actual_SDK_server_GPU_model_execution": false,
+    "loopback_fixed_HTTP_POST": 24,
+    "cross_phase_tests_overlap_do_not_sum": true,
+    "log_sha256": "43eb385159ea60c54af36d650eaf3cc7e659d3b40adb9993eebe18cc46d8b7c4"
+  },
+  "source_gzip_sha256": "5f1b4043a9f4d8881789eb76e24b701bda6eb83682fe41b68e58f2e4833162e2",
+  "source_final_and_earlier_d6d_qualifications_kept_separate": true,
+  "new_actual_SDK_server_GPU_model_execution": false,
+  "independent_final_review": {
+    "reviewed_tree": "2d88d81327df41e180950785ae79a654b5b1b47b",
+    "reviewed_patch_sha256": "2477c36ae8ddac2815796cefaefc31b0d727325cb2819ff1d3981d4c5f44f7ed",
+    "axes": {
+      "Standards": {
+        "mandatory_findings": 0,
+        "report": "text-ray-cleanup-standards-final.json",
+        "report_sha256": "5f3896d69a10998f3af72937197b152ef0d4c0a924f89414b49abbe31b315a43"
+      },
+      "Spec": {
+        "mandatory_findings": 0,
+        "report": "text-ray-cleanup-spec-final.json",
+        "report_sha256": "4afce1f7b5b7424fe18d0c31e3f6733d7da166e252c00c61f8e7266432810885"
+      }
+    },
+    "production_and_tests_unchanged_after_review": true
+  }
+}

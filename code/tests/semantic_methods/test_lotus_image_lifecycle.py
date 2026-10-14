@@ -209,6 +209,21 @@ class RayImageLifecycleTests(unittest.TestCase):
         self.assertEqual(modules["ray.data"].from_items.call_count, 1)
         owner.shutdown.assert_called_once_with(force=True)
 
+    def test_ray_iterable_wrapper_closes_actual_generator_after_consumer_error(self):
+        modules, graph, iterator, owner = self.graph(error=ValueError("consumer failed"))
+
+        class Iterable:
+            def __iter__(self):
+                return iterator
+
+        graph.iter_batches.return_value = Iterable()
+        executor = RayDataImageExecutor(model="fixture")
+        with patch.dict(sys.modules, modules):
+            with self.assertRaisesRegex(ValueError, "consumer failed"):
+                executor.embed_batch(("a",), [b"fixture"])
+        iterator.close.assert_called_once()
+        owner.shutdown.assert_called_once_with(force=True)
+
 
 class DaftImageLifecycleTests(unittest.TestCase):
     def executor(self, *, open_error=None, close_error=None, consume_error=None):

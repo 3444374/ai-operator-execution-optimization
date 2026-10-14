@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-14：[文本 Ray Data 默认／详细计时清理差异修补](diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)。
+基于固定`da379b2577118d58b890cff3fca6400af7bda8f2`，实际导入仓库函数复现首错被close替换、shutdown跳过及Iterable未关闭实际iterator。
+最终本地定向57通过／1缺Ray导入跳过，审查发现的次错交接与异常notes自复制反例已修复；修前失败及源码摘要保留。
+较早修订的共享计时42项与24次localhost替身POST独立记录，不合计为最终源码或真实Ray资格；模型／GPU0，实库最小计划待统一排队。
+
 2026-10-14：[HSE源关闭核查](diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)：
 固定da379b完整函数的traceback／gc反例及修前16组失败保留；修后10模块102项本地替身通过，源关闭不代替actor／device完成证明。未运行服务器、真实SDK或模型。
 

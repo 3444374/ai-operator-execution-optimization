@@ -227,7 +227,7 @@ class RayDataImageExecutor:
         error = None
         self._unconfirmed_work = True
         try:
-            iterator = data.iter_batches(batch_format="numpy", prefetch_batches=1)
+            iterator = iter(data.iter_batches(batch_format="numpy", prefetch_batches=1))
             for batch in iterator:
                 collector.add(tuple(str(x) for x in batch["doc_id"]), __import__("numpy").asarray(batch["embedding"], dtype="float32"))
             result = ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,

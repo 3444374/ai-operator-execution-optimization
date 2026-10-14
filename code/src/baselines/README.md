@@ -11,6 +11,10 @@ NativeLOTUS、Daft、Ray Data、SemLoom、IMLane 两模式及现有图像 CLI �
 不推定厂商排队、actor 初始化或 GPU 计算。[字段与验证](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)
 同时说明原图生命周期、图像未知首批／EOF及计时开销。
 
+文本 Ray Data 的 [清理配对修补](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-parity)
+在计时 ON/OFF 下均保留实际 iterator，独立尝试 close／shutdown；业务首错与清理次错说明保持，
+真实清理失败优先于纯计时故障，失败或未确认责任继续拒绝复用。实际 Ray 2.56.1 软件补验仍待排队。
+
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
