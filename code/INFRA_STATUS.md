@@ -1,5 +1,13 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[HSE可选设备组派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)
+在固定A增加每actor/group逻辑额度、完成work速率及先选择后lease；默认static和CLI保持。
+本树187通过／2缺独立驻留切片跳过，固定42186dbe临时组合另2通过；两名独立源码审查完成。
+固定4c7efa79单节点CPU实际Ray软件11/11通过，4 CPU／0 GPU／512MiB；34 actor／49 PID身份退出且lease释放，首轮fixture失败保留。
+Torch／CUDA、GPU性能及P99／P99.99未测，未知位置成本不参与排序；重复handle拒绝仍归独立集成修补。
+`f6daa6bc`上已[组合独立literal拒绝与可选派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md#integration-acceptance)，
+25模块318通过／14明确跳过，默认None、FIFO、A责任和现有工厂／计时修补保持；B/C与驻留实现未合入，无新服务器实验。
+
 2026-10-14：[缺失服务排队观测语义](src/experiments/shared_vllm/README.md)。
 真实helper保留未知waiting／queue估计，恢复已有校准供给而不误上调；有效waiting／KV保护与已知零队列bootstrap保持。155项本地零模型回归通过，未启动服务器或性能实验。
 `81228bdd`上的[独立整合验收](src/experiments/shared_vllm/README.md#unknown-waiting-integration)另为196项全通过／0跳过；原155项不代替或加到此最终组合，未引入研究分支策略。

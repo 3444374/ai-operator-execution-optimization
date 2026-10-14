@@ -1,0 +1,575 @@
+{
+  "schema": "hse-device-dispatch-actual-ray-v1",
+  "source_commit": "4c7efa79074ae564db1dfb6831bbe3a73063d5b1",
+  "production_commit": "081b3c172b65139ab67fc5e8cbf1a0edf479e239",
+  "source_members_verified": 34,
+  "source_sha256": {
+    "code/src/__init__.py": "d84c3889bba4c371eeeeba8ba5beaf5266caac81b0f3a29144cec5d69f82d34a",
+    "code/src/modalities/__init__.py": "1cc21cff854f2687432fafa83ea6003ad8f363c02dabc51a68f9cd5b9e9749db",
+    "code/src/modalities/image/__init__.py": "b5855d96d6d1e166c259cc5573bcaecc24a3b043895725b67d61f8f2424a3781",
+    "code/src/modalities/image/clip.py": "e7ff28b276237cdc436cc58fda69b3ee072e25db5e52b342e98afca366ba88d4",
+    "code/src/modalities/image/contracts.py": "5e042fe4e4a975d93ad910927b7eae2dcc11ac399042670d09861116fabbce6a",
+    "code/src/modalities/image/execution.py": "d4afb9e6530ca9682dda600bd2c9343d750dff3d2a464260f5d02a4b77dca98d",
+    "code/src/modalities/image/hse_dispatch.py": "98a7eb7c36f949976035921f4e1bf11f1c0d705e4fa798064882e428d2296863",
+    "code/src/modalities/image/source.py": "bc9b06bcc303b63e62552491c30d662084f4f13ebdff06ca59f5e8a8ac64ad93",
+    "code/src/modalities/image/staged.py": "1ae61da1e09d5d431c95b1d0c78b56c0898b249370b51548875268cebf1affb4",
+    "code/src/modalities/image/staged_execution.py": "c1ffe92ba5e5a29ff6dc530eb8d519411b5ee3cdee1e990a42fcf168e77f4803",
+    "code/src/planning/__init__.py": "e6e6a88e0ba3308268eb55832fa22fbcb17e734e9d70c057ca6b73268a8f0fa9",
+    "code/src/planning/blocks.py": "f66af6c2f6b3af473580697d8bed1abfebc25b0d631e12e4742e99f40ff9d76b",
+    "code/src/planning/work.py": "b834dd1cf3b2ce0563e49ece35eb2b7c1afca76fe7e2eeb8ba9246ef35e6a779",
+    "code/src/scheduling/__init__.py": "6e6e75fdf724d60925b3006d2a70cd9d49288d6fbbb9035e7232d43d4fc5db4e",
+    "code/src/scheduling/core/__init__.py": "b49507d070513d0cfe03d052cf79dcf50193b4d0cd672006decde1f59678b9a3",
+    "code/src/scheduling/core/control.py": "206fb330139e8b452ee86104584f3359a43dfaa356be1187e85ccf088bd5bb22",
+    "code/src/scheduling/core/errors.py": "d98165debe7fa30c85dfffea47e060356c8858a1ece0dc49e364e2fbef0df435",
+    "code/src/scheduling/core/models.py": "596e9096b5f73fb30fff6970f1f3ccf8586e62c1833910ef35cffa34806a7e91",
+    "code/src/scheduling/core/topology.py": "5e93a371a7653a05e1770494ab99f1fe18229f992361bc2024a575fde32a616c",
+    "code/src/scheduling/endpoint_routing/__init__.py": "494e697ce6a653c0afc3c3c71baf981853c33f0f197c62842bfb50084a758cc1",
+    "code/src/scheduling/endpoint_routing/policies.py": "d1d532077228d0409a49973756a303b8617e90378103f061de315b61a048b4f8",
+    "code/src/scheduling/runtime/__init__.py": "87e9b8cb4859df3b23b4df9ae5782c1458cec23e6a06433ed6269a570a9f5e50",
+    "code/src/scheduling/runtime/saor_capacity.py": "59fd8970d9072fd6d3bd88eb19cf166b02e85534c9cd30269c0685f9d449871f",
+    "code/src/scheduling/runtime/saor_pipeline.py": "2ccb66a1350458f1b3d998feb45b6f5124fb9408b1c4c3a3d1b61f0616e5d7fa",
+    "code/src/scheduling/runtime/stage_broker.py": "1c03ca7f4fa04e9c2e4404addb5bd2fb3ff41705fff2b0f366aa6a9036b1070d",
+    "code/src/scheduling/runtime/stage_dispatch.py": "96400f2762515d37a3272f35f32299219059bf7daa893a6b586de27ba676cfe3",
+    "code/src/scheduling/submission_control/__init__.py": "ef908a2e7d954de0226f4fa8b9d10cd75f96c107ebe921ef11431062a93124da",
+    "code/src/scheduling/submission_control/saor.py": "37465c3ed9ba3185f8122168f98a47d25c2f7e0aa7669bf65ded7dd1c64ecdc4",
+    "code/src/scheduling/submission_control/shared_credit.py": "923c2b1dbad4d787e1e5d04a6d2306854ec9af0b347fba228a671a695e77e646",
+    "code/tests/__init__.py": "e38b136594ecc3c8c67c11997db3e6aabecee0876de4ad991bacf9a684e598e6",
+    "code/tests/modalities/__init__.py": "92b6530868ee60dc23bf2427d28c080f0e7be907f22eee1825b3eb9d35a22977",
+    "code/tests/modalities/image/__init__.py": "0d09a187c0e9b3b6ab3f21cf766bf78d10d148939a884cef8b4b42fdee160cd7",
+    "code/tests/modalities/image/test_hse_device_dispatch_ray.py": "5b05bc8b1badb59be0a1bbfac531dea75c11f469be8b2c546e9642775174ba44",
+    "code/tests/modalities/image/test_hse_static_ray.py": "e363fe411099f32c41ece68c25102a30419b17ccf79d4c38f561583ec3b973dc"
+  },
+  "source_package_sha256": "4e00e09a12fa139ced5fc6cc9fca36fe34390a5add3e09f7ea74aed4ddd13486",
+  "source_manifest_sha256": "6695ae2bac80da91e6b586adcdc3868611373ece8c82f92e706b11413fdaaee8",
+  "controls_sha256": {
+    "controller.py": "fd3d8b6ee6417441687beeeb9000f6d57c5db5ad3ac3378b4f570c400928c0fc",
+    "run_fixture.py": "0f00157ac4db55fb05b9d2cf6df3acaa7d63124e3e68ad630fab54018000d904",
+    "runtime-assets.json": "9f6c3784c1571e82d9bae36049e2cc2b60837871d00091fde4c06eb24a32f798"
+  },
+  "scope": {
+    "runtime": "actual single-node Ray and Arrow",
+    "model_role": "NumPy CPU fixture; controlled delays and start/error handshakes",
+    "image_shape": "batch,3,2,2 float32",
+    "model_work_unit": "pixels",
+    "ray_cpu_slots": 4.0,
+    "ray_gpu_slots": 0,
+    "object_store_bytes": 536870912.0,
+    "healthy_run_total_wall_deadline_s": null,
+    "single_operation_or_no_progress_timeout_s": 60,
+    "ray_shutdown_timeout_s": 30,
+    "torch_cuda": "not_run",
+    "physical_multi_gpu": "not_run",
+    "performance_benefit": "not_measured",
+    "p99_p9999": "not_measured",
+    "physical_memory_ceiling": "not_established; broker budgets are logical bytes/work"
+  },
+  "driver_versions": {
+    "python": "3.12.3",
+    "numpy": "1.26.4",
+    "pyarrow": "16.1.0",
+    "ray": "2.56.1",
+    "psutil": "7.0.0"
+  },
+  "environment_preflight": {
+    "status": "ok",
+    "groups": [
+      "imlane-runtime"
+    ],
+    "host_cpu_quota_cores": 16.0,
+    "data_disk_filesystem": "xfs",
+    "runtime_env_present": true,
+    "existing_private_driver_reused": true,
+    "base_versions_unchanged": true
+  },
+  "started_utc": "2026-10-14T10:25:42.116741+00:00",
+  "finished_utc": "2026-10-14T10:26:46.248547+00:00",
+  "result": {
+    "cleanup_incidents": [],
+    "cleanup_unconfirmed": false,
+    "diagnostic_errors": [],
+    "errors": 0,
+    "failures": 0,
+    "passed": 11,
+    "skipped": 0,
+    "successful": true,
+    "tests_run": 11
+  },
+  "cases": [
+    {
+      "case": "test_actual_capacity_expiry_with_no_pending_model",
+      "passed": true,
+      "created_actor_handles": 3,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 1,
+        "ImageEmbeddingResult": 1
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 1,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": 1,
+      "model_lease_retry_counts": [
+        0
+      ],
+      "selected_actor_indices": [
+        0
+      ],
+      "sampled_actor_indices": [
+        [
+          0
+        ]
+      ],
+      "decision_counts": [
+        {
+          "capacity_wait": 1,
+          "sample_rotation": 1
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_actual_completed_feedback_and_shared_group_capacity",
+      "passed": true,
+      "created_actor_handles": 4,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 4,
+        "ImageEmbeddingResult": 4
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 4,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": 1,
+      "model_lease_retry_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "selected_actor_indices": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "sampled_actor_indices": [
+        [
+          0,
+          1
+        ]
+      ],
+      "decision_counts": [
+        {
+          "capacity_wait": 5,
+          "least_work": 2,
+          "sample_rotation": 2
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_actual_expiry_dispatches_free_actor_while_other_model_is_pending",
+      "passed": true,
+      "created_actor_handles": 4,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 2,
+        "ImageEmbeddingResult": 2
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 2,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": 2,
+      "model_lease_retry_counts": [
+        0,
+        0
+      ],
+      "selected_actor_indices": [
+        0,
+        1
+      ],
+      "sampled_actor_indices": [
+        [
+          0,
+          1
+        ]
+      ],
+      "decision_counts": [
+        {
+          "capacity_wait": 5,
+          "sample_rotation": 2
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_actual_invalid_output_is_completed_but_does_not_train_rate",
+      "passed": true,
+      "created_actor_handles": 3,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 1,
+        "ImageEmbeddingResult": 1
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 1,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": 1,
+      "model_lease_retry_counts": [
+        0
+      ],
+      "selected_actor_indices": [
+        0
+      ],
+      "sampled_actor_indices": [
+        []
+      ],
+      "decision_counts": [
+        {
+          "sample_rotation": 1
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_actual_model_error_and_failed_fence_retain_only_unknown_owner",
+      "passed": true,
+      "created_actor_handles": 4,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 2,
+        "dict": 1
+      },
+      "events": [
+        "model_error_observed",
+        "confirmed_model",
+        "released_model"
+      ],
+      "brokers": [
+        {
+          "completed": 0,
+          "failed": 1,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 48,
+          "ready_held_work": 4,
+          "prepare_inflight": 0,
+          "model_inflight": 1
+        }
+      ],
+      "model_lease_peak": 2,
+      "model_lease_retry_counts": [
+        0,
+        0
+      ],
+      "selected_actor_indices": [
+        0,
+        1
+      ],
+      "sampled_actor_indices": [
+        []
+      ],
+      "decision_counts": [
+        {
+          "sample_rotation": 2
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_actual_zero_service_rotates_without_training_invalid_rate",
+      "passed": true,
+      "created_actor_handles": 4,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 4,
+        "ImageEmbeddingResult": 4
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 4,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": 1,
+      "model_lease_retry_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "selected_actor_indices": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "sampled_actor_indices": [
+        [
+          1
+        ]
+      ],
+      "decision_counts": [
+        {
+          "sample_rotation": 4
+        }
+      ],
+      "prepared_arrays_readonly_at_model": true
+    },
+    {
+      "case": "test_real_failed_confirmation_retains_unknown_and_blocks_reuse",
+      "passed": true,
+      "created_actor_handles": 3,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 1,
+        "dict": 1
+      },
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "brokers": [
+        {
+          "completed": 0,
+          "failed": 1,
+          "encoded_held_bytes": 1,
+          "ready_held_bytes": 48,
+          "ready_held_work": 4,
+          "prepare_inflight": 1,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": null,
+      "model_lease_retry_counts": [],
+      "selected_actor_indices": [],
+      "sampled_actor_indices": [],
+      "decision_counts": [],
+      "prepared_arrays_readonly_at_model": null
+    },
+    {
+      "case": "test_real_model_error_confirms_serial_model_fence_before_release",
+      "passed": true,
+      "created_actor_handles": 2,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 1,
+        "dict": 1
+      },
+      "events": [
+        "confirmed_model",
+        "released_model"
+      ],
+      "brokers": [
+        {
+          "completed": 0,
+          "failed": 1,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": null,
+      "model_lease_retry_counts": [],
+      "selected_actor_indices": [],
+      "sampled_actor_indices": [],
+      "decision_counts": [],
+      "prepared_arrays_readonly_at_model": null
+    },
+    {
+      "case": "test_real_multi_return_dependency_and_tail_batch",
+      "passed": true,
+      "created_actor_handles": 3,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "StageBlockDescriptor": 3,
+        "ImageEmbeddingResult": 3
+      },
+      "events": [],
+      "brokers": [
+        {
+          "completed": 3,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": null,
+      "model_lease_retry_counts": [],
+      "selected_actor_indices": [],
+      "sampled_actor_indices": [],
+      "decision_counts": [],
+      "prepared_arrays_readonly_at_model": null
+    },
+    {
+      "case": "test_real_prepare_error_confirms_actor_before_release",
+      "passed": true,
+      "created_actor_handles": 2,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "dict": 1
+      },
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "brokers": [
+        {
+          "completed": 0,
+          "failed": 1,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": null,
+      "model_lease_retry_counts": [],
+      "selected_actor_indices": [],
+      "sampled_actor_indices": [],
+      "decision_counts": [],
+      "prepared_arrays_readonly_at_model": null
+    },
+    {
+      "case": "test_real_submit_ack_loss_uses_ordered_actor_fence",
+      "passed": true,
+      "created_actor_handles": 2,
+      "actor_exit_confirmed": true,
+      "pipeline_get_types": {
+        "dict": 1,
+        "StageBlockDescriptor": 1,
+        "ImageEmbeddingResult": 1
+      },
+      "events": [
+        "confirmed_prepare",
+        "released_prepare"
+      ],
+      "brokers": [
+        {
+          "completed": 0,
+          "failed": 1,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        },
+        {
+          "completed": 1,
+          "failed": 0,
+          "encoded_held_bytes": 0,
+          "ready_held_bytes": 0,
+          "ready_held_work": 0,
+          "prepare_inflight": 0,
+          "model_inflight": 0
+        }
+      ],
+      "model_lease_peak": null,
+      "model_lease_retry_counts": [],
+      "selected_actor_indices": [],
+      "sampled_actor_indices": [],
+      "decision_counts": [],
+      "prepared_arrays_readonly_at_model": null
+    }
+  ],
+  "exit_proof": {
+    "actor_identity_pairs": 34,
+    "observed_model_actor_ids": 10,
+    "observed_nodes": 1,
+    "observed_logical_gpu_ids": [],
+    "tracked_pid_birth_pairs": 49,
+    "postcheck_pid_birth_pairs": 49,
+    "owned_processes_live": 0,
+    "own_controller_live": false,
+    "ray_heads_remaining": 0,
+    "lease_released": true,
+    "postcheck_lease_present": false,
+    "forced_cleanup": false
+  },
+  "retained_first_attempt": {
+    "source_commit": "416394933b844d39d6fc233e041efbeb6c887153",
+    "result": {
+      "cleanup_incidents": [],
+      "cleanup_unconfirmed": false,
+      "diagnostic_errors": [],
+      "errors": 0,
+      "failures": 1,
+      "passed": 10,
+      "skipped": 0,
+      "successful": false,
+      "tests_run": 11
+    },
+    "reason": "Fixture injected NaN before dataclasses.replace; actor result constructor rejected before the intended driver audit. Only fixture order changed.",
+    "source_package_sha256": "465d8d4ff0b75dcdaf567b52eaa95c34d0c2e09f461a554758073dbded8838c4",
+    "raw_archive_sha256": "93370a592a4da2d5be5078c082866d91216e54d05b4df76903afab87e87421e8",
+    "owned_processes_checked": 49,
+    "owned_processes_live": 0,
+    "lease_released": true
+  },
+  "raw_evidence": {
+    "archive_sha256": "caf0066b2b2b4a1c320edb326341265edfd8681e638f8a68337c8f32776673b0",
+    "archive_bytes": 129107,
+    "members": 250,
+    "private_location": "task workspace tmp/hse-device-ray-private/downloads; full logs, source package, versions, process identities and independent postcheck retained",
+    "run_files_sha256": {
+      "status.json": "805c36e1d38b6904166b5c517c5e73a695bacfb86dac26af0033bfd37c6af329",
+      "test_result.json": "e1e688779149ddb8f23bfafed2a600d08ea2244a5e3c95abdbc7b40deb9b2dc7",
+      "case_observations.json": "7e0d0bc8e359853ecef52f71c9779b127a52bad52fb30867c818afb36472406a",
+      "actor_identities.json": "d0ef019517a898f868530efe4896b99d5aff672e52a0a1dfcf8dafa86cac252f",
+      "owned_processes.json": "df34c7df4ee0da54c9cdbf138d97a7409ebc89037b0f4a8a08d543162416dbc2",
+      "versions.json": "6f610d49fc34d57e5ecb167049d37496f4cbfa53ba27463049fd680ee6b873c2",
+      "resources.json": "e25bcc74e25f449cc2c6c36542e8486b1c678d5e5cb979bd65df14bb1c7459dd",
+      "preflight.json": "938c104b05ff05c768690eb89e28c4041041daedc4894dfd3d2f711cbd02fac0",
+      "postcheck.json": "3dd98bbd02f1f586d983d2c22446a3cd0d8fa13cc27d0a613a39fabc10bcec32",
+      "tests.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tests.stderr.log": "5c799dce63e787e11b106189c0a38b0bf31b454f7212b744cd358f22cbb1166c"
+    }
+  }
+}

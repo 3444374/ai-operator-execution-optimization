@@ -1,0 +1,186 @@
+{
+  "schema": "semloom.hse_dispatch_integration.v1",
+  "integration_input": "f6daa6bc17220f1fed91fdcb7c141f345f264de3",
+  "literal_guard_source": "f78811060d8e8dbb43c3a6816ed6bd8a83337cde",
+  "literal_guard_merge": "5b3e9176",
+  "dispatch_source": "fd1fc2504371bf0834d48c57ab5199bb90432a72",
+  "merge_style": "ordinary merge",
+  "defaults": {
+    "model_dispatch": null,
+    "source_first": true,
+    "model_FIFO": true,
+    "CLI_unchanged": true
+  },
+  "B_C_residency_imported": false,
+  "literal_duplicate_guard": {
+    "check_before": [
+      "source read",
+      "dispatcher binding",
+      "actor access"
+    ],
+    "covered_paths": [
+      "default",
+      "explicit optional dispatch"
+    ],
+    "serialized_alias_or_physical_GPU_identity": false
+  },
+  "validation_groups": [
+    {
+      "modules": [
+        "tests.planning.test_work_descriptor",
+        "tests.modalities.text.test_contracts",
+        "tests.scheduling.test_capacity_controller",
+        "tests.scheduling.test_stage_work_controller",
+        "tests.scheduling.test_saor_capacity_runtime",
+        "tests.scheduling.test_saor_pipeline_runtime",
+        "tests.experiments.test_shared_vllm_runtime",
+        "tests.experiments.test_shared_vllm_experiment",
+        "tests.experiments.test_saor_shared_vllm_config",
+        "tests.experiments.test_execution_timing_contract",
+        "tests.modalities.image.test_image_contracts",
+        "tests.modalities.image.test_staged_image_blocks",
+        "tests.modalities.image.test_staged_image_execution",
+        "tests.modalities.image.test_hse_static_lifecycle",
+        "tests.modalities.image.test_hse_pool_resource_identity",
+        "tests.modalities.image.test_hse_device_dispatch",
+        "tests.modalities.image.test_hse_residency_dispatch",
+        "tests.modalities.image.test_hse_device_dispatch_ray",
+        "tests.scheduling.test_stage_broker",
+        "tests.scheduling.test_stage_dispatch"
+      ],
+      "tests_run": 262,
+      "passed": 249,
+      "skipped": [
+        {
+          "test": "test_failed_device_fence_retains_both_input_owner_and_hse_unknown_work (tests.modalities.image.test_hse_residency_dispatch.HSEResidencyDispatchTest.test_failed_device_fence_retains_both_input_owner_and_hse_unknown_work)",
+          "reason": "requires the separately delivered input-residency slice"
+        },
+        {
+          "test": "test_off_on_reuses_only_input_and_keeps_every_full_forward_and_row (tests.modalities.image.test_hse_residency_dispatch.HSEResidencyDispatchTest.test_off_on_reuses_only_input_and_keeps_every_full_forward_and_row)",
+          "reason": "requires the separately delivered input-residency slice"
+        },
+        {
+          "test": "test_actual_capacity_expiry_with_no_pending_model (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_capacity_expiry_with_no_pending_model)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_actual_completed_feedback_and_shared_group_capacity (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_completed_feedback_and_shared_group_capacity)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_actual_expiry_dispatches_free_actor_while_other_model_is_pending (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_expiry_dispatches_free_actor_while_other_model_is_pending)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_actual_invalid_output_is_completed_but_does_not_train_rate (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_invalid_output_is_completed_but_does_not_train_rate)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_actual_model_error_and_failed_fence_retain_only_unknown_owner (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_model_error_and_failed_fence_retain_only_unknown_owner)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_actual_zero_service_rotates_without_training_invalid_rate (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_actual_zero_service_rotates_without_training_invalid_rate)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_real_failed_confirmation_retains_unknown_and_blocks_reuse (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_real_failed_confirmation_retains_unknown_and_blocks_reuse)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_real_model_error_confirms_serial_model_fence_before_release (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_real_model_error_confirms_serial_model_fence_before_release)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_real_multi_return_dependency_and_tail_batch (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_real_multi_return_dependency_and_tail_batch)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_real_prepare_error_confirms_actor_before_release (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_real_prepare_error_confirms_actor_before_release)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        },
+        {
+          "test": "test_real_submit_ack_loss_uses_ordered_actor_fence (tests.modalities.image.test_hse_device_dispatch_ray.HSEDeviceDispatchActualRayTests.test_real_submit_ack_loss_uses_ordered_actor_fence)",
+          "reason": "requires an explicitly scheduled CPU Ray window"
+        }
+      ],
+      "failures": [],
+      "errors": [],
+      "successful": true
+    },
+    {
+      "modules": [
+        "tests.modalities.image.test_image_worker_startup",
+        "tests.experiments.test_image_detailed_timing",
+        "tests.scheduling.test_scheduling_models",
+        "tests.scheduling.test_scheduling_policies",
+        "tests.scheduling.test_shared_credit"
+      ],
+      "tests_run": 70,
+      "passed": 69,
+      "skipped": [
+        {
+          "test": "test_real_ray_factory_failure_records_process_exit_before_client_shutdown (tests.modalities.image.test_image_worker_startup.ImageWorkerStartupRealRayTest.test_real_ray_factory_failure_records_process_exit_before_client_shutdown)",
+          "reason": "opt-in fixed Ray CPU process-exit evidence; shared window required"
+        }
+      ],
+      "failures": [],
+      "errors": [],
+      "successful": true
+    }
+  ],
+  "test_id_overlap": 0,
+  "total_tests_run": 332,
+  "total_passed": 318,
+  "total_skipped": 14,
+  "source_preservation": {
+    "delivery": "fd1fc2504371bf0834d48c57ab5199bb90432a72",
+    "measured_source": "4c7efa79074ae564db1dfb6831bbe3a73063d5b1",
+    "members": 34,
+    "byte_identical_members": 29,
+    "differing_members": [
+      "code/src/modalities/image/execution.py",
+      "code/src/modalities/image/staged_execution.py",
+      "code/src/planning/work.py",
+      "code/src/scheduling/runtime/saor_capacity.py",
+      "code/src/scheduling/runtime/saor_pipeline.py"
+    ],
+    "difference_owners": {
+      "code/src/modalities/image/execution.py": "preexisting image factory lifecycle repair retained",
+      "code/src/modalities/image/staged_execution.py": "literal f788 guard plus explanation only",
+      "code/src/planning/work.py": "selected unknown waiting fix",
+      "code/src/scheduling/runtime/saor_capacity.py": "selected unknown waiting fix",
+      "code/src/scheduling/runtime/saor_pipeline.py": "selected unknown waiting fix"
+    },
+    "other_code_unchanged": true,
+    "B_C_unmerged": true,
+    "root_no_actual_SDK_qualification_added": true
+  },
+  "original_archive_SHA256": [
+    {
+      "bytes": 125834,
+      "sha256": "93370a592a4da2d5be5078c082866d91216e54d05b4df76903afab87e87421e8",
+      "members": 250
+    },
+    {
+      "bytes": 129107,
+      "sha256": "caf0066b2b2b4a1c320edb326341265edfd8681e638f8a68337c8f32776673b0",
+      "members": 250
+    }
+  ],
+  "original_records_unchanged": [
+    "checks.json",
+    "ray_checks.json"
+  ],
+  "old_actual_Ray_source": "4c7efa79074ae564db1dfb6831bbe3a73063d5b1",
+  "old_actual_Ray_passed": 11,
+  "first_attempt_passed": 10,
+  "first_attempt_failed": 1,
+  "root_server_model_GPU_operations": 0,
+  "actual_combined_Ray_SDK_qualification": false,
+  "performance_qualification": false,
+  "independent_review_axes": [
+    "Standards",
+    "Spec"
+  ]
+}

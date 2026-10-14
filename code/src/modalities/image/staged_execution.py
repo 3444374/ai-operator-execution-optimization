@@ -7,6 +7,7 @@ import time
 import weakref
 from dataclasses import dataclass
 
+from ...scheduling.runtime.stage_dispatch import StageActiveWork, StageModelDispatcher
 from ...scheduling.runtime.stage_broker import (
     BoundedStageBroker,
     StageBrokerLimits,
@@ -19,6 +20,7 @@ from .execution import (
     SemLoomRayWorkerPool,
 )
 from .staged import build_encoded_image_block_descriptor
+from .hse_dispatch import bind_hse_dispatcher, image_model_routing_request
 
 
 @dataclass
@@ -48,6 +50,7 @@ class _UnconfirmedRun:
 # leases/refs, but never the pool, so disposing the owner also removes this record.
 _unconfirmed_runs: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 _ABORT_CONFIRMATION_TIMEOUT_S = 30.0
+_CAPACITY_WAIT_POLL_S = 1.0
 
 
 def _settle_aborted_calls(ray, worker_pool, broker, calls) -> None:
@@ -114,6 +117,7 @@ def run_project_ray_hse_pipeline(
     embedding_dimension: int = 512,
     job_id: str = "single-image-job",
     embedding_capture: EmbeddingCapture | None = None,
+    model_dispatch: StageModelDispatcher | None = None,
 ) -> ExecutionResult:
     """Run static HSE without materializing prepared tensors on the driver.
 
@@ -124,6 +128,7 @@ def run_project_ray_hse_pipeline(
     subsequent HSE runs on the same pool and is retained on the exception.
     GPU slots require distinct Python handle objects. This does not identify
     separately deserialized handles or shared physical GPU assignments.
+    model_dispatch is opt-in; None preserves static min-free actor selection.
     """
     if worker_pool in _unconfirmed_runs:
         raise RuntimeError("HSE worker pool has unconfirmed work; dispose its actors")
@@ -148,6 +153,8 @@ def run_project_ray_hse_pipeline(
             "one worst-case HSE source block exceeds encoded_bytes; reduce "
             "batch_size or increase the explicit byte limit"
         )
+    if model_dispatch is not None:
+        bind_hse_dispatcher(model_dispatch, worker_pool)
 
     import ray
 
@@ -207,6 +214,7 @@ def run_project_ray_hse_pipeline(
     try:
         while not source_exhausted or not broker.is_drained():
             progressed = False
+            capacity_retry_at_s = None
 
             while broker.snapshot().active_blocks < max_active_batches and not source_exhausted:
                 snapshot = broker.snapshot()
@@ -291,7 +299,25 @@ def run_project_ray_hse_pipeline(
             while True:
                 if not available_gpu_actors:
                     break
-                lease = broker.lease_model(now_s=time.perf_counter())
+                if model_dispatch is None:
+                    lease = broker.lease_model(now_s=time.perf_counter())
+                    actor_index = min(available_gpu_actors)
+                else:
+                    candidate = broker.peek_model()
+                    if candidate is None:
+                        break
+                    decision = model_dispatch.choose(
+                        candidate, image_model_routing_request(candidate),
+                        available_actor_indices=available_gpu_actors,
+                        active=tuple(StageActiveWork(call.actor_index, call.lease.descriptor.model_work_units)
+                                     for call in active_calls.values() if isinstance(call, _ModelCall)),
+                        now_s=time.perf_counter(),
+                    )
+                    if decision.actor_index is None:
+                        capacity_retry_at_s = decision.retry_at_s
+                        break
+                    actor_index = decision.actor_index
+                    lease = broker.lease_model(now_s=time.perf_counter(), block_id=candidate.block_id)
                 if lease is None:
                     break
                 batch_ready_residence_s.append(
@@ -301,7 +327,6 @@ def run_project_ray_hse_pipeline(
                         - (lease.descriptor.ready_at_s or lease.issued_at_s),
                     )
                 )
-                actor_index = min(available_gpu_actors)
                 available_gpu_actors.remove(actor_index)
                 gpu_actor = worker_pool.gpu_actors[actor_index]
                 submit_started = time.perf_counter()
@@ -325,10 +350,21 @@ def run_project_ray_hse_pipeline(
                 if source_exhausted and broker.is_drained():
                     break
                 if not progressed:
+                    if capacity_retry_at_s is not None:
+                        time.sleep(min(_CAPACITY_WAIT_POLL_S,
+                                       max(0.0, capacity_retry_at_s - time.perf_counter())))
+                        continue
                     raise RuntimeError("HSE made no progress with unfinished work")
                 continue
 
-            ready_refs, _ = ray.wait(list(pending_refs), num_returns=1)
+            if capacity_retry_at_s is None:
+                ready_refs, _ = ray.wait(list(pending_refs), num_returns=1)
+            else:
+                ready_refs, _ = ray.wait(list(pending_refs), num_returns=1,
+                    timeout=min(_CAPACITY_WAIT_POLL_S,
+                                max(0.0, capacity_retry_at_s - time.perf_counter())))
+                if not ready_refs:
+                    continue
             reference = ready_refs[0]
             now_s = time.perf_counter()
             if reference in prepare_calls:
@@ -347,6 +383,8 @@ def run_project_ray_hse_pipeline(
             call = model_calls[reference]
             result = ray.get(reference)
             broker.complete_model(call.lease.lease_id, output_row_ids=result.doc_ids)
+            if model_dispatch is not None:
+                completed_actor_index, completed_descriptor = call.actor_index, call.lease.descriptor
             available_gpu_actors.add(call.actor_index)
             completion_wall_s = now_s - call.source_admitted_at_s
             admitted_at.pop(call.lease.descriptor.block_id)
@@ -355,6 +393,9 @@ def run_project_ray_hse_pipeline(
             call.payload_ref = None
             del call
             audit.add_result(result)
+            if model_dispatch is not None:
+                model_dispatch.observe_completion(completed_actor_index, completed_descriptor,
+                                                   service_s=result.service_s, now_s=now_s)
             batch_completion_wall_s.append(completion_wall_s)
             batch_actor_service_s.append(result.service_s)
             telemetry = result.telemetry
@@ -382,6 +423,15 @@ def run_project_ray_hse_pipeline(
         # Queued blocks have no worker owner; leased work needs a serial actor
         # fence, including device completion after a GPU method exception.
         cleanup_failed = False
+        if model_dispatch is not None:
+            try:
+                for call in tuple(active_calls.values()):
+                    if isinstance(call, _ModelCall):
+                        model_dispatch.invalidate_actor(call.actor_index)
+            except BaseException as feedback_error:
+                # Advisory feedback must never prevent the authoritative
+                # actor fences or replace the execution's original error.
+                error.add_note(f"HSE feedback cleanup raised {type(feedback_error).__name__}")
         try:
             _settle_aborted_calls(ray, worker_pool, broker, active_calls)
             for block_id in (*encoded_payloads, *prepared_payloads):
@@ -413,11 +463,12 @@ def run_project_ray_hse_pipeline(
         {
             "broker": "bounded_stage_broker_v1",
             "encoded_bytes_peak": encoded_bytes_peak,
-            "execution_mode": "hse_static",
+            "execution_mode": "hse_static" if model_dispatch is None else "hse_device_dispatch",
             "model_inflight_peak": model_inflight_peak,
             "prepare_inflight_peak": prepare_inflight_peak,
             "ready_bytes_peak": ready_bytes_peak,
             "ready_work_limit": limits.ready_work,
+            **({"model_dispatch": model_dispatch.snapshot()} if model_dispatch is not None else {}),
         },
         sort_keys=True,
     )
@@ -448,7 +499,7 @@ def run_project_ray_hse_pipeline(
         ready_bytes_peak=ready_bytes_peak,
         prepare_inflight_peak=prepare_inflight_peak,
         model_inflight_peak=model_inflight_peak,
-        execution_mode="hse_static",
+        execution_mode="hse_static" if model_dispatch is None else "hse_device_dispatch",
         engine_stats=engine_stats,
     )
 

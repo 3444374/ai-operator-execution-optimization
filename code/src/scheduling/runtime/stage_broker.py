@@ -256,6 +256,19 @@ class BoundedStageBroker:
             self._encoded_held_bytes -= descriptor.physical_bytes
         self._assert_invariants()
 
+    def peek_model(
+        self, *, preferred_job_id: str | None = None,
+    ) -> StageBlockDescriptor | None:
+        """Read the next model candidate without issuing a lease or reordering.
+
+        This shares the exact FIFO and slot check used by lease_model, so an
+        optional destination selector needs no second ready queue or rollback.
+        """
+        if len(self._model_leases) >= self._limits.model_inflight:
+            return None
+        block_id = self._eligible_ready_block(preferred_job_id)
+        return None if block_id is None else self._descriptors[block_id]
+
     def lease_model(
         self,
         *,

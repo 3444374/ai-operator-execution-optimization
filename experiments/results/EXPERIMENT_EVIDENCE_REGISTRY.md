@@ -1,5 +1,12 @@
 # 实验与机制证据台账
 
+2026-10-14：[HSE可选设备组选择](diagnostics/hse_device_dispatch_20261014/README.md)：A上显式策略的本树187通过／2缺驻留切片跳过，
+固定42186dbe七成员组合2通过；实际Core／broker和Torch／Ray替身分别记录。
+随后固定4c7efa79单节点CPU实际Ray软件11/11通过，4 CPU／0 GPU／512MiB，49 PID与控制器退出、lease释放；首轮fixture失败保留。
+Torch／CUDA、多卡／GPU性能及P99／P99.99仍未验证。
+接续[整合检查](diagnostics/hse_device_dispatch_20261014/README.md#integration-acceptance)：组合独立literal guard与unknown queue，
+318通过／14明确跳过，原件与5份源码差异分列；不改标原11项实库来源，不合B/C或驻留实现。
+
 2026-10-14：[缺失waiting的真实helper回归](../../code/tests/experiments/test_shared_vllm_runtime.py)。
 默认四样本中未知回到(2,20)，已知0仍升到(4,40)、已知1仍降到(1,10)；另核有效KV／恢复及typed消费者，155项本地通过，HTTP／模型／GPU／服务器0。仅正确性证据。
 最终[单提交整合](../../code/src/experiments/shared_vllm/README.md#unknown-waiting-integration)13模块196项全通过，覆盖保存重读与旧消费者；与155项重叠分列，没有新服务器或性能实验。

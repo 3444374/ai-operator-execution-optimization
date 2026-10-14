@@ -1,5 +1,8 @@
 # Feasibility Results
 
+[HSE可选设备组选择](hse_device_dispatch_20261014/README.md)：默认关闭的逻辑额度／完成速率／FIFO派发，
+固定A及42186dbe驻留组合的本地检查、4c7efa79单节点CPU实际Ray软件11/11通过与两轮清理记录；GPU性能／尾延迟仍待验证。
+
 [可选执行计时与零模型核验](optional_execution_timing_20261014/README.md)：六条文本接点及现有图像外层，
 复用身份／时钟／有界 writer，默认关闭；账本分段、开关配对、原件来源和未观测项分别保存。
 

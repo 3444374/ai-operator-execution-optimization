@@ -1,5 +1,15 @@
 # 项目日志
 
+## 2026-10-14：实现默认关闭的HSE设备组选择
+
+- 基于A独立完成actor/group逻辑容量、确认后pixels速率反馈与FIFO目的地选择，复用EndpointSnapshot和LeastWork；默认源先行／minfree、CLI、source及原生baseline保持。
+- 本树187通过／2项缺驻留切片跳过；固定42186dbe临时组合2通过，保留完整forward、重复内容新行身份及两层unknown责任。
+- 独立审核发现并修复元数据清理跳过fence及零速率采样饥饿，失败及最终用例由[同题记录](experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)定位。
+- 固定4c7efa79的单节点实际Ray软件检查11/11通过，4 CPU／0 GPU／512MiB object store；34 actor／49 PID身份全部退出，lease释放。首轮10通过／1 fixture失败及修后原件均保留。
+- 复用驻留原estimate签名并保留unknown；Torch／CUDA、GPU／多卡性能及P99／P99.99未测，重复handle拒绝继续由集成owner处理。
+- [整合验收](experiments/results/diagnostics/hse_device_dispatch_20261014/README.md#integration-acceptance)以`f6daa6bc`先普通合入`f7881106`，再合入`fd1fc250`；25模块318通过／14明确跳过，两轴零必修，默认None且B/C／驻留不合入。
+- 原34成员及两轮归档核对，融合5份来源差异保持；未新增服务器／模型／GPU或修改main、活动实验冻结版本。
+
 ## 2026-10-14：独立拒绝 HSE 借用池的重复 GPU handle
 
 - 从已发布`58462a0d`单独补[入口校验](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)：同一Python handle对象重复占GPU槽时，在source读取／RPC前拒绝，不去重或调额度。

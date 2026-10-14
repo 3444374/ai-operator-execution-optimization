@@ -1,0 +1,923 @@
+{
+  "schema": "hse-device-dispatch-checks-v1",
+  "base_commit": "d307bb9265a32e516052f3bea7d8206f8906c288",
+  "source_sha256": {
+    "code/src/scheduling/runtime/stage_dispatch.py": "96400f2762515d37a3272f35f32299219059bf7daa893a6b586de27ba676cfe3",
+    "code/src/modalities/image/hse_dispatch.py": "98a7eb7c36f949976035921f4e1bf11f1c0d705e4fa798064882e428d2296863",
+    "code/src/modalities/image/staged_execution.py": "c1ffe92ba5e5a29ff6dc530eb8d519411b5ee3cdee1e990a42fcf168e77f4803",
+    "code/src/scheduling/runtime/stage_broker.py": "1c03ca7f4fa04e9c2e4404addb5bd2fb3ff41705fff2b0f366aa6a9036b1070d",
+    "code/tests/scheduling/test_stage_dispatch.py": "e076b027ea3790ce4a47ae52bd4181725ca0c5df98cef14700d28449c2e8d045",
+    "code/tests/modalities/image/test_hse_device_dispatch.py": "0eb0cde9d986b941bab95e2d3aedddbad641b7b2b5795092ce70299fb9508065",
+    "code/tests/modalities/image/test_hse_residency_dispatch.py": "84ee083a5b4a786989067e0c3796896bab3cd565fafa4f6c3fd93a8aeb58998c"
+  },
+  "environment": {
+    "python": "3.12.6",
+    "numpy": "2.5.0",
+    "ray": "local execution substitute; not installed or started for this run",
+    "torch": "local execution substitute; not installed or started for this run"
+  },
+  "regression": {
+    "started_utc": "2026-10-14T09:09:07.659103+00:00",
+    "ended_utc": "2026-10-14T09:09:07.916618+00:00",
+    "modules": [
+      "tests.modalities.image.test_hse_static_lifecycle",
+      "tests.modalities.image.test_staged_image_execution",
+      "tests.scheduling.test_stage_broker",
+      "tests.scheduling.test_stage_dispatch",
+      "tests.modalities.image.test_hse_device_dispatch",
+      "tests.modalities.image.test_hse_residency_dispatch",
+      "tests.scheduling.test_incremental_session",
+      "tests.scheduling.test_scheduling_policies",
+      "tests.scheduling.test_shared_credit",
+      "tests.scheduling.test_capacity_observation",
+      "tests.scheduling.test_multisession",
+      "tests.scheduling.test_input_preparation",
+      "tests.scheduling.test_completion_progress"
+    ],
+    "run": 189,
+    "passed": 187,
+    "skipped": 2,
+    "failures": 0,
+    "errors": 0,
+    "cases": [
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_cleanup_bookkeeping_error_keeps_source_error_and_pool_protection",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_cleanup_submission_interrupt_keeps_original_error_and_unknown_owner",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_drops_settled_payload_refs_before_next_prepare",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_failed_confirmation_keeps_unknown_capacity_and_blocks_pool_reuse",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_interrupt_after_prepare_transition_reconciles_stale_call_and_other_owner",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_model_get_error_retains_prepared_ref_until_device_confirmation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_partial_confirmation_settles_only_finished_actors_and_local_queue",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_records_admission_peak_when_preparing_is_capacity_blocked",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_submit_failure_fences_actor_before_releasing_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_static_lifecycle.HSEStaticLifecycleTests.test_wait_interrupt_preserves_original_error_and_confirms_all_active_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_staged_image_execution.StagedImageExecutionTest.test_driver_reads_descriptors_and_results_but_not_prepared_payload",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_staged_image_execution.StagedImageExecutionTest.test_refuses_more_model_leases_than_gpu_actors",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_staged_image_execution.StagedImageExecutionTest.test_refuses_source_lookahead_larger_than_encoded_capacity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_staged_image_execution.StagedImageExecutionTest.test_reuses_the_actor_that_actually_completed",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_explicit_model_selection_rejects_unprepared_or_other_job_block",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_explicit_ready_block_preserves_fifo_for_the_remaining_blocks",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extended_tail_is_charged_once_and_leased_with_all_rows",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extension_cannot_change_a_leased_or_non_tail_block",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_extension_rejects_rows_owned_by_another_block",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_fifo_waits_for_temporary_byte_or_work_occupancy",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_extension_preserves_queue_bytes_and_original_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_lease_time_keeps_queued_work_and_capacity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_invalid_prepare_completion_does_not_destroy_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_model_completion_is_exactly_once_and_order_checked",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_prepare_reserves_ready_bytes_before_work_completes",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_real_ready_lifecycle_preserves_identity_and_releases_capacity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_duplicate_rows_across_completed_blocks",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_rejects_permanently_oversized_ready_demand_before_admission",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_broker.BoundedStageBrokerTest.test_runtime_snapshot_uses_true_stage_queues",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_actor_and_group_work_are_counted_separately_from_ready_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_bad_future_or_expired_capacity_feedback_uses_declared_limits",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_broker_peek_shares_fifo_without_leasing_charging_or_reordering",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_capacity_downshift_retains_active_usage_then_expires_exactly",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_confirmed_heterogeneous_rates_choose_predicted_finish",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_group_occupancy_includes_unknown_calls_and_is_never_settled_here",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_invalid_identity_capacity_and_duplicate_declarations_are_rejected",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_invalid_sample_actor_does_not_starve_actor_with_valid_rate",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_large_head_waits_for_busy_large_actor_with_small_actor_free",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_missing_rates_sample_each_actor_without_mixed_units",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_no_locality_callback_is_needed_for_sampling",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_numeric_actor_indices_preserve_static_rotation_for_ten_or_more",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_only_current_capacity_eligible_rates_are_required",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_permanently_oversized_head_fails_without_bypassing_to_small_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_rate_expiry_unit_calibration_and_model_mismatch_fall_back",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_reuses_data_owner_callback_signature_with_unknown_result",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_unsupported_and_faulty_advisory_results_never_change_choice_or_capacity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_stage_dispatch.StageModelDispatchTest.test_zero_nan_and_overflow_samples_rotate_without_refreshing_rate",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_cancel_interrupt_keeps_unknown_owner_and_does_not_train_fences",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_capacity_expiry_recovers_with_no_pending_rpc_without_extra_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_capacity_expiry_wakes_while_other_actor_has_long_pending_rpc",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_data_owner_locality_callback_receives_metadata_only",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_default_keeps_static_minfree_and_payload_dependency",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_failed_two_owner_confirmation_retains_only_unknown_actor_and_payload",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_feedback_cleanup_interrupt_keeps_original_error_and_owner_confirmation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_group_capacity_serializes_distinct_actors_from_actual_live_calls",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_invalid_completed_output_does_not_train_service_rate",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_large_fifo_head_waits_for_large_actor_before_tail_uses_small_actor",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_one_bad_service_sample_keeps_both_actors_in_fallback_rotation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_one_slot_bootstraps_both_actors_then_routes_full_and_tail_batches",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_permanent_actor_work_overflow_fails_ready_without_model_or_retry",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_pool_mapping_reuse_is_rejected_and_new_run_clears_warmup_rates",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_runtime_identity_helper_uses_actor_context_and_never_invents_gpu_identity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_device_dispatch.HSEDeviceDispatchTest.test_zero_service_samples_do_not_starve_other_actor",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_residency_dispatch.HSEResidencyDispatchTest.test_failed_device_fence_retains_both_input_owner_and_hse_unknown_work",
+        "outcome": "skipped",
+        "reason": "requires the separately delivered input-residency slice"
+      },
+      {
+        "id": "tests.modalities.image.test_hse_residency_dispatch.HSEResidencyDispatchTest.test_off_on_reuses_only_input_and_keeps_every_full_forward_and_row",
+        "outcome": "skipped",
+        "reason": "requires the separately delivered input-residency slice"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_backend_timeout_retains_compute",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_bad_release_is_atomic_and_cross_session_rejected",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_binary_execution_preserves_payload_and_neutral_work_identity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_boolean_terminal_identity_cannot_alias_integer_key",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_cancel_keeps_leases_and_unknown_compute",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_consumer_timeout_does_not_discard_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_delivery_construction_failure_preserves_only_returned_leases",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_delivery_reports_new_consumer_deadline",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_duplicate_after_last_release_is_detected_by_reap",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_empty_release_preserves_progress_but_keeps_schema_and_closed_checks",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_existing_local_credit_waits_for_remote_terminal_before_finish",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_generation_prevents_lost_wakeup",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_legacy_and_incremental_share_routing_decisions",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_long_stream_has_no_history_table",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_not_accepted_does_not_reset_capacity_deadline",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_not_accepted_returns_existing_credit_and_preserves_task",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_offer_wakes_only_when_it_transfers_a_real_prefix",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_old_session_terminal_reaps_without_entering_new_session",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_one_action_steps_eventually_deliver_and_finish",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_other_thread_only_requests_cancel",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_oversized_completion_fails_after_terminal_settlement",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_partial_delivery_commit_rolls_back_unreturned_leases",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_phase_deadlines_keep_their_own_start_and_resource_ownership",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_poll_only_backend_supplies_finite_next_deadline",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_prefix_transfer_release_backpressure_and_no_eager_dispatch",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_queue_does_not_inherit_backend_timeout",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_reentrant_backend_is_rejected_before_nested_offer",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_retired_local_fifo_credit_does_not_accumulate_job_history",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_retirement_cannot_erase_live_credit_or_legacy_history",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_reverse_completions_and_identical_payloads",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_selector_cannot_dispatch_unaccepted_task",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_sink_failure_publishes_no_unobservable_lease",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_smaller_session_limits_and_single_session_ownership",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_task_selection_changes_order_without_changing_ownership",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unknown_duplicate_and_conflicting_events_fail_closed",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unknown_submit_exception_retains_no_handle_reservation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_unsealed_idle_and_sealed_finished",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_incremental_session.IncrementalSessionTests.test_whole_batch_permanent_validation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_healthy_endpoints_filters_pool_and_health",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_least_queued_uses_load_then_endpoint_id_tie_break",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_least_work_uses_predicted_drain_time",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_pinned_router_rejects_missing_or_unavailable_endpoint",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_pinned_router_selects_requested_healthy_endpoint",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_prefix_affinity_is_stable_and_unhealthy_winner_falls_back",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_request_pool_router_applies_prefix_long_short_precedence",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_request_pool_router_falls_back_to_available_healthy_pool",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_round_robin_fails_when_pool_has_no_healthy_endpoint",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_round_robin_skips_unhealthy_endpoints",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_static_admission_allows_below_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_static_admission_blocks_at_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_scheduling_policies.SchedulingPolicyTests.test_static_admission_rejects_non_positive_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_finish_job_emits_explicit_lifecycle_event",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_bounds_multiple_recovery_leases_by_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_completion_correction_reenters_recovery",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_debt_uses_actual_completion_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_hold_event_is_auditable_and_capacity_is_safe",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_reclaim_hold_targets_ready_head_then_resumes",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_recovery_reduces_debt_during_overlap",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_rejects_oversized_work_before_queueing",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_requires_explicit_stable_job_contract",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_underestimate_exits_and_records_overrun",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_priority_unready_debt_and_nonfitting_priority_do_not_hold",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_bounded_ready_policy_uses_bounded_priority_selector",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_cancel_waiter_removes_timed_out_request_and_guard_hold",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_capacity_downshift_drains_active_leases_without_revocation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_fifo_policy_preserves_global_waiter_order",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_finish_job_rejects_outstanding_credit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_hold_start_marks_nonconcrete_guard_as_avoidable_idle",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_idempotent_polling_does_not_double_count_grants",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_job_weight_must_remain_stable",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_matched_ready_fifo_records_selector_neutral_lifecycle",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_native_style_fifo_does_not_record_project_ready_events",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_request_ids_are_isolated_between_jobs",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_saor_reclaims_only_future_credit_for_new_active_job",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_saor_single_job_borrows_and_reborrows_full_envelope",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_single_job_borrows_all_idle_endpoint_capacity",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_single_request_cannot_exceed_endpoint_work_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_snapshot_tracks_waiting_request_and_work_by_job",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_holds_bulk_during_foreground_refill_gap",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_reclaims_future_releases_without_preemption",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_strict_priority_requires_stable_job_priority",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_reactivated_job_is_lifted_to_active_floor",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_reactivation_lift_uses_normalized_weighted_service",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_vtc_selects_least_attained_service_and_corrects_actual_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_waiting_jobs_receive_credit_after_completion",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_shared_credit.SharedCreditCoordinatorTests.test_work_cap_blocks_large_head_until_capacity_is_released",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_capacity_observation.CapacityObservationTests.test_legacy_and_registered_paths_observe_only_explicit_refusals",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_backend_rejection_has_a_retry_deadline_without_busy_loop",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_cancelling_one_job_keeps_late_work_and_other_job_live",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_consumer_close_reclaims_leases_but_keeps_remote_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_continued_global_ticks_preserve_other_job_and_cancel_opportunities",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_global_budget_exhaustion_reports_dispatch_without_a_new_wake",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_identified_uncertainty_does_not_poison_other_job",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_invalid_job_selection_cannot_dispatch_foreign_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_job_intake_cannot_take_other_jobs_reserved_storage",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_job_selector_can_be_replaced_without_changing_accounting",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_late_invalid_result_has_job_scope_after_session_close",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_membership_is_capability_not_a_label",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_public_failure_is_local_to_the_flow",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_queued_but_capacity_blocked_waits_until_completion",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_queued_terminal_cannot_erase_an_expired_backend_deadline",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_ready_results_do_not_claim_work_the_global_tick_cannot_do",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_shared_identity_conflict_stops_every_session",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_single_item_larger_than_job_storage_is_permanently_rejected",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_storage_refusal_reports_condition_without_self_waking",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_multisession.MultiSessionTests.test_two_flows_do_not_double_job_opportunities",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_cancel_notification_precedes_retained_input_retries",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_closed_consumer_retains_local_input_until_reap_confirms_release",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_confirmed_model_result_waits_for_transient_preparation_release",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_dispatch_gate_also_prevents_early_preparation",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_invalid_or_raised_preparation_acceptance_keeps_input_until_confirmed",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_job_cancel_notifies_later_flow_before_earlier_input_retries",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_local_reap_reaches_later_input_when_earlier_release_is_unknown",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_one_action_tick_does_not_starve_a_ready_model_request",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_only_accepted_prefix_can_be_borrowed_without_compute",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_partial_preparation_prefix_is_retried_without_duplicate_borrowing",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_preparation_advances_while_model_capacity_is_full",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_input_preparation.InputPreparationTests.test_retained_input_in_one_flow_does_not_hide_later_releasable_flow",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_cancelled_completed_tail_still_drains_with_original_action_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_exact_full_poll_prompts_only_one_extra_check_then_empty_poll_can_wait",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_full_poll_continues_draining_completed_tail_without_waiting",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_partial_poll_can_wait_with_unfinished_remote_work",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_smaller_requested_action_count_uses_its_own_poll_limit",
+        "outcome": "passed"
+      },
+      {
+        "id": "tests.scheduling.test_completion_progress.CompletionProgressTests.test_uncertain_notices_and_bounded_cancel_finish_then_empty_poll_can_wait",
+        "outcome": "passed"
+      }
+    ]
+  },
+  "residency_composition": {
+    "residency_commit": "42186dbed22c9c70cf0d22285afe4698c97bc714",
+    "files": {
+      "code/src/data/materializers/prepared_assets.py": "13ee281a5dfdd46737fd2b75a7caa1fa78d0dd38158da1055cadbbc1ba6590c0",
+      "code/src/modalities/image/input_residency.py": "5c9dcfdc6a47ebe50390e8710e2377c636cf97465f783f84733321c081bded6c",
+      "code/src/modalities/image/reusable_clip.py": "a33d083477e30287e0a32fb98d1a657bb5b36de2a5e4d7489701e733667cd7c4",
+      "code/src/modalities/image/clip.py": "c73d369835b3d1034d37350317fca55ee52cf28c8a675db2a40a3ae99d872cb9",
+      "code/tests/data/test_prepared_assets.py": "591c8f8c69e0956da43b0e577c39419609d04101372fd92f70b5839f9d3c1edf",
+      "code/tests/modalities/image/test_input_residency.py": "dc0082420291d517ac7c6181caa0f61302cc94c23b6d56e3b04ecfa5798f876b",
+      "code/tests/modalities/image/test_reusable_clip.py": "9add67dab8442d37b489fe6e37ea940937f981ada0e9919a4f77cf305b9ffb3d"
+    },
+    "run": 2,
+    "passed": 2,
+    "skipped": 0,
+    "execution": "temporary local source overlay, actual cache/actor + HSE/broker with Torch/Ray substitutes",
+    "independent_recheck": "second reviewer imported the same seven exact blobs in memory; 2/2 passed",
+    "off_on": {
+      "logical_rows_each": 8,
+      "full_forward_calls_each": 4,
+      "simulated_conversion_calls_off": 4,
+      "simulated_conversion_calls_on": 2
+    },
+    "partial_unknown": {
+      "hse_ready_bytes": 96,
+      "hse_ready_work_pixels": 8,
+      "unknown_cache_bytes": 96,
+      "unknown_cache_references": 1,
+      "confirmed_other_cache_references": 0
+    }
+  },
+  "failure_history": [
+    {
+      "log": "review_feedback_cleanup_before.log",
+      "process_returncode": 130,
+      "scope": "uncommitted selector before best-effort feedback guard",
+      "observed": "KeyboardInterrupt replaced original model error and skipped authoritative cleanup",
+      "resolution": "guard metadata invalidation; original error, fences and unknown publication preserved; focused case passed"
+    },
+    {
+      "log": "review_sampling_before.log",
+      "process_returncode": 1,
+      "scope": "uncommitted missing-rate-only rotation",
+      "run": 2,
+      "failures": 1,
+      "errors": 1,
+      "observed": "unit case selected invalid-rate actor again; HSE fixture hit total_s=0 before routing assertion"
+    },
+    {
+      "log": "review_sampling_after.log",
+      "run": 2,
+      "failures": 0,
+      "errors": 1,
+      "observed": "all-eligible rotation fixed the unit case; constant HSE fixture clock still yielded total_s=0"
+    },
+    {
+      "log": "review_sampling_final.log",
+      "run": 2,
+      "passed": 2,
+      "resolution": "all-eligible sample rotation plus realistic positive monotonic fixture duration"
+    }
+  ],
+  "independent_reviews": {
+    "reviewers": 2,
+    "remaining_must_fix": 0,
+    "direct_scope_each": {
+      "run": 65,
+      "passed": 63,
+      "skipped_residency_slice_absent": 2
+    },
+    "fixed_findings": [
+      "feedback-cleanup interruption",
+      "missing-rate-only sample starvation"
+    ],
+    "inherited_known_limit": "literal duplicate handle alias; separate integration owner implements rejection"
+  },
+  "qualification": {
+    "core_broker": "actual local implementations",
+    "ray_runtime": "passed_actual_single_node_cpu_fixture",
+    "torch_cuda": "not_run",
+    "physical_multi_device": "not_run",
+    "performance_benefit": "not_measured",
+    "numeric_locality_routing": "not_implemented"
+  },
+  "requested_software_window": {
+    "cpu_slots": 4,
+    "gpu_slots": 0,
+    "object_store_bytes": 536870912,
+    "host_lease": "required; parent schedules after baselines",
+    "single_operation_or_no_progress_timeout_s": 60,
+    "healthy_run_total_wall_deadline_s": null,
+    "status": "completed_under_shared_host_lease"
+  },
+  "retained_private_logs_sha256": {
+    "initial_integration.log": "fe8353820c979259c76fc335d8131d8c32b3c192d495c53d3783418c9b0b9042",
+    "selector_integration.log": "d9094f920d3fdad81997973d3e5f34c42a7884746040f043e152c96069fbcfb9",
+    "core_broker_policy_regression.log": "be2dc64712a5ac02ef19b1fd41c762b6b78ec7894c9ea36b0dd583788f545ecc",
+    "review_feedback_cleanup_before.log": "8941bdf222e0e7170af7f5e081b27ee85f3f465af5dfbed76e07d0f2cfb17942",
+    "review_feedback_cleanup_after.log": "4ecbca161ee820a4bcd91844566a580a22a405341c543a2e790d16309e1eb508",
+    "review_sampling_before.log": "a50ab91807bfb3b3ce633b64abf92b2dec3a851e5c69e103911b78d99db64686",
+    "review_sampling_after.log": "f50987644b21a1e8f7b03c138cb66805141f075a830df57d3c7b38bca4efafc0",
+    "review_sampling_final.log": "e917d5fedd00033d391f0320e8d677d2c8fad4a8a216d58b511be6a600e29536",
+    "residency_composition.log": "844666b2d7d3405e685a57b2c95b2c5480d3255f5fea9a94f1082c0350e88d38",
+    "final_regression.log": "6e941280d85e2634dac2bc7ae714875713aea6ef1162e1a4d11fa2dba931e2d0"
+  },
+  "private_log_retrieval": "task workspace tmp/hse-device-dispatch; public cases and fixed source hashes reproduce final assertions",
+  "actual_ray": {
+    "evidence": "ray_checks.json",
+    "source_commit": "4c7efa79074ae564db1dfb6831bbe3a73063d5b1",
+    "tests_run": 11,
+    "passed": 11,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "driver_prepared_payload_gets": 0,
+    "actor_identity_pairs": 34,
+    "tracked_pid_birth_pairs": 49,
+    "owned_processes_live": 0,
+    "lease_released": true,
+    "retained_first_attempt": "11 run,10 pass,1 fixture failure; cleaned and retained"
+  }
+}

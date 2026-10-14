@@ -1,9 +1,17 @@
 # SemLoom Code
 
+[HSE可选设备组选择](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)在A之上提供
+`model_dispatch=StageModelDispatcher(actors, groups)`；默认`None`保持static。
+接续[整合验收](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md#integration-acceptance)
+组合literal入口拒绝、unknown queue及旧工厂修补，25模块318通过／14明确跳过；旧11项实库仍绑定原source，默认关闭。
+actor/group声明额度与完成速率分开，live model calls派生占用，unknown继续持有；无新增模型或source语义。
+固定4c7efa79单节点CPU实际Ray软件11/11通过，包含五项默认路径；进程退出与lease释放已独立核对。
+驻留`estimate(descriptor,destination,now_s)`目前只记unknown；位置成本排序、Torch／CUDA、多卡／GPU性能及P99／P99.99仍待验证。
+
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。
 图像基点上的[独立A-only资格](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
 已完成5项CPU Ray和1项真实Daft/Arrow数据适配，B/C仍未加入；CUDA与CLIP性能另验。
-当前仅A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
+A/B/C三片当前仅合A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
 独立补[重复GPU handle入口校验](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)，
 只拒绝同一Python对象重复占槽，不认领实际Ray别名或物理GPU身份。
 
