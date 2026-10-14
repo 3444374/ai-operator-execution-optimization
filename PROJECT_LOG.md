@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-14：取消IMLane默认适配的额外健康整批截止
+
+- 以`de336fa0`为基线，仅两个Python适配函数允许默认逐批路径显式`timeout_s=None`；默认120及有限值、单HTTP、取消／unknown、完整关联与清理保持。作者／C++／调度及可选复用时间语义未改。
+- [本地回归](experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#default-task-completion)48通过／1缺Arrow跳过；新6项与修稳后的旧有限截止用例7项通过，受限绑定和0.6秒启动假设失败均保留。
+- 新版作者close及CPython／Ray默认时间合同仍待共享窗口补验，模型owner接续原有私有CLI／SDK透传；本轮服务器／模型／GPU均0，不借旧222 POST补证。
+
 ## 2026-10-14：整合IMLane来源并修正关闭快照
 
 - 普通合入固定四提交及原作者／SDK证据；222软件POST、六项Ray原始nonclean和305进程出生身份退出核对，默认桥复用继续关闭。

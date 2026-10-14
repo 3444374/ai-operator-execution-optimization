@@ -92,6 +92,11 @@ pending是宿主存储窗口，不是作者执行并发；两物理worker与实�
 由主协调匹配模型服务及最多8个IMLane CPU槽、独立lease与资源额度；模型机器profile重新检查，
 不以本轮软件8槽预检代替模型资格。作者Ray继续独立2CPU／0GPU／128MiB对象存储，作者进程树RSS8GiB／SHM2GiB保护保持。
 健康运行不按总时长截断，保留适合真实请求的超时、无进展／取消与资源保护。
+默认逐批Python适配的`iter_batch(..., timeout_s=None)`显式取消额外健康整批截止；
+默认120秒及原有有限值行为保持，单HTTP的`NativeCall.timeout_s`仍须有限，模型配置沿用30秒。
+`reuse_bridge=True`仍要求有限整批期限；本次不扩其时间语义，也不改作者执行器、C++桥或并发／批处理。
+本地回归及实库边界见[默认时间合同](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#default-task-completion)；
+CLI／SDK调用方的健康总期限透传独立配置，不以单请求或故障超时替代。
 单轮无预热各一次时，两模式Q2为240逻辑调用，Q1为4000；预热、重复、失败、未知及网关路由的每一跳
 另行计入主协调的新账本，不借用本轮222软件POST额度。
 发送后出现未知工作或消费／解析中止时停止该query，保留账本与uncertain记录；确认自有runtime／SHM退出，

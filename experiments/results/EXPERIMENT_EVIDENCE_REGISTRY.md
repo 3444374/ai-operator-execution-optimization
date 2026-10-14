@@ -12,6 +12,8 @@ Python协议／localhost fixture与真实Arrow复制原语分别验证；
 原SDK消费替身及错误隔离；源锁、资源／lease和首错保护已检查。
 接续[固定6916四格实库软件资格](diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)通过，生产适配来自9766，
 保留6项Ray故障SHM清理的原始非clean记录；只支持同步内核与有限原SDK消费，不替代原规模模型／PG或async组合。
+接续[默认适配时间合同](diagnostics/imlane_bridge_lifecycle_20261014/README.md#default-task-completion)仅本地回归：
+49个唯一方法中48通过／1缺Arrow跳过，首轮受限绑定及旧0.6秒用例失败保留；作者实现与C++未改，旧222 POST不覆盖新修补。
 
 2026-10-13：[集成分支LOTUS整批文本预检](../../code/src/semantic_methods/lotus/README.md#whole-text-preflight)。
 本地内存后端定向66项，31通过／35缺固定依赖跳过；新增后窗口超限／配置不符、取消／到期、本地和远程factory及首call持有检查。

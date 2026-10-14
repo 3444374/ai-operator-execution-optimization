@@ -9,6 +9,7 @@ import sys
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from urllib import error, request
 from unittest import mock
@@ -181,10 +182,16 @@ class SemaIMLaneBridgeTests(unittest.TestCase):
 
     def test_deadline_covers_bridge_wait_after_response_and_keeps_first_failure(self):
         executor = self.executor(pause=True)
-        with mock.patch('src.execution_provider.adapters.sema_imlane.write_private_json',
+        iterator = executor.iter_batch((self.call(),), timeout_s=120)
+        self.assertEqual(next(iterator).response.status_code, 200)
+        # Expire after the response, independently of subprocess import speed.
+        clock = SimpleNamespace(monotonic=lambda: time.monotonic() + 121,
+            monotonic_ns=time.monotonic_ns, sleep=time.sleep)
+        with mock.patch('src.execution_provider.adapters.sema_imlane.time', clock), mock.patch(
+                        'src.execution_provider.adapters.sema_imlane.write_private_json',
                         side_effect=OSError('fixture record failure')):
             with self.assertRaises(TimeoutError) as caught:
-                list(executor.iter_batch((self.call(),), timeout_s=.6))
+                next(iterator)
         self.assertIn('OSError', '\n'.join(caught.exception.__notes__))
         self.assertFalse(executor.last_close_report['clean'])
         self.assertTrue(executor.last_close_report['bridge_stopped'])

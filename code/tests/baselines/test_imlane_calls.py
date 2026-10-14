@@ -1,9 +1,13 @@
 """Local subprocess protocol checks; these are not real author IMLane execution."""
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 import importlib.util
 from pathlib import Path
 import tempfile
+import threading
+import time
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -150,6 +154,136 @@ class IMLaneCallProtocolTests(unittest.TestCase):
             next(iterator)
         self.assertEqual(executor.last_close_report["returncode"], 7)
         self.assertFalse(executor.last_close_report["author_batches_drained"])
+
+    def test_explicit_none_completes_after_long_parent_clock_and_returns_child_resources(self):
+        from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+        direct = self.executor(pause=True)
+        executor = NativeCallExecutor('imlane', direct.options, imlane_config=direct.config)
+        self.addCleanup(executor.close)
+        # Advance only the adapters' clock; the real child and HTTP request timers
+        # retain their clocks. This is a controlled long-batch protocol check.
+        elapsed = [0]
+        clock = SimpleNamespace(monotonic=lambda: time.monotonic() + elapsed[0],
+            monotonic_ns=time.monotonic_ns, sleep=time.sleep)
+        def verified(*_args):
+            elapsed[0] += 121
+            return self.verify.return_value
+        self.verify.side_effect = verified
+        calls = tuple(replace(self.fixture.call(i), row_id=5) for i in range(2))
+        with mock.patch('src.baselines.text.frameworks.imlane_calls.time', clock), mock.patch(
+                'src.execution_provider.adapters.sema_imlane.time', clock):
+            iterator = executor.iter_batch(calls, timeout_s=None)
+            first = next(iterator)
+            child = executor._imlane.delegate._process
+            elapsed[0] += 121
+            second = next(iterator)
+            elapsed[0] += 121
+            with self.assertRaises(StopIteration):
+                next(iterator)
+        self.assertEqual([first.call_id, second.call_id], ['occurrence-1', 'occurrence-0'])
+        self.assertEqual([first.row_id, second.row_id], [5, 5])
+        self.assertEqual([first.response.body, second.response.body], [self.fixture.server.body] * 2)
+        self.assertEqual(self.fixture.server.calls, [self.fixture.raw] * 2)
+        self.assertEqual(child.poll(), 0)
+        self.assertTrue(child.stdout.closed)
+        self.assertIsNone(executor._imlane.delegate._process)
+        self.assertTrue(executor.last_close_report['clean'])
+        self.assertFalse(executor.last_close_report['unconfirmed_work'])
+
+    def test_none_batch_keeps_finite_single_http_timeout_and_unknown_owner(self):
+        executor = self.executor()
+        self.fixture.server.gate.clear()
+        call = replace(self.fixture.call(), timeout_s=.05)
+        iterator = executor.iter_batch((call,), timeout_s=None)
+        outcome = next(iterator)
+        child = executor.delegate._process
+        with self.assertRaises(StopIteration):
+            next(iterator)
+        self.assertTrue(self.fixture.server.started.is_set())
+        self.assertIsNone(outcome.response)
+        self.assertIn('Timeout', outcome.transport_error)
+        self.assertTrue(executor.last_close_report['external_coordinator_requires_cleanup'])
+        self.assertEqual(executor.last_close_report['remote_http_stopped'], 'unavailable')
+        self.assertEqual(child.poll(), 0)
+        self.assertTrue(child.stdout.closed)
+        self.assertIsNone(executor.delegate._process)
+        marker = executor._uncertain.read_bytes()
+        executor.close()
+        self.assertEqual(executor._uncertain.read_bytes(), marker)
+
+    def test_none_batch_cancel_stops_child_and_quarantines_author_identity(self):
+        executor = self.executor()
+        self.fixture.server.gate.clear()
+        cancelled = threading.Event()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(lambda: list(executor.iter_batch((self.fixture.call(),),
+                timeout_s=None, cancelled=cancelled.is_set)))
+            try:
+                self.assertTrue(self.fixture.server.started.wait(4))
+                child = executor.delegate._process
+                cancelled.set()
+                with self.assertRaises(InterruptedError):
+                    future.result(timeout=2)
+            finally:
+                cancelled.set()
+                executor.close()
+        self.assertIsNotNone(child.poll())
+        self.assertTrue(child.stdout.closed)
+        self.assertIsNone(executor.delegate._process)
+        self.assertTrue(executor.last_close_report['external_coordinator_requires_cleanup'])
+        self.assertEqual(executor.last_close_report['remote_http_stopped'], 'unavailable')
+        another = IMLaneCallExecutor(executor.config, executor.options)
+        self.addCleanup(another.close)
+        with self.assertRaisesRegex(RuntimeError, 'unsettled'):
+            another.start()
+        self.assertEqual(len(self.fixture.server.calls), 1)
+
+    def test_none_batch_preserves_failure_after_final_response_and_first_unknown_record(self):
+        executor = self.executor(late_failure=True)
+        iterator = executor.iter_batch((self.fixture.call(),), timeout_s=None)
+        self.assertEqual(next(iterator).response.status_code, 200)
+        child = executor.delegate._process
+        with self.assertRaisesRegex(RuntimeError, 'did not complete'):
+            next(iterator)
+        self.assertEqual(child.poll(), 7)
+        self.assertTrue(child.stdout.closed)
+        self.assertIsNone(executor.delegate._process)
+        self.assertFalse(executor.last_close_report['clean'])
+        self.assertFalse(executor.last_close_report['author_batches_drained'])
+        self.assertTrue(executor.last_close_report['external_coordinator_requires_cleanup'])
+        marker = executor._uncertain.read_bytes()
+        executor.close()
+        self.assertEqual(executor._uncertain.read_bytes(), marker)
+
+    def test_finite_timeout_and_reuse_none_still_reject_before_dispatch(self):
+        executor = self.executor()
+        for timeout_s in (0, -1, 121, float('inf'), float('nan'), True, '120'):
+            with self.subTest(timeout_s=timeout_s), self.assertRaises(ValueError):
+                list(executor.iter_batch((self.fixture.call(),), timeout_s=timeout_s))
+            with self.assertRaises(ValueError):
+                list(executor.delegate.iter_batch((self.fixture.call(),), timeout_s=timeout_s))
+        reusable = IMLaneCallExecutor(replace(executor.config, reuse_bridge=True), executor.options)
+        self.addCleanup(reusable.close)
+        with self.assertRaisesRegex(ValueError, 'batch timeout'):
+            list(reusable.iter_batch((), timeout_s=None))
+        self.verify.assert_not_called()
+        self.assertEqual(self.fixture.server.calls, [])
+
+    def test_finite_batch_deadline_still_covers_preparation(self):
+        executor = self.executor()
+        elapsed = [0]
+        clock = SimpleNamespace(monotonic=lambda: time.monotonic() + elapsed[0])
+        def verified(*_args):
+            elapsed[0] += 121
+            return self.verify.return_value
+        self.verify.side_effect = verified
+        with mock.patch('src.baselines.text.frameworks.imlane_calls.time', clock):
+            with self.assertRaisesRegex(TimeoutError, 'preparation used the batch deadline'):
+                list(executor.iter_batch((self.fixture.call(),), timeout_s=120))
+        self.assertIsNone(executor.delegate._process)
+        self.assertFalse(executor.last_close_report['author_dispatch_started'])
+        self.assertFalse(executor._uncertain.exists())
+        self.assertEqual(self.fixture.server.calls, [])
 
     def test_pid_reuse_and_mode_difference_reject_before_dispatch(self):
         import src.baselines.text.frameworks.imlane_calls as adapter

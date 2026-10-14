@@ -13,6 +13,8 @@ Daft／Ray Data活动及Ray新进程导入5项实库检查已通过、0跳过，
 本地替身、资源／lease和首错回归见同一报告；接续实库保留6项Ray故障SHM清理的非clean记录，最终自有资源退出、lease释放。
 同步生产适配来自`9766e784`，实际执行`6916ebe5`，默认复用仍关闭；下一轮真实Q2／Q1按[配置契约](integrations/sema/README.md#imlane-model-contract)执行。
 整合另补[默认关闭快照竞态修正](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#integration-close-snapshot)，仅本地回归，不改原实库来源；非IMLane生产保持。
+默认逐批适配现支持显式`timeout_s=None`去除健康整批截止，有限值／默认120及单请求、取消／unknown、关联与清理保持；
+[本地时间合同回归](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#default-task-completion)48通过／1缺Arrow跳过，新版作者／模型验证仍pending，复用时间语义未扩展。
 
 2026-10-13：[LOTUS整批文本预检](src/semantic_methods/lotus/README.md#whole-text-preflight)在显式启用时，
 创建本地／远程flow前检查每行模型、单请求和累计输入容量；后窗口非法输入零flow／零发送。

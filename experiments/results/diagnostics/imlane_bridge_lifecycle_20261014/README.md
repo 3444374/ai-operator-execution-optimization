@@ -137,3 +137,20 @@ IMLane默认逐批分支仍关闭复用，但新增的阶段计时、有限读�
 下一轮匹配IMLane比较须固定同一新版和明确复用设置，不能给旧`d1f5ef74`测量换标签。
 未改源码的其他臂能否复用旧结果仍取决于输入、参数、运行环境、缓存和计时口径一致。
 本次没有服务器、模型或GPU执行；当前模型owner继续使用其已固定版本。
+
+<a id="default-task-completion"></a>
+
+## 默认逐批适配的健康时间合同
+
+以`de336fa0`为基线，仅`IMLaneCallExecutor.iter_batch`与`SemaIMLaneExecutor.iter_batch`默认逐批路径
+显式接受`timeout_s=None`，去除我们添加的健康整批截止。默认120秒、有限值校验与到期行为保持；
+单HTTP的有限期限、启动／故障清理、取消轮询、容量、完整出现关联和unknown隔离未改。
+作者源码、执行器、C++桥、原生并发／批处理、同步函数及`reuse_bridge=False`默认保持；复用仍要求有限批期限。
+
+本地命令`PYTHONPATH=code python3 -B -m unittest -v tests.baselines.test_imlane_calls tests.execution_provider.test_sema_imlane tests.execution_provider.test_imlane_session`
+覆盖49个唯一方法。默认沙箱先有46项localhost绑定拒绝；获准的同一检查47通过／1失败／1缺Arrow跳过。
+失败的旧用例给子进程启动及响应仅0.6秒，截止时未收到预期响应；修为先确认真实响应，再用独立适配时钟越过有限120秒期限。
+随后仅新6项及该用例7项均通过，去重后48通过／1缺Arrow跳过，不将失败日志抹去或说成完整组合重跑。
+None健康用例使用真实子进程／localhost与超过120秒的受控父时钟，完整重复源行／乱序响应和子进程／stdout归还通过；
+单HTTP有限timeout、取消、非零退出、有限准备到期、首错与第一份unknown记录仍检查。它不是实际等待120秒或作者／SDK实库资格。
+新版close定点及两作者模式默认None的软件检查待共享锁；旧222 POST仍绑定原生产／执行来源，本次模型／GPU／服务器执行0。
