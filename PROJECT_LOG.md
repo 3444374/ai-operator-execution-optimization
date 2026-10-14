@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-14：单卡四路径原Q1/Q2完成与精简证据
+
+- [同题主报告](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-gpu-full-q1-q2-20261014)新增固定d1与相同task-completion补丁下的N/Daft/Ray Data/S完整八查询；原协议首次失败、Daft旧strict拒绝、模型两次主要加载及清理分别保留，未重跑完成查询或改原prompt/parser/evaluator。
+- 独立完整请求与响应行绑定、407源文件、账本计数和原LOTUS解析器8480行离线重放通过；执行正确性不掩盖合法答案变化及LIMIT5与全量分类的质量差别。
+- 公开只保存精简结果、完整无正文时间点/操作span和stdlib复算/重放入口；私有配置、完整响应与旧账本原字节留存。请求分位数按各query全部实际HTTP描述，单轮查询P99及模型内部时间不补造，stage重叠不扣query。
+- 原全局9216/27648内实际8500逻辑尝试/25492逐跳POST，含4gateway-only失败；GPU/共享lease已正常释放。本次后处理新增模型0、无生产代码变更；IMLane两模式的追加窗口仍等待各自固定源与定向软件资格。
+
 ## 2026-10-13：原N/S A短IPC独立窗口资源误计与释放
 
 - 精确19文件341198字节获得用户单独授权后上传，SHA与目的地不变；原407源／模型／服务版本核验通过，独立14:54:13 UTC启动，未重用旧额度。

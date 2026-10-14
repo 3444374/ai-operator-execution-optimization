@@ -1,4 +1,60 @@
-# 原Q2补测、阶段诊断与持久计数匹配复测
+# 原Movie工作点、原Q2历史补测与阶段诊断
+
+<a id="single-gpu-full-q1-q2-20261014"></a>
+
+## 2026-10-14：单卡四路径完整 Q1/Q2，执行核验与质量分开
+
+固定公共源码 `d1f5ef74c04906ec6cec5cf0f10336e0b0953240`，使用跨两个测量作用域逐字相同的私有 task-completion 计时补丁；源文件与计时补丁 SHA 见[结果 JSON](single-gpu-full-q1-q2-result.json)。单卡 RTX 4090（24564 MiB），CPU cgroup 额度16；Qwen2.5-7B-Instruct/BF16，vLLM0.25.1、Torch2.11.0、Transformers5.14.1，TP/PP=1，max_model_len4096、max_num_seqs16、max_num_batched_tokens2048、gpu_memory_utilization0.80，eager、prefix cache off。原始 Movie sf2000、Filter prompt/SDK、生成参数、parser/evaluator、LIMIT5 均保持；cache=false、retries=0、warmups=0、repeats=1。外部预备关系的原生 API 结果不代表 PostgreSQL 算子端到端资格。
+
+四路径八个完整查询执行正确性通过，所有请求/响应完整、HTTP200、invalid/missing=0。SDK response ID→原始 HTTP response ID→原始行请求哈希的绑定独立核对通过；Native performance 模式在 SDK 之前不记录 prepared-call hash，使用 SDK ID 与原始 HTTP 请求绑定，其他三路径还要求 prepared hash 相同。相同输入出现共享请求摘要，公开摘要不声称区分同值出现的物理网络身份。
+
+| 路径 | Q1 2000请求：到达→可用EOF 秒 | Q2 120请求：到达→可用EOF 秒 | 实测HTTP峰值 | Q1相对Native变化行数 |
+|---|---:|---:|---:|---:|
+| Native | 52.790591555 | 4.265698460 | 8 | 0/2000 |
+| Daft | 49.505039142 | 4.103224583 | 8 | 3/2000 |
+| Ray Data | 87.220205571 | 21.024694463 | 4 | 2/2000 |
+| SemLoom | 60.285611150 | 4.299120313 | 8 | 1/2000 |
+
+SemLoom 在本轮原始完成时间上没有胜过 Native/Daft；Ray Data 是 A2/B2/R1、HTTP上界与实测峰值4，另外三臂峰值8，不能把R1乘成新的HTTP并发或称同实际供给对照。各声明工作点见 JSON，S 为 C8/H64（64为held-task额度），Daft线程8、batch rows1、max_concurrency7声明与实际代理峰值8分别保存。 本轮Ray的保守限制由我们冻结的接入配置造成，不能解释为Ray库的高并发极限：实际[d1 `_ray_rows`](https://github.com/3444374/ai-operator-execution-optimization/blob/d1f5ef74c04906ec6cec5cf0f10336e0b0953240/code/src/baselines/text/frameworks/native_calls.py#L454)将actor pool固定为 `(2,2)`，SDK batch_size=1，source_blocks=2，并在[第474行](https://github.com/3444374/ai-operator-execution-optimization/blob/d1f5ef74c04906ec6cec5cf0f10336e0b0953240/code/src/baselines/text/frameworks/native_calls.py#L474)对所有stage显式设 `max_concurrency=1`。导入时 `RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY=2` 被执行前设置并由实际SDK常量核对。原HttpRequestUDF是异步函数，但批内对惰性HTTP请求逐次await，因此每actor同时至多2个batch各1个HTTP，总上界4；Q1/Q2实测均达到4，不能仅归因于输入不够或观测偶然。`max_tasks_in_flight_per_actor`未在本轮显式配置，也未保存运行时最终槽位快照；它与Ray Core任务级max_concurrency、UDF异步batch容量、batch行数是不同字段，不能把stage的1冒称其实际值。合法静态高并发候选为2 actor/异步batch4/batch rows1/source blocks2/C8（对应导入环境值4），或4 actor/异步batch2/rows1/source blocks至少4/C8；都是原生已有参数，保持原HTTP UDF及作者/厂商调度、批处理和并发机制不变，不加自有线程池；候选未修改、未运行，实际并发与质量仍须另核。
+
+Native/Daft 共用模型实例 A，Ray Data/SemLoom 另加载实例 B，初始化分别46.7935471101664、47.356747820973396秒；主监督器总时长216.732828539、353.906801094秒。此前独立协议失败还初始化46.26265338389203秒，60.516379734秒后退出，4次gateway-only尝试、模型POST=0，也单列保留。A/B 服务首次任务及请求历史不同，未建立同热态；单轮数据不支持公平速度排名、稳定性或查询P99。健康任务没有统一总墙钟截断；每请求30秒、后端/工作无进展120秒、启动无活动180秒、client RSS8GiB与独立清理120秒仍保留。
+
+计时边界是实际记录的任务到达→原始查询消费者可用EOF；ready指标使用同一EOF。初始化、CLI外层工作与EOF后的质量核验单列，不用其修正query。Daft Q1消费者已完整EOF，旧精确等价门随后拒绝，任务耗时仍按EOF减实际到达精确复算；A原始run_passed=false与失败保留，B只按执行正确性passed=true，不改写旧结果。
+
+所有Q2完全等价；Q1的Daft/Ray Data/S分别有3/2/1行合法答案变化，完整原请求相同，原始模型HTTP答案已不同，根因尚未确定。八个查询原始LIMIT5 precision/recall/F1均为1；全量分类质量不能由此代替：
+
+| 路径 | Q1 TP | FP | TN | FN |
+|---|---:|---:|---:|---:|
+| Native | 1049 | 11 | 504 | 436 |
+| Daft | 1050 | 11 | 504 | 435 |
+| Ray Data | 1049 | 11 | 504 | 436 |
+| SemLoom | 1050 | 11 | 504 | 435 |
+
+所有Q2为TP7/FP0/TN106/FN7（120行）。原LOTUS1.2.4解析器源码SHA固定为 `8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956`；四个未改函数AST离线重放全部8480行，0差异/0默认回退，未导入供应商SDK、没有网络I/O或新模型请求。
+
+累计实际8496模型POST=8480查询+16协议；8500逻辑尝试、25492逐跳POST包含首次4失败，未退还/清零；原全局hard9216/27648，剩余716/2156。两测量scope与首次失败的私有归档、controller/payload/source签名和获取方式在JSON，原完整响应、配置、时钟和全部旧账本留在私有可核验存储。两测量scope均正常释放所有自有进程/GPU/lease，无force/stop；B守护器退出0，八份旧历史保持。
+
+### 逐请求描述性分位数和现有阶段
+
+下面秒值来自每个完整query全部owner代理HTTP记录，范围是handler entry→下游response write EOF，包含代理/传输/后端排队/服务；按nearest rank `sorted[ceil(n*p)-1]`计算，不是模型kernel时间、独立总体尾延迟或查询P99。
+
+| 路径/查询 | 完整样本n | P50秒 | P95秒 | P99秒 |
+|---|---:|---:|---:|---:|
+| Native Q2 | 120 | 0.175787259 | 0.230783305 | 0.271063130 |
+| Native Q1 | 2000 | 0.172813872 | 0.227962406 | 0.255262702 |
+| Daft Q2 | 120 | 0.158790242 | 0.286712933 | 0.334117889 |
+| Daft Q1 | 2000 | 0.169538086 | 0.211226409 | 0.247561578 |
+| Ray Data Q2 | 120 | 0.129284998 | 0.139753975 | 0.144397861 |
+| Ray Data Q1 | 2000 | 0.134006276 | 0.146920076 | 0.153696855 |
+| SemLoom Q2 | 120 | 0.165331269 | 0.214651351 | 0.228791904 |
+| SemLoom Q1 | 2000 | 0.175233491 | 0.218554945 | 0.247261779 |
+
+JSON另外保存代理发送前、upstream roundtrip及返回写出三个连续区间的完整统计；upstream interval含连接、排队、服务与传输，不能归因纯模型。SDK整批等待重复标记到每行（例如Native Q1为52.081440677秒），只有一个不同计时span；不把2000份相同标签称独立每请求样本。原per-call stage probes未采集，模型内部及pure-queue时间unavailable；S已有source_table/graph/first-materialization、payload_next/object_put/payload_close的全部operation span按各自样本统计。嵌套、并行span之和不是独占阶段分解，不能相加或从query扣除。
+
+公开[356849字节无正文计时观测](single-gpu-full-q1-q2-timings.json.gz)包含全部8480个HTTP时间点和全部已保留的executor操作时长；以[stdlib复算入口](recompute_single_gpu_full.py)重算JSON中的retained_timing_statistics。源码[原parser重放入口](replay_lotus_filter.py)接受原parser文件和A/B私有归档参数，SHA/row-ID/request-hash检查通过后输出摘要，不嵌入模型正文或主机路径。[独立终审](single-gpu-full-q1-q2-review.json)核对完整观测、分位数/阶段、质量、源码/预算、隐私与旧证据保持。
+
+## 2026-10-12—13：历史原Q2补测
+
 2026-10-13进一步完成[持久计数修订后的四组匹配Q2](#matched-budget-repair)，实际48槽／96查询。旧三波与本轮分别保留来源、计时、质量和样本，不合为统一性能排名。
 
 2026-10-13已按两次本人明确授权完成原双卡七个缺项：第一独立窗口5项通过后因私有Ray目录过长停止，第二独立600秒窗口只补S／R两项并通过。原双卡11项＋独立补测5项＋独立S／R2项已覆盖18／18位置；原轮与第一补测的失败、时钟、账本和分波样本保持。
@@ -429,7 +485,7 @@ S另有payload细分，以下是每查询记录的子跨度累加秒，依发生
 
 ### baseline接线与长测顺序
 
-已验证的接线是LOTUS六路径默认同步、原Movie Q2、固定模型及参数：单卡18槽和双卡18个不同位置完成，完整请求／行关联／决策一致，三个窗口退出与清理各自可核验。默认同步Q2目前没有观察到未解决的连接阻断；原启动JSON失败保留，原子发布的软件复现与后续两项J通过不是长期无故障证明。现有六路径是外部关系上的方法／执行接点，不等于PostgreSQL全部真实语义算子已验证；Q1／Q3全路径真实模型、async、同Coordinator并发与更大输入／token规模尚未覆盖。没有必要在当前问题上重复全部工程资格测试。
+已验证的接线是LOTUS六路径默认同步、原Movie Q2、固定模型及参数：单卡18槽和双卡18个不同位置完成，完整请求／行关联／决策一致，三个窗口退出与清理各自可核验。默认同步Q2目前没有观察到未解决的连接阻断；原启动JSON失败保留，原子发布的软件复现与后续两项J通过不是长期无故障证明。现有六路径是外部关系上的方法／执行接点，不等于PostgreSQL全部真实语义算子已验证；Q1全路径、Q3真实模型、async、同Coordinator并发与更大输入／token规模仍未覆盖；2026-10-14单卡N/D/R/S完整Q1/Q2见[新增工作点记录](#single-gpu-full-q1-q2-20261014)。没有必要在当前问题上重复全部工程资格测试。
 
 上表中等复测现已完成，原值与剩余成本见[本轮结果](#matched-budget-repair)。后续进入长测仍需本次相关软件核查通过、预算实现不再随历史明显变贵、详细ON／简略OFF成本已测且主模式固定、全部调用／质量／退出核对通过，以及N／D／S交错后没有尚未解释的约一倍漂移。若仍有明显漂移，保存该失败与相关时间段，针对原因修正，不将延长时间作为修复方法。
 

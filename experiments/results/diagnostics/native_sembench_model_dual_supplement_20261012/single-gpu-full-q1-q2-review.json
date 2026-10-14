@@ -1,0 +1,61 @@
+{
+  "schema": "independent.four_lotus_single_gpu_publication_review.v1",
+  "passed": true,
+  "reviewed_files": {
+    "single-gpu-full-q1-q2-result.json": {
+      "bytes": 98625,
+      "sha256": "2e0879e1b4def6411ae271ef0233bce03b02eebc6bfbe2bd85d6a89b9bf864b6"
+    },
+    "single-gpu-full-q1-q2-timings.json.gz": {
+      "bytes": 356849,
+      "sha256": "9433635b08199c590618c967636574437bdf9c8c884fcc7622fa7434ff603cac"
+    },
+    "recompute_single_gpu_full.py": {
+      "bytes": 5189,
+      "sha256": "72bafcdaefcd8d805950f2681f27ed09fb55454050a258741cc861f5ef304102"
+    },
+    "replay_lotus_filter.py": {
+      "bytes": 11164,
+      "sha256": "dc1c967969530a89a0a3d192fa57f8f231d406a248fb50f0a8dd0f1989870446"
+    },
+    "README-section.md": {
+      "bytes": 7950,
+      "sha256": "a9d113e471d2ace36a4bbd87985443c1a426b986a52542bc1b6c14b986d5cd55"
+    }
+  },
+  "verification": {
+    "full_original_queries": 8,
+    "complete_HTTP_observations": 8480,
+    "all_33920_HTTP_integer_time_points_match_private_evidence": true,
+    "complete_executor_operation_samples": 34210,
+    "all_retained_operation_samples_match_private_summary": true,
+    "independent_nearest_rank_P50_P95_P99_series": 68,
+    "continuous_HTTP_partition_verified": true,
+    "whole_SDK_batch_distinct_spans_per_query": 1,
+    "stdlib_recompute_reproduces_published_statistics": true,
+    "original_parser_replayed_rows": 8480,
+    "original_parser_mismatches": 0,
+    "original_requests_and_SDK_HTTP_row_associations_verified": true,
+    "original_method_parser_and_evaluator_preserved": true,
+    "source_files_verified_per_scope": 407,
+    "cumulative_logical_attempts": 8500,
+    "cumulative_physical_POSTs": 25492,
+    "earlier_failures_and_evidence_preserved": true,
+    "README_exact_query_and_initialization_numbers_verified": true,
+    "privacy_scan_passed": true,
+    "README_Ray_native_parameters_and_unrun_candidate_boundary_verified": true,
+    "six_document_current_entry_history_and_qualification_boundary_sync_verified": true,
+    "explicit_eleven_file_publication_manifest_verified": true,
+    "embedded_current_README_section_matches_reviewed_section": true
+  },
+  "scope": "Independent local audit of complete retained observations, not new model execution.",
+  "limitations": [
+    "Request quantiles describe this complete run; no query P99 or independent population tail estimate.",
+    "Whole SDK batch waiting labels represent one shared span per query.",
+    "Model-internal and pure-queue timing remain unavailable; nested/parallel operation sums are not an exclusive decomposition.",
+    "A/B used separate loaded service instances and different request histories; no fair speed ranking.",
+    "SemLoom did not beat Native/Daft in the observed completion times; original API results do not qualify PostgreSQL end-to-end execution."
+  ],
+  "new_model_requests": 0,
+  "blockers": []
+}

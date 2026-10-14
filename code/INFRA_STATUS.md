@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-14：[单卡四路径完整原Q1/Q2](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-gpu-full-q1-q2-20261014)固定d1及私有任务计时补丁完成。N/D/R/S八查询的原请求、HTTP/SDK行绑定、407源及原Filter解析器重放核验通过；只支持外部预备关系上原生API执行可行性，合法答案／全量质量与时间分开。两次主要服务加载及旧失败保持，GPU/lease正常释放；本次结果发布不修改Core/adapter或启用新IMLane模型任务。
+
 2026-10-13：[原N/S A短IPC独立窗口](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-rss-scope)79.520秒、0POST停止；两EngineCore误入client8GiB采样，服务强制清理与独立退出保留。两私有helper的PID/birth家族／fail-closed／发布同步候选已离线核验，未上传模型复跑；生产Core/adapter未改。
 
 2026-10-13：[原Q2→完整Q1的双卡N/S A先行](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#dual-ns-workpoint-preflight)固定整合8862c813，完整2120原生SDK mock与tokenizer资格通过；模型API因141字节IPC地址超107而退出，0POST、无query，26.959秒停止并独立释放。短IPC目录／启动前检查及watchdog RSS身份修复候选未模型复跑；生产Core、adapter及原控制器未改。
