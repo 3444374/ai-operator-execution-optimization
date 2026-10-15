@@ -4,6 +4,10 @@
 [固定 `9c59dc9b` 台账](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位；
 文档引用不把该分支的实现或运行资格转给 main，原始报告、全部失败及重复值保持原身份。
 
+2026-10-15：[重复均值置信区间](../../code/src/observability/README.md#repeat-mean-confidence)从 `4b1c834b` 独立移植到 main 底稿。
+40 项统计/原 metrics 回归及实际 CSV→JSON 入口通过；固定 `277d8f48` 的已保存摘要影响核查范围仍按原说明解释。
+本批不改原始观测、不新增模型实验；不把均值 t 区间当总体 P99 区间，独立性与覆盖条件仍需各实验自身满足。
+
 2026-10-08：[返回等待离线及本地隔离](diagnostics/map_queued_preparation_20261008/README.md#return-wait-isolation)、[实际Ray返回分段](diagnostics/map_queued_preparation_20261008/README.md#ray-return-wait)。
 原六次1024行记录复算，追加的同步guard重叠中位范围78.088%–80.260%，2512项独立区间检查通过；未作单因素归因。
 两行最小复现及五次重复、记录控制与40case扩展共71个case/4107次模拟，通过原始行/连续登记/future时序/资源复算。
