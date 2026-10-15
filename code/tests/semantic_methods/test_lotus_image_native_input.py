@@ -358,7 +358,7 @@ def cli_args(tmp_path, arm):
         "--index-dir", str(tmp_path / "index"), "--output-dir", str(tmp_path / "out")]
 
 
-@pytest.mark.parametrize("arm", ["stock", "daft_native", "external"])
+@pytest.mark.parametrize("arm", ["stock", "external"])
 def test_cli_rejects_native_option_for_other_arms_before_any_mkdir_or_model(tmp_path, monkeypatch, arm):
     module = cli()
     monkeypatch.setattr(module, "require_outside_git", Mock(side_effect=AssertionError("no filesystem")))
@@ -367,7 +367,7 @@ def test_cli_rejects_native_option_for_other_arms_before_any_mkdir_or_model(tmp_
     assert not (tmp_path / "out").exists()
 
 
-@pytest.mark.parametrize("arm", ["direct", "ray_data", "semloom_static", "semloom_hse"])
+@pytest.mark.parametrize("arm", ["direct", "ray_data", "daft_native", "semloom_static", "semloom_hse"])
 def test_cli_native_option_conflicts_with_png_before_work(tmp_path, arm):
     module = cli()
     assert module.parser().parse_args(cli_args(tmp_path, arm)).native_image_input is False
@@ -376,7 +376,7 @@ def test_cli_native_option_conflicts_with_png_before_work(tmp_path, arm):
     assert not (tmp_path / "out").exists()
 
 
-@pytest.mark.parametrize("arm", ["direct", "ray_data", "semloom_static", "semloom_hse"])
+@pytest.mark.parametrize("arm", ["direct", "ray_data", "daft_native", "semloom_static", "semloom_hse"])
 @pytest.mark.parametrize("native", [False, True])
 def test_cli_routes_only_explicit_native_option_and_source_map(tmp_path, monkeypatch, arm, native):
     module = cli()
@@ -395,9 +395,13 @@ def test_cli_routes_only_explicit_native_option_and_source_map(tmp_path, monkeyp
     def executor_factory(**kwargs):
         constructor.append(kwargs)
         return SimpleNamespace(input_kind="rgb_pil" if kwargs.get("native_image_input") else "encoded_bytes",
-                               close=lambda: None)
+                               identity={}, close=lambda: None)
     for name in ("DirectImageExecutor", "RayDataImageExecutor", "SemLoomImageExecutor"):
         monkeypatch.setattr(module, name, executor_factory)
+    if arm == "daft_native":
+        from src.baselines.image.frameworks import daft_clip
+        monkeypatch.setattr(daft_clip, "DaftClipExecutor", executor_factory)
+        monkeypatch.setattr(module, "validate_executor_identity", lambda executor, *a, **k: executor.identity)
     received = []
     def rm_factory(executor, stock, **kwargs):
         received.append(kwargs)
@@ -421,10 +425,12 @@ def test_cli_routes_only_explicit_native_option_and_source_map(tmp_path, monkeyp
     assert report["status"] == "succeeded"
     if native:
         assert report["native_image_input"] is True
-        assert report["executor_input_kind"] == ("rgb_pil" if arm in ("direct", "ray_data") else "source_encoded_bytes")
+        assert report["executor_input_kind"] == ("rgb_pil" if arm in ("direct", "ray_data", "daft_native") else "source_encoded_bytes")
     else:
         assert "native_image_input" not in report
-    assert constructor[0].get("native_image_input", False) == (native and arm in ("direct", "ray_data"))
+    assert constructor[0].get("native_image_input", False) == (native and arm in ("direct", "ray_data", "daft_native"))
+    if not native:
+        assert "native_image_input" not in constructor[0]
     if native and arm in ("semloom_static", "semloom_hse"):
         image = frames[0].iloc[0]["image"]
         source = received[0]["source_images"][id(image)]

@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：补Daft原生RGB输入与有限资格准备
+
+从已发布`ff35f57f`建立独立分支，沿既有LOTUS RM接点增加显式Daft RGB PIL→HWC uint8→原生图片列，
+旧PNG与原stateful UDF、slow处理、资源及关闭保持。本机固定SDK51项／0跳过及独立审核通过，
+9种尺寸的实际像素和完整预处理张量逐位相同；Linux及三格12图完整LOTUS模型验证等待E文本自然完成。
+外部场景统一为长生命周期LOTUS进程内连续独立查询，内部生命周期按原生配置记录；服务化仅另列配置，
+不将图级重建自动判错或排除主测。接口／缓存支持范围见[LOTUS说明](code/src/semantic_methods/lotus/README.md)，
+有限运行设计见[同题计划](experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
+
 ## 2026-10-15：完成LOTUS图像连续查询与原生输入对照
 
 从`277d8f48`建立独立职责分支，保留原生算子、图库／查询／模型数学及baseline执行所有权。既有入口添加显式同owner重复、原生返回时刻与可选实际模型计数；错误／取消跳过忙碌worker观测，继续既有关闭。固定实测`485c86a8`提供Direct RGB PIL、Ray RGB数组／单callable、HSE已核原源字节候选，并用Arrow视图减少Daft返回Python float装箱；必要数值检查、排序、资源和退出处理保留，旧PNG与staged路径继续回归。

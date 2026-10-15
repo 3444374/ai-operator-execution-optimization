@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：Daft新增显式RGB图片输入，复用LOTUS既有RM接点与原stateful UDF；默认PNG保留。
+本机固定实际SDK51项／0跳过、9种尺寸的真实像素和全部slow张量通过，超限RGB输入已在load前拒绝；
+Linux及少量完整LOTUS模型资格尚未执行，E文本优先。范围见[同题计划](../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
+
 2026-10-15：[LOTUS图像建库后连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`完成九格180条完整查询、189份完整矩阵；248项SDK／fixture及43个子测试通过、0跳过。Direct／Ray新增显式原生图片输入，HSE复用已核原源字节，Daft返回改Arrow缓冲视图；默认及旧PNG参照保持。实际模型计数确认七格复用、两格Ray逐RM重建；监督输出BrokenPipe失败与仅补剩余两格的成功续跑分别保留，未形成可靠尾分位或稳态结论。
 
 
