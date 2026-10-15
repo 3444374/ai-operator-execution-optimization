@@ -1,0 +1,128 @@
+{
+  "schema": "semloom.native_capacity_fixture_scope.v1",
+  "source": "1c05a191761f0ddacdc6cd34946d70e7cc57c62b",
+  "fixture_calls": 96,
+  "fixture_hops": 192,
+  "model_calls": 0,
+  "checks": [
+    {
+      "configuration": "Ray Data A4/B2/R1/source4",
+      "query_rows": [
+        16,
+        16
+      ],
+      "http_peaks": [
+        8,
+        4
+      ]
+    },
+    {
+      "configuration": "IMLane CPython n4/META6/bridge8",
+      "query_rows": [
+        16,
+        16
+      ],
+      "http_peaks": [
+        4,
+        4
+      ]
+    },
+    {
+      "configuration": "IMLane Ray n4/META6/bridge8",
+      "query_rows": [
+        16,
+        16
+      ],
+      "http_peaks": [
+        4,
+        4
+      ]
+    }
+  ],
+  "failure": {
+    "run": "zero-117c1b",
+    "model_calls": 0,
+    "fixture_calls_before_failure": 64,
+    "reason": "private read-only Ray resource observer attempted to JSON-encode protobuf ActorDeathCause",
+    "old_launch_qualification_stay_failed": true,
+    "worker_failure_returncode": 1,
+    "original_archive_sha256": "6b2fc678f7730ee946d735100469bf58ed37cfdd51b77bbb0aa792505d844a22",
+    "lease_reconciliation_sha256": "e3eafe5b388eb0cf97a33a05d69c1ed18aa26586eecea9e6fe6cb155166a05ea",
+    "reconciliation_verified_births": 69,
+    "corrected_projection": "fixed scalar actor fields; actual actor PID set equals full worker identities; snapshot does not alter execution"
+  },
+  "continuation": {
+    "run": "zero-278d95",
+    "fixture_calls": 32,
+    "prior_valid_calls_reused": 64,
+    "closed_passed": true,
+    "natural_lease_release": true,
+    "original_archive_sha256": "63fb2a49c60e26a41512595c568f8f952f16efa1ef7beacf0d85ff234dc0db58"
+  },
+  "resources": [
+    {
+      "samples": 712,
+      "observed_peak_client_rss_bytes": 4890624000,
+      "observed_peak_author_shm_logical_bytes": 536939648
+    },
+    {
+      "samples": 310,
+      "observed_peak_client_rss_bytes": 3151904768,
+      "observed_peak_author_shm_logical_bytes": 536939648
+    }
+  ],
+  "source_contracts": {
+    "ray": [
+      {
+        "A": 2,
+        "B": 2,
+        "R": 1,
+        "C": 8,
+        "framework_cpu": 8,
+        "source_blocks": 2,
+        "active_http_upper_bound": 4,
+        "row_envelope": 4,
+        "spare_cpu_condition": true,
+        "passed": true
+      },
+      {
+        "A": 4,
+        "B": 2,
+        "R": 1,
+        "C": 8,
+        "framework_cpu": 8,
+        "source_blocks": 4,
+        "active_http_upper_bound": 8,
+        "row_envelope": 8,
+        "spare_cpu_condition": true,
+        "passed": true
+      }
+    ],
+    "imlane": {
+      "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+      "files": {
+        "src/common/config.cpp": "d4185d3220f4c5bd1fad96bf58cec4ebd19fc3b2fc3aba8710c3b7436f98c55c",
+        "src/coordinator/coordinator.cpp": "d83cc45ec40f74b47b6c212155cea28395b29d304ed679d8ced108a81a777e27",
+        "include/dbend/dbend_context.hpp": "f524d36e40dcfa6540a1105df65e875d6b34cf04fce3fdf631631b5d1c3fca9b"
+      },
+      "default_executors": 4,
+      "physical_worker_launch": "Coordinator LaunchPyExecutors/LaunchRayExecutors loops n",
+      "reported_instances": "DBEnd AcquireLanes adds2",
+      "bridge_threads": "first TaskThreadPool singleton adds2 to reported instances",
+      "mapping": [
+        {
+          "workers": 2,
+          "meta_native_executors": 4,
+          "native_task_threads": 6
+        },
+        {
+          "workers": 4,
+          "meta_native_executors": 6,
+          "native_task_threads": 8
+        }
+      ],
+      "note": "compatibility coordinator source already fixed/qualified by E; no rebuild or source change in this calibration"
+    }
+  },
+  "prior_stage_independent_audit": "passed; package model-f2592e SHA e4c61b53959edb5f0070a81f2014f5ce055fb3714e0f7d4fadc752acd5cb66b8"
+}

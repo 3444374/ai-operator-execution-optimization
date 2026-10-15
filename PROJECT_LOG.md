@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-15：记录有限原生配置校准
+
+固定`1c05a191`，六个原生配置各一个owner连续六次完整LOTUS Q2，共36查询／4320模型／12960三跳，变化检查另计96fixture。生产与作者源码未改，全部首值／后续值和物理退出保持；私有资源观察器失败及只补剩余fixture的恢复独立保存。[同题结果](experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)分列实际资源与质量边界：IMLane n4作为后续同预算配置，Ray A4仍仅候选，不宣称稳态、调度收益或长测完成。
+
 ## 2026-10-15：IMLane可选owner复用完成公开原Q2接线
 
 固定`4271dc44`沿已有session借用实现，保留默认逐批桥和原作者机制。两模式20fixture与15项owner清理检查通过；公开SemBench CLI各同owner两原Q2实际完成480模型／1440三跳、全200，桥与作者／服务进程自然退出、GPU空、lease释放，实际独立审核通过。[完整记录](experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)分列原始时间、HTTP经验尾、桥身份／1→0计数及SDK关联。此前0HTTP身份检查失败来自私有测试器误用Coordinator executable，修正到固定作者独立worker映射，生产源码未改；旧四臂未重跑。累计六配置12查询／1440模型，仍7FN与n2，不宣称排名或调度收益。

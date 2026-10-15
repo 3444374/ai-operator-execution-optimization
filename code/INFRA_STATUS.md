@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[有限原生配置校准](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)固定`1c05a191`，仅参数化仓外配置，生产默认和作者源码不改。IMLane n4列为后续同预算完整LOTUS测试配置、n2保留；Ray A4尚不足以冻结稳态赢家。物理CPU／逻辑cluster／实际worker分列，质量仍有7FN，不能据此声称调度收益。
+
 2026-10-15：[IMLane可选LOTUS owner复用](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)固定`4271dc44`：显式session配置由owner持有原桥，默认逐批Popen保持；15项清理单测、两作者模式20fixture及公开原Q2各两次共480模型实际通过并退出。桥／context报告与SDK／身份完整关联，独立审核通过。连同`1ba0fc1e`四路径共12查询／1440模型；仍7FN，不作性能排名。私有worker身份误判的0请求失败与生产接入问题分开保存。
 
 2026-10-15：[Daft显式RGB输入资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成。

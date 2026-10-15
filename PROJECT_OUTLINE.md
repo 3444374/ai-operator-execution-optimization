@@ -387,6 +387,7 @@ PG 接入随实际路径核对同步语义、关联／顺序、快照／权限�
 公司移植按[架构计划](experiments/plans/系统架构.md#company-integration-questions)核对实际接口和授权。
 原 Q2 后续工作点、常驻连续查询与其他新运行仅在其对应计划及实际结果就绪后更新状态；
 不恢复旧 GPU 矩阵或沿用已结束运行额度。
+[固定`1c05a191`的有限原生配置校准](experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)保留全部首次／后续及资源波动；IMLane n4列后续同预算测试配置、n2保留参照，Ray A4不冻结稳态赢家。此为完整LOTUS原生配置诊断，质量不足、固定块顺序和历史独立服务实例边界不变，不作为SemLoom调度创新或长测结论。
 
 ## 9. 结果解释与写作规则
 

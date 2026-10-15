@@ -338,6 +338,44 @@ session批序号1→2，每批120调用／120复制。没有虚构C++ context地
 加上前述四臂，累计12条完整Q2／1440模型／4320三跳。质量不足、三组服务scope、各臂n2和实际并发不同均保留，
 不据本工作点宣称稳态排名或调度机制收益。
 
+<a id="native-config-calibration"></a>
+
+### 有限原生配置校准（同题追加）
+
+固定已发布源码 `1c05a191` 的815文件闭包，复用前述成功入口、SDK、隔离环境和共享lease；只参数化仓外运行配置，生产及作者源码未改、作者库未重建。按表顺序完整块串行，每格一个长生命周期owner连续承接6次独立原LOTUS Q2，保留首次和全部5次后续，0warm-up／0retry。共36查询、4320真实模型请求、12960三跳，另有96次localhost fixture；没有启动长测。全部原件留在仓外，[模型聚合与原件校验值](capacity-calibration.json)、[变化检查及失败记录](capacity-fixture-verification.json)是本节数字来源。
+
+六格共用同一RTX4090、Qwen2.5-7B-Instruct BF16／vLLM0.25.1 API与engine，身份检查11次；服务参数沿用前节（4096／16／2048、utilization0.8、TP/PP1、eager、prefix cache关闭），LOTUS结果缓存关闭。driver／框架进程固定同一组8个CPU，服务另8个；Ray Data逻辑cluster为8，作者Ray按n原生声明2／4、GPU0，边界available CPU也为2／4，不把逻辑额度当实际worker或CPU占用。model-start至首次就绪身份核查46.461秒；46次 `/v1/models` GET和1次metrics GET单列，额外模型探针为0。
+
+| 配置／块顺序 | 首次Q2秒 | 后续5次Q2秒（原顺序） | 后续均值±样本SD秒 | 实际HTTP峰（6次） |
+|---|---:|---|---:|---|
+| Ray Data A2/B2/R1/source2 | 21.081 | 10.364 / 9.943 / 10.000 / 12.177 / 8.475 | 10.192 ± 1.324 | 4 / 4 / 4 / 4 / 2 / 2 |
+| Ray Data A4/B2/R1/source4 | 19.470 | 7.404 / 6.073 / 8.395 / 8.390 / 8.420 | 7.736 ± 1.025 | 8 / 4 / 4 / 2 / 2 / 2 |
+| IMLane CPython n2 | 7.368 | 7.427 / 7.476 / 7.495 / 7.485 / 7.507 | 7.478 ± 0.031 | 2 / 2 / 2 / 2 / 2 / 2 |
+| IMLane CPython n4 | 4.831 | 4.431 / 4.446 / 4.514 / 4.341 / 4.468 | 4.440 ± 0.063 | 4 / 4 / 4 / 4 / 4 / 4 |
+| IMLane Ray n2 | 8.006 | 7.555 / 7.624 / 7.632 / 7.617 / 7.507 | 7.587 ± 0.054 | 2 / 2 / 2 / 2 / 2 / 2 |
+| IMLane Ray n4 | 5.205 | 4.511 / 4.583 / 4.533 / 4.542 / 4.590 | 4.552 ± 0.034 | 4 / 4 / 4 / 4 / 4 / 4 |
+
+主时间仍为preparation start→consumer EOF；表内没有扣除图构造、原生worker初始化或查询内准备。owner初始化另列，全部query间隔、完整块时间、末EOF→group关闭跨度与自然退出状态见JSON；间隔／关闭跨度含记录与审计，不能称纯清理成本。首Ray块CLI完成后的SDK复核导入曾触发价格表远程读取超时并回退，原日志和完整块时间保留，该跨度不在Q2主计时内。
+
+| 配置 | owner初始化秒 | 外部作者初始化／退出秒 | client RSS合计采样峰GiB | 作者SHM逻辑采样峰MiB | HTTP经验P99 ms（n720） |
+|---|---:|---:|---:|---:|---:|
+| Ray Data A2/B2/R1/source2 | 20.082 | 不适用 | 4.074 | 不适用 | 150.263 |
+| Ray Data A4/B2/R1/source4 | 18.846 | 不适用 | 5.332 | 不适用 | 189.851 |
+| IMLane CPython n2 | 8.253 | 1.200 / 0.515 | 2.376 | 256.033 | 122.290 |
+| IMLane CPython n4 | 8.260 | 1.388 / 0.528 | 2.587 | 512.066 | 144.588 |
+| IMLane Ray n2 | 8.560 | 5.126 / 2.135 | 3.466 | 256.033 | 123.661 |
+| IMLane Ray n4 | 8.432 | 5.192 / 1.934 | 3.936 | 512.066 | 151.001 |
+
+client RSS为已知自有进程RSS之和，共享页会重复计数；8GiB RSS及2GiB作者SHM保护保持。模型阶段实际采样中位间隔约0.131–0.180秒，不能保证未采样瞬时峰。Ray Data的256MiB与作者Ray的128MiB object store另在资源记录中，不被“作者SHM不适用”计成零。全部8CPU亲和检查通过。作者设施启动不含在owner初始化中；首次桥／context创建实际位于首Q2并计入。API／engine和作者进程实际退出、全部作者namespace共享内存为空、lease自然释放；API精确stop→exit墙钟未单独采集。
+
+Ray源码条件8>4成立，A×B上界从4增至8，R1不充当额外并发。A4后续均值较低，但本轮两格的后续峰都降至2，且只各1个owner、固定块顺序、Ray查询波动明显；**稳态配置选择证据不足**。保留A2旧配置与全部原值，A4仅列后续候选，不扩大矩阵或宣布稳态赢家。
+
+IMLane两模式的 **n4推荐为后续同预算完整LOTUS测试配置**，n2保留为对照。四个实际worker由PID／birth／start ticks及CPython原`py_exec_instance`或原生Ray ActorWrapper映射证明；同桥跨6次Q2，context／注册1→0→0→0→0→0，批序号1→6，最后自然关闭。作者[默认n4](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/common/config.cpp#L24)及[DBEnd设置](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/include/dbend/dbend_context.hpp#L373)说明：n2对应META4／桥线程池6，n4对应META6／桥线程池8；META不是物理worker数。作者Ray逻辑cluster也随n由2→4，收益只解释为整组原生配置差异；HTTP UDF及作者同步调用方式保持，没有新增async臂。
+
+固定SDK／正文／行身份与指标经独立重验，4320次离线SDK回放的socket尝试为0。独立质量审计首次因本机缺DuckDB停止，失败身份及修正见JSON，没有安装依赖或重跑模型。实际查询的官方评价使用服务器DuckDB1.5.4；独立质量复核用固定2000行CSV／prepared labels、同一简单gold SQL谓词（SQLite）及原Q2评价函数未改AST，不称本机DuckDB复现。每查询仍120次出现／119 distinct，4320个唯一响应的完整SDK／捕获正文／usage／row-stage-call关联及全部120条Filter决定保留；36次均与冻结reference一致。官方LIMIT5 precision／recall／F1均1.0，LIMIT前仍各TP7／TN106／FP0／FN7，质量等价未证明。HTTP分位数沿用单owner代理dispatch→完整body-read的nearest-rank定义，仅为本样本经验值；6次查询不支持查询P99或总体尾保证。原HTTP header／version未捕获；SDK复核的空header／HTTP1.1容器不代表原传输元数据。HTTP时长与SDK响应是同query两套完整集合，没有声称按位置逐条配对。
+
+变化检查曾在Ray资源观察器JSON编码protobuf字段时退出；当时Ray A4／CPython n4的64次fixture已成功、0模型。旧失败报告保持，逐69个PID／birth及空SHM／GPU核销自有lease后，仅修仓外观察器并补Ray n4的32次，总96次；未重跑已过SDK或故障矩阵。完整失败、修正、校验值与复算入口均保留于仓外。原生LOTUS、Daft、SemLoom未补跑，仍引用前节各自来源与服务scope（历史driver affinity10）；不与本轮称同实例配对。本轮不支持SemLoom创新、调度归因或长测完成结论。
+
 ### 文档与实验能力边界
 
 Daft官方说明类在worker上初始化并复用多行，初始化可以延后到查询执行；这支持worker内复用，
@@ -347,4 +385,4 @@ Daft官方说明类在worker上初始化并复用多行，初始化可以延后�
 主实验只评价明确配置的完整LOTUS查询；生命周期设计收益可以是真实整体收益，调度归因仍需同生命周期的静态／新策略消融。
 本轮两次连续查询不支持并发线上服务、故障恢复、稳态尾延迟或各后端全局最优参数结论。
 
-完整原件及失败记录由项目维护者保管；可按`1ba0fc1e`三臂／原生两个scope与`4271dc44`作者fixture／模型scope，凭[三臂证据](model-verification.json)、[原生证据](native-verification.json)、[IMLane fixture](imlane-fixture-verification.json)及[IMLane模型](imlane-model-verification.json)中的`evidence.private_closed_artifact_sha256`、`evidence.private_closed_archive_sha256`及`failed_predecessor`所列校验值，向维护者申请授权获取对应原件，核对校验值后离线复算。紧凑收据与各原件的映射保持原样。
+完整原件及失败记录由项目维护者保管；可按`1ba0fc1e`三臂／原生两个scope与`4271dc44`作者fixture／模型scope，凭[三臂证据](model-verification.json)、[原生证据](native-verification.json)、[IMLane fixture](imlane-fixture-verification.json)及[IMLane模型](imlane-model-verification.json)中的`evidence.private_closed_artifact_sha256`、`evidence.private_closed_archive_sha256`及`failed_predecessor`所列校验值，向维护者申请授权获取对应原件，核对校验值后离线复算。有限配置校准则按[模型聚合](capacity-calibration.json)的`run_id`、`raw_closed_archive_sha256`与[fixture记录](capacity-fixture-verification.json)的失败／续跑`original_archive_sha256`向维护者申请；仓外复算入口随对应控制原件提供。紧凑收据与各原件的映射保持原样。
