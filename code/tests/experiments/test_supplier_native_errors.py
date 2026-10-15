@@ -19,8 +19,6 @@ from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.postgresql.supplier_adapter_query import run_supplier_query
-from src.experiments.postgresql.persistent_native_adapter_query import PersistentAdapterGroup
-from tests.experiments.lotus_query_fixtures import fixture_server
 
 
 @contextmanager
@@ -167,5 +165,3 @@ class SupplierNativeErrors(unittest.TestCase):
             )
             + "\n"
         )
-
-
