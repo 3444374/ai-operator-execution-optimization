@@ -314,6 +314,9 @@ SemLoom 的源缓存绑定同一 PIL 对象、尺寸及当前 RGB 摘要；不�
 
 `model_startup_s`只表示显式启动区间；Ray图内模型或Daft首次UDF若延迟加载，成本仍在对应index/query中。
 任务和输入输出责任按查询处理，健康长期服务在 owner退出时结束；未确认的远端工作禁止遗忘或复用。
+普通输入`17ac2aeb`的八配置与Serve来源`460d3870`的三配置已完成有限完整LOTUS检查；
+[实际原值、模型身份与复算](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+分列来源及样本数，不据短轮推断稳态或调度优势。IMLane图像尚无已交付资格，继续使用公开external factory等待接纳。
 已有[连续查询记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)
 及[Daft RGB记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)
 保留原源码身份、配置、原值与失败，不自动改称当前默认的实测。后续规模与缓存选择见

@@ -4,12 +4,15 @@
 Direct／Ray／Daft／Serve 默认 RGB；SemLoom 核对当前像素后复用源字节，不可复用时无损 PNG1 回退。
 Ray fused／staged 和 Daft 实际 encoded 文件输入仍保留。独立源码／测试审核及接纳后185项回归通过，
 1项真实 processor 在本机条件跳过；独立 Daft 真实 CPU SDK 52项通过、0跳过。
-新默认的八配置12图完整 LOTUS 检查按[有限计划](../experiments/plans/语义系统对照.md#lotus-image-native-input-defaults)接续，模型结果尚待记录。
+固定`17ac2aeb`的[八配置12图完整 LOTUS 检查](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+已完成并独立复核；247项服务器测试及31个子测试零跳过，16查询／24完整矩阵、实际模型身份及退出通过。
+原生查询内转换、建图与加载照实计时，启动另列；有限样本不形成性能排名或可靠尾分位。
 
 2026-10-15：新增[LOTUS＋Ray Data＋Ray Serve 常驻 CLIP 配置](src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)，
 复用原 RM／索引／检索与 slow／FP32 模型。Data 同步任务调用公开非流式 handle，模型归唯一 Serve 应用；
 旧图内模型配置保留。固定`460d3870`三格12图完整 LOTUS、193项 SDK 与4个子测试均通过、零跳过，
-监督记录自有物理退出及 lease 释放；完整原件已下载，独立复算正在进行。短轮不提供尾分位或性能排名。
+监督记录自有物理退出及 lease 释放；完整原件已下载并经独立复算，与后续普通输入来源分开保存。
+短轮不提供尾分位或性能排名；IMLane 图像实现与资格仍为 pending，既有文本证据不替代图像资格。
 
 2026-10-15：[Daft显式RGB输入资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成。
 本机SDK51项、Linux144项及25个通过子测试分列且零跳过；12图库实际像素／完整slow张量通过。

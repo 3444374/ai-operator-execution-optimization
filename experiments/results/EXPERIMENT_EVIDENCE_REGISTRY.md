@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+分列`460d3870`三格与`17ac2aeb`八格实际来源；共28查询／39完整矩阵复用已有4个数组，原件独立复核通过。
+同形状图片向量逐值同stock，文本CPU／CUDA与跨batch差异保留；实际生命周期、完整查询原值和退出按来源记录。
+新默认支持小规模正确性和复用资格，不支持稳态、并发、性能排名或可靠尾分位；IMLane图像继续pending。
+
 2026-10-15：[Daft显式RGB输入](diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`：
 本机SDK51项、Linux144项及25个通过子测试分列且零跳过，实际像素与完整slow张量同PNG逐位相同；
 stock／Daft PNG／RGB的12条完整LOTUS查询、15矩阵与退出通过。全部PNG／RGB向量与top10逐位相同，
