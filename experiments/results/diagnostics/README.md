@@ -2,6 +2,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[main Core 与完整响应基础](main_foundation_20261015/README.md)：固定 main 底稿上的必要实现闭包、旧路径和真实 CPU Ray 检查；重复 offer 成本保持组件身份。
+
 [待准备尾块追加](map_queued_preparation_20261008/README.md)：原逐行补充记录、可关闭原型、本地高/低成本对照及服务器147项检查；后续PG与8224次模型验证仍慢于即时默认，全部证据归同一报告。
 
 [文本Map准备分段原型](map_input_preparation_20261004/README.md)：单Job输入借用/阶段持有、本地替身与服务器实际库检查；默认与模型请求保持原用途，失败和补测来源归同一报告。

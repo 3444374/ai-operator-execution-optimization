@@ -1,5 +1,14 @@
 # SemLoom Code
 
+## Core 与完整响应基础
+
+main 在原执行层上接纳了[完整响应与 native task API](src/execution_provider/adapters/README.md)。
+Core 修正空释放后的等待代次、满额完成事件后的继续排空和暂停派发时的进展提示。
+有限元数据检查只保留最近未接纳后缀的值与类型签名；每次 offer 仍核对当前容量、描述、work 和取消，
+元数据、类型、预算或作用域变化时重新检查，接纳、封口、失败和关闭时释放对应记录。
+本机重复 offer 诊断只说明 CPU 检查成本；[main 资格记录](../experiments/results/diagnostics/main_foundation_20261015/README.md)
+区分旧路径、真实 CPU Ray、未运行的 PG 图像检查及尚无模型结论的范围。
+
 [待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
 `RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
 不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。

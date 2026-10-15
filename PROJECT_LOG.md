@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：main 接纳 Core 与完整响应基础
+
+以 main `06854ecd` 为底稿，从固定 `671a22dd` 选择 Core 推进／有限元数据与完整 HTTP／native task 的必要实现，
+保留 Ray 失败、取消和未知远端工作的资源责任，额外计时与其他前端暂不带入。
+[本批资格](experiments/results/diagnostics/main_foundation_20261015/README.md)记录旧 Core 的复现、当前 Linux 回归、
+真实 CPU Ray 与本机元数据成本诊断。原 PZ 文档与统计修复保留；不借用集成分支模型或图像资格。
+
 ## 2026-10-15：main 接纳独立统计正确性修复
 
 以纯文档 main `170c3867` 为底稿，仅移植 `4b1c834b` 的重复均值 Student-t 临界值与浮点计算修复、

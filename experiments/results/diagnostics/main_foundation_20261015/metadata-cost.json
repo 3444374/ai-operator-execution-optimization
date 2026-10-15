@@ -1,0 +1,286 @@
+{
+  "kind": "CPU repeated unaccepted offer diagnostic",
+  "baseline": "06854ecd462d17ecdf43f3da793fb009ba12dc0d",
+  "candidate_source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+  "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "warmup_offers_per_cell": 200,
+  "repeats": 7,
+  "offers_per_repeat": 5000,
+  "total_timed_offers": 140000,
+  "models": 0,
+  "http": 0,
+  "pg": 0,
+  "rows": [
+    {
+      "stages": 1,
+      "repeat": 0,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 60220000,
+      "ns_per_offer": 12044.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 0,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 36425000,
+      "ns_per_offer": 7285.0,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 1,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 38633000,
+      "ns_per_offer": 7726.6,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 1,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 62635000,
+      "ns_per_offer": 12527.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 2,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 61068000,
+      "ns_per_offer": 12213.6,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 2,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 36238000,
+      "ns_per_offer": 7247.6,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 3,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 35034000,
+      "ns_per_offer": 7006.8,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 3,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 57079000,
+      "ns_per_offer": 11415.8,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 4,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 58210000,
+      "ns_per_offer": 11642.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 4,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 35906000,
+      "ns_per_offer": 7181.2,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 5,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 35250000,
+      "ns_per_offer": 7050.0,
+      "retained_checks": 1
+    },
+    {
+      "stages": 1,
+      "repeat": 5,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 57019000,
+      "ns_per_offer": 11403.8,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 6,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 56070000,
+      "ns_per_offer": 11214.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 1,
+      "repeat": 6,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 36197000,
+      "ns_per_offer": 7239.4,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 0,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 144796000,
+      "ns_per_offer": 28959.2,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 0,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 52471000,
+      "ns_per_offer": 10494.2,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 1,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 51368000,
+      "ns_per_offer": 10273.6,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 1,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 140639000,
+      "ns_per_offer": 28127.8,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 2,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 147555000,
+      "ns_per_offer": 29511.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 2,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 54299000,
+      "ns_per_offer": 10859.8,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 3,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 90555000,
+      "ns_per_offer": 18111.0,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 3,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 162080000,
+      "ns_per_offer": 32416.0,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 4,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 146779000,
+      "ns_per_offer": 29355.8,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 4,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 54808000,
+      "ns_per_offer": 10961.6,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 5,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 57255000,
+      "ns_per_offer": 11451.0,
+      "retained_checks": 1
+    },
+    {
+      "stages": 16,
+      "repeat": 5,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 151624000,
+      "ns_per_offer": 30324.8,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 6,
+      "mode": "baseline",
+      "offers": 5000,
+      "cpu_ns": 161487000,
+      "ns_per_offer": 32297.4,
+      "retained_checks": null
+    },
+    {
+      "stages": 16,
+      "repeat": 6,
+      "mode": "reuse",
+      "offers": 5000,
+      "cpu_ns": 54212000,
+      "ns_per_offer": 10842.4,
+      "retained_checks": 1
+    }
+  ],
+  "summary": [
+    {
+      "stages": 1,
+      "median_ns_per_offer": {
+        "baseline": 11642.0,
+        "reuse": 7239.4
+      },
+      "change_percent": -37.81652637003952
+    },
+    {
+      "stages": 16,
+      "median_ns_per_offer": {
+        "baseline": 29511.0,
+        "reuse": 10859.8
+      },
+      "change_percent": -63.20084036460981
+    }
+  ],
+  "script_sha256": "a423c2061db007868953ec65d607f7cc5217719b2f07887ab7969cac548dfa8f"
+}

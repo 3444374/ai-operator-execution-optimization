@@ -2,7 +2,7 @@
 
 ## main 与集成分支的阅读范围
 
-main 的执行与接入代码仍来自 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`；本批只移植下述公共统计修复。
+main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复和下述 Core／完整响应基础。
 下文保留该来源在2026-10-08记录的实现与验证情况，
 不将后续集成分支的能力写成 main 已实现。新适配与修复从
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)进入；
@@ -14,6 +14,15 @@ main 的执行与接入代码仍来自 `425f0145b412581ac2027b4aa31c3ae51dd42f0c
 main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通过。
 边界、固定来源影响核查及高精度参照见[所属模块](src/observability/README.md#repeat-mean-confidence)。
 不改变历史观测或重算旧摘要，也不引入集成分支的新接入、策略或模型资格。
+
+## Core 推进、元数据与完整响应
+
+从固定 `671a22dd` 选择七个生产文件组成必要依赖，保留完整取消、unknown、Job 和结果租约责任；
+Ray 额外 worker 身份观测与 payload 计时未带入。[API 与行为](src/execution_provider/adapters/README.md)
+涵盖逐请求 cookie 隔离、完整 HTTP 状态／响应、native task 与 full-mode worker 身份校验。
+[本批资格](../experiments/results/diagnostics/main_foundation_20261015/README.md)在 main 底稿上通过 Linux 调度 432 项、
+执行层 192 项中的 183 项，9 项 PG 图像集成因未提供 DSN／资产而跳过；真实 CPU Ray 与 localhost fixture 已运行。
+本机 116 项定向检查通过，重复 offer 的 CPU 诊断与全部重复值单列；没有模型、GPU 或完整 LOTUS 查询运行。
 
 ## 原 main 实现记录
 
