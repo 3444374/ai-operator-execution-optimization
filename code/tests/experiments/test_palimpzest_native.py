@@ -200,10 +200,23 @@ class PZNativeLibraryTests(unittest.TestCase):
                     ledger.record = events.record
                     with _private_working_directory(output), patch('sys.stdout', StringIO()):
                         if name == 'wrong-model':
-                            with self.assertRaisesRegex(PalimpzestAdapterError, 'response model differs'):
+                            with self.assertRaises(PalimpzestAdapterError) as caught:
                                 execute_native(dataset, rows, pz_root, binding, verified, NativeOptions(1, 1),
                                     query_id=3, budget=budget, events=events, timeout_s=30,
                                     ledger=ledger, execution=execution)
+                            # PZ iterates a set of completed futures: the original error
+                            # or an already-queued row rejected by the shared latch may win.
+                            mismatch = 'completion response model differs from the verified served model'
+                            prior = 'PZ bridge stopped after a prior adapter contract failure'
+                            self.assertIn(str(caught.exception), (mismatch, prior))
+                            chain, seen, error = [], set(), caught.exception
+                            while error is not None and id(error) not in seen:
+                                seen.add(id(error))
+                                chain.append(error)
+                                error = error.__cause__
+                            self.assertIsNone(error, 'unexpected cycle in explicit adapter failure causes')
+                            self.assertTrue(any(isinstance(error, PalimpzestAdapterError)
+                                                and str(error) == mismatch for error in chain))
                         else:
                             execute_native(dataset, rows, pz_root, binding, verified, NativeOptions(1, 1),
                                 query_id=3, budget=budget, events=events, timeout_s=30,

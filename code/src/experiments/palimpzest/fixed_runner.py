@@ -169,9 +169,13 @@ def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=No
             execution_identity=content_digest(dict(fixed_identity=prepared.identity, physical=physical)))
         fresh.begin()
         metadata_started = time.monotonic_ns()
-        verified = fetch_model_metadata(binding)
-        evidence['metadata_check_seconds'] = (time.monotonic_ns()-metadata_started)/1e9
-        if verified != selected_verified:
+        metadata_observation = evidence['metadata_observation'] = {}
+        try:
+            verified = fetch_model_metadata(binding, evidence=metadata_observation)
+        finally:
+            evidence['metadata_check_seconds'] = (time.monotonic_ns()-metadata_started)/1e9
+        metadata_observation['matches_selected_identity'] = verified.stable_identity() == selected_verified.stable_identity()
+        if not metadata_observation['matches_selected_identity']:
             raise PalimpzestAdapterError('local model metadata changed from the complete fixed identity')
         from palimpzest.query.generators import generators
         local = bind_local_completion(generators.litellm.completion, binding, verified)

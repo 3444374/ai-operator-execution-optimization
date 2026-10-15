@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-15：[PZ固定计划六臂模型与SemLoom失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)固定bebf，一次选定计划、六臂各120真实POST；COUNT7／真值14与完整120行解析／过滤矩阵本轮相同，raw输出及tokens不同。SemLoom在Daft runner配置处0POST失败，整轮failed；累计720／840、余120不自动补跑。八GET、197份原件及3815项一致性检查分列，服务与自有物理退出及正常lease已核；不授七臂、SemLoom或性能资格。
+
+2026-10-15：[PZ固定计划模型两轮失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-rounds)固定adde，首轮metadata流式GET被原观察器拒绝，第二轮GET通过后完整metadata身份比较失败；两轮真实POST／Generator／账本消费均0。服务准备86.114秒／50.121秒已初始化GPU，自有责任与正常lease关闭，原件保留。三处动态字段解释来自安装源码，非重复GET实测diff；不授模型或质量资格，累计额度仍840POST。
+
+2026-10-15：[IMLane四lane健康补轮](diagnostics/palimpzest_movie_20261015/README.md#imlane-four-lane-health)固定adde及原作者构建，CP／Ray各两批×4次localhost HTTP，共16fixture POST、模型0／GPU0。每批4个实际worker、4lane恢复及屏障峰值4，Ray另核4actor；二批复用worker／actor，仍每批DBEnd注册。自有进程／SHM／线程和正常lease退出通过；7条取消告警保留，精确ID均有GCS无引用销毁记录且与完成actor无重合。只授HTTP健康，不授完整PZ、模型或性能资格。
+
 2026-10-15：[部署限定资源 auto 单卡回归](diagnostics/resource_auto_20261015/README.md#当前单卡检查)，实际模型源d2fa8c9b。一张4090、固定CLIP、原LOTUS index/search五路径各auto／explicit1；完整矩阵、原生持久化索引／排名、worker/GPU出生身份和正常退出通过。固定数学环境四组额外验收通过，HSE旧观察缺项的外层失败未改写；默认数值失败10行＋有限诊断6行＋五配对50行＝66/66，HTTP0。原件四归档分别73／28／102／169成员已备份并独立重算。单次组件检查不支持性能、多卡、DP>1或Serve；详见[机器摘要](diagnostics/resource_auto_20261015/single_gpu_qualification.json)。
 
 main服务资格独立归7b20四文件／发布main2041的12请求，由main owner交付；本线只做只读SHA／AST兼容核对，不移植资格到d2／CLIP，见[来源记录](diagnostics/resource_auto_20261015/main_service_provenance.json)。

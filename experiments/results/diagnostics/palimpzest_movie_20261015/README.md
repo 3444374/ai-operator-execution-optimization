@@ -102,7 +102,7 @@ runner输入与依赖核对11.952560934秒、服务准备87.284129010秒分别�
 IMLane 复用固定作者072f8257的既有已审 patched build；本次未改作者源码、环境或重编译。
 Coordinator 的n4及实际创建4个lane与DBEnd本地META的executors6／host threads8分列，
 后者不代表实际作者worker数。Ray日志保留2条 SchedulingCancelled，涉及的actor与实际完成请求的2个worker不同；
-本轮只证明2-call结果与退出，告警原因及4个lane满载健康仍未核，不称无告警或满载资格。
+该阶段只证明2-call结果与退出；其后的告警核验与4个lane健康补轮见下节，不能回填本轮资格。
 
 另一个实际 Core／Daft／Ray 检查为5次 fixture POST：下游在上游尚未结束时派发，
 gzip429与重复响应头保留，命名池身份／复用和发送前拒绝0POST均通过；
@@ -120,7 +120,80 @@ fixture usage不是模型费用或吞吐证据；有限原件按run_id／SHA由�
 
 首版仍拒绝 LIMIT、join、distinct、语义聚合、多字段 follow-up 和未核多调用形状。
 PZ 原生模型轮未保存完整所选 plan，不能回填为固定计划控制；
-原2000行任务的固定计划 original-native／native-adapted／四后端模型、质量／费用／总时比较仍待执行。
+原2000行任务的固定计划模型轮已按下节保留六完成臂与SemLoom发送前失败，全七臂比较仍未完成。
+
+<a id="imlane-four-lane-health"></a>
+## IMLane 四 lane 健康补轮
+
+后续检查使用干净的固定 `adde01a660473dde626d6d04169e52487d879c74`，保留同一作者构建与原调度。
+CP／Ray各连续两批、每批4次真实localhost HTTP，共16次fixture POST。
+每批实际4个不同worker、4个lane恢复且HTTP峰值4；屏障在第4个请求到达前不返回响应，关联与结果断言全部通过。
+选中原件保存请求／trace及已审脚本的逐条响应断言结果，未另存响应字节用于独立重新解码。
+Ray每批另核4个不同actor，两批复用同一组worker／actor，DBEnd仍按原默认每批注册；
+作者未发出actor到lane的逐点映射，实际actor集合与lane恢复分别核对。
+
+旧2条取消告警的源码／GCS链支持重复同名注册的新actor失去引用：作者`emplace`保留既有条目，
+未保留的新handle被销毁。本补轮仍有7条同类创建取消告警，7个精确ID均有GCS无引用销毁记录，
+与实际完成请求的actor无重合；告警原样保留，不称已消除或推广到所有注册错误。
+两种runtime的自有进程／SHM、fixture线程和桥均正常退出，父owner无残余或unknown，正常共享lease已释放、未启用stale recovery。
+[原值与归档身份](imlane-health.json)保留来源与边界；本补轮模型调用和GPU工作均为0，不替代PZ原任务模型资格。
+
+<a id="fixed-plan-model-rounds"></a>
+## 原任务固定计划模型轮
+
+首轮 `pz-q3-adde-fixed-r1` 使用干净adde与已冻结仓外控制器，在首个original-native臂的metadata GET处失败。
+原观察器在判断请求类型前拒绝`stream=True`，而原`fetch_model_metadata`使用流式GET；尚未进入Generator。
+账本实际消费、服务日志模型POST和Generator调用均为0，已分配的840额度未退款或复用；后续新运行仍受累计840次实际POST上限约束。
+服务准备86.113515530秒已实际初始化GPU，不能把0模型POST写成0GPU工作。本轮不提供模型或质量资格。
+自有责任关闭、服务退出码0、无自有残余及GPU计算进程、GPU回1MiB和正常lease释放均已核，未启用stale recovery。
+15份原件及清单留仓外，归档SHA256为`e69932ec0b359865fa677157b2bef068e2bb00a9dc6bb1bf2134e16864384298`；
+按运行标识与摘要向项目artifact owner获取。第二轮仅修仓外GET观察范围，固定adde及已知关闭错误分支的边界保持。
+
+新运行`pz-q3-adde-fixed-r2`通过GET后，在完整metadata身份比较处再次停止；真实POST／Generator／账本消费仍为0，
+服务准备50.121419687秒，正常自有退出与lease释放完成。安装的vLLM源码每次GET新建model的`created`和permission的随机`id`／`created`，
+整个响应的哈希会随这些观测值变化。第二次GET原正文未保留，不能称已实测逐字段差异；安装源码和原始失败分别保留。
+本轮未生成原关系结果或PlanStats，COUNT与质量均不可用。[各轮原值](fixed-model.json)分列原件摘要与预算；
+后续`bebf682b`保留初始完整metadata计划锚，重复GET仅规范化上述三类动态值，并保存逐次原正文及完整／稳定摘要；
+该修补已通过CPU检查与双轴独审，模型资格另记，不回填adde资格，不自动重复模型查询。
+
+后续集成`0bdfaae27fc7ea7cb293165d2567aff738c447ed`另修`response.close`与`after_send`独立尝试及原错误优先；
+该修补不属于本轮adde或bebf资格。bebf继承adde的关闭失败分支，该分支仍未验证；发生关闭或观察错误即停止后续臂，由独立服务owner核物理退出。
+
+<a id="fixed-plan-model-r3"></a>
+### R3：六臂完成，SemLoom发送前失败
+
+新运行`pz-q3-bebf-fixed-r3`固定`bebf682b136b983257c70944aa0cb07000c976ac`，复用原2000行输入及一次选定的扫描→普通过滤→LLMFilter→结构COUNT计划。
+每臂fresh状态，原生控制为原`ParallelExecutionStrategy.execute_plan`；Qwen2.5-7B／vLLM0.25.1／单4090／prefix cache关闭，无模型预热、重试或选择阶段模型调用。
+前六臂各120次真实POST200，SemLoom首次发送前失败，整轮仍为failed；累计实际消费720／840，余120未退款、复用或自动补跑。
+
+| 路径 | 实际POST | COUNT | 输出tokens | query秒 | application秒 |
+|---|---:|---:|---:|---:|---:|
+| PZ原生固定计划 | 120 | 7 | 7,685 | 13.304 | 13.791 |
+| native-adapted | 120 | 7 | 7,695 | 13.321 | 13.867 |
+| Daft | 120 | 7 | 7,665 | 15.832 | 16.381 |
+| Ray Data | 120 | 7 | 7,655 | 60.086 | 69.980 |
+| 作者IMLane CP | 120 | 7 | 7,675 | 37.998 | 40.699 |
+| 作者IMLane Ray | 120 | 7 | 7,667 | 38.310 | 46.285 |
+| SemLoom＋Daft／Ray | 0 | 不可用 | 不可用 | — | — |
+
+六臂120行的原source-position／解析状态／过滤bool矩阵逐项相同，TP7／FN7／FP0／TN106／invalid0；真值14、官方相对误差0.5。
+完整请求正文的多重集合相同（120次、119种值），重复调用仍保留；原始生成文本并不相同，不能从相同过滤矩阵外推一般质量等价。
+每臂输入38,325 tokens，六臂合计229,950输入／46,042输出；实际美元价格不可用，未把原成本卡默认零当免费。
+八份原始metadata GET的正文与完整摘要均不同，仅三类已核动态值变化，版本化稳定摘要一致，初始完整计划锚保持。
+
+query包含固定计划／metadata核对、原PZ执行与质量评价；application再含fresh、runtime／gateway准备、关闭与记账，范围重叠，不能相加。
+服务准备52.128秒、共享准备11.612秒另计；HTTP实际峰值依次20／20／20／4／4／4，直接SDK与gateway上游观察范围分别保留，不表示GPU序列占用。
+作者两臂各核4个实际worker，Ray另核4actor；Ray Data实际actor ID及逐池关闭计数未保存，标unavailable，不能用声明值补齐。
+本轮作者Ray另保留coordinator的5条取消告警，GCS涉及8个唯一取消actor（含前5个），均与完成调用的4actor不同，逐ID有无引用销毁记录；精确C++引用释放点不可用。
+收口阶段另4条INFO级KillActor RPC失败涉及完成actor，日志原样保留；不称告警消除，最终进程／设备退出独立核对。
+单臂一次查询／120请求，顶部1%约1.2个观测，不提供稳定P99或性能排名。
+
+SemLoom事件流在Daft payload的`runner_configure`处失败：64个已准备Generator取消、56个尚未准备，模型POST为0，未产生原COUNT／PlanStats或模型usage。
+失败query 2.142秒／application 15.744秒仅为失败阶段时间。Core Job／额度归零、物理transport及调用方Ray关闭；父owner另核服务退出0、自有残余与GPU计算进程为空、GPU回1MiB、正常lease释放，未启用stale recovery。
+197份原件（185份与12份作者补件）、六份完整PlanStats及精确清单均留仓外；[原值与SHA](fixed-model.json)保留全部失败及补件身份。
+独立3815项原件一致性检查通过，只覆盖六完成臂与失败责任关闭；原全七臂验证器的失败保留，不授SemLoom、全轮或性能资格。
+只读调用链显示，前置Daft完整调用直接取得默认runner，SemLoom payload随后经共享helper配置runner；重复初始化是待核候选原因，原内部vendor异常未保留。
+两独立case的CPU诊断已窄审，但共享host已有正常owner，真库诊断尚未启动；修复及SemLoom原任务模型路径仍待完成，未动剩余120模型额度。
 
 ### baseline 合并的来源边界
 
@@ -132,12 +205,17 @@ PZ 原生模型轮未保存完整所选 plan，不能回填为固定计划控制
 本机定向 HTTPX／Core／有限 localhost 回归验证这些整合行为；实际 PZ／后端软件资格、17次 fixture
 和原生120次模型调用仍归各自冻结来源，不升级为合并源码的真实库或逐臂模型资格。
 
+本次再接纳固定 `2c175f4d` 的 metadata 身份补丁和部分模型结果，保留上述首错／关闭修补及来源守卫，
+不包含后续未交付的 Daft 初始化修补。融合后复用固定原 PZ／SDK 的受影响 CPU／有限 localhost 回归
+为118通过、1项显式 nonredirect 条件跳过，另95个通过子测试；与先前检查重叠，不累加。
+离线原件重算核对六完成臂720POST和剩余120额度；本次没有新模型／GPU调用，不授第七臂或整轮资格。
+
 ## 当前边界
 
 `freeze_best_plan` 只覆盖无 validator 的最终计划；完整系统采样和 validation 不得被省略。
 只替换 completion 接点时，PZ 继续拥有 DAG。源数据、配置、请求摘要和服务／缓存状态须与计划指纹共同核对。
-原生完整2000行Movie的本次模型质量已实测；待执行工作交接的最小CPU软件资格已按上节分列；PZ＋SemLoom／IMLane／Daft／Ray Data的原任务模型资格仍待执行。
-本记录不支持六臂排名、质量等价、性能收益或可靠尾分位。
+原生完整2000行Movie及固定bebf的六完成臂模型记录已分列；SemLoom原任务模型路径尚未完成，整轮失败及剩余120额度保留。
+本记录不支持逐臂排名、质量等价、性能收益或可靠尾分位。
 
 附件审查针对 PZ `807ed301`／1.5.3，本切片继续保留 SemBench 所需的旧 tag。
 固定后端接入现按 A（选定计划后、原线程池前）和 B（最终 SDK 请求准备后）两处边界实现；

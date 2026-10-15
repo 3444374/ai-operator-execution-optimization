@@ -1,5 +1,26 @@
 # 项目日志
 
+## 2026-10-15：保留PZ固定计划六臂模型结果与SemLoom失败
+
+固定bebf及一次选定原Movie Q3计划，原生／native-adapted／Daft／Ray Data／作者IMLane CP与Ray各120POST，共720；SemLoom在Daft runner配置处首发前失败，整轮failed。
+六臂完整120行解析／过滤矩阵逐项相同，COUNT7／真值14、TP7／FN7，raw输出与tokens差异保留；价格不可用。
+八份原始GET与初始完整metadata锚通过独立核验，3815项原件一致性通过；服务退出0、自有与GPU残余为空，正常lease释放。
+[同题原值与阶段时间](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)保留197份仓外原件，余120额度未自动补跑，不授SemLoom／全轮或性能资格。
+
+## 2026-10-15：保留PZ固定计划两轮的零模型请求失败
+
+固定adde首轮的metadata流式GET被原观察器拒绝，仓外修复后新运行又在完整metadata身份比较处停止；两轮账本／服务日志／Generator均为0模型调用。
+服务准备86.114秒／50.121秒均已发生GPU初始化，自有责任与正常lease已关闭；保留全部失败原件，累计840POST额度不扩大。
+安装vLLM源码支持三处metadata值每GET新生成的解释；第二GET原正文未存，不声称实测逐字段差异。后续`bebf682b`已完成稳定身份修补、原始GET留存及CPU／独审，模型资格另记，
+[同题原值与边界](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-rounds)不授模型资格。
+
+## 2026-10-15：核对作者 IMLane 四 lane HTTP 健康
+
+固定adde与同一作者构建，CP／Ray各连续两批×4次fixture，共16POST，模型／GPU为0。
+每批核实际4worker、4lane恢复和屏障峰值4；Ray另核4actor，二批复用worker／actor而每批重注册DBEnd。
+旧2条和新7条创建取消告警均保留；源码／精确GCS记录支持未保留的新actor因无引用被销毁。
+正常自有进程／SHM／线程退出与共享lease释放已核；[同题原值](experiments/results/diagnostics/palimpzest_movie_20261015/imlane-health.json)不授完整PZ、模型或性能资格。
+
 ## 2026-10-15：资源 auto 五条单卡查询与原件闭包
 
 模型固定源d2fa8c9b、单张4090；同一原LOTUS图像建库／两次搜索按auto与explicit1切换，五条原生路径的完整矩阵、索引、排名、所有worker身份和正常物理退出通过。

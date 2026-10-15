@@ -1,5 +1,7 @@
 """Fixed-plan controls; optional actual PZ/SDK tests use deterministic CPU fixtures."""
 
+import base64
+from copy import deepcopy
 from dataclasses import replace
 from io import StringIO
 import json
@@ -14,7 +16,7 @@ from src.baselines.common.private_artifacts import write_private_json
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.experiments.palimpzest.fixed import BackendRunProfile, FixedEnvironment, FixedMovieProfile, select_fixed_movie
 from src.experiments.palimpzest.fixed_runner import execute_fixed_movie, executor_identity
-from src.experiments.palimpzest.model import LocalModelBinding, verify_model_metadata
+from src.experiments.palimpzest.model import LocalModelBinding, fetch_model_metadata, verify_model_metadata
 from src.experiments.palimpzest.native import NativeOptions
 from src.experiments.palimpzest.source import load_palimpzest
 from src.experiments.postgresql.query_workloads import file_identity, prepare
@@ -146,6 +148,106 @@ class FixedMovieLibraryTests(unittest.TestCase):
         self.assertEqual(evidence['ledger']['completion_submitted'], 0)
         with self.assertRaisesRegex(PalimpzestAdapterError, 'unhealthy'):
             fixed.fresh('after-metadata-failure')
+
+    def test_initial_full_metadata_anchor_still_cannot_be_rebound_to_the_same_stable_identity(self):
+        for precreated in (False,True):
+            with self.subTest(precreated=precreated):
+                fixed = self.fixed()
+                fresh = fixed.fresh('before-raw-change') if precreated else None
+                altered = replace(fixed.verified,metadata_sha256='f'*64)
+                self.assertEqual(altered.stable_identity(),fixed.verified.stable_identity())
+                self.assertNotEqual(altered,fixed.verified)
+                fixed.verified = altered
+                with patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata') as fetch:
+                    with self.assertRaisesRegex(PalimpzestAdapterError,'fixed local model binding'):
+                        if fresh is None:
+                            fixed.fresh('after-raw-change')
+                        else:
+                            execute_fixed_movie(fresh,arm='original-native',backend_profile=self.backend_profile)
+                fetch.assert_not_called()
+
+    def test_repeat_get_allows_only_response_generated_values_and_keeps_each_raw_body(self):
+        import httpx
+        metadata = dict(object='list',data=[dict(id=self.binding.model.model_id,object='model',owned_by='vllm',
+            created=100,root='/fixture/checkpoint',parent=None,max_model_len=8192,
+            permission=[dict(id='modelperm-first',created=100,object='model_permission',allow_sampling=True)])])
+        changed = deepcopy(metadata)
+        changed['data'][0]['created'] += 1
+        changed['data'][0]['permission'][0].update(id='modelperm-next',created=101)
+        payloads = [json.dumps(value).encode() for value in (metadata,changed)]
+        remaining,requests,completion_requests = iter(payloads),[],[]
+        def send(_client,request,**kwargs):
+            requests.append((request.method,str(request.url)))
+            if request.method=='GET' and str(request.url)==self.binding.api_base+'/models':
+                body = next(remaining)
+            elif request.method=='POST' and str(request.url)==self.binding.model.endpoint_url:
+                completion_requests.append(json.loads(request.content))
+                body = json.dumps(dict(id='fixture',object='chat.completion',created=1,model=self.binding.model.model_id,
+                    choices=[dict(index=0,finish_reason='stop',message=dict(role='assistant',content='ANSWER: TRUE\n---'))],
+                    usage=dict(prompt_tokens=11,completion_tokens=3,total_tokens=14))).encode()
+            else:
+                raise AssertionError('undeclared fixture request')
+            response = httpx.Response(200,stream=httpx.ByteStream(body),request=request,headers={'content-type':'application/json'})
+            if not kwargs.get('stream'):
+                response.read()
+            return response
+        initial = {}
+        with patch.object(httpx.Client,'send',send), patch('sys.stdout',StringIO()):
+            self.verified = fetch_model_metadata(self.binding,evidence=initial)
+            fixed = self.fixed()
+            result = execute_fixed_movie(fixed.fresh('response-only-change'),arm='original-native',backend_profile=self.backend_profile)
+        repeated = result.evidence['metadata_observation']
+        self.assertEqual(requests.count(('GET',self.binding.api_base+'/models')),2)
+        self.assertEqual(requests.count(('POST',self.binding.model.endpoint_url)),2)
+        self.assertEqual(len(requests),4)
+        self.assertEqual(len(completion_requests),2)
+        self.assertEqual(result.records[0].count,2)
+        self.assertEqual(result.evidence['ledger']['completion_completed'],2)
+        self.assertEqual(result.evidence['ledger']['parser_default_retained'],0)
+        self.assertEqual(result.evidence['ledger']['usage_available_calls'],2)
+        self.assertTrue(result.evidence['native_bridge']['patches_restored'])
+        self.assertTrue(repeated['matches_selected_identity'])
+        self.assertNotEqual(initial['metadata_sha256'],repeated['metadata_sha256'])
+        self.assertEqual(initial['stable_metadata_sha256'],repeated['stable_metadata_sha256'])
+        self.assertEqual(base64.b64decode(initial['raw_body_base64']),payloads[0])
+        self.assertEqual(base64.b64decode(repeated['raw_body_base64']),payloads[1])
+        self.assertEqual(fixed._selected_verified.metadata_sha256,initial['metadata_sha256'])
+        retained = os.environ.get('SEMLOOM_PZ_METADATA_FIXED_OUTPUT')
+        if retained:
+            root = Path(retained); root.mkdir(parents=True,exist_ok=False)
+            write_private_json(root/'initial-metadata.json',initial)
+            write_private_json(root/'run.json',dict(result.evidence,calls=result.ledger.calls()))
+            write_private_json(root/'qualification.json',dict(status='passed',actual_http_posts=0,model_calls=0,
+                fixture_metadata_GETs=2,fixture_completion_POSTs=2,original_sdk=True,original_pz=True,
+                count=result.records[0].count,fixture='HTTPX sender fixture; no real model or server'))
+
+    def test_changed_stable_metadata_is_fatal_before_generation_and_retains_original_body(self):
+        import httpx
+        from palimpzest.query.generators import generators
+        fixed,evidence = self.fixed(),{}
+        metadata = dict(object='list',data=[dict(id=self.binding.model.model_id,object='model',owned_by='vllm',root='/changed/checkpoint')])
+        body = json.dumps(metadata).encode()
+        original_init,requests = httpx.Client.__init__,[]
+        def handler(request):
+            requests.append((request.method,str(request.url)))
+            if request.method!='GET' or str(request.url)!=self.binding.api_base+'/models':
+                raise AssertionError('identity failure must not submit a model request')
+            return httpx.Response(200,stream=httpx.ByteStream(body))
+        def initialize(client,*args,**kwargs):
+            kwargs['transport'] = httpx.MockTransport(handler)
+            original_init(client,*args,**kwargs)
+        with patch.object(httpx.Client,'__init__',initialize), patch.object(generators.litellm,'completion') as completion:
+            with self.assertRaisesRegex(PalimpzestAdapterError,'metadata changed'):
+                execute_fixed_movie(fixed.fresh('stable-change'),arm='original-native',backend_profile=self.backend_profile,evidence=evidence)
+        completion.assert_not_called()
+        self.assertEqual(evidence['ledger']['completion_submitted'],0)
+        self.assertEqual(base64.b64decode(evidence['metadata_observation']['raw_body_base64']),body)
+        self.assertEqual(evidence['metadata_observation']['status'],'verified')
+        self.assertFalse(evidence['metadata_observation']['matches_selected_identity'])
+        self.assertEqual(requests,[('GET',self.binding.api_base+'/models')])
+        self.assertGreaterEqual(evidence['metadata_check_seconds'],0)
+        with self.assertRaisesRegex(PalimpzestAdapterError,'unhealthy'):
+            fixed.fresh('after-stable-change')
 
     def test_same_base_model_rebinding_cannot_inherit_the_selected_identity_or_send_more_requests(self):
         for precreated in (False, True):

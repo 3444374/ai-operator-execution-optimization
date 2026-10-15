@@ -1,0 +1,107 @@
+{
+  "schema": "semloom.palimpzest_imlane_four_lane_health.v1",
+  "run_id": "pz-imlane-four-lane-health-20261015-r2",
+  "source_commit": "adde01a660473dde626d6d04169e52487d879c74",
+  "helper_sha256": "9252d68c141d448f4120c917c7033011c2b8a3d1b8867c52163c6642931d2b4f",
+  "status": "passed_with_retained_registration_warnings",
+  "scope": "author NativeCall four-lane HTTP fixture health; not a PZ query or model/performance result",
+  "actual_fixture_posts": 16,
+  "real_model_calls": 0,
+  "gpu_work": 0,
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "author_source_or_scheduler_modified": false,
+  "coordinator_executors": 4,
+  "dbend_local_meta_executors": 6,
+  "author_native_host_threads": 8,
+  "runtimes": [
+    {
+      "runtime": "cpython",
+      "status": "passed",
+      "actual_fixture_posts": 8,
+      "batches": [
+        {
+          "batch": 0,
+          "actual_worker_count": 4,
+          "actual_actor_count": null,
+          "restored_lane_count": 4,
+          "peak_http_requests": 4,
+          "four_arrivals_before_release": true,
+          "exact_results": true
+        },
+        {
+          "batch": 1,
+          "actual_worker_count": 4,
+          "actual_actor_count": null,
+          "restored_lane_count": 4,
+          "peak_http_requests": 4,
+          "four_arrivals_before_release": true,
+          "exact_results": true
+        }
+      ],
+      "same_worker_pid_set": true,
+      "same_actor_id_set": null,
+      "registrations_per_batch": 1,
+      "bridge_reuse": false,
+      "normal_author_cleanup": true,
+      "fixture_threads_stopped": true,
+      "registration_cancelled_warnings": 0,
+      "cancelled_completed_overlap": 0,
+      "gcs_no_reference_cancellations_confirmed": null
+    },
+    {
+      "runtime": "ray",
+      "status": "passed_with_registration_warnings",
+      "actual_fixture_posts": 8,
+      "batches": [
+        {
+          "batch": 0,
+          "actual_worker_count": 4,
+          "actual_actor_count": 4,
+          "restored_lane_count": 4,
+          "peak_http_requests": 4,
+          "four_arrivals_before_release": true,
+          "exact_results": true
+        },
+        {
+          "batch": 1,
+          "actual_worker_count": 4,
+          "actual_actor_count": 4,
+          "restored_lane_count": 4,
+          "peak_http_requests": 4,
+          "four_arrivals_before_release": true,
+          "exact_results": true
+        }
+      ],
+      "same_worker_pid_set": true,
+      "same_actor_id_set": true,
+      "registrations_per_batch": 1,
+      "bridge_reuse": false,
+      "normal_author_cleanup": true,
+      "fixture_threads_stopped": true,
+      "registration_cancelled_warnings": 7,
+      "cancelled_completed_overlap": 0,
+      "gcs_no_reference_cancellations_confirmed": true
+    }
+  ],
+  "normal_lease": {
+    "recover_stale": false,
+    "released": true,
+    "ownership_unknown": false,
+    "owned_remaining_count": 0
+  },
+  "raw_archive": {
+    "sha256": "dfed73e2ea5607cf73acbee9080602bde1f341867920b8c9ad995eabdf2124a7",
+    "bytes": 45666,
+    "selected_files": 51,
+    "manifest_sha256": "8007e2992fe3da46156c35783b76ff0390851284c917892b727cbd3752e7a363",
+    "retrieval": "Request this run_id/archive SHA from the project artifact owner; original retained outside Git on task host and experiment server"
+  },
+  "limitations": [
+    "Old two registration cancellations retain their historical source and evidence.",
+    "New seven cancellation warnings remain; all seven recorded IDs have GCS no-reference destruction and are disjoint from completed actors.",
+    "Ray actor-to-lane pointwise mapping is not emitted by the author; four distinct actors and four actual lane restores are checked separately.",
+    "No PZ original task, model quality, throughput or stable tail percentile qualified by this fixture."
+  ],
+  "response_evidence": "Exact body/result comparison was asserted during the frozen helper run; selected raw does not retain response body bytes for independent re-decoding.",
+  "restore_fence": "Four Coordinator Restore Lane events observed per batch; author protocol emits no restore ACK."
+}

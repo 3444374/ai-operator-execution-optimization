@@ -1,0 +1,401 @@
+{
+  "schema": "semloom.palimpzest_fixed_movie_model_rounds.v1",
+  "status": "six_completed_model_arms_verified_semloom_pre_send_failure",
+  "source_rows": 2000,
+  "semantic_rows_per_arm": 120,
+  "planned_arms": [
+    "original-native",
+    "native-adapted",
+    "daft",
+    "ray-data",
+    "imlane-cpython",
+    "imlane-ray",
+    "semloom"
+  ],
+  "model_id": "qwen2.5-7b",
+  "vllm_version": "0.25.1",
+  "warmup_posts": 0,
+  "automatic_rerun": false,
+  "cumulative_actual_POST_budget": {
+    "limit": 840,
+    "spent": 720,
+    "remaining": 120,
+    "old_allocations_refunded_or_reused": false,
+    "prior_7ac_native_120_is_separate_run": true
+  },
+  "rounds": [
+    {
+      "run_id": "pz-q3-adde-fixed-r1",
+      "status": "failed_before_first_model_POST",
+      "source_commit": "adde01a660473dde626d6d04169e52487d879c74",
+      "controller_sha256": "a339c27e7119903b91dc6dd4367eb67ae1dd67e8d2c3f1c5ce97368d6570dc71",
+      "source_manifest_sha256": "65a405a842ec5a6930499953bbb46be3a829b5fa0c9d58f4388a4a4fa83e5acf",
+      "failure": "Existing native observer rejects streaming model-metadata GET before Generator starts",
+      "actual_model_posts": 0,
+      "generator_calls": 0,
+      "service_preparation_seconds": 86.11351553024724,
+      "service_GPU_initialization_occurred": true,
+      "quality": {
+        "status": "unavailable",
+        "reason": "No model request or original relation result"
+      },
+      "normal_cleanup": {
+        "service_exit": 0,
+        "query_responsibility_closed": true,
+        "ownership_unknown": false,
+        "owned_remaining": [],
+        "gpu_compute_pids": [],
+        "gpu_memory_after_mib": 1,
+        "lease_released": true,
+        "recover_stale": false
+      },
+      "raw_archive": {
+        "sha256": "e69932ec0b359865fa677157b2bef068e2bb00a9dc6bb1bf2134e16864384298",
+        "bytes": 75856,
+        "selected_files": 15,
+        "selection_manifest_sha256": "06561a9201fd9d7deeb6c26347ee54b54fc654963a05eb41e456bd7600b27e05"
+      }
+    },
+    {
+      "run_id": "pz-q3-adde-fixed-r2",
+      "status": "failed_before_first_model_POST",
+      "source_commit": "adde01a660473dde626d6d04169e52487d879c74",
+      "controller_sha256": "f9705ee847ba3c64995973eebecc6f401498acd8f252acb4e9a3a82374044202",
+      "source_manifest_sha256": "8c21d93cc94a4ee8981a8ab2edc901a3ae3ecad8e665497eb90ec467fedbd887",
+      "failure": "Streaming model-metadata GET passed; repeated complete metadata JSON identity comparison failed before Generator starts",
+      "actual_model_posts": 0,
+      "generator_calls": 0,
+      "service_preparation_seconds": 50.12141968682408,
+      "service_GPU_initialization_occurred": true,
+      "quality": {
+        "status": "unavailable",
+        "reason": "No model request, original relation result or PlanStats"
+      },
+      "normal_cleanup": {
+        "service_exit": 0,
+        "query_responsibility_closed": true,
+        "ownership_unknown": false,
+        "owned_remaining": [],
+        "gpu_compute_pids": [],
+        "gpu_memory_after_mib": 1,
+        "lease_released": true,
+        "recover_stale": false
+      },
+      "raw_archive": {
+        "sha256": "b467e65ca3bbc243d3eaf2fd4493e8be9a87d630eeab09260fced3f236c4dd04",
+        "bytes": 75290,
+        "selected_files": 15,
+        "selection_manifest_sha256": "a9b0b84328a6de12383c77c3b18b2454d497c7af735feff15228b752ef7776e4"
+      }
+    },
+    {
+      "run_id": "pz-q3-bebf-fixed-r3",
+      "status": "failed_semloom_before_first_model_POST_six_cells_completed",
+      "source_commit": "bebf682b136b983257c70944aa0cb07000c976ac",
+      "controller_sha256": "e666615f020b25f2095d013f47abc672765de38a56cb74adb9c38da9c4da53d8",
+      "parent_envelope_sha256": "b0dbb975e8c1acf933bb44ddc5dee8f48574f65552c40cfc5f0948532b2b06aa",
+      "source_manifest_sha256": "e79d24253a55dc4f5e4f5e0b1232c15d160d658a73b3cee77aebf90b77da7a72",
+      "fixed_identity": "dfa59e3958208d58c972909281cec80f57f8e14a29b3ed36d0b1273f12297c9b",
+      "actual_model_posts": 720,
+      "allocated_requests": 840,
+      "service_preparation_seconds": 52.12805138574913,
+      "shared_preparation_seconds": 11.611522993,
+      "sampling_validation_model_posts": 0,
+      "successful_seven_arm_comparison": false,
+      "independent_partial_audit": {
+        "checks": 3815,
+        "all_passed": true,
+        "complete_seven_arm_verifier_qualified": false,
+        "report_sha256": "9ef66cd21875eaecfa57c4151901e01883598acbd079f36c167596c8aa465838",
+        "full_audit_sha256": "0f73aa4777cd99d1ec771a2c2c96ed54382cd9474bda5ec86c51ba940c062d37",
+        "analyzer_sha256": "98f65a884c2298e5dca8b0d05814683836e050f472e6d53cd0de8901c9ea695a",
+        "scope": "six completed cells and closed SemLoom pre-send failure; no seven-arm pass"
+      },
+      "cells": [
+        {
+          "arm": "original-native",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7685,
+          "query_seconds": 13.304312267,
+          "application_seconds": 13.790674098,
+          "actual_HTTP_peak": 20,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "native-adapted",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7695,
+          "query_seconds": 13.320809481,
+          "application_seconds": 13.867437557,
+          "actual_HTTP_peak": 20,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "daft",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7665,
+          "query_seconds": 15.831966948,
+          "application_seconds": 16.380786386,
+          "actual_HTTP_peak": 20,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "ray-data",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7655,
+          "query_seconds": 60.085716487,
+          "application_seconds": 69.979789011,
+          "actual_HTTP_peak": 4,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "imlane-cpython",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7675,
+          "query_seconds": 37.998236176,
+          "application_seconds": 40.698769752,
+          "actual_HTTP_peak": 4,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "imlane-ray",
+          "status": "originals_verified_completed",
+          "actual_model_posts": 120,
+          "original_count": 7,
+          "prompt_tokens": 38325,
+          "output_tokens": 7667,
+          "query_seconds": 38.31017585,
+          "application_seconds": 46.285050333,
+          "actual_HTTP_peak": 4,
+          "parse_filter_matrix_sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724"
+        },
+        {
+          "arm": "semloom",
+          "status": "failed_before_model_POST",
+          "actual_model_posts": 0,
+          "original_count": null,
+          "model_quality": "unavailable",
+          "prompt_tokens": null,
+          "output_tokens": null,
+          "failed_prepared_Generator_calls": 64,
+          "unprepared_occurrences": 56,
+          "failed_query_seconds": 2.141525664,
+          "failed_application_seconds": 15.743558953,
+          "failure_stage": "Daft payload runner_configure",
+          "actual_HTTP_peak": 0
+        }
+      ],
+      "normal_cleanup": {
+        "service_exit": 0,
+        "query_responsibility_closed": true,
+        "ownership_unknown": false,
+        "owned_remaining": [],
+        "gpu_compute_pids": [],
+        "gpu_memory_after_mib": 1,
+        "lease_released": true,
+        "recover_stale": false
+      },
+      "raw_archive": {
+        "sha256": "0405e720d7c97fa12e0e9ad485b22b8867b4fcb32d913fb0c392c18106602a69",
+        "bytes": 4733235,
+        "selected_files": 185,
+        "selection_manifest_sha256": "d7a78f051c3443d4af264a2d885fc62af1aa09b7fd6145a59692aafc2a91444c"
+      },
+      "raw_author_supplement": {
+        "sha256": "4b2a0efac070d66f92fce0c7a7e66ba6eb9f713e8f7c5905f5acbf1d395f7f30",
+        "bytes": 33521,
+        "selected_files": 12,
+        "selection_manifest_sha256": "82860f2bcf7948564d5cda0c4c090e7bc446f1fdcebd3c1541059fe932c2d744",
+        "reason": "original collector omitted author files under a directory named ray; exact originals were added without changing first selection"
+      },
+      "performance_qualified": false,
+      "common_completed_cell_quality": {
+        "TP": 7,
+        "FN": 7,
+        "FP": 0,
+        "TN": 106,
+        "invalid": 0,
+        "original_MovieEvaluator_relative_error": 0.5,
+        "original_MovieEvaluator_absolute_error": 7.0,
+        "original_MovieEvaluator_MAPE": 50.0,
+        "truth_positive_count": 14
+      },
+      "source_position_parse_filter_matrix": {
+        "rows_per_completed_cell": 120,
+        "identical_this_round": true,
+        "sha256": "eca2657715c634abfd03c72718cfb00be136251d49781bbd6ca8228f8370e724",
+        "pointwise_differences_from_native": {
+          "original-native": 0,
+          "native-adapted": 0,
+          "daft": 0,
+          "ray-data": 0,
+          "imlane-cpython": 0,
+          "imlane-ray": 0
+        },
+        "scope": "this observed complete-filter matrix only; no general quality-equivalence or system-ranking claim"
+      },
+      "request_body_comparison": {
+        "six_complete_wire_body_multisets_equal": true,
+        "six_full_request_value_multisets_equal": true,
+        "items_per_cell": 120,
+        "distinct_per_cell": 119,
+        "duplicates_retained": true,
+        "values_multiset_sha256": "eaa8ba3d99d9ba48d7003720cd2b1248123d64190348a7d1a60ad4db63f70c2f",
+        "wire_sha_multiset_sha256": "b183f04b6fd89be4a7c65b0d1833f6bf42a868f9dd881c978a058fb690fcfb92"
+      },
+      "raw_generated_outputs_equal": false,
+      "raw_output_differences_from_original_native": {
+        "original-native": 0,
+        "native-adapted": 10,
+        "daft": 9,
+        "ray-data": 8,
+        "imlane-cpython": 11,
+        "imlane-ray": 11
+      },
+      "model_metadata": {
+        "original_observations": 8,
+        "raw_bytes_each": 487,
+        "stable_sha256": "da715901a4d41ebb526b2ff47531031ea78772bd7a3045b535426acc66e3f7f5",
+        "initial_full_anchor_sha256": "03e42ee5bde30810a4db75c313e740770c3617f6fd5bc644162191985ff12555",
+        "all_versioned_stable_equal": true,
+        "each_arm_only_3_witnessed_value_paths_changed": true,
+        "initial_full_anchor_preserved": true
+      },
+      "total_usage": {
+        "prompt": 229950,
+        "output": 46042,
+        "actual_USD": null,
+        "monetary_cost_status": "unavailable"
+      },
+      "physical_evidence_limits": {
+        "six_cells_responsibility_closed": true,
+        "author_CP_original_trace_files": 4,
+        "author_Ray_original_trace_files": 4,
+        "author_trace_occurrences_each": 120,
+        "author_actual_workers_each": 4,
+        "author_actual_Ray_actors": 4,
+        "both_author_coordinators_and_author_Ray_owner_exit0_not_forced": true,
+        "owned_survivors": [],
+        "Ray_Data_actual_actor_IDs_and_HTTP_pool_counters": "unavailable; caller API shutdown and parent physical identities checked separately",
+        "all_API_closes_are_remote_HTTP_stop_proofs": false
+      },
+      "timing_scopes": {
+        "service_preparation_seconds": 52.12805138574913,
+        "shared_preparation_seconds": 11.611522993,
+        "selection": {
+          "preparation_seconds": 10.453750345,
+          "optimizer_selection_seconds": 0.015716098,
+          "optimizer_invocations": 1,
+          "sampling_model_calls": 0,
+          "validation_model_calls": 0,
+          "scope": "one shared selection; not executed again or charged once per backend run"
+        },
+        "helper_round_seconds": 228.50548576,
+        "parent_epoch_seconds": 288.4397099018097,
+        "query_repetitions_per_arm": 1,
+        "HTTP_samples_per_completed_arm": 120,
+        "upper_one_percent_expected_samples": 1.2,
+        "stable_p99_qualified": false,
+        "note": "request HTTP scopes differ between original SDK and gateway; query/application/setup/cleanup overlap and must not be summed"
+      },
+      "model_quality_equivalence_claimed": false,
+      "physical_plan": {
+        "plan_id": "68d1d35159",
+        "fingerprint": "99935b7097dafddb6e41e9e1b3cd4b052c28ca37d75eb4c7513c36fbf875b8ac",
+        "operators": [
+          "MarshalAndScanDataOp",
+          "NonLLMFilter",
+          "LLMFilter",
+          "CountAggregateOp"
+        ]
+      },
+      "imlane_ray_warning_evidence": {
+        "scope": "R3 only; separate from old Stage2 two warnings and health-r2 seven warnings",
+        "coordinator_SchedulingCancelled": 5,
+        "ray_owner_SchedulingCancelled": 0,
+        "GCS_cancelled_unique_actor_IDs": 8,
+        "coordinator_IDs_in_GCS": 5,
+        "GCS_only_additional_IDs": 3,
+        "cancelled_IDs_intersect_completed_four_actors": false,
+        "all_eight_GCS_no_reference_destroy_records_retained": true,
+        "precise_CPP_alias_or_emplace_release_site": "unavailable",
+        "teardown_KillActor_RPC_failed_INFO": 4,
+        "teardown_INFO_involves_completed_four_actors": true,
+        "warnings_eliminated": false,
+        "independent_private_report_sha256": "2d91bd6f16aa33b76b4dc904379b219d1603a0506aa65090fcade0ea037e8db3"
+      },
+      "pre_send_failure_diagnosis": {
+        "actual_failure_stage": "Daft payload runner_configure",
+        "original_inner_vendor_exception_retained": false,
+        "candidate_cause": "NativeCall Daft initializes the default runner outside the shared process-owned configure helper, then SemLoom configures it again",
+        "actual_CPU_reproduced": false,
+        "two_case_CPU_probe_status": "frozen_spec0_not_started_foreign_normal_host_lease",
+        "actual_CPU_cases": 0,
+        "CPU_probe_sha256": "b4d4bc46adee5785b7163a1078a786aaaaa091e5bd6af4f051b1ba105b7f4cc3",
+        "CPU_parent_sha256": "889d2b57d732e2d31e6ff6ce75bc5bdd0d6aee0446656c3d1ad35efa908b4c37",
+        "installed_Daft_0_7_21_runner_wrapper_sha256": "2277b74ed51ac2e632921a8145b1edf177a787b8482490de50868cefb52b04d9",
+        "stub_or_source_evidence_is_actual_vendor_or_model_qualification": false,
+        "additional_model_POSTs": 0,
+        "runtime_or_author_source_changed": false
+      }
+    }
+  ],
+  "metadata_diagnosis": {
+    "evidence_type": "static installed-source finding plus failed complete-identity guard",
+    "repeated_GET_raw_body_retained": false,
+    "observed_fieldwise_difference_claimed": false,
+    "vllm_protocol_sha256": "beab4f1a827b40963762a035bf2a955dc095a918c4293c3f1963f58b5e2562fa",
+    "vllm_models_serving_sha256": "c6214d373ea3e0a2b70dd44a838e92a49e3be607018a611595aa8b3dfb101839",
+    "dynamic_paths": [
+      "data[*].created",
+      "data[*].permission[*].id",
+      "data[*].permission[*].created"
+    ],
+    "new_source_fix_required": false,
+    "scope": "R1/R2 failures on adde; second repeated GET body of R2 was not retained"
+  },
+  "raw_retrieval": "Request each run_id/archive SHA from the project artifact owner; exact originals and manifests are retained outside Git on task host and experiment server",
+  "performance_qualified": false,
+  "metadata_source_fix": {
+    "source_commit": "bebf682b136b983257c70944aa0cb07000c976ac",
+    "parent_commit": "adde01a660473dde626d6d04169e52487d879c74",
+    "status": "eight_original_GETs_verified_on_bebf_R3_round_failed",
+    "profile": "vllm-0.25.1-model-list-response-identity.v1",
+    "initial_full_metadata_anchor_retained": true,
+    "repeated_GET_raw_evidence_required": true,
+    "inherits_adde_close_failure_limitation": true,
+    "C_0bdf_close_fix_is_separate_source": true
+  },
+  "timing_interpretation": "query validates the fixed plan/model, executes PZ and evaluates quality; application also includes fresh-state/runtime/gateway setup, teardown and accounting. These overlap; service/shared setup reported separately.",
+  "single_round_limits": {
+    "query_repetitions_per_completed_arm": 1,
+    "HTTP_samples_per_completed_arm": 120,
+    "upper_one_percent_expected_samples": 1.2,
+    "stable_p99_qualified": false,
+    "HTTP_scopes_differ": "original-native direct SDK body completion; adapted arms gateway upstream body completion",
+    "HTTP_peaks_are_GPU_sequence_occupancy": false,
+    "Ray_Data_actual_actor_IDs": "unavailable",
+    "seven_arm_comparison_completed": false,
+    "SemLoom_model_qualification": false
+  },
+  "source_pins": {
+    "palimpzest_tag": "0.8.2.sem_agg",
+    "palimpzest_commit": "6efc19841c49d727ce42f5c2dd55e7433601d2d9",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+  }
+}

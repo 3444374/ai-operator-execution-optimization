@@ -70,6 +70,8 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 固定 `485c86a8` 的[同次 workflow 九格连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证；服务级 RM／内存索引跨调用复用仍未认证，后续完整查询继续采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
 
 2026-10-15：[PZ 原生与固定计划边界](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)保留旧tag的原 Generator、SDK及关系合同。原生完整Movie Q3已完成120模型请求，COUNT7／真值14与FN7保留；逐臂实现另采用查询私有的就绪工作／SDK continuation，固定计划与fresh状态分别核验。源码、CPU fixture及实际模型资格分列，不把本轮原生模型结果借给其余后端或宣称性能排名。 baseline合并保留Animals显式请求容量与PG默认，回归后重绑两份工厂guard；native-adapted响应关闭／发送收尾首错修补另有本机定向资格，不改写原软件摘要。
+固定`bebf682b`的[原任务模型轮](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)六臂各120POST，完整过滤矩阵本轮相同但raw输出不同；SemLoom在Daft runner配置处0POST失败，累计720／840、正常物理退出与lease释放，未补跑或授全轮／性能资格。
+作者IMLane的[四lane HTTP健康补轮](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#imlane-four-lane-health)已核CP／Ray各两批、实际4worker及正常自有退出；16次fixture与7条保留告警单列，模型／GPU为0。
 
 ## 当前文本、接入与公共基础
 
