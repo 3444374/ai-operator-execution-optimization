@@ -66,6 +66,7 @@ GPU服务从启动到物理退出全程持正常共享lease，`recover_stale=fal
 | Daft native（初轮） | model-02 | 42.232154645 | 44.025995127 | 5 | 超限，原件保留 |
 | Ray Data native | model-02 | 62.005999545 | 75.126611353 | 2 | 通过 |
 | Daft native（补轮） | model-03 | 43.997942451 | 46.514915157 | 4 | 通过 |
+| SemLoom Core | model-04 | 40.712867874 | 59.222574832 | 4 | 通过 |
 
 “完整查询”从调用原Q1前至全部结果返回，包含该次源码核验／读取、ImageArray构造、PNG序列化、
 后端执行图、请求及结果汇合；LM配置、Daft runner／Ray runtime初始化在查询前。
@@ -80,10 +81,10 @@ GPU服务从启动到物理退出全程持正常共享lease，`recover_stale=fal
 首次 `model-01` 因当前vLLM不接受旧启动参数 `--disable-log-requests` 退出，模型POST为0；
 只改仓外controller为当前支持的 `--no-enable-log-requests`，以新运行标识执行，生产源码未改。
 成功轮服务退出码0，自有存活PID为空，GPU回到1MiB，共享lease已正常释放且未恢复stale owner。
-这只证明所列输入、模型和三个后端的原任务资格；Core显式容量的原64图VLM资格仍待补，Ecomm另行安排。
+这只证明所列输入、模型和当前后端的原任务资格；Core后续原64图资格见下节，Ecomm另行安排。
 少量查询不支持可靠P99／P99.99、稳态、性能排名、调度收益或数据库端到端结论。
 
-## Core 显式大请求入口
+## Core 显式大请求与原图补轮
 
 工程决策是只给完整原生请求增加显式容量：`build_native_execution(max_request_bytes=...)`
 默认仍1MiB，显式范围1字节至8MiB；非默认必须同时声明足以容纳一项的总`input_bytes`。
@@ -102,7 +103,17 @@ window4194328／object8388608字节；LOTUS批次准备上限128MiB单列。
 完整429字节／重复header、释放后原suffix重投及4MiB边界；CPU本地另覆盖8MiB／超限、取消和unknown不假clean。
 首个实际Ray用例错误地在新flow使用sequence3，导致74项中最后边界项失败；改回首条sequence0后通过，
 生产行为未因该fixture错误调整，失败源码／日志和退出记录保留。两轴独审发现的首错覆盖与>8CPU并发问题已修并复核。
-原64图Core真实模型运行仍待在正常共享lease下追加一次，原256次模型调用保持不变。
+Core源码`a0d1f6acdc50ebe190dbe605732be770a6b55b28`冻结后，`model-04`在正常共享lease下仅补原64图一次。
+新增64次真实VLM调用，累计5条查询／320次；未追加模型或规模矩阵。COUNT仍为3／真值3，
+原相对误差／绝对误差／MAPE均0，TP3／TN61／FP0／FN0，实测HTTP峰值4。
+完整查询40.712867874秒，应用59.222574832秒，服务启动58.440012337秒。
+Core物理HTTP worker在查询计时前准备，其准备与Ray连接／关闭计入应用时间；与旧三臂单值不作性能排名。
+SDK清理错误为空，Core所有占用／Job归零、关闭确认；持续PID＋birth追踪覆盖自有服务和Ray子进程，
+最终服务退出0、无强制清理、tracker停止、自有存活PID为空、GPU1MiB、lease正常释放。
+Core与原生LOTUS的完整请求JSON（参数、messages及PNG URI）相同；实际wire SHA因JSON对象键序不同而不同。
+逐请求表分别保留wire与规范化JSON的hash，复算核对完整语义，不将这两种身份混写。
+完成gate同时要求这些生命周期条件，保留原查询异常及其清理附注。
+
 另将同一原始64图通过CPU像素端点走完整SDK／Core／Arrow路径，64次fixture HTTP全部返回，
 其中63条超过1MiB、最大2380559字节；Core占用及Job归零、关闭确认、实测HTTP峰值4，自有子进程为空。
 该端点只判断首像素是否白色，COUNT为11；这是软件搬运／解析检查，不是VLM、斑马质量或模型成绩。
@@ -112,7 +123,7 @@ window4194328／object8388608字节；LOTUS批次准备上限128MiB单列。
 ## 证据与复算
 
 [来源及配置](source.json)固定数据／模型／processor／资源身份；[输入次序与标签](input-selection.csv)
-保留64个原始archive成员及编码／RGB哈希。[复算入口](recompute.py)读取仓外输入、原始运行及补轮各自的源码包，
+保留64个原始archive成员及编码／RGB哈希。[复算入口](recompute.py)读取仓外输入、原始运行、Daft补轮及Core补轮各自的源码包，
 核对64原图、全部实际PNG像素、消息多重集、各运行完整请求／响应／ledger／trace及逐行决策，
 生成[机器结果](results.json)及[逐请求观测](requests.csv)。请求分布、用量与原始成员校验值由该单一入口计算。
 响应留证包括完整body和status；响应headers没有另行归档，运行时透传与SDK解释仍由既有合同及gzip CPU资格检查。
@@ -120,7 +131,7 @@ LM的本地价格未配置，统计中的cost数值0不能解释为测得的零�
 
 这些包在Git外按 `source.json` 的运行标识／字节数／SHA-256向项目artifact owner获取；
 运行原件含首次失败、各次CPU日志、服务命令／日志／就绪与退出、实际请求／响应、进程资源观测和源码逐文件身份。
-服务器原件与本地独立主机备份均保留；Git不嵌入图像或base64载荷。既有源码包绑定1094个执行文件。
+服务器原件与本地独立主机备份均保留；Git不嵌入图像或base64载荷。既有源码包绑定1094个执行文件，Core新来源包绑定1115个文件（含已集成PZ代码及本轮检查）。
 独立来源包另含三个原准备helper、未改动的上游函数、原XLSX／中央目录、作者v6许可页面及文件响应。
 其中 `reproduce_selection.py --input-archive <input.tar.gz>` 已离线重现原64行完整成员／Species／City／StationID次序，
 模型及网络调用均为0；它与固定输入到结果的复算分开，不把整个数据版本假定为相同。
@@ -128,7 +139,8 @@ LM的本地价格未配置，统计中的cost数值0不能解释为测得的零�
 ```sh
 python recompute.py --raw-archive "$RAW_ARCHIVE" --input-archive "$INPUT_ARCHIVE" \
   --source-archive "$SOURCE_ARCHIVE" --retry-archive "$RETRY_ARCHIVE" \
-  --retry-source-archive "$RETRY_SOURCE_ARCHIVE" --output "$OUTPUT_DIRECTORY"
+  --retry-source-archive "$RETRY_SOURCE_ARCHIVE" --core-archive "$CORE_ARCHIVE" \
+  --core-source-archive "$CORE_SOURCE_ARCHIVE" --output "$OUTPUT_DIRECTORY"
 ```
 
 该命令只需现有Pillow，不访问模型或网络。原始官方入口是
