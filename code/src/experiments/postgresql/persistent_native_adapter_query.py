@@ -46,6 +46,7 @@ class _ArmOwner:
         self.queries = 0
         self.binding = self.service = None
         self.execution = self.sema_executor = self.lm = self.connection = self.native = None
+        self.imlane_calls = None
         self.physical = group.physical if 'semloom' in arm and not arm.endswith('diagnostic') else None
         try:
             self.events = self._enter_component(BufferedEvents(self.root / 'owner-events.jsonl'), 'owner_events_close')
@@ -64,6 +65,12 @@ class _ArmOwner:
                 token = token or 'EMPTY'
             self.model = replace(group.model, endpoint_url=self.gateway.endpoint_url(self.identity, 'model'),
                                  bearer_token=token)
+            if arm.startswith('lotus-') and NATIVE_SUPPLIER_BACKENDS.get(arm) == 'imlane':
+                config = imlane_config_for_arm(arm, group.imlane_call_configs)
+                if config.reuse_bridge:
+                    from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+                    self.imlane_calls = NativeCallExecutor('imlane', group.options, imlane_config=config)
+                    self.stack.callback(self._close_errors.attempt, 'owner_imlane_close', self.imlane_calls.close)
             if 'semloom' in arm and not arm.startswith('sema-'):
                 self.execution = build_native_execution(self.model, physical=self.physical,
                     max_tasks=group.max_held_tasks, max_active_requests=group.options.concurrency,

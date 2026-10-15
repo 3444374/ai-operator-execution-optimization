@@ -75,6 +75,34 @@ class PersistentCleanupTests(unittest.TestCase):
         self.assertEqual(self.gateway.exited,0)
         self.execution.close.assert_not_called()
 
+    def test_imlane_owner_reuse_is_opt_in_and_closes_on_lm_failure(self):
+        for reuse in (False, True):
+            with self.subTest(reuse=reuse):
+                group=self.owner_group();group.root=self.root/('imlane-'+str(reuse))
+                group.imlane_call_configs={}
+                config=SimpleNamespace(reuse_bridge=reuse)
+                graph=mock.Mock()
+                with mock.patch.object(persistent,'imlane_config_for_arm',return_value=config), \
+                        mock.patch('src.baselines.text.frameworks.native_calls.NativeCallExecutor',return_value=graph) as create, \
+                        mock.patch.object(persistent,'prepare_lotus_lm',side_effect=SourceFailure('LM setup')):
+                    with self.assertRaises(SourceFailure):
+                        persistent._ArmOwner(group,'lotus-method-native-imlane')
+                self.assertEqual(create.call_count,int(reuse))
+                self.assertEqual(graph.close.call_count,int(reuse))
+
+    def test_imlane_owner_close_failure_does_not_replace_lm_failure(self):
+        group=self.owner_group();group.imlane_call_configs={}
+        primary=SourceFailure('LM setup')
+        graph=mock.Mock();graph.close.side_effect=CloseFailure('bridge close')
+        with mock.patch.object(persistent,'imlane_config_for_arm',return_value=SimpleNamespace(reuse_bridge=True)), \
+                mock.patch('src.baselines.text.frameworks.native_calls.NativeCallExecutor',return_value=graph), \
+                mock.patch.object(persistent,'prepare_lotus_lm',side_effect=primary):
+            with self.assertRaises(SourceFailure) as caught:
+                persistent._ArmOwner(group,'lotus-method-native-imlane')
+        self.assertIs(caught.exception,primary)
+        graph.close.assert_called_once()
+        self.assertTrue(primary.__notes__)
+
     def test_lm_failure_closes_execution_created_before_the_lm(self):
         primary=SourceFailure('LM validation')
         with mock.patch.object(persistent,'prepare_lotus_lm',side_effect=primary):

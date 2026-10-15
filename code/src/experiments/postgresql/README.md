@@ -49,6 +49,8 @@ LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查
 新路径不创建SemLoom Core；Ray Core与Ray Data分别命名，旧`fixed-map-native-ray`仍表示Ray Data。
 单查询和`PersistentAdapterGroup`共用新名字，后者保留LM／连接及调用方Ray runtime，查询各建自己的图／actor。
 健康网关连接在完整 drain 后跨查询复用，Cookie 由调用者拥有；失败查询仍停止整个 group。
+LOTUS 的 IMLane 配置显式选择 `reuse_bridge=true` 时，owner借用已有桥会话跨查询执行并在owner退出关闭；
+每次查询仍新建方法批次接点。默认逐批桥保持，有限期限和未知工作拒绝复用规则保持。
 Daft在Ray初始化前显式设置Native runner，Ray入口仍需要新的短私有暂存目录；所有HTTP结果交回原方法。
 准备调用的Ray连接只核地址、CPU、object-store字节和导入异步批次数；
 Ray Core与SemLoom不借未选用的Ray Data参数拒绝小容量配置，准备调用也不套用SQL reader所需的额外CPU。
