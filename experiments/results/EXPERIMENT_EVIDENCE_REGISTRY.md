@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[Ray2.56.1迭代器构造故障](diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)。
+真实CPU Data／Serve替身证实构造异常未走原生end hook，最小兜底使本图线程停止；unknown和原MemoryError保留，owner仍负责最终退出。
+68项单测及独立1项显式CPU实库回归通过，原件留仓外、最终Ray进程清单为空；无模型／GPU或旧来源资格外推。
+
 2026-10-15：[常驻query trace归档边界](diagnostics/lotus_observation_modes_20261012/README.md#persistent-query-archive)。
 固定331源码的64×120合成已结束记录／实际asyncio复现保留7,680行、累计复制249,600行；按query归档后累计仅复制7,680行，
 unknown／未结束责任及失败证据保持。68项本地定向通过、4项条件跳过；原始失败及复现留仓外，无新增模型／GPU，不归因旧延迟。

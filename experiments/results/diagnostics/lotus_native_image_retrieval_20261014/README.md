@@ -508,3 +508,29 @@ P99／P99.99保持空值，不据1／2个样本排名。IMLane图像UDF尚无已
 离线公开复算通过新增39矩阵／28查询／4个既有数组，旧96查询及PNG候选30矩阵保持；417／423份实测源码逐Git blob及75／145成员原件包SHA核对通过。实际模型资格仍分别绑定`460d3870`和`17ac2aeb`，不改标为整棵集成树已运行。
 
 本地确定性／CPU数据检查224项通过，14项受实际库／显式资格条件限制而跳过；首轮基础Python缺pandas的8项失败已保留，复用现有环境后通过，未为此修改源码。上述本地项不与服务器193＋4、247＋31相加，本次未重跑服务器SDK、模型或GPU。
+
+<a id="ray-iterator-construction"></a>
+## Ray迭代器构造失败的图清理边界（2026-10-15）
+
+对固定Ray2.56.1实际安装源码核查：`DataIterator._iter_batches`取得executor后，
+`_create_batch_iterator`仍位于end-hook的try/finally之前；正常EOF、early close和开始迭代后error
+已由`_on_iteration_end(executor)`执行`shutdown(force=True)`。关闭构造失败后已结束的generator不能补上该hook。
+本地复用已有隔离SDK，只读核对Ray2.56.1／Arrow24.0.0／NumPy1.26.4；未改环境或下载模型。
+
+真实CPU注入通过production `RayServeClipExecutor._embed_batch`和实际Ray Data／Serve CPU替身运行：
+取得executor且第二个服务调用已活跃时，让实际`BatchIterator`构造抛MemoryError。
+修前end hook为0、图`_shutdown=False`且线程仍活；owner原本已保留unknown、拒绝复用，最终删除自有应用并退出runtime。
+修后仅在本图明确`_shutdown is False`时补一次force shutdown，返回错误前图线程已停止；
+MemoryError仍为原对象，服务结果unknown不清零，owner仍拒复用并最终退出，未触碰foreign runtime。
+这证明CPU图级清理缺口，不证明实际GPU泄漏或模型停止已获确认。
+
+68项单测通过，另有1项显式`SEMLOOM_NATIVE_CALL_TEST=1`真实Ray CPU回归通过；正常已shutdown路径
+不重复关闭、兜底失败的次错和未知状态分别覆盖。真实Serve对比声明4 CPU／0 GPU，条件回归声明2 CPU／0 GPU；
+逻辑CPU声明不代表物理隔离。最终只读Ray进程清单为空，模型／GPU／服务器运行均0。
+未选择实库时新增CPU回归明确跳过，不计为通过；首次指定resident环境缺Ray的核查失败保留，随后沿I已有SDK执行。
+
+原件运行标识 `owner-boundaries-20261015/ray`：修前／修后JSON、完整方法摘录、注入脚本、CPU preflight、
+单测／实库日志及出生与退出清单均在任务仓外保留，通过本次交接清单取回。
+`ray/provenance-and-exit.json` SHA-256为`f9f15df956a2fbb5c5b206b530563f313a4652275a17bd9cd4a3e1c00cbb77de`，
+其中固定实测源码与原件逐项摘要；按该运行标识向项目维护者取得本次交接保全包。
+既有CLIP／GPU资格仍绑定其原源码；本修复不扩展混合cache支持，不改默认资格模式，也不新增性能结论。

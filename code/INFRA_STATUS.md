@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[Ray迭代器构造失败清理](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)
+在固定Ray2.56.1真实CPU图确认取得executor后的构造缺口，并只补尚未shutdown的本图；正常关闭不重复。
+68项单测及1项显式实库CPU回归通过；unknown／拒复用及owner最终清理保持，无模型／GPU泄漏或性能结论。
+
 2026-10-15：[常驻query trace归档](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md#persistent-query-archive)
 改为按query复制并在双份持久写出确认后回收；未结束／unknown及失败证据保留，owner和连接池继续复用。
 68项定向检查通过、4项供应商实库条件跳过；合成历史检查只支持已归档历史不再累积扫描／复制，不作模型性能结论。

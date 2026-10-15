@@ -239,6 +239,15 @@ class RayServeClipExecutor:
                         error = exc
                     else:
                         error.add_note("Data iterator close also failed: " + type(exc).__name__)
+            if error is not None:
+                executor = getattr(data, "_current_executor", None)
+                # Ray 2.56.1 constructs BatchIterator before its end-hook finally.
+                # Only cover that gap; native iteration cleanup already shuts down.
+                if executor is not None and getattr(executor, "_shutdown", None) is False:
+                    try:
+                        executor.shutdown(force=True)
+                    except BaseException as exc:
+                        error.add_note("Data graph shutdown also failed: " + type(exc).__name__)
         if error is not None:
             raise error
         self._unconfirmed_work = False

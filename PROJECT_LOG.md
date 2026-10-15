@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：补 Ray Data 构造失败的本图清理
+
+固定Ray2.56.1真实CPU源码与注入确认，BatchIterator构造失败发生于原生end-hook保护之前。
+Serve executor在异常且本图明确未shutdown时补一次force shutdown，保留原异常、unknown、拒复用和owner最终清理。
+68项单测与1项显式CPU实库回归通过；真实Data／Serve替身前后证据和首次环境失败留仓外，最终Ray进程清单为空。
+[同题说明](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)限定为CPU图级边界，无模型／GPU或新增性能结论。
+
 ## 2026-10-15：常驻 owner 按 query 归档 trace
 
 复现331源码按全历史等待／复制的增长，改为query索引与独立未结束集合；私有query文件和owner归档均持久写出后才回收。
