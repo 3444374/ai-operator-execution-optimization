@@ -1,12 +1,13 @@
 """Native-call diagnostic contracts using vendor API doubles and no models."""
 from contextlib import contextmanager
+import asyncio
 import json
 import os
 import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from src.baselines.text.frameworks import native_calls as native
 from src.experiments import execution_timing
@@ -107,6 +108,74 @@ def graph_rows(backend, control):
 
 
 class NativeCallDetailedTimingTests(unittest.TestCase):
+    def test_daft_execution_error_precedes_close_failure_with_timing_on_or_off(self):
+        for enabled in (False, True):
+            execution, closing = ValueError('fixture execution'), OSError('fixture close')
+            with self.subTest(enabled=enabled), observations(enabled), \
+                    tracked_graph('daft', records := {}, close_failure=closing), \
+                    patch.object(native, '_request', AsyncMock(side_effect=execution)):
+                with self.assertRaises(ValueError) as caught:
+                    list(graph_rows('daft', native._GraphControl()))
+                self.assertIs(caught.exception, execution)
+                self.assertIn('OSError', '\n'.join(execution.__notes__))
+                self.assertEqual(records['closes'], ['iterator.close'])
+                self.assertFalse(native._DAFT_CONTROLS)
+
+    def test_daft_setup_failure_releases_registration_with_timing_on_or_off(self):
+        for enabled in (False, True):
+            for stage in ('decorator', 'expression', 'iterator_open'):
+                setup = ValueError('fixture ' + stage + ' setup')
+                with self.subTest(enabled=enabled, stage=stage), observations(enabled), daft_graph({}):
+                    module = sys.modules['daft']
+                    original = module.from_pydict
+                    def failing_open(values):
+                        frame = original(values)
+                        frame.iter_rows = Mock(side_effect=setup)
+                        return frame
+                    target, name = (module.func, 'batch') if stage == 'decorator' else (
+                        module, 'col' if stage == 'expression' else 'from_pydict')
+                    with patch.object(target, name, side_effect=failing_open if stage == 'iterator_open' else setup):
+                        try:
+                            with self.assertRaises(ValueError) as caught:
+                                list(graph_rows('daft', native._GraphControl()))
+                            self.assertIs(caught.exception, setup)
+                            self.assertFalse(native._DAFT_CONTROLS)
+                        finally:
+                            native._DAFT_CONTROLS.clear()
+
+    def test_daft_failed_graph_releases_control_and_prevents_executor_reuse(self):
+        for enabled in (False, True):
+            execution = ValueError('fixture execution')
+            with self.subTest(enabled=enabled), observations(enabled), daft_graph({}), \
+                    patch.object(native, '_request', AsyncMock(side_effect=execution)):
+                executor = native.NativeCallExecutor('daft')
+                with self.assertRaises(ValueError) as caught:
+                    list(executor.iter_batch(calls()))
+                self.assertIs(caught.exception, execution)
+                self.assertFalse(native._DAFT_CONTROLS)
+                self.assertTrue(executor.last_close_report['graph_consumer_stopped'])
+                self.assertFalse(executor.last_close_report['reuse_allowed'])
+                with self.assertRaisesRegex(RuntimeError, 'unconfirmed work'):
+                    list(executor.iter_batch(calls()))
+
+    def test_daft_partial_close_and_cancellation_keep_cleanup_responsibility(self):
+        for enabled in (False, True):
+            for category in (None, InterruptedError, asyncio.CancelledError):
+                closing = OSError('fixture close')
+                primary = category('fixture cancellation') if category else None
+                with self.subTest(enabled=enabled, category=category), observations(enabled), \
+                        tracked_graph('daft', records := {}, close_failure=closing), \
+                        patch.object(native, '_request', AsyncMock(side_effect=lambda call, *_: outcome(call))):
+                    iterator = graph_rows('daft', native._GraphControl())
+                    next(iterator)
+                    with self.assertRaises(category or OSError) as caught:
+                        iterator.throw(primary) if primary else iterator.close()
+                    self.assertIs(caught.exception, primary or closing)
+                    if primary:
+                        self.assertIn('OSError', '\n'.join(primary.__notes__))
+                    self.assertEqual(records['closes'], ['iterator.close'])
+                    self.assertFalse(native._DAFT_CONTROLS)
+
     def test_on_off_preserve_vendor_graph_results_settings_and_consumer_thread_context(self):
         for backend in ('daft', 'ray-data'):
             samples = []

@@ -154,6 +154,40 @@ class DaftHttpActivityTests(unittest.TestCase):
     def setUp(self):
         os.environ['SEMLOOM_NATIVE_CALL_CASE'] = self.id()
 
+    def test_sdk_execution_failure_keeps_primary_when_iterator_close_also_fails(self):
+        import daft
+        from tests.baselines.test_native_call_detailed_timing import observations
+        from tests.baselines.test_native_calls import complete_server
+        original = daft.DataFrame.iter_rows
+        class ClosingIterator:
+            def __init__(self, rows):
+                self.rows = iter(rows)
+            def __iter__(self):
+                return self
+            def __next__(self):
+                return next(self.rows)
+            def close(self):
+                self.rows.close()
+                raise OSError('fixture SDK iterator close')
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled), observations(enabled), \
+                    complete_server(body=b'oversized') as (endpoint, requests, _), \
+                    patch.object(daft.DataFrame, 'iter_rows',
+                        lambda frame, **kwargs: ClosingIterator(original(frame, **kwargs))):
+                executor = native.NativeCallExecutor('daft')
+                with self.assertRaises(Exception) as caught:
+                    list(executor.iter_batch((call(endpoint, maximum=2),)))
+                self.assertNotIsInstance(caught.exception, OSError)
+                self.assertIn('byte allowance', str(caught.exception))
+                self.assertIn('OSError', '\n'.join(getattr(caught.exception, '__notes__', ())))
+                self.assertFalse(native._DAFT_CONTROLS)
+                self.assertFalse(executor.last_close_report['reuse_allowed'])
+                record_fixture('daft-sdk-cleanup', dict(timing_enabled=enabled,
+                    primary_type=type(caught.exception).__name__,
+                    secondary_notes=getattr(caught.exception, '__notes__', ()),
+                    actual_posts=len(requests), controls_after_close=len(native._DAFT_CONTROLS),
+                    report=executor.last_close_report))
+
     def test_prepared_calls_overlap_with_greedy_consumption_and_keep_full_results(self):
         controls = []
         control_factory = native._GraphControl
