@@ -491,9 +491,7 @@ def _daft_rows(calls, options, control):
     from daft.runners import get_or_create_runner
     if daft.__version__ != "0.7.21" or get_or_create_runner().name != "native":
         raise RuntimeError("native complete calls require Daft 0.7.21 with its native runner")
-    detailed = bool(os.environ.get('SEMLOOM_DETAILED_TIMING_DIR'))
     iterator = control_key = None
-    cleanup_started = False
     try:
         with timing_span('native_call.graph_input', backend='daft'):
             inputs = {"native_call": [_call_wire(call) for call in calls]}
@@ -513,7 +511,6 @@ def _daft_rows(calls, options, control):
                 outcome = await _request(_call_from_wire(wires.to_pylist()[0]), _daft_control(control_key))
                 return daft.Series.from_pylist([_outcome_wire(outcome)])
 
-            cleanup_started = True
             result = frame.with_column("native_outcome", complete(daft.col("native_call"))).select("native_outcome")
         if control.stopped.is_set():
             return
@@ -527,19 +524,12 @@ def _daft_rows(calls, options, control):
                     return
                 yield _outcome_from_wire(row["native_outcome"])
     finally:
-        if detailed:
-            actions = []
-            if iterator is not None:
-                actions.append(('iterator_close', iterator.close))
-            if control_key is not None:
-                actions.append(('control_release', lambda: _DAFT_CONTROLS.pop(control_key, None)))
-            _observed_graph_cleanup('daft', actions)
-        elif cleanup_started:
-            try:
-                if iterator is not None:
-                    iterator.close()
-            finally:
-                _DAFT_CONTROLS.pop(control_key, None)
+        actions = []
+        if iterator is not None:
+            actions.append(('iterator_close', iterator.close))
+        if control_key is not None:
+            actions.append(('control_release', lambda: _DAFT_CONTROLS.pop(control_key, None)))
+        _observed_graph_cleanup('daft', actions)
 
 
 def _ray_rows(calls, options, control):
