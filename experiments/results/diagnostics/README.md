@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[HSE真实身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。
+
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [main Core 与完整响应基础](main_foundation_20261015/README.md)：固定 main 底稿上的必要实现闭包、旧路径和真实 CPU Ray 检查；重复 offer 成本保持组件身份。

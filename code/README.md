@@ -9,6 +9,10 @@ Core 修正空释放后的等待代次、满额完成事件后的继续排空和
 本机重复 offer 诊断只说明 CPU 检查成本；[main 资格记录](../experiments/results/diagnostics/main_foundation_20261015/README.md)
 区分旧路径、真实 CPU Ray、未运行的 PG 图像检查及尚无模型结论的范围。
 
+固定 `bdae61bb` 的[图像基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)
+统一真实预处理身份、恢复历史 B/C 小优化及 RM 结果／已导出观测成本；当前默认、入口、最近实测与未验证项见[能力表](INFRA_STATUS.md#current-image-status)。
+本段只导航该固定分支的修正与资格；main 执行代码范围按上方 Core 基础和 [main 状态](INFRA_STATUS.md#main-与集成分支的阅读范围)核对。
+
 [待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
 `RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
 不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。
