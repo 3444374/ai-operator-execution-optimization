@@ -277,7 +277,7 @@ Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭
 
 SemLoom static/HSE候选复用loader读取时已验证的原图字节，映射绑定PIL对象、尺寸和RGB摘要；每次调用先检查整批RGB／非空／可load及摘要，再提交。变换或原地改动PIL、缺少映射、非法后缀均拒绝，不能回读路径替代当前像素。Daft默认保留PNG字节→原生RGB decode，显式候选接收RGB PIL，在executor计时内转为HWC uint8并通过公开`cast(DataType.image("RGB"))`进入原生图片列。两路共用原stateful UDF、显式`channels_last`及slow处理；未借此宣称原JPEG在其decoder下等价。输入、实际forward批次与最后完整矩阵分别验证；本入口保留整批检查后零／完整提交语义，不暗中改为流式半提交。
 
-Daft选项对应`DaftClipExecutor(native_image_input=True)`，默认False；固定版本0.7.21公开图片类型要求HWC，不能从三像素尺寸猜测CHW。PNG／RGB两路的实际解码像素与完整处理张量须分别核对，最终矩阵保持float32／独立拥有和按ID恢复。像素到Arrow图片列仍可能复制，不称零拷贝。CPU与后续少量完整LOTUS模型状态由[同题结果](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)维护，已发布九格不自动继承新模式资格。
+Daft选项对应`DaftClipExecutor(native_image_input=True)`，默认False；固定版本0.7.21公开图片类型要求HWC，不能从三像素尺寸猜测CHW。PNG／RGB两路的实际解码像素与完整处理张量须分别核对，最终矩阵保持float32／独立拥有和按ID恢复。像素到Arrow图片列仍可能复制，不称零拷贝。[固定793204cc的小规模资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)已核对12图、两轮图片／文本查询；已发布九格不自动继承新模式资格，也不将本轮外推为稳态或尾延迟结论。
 
 `model_startup_s`记录显式启动区间；Ray callable载入和Daft首次UDF延迟载入仍在实际建索引／查询／应用耗时内。细分以`model_load_scope`与实际构造事件为准，不能理解成所有模型载入都已移出应用区间。短对照和旧默认的结果、失败及恢复信息见[同题结果](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)。
 

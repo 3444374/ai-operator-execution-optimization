@@ -9,6 +9,11 @@ PNG等级1与固定HSE字节容量的[独立候选](experiments/results/diagnost
 已作为显式可选共享适配参数接纳，省略时保持原PNG默认；保留Direct／HSE最小匹配资格与完整查询观测。
 单轮应用区间约40%的降低不含启动时间，不是SemLoom独有创新，也不扩为六路径性能资格或新调度。
 
+[Daft RGB小规模接入](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)
+固定`793204cc`完成144项Linux测试、12条完整查询与15矩阵，默认PNG保留。
+连续查询统一外部场景、语义与资源，允许原生内部生命周期不同；整体性能与调度机制收益分别验证，
+本次两次重复不提供可靠尾分位、稳态或性能排名。
+
 当前开发来源为`codex/native-execution-adapters`；原Q2真实模型执行源码为`3bd53587`，新增持久计数修订的四组匹配观察仍使用该算法／适配源码。[六路径分波记录](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#single-dual-summary)已完成默认同步原Q2单卡与双卡全部位置；真实小轮保留质量不足、旧失败及各波样本，不能据此称合理调优后的扩展性或研究方法优势。
 
 本次LOTUS线的近期任务按以下顺序推进，详细量与停止条件归[同题阶段分析](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)，不再另建总计划：
@@ -27,7 +32,7 @@ PNG等级1与固定HSE字节容量的[独立候选](experiments/results/diagnost
 该次文档收敛本身没有新增模型实验或实现资格。随后[固定来源的单GPU文件CLIP复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)
 已完成已有静态／HSE／原生Ray Data的冷算子观察，全部重复和失败保留；[另窗257图补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)确认Direct/HSE逐位相同、Ray输入一致但模型返回有数值差异。批形态因果、5000图逐行等价和下游质量仍未验证，未形成方法优势、稳态最优或PG接入结论。
 
-更新时间：2026-10-14
+更新时间：2026-10-15
 
 系统名称：**SemLoom**。DB-AIEL（Database-Aware AI Execution Layer）表示其所在架构层，不作为
 代码接口或实验身份前缀；完整术语见 [`CONTEXT.md`](CONTEXT.md)。

@@ -1,8 +1,9 @@
 # 实验与机制证据台账
 
-2026-10-15：Daft显式RGB输入的本机固定SDK51项／0跳过与独立审核通过，9种尺寸实际像素及完整slow张量同旧PNG逐位相同。
-这是CPU／确定性actor证据，未继承旧模型资格；Linux及有限三格LOTUS模型验证待E文本自然完成后排队。
-接口与运行范围见[同题计划](../plans/语义系统对照.md#lotus-image-resident-queries)，实际结果继续归原图像主报告。
+2026-10-15：[Daft显式RGB输入](diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`：
+本机SDK51项、Linux144项及25个通过子测试分列且零跳过，实际像素与完整slow张量同PNG逐位相同；
+stock／Daft PNG／RGB的12条完整LOTUS查询、15矩阵与退出通过。全部PNG／RGB向量与top10逐位相同，
+图片对stock最大差0、文本`5.96046448e-8`。准备失败／未知状态保留，三模型CLI均成功；小样本不提供排名或尾分位。
 
 2026-10-15：[LOTUS图像建库后连续调用](diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`，九格180查询／189完整矩阵及实际模型出生计数已核对。原监督stdout失败仍failed，续跑只补两格；CPU只计一次，十二次实际监督调用均退出并清理。公共输入减负改善与Ray逐RM加载的负结果按当前接法解释，五次固定payload不提供可靠尾分位。
 

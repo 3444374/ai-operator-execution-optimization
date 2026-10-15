@@ -4,7 +4,9 @@
 
 从已发布`ff35f57f`建立独立分支，沿既有LOTUS RM接点增加显式Daft RGB PIL→HWC uint8→原生图片列，
 旧PNG与原stateful UDF、slow处理、资源及关闭保持。本机固定SDK51项／0跳过及独立审核通过，
-9种尺寸的实际像素和完整预处理张量逐位相同；Linux及三格12图完整LOTUS模型验证等待E文本自然完成。
+9种尺寸的实际像素和完整预处理张量逐位相同；固定`793204cc`在E完成后追加Linux144项与25个子测试／零跳过，
+三格12图完整LOTUS的12条查询／15矩阵、实际模型身份及退出通过。两包恢复保留CPU原件与仅49成员的模型增量，
+准备阶段工具断线未知与runpy调用错误分别保留，三次模型CLI均成功；[实际结果](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)不形成性能排名。
 外部场景统一为长生命周期LOTUS进程内连续独立查询，内部生命周期按原生配置记录；服务化仅另列配置，
 不将图级重建自动判错或排除主测。接口／缓存支持范围见[LOTUS说明](code/src/semantic_methods/lotus/README.md)，
 有限运行设计见[同题计划](experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
