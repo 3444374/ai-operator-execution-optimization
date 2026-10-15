@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询与完整图文请求CPU资格、许可逐文件证明及待运行的单VLM小轮分列；不作CLIP、稳态或尾分位结论。
+
+
 2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
 分列`460d3870`三格与`17ac2aeb`八格实际来源；共28查询／39完整矩阵复用已有4个数组，原件独立复核通过。
 同形状图片向量逐值同stock，文本CPU／CUDA与跨batch差异保留；实际生命周期、完整查询原值和退出按来源记录。

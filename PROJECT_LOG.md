@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-15：接入原始 SemBench Animals Q1
+
+新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和模型计划集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；单项请求超Core容量的臂明确pending，未改依赖或使用CLIP检索代替。
+
+
 ## 2026-10-15：统一普通 LOTUS 图片输入
 
 按用户要求接纳已独审的公共输入精简：RGB 后端省去 PNG 往返，字节后端优先复用仍匹配当前

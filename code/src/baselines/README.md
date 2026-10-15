@@ -1,5 +1,8 @@
 # Baseline and comparison harnesses
 
+`image/sembench_animals.py`调用固定上游Animals Q1和原SQL／聚合评价器，冻结完整目录上的SF64输入并将Species留在质量侧；[图像资格](../../../experiments/results/diagnostics/sembench_animals_20261015/README.md)与Movie和CLIP检索独立。
+
+
 [`image/frameworks/daft_clip.py`](image/frameworks/daft_clip.py)提供本地 CLIP 的原生 Daft 有状态 UDF 批次接点。
 `DaftClipExecutor.embed_batch(doc_ids, images)`默认接收稳定 ID 与 RGB PIL 图片；显式
 `input_kind="encoded_bytes"`保留原生编码文件输入。返回共享 `ImageEmbeddingResult`，完整归一化

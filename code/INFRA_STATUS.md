@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：新增[原始 SemBench Animals Q1](../experiments/results/diagnostics/sembench_animals_20261015/README.md)有限图像入口及原评价；保留当前LOTUS1.2.4身份，复用既有完整图文profile。CPU与真实模型状态由同题报告拥有，CLIP检索不替代本任务。
+
+
 2026-10-15：普通 LOTUS 图像入口按后端能力自动选择输入，移除历史 native／PNG 调参开关。
 Direct／Ray／Daft／Serve 默认 RGB；SemLoom 核对当前像素后复用源字节，不可复用时无损 PNG1 回退。
 Ray fused／staged 和 Daft 实际 encoded 文件输入仍保留。独立源码／测试审核及接纳后185项回归通过，
