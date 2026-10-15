@@ -22,7 +22,7 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --
 ## Animals 原版图文 Q1
 
 `experiments/run_sembench_animals.py`要求`--checkout`、`--manifest`和`--manifest-digest`。
-只读`--preflight`核对固定 SemBench、原始图像发生项／像素身份与库版本，模型调用为0。
+只读`--preflight`核对固定 SemBench及原始图像发生项／像素身份，模型调用为0；执行入口另核验固定SDK版本与源码。
 `--execute`还要求`--model`、`--tokenizer`、新的`--output`、显式`--observation-mode`、
 `--lease-root`和`--repository-commit`；`--arm`选择`lotus-native`、`daft`、`ray-data`或`semloom`。
 服务由调用方准备。入口正常获取共享 lease，`recover_stale=False`；已有外层服务 owner 持 lease 时直接调用
