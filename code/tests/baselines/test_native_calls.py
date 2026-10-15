@@ -392,6 +392,30 @@ class RayDataHttpActivityTests(unittest.TestCase):
                 timing_scope='processor application, full iterator consumption and cleanup; source/method/runtime preparation excluded',
                 observation_scope='localhost server handlers through complete response write'))
 
+        with complete_server(body=body, delay=.02) as (endpoint, calls, raw):
+            native_calls = tuple(NativeCall(row['call_id'], i, row['payload'], endpoint,
+                (('Content-Type', 'application/json'),), 5) for i, row in enumerate(prepared))
+            executor = NativeCallExecutor('ray-data', NativeGraphOptions(concurrency=2,
+                ray_actors=1, ray_async_batches_per_actor=2, ray_batch_rows=4, source_blocks=4))
+            started = time.perf_counter()
+            try:
+                outcomes = tuple(executor.iter_batch(native_calls))
+            finally:
+                executor.close()
+            elapsed = time.perf_counter() - started
+            self.assertEqual({(o.call_id, o.row_id) for o in outcomes},
+                             {(call.call_id, call.row_id) for call in native_calls})
+            self.assertTrue(all(o.response.status_code == 200 and o.response.body == raw for o in outcomes))
+            self.assertEqual((len(calls), calls.active), (16, 0))
+            self.assertEqual(sorted(payload for _, payload, _ in calls),
+                             sorted(call.payload for call in native_calls))
+            self.assertTrue(executor.last_close_report['clean'])
+            record_fixture('complete-call-ray-http', dict(actual_posts=len(calls),
+                peak_active=calls.peak, execution_seconds=elapsed, report=executor.last_close_report,
+                same_prepared_payloads=True, complete_response_bytes_preserved=True,
+                timing_scope='NativeCallExecutor submission, full outcome consumption and cleanup; source/method/runtime preparation excluded',
+                observation_scope='localhost server handlers through complete response write'))
+
 
 @unittest.skipUnless(ENABLED, "actual pinned Ray Core reference validation is explicitly opt-in")
 class RayCoreReferenceTests(NativeGraphTests):

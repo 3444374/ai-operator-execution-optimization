@@ -21,6 +21,8 @@ class NativeRayConfigurationTests(unittest.TestCase):
         planner.DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY = 2
         def from_items(rows, **kwargs):
             recorded['source'] = kwargs
+            recorded['source_rows'] = len(rows)
+            recorded['source_calls'] = recorded.get('source_calls', 0) + 1
             return rows
         data.from_items = from_items
         def config(**kwargs):
@@ -30,6 +32,7 @@ class NativeRayConfigurationTests(unittest.TestCase):
         class Processor:
             stages = {'http': SimpleNamespace(map_batches_kwargs={})}
             def __call__(self, dataset):
+                recorded['processor_calls'] = recorded.get('processor_calls', 0) + 1
                 recorded['stage'] = dict(self.stages['http'].map_batches_kwargs)
                 return SimpleNamespace(iter_rows=lambda: iter(()))
         llm.build_processor = lambda *args, **kwargs: Processor()
@@ -45,6 +48,7 @@ class NativeRayConfigurationTests(unittest.TestCase):
         self.assertEqual(lower['config']['concurrency'], (2,2))
         self.assertEqual(lower['config']['batch_size'], 1)
         self.assertEqual(lower['source']['override_num_blocks'], 4)
+        self.assertEqual((lower['source_rows'], lower['source_calls'], lower['processor_calls']), (8, 1, 1))
         self.assertEqual(lower['stage']['max_concurrency'], 1)
 
     def test_http_allowance_is_independent_of_serial_rows_in_each_batch(self):
