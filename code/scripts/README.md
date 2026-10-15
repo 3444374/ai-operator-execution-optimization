@@ -1,5 +1,13 @@
 # SemLoom 脚本入口
 
+## 可选 vLLM 部署资源分配
+
+`services/launch_vllm_with_identity.py`可用`--resource-config /path/to/private/resources.json`指定
+`gpu_count`（`"auto"`或显式数量）、`allowed_gpus`完整UUID列表及`tensor_parallel_size`。
+只使用部署分配与继承mask的交集，冻结UUID后再启动原生vLLM；不接收其他拓扑覆盖。
+未提供此选项时保持既有launcher／sidecar路径。声明映射与live进程／GPU证明分别记录；
+[配置、固定来源和单卡实际资格](../../experiments/results/diagnostics/main_service_auto_20261015/README.md)不外推多GPU或性能。
+
 ## LOTUS 原版 Movie 四臂
 
 `experiments/run_sembench_lotus_queries.py --config CONFIG`提供互斥的`--data-preflight`、

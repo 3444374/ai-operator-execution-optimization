@@ -4,6 +4,8 @@
 
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
+[main可选vLLM部署资源](main_service_auto_20261015/README.md)：四生产文件、严格身份reader和固定候选单卡auto／显式1实际服务资格，原查询及多卡另验。
+
 [固定main原Movie／Animals实测](main_queries_20261015/README.md)：同一发布源码的完整查询、逐行质量、请求观察及资源退出；模型不足和单次边界分列。
 
 [main LOTUS 文本接入](main_lotus_text_20261015/README.md)：四个执行owner、原Movie查询与评价、固定来源CPU/SDK和原数据预检；真实模型与最终main组合另行资格。

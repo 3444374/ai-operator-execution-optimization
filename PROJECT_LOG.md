@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-15：收敛可选 vLLM 部署资源闭包
+
+固定候选`7b20feb5`只引入部署GPU解析、原生vLLM资源配置、launcher及严格reader兼容，保留旧默认和现有前端。
+[本批来源与资格](experiments/results/diagnostics/main_service_auto_20261015/README.md)记录Mac／Linux各30项、官方parser，以及auto／显式单卡12个实际原SDK请求和物理退出；
+无CLIP／PZ／其他平台依赖，不给多卡或性能结论。新main完整原查询在合并后单独固定与复验。
+
 ## 2026-10-15：固定 main 完成原 Movie／Animals 模型检查
 
 main`464de926`四臂16完整查询、9216实际模型POST全部返回，原SDK／逐行关联与官方质量复算完成，资源峰值及正常lease／物理退出通过。

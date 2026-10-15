@@ -34,6 +34,7 @@
 
 | 主题 | 入口 |
 |---|---|
+| 可选 vLLM 部署资源 | [命令](code/scripts/README.md#可选-vllm-部署资源分配)、[来源与单卡资格](experiments/results/diagnostics/main_service_auto_20261015/README.md) |
 | LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals闭包](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)、[固定main实际模型](experiments/results/diagnostics/main_queries_20261015/README.md) |
 | 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
 | 就绪窗口的准备粒度 | [本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)、[实施计划](experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03) |

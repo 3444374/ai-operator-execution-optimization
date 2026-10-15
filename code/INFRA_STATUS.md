@@ -15,6 +15,13 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 边界、固定来源影响核查及高精度参照见[所属模块](src/observability/README.md#repeat-mean-confidence)。
 不改变历史观测或重算旧摘要，也不引入集成分支的新接入、策略或模型资格。
 
+## 可选 vLLM 资源分配
+
+现有identity launcher可选`--resource-config`，在明确部署分配内解析auto／数量、TP与原生DP，模型初始化前冻结UUID。
+旧默认和八字段sidecar保持；当前严格reader同时接受成对资源字段，校验声明及live argv，保留PID／出生／Python／模型检查。
+[固定候选资格](../experiments/results/diagnostics/main_service_auto_20261015/README.md)为`7b20feb5`的Mac／Linux各30项、官方parser及单4090 auto／显式1各6个原SDK请求；
+物理自有GPU绑定、退出与正常lease已核。仅服务接入成熟，不包含CLIP/PZ/新平台；合并后的新main原查询另验，多卡／Serve仍pending，无加速声明。
+
 ## LOTUS 文本四臂
 
 [当前模块](src/semantic_methods/lotus/README.md)已提供完整 uncached batch 的原 SDK／Daft／Ray Data／SemLoom 接点，

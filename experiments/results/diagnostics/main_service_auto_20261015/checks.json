@@ -1,0 +1,138 @@
+{
+  "schema": "semloom.main_service_auto.v1",
+  "implementation_source": "7b20feb507f64af27354b1d4c39c0606c7160725",
+  "base_main": "464de926cb85c2bc526a9402442776b8d60db966",
+  "upstream_service_source": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
+  "baseline_cpu_source": "7bac93ada893dd978b21d7935edd0bdb48d5980d",
+  "scope": "optional single-node native vLLM service allocation and native LOTUS SDK health; not SemBench or performance qualification",
+  "production_files": [
+    "code/src/infrastructure/gpu_allocation.py",
+    "code/src/serving/vllm_resources.py",
+    "code/scripts/services/launch_vllm_with_identity.py",
+    "code/src/infrastructure/vllm_preflight.py"
+  ],
+  "candidate_file_hashes": [
+    {
+      "path": "code/src/infrastructure/gpu_allocation.py",
+      "bytes": 5571,
+      "sha256": "3f0fd02d756aeb7d286673b314a622cda3b9a5e68db7ef1a62dc77f464db4f19"
+    },
+    {
+      "path": "code/src/serving/vllm_resources.py",
+      "bytes": 10457,
+      "sha256": "7708a7aa9cb31c45b3fe773e44f926b9df49518854dffcf00fb37643a4ba702b"
+    },
+    {
+      "path": "code/scripts/services/launch_vllm_with_identity.py",
+      "bytes": 3843,
+      "sha256": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173"
+    },
+    {
+      "path": "code/src/infrastructure/vllm_preflight.py",
+      "bytes": 25723,
+      "sha256": "d347c431e64b8b71ad009dc020962657fcbdb04be4579542207b88e1a9c77482"
+    },
+    {
+      "path": "code/tests/infrastructure/test_gpu_allocation.py",
+      "bytes": 8491,
+      "sha256": "4e5413174ba96878fe3db3e5a1ebc1e8028319b596e0247c190a2a1b66d30d19"
+    },
+    {
+      "path": "code/tests/infrastructure/test_vllm_resource_identity.py",
+      "bytes": 6520,
+      "sha256": "22165147d21cbbe2fe2a8f07c2aba66c75123cccc4b8b63e1492ddfa2a9005c0"
+    },
+    {
+      "path": "code/tests/infrastructure/test_vllm_preflight.py",
+      "bytes": 23549,
+      "sha256": "1d0ee68e60c75b771134f73a397a1ad11120f2c734c8be8b747c7882dc9561e9"
+    }
+  ],
+  "CPU": {
+    "mac_passed": 30,
+    "linux_passed": 30,
+    "skips": 0,
+    "official_vllm_0251_parser_cases": 2,
+    "parser_gpu_initializations": 0,
+    "localhost_fixture_posts": 6,
+    "localhost_model_calls": 0,
+    "physical_resource_guard_tests": 5
+  },
+  "run_id": "main-auto-service-probe-r1",
+  "actual_model_posts": 12,
+  "returned_model_posts": 12,
+  "unconfirmed_model_attempts": 0,
+  "http_errors": [],
+  "rows": [
+    {
+      "mode": "auto",
+      "actual_posts": 6,
+      "complete_status200_responses": 6,
+      "expected_OK_outputs": 6,
+      "http_peak": 4,
+      "vllm_request_success": 6,
+      "startup_s": 57.02704076003283,
+      "service_exit": {
+        "returncode": 0,
+        "remaining_owned": []
+      },
+      "resources_requested_gpu_count": "auto",
+      "resolved_count": 1,
+      "tensor_parallel_size": 1,
+      "data_parallel_size": 1,
+      "physical_scope": "one explicitly allocated GPU UUID; live owned PID/start and NVML UUID match",
+      "physical_gpu_uuid_sha256": "bba105f761eb7a01b4b186a194e987bb033abfc19f4d66847fe505f05ea1520a"
+    },
+    {
+      "mode": "explicit1",
+      "actual_posts": 6,
+      "complete_status200_responses": 6,
+      "expected_OK_outputs": 6,
+      "http_peak": 4,
+      "vllm_request_success": 6,
+      "startup_s": 55.64547675894573,
+      "service_exit": {
+        "returncode": 0,
+        "remaining_owned": []
+      },
+      "resources_requested_gpu_count": 1,
+      "resolved_count": 1,
+      "tensor_parallel_size": 1,
+      "data_parallel_size": 1,
+      "physical_scope": "one explicitly allocated GPU UUID; live owned PID/start and NVML UUID match",
+      "physical_gpu_uuid_sha256": "bba105f761eb7a01b4b186a194e987bb033abfc19f4d66847fe505f05ea1520a"
+    }
+  ],
+  "actual_request_values_multiset_equal": true,
+  "outputs_equal": true,
+  "multi_gpu_physical_qualification": false,
+  "performance_qualification": false,
+  "cleanup": {
+    "allocations_closed": true,
+    "owned_before": [],
+    "forced": [],
+    "survivors": [],
+    "actions": [],
+    "callback_seconds": 0.0023496802896261215,
+    "errors": [],
+    "inventory_error": null,
+    "callback_wait_upper_bound_s": 8.0,
+    "observer_stopped": true
+  },
+  "lease_released": true,
+  "raw_archive": {
+    "run_id": "main-auto-service-probe-r1",
+    "source_commit": "7b20feb507f64af27354b1d4c39c0606c7160725",
+    "bytes": 146112,
+    "sha256": "cc0ea63e88e36a41a1bf6f3393b87355dfa7ed40cbb6c99efbd82b3a46cf7556",
+    "manifest_files": 49,
+    "independent_copy_verified": true,
+    "all_files_verified": 50
+  },
+  "postmerge_original_query_qualification": "pending new published main, 1472 planned model requests; source464 results kept separate",
+  "independent_reviews": {
+    "standards_P1P2": 0,
+    "spec_P1P2": 0,
+    "scope": "code, CPU checks and candidate real single-card service evidence; original queries pending new main"
+  }
+}
