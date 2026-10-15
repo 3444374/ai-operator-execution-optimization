@@ -262,6 +262,34 @@ Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭
 
 ## 连续查询观测
 
+### Ray Data 与 Ray Serve 的独立配置
+
+[`RayServeClipExecutor`](../../baselines/image/frameworks/ray_serve_clip.py)提供
+`LOTUS + Ray Data + Ray Serve 常驻 CLIP`，沿原 RM、索引与查询方法接入。
+普通同步[`map_batches`工作负载函数](../../serving/ray_data_clip_client.py)只持公开 deployment handle，
+每个实际批次等待一次完整 NumPy 返回；图由 Data 调度，模型副本、路由与队列由 Serve 管理。
+不使用 LLM 流式 Processor，也不引入 SemLoom 调度池。原 Ray 图内模型继续是独立可用配置。
+
+使用既有`--arm external --executor-factory src.baselines.image.frameworks.ray_serve_clip:RayServeClipExecutor`
+和仓外`--executor-config`。工厂参数为`model_path`、`processor_path`、`ray_temp_dir`，可选
+`device='cuda'`、`dtype='float32'`、`batch_size=32`、`max_batch_rows=5000`、`request_timeout_s=60`。
+该 executor 自动声明 RGB PIL 输入，external 不传旧`--native-image-input`。
+权重／有效处理器内容摘要和实际软件版本仍由现有 CLI 核对。
+
+固定 Ray2.56.1，使用[普通函数任务与公开参数](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/data/dataset.py#L530-L558)、
+[可序列化 handle](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/serve/handle.py#L331-L342)和
+[同步完整返回](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/serve/handle.py#L562-L589)。
+Data task CPU1／GPU0，单 Serve 副本 CPU1／GPU1，独占 runtime 声明 CPU4／GPU1；
+Torch 两线程池均为1。控制器与 driver 实际资源另计，逻辑 CPU 声明不是物理 CPU 硬限制。
+worker 可重建自己的 handle/router，只有服务模型拟跨图保留，须以实际 UID／PID／调用计数证明。
+
+查询内 RGB 转换、建图、序列化、排队、RPC、原 slow 处理、FP32 模型与完整恢复均进入 LOTUS 时间；
+服务初始化和最终退出另报。每条查询完整消费并关闭自己的迭代器，健康服务仅在 owner 退出时删除。
+只删除本次唯一应用并关闭自有 runtime；构造半途失败也执行清理。
+Data task 重试为0、`retried_map_errors=False`；Serve 仍可能原生重新路由／重建，不能据此保证推理恰好执行一次。
+任何错误、超时或实例身份变化都禁止继续复用；cancel／逻辑删除不代替物理退出核查。
+真实 CPU SDK 与完整 LOTUS 模型资格分别记录，服务化收益与调度机制收益分别论证。
+
 显式`--query-repeats N`在同一native owner／FaissVS内重复原有有序查询；默认1保持原query ID，重复时增加source_query_id、repeat_index与query_ordinal。`native_call_return_elapsed_s`紧接原生`sem_search`返回采样，失败时为null；旧elapsed_s保留输出检查和失败耗时，原生实际加载／建图／传输不会扣除。
 
 `--observe-model-reuse`仅用于短诊断，使用实际模型UUID、PID、Linux进程start及整数计数。stock观测vision/text子模块，其他图片路径观测完整GPU模型调用至CPU NumPy返回；阶段快照与Ray批次标量采用不同取得方式，缺项不推定复用。模型构造每实例写一次私有记录；默认关闭，观测不持有模型强引用，失败／取消后不等待忙碌worker的观测RPC而继续关闭。

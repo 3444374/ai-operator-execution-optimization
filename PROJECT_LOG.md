@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-15：增加 LOTUS 的 Ray Data 与 Serve 组合配置
+
+按用户授权增加独立常驻 CLIP 配置，普通 Data 同步函数调用公开 Serve handle，保留原图内模型。
+复用 slow processor、FP32 kernel、完整矩阵检查及原 LOTUS 方法，不强接 LLM 流式 Processor。
+创建独占 runtime 和唯一应用，查询只持本次图／缓冲；失败禁止继续复用，服务退出另核物理进程。
+独立源码／fixture 审核与真实 CPU 接口检查已完成，首轮非法构造重试参数失败保留并改为合法值；
+生产 owner 的实库检查与三格12图库模型检查分别接续，不把 CPU 替身作为数值或性能结果。
+用户追加的输入自动选择与无用代码清理在新配置跑通后处理，保留仍有意义的原生执行配置及全部旧结果。
+实现与有限检查设计见[接入说明](code/src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)及
+[同题计划](experiments/plans/语义系统对照.md#ray-data-与-serve-组合配置)。
+
 ## 2026-10-15：补Daft原生RGB输入与有限资格准备
 
 从已发布`ff35f57f`建立独立分支，沿既有LOTUS RM接点增加显式Daft RGB PIL→HWC uint8→原生图片列，

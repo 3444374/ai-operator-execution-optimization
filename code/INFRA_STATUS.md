@@ -1,5 +1,10 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：新增[LOTUS＋Ray Data＋Ray Serve 常驻 CLIP 配置](src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)，
+复用原 RM／索引／检索与 slow／FP32 模型。Data 同步任务调用公开非流式 handle，模型归唯一 Serve 应用；
+旧图内模型配置保留。独立 fixture 与真实 CPU 路由检查通过，完整 LOTUS／真实 CLIP 及物理退出检查尚待执行；
+不将计划或 CPU 替身结果写成模型性能结论。
+
 2026-10-15：[Daft显式RGB输入资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成。
 本机SDK51项、Linux144项及25个通过子测试分列且零跳过；12图库实际像素／完整slow张量通过。
 stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB全部矩阵与top10逐位相同。
