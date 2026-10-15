@@ -1,8 +1,10 @@
 # SemLoom Code
 
-[LOTUS 文本模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
+[LOTUS 完整请求模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
 [Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。
-固定依赖、实际 CPU／SDK 检查和未验证的模型／图像／PZ范围统一见[本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
+[Animals 图文 Q1](scripts/README.md#animals-原版图文-q1)复用这四个执行 owner，额外显式声明原图请求容量。
+固定来源与实际检查分别见[Movie](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)和
+[Animals](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)；模型资格与其他图像／PZ实现分列。
 
 
 ## Core 与完整响应基础

@@ -1,0 +1,149 @@
+{
+  "schema": "semloom.main_animals_qualification.v1",
+  "base": "84203e0d3e3ca5170866b081ffb6b63b6e0f76ec",
+  "upstream_code": "a0d1f6acdc50ebe190dbe605732be770a6b55b28",
+  "accepted_baseline": "7a4c1846fa8c973225d2fe894ad4f0ab11deded1",
+  "initial_code": "0cbb6aa4162dd8a48b278235ab84ace1eb4cab7c",
+  "review_fixed_code": "cf58d4426de3e4c0d60b99828fb9761dd330aa2e",
+  "production_python_files": 9,
+  "test_python_files": 3,
+  "initial_runtime_inventory": {
+    "files": 776,
+    "mismatch": 0,
+    "extra": 0
+  },
+  "initial": [
+    {
+      "stage": "preflight",
+      "exit_code": 0,
+      "seconds": 17.34679102897644,
+      "log_sha256": "83af75dc2268c72ca1e52c6d7055df0882d5769297113ebcc8eb5adf27a1f07c",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "provider-defaults",
+      "exit_code": 0,
+      "seconds": 11.336625099182129,
+      "log_sha256": "df212120fbddc8e128fb9248f18d52d60e74e3237e461c84a05257357803cbba",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "sdk-and-inputs",
+      "exit_code": 0,
+      "seconds": 37.338239908218384,
+      "log_sha256": "388fb456941ad74174e8313cf8d20bf8ca937dc36f7ffb89b1d3b3b0c3d9523d",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "animals-actual-libraries",
+      "exit_code": 0,
+      "seconds": 105.97772741317749,
+      "log_sha256": "6d509376c571a03b8d7b2b79689c368b17eb71fb6ef25e3a6270a2205d302965",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "large-native-ray",
+      "exit_code": 0,
+      "seconds": 18.701471090316772,
+      "log_sha256": "461a2fbd3c1d3ea1533a804fb8cd0e7f8bb01a5a5c1d4dbbb5d0199b673966ad",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "movie-text-actual-libraries",
+      "exit_code": 1,
+      "seconds": 12.28683352470398,
+      "log_sha256": "ff4132b172b2217b5ef1e00549c2c24b0fc200f1d716f8afb0bf79e936f3ee1a",
+      "gpu_count": 0,
+      "model_calls": 0
+    }
+  ],
+  "affected_recheck": [
+    {
+      "stage": "animals-fixed",
+      "exit_code": 0,
+      "seconds": 90.39539957046509,
+      "log_sha256": "3981b5cc0d82bd156fe8ae925c1bbef757a2b1cd83ca2610996d889f14741da2",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "movie-text-0",
+      "exit_code": 0,
+      "seconds": 56.279242515563965,
+      "log_sha256": "dc6280b94fd72ad920331b6c8d69410fc4c2c4a7e54bb61aae5e77c8d576fd2c",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "movie-text-1",
+      "exit_code": 0,
+      "seconds": 34.58214092254639,
+      "log_sha256": "075b1cdc4e6927485c5e8b62cd7a1df410408b0feb717d9351083e819836bf27",
+      "gpu_count": 0,
+      "model_calls": 0
+    }
+  ],
+  "unittest_counts": {
+    "logs/provider-defaults.log": {
+      "total": 202,
+      "outcome": "OK (skipped=14)"
+    },
+    "logs/sdk-and-inputs.log": {
+      "total": 81,
+      "outcome": "OK (skipped=4)"
+    },
+    "logs/animals-actual-libraries.log": {
+      "total": 13,
+      "outcome": "OK"
+    },
+    "logs/large-native-ray.log": {
+      "total": 10,
+      "outcome": "OK"
+    },
+    "logs/movie-text-actual-libraries.log": {
+      "total": 2,
+      "outcome": "FAILED (failures=1)"
+    },
+    "review-r1/animals-fixed.log": {
+      "total": 14,
+      "outcome": "OK"
+    },
+    "review-r1/movie-text-0.log": {
+      "total": 2,
+      "outcome": "OK"
+    },
+    "review-r1/movie-text-1.log": {
+      "total": 2,
+      "outcome": "OK"
+    }
+  },
+  "counts_overlap_not_added": true,
+  "standards_P1P2": 0,
+  "spec_P1P2": 0,
+  "closed_spec_finding": "Late unavailable accounting preserves the primary error, summary and unavailable count; no refund or reinitialization.",
+  "gpu_count": 0,
+  "model_calls": 0,
+  "old_source_model_evidence_not_adopted": true,
+  "raw_archive": {
+    "run_id": "main-animals-cpu-20261015",
+    "sha256": "8ff8eaa2995976b67d286c726e792c3113fb56a2b3c58402980de5aae27d0464",
+    "bytes": 245876,
+    "files": 330,
+    "preservation": "immutable execution-host archive and SHA-verified independent Mac copy; full raw logs and fixtures available from maintainer"
+  },
+  "pending": [
+    "fixed published main actual Movie/Animals model quality and descriptive timings",
+    "conditions behind opt-in PG and image skips",
+    "stable repeated performance and query tails"
+  ],
+  "excluded": [
+    "wholesale baseline merge",
+    "PZ/IMLane/CLIP/HSE/RM/index",
+    "debug/runtime scripts and raw artifacts"
+  ]
+}

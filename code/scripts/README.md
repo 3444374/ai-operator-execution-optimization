@@ -19,6 +19,22 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --
 缩小 arm／query／repeat 时同步重算，不能把软件测试样本替换成原数据却沿用原资格。
 接口、owner、容量与 completion 监督边界见[LOTUS 模块](../src/semantic_methods/lotus/README.md)。
 
+## Animals 原版图文 Q1
+
+`experiments/run_sembench_animals.py`要求`--checkout`、`--manifest`和`--manifest-digest`。
+只读`--preflight`核对固定 SemBench、原始图像发生项／像素身份与库版本，模型调用为0。
+`--execute`还要求`--model`、`--tokenizer`、新的`--output`、显式`--observation-mode`、
+`--lease-root`和`--repository-commit`；`--arm`选择`lotus-native`、`daft`、`ray-data`或`semloom`。
+服务由调用方准备。入口正常获取共享 lease，`recover_stale=False`；已有外层服务 owner 持 lease 时直接调用
+`src.experiments.sembench_animals.run_query`，避免嵌套抢锁。健康查询不设累计 wall 截止，调用方仍须提供有限故障、取消和清理监督。
+
+SemLoom 图文路径另须显式给出`--core-request-bytes`、`--core-input-bytes`、
+`--core-ray-window-bytes`和`--core-ray-object-bytes`；原64图选择分别为4194304、8388608、4194328、8388608。
+Ray臂使用新的短`--ray-temp-root`。模型逐请求超时有限且不超过120秒，默认并发4、max_tokens8192；
+重试与结果缓存关闭，实际请求／完整响应／逐行判定、COUNT、原评价及观测HTTP峰值共同保存。
+资源失败保留质量与结果，账本收尾不可读时计数标为unavailable，不覆盖原查询异常或重开预算。
+[实际资格与适用边界](../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
+
 ## gateway多查询干扰诊断
 
 `profiling/gateway_isolation_probe.py --output /path/to/new-private-probe`运行真实UDS登记/消息槽、共享Core与Map循环，

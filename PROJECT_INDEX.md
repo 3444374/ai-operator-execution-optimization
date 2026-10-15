@@ -34,7 +34,7 @@
 
 | 主题 | 入口 |
 |---|---|
-| LOTUS 文本四臂与原版 Movie | [模块/API](code/src/semantic_methods/lotus/README.md)、[脚本入口](code/scripts/README.md#lotus-原版-movie-四臂)、[main资格](experiments/results/diagnostics/main_lotus_text_20261015/README.md) |
+| LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals资格](experiments/results/diagnostics/main_lotus_animals_20261015/README.md) |
 | 实验记账组件 | [小批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md) |
 | 就绪窗口的准备粒度 | [本地原型与反例](experiments/results/diagnostics/ready_window_coalescing_20261003/README.md)、[实施计划](experiments/plans/查询调优.md#就绪窗口聚合的本地尝试2026-10-03) |
 | 完整流程与场景分层 | [应用/工程/理论分析](docs/research/优化方法依据.md#query-specific-execution-opportunities)、[物理需求与准备时机](docs/research/优化方法依据.md#heterogeneous-demand-supplement)、[共享准备切片](experiments/plans/数据组织.md#scene-preparation-pilot) |

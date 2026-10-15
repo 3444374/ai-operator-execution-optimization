@@ -1,4 +1,4 @@
-# LOTUS 文本执行接点
+# LOTUS 完整请求执行接点
 
 本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，
 只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
@@ -13,7 +13,7 @@
 - `limits.LotusCallLimits` 声明逐请求、整批字节与 deadline。native graph 在发送前准备并核对整批；
   Movie runner 显式设置 `prevalidate_batch=True`，也在发送前预检整批。
   直接使用 `LotusBatchExecutor` 的默认分窗口路径时，无效后缀被拒绝前，合法前缀可能已经执行。
-  单个请求不截断或补发；SemLoom 当前逐请求输入仍受其默认 1 MiB transport 合同限制。
+  单个请求不截断或补发；SemLoom 默认逐请求输入仍为 1 MiB。图文 profile 强制整批预检。
 - `maps.staged_two_map` 保留原阶段间整批等待；`driver.iter_two_map_rows` 是显式增量两阶段库接口，
   保留逐行关联和方法状态。这两条路径分别测试，下面的 Movie runner 不增加两阶段查询形状。
 
@@ -47,5 +47,15 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 
 依赖检查、环境变量和三种 CLI 动作见[脚本入口](../../../scripts/README.md#lotus-原版-movie-四臂)。
 本批来源、检查和未验证范围统一记录在[main 文本接入资格](../../../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
-本模块说明不认证其他分支的图像 RM／index／search、Animals VLM、PZ 或 IMLane，
-也不把软件 fixture 的关系结果检查解释为真实模型质量或性能收益。
+本模块说明不认证其他分支的图像 RM／index／search、PZ 或 IMLane；软件 fixture 不代表真实模型质量或性能收益。
+
+## 原版 Animals 图文查询
+
+[Animals Q1 入口](../../../scripts/experiments/run_sembench_animals.py)保留 SemBench 的 ImageArray、sem_filter、COUNT 和原 evaluator；
+`lotus-image-text-v1` 核对原 PNG data URI、消息结构及固定 LOTUS 图文源码。四臂名称为
+`lotus-native`、`daft`、`ray-data`、`semloom`，执行 owner 与上表一致。非法图文后缀在创建 Core flow 或原生执行图前失败。
+
+原图不缩放、拆分或转为 CLIP 输入；模型 processor 的内部处理另行固定。SemLoom 使用显式 native
+请求／总输入与 Ray window／object 字节额度，原 PG／wire 默认不变。CLI、正常 lease 和外层故障监督要求见
+[脚本说明](../../../scripts/README.md#animals-原版图文-q1)；源码闭包、实际 CPU 与未运行的模型范围见
+[Animals 接入资格](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。

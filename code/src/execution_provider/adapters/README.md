@@ -12,7 +12,13 @@ records the composed main source and the checks it actually passed.
 Its default work estimate counts requests; it is not a token or GPU cost estimate.
 `build_native_execution(config, physical=RayMapConfig(...))` uses existing Daft payload batches
 and Ray HTTP workers. `physical=None` selects the local diagnostic transport.
-The builder retains the existing capacity and scheduling policies.
+The builder retains the existing capacity and scheduling policies. Native input defaults to 1 MiB.
+`max_request_bytes` may explicitly select at most 8 MiB; a nondefault value requires an explicit
+`input_bytes` total at least as large. Ray window, object and optional preparation capacities must
+fit that choice before transport creation. PG public factories and wire framing remain at 1 MiB.
+The three private assembly factories form one capacity closure;
+[boundary and lifecycle qualification](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)
+keeps logical input, prepared suffix, SDK/proxy copies and process RSS distinct.
 
 `NativeTaskSession` registers a query Job and one operator flow. `offer` transfers only its
 accepted prefix, leaving the caller responsible for the suffix; offering sends no request.
