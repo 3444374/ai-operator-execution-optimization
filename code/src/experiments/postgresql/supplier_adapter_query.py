@@ -248,7 +248,7 @@ def prepare_lotus_lm(plan, model, options, tokenizer_path, *, sembench=False):
 
 
 @contextmanager
-def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None,query_timeout_s=120,imlane_call_configs=None,sembench_result=None,lotus_observation_mode='qualification'):
+def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_id,stages,stop,tokenizer_path,*,lm=None,max_held_tasks=None,query_timeout_s=120,imlane_call_configs=None,sembench_result=None,lotus_observation_mode='qualification',imlane_executor=None):
     import lotus
     import pandas as pd
     from src.semantic_methods.lotus.batch import LotusBatchExecutor,lotus_executor
@@ -271,10 +271,12 @@ def _lotus_rows(stack,arm,values,plan,model,execution,observations,options,unit_
     if backend is not None:
         from src.baselines.text.frameworks.native_calls import NativeCallExecutor
         from src.semantic_methods.lotus.native import LotusNativeBatchExecutor
-        graph=NativeCallExecutor(backend,options,
-            imlane_config=imlane_config_for_arm(arm,imlane_call_configs or {}))
-        if backend == 'imlane':
-            stack.callback(graph.close)
+        graph=imlane_executor if backend == 'imlane' else None
+        if graph is None:
+            graph=NativeCallExecutor(backend,options,
+                imlane_config=imlane_config_for_arm(arm,imlane_call_configs or {}))
+            if backend == 'imlane':
+                stack.callback(graph.close)
         selected=LotusNativeBatchExecutor(graph,configured,
             query_id=unit_id,operator_id=operator,cancelled=stop.is_set,
             timeout_s=query_timeout_s,retain_full_responses=False)
@@ -655,7 +657,8 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                     observations,options,unit_id,stages,stop,tokenizer_path,
                     lm=owner.lotus_lm() if owner is not None else None,max_held_tasks=held_tasks,
                     query_timeout_s=query_timeout_s,imlane_call_configs=imlane_call_configs,
-                    sembench_result=sembench_result,lotus_observation_mode=lotus_observation_mode))
+                    sembench_result=sembench_result,lotus_observation_mode=lotus_observation_mode,
+                    imlane_executor=getattr(owner,'imlane_calls',None)))
                 if local:
                     identity.update(executor='SemLoom local diagnostic',payload_backend='no Daft or Ray')
                 summary['identity']=identity
