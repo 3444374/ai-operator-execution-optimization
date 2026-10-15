@@ -1,7 +1,7 @@
 # 项目大纲
 
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
-main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列当前CPU资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
+main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
 维护日期：2026-10-15。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
@@ -30,7 +30,7 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 | 图像证据 | [最终融合资格](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)保留固定 `2afcaf47` 的六路径64图及已有索引结果；[普通输入与Serve补充](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)分列`460d3870`三格与`17ac2aeb`八格的28查询／39矩阵，均仅支持有限资格，不提供性能排名 |
 | 编码与内存 | 普通入口按后端自动接RGB或经当前像素核对的源字节，不可复用时无损PNG1回退；历史显式开关已移除。HSE逻辑额度不覆盖RM列表／复制，也不是RSS或硬显存限，见[实现状态](code/INFRA_STATUS.md#current-image-status) |
 | main 已接入路径 | [原Movie／Animals四臂实测](experiments/results/diagnostics/main_queries_20261015/README.md)绑定`464de926`；[可选服务auto的合并后复验](experiments/results/diagnostics/main_service_auto_20261015/README.md)另绑`2041da67`，仅Movie Q2／Animals Q1单卡两配置；质量不足和单次范围明确，无稳定收益结论 |
-| main CLIP接点 | [最小闭包与来源](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)：原RM／FAISS／完整结果、单卡显式资源；当前CPU／SDK检查，新main GPU pending，默认精度和HSE环境失败保留 |
+| main CLIP接点 | [最小闭包与来源](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)：原RM／FAISS／完整结果、单卡显式资源；8834 CPU／SDK与main570四路径八臂40行实机分列，默认精度和HSE环境失败保留 |
 | 文本与其他接点 | [原 Q2 历史观察](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)与[原生执行接入](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/postgresql/native_executor_baselines_20261012/README.md)按实际源码、质量、规模和生命周期解释 |
 | 尚待补证 | 文本三条 Q2 仍按各自固定来源资格解释；图像同次 workflow 九格连续查询已有固定 `485c86a8` 观测，服务级 RM／索引跨调用复用仍未认证，见[能力表](code/INFRA_STATUS.md#current-image-status) |
 | 研究候选 | 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索；尚未采纳为本基线方法，GPU／生产收益未验证 |

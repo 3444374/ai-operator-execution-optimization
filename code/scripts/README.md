@@ -18,8 +18,8 @@ Ray／SemLoom CUDA路径另给自有`--ray-temp-dir`，Ray的`--ray-image-pipeli
 对该查询进程设置`NVIDIA_TF32_OVERRIDE=0`才接纳scoped配置；只开放static、Ray fused／staged及Daft。
 auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在模型构造前失败。
 不改变未配置路径的数学默认，不将条件通过说成默认数值问题已修复。
-真实GPU／模型运行须按既有normal shared lease、外层超时及物理退出监督；本轮没有追加模型运行。
-[来源与CPU检查](../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)保留d2条件资格与新main GPU pending。
+真实GPU／模型运行须按既有normal shared lease、外层超时及物理退出监督；main570的40行实机使用独立预算，未重置d2历史66行。
+[来源与CPU检查](../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)分列d2历史资格与main570四路径八臂40行严格单卡实机；实际像素、完整向量和正常物理退出均核同。
 
 
 ## 可选 vLLM 部署资源分配

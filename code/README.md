@@ -7,7 +7,7 @@
 [Animals](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
 原查询模型结果见[固定main464报告](../experiments/results/diagnostics/main_queries_20261015/README.md)；
 [可选vLLM资源配置](../experiments/results/diagnostics/main_service_auto_20261015/README.md)的服务与合并后原查询按各自源码分列。
-[原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的当前CPU检查及d2来源条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。新main GPU、HSE资源auto和PZ分别待验。
+[原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的8834 CPU检查、main570四路径40行实机及d2历史条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。HSE资源auto、多卡和PZ分别待验。
 
 
 ## Core 与完整响应基础

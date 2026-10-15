@@ -76,4 +76,4 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 可选resource配置只开放static／Ray／Daft单卡、CPU1和外置TF32关闭环境，模型启动前拒绝HSEauto及多卡。
 HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入。
 [本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、
-固定d2的条件模型证据和新main仍待GPU复验；默认数值失败、HSE环境缺项及性能边界保留。
+固定d2历史证据与main570新增四路径八臂40行严格单卡实机分列；默认数值失败、HSE环境缺项及性能边界保留。
