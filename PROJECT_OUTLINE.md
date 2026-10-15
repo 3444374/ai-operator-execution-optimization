@@ -119,26 +119,26 @@ formal 从未运行且继续禁止。
 
 题目为：
 
-> 数据库 AI 负载的执行优化与调度研究
+> AI 语义算子与多模态任务的物理执行、数据组织与调度研究
 
-统一研究对象是数据库内 AI 语义算子触发的外部物理执行层：
+统一研究对象是语义 API、数据库等前端交付的 AI 任务物理执行与数据组织：
 
 ```text
-PostgreSQL SQL AI operator
-  -> relational child plan / snapshot / filter / projection
-  -> database-managed AI Data Execution Layer
+Semantic API / database AI operator
+  -> frontend-owned semantic plan / input identity / lifecycle
+  -> physical data execution layer
        -> research content 1: work-unit construction and organization
        -> research content 2: state-aware admission, routing and multi-job
        -> shared cost estimator
             -> stage/service/remaining work
             -> SLO slack and uncertainty
   -> Model Service / GPU Executor
-  -> Database / Vector Sink
+  -> Frontend result / Database / Vector Sink
 ```
 
-对外口径：PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化。
+对外口径：AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化；PostgreSQL 是其中一种接入。
 
-PostgreSQL extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
+PostgreSQL 路径由 extension 先提供 SQL/planner/query-lifecycle seam；若目标 LOTUS/Cortex rewrite、plan identity
 或 lifecycle 出现可复现阻断，允许维护 `REL_18_3` 最小 core semantic patch。默认语义由中立
 plan/task/result 合同定义，LOTUS v1.2.4 不再是核心依赖。Daft、Ray、vLLM、pgvector 和 CLIP
 是物理执行与验证平台，不是贡献名称。项目不修改 vLLM continuous batching、Ray 调度器、模型结构

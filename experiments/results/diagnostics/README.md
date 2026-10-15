@@ -20,7 +20,7 @@
 复用身份／时钟／有界 writer，默认关闭；账本分段、开关配对、原件来源和未观测项分别保存。
 
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
-[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
+[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：原 A-only 交付的正确性与 B／C 待分片状态；本轮恢复见上方基础修正，
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。
 [HSE上游迭代器关闭](hse_static_lifecycle_20261014/README.md#source-iterator-closure)保存完整函数反例、首错和actor责任回归；仅本地确定性依赖。
 
