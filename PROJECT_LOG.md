@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：main 接纳 Animals 最小图文请求闭包
+
+从已由baseline接纳的固定`a0d1f6ac`窄选原Animals Q1、LOTUS图文profile及三容量工厂，复用当前四臂执行器。
+保留默认1MiB；原图路径显式声明请求／总input与Ray额度，不带CLIP/HSE/PZ。独审发现的账本收尾首错覆盖已修并加入零HTTP故障注入。
+[本批资格](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)记录当前源码、实际CPU/Ray与失败；
+随后固定发布main做真实Movie及Animals完整查询，旧源码的模型结果不升级为本轮资格。
+
 ## 2026-10-15：main 接纳 LOTUS 文本四臂
 
 以`72f3f715`为底稿，从固定`671a22dd`收敛原LOTUS SDK、Daft、Ray Data、SemLoom和原Movie Q1/Q2/Q3入口。

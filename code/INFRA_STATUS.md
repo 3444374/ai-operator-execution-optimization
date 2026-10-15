@@ -2,7 +2,7 @@
 
 ## main 与集成分支的阅读范围
 
-main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复、Core／完整响应基础及下述 LOTUS 文本四臂。
+main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复、Core／完整响应基础及下述 LOTUS Movie／Animals 完整请求接点。
 下文保留该来源在2026-10-08记录的实现与验证情况，
 不将后续集成分支的能力写成 main 已实现。新适配与修复从
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)进入；
@@ -21,7 +21,15 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
 原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
 [本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
-当前不将旧模型结果升级为新main质量／性能，不表示图像、PZ或IMLane已接入。
+当前不将旧模型结果升级为新main质量／性能；PZ、IMLane和图像检索仍按各自固定来源解释。
+
+## Animals 图文四臂
+
+[原版 Q1](scripts/README.md#animals-原版图文-q1)保留 ImageArray、sem_filter、COUNT及原评价，
+图文profile整批校验，原图不缩放或拆分。native显式逐请求最多8MiB且须给总input，三工厂共同验证Ray容量；
+默认native／PG／wire仍为1MiB。
+[本批资格](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)固定来源、原CPU/真实Ray、独审和失败修复；
+不引入CLIP/HSE/RM/index或PZ依赖。最终main的模型测试另行绑定同一发布SHA。
 
 ## Core 推进、元数据与完整响应
 

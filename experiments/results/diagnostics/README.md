@@ -5,6 +5,7 @@
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [main LOTUS 文本接入](main_lotus_text_20261015/README.md)：四个执行owner、原Movie查询与评价、固定来源CPU/SDK和原数据预检；真实模型与最终main组合另行资格。
+[main Animals 图文接入](main_lotus_animals_20261015/README.md)：原Q1和三容量工厂的最小闭包、实际CPU/Ray及独审修复；模型结果另绑统一main。
 
 [main Core 与完整响应基础](main_foundation_20261015/README.md)：固定 main 底稿上的必要实现闭包、旧路径和真实 CPU Ray 检查；重复 offer 成本保持组件身份。
 

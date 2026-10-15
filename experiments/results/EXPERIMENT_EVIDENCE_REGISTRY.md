@@ -9,6 +9,10 @@
 [固定 `9c59dc9b` 台账](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位；
 文档引用不把该分支的实现或运行资格转给 main，原始报告、全部失败及重复值保持原身份。
 
+2026-10-15：[main Animals 图文接入](diagnostics/main_lotus_animals_20261015/README.md)。
+固定`a0d1f6ac`的必要图文／容量闭包在当前main底稿重新验证，默认PG/native/wire1MiB保持；真实Ray和软件模型请求分列。
+先保留原像素、发生项、SDK及COUNT/evaluator，再做同一最终main的单4090实际查询；不借旧模型范围或声称收益。
+
 2026-10-15：[main LOTUS 文本接入](diagnostics/main_lotus_text_20261015/README.md)。
 固定main底稿上采用必要四臂闭包，保留原SDK、Movie Q1/Q2/Q3和评价器；本批CPU/实际库、原数据身份和失败分列，模型质量与性能仍待统一main资格。
 

@@ -10,6 +10,7 @@ from ...scheduling.core.session_contract import SessionLimits, State
 from ...execution_provider.adapters.full_response import decode_full_response
 from .sdk import (
     LotusResponseReplay,
+    check_message_profile,
     check_model_config,
     parse_lotus_response,
     prepare_call,
@@ -45,6 +46,7 @@ class LotusBatchExecutor:
         call_limits=None,
         session_factory=None,
         session_limits=None,
+        message_profile="text",
     ):
         if any(type(v) is not int or v <= 0 for v in (max_batch_rows, max_batch_result_bytes)):
             raise ValueError("LOTUS batch limits must be positive integers")
@@ -59,6 +61,7 @@ class LotusBatchExecutor:
         if session_factory is not None and not callable(session_factory):
             raise ValueError("LOTUS session factory must be callable")
         self.execution, self.model_config = execution, model_config
+        self.message_profile = check_message_profile(message_profile)
         if call_limits is not None and type(call_limits) is not LotusCallLimits:
             raise TypeError("LOTUS call_limits requires LotusCallLimits")
         if execution is None:
@@ -90,10 +93,8 @@ class LotusBatchExecutor:
         self.max_batch_result_bytes = self.call_limits.max_batch_response_bytes
         self.on_response, self.on_batch, self.cancelled = on_response, on_batch, cancelled
         self.on_prepared = on_prepared
-        self.prevalidate_batch, self.retain_full_responses = (
-            prevalidate_batch,
-            retain_full_responses,
-        )
+        self.prevalidate_batch = prevalidate_batch or self.message_profile != "text"
+        self.retain_full_responses = retain_full_responses
         self.timeout_s, self.last_responses = self.call_limits.batch_timeout_s, ()
         self.last_cleanup_errors = ()
         self.session_factory = session_factory
@@ -139,6 +140,9 @@ class LotusBatchExecutor:
             if self.on_batch:
                 self.on_batch(uncached_data, all_kwargs)
             check_stop()
+            profile_kwargs = (
+                {} if self.message_profile == "text" else {"message_profile": self.message_profile}
+            )
             first_call = (
                 validate_batch(
                     lm,
@@ -147,6 +151,7 @@ class LotusBatchExecutor:
                     check_stop=check_stop,
                     model_config=self.model_config,
                     call_limits=self.call_limits,
+                    **profile_kwargs,
                 )
                 if self.prevalidate_batch
                 else None
@@ -174,7 +179,9 @@ class LotusBatchExecutor:
                         call = (
                             first_call
                             if sequence == 0 and first_call is not None
-                            else prepare_call(lm, uncached_data[sequence][0], all_kwargs)
+                            else prepare_call(
+                                lm, uncached_data[sequence][0], all_kwargs, **profile_kwargs
+                            )
                         )
                         first_call = None
                         check_model_config(call, self.model_config)
@@ -298,7 +305,11 @@ def lotus_executor(lm, executor=None):
     if executor is None:
         yield lm
         return
-    validate_source()
+    profile = check_message_profile(getattr(executor, "message_profile", "text"))
+    if profile == "text":
+        validate_source()
+    else:
+        validate_source(message_profile=profile)
 
     def selected(instance, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc):
         return executor(instance, uncached_data, all_kwargs, show_progress_bar, progress_bar_desc)

@@ -210,6 +210,73 @@ class LotusSdkTests(unittest.TestCase):
                         (4 if status == 200 else 2) if mode == "qualification" else 0,
                     )
 
+    def test_image_profile_rejects_invalid_suffix_before_core_or_native_graph(self):
+        import base64
+        from PIL import Image
+        from src.semantic_methods.lotus.native import LotusNativeBatchExecutor
+        from src.semantic_methods.lotus.sdk import IMAGE_TEXT_PROFILE
+
+        image = io.BytesIO()
+        Image.new("RGB", (1, 1), "white").save(image, format="PNG")
+        uri = "data:image/png;base64," + base64.b64encode(image.getvalue()).decode("ascii")
+        valid = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image."},
+                    {"type": "image_url", "image_url": {"url": uri}},
+                ],
+            }
+        ]
+        invalid = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.invalid/image.png"},
+                    },
+                ],
+            }
+        ]
+        graph = SimpleNamespace(
+            max_batch_rows=64,
+            max_batch_bytes=2**28,
+            iter_batch=lambda *_args, **_kwargs: self.fail("invalid suffix reached native graph"),
+        )
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            lm = model(base)
+            adapters = (
+                LotusBatchExecutor(
+                    execution,
+                    config(base),
+                    query_id="image-invalid",
+                    operator_id="map",
+                    message_profile=IMAGE_TEXT_PROFILE,
+                ),
+                LotusNativeBatchExecutor(
+                    graph,
+                    config(base),
+                    query_id="image-invalid",
+                    operator_id="map",
+                    message_profile=IMAGE_TEXT_PROFILE,
+                ),
+            )
+            with patch(
+                "src.semantic_methods.lotus.batch.NativeTaskSession",
+                side_effect=AssertionError("invalid suffix opened Core flow"),
+            ):
+                for adapter in adapters:
+                    with (
+                        self.subTest(adapter=type(adapter).__name__),
+                        self.assertRaisesRegex(ValueError, "PNG data URI"),
+                    ):
+                        adapter(
+                            lm, [(valid, None)] * 4 + [(invalid, None)], lm.kwargs, False, "fixture"
+                        )
+            self.assertEqual(calls, [])
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+
     def test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer(self):
         messages = [{"role": "user", "content": "first"}]
         invalid_messages = (
