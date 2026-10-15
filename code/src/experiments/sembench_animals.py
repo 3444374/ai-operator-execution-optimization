@@ -425,12 +425,18 @@ def run_query(
             summary["status"] = "completed"
     except BaseException as error:
         failure = error
-        summary["status"] = "failed"
-        summary["error_type"] = type(error).__name__
-        summary["error"] = redact_text(str(error))
-        summary["error_notes"] = [redact_text(str(n)) for n in getattr(error, "__notes__", ())]
     finally:
-        summary["model_calls"] = ledger.attempts
+        try:
+            summary["model_calls"] = ledger.attempts
+        except BaseException as error:
+            summary["model_calls"] = None
+            summary["model_call_accounting"] = dict(
+                status="unavailable", error_type=type(error).__name__
+            )
+            if failure is None:
+                failure = error
+            else:
+                failure.add_note("Animals attempt accounting cleanup: " + type(error).__name__)
         summary["application_seconds"] = (time.monotonic_ns() - started) / 1e9
         summary["versions"] = {}
         for name in ("lotus-ai", "litellm", "openai", "pandas", "duckdb"):
@@ -440,6 +446,13 @@ def run_query(
                 summary["versions"][name] = dict(
                     status="unavailable", reason="distribution is not installed"
                 )
+        if failure is not None:
+            summary["status"] = "failed"
+            summary["error_type"] = type(failure).__name__
+            summary["error"] = redact_text(str(failure))
+            summary["error_notes"] = [
+                redact_text(str(note)) for note in getattr(failure, "__notes__", ())
+            ]
         write_private_json(root / "summary.json", summary)
     if failure is not None:
         raise failure

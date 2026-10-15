@@ -1,7 +1,7 @@
 """CPU-only input contracts and actual pinned LOTUS image HTTP fixture checks."""
 
 import base64
-from contextlib import contextmanager, ExitStack
+from contextlib import contextmanager, ExitStack, nullcontext
 from dataclasses import make_dataclass
 from functools import wraps
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -193,6 +193,68 @@ class AnimalsInputsTests(unittest.TestCase):
                 concurrency=9,
                 observation_mode="performance",
             )
+
+    def test_late_budget_failure_preserves_primary_error_and_failed_summary(self):
+        from src.experiments import sembench_animals as animals
+        from src.experiments.attempt_ledger import BudgetError
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+
+        class Ledger:
+            reads = 0
+
+            @property
+            def attempts(self):
+                self.reads += 1
+                if self.reads > 2:
+                    raise BudgetError("fixture ledger became unavailable")
+                return 0
+
+        ledger = Ledger()
+        dataset = SimpleNamespace(
+            preflight=lambda: {},
+            read=lambda: {"rows": self.rows},
+            expected_digest=self.value["sha256"],
+            checkout=self.root,
+            frame=lambda: None,
+        )
+        gateway = SimpleNamespace(endpoint_url=lambda *_: "http://localhost/v1/chat/completions")
+        original = TimeoutError("fixture primary query failure")
+        output = self.root / "accounting-failure"
+        with ExitStack() as stack:
+            create = stack.enter_context(
+                patch.object(animals.AttemptLedger, "create", return_value=ledger)
+            )
+            for name, value in (
+                ("validate_source", None),
+                ("configure_lm", SimpleNamespace()),
+                ("ObservationGateway", nullcontext(gateway)),
+                ("lotus_executor", nullcontext()),
+                ("observe_filter_rows", nullcontext()),
+            ):
+                stack.enter_context(patch.object(animals, name, return_value=value))
+            query = stack.enter_context(
+                patch.object(animals, "run_original_query", side_effect=original)
+            )
+            with self.assertRaises(TimeoutError) as caught:
+                animals.run_query(
+                    dataset,
+                    FixedModelConfig("http://localhost/v1/chat/completions", "fixture", 1000),
+                    arm="lotus-native",
+                    output=output,
+                    tokenizer_path=None,
+                    observation_mode="performance",
+                )
+        self.assertIs(caught.exception, original)
+        self.assertEqual(create.call_count, 1)
+        self.assertEqual(query.call_count, 1)
+        summary = json.loads((output / "summary.json").read_text())
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["error_type"], "TimeoutError")
+        self.assertIsNone(summary["model_calls"])
+        self.assertEqual(
+            summary["model_call_accounting"], dict(status="unavailable", error_type="BudgetError")
+        )
+        self.assertIn("Animals attempt accounting cleanup: BudgetError", summary["error_notes"])
 
 
 @contextmanager
