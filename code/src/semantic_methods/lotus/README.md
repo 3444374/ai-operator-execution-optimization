@@ -257,6 +257,8 @@ Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭
 
 ## 连续查询观测
 
+主测保持长生命周期 LOTUS 进程连续承接完整查询，原生内部生命周期可不同，成本全计入；每图重建本身不失去主测身份，官方服务化另作配置，见[生命周期口径](../../../../experiments/plans/reference/对照规范.md#resident-query-timing)。文本固定版本使用内部`_process_uncached_messages`替换，图像`RM._embed`是作者扩展点，不泛称统一公开插件接口。关闭缓存的图像观察不认证开启缓存配置的通用兼容。
+
 显式`--query-repeats N`在同一native owner／FaissVS内重复原有有序查询；默认1保持原query ID，重复时增加source_query_id、repeat_index与query_ordinal。`native_call_return_elapsed_s`紧接原生`sem_search`返回采样，失败时为null；旧elapsed_s保留输出检查和失败耗时，原生实际加载／建图／传输不会扣除。
 
 当前每次`run_workflow`新建`FaissVS`；本节资格只覆盖同一次调用内的多轮查询。磁盘索引目录或模型endpoint常驻不证明服务级RM／内存索引跨调用复用，版本变更后的重建、加载与失效也未由本切片认证。
