@@ -168,9 +168,9 @@ class DaftConfigurationTests(unittest.TestCase):
 
 
 class RayConfigurationTests(unittest.TestCase):
-    def test_ray_envelope_is_checked_before_graph_creation_and_c1_can_be_selected(self):
+    def test_ray_http_bound_is_checked_before_graph_creation_and_c1_can_be_selected(self):
         with ray_graph(records := {}, async_batches=1):
-            with self.assertRaisesRegex(ValueError, 'batch request envelope'):
+            with self.assertRaisesRegex(ValueError, 'active HTTP upper bound'):
                 native.NativeCallExecutor('ray-data', NativeGraphOptions(concurrency=1))
             options = NativeGraphOptions(concurrency=1, ray_actors=1, ray_async_batches_per_actor=1)
             returned = tuple(native.NativeCallExecutor('ray-data', options).iter_batch(calls()))
@@ -180,7 +180,7 @@ class RayConfigurationTests(unittest.TestCase):
 
     def test_close_report_separates_rows_slots_and_the_imported_setting(self):
         for batch_rows in (1, 4):
-            options = NativeGraphOptions(concurrency=16, ray_batch_rows=batch_rows)
+            options = NativeGraphOptions(concurrency=4, ray_batch_rows=batch_rows)
             # Changing the environment after import cannot change Ray's constant.
             with self.subTest(batch_rows=batch_rows), ray_graph({}), \
                     patch.dict(os.environ, {'RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY': '4'}):
@@ -191,6 +191,11 @@ class RayConfigurationTests(unittest.TestCase):
             self.assertEqual(report['async_batches_effective'], 2)
             self.assertEqual(report['request_row_envelope'], 4 * batch_rows)
             self.assertEqual(report['active_http_upper_bound'], 4)
+            storage = executor.last_close_report['batch_storage']
+            self.assertEqual(storage['input_rows'], 3)
+            self.assertEqual(storage['input_payload_bytes'], sum(len(call.payload) for call in calls()))
+            self.assertEqual(storage['response_allowance_sum_bytes'], 3 * 8 * 1024 * 1024)
+            self.assertEqual(storage['max_consumed_response_bytes'], executor.max_batch_bytes)
 
     def test_batch_actor_and_source_parameters_are_forwarded_separately(self):
         selections = (NativeGraphOptions(concurrency=9, ray_actors=1, ray_async_batches_per_actor=3,
@@ -264,7 +269,7 @@ class SharedConfigurationTests(unittest.TestCase):
     def test_prepared_graph_contexts_apply_their_own_checks_before_import(self):
         from src.baselines.text.frameworks.prepared_map import open_daft_calls, open_ray_calls
         for graph, message in ((open_daft_calls, 'at least two request slots'),
-                               (open_ray_calls, 'batch request envelope')):
+                               (open_ray_calls, 'active HTTP upper bound')):
             with self.subTest(graph=graph.__name__), self.assertRaisesRegex(ValueError, message):
                 with graph((), NativeGraphOptions(concurrency=1), None):
                     self.fail('an invalid selected graph must not be opened')
@@ -291,6 +296,23 @@ class SharedConfigurationTests(unittest.TestCase):
 
 
 class GraphConsumerIdentityTests(unittest.TestCase):
+    def test_input_iterables_stop_at_the_first_overflow_before_any_graph(self):
+        for backend, graph_name in (('daft', '_daft_rows'), ('ray-data', '_ray_rows'), ('ray', '_ray_core_rows')):
+            for limits, expected_reads in ((dict(max_batch_rows=2), 3),
+                                           (dict(max_batch_bytes=3), 2)):
+                read = []
+                def source():
+                    for index in range(10):
+                        read.append(index)
+                        yield native.NativeCall(str(index), index, b'{}', 'http://localhost/fixture', (), 1)
+                with self.subTest(backend=backend, limits=limits), patch.object(native, graph_name) as graph:
+                    executor = native.NativeCallExecutor(backend, **limits)
+                    with self.assertRaisesRegex(ValueError, 'input batch exceeds'):
+                        list(executor.iter_batch(source()))
+                    graph.assert_not_called()
+                    self.assertEqual(len(read), expected_reads)
+                    self.assertFalse(executor._unsettled)
+
     def test_out_of_order_complete_calls_keep_duplicate_input_occurrences(self):
         for backend, graph in (("daft", "_daft_rows"), ("ray-data", "_ray_rows")):
             source = calls()

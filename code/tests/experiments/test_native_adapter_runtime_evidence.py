@@ -47,13 +47,13 @@ class NativeAdapterRuntimeEvidenceTests(unittest.TestCase):
             if selected_physical is not None:
                 self.assertEqual(updated, physical)
 
-    def test_ray_data_envelope_is_rejected_before_runtime_or_import_setting_changes(self):
+    def test_ray_data_http_bound_is_rejected_before_runtime_or_import_setting_changes(self):
         for options in (NativeGraphOptions(concurrency=3),
-                        NativeGraphOptions(concurrency=4, ray_batch_rows=2)):
+                        NativeGraphOptions(concurrency=3, ray_batch_rows=2)):
             with self.subTest(options=options), mock.patch.dict(os.environ,
                     {'RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY': '4'}), \
                     mock.patch('src.experiments.postgresql.native_adapter_query.native_ray_runtime') as runtime:
-                with ExitStack() as stack, self.assertRaisesRegex(ValueError, 'batch request envelope'):
+                with ExitStack() as stack, self.assertRaisesRegex(ValueError, 'active HTTP upper bound'):
                     _runtime(stack, 'fixed-map-native-ray', options, None, None, None)
                 runtime.assert_not_called()
                 self.assertEqual(os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY'], '4')

@@ -26,15 +26,15 @@ def raw_rows(count):
 
 
 class PersistentNativeOptionsTests(unittest.TestCase):
-    def test_mixed_groups_reject_selected_ray_data_envelopes_before_any_startup(self):
+    def test_mixed_groups_reject_selected_ray_data_http_bounds_before_any_startup(self):
         with mock.patch('src.experiments.postgresql.persistent_native_adapter_query._runtime') as runtime, \
                 mock.patch('src.experiments.postgresql.persistent_native_adapter_query.new_private_directory') as directory, \
                 mock.patch('src.experiments.postgresql.persistent_native_adapter_query.ObservationGateway') as gateway:
             for arm in ('fixed-map-native-ray', 'lotus-method-native-ray-data', 'sema-native-ray-data-request-service'):
                 for options in (NativeGraphOptions(concurrency=1, num_threads=1),
-                                NativeGraphOptions(concurrency=4, num_threads=1, ray_batch_rows=2)):
+                                NativeGraphOptions(concurrency=3, num_threads=1, ray_batch_rows=2)):
                     with self.subTest(arm=arm, options=options), \
-                            self.assertRaisesRegex(ValueError, 'batch request envelope'):
+                            self.assertRaisesRegex(ValueError, 'active HTTP upper bound'):
                         PersistentAdapterGroup(('fixed-map-semloom', arm),
                             plan=SemanticMapPlan('Return ok.', 'fixture', 16),
                             model=FixedModelConfig('http://localhost/fixture', 'fixture', 1000),

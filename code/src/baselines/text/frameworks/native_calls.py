@@ -653,12 +653,16 @@ class NativeCallExecutor:
                 or timeout_s is not None and (type(timeout_s) not in (int, float)
                 or not math.isfinite(timeout_s) or not 0 < timeout_s <= 120)):
             raise ValueError("native complete-call batch requires a finite deadline or supervised vendor completion")
-        calls = tuple(calls)
-        if any(type(call) is not NativeCall for call in calls) or len({call.call_id for call in calls}) != len(calls):
-            raise ValueError("native complete-call batch repeats or changes occurrence identity")
-        if len(calls) > self.max_batch_rows or sum(len(call.payload) for call in calls) > self.max_batch_bytes:
-            raise ValueError("native complete-call input batch exceeds its declared allowance")
-        expected = {call.call_id: call.row_id for call in calls}
+        prepared, expected, payload_bytes = [], {}, 0
+        for call in calls:
+            if type(call) is not NativeCall or call.call_id in expected:
+                raise ValueError("native complete-call batch repeats or changes occurrence identity")
+            payload_bytes += len(call.payload)
+            if len(prepared) == self.max_batch_rows or payload_bytes > self.max_batch_bytes:
+                raise ValueError("native complete-call input batch exceeds its declared allowance")
+            expected[call.call_id] = call.row_id
+            prepared.append(call)
+        calls = tuple(prepared)
         deadline = None if timeout_s is None else time.monotonic() + timeout_s
         self.last_close_report = None
         if not calls:
@@ -779,6 +783,11 @@ class NativeCallExecutor:
                     all(connector.closed for connector in control._clients.values()),
                 owned_ray_actor_ids=[actor._actor_id.hex() for actor in control._actors],
                 declared_options=dict(vars(self.options)),
+                batch_storage=dict(input_rows=len(calls), input_payload_bytes=payload_bytes,
+                    max_input_rows=self.max_batch_rows, max_input_payload_bytes=self.max_batch_bytes,
+                    max_consumed_response_bytes=self.max_batch_bytes,
+                    response_allowance_sum_bytes=sum(call.max_response_bytes for call in calls),
+                    resident_memory_limit='not established by encoded-byte limits'),
                 native_graph_parameters=(
                     dict(batch_size=1, max_concurrency=self.options.concurrency - 1)
                     if self.backend == "daft" else

@@ -171,6 +171,23 @@ SESSION = types.SimpleNamespace(endpoint='http://127.0.0.1/fixture')
 
 
 class AdapterDetailedTimingTests(unittest.TestCase):
+    def test_prepared_input_limits_reject_the_first_overflow_before_graph_build(self):
+        for backend in ('daft', 'ray-data'):
+            for limits, expected_reads in ((dict(max_batch_rows=1), 2),
+                                           (dict(max_batch_bytes=1), 1)):
+                read = []
+                def source():
+                    for call in CALLS * 4:
+                        read.append(call)
+                        yield call
+                opener = prepared_map.open_daft_calls if backend == 'daft' else prepared_map.open_ray_calls
+                with self.subTest(backend=backend, limits=limits), native_graph(backend) as transcript:
+                    with self.assertRaisesRegex(ValueError, 'input batch exceeds'):
+                        with opener(source(), prepared_map.NativeGraphOptions(), SESSION, **limits) as stream:
+                            list(stream)
+                    self.assertEqual(len(read), expected_reads)
+                    self.assertEqual(transcript, [])
+
     def consume(self, backend, *, enabled, fail=False, partial=False, writer=MemoryWriter):
         with observations(enabled, writer=writer) as timing, native_graph(backend, fail=fail) as transcript:
             options = prepared_map.NativeGraphOptions()

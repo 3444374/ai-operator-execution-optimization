@@ -47,11 +47,11 @@ class NativeRayConfigurationTests(unittest.TestCase):
         self.assertEqual(lower['source']['override_num_blocks'], 4)
         self.assertEqual(lower['stage']['max_concurrency'], 1)
 
-    def test_batch_rows_must_fit_the_declared_request_envelope(self):
-        with self.assertRaisesRegex(ValueError, 'batch request envelope'):
-            NativeGraphOptions(concurrency=8, ray_actors=2, ray_async_batches_per_actor=2,
+    def test_http_allowance_is_independent_of_serial_rows_in_each_batch(self):
+        with self.assertRaisesRegex(ValueError, 'active HTTP upper bound'):
+            NativeGraphOptions(concurrency=3, ray_actors=2, ray_async_batches_per_actor=2,
                 ray_batch_rows=4).validate_backend('ray-data')
-        NativeGraphOptions(concurrency=16, ray_actors=2, ray_async_batches_per_actor=2,
+        NativeGraphOptions(concurrency=4, ray_actors=2, ray_async_batches_per_actor=2,
             ray_batch_rows=4).validate_backend('ray-data')
 
     @unittest.skipUnless(find_spec('ray') is not None, 'pinned Ray is unavailable for fresh-import validation')
