@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-15：补齐固定main原查询连续运行报告
+
+实际来源`eb697477`的Movie每臂19次、Animals每臂8次已正常完成；[同题报告](experiments/results/diagnostics/main_queries_20261015/README.md#long-run)分列首轮、后续完整查询与Animals应用成本。
+逐请求P/O和共同墙钟MFU、分组、请求分位、PID／出生身份及原件构成经两项独立离线审计；质量不足、Animals固定根RSS增长待归因及观测缺项保留。
+r1失败与全部原件独立备份核验，Git只保存配置、复算入口和必要汇总；本次发布没有新增模型／GPU运行，不引入生产代码或扩大方法结论。
+
 ## 2026-10-15：main 原生 CLIP 查询与合并后单卡资格
 
 固定88347614按d2来源选取原LOTUS RM／index／search、公开manifest／身份入口及static／Ray／Daft，保留必要静态HSE身份、失败和unknown责任。

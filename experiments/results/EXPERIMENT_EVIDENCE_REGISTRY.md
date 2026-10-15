@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-15：[固定main Movie／Animals连续运行](diagnostics/main_queries_20261015/README.md#long-run)。
+来源`eb697477`，Movie每臂19次／Animals每臂8次；首轮、后续、请求分布、生命周期与实际质量分别报告。
+独立离线审计核同MFU分子及同墙钟分母；四个固定Animals客户端RSS增长尚未归因，终态进程退出不证明存活期间内存回落。
+完整原件独立备份并逐文件核验，r1失败排除且保留；不支持质量等价、稳定性能或其他模型／前端资格。
+
 2026-10-15：[main原生CLIP最小闭包](diagnostics/main_lotus_clip_20261015/README.md)。8834 CPU／SDK、源d2的66/66历史模型与main570新增40/40行实机分列；四路径八臂完整查询、像素／全向量、GPU身份、物理退出与lease通过，默认数值及HSE环境失败保留，无稳定性能结论。
 
 2026-10-15：[main 可选 vLLM 部署资源](diagnostics/main_service_auto_20261015/README.md)。
