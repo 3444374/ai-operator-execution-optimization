@@ -3,9 +3,11 @@
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.util import find_spec
+import io
 import json
 import threading
 import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -102,6 +104,45 @@ def local_execution(base):
 
 @unittest.skipUnless(HAS_LOTUS, "pinned LOTUS library is unavailable")
 class LotusSdkTests(unittest.TestCase):
+    def test_observation_modes_share_semloom_api_and_original_sem_map(self):
+        import lotus
+        import pandas as pd
+        from src.experiments.postgresql.supplier_adapter_query import MethodObservations, _LotusBatchObservation
+        frame = pd.DataFrame({"text": ["duplicate", "duplicate"]})
+        for mode in ("qualification", "performance"):
+            for status in (200, 429):
+                failure = None if status == 200 else lambda request: (429, b'{"error":{"message":"fixture quota","type":"rate_limit"}}')
+                with self.subTest(mode=mode, status=status), fixture_server(failure=failure) as (base, calls), local_execution(base) as execution:
+                    expected_lm, lm = model(base), model(base)
+                    selected = LotusBatchExecutor(execution, config(base), query_id="observer", operator_id="map",
+                        prevalidate_batch=True, retain_full_responses=False)
+                    events, raw = [], io.StringIO()
+                    observer = _LotusBatchObservation(lm, [dict(row_id="a"), dict(row_id="b")],
+                        MethodObservations(SimpleNamespace(record=events.append), raw, "fixture"),
+                        selected, observation_mode=mode)
+                    results, errors = [], []
+                    for current, executor in ((expected_lm, None), (lm, observer)):
+                        with lotus.settings.context(lm=current, enable_cache=False), lotus_executor(current, executor):
+                            try:
+                                result = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
+                                results.append(list(result.itertuples(index=False, name=None)))
+                                errors.append(None)
+                            except Exception as error:
+                                results.append(None)
+                                errors.append(error)
+                    self.assertEqual(results[0], results[1])
+                    self.assertIs(type(errors[0]), type(errors[1]))
+                    if status == 200:
+                        self.assertIsNone(errors[0])
+                    else:
+                        self.assertEqual((errors[0].status_code, errors[1].status_code), (status, status))
+                    self.assertEqual(lm.stats, expected_lm.stats)
+                    self.assertEqual(len(calls), 4)
+                    self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+                    self.assertFalse(selected.last_cleanup_errors)
+                    self.assertEqual(len(raw.getvalue().splitlines()),
+                                     (4 if status == 200 else 2) if mode == "qualification" else 0)
+
     def test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer(self):
         messages = [{"role":"user","content":"first"}]
         invalid_messages = ([], [{"role":"tool","content":"last"}],

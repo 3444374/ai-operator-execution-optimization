@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.model_config import FixedModelConfig
+from src.execution_provider.adapters.full_response import FullModelResponse
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.attempt_ledger import AttemptBudget, BudgetExhausted
 from src.experiments.cell_budget import CellBudgetLedger
@@ -80,7 +81,7 @@ class LotusObservationModeTests(unittest.TestCase):
         receipts=[e for e in writer.events if e['event']=='caller_response']
         self.assertEqual(receipts[0]['monotonic_ns'], receipts[1]['monotonic_ns'])
         self.assertEqual(summarize_calls(writer.events, calls)['request_e2e']['count'], 2)
-        self.assertEqual(len(raw.getvalue().splitlines()), 2)
+        self.assertEqual(raw.getvalue(), '')
         with self.assertRaisesRegex(ValueError, 'unavailable'):
             compare_methods(calls, calls)
 
@@ -91,6 +92,8 @@ class LotusObservationModeTests(unittest.TestCase):
                 def __call__(self, lm, data, kwargs, show, description):
                     for index, item in enumerate(data):
                         self.on_prepared(index, fixture_prepare(lm, item[0], kwargs))
+                        if self.on_response is not None:
+                            self.on_response(index, FullModelResponse(200, (), b'{}'))
                     return [SimpleNamespace(model_dump=lambda:dict(value='ok'))]*len(data)
             lm=SimpleNamespace(_process_uncached_messages=lambda *_:self.fail('original pool used'))
             observer=supplier._LotusBatchObservation(lm, [dict(row_id='a'), dict(row_id='b')], observed,
@@ -100,6 +103,7 @@ class LotusObservationModeTests(unittest.TestCase):
             self.assertTrue(all(c['request_values_sha256'] for c in observed.calls.values()))
             self.assertEqual(sum(e['scope']=='HTTP encoding used by execution' for e in writer.events
                 if e['event']=='lotus_http_call_prepared'), 2)
+            self.assertEqual(len(raw.getvalue().splitlines()), 4 if mode=='qualification' else 0)
 
     def test_native_errors_cancellation_and_partial_results_keep_the_original_behavior(self):
         for mode in supplier.LOTUS_OBSERVATION_MODES:
