@@ -154,6 +154,64 @@ class DaftHttpActivityTests(unittest.TestCase):
     def setUp(self):
         os.environ['SEMLOOM_NATIVE_CALL_CASE'] = self.id()
 
+    def test_minimal_official_async_udf_keeps_complete_map_calls_and_responses(self):
+        import aiohttp
+        import daft
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        from src.experiments.postgresql.native_adapter_query import prepare_fixed_calls
+        from tests.baselines.test_native_calls import complete_server
+
+        prepared = prepare_fixed_calls(tuple(dict(row_id=str(i), text='duplicate fixture text')
+            for i in range(16)), SemanticMapPlan('fixture instruction', 'fixture', 16), lambda _: None)
+        body = b'{"choices":[{"message":{"content":"ok"}}],"usage":{"prompt_tokens":2,"completion_tokens":1}}'
+        options = NativeGraphOptions(concurrency=4)
+        with complete_server(body=body, delay=.01) as (endpoint, calls, _):
+            frame = daft.from_pydict(dict(row_id=[row['row_id'] for row in prepared],
+                payload=[row['payload'].decode() for row in prepared]))
+            started = time.perf_counter()
+
+            @daft.func.batch(return_dtype=daft.DataType.string(), use_process=False,
+                            batch_size=1, max_concurrency=options.concurrency - 1,
+                            max_retries=0, on_error='raise')
+            async def complete(payloads):
+                if len(payloads) != 1:
+                    raise ValueError('fixture expects one complete call per native batch')
+                async with aiohttp.ClientSession(auto_decompress=False,
+                        timeout=aiohttp.ClientTimeout(total=5)) as session:
+                    async with session.post(endpoint, data=payloads.to_pylist()[0].encode(),
+                            headers={'Content-Type': 'application/json', 'Accept-Encoding': 'identity'},
+                            allow_redirects=False) as response:
+                        full = native.FullModelResponse(response.status,
+                            tuple((name.decode('ascii'), value.decode('latin-1'))
+                                  for name, value in response.raw_headers), await response.read(),
+                            f'HTTP/{response.version.major}.{response.version.minor}')
+                return daft.Series.from_pylist([base64.b64encode(native.encode_full_response(full)).decode()])
+
+            result = frame.with_column('response', complete(daft.col('payload'))).select('row_id', 'response')
+            iterator = iter(result.iter_rows(results_buffer_size=1))
+            try:
+                returned = list(iterator)
+            finally:
+                iterator.close()
+            elapsed = time.perf_counter() - started
+            self.assertEqual(len(returned), len(prepared))
+            self.assertEqual({row['row_id'] for row in returned}, {row['row_id'] for row in prepared})
+            responses = [native.decode_full_response(base64.b64decode(row['response'], validate=True))
+                         for row in returned]
+            self.assertTrue(all(response.status_code == 200 and response.body == body
+                                and response.http_version == 'HTTP/1.1' for response in responses))
+            self.assertTrue(all([value for name, value in response.headers if name.lower() == 'x-repeated']
+                                == ['one', 'two'] for response in responses))
+            self.assertEqual(sorted(payload for _, payload, _ in calls),
+                             sorted(row['payload'] for row in prepared))
+            self.assertEqual((len(calls), calls.active), (16, 0))
+            record_fixture('minimal-official-daft-http', dict(actual_posts=len(calls),
+                peak_active=calls.peak, batch_size=1, max_concurrency=options.concurrency - 1,
+                execution_seconds=elapsed, complete_response_bytes_preserved=True,
+                session_scope='one aiohttp session per native UDF batch',
+                timing_scope='async UDF definition, graph application, full iterator consumption and close; source/runtime preparation excluded',
+                observation_scope='localhost server handlers through complete response write'))
+
     def test_sdk_execution_failure_keeps_primary_when_iterator_close_also_fails(self):
         import daft
         from tests.baselines.test_native_call_detailed_timing import observations
@@ -191,6 +249,22 @@ class DaftHttpActivityTests(unittest.TestCase):
     def test_prepared_calls_overlap_with_greedy_consumption_and_keep_full_results(self):
         controls = []
         control_factory = native._GraphControl
+        client_factory, client_close = native._new_http_client, native._HttpClient.close
+        created, create_seconds, close_seconds = [], [], []
+
+        def measured_client():
+            started = time.perf_counter()
+            client = client_factory()
+            create_seconds.append(time.perf_counter() - started)
+            created.append(client)
+            return client
+
+        async def measured_close(client):
+            started = time.perf_counter()
+            try:
+                await client_close(client)
+            finally:
+                close_seconds.append(time.perf_counter() - started)
 
         def capture_control():
             control = control_factory()
@@ -203,7 +277,9 @@ class DaftHttpActivityTests(unittest.TestCase):
                 payload=json.dumps(dict(index=index, text='duplicate')).encode()) for index in range(24))
             prepared_ns = time.monotonic_ns()
             executor = native.NativeCallExecutor('daft', options)
-            with patch.object(native, '_GraphControl', capture_control):
+            with patch.object(native, '_GraphControl', capture_control), \
+                    patch.object(native, '_new_http_client', measured_client), \
+                    patch.object(native._HttpClient, 'close', measured_close):
                 outcomes = tuple(executor.iter_batch(sources))
             consumed_ns = time.monotonic_ns()
         expected = {source.call_id: source for source in sources}
@@ -239,10 +315,16 @@ class DaftHttpActivityTests(unittest.TestCase):
         self.assertTrue(report['http_pools_closed'])
         self.assertEqual(len(controls), 1)
         self.assertTrue(all(client.closed for client in controls[0]._clients.values()))
+        self.assertEqual(len(created), report['http_pool_count'])
+        self.assertEqual(len(close_seconds), len(created))
+        self.assertLess(len(created), len(sources), 'native calls did not reuse graph-loop clients')
         self.assertEqual(native._DAFT_CONTROLS, {})
         record_fixture('daft-http-activity', dict(report=report,
             prepared_input_rows=len(sources), prepared_ns=prepared_ns, consumed_ns=consumed_ns,
             source_preparation='complete before iteration', result_consumption='without deliberate waits',
+            lifecycle=dict(client_creations=len(created), client_closes=len(close_seconds),
+                client_create_seconds=create_seconds, client_close_seconds=close_seconds,
+                timing_scope='individual actual client factory and awaited close calls; no cross-run subtraction'),
             observed_active_counts=sorted({event['active'] for event in events}),
             peak_active=activity['peak'], actual_posts=len(requests)))
 
