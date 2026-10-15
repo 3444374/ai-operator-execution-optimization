@@ -5,17 +5,17 @@
 ## Language
 
 **SemLoom**:
-面向数据库 AI 语义算子的工作量感知执行与多作业调度系统；它是整个系统的名称，不指某个算法、
-数据库、分布式框架或模型服务。
+面向 AI 语义算子与多模态数据任务的物理执行、数据组织与调度系统；支持语义 API 与数据库等前端，
+PostgreSQL 是数据库接入场景之一。它是整个系统的名称，不指某个算法、数据库、分布式框架或模型服务。
 _Avoid_: project、Project、DB-AIEL（作为系统名称）
 
 **Database-Aware AI Execution Layer (DB-AIEL)**:
-数据库语义算子与外部模型执行设施之间的架构层名称；SemLoom 是这一架构层的具体系统。
+数据库语义算子与外部模型执行设施之间的架构层名称，描述 SemLoom 在数据库接入路径的架构角色。
 _Avoid_: 把 DB-AIEL 用作 Python 类型、函数或包名前缀
 
 **AI semantic operator**:
-由数据库拥有 SQL、计划、关系语义和查询生命周期，并将已编译语义任务交给 execution provider 的
-数据库算子。
+由实际语义前端拥有算子语义、计划、输入关联和查询生命周期，将已确定任务交给执行设施的 AI 算子。
+数据库接入路径还由数据库拥有 SQL、关系语义、快照与权限；LOTUS、Palimpzest 等前端保留自身职责。
 _Avoid_: 把逐行 UDF、外部 profiler 或普通 HTTP 调用直接称为数据库 AI 语义算子
 
 **SemLoom execution provider**:
