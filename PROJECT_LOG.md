@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：接通PZ固定计划的最小后端软件路径
+
+查询私有的就绪工作／SDK continuation保留旧PZ执行函数、Generator与原解析，固定一次计划并为各臂重建状态。
+复用既有NativeCall、Daft、Ray Data及作者IMLane桥；SemLoom用同查询Job／算子流及Daft／Ray物理路径，未另造HTTP层或统一并发控制器。
+六条最小PZ接入各2次fixture POST、COUNT1，独立Core5次，共17POST／0模型／0GPU；自有进程与正常lease退出完成。
+模型重绑、unknown继续派发及终态Future保留wire等独审问题已修，Ray导入配置失败与IMLane告警保留。
+见[软件原值与边界](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-cpu-backends)；
+这批三行fixture不授予原2000行SemBench逐臂模型、四lane满载或性能比较资格。
+
 ## 2026-10-15：完成一次PZ原生Movie Q3
 
 固定7ac292e0、旧PZ6ef／SemBenchc814及已有2000行输入，原生parallel完成120真实模型请求，COUNT7／真值14。

@@ -33,7 +33,8 @@ def build_native_execution(config, *, physical: RayMapConfig | None, execute=Non
     else:
         if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
             raise ValueError("native Ray execution requires RayMapConfig and its own transport")
-        execution = ray_map_factory(replace(physical, response_mode="full"))(config, **options)
+        mode = 'native-call-full' if physical.response_mode == 'native-call-full' else 'full'
+        execution = ray_map_factory(replace(physical, response_mode=mode))(config, **options)
 
     def close(timeout=5.0):
         # Backend teardown cannot claim service cleanup while a flow or unknown

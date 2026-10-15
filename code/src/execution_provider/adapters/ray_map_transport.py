@@ -37,7 +37,7 @@ class RayMapConfig:
     coalesce_queued_preparation: bool = False
 
     def __post_init__(self):
-        if self.response_mode not in ('completion', 'full'):
+        if self.response_mode not in ('completion', 'full', 'native-call-full'):
             raise ValueError("unknown Ray Map response mode")
         if type(self.coalesce_queued_preparation) is not bool or (
                 self.coalesce_queued_preparation and self.preparation is None):
@@ -101,22 +101,47 @@ def _model_identity(config, response_mode='completion'):
     fields = asdict(config)
     if response_mode != 'completion':
         fields['response_mode'] = response_mode
+    if response_mode == 'native-call-full':
+        from .native_call_transport import native_call_transport_identity
+        fields['native_call_transport'] = native_call_transport_identity()
     value = json.dumps(fields, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(value).hexdigest()
 
 
+def _native_call_node(ray):
+    """Loopback routes are qualified only on the driver's one live Ray node."""
+    node = ray.get_runtime_context().get_node_id()
+    live = [value['NodeID'] for value in ray.nodes() if value.get('Alive') is True]
+    if type(node) is not str or not node or live != [node]:
+        raise ValueError("native-call-full requires the driver's single live Ray node")
+    return node
+
+
+def _validate_native_worker(reply, identity, node):
+    if reply != dict(identity=identity, node_id=node):
+        raise ValueError("native-call-full worker source identity or node differs")
+
+
 class _HttpActor:
     def __init__(self, config, concurrency, managed=False, response_mode='completion'):
-        if response_mode not in ('completion', 'full'):
+        if response_mode not in ('completion', 'full', 'native-call-full'):
             raise ValueError("unknown Ray worker response mode")
-        transport = FullResponseTransport if response_mode == 'full' else AsyncFixedModelTransport
+        if response_mode == 'native-call-full':
+            from .native_call_transport import NativeCallTransport
+            transport = NativeCallTransport
+        else:
+            transport = FullResponseTransport if response_mode == 'full' else AsyncFixedModelTransport
         self.transport = transport(config, concurrency)
+        self.response_mode = response_mode
         self.active = 0
         self.managed, self.owner = managed, None
         self.identity, self.capacity = _model_identity(config, response_mode), concurrency
         self.clock_domain = _clock_domain()
 
     async def ready(self):
+        if self.response_mode == 'native-call-full':
+            import ray
+            return dict(identity=self.identity, node_id=ray.get_runtime_context().get_node_id())
         return True
 
     async def claim(self, owner, identity, capacity):
@@ -153,6 +178,9 @@ class _HttpActor:
             return _RemoteResult(key, result, start, time.monotonic_ns(), self.clock_domain)
         except Exception as error:
             # Return only safe metadata across Ray; this is not a model receipt.
+            if (self.response_mode == 'native-call-full' and stage == 'http'
+                    and type(error) is ConfirmedTaskFailure and error.key == key):
+                return _RemoteFailure(key, 'pre_send', error.reason)
             return _RemoteFailure(key, stage, exception_details(error))
         finally:
             if counted:
@@ -179,6 +207,7 @@ def owned_map_worker_pool(ray, config, capacity, physical):
         raise ValueError("worker service requires its declared live Ray cluster and capacities")
     actors = []
     try:
+        node = _native_call_node(ray) if physical.response_mode == 'native-call-full' else None
         actor = _worker_class(ray, capacity)
         for index in range(physical.workers):
             arguments = (config, capacity, True)
@@ -186,7 +215,10 @@ def owned_map_worker_pool(ray, config, capacity, physical):
                 arguments += (physical.response_mode,)
             actors.append(actor.options(name=f"{physical.worker_pool}-{index}",
                                         namespace="semloom-map").remote(*arguments))
-        ray.get([a.ready.remote() for a in actors], timeout=30)
+        replies = ray.get([a.ready.remote() for a in actors], timeout=30)
+        if node is not None:
+            for reply in replies:
+                _validate_native_worker(reply, _model_identity(config, physical.response_mode), node)
         yield
     finally:
         failure = None
@@ -258,6 +290,7 @@ class RayMapTransport:
                     self.ray.init(address=physical.address)
                 elif self.ray.get_runtime_context().gcs_address != physical.address:
                     raise ValueError("initialized Ray connection differs from the declared GCS address")
+                node = _native_call_node(self.ray) if physical.response_mode == 'native-call-full' else None
             if physical.worker_pool:
                 with self._startup_stage("actor_bind"):
                     for index in range(physical.workers):
@@ -266,6 +299,8 @@ class RayMapTransport:
                             raise ValueError("Ray worker query claim was not confirmed")
                         self.leased.append(actor)
                         self.actors.append(actor)
+                    if node is not None:
+                        replies = self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
             else:
                 with self._startup_stage("actor_create"):
                     actor = _worker_class(self.ray, capacity)
@@ -275,11 +310,17 @@ class RayMapTransport:
                             arguments += (False, physical.response_mode)
                         self.actors.append(actor.remote(*arguments))
                 with self._startup_stage("actor_ready"):
-                    self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
+                    replies = self.ray.get([a.ready.remote() for a in self.actors], timeout=30)
+            if node is not None:
+                for reply in replies:
+                    _validate_native_worker(reply, _model_identity(config, physical.response_mode), node)
             actor_ids = [getattr(actor, '_actor_id', None) for actor in self.actors]
+            native_identity = (dict(response_mode=physical.response_mode, node_id=node,
+                                   model_identity=_model_identity(config, physical.response_mode))
+                               if node is not None else {})
             self._observe('ray_worker_pool', actor_ids=[actor.hex() for actor in actor_ids if actor is not None],
                           identity_available=all(actor is not None for actor in actor_ids),
-                          ownership='caller pool' if physical.worker_pool else 'execution owner')
+                          ownership='caller pool' if physical.worker_pool else 'execution owner', **native_identity)
         except BaseException:
             self._dispose()
             raise
@@ -341,6 +382,8 @@ class RayMapTransport:
     async def execute(self, task, endpoint):
         if endpoint != "model" or task.key in self.rows or len(self.rows) >= self.capacity:
             raise ValueError("Ray Map admission differs from the core")
+        if self._native_call_blocked():
+            raise self._native_call_dispatch_failure(task.key)
         if len(task.task.payload) + 24 > self.physical.window_bytes:
             return b'{"bridge_error":"MODEL_REQUEST_REJECTED"}'
         row = _Row(task, asyncio.get_running_loop().create_future())
@@ -393,6 +436,10 @@ class RayMapTransport:
 
     async def _flush(self):
         while self.pending:
+            if self._native_call_blocked():
+                while self.pending:
+                    self._reject_native_unsent(self.pending.popleft())
+                break
             selected, size = [], 0
             while self.pending and len(selected) < self.capacity:
                 row = self.pending[0]
@@ -416,6 +463,11 @@ class RayMapTransport:
                     self.first_payload = False
                     with measure:
                         table = await self._work(next, stream, None, stage='payload_next', key=first_key)
+                    if self._native_call_blocked():
+                        for row in by_key.values():
+                            self._reject_native_unsent(row)
+                        by_key.clear()
+                        break
                     if table is None:
                         break
                     # Count backing Arrow buffers, including any shared slice storage.
@@ -423,6 +475,11 @@ class RayMapTransport:
                     if amount > self.physical.object_bytes:
                         raise ValueError("one Ray object exceeds its byte capacity")
                     while self.used_bytes + amount > self.physical.object_bytes:
+                        if self._native_call_blocked():
+                            for row in by_key.values():
+                                self._reject_native_unsent(row)
+                            by_key.clear()
+                            break
                         if all(row.cancelled for row in by_key.values()):
                             for row in by_key.values():
                                 row.future.set_result(b"")
@@ -476,8 +533,26 @@ class RayMapTransport:
             self.changed.set()
             self._observe("ray_block_released", block_id=block_id)
 
+    def _native_call_blocked(self):
+        return self.physical.response_mode == 'native-call-full' and bool(self.unknown)
+
+    @staticmethod
+    def _native_call_dispatch_failure(key):
+        return ConfirmedTaskFailure(key, {'exception_type': 'NativeCallDispatchBlocked'})
+
+    def _reject_native_unsent(self, row, block_id=None):
+        if not self._native_call_blocked() or row.sent:
+            return False
+        if block_id is not None:
+            self._release(block_id, row.task.key, failed=True)
+        if not row.future.done():
+            row.future.set_exception(self._native_call_dispatch_failure(row.task.key))
+        return True
+
     async def _run_row(self, row, block_id, index):
         key = row.task.key
+        if self._reject_native_unsent(row, block_id):
+            return
         if row.cancelled or self.observation_failed or row.future.cancelled():
             self._release(block_id, key, failed=True)
             if not row.future.done():
@@ -506,6 +581,8 @@ class RayMapTransport:
                 row.future.set_result(b'{"bridge_error":"MODEL_UNAVAILABLE"}')
             return
         # Accounting may have yielded while the database cancelled this row.
+        if self._reject_native_unsent(row, block_id):
+            return
         if row.cancelled or self.observation_failed or row.future.cancelled():
             self._release(block_id, key, failed=True)
             if not row.future.done():
@@ -514,7 +591,8 @@ class RayMapTransport:
         actor = self.actors[self.actor_index % len(self.actors)]
         self.actor_index += 1
         template = replace(row.task, task=replace(row.task.task, payload=b""))
-        row.sent = True
+        if self.physical.response_mode != 'native-call-full':
+            row.sent = True
         stage, remote_reason = "ray_submit", None
         try:
             if self.first_submit:
@@ -525,6 +603,9 @@ class RayMapTransport:
                          else self.blocks[block_id].reference)
             arguments = (reference, index, template)
             rpc_started = time.monotonic_ns()
+            if self._reject_native_unsent(row, block_id):
+                return
+            row.sent = True
             call = actor.execute.remote(*arguments, self.worker_owner) if self.worker_owner else actor.execute.remote(*arguments)
             rpc_returned = time.monotonic_ns()
             stage = "ray_await"
@@ -532,10 +613,11 @@ class RayMapTransport:
             received = time.monotonic_ns()
             stage = "result_validation"
             if isinstance(reply, _RemoteFailure):
-                if reply.key != key or reply.stage not in ("payload", "http"):
+                allowed = ("payload", "http", "pre_send") if self.physical.response_mode == 'native-call-full' else ("payload", "http")
+                if reply.key != key or reply.stage not in allowed:
                     raise ValueError("Ray failure differs from its row or execution stage")
                 stage, remote_reason = reply.stage, reply.reason
-                if stage == "payload":
+                if stage == "payload" or stage == "pre_send":
                     # This identified actor reply proves HTTP was never entered.
                     failure = ConfirmedTaskFailure(key, remote_reason)
                     self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
@@ -570,6 +652,8 @@ class RayMapTransport:
             self._observe("ray_execution_error", key=dict(session_id=key.session_id, sequence=key.sequence),
                           stage=stage, reason=reason, remote_outcome="unconfirmed")
             self.unknown.add(key)
+            if self.physical.response_mode == 'native-call-full':
+                self.changed.set()
             if isinstance(error, asyncio.CancelledError):
                 row.future.cancel()
                 raise

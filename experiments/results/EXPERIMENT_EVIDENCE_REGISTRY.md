@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[PZ固定计划交接与CPU后端资格](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-cpu-backends)新增查询私有就绪工作／原SDK继续，六条PZ接入各2fixture POST与COUNT1，另Core物理检查5POST；合计17POST、模型0／GPU0，正常lease与自有退出。固定计划／fresh、nonredirect profile及unknown责任分列；Ray配置失败、IMLane META6/8/4与2条注册取消保留。仅三行Q3形状软件资格，原任务逐臂模型／质量／费用／总时及满载能力仍待验证。
+
 2026-10-15：[PZ原生Movie Q3模型资格](diagnostics/palimpzest_movie_20261015/README.md#一次原生-movie-q3-模型资格)，源码7ac292e0；120模型请求完整结束，COUNT7／真值14、官方相对误差0.5，TP7／FN7／FP0／TN106，无无效预测。单查询8.876秒、服务准备87.284秒分列，prefix cache实际关闭；自有进程／GPU及lease退出已核。未保存完整所选plan，不授固定计划后端资格或性能排名。
 
 2026-10-15：[PZ Movie 原生接线](diagnostics/palimpzest_movie_20261015/README.md)锁定 c814e／6efc 源码，实际原库 CPU 与8行localhost fixture的 Q3／Q2共12POST通过，模型0／GPU0。Q2 LIMIT5仍6调用；FP1／FN1抵消COUNT的反例保留。完整原始 Movie 模型、五组执行及性能资格尚未完成。
