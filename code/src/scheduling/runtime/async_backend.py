@@ -23,6 +23,14 @@ from ..core.session_contract import (
 )
 
 
+class ConfirmedTaskFailure(RuntimeError):
+    """An adapter has affirmative evidence that this task's remote borrowing ended."""
+
+    def __init__(self, key: TaskKey, reason: dict):
+        self.key, self.reason = key, reason
+        super().__init__("confirmed task failure: " + reason["exception_type"])
+
+
 @dataclass
 class _Pending:
     handle: str
@@ -33,7 +41,7 @@ class _Pending:
 
 
 class BoundedAsyncBackend:
-    """Bound coroutine and result slots; only completed responses produce terminals.
+    """Bound coroutine and result slots; responses and confirmed failures produce terminals.
 
     execute must perform asynchronous I/O and enforce the task's response size
     limit while reading, before buffering an unbounded response. The adapter never
@@ -124,10 +132,17 @@ class BoundedAsyncBackend:
                 if not slot.future.done() or slot.reported_unknown:
                     continue
                 # Report an uncertain transport failure once, retaining its slot.
-                # No successful event is consumed if this poll raises instead.
+                # No terminal event is consumed if this poll raises instead.
                 try:
                     result = slot.future.result()
                 except BaseException as error:
+                    if type(error) is ConfirmedTaskFailure and error.key == key:
+                        if (key, slot.handle) not in handles:
+                            raise RuntimeError("asynchronous failure has no registered owner") from None
+                        events.append(Terminal(key, slot.handle, "failed"))
+                        if len(events) == max_events:
+                            break
+                        continue
                     slot.reported_unknown = True
                     if not self._isolate_failures:
                         raise RuntimeError("asynchronous remote outcome unknown") from None

@@ -4,6 +4,10 @@
 [固定 `9c59dc9b` 台账](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位；
 文档引用不把该分支的实现或运行资格转给 main，原始报告、全部失败及重复值保持原身份。
 
+2026-10-15：[main Core 与完整响应资格](diagnostics/main_foundation_20261015/README.md)。
+main `06854ecd` 上的七文件实现闭包通过 Linux 调度 432 项、执行层 183／192 项，9 项未配置 PG 图像检查跳过；
+包含实际 CPU Ray、localhost HTTP 与旧路径回归。元数据重复 offer 的 CPU 成本诊断保留全部重复，不能外推查询或 GPU 收益。
+
 2026-10-15：[重复均值置信区间](../../code/src/observability/README.md#repeat-mean-confidence)从 `4b1c834b` 独立移植到 main 底稿。
 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通过；固定 `277d8f48` 的已保存摘要影响核查范围仍按原说明解释。
 本批不改原始观测、不新增模型实验；不把均值 t 区间当总体 P99 区间，独立性与覆盖条件仍需各实验自身满足。

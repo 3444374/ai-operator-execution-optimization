@@ -1,0 +1,111 @@
+{
+  "baseline": "06854ecd462d17ecdf43f3da793fb009ba12dc0d",
+  "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+  "candidate_code_tree": "436840240007279646788b3643599bcc9b24c7f1",
+  "production": [
+    {
+      "path": "code/src/execution_provider/adapters/async_fixed_model.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b",
+      "candidate_sha256": "3e86526be43decdbc96811442c769efecc9b697255e820d17bdf045bb83a8e4b",
+      "exact": true
+    },
+    {
+      "path": "code/src/execution_provider/adapters/full_response.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "ef0bdfeb99bd5aab1c1b4002ee1f61469ee270966437d71eac66b2ddbd99ebde",
+      "candidate_sha256": "ef0bdfeb99bd5aab1c1b4002ee1f61469ee270966437d71eac66b2ddbd99ebde",
+      "exact": true
+    },
+    {
+      "path": "code/src/execution_provider/adapters/native_tasks.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "a451195d9d15b72260503ca105f449a5da144e9bf07d82e91b60e0e806ca8e34",
+      "candidate_sha256": "a451195d9d15b72260503ca105f449a5da144e9bf07d82e91b60e0e806ca8e34",
+      "exact": true
+    },
+    {
+      "path": "code/src/execution_provider/adapters/ray_map_transport.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "1818fffd06ab88be8aa45ebfdd3bba02d4a55a75919ceba53400f658188284f1",
+      "candidate_sha256": "c085414d99ffe5f8bb329171c50881e4c478099d3c6a23b3f7f76bdac3d59bf6",
+      "exact": false
+    },
+    {
+      "path": "code/src/scheduling/runtime/async_backend.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "candidate_sha256": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "exact": true
+    },
+    {
+      "path": "code/src/scheduling/core/session.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "candidate_sha256": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "exact": true
+    },
+    {
+      "path": "code/src/scheduling/core/task_info.py",
+      "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+      "source_sha256": "f13062e9b1d246918212fc456b4b6c05ed39db85c21894fbee9070fbc046d51f",
+      "candidate_sha256": "f13062e9b1d246918212fc456b4b6c05ed39db85c21894fbee9070fbc046d51f",
+      "exact": true
+    }
+  ],
+  "tests": {
+    "local_targeted": {
+      "run": 116,
+      "pass": 116,
+      "skip": 0
+    },
+    "before_core": {
+      "run": 72,
+      "failures": 9,
+      "errors": 8
+    },
+    "linux_scheduling": {
+      "run": 432,
+      "pass": 432,
+      "skip": 0
+    },
+    "linux_execution_provider": {
+      "run": 192,
+      "pass": 183,
+      "skip": 9,
+      "skip_reason": "PG image DSN and image assets not supplied"
+    }
+  },
+  "linux_preflight": {
+    "status": "ok",
+    "profile_selection": "automatic",
+    "groups": [
+      "core"
+    ],
+    "machine": {
+      "cpu_slots": 128,
+      "gpu_driver_versions": [
+        "595.71.05"
+      ],
+      "gpu_memory_mib": [
+        24564
+      ],
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4090"
+      ],
+      "machine_id": "machine-6cef8852a552d494",
+      "platform": "Linux",
+      "python": "3.12.3"
+    }
+  },
+  "linux_logs_archive_sha256": "309c09d09d898ea5ed306701d88fc74c3e7cd427806d299307362fe4f40b8997",
+  "upload_tar_sha256": "849246636b6e736d09906fbfe77d1195d07f9f798f52e97bfde0ef1ca85c4c51",
+  "new_model_or_gpu_work": 0,
+  "unverified": [
+    "complete LOTUS query",
+    "PG image integration on this source",
+    "GPU performance",
+    "semantic model quality"
+  ],
+  "source_deviation": "Ray worker-ID and payload timing observation additions omitted; existing materializer unchanged."
+}
