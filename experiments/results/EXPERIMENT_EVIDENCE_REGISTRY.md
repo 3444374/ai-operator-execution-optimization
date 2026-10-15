@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[PZ独立SemLoom模型R4](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)固定620，120POST200、COUNT7／真值14，经1682项原件独审通过；外层退出与正常lease释放已记录。bebf R3 failed／六臂720原账及CPU累计6fixture另列，模型累计840／840余0；完整身份不同，不授同身份七臂或性能排名，离线reader首轮形状错误保留。
+
+2026-10-15：[PZ同进程Daft到SemLoom CPU组合](diagnostics/palimpzest_movie_20261015/README.md#daft-semloom-cpu-composition)固定62018855，原PZ／SDK及生产固定入口依次完成各2次合成HTTP、COUNT1／TP1TN1／usage22+6，共享同一native runner，正常Core／HTTP／Ray／自有进程及lease退出。CPUr1导入顺序错误0POST、r2 checker错误前Daft2POST仍保留failed；通过轮4、本阶段累计6fixture、模型／GPU0。91份原件及独审分列；bebf两case只记录runner模式，原R3内部原错未补回，该CPU阶段模型仍720／840余120，不授全七臂或性能资格。
+
 2026-10-15：[PZ固定计划六臂模型与SemLoom失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)固定bebf，一次选定计划、六臂各120真实POST；COUNT7／真值14与完整120行解析／过滤矩阵本轮相同，raw输出及tokens不同。SemLoom在Daft runner配置处0POST失败，整轮failed；累计720／840、余120不自动补跑。八GET、197份原件及3815项一致性检查分列，服务与自有物理退出及正常lease已核；不授七臂、SemLoom或性能资格。
 
 2026-10-15：[PZ固定计划模型两轮失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-rounds)固定adde，首轮metadata流式GET被原观察器拒绝，第二轮GET通过后完整metadata身份比较失败；两轮真实POST／Generator／账本消费均0。服务准备86.114秒／50.121秒已初始化GPU，自有责任与正常lease关闭，原件保留。三处动态字段解释来自安装源码，非重复GET实测diff；不授模型或质量资格，累计额度仍840POST。

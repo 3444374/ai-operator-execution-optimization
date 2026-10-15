@@ -48,6 +48,7 @@ def adapter_source_identity():
         'execution_provider/adapters/ray_map_transport.py', 'execution_provider/adapters/sema_imlane.py',
         'execution_provider/completion.py', 'execution_provider/limits.py', 'execution_provider/wire/framing.py',
         'experiments/postgresql/sembench_queries.py', 'experiments/postgresql/query_workloads.py',
+        'infrastructure/daft_runtime.py',
         'observability/request_gateway.py', 'planning/work.py', 'scheduling/runtime/async_backend.py',
         'scheduling/endpoint_routing/policies.py', 'scheduling/organization/session_window.py',
         'scheduling/submission_control/admission.py',

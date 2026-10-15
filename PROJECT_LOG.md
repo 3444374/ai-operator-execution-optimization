@@ -1,5 +1,18 @@
 # 项目日志
 
+## 2026-10-15：记录source620的SemLoom单臂模型补轮
+
+独立R4使用62018855，完成120次真实POST200、原COUNT7／真值14，query15.110秒／application29.739秒；服务准备49.091秒另报，1682项原件独审与物理旁审通过。
+bebf的R3 failed与六完成臂720原账保持，新增后累计840／840、余0；新旧完整身份不同，不合称同身份七臂或性能排名。
+离线reader首轮因quality对象形状比较错误保留失败，修正版离线复算通过，未重跑模型或新增POST；见[独立R4记录](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)。
+
+## 2026-10-15：核对同进程Daft到SemLoom CPU组合
+
+固定62018855的生产固定入口在同一进程完成Daft2＋SemLoom2合成HTTP，各COUNT1／TP1TN1／usage22+6；共享native runner及严格资源／进程退出、正常lease释放通过，91份原件保留。
+此前CPUr1导入顺序错误0POST、r2 checker字段错误前Daft2POST仍为failed，本阶段累计6fixture／0模型／0GPU。
+另有bebf两进程真实Daft生命周期诊断，不能补认旧模型R3的内部异常或因果；该CPU阶段模型仍720／840、余120未动。
+见[同题CPU记录](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#daft-semloom-cpu-composition)；不授模型、全七臂或性能资格。
+
 ## 2026-10-15：保留PZ固定计划六臂模型结果与SemLoom失败
 
 固定bebf及一次选定原Movie Q3计划，原生／native-adapted／Daft／Ray Data／作者IMLane CP与Ray各120POST，共720；SemLoom在Daft runner配置处首发前失败，整轮failed。

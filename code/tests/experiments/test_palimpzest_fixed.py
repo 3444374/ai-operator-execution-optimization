@@ -1,21 +1,23 @@
 """Fixed-plan controls; optional actual PZ/SDK tests use deterministic CPU fixtures."""
 
 import base64
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import replace
 from io import StringIO
 import json
 import os
 from pathlib import Path
+import sys
 import tempfile
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
 from src.baselines.common.private_artifacts import write_private_json
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.experiments.palimpzest.fixed import BackendRunProfile, FixedEnvironment, FixedMovieProfile, select_fixed_movie
-from src.experiments.palimpzest.fixed_runner import execute_fixed_movie, executor_identity
+from src.experiments.palimpzest.fixed_runner import _prepare_daft_runtime, execute_fixed_movie, executor_identity
 from src.experiments.palimpzest.model import LocalModelBinding, fetch_model_metadata, verify_model_metadata
 from src.experiments.palimpzest.native import NativeOptions
 from src.experiments.palimpzest.source import load_palimpzest
@@ -45,11 +47,39 @@ class FixedProfileTests(unittest.TestCase):
             with self.subTest(arm=arm), self.assertRaises(ValueError):
                 executor_identity(arm, fake)
 
+    def test_other_arms_skip_daft_runtime_import_and_setup(self):
+        import builtins
+        original = builtins.__import__
+        def forbid(name,*args,**kwargs):
+            if name=='daft' or name.startswith('daft.') or name=='src.infrastructure.daft_runtime':
+                raise AssertionError('non-Daft runtime setup imported Daft')
+            return original(name,*args,**kwargs)
+        for arm in ('original-native','native-adapted','ray-data','imlane-cpython','imlane-ray','semloom'):
+            with self.subTest(arm=arm), patch('builtins.__import__',side_effect=forbid):
+                evidence = {'unchanged':True}
+                _prepare_daft_runtime(arm,evidence)
+                self.assertEqual(evidence,{'unchanged':True})
+
 
 def native_response(answer):
     return SimpleNamespace(model='fixed-fixture-model',
         choices=[SimpleNamespace(message=SimpleNamespace(content='ANSWER: '+answer+'\n---'))],
         usage=SimpleNamespace(model_dump=lambda: dict(prompt_tokens=11, completion_tokens=3)))
+
+
+@contextmanager
+def daft_module_fixture(module):
+    # Restore only the replaced key; clearing newly imported extension modules
+    # from sys.modules can make their subsequent initialization invalid.
+    present,previous = 'daft' in sys.modules,sys.modules.get('daft')
+    sys.modules['daft'] = module
+    try:
+        yield
+    finally:
+        if present:
+            sys.modules['daft'] = previous
+        else:
+            sys.modules.pop('daft',None)
 
 
 @unittest.skipUnless(os.environ.get('SEMLOOM_PZ_LIBRARY_TEST') == '1',
@@ -81,6 +111,133 @@ class FixedMovieLibraryTests(unittest.TestCase):
         return select_fixed_movie(self.dataset, self.pz_root, self.binding, self.verified,
             environment=kwargs.pop('environment', self.environment),
             profile=kwargs.pop('profile', FixedMovieProfile(NativeOptions(2, 2))), **kwargs)
+
+    def test_daft_registers_before_lazy_calls_and_reuses_shared_runtime_for_payloads(self):
+        from src.baselines.text.frameworks import native_calls
+        from src.data.materializers.payloads import PayloadBatchLimits,iter_payload_batches
+        from src.execution_provider.adapters.full_response import FullModelResponse
+        from src.infrastructure import daft_runtime
+        from src.semantic_methods.palimpzest.query_execution import QueryExecutionLimits
+        # Actual PZ/SDK/shared helper/Arrow; only the vendor graph and HTTP result
+        # are software fixtures. This is not actual Daft or model qualification.
+        fake,events,state = ModuleType('daft'),[],dict(runner=None)
+        def get_runner():
+            events.append(('get_runner',daft_runtime._configured))
+            if state['runner'] is None:
+                state['runner'] = SimpleNamespace(name='native')
+            return state['runner']
+        def set_native(num_threads=None):
+            events.append(('set_native',num_threads))
+            if state['runner'] is not None:
+                raise RuntimeError('fixture: cannot set runner more than once')
+            state['runner'] = SimpleNamespace(name='native')
+        class Frame:
+            def __init__(self,table):
+                self.table = table
+            def into_batches(self,rows):
+                self.rows = rows
+                return self
+            def to_arrow_iter(self,**_kwargs):
+                yield from self.table.to_batches(max_chunksize=self.rows)
+        def from_arrow(table):
+            events.append(('payload_graph',get_runner().name))
+            return Frame(table)
+        fake.set_runner_native,fake.from_arrow = set_native,from_arrow
+        def complete(_executor,calls,**_kwargs):
+            events.append(('native_graph',get_runner().name))
+            for call in calls:
+                body = dict(id='fixture',object='chat.completion',created=1,model=self.binding.model.model_id,
+                    choices=[dict(index=0,finish_reason='stop',message=dict(role='assistant',content='ANSWER: TRUE\n---'))],
+                    usage=dict(prompt_tokens=11,completion_tokens=3,total_tokens=14))
+                yield native_calls.NativeCallOutcome(call.call_id,call.row_id,
+                    FullModelResponse(200,(('content-type','application/json'),),json.dumps(body).encode()))
+        fixed = self.fixed()
+        executor = native_calls.NativeCallExecutor('daft')
+        try:
+            with daft_module_fixture(fake), patch.object(daft_runtime,'_configured',None), \
+                    patch.object(native_calls.NativeCallExecutor,'iter_batch',complete), \
+                    patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata',return_value=self.verified), \
+                    patch('sys.stdout',StringIO()):
+                first = execute_fixed_movie(fixed.fresh('daft-first'),arm='daft',executor=executor,
+                    limits=QueryExecutionLimits(2,3,2),backend_profile=self.backend_profile)
+                rows = ((0,0,b'first complete call'),(0,1,b'second complete call'))
+                tables = list(iter_payload_batches(rows,PayloadBatchLimits(2,1024),batch_rows=1))
+                self.assertEqual(tuple((row['session_id'],row['sequence'],row['payload'])
+                    for table in tables for row in table.to_pylist()),rows)
+                second = execute_fixed_movie(fixed.fresh('daft-repeat'),arm='daft',executor=executor,
+                    limits=QueryExecutionLimits(2,3,2),backend_profile=self.backend_profile)
+                self.assertEqual(daft_runtime._configured,('native',None))
+        finally:
+            executor.close()
+        self.assertEqual(events[0],('set_native',None))
+        self.assertEqual([row for row in events if row[0]=='set_native'],[('set_native',None)])
+        self.assertTrue(all(row[1]==('native',None) for row in events if row[0]=='get_runner'))
+        self.assertTrue(any(row[0]=='payload_graph' for row in events))
+        for result in (first,second):
+            self.assertEqual(result.records[0].count,2)
+            self.assertEqual(result.evidence['ledger']['completion_completed'],2)
+            setup = result.evidence['daft_runner_setup']
+            self.assertEqual(setup['requested_runner'],'native')
+            self.assertFalse(setup['thread_override_requested'])
+            self.assertEqual(setup['status'],'configured_or_reused')
+            self.assertGreaterEqual(setup['seconds'],0)
+            self.assertGreaterEqual(result.evidence['query_seconds'],setup['seconds'])
+
+    def test_incompatible_shared_daft_configuration_refuses_before_any_model_call(self):
+        from palimpzest.query.generators import generators
+        from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+        from src.infrastructure import daft_runtime
+        from src.semantic_methods.palimpzest.query_execution import QueryExecutionLimits
+        for configured,message in ((('ray',None),'already configured as ray'),
+                                    (None,'foreign native runner already initialized')):
+            with self.subTest(shared_configuration=configured):
+                fixed,evidence = self.fixed(),{}
+                fake,executor = ModuleType('daft'),NativeCallExecutor('daft')
+                fake.set_runner_native = Mock(side_effect=RuntimeError('foreign native runner already initialized'))
+                try:
+                    with daft_module_fixture(fake), patch.object(daft_runtime,'_configured',configured), \
+                            patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata',return_value=self.verified), \
+                            patch.object(generators.litellm,'completion') as completion, \
+                            patch.object(NativeCallExecutor,'iter_batch') as dispatch:
+                        with self.assertRaisesRegex(RuntimeError,message):
+                            execute_fixed_movie(fixed.fresh('incompatible-daft'),arm='daft',executor=executor,
+                                limits=QueryExecutionLimits(2,3,2),backend_profile=self.backend_profile,evidence=evidence)
+                    completion.assert_not_called()
+                    dispatch.assert_not_called()
+                    if configured is None:
+                        fake.set_runner_native.assert_called_once_with()
+                    else:
+                        fake.set_runner_native.assert_not_called()
+                    self.assertEqual(evidence['ledger']['completion_submitted'],0)
+                    self.assertEqual(evidence['daft_runner_setup']['status'],'failed')
+                    self.assertGreaterEqual(evidence['daft_runner_setup']['seconds'],0)
+                    with self.assertRaisesRegex(PalimpzestAdapterError,'unhealthy'):
+                        fixed.fresh('after-runtime-failure')
+                finally:
+                    executor.close()
+
+    def test_daft_setup_waits_for_matching_fixed_model_metadata(self):
+        from palimpzest.query.generators import generators
+        from src.baselines.text.frameworks.native_calls import NativeCallExecutor
+        from src.semantic_methods.palimpzest.query_execution import QueryExecutionLimits
+        fixed,evidence = self.fixed(),{}
+        executor = NativeCallExecutor('daft')
+        changed = replace(self.verified,stable_metadata_sha256='f'*64)
+        try:
+            with patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata',return_value=changed), \
+                    patch('src.experiments.palimpzest.fixed_runner._prepare_daft_runtime') as setup, \
+                    patch.object(generators.litellm,'completion') as completion, \
+                    patch.object(NativeCallExecutor,'iter_batch') as dispatch:
+                with self.assertRaisesRegex(PalimpzestAdapterError,'metadata changed'):
+                    execute_fixed_movie(fixed.fresh('daft-model-change'),arm='daft',executor=executor,
+                        limits=QueryExecutionLimits(2,3,2),backend_profile=self.backend_profile,evidence=evidence)
+            setup.assert_not_called()
+            dispatch.assert_not_called()
+            completion.assert_not_called()
+            self.assertNotIn('daft_runner_setup',evidence)
+            self.assertEqual(evidence['ledger']['completion_submitted'],0)
+        finally:
+            executor.close()
 
     def test_selects_once_and_fresh_copies_keep_complete_plan_without_reoptimizing(self):
         from palimpzest.query.optimizer.optimizer import Optimizer
@@ -289,7 +446,8 @@ class FixedMovieLibraryTests(unittest.TestCase):
         sources = fixed.describe()['manifest']['adapter_source_files']
         for expected in ('experiments/palimpzest/fixed.py', 'experiments/palimpzest/fixed_runner.py',
                          'semantic_methods/palimpzest/query_execution.py', 'semantic_methods/palimpzest/semloom.py',
-                         'baselines/text/frameworks/native_calls.py', 'scheduling/core/session.py'):
+                         'baselines/text/frameworks/native_calls.py', 'scheduling/core/session.py',
+                         'infrastructure/daft_runtime.py'):
             self.assertIn(expected, sources)
         sources['experiments/palimpzest/fixed_runner.py']['sha256'] = '0'*64
         with patch('src.experiments.palimpzest.fixed.adapter_source_identity', return_value=sources):
@@ -297,6 +455,19 @@ class FixedMovieLibraryTests(unittest.TestCase):
                 fixed.fresh('changed-adapter-source')
         with self.assertRaisesRegex(PalimpzestAdapterError, 'unhealthy'):
             fixed.fresh('after-adapter-source-change')
+
+    def test_daft_helper_source_drift_rejects_precreated_run_before_metadata(self):
+        fixed = self.fixed()
+        fresh = fixed.fresh('before-helper-drift')
+        sources = fixed.describe()['manifest']['adapter_source_files']
+        sources['infrastructure/daft_runtime.py']['sha256'] = '0'*64
+        evidence = {}
+        with patch('src.experiments.palimpzest.fixed.adapter_source_identity',return_value=sources), \
+                patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata') as metadata:
+            with self.assertRaisesRegex(PalimpzestAdapterError,'source content or dependency'):
+                execute_fixed_movie(fresh,arm='original-native',backend_profile=self.backend_profile,evidence=evidence)
+        metadata.assert_not_called()
+        self.assertEqual(evidence['ledger']['completion_submitted'],0)
 
     def test_capacity_contract_failure_poisoning_precedes_metadata_or_model_submission(self):
         from src.semantic_methods.palimpzest.query_execution import NativeAdaptedExecutor, QueryExecutionLimits

@@ -28,7 +28,7 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 | 原始图像基准 | [SemBench Animals Q1](experiments/results/diagnostics/sembench_animals_20261015/README.md)在官方完整目录／seed42 SF64上验证原图文Filter与原SQL评价；与CLIP检索分开，三后端单VLM资格不支持排名，Core显式大请求CPU与原64图模型补轮通过，累计320次调用 |
 | 编码与内存 | 普通入口按后端自动接RGB或经当前像素核对的源字节，不可复用时无损PNG1回退；历史显式开关已移除。HSE逻辑额度不覆盖RM列表／复制，也不是RSS或硬显存限，见[实现状态](code/INFRA_STATUS.md#current-image-status) |
 | 文本与其他接点 | [原 Q2 历史观察](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)与[原生执行接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)按实际源码、质量、规模和生命周期解释 |
-| PZ 接点 | [原生与固定计划报告](experiments/results/diagnostics/palimpzest_movie_20261015/README.md)分列原生模型、最小后端软件与作者四lane HTTP健康；固定bebf六臂720模型调用及SemLoom0POST失败已记，全七臂比较未完成 |
+| PZ 接点 | [原生与固定计划报告](experiments/results/diagnostics/palimpzest_movie_20261015/README.md)分列原生模型、软件及作者四lane健康；R3 failed／六臂720保留，620的CPU组合4fixture通过、独立SemLoom模型补轮120已核，累计840／840；非同完整身份七臂比较 |
 | 尚待补证 | 最终文本三条 Q2 的新来源验证仍待完成；图像固定 `485c86a8` 的[同次 workflow 九格连续查询](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证，服务级 RM／内存索引跨调用复用仍未认证 |
 | 研究候选 | 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索；尚未采纳为本基线方法，GPU／生产收益未验证 |
 
