@@ -1,43 +1,18 @@
-# Local Reference PDF Subset
+# 本地参考 PDF 子集
 
-更新日期：2026-08-28
+本页保留**2026-08-28**完成PDF解析核验的本地子集记录，不表示每个 checkout 都含这些实体。
+PDF 被 Git 忽略，实体随工作区或仓库外保存位置而异；使用前核对实际文件、版本及解析结果。
+题录与用途见[REFERENCE_INDEX](REFERENCE_INDEX.md)，泛读／精读分别见[泛读库](../reading_notes/README.md)和[精读库](../精读文献笔记/README.md)。
 
-本目录保存当前工作区实际存在、已通过 PDF 解析检查的论文。权威题录和用途见 `REFERENCE_INDEX.md`；泛读笔记见 `../reading_notes/`，精读笔记见 `../精读文献笔记/`。
+| 当时分类 | 2026-08-28核验文件 |
+|---|---|
+| Top 15子集 | `abacus_pvldb2026.pdf`、`galois_sigmod2025.pdf` |
+| 核心补充 | `palimpzest_cidr2025.pdf`、`sema_vldb2026.pdf`、`kalypso_arxiv2026.pdf` |
+| 其他已精读正式论文 | `parrot_osdi2024.pdf`、`IMLane_PVLDB2026.pdf` |
 
-## 当前状态
+当时共七份，其中Top 15两份；Sema本地文件按arXiv v1、Kalypso按arXiv v2、Parrot与IMLane按正式版本记录。
+历史较大下载数是其他时期的登记，既不证明当前实体存在，也不改写为本工作区的新计数。
 
-- 当前工作区可解析 PDF 实体：7 份。
-- 当前 Top 15 实体：2/15（Galois、Abacus）；其余名称保留在历史题录索引中，使用前需要重新放回本目录并核验。
-- 当前核心补充实体：Palimpzest、Sema、Kalypso；Sema 只按 arXiv v1 记录，不由文件名确认正式 venue，Kalypso 只按 arXiv v2 记录。
-- 当前其他已精读正式论文实体：Parrot（OSDI 2024 proceedings PDF）、IMLane（PVLDB 2026 正式论文）。
-- 旧索引中的较大下载数描述的是曾经登记的外部/历史子集，不符合当前工作区实体文件；当前状态只按可验证文件报告。
-
-## 当前 Top 15 PDF
-
-```text
-abacus_pvldb2026.pdf
-galois_sigmod2025.pdf
-```
-
-## 当前核心补充 PDF
-
-```text
-palimpzest_cidr2025.pdf
-sema_vldb2026.pdf
-kalypso_arxiv2026.pdf
-```
-
-## 当前其他已精读 PDF
-
-```text
-parrot_osdi2024.pdf
-IMLane_PVLDB2026.pdf
-```
-
-## 使用规则
-
-1. PDF 仅用于本地核验、精读和图表定位；正式引用以 DOI、会议/期刊官方题录为准。
-2. arXiv 版本若已有正式发表，笔记同时记录“本地文件版本”和“正式题录”。
-3. Companion、Demo、Tutorial、CIDR、MLSys、arXiv 不自动写成 CCF-A。
-4. 新增 PDF 后同步更新本 README、`REFERENCE_INDEX.md`、对应泛读/精读笔记和 `PROJECT_INDEX.md`。
-5. 不根据摘要直接改 Top 15；必须完成题录核验和全文精读。
+PDF只用于本地核验、精读及图表定位；正式引用以DOI和会议／期刊题录为准。
+补入实体时记录本地版本与正式题录的区别；Companion、Demo、Tutorial、CIDR、MLSys及arXiv不自动写成CCF-A。
+新增或替换实体后更新本页、索引及受影响笔记，不根据摘要重排Top 15。

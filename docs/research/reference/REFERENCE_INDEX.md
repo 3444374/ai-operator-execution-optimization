@@ -1,7 +1,7 @@
 # 项目参考资料索引
 
 更新日期：2026-08-28
-本索引保留项目历史题录登记，并与精读笔记交叉引用；当前工作区实际存在且已解析的 PDF 以同目录 `README.md` 为准。
+本索引保留项目历史题录登记，并与精读笔记交叉引用；本地PDF子集的核验日期与实体使用说明见同目录[README](README.md)，本索引不保证实体存在。
 Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`。
 
 ## 一、Top 15 正式论文（15/15 CCF-A research paper）
@@ -24,7 +24,7 @@ Top 15 正式论文的权威排名与选择依据见 `../top15_ranked_papers.md`
 | 14 | `costream_icde2024.pdf` | COSTREAM: Learned Cost Models for Operator Placement | ICDE 2024 | `costream_icde2024.md` |
 | 15 | `abacus_pvldb2026.pdf` | Abacus: A Cost-Based Optimizer for Semantic Operator Systems | PVLDB 19(5), 2026 | `abacus_pvldb2026.md` |
 
-Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Abacus 两份实体 PDF，实际可用状态以同目录 `README.md` 为准。选择依据与排名逻辑见 `../top15_ranked_papers.md`。
+Top 15 题录与精读映射仍保留 15/15；2026-08-28核验的Top 15本地子集及实体使用说明见[README](README.md)。选择依据与排名逻辑见 `../top15_ranked_papers.md`。
 
 ## 二、核心补充论文
 
@@ -186,7 +186,7 @@ Top 15 题录与精读映射仍保留 15/15；当前 checkout 只有 Galois、Ab
 
 ## 十、统计与一致性
 
-- **当前工作区可解析 PDF 实体**: 7（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane；以同目录 README 为准）
+- **本地PDF实体**：以[子集核验记录](README.md)及使用前实际检查为准；不从历史题录数推定当前可用数。
 - **以下旧统计**记录历史题录/下载状态，不代表 2026-08-24 当前 checkout；待参考子集恢复后再整体重算。
 - **PDF 总数**: 88（`fastserve_2023.pdf` 与 `fastserve_nsdi2026.pdf` 内容相同，后者为 NSDI 2026 正式版命名；去重后 87 唯一内容）
 - **唯一内容 PDF**: 87

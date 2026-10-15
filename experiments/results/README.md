@@ -1,10 +1,18 @@
 # 实验结果
 
+本页同时链接 main 已存报告及 [固定集成快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/README.md)的后续结果。
+外链结果按其实际源码与运行身份解释，不表示 main 已包含对应实现。
+
 本页定位报告与数据；实际配置、全部重复、失败和结论在对应实验的主报告中维护。
 共享证据、负结果及尚未覆盖的能力见[证据台账](EXPERIMENT_EVIDENCE_REGISTRY.md)。
 
 | 内容 | 报告入口 |
 |---|---|
+| LOTUS原生CLIP建索引与检索 | [六路径历史与最终融合资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)、[PNG共享适配](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate) |
+| 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与257图数值补测](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/image_clip_file_operator_20261014/README.md) |
+| 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/postgresql/native_executor_baselines_20261012/README.md) |
+| 独立IMLane构建 | [无模型Arrow往返](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/imlane_build_20261012/README.md) |
+| 原生方法与SemLoom执行接入 | [固定版本工程核对](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/postgresql/native_adapter_integration_20261009/README.md) |
 | 文本Map完整系统比较 | [四路径匹配比较](postgresql/text_map_four_path_comparison_20260930/README.md) |
 | 查询准备与消费调优 | [worker复用](postgresql/text_map_worker_reuse_real_20260930/README.md)、[gateway与消费分段](postgresql/text_map_gateway_lifecycle_20261001/README.md) |
 | 准备分段的数据库与模型验证 | [PG生命周期、模型停止及物理内存](postgresql/text_map_preparation_validation_20261004/README.md) |
