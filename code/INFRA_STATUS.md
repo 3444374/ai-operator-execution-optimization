@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
+分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
+原方法／SDK、厂商调度和既有默认保持，不提供新模型性能或全图RSS资格。
+
 维护日期：2026-10-15；主体能力核对固定集成来源 `277d8f48`，后续独立修复逐条注明来源，不将其他活动分支或旧运行自动计入。
 接口事实由源码拥有，逐次测试／模型结果与失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)和原报告拥有。
 本页保留能力与缺口，逐次交付数字不再在此复制；精简前记录可查[固定来源状态页](https://github.com/3444374/ai-operator-execution-optimization/blob/277d8f4862c291bc2830cc6622f5a0b4f28b5c90/code/INFRA_STATUS.md)。

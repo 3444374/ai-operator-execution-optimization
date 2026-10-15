@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：简化文本原生接入的容量与清理
+
+基于`277d8f48`独立完成`a9c6df63`的Daft清理修补与`f2749bf1`的容量分离，
+删除重复默认清理及状态标志；Ray改按活动HTTP校验，完整输入复用有限行／字节额度并在首越界拒绝。
+独立审核发现的source／完整payload混同已按固定模板开销修正，方法、usage与厂商执行保持。
+[同题报告](experiments/results/diagnostics/native_text_capacity_20261015/README.md)保存最小API实跑、完整消费计时、
+Mac实验观测平台限制、实库／替身范围和全部失败；不新造formatter、session、runner或调度，不重跑模型矩阵。
+IMLane公共接点的每查询关闭与底层可选跨批session分别说明；main、integration及其他owner路径不在本次写入范围。
+
 ## 2026-10-15：独立接纳重复均值区间修复
 
 按固定来源 `4b1c834b64b604397c7e6a533134648a72923097` 吸收统计函数、定向测试与同题说明，集成提交 `24f87440` 保持三文件同blob。

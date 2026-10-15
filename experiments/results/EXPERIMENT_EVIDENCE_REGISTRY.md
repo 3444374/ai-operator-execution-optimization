@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
+固定`f2749bf1`的CPU localhost SDK观测、回归及原失败分别保存；支持活动HTTP／批次存储分离和清理责任修补，
+不支持模型收益、全图内存保证或Mac上的Linux完整query观测。LOTUS方法与IMLane生命周期边界见同题说明。
+
 2026-10-15：[重复均值区间修复](../../code/src/observability/README.md#repeat-mean-confidence)来自独立 `4b1c834b`，本集成保持三个交付文件同blob，固定源码40项本地定向检查通过。
 仅修正保守临界值查表与可规避的半宽中间溢出；固定 `277d8f48` 留存材料未确认已发布摘要受影响，未改写历史观测。样本独立性、总体尾分位与既有有符号极值的标准差／CV可表示性不由本修复认证；无服务器、模型或GPU运行。
 
