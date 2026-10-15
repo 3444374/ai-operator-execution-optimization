@@ -48,6 +48,22 @@ def configure_lm(model, concurrency, max_tokens, tokenizer_path):
     return lm
 
 
+def observed_http_peak(trace):
+    """One gateway clock: upstream dispatch until its complete response body."""
+    events = []
+    for row in trace:
+        start = row['upstream_dispatch_started_monotonic_ns']
+        end = row['upstream_response_body_read_completed_monotonic_ns']
+        if type(start) is not int or type(end) is not int or end < start:
+            raise ValueError('Animals HTTP interval is incomplete')
+        events.extend(((start, 1), (end, -1)))
+    active = peak = 0
+    for _, delta in sorted(events):
+        active += delta
+        peak = max(peak, active)
+    return peak
+
+
 def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
               max_tokens=8192, observation_mode, ray_temp_root=None):
     """No constructor warmup; actual POST/response bodies, status and original decisions persist."""
@@ -112,11 +128,11 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
             executor = None
             if arm != 'lotus-native':
                 ray_actors = 2 if concurrency % 2 == 0 else 1
-                options = NativeGraphOptions(concurrency=concurrency+(arm == 'daft'),num_threads=8,
+                options = NativeGraphOptions(concurrency=concurrency,num_threads=8,
                     ray_actors=ray_actors,ray_async_batches_per_actor=concurrency//ray_actors,
                     ray_batch_rows=1,source_blocks=4)
                 summary['native_options'] = asdict(options)
-                summary['configured_http_upper_bound'] = (options.concurrency-1 if arm == 'daft'
+                summary['configured_http_upper_bound'] = (options.concurrency if arm == 'daft'
                                                          else options.ray_active_http_upper_bound)
                 if arm == 'daft':
                     import daft
@@ -163,6 +179,12 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
             write_private_json(root/'filter-decisions.json',decisions)
             if executor is not None:
                 summary['executor_close_report'] = executor.last_close_report
+            peak = observed_http_peak(trace)
+            summary['resource_gate'] = dict(request_allowance=concurrency,
+                observed_upstream_peak=peak, passed=peak <= concurrency,
+                interval='upstream dispatch to complete response body, gateway monotonic clock')
+            if peak > concurrency:
+                raise ValueError('Animals observed HTTP concurrency exceeds its declared allowance')
             summary['status'] = 'completed'
     except BaseException as error:
         failure = error

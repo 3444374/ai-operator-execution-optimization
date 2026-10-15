@@ -1,6 +1,7 @@
 """CPU-only input contracts and actual pinned LOTUS image HTTP fixture checks."""
 import base64
 from contextlib import contextmanager
+from functools import wraps
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
@@ -11,6 +12,9 @@ import os
 from pathlib import Path
 import tempfile
 import threading
+import time
+import subprocess
+import sys
 import unittest
 from unittest.mock import patch
 
@@ -18,6 +22,21 @@ from src.baselines.common.private_artifacts import content_digest
 from src.baselines.image.sembench_animals import (
     AnimalsDataset, MANIFEST_SCHEMA, SEMBENCH_COMMIT, classification_audit, image_identity,
 )
+
+
+def fresh_daft_runtime(test):
+    """Daft's compute-thread count is process-global and can only be set once."""
+    @wraps(test)
+    def run(self):
+        target='test_sembench_animals.'+'.'.join(self.id().split('.')[-2:])
+        if os.environ.get('SEMLOOM_ANIMALS_NATIVE_CHILD') == target:
+            return test(self)
+        env=dict(os.environ,SEMLOOM_ANIMALS_NATIVE_CHILD=target)
+        env['PYTHONPATH']=str(Path(__file__).parent)+os.pathsep+env.get('PYTHONPATH','')
+        completed=subprocess.run([sys.executable,'-m','unittest',target],env=env,
+                                 stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+        self.assertEqual(completed.returncode,0,completed.stdout[-8000:])
+    return run
 
 
 class AnimalsInputsTests(unittest.TestCase):
@@ -87,7 +106,7 @@ class AnimalsInputsTests(unittest.TestCase):
 
 
 @contextmanager
-def image_http_fixture(*, gzip_response=False):
+def image_http_fixture(*, gzip_response=False, delay_s=0):
     received=[]
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):
@@ -103,6 +122,7 @@ def image_http_fixture(*, gzip_response=False):
             with Image.open(io.BytesIO(raw)) as image:
                 positive=image.convert('RGB').getpixel((0,0))==(255,255,255)
             received.append(value)
+            time.sleep(delay_s)
             body=json.dumps(dict(id='fixture-response',object='chat.completion',created=1,
                 model=value['model'],choices=[dict(index=0,finish_reason='stop',
                     message=dict(role='assistant',content='Answer: '+str(positive)))],
@@ -128,6 +148,43 @@ class ActualAnimalsLibrariesTests(unittest.TestCase):
     """Real LOTUS/SDK/SQL evaluation; the endpoint is a pixel-reading CPU fixture."""
     setUp = AnimalsInputsTests.setUp
     freeze = AnimalsInputsTests.freeze
+
+    @fresh_daft_runtime
+    def test_daft_complete_image_requests_stay_within_four_http_slots(self):
+        from PIL import Image
+        from tokenizers import Tokenizer,models
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.experiments.sembench_animals import run_query
+        for i in range(4, 16):
+            path=self.root/f'{i}.png'
+            Image.new('RGB',(16+i,12),'white' if i%2==0 else 'black').save(path)
+            self.rows.append(dict(row_id=f'animals-row-{i}', ImagePath=str(path),
+                Species='ZEBRA' if i%2==0 else 'IMPALA', City='Nairobi',StationID='Station_A',
+                image=image_identity(path)))
+        self.freeze()
+        dataset=AnimalsDataset(Path(os.environ['SEMLOOM_TEST_SEMBENCH_ROOT']),self.path,self.value['sha256'])
+        tokenizer=self.root/'capacity-tokenizer.json'
+        Tokenizer(models.WordLevel({'[UNK]':0},unk_token='[UNK]')).save(str(tokenizer))
+        with image_http_fixture(gzip_response=True,delay_s=.2) as (url,received):
+            summary=run_query(dataset,FixedModelConfig(url,'fixture-vlm',10000),
+                arm='daft',output=self.root/'capacity',tokenizer_path=tokenizer,
+                concurrency=4,max_tokens=32,observation_mode='performance')
+        self.assertEqual(len(received),16)
+        self.assertEqual(summary['quality']['predicted'],8)
+        self.assertTrue(summary['resource_gate']['passed'])
+        self.assertLessEqual(summary['resource_gate']['observed_upstream_peak'],4)
+        self.assertEqual(summary['native_options']['concurrency'],4)
+        trace=[json.loads(line) for line in (self.root/'capacity/http-trace.jsonl').read_text().splitlines()]
+        events=[]
+        for row in trace:
+            events.extend(((row['upstream_dispatch_started_monotonic_ns'],1),
+                           (row['upstream_response_body_read_completed_monotonic_ns'],-1)))
+        active=peak=0
+        for _,change in sorted(events):
+            active+=change
+            peak=max(peak,active)
+        self.assertEqual(active,0)
+        self.assertLessEqual(peak,4)
 
     def test_original_query_keeps_pixels_messages_parser_count_and_evaluator(self):
         from tokenizers import Tokenizer,models
@@ -177,6 +234,30 @@ class ActualAnimalsLibrariesTests(unittest.TestCase):
         self.assertEqual(summary['error_type'],'RuntimeError')
         self.assertEqual(summary['versions']['duckdb']['status'],'unavailable')
         self.assertEqual(summary['model_calls'],4)
+
+    @fresh_daft_runtime
+    def test_resource_failure_keeps_quality_results_and_close_report(self):
+        from tokenizers import Tokenizer,models
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.experiments.sembench_animals import run_query
+        dataset=AnimalsDataset(Path(os.environ['SEMLOOM_TEST_SEMBENCH_ROOT']),self.path,self.value['sha256'])
+        tokenizer=self.root/'resource-tokenizer.json'
+        Tokenizer(models.WordLevel({'[UNK]':0},unk_token='[UNK]')).save(str(tokenizer))
+        output=self.root/'expected-resource-failure'
+        with image_http_fixture() as (url,_), \
+             patch('src.experiments.sembench_animals.observed_http_peak',return_value=5):
+            with self.assertRaisesRegex(ValueError,'observed HTTP concurrency'):
+                run_query(dataset,FixedModelConfig(url,'fixture-vlm',10000),arm='daft',
+                    output=output,tokenizer_path=tokenizer,max_tokens=32,observation_mode='performance')
+        summary=json.loads((output/'summary.json').read_text())
+        self.assertEqual(summary['status'],'failed')
+        self.assertFalse(summary['resource_gate']['passed'])
+        self.assertEqual(summary['quality']['predicted'],2)
+        self.assertEqual(summary['model_calls'],4)
+        self.assertIn('executor_close_report',summary)
+        self.assertEqual(json.loads((output/'original-result.json').read_text())['data'],[[2]])
+        self.assertEqual(len(json.loads((output/'filter-decisions.json').read_text())),4)
+        self.assertEqual(len((output/'http-trace.jsonl').read_text().splitlines()),4)
 
 
 if __name__=='__main__':
