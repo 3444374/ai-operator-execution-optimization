@@ -1,0 +1,9 @@
+# Use a separate PZ driver; upstream pins numpy, Arrow and sentence-transformers.
+palimpzest @ git+https://github.com/mitdbg/palimpzest.git@6efc19841c49d727ce42f5c2dd55e7433601d2d9
+litellm==1.95.0
+openai==2.50.0
+pandas==2.3.3
+duckdb==1.5.4
+scipy==1.17.1
+cdlib>=0.4,<0.5
+overrides>=7,<8

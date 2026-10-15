@@ -64,6 +64,8 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索，尚未采纳为本集成实现或验证 GPU 收益。
 固定 `485c86a8` 的[同次 workflow 九格连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证；服务级 RM／内存索引跨调用复用仍未认证，后续完整查询继续采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
 
+2026-10-15：[PZ 原生与固定计划边界](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)保留原 Generator、parallel 与结果合同；实际原库 CPU／localhost fixture 已接通 Q3 与 Q2。模型绑定未知即拒绝，失败与 negative、usage 缺失分开；完整 Movie 模型与其余四后端逐臂资格待完成。
+
 ## 当前文本、接入与公共基础
 
 重复均值区间已单独吸收 `4b1c834b`；公式、保守取值与发布影响见[统计说明](src/observability/README.md#repeat-mean-confidence)。固定源码40项定向检查通过，不证明重复独立或尾分位充分，也不改写原始观测。

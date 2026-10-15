@@ -7,6 +7,11 @@ The native complete-call adapters additionally select Daft Native, Ray Data, or 
 reference while leaving LOTUS and DuckDB response interpretation in the original libraries.
 See the [execution adapter checks](../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md).
 
+The [pinned Palimpzest adapter](palimpzest/README.md) retains PZ's own parallel DAG,
+Generator and parser, with an explicit local-model binding and a separate fixed-plan
+boundary. It is an independent semantic frontend. Its CPU and model qualification
+cannot be borrowed from LOTUS or treated as five completed backend comparisons.
+
 The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through

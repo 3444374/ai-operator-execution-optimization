@@ -1,5 +1,7 @@
 # 实验结果
 
+[PZ Movie 原生与固定计划边界](diagnostics/palimpzest_movie_20261015/README.md)分列实际原库软件、localhost fixture 与待完成的真实模型／后端资格。
+
 本页定位报告与数据；实际配置、全部重复、失败和结论在对应实验的主报告中维护。
 共享证据、负结果及尚未覆盖的能力见[证据台账](EXPERIMENT_EVIDENCE_REGISTRY.md)。
 

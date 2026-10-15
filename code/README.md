@@ -1,5 +1,8 @@
 # SemLoom Code
 
+[PZ 原生 Movie 与固定计划边界](src/semantic_methods/palimpzest/README.md)保留 PZ 自己的算子、优化器和并行 DAG；软件／fixture 与真实模型、五组后端资格分别记录。
+
+
 [HSE源迭代器关闭核查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
 覆盖正常、取消与双错，源close和actor确认分别执行；原默认保持，实际SDK／设备退出仍需独立验证。
 

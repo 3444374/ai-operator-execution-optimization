@@ -53,6 +53,10 @@ SciPy、cdlib、overrides与LOTUS1.2.4。原生Ray SQL/HTTP还须核对Ray2.56.1
 原生Daft SQL读取还检查`sql-readers`组（SQLAlchemy、SQLGlot、ConnectorX），并使用独立driver解释器。
 本轮固定Daft0.7.21的连接工厂返回SQLAlchemy Connection；psycopg通过NullPool的creator接入，只读和statement timeout仍明确设置。
 上游SemBench的LOTUS1.1.3与本项目选用的1.2.4分别登记，不称完整上游环境复现。
+PZ Movie 使用独立 driver 的 `semantic-palimpzest` 组及[固定依赖](../../code/requirements/palimpzest.txt)，
+不要求安装 LOTUS。PZ 专属上游固定 NumPy 2.0.2、Arrow 20.0.0 与 sentence-transformers 5.0.0；
+不能与 IMLane 作者运行环境合并。源码 commit、实际依赖和私有接点另由 [PZ 模块](../../code/src/semantic_methods/palimpzest/README.md)核对，
+能力组 import 成功不替代完整查询或模型资格。
 IMLane独立构建与无模型检查使用`imlane-runtime`组：Python3.12、Arrow16.1.0、Ray2.56.1与psutil7.0.0
 在自己的环境核对，不修改原语义系统driver；C++库、构建来源与实际往返另由
 [IMLane接入目录](../../code/integrations/imlane/README.md)记录。该组不检查或下载模型。

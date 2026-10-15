@@ -95,6 +95,17 @@ Linux 上设置 `SEMLOOM_IMAGE_WORKER_SDK_TESTS=1`，运行
 新桥摘要、字段和已有软件资格见[完整调用说明](../integrations/sema/imlane_calls.md#调用与配置)。
 `--execute`只用于另行授权且完整预检通过的具体清单，正常软件检查不提供性能资格。
 
+## SemBench Palimpzest 原查询
+
+`experiments/run_sembench_palimpzest.py` 从固定 SemBench/PZ 源码运行原 Movie Q3 完整过滤与 count，
+Q2 LIMIT5 可单独选用；原生 `parallel`、实际 worker/batch 配置与额外调用均保留。
+[版本与职责](../src/semantic_methods/palimpzest/README.md)说明私有接点、模型绑定和失败台账；
+[模板](../../deploy/autodl/sembench_palimpzest.example.json)只引用仓库外路径环境变量。
+`--data-preflight` 核输入/源码，`--preflight` 再核严格依赖 profile；两者不发模型请求。
+`--execute` 先取得正常共享 lease（不自动恢复），再核精确本地模型元数据。
+PZ 原方法继续生成提示、解析和结果；模型错误、解析默认及 usage 缺失不算真实 negative 或免费。
+CPU 原库/fixture 和真实模型检查分别登记，接口存在不代表五组比较完成。
+
 <a id="sembench-send-accounting"></a>
 
 ### 本轮逐跳发送预算
