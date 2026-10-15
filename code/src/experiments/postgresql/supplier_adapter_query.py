@@ -176,7 +176,9 @@ class _LotusBatchObservation:
             results=self.original(data,kwargs,show_progress_bar,description)
         else:
             self.executor.on_prepared=prepared
-            self.executor.on_response=lambda index,full:self.observations.save_full(self.rows[index]['row_id'],stage,full)
+            self.executor.on_response=(
+                (lambda index,full:self.observations.save_full(self.rows[index]['row_id'],stage,full))
+                if self.observation_mode=='qualification' else None)
             results=self.executor(lm,data,kwargs,show_progress_bar,description)
         if len(results)!=len(self.rows):
             raise ValueError('LOTUS native batch returned an incomplete response list')
@@ -195,9 +197,10 @@ class _LotusBatchObservation:
             response_values=response.model_dump()
             body=json.dumps(response_values,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()
             self.observations.received(row['row_id'],stage,body,when=returned,call_id=self.call_id)
-            self.observations.raw.write(json.dumps(dict(row_id=row['row_id'],stage_id=str(stage),
-                response_representation='complete native SDK ModelResponse values',
-                response_values=response_values),ensure_ascii=False,allow_nan=False)+'\n')
+            if self.observation_mode=='qualification':
+                self.observations.raw.write(json.dumps(dict(row_id=row['row_id'],stage_id=str(stage),
+                    response_representation='complete native SDK ModelResponse values',
+                    response_values=response_values),ensure_ascii=False,allow_nan=False)+'\n')
         return results
 
 

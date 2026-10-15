@@ -4,11 +4,14 @@ from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.util import find_spec
 import json
+import io
 import os
 from pathlib import Path
 import socket
 import sys
 import threading
+import time
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -114,6 +117,100 @@ class LotusNativeTests(unittest.TestCase):
     def executor(self, backend, base, **options):
         native = NativeCallExecutor(backend, self.options)
         return LotusNativeBatchExecutor(native, config(base), query_id="native-query", operator_id="map", **options)
+
+    def test_sem_map_cache_states_keep_original_miss_batches_and_usage(self):
+        import lotus
+        import pandas as pd
+        frame = pd.DataFrame({"text": ["duplicate", "你好", "duplicate", "tail"]})
+        states = (("all-miss", [], 4), ("mixed", ["duplicate"], 2),
+                  ("all-hit", ["duplicate", "你好", "tail"], 0))
+        for backend in self.BACKENDS:
+            for state, seeds, misses in states:
+                with self.subTest(backend=backend, cache=state), fixture_server() as (base, calls):
+                    results, statistics, requests = [], [], []
+                    for adapted in (False, True):
+                        lm = model(base)
+                        selected = self.executor(backend, base)
+                        with lotus.settings.context(lm=lm, enable_cache=True):
+                            if seeds:
+                                pd.DataFrame({"text": seeds}).sem_map("Summarize {text}.", return_raw_outputs=True)
+                            before = len(calls)
+                            graphs = []
+                            original = selected.native.iter_batch
+                            def enter(batch, **kwargs):
+                                graphs.append(len(batch))
+                                return original(batch, **kwargs)
+                            with patch.object(selected.native, "iter_batch", enter), lotus_executor(lm, selected if adapted else None):
+                                started = time.perf_counter_ns()
+                                result = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
+                                consumed = list(result.itertuples(index=False, name=None))
+                                elapsed = time.perf_counter_ns() - started
+                                cached = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
+                        self.assertEqual(len(calls) - before, misses)
+                        self.assertEqual(cached.to_dict("records"), result.to_dict("records"))
+                        self.assertEqual(lm.stats.operator_cache_hits, 1)
+                        if adapted:
+                            self.assertEqual(graphs, [misses] if misses else [])
+                            self.assertEqual(selected.last_preflight["target_rows"], misses)
+                            if misses:
+                                self.assertTrue(selected.last_close_report["clean"])
+                            record_fixture("lotus-cache-state", dict(backend=backend, cache_state=state,
+                                rows=len(consumed), actual_main_posts=misses, graph_batches=graphs,
+                                stats=asdict(lm.stats), query_seconds=elapsed / 1e9,
+                                timing_scope="original sem_map submission through full frame consumption; seed and operator-cache repeat outside"))
+                        results.append(result.to_dict("records"))
+                        statistics.append(lm.stats)
+                        requests.append(calls[before:])
+                    self.assertEqual(results[0], results[1])
+                    self.assertEqual(statistics[0], statistics[1])
+                    self.assertCountEqual(requests[0], requests[1])
+
+    def test_observation_modes_keep_full_sem_map_results_errors_usage_and_cleanup(self):
+        import lotus
+        import pandas as pd
+        from src.experiments.postgresql.supplier_adapter_query import MethodObservations, _LotusBatchObservation
+        frame = pd.DataFrame({"text": ["duplicate", "duplicate"]})
+        for backend in self.BACKENDS:
+            for mode in ("qualification", "performance"):
+                for status in (200, 429):
+                    failure = None if status == 200 else lambda request: (429, b'{"error":{"message":"fixture quota","type":"rate_limit"}}')
+                    with self.subTest(backend=backend, mode=mode, status=status), fixture_server(failure=failure) as (base, calls):
+                        expected_lm, lm = model(base), model(base)
+                        selected = self.executor(backend, base, retain_full_responses=False)
+                        events, raw = [], io.StringIO()
+                        observed = MethodObservations(SimpleNamespace(record=events.append), raw, "fixture")
+                        observer = _LotusBatchObservation(lm, [dict(row_id="a"), dict(row_id="b")], observed,
+                            selected, observation_mode=mode)
+                        values, errors = [], []
+                        for current, executor in ((expected_lm, None), (lm, observer)):
+                            with lotus.settings.context(lm=current, enable_cache=False), lotus_executor(current, executor):
+                                try:
+                                    result = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
+                                    values.append(list(result.itertuples(index=False, name=None)))
+                                    errors.append(None)
+                                except Exception as error:
+                                    values.append(None)
+                                    errors.append(error)
+                        self.assertEqual(values[0], values[1])
+                        self.assertIs(type(errors[0]), type(errors[1]))
+                        self.assertEqual(getattr(errors[0], "status_code", None), getattr(errors[1], "status_code", None))
+                        if status == 200:
+                            self.assertIsNone(errors[0])
+                        else:
+                            self.assertEqual(errors[0].status_code, status)
+                        self.assertEqual(lm.stats, expected_lm.stats)
+                        self.assertEqual(len(calls), 4)
+                        self.assertEqual(len(observed.calls), 2)
+                        self.assertTrue(selected.last_close_report["clean"])
+                        self.assertTrue(selected.last_close_report["graph_consumer_stopped"])
+                        self.assertEqual(len(raw.getvalue().splitlines()),
+                                         (4 if status == 200 else 2) if mode == "qualification" else 0)
+                        record_fixture("lotus-observation-mode", dict(backend=backend, observation_mode=mode,
+                            http_status=status, actual_posts=len(calls),
+                            original_error=None if errors[0] is None else type(errors[0]).__name__,
+                            adapted_error=None if errors[1] is None else type(errors[1]).__name__,
+                            raw_records=len(raw.getvalue().splitlines()), stats=asdict(lm.stats),
+                            close_report=selected.last_close_report))
 
     def test_map_and_cache_usage_logprobs_match_original_without_parser_http(self):
         import lotus
