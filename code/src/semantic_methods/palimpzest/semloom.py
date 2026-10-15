@@ -17,10 +17,10 @@ from .backend import PalimpzestAdapterError
 
 
 _SOURCE_HASHES = {
-    native_calls: "5dc337278a7b358498e05d8e826da551698cd72aeca55f01a4fab85976b88498",
+    native_calls: "ec02723d9d997d120ea66429b1edaa87709c7028e37aa1339e6f0a6bc3ffbb6f",
     full_response: "ef0bdfeb99bd5aab1c1b4002ee1f61469ee270966437d71eac66b2ddbd99ebde",
     native_tasks: "afd3e07dd71eac8bcd358a042876860074846ebd628c868fb86822bb47e5206b",
-    native_call_transport: "d03ccb340ae52b73b52d42e6690a6c7f5c9f5c5dbc38cf89815a3ee187f9bdb5",
+    native_call_transport: "85e3b91991a87388405f70881b12cf58142261d5a00f80088c2aa1b0458c5a70",
     ray_map_transport: "600ed26f6e1bc6f3868b97ba6f0f786e613f4e1956a635d85e0bf275e489df4f",
 }
 

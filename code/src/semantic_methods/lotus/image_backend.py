@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 import threading
 import operator
+import json
 
 from src.modalities.image.clip import ClipImagePreprocessor, ClipTensorActor
 from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult, ImageBatchTelemetry
@@ -59,14 +60,26 @@ class DirectImageExecutor:
 
 class SlowClipPrepare:
     """A workload preprocessor; execution and queues belong to the chosen engine."""
-    def __init__(self, processor_revision, torch_intraop_threads=1, torch_interop_threads=1):
+    def __init__(self, processor_revision, torch_intraop_threads=1, torch_interop_threads=1,
+                 preprocessing_identity=None):
         from src.modalities.image.clip import configure_torch_thread_pools
         configure_torch_thread_pools(torch_intraop_threads, torch_interop_threads)
         self.processor = ClipImagePreprocessor(processor_revision, local_files_only=True)
+        self.identity = self.processor.preprocessing_identity()
+        self.resource_identity = None
+        if preprocessing_identity is not None:
+            from src.modalities.image.worker_identity import validate_preprocessing_identity, worker_identity, record_worker_identity
+            if validate_preprocessing_identity(self.identity) != preprocessing_identity:
+                raise ValueError("CLIP preprocessor differs from the owner's actual identity")
+            self.resource_identity = worker_identity("clip_prepare", preprocessing_identity=self.identity)
+            record_worker_identity(self.resource_identity)
 
     def ready(self):
+        import torch
         return {"input_kind": "encoded_bytes", "processor_backend": "PIL",
-                "preprocessing_identity": self.processor.preprocessing_identity()}
+                "preprocessing_identity": self.identity,
+                "torch_intraop_threads": torch.get_num_threads(),
+                "torch_interop_threads": torch.get_num_interop_threads()}
 
     def preprocess(self, doc_ids, encoded_images):
         pixels = self.processor.preprocess(encoded_images)
@@ -93,8 +106,11 @@ class SlowClipPrepare:
 
     def __call__(self, batch):
         import numpy as np
-        return {"doc_id": np.asarray(batch["doc_id"]),
-                "pixel_values": self.processor.preprocess_decoded(list(batch["image"]))}
+        result = {"doc_id": np.asarray(batch["doc_id"]),
+                  "pixel_values": self.processor.preprocess_decoded(list(batch["image"]))}
+        if self.resource_identity is not None:
+            result["_semloom_preprocessing_identity"] = np.full(len(batch["doc_id"]), json.dumps(self.identity, sort_keys=True))
+        return result
 
 
 class OrderedMatrix:
@@ -131,7 +147,16 @@ class SemLoomImageExecutor:
     """Adapt the existing SemLoom driver/HSE to the public image batch interface."""
     def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
                  max_active_batches=2, hse=True, encoded_bytes_limit=None,
-                 encoded_block_bytes_upper_bound=None):
+                 encoded_block_bytes_upper_bound=None, cpu_workers=1, gpu_workers=1,
+                 prepare_inflight=1, model_inflight=1, allowed_gpu_uuids=None):
+        if any(type(x) is not int or x <= 0 for x in
+               (cpu_workers, gpu_workers, prepare_inflight, model_inflight, batch_size, max_active_batches)):
+            raise ValueError("image worker counts, batch size and depths must be positive integers")
+        if (prepare_inflight > cpu_workers or model_inflight > gpu_workers
+                or max(prepare_inflight, model_inflight) > max_active_batches):
+            raise ValueError("HSE stage depths exceed workers or active batches")
+        if not hse and max_active_batches < gpu_workers:
+            raise ValueError("SemLoom static max_active_batches must cover every GPU worker")
         for value in (encoded_bytes_limit, encoded_block_bytes_upper_bound):
             if value is not None and (type(value) is not int or value <= 0):
                 raise ValueError("HSE encoded byte settings must be positive integers")
@@ -148,6 +173,7 @@ class SemLoomImageExecutor:
         self.model, self.processor, self.dtype = model, processor or model, dtype
         self.encoded_bytes_limit = encoded_bytes_limit
         self.encoded_block_bytes_upper_bound = encoded_block_bytes_upper_bound
+        self.prepare_inflight, self.model_inflight = prepare_inflight, model_inflight
         self.execution_observations = []
         self.semantics = EmbeddingSemantics(model, self.processor, 512)
         self.pool = None
@@ -155,22 +181,35 @@ class SemLoomImageExecutor:
         self._lock = threading.Lock()
         handles = []
         try:
-            cpu = ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)(SlowClipPrepare).remote(self.processor)
-            handles.append(cpu)
-            gpu = ray.remote(num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0)(ClipTensorActor).remote(
-                model, processor_revision=self.processor, dtype=dtype, normalize=True,
-                local_files_only=True, torch_intraop_threads=1, torch_interop_threads=1)
-            handles.append(gpu)
-            readiness = ray.get([cpu.ready.remote(), gpu.ready.remote()])
-            from src.modalities.image.staged import image_transform_signature
-            identity = readiness[0].get("preprocessing_identity")
-            if (not isinstance(identity, dict)
-                    or not image_transform_signature(**identity).startswith("image-transform-v2:")
-                    or identity.get("input_size") != 224 or identity.get("layout") != "NCHW"
-                    or identity.get("dtype") != "float32"
-                    or identity.get("representation") != "prepared_fp32_nchw"):
-                raise ValueError("Slow CLIP worker readiness requires its actual preprocessing identity")
-            self.pool = SemLoomRayWorkerPool((cpu,), (gpu,), preprocessing_identity=identity)
+            expected = (ClipImagePreprocessor(self.processor, local_files_only=True).preprocessing_identity()
+                        if allowed_gpu_uuids is not None else None)
+            cpus, gpus = [], []
+            for _ in range(cpu_workers):
+                options = {} if expected is None else {"preprocessing_identity": expected}
+                cpu = ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)(SlowClipPrepare).remote(self.processor, **options)
+                handles.append(cpu)
+                cpus.append(cpu)
+            for _ in range(gpu_workers):
+                options = {} if allowed_gpu_uuids is None else {"allowed_gpu_uuids": tuple(allowed_gpu_uuids)}
+                gpu = ray.remote(num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0)(ClipTensorActor).remote(
+                    model, processor_revision=self.processor, dtype=dtype, normalize=True,
+                    local_files_only=True, torch_intraop_threads=1, torch_interop_threads=1, **options)
+                handles.append(gpu)
+                gpus.append(gpu)
+            readiness = ray.get([worker.ready.remote() for worker in handles])
+            from src.modalities.image.worker_identity import validate_preprocessing_identity
+            identities = [validate_preprocessing_identity(item.get("preprocessing_identity")) for item in readiness[:cpu_workers]]
+            identity = identities[0]
+            if any(item != identity for item in identities) or (expected is not None and identity != expected):
+                raise ValueError("all CLIP preprocessors must share the owner's actual identity")
+            if allowed_gpu_uuids is not None:
+                if any(item.get("torch_intraop_threads") != 1 or item.get("torch_interop_threads") != 1 for item in readiness):
+                    raise ValueError("all CLIP CPU/GPU workers must match the declared Torch thread pools")
+                actual = [item.get("resource_identity", {}).get("gpu_uuid") for item in readiness[cpu_workers:]]
+                if len(set(actual)) != gpu_workers or not set(actual).issubset(allowed_gpu_uuids):
+                    raise ValueError("CLIP model workers must own distinct allocated physical GPUs")
+            self.worker_readiness = readiness
+            self.pool = SemLoomRayWorkerPool(tuple(cpus), tuple(gpus), preprocessing_identity=identity)
         except BaseException as error:
             failure = RayWorkerPoolStartupFailure(tuple(handles))
             error.image_worker_pool_startup = failure
@@ -215,9 +254,9 @@ class SemLoomImageExecutor:
             execution = run_semloom_ray_hse_pipeline(source, **kwargs,
                 encoded_block_bytes_upper_bound=block_upper,
                 limits=StageBrokerLimits(encoded_bytes=capacity,
-                    prepare_inflight=1, ready_bytes=prepared * self.window,
+                    prepare_inflight=getattr(self, "prepare_inflight", 1), ready_bytes=prepared * self.window,
                     ready_work=self.batch_size * 224 * 224 * self.window,
-                    model_inflight=1),
+                    model_inflight=getattr(self, "model_inflight", 1)),
                 model_revision=self.model, processor_revision=self.processor, model_dtype=self.dtype)
             self.execution_observations.append(dict(encoded_bytes_limit=capacity,
                 encoded_block_bytes_upper_bound=block_upper, encoded_bytes_peak=execution.encoded_bytes_peak,
@@ -250,10 +289,18 @@ class RayDataImageExecutor:
     input_kind = "rgb_pil"
 
     def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
-                 pipeline="fused"):
+                 pipeline="fused", cpu_workers=1, gpu_workers=1, allowed_gpu_uuids=None):
         from src.modalities.image.contracts import EmbeddingSemantics
         if pipeline not in ("fused", "staged"):
             raise ValueError("Ray image pipeline must be fused or staged")
+        if any(type(x) is not int or x <= 0 for x in (batch_size, cpu_workers, gpu_workers)):
+            raise ValueError("Ray image batch size and worker counts must be positive integers")
+        self.cpu_workers, self.gpu_workers = cpu_workers, gpu_workers
+        self.worker_options = {}
+        if allowed_gpu_uuids is not None:
+            from src.modalities.image.worker_identity import validate_preprocessing_identity
+            expected = validate_preprocessing_identity(ClipImagePreprocessor(processor or model, local_files_only=True).preprocessing_identity())
+            self.worker_options = dict(allowed_gpu_uuids=tuple(allowed_gpu_uuids), preprocessing_identity=expected)
         self.pipeline = pipeline
         self.model, self.processor, self.dtype = model, processor or model, dtype
         self.batch_size = batch_size
@@ -292,20 +339,25 @@ class RayDataImageExecutor:
             image.load()
         data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
                                    for x, y in zip(doc_ids, images, strict=True)])
+        retry_options = dict(max_restarts=0, max_task_retries=0) if self.worker_options else {}
         if self.pipeline == "fused":
             from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
             data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
-                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
+                compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
+                **retry_options,
                 fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
-                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
         else:
             data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
-                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1,
-                fn_constructor_kwargs={"processor_revision": self.processor})
+                compute=ray.data.ActorPoolStrategy(size=self.cpu_workers), num_cpus=1,
+                **retry_options,
+                fn_constructor_kwargs={"processor_revision": self.processor,
+                    **({"preprocessing_identity": self.worker_options["preprocessing_identity"]} if self.worker_options else {})})
             data = data.map_batches(RayDataClipPredictor, batch_format="numpy", batch_size=self.batch_size,
-                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
+                compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
+                **retry_options,
                 fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
-                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
         iterator = None
         error = None
         self._unconfirmed_work = True

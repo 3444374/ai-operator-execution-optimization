@@ -1,5 +1,10 @@
 # SemLoom 脚本入口
 
+本地 LOTUS CLIP 的 `experiments/run_lotus_image_retrieval.py --resource-config` 与模型服务的
+`services/launch_vllm_with_identity.py --resource-config` 使用仓外配置，从部署允许 GPU 集解析 auto，
+记录 requested/resolved 与物理 UUID；未传保持原行为。配置字段、原生 DP、边界拒绝、验证与 pending 项见
+[资源配置说明](../../experiments/results/diagnostics/resource_auto_20261015/README.md#使用同一查询切换部署)。
+
 ## 原始 SemBench Animals Q1
 
 `experiments/run_sembench_animals.py`使用固定上游Q1及原Species SQL／相对误差评价；输入是仓外冻结manifest与完整digest。`--preflight`零模型；执行需显式`--observation-mode performance`或`qualification`、模型／tokenizer／新输出与共享lease目录。`--arm lotus-native|daft|ray-data|semloom`保留原ImageArray、提示、缓存关闭和parser；生成上限默认沿用上游8192，无构造器预热。入口只测≤64图，一次完整query不提供可靠尾分位。数据准备及当前资格见[报告](../../experiments/results/diagnostics/sembench_animals_20261015/README.md)。

@@ -1,5 +1,7 @@
 # SemLoom Code
 
+[部署限定的资源配置](../experiments/results/diagnostics/resource_auto_20261015/README.md)提供可选 GPU auto、原生 vLLM DP、LOTUS 图像 worker 参数与 Ray HTTP 原生范围；原查询与默认保持。资源适配不调优性能，CPU／模拟检查与真实多卡资格分列。
+
 [PZ 原生 Movie 与固定计划边界](src/semantic_methods/palimpzest/README.md)保留 PZ 自己的算子、优化器和并行 DAG；软件／fixture 与真实模型、五组后端资格分别记录。
 
 固定 `bdae61bb` 的[图像基础修正](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)

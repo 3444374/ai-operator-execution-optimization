@@ -19,12 +19,16 @@ class RaySqlHttpConfig:
     actors: int
     batch_rows: int
     expected_version: str = '2.56.1'
+    min_actors: int | None = None
 
     def __post_init__(self):
         if any(type(v) is not int or v < 1 for v in (
             self.read_blocks, self.read_concurrency, self.actors, self.batch_rows
         )):
             raise ValueError('positive Ray source and processor sizes required')
+        if self.min_actors is not None and (type(self.min_actors) is not int
+                or not 1 <= self.min_actors <= self.actors):
+            raise ValueError('Ray minimum actors must be between 1 and actors')
 
 
 def preprocess(row, inputs, plan):
@@ -62,7 +66,8 @@ def open_rows(inputs, plan, config, connection_factory, session_factory, *, head
             concurrency=config.read_concurrency, ray_remote_args={'max_retries': 0})
         processor = build_processor(HttpRequestProcessorConfig(
             url=session_factory.endpoint, headers=headers, batch_size=config.batch_rows,
-            concurrency=(config.actors, config.actors), max_retries=0, session_factory=session_factory),
+            concurrency=(config.actors if config.min_actors is None else config.min_actors, config.actors),
+            max_retries=0, session_factory=session_factory),
             preprocess=lambda row: preprocess(row, inputs, plan),
             postprocess=lambda row: postprocess(row, plan),
             preprocess_map_kwargs={'max_retries': 0}, postprocess_map_kwargs={'max_retries': 0})

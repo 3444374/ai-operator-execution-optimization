@@ -1,0 +1,290 @@
+{
+  "baseline_commit": "7a4c1846fa8c973225d2fe894ad4f0ab11deded1",
+  "code_source_sha256": {
+    "code/scripts/experiments/run_lotus_image_retrieval.py": {
+      "bytes": 26487,
+      "sha256": "ec72959b4d888a1b7079e7327493eaf442f94031d886a109bfad34af952b8e5c"
+    },
+    "code/scripts/services/launch_vllm_with_identity.py": {
+      "bytes": 3843,
+      "sha256": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173"
+    },
+    "code/scripts/services/verify_model_replicas.py": {
+      "bytes": 1912,
+      "sha256": "6d47ba9b7e375fda248a26c9a7a9471b40373f19cf16a0b869cda4a927257b2a"
+    },
+    "code/src/baselines/image/frameworks/daft_clip.py": {
+      "bytes": 17128,
+      "sha256": "fa34049d472e31597e9ccdf6d1f20a63adc2afdb715af5cbef78b1de0cce820b"
+    },
+    "code/src/baselines/image/frameworks/ray_data.py": {
+      "bytes": 11957,
+      "sha256": "5815fe10e87edc8936a190db5206bf91468bed7c8b66b1ea56fcd5710dc3cccd"
+    },
+    "code/src/baselines/text/frameworks/native_calls.py": {
+      "bytes": 40282,
+      "sha256": "ec02723d9d997d120ea66429b1edaa87709c7028e37aa1339e6f0a6bc3ffbb6f"
+    },
+    "code/src/baselines/text/frameworks/prepared_map.py": {
+      "bytes": 12179,
+      "sha256": "7a133d12ad908b341a30cf715118a5c53be8907854463881ae2fce80e579835e"
+    },
+    "code/src/baselines/text/frameworks/ray_data_http.py": {
+      "bytes": 6855,
+      "sha256": "e3c70546d2eeed0db261f938362011ffd2f9cab04817e84c19a70821b9fdff64"
+    },
+    "code/src/baselines/text/frameworks/ray_data_pg_http.py": {
+      "bytes": 4466,
+      "sha256": "a4c35c9ecd779f49e35c5ada2854acc052a9d504b3daaab74c779742b8620c5e"
+    },
+    "code/src/execution_provider/adapters/replica_identity.py": {
+      "bytes": 17990,
+      "sha256": "248cef072ca7b41479ec7938444364e10090cb784d44987fd05409228c9c75a3"
+    },
+    "code/src/infrastructure/gpu_allocation.py": {
+      "bytes": 5370,
+      "sha256": "5882023de576ce54a09bd062094285b649aebca22e3a58024e111848fbfb4093"
+    },
+    "code/src/modalities/image/clip.py": {
+      "bytes": 17079,
+      "sha256": "18cf0dd12dfb4785af87bbe93d189e3cc50f7bf014ad7d3ce312fdc57f5f46ea"
+    },
+    "code/src/modalities/image/resource_budget.py": {
+      "bytes": 7865,
+      "sha256": "a49ef29eb35388a30eb795e841a13cd2bb875191ff535e9e8e0b648374d26571"
+    },
+    "code/src/modalities/image/worker_identity.py": {
+      "bytes": 2708,
+      "sha256": "40dfcf4ac72b2ba6d59f3ff5e26068f9c603a971232f943ec8c125a3ccbc1117"
+    },
+    "code/src/semantic_methods/lotus/image_backend.py": {
+      "bytes": 25126,
+      "sha256": "4a630f5009eecb81135090fb10131cb550cac24c7b3da694f5e6b718095d803b"
+    },
+    "code/src/serving/vllm_resources.py": {
+      "bytes": 3865,
+      "sha256": "ca3f7813832b90eb067d7c7040979aee25384ff14d9810734fb5892b0e8649ad"
+    },
+    "code/tests/baselines/test_native_dataset_configuration.py": {
+      "bytes": 20192,
+      "sha256": "9cca2bfd63718dd047dd7974650c533182526d57e077e95759754e171a089da4"
+    },
+    "code/tests/infrastructure/test_gpu_allocation.py": {
+      "bytes": 10633,
+      "sha256": "f2d323198d7edf91ffa7b20577fd2980a52625882d7e412050ab9cf2085eccde"
+    },
+    "code/tests/infrastructure/test_replica_identity.py": {
+      "bytes": 18303,
+      "sha256": "667e874aae85a1861d8c2b72bfb0bad3c1cecaa209fbdf923fb6725052bb799a"
+    },
+    "code/tests/infrastructure/test_vllm_preflight.py": {
+      "bytes": 21497,
+      "sha256": "6888e2380f6afd80f530ee9dba9e0348cff919597247ad587deed15f027602fb"
+    },
+    "code/tests/semantic_methods/test_lotus_image_lifecycle.py": {
+      "bytes": 26495,
+      "sha256": "42eda74b700bef26a287be13b2c2a27251305c021008ab4c8d32707a4a275a2c"
+    },
+    "code/tests/semantic_methods/test_lotus_image_native_input.py": {
+      "bytes": 25394,
+      "sha256": "b9d1eb601f243a87d7c1e4befb7d4c4ad167010054cadf6195e991673fd1bd35"
+    },
+    "code/tests/semantic_methods/test_lotus_image_resources.py": {
+      "bytes": 7919,
+      "sha256": "ac327a1b0542735b718287dc284452c5d7f8db679e383b563e8f81dbe2f9ed30"
+    }
+  },
+  "environment": {
+    "architecture": "arm64",
+    "packages": {
+      "Pillow": "12.2.0",
+      "aiohttp": "3.14.1",
+      "httpx": "0.28.1",
+      "numpy": "2.5.0",
+      "pandas": "2.3.3",
+      "pytest": "8.4.2"
+    },
+    "python": "3.12.6",
+    "system": "Darwin"
+  },
+  "final_run": "cpu-regression-02",
+  "gpu_runtime_started": false,
+  "independent_review": {
+    "agent": "resource_review",
+    "cpu_tests": 78,
+    "passed": 78,
+    "runtime_or_model_started": false,
+    "scope": "read-only source review plus CPU graph/actor/process doubles",
+    "skipped": 0,
+    "status": "no blocking findings after fixes",
+    "test_modules": [
+      "infrastructure.test_gpu_allocation",
+      "infrastructure.test_replica_identity",
+      "semantic_methods.test_lotus_image_resources",
+      "semantic_methods.test_lotus_image_lifecycle",
+      "baselines.test_native_dataset_configuration"
+    ]
+  },
+  "model_calls": 0,
+  "pending": [
+    "new-configuration real single-GPU model regression",
+    "real two/multi-GPU correctness and complete query performance",
+    "actual Daft per-worker GPU masking",
+    "actual vLLM DP rank creation and physical exit",
+    "Serve multi-replica deployment/replica identity and caller concurrency",
+    "pinned SDK requalification",
+    "legacy SAOR sidecar and per-card shell migration"
+  ],
+  "performance_measurement": false,
+  "raw_artifacts": {
+    "retained_outside_git": true,
+    "retrieval": "task artifact owner by run ID, bytes and SHA-256; complete redacted logs, JUnit and commands retained"
+  },
+  "retained_first_failure": {
+    "reason": "missing pandas, sandbox localhost sockets, two constructor/argument doubles missing newly optional fields",
+    "run_id": "cpu-regression-01",
+    "source_snapshot": "uncommitted; original file digests were not captured, failure traceback and test identities retained"
+  },
+  "runs": [
+    {
+      "artifacts": {
+        "cpu-regression-01-command.json": {
+          "bytes": 2684,
+          "sha256": "a0029c136b6a0bb8fbe7faa84ac5de689327a634c82463d32b546273a60a4fbb"
+        },
+        "cpu-regression-01.log": {
+          "bytes": 52158,
+          "sha256": "0630f8b2be52f90016307090cc976488b6c86e119e6333effce584523af826cf"
+        },
+        "cpu-regression-01.xml": {
+          "bytes": 143089,
+          "sha256": "39cab4516a214790e940185aa26df8052be785e0e59c004d40eaafd579079137"
+        }
+      },
+      "exit_code": 1,
+      "junit_totals": [
+        {
+          "errors": "0",
+          "failures": "16",
+          "skipped": "54",
+          "tests": "475"
+        }
+      ],
+      "pytest_summary": {
+        "failed": 16,
+        "passed": 405,
+        "skipped": 54
+      },
+      "run_id": "cpu-regression-01",
+      "scope": "CPU fixtures; opt-in SDK/model flags unset; no model/GPU service",
+      "test_paths": [
+        "code/tests/infrastructure/test_gpu_allocation.py",
+        "code/tests/infrastructure/test_replica_identity.py",
+        "code/tests/infrastructure/test_vllm_preflight.py",
+        "code/tests/baselines/test_native_dataset_configuration.py",
+        "code/tests/baselines/test_native_ray_configuration.py",
+        "code/tests/baselines/test_native_call_cleanup.py",
+        "code/tests/baselines/test_native_http_lifecycle.py",
+        "code/tests/baselines/test_native_call_detailed_timing.py",
+        "code/tests/baselines/test_native_calls.py",
+        "code/tests/baselines/text/test_native_prepared.py",
+        "code/tests/modalities/image/test_image_resource_budget.py",
+        "code/tests/semantic_methods/test_lotus_image_capacity.py",
+        "code/tests/semantic_methods/test_lotus_image_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_collection_results.py",
+        "code/tests/semantic_methods/test_lotus_image_identity.py",
+        "code/tests/semantic_methods/test_lotus_image_lifecycle.py",
+        "code/tests/semantic_methods/test_lotus_image_native.py",
+        "code/tests/semantic_methods/test_lotus_image_native_input.py",
+        "code/tests/semantic_methods/test_lotus_image_observation_release.py",
+        "code/tests/semantic_methods/test_lotus_image_resident.py",
+        "code/tests/semantic_methods/test_lotus_image_resident_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_resources.py",
+        "code/tests/semantic_methods/test_lotus_image_rm.py",
+        "code/tests/baselines/image/test_daft_clip_arrow.py",
+        "code/tests/baselines/image/test_daft_clip_executor.py",
+        "code/tests/baselines/image/test_daft_clip_rgb.py",
+        "code/tests/baselines/image/test_image_baseline_contract.py",
+        "code/tests/baselines/image/test_image_vendor_baseline_manifest.py",
+        "code/tests/baselines/image/test_ray_serve_clip.py",
+        "code/tests/baselines/image/test_ray_serve_clip_native.py",
+        "code/tests/semantic_methods/test_palimpzest_bridge.py",
+        "code/tests/semantic_methods/test_palimpzest_plan.py",
+        "code/tests/semantic_methods/test_palimpzest_upstream.py",
+        "code/tests/experiments/test_palimpzest_ledger.py",
+        "code/tests/experiments/test_palimpzest_model.py",
+        "code/tests/experiments/test_palimpzest_native.py"
+      ]
+    },
+    {
+      "artifacts": {
+        "cpu-regression-02-command.json": {
+          "bytes": 2703,
+          "sha256": "c15819536a54ed934a4dcef7aa76caaa3ba838d0be6abe7dbc4fb6b495212967"
+        },
+        "cpu-regression-02.log": {
+          "bytes": 7376,
+          "sha256": "f3e4397301f0de07f8f65255774d09014b130ea2279e463ee3b82433c16c5ddc"
+        },
+        "cpu-regression-02.xml": {
+          "bytes": 97997,
+          "sha256": "6699c90fba43ae42c98cd3464c4f1d5b8d4f697ee041261d7274bff0a3b1a640"
+        }
+      },
+      "exit_code": 0,
+      "junit_totals": [
+        {
+          "errors": "0",
+          "failures": "0",
+          "skipped": "54",
+          "tests": "475"
+        }
+      ],
+      "pytest_summary": {
+        "passed": 421,
+        "skipped": 54
+      },
+      "run_id": "cpu-regression-02",
+      "scope": "CPU fixtures and localhost HTTP only; no model/GPU service; opt-in SDK flags unset",
+      "test_paths": [
+        "code/tests/infrastructure/test_gpu_allocation.py",
+        "code/tests/infrastructure/test_replica_identity.py",
+        "code/tests/infrastructure/test_vllm_preflight.py",
+        "code/tests/baselines/test_native_dataset_configuration.py",
+        "code/tests/baselines/test_native_ray_configuration.py",
+        "code/tests/baselines/test_native_call_cleanup.py",
+        "code/tests/baselines/test_native_http_lifecycle.py",
+        "code/tests/baselines/test_native_call_detailed_timing.py",
+        "code/tests/baselines/test_native_calls.py",
+        "code/tests/baselines/text/test_native_prepared.py",
+        "code/tests/modalities/image/test_image_resource_budget.py",
+        "code/tests/semantic_methods/test_lotus_image_capacity.py",
+        "code/tests/semantic_methods/test_lotus_image_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_collection_results.py",
+        "code/tests/semantic_methods/test_lotus_image_identity.py",
+        "code/tests/semantic_methods/test_lotus_image_lifecycle.py",
+        "code/tests/semantic_methods/test_lotus_image_native.py",
+        "code/tests/semantic_methods/test_lotus_image_native_input.py",
+        "code/tests/semantic_methods/test_lotus_image_observation_release.py",
+        "code/tests/semantic_methods/test_lotus_image_resident.py",
+        "code/tests/semantic_methods/test_lotus_image_resident_cli.py",
+        "code/tests/semantic_methods/test_lotus_image_resources.py",
+        "code/tests/semantic_methods/test_lotus_image_rm.py",
+        "code/tests/baselines/image/test_daft_clip_arrow.py",
+        "code/tests/baselines/image/test_daft_clip_executor.py",
+        "code/tests/baselines/image/test_daft_clip_rgb.py",
+        "code/tests/baselines/image/test_image_baseline_contract.py",
+        "code/tests/baselines/image/test_image_vendor_baseline_manifest.py",
+        "code/tests/baselines/image/test_ray_serve_clip.py",
+        "code/tests/baselines/image/test_ray_serve_clip_native.py",
+        "code/tests/semantic_methods/test_palimpzest_bridge.py",
+        "code/tests/semantic_methods/test_palimpzest_plan.py",
+        "code/tests/semantic_methods/test_palimpzest_upstream.py",
+        "code/tests/experiments/test_palimpzest_ledger.py",
+        "code/tests/experiments/test_palimpzest_model.py",
+        "code/tests/experiments/test_palimpzest_native.py"
+      ]
+    }
+  ],
+  "schema": "semloom.deployment_resource_auto.cpu_qualification.v1"
+}

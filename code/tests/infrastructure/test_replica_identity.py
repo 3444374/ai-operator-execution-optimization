@@ -36,6 +36,39 @@ def fixture(*, same_device=False):
 
 
 class ReplicaIdentityTests(unittest.TestCase):
+    def test_native_dp_is_one_endpoint_with_all_gpu_process_birth_identities(self):
+        directory, sidecars, processes, gpus = fixture()
+        from src.serving.vllm_resources import VllmResources
+        _, argv, resources = VllmResources(allowed_gpus=["GPU-a", "GPU-b"]).resolve(
+            ["--model", "/private/model", "--served-model-name", "fixture", "--port", "8000"],
+            environ={}, probe=lambda x: x)
+        one = replace(directory, replicas=(replace(directory.replicas[0], device_ids=("GPU-a", "GPU-b")),),
+                      max_active_requests=2, max_active_work=2)
+        parent = replace(processes[0], argv=("python", "-m", "vllm.entrypoints.openai.api_server", *argv))
+        children = (processes[1], replace(processes[3], parent_pid=100))
+        actual = (parent, *children)
+        sidecar = dict(sidecars["a"], package_version="0.25.1", **resources)
+        result = verify_replica_processes(one, {"a": sidecar}, actual, gpus)
+        self.assertEqual((result["replica_count"], result["gpu_count"]), (1, 2))
+        record = result["replicas"][0]
+        self.assertEqual(record["native_topology"]["data_parallel_size"], 2)
+        self.assertEqual(record["gpu_workers"], [
+            dict(pid=101, process_start_time_ticks="1001", device_ids=["GPU-a"]),
+            dict(pid=201, process_start_time_ticks="2001", device_ids=["GPU-b"])])
+        for bad in (dict(sidecar, package_version="0.25.0"),
+                    dict(sidecar, resources_resolved=dict(resources["resources_resolved"], data_parallel_size=3))):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                verify_replica_processes(one, {"a": bad}, actual, gpus)
+        with self.assertRaisesRegex(ValueError, "declared devices"):
+            verify_replica_processes(one, {"a": sidecar}, actual, gpus[:1])
+        with self.assertRaisesRegex(ValueError, "exactly one"):
+            verify_replica_processes(one, {"a": sidecars["a"]}, actual, gpus)
+        for hidden in (("--data_parallel_size", "3"), ("--tensor_parallel_size=2",),
+                       ("--distributed_executor_backend", "ray"), ("--data_parallel_rank", "0")):
+            with self.subTest(hidden=hidden), self.assertRaises(ValueError):
+                verify_replica_processes(one, {"a": sidecar},
+                    (replace(parent, argv=parent.argv + hidden), *children), gpus)
+
     def test_two_tp1_processes_are_bound_to_distinct_real_gpu_descendants(self):
         directory, sidecars, processes, gpus = fixture()
         result = verify_replica_processes(directory, sidecars, processes, gpus)

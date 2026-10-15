@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-15：参数化部署允许集合内的资源配置
+
+从核实的7a4c1846建立独立资源分支，新增可选资源JSON：仅在部署允许集合解析GPU UUID，固定vLLM0.25.1单节点原生DP／显式TP，贯通LOTUS本地CLIP原工厂、池及独立准备深度。Ray HTTP使用原生minimum/maximum，按上限核容量；旧未传配置的单卡默认保留。全部worker身份及unknown责任、CPU回归失败／修复、独立审查和真实硬件pending由[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md)维护。未启动模型或占GPU，不改变main／baseline集成职责；Serve多副本分阶段保留。
+
+集成审查收口默认Ray重试兼容问题，并在核对完整请求合同后精确重绑PZ来源守卫；融合CPU／localhost检查297通过、68条件跳过，原交付和旧实库资格保持各自来源，无新模型／GPU运行。
+
 ## 2026-10-15：图像预处理身份、历史 HSE 小优化与 RM 边界修正
 
 固定实现 `bdae61bb`、基点 `671a22dd`；真实 processor 身份贯通 ready／descriptor／worker 完成，旧 v1 校准保留原来源。

@@ -1,4 +1,4 @@
-"""Verify live one-device model replicas on their Linux host without sending model requests."""
+"""Verify live TP1 replicas or opt-in native DP model ownership without model requests."""
 
 from __future__ import annotations
 

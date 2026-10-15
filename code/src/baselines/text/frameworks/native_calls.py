@@ -551,7 +551,7 @@ def _ray_rows(calls, options, control):
         with timing_span('native_call.graph_build', backend='ray-data', scope='adapter vendor graph API calls'):
             dataset = ray.data.from_items(inputs, override_num_blocks=min(len(inputs), options.source_blocks))
             processor = build_processor(HttpRequestProcessorConfig(url=_PROCESSOR_URL,
-                batch_size=options.ray_batch_rows, concurrency=(options.ray_actors, options.ray_actors),
+                batch_size=options.ray_batch_rows, concurrency=options.ray_actor_pool,
                 max_retries=0, session_factory=_ProcessorSession), preprocess=_ray_preprocess,
                 postprocess=_ray_postprocess, preprocess_map_kwargs={"max_retries": 0},
                 postprocess_map_kwargs={"max_retries": 0})
@@ -791,7 +791,7 @@ class NativeCallExecutor:
                 native_graph_parameters=(
                     dict(batch_size=1, max_concurrency=self.options.concurrency - 1)
                     if self.backend == "daft" else
-                    dict(actor_pool_range=[self.options.ray_actors, self.options.ray_actors],
+                    dict(actor_pool_range=list(self.options.ray_actor_pool),
                          http_batch_rows=self.options.ray_batch_rows,
                          async_batches_setting=self.options.ray_async_batches_per_actor,
                          async_batches_effective=control.ray_async_batches_effective,

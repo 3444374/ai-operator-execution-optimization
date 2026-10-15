@@ -333,6 +333,7 @@ def test_ray_fused_native_callable_keeps_processor_math_and_inherited_reuse_colu
 def test_ray_staged_cpu_callable_accepts_rgb_arrays_without_encoded_roundtrip(model_fixture):
     prepare = image_backend.SlowClipPrepare.__new__(image_backend.SlowClipPrepare)
     prepare.processor = SlowProcessor()
+    prepare.resource_identity = None
     images = [np.asarray(image) for image in pictures()]
     result = prepare(dict(doc_id=["a", "图", "tail"], image=images))
     assert result["doc_id"].tolist() == ["a", "图", "tail"]

@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[部署限定资源 auto](../experiments/results/diagnostics/resource_auto_20261015/README.md)从已分配 GPU 集冻结 UUID，贯通单节点 vLLM0.25.1 原生 DP 与 LOTUS 本地 CLIP 原工厂／池的 worker 参数；Ray HTTP 可选原生 `(min,max)` 按上限核容量。未传新配置保持原单卡默认，准备深度独立；只取得 CPU／模拟身份资格，实际单／多卡、rank退出、Daft分配和Serve多副本均pending。 集成保持未启用配置的Ray原生重试，核验完整调用合同后精确更新PZ来源守卫；融合CPU／localhost 297通过、68条件跳过，实库来源不改标。
+
 2026-10-15：新增[原始 SemBench Animals Q1](../experiments/results/diagnostics/sembench_animals_20261015/README.md)有限图像入口及原评价；保留当前LOTUS1.2.4身份，复用既有完整图文profile。CPU与真实模型状态由同题报告拥有，CLIP检索不替代本任务。
 初轮原始请求独审发现Daft峰值超出声明HTTP额度；有限入口已修正其原生参数并增加实测资源gate，超限仍保留质量、结果及关闭报告。定向CPU与失败回归通过，真实补测状态见同题报告。
 Core完整原生请求新增显式≤8MiB单项与显式总输入预算，默认／PG帧仍1MiB。服务器113项CPU含实际大载荷Ray及PG回归通过；原64图Core已完成单次64调用、逐图及原COUNT误差均0，实际来源和逻辑容量边界见同题报告。

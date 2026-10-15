@@ -7,6 +7,11 @@
 
 ## 原生 CLIP 图像检索
 
+可选 `--resource-config` 将同一源码的 SemLoom、Ray Data 与 Daft worker 数按部署 GPU 集解析，
+auto 不发现整机或调优 batch；CPU prepare 与 HSE ready/model 深度独立。未传配置仍保持原单卡默认，
+stock 单设备配置合法，Serve 多副本与 IMLane CLIP未开放。字段、实际身份及 CPU资格／硬件待验范围见
+[本轮资源接线](../../../../experiments/results/diagnostics/resource_auto_20261015/README.md)。
+
 固定融合源码 `2afcaf47` 的[最终十格资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)
 已经完成六路径64图组合与四格已有索引的完整数值／查询检查；单次资格不提供性能排名或稳定尾分位。
 

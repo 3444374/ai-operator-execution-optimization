@@ -13,7 +13,7 @@ from .model_config import FixedModelConfig
 
 
 _SOURCE_HASHES = {
-    native_calls: "5dc337278a7b358498e05d8e826da551698cd72aeca55f01a4fab85976b88498",
+    native_calls: "ec02723d9d997d120ea66429b1edaa87709c7028e37aa1339e6f0a6bc3ffbb6f",
     full_response: "ef0bdfeb99bd5aab1c1b4002ee1f61469ee270966437d71eac66b2ddbd99ebde",
 }
 NATIVE_CALL_PROFILE = 'fixed-local-nonredirect.v1'
