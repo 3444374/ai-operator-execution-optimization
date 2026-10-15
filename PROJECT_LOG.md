@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：完成一次PZ原生Movie Q3
+
+固定7ac292e0、旧PZ6ef／SemBenchc814及已有2000行输入，原生parallel完成120真实模型请求，COUNT7／真值14。
+官方相对误差0.5与TP7／FN7完整保留，无HTTP／解析失败；查询8.876秒与服务准备87.284秒分列，不构成性能排名。
+prefix cache实际关闭与原计划差异明确记录；自有进程／GPU及共享lease正常释放，后端逐臂仍待资格。
+见[同题原值](experiments/results/diagnostics/palimpzest_movie_20261015/native-model.json)。
+
 ## 2026-10-15：接入固定 PZ 原生 Movie 与执行边界
 
 新增原 Movie Q3／Q2 runner、显式本地模型绑定、失败／usage 台账和同物理计划检查。

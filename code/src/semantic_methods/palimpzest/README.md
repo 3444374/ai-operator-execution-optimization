@@ -1,10 +1,23 @@
 # Palimpzest fixed-version adapters
 
-PZ remains the semantic operator, optimizer and DAG execution owner. This module
+PZ owns semantic operators, optimization and legal DAG dependencies. This module
 provides controlled private seams for PZ `0.8.2.sem_agg`, commit
 `6efc19841c49d727ce42f5c2dd55e7433601d2d9`; it is parallel to LOTUS.
 The [comparison contract](../../../../experiments/plans/reference/对照规范.md#execution-comparison-levels)
 separates complete-system quality/cost/time from execution of one selected plan.
+
+Deployment declares CPU/GPU, memory and model-service budgets, and chooses a fixed
+configuration or a verified native automatic mode. PZ determines semantic readiness;
+the selected backend owns dispatch, workers and backpressure. The thin adapter adds
+no common concurrency controller. Its finite prepared-request/stack and snapshot
+limits bound retained memory, rather than claiming to tune backend concurrency.
+System comparisons freeze configuration rules and permit reasonable backend-specific
+concurrency; capacity-matched mechanism experiments state the common work unit separately.
+HTTP request budgets and vLLM sequence/token budgets remain distinct. Native Ray pool
+autoscaling does not prove HTTP/GPU-window tuning; IMLane's declared `n` and SemLoom's
+declared cap remain explicit. Dispatch within a cap is not verified online cap tuning.
+Existing fixed-configuration evidence retains its original identity; these rules do
+not require historical reruns or a new tuning matrix.
 
 `completion_bridge(completion=..., observer=...)` keeps the original Generator's
 prompt factory, parser, statistics and exception defaults. It substitutes the
