@@ -101,6 +101,20 @@ class FixedRunResult:
     evidence: dict
 
 
+def _prepare_daft_runtime(arm, evidence):
+    if arm != 'daft':
+        return
+    started = time.monotonic_ns()
+    setup = evidence['daft_runner_setup'] = dict(
+        requested_runner='native', thread_override_requested=False, status='failed')
+    try:
+        from src.infrastructure.daft_runtime import configure_daft_runner
+        configure_daft_runner('native')
+        setup['status'] = 'configured_or_reused'
+    finally:
+        setup['seconds'] = (time.monotonic_ns()-started)/1e9
+
+
 def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=None, ledger=None,
                         record=None, cancelled=None, evidence=None, request_route=None):
     """Execute once; actual-send budget/lease and executor teardown stay caller-owned.
@@ -177,6 +191,7 @@ def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=No
         metadata_observation['matches_selected_identity'] = verified.stable_identity() == selected_verified.stable_identity()
         if not metadata_observation['matches_selected_identity']:
             raise PalimpzestAdapterError('local model metadata changed from the complete fixed identity')
+        _prepare_daft_runtime(arm, evidence)
         from palimpzest.query.generators import generators
         local = bind_local_completion(generators.litellm.completion, binding, verified)
         def request_kwargs(kwargs):
