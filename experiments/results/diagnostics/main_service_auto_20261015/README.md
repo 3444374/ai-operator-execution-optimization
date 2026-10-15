@@ -43,4 +43,42 @@ Mac30项、Linux30项均通过且无skip；官方vLLM0.25.1 parser的auto1／exp
 
 原件run id `main-auto-service-probe-r1`，146112bytes，SHA256 `cc0ea63e88e36a41a1bf6f3393b87355dfa7ed40cbb6c99efbd82b3a46cf7556`；49份证据加manifest共50文件，Mac独立副本逐份校验。项目维护者可按run id／SHA提供。恢复时controller／worker来自`controls/`，`controls/helpers/`恢复为同根`main-model-helpers/`，先核计划与helper哈希；仅审查可直接使用原请求／响应和生产声明校验函数，无需启动模型。
 
-合并后固定新的main，用原Movie Q2／Animals Q1四臂、auto／显式1共16查询／1472请求做有限整合复验；不重跑旧Q1（2000行）和Q3（120行），不继承旧源码的模型资格。多GPU、TP>1／DP>1、Serve及多节点实机验证仍pending，不阻塞单卡可选服务配置。
+## 合并后固定main原查询
+
+PR25合并后的源码固定`2041da67d883f54285952042482493a4a76a6ba1`，780个运行文件逐字核对；Mac／Linux各30项回归通过且无skip。原Movie Q2每臂120行、Animals Q1每臂64图，四执行owner分别在auto与显式1独立服务下运行，共16完整查询、1472实际POST／完整返回，warm-up、重试和结果缓存均为0。固定单RTX4090、TP1／DP1／PP1、每路径HTTP上限4；模型、原数据、SDK及服务参数沿用上文与[main464报告](../main_queries_20261015/README.md)的固定身份，本轮自行核验和计数，没有转用旧源码结果。
+
+完整查询时间单位为秒；所有原值、ready-query和请求P50／P95见[results.json](results.json)。
+
+| 原查询／单卡配置 | LOTUS | Daft | Ray Data | SemLoom |
+|---|---:|---:|---:|---:|
+| Movie Q2／auto | 5.213270 | 5.299987 | 19.861628 | 5.325647 |
+| Movie Q2／显式1 | 5.227021 | 7.296496 | 19.521591 | 4.906483 |
+| Animals Q1／auto | 38.595305 | 44.127305 | 60.899405 | 39.963959 |
+| Animals Q1／显式1 | 37.729624 | 42.970365 | 60.498006 | 40.145637 |
+
+Movie完整窗口从查询准备至完整结果，owner初始化／退出证据保留原件；本runner没有更宽的Movie application wall。Animals查询窗口保留原ImageArray→sem_filter→COUNT，外部执行器准备、评价／归档和关闭在更宽的application_s中单列。各值均不包含外部模型服务启动，不能把不同窗口相减当阶段成本。
+
+| 服务组 | actual／returned POST | 启动s | 退出／自有剩余 |
+|---|---:|---:|---|
+| movie-auto | 480／480 | 56.864150 | 0／空 |
+| movie-explicit1 | 480／480 | 54.111028 | 0／空 |
+| animals-auto | 256／256 | 79.939907 | 0／空 |
+| animals-explicit1 | 256／256 | 80.281271 | 0／空 |
+
+两种配置／四臂的实际请求值多重集合和逐发生项判定相同；原OpenAI／LiteLLM转换、Filter parser、row_id及PNG像素关联均从本轮完整响应复算。Movie Q2的LIMIT 5官方precision／recall／F1均1.0，但LIMIT前分类仍TP7、FP0、TN106、FN7，不能写成全量Filter正确。Animals八格COUNT3／真值3、TP3／TN61、FP／FN0，64图逐项相同。它们只认证本数据与本次原查询，不证明更广质量。
+
+每个cell只有一次查询，样本请求数120或64，故不报告请求P99、查询P99或P99.99，不合并不同cell凑尾部样本，也不给auto、显式1或四owner稳定排名。GPU UUID、live argv、PID／出生时间／Linux ticks与自有descendant在四次启动均有原件并经CPU回读；声明rank不代替这些物理证明。RSS每0.5秒采样，client加controller容量8GiB是监督门限，采样和逻辑额度均不是硬内存界；完整观测保留原件。
+
+两次正常lease竞争在发送前退出，累计模型调用0；一次目录已存在保护同样在任何调用前退出。初次busy的stderr被该目录错误日志覆盖，原controller-result、预检及后续guard日志／过程记录保留并注明限制。随后仅增加仓外可取消的取锁前等待和物理证据导出，双审及15项Mac／9项Linux零模型guard通过后再运行；生产源码与1472预算未变。等待不持lease，锁消失后仍只进行一次normal acquire，竞态失败不自动重试，recover_stale=False。
+
+四服务均自然exit0／remaining空，最终owned／forced／actions／survivors／errors为空、observer停止、inventory error为null，正常释放lease。结束后的现场无GPU计算进程；该快照不预留后续窗口。完整原件run id `main-auto-model-r1`，657225086bytes，SHA256 `4b7b2942dc9c73e1bfb4386275185535e14c29d8da1c4558622c89bb624ae6f7`，444份证据加manifest共445文件；Mac差量恢复的445份独立文件副本全部通过字节数／SHA核对，压缩归档本身保留服务器；恢复状态见[checks.json](checks.json)。原件按run id／SHA由维护者提供，包含全部实际请求／响应、预算、服务／资源、两次busy及首日志限制，不上传大量PNG或私有机器路径。
+
+[复算入口](recompute.py)与[共享原解析／关联函数](../main_queries_20261015/recompute.py)按报告目录相对位置恢复，使用固定SDK环境与main2041代码，仅CPU运行：
+
+```bash
+CUDA_VISIBLE_DEVICES="" PYTHONPATH=code python /path/to/main_service_auto_20261015/recompute.py --root /path/to/main-auto-model-r1 --checkout /path/to/sembench --movie-manifest /path/to/movie-manifest.json --movie-csv /path/to/Reviews.csv --animals-manifest /path/to/animals-manifest.json --output /path/to/results.json
+```
+
+原件`controls/reports/`保存这两份脚本；controller／worker与`controls/helpers/`分别恢复到运行根及其`main-model-helpers/`，先核plan中的6份哈希。复算不需要启动模型；重执行原控制器仍受原预算、正常lease和环境前置要求约束。
+
+本轮未重跑旧Movie Q1／Q3；其结果仍绑定main464。CLIP／HSE、PZ／IMLane、Serve、多GPU、TP>1／DP>1及多节点的实机资格分别解释，本报告不覆盖全项目auto。

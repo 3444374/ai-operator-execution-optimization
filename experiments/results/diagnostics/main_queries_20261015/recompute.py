@@ -97,6 +97,46 @@ def associate_movie_protocols(protocols, calls, prompts):
     return associated
 
 
+def associate_animals_protocols(requests, responses, pixels):
+    requests_by_hash = {v["body_sha256"]: v["body"] for v in requests}
+    assert len(requests) == len(responses) == len(pixels)
+    assert len(requests_by_hash) == len(pixels)
+    replay = {}
+    for response in responses:
+        assert response["status"] == 200
+        body = requests_by_hash.pop(response["request_sha256"])
+        assert body["model"] == "Qwen2-VL-2B-Instruct"
+        parts = [
+            part
+            for msg in body["messages"]
+            if type(msg["content"]) is list
+            for part in msg["content"]
+            if part.get("type") == "image_url"
+        ]
+        assert len(parts) == 1
+        raw = base64.b64decode(
+            parts[0]["image_url"]["url"].split(",", 1)[1], validate=True
+        )
+        with Image.open(io.BytesIO(raw)) as image:
+            rgb = image.convert("RGB")
+            identity = (
+                rgb.width,
+                rgb.height,
+                hashlib.sha256(rgb.tobytes()).hexdigest(),
+            )
+        row_id = pixels[identity]
+        assert row_id not in replay
+        raw = base64.b64decode(response["body_base64"])
+        raw = gzip.decompress(raw) if raw.startswith(b"\x1f\x8b") else raw
+        value = json.loads(raw)
+        assert value["model"] == "Qwen2-VL-2B-Instruct"
+        replay[row_id] = parsed(
+            value["choices"][0]["message"]["content"], value["model"]
+        )
+    assert not requests_by_hash and set(replay) == set(pixels.values())
+    return replay
+
+
 def request_stats(traces):
     samples = []
     points = []
@@ -271,41 +311,7 @@ def main():
             summary["status"] == "completed"
             and summary["model_calls"] == len(requests) == len(responses) == 64
         )
-        requests_by_hash = {v["body_sha256"]: v["body"] for v in requests}
-        assert len(requests_by_hash) == 64
-        replay = {}
-        for response in responses:
-            assert response["status"] == 200
-            body = requests_by_hash.pop(response["request_sha256"])
-            assert body["model"] == "Qwen2-VL-2B-Instruct"
-            parts = [
-                part
-                for msg in body["messages"]
-                if type(msg["content"]) is list
-                for part in msg["content"]
-                if part.get("type") == "image_url"
-            ]
-            assert len(parts) == 1
-            raw = base64.b64decode(
-                parts[0]["image_url"]["url"].split(",", 1)[1], validate=True
-            )
-            with Image.open(io.BytesIO(raw)) as image:
-                rgb = image.convert("RGB")
-                identity = (
-                    rgb.width,
-                    rgb.height,
-                    hashlib.sha256(rgb.tobytes()).hexdigest(),
-                )
-            row_id = pixels[identity]
-            assert row_id not in replay
-            raw = base64.b64decode(response["body_base64"])
-            raw = gzip.decompress(raw) if raw.startswith(b"\x1f\x8b") else raw
-            value = json.loads(raw)
-            assert value["model"] == "Qwen2-VL-2B-Instruct"
-            replay[row_id] = parsed(
-                value["choices"][0]["message"]["content"], value["model"]
-            )
-        assert not requests_by_hash and set(replay) == set(pixels.values())
+        replay = associate_animals_protocols(requests, responses, pixels)
         decisions = read(unit / "filter-decisions.json")
         assert dict(decisions) == replay
         audit = classification_audit(animal_rows, decisions)

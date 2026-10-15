@@ -2,9 +2,10 @@
 
 ## main 与集成分支的阅读范围
 
-main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复、Core／完整响应基础及下述 LOTUS Movie／Animals 完整请求接点。
+main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals 完整请求接点及可选vLLM部署资源。每批固定源码和资格从下文报告核对；
+`425f0145` 是这些批次之前的运行基点，不能再代表当前main的全部接入范围。
 下文保留该来源在2026-10-08记录的实现与验证情况，
-不将后续集成分支的能力写成 main 已实现。新适配与修复从
+不将后续集成分支的能力写成 main 已实现。未在下文明确接纳的适配与修复从
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)进入；
 [LOTUS 模块](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/src/semantic_methods/lotus/README.md)和
 [固定 `2afcaf47` 图像资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)
@@ -19,8 +20,9 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 
 现有identity launcher可选`--resource-config`，在明确部署分配内解析auto／数量、TP与原生DP，模型初始化前冻结UUID。
 旧默认和八字段sidecar保持；当前严格reader同时接受成对资源字段，校验声明及live argv，保留PID／出生／Python／模型检查。
-[固定候选资格](../experiments/results/diagnostics/main_service_auto_20261015/README.md)为`7b20feb5`的Mac／Linux各30项、官方parser及单4090 auto／显式1各6个原SDK请求；
-物理自有GPU绑定、退出与正常lease已核。仅服务接入成熟，不包含CLIP/PZ/新平台；合并后的新main原查询另验，多卡／Serve仍pending，无加速声明。
+[同题资格](../experiments/results/diagnostics/main_service_auto_20261015/README.md)分列`7b20feb5`候选服务的12次原SDK请求和合并后main`2041da67`的原Movie Q2／Animals Q1四臂auto／显式1复验。
+新main的Mac／Linux各30项、16完整查询／1472实际请求、逐行／像素关联、物理GPU身份、退出与正常lease均核同；Movie Q2仍有7个漏判，Animals八格COUNT3／真值3。
+仅认证所用单卡与查询，不包含CLIP/PZ/新平台；多卡／Serve仍pending，单次计时无稳定收益结论。
 
 ## LOTUS 文本四臂
 

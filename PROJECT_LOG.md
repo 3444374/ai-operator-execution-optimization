@@ -3,8 +3,10 @@
 ## 2026-10-15：收敛可选 vLLM 部署资源闭包
 
 固定候选`7b20feb5`只引入部署GPU解析、原生vLLM资源配置、launcher及严格reader兼容，保留旧默认和现有前端。
-[本批来源与资格](experiments/results/diagnostics/main_service_auto_20261015/README.md)记录Mac／Linux各30项、官方parser，以及auto／显式单卡12个实际原SDK请求和物理退出；
-无CLIP／PZ／其他平台依赖，不给多卡或性能结论。新main完整原查询在合并后单独固定与复验。
+[本批来源与资格](experiments/results/diagnostics/main_service_auto_20261015/README.md)记录候选服务12次原SDK请求，以及合并后main`2041da67`的Mac／Linux各30项、原Movie Q2／Animals Q1四臂auto／显式1共16完整查询／1472实际请求。
+本轮实际响应、原解析／质量及逐行／像素关联复算通过，请求值与判定一致；Movie Q2仍有7个漏判，Animals八格COUNT3／真值3，单次计时不作稳定排名。
+四服务exit0、owned为空／unknown0、正常lease释放，445份原件在Mac独立逐文件恢复校验。零模型的锁竞争／目录保护与首stderr覆盖限制保留；共享Animals关联函数抽取后，旧main464全量CPU复算与原结果JSON完全相同。
+无CLIP／PZ／其他平台依赖，不给多卡或全项目auto结论。
 
 ## 2026-10-15：固定 main 完成原 Movie／Animals 模型检查
 

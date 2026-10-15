@@ -4,7 +4,10 @@
 [Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。
 [Animals 图文 Q1](scripts/README.md#animals-原版图文-q1)复用这四个执行 owner，额外显式声明原图请求容量。
 固定来源与实际检查分别见[Movie](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)和
-[Animals](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)；模型资格与其他图像／PZ实现分列。
+[Animals](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
+原查询模型结果见[固定main464报告](../experiments/results/diagnostics/main_queries_20261015/README.md)；
+[可选vLLM资源配置](../experiments/results/diagnostics/main_service_auto_20261015/README.md)的服务与合并后原查询按各自源码分列。
+CLIP检索／HSE与PZ实现仍从各自分支和资格入口解释。
 
 
 ## Core 与完整响应基础

@@ -1,8 +1,8 @@
 # 实验与机制证据台账
 
 2026-10-15：[main 可选 vLLM 部署资源](diagnostics/main_service_auto_20261015/README.md)。
-固定候选`7b20feb5`四生产文件闭包，Mac／Linux各30项与官方parser通过；单卡auto／显式1各6次原SDK POST，真实自有GPU身份／完整返回／物理退出与正常lease通过。
-仅提供服务接入资格；新main原查询另验，不继承CLIP／其他来源／多卡或性能结论。
+固定候选`7b20feb5`四生产文件闭包及12次原SDK服务POST，与合并后main`2041da67`分列；新main的Mac／Linux各30项和原Movie Q2／Animals Q1四臂auto／显式1共16查询／1472实际请求通过。
+新轮请求值与逐发生项判定一致，原SDK／质量／像素关联复算、物理退出与正常lease通过；Movie Q2仍FN7、Animals八格COUNT3／真值3。仅所用单卡和查询，不继承CLIP／其他来源／多卡或稳定性能结论。
 
 2026-10-15：[固定 main 原 Movie／Animals 实测](diagnostics/main_queries_20261015/README.md)。
 固定`464de926`，四臂16完整查询、9216实际模型POST及原始响应关联复算；Movie Q3四臂相对误差50%，Q1发生项判定不全相同，Animals64图一致。
