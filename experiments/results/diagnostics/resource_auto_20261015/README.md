@@ -116,3 +116,23 @@ C 已把候选 `895daab3` 普通合入 baseline `7bac93ada893dd978b21d7935edd0bd
 后续单卡检查已经准备同一原生 LOTUS 图像 index/search 的 auto／explicit1 配对，
 以及固定 vLLM0.25.1 官方 parser 的 CPU 检查；真实执行仍排在 main／PZ 之后。
 配对按共享 host lease 独立申请，禁止自动恢复 stale lease；没有持锁等待开发，也没有启动模型。
+
+新固定源为 `88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf`；上述两个修复文件与 C 的 `7bac93ad`
+逐字一致。[单卡准备摘要](single_gpu_preparation.json)另列这次 CPU 证据，不修改 895 的旧资格：
+driver／serving 只读环境检查和缓存模型内容核验通过，实际 vLLM0.25.1 官方 parser 的 DP1／TP1／PP1／MP
+有效参数检查通过，没有调用 engine config 或启动模型。固定 LOTUS／LiteLLM／原生 `sem_map` 经过 localhost fixture
+完成两个三行查询、6 个 fixture POST；完整顺序、原解析输出及重复结果一致，模型 POST 为0。
+实际字段为 `max_completion_tokens=16`，CPU 检查也覆盖控制器在缺观测／观测错误时拒绝确认物理退出。
+parser 预检进程的 CUDA 可见性为空，显式 UUID 与独立配置环境只用于构造 argv；没有执行生产 launcher。
+
+控制器已独立审查，修复 token 字段、缺观测误判、截断证据跳过清理及日志线程错误传播。
+私有归档 `single-gpu-preparation-20261015.tar.gz` 为171621字节、58成员，SHA-256
+`34d3a54b865a8ec09e81505ab4218ab0fc92f46b95b6e7c8830242240d35e3ff`；已在 Mac 逐成员核验，服务器原件保留。
+首次工具连接中断和 system Python 缺少 psutil 的包装器失败均保留，没有安装或修改共享环境。
+
+真实计划为五个图像执行分支各 auto／explicit1 配对（3图库、batch2、K3、图片查询重复2次，共50图片行出现），
+加两个 DP1 服务启动、每服务两个原 LOTUS 三行 Map（共12个模型 POST 上限）。每 pair 独立取得并释放 lease，
+检查完整矩阵、内积／排名、实际 UUID、模型／worker出生身份及物理退出；失败停止，不自动重发未知工作。
+当前没有收到 main／PZ 正常完成后的队列窗口，因此这些真实模型检查全部 **pending**。
+通过后把最小依赖闭包、实际固定源、C 兼容修复和未验边界交 main owner，由其独占合并与合并后复验；
+双／多卡、多个实际 DP rank 和 Serve 多副本不会借用单卡结果。

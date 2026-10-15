@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-2026-10-15：[部署限定资源 auto 的 CPU 检查](diagnostics/resource_auto_20261015/README.md)。基点7a4c1846；vLLM native DP、图像原工厂／池及Ray HTTP范围只做配置、模拟多设备、完整输出与生命周期回归。独立审查、失败环境与修复后结果按同题摘要定位；无新模型／GPU／多卡性能或rank退出资格。
+2026-10-15：[部署限定资源 auto 的 CPU 检查与单卡准备](diagnostics/resource_auto_20261015/README.md)。895原CPU资格保留；新固定源88f9b08c精确接回C的7bac93ad默认兼容修复，定向30pass。固定实库官方vLLM parser及原LOTUS两个三行Map／6fixture POST通过，模型请求0；58成员准备证据已独立备份。实际单／多卡、Daft分配、DP进程退出、Serve多副本和main合并复验仍pending，不借旧源资格。
 
 2026-10-15：[HSE 身份与基础修正](diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
 

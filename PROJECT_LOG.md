@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-15：固定库 CPU 预检与单卡排队准备
+
+资源分支固定88f9b08c；实际vLLM0.25.1官方parser、环境和缓存内容预检通过，没有创建engine。
+固定LOTUS原生Map两次三行查询经过6个localhost fixture POST，完整输出与重复一致，模型请求0。
+控制器独审问题已修，58成员原件与两次启动／传输失败保留并完成Mac逐字备份。
+真实单卡仍排main／PZ之后，未获窗口、未拿lease。单卡成熟闭包通过后交main owner独占合并和复验，
+实际边界见[准备摘要](experiments/results/diagnostics/resource_auto_20261015/single_gpu_preparation.json)。
+
 ## 2026-10-15：资源分支接回默认兼容修复
 
 精确接回 C 在 baseline `7bac93ad` 的 Ray 图默认兼容修复，仅显式资源模式关闭重试；
