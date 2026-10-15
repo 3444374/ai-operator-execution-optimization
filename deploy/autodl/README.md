@@ -1,5 +1,10 @@
 # AutoDL 云部署指南
 
+LOTUS 原版 Movie 的 main 四臂配置见[示例](sembench_lotus_queries.example.json)，
+对应[脚本入口](../../code/scripts/README.md#lotus-原版-movie-四臂)和[本批资格](../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
+执行前检查`core,text,semantic-benchmarks`，使用仓库外真实环境与新输出目录；本配置不启动模型服务。
+
+
 ## SAOR native-system matched readiness
 
 The CLI config trio is `saor_native_system_matched.example.json` (five-arm

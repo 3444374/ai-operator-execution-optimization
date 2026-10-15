@@ -9,6 +9,9 @@
 [固定 `9c59dc9b` 台账](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位；
 文档引用不把该分支的实现或运行资格转给 main，原始报告、全部失败及重复值保持原身份。
 
+2026-10-15：[main LOTUS 文本接入](diagnostics/main_lotus_text_20261015/README.md)。
+固定main底稿上采用必要四臂闭包，保留原SDK、Movie Q1/Q2/Q3和评价器；本批CPU/实际库、原数据身份和失败分列，模型质量与性能仍待统一main资格。
+
 2026-10-15：[main Core 与完整响应资格](diagnostics/main_foundation_20261015/README.md)。
 main `06854ecd` 上的七文件实现闭包通过 Linux 调度 432 项、执行层 183／192 项，9 项未配置 PG 图像检查跳过；
 包含实际 CPU Ray、localhost HTTP 与旧路径回归。元数据重复 offer 的 CPU 成本诊断保留全部重复，不能外推查询或 GPU 收益。

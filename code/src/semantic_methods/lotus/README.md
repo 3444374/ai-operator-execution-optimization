@@ -1,0 +1,49 @@
+# LOTUS 文本执行接点
+
+本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，
+只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
+`sdk.validate_source()` 核对实际安装源码和版本；不把可选 PG 兼容 profile 当成原 LOTUS 查询。
+
+## 接口与所有权
+
+- `batch.lotus_executor(lm, executor)` 在作用域内替换 uncached 执行接点，退出时恢复；
+  `LotusBatchExecutor` 将完整请求提交给已有 native task API，并将完整响应交回原 SDK。
+- `native.LotusNativeBatchExecutor` 消费 Daft／Ray Data 自有图的完整响应。
+  vendor graph 拥有并行与缓冲；适配层不向这些 baseline 注入 SemLoom 的任务选择或 credit。
+- `limits.LotusCallLimits` 声明逐请求、整批字节与 deadline；整批先核对输入和目标容量，
+  不静默拆分、截断或补发。SemLoom 当前逐请求输入仍受其默认 1 MiB transport 合同限制。
+- `maps.staged_two_map` 保留原阶段间整批等待；`driver.iter_two_map_rows` 是显式增量两阶段库接口，
+  保留逐行关联和方法状态。这两条路径分别测试，下面的 Movie runner 不增加两阶段查询形状。
+
+HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，适配器不把 HTTP 错误改成合法空结果。
+取消与本地 iterator 关闭不证明远端模型停止；未确认的工作保留原 ownership，执行 owner 负责 drain。
+完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
+
+## 原版 Movie 查询
+
+[公开入口](../../../scripts/experiments/run_sembench_lotus_queries.py)使用
+[四臂配置](../../../../deploy/autodl/sembench_lotus_queries.example.json)：
+
+| 配置臂 | 执行 owner |
+|---|---|
+| `lotus-adapted-native` | LOTUS／LiteLLM 原 request pool |
+| `lotus-method-native-daft` | Daft Native batch graph |
+| `lotus-method-native-ray-data` | Ray Data 官方 HTTP processor graph |
+| `lotus-method-semloom` | SemLoom Core／Ray workers |
+
+输入绑定 SemBench `c814e380` 的选定 Movie 关系、manifest、原 CSV 和独立 occurrence ID；
+Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
+标签仅供预检与查询结束后的评价，不进入模型输入。重试与结果缓存关闭。
+每个臂的持久 owner 可处理多个独立查询；每条查询重新绑定输入、预算和 trace，
+只有查询 trace 成功写入并确认归档后才回收网关对应观测。LM／Core 复用不复用模型答案。
+
+默认 `qualification` 模式核对准备请求值与实际 HTTP；显式 `performance` 模式保留实际 HTTP 和
+原 SDK 调用，准备前不可得的调用值标为 unavailable。两者的实际观测开销都计入查询，不作估计扣除。
+调用开始至消费者 EOF 与后续清理分别报告；owner 启停另列。
+示例使用有限 query／owner deadline。仅原 Movie 可显式同时置为 null，且调用方必须提供有限的
+故障、取消与清理监督；该配置本身不会安装 supervisor，逐请求 deadline 仍有限。
+
+依赖检查、环境变量和三种 CLI 动作见[脚本入口](../../../scripts/README.md#lotus-原版-movie-四臂)。
+本批来源、检查和未验证范围统一记录在[main 文本接入资格](../../../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
+本模块说明不认证其他分支的图像 RM／index／search、Animals VLM、PZ 或 IMLane，
+也不把软件 fixture 的关系结果检查解释为真实模型质量或性能收益。

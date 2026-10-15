@@ -1,5 +1,16 @@
 # PostgreSQL resource measurement tools
 
+## Original LOTUS text queries
+
+`sembench_query_cli.py` is the public four-arm Movie Q1/Q2/Q3 entry. Despite this historical
+package location, it reads a verified finite external relation and makes no PostgreSQL claim.
+`sembench_queries.py` owns original query/evaluator identity; `supplier_adapter_query.py` binds
+complete LOTUS batches to the selected executor. `persistent_native_adapter_query.py` owns the
+reusable runtime, independent query budgets, first-error precedence and durable trace handoff.
+The Daft/Ray Data graphs own native scheduling; SemLoom owns only its selected execution arm.
+[Supported API and commands](../../semantic_methods/lotus/README.md) describe exact limits,
+explicit observation modes and the separate completion-supervisor responsibility.
+
 ## Database-source queries
 
 `query_workloads.py` prepares separate raw/reference files; `query_tables.py` installs and verifies

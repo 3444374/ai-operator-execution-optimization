@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：main 接纳 LOTUS 文本四臂
+
+以`72f3f715`为底稿，从固定`671a22dd`收敛原LOTUS SDK、Daft、Ray Data、SemLoom和原Movie Q1/Q2/Q3入口。
+共享Daft runner解决组合时的重复初始化，完整HTTP和持久owner保留独立预算、错误、取消与trace落盘后归档责任。
+无消费者的replica hook按独审删除；不引入其他平台、原始/debug产物或默认策略变化。
+[资格记录](experiments/results/diagnostics/main_lotus_text_20261015/README.md)绑定当前源码、实际库／CPU与原数据身份，
+不借用历史模型结果；后续成熟图像/PZ接点与统一main实测分别完成。
+
+
 ## 2026-10-15：main 接纳 Core 与完整响应基础
 
 以 main `06854ecd` 为底稿，从固定 `671a22dd` 选择 Core 推进／有限元数据与完整 HTTP／native task 的必要实现，

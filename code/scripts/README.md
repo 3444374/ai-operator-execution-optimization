@@ -1,5 +1,24 @@
 # SemLoom 脚本入口
 
+## LOTUS 原版 Movie 四臂
+
+`experiments/run_sembench_lotus_queries.py --config CONFIG`提供互斥的`--data-preflight`、
+`--preflight`和`--execute`。前两者不调用模型；执行保留原 Q1/Q2/Q3 与 evaluator。
+配置从[四臂示例](../../deploy/autodl/sembench_lotus_queries.example.json)开始，
+填入其指定的仓库外 dataset／模型配置／tokenizer／输出／短 Ray 临时父目录环境变量。
+输入与配置身份不匹配、输出已存在、预算不足或 backend 失败时保留证据并停止。
+
+```bash
+PYTHONPATH=code python code/scripts/environment/manage_environment.py check --groups core,text,semantic-benchmarks --json-out /path/to/private/preflight.json
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --config /path/to/config.json --preflight
+PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --config /path/to/config.json --execute
+```
+
+执行前由调用方准备外部模型服务并遵守共享资源 lease；本入口不隐式下载或启动服务。
+示例预算35,840次，来自四臂×（1次warm-up+3次measurement）×（2000+120+120）；
+缩小 arm／query／repeat 时同步重算，不能把软件测试样本替换成原数据却沿用原资格。
+接口、owner、容量与 completion 监督边界见[LOTUS 模块](../src/semantic_methods/lotus/README.md)。
+
 ## gateway多查询干扰诊断
 
 `profiling/gateway_isolation_probe.py --output /path/to/new-private-probe`运行真实UDS登记/消息槽、共享Core与Map循环，
