@@ -155,10 +155,9 @@ def main(argv=None):
         stock = SentenceTransformersRM(str(args.stock_model),
             max_batch_size=args.stock_outer_batch_size, normalize_embeddings=True, device=stock_device)
         stock.transformer.to(dtype=__import__("torch").__dict__[args.dtype])
-        stock_probe = None
         if reuse_enabled:
             from src.experiments.image_reuse import observe_stock_model
-            stock_probe = observe_stock_model(stock.transformer[0].model, device=stock_device)
+            observe_stock_model(stock.transformer[0].model, device=stock_device)
         report["stock_rm_device"] = stock_device
         report["image_model_lifecycle"] = ("cold_native_graph_per_rm_call" if args.arm == "ray_data"
             else "resident_for_workflow" if args.arm != "external" else "declared_by_external_executor")

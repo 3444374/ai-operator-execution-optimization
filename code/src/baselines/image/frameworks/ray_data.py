@@ -133,7 +133,7 @@ class RayDataClipPredictor:
 
 
 class RayDataClipImagePredictor(RayDataClipPredictor):
-    """Opt-in native image arrays -> the same slow processor -> CLIP in one UDF."""
+    """Default native RGB arrays -> the same slow processor -> CLIP in one UDF."""
 
     def __init__(self, model_revision, processor_revision, dtype,
                  torch_intraop_threads, torch_interop_threads):
