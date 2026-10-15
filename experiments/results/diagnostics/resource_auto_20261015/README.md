@@ -38,7 +38,8 @@ Ray staged 每个批次携带并核对实际预处理身份；fused 每个构造
 Linux start ticks（可取得时）、实际 GPU UUID 或预处理身份；它只证明已成功构造的 worker，不能证明全部设备实际做过推理或已经退出。
 
 报告分列 `resources_requested`、`resources_resolved`、配置文件摘要、worker／模型所有者及实际构造记录。
-物理 UUID 不从 actor 数推断。Ray 图显式关闭 actor restart/task retry；未知工作仍拒复用旧 executor，不自动重发。
+物理 UUID 不从 actor 数推断。显式资源模式的 Ray 图关闭 actor restart/task retry；未传资源配置的旧图保留原生重试默认。
+未知工作仍拒复用旧 executor，不自动重发。
 Daft 继续 `max_retries=0`。完整矩阵仍由原 collector 检查行 ID、shape、finite、无丢重和顺序。
 
 ## 使用同一查询切换部署
@@ -104,3 +105,14 @@ vLLM 各 DP rank 的真实创建／退出和 GPU ownership释放、Serve 多副�
 
 完整查询原计时仍包含查询内原生建图、模型／processor重复初始化、传输、消费和结果检查；启动与最终清理另报。
 本轮没有性能数值、可靠尾分位、在线扩缩或永久 worker 的新结论。
+
+## 单卡后续准备
+
+C 已把候选 `895daab3` 普通合入 baseline `7bac93ada893dd978b21d7935edd0bdb48d5980d`。
+融合独审发现原版无条件关闭 Ray 图重试会改变旧默认；本功能分支精确接回 C 的两文件修复，
+仅 `allowed_gpu_uuids` 显式模式传入零重试。定向资源／生命周期检查为 30 passed；
+`895daab3` 的原始源码与 [CPU 资格摘要](qualification.json)保持原身份，不重标为融合或硬件结果。
+
+后续单卡检查已经准备同一原生 LOTUS 图像 index/search 的 auto／explicit1 配对，
+以及固定 vLLM0.25.1 官方 parser 的 CPU 检查；真实执行仍排在 main／PZ 之后。
+配对按共享 host lease 独立申请，禁止自动恢复 stale lease；没有持锁等待开发，也没有启动模型。

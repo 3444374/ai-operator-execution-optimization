@@ -339,22 +339,23 @@ class RayDataImageExecutor:
             image.load()
         data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
                                    for x, y in zip(doc_ids, images, strict=True)])
+        retry_options = dict(max_restarts=0, max_task_retries=0) if self.worker_options else {}
         if self.pipeline == "fused":
             from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
             data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
-                max_restarts=0, max_task_retries=0,
+                **retry_options,
                 fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
                     "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
         else:
             data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=self.cpu_workers), num_cpus=1,
-                max_restarts=0, max_task_retries=0,
+                **retry_options,
                 fn_constructor_kwargs={"processor_revision": self.processor,
                     **({"preprocessing_identity": self.worker_options["preprocessing_identity"]} if self.worker_options else {})})
             data = data.map_batches(RayDataClipPredictor, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
-                max_restarts=0, max_task_retries=0,
+                **retry_options,
                 fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
                     "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
         iterator = None

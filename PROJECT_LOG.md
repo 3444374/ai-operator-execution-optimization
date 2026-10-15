@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-15：资源分支接回默认兼容修复
+
+精确接回 C 在 baseline `7bac93ad` 的 Ray 图默认兼容修复，仅显式资源模式关闭重试；
+资源与生命周期定向检查 30 passed。保留 895 原始 CPU 资格，单卡模型回归按 main／PZ
+优先队列准备中，见[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md#单卡后续准备)。
+
 ## 2026-10-15：参数化部署允许集合内的资源配置
 
 从核实的7a4c1846建立独立资源分支，新增可选资源JSON：仅在部署允许集合解析GPU UUID，固定vLLM0.25.1单节点原生DP／显式TP，贯通LOTUS本地CLIP原工厂、池及独立准备深度。Ray HTTP使用原生minimum/maximum，按上限核容量；旧未传配置的单卡默认保留。全部worker身份及unknown责任、CPU回归失败／修复、独立审查和真实硬件pending由[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md)维护。未启动模型或占GPU，不改变main／baseline集成职责；Serve多副本分阶段保留。

@@ -117,8 +117,10 @@ class RayDataResourceTests(unittest.TestCase):
         for devices in (1, 2):
             for pipeline in ("fused", "staged"):
                 modules, graph = self.graph(batches)
-                executor = RayDataImageExecutor(model="fixture", batch_size=2, gpu_workers=devices,
-                                                cpu_workers=3, pipeline=pipeline)
+                with patch("src.semantic_methods.lotus.image_backend.ClipImagePreprocessor",
+                           return_value=SimpleNamespace(preprocessing_identity=lambda: IDENTITY)):
+                    executor = RayDataImageExecutor(model="fixture", batch_size=2, gpu_workers=devices,
+                        cpu_workers=3, pipeline=pipeline, allowed_gpu_uuids=("GPU-a", "GPU-b")[:devices])
                 with self.subTest(devices=devices, pipeline=pipeline), patch.dict(sys.modules, modules):
                     for _ in range(2):
                         result = executor.embed_batch(("a", "b", "c"), [Image.new("RGB", (4, 5))] * 3)
@@ -128,6 +130,17 @@ class RayDataResourceTests(unittest.TestCase):
                 self.assertEqual(maps[-1].kwargs["compute"], {"size": devices})
                 if pipeline == "staged":
                     self.assertEqual(maps[0].kwargs["compute"], {"size": 3})
+
+    def test_default_graphs_keep_native_retry_policy(self):
+        for pipeline in ("fused", "staged"):
+            modules, graph = self.graph([dict(doc_id=("a",), embedding=matrix(("a",)))])
+            executor = RayDataImageExecutor(model="fixture", pipeline=pipeline)
+            with self.subTest(pipeline=pipeline), patch.dict(sys.modules, modules):
+                result = executor.embed_batch(("a",), [Image.new("RGB", (4, 5))])
+                np.testing.assert_array_equal(result.embeddings, matrix(("a",)))
+                for call in graph.map_batches.call_args_list:
+                    self.assertNotIn("max_restarts", call.kwargs)
+                    self.assertNotIn("max_task_retries", call.kwargs)
 
     def test_duplicate_or_missing_output_poison_the_executor_without_a_retry(self):
         for ids in (("a", "a", "c"), ("a", "b")):
