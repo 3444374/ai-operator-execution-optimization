@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[IMLane两作者模式连续LOTUS查询](diagnostics/native_text_capacity_20261015/README.md#imlane-owner)。固定`4271dc44`、显式`reuse_bridge=True`，20fixture／0模型软件检查独审通过；随后现有公开Q2各同owner两次，480模型／1440三跳、全200与自然退出实际通过，原件独立审核通过。bridge身份、创建／注册1→0、usage与SDK关联单列；和旧四路径分开服务scope，累计12查询／1440模型／4320三跳。0发送私有核验失败保留，无新模型预算或旧四臂重跑；每臂n2、7FN与未调优工作点不支持稳态排名。
+
 2026-10-15：[Daft显式RGB输入](diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`：
 本机SDK51项、Linux144项及25个通过子测试分列且零跳过，实际像素与完整slow张量同PNG逐位相同；
 stock／Daft PNG／RGB的12条完整LOTUS查询、15矩阵与退出通过。全部PNG／RGB向量与top10逐位相同，

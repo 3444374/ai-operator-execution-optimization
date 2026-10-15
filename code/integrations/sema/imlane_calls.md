@@ -25,7 +25,7 @@
 | `max_item_payload_bytes` | 单项payload容量；省略时8MiB |
 | `max_pending_calls` | 桥内待交付数量；省略时128，不表示作者执行并发 |
 | `max_batch_response_bytes` | 全批次完整响应累计容量；省略时32MiB |
-| `reuse_bridge` | 默认`False`；显式`True`选择下述固定函数的常驻桥候选，作者CPython／Ray资格分别待验证 |
+| `reuse_bridge` | 默认`False`；显式`True`选择下述固定函数的常驻桥，桥及LOTUS owner资格按后续记录分列 |
 
 六项均由`IMLaneCallConfig.batch_limits`校验并传到既有DBEnd桥；公开单查询、常驻和MovieQuery的配置文件
 读取同一组字段。省略构造参数时使用配置字段，显式参数可选择合法额度；公共`NativeCallExecutor`将自身
@@ -108,7 +108,10 @@ HTTP超时可正常回送一条错误值；即使DBEnd已排空，远端HTTP停�
 本次只改变LOTUS／IMLane适配的初始化寿命，并增加阶段观测；不改变作者调度、HTTP函数、
 逐行独立请求、物理Arrow批次或HTTP client寿命。既有同步默认与可选async的实库资格保留，
 本次常驻候选已通过[完整桥及两作者模式的有限软件资格](../../../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session)，
-原2000行完整CLI、PG、async与reuse组合及真实模型另列pending，不能据软件资格做性能排名。
+原2000行完整CLI、PG及async与reuse组合仍分别pending，不能据软件资格做性能排名。
+`4271dc44`将既有session借给显式选择复用的LOTUS常驻owner，原方法接点仍每query建立，
+有限期限与错误后停止保持。[两作者模式的LOTUS检查](../../../experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)
+单列实际软件／模型来源，不借历史桥组件资格替代完整查询。
 
 来源核对固定作者`072f8257`原始源码：
 [C++示例](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/demo/cpp_example/dbend_cpp_example.cpp)

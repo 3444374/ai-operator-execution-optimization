@@ -204,6 +204,15 @@ Ray辅助最小API及现有接入两图共32POST；当前R4接入4个session的�
 删除一套重复清理及两个状态标志，并移除一次每query无条件reset；资格记录仍在使用，未用大块注释保留死代码。
 默认R1、Daft C−1、单元素背压交付、完整消费与未知工作禁止复用均保持。
 
+| 生产文件（相对最初`277d8f48`） | 实际修改 |
+|---|---|
+| [prepared_map.py](../../../../code/src/baselines/text/frameworks/prepared_map.py) | Ray活动HTTP按A×B，有限行／payload另计 |
+| [native_calls.py](../../../../code/src/baselines/text/frameworks/native_calls.py) | 输入首越界即拒绝，Daft默认／详细模式统一清理 |
+| [native_adapter_query.py](../../../../code/src/experiments/postgresql/native_adapter_query.py) | source额度加固定请求模板开销，避免混用payload单位 |
+| [supplier_adapter_query.py](../../../../code/src/experiments/postgresql/supplier_adapter_query.py) | performance省重复SDK落盘；查询借用可选IMLane owner执行器 |
+| [persistent_native_adapter_query.py](../../../../code/src/experiments/postgresql/persistent_native_adapter_query.py) | 移除健康查询强制池重置；可选桥在owner统一关闭 |
+| [request_gateway.py](../../../../code/src/observability/request_gateway.py) | DummyCookieJar保留显式Cookie透传，连接池不积累Cookie |
+
 ### 新源 Linux 常驻检查与真实模型小轮
 
 `1ba0fc1e` 的814文件闭包已完成实际Linux三臂各两次原LOTUS HTTP/1.1 fixture查询：
@@ -282,13 +291,52 @@ C是上限，实际并发未被强制相等。Ray的A2×B2工作点上界4与本
 已独立审核通过；原LM、owner身份连续，第二query新建连接0／复用120、pool generation0。
 完整query、资源及HTTP分布已并列于上表；仍有7FN，不升级质量或性能结论。
 
+<a id="imlane-owner"></a>
+
 `4271dc44`独立完成IMLane有限owner借用：仅显式`reuse_bridge=True`时持有既有`NativeCallExecutor`／DBEnd session，
 每query仍有独立方法接点／身份，owner统一关闭；默认逐batch文件／Popen及原HTTP UDF生命周期保持。
 没有新桥或改作者算法，原uncertain／poison／未知工作拒复用保留。15项受影响owner清理单测通过；
 CPython／Ray各两健康query加一次完整429后禁止后query，共20fixture／0模型的作者scope实际通过，
-进程／共享内存自然退出且lease释放；实际记录正在独立审核。首个私有验证入口在HTTP前因禁止覆盖写入配置失败，
+进程／共享内存自然退出且lease释放，实际记录独立审核通过。
+[作者fixture核验](imlane-fixture-verification.json)与[10份原始收据的脱敏归档](imlane-fixture-receipts.jsonl.gz)
+保留20请求／40两跳、同桥身份和1→0创建／注册计数；10份收据不是请求数。
+首个私有验证入口在HTTP前因禁止覆盖写入配置失败，
 0fixture／0模型，原失败保留；仅改为新配置文件后重验，没有重跑旧模型。
-后续两模式各同owner两次原Q2的最小模型补验尚pending，不用组件检查代替完整公开入口，也不借上表`1ba0fc1e`成绩。
+随后以同源`4271dc44`的815文件闭包，通过已有公开`sembench_query_cli`完成两模式各同owner两次原Q2，
+共480模型／1440三跳、全部200、0warmup／0retry；没有重跑前述四臂。
+[IMLane模型原值](imlane-model-verification.json)与[480请求和SDK关联收据](imlane-model-request-receipts.jsonl.gz)
+单独绑定新服务scope，两模式共享该API／engine，与前述四臂不是同实例配对。
+两模式均显式`reuse_bridge=True`、query120秒／owner600秒；沿用原作者两worker、桥级原生线程池6与C8。
+META的`native_executors=4`是作者实例额度，不是4个物理worker；6也不是每worker的HTTP并发。
+本轮未改作者或桥源码，使用已固定的兼容构建。HTTP UDF仍逐调用建立client，不称所有层都常驻。
+
+| 作者模式 | owner启动秒 | 首次完整query秒 | 后续完整query秒 | 两query窗口calls/s | 两query间隔秒 |
+|---|---:|---:|---:|---:|---:|
+| CPython | 8.517 | 7.906 | 7.506 | 14.922 | 0.672 |
+| Ray | 8.563 | 8.128 | 7.677 | 14.438 | 0.818 |
+
+| 作者模式 | 活动HTTP峰（首／后） | HTTP窗口平均在途（首／后） | 首HTTP前秒（首／后） | 末HTTP正文后至EOF秒（首／后） | P50／P95／经验P99／最大 ms（n240） |
+|---|---:|---:|---:|---:|---:|
+| CPython | 2／2 | 1.742／1.780 | 0.199／0.148 | 0.048／0.040 | 108.322／116.505／145.894／413.655 |
+| Ray | 2／2 | 1.665／1.720 | 0.305／0.183 | 0.045／0.047 | 105.696／119.123／138.122／427.658 |
+
+时间与HTTP分位沿用前述定义。owner启动不包含外部已准备的作者Coordinator／worker或模型服务；
+首query内部的桥／context创建实际发生并计入主时间，不扣除。外部作者启动没有单独精确时长，不补造数字。
+查询返回与owner退出各取既有报告，共每CLI三次边界观测；位于EOF后的记录成本进入两query观察窗口。
+同桥PID／birth／start ticks、session root、namespace及native／LM身份连续；原桥报告创建／注册1→0，
+session批序号1→2，每批120调用／120复制。没有虚构C++ context地址。
+第二query网关新建0／复用120，第一query各新建2／复用118；批次排空后桥仍在，owner关闭后自然返回0、stdio关闭、无uncertain。
+作者进程／共享内存、服务API／engine全部退出，GPU为空、lease释放；实际原件和派生指标均独立审核通过。
+
+首个模型scope在发送前被私有身份检查拒绝，0模型／0HTTP，失败原件保留并完成退出。
+检查错误地要求CPython worker与Coordinator同一可执行文件；固定作者[启动源码](https://github.com/IM-DM4AI/IMLane0/blob/072f8257db80569e42c9f5727d839587df529652/src/coordinator/coordinator.cpp#L35)
+实际fork／exec独立`py_exec_instance`，
+修正仅在私有helper核其原固定SHA、实际exe、父PID、argv、birth／钩子／namespace与CPU身份，不改生产接入。
+这是测试器假设错误，不是原生API或接入失败；修正前未发模型，不增加480模型额度或重跑四臂。
+
+本轮新增四query仍各TP7／TN106／FP0／FN7、官方LIMIT5指标1.0，`performance_qualified=false`；
+加上前述四臂，累计12条完整Q2／1440模型／4320三跳。质量不足、三组服务scope、各臂n2和实际并发不同均保留，
+不据本工作点宣称稳态排名或调度机制收益。
 
 ### 文档与实验能力边界
 
@@ -299,4 +347,4 @@ Daft官方说明类在worker上初始化并复用多行，初始化可以延后�
 主实验只评价明确配置的完整LOTUS查询；生命周期设计收益可以是真实整体收益，调度归因仍需同生命周期的静态／新策略消融。
 本轮两次连续查询不支持并发线上服务、故障恢复、稳态尾延迟或各后端全局最优参数结论。
 
-完整模型原件由项目维护者保管；可按本节`1ba0fc1e`三臂与原生两个scope，凭[三臂证据](model-verification.json)和[原生证据](native-verification.json)中`evidence.private_closed_artifact_sha256`向维护者申请授权获取，核对校验值后离线复算。紧凑收据与各原件的映射保持原样。
+完整原件及失败记录由项目维护者保管；可按`1ba0fc1e`三臂／原生两个scope与`4271dc44`作者fixture／模型scope，凭[三臂证据](model-verification.json)、[原生证据](native-verification.json)、[IMLane fixture](imlane-fixture-verification.json)及[IMLane模型](imlane-model-verification.json)中的`evidence.private_closed_artifact_sha256`、`evidence.private_closed_archive_sha256`及`failed_predecessor`所列校验值，向维护者申请授权获取对应原件，核对校验值后离线复算。紧凑收据与各原件的映射保持原样。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-15：IMLane可选owner复用完成公开原Q2接线
+
+固定`4271dc44`沿已有session借用实现，保留默认逐批桥和原作者机制。两模式20fixture与15项owner清理检查通过；公开SemBench CLI各同owner两原Q2实际完成480模型／1440三跳、全200，桥与作者／服务进程自然退出、GPU空、lease释放，实际独立审核通过。[完整记录](experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)分列原始时间、HTTP经验尾、桥身份／1→0计数及SDK关联。此前0HTTP身份检查失败来自私有测试器误用Coordinator executable，修正到固定作者独立worker映射，生产源码未改；旧四臂未重跑。累计六配置12查询／1440模型，仍7FN与n2，不宣称排名或调度收益。
+
 ## 2026-10-15：明确 LOTUS 主实验的外部场景与原生生命周期
 
 按用户最新原则在[对照规范](experiments/plans/reference/对照规范.md#resident-query-timing)、所属模块及图像同题报告作局部同步：长生命周期LOTUS进程连续完整查询匹配外部语义与资源，允许原生内部生命周期不同，构图／模型重建成本全计入且不自动排除主测；官方服务化另作配置。整体生命周期结果与同生命周期静态消融下的调度归因分开，固定内部接点及关闭缓存观察边界如实命名。无代码、原值或实验变更，不增加 E 模型小轮前置。
