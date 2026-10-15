@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-15：main 接纳独立统计正确性修复
+
+以纯文档 main `170c3867` 为底稿，仅移植 `4b1c834b` 的重复均值 Student-t 临界值与浮点计算修复、
+对应测试及[模块说明](code/src/observability/README.md#repeat-mean-confidence)，不合入 integration 工程祖先。
+原 main 上新增回归失败，修后 40 项统计/原 metrics 回归和实际 CSV→JSON 入口通过；无新运行依赖。
+历史观测不改，不把均值区间称为总体尾分位区间；本批没有服务器、模型或 GPU 运行，也不主张性能收益。
+其余 Core、native provider、LOTUS 文本及图像基础仍按完整依赖分别验证、独审和接纳。
+
 ## 2026-10-15：补齐 Palimpzest 定位与两层对照文档
 
 从 main `e315e5af` 的现存文件局部修订研究定位、文献清单、对照规范、总纲和根入口；未带入 integration 的方案正文或实现。

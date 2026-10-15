@@ -1,7 +1,7 @@
 # 项目大纲
 
 本文方向与实现核对参照 [integration/baselines 的固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
-本次仅向 main 更新文档；快照中的 LOTUS 新入口、可选派发／计时和独立研究能力不因此成为 main 实现，具体能力按固定源码与报告解释。
+快照中的 LOTUS 新入口、可选派发／计时和独立研究能力不因本文出现在 main 而成为 main 实现，具体能力按固定源码与报告解释。
 
 维护日期：2026-10-15。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，

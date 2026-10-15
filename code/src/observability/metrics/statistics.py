@@ -7,20 +7,44 @@ import statistics
 from dataclasses import asdict, dataclass
 
 
+# t(0.975, df), rounded upward to six decimals; see ../README.md.
 _T_CRITICAL_95 = {
-    1: 12.706,
-    2: 4.303,
-    3: 3.182,
-    4: 2.776,
-    5: 2.571,
-    6: 2.447,
-    7: 2.365,
-    8: 2.306,
-    9: 2.262,
-    10: 2.228,
-    15: 2.131,
-    20: 2.086,
-    30: 2.042,
+    1: 12.706205,
+    2: 4.302653,
+    3: 3.182447,
+    4: 2.776446,
+    5: 2.570582,
+    6: 2.446912,
+    7: 2.364625,
+    8: 2.306005,
+    9: 2.262158,
+    10: 2.228139,
+    11: 2.200986,
+    12: 2.178813,
+    13: 2.160369,
+    14: 2.144787,
+    15: 2.131450,
+    16: 2.119906,
+    17: 2.109816,
+    18: 2.100923,
+    19: 2.093025,
+    20: 2.085964,
+    21: 2.079614,
+    22: 2.073874,
+    23: 2.068658,
+    24: 2.063899,
+    25: 2.059539,
+    26: 2.055530,
+    27: 2.051831,
+    28: 2.048408,
+    29: 2.045230,
+    30: 2.042273,
+    40: 2.021076,
+    60: 2.000298,
+    120: 1.979931,
+    1000: 1.962340,
+    10000: 1.960202,
+    1000000: 1.959967,
 }
 
 
@@ -44,7 +68,7 @@ def percentile(values: list[float], p: float) -> float:
 
 
 def repeat_summary(values: list[float]) -> dict[str, float | int | str]:
-    """Summarize formal repeats with a small-sample Student-t interval."""
+    """Summarize repeat means with a conservative two-sided 95% t interval."""
 
     if not values:
         return {
@@ -56,7 +80,7 @@ def repeat_summary(values: list[float]) -> dict[str, float | int | str]:
     mean = statistics.mean(values)
     standard_deviation = statistics.stdev(values) if len(values) > 1 else 0.0
     critical = _student_t_critical_95(len(values) - 1)
-    margin = critical * standard_deviation / math.sqrt(len(values))
+    margin = (critical / math.sqrt(len(values))) * standard_deviation
     return {
         "status": "ok" if len(values) > 1 else "single_repeat:no_interval",
         **asdict(
@@ -97,12 +121,16 @@ def paired_performance_regression_count(
 
 
 def _student_t_critical_95(degrees_of_freedom: int) -> float:
-    if degrees_of_freedom <= 0:
+    """Use the nearest lower tabulated df; zero denotes a single repeat."""
+
+    if isinstance(degrees_of_freedom, bool) or not isinstance(degrees_of_freedom, int):
+        raise TypeError("degrees_of_freedom must be an integer")
+    if degrees_of_freedom < 0:
+        raise ValueError("degrees_of_freedom must be non-negative")
+    if degrees_of_freedom == 0:
         return 0.0
-    for upper_bound in sorted(_T_CRITICAL_95):
-        if degrees_of_freedom <= upper_bound:
-            return _T_CRITICAL_95[upper_bound]
-    return 1.96
+    lower_bound = max(df for df in _T_CRITICAL_95 if df <= degrees_of_freedom)
+    return _T_CRITICAL_95[lower_bound]
 
 def batch_result_stats(results: list[dict]) -> dict[str, float | int]:
     rows = [int(result.get("rows", 0)) for result in results]

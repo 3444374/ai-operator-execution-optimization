@@ -2,15 +2,18 @@
 
 ## main 与集成分支的阅读范围
 
-本次 main 仅接纳文档，生产代码保持 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`。下文保留该来源在2026-10-08记录的实现与验证情况，
+main 的执行与接入代码仍来自 `425f0145b412581ac2027b4aa31c3ae51dd42f0c`；本批只移植下述公共统计修复。
+下文保留该来源在2026-10-08记录的实现与验证情况，
 不将后续集成分支的能力写成 main 已实现。新适配与修复从
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)进入；
 [LOTUS 模块](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/src/semantic_methods/lotus/README.md)和
 [固定 `2afcaf47` 图像资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)
 属于该集成来源，不能用于认证 main 的执行代码。可选派发、详细计时、IMLane 新桥及 PreparedAssetWindow 等分别按实际分支／固定来源解释。
 
-统计修复由独立 [4b1c834b 说明](https://github.com/3444374/ai-operator-execution-optimization/blob/4b1c834b64b604397c7e6a533134648a72923097/code/src/observability/README.md#repeat-mean-confidence)交付，
-本次文档合入不包含统计代码，也不改变历史观测或重算旧摘要。
+统计修复从独立 `4b1c834b` 精确移植生产函数与定向测试，无新依赖；
+main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通过。
+边界、固定来源影响核查及高精度参照见[所属模块](src/observability/README.md#repeat-mean-confidence)。
+不改变历史观测或重算旧摘要，也不引入集成分支的新接入、策略或模型资格。
 
 ## 原 main 实现记录
 
