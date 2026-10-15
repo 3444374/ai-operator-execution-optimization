@@ -70,20 +70,23 @@ def main(argv=None):
             images.append(decode_rgb_image(raw))
         encoded = [image_bytes(x) for x in images]
         pixels_stock = stock.transformer[0].tokenize(images)["pixel_values"].numpy()
-        pixels_direct = direct.processor.preprocess(encoded)
+        pixels_direct = direct.processor.preprocess_decoded(images)
+        report["png_fallback_pixels_equal"] = np.array_equal(
+            pixels_direct, direct.processor.preprocess(encoded))
         report["effective_pixels_equal"] = np.array_equal(pixels_stock, pixels_direct)
         report["pixel_max_abs_error"] = float(np.max(np.abs(pixels_stock - pixels_direct)))
         texts = ["bird", "a photograph of a bird", "not-a-bird.jpg"]
         stock_tokens = stock.transformer[0].processor.tokenizer(texts, padding=True, return_tensors="np")
         candidate_tokens = direct.processor.processor.tokenizer(texts, padding=True, return_tensors="np")
         report["tokenizer_equal"] = all(np.array_equal(stock_tokens[x], candidate_tokens[x]) for x in stock_tokens)
-        if not report["effective_pixels_equal"] or not report["tokenizer_equal"]:
+        if (not report["effective_pixels_equal"] or not report["png_fallback_pixels_equal"]
+                or not report["tokenizer_equal"]):
             raise ValueError("effective CLIP preprocessing or tokenizer differs")
         stock.transformer.to(args.device)
         direct.actor._model = direct.actor._model.to(args.device)
         direct.actor._device = args.device
         stock_values = stock(images)
-        direct_values = direct.embed_batch(tuple(x.doc_id for x in entries), encoded).embeddings
+        direct_values = direct.embed_batch(tuple(x.doc_id for x in entries), images).embeddings
         report["normalized_outputs_equivalent"] = bool(np.allclose(stock_values, direct_values, atol=1e-5, rtol=1e-5))
         report["embedding_max_abs_error"] = float(np.max(np.abs(stock_values - direct_values)))
         report["min_cosine"] = float(np.min(np.sum(stock_values * direct_values, axis=1)))
@@ -101,7 +104,7 @@ def main(argv=None):
             raise ValueError("CLIP numeric qualification or image-content controls failed")
         report.update(status="succeeded", qualified=True, manifest_sha256=manifest.sha256,
             stock_outer_batch_size=64, stock_encode_default_batch_size=32,
-            decode="eager RGB PIL; transport lossless PNG", processor_backend="slow PIL",
+            decode="eager RGB PIL; PNG fallback checked separately", processor_backend="slow PIL",
             task_quality="self-image retrieval checked separately; captions/semantic relevance unavailable")
     except BaseException as exc:
         error = exc

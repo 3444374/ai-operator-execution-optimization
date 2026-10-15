@@ -5,17 +5,14 @@
 固定融合源码 `2afcaf47` 的[最终十格资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)
 已经完成六路径64图组合与四格已有索引的完整数值／查询检查；单次资格不提供性能排名或稳定尾分位。
 
-PNG 参数已在`e50dd2b9`后作为显式可选项接纳，原默认与stock PIL保持。
-该共享适配开销作用于Direct／HSE等替换路径，不作为SemLoom独有创新；旧`06332d4f`资格与下述候选各保留原身份，最终融合版本的资格见上方链接。
-固定`eab9f11a`的Direct／HSE最小匹配模型资格与阶段观测见[候选证据](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
-`--png-compress-level` 仅作用于替换 RM，接受 `-1..9` 的整数；省略时仍按原调用不传 Pillow 参数，
-stock 的原生 PIL 路径拒绝该选项。研究候选为1，0仅用于诊断；各替换后端通过同一 RM 编码接点接收字节。
-HSE 可用 `--hse-encoded-bytes` 与 `--hse-encoded-block-bytes-upper-bound` 固定已有
-`StageBrokerLimits.encoded_bytes` 和原驱动块上限；省略两者保持原推导。显式值不会按新 PNG 大小增大，
-块上限超过容量或实际块超过上限时沿用原驱动 `BufferError`，不改输入、batch 或调度。
-容量只覆盖 broker 持有的块；RM 全量 PNG 列表与序列化复制仍是另计的成本。
-观测记录 PNG 编码 CPU／墙钟及字节量；Direct／HSE 使用已有 telemetry 记录包含解码的预处理、
-host copy、actor service、提交与张量字节。纯解码、跨进程传输及 CUDA 分项未独立计时，不能把聚合时间当这些分项。
+普通入口自动采用已验证的后端输入：Direct／Daft／Ray 接 RGB PIL，数组转换在查询内；
+SemLoom static／HSE 复用已核对的原图字节。源记录缺失、图片变换或像素变化时，按当前 RGB PIL
+无损 PNG 编码，固定压缩等级1；不会回读旧 JPEG 代替当前像素。所有图片先整批检查后再提交。
+必要 fallback 保留，旧输入选择／压缩调参开关已移除；历次命令与实测来源保留在
+[原记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
+HSE 的 encoded 容量与块上限仍可显式设置，超限沿用原错误，实际字节减少不会自动扩大容量。
+
+历史PNG参数与候选命令按[固定来源记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)解释；当前入口不再接受旧调参开关。HSE逻辑容量只约束broker持有块，RM列表、复制及RSS／显存不由此形成硬上限。
 
 `image_workflow.py`保留 LOTUS1.2.4 的`sem_index`、`load_sem_index`、`sem_search`与原生
 `FaissVS(Flat, inner product)`。图库固定原始 RangeIndex，业务ID另列；输入使用一维object列中的
@@ -24,12 +21,12 @@ RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，st
 
 图像实现LOTUS作者规定的抽象`RM._embed()`扩展点，保留原`RM.__call__()`与查询转换；
 文本则在固定源码上替换实例内部`_process_uncached_messages`，不是官方稳定执行器插件。
-`image_rm.ImageBatchExecutor`公开`semantics`、`embed_batch(doc_ids, images)`与`close()`。
-默认`encoded_bytes`以无损PNG传输同一RGB像素；显式`rgb_pil`接收RGB PIL，原源字节映射见下方候选说明。RM按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
+项目自己的`image_rm.ImageBatchExecutor`提供`semantics`、`embed_batch(doc_ids: tuple[str,...], images: Sequence[bytes | Image.Image])`
+与`close()`。输入表示在executor创建时声明，RM按稳定ID恢复顺序，检查完整float32 `[N,512]`向量、
 finite值与单位范数。原生建索引需要完整矩阵，显式限制图库至5000行；这不是流式PG执行。
 Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE，Ray Data保留原生图与调度；
 `--arm daft_native`接入[独立Daft后端](../../baselines/image/frameworks/daft_clip.py)，
-保留其原生RGB解码、stateful batch UDF与生命周期，不复制执行代码。外部工厂也可使用同一协议。
+保留其原生图片类型、stateful batch UDF与生命周期，不复制执行代码。外部工厂也可使用同一协议。
 原生算子与作者源码均不修改，固定来源、资格及精简证据见[本轮记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 
 [资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
@@ -273,34 +270,67 @@ Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭
 
 `--observe-model-reuse`仅用于短诊断，使用实际模型UUID、PID、Linux进程start及整数计数。stock观测vision/text子模块，其他图片路径观测完整GPU模型调用至CPU NumPy返回；阶段快照与Ray批次标量采用不同取得方式，缺项不推定复用。模型构造每实例写一次私有记录；默认关闭，观测不持有模型强引用，失败／取消后不等待忙碌worker的观测RPC而继续关闭。
 
-固定[Ray2.56.1批推理说明](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/data/batch_inference.rst)及[actor pool实现](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)支持单图内多batch复用与流水。本接点每个同步RM调用创建独立图并完整消费关闭；ActorPoolStrategy只指定配置，未提供跨独立图传入现有pool的公开参数。仅删显式shutdown不产生复用保证。单长图动态source或Ray Core／Serve常驻是另一个接法，需独立验证，不能借此结果概括Ray Data一般能力。图库batch32和在线单图1行的来源分开保留；现有较大图pipeline的Fast预处理也不能直接替代本轮slow数学。
+### Ray Data 与 Ray Serve 的独立配置
 
-规模、预热／缓存及不能支持的判断见[连续查询计划](../../../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。实际模型状态以同题结果为准。
+[`RayServeClipExecutor`](../../baselines/image/frameworks/ray_serve_clip.py)提供
+`LOTUS + Ray Data + Ray Serve 常驻 CLIP`，沿原 RM、索引与查询方法接入。
+普通同步[`map_batches`工作负载函数](../../serving/ray_data_clip_client.py)只持公开 deployment handle，
+每个实际批次等待一次完整 NumPy 返回；图由 Data 调度，模型副本、路由与队列由 Serve 管理。
+不使用 LLM 流式 Processor，也不引入 SemLoom 调度池。原 Ray 图内模型继续是独立可用配置。
 
-当前Daft接点先原生RGB decode，然后在声明GPU资源的stateful UDF内依序执行slow resize／crop／normalize和CLIP forward；CPU准备尚未独立成可流水阶段。这是已测接法，不代表Daft能力上限。batch32由当前图和UDF声明，模型实际批形态以调用计数和完整向量核对；仓库其他staged实现的Fast处理／不同runner不能直接继承本轮slow资格。fixed_size_list输出改为公开Arrow列缓冲视图：验证宽512、float32、父与有效child无NULL，按父offset取有效区间；多chunk必要时拼接，保留最终完整矩阵和按ID恢复顺序。不再物化每个Python浮点，仍有拼接／重排／RM输出拷贝，不声称端到端零拷贝。本轮不新增CPU分阶段候选。
+使用既有`--arm external --executor-factory src.baselines.image.frameworks.ray_serve_clip:RayServeClipExecutor`
+和仓外`--executor-config`。工厂参数为`model_path`、`processor_path`、`ray_temp_dir`，可选
+`device='cuda'`、`dtype='float32'`、`batch_size=32`、`max_batch_rows=5000`、`request_timeout_s=60`。
+该 executor 自动声明 RGB PIL 输入。
+权重／有效处理器内容摘要和实际软件版本仍由现有 CLI 核对。
 
+固定 Ray2.56.1，使用[普通函数任务与公开参数](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/data/dataset.py#L530-L558)、
+[可序列化 handle](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/serve/handle.py#L331-L342)和
+[同步完整返回](https://github.com/ray-project/ray/blob/936f0d7d49d9da8ac1a9f04cc8a89faf2cb3c42a/python/ray/serve/handle.py#L562-L589)。
+Data task CPU1／GPU0，单 Serve 副本 CPU1／GPU1，独占 runtime 声明 CPU4／GPU1；
+Torch 两线程池均为1。控制器与 driver 实际资源另计，逻辑 CPU 声明不是物理 CPU 硬限制。
+worker 可重建自己的 handle/router，只有服务模型拟跨图保留，须以实际 UID／PID／调用计数证明。
 
-`--native-image-input`是显式诊断候选，默认关闭且与PNG参数互斥。Direct接收RGB PIL；Ray在查询内转换RGB uint8 HWC数组，经一个stateful callable完成同slow处理与CLIP，保留原staged作对照。融合省去CPU actor和预处理张量跨actor，但会失去跨批CPU/GPU重叠；批大小与GPU资源仍由原生API管理。每个executor在创建时固定一种输入，不按行猜测表示。
+查询内 RGB 转换、建图、序列化、排队、RPC、原 slow 处理、FP32 模型与完整恢复均进入 LOTUS 时间；
+服务初始化和最终退出另报。每条查询完整消费并关闭自己的迭代器，健康服务仅在 owner 退出时删除。
+只删除本次唯一应用并关闭自有 runtime；构造半途失败也执行清理。
+Data task 重试为0、`retried_map_errors=False`；Serve 仍可能原生重新路由／重建，不能据此保证推理恰好执行一次。
+任何错误、超时或实例身份变化都禁止继续复用；cancel／逻辑删除不代替物理退出核查。
+真实 CPU SDK 与完整 LOTUS 模型资格分别记录，服务化收益与调度机制收益分别论证。
 
-SemLoom static/HSE候选复用loader读取时已验证的原图字节，映射绑定PIL对象、尺寸和RGB摘要；每次调用先检查整批RGB／非空／可load及摘要，再提交。变换或原地改动PIL、缺少映射、非法后缀均拒绝，不能回读路径替代当前像素。Daft默认保留PNG字节→原生RGB decode，显式候选接收RGB PIL，在executor计时内转为HWC uint8并通过公开`cast(DataType.image("RGB"))`进入原生图片列。两路共用原stateful UDF、显式`channels_last`及slow处理；未借此宣称原JPEG在其decoder下等价。输入、实际forward批次与最后完整矩阵分别验证；本入口保留整批检查后零／完整提交语义，不暗中改为流式半提交。
+### 输入、计时与实际模型观测
 
-Daft选项对应`DaftClipExecutor(native_image_input=True)`，默认False；固定版本0.7.21公开图片类型要求HWC，不能从三像素尺寸猜测CHW。PNG／RGB两路的实际解码像素与完整处理张量须分别核对，最终矩阵保持float32／独立拥有和按ID恢复。像素到Arrow图片列仍可能复制，不称零拷贝。[固定793204cc的小规模资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)已核对12图、两轮图片／文本查询；已发布九格不自动继承新模式资格，也不将本轮外推为稳态或尾延迟结论。
+`--query-repeats N`在同一 owner／FaissVS 内执行独立完整查询，默认1；重复输入不额外去重。
+`native_call_return_elapsed_s`从原生`sem_search`提交到完整 DataFrame 返回；`elapsed_s`另外保留
+输出检查和失败耗时。索引准备、模型服务启动、查询及最终退出分别记录。每次查询内实际发生的
+转换、建图、加载、排队、传输、预处理、模型、恢复与 LOTUS 处理全部保留，惰性图必须完整消费。
+已有内存索引由同一 FaissVS 保留，答案缓存关闭。首条查询不丢弃，不据短重复声称可靠尾分位。
 
-`model_startup_s`记录显式启动区间；Ray callable载入和Daft首次UDF延迟载入仍在实际建索引／查询／应用耗时内。细分以`model_load_scope`与实际构造事件为准，不能理解成所有模型载入都已移出应用区间。短对照和旧默认的结果、失败及恢复信息见[同题结果](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)。
+Ray 普通图内模型默认`--ray-image-pipeline fused`；`staged`保留 CPU 预处理／GPU 模型两段，
+两者均从 RGB 数组执行相同 slow 数学，原生 Data 决定批处理与图生命周期。融合减少 actor／张量传输，
+分阶段允许跨批准备与模型重叠，不能凭单次时间删除一种。普通 ActorPoolStrategy 只配置本图 pool，
+不保证后续独立图的模型常驻；Serve 组合才另行声明模型所有者。
 
+`DaftClipExecutor(input_kind='rgb_pil')`为普通默认，在查询内转 HWC uint8，经公开 cast 进入
+`Image[RGB]`；`input_kind='encoded_bytes'`保留给原生编码文件及 decoder 诊断。两种输入共用
+stateful UDF、slow `channels_last`、FP32 与原生资源，不预先推定 JPEG decoder 数学相同。
+向量经公开 Arrow 缓冲视图校验 float32／宽512／有效区间无 NULL，再完整恢复顺序与输出所有权；
+拼接和结果复制仍可能发生，不称零拷贝。CPU准备尚未单独形成新的 Daft 流水配置。
 
-Ray候选的核心就是公开原生调用；外部先初始化自己的Ray，下面的行输入来自已检查的RGB图片，UDF复用共享slow processor和CLIP数学：
+SemLoom 的源缓存绑定同一 PIL 对象、尺寸及当前 RGB 摘要；不可复用项走 lossless PNG fallback。
+记录实际源复用／fallback行数、编码 CPU／墙钟和字节。源检查与转换发生在哪层就计入哪层，
+不会将公共输入减负写成 SemLoom 专属调度收益。完整矩阵的ID／dtype／finite／norm检查保持。
 
-```python
-from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
-dataset = ray.data.from_items(rows)  # doc_id + RGB uint8 HWC ndarray
-result = dataset.map_batches(
-    RayDataClipImagePredictor, batch_format="numpy", batch_size=32,
-    compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
-    fn_constructor_kwargs=model_settings,
-)
-for batch in result.iter_batches(batch_format="numpy", prefetch_batches=1):
-    consume_complete_embeddings(batch)
-```
+`--observe-model-reuse`仅用于短诊断，默认关闭。实际模型 UUID／PID／Linux出生身份与整数调用计数
+证明已观察到的复用；worker wrapper 或固定副本数不能代替它。构造每实例记录一次，计数随真正调用增长；
+失败／取消后不等待忙碌worker的观察RPC，而继续资源处理。纯快照与请求实际执行计数分别解释。
 
-计时须包住完整消费，而非只包惰性建图。现有RM记录`executor_elapsed_ns`覆盖`embed_batch`入口至完整返回（包括实际图消费及本接点的关闭），完整查询记录`native_call_return_elapsed_s`则覆盖LOTUS调用入口至DataFrame返回。PNG／原图指纹／PIL数组转换发生在哪层就留在哪层，二者不互相替代。输入有界检查与完整ID／FP32／finite／norm属于接纳语义；源码／权重摘要在启动，跨路径完整向量比对及进程监督在实验侧。RM各图片／文本分区已经逐份检查，组装后的同一矩阵不重复扫描范数。
+`model_startup_s`只表示显式启动区间；Ray图内模型或Daft首次UDF若延迟加载，成本仍在对应index/query中。
+任务和输入输出责任按查询处理，健康长期服务在 owner退出时结束；未确认的远端工作禁止遗忘或复用。
+普通输入`17ac2aeb`的八配置与Serve来源`460d3870`的三配置已完成有限完整LOTUS检查；
+[实际原值、模型身份与复算](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+分列来源及样本数，不据短轮推断稳态或调度优势。IMLane图像尚无已交付资格，继续使用公开external factory等待接纳。
+已有[连续查询记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)
+及[Daft RGB记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)
+保留原源码身份、配置、原值与失败，不自动改称当前默认的实测。后续规模与缓存选择见
+[同题计划](../../../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。

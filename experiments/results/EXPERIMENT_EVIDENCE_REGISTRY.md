@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+分列`460d3870`三格与`17ac2aeb`八格实际来源；共28查询／39完整矩阵复用已有4个数组，原件独立复核通过。
+同形状图片向量逐值同stock，文本CPU／CUDA与跨batch差异保留；实际生命周期、完整查询原值和退出按来源记录。
+新默认支持小规模正确性和复用资格，不支持稳态、并发、性能排名或可靠尾分位；IMLane图像继续pending。
+
 2026-10-15：[文本原生配置的有限校准](diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)。固定`1c05a191`的六配置连续原Q2；首次、五次后续、资源／HTTP原值和私有观察器失败由同题报告拥有。IMLane n4仅推荐后续同预算配置，Ray A4不冻结稳态赢家；单owner固定块顺序、质量不足与历史独立服务scope保持，不作调度归因或长测完成结论。
 
 2026-10-15：[IMLane两作者模式连续LOTUS查询](diagnostics/native_text_capacity_20261015/README.md#imlane-owner)。固定`4271dc44`、显式`reuse_bridge=True`，20fixture／0模型软件检查独审通过；随后现有公开Q2各同owner两次，480模型／1440三跳、全200与自然退出实际通过，原件独立审核通过。bridge身份、创建／注册1→0、usage与SDK关联单列；和旧四路径分开服务scope，累计12查询／1440模型／4320三跳。0发送私有核验失败保留，无新模型预算或旧四臂重跑；每臂n2、7FN与未调优工作点不支持稳态排名。

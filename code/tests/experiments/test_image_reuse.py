@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 import weakref
 
 import numpy as np
+from PIL import Image
 
 from src.experiments import image_reuse as reuse
 from src.modalities.image.clip import ClipTensorActor
@@ -318,13 +319,13 @@ class ImageReuseTests(unittest.TestCase):
         data.ActorPoolStrategy = lambda **kwargs: object()
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, {"ray": ray, "ray.data": data}):
-            result = executor.embed_batch(("a", "b", "c"), [b"x"] * 3)
+            result = executor.embed_batch(("a", "b", "c"), [Image.new("RGB", (4, 5), "red") for _ in range(3)])
         np.testing.assert_array_equal(result.embeddings, values)
         self.assertEqual(executor.reuse_observations, [
             dict(model_uid="one", pid=12, embed_calls=1, rows=2, batch_rows=2),
             dict(model_uid="two", pid=34, embed_calls=2, rows=4, batch_rows=1)])
         owner.shutdown.assert_called_once_with(force=True)
-        self.assertEqual(len(graph.map_batches.call_args_list), 2)
+        self.assertEqual(len(graph.map_batches.call_args_list), 1)
 
     def test_ray_driver_rejects_partial_metadata_instead_of_claiming_reuse(self):
         executor = RayDataImageExecutor(model="fixture")

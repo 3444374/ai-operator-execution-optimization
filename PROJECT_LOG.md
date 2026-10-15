@@ -1,5 +1,29 @@
 # 项目日志
 
+## 2026-10-15：统一普通 LOTUS 图片输入
+
+按用户要求接纳已独审的公共输入精简：RGB 后端省去 PNG 往返，字节后端优先复用仍匹配当前
+PIL 像素的源；copy、变换、原地修改及无源输入均按当前像素无损回退。删除旧 native／PNG 参数，
+保留 Ray fused／staged、图内模型／Serve 和 Daft 编码文件配置的实际区别。
+必要 ID、完整矩阵、取消、首错与资源处理保持；转换和源检查仍进入完整查询。
+接纳后185项回归通过、1项本机 processor 条件跳过；Daft 真实 CPU SDK 52项零跳过。
+固定`17ac2aeb`完成八配置12图小轮：247项服务器测试／31个子测试零跳过，16完整查询／24矩阵、
+模型身份及逐次退出通过；对应形状图片向量同stock逐值相同，文本设备差异单列。
+独立原件审核与[精简结果及复算](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+保留全部单次值、各配置生命周期和原失败，不作性能排名或可靠尾分位判断。
+
+## 2026-10-15：增加 LOTUS 的 Ray Data 与 Serve 组合配置
+
+按用户授权增加独立常驻 CLIP 配置，普通 Data 同步函数调用公开 Serve handle，保留原图内模型。
+复用 slow processor、FP32 kernel、完整矩阵检查及原 LOTUS 方法，不强接 LLM 流式 Processor。
+创建独占 runtime 和唯一应用，查询只持本次图／缓冲；失败禁止继续复用，服务退出另核物理进程。
+独立源码／fixture 审核与真实 CPU 接口检查已完成，首轮非法构造重试参数失败保留并改为合法值；
+固定`460d3870`完成193项服务器测试／4个子测试和三格12图库的12查询／15矩阵，独立原件复核通过。
+Serve 同一实际模型处理建库及后续图片查询，原Ray图内模型保持逐图生命周期；CPU替身不充作模型结果。
+随后按用户要求采用上方普通输入自动选择，保留仍有意义的原生执行配置及全部旧结果。
+实现与有限检查设计见[接入说明](code/src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)及
+[同题计划](experiments/plans/语义系统对照.md#ray-data-与-serve-组合配置)。
+
 ## 2026-10-15：记录有限原生配置校准
 
 固定`1c05a191`，六个原生配置各一个owner连续六次完整LOTUS Q2，共36查询／4320模型／12960三跳，变化检查另计96fixture。生产与作者源码未改，全部首值／后续值和物理退出保持；私有资源观察器失败及只补剩余fixture的恢复独立保存。[同题结果](experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)分列实际资源与质量边界：IMLane n4作为后续同预算配置，Ray A4仍仅候选，不宣称稳态、调度收益或长测完成。

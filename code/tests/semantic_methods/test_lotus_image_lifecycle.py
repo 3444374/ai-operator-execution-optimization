@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 import tempfile
 
 import numpy as np
+from PIL import Image
 
 from src.modalities.image.contracts import EmbeddingSemantics
 from src.semantic_methods.lotus.image_backend import RayDataImageExecutor, SemLoomImageExecutor
@@ -157,13 +158,13 @@ class RayImageLifecycleTests(unittest.TestCase):
         modules, graph, iterator, owner = self.graph()
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, modules):
-            result = executor.embed_batch(("a",), [b"fixture"])
+            result = executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
             self.assertEqual(result.doc_ids, ("a",))
             iterator.close.assert_called_once()
             owner.shutdown.assert_called_once_with(force=True)
             executor.close()
             with self.assertRaisesRegex(RuntimeError, "closed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
 
     def test_execution_and_cancel_errors_survive_both_cleanup_failures(self):
         for error in (ValueError("bad output"), asyncio.CancelledError("cancelled")):
@@ -173,13 +174,13 @@ class RayImageLifecycleTests(unittest.TestCase):
                 executor = RayDataImageExecutor(model="fixture")
                 with patch.dict(sys.modules, modules):
                     with self.assertRaises(type(error)) as caught:
-                        executor.embed_batch(("a",), [b"fixture"])
+                        executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
                     self.assertIs(caught.exception, error)
                     iterator.close.assert_called_once()
                     owner.shutdown.assert_called_once_with(force=True)
                     self.assertTrue(executor._unconfirmed_work)
                     with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
-                        executor.embed_batch(("a",), [b"fixture"])
+                        executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
                     with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
                         executor.close()
 
@@ -188,7 +189,7 @@ class RayImageLifecycleTests(unittest.TestCase):
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, modules):
             with self.assertRaisesRegex(RuntimeError, "open failed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         owner.shutdown.assert_called_once_with(force=True)
         iterator.close.assert_not_called()
 
@@ -199,7 +200,7 @@ class RayImageLifecycleTests(unittest.TestCase):
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, modules):
             with self.assertRaises(RuntimeError) as caught:
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         self.assertIs(caught.exception, actual)
         self.assertTrue(any("timing" in note for note in actual.__notes__))
 
@@ -208,9 +209,9 @@ class RayImageLifecycleTests(unittest.TestCase):
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, modules):
             with self.assertRaisesRegex(OSError, "iterator failed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
             with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         self.assertEqual(modules["ray.data"].from_items.call_count, 1)
         owner.shutdown.assert_called_once_with(force=True)
 
@@ -225,7 +226,7 @@ class RayImageLifecycleTests(unittest.TestCase):
         executor = RayDataImageExecutor(model="fixture")
         with patch.dict(sys.modules, modules):
             with self.assertRaisesRegex(ValueError, "consumer failed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         iterator.close.assert_called_once()
         owner.shutdown.assert_called_once_with(force=True)
 
@@ -243,7 +244,7 @@ class DaftImageLifecycleTests(unittest.TestCase):
 
         class Frame:
             def __getitem__(self, key):
-                return object()
+                return SimpleNamespace(cast=lambda dtype: object())
 
             def into_batches(self, rows):
                 return self
@@ -264,12 +265,14 @@ class DaftImageLifecycleTests(unittest.TestCase):
         daft.__path__, daft.functions = [], functions
         daft.from_pydict = lambda values: Frame()
         daft.ImageMode = SimpleNamespace(RGB="RGB")
+        daft.DataType = SimpleNamespace(image=lambda mode: ("image", mode))
         functions.decode_image = lambda *args, **kwargs: None
         executor = daft_clip.DaftClipExecutor.__new__(daft_clip.DaftClipExecutor)
         executor._embedder = SimpleNamespace(embed=Mock())
         executor._lock = threading.Lock()
         executor._closed = executor._unconfirmed_work = False
         executor.identity = {"batch_size": 1, "max_batch_rows": 1}
+        executor.input_kind = "rgb_pil"
         executor.semantics = EmbeddingSemantics("fixture", "fixture", 512)
         return executor, iterator, {"daft": daft, "daft.functions": functions}
 
@@ -277,10 +280,10 @@ class DaftImageLifecycleTests(unittest.TestCase):
         executor, iterator, modules = self.executor(open_error=RuntimeError("open failed"))
         with patch.dict(sys.modules, modules):
             with self.assertRaisesRegex(RuntimeError, "open failed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
             self.assertTrue(executor._unconfirmed_work)
             with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         iterator.close.assert_not_called()
 
     def test_real_close_failure_overrides_timing_diagnostic(self):
@@ -296,7 +299,7 @@ class DaftImageLifecycleTests(unittest.TestCase):
         with patch.dict(sys.modules, modules), patch.object(daft_clip, "_span", span), \
                 patch.object(daft_clip, "_arrow_embedding_matrix", return_value=np.zeros((1, 512), np.float32)):
             with self.assertRaises(RuntimeError) as caught:
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         self.assertIs(caught.exception, actual)
         self.assertTrue(executor._unconfirmed_work)
         iterator.close.assert_called_once()
@@ -306,7 +309,7 @@ class DaftImageLifecycleTests(unittest.TestCase):
         executor, iterator, modules = self.executor(consume_error=primary, close_error=OSError("close failed"))
         with patch.dict(sys.modules, modules):
             with self.assertRaises(asyncio.CancelledError) as caught:
-                executor.embed_batch(("a",), [b"fixture"])
+                executor.embed_batch(("a",), [Image.new("RGB", (4, 5), "red")])
         self.assertIs(caught.exception, primary)
         iterator.close.assert_called_once()
 
@@ -351,7 +354,8 @@ class LotusImageCliLifecycleTests(unittest.TestCase):
                     SemLoomImageExecutor=Mock(return_value=executor, side_effect=primary if startup else None),
                     make_image_rm=Mock(return_value=SimpleNamespace(observation=observation)),
                     load_image_file_manifest=Mock(return_value=manifest, side_effect=None if startup else primary),
-                    decode_rgb_image=Mock(), image_frame=Mock(), run_workflow=Mock(side_effect=workflow)), \
+                    decode_rgb_image=Mock(return_value=Image.new("RGB", (4, 5), "red")),
+                    image_frame=Mock(), run_workflow=Mock(side_effect=workflow)), \
                 patch("numpy.savez_compressed", side_effect=vector_error), patch.object(Path, "write_text", write):
             status = module.main(args)
         return status, output, executor, ray

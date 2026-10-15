@@ -1,5 +1,19 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：普通 LOTUS 图像入口按后端能力自动选择输入，移除历史 native／PNG 调参开关。
+Direct／Ray／Daft／Serve 默认 RGB；SemLoom 核对当前像素后复用源字节，不可复用时无损 PNG1 回退。
+Ray fused／staged 和 Daft 实际 encoded 文件输入仍保留。独立源码／测试审核及接纳后185项回归通过，
+1项真实 processor 在本机条件跳过；独立 Daft 真实 CPU SDK 52项通过、0跳过。
+固定`17ac2aeb`的[八配置12图完整 LOTUS 检查](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
+已完成并独立复核；247项服务器测试及31个子测试零跳过，16查询／24完整矩阵、实际模型身份及退出通过。
+原生查询内转换、建图与加载照实计时，启动另列；有限样本不形成性能排名或可靠尾分位。
+
+2026-10-15：新增[LOTUS＋Ray Data＋Ray Serve 常驻 CLIP 配置](src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)，
+复用原 RM／索引／检索与 slow／FP32 模型。Data 同步任务调用公开非流式 handle，模型归唯一 Serve 应用；
+旧图内模型配置保留。固定`460d3870`三格12图完整 LOTUS、193项 SDK 与4个子测试均通过、零跳过，
+监督记录自有物理退出及 lease 释放；完整原件已下载并经独立复算，与后续普通输入来源分开保存。
+短轮不提供尾分位或性能排名；IMLane 图像实现与资格仍为 pending，既有文本证据不替代图像资格。
+
 2026-10-15：[有限原生配置校准](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)固定`1c05a191`，仅参数化仓外配置，生产默认和作者源码不改。IMLane n4列为后续同预算完整LOTUS测试配置、n2保留；Ray A4尚不足以冻结稳态赢家。物理CPU／逻辑cluster／实际worker分列，质量仍有7FN，不能据此声称调度收益。
 
 2026-10-15：[IMLane可选LOTUS owner复用](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)固定`4271dc44`：显式session配置由owner持有原桥，默认逐批Popen保持；15项清理单测、两作者模式20fixture及公开原Q2各两次共480模型实际通过并退出。桥／context报告与SDK／身份完整关联，独立审核通过。连同`1ba0fc1e`四路径共12查询／1440模型；仍7FN，不作性能排名。私有worker身份误判的0请求失败与生产接入问题分开保存。

@@ -160,7 +160,7 @@ def run(args, report):
     with patch.object(native, 'ClipTensorActor', ObservedActor):
         executor = native.DaftClipExecutor(model_path=args.model, processor_path=args.processor,
                                            dtype='float32', batch_size=args.batch_size, model_workers=1,
-                                           gpus_per_worker=1, device='cuda')
+                                           gpus_per_worker=1, device='cuda', input_kind='encoded_bytes')
     report['native_constructor_s'] = time.perf_counter() - started
     report['identity'] = executor.identity
     report['runs'] = []
@@ -234,6 +234,7 @@ def main():
     os.environ['SEMLOOM_DAFT_CLIP_GPU_TRACE'] = str(output / 'model-trace.jsonl')
     report = dict(schema='daft.clip.native.qualification.v1', source_hash=args.source_hash,
                   baseline_sha=args.base_sha, dtype='float32', rows=9, batch_size=args.batch_size,
+                  input_kind='encoded_bytes',
                   tolerance=dict(max_abs=1e-5, min_cosine=.99999, max_norm_error=1e-5),
                   tail_percentiles='unavailable: nine-image backend qualification, four batch calls',
                   status='not_started')

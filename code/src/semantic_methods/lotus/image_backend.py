@@ -10,13 +10,11 @@ from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingRe
 
 
 class DirectImageExecutor:
-    def __init__(self, *, model, processor=None, device="cuda", dtype="float32", batch_size=32,
-                 native_image_input=False):
+    input_kind = "rgb_pil"
+
+    def __init__(self, *, model, processor=None, device="cuda", dtype="float32", batch_size=32):
         if type(batch_size) is not int or batch_size < 1:
             raise ValueError("image model batch size must be positive")
-        if type(native_image_input) is not bool:
-            raise ValueError("native_image_input must be a boolean")
-        self.input_kind = "rgb_pil" if native_image_input else "encoded_bytes"
         self.batch_size = batch_size
         self.processor = ClipImagePreprocessor(processor or model, local_files_only=True)
         self.actor = ClipTensorActor(model, processor_revision=processor or model,
@@ -28,12 +26,11 @@ class DirectImageExecutor:
     def embed_batch(self, doc_ids, images):
         if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
             raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
-        if self.input_kind == "rgb_pil":
-            from PIL import Image
-            for image in images:
-                if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
-                    raise TypeError("native image input requires nonempty RGB PIL images")
-                image.load()
+        from PIL import Image
+        for image in images:
+            if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                raise TypeError("native image input requires nonempty RGB PIL images")
+            image.load()
         import numpy as np
 
         started = time.perf_counter()
@@ -42,9 +39,7 @@ class DirectImageExecutor:
         for offset in range(0, len(doc_ids), self.batch_size):
             ids = doc_ids[offset:offset + self.batch_size]
             at = time.perf_counter()
-            prepare = (self.processor.preprocess_decoded if self.input_kind == "rgb_pil"
-                       else self.processor.preprocess)
-            pixels = prepare(images[offset:offset + self.batch_size])
+            pixels = self.processor.preprocess_decoded(images[offset:offset + self.batch_size])
             preprocess_s = time.perf_counter() - at
             batch = ImageEmbeddingBatch(ids, pixels, "preprocessed_tensor",
                                         len(ids) * 224 * 224, "pixels")
@@ -92,7 +87,7 @@ class SlowClipPrepare:
     def __call__(self, batch):
         import numpy as np
         return {"doc_id": np.asarray(batch["doc_id"]),
-                "pixel_values": self.processor.preprocess([bytes(x) for x in batch["image"]])}
+                "pixel_values": self.processor.preprocess_decoded(list(batch["image"]))}
 
 
 class OrderedMatrix:
@@ -229,12 +224,14 @@ class SemLoomImageExecutor:
 
 class RayDataImageExecutor:
     """Native Ray Data graph reusing the existing tensor predictor."""
+    input_kind = "rgb_pil"
+
     def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
-                 native_image_input=False):
+                 pipeline="fused"):
         from src.modalities.image.contracts import EmbeddingSemantics
-        if type(native_image_input) is not bool:
-            raise ValueError("native_image_input must be a boolean")
-        self.input_kind = "rgb_pil" if native_image_input else "encoded_bytes"
+        if pipeline not in ("fused", "staged"):
+            raise ValueError("Ray image pipeline must be fused or staged")
+        self.pipeline = pipeline
         self.model, self.processor, self.dtype = model, processor or model, dtype
         self.batch_size = batch_size
         self.semantics = EmbeddingSemantics(model, self.processor, 512)
@@ -264,22 +261,21 @@ class RayDataImageExecutor:
             raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
         collector = OrderedMatrix(doc_ids, self.semantics)
         started = time.perf_counter()
-        if self.input_kind == "rgb_pil":
-            from PIL import Image
-            import numpy as np
+        from PIL import Image
+        import numpy as np
+        for image in images:
+            if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                raise TypeError("native image input requires nonempty RGB PIL images")
+            image.load()
+        data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
+                                   for x, y in zip(doc_ids, images, strict=True)])
+        if self.pipeline == "fused":
             from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
-            for image in images:
-                if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
-                    raise TypeError("native image input requires nonempty RGB PIL images")
-                image.load()
-            data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
-                                       for x, y in zip(doc_ids, images, strict=True)])
             data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
                 fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
                     "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
         else:
-            data = ray.data.from_items([{"doc_id": x, "image": y} for x, y in zip(doc_ids, images, strict=True)])
             data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
                 compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1,
                 fn_constructor_kwargs={"processor_revision": self.processor})

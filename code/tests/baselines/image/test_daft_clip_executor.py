@@ -84,6 +84,7 @@ class DaftClipOptionsTests(unittest.TestCase):
 
     def test_batch_rejects_ids_payloads_and_limit_before_native_graph(self):
         executor = object.__new__(native.DaftClipExecutor)
+        executor.input_kind = "encoded_bytes"
         executor.identity = dict(max_batch_rows=2)
         for ids, images in ((["a"], [b"x"]), (("a", "a"), [b"x", b"y"]),
                             ((1,), [b"x"]), (("",), [b"x"]),
@@ -191,7 +192,7 @@ class DaftClipSdkTests(unittest.TestCase):
         for item in self.patches:
             item.start()
         self.executor = native.DaftClipExecutor(model_path=str(root), batch_size=2,
-                                               gpus_per_worker=0, device="cpu")
+                                               gpus_per_worker=0, device="cpu", input_kind="encoded_bytes")
 
     def tearDown(self):
         if not self.executor._unconfirmed_work:
@@ -284,7 +285,7 @@ class DaftClipSdkTests(unittest.TestCase):
         import daft
         with patch.object(daft, "__version__", "other"):
             with self.assertRaisesRegex(RuntimeError, "0.7.21"):
-                native.DaftClipExecutor(model_path=self.directory.name)
+                native.DaftClipExecutor(model_path=self.directory.name, input_kind="encoded_bytes")
 
 
 if __name__ == "__main__":

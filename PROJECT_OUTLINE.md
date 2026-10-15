@@ -20,8 +20,8 @@
 | 核对对象 | 当前解释与事实入口 |
 |---|---|
 | 图像可用起点 | LOTUS 公共 RM 已使用 batch32 的 slow CLIP 准备与 tensor actor；PG 单图接口单独解释，见[研究定位](docs/research/研究定位.md#existing-image-execution-paths) |
-| 图像证据 | [最终融合资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)保存固定 `2afcaf47` 的六路径 64 图及已有索引结果；单次正确性资格不提供性能排名 |
-| 编码与内存 | PNG 等级1为显式可选共享适配；HSE 逻辑额度不覆盖 RM 事先形成的完整 PNG 列表，也不是硬显存限，见[实现状态](code/INFRA_STATUS.md#current-image-status) |
+| 图像证据 | [最终融合资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)保留固定 `2afcaf47` 的六路径64图及已有索引结果；[普通输入与Serve补充](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)分列`460d3870`三格与`17ac2aeb`八格的28查询／39矩阵，均仅支持有限资格，不提供性能排名 |
+| 编码与内存 | 普通入口按后端自动接RGB或经当前像素核对的源字节，不可复用时无损PNG1回退；历史显式开关已移除。HSE逻辑额度不覆盖RM列表／复制，也不是RSS或硬显存限，见[实现状态](code/INFRA_STATUS.md#current-image-status) |
 | 文本与其他接点 | [原 Q2 历史观察](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)与[原生执行接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)按实际源码、质量、规模和生命周期解释 |
 | 尚待补证 | 最终文本三条 Q2 的新来源验证仍待完成；图像固定 `485c86a8` 的[同次 workflow 九格连续查询](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证，服务级 RM／内存索引跨调用复用仍未认证 |
 | 研究候选 | 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索；尚未采纳为本基线方法，GPU／生产收益未验证 |
@@ -109,7 +109,7 @@ lag P95 +42.47%，继续呈效率—尾延迟—公平权衡。0s/5s 主矩阵�
 victim inflation/recovery 只标 partial；full-solo 仍需独立控制。该 root 是 rehearsal，不作显著性排名，
 formal 从未运行且继续禁止。
 
-[Daft RGB小规模接入](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成144项Linux测试、12条完整查询与15矩阵，默认PNG保留。连续查询统一外部场景、语义与资源，允许原生内部生命周期不同；整体性能与调度机制收益分别验证。本次两次重复不提供可靠尾分位、稳态或性能排名。
+[Daft RGB小规模接入](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成144项Linux测试、12条完整查询与15矩阵，当时的PNG默认与显式RGB作为历史配置保留来源；当前普通输入见本纲§0。连续查询统一外部场景、语义与资源，允许原生内部生命周期不同；整体性能与调度机制收益分别验证。本次两次重复不提供可靠尾分位、稳态或性能排名。
 
 ## 1. 题目与研究对象
 
