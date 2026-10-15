@@ -27,6 +27,10 @@ class Probe:
         self._directory = directory
         self.model_uid = uuid.uuid4().hex
         self.pid = os.getpid()
+        try:
+            self.process_start_ticks = Path("/proc/self/stat").read_text().rsplit(") ", 1)[1].split()[19]
+        except (OSError, IndexError):
+            self.process_start_ticks = None  # Unavailable on platforms without Linux procfs.
         self.model_object_id = id(model)
         self.role, self.device = str(role), str(device)
         self.constructed_monotonic_ns = time.monotonic_ns()
@@ -57,6 +61,7 @@ class Probe:
 
     def snapshot(self):
         result = dict(model_uid=self.model_uid, pid=self.pid,
+            process_start_ticks=self.process_start_ticks,
             model_object_id=self.model_object_id, role=self.role, device=self.device,
             constructed_monotonic_ns=self.constructed_monotonic_ns,
             model_alive=self._model() is not None, hook_mode=self.hook_mode,

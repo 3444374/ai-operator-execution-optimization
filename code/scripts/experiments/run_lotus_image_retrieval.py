@@ -61,6 +61,8 @@ def parser():
     p.add_argument("--max-active-batches", type=int, default=2)
     p.add_argument("--png-compress-level", type=int, choices=range(-1, 10), default=None,
                    help="replacement RM only; omitted preserves Pillow defaults")
+    p.add_argument("--native-image-input", action="store_true",
+                   help="direct/ray_data accept RGB PIL; SemLoom reuses validated source bytes; no PNG round trip")
     p.add_argument("--hse-encoded-bytes", type=int)
     p.add_argument("--hse-encoded-block-bytes-upper-bound", type=int)
     p.add_argument("--ray-temp-dir", type=Path)
@@ -79,6 +81,9 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
+    if args.native_image_input and (args.arm not in ("direct", "ray_data", "semloom_static", "semloom_hse")
+                                    or args.png_compress_level is not None):
+        raise ValueError("native image input requires direct/ray_data/semloom_static/semloom_hse and no PNG compression setting")
     if args.arm == "stock" and args.png_compress_level is not None:
         raise ValueError("stock native PIL path does not accept PNG compression settings")
     hse_bytes = (args.hse_encoded_bytes, args.hse_encoded_block_bytes_upper_bound)
@@ -104,7 +109,21 @@ def main(argv=None):
                   hse_encoded_bytes=args.hse_encoded_bytes,
                   hse_encoded_block_bytes_upper_bound=args.hse_encoded_block_bytes_upper_bound,
                   detailed_timing=bool(os.environ.get("SEMLOOM_DETAILED_TIMING_DIR")))
+    report["model_load_scope"] = (
+        "identity, stock text RM and eager CLIP/worker setup are in model_startup_s"
+        if args.arm in ("stock", "direct", "semloom_static", "semloom_hse") else
+        "identity, stock CPU text RM and Ray owner setup are in model_startup_s; this adapter's per-RM native callable CLIP loads remain in index/query/application time"
+        if args.arm == "ray_data" else
+        "identity, stock CPU text RM and Daft wrapper setup are in model_startup_s; first native UDF processor/CLIP load remains in index/query/application time"
+        if args.arm == "daft_native" else
+        "eager identity/text RM/factory setup is in model_startup_s; external lazy loads remain in index/query/application time")
+    if args.native_image_input:
+        report.update(native_image_input=True, executor_input_kind=("rgb_pil"
+            if args.arm in ("direct", "ray_data") else "source_encoded_bytes"))
+        if args.arm == "ray_data":
+            report["ray_image_pipeline"] = "native_image_arrays_fused_slow_preprocess_clip"
     executor = None
+    source_images = {} if args.native_image_input and args.arm in ("semloom_static", "semloom_hse") else None
     rm = None
     owned_ray = None
     startup_failure = None
@@ -118,7 +137,7 @@ def main(argv=None):
     def observe_phase(phase, *, allow_workers=True):
         from src.experiments.image_reuse import snapshot_models
         at = time.monotonic_ns()
-        snapshot = dict(phase=phase, local_models=snapshot_models(), worker_models=[])
+        snapshot = dict(phase=phase, observed_monotonic_ns=at, local_models=snapshot_models(), worker_models=[])
         if args.arm in ("semloom_static", "semloom_hse") and executor is not None and executor.pool is not None:
             if allow_workers and not executor._unconfirmed_work:
                 snapshot["worker_models"] = owned_ray.get(
@@ -159,6 +178,8 @@ def main(argv=None):
                     raise ValueError("direct arm requires its qualified CLIP checkpoint")
                 settings = dict(model=str(args.model), processor=str(args.processor) if args.processor else None,
                                 dtype=args.dtype, batch_size=args.batch_size)
+                if args.native_image_input and args.arm in ("direct", "ray_data"):
+                    settings["native_image_input"] = True
                 if args.arm == "direct":
                     executor = DirectImageExecutor(**settings, device=args.device)
                 else:
@@ -200,9 +221,10 @@ def main(argv=None):
                     model=args.model, processor=args.processor, dtype=args.dtype, device=args.device)
             if args.arm in ("semloom_static", "semloom_hse", "ray_data", "daft_native"):
                 report["versions"].update({x: version(x) for x in ("ray", "daft", "pyarrow")})
+            rm_options = {} if source_images is None else {"source_images": source_images}
             rm = make_image_rm(executor, stock, max_rows=args.max_gallery_rows,
                                observation=RMObservation(capture_vectors=args.retain_query_vectors),
-                               png_compress_level=args.png_compress_level)
+                               png_compress_level=args.png_compress_level, **rm_options)
         if reuse_enabled:
             observe_phase("startup_complete")
         report["model_startup_s"] = (time.monotonic_ns() - started) / 1e9
@@ -217,7 +239,10 @@ def main(argv=None):
             raw = (manifest.root / entry.path).read_bytes()
             if hashlib.sha256(raw).hexdigest() != entry.sha256:
                 raise ValueError("gallery content differs from the pinned source manifest")
-            images.append(decode_rgb_image(raw))
+            image = decode_rgb_image(raw)
+            images.append(image)
+            if source_images is not None:
+                source_images[id(image)] = (image, raw, image.size, hashlib.sha256(image.tobytes()).hexdigest())
         report["source_decode_s"] = (time.monotonic_ns() - application_started) / 1e9
         report["manifest_sha256"] = manifest.sha256
         ids = tuple(x.doc_id for x in entries)
@@ -240,7 +265,8 @@ def main(argv=None):
                      embedding_identity=identity, k=args.k, mode=args.mode,
                      max_gallery_rows=args.max_gallery_rows, report=report, **workflow_options)
         report["application_e2e_s"] = (time.monotonic_ns() - application_started) / 1e9
-        report["application_scope"] = "source content check/decode through native index/search and output validation; model startup and evidence serialization separate"
+        report["application_scope"] = ("source content check/decode through native index/search and output validation; "
+            "eager owner/identity setup and evidence serialization separate; per-call or lazy model loads remain included where performed")
     except BaseException as exc:
         error = exc
         startup_failure = getattr(exc, "image_worker_pool_startup", None)

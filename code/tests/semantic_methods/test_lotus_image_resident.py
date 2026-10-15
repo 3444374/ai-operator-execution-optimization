@@ -84,7 +84,7 @@ def test_native_return_clock_stops_before_output_audit(tmp_path, rm, monkeypatch
             return self.result[name]
 
     def search(self, *args, **kwargs):
-        return Result(original(self, *args, **kwargs))
+        return Result(original(self)(*args, **kwargs))
 
     monkeypatch.setattr(workflow.time, "monotonic_ns", clock)
     monkeypatch.setattr(pd.DataFrame, "sem_search", search)

@@ -107,6 +107,20 @@ class ClipImagePreprocessor:
         if not encoded_images:
             raise ValueError("encoded_images must not be empty")
         images = [decode_rgb_image(item) for item in encoded_images]
+        return self.preprocess_decoded(images)
+
+    def preprocess_decoded(self, images) -> np.ndarray:
+        """Apply the same slow processor to already decoded RGB images/arrays."""
+        if not images:
+            raise ValueError("decoded images must not be empty")
+        from PIL import Image
+        pil = all(isinstance(image, Image.Image) and image.mode == "RGB" and min(image.size) > 0 for image in images)
+        arrays = all(isinstance(image, np.ndarray) and image.dtype == np.uint8
+                     and image.ndim == 3 and image.shape[-1] == 3 and min(image.shape[:2]) > 0 for image in images)
+        if not (pil or arrays):
+            raise TypeError("decoded images must be RGB PIL images or uint8 HWC RGB arrays")
+        # Preserve the pinned slow processor's own layout inference for PIL and
+        # arrays alike, including its existing behavior on tiny ambiguous images.
         pixel_values = self.processor(
             images=images,
             return_tensors="np",

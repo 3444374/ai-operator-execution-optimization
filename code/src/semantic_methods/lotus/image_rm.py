@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from dataclasses import dataclass, field
+import hashlib
 import io
 import os
 import time
@@ -15,10 +16,10 @@ from src.modalities.image.contracts import EmbeddingSemantics, ImageEmbeddingRes
 
 
 class ImageBatchExecutor(Protocol):
-    """The executor owns its batching and execution lifecycle."""
+    """The executor owns batching/lifetime; absent input_kind means encoded bytes."""
     semantics: EmbeddingSemantics
 
-    def embed_batch(self, doc_ids: tuple[str, ...], images: Sequence[bytes]) -> ImageEmbeddingResult:
+    def embed_batch(self, doc_ids: tuple[str, ...], images: Sequence[bytes | Image.Image]) -> ImageEmbeddingResult:
         ...
 
     def close(self) -> None:
@@ -77,13 +78,24 @@ class RMObservation:
 
 
 def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
-                  max_output_bytes=32 * 1024 * 1024, observation=None, png_compress_level=None):
+                  max_output_bytes=32 * 1024 * 1024, observation=None, png_compress_level=None,
+                  source_images=None):
     """Replace only RM._embed; native RM query conversion and FAISS stay intact.
 
     A sem_index call requires a complete N×D matrix. This explicitly bounded
     collection is distinct from the existing streaming benchmark's capture.
     """
     validate_png_compress_level(png_compress_level)
+    input_kind = getattr(executor, "input_kind", "encoded_bytes")
+    if input_kind not in ("encoded_bytes", "rgb_pil"):
+        raise ValueError("LOTUS image executor input_kind must be encoded_bytes or rgb_pil")
+    if source_images is not None:
+        from collections.abc import Mapping
+        if input_kind != "encoded_bytes" or not isinstance(source_images, Mapping):
+            raise ValueError("source images require an encoded-byte executor and an identity mapping")
+        input_kind = "source_encoded_bytes"
+    if input_kind != "encoded_bytes" and png_compress_level is not None:
+        raise ValueError("native image input does not accept PNG compression settings")
     from lotus.models.rm import RM
 
     if (type(max_rows) is not int or max_rows < 1 or type(max_output_bytes) is not int
@@ -103,22 +115,52 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
             started = time.monotonic_ns()
             images = [i for i, x in enumerate(docs) if isinstance(x, Image.Image)]
             texts = [i for i, x in enumerate(docs) if isinstance(x, str)]
-            record = dict(call_index=len(observation.calls), image_rows=len(images), text_rows=len(texts), status="failed")
+            record = dict(call_index=len(observation.calls), image_rows=len(images), text_rows=len(texts),
+                          input_kind=input_kind, status="failed")
             try:
                 matrix = np.empty((len(docs), 512), dtype=np.float32)
                 if images:
                     ids = tuple(str(i) for i in images)
                     with timing_span("lotus.rm.image_embed", scope="rm_call"):
-                        encode_at, cpu_at = time.monotonic_ns(), time.process_time_ns()
+                        if input_kind in ("rgb_pil", "source_encoded_bytes"):
+                            for i in images:
+                                if docs[i].mode != "RGB" or min(docs[i].size) <= 0:
+                                    raise TypeError("LOTUS image embedding requires nonempty RGB PIL images")
+                                docs[i].load()
+                            record.update(image_encoding="not_performed", png_compress_level=None,
+                                image_encode_wall_ns=None, image_encode_cpu_ns=None,
+                                encoded_total_bytes=0, encoded_peak_single_bytes=0)
+                            payload = []
+                            for i in images:
+                                if input_kind == "rgb_pil":
+                                    payload.append(docs[i])
+                                else:
+                                    source = source_images.get(id(docs[i]))
+                                    if (not isinstance(source, tuple) or len(source) != 4 or source[0] is not docs[i]
+                                            or type(source[1]) is not bytes or not source[1]
+                                            or source[2] != docs[i].size
+                                            or source[3] != hashlib.sha256(docs[i].tobytes()).hexdigest()):
+                                        raise ValueError("image is missing its identical validated source bytes")
+                                    payload.append(source[1])
+                            if input_kind == "source_encoded_bytes":
+                                record.update(image_encoding="source_bytes_reused",
+                                    encoded_total_bytes=sum(len(x) for x in payload),
+                                    encoded_peak_single_bytes=max(len(x) for x in payload))
+                        else:
+                            encode_at, cpu_at = time.monotonic_ns(), time.process_time_ns()
+                            try:
+                                payload = [image_bytes(docs[i], png_compress_level=png_compress_level) for i in images]
+                            finally:
+                                record.update(png_compress_level=png_compress_level,
+                                    image_encode_wall_ns=time.monotonic_ns() - encode_at,
+                                    image_encode_cpu_ns=time.process_time_ns() - cpu_at)
+                            record.update(encoded_total_bytes=sum(len(x) for x in payload),
+                                          encoded_peak_single_bytes=max(len(x) for x in payload))
+                        execute_at = time.monotonic_ns()
                         try:
-                            encoded = [image_bytes(docs[i], png_compress_level=png_compress_level) for i in images]
+                            result = executor.embed_batch(ids, payload)
                         finally:
-                            record.update(png_compress_level=png_compress_level,
-                                image_encode_wall_ns=time.monotonic_ns() - encode_at,
-                                image_encode_cpu_ns=time.process_time_ns() - cpu_at)
-                        record.update(encoded_total_bytes=sum(len(x) for x in encoded),
-                                      encoded_peak_single_bytes=max(len(x) for x in encoded))
-                        result = executor.embed_batch(ids, encoded)
+                            record["executor_elapsed_ns"] = time.monotonic_ns() - execute_at
                     if result.semantics != semantics:
                         raise ValueError("executor changed its embedding semantics")
                     if (len(set(result.doc_ids)) != len(ids) or set(result.doc_ids) != set(ids)):
@@ -131,7 +173,9 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
                         matrix[texts] = checked_matrix(text_rm([docs[i] for i in texts]), len(texts), semantics)
                 record["status"] = "succeeded"
                 observation.retain(matrix)
-                return checked_matrix(matrix, len(docs), semantics)
+                # Each image/text partition was checked before scattering into
+                # this owned float32 matrix; a second full norm scan adds no check.
+                return matrix
             finally:
                 record["elapsed_ns"] = time.monotonic_ns() - started
                 observation.calls.append(record)

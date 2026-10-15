@@ -132,6 +132,25 @@ class RayDataClipPredictor:
         return output
 
 
+class RayDataClipImagePredictor(RayDataClipPredictor):
+    """Opt-in native image arrays -> the same slow processor -> CLIP in one UDF."""
+
+    def __init__(self, model_revision, processor_revision, dtype,
+                 torch_intraop_threads, torch_interop_threads):
+        from src.modalities.image.clip import ClipImagePreprocessor
+        self._preprocessor = ClipImagePreprocessor(processor_revision, local_files_only=True)
+        super().__init__(model_revision, processor_revision, dtype,
+                         torch_intraop_threads, torch_interop_threads)
+
+    def __call__(self, batch: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        images = [np.asarray(image) for image in batch["image"]]
+        if any(image.dtype != np.uint8 or image.ndim != 3 or image.shape[-1] != 3
+               or min(image.shape[:2]) <= 0 for image in images):
+            raise ValueError("native Ray image arrays must be uint8 HWC RGB")
+        return super().__call__({"doc_id": batch["doc_id"],
+            "pixel_values": self._preprocessor.preprocess_decoded(images)})
+
+
 def build_ray_data_clip_pipeline(
     *,
     database_url: str,

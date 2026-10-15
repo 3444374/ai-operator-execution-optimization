@@ -106,6 +106,33 @@ def _digest(path):
         return hashlib.file_digest(handle, "sha256").hexdigest()
 
 
+def _arrow_embedding_matrix(column):
+    """Read native fixed float32 vectors without creating Python float lists.
+
+    Child NumPy views retain their Arrow buffers. The existing final assembly
+    and ID reorder still produce the caller-owned result matrix.
+    """
+    import pyarrow as pa
+
+    if (not pa.types.is_fixed_size_list(column.type) or column.type.list_size != 512
+            or not pa.types.is_float32(column.type.value_type)):
+        raise ValueError("Daft CLIP Arrow vectors must be fixed-size float32 lists of width 512")
+    chunks = column.chunks if isinstance(column, pa.ChunkedArray) else (column,)
+    matrices = []
+    for chunk in chunks:
+        if chunk.null_count:
+            raise ValueError("Daft CLIP Arrow vectors must not contain null rows")
+        # FixedSizeListArray.values ignores the parent's row offset; slicing it
+        # explicitly also respects any independent offset on the child array.
+        values = chunk.values.slice(chunk.offset * 512, len(chunk) * 512)
+        if values.null_count:
+            raise ValueError("Daft CLIP Arrow vectors must not contain null values")
+        matrices.append(values.to_numpy(zero_copy_only=True).reshape(len(chunk), 512))
+    if not matrices:
+        return np.empty((0, 512), dtype=np.float32)
+    return matrices[0] if len(matrices) == 1 else np.concatenate(matrices)
+
+
 class DaftClipExecutor:
     """Bounded synchronous image batch interface; inference is a native graph.
 
@@ -219,7 +246,7 @@ class DaftClipExecutor:
             with _span("daft_image.graph_consume"):
                 for batch in iterator:
                     ids.extend(batch["doc_id"].to_pylist())
-                    chunks.append(np.asarray(batch["embedding"].to_pylist(), dtype=np.float32))
+                    chunks.append(_arrow_embedding_matrix(batch["embedding"]))
         except BaseException as error:
             try:
                 if iterator is not None:
