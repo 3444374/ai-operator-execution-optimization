@@ -10,8 +10,10 @@
   `LotusBatchExecutor` 将完整请求提交给已有 native task API，并将完整响应交回原 SDK。
 - `native.LotusNativeBatchExecutor` 消费 Daft／Ray Data 自有图的完整响应。
   vendor graph 拥有并行与缓冲；适配层不向这些 baseline 注入 SemLoom 的任务选择或 credit。
-- `limits.LotusCallLimits` 声明逐请求、整批字节与 deadline；整批先核对输入和目标容量，
-  不静默拆分、截断或补发。SemLoom 当前逐请求输入仍受其默认 1 MiB transport 合同限制。
+- `limits.LotusCallLimits` 声明逐请求、整批字节与 deadline。native graph 在发送前准备并核对整批；
+  Movie runner 显式设置 `prevalidate_batch=True`，也在发送前预检整批。
+  直接使用 `LotusBatchExecutor` 的默认分窗口路径时，无效后缀被拒绝前，合法前缀可能已经执行。
+  单个请求不截断或补发；SemLoom 当前逐请求输入仍受其默认 1 MiB transport 合同限制。
 - `maps.staged_two_map` 保留原阶段间整批等待；`driver.iter_two_map_rows` 是显式增量两阶段库接口，
   保留逐行关联和方法状态。这两条路径分别测试，下面的 Movie runner 不增加两阶段查询形状。
 
