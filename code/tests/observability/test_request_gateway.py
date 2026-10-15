@@ -477,6 +477,43 @@ class ObservationGatewayTest(unittest.TestCase):
                     row['upstream_connection_create_completed_monotonic_ns'], row['upstream_headers_send_started_monotonic_ns'])
         self.assertEqual(len(KeepAliveHandler.calls), 4)
 
+    def test_pooled_proxy_forwards_cookies_without_retaining_caller_state(self) -> None:
+        class CookieHandler(BaseHTTPRequestHandler):
+            protocol_version = 'HTTP/1.1'
+            cookies = []
+
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                type(self).cookies.append(self.headers.get('Cookie'))
+                self.send_response(200)
+                self.send_header('Set-Cookie', 'upstream=private; Path=/')
+                self.send_header('Content-Length', '2')
+                self.end_headers()
+                self.wfile.write(b'{}')
+
+            def log_message(self, *_):
+                pass
+
+        self.upstream.RequestHandlerClass = CookieHandler
+        for preserve in (False, True):
+            with self.subTest(preserve=preserve), TemporaryDirectory() as directory:
+                trace = Path(directory) / 'gateway.jsonl'
+                with ObservationGateway(
+                    routes=(GatewayRoute('job', 'model', self._upstream_url().replace('127.0.0.1', 'localhost')),),
+                    trace_path=trace, preserve_http=preserve,
+                ) as gateway:
+                    for cookie in ('caller=first', None, 'caller=second'):
+                        headers = {} if cookie is None else {'Cookie': cookie}
+                        with request.urlopen(request.Request(
+                            gateway.endpoint_url('job', 'model'), data=b'{}', headers=headers), timeout=5) as response:
+                            self.assertEqual(response.headers.get('Set-Cookie'), 'upstream=private; Path=/')
+                            self.assertEqual(response.read(), b'{}')
+                    rows = gateway.snapshot()
+                self.assertEqual([row['upstream_connection_reused_count'] for row in rows], [0, 1, 1])
+                self.assertEqual({row['upstream_pool_generation'] for row in rows}, {0})
+                self.assertTrue(all(row['retry_count'] == 0 for row in rows))
+        self.assertEqual(CookieHandler.cookies, ['caller=first', None, 'caller=second'] * 2)
+
     def test_pool_reset_rejects_an_active_request_without_replay(self) -> None:
         _UpstreamHandler.response_gate = threading.Event()
         _UpstreamHandler.headers_sent = threading.Event()

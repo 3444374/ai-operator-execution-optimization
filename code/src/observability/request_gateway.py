@@ -302,7 +302,7 @@ class ObservationGateway:
         trace_stream = None
         trace_rows = self._trace_rows
         try:
-            from aiohttp import ClientSession, ClientTimeout, TCPConnector, TraceConfig, web
+            from aiohttp import ClientSession, ClientTimeout, DummyCookieJar, TCPConnector, TraceConfig, web
 
             trace_stream = self._trace_path.open("x", encoding="utf-8")
             session: Any = None
@@ -384,6 +384,7 @@ class ObservationGateway:
                 ):
                     signal.append(connection_signal(name))
                 return ClientSession(connector=connector,
+                    cookie_jar=DummyCookieJar(),
                     timeout=ClientTimeout(total=self._request_timeout_s),
                     auto_decompress=not self._preserve_http,
                     skip_auto_headers=("Accept-Encoding",) if self._preserve_http else (),
