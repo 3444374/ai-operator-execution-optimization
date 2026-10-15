@@ -107,6 +107,20 @@ class ClipImagePreprocessor:
         if not encoded_images:
             raise ValueError("encoded_images must not be empty")
         images = [decode_rgb_image(item) for item in encoded_images]
+        return self.preprocess_decoded(images)
+
+    def preprocess_decoded(self, images) -> np.ndarray:
+        """Apply the same slow processor to already decoded RGB images/arrays."""
+        if not images:
+            raise ValueError("decoded images must not be empty")
+        from PIL import Image
+        pil = all(isinstance(image, Image.Image) and image.mode == "RGB" and min(image.size) > 0 for image in images)
+        arrays = all(isinstance(image, np.ndarray) and image.dtype == np.uint8
+                     and image.ndim == 3 and image.shape[-1] == 3 and min(image.shape[:2]) > 0 for image in images)
+        if not (pil or arrays):
+            raise TypeError("decoded images must be RGB PIL images or uint8 HWC RGB arrays")
+        # Preserve the pinned slow processor's own layout inference for PIL and
+        # arrays alike, including its existing behavior on tiny ambiguous images.
         pixel_values = self.processor(
             images=images,
             return_tensors="np",
@@ -231,9 +245,11 @@ class ClipTensorActor:
             projected=True,
             normalized=normalize,
         )
+        from src.experiments.image_reuse import observe_model
+        self._reuse_probe = observe_model(self._model, role="clip_tensor_actor", device=device)
 
     def ready(self) -> dict[str, object]:
-        return {
+        ready = {
             "actor_worker_pid": os.getpid(),
             "actor_type": type(self).__name__,
             "input_kind": self.input_kind,
@@ -242,6 +258,9 @@ class ClipTensorActor:
             "torch_intraop_threads": self._torch.get_num_threads(),
             "torch_interop_threads": self._torch.get_num_interop_threads(),
         }
+        if self._reuse_probe is not None:
+            ready["model_reuse"] = self._reuse_probe.snapshot()
+        return ready
 
     def synchronize(self) -> None:
         """Confirm device work has ended, including after a model exception."""
@@ -283,6 +302,8 @@ class ClipTensorActor:
             self._torch.cuda.synchronize()
         forward_started = time.perf_counter()
         with self._torch.inference_mode():
+            if self._reuse_probe is not None:
+                self._reuse_probe.begin(len(batch.doc_ids))
             output = self._model.get_image_features(pixel_values=pixel_values)
             # Normalize in float32 so ``normalized=True`` is an accurate output
             # contract rather than an approximate float16 property.
@@ -297,6 +318,8 @@ class ClipTensorActor:
             self._torch.cuda.synchronize()
         d2h_started = time.perf_counter()
         embeddings = features.cpu().numpy()
+        if self._reuse_probe is not None:
+            self._reuse_probe.returned(len(batch.doc_ids))
         d2h_s = time.perf_counter() - d2h_started if detailed_cuda_timing else 0.0
         telemetry = ImageBatchTelemetry(
             preprocess_s=batch.telemetry.preprocess_s,

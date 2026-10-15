@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[LOTUS图像建库后连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`完成九格180条完整查询、189份完整矩阵；248项SDK／fixture及43个子测试通过、0跳过。Direct／Ray新增显式原生图片输入，HSE复用已核原源字节，Daft返回改Arrow缓冲视图；默认及旧PNG参照保持。实际模型计数确认七格复用、两格Ray逐RM重建；监督输出BrokenPipe失败与仅补剩余两格的成功续跑分别保留，未形成可靠尾分位或稳态结论。
+
+
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
 分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
 原方法／SDK、厂商调度和既有默认保持；这只是容量／清理首阶段，后续薄接入减法未完成，不提供新模型性能或全图RSS资格。
@@ -16,8 +19,8 @@
 | LOTUS 原生 CLIP 检索 | [公共 RM](src/semantic_methods/lotus/README.md#原生-clip-图像检索)接通原生建索引、完整查询与六条执行路径；最终融合资格见[固定 `2afcaf47` 结果](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification) | 这批单次资格不提供性能排名、稳定尾分位或 PG 接入 |
 | 多图计算热路径 | [image_backend.py](src/semantic_methods/lotus/image_backend.py)复用 `SlowClipPrepare` 和 `ClipTensorActor`，默认 batch32；[PG 单图阶段](src/modalities/image/operator.py)仍单独存在 | PG 单图限制不能套用到 LOTUS RM；多图支持本身不是创新 |
 | SemLoom static／HSE | workflow 对象内持有 CPU/GPU 池；[HSE broker](src/scheduling/runtime/stage_broker.py)控制 encoded／ready 字节、work 与阶段 lease | 逻辑预算不覆盖源列表、序列化副本、全部进程内存或模型／device 分配，不是硬显存上限 |
-| RM 准备 | [image_rm.py](src/semantic_methods/lotus/image_rm.py)先形成整份 PNG 列表，再调用 executor；入口显式限量 | 表示选择、渐进编码／准备尚未实现，不能由 broker 峰值声称整查询内存有界 |
-| 原生 Ray Data | 每次图片 RM 构造 CPU/GPU callable actor 池图；原生图内已有流水、批次与背压 | 与 workflow 常驻池的生命周期不同；不能从源码复用声明推断实际加载／销毁次数，也不能给 baseline 私造池 |
+| RM 准备 | [image_rm.py](src/semantic_methods/lotus/image_rm.py)默认先形成整份 PNG 列表，再调用 executor；显式原生输入可用 RGB PIL 或已核原源字节，入口仍限量 | 渐进编码／准备尚未实现，不能由 broker 峰值声称整查询内存有界 |
+| 原生 Ray Data | 默认 staged 或显式 RGB 单 callable 都按每次图片 RM 构图，仍由 Ray 管理批次与背压 | [固定 `485c86a8` 计数](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)两格各16模型，仅说明当前接法；不泛化销毁方式或框架上限，也不给 baseline 私造池 |
 | PNG 参数 | 等级1与 HSE encoded 容量为显式可选共享适配，省略仍用原默认；[候选观察](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)保留原值 | 256图 Direct／HSE 单轮应用区间约40%的改善不含启动，属于共享编码改进，不是 SemLoom 独有创新 |
 | 文件 CLIP 冷算子 | [固定文件入口复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保留全部重复、失败与257图补测 | Direct／HSE 旧 requested64 实际最大56，Ray为64；批形态与数值差异不能混为同批性能，5000图逐行等价及下游质量未验证 |
 | 设备派发 | [可选派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)已有逻辑额度与完成work速率选择；默认 static | locality 仍 unknown／unsupported，不改变路由；多 GPU、直传及驻留组合净收益未验证 |
@@ -26,7 +29,7 @@
 已可定位的[消费者准备缓存软件负结果](https://github.com/3444374/ai-operator-execution-optimization/blob/5a7851426b9d4412a3d20192a84a72cd1acf1c6c/experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-daft-ray)继续按独立来源保留，不写成优化成功。
 另据用户提供的历史核对，整批cache五次零命中且变慢；固定源尚未定位该独立run，原始证据待定位，不能借上项消费者缓存报告代证。
 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索，尚未采纳为本集成实现或验证 GPU 收益。
-图像常驻连续查询新任务仍在准备；模型 worker 原生复用、索引存在的完整查询采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
+固定 `485c86a8` 的[同次 workflow 九格连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证；服务级 RM／内存索引跨调用复用仍未认证，后续完整查询继续采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
 
 ## 当前文本、接入与公共基础
 

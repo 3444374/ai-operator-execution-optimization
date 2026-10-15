@@ -22,8 +22,8 @@ host copy、actor service、提交与张量字节。纯解码、跨进程传输�
 RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，stock RM不会把list解码为图片，
 因此路径示例不足以证明图像编码。在线PIL查询会编码一张图片，文本`bird`查询只编码文本。
 
-`image_rm.ImageBatchExecutor`公开`semantics`、`embed_batch(doc_ids: tuple[str,...], images: Sequence[bytes])`
-与`close()`。RM以无损PNG传输同一RGB像素，按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
+`image_rm.ImageBatchExecutor`公开`semantics`、`embed_batch(doc_ids, images)`与`close()`。
+默认`encoded_bytes`以无损PNG传输同一RGB像素；显式`rgb_pil`接收RGB PIL，原源字节映射见下方候选说明。RM按稳定ID恢复输入顺序，检查完整float32 `[N,512]`向量、
 finite值与单位范数。原生建索引需要完整矩阵，显式限制图库至5000行；这不是流式PG执行。
 Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE，Ray Data保留原生图与调度；
 `--arm daft_native`接入[独立Daft后端](../../baselines/image/frameworks/daft_clip.py)，
@@ -32,7 +32,7 @@ Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE�
 
 [资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
 组合workflow、CLI准备和结果写出分别记录；`model_startup_s` 不证明全部模型构造都在应用区间外，详见[字段口径](../../../../experiments/plans/reference/对照规范.md#measurement-field-scopes)。源码中Ray Data每次RM调用新建CPU/GPU callable池图；其他内置路径
-在workflow对象内持有模型／worker池。该生命周期声明不等于实测加载／销毁次数；本轮计数未采集，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU、stock文本在CUDA；数值通过不表示文本性能可比，耗时另列。
+在workflow对象内持有模型／worker池。该生命周期声明不等于实测加载／销毁次数；早期`2afcaf47`资格未采集这些次数，后续`485c86a8`的实际计数见下方连续查询观测，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU、stock文本在CUDA；数值通过不表示文本性能可比，耗时另列。
 默认只读低开销单调时钟；`SEMLOOM_DETAILED_TIMING_DIR`借用已集成的可选计时模块，缺模块时明确失败。
 原生缓存关闭；串行入口拒绝同进程第二个owner，尚未资格跨查询并发。失败查询与RM调用保留时间、状态和阶段。
 
@@ -254,3 +254,41 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 同一 executor 互斥批次，关闭先封口，未知工作拒绝复用；部分启动 actor 只保留清理用途。
 Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭，caller-owned runtime
 与物理退出证明仍归调用方。两个资格 CLI 保留执行／取消首错及独立证据写入失败。
+
+## 连续查询观测
+
+显式`--query-repeats N`在同一native owner／FaissVS内重复原有有序查询；默认1保持原query ID，重复时增加source_query_id、repeat_index与query_ordinal。`native_call_return_elapsed_s`紧接原生`sem_search`返回采样，失败时为null；旧elapsed_s保留输出检查和失败耗时，原生实际加载／建图／传输不会扣除。
+
+当前每次`run_workflow`新建`FaissVS`；本节资格只覆盖同一次调用内的多轮查询。磁盘索引目录或模型endpoint常驻不证明服务级RM／内存索引跨调用复用，版本变更后的重建、加载与失效也未由本切片认证。
+
+`--observe-model-reuse`仅用于短诊断，使用实际模型UUID、PID、Linux进程start及整数计数。stock观测vision/text子模块，其他图片路径观测完整GPU模型调用至CPU NumPy返回；阶段快照与Ray批次标量采用不同取得方式，缺项不推定复用。模型构造每实例写一次私有记录；默认关闭，观测不持有模型强引用，失败／取消后不等待忙碌worker的观测RPC而继续关闭。
+
+固定[Ray2.56.1批推理说明](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/data/batch_inference.rst)及[actor pool实现](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)支持单图内多batch复用与流水。本接点每个同步RM调用创建独立图并完整消费关闭；ActorPoolStrategy只指定配置，未提供跨独立图传入现有pool的公开参数。仅删显式shutdown不产生复用保证。单长图动态source或Ray Core／Serve常驻是另一个接法，需独立验证，不能借此结果概括Ray Data一般能力。图库batch32和在线单图1行的来源分开保留；现有较大图pipeline的Fast预处理也不能直接替代本轮slow数学。
+
+规模、预热／缓存及不能支持的判断见[连续查询计划](../../../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。实际模型状态以同题结果为准。
+
+当前Daft接点先原生RGB decode，然后在声明GPU资源的stateful UDF内依序执行slow resize／crop／normalize和CLIP forward；CPU准备尚未独立成可流水阶段。这是已测接法，不代表Daft能力上限。batch32由当前图和UDF声明，模型实际批形态以调用计数和完整向量核对；仓库其他staged实现的Fast处理／不同runner不能直接继承本轮slow资格。fixed_size_list输出改为公开Arrow列缓冲视图：验证宽512、float32、父与有效child无NULL，按父offset取有效区间；多chunk必要时拼接，保留最终完整矩阵和按ID恢复顺序。不再物化每个Python浮点，仍有拼接／重排／RM输出拷贝，不声称端到端零拷贝。本轮不新增CPU分阶段候选。
+
+
+`--native-image-input`是显式诊断候选，默认关闭且与PNG参数互斥。Direct接收RGB PIL；Ray在查询内转换RGB uint8 HWC数组，经一个stateful callable完成同slow处理与CLIP，保留原staged作对照。融合省去CPU actor和预处理张量跨actor，但会失去跨批CPU/GPU重叠；批大小与GPU资源仍由原生API管理。每个executor在创建时固定一种输入，不按行猜测表示。
+
+SemLoom static/HSE候选复用loader读取时已验证的原图字节，映射绑定PIL对象、尺寸和RGB摘要；每次调用先检查整批RGB／非空／可load及摘要，再提交。变换或原地改动PIL、缺少映射、非法后缀均拒绝，不能回读路径替代当前像素。Daft保留PNG字节→原生RGB decode；未借此宣称原JPEG在其decoder下等价。输入、实际forward批次与最后完整矩阵分别验证；本入口保留整批检查后零／完整提交语义，不暗中改为流式半提交。
+
+`model_startup_s`记录显式启动区间；Ray callable载入和Daft首次UDF延迟载入仍在实际建索引／查询／应用耗时内。细分以`model_load_scope`与实际构造事件为准，不能理解成所有模型载入都已移出应用区间。短对照和旧默认的结果、失败及恢复信息见[同题结果](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)。
+
+
+Ray候选的核心就是公开原生调用；外部先初始化自己的Ray，下面的行输入来自已检查的RGB图片，UDF复用共享slow processor和CLIP数学：
+
+```python
+from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
+dataset = ray.data.from_items(rows)  # doc_id + RGB uint8 HWC ndarray
+result = dataset.map_batches(
+    RayDataClipImagePredictor, batch_format="numpy", batch_size=32,
+    compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
+    fn_constructor_kwargs=model_settings,
+)
+for batch in result.iter_batches(batch_format="numpy", prefetch_batches=1):
+    consume_complete_embeddings(batch)
+```
+
+计时须包住完整消费，而非只包惰性建图。现有RM记录`executor_elapsed_ns`覆盖`embed_batch`入口至完整返回（包括实际图消费及本接点的关闭），完整查询记录`native_call_return_elapsed_s`则覆盖LOTUS调用入口至DataFrame返回。PNG／原图指纹／PIL数组转换发生在哪层就留在哪层，二者不互相替代。输入有界检查与完整ID／FP32／finite／norm属于接纳语义；源码／权重摘要在启动，跨路径完整向量比对及进程监督在实验侧。RM各图片／文本分区已经逐份检查，组装后的同一矩阵不重复扫描范数。

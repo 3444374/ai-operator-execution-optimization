@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-15：[LOTUS图像建库后连续调用](diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`，九格180查询／189完整矩阵及实际模型出生计数已核对。原监督stdout失败仍failed，续跑只补两格；CPU只计一次，十二次实际监督调用均退出并清理。公共输入减负改善与Ray逐RM加载的负结果按当前接法解释，五次固定payload不提供可靠尾分位。
+
+
 2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
 固定`f2749bf1`的CPU localhost SDK观测、回归及原失败分别保存；支持活动HTTP／批次存储分离和清理责任修补，
 不支持模型收益、全图内存保证或Mac上的Linux完整query观测。LOTUS方法与IMLane生命周期边界见同题说明。

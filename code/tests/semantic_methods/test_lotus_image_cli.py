@@ -65,12 +65,18 @@ def test_cli_codec_defaults_and_inapplicable_flags_fail_before_work(tmp_path):
     cli = load_cli()
     args = base_args(tmp_path)
     assert cli.parser().parse_args(args).png_compress_level is None
+    assert cli.parser().parse_args(args).query_repeats == 1
+    assert cli.parser().parse_args(args).observe_model_reuse is False
     with pytest.raises(SystemExit):
         cli.parser().parse_args(args + ["--png-compress-level", "10"])
     with pytest.raises(ValueError, match="stock native PIL"):
         cli.main(base_args(tmp_path, "stock") + ["--png-compress-level", "1"])
     with pytest.raises(ValueError, match="require semloom_hse"):
         cli.main(args + ["--hse-encoded-bytes", "4"])
+    with pytest.raises(ValueError, match="dimensions"):
+        cli.main(args + ["--query-repeats", "0"])
+    with pytest.raises(ValueError, match="query repeats"):
+        cli.main(args + ["--mode", "index", "--query-repeats", "5"])
     assert not (tmp_path / "output").exists()
 
 

@@ -62,13 +62,18 @@ def native_settings(rm, vs):
 
 
 def run_workflow(frame, rm, queries, *, index_dir, embedding_identity, k=10,
-                 mode="combined", max_gallery_rows=5000, report=None):
+                 mode="combined", max_gallery_rows=5000, report=None,
+                 query_repeats=1, phase_observer=None):
     """Run the unmodified native index and search, including native output assembly."""
     import pandas as pd
     from lotus.vector_store import FaissVS
 
     if mode not in ("combined", "index", "search"):
         raise ValueError("unknown native image workflow mode")
+    if type(query_repeats) is not int or query_repeats < 1:
+        raise ValueError("query repeats must be a positive integer")
+    if mode == "index" and query_repeats != 1:
+        raise ValueError("query repeats require search or combined mode")
     if (type(k) is not int or k < 1 or type(max_gallery_rows) is not int
             or not 0 < len(frame) <= max_gallery_rows):
         raise ValueError("invalid K or gallery collection size")
@@ -121,16 +126,28 @@ def run_workflow(frame, rm, queries, *, index_dir, embedding_identity, k=10,
             frame = frame.load_sem_index("image", str(index_dir))
             # Native sem_search performs the actual load; keep that cost in its time.
             report["index_load_s"] = (time.monotonic_ns() - at) / 1e9
+        if phase_observer is not None:
+            phase_observer("after_index_or_register")
         if mode != "index":
-            for query in queries:
+            for repeat_index, query in ((r, q) for r in range(query_repeats) for q in queries):
                 report["stage"] = "query:" + query.query_id
                 before = len(rm.observation.calls)
                 at = time.monotonic_ns()
                 record = dict(query_id=query.query_id,
-                    kind="image" if isinstance(query.value, Image.Image) else "text", status="failed")
+                    kind="image" if isinstance(query.value, Image.Image) else "text", status="failed",
+                    submitted_monotonic_ns=None, returned_monotonic_ns=None,
+                    native_call_return_elapsed_s=None)
+                if query_repeats > 1:
+                    record.update(source_query_id=query.query_id, repeat_index=repeat_index,
+                                  query_ordinal=len(report["queries"]),
+                                  query_id=f"{query.query_id}@{repeat_index}")
                 try:
-                    with timing_span("lotus.sem_search", scope="native_operator", query_id=query.query_id):
+                    with timing_span("lotus.sem_search", scope="native_operator", query_id=record["query_id"]):
+                        record["submitted_monotonic_ns"] = time.monotonic_ns()
                         result = frame.sem_search("image", query.value, K=k, return_scores=True)
+                        record["returned_monotonic_ns"] = time.monotonic_ns()
+                        record["native_call_return_elapsed_s"] = (
+                            record["returned_monotonic_ns"] - record["submitted_monotonic_ns"]) / 1e9
                         positions = [int(x) for x in result.index]
                         ids = result["doc_id"].tolist()
                         scores = [float(x) for x in result["vec_scores_sim_score"]]
@@ -151,6 +168,8 @@ def run_workflow(frame, rm, queries, *, index_dir, embedding_identity, k=10,
                                   rm_calls=rm.observation.calls[before:])
                     report["queries"].append(record)
                     report["rm_calls"] = rm.observation.calls
+        if phase_observer is not None:
+            phase_observer("after_queries")
     report.update(status="succeeded", stage="complete", native_workflow_s=(time.monotonic_ns() - started) / 1e9,
                   rm_calls=rm.observation.calls,
                   tail_quantiles={"p99": None, "p99_99": None,

@@ -3,15 +3,20 @@ from __future__ import annotations
 
 import time
 import threading
+import operator
 
 from src.modalities.image.clip import ClipImagePreprocessor, ClipTensorActor
 from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult, ImageBatchTelemetry
 
 
 class DirectImageExecutor:
-    def __init__(self, *, model, processor=None, device="cuda", dtype="float32", batch_size=32):
+    def __init__(self, *, model, processor=None, device="cuda", dtype="float32", batch_size=32,
+                 native_image_input=False):
         if type(batch_size) is not int or batch_size < 1:
             raise ValueError("image model batch size must be positive")
+        if type(native_image_input) is not bool:
+            raise ValueError("native_image_input must be a boolean")
+        self.input_kind = "rgb_pil" if native_image_input else "encoded_bytes"
         self.batch_size = batch_size
         self.processor = ClipImagePreprocessor(processor or model, local_files_only=True)
         self.actor = ClipTensorActor(model, processor_revision=processor or model,
@@ -23,6 +28,12 @@ class DirectImageExecutor:
     def embed_batch(self, doc_ids, images):
         if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
             raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
+        if self.input_kind == "rgb_pil":
+            from PIL import Image
+            for image in images:
+                if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                    raise TypeError("native image input requires nonempty RGB PIL images")
+                image.load()
         import numpy as np
 
         started = time.perf_counter()
@@ -31,7 +42,9 @@ class DirectImageExecutor:
         for offset in range(0, len(doc_ids), self.batch_size):
             ids = doc_ids[offset:offset + self.batch_size]
             at = time.perf_counter()
-            pixels = self.processor.preprocess(images[offset:offset + self.batch_size])
+            prepare = (self.processor.preprocess_decoded if self.input_kind == "rgb_pil"
+                       else self.processor.preprocess)
+            pixels = prepare(images[offset:offset + self.batch_size])
             preprocess_s = time.perf_counter() - at
             batch = ImageEmbeddingBatch(ids, pixels, "preprocessed_tensor",
                                         len(ids) * 224 * 224, "pixels")
@@ -216,13 +229,18 @@ class SemLoomImageExecutor:
 
 class RayDataImageExecutor:
     """Native Ray Data graph reusing the existing tensor predictor."""
-    def __init__(self, *, model, processor=None, dtype="float32", batch_size=32):
+    def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
+                 native_image_input=False):
         from src.modalities.image.contracts import EmbeddingSemantics
+        if type(native_image_input) is not bool:
+            raise ValueError("native_image_input must be a boolean")
+        self.input_kind = "rgb_pil" if native_image_input else "encoded_bytes"
         self.model, self.processor, self.dtype = model, processor or model, dtype
         self.batch_size = batch_size
         self.semantics = EmbeddingSemantics(model, self.processor, 512)
         self._closed = self._unconfirmed_work = False
         self._lock = threading.Lock()
+        self.reuse_observations = []
 
     def embed_batch(self, doc_ids, images):
         if not self._lock.acquire(blocking=False):
@@ -246,14 +264,29 @@ class RayDataImageExecutor:
             raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
         collector = OrderedMatrix(doc_ids, self.semantics)
         started = time.perf_counter()
-        data = ray.data.from_items([{"doc_id": x, "image": y} for x, y in zip(doc_ids, images, strict=True)])
-        data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
-            compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1,
-            fn_constructor_kwargs={"processor_revision": self.processor})
-        data = data.map_batches(RayDataClipPredictor, batch_format="numpy", batch_size=self.batch_size,
-            compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
-            fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
-                "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
+        if self.input_kind == "rgb_pil":
+            from PIL import Image
+            import numpy as np
+            from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
+            for image in images:
+                if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                    raise TypeError("native image input requires nonempty RGB PIL images")
+                image.load()
+            data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
+                                       for x, y in zip(doc_ids, images, strict=True)])
+            data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
+                fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
+        else:
+            data = ray.data.from_items([{"doc_id": x, "image": y} for x, y in zip(doc_ids, images, strict=True)])
+            data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1,
+                fn_constructor_kwargs={"processor_revision": self.processor})
+            data = data.map_batches(RayDataClipPredictor, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=1), num_cpus=1, num_gpus=1,
+                fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1})
         iterator = None
         error = None
         self._unconfirmed_work = True
@@ -261,6 +294,7 @@ class RayDataImageExecutor:
             iterator = iter(data.iter_batches(batch_format="numpy", prefetch_batches=1))
             for batch in iterator:
                 collector.add(tuple(str(x) for x in batch["doc_id"]), __import__("numpy").asarray(batch["embedding"], dtype="float32"))
+                self._observe_reuse_batch(batch)
             result = ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,
                                           time.perf_counter() - started)
         except BaseException as exc:
@@ -289,6 +323,28 @@ class RayDataImageExecutor:
             raise error
         self._unconfirmed_work = False
         return result
+
+    def _observe_reuse_batch(self, batch):
+        columns = ("uid", "pid", "embed_calls", "rows")
+        names = tuple("_semloom_model_" + column for column in columns)
+        if not any(name in batch for name in names):
+            return
+        if not all(name in batch and len(batch[name]) == len(batch["doc_id"]) for name in names):
+            raise ValueError("Ray Data model reuse columns must be complete and aligned")
+        # A returned native batch may combine predictor calls. Preserve each
+        # distinct cumulative count rather than assuming one model per batch.
+        groups = {}
+        for uid, pid, calls, rows in zip(*(batch[name] for name in names), strict=True):
+            try:
+                key = (str(uid), operator.index(pid), operator.index(calls), operator.index(rows))
+            except TypeError as error:
+                raise ValueError("Ray Data model reuse counters must be integers") from error
+            if not key[0] or min(key[1:]) <= 0:
+                raise ValueError("Ray Data model reuse identity/counters are invalid")
+            groups[key] = groups.get(key, 0) + 1
+        for (uid, pid, calls, rows), count in groups.items():
+            self.reuse_observations.append(dict(model_uid=uid, pid=pid,
+                embed_calls=calls, rows=rows, batch_rows=count))
 
     def close(self):
         if not self._lock.acquire(blocking=False):

@@ -293,7 +293,8 @@ class DaftImageLifecycleTests(unittest.TestCase):
             if name == "daft_image.graph_consume":
                 raise timing_error()
 
-        with patch.dict(sys.modules, modules), patch.object(daft_clip, "_span", span):
+        with patch.dict(sys.modules, modules), patch.object(daft_clip, "_span", span), \
+                patch.object(daft_clip, "_arrow_embedding_matrix", return_value=np.zeros((1, 512), np.float32)):
             with self.assertRaises(RuntimeError) as caught:
                 executor.embed_batch(("a",), [b"fixture"])
         self.assertIs(caught.exception, actual)

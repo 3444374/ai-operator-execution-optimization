@@ -1,5 +1,16 @@
 # 项目日志
 
+## 2026-10-15：完成LOTUS图像连续查询与原生输入对照
+
+从`277d8f48`建立独立职责分支，保留原生算子、图库／查询／模型数学及baseline执行所有权。既有入口添加显式同owner重复、原生返回时刻与可选实际模型计数；错误／取消跳过忙碌worker观测，继续既有关闭。固定实测`485c86a8`提供Direct RGB PIL、Ray RGB数组／单callable、HSE已核原源字节候选，并用Arrow视图减少Daft返回Python float装箱；必要数值检查、排序、资源和退出处理保留，旧PNG与staged路径继续回归。
+
+248项实际SDK／fixture与43个子测试、64图及9种非歧义输入的slow处理逐位对照通过。九格各64图建库后五轮四查询，共180查询／189完整矩阵；旧／新输入各21矩阵及完整top10逐位相同。实际UID／PID／出生计数确认七格模型复用、两格Ray分别16个模型；完整LOTUS为主测，不把原生API或公共编码改善写成独有调度收益。
+
+原a运行在七个CLI成功退出并清理后，监督器stdout遇SSH断开抛BrokenPipe；原failed状态和120成员原包保留，后验核验另存。b只补剩余Ray原生输入／Daft两格，CPU来源明确复用a，不重跑已完成GPU。十二次实际监督调用、三个controller出生身份退出与lease释放已核对。[全部原值及恢复映射](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)保持运行身份；未合main，不宣称可靠P99／P99.99或稳态。
+
+集成保留三份提交和双方现有记录；规范／需求两轴0必修，本地定向197通过／1显式opt-in跳过。仅同一次workflow内的连续查询获得该来源资格，服务级RM／内存索引跨调用常驻仍待验证；后续Daft RGB与文本常驻改动保持各自独立来源。
+
+
 ## 2026-10-15：明确全局执行层与 PG 接入的适用范围
 
 根规则原将全项目研究对象统一写成 PostgreSQL 内置算子；现明确 SemLoom 为多前端执行层，

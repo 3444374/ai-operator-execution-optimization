@@ -2,6 +2,9 @@
 
 ## LOTUS 原生图像检索
 
+同一owner连续调用可显式增加`--query-repeats 5 --observe-model-reuse`；默认一次查询序列且不开启复用观测。首轮保留、原生缓存关闭；计时、模型／worker身份及Ray接点用途见[连续查询说明](../src/semantic_methods/lotus/README.md#连续查询观测)和[计划](../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
+`--native-image-input`为Direct／Ray／SemLoom显式候选，默认关闭且与PNG设置互斥；原生输入及整批检查后提交语义见同一LOTUS说明。
+
 `experiments/qualify_lotus_clip.py`先对固定ST／cached CLIP检查实际参数、PIL预处理与数值资格；
 `experiments/run_lotus_image_retrieval.py`通过原生LOTUS建索引与查询。两者要求仓库外的新输出目录，
 保留失败，不自动重试。模型、manifest与身份文件来自本机运行配置；所有图库输入为真实RGB PIL。
