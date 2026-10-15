@@ -30,20 +30,25 @@
 
 ## 2. 项目范围
 
-研究对象是：**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
+研究对象是：**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
+SemLoom 是执行层，面向 LOTUS 等语义 API 与数据库等前端；PostgreSQL 是数据库接入场景之一，
+不是所有任务的唯一前端。下述 SQL、snapshot、权限与 carrier 要求只适用于对应数据库接入，
+各前端的实际支持与验证范围仍以固定源码和报告为准。
 
 - 系统名称为 **SemLoom**；DB-AIEL（Database-Aware AI Execution Layer）只表示架构层，不作为
   Python 类型、函数、包或实验身份的前缀；领域术语以根 `CONTEXT.md` 为准。
-- 数据库拥有 SQL、ordinary child plan、snapshot、权限、query cancel/error/result lifecycle；
-- 主要架构参照 Sema 一类数据库原生语义算子系统：语义算子进入 SQL、计划和执行生命周期；
-- recording `SemMap/SemFilter` 只验证 PostgreSQL carrier 与生命周期；真实语义由数据库内版本化
-  `SemanticPlanSpec` 定义，LOTUS v1.2.4 只作可选兼容 profile、算法参照和完整路径 baseline；
-- Daft、Ray、vLLM、typed CLIP actor 等位于数据库进程外，作为受数据库管理的可替换 backend；
+- 数据库接入时，由数据库拥有 SQL、ordinary child plan、snapshot、权限、query cancel/error/result lifecycle；
+- 数据库接入的架构参照包括 Sema 一类原生语义算子系统：语义算子进入 SQL、计划和执行生命周期；
+- PG recording `SemMap/SemFilter` 只验证该 carrier 与生命周期；PG 真实语义由数据库内版本化
+  `SemanticPlanSpec` 定义。其可选 LOTUS v1.2.4 兼容 profile 不替代原 LOTUS 完整路径对照；
+- LOTUS 主比较保留原文本算子或图像 RM/index/search、提示／缓存、原 SDK 解析与后处理；
+  后端原生 API 的薄接入及独立 API 诊断不取代完整 LOTUS 查询；
+- Daft、Ray、vLLM、typed CLIP actor 等作为可替换执行后端，语义与生命周期按实际前端及接入分别核对；
 - 研究内容一是按 token/frame/阶段 work 与局部性组织数据；
 - 研究内容二是在固定 request/work capacity 下控制提交、服务实例路由和单租户多 Job 调度；
 - 算子代价估计是两项研究内容和数据库计划比较的共同支撑；
-- 图像 `AI_EMBED/AI_CLASSIFY` 用于跨模态验证，文本 `AI_COMPLETE` 是首版主场景；
-- PostgreSQL + pgvector 的 COPY + deferred index 是写回工程 baseline。
+- 文本语义任务是首版主场景，图像用于跨模态验证；`AI_COMPLETE`、`AI_EMBED/AI_CLASSIFY` 按各自 PG 接点解释；
+- PostgreSQL + pgvector 的 COPY + deferred index 是 PG 写回工程 baseline。
 
 项目不以广泛 PostgreSQL fork、PL/Python 逐行 HTTP UDF、LOTUS DataConnector 外拉、修改 vLLM
 continuous batching、修改 Ray scheduler、模型/kernel 优化、传统 GPU 查询算子或单纯产品集成为主线。
@@ -128,7 +133,8 @@ driver 与 vLLM 环境保持隔离。batch/K/actor/active-work 配置绑定“�
 ## 6. 文字表达
 
 - 用准确、简明的技术表述说明对象、条件、动作和结果；内部代号在需要定位实现或历史记录时保留并解释。
-- 研究对象统一表述为“PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化”。
+- 按实际前端表述研究对象：通用执行层使用 AI 任务的物理执行与调度描述；PG 专属接口或实验明确 PostgreSQL，
+  LOTUS 等入口保留原方法身份和职责，不把所有前端改写成 PG 内置算子。
 - 总动机、子问题、证据实验、研究内容和实现任务分清层次；同级内容保持相近粒度。
 - 英文缩写、内部结构和指标首次出现时说明中文作用；文献使用正式英文题名，系统名保留英文。
 - 初步结果写“可行性依据、观察信号或待扩大验证”，不写成已经完成的贡献。
