@@ -66,6 +66,8 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 
 2026-10-15：[PZ 原生与固定计划边界](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)保留旧tag的原 Generator、SDK及关系合同。原生完整Movie Q3已完成120模型请求，COUNT7／真值14与FN7保留；逐臂实现另采用查询私有的就绪工作／SDK continuation，固定计划与fresh状态分别核验。源码、CPU fixture及实际模型资格分列，不把本轮原生模型结果借给其余后端或宣称性能排名。
 固定`bebf682b`的[原任务模型轮](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)六臂各120POST，完整过滤矩阵本轮相同但raw输出不同；SemLoom在Daft runner配置处0POST失败，累计720／840、正常物理退出与lease释放，未补跑或授全轮／性能资格。
+后续`62018855`接入既有Daft进程级配置，19项测试／28子检查与双轴独审通过；[同进程CPU组合](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#daft-semloom-cpu-composition)实际先Daft后SemLoom，各2次合成HTTP／COUNT1，共享同一native runner，严格资源退出及正常lease释放。旧CPUr1／r2仍failed，本阶段累计6fixture；该CPU阶段未动模型余120，不回填bebf或授模型／七臂／性能资格。
+独立[SemLoom模型R4](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)使用620，120POST200／COUNT7经1682项原件独审通过，外层正常退出另核；新增后累计840／840、余0。与bebf物理计划相同但完整身份变化，保留原R3 failed，不授同身份七臂或性能资格。
 作者IMLane的[四lane HTTP健康补轮](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#imlane-four-lane-health)已核CP／Ray各两批、实际4worker及正常自有退出；16次fixture与7条保留告警单列，模型／GPU为0。
 
 ## 当前文本、接入与公共基础

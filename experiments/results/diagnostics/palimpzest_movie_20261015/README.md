@@ -112,7 +112,7 @@ fixture usage不是模型费用或吞吐证据；有限原件按run_id／SHA由�
 
 首版仍拒绝 LIMIT、join、distinct、语义聚合、多字段 follow-up 和未核多调用形状。
 PZ 原生模型轮未保存完整所选 plan，不能回填为固定计划控制；
-原2000行任务的固定计划模型轮已按下节保留六完成臂与SemLoom发送前失败，全七臂比较仍未完成。
+原2000行任务的固定计划模型轮按下节分列R3六完成臂／SemLoom发送前失败与后续独立R4；不是同完整身份的七臂比较。
 
 <a id="imlane-four-lane-health"></a>
 ## IMLane 四 lane 健康补轮
@@ -185,13 +185,46 @@ SemLoom事件流在Daft payload的`runner_configure`处失败：64个已准备Ge
 197份原件（185份与12份作者补件）、六份完整PlanStats及精确清单均留仓外；[原值与SHA](fixed-model.json)保留全部失败及补件身份。
 独立3815项原件一致性检查通过，只覆盖六完成臂与失败责任关闭；原全七臂验证器的失败保留，不授SemLoom、全轮或性能资格。
 只读调用链显示，前置Daft完整调用直接取得默认runner，SemLoom payload随后经共享helper配置runner；重复初始化是待核候选原因，原内部vendor异常未保留。
-两独立case的CPU诊断已窄审，但共享host已有正常owner，真库诊断尚未启动；修复及SemLoom原任务模型路径仍待完成，未动剩余120模型额度。
+后续固定bebf的两个独立进程使用真实Daft0.7.21作生命周期诊断：先取默认runner再配置出现重复设置异常，先配置后重复配置复用同一对象；85项独立检查通过，未创建HTTP客户端／服务或调用模型，GPU为0。
+该诊断不补回R3内部原错，`hypothesis_supported`仍为null，不能认定原R3的具体因果。
+
+<a id="daft-semloom-cpu-composition"></a>
+### 后续CPU：同进程Daft到SemLoom
+
+修补源码`62018855791dbee5c7a2c933361b21e58451496e`在Daft臂执行前使用现有进程级配置helper，保留配置冲突拒绝；19项测试／28项子检查及双轴独审通过。
+源码与完整固定身份区别于bebf，不借用其模型资格。实际运行`pz-daft-semloom-synthetic-cpu-r3`在同一Python进程先Daft后SemLoom，调用生产`execute_fixed_movie`及原PZ／SDK，使用Daft0.7.21、Ray2.56.1和4CPU／0GPU。
+三行软件fixture保留两个重复业务ID及一行普通谓词排除；一次选计划、各臂fresh。两臂各2次localhost合成HTTP、COUNT1、TP1／TN1、invalid0，usage各22输入／6输出tokens；请求多重集合相同、共享native runner为同一对象，合成usage不作模型费用。
+Core Job／session／存储／physical transport、Daft consumer／HTTP池、Ray与fixture线程均正常关闭，独立owner核自有进程退出及正常lease释放，未启用stale recovery。
+此前CPUr1因版本检查先导入环境PZ，在固定source核对处0POST失败；CPUr2完成Daft2POST后，checker误用`TP`字段失败，均保留failed。此次通过轮4POST、本CPU组合阶段累计6POST，模型／GPU均为0。
+91份原件、104,497字节归档及独立原件审计的身份见[原值](fixed-model.json)。该CPU阶段模型仍为720／840、剩余120，原模型R3保持failed；CPU结果不授模型、完整七臂或性能资格，C0bdf的关闭错误修补也不由本次正常退出代替。
+
+<a id="fixed-plan-model-r4"></a>
+### R4：source620的独立SemLoom模型补轮
+
+新运行`pz-q3-semloom-resume-r4`固定62018855，仅执行SemLoom；原2000行／120语义出现、Qwen2.5-7B／vLLM0.25.1／单4090及关闭prefix cache的配置保留，无模型预热、重试或选择阶段模型调用。driver与Ray为4CPU／0GPU，模型服务使用该GPU。
+完整物理计划指纹仍为`99935b70…`，但两处固定入口源码变化、fixed manifest新增的adapter源码绑定（Daft helper字节未改）及新metadata初始完整锚使full identity由`dfa59e39…`变为`aba2bee1…`；稳定metadata摘要相同，不称同完整身份七臂。
+
+| 路径 | 实际POST200 | COUNT | 输入／输出tokens | query秒 | application秒 |
+|---|---:|---:|---:|---:|---:|
+| SemLoom＋Daft payload／Ray HTTP worker | 120 | 7 | 38,325／7,717 | 15.110 | 29.739 |
+
+原COUNT关系为7、真值14、官方相对误差0.5；120行TP7／FN7／FP0／TN106／invalid0，source-position／解析／过滤矩阵与R3六臂相同。
+请求值及已记录wire hash的多重集合均为120次／119种，重复次数保留并与六臂相同；raw输出逐source分别有10／8／9／8／9／7处不同，不推定质量等价。实际美元费用不可用，原成本卡零估值不作免费。
+query与application沿用上节重叠口径；服务准备49.091秒、共享准备11.510秒另列。额外一次零模型选择的准备10.262秒、优化0.015122秒已包含于共享准备，不能重复相加。
+
+原日志记录两个实际Ray actor就绪，120个完成事件没有逐call actor_id，不能分摊为每actor60次。
+Ray日志保留14条WARNING及2条INFO级KillActor RPC失败，含2条quick-exit与6条plasma EOF；其中部分EOF在工作前出现，时间与重复分别核对，不作请求失败数或无告警声明。实际actor关闭原因为`ray.kill`，不借用旧IMLane的无引用解释。
+pending_calls／registered_jobs计数、Core usage及object bytes归零、physical transport closed可核；远端HTTP池关闭状态为null／unavailable，私有Job／session／storage终态未记录，不补0。
+外层owner另核query／service退出0、自有残余为空、parent已退出、GPU回1MiB及正常lease释放，未启用stale recovery；该物理见证与调用方close返回分开。
+
+88份常规原件含Ray日志与外部parent退出见证，935,173字节归档及精确摘要见[原值](fixed-model.json)。离线reader首轮因比较完整quality对象而出现形状错误，失败审计保留；修正版经独立窄审后，1682项原件检查全通过，支持该单次SemLoom模型补轮；未因此重跑模型或新增POST。
+R3 failed与六完成臂720原账不改；本轮新增120后累计840／840、余0。CPU通过轮4／阶段累计6fixture另计；不授同完整身份七臂、一般质量等价、稳定尾分位或性能排名，也不借C0bdf关闭错误分支资格。
 
 ## 当前边界
 
 `freeze_best_plan` 只覆盖无 validator 的最终计划；完整系统采样和 validation 不得被省略。
 只替换 completion 接点时，PZ 继续拥有 DAG。源数据、配置、请求摘要和服务／缓存状态须与计划指纹共同核对。
-原生完整2000行Movie及固定bebf的六完成臂模型记录已分列；SemLoom原任务模型路径尚未完成，整轮失败及剩余120额度保留。
+原生完整2000行Movie、固定bebf的六完成臂与source620独立SemLoom补轮分列；R3 failed不改，累计模型840／840。R4仅支持该单次补轮，不合称同完整身份的完整七臂比较。
 本记录不支持逐臂排名、质量等价、性能收益或可靠尾分位。
 
 附件审查针对 PZ `807ed301`／1.5.3，本切片继续保留 SemBench 所需的旧 tag。

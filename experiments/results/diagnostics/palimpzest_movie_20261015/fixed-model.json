@@ -1,6 +1,6 @@
 {
   "schema": "semloom.palimpzest_fixed_movie_model_rounds.v1",
-  "status": "six_completed_model_arms_verified_semloom_pre_send_failure",
+  "status": "six_bebf_R3_completed_arms_plus_source620_R4_SemLoom_single_cell_verified",
   "source_rows": 2000,
   "semantic_rows_per_arm": 120,
   "planned_arms": [
@@ -18,8 +18,8 @@
   "automatic_rerun": false,
   "cumulative_actual_POST_budget": {
     "limit": 840,
-    "spent": 720,
-    "remaining": 120,
+    "spent": 840,
+    "remaining": 0,
     "old_allocations_refunded_or_reused": false,
     "prior_7ac_native_120_is_separate_run": true
   },
@@ -344,14 +344,351 @@
         "original_inner_vendor_exception_retained": false,
         "candidate_cause": "NativeCall Daft initializes the default runner outside the shared process-owned configure helper, then SemLoom configures it again",
         "actual_CPU_reproduced": false,
-        "two_case_CPU_probe_status": "frozen_spec0_not_started_foreign_normal_host_lease",
-        "actual_CPU_cases": 0,
+        "two_case_CPU_probe_status": "completed_real_Daft_runner_lifecycle_only",
+        "actual_CPU_cases": 2,
         "CPU_probe_sha256": "b4d4bc46adee5785b7163a1078a786aaaaa091e5bd6af4f051b1ba105b7f4cc3",
         "CPU_parent_sha256": "889d2b57d732e2d31e6ff6ce75bc5bdd0d6aee0446656c3d1ad35efa908b4c37",
         "installed_Daft_0_7_21_runner_wrapper_sha256": "2277b74ed51ac2e632921a8145b1edf177a787b8482490de50868cefb52b04d9",
         "stub_or_source_evidence_is_actual_vendor_or_model_qualification": false,
         "additional_model_POSTs": 0,
-        "runtime_or_author_source_changed": false
+        "runtime_or_author_source_changed": false,
+        "actual_CPU_reproduced_scope": "Original R3 inner failure was not recovered or causally reproduced; the separate real runner pattern is recorded below",
+        "probe_source_commit": "bebf682b136b983257c70944aa0cb07000c976ac",
+        "actual_CPU_runner_pattern_observed": true,
+        "hypothesis_supported": null,
+        "original_R3_cause_proven": false,
+        "independent_probe_checks": 85,
+        "independent_probe_report_sha256": "3a6c27fcbcdf01d52f58c9ec5f128d3f3c1962c4af6689c8d0b7a7230efcc3b7",
+        "probe_raw_archive": {
+          "sha256": "9fde2b6bb3b299b628266af26dae16942cc619f6faa6132cf59841f351019856",
+          "bytes": 3539,
+          "selected_files": 12,
+          "selection_manifest_sha256": "fb340997043d490278594a095a541c4fe9efdce5829a162a5b62a71605e6f715"
+        }
+      },
+      "cpu_composition_followup": {
+        "run_id": "pz-daft-semloom-synthetic-cpu-r3",
+        "source_commit": "62018855791dbee5c7a2c933361b21e58451496e",
+        "status": "passed_synthetic_CPU_only",
+        "source_fix_checks": {
+          "tests_passed": 19,
+          "subtests_passed": 28,
+          "Spec_must_fix": 0,
+          "Standards_must_fix": 0
+        },
+        "scope": "Same Python process, production execute_fixed_movie Daft then SemLoom; original pinned PZ/SDK; three-row software_fixture with two eligible duplicate business IDs",
+        "daft_version": "0.7.21",
+        "ray_version": "2.56.1",
+        "driver_CPUs": 4,
+        "GPUs": 0,
+        "served_model_id": "fixture-local-model",
+        "selected_once": true,
+        "fresh_per_arm": true,
+        "physical_plan_fingerprint_unchanged": true,
+        "completion_ledger_capacity": 3,
+        "cells": [
+          {
+            "arm": "daft",
+            "actual_fixture_POSTs": 2,
+            "original_count": 1,
+            "classification_audit": {
+              "true_positive": 1,
+              "false_positive": 0,
+              "true_negative": 1,
+              "false_negative": 0,
+              "invalid": 0,
+              "evaluated_rows": 2,
+              "missing_rows": 0,
+              "count_error_from_classifications": 0
+            },
+            "synthetic_prompt_tokens": 22,
+            "synthetic_output_tokens": 6,
+            "responsibility_closed": true
+          },
+          {
+            "arm": "semloom",
+            "actual_fixture_POSTs": 2,
+            "original_count": 1,
+            "classification_audit": {
+              "true_positive": 1,
+              "false_positive": 0,
+              "true_negative": 1,
+              "false_negative": 0,
+              "invalid": 0,
+              "evaluated_rows": 2,
+              "missing_rows": 0,
+              "count_error_from_classifications": 0
+            },
+            "synthetic_prompt_tokens": 22,
+            "synthetic_output_tokens": 6,
+            "responsibility_closed": true
+          }
+        ],
+        "actual_fixture_POSTs": 4,
+        "stage_cumulative_fixture_POSTs": 6,
+        "real_model_POSTs": 0,
+        "GPU_work": 0,
+        "request_multisets_equal": true,
+        "shared_native_runner_same_object": true,
+        "strict_Core_session_storage_transport_HTTP_Ray_cleanup": true,
+        "normal_process_and_lease_close": true,
+        "recover_stale": false,
+        "ownership_unknown": false,
+        "source_and_full_identity_are_bebf_R3_identity": false,
+        "original_model_R3_status_unchanged": "failed",
+        "synthetic_usage_is_model_cost": false,
+        "model_qualification": false,
+        "seven_arm_comparison_completed": false,
+        "performance_qualified": false,
+        "failed_attempts_retained": [
+          {
+            "run_id": "pz-daft-semloom-synthetic-cpu",
+            "status": "failed",
+            "actual_fixture_POSTs": 0,
+            "reason": "Library verification imported the environment PZ before loading the fixed checkout",
+            "normal_lease_released": true,
+            "raw_archive": {
+              "sha256": "4e7eeeda003868797225a6edff9cb431becdbd7c15594f6a098e96e2e3ff30cb",
+              "bytes": 45862,
+              "selected_files": 11,
+              "selection_manifest_sha256": "a701ebc8dc000af68c80d453b0085405950d75f3853f2dd769c52475750e6903"
+            }
+          },
+          {
+            "run_id": "pz-daft-semloom-synthetic-cpu-r2",
+            "status": "failed",
+            "actual_fixture_POSTs": 2,
+            "reason": "Daft completed two fixture calls; observer incorrectly requested a TP key from the real verbose classification schema",
+            "normal_lease_released": true,
+            "raw_archive": {
+              "sha256": "022633d5ab22997ca1d01ad89a19e966996f156f0ef9b49468ae993e1e09326d",
+              "bytes": 68708,
+              "selected_files": 19,
+              "selection_manifest_sha256": "0933de2e551710b4f761063ed55e100d907829aadbbd90421d34ca1a0426238a"
+            }
+          }
+        ],
+        "raw_archive": {
+          "sha256": "63fb018ec04c2bd81cb2d0b03ab1d4209425550a903900738c2c0587f22923aa",
+          "bytes": 104497,
+          "selected_files": 91,
+          "selection_manifest_sha256": "1d9b31d3b3e8574e0a3bb7ea6fb0a4322115596660dab2df95f28130908dacbc"
+        },
+        "independent_raw_review_sha256": "ced13d7f4b63074240f5a90caeca95ef9ba21e72c85ee9a5d9b7a420a3220400",
+        "inherits_adde_close_failure_limitation": true,
+        "C_0bdf_close_fix_is_separate_source": true,
+        "model_budget_unchanged": {
+          "spent": 720,
+          "remaining": 120,
+          "limit": 840
+        }
+      }
+    },
+    {
+      "run_id": "pz-q3-semloom-resume-r4",
+      "status": "originals_verified_passed_new_single_cell",
+      "source_commit": "62018855791dbee5c7a2c933361b21e58451496e",
+      "controller_sha256": "71f594a179d7a7086c196ce55bf9682054767135799117c78de168d8991893e5",
+      "source_manifest_sha256": "ddf5f2aad3d1869b6f0dabdf41ad5c0b916b9f8bb60e59885c8245bc10019a45",
+      "arm": "semloom",
+      "actual_model_posts": 120,
+      "all_POSTs_HTTP_200": true,
+      "allocated_requests": 120,
+      "fixed_identity": "aba2bee103c47720ae1e2df64c21d42033208b06ae14425b868a910293963bce",
+      "old_R3_fixed_identity": "dfa59e3958208d58c972909281cec80f57f8e14a29b3ed36d0b1273f12297c9b",
+      "physical_plan_fingerprint": "99935b7097dafddb6e41e9e1b3cd4b052c28ca37d75eb4c7513c36fbf875b8ac",
+      "physical_plan_identical_to_R3": true,
+      "same_full_identity_as_R3": false,
+      "old_R3_reclassified": false,
+      "source_identity_delta": {
+        "changed_source_blobs": [
+          "experiments/palimpzest/fixed.py",
+          "experiments/palimpzest/fixed_runner.py"
+        ],
+        "newly_bound_unchanged_dependency": {
+          "infrastructure/daft_runtime.py": {
+            "sha256": "b4fec44f0950ea4ac76dad1ee1d2bfa49c6a4cac8fef598644395415e4fce68d",
+            "bytes": 1460
+          }
+        }
+      },
+      "model_metadata": {
+        "complete_initial_anchor": "5e75d5572727078a33e7bc4d597f702a1d0cc551092beaabc23e72796abc07b1",
+        "old_R3_complete_initial_anchor": "03e42ee5bde30810a4db75c313e740770c3617f6fd5bc644162191985ff12555",
+        "stable_metadata_sha256": "da715901a4d41ebb526b2ff47531031ea78772bd7a3045b535426acc66e3f7f5",
+        "complete_raw_observations": 3,
+        "raw_bytes_per_observation": 487,
+        "same_stable_profile_as_R3": true,
+        "raw_and_parsed_JSON_hash_scopes_distinct": true,
+        "actual_changed_paths_from_new_initial": [
+          "data[*].created",
+          "data[*].permission[*].id",
+          "data[*].permission[*].created"
+        ]
+      },
+      "original_count": 7,
+      "COUNT_source": "original-result.json",
+      "original_result_sha256": "2fc616081627bd3c775e8623f9e62e6466cfde99a870a24fa2e273b6388a60b0",
+      "owner_receipt_null_count_is_not_result": true,
+      "quality": {
+        "truth_positive_count": 14,
+        "relative_error": 0.5,
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "source_position_parse_filter_matrix_matches_R3_six": true,
+        "general_quality_equivalence_proven": false
+      },
+      "request_comparison": {
+        "request_value_and_recorded_wire_multisets_match_R3_six": true,
+        "items": 120,
+        "distinct": 119,
+        "multiplicity_preserved": true,
+        "raw_generated_outputs_equal": false,
+        "raw_output_differences_from_R3_arms": {
+          "original-native": 10,
+          "native-adapted": 8,
+          "daft": 9,
+          "ray-data": 8,
+          "imlane-cpython": 9,
+          "imlane-ray": 7
+        }
+      },
+      "usage": {
+        "available_calls": 120,
+        "prompt_tokens": 38325,
+        "output_tokens": 7717,
+        "monetary_cost_usd": null,
+        "monetary_cost_status": "unavailable",
+        "original_PZ_cost_card_is_actual_USD": false
+      },
+      "timing_seconds": {
+        "query": 15.109830341,
+        "application": 29.739347026,
+        "service_preparation": 49.090756688732654,
+        "shared_preparation": 11.509834916,
+        "additional_zero_model_selection_preparation": 10.261602753,
+        "additional_optimizer_selection": 0.015121776,
+        "selection_preparation_is_within_shared_preparation": true,
+        "query_and_application_overlap": true
+      },
+      "sampling_validation_model_posts": 0,
+      "physical_evidence": {
+        "payload_backend": "Daft",
+        "HTTP_workers": "Ray NativeCall full response",
+        "actual_ready_actor_count": 2,
+        "actual_per_call_actor_association": "unavailable",
+        "completion_events": 120,
+        "actor_equal_work_split_claimed": false,
+        "pending_calls": 0,
+        "registered_jobs": 0,
+        "Core_usage_zero": true,
+        "object_bytes": 0,
+        "physical_transport_closed": true,
+        "remote_http_pool_closed": null,
+        "remote_http_stopped_by_close_API": "unavailable",
+        "private_session_and_storage_final_state": "not recorded",
+        "Ray_log_inventory": {
+          "unique_original_WARNING_rows": 14,
+          "additional_INFO_KillActor_RPC_socket_closed_rows": 2,
+          "quick_exit_WARNING_rows": 2,
+          "plasma_EOF_WARNING_rows": 6,
+          "some_EOF_rows_precede_model_work": true,
+          "log_rows_are_request_failure_counts": false,
+          "cross_file_repeated_wording_is_new_failure": false,
+          "warning_free_claimed": false
+        },
+        "vLLM_explicit_half_cast_WARNING_rows": 1,
+        "recorded_actor_stop_reason": "ray.kill",
+        "explicit_no_reference_destruction_reason_observed": false,
+        "private_Job_final_state": "not recorded"
+      },
+      "normal_cleanup": {
+        "query_exit": 0,
+        "service_exit": 0,
+        "own_remaining": [],
+        "parent_gone": true,
+        "GPU_compute_pids": [],
+        "GPU_MiB_after": 1,
+        "lease_released": true,
+        "recover_stale": false,
+        "ownership_unknown": false,
+        "outer_physical_exit_is_separate_from_close_API": true
+      },
+      "initial_offline_reader_audit": {
+        "reader_sha256": "117e75027501b0c80a86dc11be60cd0a2f5fb13330da19516e2fb3465c65dec0",
+        "audit_sha256": "2d7c8f9fd8b135bf84dcf5f372150d0171ce1d82794659524238a35cc69d17c9",
+        "checks": 1682,
+        "failed_checks": 1,
+        "status": "failed_retained",
+        "reason": "Whole quality wrapper equality incorrectly included extra audit fields; official metric values matched",
+        "new_model_POSTs": 0
+      },
+      "independent_final_audit": {
+        "status": "passed_new_single_cell",
+        "sha256": "f1c59c97a5d8dbf3feb29cd3136154d3963ee1447719a9fd147becc81d2cc9eb",
+        "bytes": 490695,
+        "checks": 1682,
+        "failed_checks": 0,
+        "single_cell_qualified": true,
+        "reader_sha256": "0afcb721df108349d9d882c4c39da9b84f7f0dd25e8e1742059a652affcb5fdf",
+        "reader_Spec_must_fix_count": 0,
+        "reader_Spec_sha256": "35d7a2d27ca1c4d265db25143e189f297f3d4593618a91317b46bf53df1ff658",
+        "reader_freeze_sha256": "c02ddf11acb17c189a844ee6eaea56900fab2e095ac69770e3b1fce53acf5a99",
+        "scope": "Source620 one SemLoom model cell, with explicit cross-round source/metadata deltas; no same-full-identity seven-arm or performance qualification"
+      },
+      "raw_archive": {
+        "sha256": "ccbc899650cadf8a8e5a64bbb70a39ce9e293d3d522e4d3c9708c64327281c78",
+        "bytes": 935173,
+        "selected_files": 88,
+        "selection_manifest_sha256": "3f4053403dd0e031be7f0655035a2834983d61591fe117d05609f268a42176d2",
+        "all_regular_Ray_logs_and_external_parent_postexit_witness_retained": true
+      },
+      "cumulative_actual_model_POSTs": {
+        "prior_R3": 720,
+        "this_round": 120,
+        "total": 840,
+        "remaining": 0,
+        "limit": 840
+      },
+      "CPU_composition_fixture_POSTs_are_separate": {
+        "passed_round": 4,
+        "stage_cumulative": 6,
+        "model_POSTs": 0
+      },
+      "inherits_adde_close_failure_limitation": true,
+      "C_0bdf_close_fix_is_separate_source": true,
+      "seven_arm_same_full_identity_qualified": false,
+      "performance_qualified": false,
+      "stable_p99_qualified": false,
+      "deployment_profile": {
+        "mode": "fixed",
+        "driver_CPUs": 4,
+        "Ray_CPUs": 4,
+        "Ray_GPUs": 0,
+        "Ray_object_store_bytes": 134217728,
+        "model_service_GPUs": 1,
+        "model_service_GPU": "RTX 4090",
+        "SemLoom_declared_request_capacity": 20,
+        "preparation_memory_slots": 64,
+        "Ray_HTTP_workers": 2,
+        "Daft_payload_batch_rows": 8,
+        "work_unit": "request-count",
+        "HTTP_capacity_is_not_vLLM_sequence_or_token_capacity": true,
+        "nonredirect_profile": true
+      },
+      "independent_physical_side_audit": {
+        "status": "passed_with_explicit_warning_and_observation_limits",
+        "must_fix_count": 0,
+        "sha256": "5c89b47781ee38799491950d23d3ae51ba71d41db18f7e3142f6f76d795e27b6",
+        "scope": "Physical pool/logs/recorded closure and independent outer exit; separate from final model reader audit"
       }
     }
   ],
@@ -391,7 +728,8 @@
     "HTTP_peaks_are_GPU_sequence_occupancy": false,
     "Ray_Data_actual_actor_IDs": "unavailable",
     "seven_arm_comparison_completed": false,
-    "SemLoom_model_qualification": false
+    "SemLoom_model_qualification": false,
+    "scope": "R3 on bebf only; later source620 R4 is a separate full identity and round"
   },
   "source_pins": {
     "palimpzest_tag": "0.8.2.sem_agg",
