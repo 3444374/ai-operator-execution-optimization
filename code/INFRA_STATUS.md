@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-2026-10-15：[部署限定资源 auto](../experiments/results/diagnostics/resource_auto_20261015/README.md)从已分配 GPU 集冻结 UUID，贯通单节点 vLLM0.25.1 原生 DP 与 LOTUS 本地 CLIP 原工厂／池的 worker 参数；Ray HTTP 可选原生 `(min,max)` 按上限核容量。未传新配置保持原单卡及图重试默认，准备深度独立。88f9的官方parser／LOTUS CPU fixture通过；首GPU actor构造因Torch裸UUID／NVML前缀差异失败，正常退出并释放lease，0推理。严格worker UUID修复与81 CPU检查通过，需新固定源重新做实际单卡资格；多卡、rank退出、Daft分配及Serve多副本仍pending。
+2026-10-15：[部署限定资源 auto](../experiments/results/diagnostics/resource_auto_20261015/README.md)只在已分配 UUID 集内参数化原工厂／池、原生 vLLM DP 和 Ray HTTP min/max，保持旧单卡／重试默认，准备深度独立。严格 worker UUID 修复固定 d2 后，一张4090的 LOTUS CLIP 五原生路径 auto／explicit1 完整输出、身份与物理退出通过；固定精度环境四组通过，HSE 旧额外环境验收仍失败。默认环境数值失败、6行诊断及66/66累计行全部保留，无性能结论。main 独立7b20／PR25服务12请求保持单独来源；本线HTTP0。真实多卡、Daft多卡mask、DP>1 rank、Serve多副本及真实扩缩仍pending。
 
 2026-10-15：新增[原始 SemBench Animals Q1](../experiments/results/diagnostics/sembench_animals_20261015/README.md)有限图像入口及原评价；保留当前LOTUS1.2.4身份，复用既有完整图文profile。CPU与真实模型状态由同题报告拥有，CLIP检索不替代本任务。
 初轮原始请求独审发现Daft峰值超出声明HTTP额度；有限入口已修正其原生参数并增加实测资源gate，超限仍保留质量、结果及关闭报告。定向CPU与失败回归通过，真实补测状态见同题报告。

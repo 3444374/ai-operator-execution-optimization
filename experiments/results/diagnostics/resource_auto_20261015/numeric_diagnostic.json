@@ -1,0 +1,262 @@
+{
+  "archive_members": 28,
+  "archive_sha256": "a02f8fc062cced72163b8c232d9556549e0d834bcaddb6c7bf662171ed872fe0",
+  "attempted_rows": 6,
+  "attention_implementation": "sdpa",
+  "causal_limit": "Default/strict batch2 are identical. No default single in same actor was measured. TF32 root cause is not isolated.",
+  "comparisons_to_old": {
+    "default_batch2": {
+      "auto": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": true,
+          "changed_values": 0,
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "per_row_max_abs": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "explicit1": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": false,
+          "changed_values": 1024,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627,
+            9.436160326004028e-05
+          ]
+        }
+      }
+    },
+    "strict_batch2": {
+      "auto": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": true,
+          "changed_values": 0,
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "per_row_max_abs": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "explicit1": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": false,
+          "changed_values": 1024,
+          "max_abs": 0.0001182854175567627,
+          "min_cosine": 0.99999989652345,
+          "per_row_max_abs": [
+            0.0001182854175567627,
+            9.436160326004028e-05
+          ]
+        }
+      }
+    },
+    "strict_singles": {
+      "auto": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001183338463306427,
+          "min_cosine": 0.9999998965355122,
+          "per_row_max_abs": [
+            0.0001183338463306427
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": false,
+          "changed_values": 985,
+          "max_abs": 1.7508864402770996e-07,
+          "min_cosine": 0.9999999999997558,
+          "per_row_max_abs": [
+            1.4528632164001465e-07,
+            1.7508864402770996e-07
+          ]
+        }
+      },
+      "explicit1": {
+        "first_image_query": {
+          "bitwise_equal": false,
+          "changed_values": 512,
+          "max_abs": 0.0001183338463306427,
+          "min_cosine": 0.9999998965355122,
+          "per_row_max_abs": [
+            0.0001183338463306427
+          ]
+        },
+        "gallery_first_two": {
+          "bitwise_equal": false,
+          "changed_values": 1024,
+          "max_abs": 0.0001183338463306427,
+          "min_cosine": 0.9999998965355122,
+          "per_row_max_abs": [
+            0.0001183338463306427,
+            9.436905384063721e-05
+          ]
+        }
+      }
+    }
+  },
+  "diagnostic_comparisons": {
+    "default_vs_strict_batch": {
+      "bitwise_equal": true,
+      "changed_values": 0,
+      "max_abs": 0.0,
+      "min_cosine": 0.9999999999999999,
+      "per_row_max_abs": [
+        0.0,
+        0.0
+      ]
+    },
+    "strict_batch_vs_singles": {
+      "bitwise_equal": false,
+      "changed_values": 985,
+      "max_abs": 1.7508864402770996e-07,
+      "min_cosine": 0.9999999999997558,
+      "per_row_max_abs": [
+        1.4528632164001465e-07,
+        1.7508864402770996e-07
+      ]
+    }
+  },
+  "diagnostic_helpers": {
+    "numeric_controller.py": "c7c72242ec8c5c880b253966d866386e6c35a6238e43a6c778de92d73da5e45e",
+    "numeric_diagnostic.py": "032b6f78e78fccde4c85ff8b63812bb9751867a25c1281030a9b3c7001fcef2b",
+    "run_remote_pair.py": "62392e08823e3b993158675471a95fc8e800e30a90eb80c29b5aa7b1f1c5442c"
+  },
+  "flags_by_forward": [
+    {
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "matmul_allow_tf32": false,
+      "matmul_precision": "highest"
+    },
+    {
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "matmul_allow_tf32": false,
+      "matmul_precision": "highest"
+    },
+    {
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "matmul_allow_tf32": false,
+      "matmul_precision": "highest"
+    },
+    {
+      "cudnn_allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "matmul_allow_tf32": false,
+      "matmul_precision": "highest"
+    }
+  ],
+  "http_posts_consumed": 0,
+  "identity": {
+    "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+    "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "pid": 362550,
+    "process_start_time_ticks": "321491475",
+    "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "role": "clip_model",
+    "worker_uid": "66aa9c8684794e4ab870c5b5a67ada35"
+  },
+  "image_forwards": 4,
+  "input_manifest_first_two_equal": true,
+  "lease_released": true,
+  "matrix_norm_max_error": {
+    "default_batch2": 7.040203253705357e-08,
+    "strict_batch2": 7.040203253705357e-08,
+    "strict_single0": 4.146149823469614e-08,
+    "strict_single1": 8.15606260307078e-09,
+    "strict_singles": 4.146149823469614e-08
+  },
+  "no_emergency_signals": true,
+  "nvml_owner_samples": 3,
+  "old_pixels_not_captured": true,
+  "old_static_pair_gallery_comparison": {
+    "bitwise_equal": false,
+    "changed_values": 1024,
+    "max_abs": 0.0001182854175567627,
+    "min_cosine": 0.99999989652345,
+    "per_row_max_abs": [
+      0.0001182854175567627,
+      9.436160326004028e-05,
+      0.0
+    ]
+  },
+  "old_static_pair_recomputed_score_max_abs": 2.372562145425139e-05,
+  "passed": true,
+  "physical_exit_confirmed": true,
+  "pixels_batch_single_bitwise_equal": true,
+  "preprocessing_identity_matches_old": true,
+  "returned_rows": 6,
+  "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+  "test_script_sha256": "7bc27c225ebb3e2c43a0430184469db236e0d6258d2eb4ee03f2afbff8fc594d",
+  "historical_strict_wrapper_sha256_at_numeric_review": "e2335cdce9e1dd3e0bb5e9ac351ea648fdd5a495a73247c27fa1fce1fc0a8929",
+  "schema": "semloom.resource_auto.numeric_diagnostic.v1",
+  "run_id": "resource-auto-20261015-r3/numeric-r2",
+  "status": "completed_diagnostic_not_causal_proof",
+  "budget_snapshot": {
+    "phase_image_rows_consumed": 16,
+    "phase_image_rows_remaining": 50,
+    "current_total_consumption": 66,
+    "current_remaining": 0
+  },
+  "default_single_in_same_actor_measured": false,
+  "strict_later_pair_environment": "NVIDIA_TF32_OVERRIDE=0 in new subprocesses; old thresholds unchanged; see single_gpu_qualification.json",
+  "archive": {
+    "mac_archive_name": "r3-numeric-r2-evidence.tar.gz",
+    "server_archive_name": "numeric-r2-evidence.tar.gz",
+    "sha256": "a02f8fc062cced72163b8c232d9556549e0d834bcaddb6c7bf662171ed872fe0",
+    "bytes": 740951,
+    "members": 28,
+    "per_member_manifest_sha256": "9d2a2c001826fdcdfe2647941c56136820d597d557cbb4c45c4027d838f4afcf",
+    "server_originals_retained": true,
+    "mac_members_verified": true
+  }
+}

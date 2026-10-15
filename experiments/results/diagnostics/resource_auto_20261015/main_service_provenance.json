@@ -1,0 +1,67 @@
+{
+  "handoff_sha256": "4dd8a465f71c2506c0a729388a4cf773e1de9c9832d4ab8312b589b93de6bd4c",
+  "main_handoff": {
+    "actual_source": "7b20feb507f64af27354b1d4c39c0606c7160725",
+    "code_source_file_sha256": {
+      "code/scripts/services/launch_vllm_with_identity.py": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173",
+      "code/src/infrastructure/vllm_preflight.py": "d347c431e64b8b71ad009dc020962657fcbdb04be4579542207b88e1a9c77482",
+      "code/src/infrastructure/gpu_allocation.py": "3f0fd02d756aeb7d286673b314a622cda3b9a5e68db7ef1a62dc77f464db4f19",
+      "code/src/serving/vllm_resources.py": "7708a7aa9cb31c45b3fe773e44f926b9df49518854dffcf00fb37643a4ba702b"
+    },
+    "run_id": "main-auto-service-probe-r1",
+    "actual_posts": 12,
+    "unknown": 0,
+    "single_gpu_TP_DP_1": true,
+    "lease_released": true,
+    "broader_CLIP_or_other_source_qualification": false,
+    "raw_archive_sha256": "cc0ea63e88e36a41a1bf6f3393b87355dfa7ed40cbb6c99efbd82b3a46cf7556",
+    "report": "https://github.com/3444374/ai-operator-execution-optimization/blob/2041da67d883f54285952042482493a4a76a6ba1/experiments/results/diagnostics/main_service_auto_20261015/README.md",
+    "published_pr": "https://github.com/3444374/ai-operator-execution-optimization/pull/25"
+  },
+  "comparison": {
+    "code/scripts/services/launch_vllm_with_identity.py": {
+      "resource_d2_sha256": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173",
+      "main_7b20_sha256": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173",
+      "equal": true
+    },
+    "code/src/infrastructure/vllm_preflight.py": {
+      "resource_d2_sha256": "8368dcfab4a7534885b27cdafa3eca71536e948510153917dd897aa64e6a6b17",
+      "main_7b20_sha256": "d347c431e64b8b71ad009dc020962657fcbdb04be4579542207b88e1a9c77482",
+      "equal": false
+    },
+    "code/src/infrastructure/gpu_allocation.py": {
+      "resource_d2_sha256": "5882023de576ce54a09bd062094285b649aebca22e3a58024e111848fbfb4093",
+      "main_7b20_sha256": "3f0fd02d756aeb7d286673b314a622cda3b9a5e68db7ef1a62dc77f464db4f19",
+      "equal": false,
+      "existing_function_class_AST_equal": {
+        "_tokens": true,
+        "_probe_uuid": true,
+        "GpuAllocation": true,
+        "resolve_gpu_allocation": true
+      },
+      "main_added_symbols": [],
+      "whole_module_AST_equal": true
+    },
+    "code/src/serving/vllm_resources.py": {
+      "resource_d2_sha256": "ca3f7813832b90eb067d7c7040979aee25384ff14d9810734fb5892b0e8649ad",
+      "main_7b20_sha256": "7708a7aa9cb31c45b3fe773e44f926b9df49518854dffcf00fb37643a4ba702b",
+      "equal": false,
+      "existing_function_class_AST_equal": {
+        "VllmResources": true,
+        "verify_parsed_launch": true
+      },
+      "main_added_symbols": [
+        "validate_resource_identity",
+        "verify_resource_argv"
+      ]
+    }
+  },
+  "published_main": "2041da67d883f54285952042482493a4a76a6ba1",
+  "source_attribution": "Main service qualification stays7b20/these4files; never relabel whole d2/CLIP",
+  "own_http_posts_consumed": 0,
+  "own_http_plan": "12POST not executed to avoid duplicating main service closure; original LOTUS/PZ integrated main query follow-up belongs to main owner",
+  "schema": "semloom.resource_auto.independent_main_service_provenance.v1",
+  "status": "independent_source_only",
+  "verification_scope": "Read-only task-12 handoff and local four-file SHA/AST comparison against d2, plus C publication receipt. Raw main request archive and published Git objects were not independently re-audited in this CLIP line.",
+  "integration_requirement": "Keep the four published service files and their 7b20 qualification. Do not overwrite them wholesale from this feature branch, relabel them as d2, or broaden to CLIP. Main owner owns merged query regression; C owns integration/guard-source binding."
+}
