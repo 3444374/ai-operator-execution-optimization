@@ -1,0 +1,591 @@
+{
+  "allocation_method": "CPython tracemalloc: traced Python and NumPy allocations in one complete component call; inputs pre-existing; output retained; not process RSS",
+  "baseline_source": "unmodified files copied before C changes from base 671a22dd",
+  "collection": [
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 262144,
+          "peak_traced_bytes": 529616,
+          "retained_traced_blocks": 33,
+          "retained_traced_bytes": 263752
+        },
+        "original": {
+          "output_bytes": 262144,
+          "peak_traced_bytes": 565432,
+          "retained_traced_blocks": 44,
+          "retained_traced_bytes": 264192
+        }
+      },
+      "batch_size": 32,
+      "completion_order": "seeded random",
+      "dimension": 512,
+      "exact_bytes_equal": true,
+      "retained_collector": {
+        "current": {
+          "after_finish_peak_bytes": 532120,
+          "after_finish_traced_bytes": 532120,
+          "before_finish_peak_bytes": 334084,
+          "before_finish_traced_blocks": 38,
+          "before_finish_traced_bytes": 267368,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 262144,
+          "retained_embedding_ndarrays": 1
+        },
+        "original": {
+          "after_finish_peak_bytes": 567528,
+          "after_finish_traced_bytes": 546056,
+          "before_finish_peak_bytes": 281565,
+          "before_finish_traced_blocks": 407,
+          "before_finish_traced_bytes": 281068,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 262144,
+          "retained_embedding_ndarrays": 128
+        }
+      },
+      "rows": 128,
+      "sha256": "8b6d82d0ceb9d44d228dddd614c7dc6741cb65598981fdc9f343e083fa047ce5",
+      "timing": {
+        "current": {
+          "median_s": 0.000106708,
+          "samples_s": [
+            0.000107417,
+            0.000105583,
+            0.000106,
+            0.000103125,
+            0.000106708,
+            0.0001095,
+            0.00010825
+          ]
+        },
+        "original": {
+          "median_s": 0.000180166,
+          "samples_s": [
+            0.000184875,
+            0.000181292,
+            0.000179708,
+            0.000178667,
+            0.0001795,
+            0.000181958,
+            0.000180166
+          ]
+        }
+      }
+    },
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 2097152,
+          "peak_traced_bytes": 4244676,
+          "retained_traced_blocks": 33,
+          "retained_traced_bytes": 2098760
+        },
+        "original": {
+          "output_bytes": 2097152,
+          "peak_traced_bytes": 4511204,
+          "retained_traced_blocks": 53,
+          "retained_traced_bytes": 2099596
+        }
+      },
+      "batch_size": 32,
+      "completion_order": "seeded random",
+      "dimension": 512,
+      "exact_bytes_equal": true,
+      "retained_collector": {
+        "current": {
+          "after_finish_peak_bytes": 4247040,
+          "after_finish_traced_bytes": 4247040,
+          "before_finish_peak_bytes": 2214056,
+          "before_finish_traced_blocks": 801,
+          "before_finish_traced_bytes": 2147252,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 2097152,
+          "retained_embedding_ndarrays": 1
+        },
+        "original": {
+          "after_finish_peak_bytes": 4513048,
+          "after_finish_traced_bytes": 4339224,
+          "before_finish_peak_bytes": 2239941,
+          "before_finish_traced_blocks": 3103,
+          "before_finish_traced_bytes": 2239444,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 2097152,
+          "retained_embedding_ndarrays": 1024
+        }
+      },
+      "rows": 1024,
+      "sha256": "c1c1196d1f1cc1e75653120d17b1bdae8b2f70e92956e5eee9cc5218c65c5778",
+      "timing": {
+        "current": {
+          "median_s": 0.001132958,
+          "samples_s": [
+            0.0012325,
+            0.001190167,
+            0.001091,
+            0.001103875,
+            0.001071833,
+            0.001132958,
+            0.001172916
+          ]
+        },
+        "original": {
+          "median_s": 0.003842291,
+          "samples_s": [
+            0.004030125,
+            0.003842291,
+            0.004184042,
+            0.003764917,
+            0.003745292,
+            0.0037575,
+            0.003870166
+          ]
+        }
+      }
+    },
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 8192000,
+          "peak_traced_bytes": 16598280,
+          "retained_traced_blocks": 28,
+          "retained_traced_bytes": 8193388
+        },
+        "original": {
+          "output_bytes": 8192000,
+          "peak_traced_bytes": 17612540,
+          "retained_traced_blocks": 39,
+          "retained_traced_bytes": 8193828
+        }
+      },
+      "batch_size": 32,
+      "completion_order": "seeded random",
+      "dimension": 512,
+      "exact_bytes_equal": true,
+      "retained_collector": {
+        "current": {
+          "after_finish_peak_bytes": 16600692,
+          "after_finish_traced_bytes": 16600692,
+          "before_finish_peak_bytes": 8473032,
+          "before_finish_traced_blocks": 3778,
+          "before_finish_traced_bytes": 8406272,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 8192000,
+          "retained_embedding_ndarrays": 1
+        },
+        "original": {
+          "after_finish_peak_bytes": 17614560,
+          "after_finish_traced_bytes": 16939616,
+          "before_finish_peak_bytes": 8745485,
+          "before_finish_traced_blocks": 12021,
+          "before_finish_traced_bytes": 8744988,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 8192000,
+          "retained_embedding_ndarrays": 4000
+        }
+      },
+      "rows": 4000,
+      "sha256": "17675b9832ea5148bb0cbec726e071ebc32a299510ccc76a60c9302994b25fac",
+      "timing": {
+        "current": {
+          "median_s": 0.005531875,
+          "samples_s": [
+            0.005147,
+            0.005531875,
+            0.005049,
+            0.005815834,
+            0.007224417,
+            0.005458375,
+            0.0094625
+          ]
+        },
+        "original": {
+          "median_s": 0.04070775,
+          "samples_s": [
+            0.039723541,
+            0.039475,
+            0.038551916,
+            0.04070775,
+            0.042653625,
+            0.045331083,
+            0.047237375
+          ]
+        }
+      }
+    },
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 20723280,
+          "retained_traced_blocks": 28,
+          "retained_traced_bytes": 10241388
+        },
+        "original": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 21991652,
+          "retained_traced_blocks": 53,
+          "retained_traced_bytes": 10242444
+        }
+      },
+      "batch_size": 32,
+      "completion_order": "seeded random",
+      "dimension": 512,
+      "exact_bytes_equal": true,
+      "retained_collector": {
+        "current": {
+          "after_finish_peak_bytes": 20725780,
+          "after_finish_traced_bytes": 20725780,
+          "before_finish_peak_bytes": 10550164,
+          "before_finish_traced_blocks": 4780,
+          "before_finish_traced_bytes": 10483360,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 10240000,
+          "retained_embedding_ndarrays": 1
+        },
+        "original": {
+          "after_finish_peak_bytes": 21993188,
+          "after_finish_traced_bytes": 21147748,
+          "before_finish_peak_bytes": 10905617,
+          "before_finish_traced_blocks": 15024,
+          "before_finish_traced_bytes": 10905120,
+          "result_independent_from_collector": true,
+          "retained_embedding_data_bytes": 10240000,
+          "retained_embedding_ndarrays": 5000
+        }
+      },
+      "rows": 5000,
+      "sha256": "31a8b79d13b19277817aea1130b74f2571482dafaafcb7dc1f344b17ac6fea63",
+      "timing": {
+        "current": {
+          "median_s": 0.00740475,
+          "samples_s": [
+            0.006864167,
+            0.008348792,
+            0.006267042,
+            0.005721791,
+            0.00740475,
+            0.008361292,
+            0.0083055
+          ]
+        },
+        "original": {
+          "median_s": 0.070438,
+          "samples_s": [
+            0.095345333,
+            0.070438,
+            0.069294167,
+            0.073517041,
+            0.08446875,
+            0.067635583,
+            0.064129209
+          ]
+        }
+      }
+    }
+  ],
+  "error_parity": [
+    {
+      "case_index": 0,
+      "current": {
+        "error_type": "ValueError",
+        "message": "need at least one array to stack",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "need at least one array to stack",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 1,
+      "current": {
+        "error_type": "ValueError",
+        "message": "native index collection returned an unexpected or duplicate ID",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "native index collection returned an unexpected or duplicate ID",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 2,
+      "current": {
+        "error_type": "ValueError",
+        "message": "native index collection returned an unexpected or duplicate ID",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "native index collection returned an unexpected or duplicate ID",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 3,
+      "current": {
+        "error_type": "ValueError",
+        "message": "native index collection is incomplete",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "native index collection is incomplete",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 4,
+      "current": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 5,
+      "current": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 6,
+      "current": {
+        "error_type": "ValueError",
+        "message": "embedding output is not L2 normalized",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "embedding output is not L2 normalized",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 7,
+      "current": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 8,
+      "current": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "embedding output must be complete finite float32 vectors",
+        "status": "failed"
+      }
+    },
+    {
+      "case_index": 9,
+      "current": {
+        "error_type": "ValueError",
+        "message": "LOTUS CLIP retrieval requires projected normalized float32 vectors",
+        "status": "failed"
+      },
+      "identical": true,
+      "original": {
+        "error_type": "ValueError",
+        "message": "LOTUS CLIP retrieval requires projected normalized float32 vectors",
+        "status": "failed"
+      }
+    }
+  ],
+  "machine": "arm64",
+  "matrix_validation_function_unchanged": true,
+  "numpy": "2.5.0",
+  "ownership": "both collector implementations copy inputs and finish returns a fresh full output copy; RM keeps its own output matrix",
+  "pillow": "12.2.0",
+  "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]",
+  "rm_scatter": [
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 21002914,
+          "retained_traced_blocks": 36,
+          "retained_traced_bytes": 10242244
+        },
+        "original": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 21284794,
+          "retained_traced_blocks": 37,
+          "retained_traced_bytes": 10242300
+        }
+      },
+      "exact_bytes_equal": true,
+      "mixed_text": false,
+      "output_independent_of_executor": true,
+      "output_owns_memory": true,
+      "result_order": "input",
+      "rows": 5000,
+      "sha256": "31a8b79d13b19277817aea1130b74f2571482dafaafcb7dc1f344b17ac6fea63",
+      "timing": {
+        "current": {
+          "median_s": 0.004034709,
+          "samples_s": [
+            0.003987375,
+            0.003924,
+            0.004868,
+            0.006242417,
+            0.004032083,
+            0.004034709,
+            0.004880333
+          ]
+        },
+        "original": {
+          "median_s": 0.004996875,
+          "samples_s": [
+            0.004988125,
+            0.004778666,
+            0.005049708,
+            0.004996875,
+            0.004916375,
+            0.005065,
+            0.005224917
+          ]
+        }
+      }
+    },
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 21192214,
+          "retained_traced_blocks": 39,
+          "retained_traced_bytes": 10242420
+        },
+        "original": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 31564994,
+          "retained_traced_blocks": 37,
+          "retained_traced_bytes": 10242300
+        }
+      },
+      "exact_bytes_equal": true,
+      "mixed_text": false,
+      "output_independent_of_executor": true,
+      "output_owns_memory": true,
+      "result_order": "reverse",
+      "rows": 5000,
+      "sha256": "31a8b79d13b19277817aea1130b74f2571482dafaafcb7dc1f344b17ac6fea63",
+      "timing": {
+        "current": {
+          "median_s": 0.011364166,
+          "samples_s": [
+            0.007943125,
+            0.007649459,
+            0.013035667,
+            0.011364166,
+            0.013973625,
+            0.009764208,
+            0.011791083
+          ]
+        },
+        "original": {
+          "median_s": 0.012103458,
+          "samples_s": [
+            0.008340875,
+            0.010430125,
+            0.012103458,
+            0.015609167,
+            0.031101333,
+            0.009512208,
+            0.01766
+          ]
+        }
+      }
+    },
+    {
+      "allocation_complete_call": {
+        "current": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 21035186,
+          "retained_traced_blocks": 42,
+          "retained_traced_bytes": 10242536
+        },
+        "original": {
+          "output_bytes": 10240000,
+          "peak_traced_bytes": 26308786,
+          "retained_traced_blocks": 41,
+          "retained_traced_bytes": 10242480
+        }
+      },
+      "exact_bytes_equal": true,
+      "mixed_text": true,
+      "output_independent_of_executor": true,
+      "output_owns_memory": true,
+      "result_order": "reverse",
+      "rows": 5000,
+      "sha256": "4c43c993bdaa2e68c1840fbcc66b1266ec940b1ea1e4bda06a02dfdee993e383",
+      "timing": {
+        "current": {
+          "median_s": 0.0069165,
+          "samples_s": [
+            0.008245459,
+            0.006118125,
+            0.006762167,
+            0.006400791,
+            0.007002209,
+            0.0069165,
+            0.007456125
+          ]
+        },
+        "original": {
+          "median_s": 0.008465375,
+          "samples_s": [
+            0.007884,
+            0.009958625,
+            0.009226042,
+            0.007821625,
+            0.00792325,
+            0.008465375,
+            0.013496417
+          ]
+        }
+      }
+    }
+  ],
+  "scope": "real NumPy CPU components only; no model/GPU performance claim",
+  "source_sha256": {
+    "image_backend.measured.py": "6629f9a40d7374bdf5adfe015755a37cf4438c3c6446efd853547a52f719a090",
+    "image_backend.original.py": "21dbf15dd12c12ba5f1a26995b4ead98875f563e8664a0bd14f6f073e48d10d4",
+    "image_rm.measured.py": "73f7faf808d71528fca0a816989348c7a06be5cbc83096cafc45f28f1019cf9f",
+    "image_rm.original.py": "bf10d1baf0923a560183083e206e7970c1730e72446e795e87844f5e46e44416"
+  },
+  "timing_method": "2 warmups per arm, 7 interleaved paired calls; inputs/chunks prepared before timing; full ctor/add/finish or RM._embed timed"
+}

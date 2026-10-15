@@ -1,5 +1,7 @@
 # HSE static集成切片
 
+当前 `bdae61bb` 的身份与 B/C 恢复见[本轮基础修正](#foundation-restoration-20261015)。以下初始交接及原 A-only 资格保持各自固定来源，不改称本轮实测。
+
 本分支从`3e7bd54b`构造可顺序挑选的A／B／C；已发布`47f7800c`与原修复分支保持。
 A仅修正确性，B历史扫描优化、C ready优先分别待加入；生产行为和测试依赖如下。
 [原完整审查与失败证据](https://github.com/3444374/ai-operator-execution-optimization/blob/47f7800ce5fbe280c5075165453b2c6dec5437f4/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)属于47f的完整组合，不能当作当前A含B／C的证据。
@@ -7,8 +9,8 @@ A仅修正确性，B历史扫描优化、C ready优先分别待加入；生产�
 | 片 | 精确代码／测试 | 依赖与默认影响 |
 |---|---|---|
 | A正确性 | staged_execution的提交前owner登记、payload至完成证明持有、异常确认／未知池保护、局部引用清理和admission峰值；stage_broker的lease时间原子校验、永久超大ready拒绝；10项lifecycle＋broker时间／超大块／临时FIFO三项 | 从3e直接应用；保留source→CPU提交→model提交→wait、FIFO和全终态历史扫描；CLI默认direct_dependency保持；正常HSE无新增确认RPC |
-| B历史扫描 | 仅stage_broker的活动集合／终态计数及其转换、snapshot和不变量；broker不重扫历史及retry/cancel计数两项 | 可在A上独立加入；不改HSE顺序；保留默认历史与duplicate检测；当前未包含 |
-| C ready优先 | 将A已修正的model提交循环提取为helper；source.next前及原model派发位置调用；1项顺序测试的局部source／GPU fixture | 依赖A的owner/ref登记与公共fixture；不依赖B；当前未包含 |
+| B历史扫描 | 仅stage_broker的活动集合／终态计数及其转换、snapshot和不变量；broker不重扫历史及retry/cancel计数两项 | 可在A上独立加入；不改HSE顺序；保留默认历史与duplicate检测；原 A-only 交付未包含 |
+| C ready优先 | 将A已修正的model提交循环提取为helper；source.next前及原model派发位置调用；1项顺序测试的局部source／GPU fixture | 依赖A的owner/ref登记与公共fixture；不依赖B；原 A-only 交付未包含 |
 
 A不引入新worker、模型、source、batch、输出schema或资源选点。逻辑byte/work额度不代表全部
 RSS、Arrow／Ray副本、pinned对象或device内存上限。临时FIFO等待仍保留，不增加fit-aware策略。
@@ -127,3 +129,62 @@ fence不证明设备完成或actor物理退出；真实源内部资源停止、C
 源close或替身fence不证明真实源内部停止、设备完成或actor物理退出。
 
 两轴独立终审在冻结候选 `01b0e34f` 上各0必修，原 SDK／物理完成边界保持。
+
+
+<a id="foundation-restoration-20261015"></a>
+## 真实身份、既有小优化与结果观测修正
+
+实现固定 `bdae61bb1f067224ff400ef526f6dba70443851d`，基点 `671a22dd4285319209396ece3572bb89ff5ab74e`。
+B 来自 `7c47e2cc1c8e0e0e5afdf71f7f388019e3f574f3`，C 来自 `d1db2ea9117e97db68bfa5be2c685b13d4d815d4`，
+只按 hunk 适配，保留当前 model_dispatch／unknown 责任；历史保全不等于此前已集成，也未恢复旧 worktree。
+
+原 LOTUS HSE 的 `SlowClipPrepare → ClipImagePreprocessor → decode_rgb_image` 实际使用 PIL，
+descriptor 却借用默认 torchvision transform 身份。此为已复现的身份标注问题，没有据此判定向量已错。
+真实预处理器现在发布 decoder／版本、实际 processor revision／类／包版本／配置摘要、NCHW／FP32／尺寸及执行变体；
+ready→pool→descriptor→worker 完成一致核验，v2 缺字段或不匹配在 source／解码前拒绝。
+Fast 的 torchvision 身份独立保留；原像素运算 AST 不变，真实 slow CPU 张量也逐字核对。
+
+显式 transform 使用 v2；所有新 encoded descriptor 的 work-v2 含 decoder、执行变体和完整 transform。
+合法旧自定义池／旧 transform helper 仍保留原 transform-v1 默认；直接 work helper 未给新身份时保留原 work-v1。
+旧校准与旧证据属于旧来源，不能混为本轮 v2。模型签名与向量数学不变，不重新量化或改变 slow rescale 顺序。
+
+broker 以活动集合及终态计数检查现有不变量，保留历史、重复检测及 release_terminal 的调用方身份不复用约定；
+ready 派发前移到 source.next 前，不增加 source 线程、future、控制器或缓存。
+OrderedMatrix 使用一次 ID→位置映射、预分配矩阵及 seen，保留非法矩阵优先于 ID 错误、错误前合法前缀、空输入错误与 finish 自有复制；
+RM 仅在左侧 scatter，避免完整 RHS 高级索引临时矩阵。workflow 所有退出在 settings 退出后保留一次 owned 调用快照；
+CLI 对 JSON／NPZ 分别确认成功后才释放对应记录，未知、未导出、写失败及写出期间新增后缀保留，编号和累计行数不重置。
+这些释放不覆盖 request_gateway／persistent owner，不构成全任务 RSS 有界保证。
+
+| 检查 | 实际范围与结果 |
+|---|---|
+| Linux CPU 定向 | 同一925成员源码包，302 passed／4条件skip／107通过子测试；真实 processor 与 Ray opt-in 后续单列，不把skip算通过 |
+| 独立 A/B 审查 | 身份早拒绝问题已修；97项含1实际Ray条件skip、额外2项dispatcher源边界；与原broker共9600次状态转换逐步一致 |
+| 独立 C 审查 | workflow后置回调／settings退出漏快照P2已修；52项全通过、8606次收集动作、88组RM差分与12组写出取消核对 |
+| broker组件 | [全部三重复](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_broker_cpu.json)：1000／2000／4000历史、活动窗口1／8／32；4000窗口1中位0.795873→0.126429秒，仍保留4000历史 |
+| NumPy组件 | [全部七次交错原值](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_numpy_cpu.json)：128／1024／4000／5000行；5000收集70.438→7.405毫秒，反序RM12.103→11.364毫秒；10类错误type/message一致，全部输出字节一致 |
+| 分配与所有权 | 5000行collector持有embedding ndarray从5000个到1个；finish完整复制保留。反序RM tracemalloc峰31,564,994→21,192,214B，非进程RSS |
+| 真实 CPU／GPU 与物理退出 | 18项真实CPU SDK全过；单4090旧／新四owner ABBA，264图／16真实forward、8完整矩阵逐字同；4个GPU actor及全部自有子进程退出，正常lease释放。仅embedding API资格，非新完整LOTUS／PG／稳态性能结论 |
+
+NumPy最终测量的整份 image_backend 文件还包含当时 A 补丁状态；被测 OrderedMatrix AST 与固定实现一致，
+image_rm／checked_matrix 与最终被测源码一致。原版逐字取基点；中间 Python 逐行 scatter 的退化轮、
+初始并发CPU轮、缺pytest导入、hash fixture失败、独审反例和preflight命令位置错误均保存在仓外原件，未择优覆盖。
+设备原件另经28项独立核验全过、0必修；运行覆盖 Transformers 4.57.6，未覆盖5.14.1。后续只读观察确认外层controller已退出，精确退出时点仍未知。
+两类组件不合成端到端收益，少量设备轮不提供稳态／尾分位／方法创新结论，也不替代完整 LOTUS、PG 或多卡资格。
+
+逻辑 encoded／ready 额度不含 RM 完整输入、原图 decoder scratch、序列化／输出副本和诊断；prepare 输出像素 work 不代表原图解码代价。
+本轮不实现表示选择、GPU cache、uint8 延后展开或复杂学习器。后续有限候选及云端负例边界见[数据组织计划](../../../plans/数据组织.md#single-gpu-image-critical-path)。
+服务器源码、机器报告、设备原值／服务器命令失败及退出证据保存在仓外运行标识 `hse-correctness-20261015`，
+对应归档校验映射见[设备与退出摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)。Mac组件各轮原值、历史原件、独审及中间失败另保存在仓外组件／审查目录，分别归档，不混作同一服务器包；两包均已核对独立Mac／服务器副本，按运行标识与校验值向维护者索取。
+
+
+同任务 GPU 原值（秒；每 owner 一次预热、一次测量，源码与顺序固定，不作排名）：
+
+| 顺序 | 源码 | 模型启动 | 预热完整调用 | 测量完整调用 |
+|---|---|---:|---:|---:|
+| A0 | `671a22dd` | 9.873292 | 12.051645 | 0.438164 |
+| B0 | `bdae61bb` | 11.225503 | 10.147269 | 0.471367 |
+| B1 | `bdae61bb` | 10.370828 | 12.437455 | 0.443743 |
+| A1 | `671a22dd` | 10.199323 | 10.864620 | 0.453913 |
+
+旧版两个测量均值0.446038秒，新版0.457555秒，本小轮新版慢2.582%；重复不足以判定稳定差异。
+修正版的两个测量值未显示可主张的端到端收益；本轮仅取得同数学、真实设备与退出资格，不将CPU组件改善外推为GPU加速。

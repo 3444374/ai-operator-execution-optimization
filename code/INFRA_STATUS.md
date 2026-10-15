@@ -44,26 +44,25 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 原方法／SDK、厂商调度和既有默认保持；这只是容量／清理首阶段，后续薄接入减法未完成，不提供新模型性能或全图RSS资格。
 
 维护日期：2026-10-15；主体能力核对固定集成来源 `277d8f48`，后续独立修复逐条注明来源，不将其他活动分支或旧运行自动计入。
-接口事实由源码拥有，逐次测试／模型结果与失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)和原报告拥有。
+本表按固定 `bdae61bb` 核对；下列带日期的旧来源记录保持原身份。接口事实由源码拥有，逐次测试／模型结果与失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)和原报告拥有。
 本页保留能力与缺口，逐次交付数字不再在此复制；精简前记录可查[固定来源状态页](https://github.com/3444374/ai-operator-execution-optimization/blob/277d8f4862c291bc2830cc6622f5a0b4f28b5c90/code/INFRA_STATUS.md)。
 
 <a id="current-image-status"></a>
 ## 当前图像执行与测量
 
-| 对象 | 已有实现及证据 | 尚不能据此声称 |
-|---|---|---|
-| LOTUS 原生 CLIP 检索 | [公共 RM](src/semantic_methods/lotus/README.md#原生-clip-图像检索)接通原生建索引、完整查询与六条执行路径；最终融合资格见[固定 `2afcaf47` 结果](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification) | 这批单次资格不提供性能排名、稳定尾分位或 PG 接入 |
-| 多图计算热路径 | [image_backend.py](src/semantic_methods/lotus/image_backend.py)复用 `SlowClipPrepare` 和 `ClipTensorActor`，默认 batch32；[PG 单图阶段](src/modalities/image/operator.py)仍单独存在 | PG 单图限制不能套用到 LOTUS RM；多图支持本身不是创新 |
-| SemLoom static／HSE | workflow 对象内持有 CPU/GPU 池；[HSE broker](src/scheduling/runtime/stage_broker.py)控制 encoded／ready 字节、work 与阶段 lease | 逻辑预算不覆盖源列表、序列化副本、全部进程内存或模型／device 分配，不是硬显存上限 |
-| RM 准备 | [image_rm.py](src/semantic_methods/lotus/image_rm.py)默认先形成整份 PNG 列表，再调用 executor；显式原生输入可用 RGB PIL 或已核原源字节，入口仍限量 | 渐进编码／准备尚未实现，不能由 broker 峰值声称整查询内存有界 |
-| 原生 Ray Data | 默认 staged 或显式 RGB 单 callable 都按每次图片 RM 构图，仍由 Ray 管理批次与背压 | [固定 `485c86a8` 计数](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)两格各16模型，仅说明当前接法；不泛化销毁方式或框架上限，也不给 baseline 私造池 |
-| PNG 参数 | 等级1与 HSE encoded 容量为显式可选共享适配，省略仍用原默认；[候选观察](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)保留原值 | 256图 Direct／HSE 单轮应用区间约40%的改善不含启动，属于共享编码改进，不是 SemLoom 独有创新 |
-| 文件 CLIP 冷算子 | [固定文件入口复验](../experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保留全部重复、失败与257图补测 | Direct／HSE 旧 requested64 实际最大56，Ray为64；批形态与数值差异不能混为同批性能，5000图逐行等价及下游质量未验证 |
-| 设备派发 | [可选派发](../experiments/results/diagnostics/hse_device_dispatch_20261014/README.md)已有逻辑额度与完成work速率选择；默认 static | locality 仍 unknown／unsupported，不改变路由；多 GPU、直传及驻留组合净收益未验证 |
-| 详细计时 | [可选计时](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)默认关闭，外层阶段已有观测 | decode、transport、H2D、kernel、D2H 尚未完整纯拆分；关闭详细计时的0不是零成本 |
+| 机制 | 当前源码与实际入口 | 默认 | 最近实测来源 | 未验证项／边界 |
+|---|---|---|---|---|
+| LOTUS 完整检索 | [公共 RM](src/semantic_methods/lotus/README.md#原生-clip-图像检索)与 `run_lotus_image_retrieval.py` 保留原索引／检索 | CLI 默认 stock；替换后端显式选臂 | `17ac2aeb` 普通输入、`460d3870` Serve；[原报告](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve) | 新修正不借旧完整查询资格；短轮不提供稳态排名或 PG 资格 |
+| 实际预处理身份 | [Slow/Fast preprocessor](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/modalities/image/clip.py)发布 decoder／版本／processor配置／NCHW／FP32／尺寸，ready→pool→descriptor→完成核验 | 真实工厂自动 v2；自定义旧池保留 legacy 标签 | `bdae61bb` [身份与基础修正](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015) | 旧 transform/work v1 来源不能当 v2 校准；同 shape 不代表同 decoder |
+| HSE 既有小优化 | [broker](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/scheduling/runtime/stage_broker.py)活动集合／终态计数；[执行循环](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/modalities/image/staged_execution.py)在 source.next 前派发 ready | 所选 HSE 自动采用；未新增 source 线程／future／控制器 | 从 `7c47e2cc`／`d1db2ea9` 按 hunk 恢复；本轮 CPU／组件与设备范围见同题报告 | 历史保留、重复检测、unknown 责任与显式 release 的 never-reuse 约定仍在；组件不是系统收益 |
+| 多图与完整结果收集 | [OrderedMatrix／RM](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/semantic_methods/lotus/image_backend.py)按 ID 映射预分配，RM 仅左侧 scatter | batch32；完整矩阵最大5000行 | `bdae61bb` NumPy 原版逐字对照；[全部重复](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_numpy_cpu.json) | `finish.copy()`及 RM 自有输出保留；PG 单图限制不能套用 LOTUS；不是零拷贝 |
+| 图像观测释放 | [RMObservation](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/semantic_methods/lotus/image_rm.py)与 CLI 最终导出边界；workflow 退出一次 owned 快照 | 未导出记录全部保留；NPZ／JSON 各自成功后明确释放 | `bdae61bb` 写出失败／取消／suffix／累计编号回归 | 不覆盖 request_gateway／persistent owner；未导出长期审计仍可能增长，不保证总 RSS |
+| 输入与内存 | [RM](https://github.com/3444374/ai-operator-execution-optimization/blob/bdae61bb1f067224ff400ef526f6dba70443851d/code/src/semantic_methods/lotus/image_rm.py)自动接 RGB 或像素核对后的源字节，不可复用时 PNG1 回退 | Direct／Ray／Daft／Serve 默认 RGB；SemLoom encoded；旧开关已移除 | `17ac2aeb` 普通输入资格；本轮不重写旧 PNG 参数记录 | RM 完整输入、decoder scratch、序列化、副本、完整输出和诊断另计；broker 逻辑额度不等于任务 RSS／硬显存限，输出像素 work 不等于原图解码成本 |
+| 原生 Ray Data／Serve | Ray 按配置构图，由引擎拥有分批／背压；Serve 配置另持有模型服务 | Ray Data 默认 fused；staged／Serve 显式 | `17ac2aeb`／`460d3870`／`485c86a8` 各自固定来源 | 每 RM 构图不泛化为 Ray 不能常驻；生命周期及文本 CPU／CUDA差异仍计入完整查询 |
+| 可选设备派发／计时 | [dispatcher](src/scheduling/runtime/stage_dispatch.py)与[可选计时](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md) | 派发 `None` 为 static；详细 CUDA 计时关闭 | 原 `4c7efa79` CPU Ray 与本轮分别定位 | locality unknown／unsupported 不改变路由；多卡／驻留组合、纯 decode／transport／H2D／kernel／D2H及尾分位未由本轮认证；字段0不是零成本 |
 
 已可定位的[消费者准备缓存软件负结果](https://github.com/3444374/ai-operator-execution-optimization/blob/5a7851426b9d4412a3d20192a84a72cd1acf1c6c/experiments/results/diagnostics/lotus_image_text_compatibility_20261013/README.md#stage-a-daft-ray)继续按独立来源保留，不写成优化成功。
-另据用户提供的历史核对，整批cache五次零命中且变慢；固定源尚未定位该独立run，原始证据待定位，不能借上项消费者缓存报告代证。
+用户本轮审查提供整批 cache `5000×2` 无 hit 等云端负例；其独立源码／原件仍待定位，不能借上项报告代证。候选边界由[数据组织计划](../experiments/plans/数据组织.md#single-gpu-image-critical-path)维护。
 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索，尚未采纳为本集成实现或验证 GPU 收益。
 固定 `485c86a8` 的[同次 workflow 九格连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证；服务级 RM／内存索引跨调用复用仍未认证，后续完整查询继续采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
 

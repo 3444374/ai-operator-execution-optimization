@@ -19,6 +19,14 @@ HSE 的 encoded 容量与块上限仍可显式设置，超限沿用原错误，�
 
 历史PNG参数与候选命令按[固定来源记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)解释；当前入口不再接受旧调参开关。HSE逻辑容量只约束broker持有块，RM列表、复制及RSS／显存不由此形成硬上限。
 
+固定 `bdae61bb` 的[基础修正](../../../../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)
+由真实 Slow/Fast processor 发布解码器、版本、配置摘要及输出规格；工厂 ready、HSE descriptor 与 worker 完成核验一致，错误身份在 source／解码前拒绝。
+Slow 仍以 PIL RGB 解码，Fast 保留 torchvision 路径，像素处理数学不变；不是向量错误修正的结论。
+真实工厂自动提供 transform-v2，encoded descriptor 的 work-v2 区分 decoder／执行变体／完整 transform。
+未升级的合法自定义池仍可使用原 transform-v1 默认，不能据此认领实际身份核验；直接 work helper 未给新身份仍保留 work-v1。
+旧签名及旧实测保留原来源，新旧校准不可混用。`OrderedMatrix` 预分配及 RM 左侧 scatter 保留校验、顺序和自有输出复制。
+图像 RM 调用／向量与 executor 观测仅在对应 JSON／NPZ 成功写出后明确释放，未导出审计与后续追加记录保留，累计编号与行数不重置。
+
 `image_workflow.py`保留 LOTUS1.2.4 的`sem_index`、`load_sem_index`、`sem_search`与原生
 `FaissVS(Flat, inner product)`。图库固定原始 RangeIndex，业务ID另列；输入使用一维object列中的
 RGB PIL对象。该版本的`ImageArray(...).tolist()`返回路径字符串，stock RM不会把list解码为图片，

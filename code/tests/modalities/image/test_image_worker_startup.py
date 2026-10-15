@@ -110,6 +110,39 @@ class ImageWorkerStartupTest(unittest.TestCase):
         self.assertEqual(ray.options, [{"num_cpus": 1, "max_restarts": 0, "max_task_retries": 0},
                                      {"num_cpus": 1, "num_gpus": 1, "max_restarts": 0, "max_task_retries": 0}])
 
+    def test_versioned_cpu_readiness_identity_is_retained_without_changing_pool_hash(self):
+        identity = dict(processor_revision="fixture", processor_version="fixture-transformers",
+            decoder="torchvision_decode_image_rgb", decoder_version="fixture-torchvision",
+            execution_variant="clip_fast_torchvision", input_size=224,
+            representation="prepared_fp32_nchw", layout="NCHW", dtype="float32")
+        ray = _FakeRay()
+        original_get = ray.get
+        def get(references):
+            values = original_get(references)
+            if ray.get_calls == 1:
+                return [{**value, "preprocessing_identity": identity} for value in values]
+            return values
+        ray.get = get
+        pool = self.build(ray)
+        self.assertEqual(pool.preprocessing_identity, identity)
+        handles = ((object(),), (object(),))
+        self.assertEqual(hash(execution.ProjectRayWorkerPool(*handles, preprocessing_identity=identity)),
+                         hash(execution.ProjectRayWorkerPool(*handles)))
+
+    def test_mixed_cpu_readiness_identity_is_a_startup_failure(self):
+        ray = _FakeRay()
+        original_get = ray.get
+        def get(references):
+            values = original_get(references)
+            if ray.get_calls == 1:
+                return [{**value, "preprocessing_identity": {"decoder": str(index)}}
+                        for index, value in enumerate(values)]
+            return values
+        ray.get = get
+        with self.assertRaisesRegex(RuntimeError, "preprocessing identity"):
+            self.build(ray)
+        self.assertEqual(ray.killed, ray.created)
+
     def test_normal_pool_stop_attempts_all_handles_and_keeps_first_termination_error(self):
         ray = _FakeRay()
         pool = self.build(ray)

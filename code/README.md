@@ -2,6 +2,8 @@
 
 [PZ 原生 Movie 与固定计划边界](src/semantic_methods/palimpzest/README.md)保留 PZ 自己的算子、优化器和并行 DAG；软件／fixture 与真实模型、五组后端资格分别记录。
 
+固定 `bdae61bb` 的[图像基础修正](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)
+统一真实预处理身份、恢复历史 B/C 小优化及 RM 结果／已导出观测成本；当前默认、入口、最近实测与未验证项见[能力表](INFRA_STATUS.md#current-image-status)。
 
 [HSE源迭代器关闭核查](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure)
 覆盖正常、取消与双错，源close和actor确认分别执行；原默认保持，实际SDK／设备退出仍需独立验证。
@@ -16,8 +18,8 @@ actor/group声明额度与完成速率分开，live model calls派生占用，un
 
 [HSE分片交接](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md)将正确性A与历史扫描B、ready优先C分开。
 图像基点上的[独立A-only资格](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#integration-a-qualification)
-已完成5项CPU Ray和1项真实Daft/Arrow数据适配，B/C仍未加入；CUDA与CLIP性能另验。
-A/B/C三片当前仅合A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
+已完成5项CPU Ray和1项真实Daft/Arrow数据适配，该固定来源当时未加入B/C；本轮恢复另列，CUDA与CLIP来源不互借。
+该历史切片当时仅合A；10项lifecycle及broker时间／超大块／临时FIFO新增检查保持原source先行与强static对照。
 独立补[重复GPU handle入口校验](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#literal-gpu-handle-guard)，
 只拒绝同一Python对象重复占槽，不认领实际Ray别名或物理GPU身份。
 

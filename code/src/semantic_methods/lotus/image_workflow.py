@@ -99,7 +99,14 @@ def run_workflow(frame, rm, queries, *, index_dir, embedding_identity, k=10,
                   index_s=None, index_load_s=None, queries=[], native_cache=False)
     started = time.monotonic_ns()
     vs = FaissVS()  # Keep native Flat inner-product indexing/search and persistence.
-    with native_settings(rm, vs):
+    @contextmanager
+    def retain_rm_calls():
+        try:
+            yield
+        finally:
+            report["rm_calls"] = list(rm.observation.calls)
+
+    with retain_rm_calls(), native_settings(rm, vs):
         if mode in ("combined", "index"):
             if index_dir.exists():
                 raise FileExistsError("refuse to overwrite a native image index")
@@ -167,11 +174,9 @@ def run_workflow(frame, rm, queries, *, index_dir, embedding_identity, k=10,
                     record.update(elapsed_s=(time.monotonic_ns() - at) / 1e9,
                                   rm_calls=rm.observation.calls[before:])
                     report["queries"].append(record)
-                    report["rm_calls"] = rm.observation.calls
         if phase_observer is not None:
             phase_observer("after_queries")
     report.update(status="succeeded", stage="complete", native_workflow_s=(time.monotonic_ns() - started) / 1e9,
-                  rm_calls=rm.observation.calls,
                   tail_quantiles={"p99": None, "p99_99": None,
                                   "reason": "qualification has too few independent complete queries"})
     return report

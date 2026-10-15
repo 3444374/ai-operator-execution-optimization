@@ -2,6 +2,7 @@
 
 - [原始 SemBench Animals Q1](sembench_animals_20261015/README.md)：官方完整目录／seed42 SF64、原ImageArray Filter与原聚合评价；CPU和单VLM资格独立于CLIP检索。
 
+[HSE真实身份与基础修正](hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。
 
 [文本原生API与容量](native_text_capacity_20261015/README.md)：最小Ray调用及完整消费、活动HTTP／有限存储合同、Daft清理配对与精简证据；原方法／作者调度保持。
 
@@ -21,7 +22,7 @@
 复用身份／时钟／有界 writer，默认关闭；账本分段、开关配对、原件来源和未观测项分别保存。
 
 [固定 JPEG 文件源与 CPU 工厂退出](image_file_sdk_20261014/README.md)：三项实际 SDK 检查通过、0 跳过；成功、首次交接失败与固定源码映射集中保存。
-[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：当前A正确性，B历史扫描与C ready优先待分片；
+[HSE A／B／C集成交接](hse_static_lifecycle_20261014/README.md)：原 A-only 交付的正确性与 B／C 待分片状态；本轮恢复见上方基础修正，
 原47f历史不改，实际Ray包和CLI清理职责分别引用固定交付。
 [HSE上游迭代器关闭](hse_static_lifecycle_20261014/README.md#source-iterator-closure)保存完整函数反例、首错和actor责任回归；仅本地确定性依赖。
 

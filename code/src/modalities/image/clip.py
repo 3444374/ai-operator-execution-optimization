@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
+import json
 import os
 import time
 from collections.abc import Sequence
@@ -55,6 +57,36 @@ def decode_rgb_image(encoded: bytes):
         return image.convert("RGB")
 
 
+def _clip_preprocessing_identity(processor, processor_revision, *, decoder,
+                                 decoder_version, execution_variant):
+    """Describe the loaded encoded-image path without changing its math."""
+    import transformers
+
+    image_processor = getattr(processor, "image_processor", processor)
+    configuration = image_processor.to_dict()
+    crop = configuration.get("crop_size")
+    if (configuration.get("do_center_crop") is not True or not isinstance(crop, dict)
+            or type(crop.get("height")) is not int or crop["height"] <= 0
+            or type(crop.get("width")) is not int or crop["width"] != crop["height"]):
+        raise ValueError("staged CLIP identity requires a fixed square center crop")
+    configuration_digest = hashlib.sha256(json.dumps(
+        configuration, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    implementation = f"{type(image_processor).__module__}.{type(image_processor).__qualname__}"
+    return {
+        "processor_revision": (getattr(image_processor, "_commit_hash", None)
+                               or configuration.get("_commit_hash") or processor_revision),
+        "processor_version": (f"transformers={transformers.__version__};{implementation};"
+                              f"config-sha256={configuration_digest}"),
+        "decoder": decoder,
+        "decoder_version": decoder_version,
+        "execution_variant": execution_variant,
+        "input_size": crop["height"],
+        "representation": "prepared_fp32_nchw",
+        "layout": "NCHW",
+        "dtype": "float32",
+    }
+
+
 def extract_clip_image_features(model_output):
     """Return the projected 2-D CLIP image embedding tensor across HF versions."""
     features = (
@@ -96,12 +128,22 @@ class ClipImagePreprocessor:
         from transformers import CLIPProcessor
 
         self.processor_revision = processor_revision
+        self._processor_commit = revision
         loading = {}
         if revision is not None:
             loading["revision"] = revision
         if local_files_only:
             loading["local_files_only"] = True
         self.processor = CLIPProcessor.from_pretrained(processor_revision, **loading)
+
+    def preprocessing_identity(self) -> dict[str, object]:
+        """Publish the actual PIL decoder and loaded slow processor contract."""
+        from PIL import __version__ as pillow_version
+
+        return _clip_preprocessing_identity(
+            self.processor, self._processor_commit or self.processor_revision,
+            decoder="pillow_convert_rgb", decoder_version=pillow_version,
+            execution_variant="clip_slow_pil")
 
     def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
         if not encoded_images:
@@ -158,6 +200,17 @@ class FastClipImagePreprocessor:
             processor_revision,
             backend="torchvision",
         )
+
+    def preprocessing_identity(self) -> dict[str, object]:
+        """Publish this path's torchvision identity independently from PIL."""
+        import torch
+        import torchvision
+
+        return _clip_preprocessing_identity(
+            self.processor, self.processor_revision,
+            decoder="torchvision_decode_image_rgb",
+            decoder_version=f"torchvision={torchvision.__version__};torch={torch.__version__}",
+            execution_variant="clip_fast_torchvision")
 
     def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
         if not encoded_images:

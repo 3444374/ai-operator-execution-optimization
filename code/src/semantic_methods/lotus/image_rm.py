@@ -60,14 +60,44 @@ class RMObservation:
     calls: list[dict] = field(default_factory=list)
     capture_vectors: bool = False
     vectors: dict[str, np.ndarray] = field(default_factory=dict)
+    _released_calls: int = field(default=0, init=False, repr=False)
+    _released_image_rows: int = field(default=0, init=False, repr=False)
+
+    @property
+    def call_count(self):
+        return self._released_calls + len(self.calls)
 
     def retain(self, matrix):
         if self.capture_vectors:
-            self.vectors["call_" + str(len(self.calls))] = matrix.copy()
+            key = "call_" + str(self.call_count)
+            if key in self.vectors:
+                raise ValueError("RM vector evidence already exists for this call")
+            self.vectors[key] = matrix.copy()
+
+    def release_exported(self, *, calls=(), vectors=None):
+        """Release only an explicitly persisted call prefix or vector snapshot.
+
+        The caller confirms the write succeeded before calling this method.
+        Default retention includes failed calls and all unexported evidence.
+        """
+        calls, vectors = tuple(calls), {} if vectors is None else dict(vectors)
+        if len(calls) > len(self.calls) or any(
+                left is not right for left, right in zip(calls, self.calls)):
+            raise ValueError("exported RM calls must match a retained prefix")
+        if any(key not in self.vectors or self.vectors[key] is not value
+               for key, value in vectors.items()):
+            raise ValueError("exported RM vectors must match retained identities")
+        if calls:
+            image_rows = sum(record["image_rows"] for record in calls)
+            self._released_calls += len(calls)
+            self._released_image_rows += image_rows
+            self.calls = self.calls[len(calls):]
+        for key in vectors:
+            del self.vectors[key]
 
     @property
     def image_rows(self):
-        return sum(x["image_rows"] for x in self.calls)
+        return self._released_image_rows + sum(x["image_rows"] for x in self.calls)
 
 
 def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
@@ -104,7 +134,7 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
             started = time.monotonic_ns()
             images = [i for i, x in enumerate(docs) if isinstance(x, Image.Image)]
             texts = [i for i, x in enumerate(docs) if isinstance(x, str)]
-            record = dict(call_index=len(observation.calls), image_rows=len(images), text_rows=len(texts),
+            record = dict(call_index=observation.call_count, image_rows=len(images), text_rows=len(texts),
                           input_kind=input_kind, status="failed")
             try:
                 matrix = np.empty((len(docs), 512), dtype=np.float32)
@@ -159,13 +189,16 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
                     if (len(set(result.doc_ids)) != len(ids) or set(result.doc_ids) != set(ids)):
                         raise ValueError("executor image IDs are duplicated, missing or unexpected")
                     values = checked_matrix(result.embeddings, len(ids), semantics)
-                    position = {doc_id: i for i, doc_id in enumerate(result.doc_ids)}
-                    matrix[images] = values[[position[x] for x in ids]]
+                    if result.doc_ids == ids and not texts:
+                        matrix[:] = values
+                    else:
+                        position = dict(zip(ids, images, strict=True))
+                        matrix[[position[doc_id] for doc_id in result.doc_ids]] = values
                 if texts:
                     with timing_span("lotus.rm.text_embed", scope="rm_call"):
                         matrix[texts] = checked_matrix(text_rm([docs[i] for i in texts]), len(texts), semantics)
-                record["status"] = "succeeded"
                 observation.retain(matrix)
+                record["status"] = "succeeded"
                 # Each image/text partition was checked before scattering into
                 # this owned float32 matrix; a second full norm scan adds no check.
                 return matrix
@@ -187,14 +220,14 @@ def observe_stock_rm(stock, *, observation=None):
     class ObservedStockRM(RM):
         def _embed(self, docs):
             started = time.monotonic_ns()
-            record = dict(call_index=len(observation.calls), image_rows=sum(isinstance(x, Image.Image) for x in docs),
+            record = dict(call_index=observation.call_count, image_rows=sum(isinstance(x, Image.Image) for x in docs),
                           text_rows=sum(isinstance(x, str) for x in docs), status="failed")
             try:
                 with timing_span("lotus.rm.stock_embed", scope="rm_call"):
                     result = stock(docs)
                 result = checked_matrix(result, len(docs), semantics)
-                record["status"] = "succeeded"
                 observation.retain(result)
+                record["status"] = "succeeded"
                 return result
             finally:
                 record["elapsed_ns"] = time.monotonic_ns() - started

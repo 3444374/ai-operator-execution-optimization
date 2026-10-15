@@ -105,6 +105,9 @@ class BoundedStageBroker:
         self._limits = limits
         self._descriptors: dict[str, StageBlockDescriptor] = {}
         self._states: dict[str, BlockState] = {}
+        self._active_blocks: set[str] = set()
+        self._completed_count = 0
+        self._failed_count = 0
         self._encoded_queue: deque[str] = deque()
         self._ready_queue: deque[str] = deque()
         self._prepare_leases: dict[str, StageLease] = {}
@@ -141,6 +144,7 @@ class BoundedStageBroker:
         self._descriptors[descriptor.block_id] = descriptor
         self._admitted_rows.update(descriptor.row_ids)
         self._states[descriptor.block_id] = "encoded"
+        self._active_blocks.add(descriptor.block_id)
         self._encoded_queue.append(descriptor.block_id)
         self._encoded_held_bytes += descriptor.physical_bytes
         self._assert_invariants()
@@ -253,6 +257,8 @@ class BoundedStageBroker:
             self._encoded_queue.appendleft(descriptor.block_id)
         else:
             self._states[descriptor.block_id] = "failed"
+            self._active_blocks.remove(descriptor.block_id)
+            self._failed_count += 1
             self._encoded_held_bytes -= descriptor.physical_bytes
         self._assert_invariants()
 
@@ -314,6 +320,8 @@ class BoundedStageBroker:
         self._ready_held_bytes -= descriptor.physical_bytes
         self._ready_held_work -= descriptor.model_work_units
         self._states[descriptor.block_id] = "completed"
+        self._active_blocks.remove(descriptor.block_id)
+        self._completed_count += 1
         self._assert_invariants()
         return descriptor
 
@@ -328,23 +336,21 @@ class BoundedStageBroker:
             self._ready_queue.appendleft(descriptor.block_id)
         else:
             self._states[descriptor.block_id] = "failed"
+            self._active_blocks.remove(descriptor.block_id)
+            self._failed_count += 1
             self._ready_held_bytes -= descriptor.physical_bytes
             self._ready_held_work -= descriptor.model_work_units
         self._assert_invariants()
 
     def snapshot(self) -> StageBrokerSnapshot:
         """Return exact counts and held capacities without reading engine state."""
-        counts = {state: 0 for state in ("completed", "failed")}
-        for state in self._states.values():
-            if state in counts:
-                counts[state] += 1
         return StageBrokerSnapshot(
             encoded_queued=len(self._encoded_queue),
             prepare_inflight=len(self._prepare_leases),
             ready_queued=len(self._ready_queue),
             model_inflight=len(self._model_leases),
-            completed=counts["completed"],
-            failed=counts["failed"],
+            completed=self._completed_count,
+            failed=self._failed_count,
             encoded_held_bytes=self._encoded_held_bytes,
             ready_held_bytes=self._ready_held_bytes,
             ready_held_work=self._ready_held_work,
@@ -415,6 +421,8 @@ class BoundedStageBroker:
         else:
             raise ValueError("only an unleased block can be cancelled locally")
         self._states[block_id] = "failed"
+        self._active_blocks.remove(block_id)
+        self._failed_count += 1
         self._assert_invariants()
 
     def release_terminal(self, block_id: str) -> None:
@@ -424,8 +432,13 @@ class BoundedStageBroker:
         default historical broker API retains its duplicate-detection history;
         this explicit operation lets an incremental owner bound that history.
         """
-        if self.state_of(block_id) not in ("completed", "failed"):
+        state = self.state_of(block_id)
+        if state not in ("completed", "failed"):
             raise ValueError("cannot release a block with unfinished work")
+        if state == "completed":
+            self._completed_count -= 1
+        else:
+            self._failed_count -= 1
         descriptor = self._descriptors.pop(block_id)
         del self._states[block_id]
         self._admitted_rows.difference_update(descriptor.row_ids)
@@ -567,13 +580,15 @@ class BoundedStageBroker:
             if union.intersection(container):
                 raise AssertionError("a block appears in more than one active container")
             union.update(container)
-        active_states = {
-            block_id
-            for block_id, state in self._states.items()
-            if state not in ("completed", "failed")
-        }
-        if union != active_states:
+        if union != self._active_blocks or any(
+            self._states[block_id] != state
+            for state, container in zip(("encoded", "preparing", "ready", "modeling"), containers)
+            for block_id in container
+        ):
             raise AssertionError("active containers and lifecycle states diverged")
+        if (min(self._completed_count, self._failed_count) < 0
+                or len(self._states) != len(union) + self._completed_count + self._failed_count):
+            raise AssertionError("terminal counts and retained history diverged")
         encoded_expected = sum(
             self._descriptors[block_id].physical_bytes for block_id in self._encoded_queue
         ) + sum(

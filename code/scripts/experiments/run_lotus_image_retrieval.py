@@ -115,6 +115,7 @@ def main(argv=None):
     if args.arm == "ray_data":
         report["ray_image_pipeline"] = "native_image_arrays_" + (args.ray_image_pipeline or "fused") + "_slow_preprocess_clip"
     executor = None
+    execution_records = None
     source_images = {} if args.arm in ("semloom_static", "semloom_hse") else None
     rm = None
     owned_ray = None
@@ -265,8 +266,6 @@ def main(argv=None):
         report.update(status="failed", error_type=type(exc).__name__, reason=redact_text(str(exc)))
     finally:
         cleanup_at = time.monotonic_ns()
-        if rm is not None:
-            report["rm_calls"] = rm.observation.calls
         if reuse_enabled:
             try:
                 observe_phase("before_close", allow_workers=error is None)
@@ -285,7 +284,7 @@ def main(argv=None):
             report["startup_physical_exit"] = startup_failure.physical_exit_status
         if executor is not None:
             try:
-                report["execution_observations"] = getattr(executor, "execution_observations", [])
+                execution_records = getattr(executor, "execution_observations", [])
             except BaseException as exc:
                 report["execution_observation_error"] = type(exc).__name__
                 if not isinstance(exc, Exception):
@@ -311,16 +310,25 @@ def main(argv=None):
         report["cleanup_s"] = (time.monotonic_ns() - cleanup_at) / 1e9
         report["process_wall_s"] = (time.monotonic_ns() - started) / 1e9
         sink = time.monotonic_ns()
+        if rm is not None:
+            report["rm_calls"] = list(rm.observation.calls)
+        if execution_records is not None:
+            report["execution_observations"] = list(execution_records)
         if rm is not None and rm.observation.vectors:
             import numpy as np
             try:
-                np.savez_compressed(args.output_dir / "rm-vectors.npz", **rm.observation.vectors)
+                vectors = dict(rm.observation.vectors)
+                np.savez_compressed(args.output_dir / "rm-vectors.npz", **vectors)
+                if isinstance(rm.observation, RMObservation):
+                    rm.observation.release_exported(vectors=vectors)
             except BaseException as exc:
                 report.setdefault("evidence_write_errors", []).append("vectors: " + type(exc).__name__)
                 error = _retain_failure(report, error, exc, "vector evidence write")
         report_path = args.output_dir / "result.json"
+        report_written = False
         try:
             report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+            report_written = True
         except BaseException as exc:
             report.setdefault("evidence_write_errors", []).append("result: " + type(exc).__name__)
             error = _retain_failure(report, error, exc, "result evidence write")
@@ -332,10 +340,20 @@ def main(argv=None):
         except BaseException as exc:
             report.setdefault("evidence_write_errors", []).append("receipt: " + type(exc).__name__)
             error = _retain_failure(report, error, exc, "receipt evidence write")
+            report_written = False
             try:
                 report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+                report_written = True
             except BaseException as update_error:
                 error.add_note("updated result evidence write also raised " + type(update_error).__name__)
+        if report_written:
+            if rm is not None and isinstance(rm.observation, RMObservation):
+                rm.observation.release_exported(calls=report["rm_calls"])
+            if isinstance(execution_records, list):
+                exported = report["execution_observations"]
+                if len(exported) <= len(execution_records) and all(
+                        left is right for left, right in zip(exported, execution_records)):
+                    del execution_records[:len(exported)]
         if reuse_enabled:
             if previous_reuse_directory is None:
                 os.environ.pop("SEMLOOM_IMAGE_REUSE_DIR", None)

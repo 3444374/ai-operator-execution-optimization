@@ -1,0 +1,301 @@
+{
+  "base_commit": "671a22dd4285319209396ece3572bb89ff5ab74e",
+  "cpu": {
+    "conditional_skipped": 4,
+    "corrected_preflight_status": "ok",
+    "initial_preflight_command_error_retained": true,
+    "pytest_passed": 302,
+    "subtests_passed": 107
+  },
+  "gpu": {
+    "actual_image_rows": 264,
+    "actual_model_forwards": 16,
+    "batch_rows_requested": 32,
+    "cases": [
+      {
+        "calls": [
+          {
+            "elapsed_s": 12.051645359955728,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "warmup",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          },
+          {
+            "elapsed_s": 0.43816386675462127,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "measured",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          }
+        ],
+        "case": "base-0",
+        "device_sync_confirmed": true,
+        "gpu_actor_exited": true,
+        "real_model_observation": {
+          "device": "cuda",
+          "hook_errors": 0,
+          "image_attempted_rows": 66,
+          "image_attempts": 4,
+          "image_returned_rows": 66,
+          "image_returns": 4
+        },
+        "remaining_owned_children": [],
+        "source_commit": "671a22dd4285319209396ece3572bb89ff5ab74e",
+        "startup_s": 9.873291830066592,
+        "supervisor_remaining_owned": [],
+        "supervisor_worker_exit": 0,
+        "versions": {
+          "Pillow": "12.2.0",
+          "daft": "0.7.21",
+          "numpy": "1.26.4",
+          "pyarrow": "24.0.0",
+          "ray": "2.56.1",
+          "torch": "2.12.1+cu130",
+          "transformers": "4.57.6"
+        }
+      },
+      {
+        "calls": [
+          {
+            "elapsed_s": 10.147268620785326,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "warmup",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          },
+          {
+            "elapsed_s": 0.47136711282655597,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "measured",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          }
+        ],
+        "case": "updated-0",
+        "device_sync_confirmed": true,
+        "gpu_actor_exited": true,
+        "real_model_observation": {
+          "device": "cuda",
+          "hook_errors": 0,
+          "image_attempted_rows": 66,
+          "image_attempts": 4,
+          "image_returned_rows": 66,
+          "image_returns": 4
+        },
+        "remaining_owned_children": [],
+        "source_commit": "bdae61bb1f067224ff400ef526f6dba70443851d",
+        "startup_s": 11.225503468886018,
+        "supervisor_remaining_owned": [],
+        "supervisor_worker_exit": 0,
+        "versions": {
+          "Pillow": "12.2.0",
+          "daft": "0.7.21",
+          "numpy": "1.26.4",
+          "pyarrow": "24.0.0",
+          "ray": "2.56.1",
+          "torch": "2.12.1+cu130",
+          "transformers": "4.57.6"
+        }
+      },
+      {
+        "calls": [
+          {
+            "elapsed_s": 12.43745512701571,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "warmup",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          },
+          {
+            "elapsed_s": 0.44374341890215874,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "measured",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          }
+        ],
+        "case": "updated-1",
+        "device_sync_confirmed": true,
+        "gpu_actor_exited": true,
+        "real_model_observation": {
+          "device": "cuda",
+          "hook_errors": 0,
+          "image_attempted_rows": 66,
+          "image_attempts": 4,
+          "image_returned_rows": 66,
+          "image_returns": 4
+        },
+        "remaining_owned_children": [],
+        "source_commit": "bdae61bb1f067224ff400ef526f6dba70443851d",
+        "startup_s": 10.370827795006335,
+        "supervisor_remaining_owned": [],
+        "supervisor_worker_exit": 0,
+        "versions": {
+          "Pillow": "12.2.0",
+          "daft": "0.7.21",
+          "numpy": "1.26.4",
+          "pyarrow": "24.0.0",
+          "ray": "2.56.1",
+          "torch": "2.12.1+cu130",
+          "transformers": "4.57.6"
+        }
+      },
+      {
+        "calls": [
+          {
+            "elapsed_s": 10.864619613159448,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "warmup",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          },
+          {
+            "elapsed_s": 0.4539126171730459,
+            "max_norm_error": 1.7881393432617188e-07,
+            "phase": "measured",
+            "sha256": "66fc59d4939a1c19a8202763489f5d2578db83375f05d93ea0f8c1182d3cc005"
+          }
+        ],
+        "case": "base-1",
+        "device_sync_confirmed": true,
+        "gpu_actor_exited": true,
+        "real_model_observation": {
+          "device": "cuda",
+          "hook_errors": 0,
+          "image_attempted_rows": 66,
+          "image_attempts": 4,
+          "image_returned_rows": 66,
+          "image_returns": 4
+        },
+        "remaining_owned_children": [],
+        "source_commit": "671a22dd4285319209396ece3572bb89ff5ab74e",
+        "startup_s": 10.199322540778667,
+        "supervisor_remaining_owned": [],
+        "supervisor_worker_exit": 0,
+        "versions": {
+          "Pillow": "12.2.0",
+          "daft": "0.7.21",
+          "numpy": "1.26.4",
+          "pyarrow": "24.0.0",
+          "ray": "2.56.1",
+          "torch": "2.12.1+cu130",
+          "transformers": "4.57.6"
+        }
+      }
+    ],
+    "cpu_prepare_actors": 1,
+    "cpu_slots_are_not_OS_quota": true,
+    "device": "one NVIDIA GeForce RTX 4090",
+    "dtype": "float32",
+    "gpu_model_actors": 1,
+    "input_manifest_sha256": "d474ccd2eaac12aef01935d1b4d90c403aa6c678d23876b55f9e1bb702bfd145",
+    "input_rows_per_call": 33,
+    "numeric_comparisons": [
+      {
+        "case": "base-0",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "warmup"
+      },
+      {
+        "case": "base-0",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "measured"
+      },
+      {
+        "case": "updated-0",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "warmup"
+      },
+      {
+        "case": "updated-0",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "measured"
+      },
+      {
+        "case": "updated-1",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "warmup"
+      },
+      {
+        "case": "updated-1",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "measured"
+      },
+      {
+        "case": "base-1",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "warmup"
+      },
+      {
+        "case": "base-1",
+        "exact_equal": true,
+        "max_abs_error": 0.0,
+        "phase": "measured"
+      }
+    ],
+    "ray_cpu_slots": 4,
+    "window": 2
+  },
+  "independent_device_evidence_review": {
+    "audit_name": "server-r1-independent-audit.json",
+    "audit_sha256": "f4bd672c378976333e31d03e1415db8788659ac0c8145412ff18296b0062ca5c",
+    "checks_passed": 28,
+    "later_controller_observation": {
+      "bytes": 277,
+      "current_lease_is_ours": false,
+      "does_not_imply_current_lease_idle": true,
+      "exact_original_controller_exit_time": "unknown",
+      "independent_supplemental_audit_name": "server-r1-controller-supplemental-audit.json",
+      "independent_supplemental_audit_sha256": "eb2c24c8a89939112747477d7859cebf3b43ffe3ab9b2a329a9ee8b7a6a5bfe7",
+      "name": "post-exit-controller-r1.json",
+      "original_controller_not_active": true,
+      "sha256": "bc9ac1f94bd4cf8219ed05e594c154f3447d3c4bb99947d7165d1675d35b5a46"
+    },
+    "must_fix_count": 0,
+    "scope": "Offline source members, raw matrices, actual model counters, per-case physical completion/exit and normal lease release; no live model runs by reviewer",
+    "status": "passed"
+  },
+  "lease": {
+    "next_window_returned_to_animals": true,
+    "recovered_stale": false,
+    "released": true
+  },
+  "limits": [
+    "Small embedding API qualification, not a complete new LOTUS/PG query qualification",
+    "Two measured calls per arm do not establish performance ranking or steady state; all warmups/startup/measured values retained",
+    "Logical broker quotas do not bound whole-task RSS/decoder scratch/serialization/output/diagnostics/device memory",
+    "No new GPU cache, prefetch thread, controller, representation candidate or learning selector",
+    "Runtime qualified here is Transformers 4.57.6; no Transformers 5.14.1 qualification"
+  ],
+  "mac_component_review_archive": {
+    "all_payload_members_rehashed": true,
+    "bytes": 336558,
+    "name": "mac-components-review-r1.tar.gz",
+    "payload_files": 102,
+    "regular_members": 103,
+    "scope": "Mac component rounds, historical originals, initial failures, patches, code reviews, offline server evidence reviews and later controller observation; excludes subsequent documentation publication review",
+    "sha256": "65b0e8be90842fd88488366e14b2732a5ff7088b3f7ab1bef8e32040a6a95b64",
+    "verified_copies": "Independent Mac archive and server copy, both bytes and SHA-256 verified after explicit user backup authorization"
+  },
+  "opt_in_cpu_sdk": {
+    "elapsed_pytest_s": 110.26,
+    "gpu": 0,
+    "model_calls": 0,
+    "passed": 18,
+    "scope": "real Ray/Arrow serial actors, failure/unknown/process exit and real slow processor; model roles are explicit CPU fixtures",
+    "skipped": 0
+  },
+  "private_archive": {
+    "bytes": 9323244,
+    "name": "server-qualification-r1.tar.gz",
+    "scope": "Server source snapshots, runtime evidence, original command failures, CPU/SDK/GPU results and per-case exit evidence; does not contain Mac components/reviews or later controller observation",
+    "sha256": "b872ca29200ff3bc7bf21ded5a371a1f40c2ce2173de5958d07c229c649e6595",
+    "verified_copies": "Original server and independent Mac archive"
+  },
+  "run_id": "hse-correctness-20261015",
+  "schema": "semloom.hse_foundation_qualification.v1",
+  "source_commit": "bdae61bb1f067224ff400ef526f6dba70443851d",
+  "source_manifest_sha256": "cd3605b649fc36da7f2c272f7931ca17514fb1f40f77e30eff75325649741ec6",
+  "source_members_verified": 925
+}
