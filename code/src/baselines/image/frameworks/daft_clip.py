@@ -1,4 +1,4 @@
-"""Local CLIP in Daft's native graph, for encoded-image RM batches.
+"""Local CLIP in Daft's native graph, for encoded-image or opt-in RGB RM batches.
 
 The stateful UDF is project-authored (``diagnostic_reference``); Daft owns its
 batching, resource placement and worker lifetime. No HTTP or SemLoom scheduler
@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 import threading
 import time
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -24,6 +25,9 @@ from src.modalities.image.clip import ClipTensorActor
 from src.modalities.image.contracts import (
     EmbeddingSemantics, ImageEmbeddingBatch, ImageEmbeddingResult,
 )
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 DAFT_VERSION = "0.7.21"
@@ -149,7 +153,9 @@ class DaftClipExecutor:
                  dtype: str = "float32", batch_size: int = 32,
                  model_workers: int = 1, gpus_per_worker: float = 1,
                  device: str = "cuda", torch_threads: int = 1,
-                 max_batch_rows: int = 4096):
+                 max_batch_rows: int = 4096, native_image_input: bool = False):
+        if type(native_image_input) is not bool:
+            raise ValueError("native_image_input must be a boolean")
         if any(type(v) is not int or v <= 0 for v in
                (batch_size, model_workers, torch_threads, max_batch_rows)):
             raise ValueError("batch size, worker count, threads and row limit must be positive integers")
@@ -196,6 +202,13 @@ class DaftClipExecutor:
             device=device, use_process_requested=True, max_retries=0, max_batch_rows=max_batch_rows,
             torch_threads=torch_threads, software=versions, model_lifetime="daft_owned_stateful_instance",
         )
+        if native_image_input:
+            self.input_kind = "rgb_pil"
+            self.identity.update(
+                input_kind=self.input_kind,
+                input_adapter="PIL RGB -> HWC uint8 -> Daft Image[RGB]",
+                decode="none (caller-decoded RGB)",
+            )
         self._embedder = _build_embedder(
             model_path=str(model), processor_path=str(processor), dtype=dtype,
             batch_size=batch_size, model_workers=model_workers,
@@ -205,15 +218,31 @@ class DaftClipExecutor:
         self._closed = False
         self._unconfirmed_work = False
 
-    def embed_batch(self, doc_ids: tuple[str, ...], images: Sequence[bytes]) -> ImageEmbeddingResult:
+    def embed_batch(self, doc_ids: tuple[str, ...],
+                    images: Sequence[bytes | Image.Image]) -> ImageEmbeddingResult:
         if not isinstance(doc_ids, tuple) or any(type(i) is not str or not i for i in doc_ids):
             raise ValueError("doc_ids must be a tuple of non-empty strings")
         if len(set(doc_ids)) != len(doc_ids):
             raise ValueError("doc_ids must be unique")
-        if len(images) != len(doc_ids) or any(type(i) is not bytes or not i for i in images):
-            raise ValueError("images must be non-empty encoded bytes, one per ID")
-        if len(doc_ids) > self.identity["max_batch_rows"]:
-            raise ValueError("caller batch exceeds max_batch_rows")
+        if self.input_kind == "rgb_pil":
+            from PIL import Image
+
+            if len(images) != len(doc_ids):
+                raise ValueError("images must contain one image per ID")
+            if len(doc_ids) > self.identity["max_batch_rows"]:
+                raise ValueError("caller batch exceeds max_batch_rows")
+            # Validate the whole caller batch before any native submission, so a
+            # closed/corrupt suffix cannot execute an otherwise valid prefix.
+            for image in images:
+                if (not isinstance(image, Image.Image) or image.mode != "RGB"
+                        or image.width <= 0 or image.height <= 0):
+                    raise ValueError("native images must be non-empty RGB PIL images")
+                image.load()
+        else:
+            if len(images) != len(doc_ids) or any(type(i) is not bytes or not i for i in images):
+                raise ValueError("images must be non-empty encoded bytes, one per ID")
+            if len(doc_ids) > self.identity["max_batch_rows"]:
+                raise ValueError("caller batch exceeds max_batch_rows")
         if not self._lock.acquire(blocking=False):
             raise RuntimeError("Daft CLIP already has an active batch")
         try:
@@ -232,10 +261,15 @@ class DaftClipExecutor:
         from daft.functions import decode_image
 
         started = time.perf_counter()
-        frame = daft.from_pydict({"doc_id": list(doc_ids), "image": list(images)})
+        payloads = ([np.asarray(image) for image in images]
+                    if self.input_kind == "rgb_pil" else list(images))
+        frame = daft.from_pydict({"doc_id": list(doc_ids), "image": payloads})
         frame = frame.into_batches(self.identity["batch_size"])
-        frame = frame.with_column("_rgb", decode_image(frame["image"], on_error="raise",
-                                                       mode=daft.ImageMode.RGB))
+        if self.input_kind == "rgb_pil":
+            frame = frame.with_column("_rgb", frame["image"].cast(daft.DataType.image("RGB")))
+        else:
+            frame = frame.with_column("_rgb", decode_image(frame["image"], on_error="raise",
+                                                           mode=daft.ImageMode.RGB))
         query = frame.with_column("embedding", self._embedder.embed(frame["_rgb"], frame["doc_id"]))
         query = query.select("doc_id", "embedding")
         iterator = None

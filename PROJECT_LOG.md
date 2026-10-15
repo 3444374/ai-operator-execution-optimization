@@ -4,6 +4,17 @@
 
 按用户最新原则在[对照规范](experiments/plans/reference/对照规范.md#resident-query-timing)、所属模块及图像同题报告作局部同步：长生命周期LOTUS进程连续完整查询匹配外部语义与资源，允许原生内部生命周期不同，构图／模型重建成本全计入且不自动排除主测；官方服务化另作配置。整体生命周期结果与同生命周期静态消融下的调度归因分开，固定内部接点及关闭缓存观察边界如实命名。无代码、原值或实验变更，不增加 E 模型小轮前置。
 
+## 2026-10-15：补Daft原生RGB输入与有限资格准备
+
+从已发布`ff35f57f`建立独立分支，沿既有LOTUS RM接点增加显式Daft RGB PIL→HWC uint8→原生图片列，
+旧PNG与原stateful UDF、slow处理、资源及关闭保持。本机固定SDK51项／0跳过及独立审核通过，
+9种尺寸的实际像素和完整预处理张量逐位相同；固定`793204cc`在E完成后追加Linux144项与25个子测试／零跳过，
+三格12图完整LOTUS的12条查询／15矩阵、实际模型身份及退出通过。两包恢复保留CPU原件与仅49成员的模型增量，
+准备阶段工具断线未知与runpy调用错误分别保留，三次模型CLI均成功；[实际结果](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)不形成性能排名。
+外部场景统一为长生命周期LOTUS进程内连续独立查询，内部生命周期按原生配置记录；服务化仅另列配置，
+不将图级重建自动判错或排除主测。接口／缓存支持范围见[LOTUS说明](code/src/semantic_methods/lotus/README.md)，
+有限运行设计见[同题计划](experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
+
 ## 2026-10-15：完成LOTUS图像连续查询与原生输入对照
 
 从`277d8f48`建立独立职责分支，保留原生算子、图库／查询／模型数学及baseline执行所有权。既有入口添加显式同owner重复、原生返回时刻与可选实际模型计数；错误／取消跳过忙碌worker观测，继续既有关闭。固定实测`485c86a8`提供Direct RGB PIL、Ray RGB数组／单callable、HSE已核原源字节候选，并用Arrow视图减少Daft返回Python float装箱；必要数值检查、排序、资源和退出处理保留，旧PNG与staged路径继续回归。

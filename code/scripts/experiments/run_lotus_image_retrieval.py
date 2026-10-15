@@ -62,7 +62,7 @@ def parser():
     p.add_argument("--png-compress-level", type=int, choices=range(-1, 10), default=None,
                    help="replacement RM only; omitted preserves Pillow defaults")
     p.add_argument("--native-image-input", action="store_true",
-                   help="direct/ray_data accept RGB PIL; SemLoom reuses validated source bytes; no PNG round trip")
+                   help="direct/ray_data/daft_native accept RGB PIL; SemLoom reuses validated source bytes; no PNG round trip")
     p.add_argument("--hse-encoded-bytes", type=int)
     p.add_argument("--hse-encoded-block-bytes-upper-bound", type=int)
     p.add_argument("--ray-temp-dir", type=Path)
@@ -81,9 +81,9 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
-    if args.native_image_input and (args.arm not in ("direct", "ray_data", "semloom_static", "semloom_hse")
+    if args.native_image_input and (args.arm not in ("direct", "ray_data", "daft_native", "semloom_static", "semloom_hse")
                                     or args.png_compress_level is not None):
-        raise ValueError("native image input requires direct/ray_data/semloom_static/semloom_hse and no PNG compression setting")
+        raise ValueError("native image input requires direct/ray_data/daft_native/semloom_static/semloom_hse and no PNG compression setting")
     if args.arm == "stock" and args.png_compress_level is not None:
         raise ValueError("stock native PIL path does not accept PNG compression settings")
     hse_bytes = (args.hse_encoded_bytes, args.hse_encoded_block_bytes_upper_bound)
@@ -119,7 +119,7 @@ def main(argv=None):
         "eager identity/text RM/factory setup is in model_startup_s; external lazy loads remain in index/query/application time")
     if args.native_image_input:
         report.update(native_image_input=True, executor_input_kind=("rgb_pil"
-            if args.arm in ("direct", "ray_data") else "source_encoded_bytes"))
+            if args.arm in ("direct", "ray_data", "daft_native") else "source_encoded_bytes"))
         if args.arm == "ray_data":
             report["ray_image_pipeline"] = "native_image_arrays_fused_slow_preprocess_clip"
     executor = None
@@ -207,7 +207,8 @@ def main(argv=None):
                     processor_path=str(args.processor) if args.processor else None,
                     dtype=args.dtype, batch_size=args.batch_size, device=args.device,
                     gpus_per_worker=1 if args.device == "cuda" else 0,
-                    max_batch_rows=args.max_gallery_rows)
+                    max_batch_rows=args.max_gallery_rows,
+                    **({"native_image_input": True} if args.native_image_input else {}))
                 report["executor_identity"] = executor.identity
                 report["image_model_lifecycle"] = "native_stateful_wrapper_across_graphs"
             else:

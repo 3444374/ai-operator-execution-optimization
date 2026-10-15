@@ -109,6 +109,8 @@ lag P95 +42.47%，继续呈效率—尾延迟—公平权衡。0s/5s 主矩阵�
 victim inflation/recovery 只标 partial；full-solo 仍需独立控制。该 root 是 rehearsal，不作显著性排名，
 formal 从未运行且继续禁止。
 
+[Daft RGB小规模接入](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#daft-rgb-input)固定`793204cc`完成144项Linux测试、12条完整查询与15矩阵，默认PNG保留。连续查询统一外部场景、语义与资源，允许原生内部生命周期不同；整体性能与调度机制收益分别验证。本次两次重复不提供可靠尾分位、稳态或性能排名。
+
 ## 1. 题目与研究对象
 
 题目为：
