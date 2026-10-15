@@ -24,11 +24,11 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 Palimpzest 与 LOTUS 是平行的语义系统参照；其[研究定位](docs/research/研究定位.md#palimpzest-comparison)和[五组执行目标](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)区分完整系统与固定计划比较，目标接入仍需分别验证。
 
 main 的[原生CLIP查询入口](code/scripts/README.md#原生-lotus-clip-查询)保留RM、FAISS建库／检索及完整结果；
-[本批接纳记录](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列CPU接入和固定d2的条件模型证据，新main GPU仍待复验。
+[本批接纳记录](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)分列CPU接入、固定d2历史资格及main570四路径八臂40行严格单卡实机结果。
 历史外部文件CLIP、文本原Q2、PG路径与负结果保留各自身份。
 常驻完整查询、一次性启动／建库及逐查询原生重建的计时按[统一口径](experiments/plans/reference/对照规范.md#resident-query-timing)解释。
 
-main 已接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)，原提示、SDK解析和查询评价仍由LOTUS拥有；CLIP条件入口与新main GPU pending从上方同题报告核对。
+main 已接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)，原提示、SDK解析和查询评价仍由LOTUS拥有；CLIP条件入口及main570实机资格从上方同题报告核对。
 [固定 main 的原Movie／Animals实际模型报告](experiments/results/diagnostics/main_queries_20261015/README.md)覆盖四臂完整查询，保留质量不足和单次边界。
 [可选vLLM部署资源](experiments/results/diagnostics/main_service_auto_20261015/README.md)按显式分配解析auto／数量，候选服务和main2041的单卡原Movie Q2／Animals Q1复验分列，未覆盖CLIP或多卡。
 Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。

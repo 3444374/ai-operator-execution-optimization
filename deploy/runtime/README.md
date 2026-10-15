@@ -1,7 +1,7 @@
 # 多机器运行时、资产与校准管理
 
 原生CLIP的可选单卡资源使用独立`gpu_workers` JSON，公开入口及外置精度条件见[脚本说明](../../code/scripts/README.md#原生-lotus-clip-查询)。
-本批不开放HSE资源auto／多卡，不改变vLLM的`gpu_count`配置或真实runtime env。模型身份producer会执行编码器，不能作为零模型check；新main GPU资格仍pending。
+本批不开放HSE资源auto／多卡，不改变vLLM的`gpu_count`配置或真实runtime env。模型身份producer会执行编码器，不能作为零模型check；main570的四路径八臂40行资格只接受该严格单卡配置；默认精度、HSE／多卡及其他硬件另验。
 
 本目录解决“同一仓库长期轮流在不同 GPU、目录布局和软件环境中如何安全启动”的问题。它不替代
 AutoDL、文本或图像专项 runbook，也不假设所有机器已经下载模型、数据集和可选 Python

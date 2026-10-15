@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-2026-10-15：[main原生CLIP最小闭包](diagnostics/main_lotus_clip_20261015/README.md)。当前8834 CPU／SDK与源d2的66/66条件模型分列；默认数值失败、HSE环境缺项及新main GPU pending保留，无稳定性能结论。
+2026-10-15：[main原生CLIP最小闭包](diagnostics/main_lotus_clip_20261015/README.md)。8834 CPU／SDK、源d2的66/66历史模型与main570新增40/40行实机分列；四路径八臂完整查询、像素／全向量、GPU身份、物理退出与lease通过，默认数值及HSE环境失败保留，无稳定性能结论。
 
 2026-10-15：[main 可选 vLLM 部署资源](diagnostics/main_service_auto_20261015/README.md)。
 固定候选`7b20feb5`四生产文件闭包及12次原SDK服务POST，与合并后main`2041da67`分列；新main的Mac／Linux各30项和原Movie Q2／Animals Q1四臂auto／显式1共16查询／1472实际请求通过。

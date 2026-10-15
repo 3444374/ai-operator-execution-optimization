@@ -323,7 +323,7 @@
       "raw_log": "linux-compat-r1.log"
     },
     "counts_overlap_not_added": true,
-    "GPU": "pending; no new image/model budget or run",
+    "GPU": "PR27 candidate8834 had no GPU run. Separate actual merged main570 qualification is recorded in postmerge_GPU; no source relabelling.",
     "public_entries": "three-JPEG manifest and help for importer/qualification/query; qualification producer not executed"
   },
   "independent_review": {
@@ -350,7 +350,6 @@
     }
   },
   "pending": [
-    "merged-source GPU qualification",
     "default precision qualification",
     "HSE extra environment acceptance",
     "multi-GPU/DP>1/Serve",
@@ -398,5 +397,72 @@
     "members_including_manifest": 29,
     "independent_server_copy": true,
     "obtain": "project owner by run_id/archive digest; raw evidence remains outside Git"
+  },
+  "postmerge_CPU": {
+    "source_commit": "570fca5d2ded77e38ef4918ca01880d4386adedd",
+    "runtime_files": 813,
+    "Mac": {
+      "passed": 68,
+      "subtests": 135
+    },
+    "Linux": {
+      "passed": 68,
+      "subtests": 135
+    },
+    "model_calls": 0,
+    "GPU_or_lease_actions": 0
+  },
+  "postmerge_GPU": {
+    "source_commit": "570fca5d2ded77e38ef4918ca01880d4386adedd",
+    "new_independent_image_budget": 40,
+    "charged_rows": 40,
+    "returned_forward_rows": 40,
+    "failed_or_unknown_rows": 0,
+    "GPU_forward_calls": 34,
+    "GPU_model_and_birth_identities": 16,
+    "complete_indexes": 8,
+    "complete_searches": 16,
+    "within_pair_full_vectors_bitwise": true,
+    "cross_owner_max_abs": 1.7508864402770996e-07,
+    "cross_owner_min_cosine": 0.9999999999997558,
+    "actual_pixels_bound_before_forward": true,
+    "normal_pair_lease_releases": 4,
+    "model_HTTP_POST": 0,
+    "warmups": 0,
+    "automatic_model_retries": 0,
+    "checks": "gpu_checks.json",
+    "historical_resource66_unchanged": true,
+    "result_independent_review": {
+      "status": "passed",
+      "source_commit": "570fca5d2ded77e38ef4918ca01880d4386adedd",
+      "reviewed_publication_seal_sha256": "d1a5c1824f6cef487517a650ce30ebd78502c94da60e0dd30f82c67fc7d3f75a",
+      "four_independent_receipts": {
+        "actual_Standards": {
+          "sha256": "ed0824bb5615e7b5f6716f62b55546a97e7d49c49ef98e564ada0180ba55f227",
+          "run_id": "main570-clip-gpu-r1",
+          "obtain": "project owner, private review artifact by digest",
+          "P1_P2_must_fix": 0
+        },
+        "actual_Spec": {
+          "sha256": "f21e396d48d8a7822e0dda52019d8b7d345e799983dbf2b4664a1f5fdcda4b84",
+          "run_id": "main570-clip-gpu-r1",
+          "obtain": "project owner, private review artifact by digest",
+          "P1_P2_must_fix": 0
+        },
+        "publication_Standards": {
+          "sha256": "47a3c1d91ed4aad26de496d6c9fafb2cd1628b522b58095a3748465958bd586a",
+          "run_id": "main570-clip-gpu-r1",
+          "obtain": "project owner, private review artifact by digest",
+          "P1_P2_must_fix": 0
+        },
+        "publication_Spec": {
+          "sha256": "ad5752506f49c1f8e16d1401d5b10612e0270f0da086db820387151fa8b9cc33",
+          "run_id": "main570-clip-gpu-r1",
+          "obtain": "project owner, private review artifact by digest",
+          "P1_P2_must_fix": 0
+        }
+      },
+      "only_post_review_mutation": "Complete this final review receipt; reviewed content unchanged."
+    }
   }
 }

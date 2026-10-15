@@ -29,7 +29,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 本批提供原LOTUS RM／FAISS index／search、公开manifest／模型身份入口和static、Ray fused／staged、Daft执行接点。
 显式资源配置要求单GPU／CPU1及该进程外置`NVIDIA_TF32_OVERRIDE=0`；HSEscoped、多卡和额外深度在模型前拒绝。
 普通入口保留stock默认；HSE仅带身份／启动／取消／unknown和结果所有权基础，未带新dispatcher、路由或Broker历史计数。
-[本批接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)绑定8834的CPU／SDK检查；新main GPU仍pending。
+[本批接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)绑定8834的CPU／SDK检查及main570四路径八臂40行严格单卡实机；完整向量／检索、实际像素、GPU身份、物理退出与四次正常lease释放均核同。
 固定d2的四路径条件模型证据、默认数值失败及HSE环境缺项保留原身份，不继承上节服务或Movie／Animals模型资格。
 
 ## LOTUS 文本四臂

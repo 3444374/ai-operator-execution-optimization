@@ -1,6 +1,6 @@
 # Baseline and comparison harnesses
 
-[原生CLIP检索](../semantic_methods/lotus/README.md#原生-clip-图像检索)使用[Daft CLIP UDF](image/frameworks/daft_clip.py)与Ray CLIP predictor；图与模型批次仍由原生系统拥有，当前资格按同题main报告解释。
+[原生CLIP检索](../semantic_methods/lotus/README.md#原生-clip-图像检索)使用[Daft CLIP UDF](image/frameworks/daft_clip.py)与Ray CLIP predictor；图与模型批次仍由原生系统拥有，main570四路径40行严格单卡实机按同题报告解释，未认证HSE／多卡。
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
