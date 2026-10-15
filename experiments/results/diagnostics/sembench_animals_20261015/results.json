@@ -1,0 +1,308 @@
+{
+  "schema": "semloom.sembench_animals_results.v2",
+  "runs": [
+    {
+      "schema": "semloom.sembench_animals_audit.v1",
+      "run_id": "model-02",
+      "archives": {
+        "raw": {
+          "bytes": 245520623,
+          "sha256": "61f7564eefe03b3c2e208ccb7d1b20ea1c05bfcf1a0aaeaf34be776369df5009"
+        },
+        "inputs": {
+          "bytes": 41565481,
+          "sha256": "e20af2be0643898f301bb1ae8d79ff4ec9eafbe6e9a1e3766e218e7c01f4ad3d"
+        },
+        "execution_source": {
+          "bytes": 2537208,
+          "sha256": "64b2166c3a2d3b045e0aac21d6dc311f9df0edfdc4c2b0c7b82ef543d2423f95"
+        }
+      },
+      "source_commit": "45dd1524738e9ed40f54a39c222f2c75c5fe2986",
+      "verified_source_files": 1094,
+      "rows": 64,
+      "arms": [
+        {
+          "arm": "lotus-native",
+          "status": "completed",
+          "resource_allowance_passed": true,
+          "qualification_status": "passed",
+          "query_count": 1,
+          "model_calls": 64,
+          "full_query_seconds": 37.823664327,
+          "application_seconds": 40.231047972,
+          "predicted": 3,
+          "truth": 3,
+          "original_relative_error": 0.0,
+          "true_positive": 3,
+          "false_positive": 0,
+          "true_negative": 61,
+          "false_negative": 0,
+          "request_bytes": {
+            "min": 380284,
+            "median": 1598858.0,
+            "max": 2380568,
+            "total": 108068304
+          },
+          "requests_over_core_1mib": 63,
+          "usage": {
+            "prompt_tokens": 81307,
+            "completion_tokens": 128,
+            "total_tokens": 81435
+          },
+          "handler_to_terminal_seconds": {
+            "min": 0.237648562,
+            "median": 0.4332942715,
+            "max": 1.248784415,
+            "total": 33.490808385
+          },
+          "peak_observed_upstream_inflight": 4,
+          "versions": {
+            "lotus-ai": "1.2.4",
+            "litellm": "1.95.0",
+            "openai": "2.50.0",
+            "pandas": "2.3.3",
+            "duckdb": "1.5.4"
+          },
+          "evidence_sha256": {
+            "summary.json": "74a1d16ddc744686138b9e6061542b0a2fecc8c04cf4a3f059cb5f654d275fc7",
+            "attempts.jsonl": "60e09440e623ab3ea0bca2cd42c1801ff953e07412c6528d6719bd204b04dd17",
+            "requests.jsonl": "3e2577ca81afc9fab93e8c2c1e00d2554ba4d558823477763af4b5ecd87f2899",
+            "responses.jsonl": "b46c6b4962e5ad5cf2a345cc94c4b6014720f61ecd88bd7f273ab4462b1942ef",
+            "http-trace.jsonl": "37ff424a1e39e08662eafa3e83fe7d4c2b14b26521924262d4de4156299689a1",
+            "filter-decisions.json": "2b3fbaee75900a8c026959febec3188df6ddf643f0075527740278f10d9eba45",
+            "original-result.json": "a8d52e0a463d9dad84b853516c165360d40c15f21db904b9fb15e0967e1ade8d"
+          }
+        },
+        {
+          "arm": "daft",
+          "status": "completed",
+          "resource_allowance_passed": false,
+          "qualification_status": "failed: observed HTTP peak exceeds four slots",
+          "query_count": 1,
+          "model_calls": 64,
+          "full_query_seconds": 42.232154645,
+          "application_seconds": 44.025995127,
+          "predicted": 3,
+          "truth": 3,
+          "original_relative_error": 0.0,
+          "true_positive": 3,
+          "false_positive": 0,
+          "true_negative": 61,
+          "false_negative": 0,
+          "request_bytes": {
+            "min": 380284,
+            "median": 1598858.0,
+            "max": 2380568,
+            "total": 108068304
+          },
+          "requests_over_core_1mib": 63,
+          "usage": {
+            "prompt_tokens": 81307,
+            "completion_tokens": 128,
+            "total_tokens": 81435
+          },
+          "handler_to_terminal_seconds": {
+            "min": 0.262701183,
+            "median": 0.544410029,
+            "max": 0.997172974,
+            "total": 35.41973211
+          },
+          "peak_observed_upstream_inflight": 5,
+          "versions": {
+            "lotus-ai": "1.2.4",
+            "litellm": "1.95.0",
+            "openai": "2.50.0",
+            "pandas": "2.3.3",
+            "duckdb": "1.5.4"
+          },
+          "evidence_sha256": {
+            "summary.json": "2b1b7d86ac20964892b5704ef2e36f68cea4989b27c24ab51e6ce14eb8eb2d90",
+            "attempts.jsonl": "8a11559e5890282e494b08fcff9148bebaa763b03635a636a8883bdb5527128c",
+            "requests.jsonl": "bae0e766cea903a8f003ac724d9f869fdc186972fbe4d248050b5c73db0821a0",
+            "responses.jsonl": "14f5a518d409d248dcca23f5f005595db9e97f755848240398985de6ed22e318",
+            "http-trace.jsonl": "7707f70bb9838f37e40dc4a606d795e03ff4b7eff436713c1662e61c361efd15",
+            "filter-decisions.json": "2b3fbaee75900a8c026959febec3188df6ddf643f0075527740278f10d9eba45",
+            "original-result.json": "a8d52e0a463d9dad84b853516c165360d40c15f21db904b9fb15e0967e1ade8d"
+          }
+        },
+        {
+          "arm": "ray-data",
+          "status": "completed",
+          "resource_allowance_passed": true,
+          "qualification_status": "passed",
+          "query_count": 1,
+          "model_calls": 64,
+          "full_query_seconds": 62.005999545,
+          "application_seconds": 75.126611353,
+          "predicted": 3,
+          "truth": 3,
+          "original_relative_error": 0.0,
+          "true_positive": 3,
+          "false_positive": 0,
+          "true_negative": 61,
+          "false_negative": 0,
+          "request_bytes": {
+            "min": 380284,
+            "median": 1598858.0,
+            "max": 2380568,
+            "total": 108068304
+          },
+          "requests_over_core_1mib": 63,
+          "usage": {
+            "prompt_tokens": 81307,
+            "completion_tokens": 128,
+            "total_tokens": 81435
+          },
+          "handler_to_terminal_seconds": {
+            "min": 0.133909054,
+            "median": 0.301478178,
+            "max": 1.026122315,
+            "total": 22.553072444
+          },
+          "peak_observed_upstream_inflight": 2,
+          "versions": {
+            "lotus-ai": "1.2.4",
+            "litellm": "1.95.0",
+            "openai": "2.50.0",
+            "pandas": "2.3.3",
+            "duckdb": "1.5.4"
+          },
+          "evidence_sha256": {
+            "summary.json": "5ac339cc87b73292487110cf57683eeeedfb050d5c9700f5bd4e3263c5a8205a",
+            "attempts.jsonl": "4ae829f310b194e1213e26e6ab18170281b274115620d213e2589f9c0403cae6",
+            "requests.jsonl": "e3e55ffa002453a98f29f85961d3c1896126db5652bf34b79607766201dbca75",
+            "responses.jsonl": "c9434f7724d5008378962aa79921dcc71b6454ea10f003125c94fd160036ded6",
+            "http-trace.jsonl": "f33b0cff200ef33bb03d204f3dcd6380a994bf863b7bc6ca9b9ea9befa3d0cd5",
+            "filter-decisions.json": "2b3fbaee75900a8c026959febec3188df6ddf643f0075527740278f10d9eba45",
+            "original-result.json": "a8d52e0a463d9dad84b853516c165360d40c15f21db904b9fb15e0967e1ade8d"
+          }
+        }
+      ],
+      "messages_identical_across_arms": true,
+      "original_pixels_verified": true,
+      "total_model_calls": 192,
+      "all_retained_arms_pass_resource_allowance": false,
+      "service_startup_seconds": 70.98909497680143,
+      "service_exit": 0,
+      "lease_released": true,
+      "query_tail_quantiles": {
+        "status": "unavailable",
+        "reason": "one complete query per arm"
+      },
+      "monetary_cost": {
+        "status": "unavailable",
+        "reason": "no local model pricing; LM numeric zero is not a measured cost"
+      }
+    },
+    {
+      "schema": "semloom.sembench_animals_audit.v1",
+      "run_id": "model-03",
+      "archives": {
+        "raw": {
+          "bytes": 81877020,
+          "sha256": "a3888d2a7c4523ff04326b8d45bac8f512f0046faa7ec24c616b3946c6b54c07"
+        },
+        "inputs": {
+          "bytes": 41565481,
+          "sha256": "e20af2be0643898f301bb1ae8d79ff4ec9eafbe6e9a1e3766e218e7c01f4ad3d"
+        },
+        "execution_source": {
+          "bytes": 2538648,
+          "sha256": "7c95f4d4d37953a06cf33c07a824ee7f2eceeeae23dcbee4654e2f2d3047e850"
+        }
+      },
+      "source_commit": "ce7d328514abc33969e7c08139c4af72c2b01236",
+      "verified_source_files": 1094,
+      "rows": 64,
+      "arms": [
+        {
+          "arm": "daft",
+          "status": "completed",
+          "resource_allowance_passed": true,
+          "qualification_status": "passed",
+          "query_count": 1,
+          "model_calls": 64,
+          "full_query_seconds": 43.997942451,
+          "application_seconds": 46.514915157,
+          "predicted": 3,
+          "truth": 3,
+          "original_relative_error": 0.0,
+          "true_positive": 3,
+          "false_positive": 0,
+          "true_negative": 61,
+          "false_negative": 0,
+          "request_bytes": {
+            "min": 380284,
+            "median": 1598858.0,
+            "max": 2380568,
+            "total": 108068304
+          },
+          "requests_over_core_1mib": 63,
+          "usage": {
+            "prompt_tokens": 81307,
+            "completion_tokens": 128,
+            "total_tokens": 81435
+          },
+          "handler_to_terminal_seconds": {
+            "min": 0.22604978,
+            "median": 0.47889053049999997,
+            "max": 0.875549705,
+            "total": 32.279319216
+          },
+          "peak_observed_upstream_inflight": 4,
+          "versions": {
+            "lotus-ai": "1.2.4",
+            "litellm": "1.95.0",
+            "openai": "2.50.0",
+            "pandas": "2.3.3",
+            "duckdb": "1.5.4"
+          },
+          "evidence_sha256": {
+            "summary.json": "01f35dc738200525ecec7f2290d12701fe690912318332237e499372f5d72b33",
+            "attempts.jsonl": "a1059d539c0bd2d752dd1b03f55c61b87e8bb9ebefd99ce15b2827d7102dbdfa",
+            "requests.jsonl": "f7ac7a2426878b237580441eca033cb7132a696652556463e0c27b2d07db8d70",
+            "responses.jsonl": "505ca6e2505164585c1b49cadb1c66e72f99c5401eb8e3f3d85e21706d54dbc3",
+            "http-trace.jsonl": "8b44a9364d5a33e4eddec5a2bfe011b290f254f323b2231e4d070fd943bc26e7",
+            "filter-decisions.json": "2b3fbaee75900a8c026959febec3188df6ddf643f0075527740278f10d9eba45",
+            "original-result.json": "a8d52e0a463d9dad84b853516c165360d40c15f21db904b9fb15e0967e1ade8d"
+          }
+        }
+      ],
+      "messages_identical_across_arms": true,
+      "original_pixels_verified": true,
+      "total_model_calls": 64,
+      "all_retained_arms_pass_resource_allowance": true,
+      "service_startup_seconds": 60.447400035802275,
+      "service_exit": 0,
+      "lease_released": true,
+      "query_tail_quantiles": {
+        "status": "unavailable",
+        "reason": "one complete query per arm"
+      },
+      "monetary_cost": {
+        "status": "unavailable",
+        "reason": "no local model pricing; LM numeric zero is not a measured cost"
+      }
+    }
+  ],
+  "total_model_calls": 256,
+  "selected_qualification_arms": [
+    {
+      "run_id": "model-02",
+      "arm": "lotus-native",
+      "resource_allowance_passed": true
+    },
+    {
+      "run_id": "model-03",
+      "arm": "daft",
+      "resource_allowance_passed": true
+    },
+    {
+      "run_id": "model-02",
+      "arm": "ray-data",
+      "resource_allowance_passed": true
+    }
+  ],
+  "selected_all_pass_resource_allowance": true
+}

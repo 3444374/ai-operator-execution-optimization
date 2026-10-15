@@ -2,7 +2,7 @@
 
 ## 2026-10-15：接入原始 SemBench Animals Q1
 
-新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和模型计划集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；单项请求超Core容量的臂明确pending，未改依赖或使用CLIP检索代替。
+新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和真实VLM小轮集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；单项请求超Core容量的臂明确pending，未改依赖或使用CLIP检索代替。45dd1524初轮及ce7d3285的Daft容量补轮完成原64图与原质量评价；独审发现的初轮并发超限、补轮、来源包和正常释放均保留，累计256真实调用，单次值不作性能排名。
 
 
 ## 2026-10-15：统一普通 LOTUS 图片输入

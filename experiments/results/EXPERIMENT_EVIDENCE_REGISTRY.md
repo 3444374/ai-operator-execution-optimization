@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询与完整图文请求CPU资格、许可逐文件证明及待运行的单VLM小轮分列；不作CLIP、稳态或尾分位结论。
+2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询CPU资格、许可逐文件证明及单VLM三后端真实小轮已分列；保留原始失败、Daft初轮并发超限与容量补轮、完整请求及逐图核验，Core容量缺口仍pending，不作CLIP、排名、稳态或尾分位结论。
 
 
 2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)

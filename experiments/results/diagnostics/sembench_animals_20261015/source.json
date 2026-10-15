@@ -1,0 +1,203 @@
+{
+  "schema": "semloom.sembench_animals_public_source.v1",
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "manifest_content_digest": "04816fecdbad5c7f39b3483cb3a0fdac87c3bc840d22bb006944f8b21a589758",
+  "rows": 64,
+  "zebra_truth": 3,
+  "provenance": {
+    "source": "official SemBench wildlife.zip",
+    "image_catalog_count": 8718,
+    "audio_catalog_count": 650,
+    "source_bytes": 5355131661,
+    "selected": 64,
+    "seed": 42,
+    "scale_factor": 64,
+    "generator_sha256": "4964095b2bbd3d73d9959d66f781cb9aaede592f29a84d7e782ec17f3de0a457",
+    "central_directory_sha256": "14b449ef006dbeeaf2eeb117a869509817f5f593b1279ee7cace29eaea4c41af",
+    "annotation_sha256": "a3a2894ce0cc3b02428fb6bf3bbcef076f9eaf7f4e98bb5ef77f93e59d8e1b37",
+    "range_bytes_this_process": 41354256,
+    "reader": "stdlib OOXML strings for Filename/Species/Device; unchanged upstream sampling functions",
+    "selection": "upstream_generator_over_complete_archive_catalog",
+    "license": "CC BY 4.0",
+    "license_basis": "all 64 selected images and annotation match author-v6 public SHA-256 records; no whole archive equivalence claim",
+    "license_url": "https://data.mendeley.com/datasets/6mhrhn7rxc/6",
+    "source_url": "https://drive.google.com/file/d/1HG6tvXIA0BtpqbZqCR46oNSeY2yZ4Lko/view"
+  },
+  "annotation_author_v6_sha256": "a3a2894ce0cc3b02428fb6bf3bbcef076f9eaf7f4e98bb5ef77f93e59d8e1b37",
+  "input_bundle": {
+    "bytes": 41565481,
+    "sha256": "e20af2be0643898f301bb1ae8d79ff4ec9eafbe6e9a1e3766e218e7c01f4ad3d"
+  },
+  "preparation_scripts": {
+    "remote_zip.py": "137a04aa514e5fd3dad9f4b1358466470ad68375efe120bea46f1501acd4a87b",
+    "prepare_official_selection.py": "1f1a8ca067b5ab23fc8c7beebdf3be6b3704a47e5d5b46ed99a3068fbdd51cc8",
+    "verify_author_files.py": "2ae0ea366f55d93b02e6bc5176cde57ffcd35572aa43d0e3fec04f746a89e1f6"
+  },
+  "execution_source_commit": "45dd1524738e9ed40f54a39c222f2c75c5fe2986",
+  "execution_source_archive_sha256": "64b2166c3a2d3b045e0aac21d6dc311f9df0edfdc4c2b0c7b82ef543d2423f95",
+  "model": {
+    "id": "Qwen/Qwen2-VL-2B-Instruct",
+    "revision": "895c3a49bc3fa70a340399125c650a463535e71c",
+    "license": "apache-2.0",
+    "bytes": 4429603990,
+    "serving": {
+      "vllm": "0.25.1",
+      "dtype": "bfloat16",
+      "max_model_len": 12288,
+      "gpu_memory_utilization": 0.75,
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 8192,
+      "enable_chunked_prefill": true,
+      "enable_prefix_caching": false,
+      "mm_processor_cache_gb": 0,
+      "limit_mm_per_prompt": {
+        "image": 1,
+        "video": 0
+      },
+      "processor_max_pixels": 1003520,
+      "processor_min_pixels": 3136,
+      "enforce_eager": true,
+      "seed": 0
+    },
+    "weight_sha256": {
+      "model-00001-of-00002.safetensors": "994ac2b03f97de8bc647d0fe5eba2e4b632b3e28dc03574c29bdfc36cf47e1b9",
+      "model-00002-of-00002.safetensors": "92540d8353c8d226a589a3b179bdb33851c970ee2cc2ac7ba035f79425e7b833"
+    }
+  },
+  "cpu_checks": {
+    "initial_animals_and_sdk": 23,
+    "capacity_fix_animals_and_sdk": 25,
+    "existing_native_text_graphs": 16,
+    "distinct_total": 41,
+    "skipped": 0,
+    "real_model_calls": 0,
+    "repeated_runs_not_added": true
+  },
+  "request_capacity_gap": {
+    "semloom_core_item_bytes": 1048576,
+    "all_64_core_compatible": false,
+    "resize_or_split_used": false,
+    "observed_requests_over_1mib_each_arm": 63,
+    "observed_request_bytes": {
+      "min": 380284,
+      "median": 1598858,
+      "max": 2380568,
+      "total_each_arm": 108068304
+    }
+  },
+  "raw_bundle": {
+    "run_ids": [
+      "cpu-server-01",
+      "cpu-server-02",
+      "cpu-server-03",
+      "cpu-text-default-04",
+      "model-01",
+      "model-02"
+    ],
+    "bytes": 245520623,
+    "sha256": "61f7564eefe03b3c2e208ccb7d1b20ea1c05bfcf1a0aaeaf34be776369df5009",
+    "retained_outside_git": true,
+    "retrieval": "project artifact owner, by run IDs and SHA-256; preserved on execution host and independently verified local backup"
+  },
+  "execution_source_bundle": {
+    "bytes": 2537208,
+    "sha256": "64b2166c3a2d3b045e0aac21d6dc311f9df0edfdc4c2b0c7b82ef543d2423f95"
+  },
+  "resources": {
+    "gpu": "single NVIDIA GeForce RTX 4090",
+    "gpu_memory_mib": 24564,
+    "serving_cpu_affinity": "0-7",
+    "driver_cpu_affinity": "8-15",
+    "driver_native_threads": 8,
+    "ray_logical_cpus": 8,
+    "ray_object_store_bytes": 536870912,
+    "configured_http_upper_bound": 4,
+    "native_daft_udf_max_concurrency": 4,
+    "native_ray_actors": 2,
+    "native_ray_async_batches_per_actor": 2,
+    "observed_model_02_http_peaks": {
+      "lotus-native": 4,
+      "daft": 5,
+      "ray-data": 2
+    },
+    "matched_model_02_http_allowance_passed": false
+  },
+  "generation": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_completion_tokens": 8192,
+    "retries": 0,
+    "request_timeout_seconds": 120,
+    "healthy_full_query_timeout_seconds": null,
+    "lotus_cache": false,
+    "api_warmup_calls": 0
+  },
+  "driver_runtime": {
+    "python": "3.12.3",
+    "versions": {
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "torch": "2.12.1+cu130",
+      "Pillow": "12.2.0",
+      "transformers": "4.57.6",
+      "tokenizers": "0.22.2"
+    },
+    "recording_scope": "read from unchanged qualified environment after model-02"
+  },
+  "provenance_bundle": {
+    "bytes": 1567883,
+    "sha256": "46bee72b5ef81d4eac9478cff0f050944366144a61686cb3ba4cb8c14c1ee993",
+    "retained_outside_git": true,
+    "offline_selection_reproduced": true,
+    "scope": "preparation helpers, unchanged upstream functions, original XLSX/central directory, public author-v6 license and per-file responses"
+  },
+  "serving_runtime": {
+    "python": "3.12.3",
+    "versions": {
+      "vllm": "0.25.1",
+      "torch": "2.11.0",
+      "transformers": "5.14.1",
+      "Pillow": "12.3.0"
+    },
+    "nvidia_driver": "595.71.05",
+    "recording_scope": "read from unchanged serving environment after model-02"
+  },
+  "capacity_retry": {
+    "execution_source_commit": "ce7d328514abc33969e7c08139c4af72c2b01236",
+    "execution_source_bundle": {
+      "bytes": 2538648,
+      "sha256": "7c95f4d4d37953a06cf33c07a824ee7f2eceeeae23dcbee4654e2f2d3047e850"
+    },
+    "source_identity_file": "source-identity-capacity.json",
+    "reason": "original Daft observed peak5 exceeds allowance4; preserve semantic result as resource-unmatched diagnostic",
+    "previous_model_calls": 192,
+    "additional_call_limit": 64,
+    "cumulative_call_limit": 256,
+    "native_options_concurrency": 4,
+    "native_udf_max_concurrency": 3,
+    "status": "completed; semantic and measured resource gates passed",
+    "raw_bundle": {
+      "bytes": 81877020,
+      "sha256": "a3888d2a7c4523ff04326b8d45bac8f512f0046faa7ec24c616b3946c6b54c07",
+      "retained_outside_git": true,
+      "run_ids": [
+        "cpu-server-05",
+        "cpu-server-06",
+        "model-03"
+      ]
+    },
+    "observed_http_peak": 4,
+    "service_exit": 0,
+    "lease_released": true
+  },
+  "qualification_selection": {
+    "lotus-native": "model-02",
+    "daft": "model-03",
+    "ray-data": "model-02",
+    "excluded_from_matching_resources": {
+      "model-02/daft": "observed HTTP peak5 exceeds declared4; semantic result and all raw evidence retained"
+    },
+    "performance_ranking_supported": false,
+    "query_tail_quantiles_supported": false
+  }
+}
