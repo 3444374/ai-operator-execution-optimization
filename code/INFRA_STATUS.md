@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[IMLane可选LOTUS owner复用](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)固定`4271dc44`：显式session配置由owner持有原桥，默认逐批Popen保持；15项清理单测、两作者模式20fixture及公开原Q2各两次共480模型实际通过并退出。桥／context报告与SDK／身份完整关联，独立审核通过。连同`1ba0fc1e`四路径共12查询／1440模型；仍7FN，不作性能排名。私有worker身份误判的0请求失败与生产接入问题分开保存。
+
 2026-10-15：[LOTUS文本薄接入与常驻边界](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#thin-lotus)固定`21d87786`与`efa65c18`：performance省去重复SDK响应落盘，健康代理连接跨查询复用且无Cookie积累；原方法／缓存／SDK／usage与取消清理保持。真实CPU缓存三态、200／429及既有SemLoom接点通过；新源Linux三臂各两fixture query通过，`1ba0fc1e`三臂720模型及原生LOTUS另scope240模型均闭环并经独审。两query原值、请求经验P99与7FN边界见报告；不作尾延迟或调度收益结论。`4271dc44`的IMLane可选owner复用分开验证，不借此成绩。
 
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)

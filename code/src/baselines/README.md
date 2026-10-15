@@ -84,7 +84,8 @@ Daft默认与详细计时共用已有清理helper：执行首错保持，iterato
 
 IMLane继续使用已有作者桥。`reuse_bridge=False`默认逐batch写`input.jsonl`并创建桥进程；
 显式`True`复用同一执行器内的桥session。公共[`_lotus_rows`](../experiments/postgresql/supplier_adapter_query.py)
-每查询创建`NativeCallExecutor`，并在本查询的`ExitStack`关闭IMLane；常驻owner复用LM／运行时不代表跨查询桥复用。
+默认每查询创建并关闭IMLane执行器；LOTUS常驻owner显式选择`reuse_bridge=True`时，借用owner持有的
+既有`NativeCallExecutor`及桥session，查询接点独立，桥在owner退出时关闭。有限期限与未知责任保护保持。
 作者CPython／Ray两模式及外部Coordinator的拥有与退出责任不变，无需另造session接口。
 
 Daft已有按事件循环复用客户端、各调用保留期限、关闭失败与未知工作不可直接复用的检查。

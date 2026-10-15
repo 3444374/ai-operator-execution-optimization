@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-15：IMLane可选owner复用完成公开原Q2接线
+
+固定`4271dc44`沿已有session借用实现，保留默认逐批桥和原作者机制。两模式20fixture与15项owner清理检查通过；公开SemBench CLI各同owner两原Q2实际完成480模型／1440三跳、全200，桥与作者／服务进程自然退出、GPU空、lease释放，实际独立审核通过。[完整记录](experiments/results/diagnostics/native_text_capacity_20261015/README.md#imlane-owner)分列原始时间、HTTP经验尾、桥身份／1→0计数及SDK关联。此前0HTTP身份检查失败来自私有测试器误用Coordinator executable，修正到固定作者独立worker映射，生产源码未改；旧四臂未重跑。累计六配置12查询／1440模型，仍7FN与n2，不宣称排名或调度收益。
+
 ## 2026-10-15：沿原LOTUS接点精简观测并保留健康常驻连接
 
 `21d87786`按performance开关省去重复响应落盘，`efa65c18`移除每query强制reset并以DummyCookieJar保留调用者Cookie语义；不扩大原生图scope，不增调度。固定SDK下真实LOTUS缓存三态、结果／usage／429和已有SemLoom API检查通过，56项公共网关与取消清理、1项既有Core常驻回归通过。独立审核及CPU原始证据见[同题报告](experiments/results/diagnostics/native_text_capacity_20261015/README.md#thin-lotus)；新源Linux常驻fixture与`1ba0fc1e`三臂720模型、原生LOTUS另scope240模型通过并退出，未重跑旧三臂。实际HTTP分位、资源工作点、首HTTP前／后跨度及质量仍7FN见报告；两次完整query不足以估计查询P99。IMLane可选owner借用在`4271dc44`独立提交，20次作者fixture通过、实库记录待独审，后续最小模型接线资格不借前述成绩。

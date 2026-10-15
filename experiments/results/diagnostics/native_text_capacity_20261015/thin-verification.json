@@ -99,7 +99,8 @@
       "author_coordinator_executed": false,
       "arrow_http_udf_sdk_cases": 3,
       "fixture_posts": 6,
-      "source_modified": false
+      "source_modified": false,
+      "scope": "Earlier Arrow HTTP UDF-only auxiliary run; source4271 actual author/Coordinator fixture and model followup are separate evidence, not counted here."
     }
   },
   "preserved_failures": [
@@ -136,11 +137,19 @@
   "server_model_validation": "source1ba three arms720model/2160three-hop plus original LOTUS separate service scope240model/720three-hop passed; all8Q2 physically closed, leases released, independently reviewed",
   "lotus_seam": "fixed internal _process_uncached_messages replacement, not an entirely public LOTUS plugin",
   "native_lifecycle": "Per-graph native resource creation remains valid main-query configuration; service mode is optional.",
-  "new_imlane_author_validation": "source4271 owner reuse code and15unit tests complete; actual author CPython/Ray20fixture passed with closure; independent actual review pending, public Q2 model followup pending separately",
+  "new_imlane_author_validation": "source4271 owner reuse code and15unit tests complete; actual CPython/Ray20fixture plus existing public CLI same-owner2Q2 per mode480model/1440hop passed/closed and independently reviewed; source1ba four paths not rerun",
   "model_evidence": [
     "model-verification.json",
     "model-request-receipts.jsonl.gz",
     "native-verification.json",
     "native-request-receipts.jsonl.gz"
-  ]
+  ],
+  "imlane_evidence": [
+    "imlane-fixture-verification.json",
+    "imlane-fixture-receipts.jsonl.gz",
+    "imlane-model-verification.json",
+    "imlane-model-request-receipts.jsonl.gz"
+  ],
+  "total_actual_model_calls": 1440,
+  "model_source_scope": "source1ba four paths960 in two service scopes; source4271 IMLane two modes480 in a third service scope; no old paths rerun"
 }

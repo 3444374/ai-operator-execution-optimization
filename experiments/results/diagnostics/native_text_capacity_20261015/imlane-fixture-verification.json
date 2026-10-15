@@ -1,0 +1,141 @@
+{
+  "schema": "semloom.imlane_lotus_owner_reuse_actual.v1",
+  "source_head": "4271dc447820577dcbfa0b23530563fd7d3802ab",
+  "source_files": 815,
+  "source_archive_sha256": "6759e97eab79808a12c7eb1abba9057aebe822d546f7da8e32e75291c32dbc90",
+  "package_sha256": "9d59514ac54756e0f9f7cd85733da2b31d48f47d0d25733805c9292431639b6d",
+  "fixture_endpoint_posts": 20,
+  "fixture_two_hop_posts": 40,
+  "model_posts": 0,
+  "GPU": false,
+  "independent_actual_review": "passed",
+  "modes": [
+    {
+      "runtime": "cpython",
+      "healthy_queries": 2,
+      "healthy_posts": 8,
+      "error_posts": 2,
+      "next_query_posts": 0,
+      "same_bridge_pid": true,
+      "same_bridge_start_ticks": true,
+      "same_session_root": true,
+      "same_owner": true,
+      "same_lm": true,
+      "lifecycle_counts": [
+        {
+          "author_calls": 4,
+          "context_creations": 1,
+          "output_copies": 4,
+          "registrations": 1
+        },
+        {
+          "author_calls": 4,
+          "context_creations": 0,
+          "output_copies": 4,
+          "registrations": 0
+        }
+      ],
+      "session_batches": [
+        1,
+        2
+      ],
+      "healthy_bridge_exit": 0,
+      "error_bridge_exit": 0,
+      "original_sdk_error": "RateLimitError",
+      "author_cleanup_passed": true
+    },
+    {
+      "runtime": "ray",
+      "healthy_queries": 2,
+      "healthy_posts": 8,
+      "error_posts": 2,
+      "next_query_posts": 0,
+      "same_bridge_pid": true,
+      "same_bridge_start_ticks": true,
+      "same_session_root": true,
+      "same_owner": true,
+      "same_lm": true,
+      "lifecycle_counts": [
+        {
+          "author_calls": 4,
+          "context_creations": 1,
+          "output_copies": 4,
+          "registrations": 1
+        },
+        {
+          "author_calls": 4,
+          "context_creations": 0,
+          "output_copies": 4,
+          "registrations": 0
+        }
+      ],
+      "session_batches": [
+        1,
+        2
+      ],
+      "healthy_bridge_exit": 0,
+      "error_bridge_exit": 0,
+      "original_sdk_error": "RateLimitError",
+      "author_cleanup_passed": true
+    }
+  ],
+  "closure": {
+    "passed": true,
+    "source_head": "4271dc447820577dcbfa0b23530563fd7d3802ab",
+    "stage": "zero",
+    "model_started": false,
+    "lease_released": true,
+    "physical_exit_verified": true,
+    "author_exit_verified": true,
+    "gpu_after": [],
+    "author_namespaces_after": [
+      {
+        "namespace": "fq-cpython-e2eb6ac763",
+        "remaining_shm": [],
+        "cleanup_present": true
+      },
+      {
+        "namespace": "fq-ray-5b7a20894b",
+        "remaining_shm": [],
+        "cleanup_present": true
+      }
+    ],
+    "service_exit_verified": true,
+    "service_process_exit": [],
+    "shared_lease_retained_on_uncertain_cleanup": false
+  },
+  "evidence": {
+    "receipts": "imlane-fixture-receipts.jsonl.gz",
+    "records": 10,
+    "sha256": "5c44125e9781748f7f145cc776f91a91e95bd65820c504d435e4babf83bb2a6b",
+    "private_closed_archive_sha256": "299d7c87704f532ffd6837f460ceaf5bd3e37cf56b80186e13d54eb7660450e9",
+    "source_identity_sha256": "c4271594676fbf3a005ebe0f77e6ea2e6c241ed886dfe7fbf85dcddfef3aafc7",
+    "harness_sha256": {
+      "allocation_barrier.py": "8758424c672688724082ecbb6b6f06acc2a95229f5ddaa85fa33065c7504143f",
+      "fault_supervision.py": "1b6b8084b7802b2ae2c540cb0361ef2170a05147309f5da67356a7f8b4508708",
+      "launch.py": "3d7790ebbf1005caff9b7851379ff2b3dfe672961c52d9be71ec6f1181818efe",
+      "model_identity_gate.py": "9d0fc2bb7c7820ac7abbac53a4df42331ed087ed8d87df571421fe6c03058851",
+      "owned_controller.py": "ef2f71a887a89c254de0d36e0deea75cb187898a78c9b89d094927b6a14dd9ce",
+      "pre_send_ledger.py": "f516bdfb518cacdd217be6bc739e6aad31b73be331b2159f0d813293417c7d46",
+      "preflight_assets.py": "524336293046cc67603fd51c53267930f4ec2310391642944f9c06305ab1116a",
+      "send_counts.py": "2b08c3f9a9e69845d236c29b8e532e85ba82b9a9473d58080d9b3a7907d33e25",
+      "sitecustomize.py": "eb3aa57f8de9f575c326b7d6e071b7a14d01030a97277af6616f91e0e75999f7",
+      "task_progress.py": "139416dd92f7d207794155ebc785367431757e8ee5bed1c7b75410af7122b9a7",
+      "workload.py": "cfb84b631e33b51f764ed19dbad7a83e72f58799e2d42c0e74f13def31f888f3"
+    }
+  },
+  "failed_predecessor": {
+    "package_sha256": "012d5dac1eb7a916dbebb58bff170ccb97fdedd8b4603311ed7b305f9c1fc349",
+    "private_closed_archive_sha256": "2f6a2dd1c9a2224dfe39da7dbe16d9861c387812a633e3bf16e2914d6d264e30",
+    "model_posts": 0,
+    "fixture_posts": 0,
+    "error": "FileExistsError writing already-existing private call-config; corrected to a new reuse-call-config.json without production changes"
+  },
+  "limits": [
+    "No model/GPU qualification in this fixture scope",
+    "Complete429 error is not unknown remote work recovery",
+    "Bridge/session identity plus reported1->0 creations, no invented C++ context address",
+    "Query-level owner wrappers and bridge reused; author HTTP UDF client lifetime remains per call",
+    "Actual public Q2 model followup bound separately"
+  ]
+}

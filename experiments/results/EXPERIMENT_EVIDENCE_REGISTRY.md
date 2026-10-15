@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[IMLane两作者模式连续LOTUS查询](diagnostics/native_text_capacity_20261015/README.md#imlane-owner)。固定`4271dc44`、显式`reuse_bridge=True`，20fixture／0模型软件检查独审通过；随后现有公开Q2各同owner两次，480模型／1440三跳、全200与自然退出实际通过，原件独立审核通过。bridge身份、创建／注册1→0、usage与SDK关联单列；和旧四路径分开服务scope，累计12查询／1440模型／4320三跳。0发送私有核验失败保留，无新模型预算或旧四臂重跑；每臂n2、7FN与未调优工作点不支持稳态排名。
+
 2026-10-15：[LOTUS文本薄观测与常驻连接](diagnostics/native_text_capacity_20261015/README.md#thin-lotus)。3个新完整LOTUS函数／4次CPU执行通过，Ray Data／Daft缓存三态、200／429与既有SemLoom路径分列；performance原SDK重复raw由32条／46,202B降为0，未据此推导性能收益。`efa65c18`跨query池复用与Cookie隔离保持drain／失败停止；`1ba0fc1e`三臂720及原生LOTUS另scope240模型请求、共八条完整Q2均闭环并独审通过。HTTP经验P99每臂n240，完整query仅n2；质量仍7FN/120，不作稳态排名。`4271dc44`的IMLane owner复用资格单列。
 
 2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
