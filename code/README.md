@@ -1,5 +1,10 @@
 # SemLoom Code
 
+[LOTUS 文本模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
+[Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。
+固定依赖、实际 CPU／SDK 检查和未验证的模型／图像／PZ范围统一见[本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
+
+
 ## Core 与完整响应基础
 
 main 在原执行层上接纳了[完整响应与 native task API](src/execution_provider/adapters/README.md)。

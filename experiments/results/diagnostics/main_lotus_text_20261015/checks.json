@@ -1,0 +1,422 @@
+{
+  "schema": "semloom.main_lotus_text_qualification.v1",
+  "base": "72f3f71523f8664547c705bf2bf008acdd6f4b19",
+  "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
+  "tested_initial_code": "80187839e242971ace00adf1e17c2e4e0e681fd7",
+  "review_fix_code": "57945e80d6c53f3fba175c4ea14c199265686e68",
+  "initial_source_verification": {
+    "files": 54,
+    "mismatches": []
+  },
+  "scope": "CPU software and public original-Movie input preflight; no real models or GPUs",
+  "arms": [
+    "lotus-adapted-native",
+    "lotus-method-native-daft",
+    "lotus-method-native-ray-data",
+    "lotus-method-semloom"
+  ],
+  "upstream_sembench": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "versions": {
+    "python": "3.12.3",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "pandas": "2.3.3",
+    "duckdb": "1.5.4",
+    "scipy": "1.17.1",
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0"
+  },
+  "public_preflight": {
+    "status": "passed",
+    "runtime_groups": [
+      "core",
+      "text",
+      "semantic-benchmarks"
+    ],
+    "optional_missing": [
+      "nvcc"
+    ],
+    "relation_rows": 2000,
+    "model_requests": 0,
+    "data_cli_exit": 0,
+    "execution_output_created": false,
+    "example_config_sha256": "a244a790b7449aa2b92524f16ad5c3e465ce3910a9a4761bda2cf7a1c0f69123"
+  },
+  "local": {
+    "initial": {
+      "total": 214,
+      "passed": 191,
+      "conditional_skip": 23
+    },
+    "daft_composition_before": {
+      "total": 2,
+      "failed": 2
+    },
+    "daft_composition_after": {
+      "total": 2,
+      "passed": 2
+    },
+    "review_fix": {
+      "total": 64,
+      "passed": 64
+    }
+  },
+  "linux_old_paths": {
+    "data": {
+      "total": 63,
+      "passed": 63
+    },
+    "scheduling": {
+      "total": 432,
+      "passed": 432
+    },
+    "execution_provider": {
+      "total": 192,
+      "passed": 179,
+      "conditional_skip": 13
+    },
+    "skip_reason": "PG image DSN/assets and actual Ray opt-ins absent in this old-path run; actual Ray runs separately"
+  },
+  "linux_current": "passed",
+  "new_real_model_requests": 0,
+  "new_gpu_execution": 0,
+  "performance_qualified": false,
+  "meaning": "Fixture call/query times are test diagnostics; no performance ranking or query-tail estimates.",
+  "review_changes": [
+    "remove unused replica endpoint-selector parameter/field/branch",
+    "remove two unused test imports and trailing blank lines"
+  ],
+  "engineering_reference": "experiments/plans/系统架构.md §§8.7–8.8; effective request single source, method/parser vs execution owner, client lifetime vs capacity, cancel/error ownership",
+  "excluded": [
+    "whole integration ancestry",
+    "IMLane/Ray Core reference/Sema/DuckDB-AI query paths",
+    "HSE new strategies",
+    "Animals explicit big-payload closure",
+    "PZ Stage2",
+    "raw/debug scripts in production"
+  ],
+  "failures_preserved": [
+    "local initial scope-signature/import mismatch",
+    "native graph controller missing import-time Ray async declaration",
+    "Core-Ray controller output-directory declaration"
+  ],
+  "raw_recovery": {
+    "run_id": "main-convergence-20261015/lotus-text",
+    "archive_sha256": "97b7fbffbc3ba936c59c1193da4799e87900351802eec97e1dd2c541bd97d778",
+    "retrieve": "Request the immutable raw archive by run ID and SHA from the project artifact owner; originals retained outside Git.",
+    "archive_bytes": 650466,
+    "archive_name": "raw-qualification.tar.gz",
+    "verified_independent_copies": 2,
+    "contents": "initial and corrected controller logs, raw fixtures/observations/budgets, runtime and original-data preflight, both source manifests, review-fix results and controllers"
+  },
+  "linux_unit": {
+    "total": 220,
+    "passed": 213,
+    "conditional_skip": 7
+  },
+  "linux_runtime_stages": [
+    {
+      "stage": "native-http",
+      "exit_code": 0,
+      "seconds": 71.1945550441742,
+      "log_sha256": "bd3693725ec46199b47797746778aceab915540f2fe8b7b08e3a9771d0a5c48a",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "lotus-native",
+      "exit_code": 0,
+      "seconds": 89.63130903244019,
+      "log_sha256": "cbc7c1c3ca26fa27e60c50040df1da6ab7ecec76d35863ff5ac3bb69b2cd50a8",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "lotus-core-ray",
+      "exit_code": 0,
+      "seconds": 40.5374481678009,
+      "log_sha256": "ae72803dc01e71cea6c48c27f8f886713c970e1f2c9e1c5c4f2cb55999d31a1c",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "four-arm-composition",
+      "exit_code": 0,
+      "seconds": 66.90518760681152,
+      "log_sha256": "cc7b6aa5d51393025c2bd55be5870f30c159c8df238afca4daf292cd3eefe112",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "movie-software-0",
+      "exit_code": 0,
+      "seconds": 52.97052049636841,
+      "log_sha256": "08231478a3b95ab80991be3efcd147c5e6d18be523f58b866eb5229ff2123ff9",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "movie-software-1",
+      "exit_code": 0,
+      "seconds": 34.335978984832764,
+      "log_sha256": "86d8c57e6aa2f9067e3f4fd50ff9e6bf8f1629517d7901958c317f9e8f425b52",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "persistent-http-0",
+      "exit_code": 0,
+      "seconds": 15.946875095367432,
+      "log_sha256": "738eb124551b0b10a74b08daada2a82aa7f31968b7b1718d1fe4584a6f82b289",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "persistent-http-1",
+      "exit_code": 0,
+      "seconds": 46.55200171470642,
+      "log_sha256": "864b793138fffe2ec567170481207e360e8a30d080e1cdf73d4e504e5ac4e8f2",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "persistent-http-2",
+      "exit_code": 0,
+      "seconds": 34.68042063713074,
+      "log_sha256": "efc7e128b8d4df2a4b0bba820a25a12a55ee7acf1eb96ec3f716adfe91c8c390",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "full-http-parser-0",
+      "exit_code": 0,
+      "seconds": 15.843246459960938,
+      "log_sha256": "4f496f89b5cc56f8270689042a37126f8373ab075109d3b17d2780e21f6cd781",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "full-http-parser-1",
+      "exit_code": 0,
+      "seconds": 20.25290584564209,
+      "log_sha256": "255f8b13079ab727e13cd75c459ab3aeb68605386a7db7cc0d2855dd4196e2f1",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "native-errors-1",
+      "exit_code": 0,
+      "seconds": 18.146610021591187,
+      "log_sha256": "2e2496b0f09b3a1c9fd06e7f2822b13958037554cf6b486eb440ce9bcd9e7cb0",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "full-http-parser-2",
+      "exit_code": 0,
+      "seconds": 93.48861169815063,
+      "log_sha256": "3db61c738e4a633d943b85820c5e1d9ea1e2648b352211171c87887964b2b823",
+      "gpu_count": 0,
+      "model_calls": 0
+    },
+    {
+      "stage": "native-errors-2",
+      "exit_code": 0,
+      "seconds": 120.19787907600403,
+      "log_sha256": "7cf82834d26742f075670ce7ab2db0a171796db8518d08d3b488d3a51714dd88",
+      "gpu_count": 0,
+      "model_calls": 0
+    }
+  ],
+  "linux_review_fix": [
+    {
+      "stage": "review-fix-unit",
+      "exit_code": 0,
+      "seconds": 18.00134301185608,
+      "log_sha256": "ad379fc2b80afcfe539fe485e7874e772b0a97d15fb404ca508bd1d614fab30f"
+    },
+    {
+      "stage": "review-fix-movie",
+      "exit_code": 0,
+      "seconds": 35.29200720787048,
+      "log_sha256": "5bd35ce13dcae6075a1842e431a85a8cf18046f48880278d61eebd189bce9324"
+    }
+  ],
+  "review_fix_source_verification": {
+    "commit": "57945e80d6c53f3fba175c4ea14c199265686e68",
+    "files": 54,
+    "mismatches": []
+  },
+  "linux_log_counts": [
+    {
+      "log": "logs/controller-r1.log",
+      "total": 1,
+      "passed_status": false,
+      "skipped": null,
+      "sha256": "3d061276116de2825a054bbbd158691d78ab8928c6b769c47d7f544a61fb3c62"
+    },
+    {
+      "log": "logs/controller.log",
+      "total": 12,
+      "passed_status": false,
+      "skipped": null,
+      "sha256": "8eb0de0c2eae1386e2ffae8f27a62496d4afd3b5f15b49f3123133f517289796"
+    },
+    {
+      "log": "logs/native-http.log",
+      "total": 12,
+      "passed_status": false,
+      "skipped": null,
+      "sha256": "91d820741501e69f8dcbb9a2b1490c4e2213a13ffe61aea895ffc608bb8bb3e4"
+    },
+    {
+      "log": "logs/old-data.log",
+      "total": 63,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "136fc20cc1e78464d4f5d8cd7dd18c6b51fa22dad8b3c0da51c56a14927b80e1"
+    },
+    {
+      "log": "logs/old-execution_provider.log",
+      "total": 192,
+      "passed_status": true,
+      "skipped": 13,
+      "sha256": "b132c9ab7fcb70a71b7bb8c2ba2e3613b5935fcc4504dfdccd4bcf5b92d26bcf"
+    },
+    {
+      "log": "logs/old-scheduling.log",
+      "total": 432,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "62832c4dbac4b7f6c06eeefccf981b3cfe0174abe4131e92ca0b0bfef16b9fce"
+    },
+    {
+      "log": "logs/review-fix-movie.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "5bd35ce13dcae6075a1842e431a85a8cf18046f48880278d61eebd189bce9324"
+    },
+    {
+      "log": "logs/review-fix-unit.log",
+      "total": 64,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "ad379fc2b80afcfe539fe485e7874e772b0a97d15fb404ca508bd1d614fab30f"
+    },
+    {
+      "log": "logs/unit.log",
+      "total": 220,
+      "passed_status": true,
+      "skipped": 7,
+      "sha256": "f3b450e5e30b063c3996805caaf90c8ee90455b2bdee8ec07c5d22a8484660c9"
+    },
+    {
+      "log": "cpu-r1/logs/four-arm-composition.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "cc7b6aa5d51393025c2bd55be5870f30c159c8df238afca4daf292cd3eefe112"
+    },
+    {
+      "log": "cpu-r1/logs/full-http-parser-0.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "4f496f89b5cc56f8270689042a37126f8373ab075109d3b17d2780e21f6cd781"
+    },
+    {
+      "log": "cpu-r1/logs/full-http-parser-1.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "255f8b13079ab727e13cd75c459ab3aeb68605386a7db7cc0d2855dd4196e2f1"
+    },
+    {
+      "log": "cpu-r1/logs/full-http-parser-2.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "3db61c738e4a633d943b85820c5e1d9ea1e2648b352211171c87887964b2b823"
+    },
+    {
+      "log": "cpu-r1/logs/lotus-core-ray-r2.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "ae72803dc01e71cea6c48c27f8f886713c970e1f2c9e1c5c4f2cb55999d31a1c"
+    },
+    {
+      "log": "cpu-r1/logs/lotus-core-ray.log",
+      "total": 1,
+      "passed_status": false,
+      "skipped": null,
+      "sha256": "207ef0a6ccd20f618c7c2a5351d3a67e16800d0698fbc6e024486de89a3507a5"
+    },
+    {
+      "log": "cpu-r1/logs/lotus-native.log",
+      "total": 8,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "cbc7c1c3ca26fa27e60c50040df1da6ab7ecec76d35863ff5ac3bb69b2cd50a8"
+    },
+    {
+      "log": "cpu-r1/logs/movie-software-0.log",
+      "total": 2,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "08231478a3b95ab80991be3efcd147c5e6d18be523f58b866eb5229ff2123ff9"
+    },
+    {
+      "log": "cpu-r1/logs/movie-software-1.log",
+      "total": 2,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "86d8c57e6aa2f9067e3f4fd50ff9e6bf8f1629517d7901958c317f9e8f425b52"
+    },
+    {
+      "log": "cpu-r1/logs/native-errors-1.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "2e2496b0f09b3a1c9fd06e7f2822b13958037554cf6b486eb440ce9bcd9e7cb0"
+    },
+    {
+      "log": "cpu-r1/logs/native-errors-2.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "7cf82834d26742f075670ce7ab2db0a171796db8518d08d3b488d3a51714dd88"
+    },
+    {
+      "log": "cpu-r1/logs/native-http.log",
+      "total": 12,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "bd3693725ec46199b47797746778aceab915540f2fe8b7b08e3a9771d0a5c48a"
+    },
+    {
+      "log": "cpu-r1/logs/persistent-http-0.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "738eb124551b0b10a74b08daada2a82aa7f31968b7b1718d1fe4584a6f82b289"
+    },
+    {
+      "log": "cpu-r1/logs/persistent-http-1.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "864b793138fffe2ec567170481207e360e8a30d080e1cdf73d4e504e5ac4e8f2"
+    },
+    {
+      "log": "cpu-r1/logs/persistent-http-2.log",
+      "total": 1,
+      "passed_status": true,
+      "skipped": 0,
+      "sha256": "efc7e128b8d4df2a4b0bba820a25a12a55ee7acf1eb96ec3f716adfe91c8c390"
+    }
+  ],
+  "new_main_model_qualification": "pending after Animals minimal closure and normal shared lease"
+}

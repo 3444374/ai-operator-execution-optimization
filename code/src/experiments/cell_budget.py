@@ -19,6 +19,7 @@ from src.baselines.common.private_artifacts import require_outside_git
 from src.experiments.attempt_ledger import AttemptBudget, BudgetError, BudgetExhausted
 
 SCHEMA = 'semloom.cell_budget.v1'
+COMPLETION_SCHEMA = 'semloom.cell_budget.task_completion.v2'
 _ID = re.compile(r'[A-Za-z0-9_.-]{1,128}\Z')
 _DIGEST = re.compile(r'[0-9a-f]{64}\Z')
 _SQLITE_MAX_INT = 2**63 - 1
@@ -33,10 +34,10 @@ class Reservation:
 
 class ClaimedUnit:
     """One process owns these already-charged attempts; reserve performs no I/O."""
-    def __init__(self, reservation: Reservation, deadline_utc: float):
+    def __init__(self, reservation: Reservation, deadline_utc: float | None):
         self.reservation = reservation
         self._pid = os.getpid()
-        self._deadline = time.monotonic() + max(0, deadline_utc - time.time())
+        self._deadline = None if deadline_utc is None else time.monotonic() + max(0, deadline_utc - time.time())
         self._used = 0
         self._lock = threading.Lock()
 
@@ -58,7 +59,7 @@ class ClaimedUnit:
         with self._lock:
             if os.getpid() != self._pid:
                 raise BudgetError('claimed budget belongs to another process')
-            if time.monotonic() >= self._deadline:
+            if self._deadline is not None and time.monotonic() >= self._deadline:
                 raise BudgetExhausted('experiment deadline reached')
             if self._used == self.reservation.requests:
                 raise BudgetExhausted('reserved unit budget exhausted')
@@ -79,28 +80,32 @@ class CellBudgetLedger:
             self._header(connection)
 
     @classmethod
-    def create(cls, path: Path, budget: AttemptBudget, *, deadline_utc: float):
+    def create(cls, path: Path, budget: AttemptBudget, *, deadline_utc: float | None):
         path = Path(path).absolute()
         require_outside_git(path)
-        if budget.limit > _SQLITE_MAX_INT or not math.isfinite(deadline_utc) or deadline_utc <= time.time():
-            raise ValueError('finite future deadline and supported budget are required')
+        if (budget.limit > _SQLITE_MAX_INT or deadline_utc is not None and (
+                type(deadline_utc) not in (int, float) or not math.isfinite(deadline_utc)
+                or deadline_utc <= time.time())):
+            raise ValueError('future deadline or explicit completion and supported budget are required')
+        schema = SCHEMA if deadline_utc is not None else COMPLETION_SCHEMA
+        deadline_constraint = ' NOT NULL' if deadline_utc is not None else ''
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         os.close(fd)
         with sqlite3.connect(path) as connection:
             connection.execute('PRAGMA synchronous=EXTRA')
-            connection.executescript('''
+            connection.executescript(f'''
                 CREATE TABLE budget (
                     singleton INTEGER PRIMARY KEY CHECK(singleton=1), schema TEXT NOT NULL,
                     budget_id TEXT NOT NULL, limit_count INTEGER NOT NULL CHECK(limit_count>0),
                     allocated INTEGER NOT NULL CHECK(allocated>=0 AND allocated<=limit_count),
-                    deadline REAL NOT NULL);
+                    deadline REAL{deadline_constraint});
                 CREATE TABLE units (
                     unit_id TEXT PRIMARY KEY, first_attempt INTEGER NOT NULL,
                     requests INTEGER NOT NULL CHECK(requests>0), claimed INTEGER NOT NULL DEFAULT 0
                     CHECK(claimed IN (0,1)));
             ''')
             connection.execute('INSERT INTO budget VALUES(1,?,?,?,?,?)',
-                               (SCHEMA, budget.budget_id, budget.limit, 0, deadline_utc))
+                               (schema, budget.budget_id, budget.limit, 0, deadline_utc))
         return cls(path, budget)
 
     @contextmanager
@@ -124,15 +129,20 @@ class CellBudgetLedger:
 
     def _header(self, connection):
         rows = connection.execute('SELECT schema,budget_id,limit_count,allocated,deadline FROM budget').fetchall()
-        if (len(rows) != 1 or rows[0][:3] != (SCHEMA, self.budget.budget_id, self.budget.limit)
-                or type(rows[0][3]) is not int or not 0 <= rows[0][3] <= self.budget.limit
-                or not isinstance(rows[0][4], (int, float)) or not math.isfinite(rows[0][4])):
+        if len(rows) != 1:
             raise BudgetError('cell budget identity or state mismatch')
-        return rows[0][3:]
+        schema, budget_id, limit, allocated, deadline = rows[0]
+        valid_deadline = (deadline is None and schema == COMPLETION_SCHEMA or
+                          type(deadline) in (int, float) and math.isfinite(deadline))
+        if (schema not in (SCHEMA, COMPLETION_SCHEMA) or (budget_id, limit) != (self.budget.budget_id, self.budget.limit)
+                or type(allocated) is not int or not 0 <= allocated <= self.budget.limit or not valid_deadline):
+            raise BudgetError('cell budget identity or state mismatch')
+        self.schema = schema
+        return allocated, deadline
 
     def _active(self, connection):
         allocated, deadline = self._header(connection)
-        if time.time() >= deadline:
+        if deadline is not None and time.time() >= deadline:
             raise BudgetExhausted('experiment deadline reached')
         return allocated, deadline
 
@@ -166,7 +176,7 @@ class CellBudgetLedger:
         with self._transaction() as connection:
             allocated, deadline = self._header(connection)
             units = connection.execute('SELECT unit_id,first_attempt,requests,claimed FROM units ORDER BY first_attempt').fetchall()
-        return {'schema': SCHEMA, 'budget_id': self.budget.budget_id, 'limit': self.budget.limit,
+        return {'schema': self.schema, 'budget_id': self.budget.budget_id, 'limit': self.budget.limit,
                 'allocated_requests': allocated, 'deadline_utc': deadline,
                 'units': [dict(zip(('unit_id', 'first_attempt', 'requests', 'claimed'), row)) for row in units]}
 

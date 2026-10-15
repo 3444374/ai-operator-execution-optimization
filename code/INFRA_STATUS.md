@@ -2,7 +2,7 @@
 
 ## main 与集成分支的阅读范围
 
-main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复和下述 Core／完整响应基础。
+main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为基点，已独立接纳公共统计修复、Core／完整响应基础及下述 LOTUS 文本四臂。
 下文保留该来源在2026-10-08记录的实现与验证情况，
 不将后续集成分支的能力写成 main 已实现。新适配与修复从
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)进入；
@@ -14,6 +14,14 @@ main 的执行与接入代码以 `425f0145b412581ac2027b4aa31c3ae51dd42f0c` 为�
 main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通过。
 边界、固定来源影响核查及高精度参照见[所属模块](src/observability/README.md#repeat-mean-confidence)。
 不改变历史观测或重算旧摘要，也不引入集成分支的新接入、策略或模型资格。
+
+## LOTUS 文本四臂
+
+[当前模块](src/semantic_methods/lotus/README.md)已提供完整 uncached batch 的原 SDK／Daft／Ray Data／SemLoom 接点，
+以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
+原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
+[本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
+当前不将旧模型结果升级为新main质量／性能，不表示图像、PZ或IMLane已接入。
 
 ## Core 推进、元数据与完整响应
 
