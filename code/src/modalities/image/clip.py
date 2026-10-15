@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
+import json
 import os
 import time
 from collections.abc import Sequence
@@ -55,6 +57,36 @@ def decode_rgb_image(encoded: bytes):
         return image.convert("RGB")
 
 
+def _clip_preprocessing_identity(processor, processor_revision, *, decoder,
+                                 decoder_version, execution_variant):
+    """Describe the loaded encoded-image path without changing its math."""
+    import transformers
+
+    image_processor = getattr(processor, "image_processor", processor)
+    configuration = image_processor.to_dict()
+    crop = configuration.get("crop_size")
+    if (configuration.get("do_center_crop") is not True or not isinstance(crop, dict)
+            or type(crop.get("height")) is not int or crop["height"] <= 0
+            or type(crop.get("width")) is not int or crop["width"] != crop["height"]):
+        raise ValueError("staged CLIP identity requires a fixed square center crop")
+    configuration_digest = hashlib.sha256(json.dumps(
+        configuration, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+    implementation = f"{type(image_processor).__module__}.{type(image_processor).__qualname__}"
+    return {
+        "processor_revision": (getattr(image_processor, "_commit_hash", None)
+                               or configuration.get("_commit_hash") or processor_revision),
+        "processor_version": (f"transformers={transformers.__version__};{implementation};"
+                              f"config-sha256={configuration_digest}"),
+        "decoder": decoder,
+        "decoder_version": decoder_version,
+        "execution_variant": execution_variant,
+        "input_size": crop["height"],
+        "representation": "prepared_fp32_nchw",
+        "layout": "NCHW",
+        "dtype": "float32",
+    }
+
+
 def extract_clip_image_features(model_output):
     """Return the projected 2-D CLIP image embedding tensor across HF versions."""
     features = (
@@ -96,6 +128,7 @@ class ClipImagePreprocessor:
         from transformers import CLIPProcessor
 
         self.processor_revision = processor_revision
+        self._processor_commit = revision
         loading = {}
         if revision is not None:
             loading["revision"] = revision
@@ -103,10 +136,33 @@ class ClipImagePreprocessor:
             loading["local_files_only"] = True
         self.processor = CLIPProcessor.from_pretrained(processor_revision, **loading)
 
+    def preprocessing_identity(self) -> dict[str, object]:
+        """Publish the actual PIL decoder and loaded slow processor contract."""
+        from PIL import __version__ as pillow_version
+
+        return _clip_preprocessing_identity(
+            self.processor, self._processor_commit or self.processor_revision,
+            decoder="pillow_convert_rgb", decoder_version=pillow_version,
+            execution_variant="clip_slow_pil")
+
     def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
         if not encoded_images:
             raise ValueError("encoded_images must not be empty")
         images = [decode_rgb_image(item) for item in encoded_images]
+        return self.preprocess_decoded(images)
+
+    def preprocess_decoded(self, images) -> np.ndarray:
+        """Apply the same slow processor to already decoded RGB images/arrays."""
+        if not images:
+            raise ValueError("decoded images must not be empty")
+        from PIL import Image
+        pil = all(isinstance(image, Image.Image) and image.mode == "RGB" and min(image.size) > 0 for image in images)
+        arrays = all(isinstance(image, np.ndarray) and image.dtype == np.uint8
+                     and image.ndim == 3 and image.shape[-1] == 3 and min(image.shape[:2]) > 0 for image in images)
+        if not (pil or arrays):
+            raise TypeError("decoded images must be RGB PIL images or uint8 HWC RGB arrays")
+        # Preserve the pinned slow processor's own layout inference for PIL and
+        # arrays alike, including its existing behavior on tiny ambiguous images.
         pixel_values = self.processor(
             images=images,
             return_tensors="np",
@@ -144,6 +200,17 @@ class FastClipImagePreprocessor:
             processor_revision,
             backend="torchvision",
         )
+
+    def preprocessing_identity(self) -> dict[str, object]:
+        """Publish this path's torchvision identity independently from PIL."""
+        import torch
+        import torchvision
+
+        return _clip_preprocessing_identity(
+            self.processor, self.processor_revision,
+            decoder="torchvision_decode_image_rgb",
+            decoder_version=f"torchvision={torchvision.__version__};torch={torch.__version__}",
+            execution_variant="clip_fast_torchvision")
 
     def preprocess(self, encoded_images: Sequence[bytes]) -> np.ndarray:
         if not encoded_images:
@@ -190,6 +257,7 @@ class ClipTensorActor:
         model_commit: str | None = None,
         processor_commit: str | None = None,
         local_files_only: bool = False,
+        allowed_gpu_uuids: tuple[str, ...] | None = None,
     ) -> None:
         if model_commit is not None and os.path.exists(model_revision):
             raise ValueError("a revision-pinned model requires a repository identifier")
@@ -220,6 +288,12 @@ class ClipTensorActor:
             loading["revision"] = model_commit
         if local_files_only:
             loading["local_files_only"] = True
+        self._resource_identity = None
+        if allowed_gpu_uuids is not None:
+            from .worker_identity import assigned_gpu_uuid, worker_identity
+            uid = assigned_gpu_uuid(torch, device, allowed_gpu_uuids)
+            self._resource_identity = worker_identity("clip_model", gpu_uuid=uid,
+                model_revision=model_revision, processor_revision=processor_revision or model_revision)
         self._model = CLIPModel.from_pretrained(model_revision, **loading).eval()
         self._model = self._model.to(device=device, dtype=self._dtype)
         projection_dim = int(self._model.config.projection_dim)
@@ -231,9 +305,14 @@ class ClipTensorActor:
             projected=True,
             normalized=normalize,
         )
+        from src.experiments.image_reuse import observe_model
+        self._reuse_probe = observe_model(self._model, role="clip_tensor_actor", device=device)
+        if self._resource_identity is not None:
+            from .worker_identity import record_worker_identity
+            record_worker_identity(self._resource_identity)
 
     def ready(self) -> dict[str, object]:
-        return {
+        ready = {
             "actor_worker_pid": os.getpid(),
             "actor_type": type(self).__name__,
             "input_kind": self.input_kind,
@@ -242,6 +321,11 @@ class ClipTensorActor:
             "torch_intraop_threads": self._torch.get_num_threads(),
             "torch_interop_threads": self._torch.get_num_interop_threads(),
         }
+        if self._reuse_probe is not None:
+            ready["model_reuse"] = self._reuse_probe.snapshot()
+        if self._resource_identity is not None:
+            ready["resource_identity"] = self._resource_identity
+        return ready
 
     def synchronize(self) -> None:
         """Confirm device work has ended, including after a model exception."""
@@ -283,6 +367,8 @@ class ClipTensorActor:
             self._torch.cuda.synchronize()
         forward_started = time.perf_counter()
         with self._torch.inference_mode():
+            if self._reuse_probe is not None:
+                self._reuse_probe.begin(len(batch.doc_ids))
             output = self._model.get_image_features(pixel_values=pixel_values)
             # Normalize in float32 so ``normalized=True`` is an accurate output
             # contract rather than an approximate float16 property.
@@ -297,6 +383,8 @@ class ClipTensorActor:
             self._torch.cuda.synchronize()
         d2h_started = time.perf_counter()
         embeddings = features.cpu().numpy()
+        if self._reuse_probe is not None:
+            self._reuse_probe.returned(len(batch.doc_ids))
         d2h_s = time.perf_counter() - d2h_started if detailed_cuda_timing else 0.0
         telemetry = ImageBatchTelemetry(
             preprocess_s=batch.telemetry.preprocess_s,
