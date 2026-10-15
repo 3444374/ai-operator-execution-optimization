@@ -490,8 +490,14 @@ def _load_runtime_identities(paths: tuple[Path, ...]) -> dict[str, dict[str, obj
             "python_executable_argv0", "sys_prefix", "package_root",
             "package_version",
         }
-        if decoded.get("schema_version") != 1 or set(decoded) != required:
+        resource_fields = {"resources_requested", "resources_resolved"}
+        if decoded.get("schema_version") != 1 or set(decoded) not in (required, required | resource_fields):
             raise RuntimeError(f"vLLM runtime identity fields are invalid: {path}")
+        if resource_fields <= set(decoded):
+            from src.serving.vllm_resources import validate_resource_identity
+            validate_resource_identity(decoded["resources_requested"], decoded["resources_resolved"])
+            if decoded["package_version"] != decoded["resources_resolved"]["version"]:
+                raise RuntimeError(f"vLLM resource identity package version differs: {path}")
         port = str(decoded["port"])
         if port in identities:
             raise RuntimeError(f"duplicate vLLM runtime identity for port {port}")
@@ -584,6 +590,13 @@ def verify_live_vllm_service_identity(
             "package_root": str(runtime["package_root"]),
             "package_version": str(runtime["package_version"]),
         }
+        if "resources_resolved" in runtime:
+            from src.serving.vllm_resources import verify_resource_argv
+            verify_resource_argv(shlex.split(process["cmdline"]), runtime["resources_resolved"])
+            endpoints[url]["process_identity"].update(
+                resources_requested=runtime["resources_requested"],
+                resources_resolved=runtime["resources_resolved"],
+            )
     model_artifacts = verify_model_artifact_identity(expected_identity)
     return {
         "status": "passed",

@@ -29,6 +29,8 @@ def _args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--identity-output", required=True, type=Path)
     parser.add_argument("--port", required=True, type=int)
+    parser.add_argument("--resource-config", type=Path,
+                        help="optional single-node native vLLM DP configuration with deployment-scoped GPUs")
     parser.add_argument("server_args", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if not args.server_args or args.server_args[0] != "--":
@@ -45,6 +47,22 @@ def main() -> int:
     if spec is None or spec.origin is None:
         raise RuntimeError("vLLM is not installed in VLLM_PYTHON")
     package_root = Path(spec.origin).resolve().parent
+    resources = {}
+    if args.resource_config is not None:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from src.serving.vllm_resources import VllmResources, verify_parsed_launch
+        if importlib.metadata.version("vllm") != "0.25.1":
+            raise RuntimeError("native DP resource config requires vLLM 0.25.1")
+        if args.resource_config.stat().st_size > 65536:
+            raise ValueError("vLLM resource config exceeds its byte capacity")
+        config = VllmResources(**json.loads(args.resource_config.read_text()))
+        allocation, args.server_args, resources = config.resolve(args.server_args)
+        # Exec inherits this frozen mask; no CUDA or model has been initialized.
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(allocation.selected_gpu_uuids)
+        from vllm.entrypoints.openai.cli_args import make_arg_parser
+        from vllm.utils.argparse_utils import FlexibleArgumentParser
+        parsed = make_arg_parser(FlexibleArgumentParser(allow_abbrev=False)).parse_args(args.server_args)
+        verify_parsed_launch(parsed, resources["resources_resolved"], args.port)
     identity = {
         "schema_version": 1,
         "pid": os.getpid(),
@@ -54,6 +72,7 @@ def main() -> int:
         "sys_prefix": sys.prefix,
         "package_root": str(package_root),
         "package_version": importlib.metadata.version("vllm"),
+        **resources,
     }
     args.identity_output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.identity_output.with_suffix(args.identity_output.suffix + ".tmp")

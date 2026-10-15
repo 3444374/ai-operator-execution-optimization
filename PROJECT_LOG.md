@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-10-15：收敛可选 vLLM 部署资源闭包
+
+固定候选`7b20feb5`只引入部署GPU解析、原生vLLM资源配置、launcher及严格reader兼容，保留旧默认和现有前端。
+[本批来源与资格](experiments/results/diagnostics/main_service_auto_20261015/README.md)记录Mac／Linux各30项、官方parser，以及auto／显式单卡12个实际原SDK请求和物理退出；
+无CLIP／PZ／其他平台依赖，不给多卡或性能结论。新main完整原查询在合并后单独固定与复验。
+
+## 2026-10-15：固定 main 完成原 Movie／Animals 模型检查
+
+main`464de926`四臂16完整查询、9216实际模型POST全部返回，原SDK／逐行关联与官方质量复算完成，资源峰值及正常lease／物理退出通过。
+[唯一报告](experiments/results/diagnostics/main_queries_20261015/README.md)保留完整计时、全部质量和原件恢复身份；Movie Q3四臂相对误差50%，Q1全量判定不完全相同，Animals64图一致，单次观察不作稳定排名。
+离线复算响应格式与覆盖修复保留初次失败，未重跑模型；auto／多卡及其他接点继续按自己的固定来源验证。
+
 ## 2026-10-15：main 接纳 Animals 最小图文请求闭包
 
 从已由baseline接纳的固定`a0d1f6ac`窄选原Animals Q1、LOTUS图文profile及三容量工厂，复用当前四臂执行器。

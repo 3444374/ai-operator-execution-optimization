@@ -367,6 +367,7 @@ now lives under `code/src/`:
   real ready lease is issued. Enable it explicitly with
   `--arm project_ray --project-execution-mode hse_static`; the default direct-dependency
   path remains the matched static control.
+- `infrastructure/gpu_allocation.py` and `serving/vllm_resources.py`: explicit deployment GPU scope, UUID mask intersection and optional native vLLM DP configuration; [launcher and qualification](../experiments/results/diagnostics/main_service_auto_20261015/README.md) keep requested topology separate from live single-card proof.
 - `infrastructure/runtime_env.py`: one shared contract for `PYTHONPATH` plus single-threaded
   OpenBLAS/MKL/OMP/NumExpr settings inherited by Ray workers and multi-job
   subprocesses. This prevents a 4-job run from multiplying 32 BLAS threads per

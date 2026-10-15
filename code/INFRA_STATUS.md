@@ -15,13 +15,20 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 边界、固定来源影响核查及高精度参照见[所属模块](src/observability/README.md#repeat-mean-confidence)。
 不改变历史观测或重算旧摘要，也不引入集成分支的新接入、策略或模型资格。
 
+## 可选 vLLM 资源分配
+
+现有identity launcher可选`--resource-config`，在明确部署分配内解析auto／数量、TP与原生DP，模型初始化前冻结UUID。
+旧默认和八字段sidecar保持；当前严格reader同时接受成对资源字段，校验声明及live argv，保留PID／出生／Python／模型检查。
+[固定候选资格](../experiments/results/diagnostics/main_service_auto_20261015/README.md)为`7b20feb5`的Mac／Linux各30项、官方parser及单4090 auto／显式1各6个原SDK请求；
+物理自有GPU绑定、退出与正常lease已核。仅服务接入成熟，不包含CLIP/PZ/新平台；合并后的新main原查询另验，多卡／Serve仍pending，无加速声明。
+
 ## LOTUS 文本四臂
 
 [当前模块](src/semantic_methods/lotus/README.md)已提供完整 uncached batch 的原 SDK／Daft／Ray Data／SemLoom 接点，
 以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
 原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
 [本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
-当前不将旧模型结果升级为新main质量／性能；PZ、IMLane和图像检索仍按各自固定来源解释。
+[同一main实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)固定`464de926`，覆盖原Q1/Q2/Q3与Animals；模型质量不足及单次计时边界保留。PZ、IMLane和图像检索仍按各自固定来源解释。
 
 ## Animals 图文四臂
 
@@ -29,7 +36,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 图文profile整批校验，原图不缩放或拆分。native显式逐请求最多8MiB且须给总input，三工厂共同验证Ray容量；
 默认native／PG／wire仍为1MiB。
 [本批资格](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)固定来源、原CPU/真实Ray、独审和失败修复；
-不引入CLIP/HSE/RM/index或PZ依赖。最终main的模型测试另行绑定同一发布SHA。
+不引入CLIP/HSE/RM/index或PZ依赖。[实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)绑定同一发布main`464de926`，四臂64图判定及COUNT一致；不代表更大数据或其他源码已认证。
 
 ## Core 推进、元数据与完整响应
 
