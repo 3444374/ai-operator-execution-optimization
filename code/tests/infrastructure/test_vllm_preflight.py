@@ -21,6 +21,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts.services import launch_vllm_with_identity as identity_launcher
+from src.serving.vllm_resources import VllmResources
 from src.infrastructure.vllm_preflight import (
     cmdline_for_port,
     flag_value_present,
@@ -48,6 +49,7 @@ class VllmPreflightPureTests(unittest.TestCase):
                 "_args",
                 return_value=SimpleNamespace(
                     identity_output=sidecar,
+                    resource_config=None,
                     port=8000,
                     server_args=["--model", "/model", "--port", "8000"],
                 ),
@@ -71,6 +73,10 @@ class VllmPreflightPureTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "exec captured"):
                     identity_launcher.main()
             sealed = json.loads(sidecar.read_text(encoding="utf-8"))
+            self.assertEqual(set(sealed), {
+                "schema_version", "pid", "process_start_time_ticks", "port",
+                "python_executable_argv0", "sys_prefix", "package_root", "package_version",
+            })
             self.assertEqual(sealed["process_start_time_ticks"], "12345")
             self.assertEqual(sealed["python_executable_argv0"], sys.executable)
             self.assertEqual(sealed["sys_prefix"], sys.prefix)
@@ -387,25 +393,44 @@ class VllmPreflightPureTests(unittest.TestCase):
                 "package_root": "/venv-a/lib/python/site-packages/vllm",
                 "package_version": "0.25.1",
             }
-            sidecar.write_text(json.dumps({
+            legacy = {
                 "schema_version": 1, "pid": 123,
                 "process_start_time_ticks": "456", "port": 8000,
                 "python_executable_argv0": runtime["executable_argv0"],
                 "sys_prefix": runtime["sys_prefix"],
                 "package_root": runtime["package_root"],
                 "package_version": runtime["package_version"],
-            }), encoding="utf-8")
-            with patch(
-                "src.infrastructure.vllm_preflight._read_live_processes",
-                return_value=processes,
-            ):
-                observed = verify_live_vllm_service_identity(
-                    (endpoint,), identity, runtime, (sidecar,)
-                )
-            self.assertEqual(
-                observed["endpoints"][endpoint]["process_identity"]["sys_prefix"],
-                "/venv-a",
-            )
+            }
+            _, argv, resources = VllmResources(allowed_gpus=("GPU-a",)).resolve(
+                [], environ={}, probe=lambda uid: uid)
+            for extra in ({}, resources):
+                with self.subTest(resource_config=bool(extra)):
+                    sidecar.write_text(json.dumps(dict(legacy, **extra)), encoding="utf-8")
+                    processes["123"]["cmdline"] = self._complete_cmdline(8000, model)
+                    if extra:
+                        processes["123"]["cmdline"] += " " + " ".join(argv)
+                    with patch(
+                        "src.infrastructure.vllm_preflight._read_live_processes",
+                        return_value=processes,
+                    ):
+                        observed = verify_live_vllm_service_identity(
+                            (endpoint,), identity, runtime, (sidecar,)
+                        )
+                    process_identity = observed["endpoints"][endpoint]["process_identity"]
+                    self.assertEqual(process_identity["sys_prefix"], "/venv-a")
+                    self.assertEqual("resources_resolved" in process_identity, bool(extra))
+                    for field, value in (("pid", 999), ("process_start_time_ticks", "999"),
+                                         ("sys_prefix", "/different")):
+                        sidecar.write_text(json.dumps(dict(legacy, **extra, **{field: value})), encoding="utf-8")
+                        with patch(
+                            "src.infrastructure.vllm_preflight._read_live_processes",
+                            return_value=processes,
+                        ), self.assertRaisesRegex(RuntimeError, "Python runtime drift"):
+                            verify_live_vllm_service_identity((endpoint,), identity, runtime, (sidecar,))
+            sidecar.write_text(json.dumps(dict(legacy, **resources)), encoding="utf-8")
+            processes["123"]["cmdline"] = processes["123"]["cmdline"].replace("--data-parallel-size 1", "--data-parallel-size 2")
+            with patch("src.infrastructure.vllm_preflight._read_live_processes", return_value=processes), self.assertRaisesRegex(ValueError, "topology differs"):
+                verify_live_vllm_service_identity((endpoint,), identity, runtime, (sidecar,))
 
     def test_complete_service_identity_rejects_every_runtime_drift(self):
         with tempfile.TemporaryDirectory() as directory:
