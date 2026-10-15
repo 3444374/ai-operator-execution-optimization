@@ -377,7 +377,7 @@ class PersistentLotusHttpLibraries(unittest.TestCase):
                         self.assertEqual(records[0]['lifecycle'][key], records[1]['lifecycle'][key])
                 closed = json.loads((root / 'group/group-summary.json').read_text())
                 self.assertEqual(closed['status'], 'passed')
-                self.assertEqual(closed['cleanup_errors'], [])
+                self.assertFalse(closed['cleanup_errors'])
                 self.assertTrue(owner._closed)
                 self.assertIsNone(owner.gateway._thread)
                 self.assertEqual((len(requests), fixture['active'], fixture['errors']), (8, 0, []))
