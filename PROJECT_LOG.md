@@ -13,6 +13,23 @@ CPU定向与独审修复身份早拒绝、workflow退出异常快照两项；实
 
 新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和真实VLM小轮集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；初轮单项请求超Core默认容量的臂明确pending，未改依赖或使用CLIP检索代替。45dd1524初轮及ce7d3285的Daft容量补轮完成原64图与原质量评价；独审发现的初轮并发超限、补轮、来源包和正常释放均保留，累计256真实调用，单次值不作性能排名。 随后复用同一工作目录实现native显式≤8MiB／总输入预算，普通PG默认不变；113项服务器CPU含实际大载荷Ray通过、原失败保留，Core原64图补轮也完成64调用、计数与逐图误差均0，累计320调用，正常释放。
 
+## 2026-10-15：接通PZ固定计划的最小后端软件路径
+
+查询私有的就绪工作／SDK continuation保留旧PZ执行函数、Generator与原解析，固定一次计划并为各臂重建状态。
+复用既有NativeCall、Daft、Ray Data及作者IMLane桥；SemLoom用同查询Job／算子流及Daft／Ray物理路径，未另造HTTP层或统一并发控制器。
+六条最小PZ接入各2次fixture POST、COUNT1，独立Core5次，共17POST／0模型／0GPU；自有进程与正常lease退出完成。
+模型重绑、unknown继续派发及终态Future保留wire等独审问题已修，Ray导入配置失败与IMLane告警保留。
+见[软件原值与边界](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-cpu-backends)；
+这批三行fixture不授予原2000行SemBench逐臂模型、四lane满载或性能比较资格。
+baseline整合另保留Animals显式容量与PG默认，合同回归后只重绑两份工厂guard；独审发现的响应关闭／发送收尾首错问题已修并增本机回归。原软件与模型证据仍绑定各自来源，未新跑服务器／模型／GPU。
+
+## 2026-10-15：完成一次PZ原生Movie Q3
+
+固定7ac292e0、旧PZ6ef／SemBenchc814及已有2000行输入，原生parallel完成120真实模型请求，COUNT7／真值14。
+官方相对误差0.5与TP7／FN7完整保留，无HTTP／解析失败；查询8.876秒与服务准备87.284秒分列，不构成性能排名。
+prefix cache实际关闭与原计划差异明确记录；自有进程／GPU及共享lease正常释放，后端逐臂仍待资格。
+见[同题原值](experiments/results/diagnostics/palimpzest_movie_20261015/native-model.json)。
+
 ## 2026-10-15：接入固定 PZ 原生 Movie 与执行边界
 
 新增原 Movie Q3／Q2 runner、显式本地模型绑定、失败／usage 台账和同物理计划检查。

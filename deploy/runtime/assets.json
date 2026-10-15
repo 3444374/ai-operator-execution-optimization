@@ -33,6 +33,7 @@
       {"module": "palimpzest", "install": "palimpzest @ git+https://github.com/mitdbg/palimpzest.git@6efc19841c49d727ce42f5c2dd55e7433601d2d9"},
       {"module": "litellm", "install": "litellm==1.95.0"},
       {"module": "openai", "install": "openai==2.50.0"},
+      {"module": "greenlet", "install": "greenlet==3.5.6"},
       {"module": "pandas", "install": "pandas==2.3.3"},
       {"module": "duckdb", "install": "duckdb==1.5.4"},
       {"module": "scipy", "install": "scipy==1.17.1"},

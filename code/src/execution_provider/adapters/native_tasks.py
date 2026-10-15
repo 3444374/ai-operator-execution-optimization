@@ -45,7 +45,8 @@ def build_native_execution(config, *, physical: RayMapConfig | None, execute=Non
     else:
         if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
             raise ValueError("native Ray execution requires RayMapConfig and its own transport")
-        selected = _ray_transport_options(replace(physical, response_mode="full"), max_request_bytes)
+        mode = 'native-call-full' if physical.response_mode == 'native-call-full' else 'full'
+        selected = _ray_transport_options(replace(physical, response_mode=mode), max_request_bytes)
         selected.update(options)
         execution = _build_model_execution(config, item_input_bytes=max_request_bytes, **selected)
 

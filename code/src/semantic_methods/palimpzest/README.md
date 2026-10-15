@@ -1,10 +1,23 @@
 # Palimpzest fixed-version adapters
 
-PZ remains the semantic operator, optimizer and DAG execution owner. This module
+PZ owns semantic operators, optimization and legal DAG dependencies. This module
 provides controlled private seams for PZ `0.8.2.sem_agg`, commit
 `6efc19841c49d727ce42f5c2dd55e7433601d2d9`; it is parallel to LOTUS.
 The [comparison contract](../../../../experiments/plans/reference/对照规范.md#execution-comparison-levels)
 separates complete-system quality/cost/time from execution of one selected plan.
+
+Deployment declares CPU/GPU, memory and model-service budgets, and chooses a fixed
+configuration or a verified native automatic mode. PZ determines semantic readiness;
+the selected backend owns dispatch, workers and backpressure. The thin adapter adds
+no common concurrency controller. Its finite prepared-request/stack and snapshot
+limits bound retained memory, rather than claiming to tune backend concurrency.
+System comparisons freeze configuration rules and permit reasonable backend-specific
+concurrency; capacity-matched mechanism experiments state the common work unit separately.
+HTTP request budgets and vLLM sequence/token budgets remain distinct. Native Ray pool
+autoscaling does not prove HTTP/GPU-window tuning; IMLane's declared `n` and SemLoom's
+declared cap remain explicit. Dispatch within a cap is not verified online cap tuning.
+Existing fixed-configuration evidence retains its original identity; these rules do
+not require historical reruns or a new tuning matrix.
 
 `completion_bridge(completion=..., observer=...)` keeps the original Generator's
 prompt factory, parser, statistics and exception defaults. It substitutes the
@@ -52,9 +65,54 @@ real-model runs and each of PZ+SemLoom/IMLane/Daft/Ray Data need separate eviden
 the completion seam is not a transfer of the entire query DAG to those backends.
 
 The newer attachment review concerns PZ `807ed301`/1.5.3, not this SemBench tag.
-Full backend qualification additionally needs a query-local ExecutionStrategy seam
-before the original per-row thread pool, plus final SDK-request preparation and
-original completion/parse/statistics continuation. The current completion bridge
-is a native/diagnostic boundary only. A native-adapted control must use the same
-prepare/finish path as each qualified backend. LIMIT/join/distinct/semantic aggregate
-and unverified multi-call shapes are unsupported in that first adapted slice.
+The completion bridge remains a native/diagnostic boundary. The adapted path in
+[`query_execution.py`](query_execution.py) privately reuses the original parallel
+strategy's function bodies and queues before its per-row pool. Non-model operators
+run locally; model operators suspend on the query thread when the original SDK has
+prepared a complete request. [`prepared_sdk.py`](prepared_sdk.py) returns the full
+HTTP response to the same SDK/Generator stack for parsing, statistics and records.
+It uses greenlet 3.5.6 without switching stacks between threads or replacing global
+PZ executor state. Terminal futures release introduced request and stack references.
+
+This first controlled profile is `fixed-local-nonredirect.v1`: the query-owned SDK
+client disables redirects before request preparation, then preserves that prepared
+request's body, headers and timeouts. A 3xx response keeps the original SDK/PZ error
+default and separate failure ledger, then stops further adapter dispatch. This does
+not qualify the original SDK's default redirect behavior. Zero SDK sends, a second
+send, identity changes and unknown remote outcomes fail the adapter; ordinary
+provider/parser failures retain the original False/None defaults and invalid ledger.
+Unknown work keeps its responsibility and blocks new work. An exhausted finite
+batch is not evidence that a query or remote service has ended.
+
+Native-adapted response closing and actual-send observation are attempted independently.
+The request or cancellation error keeps priority; later close/observation failures are
+notes. A close failure after a complete response still fails the call, and an unknown
+transport outcome still prevents reuse. Integration keeps the native capacity contract
+and revalidates exact source guards; earlier runtime evidence remains at its frozen source.
+
+[`select_fixed_movie`](../../experiments/palimpzest/fixed.py) selects the original
+Movie Q3 plan once. It records source/schema/UDF, prompt/parser, model, dependencies,
+disabled client cache and caller-verified service/cache declarations; `fresh(run_id)`
+constructs independent operators, sources, Generators and the original strategy.
+[`execute_fixed_movie`](../../experiments/palimpzest/fixed_runner.py) never reoptimizes.
+It separates original-native execution from native-adapted, Daft, Ray Data, author
+IMLane CP/Ray and SemLoom. `BackendRunProfile` currently accepts only explicit fixed
+deployment budgets; native automatic tuning remains unsupported. The original
+zero-survivor empty relation is preserved and marked compatibility-invalid rather
+than silently changed to COUNT=0.
+
+Finite Daft/Ray Data/IMLane paths reuse the existing complete-call native API graphs.
+[`SemLoomProgress`](semloom.py) instead keeps one query Job and open operator flows,
+releasing results before resuming the original continuation and sealing only when
+the method ends. Explicit `RayMapConfig(response_mode='native-call-full',
+payload_backend='daft', ...)` uses the existing Daft materializer, Ray objects and
+HTTP actors with verified source/model identity on the driver's single live node.
+The shared transport reuses the existing NativeCall HTTP kernel. `physical=None`
+is a local diagnostic. Work=1 denotes request count, not calibrated GPU work.
+
+The adapted slice accepts single-model LLMFilter, single-field ONE_TO_ONE bonded
+conversion, ordinary scans/predicates/projection and structural COUNT. It rejects
+LIMIT/join/distinct/semantic aggregate, multi-field follow-ups and unverified shapes.
+The [qualification record](../../../../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)
+separates source checks, synthetic HTTP backend runs and real model evidence; the
+implemented interfaces do not by themselves establish six-arm model parity.

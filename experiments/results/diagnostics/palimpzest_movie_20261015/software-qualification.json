@@ -1,0 +1,317 @@
+{
+  "schema": "semloom.palimpzest_prepared_backend_cpu.v1",
+  "run_id": "pz-prepared-backends-cpu-20261015-r1",
+  "scope": "Actual PZ/SDK and backend APIs with a three-row Q3-shaped deterministic HTTP fixture; not the original SemBench model benchmark",
+  "source_base_commit": "7ac292e0a174dd52701cfb1a8675b918403c3f7a",
+  "overlay_required": true,
+  "base_alone_contains_stage2": false,
+  "source_files": {
+    "code/requirements/palimpzest.txt": {
+      "sha256": "68ace8ebc1d02b1c99641261da0acdaa78f8a20eea36cd9c6f90a2fd286bbf80",
+      "bytes": 388
+    },
+    "code/src/execution_provider/adapters/native_call_transport.py": {
+      "sha256": "d03ccb340ae52b73b52d42e6690a6c7f5c9f5c5dbc38cf89815a3ee187f9bdb5",
+      "bytes": 4811
+    },
+    "code/src/execution_provider/adapters/native_tasks.py": {
+      "sha256": "1e727fc2647856eced29c18aa6999b1f2c062cdf70c4c438e79a97ce06a42ba7",
+      "bytes": 7512
+    },
+    "code/src/execution_provider/adapters/ray_map_transport.py": {
+      "sha256": "2ca2063e195647efe710c9635b63325b044c608a561e2dc1730e4e75f85e8de6",
+      "bytes": 35190
+    },
+    "code/src/experiments/palimpzest/__init__.py": {
+      "sha256": "b5075c3481c95169b8b38cb9e7027022e6acbd900dc9cf1d8e6dcacde2ce4ef6",
+      "bytes": 78
+    },
+    "code/src/experiments/palimpzest/fixed.py": {
+      "sha256": "2bf5300f7b4238a20c97afab6bdedb3288b704842a21c717d927a61d15d298f1",
+      "bytes": 18123
+    },
+    "code/src/experiments/palimpzest/fixed_runner.py": {
+      "sha256": "b0b4941770df7a47d5a9469473eb3e65e814acdfe7f452e5e66d6fcf068c8bcf",
+      "bytes": 14071
+    },
+    "code/src/experiments/palimpzest/ledger.py": {
+      "sha256": "dd0ac548eb61d913016cb63e02320ec2e6df93ca943b1e64868883e05368e49b",
+      "bytes": 7755
+    },
+    "code/src/experiments/palimpzest/model.py": {
+      "sha256": "77f1f1c1f519f8e87180f6cdf9a6eefdaeba0ac248ab61c5207c22cdede4af89",
+      "bytes": 6643
+    },
+    "code/src/experiments/palimpzest/native.py": {
+      "sha256": "22798641865afc8e450b5e729a1f7adf8fb30bdaaf9bcc3582eafaea36a48fd8",
+      "bytes": 17752
+    },
+    "code/src/experiments/palimpzest/source.py": {
+      "sha256": "ca2c86f9d80f41668b3cff30074d533c5070fc304895b2f426b9af6498c11a5d",
+      "bytes": 6023
+    },
+    "code/src/semantic_methods/palimpzest/__init__.py": {
+      "sha256": "a210b22644a5e6b4ad08b8ad148bfbc2f42daeaf338bfb32cf52085311a625aa",
+      "bytes": 285
+    },
+    "code/src/semantic_methods/palimpzest/backend.py": {
+      "sha256": "3afa987d1f838d80c8d9175dfc523d62d53ab2a27632affea1f3e6943dc2e45e",
+      "bytes": 10102
+    },
+    "code/src/semantic_methods/palimpzest/native_control.py": {
+      "sha256": "e8a9c4e7ea3e535a7e358db4954ba71fdb61445740bf76ef018313e1e1e11711",
+      "bytes": 6464
+    },
+    "code/src/semantic_methods/palimpzest/plan.py": {
+      "sha256": "678465a0486452a3f17ee840d8f265f20c3ae1d39e62a9f43b906dc9f0f8e740",
+      "bytes": 6880
+    },
+    "code/src/semantic_methods/palimpzest/prepared_progress.py": {
+      "sha256": "c2c775c1b068f3fe7aee53f66c7e72fc3ec0e44b0ad32f71746c9ac12fb84976",
+      "bytes": 3872
+    },
+    "code/src/semantic_methods/palimpzest/prepared_sdk.py": {
+      "sha256": "4c7e3c950d1e2edd004d6dd709f7cc93a5c7758c58601c0f770ce9a9802eb3d0",
+      "bytes": 14780
+    },
+    "code/src/semantic_methods/palimpzest/query_execution.py": {
+      "sha256": "ead76808964347294992d146e5624c0b340414cd9f2f3c7880969b407069dc73",
+      "bytes": 29902
+    },
+    "code/src/semantic_methods/palimpzest/semloom.py": {
+      "sha256": "11049c0c1a85c4c628a6cf37da43d2e85deb24eff1438a64d2ae22193804045f",
+      "bytes": 16999
+    },
+    "code/src/semantic_methods/palimpzest/source.py": {
+      "sha256": "3cee498c9a1332ad591b77cf87fa7520b85d39d22dcd0bc76245e878e772f9b9",
+      "bytes": 1414
+    },
+    "code/tests/execution_provider/test_native_call_transport.py": {
+      "sha256": "11cf09940ce12f97ebc17a2a199fc64223b92bc9031ee3b26494435ae9c30ab0",
+      "bytes": 26023
+    },
+    "code/tests/experiments/test_palimpzest_fixed.py": {
+      "sha256": "127a6c329409ce55c69569dbb0d09b606c60db3be0cdd4f5221919fb449b099f",
+      "bytes": 21031
+    },
+    "code/tests/semantic_methods/test_palimpzest_query_execution.py": {
+      "sha256": "5f58166251eae14af30c9be55d118badaee49e8de046b585016d52e7535bc52f",
+      "bytes": 35531
+    },
+    "code/tests/semantic_methods/test_palimpzest_semloom.py": {
+      "sha256": "502e3e75cd5e4a24919a7f63d4149d6225ca5aa5924af69653efab2c599b3a4d",
+      "bytes": 22475
+    },
+    "deploy/runtime/assets.json": {
+      "sha256": "4d578f80c28cf4e8bdf5be5b3366a42d4fb7b056c52d738c3e98b743aa0bc4cf",
+      "bytes": 5219
+    }
+  },
+  "upstream": {
+    "sembench": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "palimpzest": "6efc19841c49d727ce42f5c2dd55e7433601d2d9",
+    "tag": "0.8.2.sem_agg"
+  },
+  "versions": {
+    "palimpzest": "0.8.2",
+    "greenlet": "3.5.6",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "httpx": "0.28.1",
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pyarrow": "20.0.0",
+    "numpy": "2.0.2",
+    "pandas": "2.3.3"
+  },
+  "http_profile": "fixed-local-nonredirect.v1",
+  "configuration_mode": "fixed",
+  "native_auto_qualified": false,
+  "prepared_memory_is_backend_concurrency": false,
+  "real_model_calls": 0,
+  "gpu_work": 0,
+  "actual_fixture_posts": 17,
+  "arms": [
+    {
+      "arm": "native-adapted",
+      "run_id": "native-adapted-cpu-r2",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "passed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "166d696b564c2189b6edb53a1173b5bc8aa6802fe99e086b373974081dfb5e2d",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "b825ca945e69a1a25b19fd30a12816b60fd02fc99b341b5c073b7a756f78d99f"
+    },
+    {
+      "arm": "daft",
+      "run_id": "vendor-cpu-r1",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "failed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "3344377de4a0b2bed582cade11e1c8d8aafe71f3337e63c56f34aadae7d860f8",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "66aa13a8f110c7583c26759f3cc38416ca54a3df266a1786224cf523dbba4b29"
+    },
+    {
+      "arm": "ray-data",
+      "run_id": "vendor-ray-r3",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "passed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "f47a8aad987e83ab8545ccc07e79986c355b8be00f3dd710566e2e904f5a3764",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "b55d2abf12f1ee9f04c95f047e44757828807b6e195663c3a682ef96c7aba1c5"
+    },
+    {
+      "arm": "imlane-cpython",
+      "run_id": "imlane-cpu-r1",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "passed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "a2f637c1f4664ec2b41a001967425d93cc24bd1702e7591fe14681db66495611",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "7cee26de6b17913db0727fb47b2da1a273a6d923012846db4ddb0a1d3c51495a"
+    },
+    {
+      "arm": "imlane-ray",
+      "run_id": "imlane-cpu-r1",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "passed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "a2f637c1f4664ec2b41a001967425d93cc24bd1702e7591fe14681db66495611",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "7cee26de6b17913db0727fb47b2da1a273a6d923012846db4ddb0a1d3c51495a"
+    },
+    {
+      "arm": "semloom-ray",
+      "run_id": "pz-semloom-ray-cpu-r1",
+      "status": "passed_software_fixture_component",
+      "enclosing_run_status": "passed",
+      "fixture_posts": 2,
+      "count": 1,
+      "completion_completed": 2,
+      "invalid_predictions": 0,
+      "original_plan_fingerprint": "e5884a45815c17cdbf9fb2543be7c010420a8fd54795a6fc2d0da82741be2bbb",
+      "prepared_stacks_at_exit": 0,
+      "retained_request_bytes_at_exit": 0,
+      "unconfirmed_work": false,
+      "response_usage_scope": "synthetic fixture values; no model inference",
+      "raw_result_sha256": "4f5505c9c8b941636be60ca53df8c59e2dace52bc9c4dd47c80829fc79483ee1"
+    }
+  ],
+  "core_physical_component": {
+    "run_id": "core-ray-cpu-r1",
+    "fixture_posts": 5,
+    "tests": {
+      "cross_operator_before_upstream_end": true,
+      "gzip_429_complete_response": true,
+      "named_pool_source_claim_and_reuse": true,
+      "worker_presend_failure_zero_posts": true
+    },
+    "closed_query_count": 3,
+    "all_jobs_and_storage_zero": true,
+    "logical_ray_cpus": 2,
+    "driver_cpu_affinity_set": false,
+    "gzip_response_qualification": "Frozen helper runtime byte/status/header assertions; response bytes were not separately persisted",
+    "source_before_verification": "Parent SSH upload/extraction and all-25-file SHA assertion recorded in tool transcript; no separate server before log",
+    "source_after_verification": "All 25 source files matched the uploaded archive manifest"
+  },
+  "author_imlane": {
+    "upstream_commit": "072f8257db80569e42c9f5727d839587df529652",
+    "build_mode": "existing reviewed patched build; no source/environment/build changes in this task",
+    "bridge_binary_sha256": "8f7d48aa3a73bd6ef35c2da7426c0b0f8e2cbc4dbc985dc15834de5d51de396d",
+    "declared_coordinator_executors": 4,
+    "created_lanes_per_runtime": 4,
+    "actual_fixture_worker_calls_per_runtime": 2,
+    "dbend_local_meta_executors": 6,
+    "native_host_threads": 8,
+    "ray_registration_cancelled_warnings": 2,
+    "warning_cause": "unverified; retained, not assumed harmless or resolved",
+    "four_lane_full_load_qualified": false,
+    "normal_coordinator_and_ray_owner_exit": true,
+    "owned_survivors": [],
+    "owned_shared_memory_after": {}
+  },
+  "failure_history": [
+    {
+      "run_id": "vendor-cpu-r1",
+      "status": "failed",
+      "daft_component": "passed two POSTs/count1 before later Ray failure",
+      "ray_fixture_posts": 0
+    },
+    {
+      "run_id": "vendor-ray-r2",
+      "status": "failed",
+      "fixture_posts": 0,
+      "cause": "declared async batches 2 differed from Ray import-time default 4"
+    },
+    {
+      "run_id": "vendor-ray-r3",
+      "status": "passed",
+      "change": "Explicit import-time setting 2 in a fresh process; production source unchanged; Daft not rerun"
+    }
+  ],
+  "physical_exit": {
+    "lease_recover_stale": false,
+    "forced_owned_cleanup": false,
+    "owned_remaining": [],
+    "lease_released": true,
+    "all_owned_process_cleanup_confirmed": true,
+    "failed_helper_nonzero_returncodes_preserved": true
+  },
+  "unsupported": [
+    "LIMIT",
+    "join",
+    "distinct",
+    "semantic aggregate",
+    "multi-field follow-up",
+    "unverified multi-call shapes"
+  ],
+  "remaining": [
+    "Original 2000-row Movie model runs per fixed plan including original-native and native-adapted controls",
+    "Matched quality/cost/time comparison and performance qualification",
+    "IMLane four-lane full-load health and registration warning cause"
+  ],
+  "performance_qualified": false,
+  "original_movie_backend_model_qualified": false,
+  "raw_evidence": {
+    "run_id": "pz-prepared-backends-cpu-20261015-r1",
+    "archive_basename": "pz-stage2-cpu-selected-final-r1.tar.gz",
+    "archive_sha256": "3afa9b054369f32830963cbb1f0e2a8999e7f68be87e54ac4d258e3a4378a1cf",
+    "archive_bytes": 213933,
+    "selected_raw_and_source_files": 66,
+    "manifest_sha256": "d151122d0c767b38634a40f36f2b4bc092f7f0f22cd07e64d59393324977d199",
+    "retrieval": "Request this run_id and archive SHA from the project artifact owner; private raw archive is retained outside Git on the task host and experiment server",
+    "full_debug_bundle_in_git": false
+  }
+}

@@ -114,6 +114,33 @@ class NativeRequestCapacityTests(unittest.TestCase):
                     build_native_execution(MODEL,physical=physical,max_request_bytes=4*MIB,input_bytes=8*MIB)
                 transport.assert_not_called()
 
+    def test_complete_call_ray_mode_keeps_explicit_native_item_and_total_limits(self):
+        constructed = []
+
+        class Transport:
+            def __init__(self, config, capacity, observer=None, *, physical, before_request=None):
+                constructed.append((config, capacity, physical))
+
+            async def execute(self, request, endpoint):
+                raise AssertionError('constructor contract must not dispatch')
+
+            async def close(self):
+                pass
+
+        physical = RayMapConfig('127.0.0.1:12345', 1, 1, 4*MIB+24, 8*MIB+64,
+                                response_mode='native-call-full')
+        with patch('src.execution_provider.adapters.ray_map_transport.RayMapTransport', Transport):
+            execution = build_native_execution(MODEL, physical=physical,
+                max_request_bytes=4*MIB, input_bytes=8*MIB)
+            try:
+                self.assertEqual(execution.engine.capacity.limits.item_input_bytes, 4*MIB)
+                self.assertEqual(execution.engine.capacity.limits.input_bytes, 8*MIB)
+                self.assertEqual(len(constructed), 1)
+                self.assertEqual(constructed[0][2], physical)
+                self.assertEqual(MAX_FRAME_BYTES, MIB)
+            finally:
+                self.assertTrue(execution.close())
+
     def test_boundary_and_intermediate_payloads_preserve_bytes(self):
         for size in (MIB,2516582,8*MIB):
             with self.subTest(size=size):

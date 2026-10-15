@@ -67,7 +67,7 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 表示／中间物化、uint8 延后 FP32 扩展与批次切分仅有云端 CPU 探索，尚未采纳为本集成实现或验证 GPU 收益。
 固定 `485c86a8` 的[同次 workflow 九格连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已验证；服务级 RM／内存索引跨调用复用仍未认证，后续完整查询继续采用[常驻口径](../experiments/plans/reference/对照规范.md#resident-query-timing)。
 
-2026-10-15：[PZ 原生与固定计划边界](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)保留原 Generator、parallel 与结果合同；实际原库 CPU／localhost fixture 已接通 Q3 与 Q2。模型绑定未知即拒绝，失败与 negative、usage 缺失分开；完整 Movie 模型与其余四后端逐臂资格待完成。
+2026-10-15：[PZ 原生与固定计划边界](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md)保留旧tag的原 Generator、SDK及关系合同。原生完整Movie Q3已完成120模型请求，COUNT7／真值14与FN7保留；逐臂实现另采用查询私有的就绪工作／SDK continuation，固定计划与fresh状态分别核验。源码、CPU fixture及实际模型资格分列，不把本轮原生模型结果借给其余后端或宣称性能排名。 baseline合并保留Animals显式请求容量与PG默认，回归后重绑两份工厂guard；native-adapted响应关闭／发送收尾首错修补另有本机定向资格，不改写原软件摘要。
 
 ## 当前文本、接入与公共基础
 

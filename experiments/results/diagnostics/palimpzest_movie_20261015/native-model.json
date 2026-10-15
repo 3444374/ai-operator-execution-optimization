@@ -1,0 +1,148 @@
+{
+  "schema": "semloom.palimpzest_native_model_qualification.v1",
+  "execution_source_commit": "7ac292e0a174dd52701cfb1a8675b918403c3f7a",
+  "upstream_sources": {
+    "palimpzest": "6efc19841c49d727ce42f5c2dd55e7433601d2d9",
+    "sembench": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+  },
+  "run_scope": "one original Movie Q3; native PZ parallel strategy; no frozen-plan backend comparison",
+  "source_relation_rows": 2000,
+  "selected_rows": 120,
+  "input_manifest_content_sha256": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+  "input_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+  "query_count": 1,
+  "model": {
+    "cached_model": "Qwen2.5-7B-Instruct",
+    "served_model": "qwen2.5-7b",
+    "upstream_enum": "VLLM_QWEN_1_5_0_5B_CHAT",
+    "binding_scope": "controlled fixed-version local transport mapping",
+    "metadata_sha256": "8cf6863335a86f9878220e8dc81369cd8f22f23ffc58165fbb1a615b58a90bf0",
+    "vllm_version": "0.25.1",
+    "dtype": "float16",
+    "gpu_count": 1,
+    "gpu": "RTX 4090",
+    "prefix_caching": false,
+    "generation_config": "vllm defaults; original PZ temperature=0; no client max_tokens or stop override",
+    "vllm_max_model_len": 8192,
+    "vllm_max_num_seqs": 64,
+    "gpu_memory_utilization": 0.9
+  },
+  "native_configuration": {
+    "strategy": "original ParallelExecutionStrategy",
+    "max_workers": 64,
+    "join_parallelism": 64,
+    "batch_size": null,
+    "sentinel": null,
+    "optimizer": "pareto/MaxQuality; original selected configuration retained",
+    "optimizer_flags": {
+      "allow_bonded_query": true,
+      "allow_model_selection": true,
+      "allow_rag_reduction": true,
+      "allow_mixtures": true,
+      "allow_critic": true,
+      "allow_split_merge": false
+    },
+    "selected_plan_artifact_retained": false
+  },
+  "versions": {
+    "palimpzest": "0.8.2",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pandas": "2.3.3",
+    "numpy": "2.0.2",
+    "pyarrow": "20.0.0",
+    "pydantic": "2.14.1",
+    "httpx": "0.28.1"
+  },
+  "status": "valid native execution; quality measured separately",
+  "actual_posts": 120,
+  "model_api_warmup_requests": 0,
+  "count": 7,
+  "ground_truth_count": 14,
+  "quality": {
+    "original_metric": {
+      "relative_error": 0.5,
+      "absolute_error": 7.0,
+      "mean_absolute_percentage_error": 50.0
+    },
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "classification_audit": {
+      "true_positive": 7,
+      "false_positive": 0,
+      "true_negative": 106,
+      "false_negative": 7,
+      "invalid": 0,
+      "evaluated_rows": 120,
+      "missing_rows": 0,
+      "count_error_from_classifications": -7
+    },
+    "all_evaluated_classification_audit": {
+      "true_positive": 7,
+      "false_positive": 0,
+      "true_negative": 106,
+      "false_negative": 7,
+      "invalid": 0,
+      "evaluated_rows": 120,
+      "missing_rows": 1880,
+      "count_error_from_classifications": -7
+    },
+    "extra_movie_filter_calls": 0,
+    "dataset_role": "original_movie_sf2000",
+    "audit_scope": "every submitted Filter occurrence; failures/defaults are invalid predictions",
+    "complete_filter_audit": true,
+    "quality_equivalence_proven": false
+  },
+  "completion_ledger": {
+    "schema": "semloom.palimpzest_completion_ledger.v1",
+    "completion_submitted": 120,
+    "completion_completed": 120,
+    "completion_outstanding": 0,
+    "completion_failed": 0,
+    "parser_default_retained": 0,
+    "parser_not_attempted": 0,
+    "generator_failed": 0,
+    "usage_available_calls": 120,
+    "usage_unavailable_calls": 0,
+    "usage_status": "available",
+    "total_prompt_tokens": 38325,
+    "total_output_tokens": 7666,
+    "known_prompt_tokens": 38325,
+    "known_output_tokens": 7666,
+    "monetary_cost_usd": null,
+    "monetary_cost_status": "unavailable",
+    "accounting_scope": "Generator calls; actual HTTP attempts require the separate POST budget"
+  },
+  "timing": {
+    "native_full_query_seconds": 8.875966797,
+    "scope": "original query construction/run including final optimization; returned relation; excludes later quality/evidence output and service cleanup",
+    "runner_input_and_dependency_preparation_seconds": 11.952560934,
+    "model_service_preparation_seconds": 87.28412901004776,
+    "independent_queries": 1,
+    "query_tail_percentiles": "unavailable; one query"
+  },
+  "cleanup": {
+    "service_exit": 0,
+    "ownership_unknown": false,
+    "owned_processes_remaining": 0,
+    "gpu_compute_processes_remaining": 0,
+    "gpu_after_mib": 1,
+    "host_lease_normally_released": true,
+    "recover_stale": false,
+    "bridge_restored": true,
+    "active_generators": 0,
+    "remote_stop_evidence": "independent owner process/GPU/lease observation; not inferred from Generator bridge",
+    "vllm_shutdown_log": "resource_tracker reported one semaphore cleanup warning; log retained"
+  },
+  "raw_evidence": {
+    "archive_bytes": 109793,
+    "archive_sha256": "148f84db4a60dd0665723c7c29311ad37355441b2451c7643e0dc92e0bd30897",
+    "files": 34,
+    "location": "private external artifacts; not committed",
+    "run_id": "pz-native-movie-q3-20261015-r1",
+    "archive_basename": "native-evidence-r1.tar.gz",
+    "retrieval": "Request this run_id and archive SHA256 from the project artifact owner; verify every file using the accompanying SHA256 manifest. Raw files remain outside Git."
+  },
+  "performance_qualified": false,
+  "quality_equivalence_proven": false,
+  "backend_comparison_qualified": false
+}
