@@ -2,7 +2,7 @@
 
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
 分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
-原方法／SDK、厂商调度和既有默认保持，不提供新模型性能或全图RSS资格。
+原方法／SDK、厂商调度和既有默认保持；这只是容量／清理首阶段，后续薄接入减法未完成，不提供新模型性能或全图RSS资格。
 
 维护日期：2026-10-15；主体能力核对固定集成来源 `277d8f48`，后续独立修复逐条注明来源，不将其他活动分支或旧运行自动计入。
 接口事实由源码拥有，逐次测试／模型结果与失败由[证据台账](../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)和原报告拥有。
@@ -47,7 +47,7 @@
 
 Daft 的[当前图片适配](src/baselines/image/frameworks/daft_clip.py)在同一 GPU stateful 方法中执行 resize／normalize 与 forward；
 另一 staged 参照使用不同 Fast processor／runner，不能混用数值或性能资格。fixed-size-list 转 Python list／NumPy 存在拷贝，成本量级待测，不称零拷贝。
-文本 Ray 的[容量校验](src/baselines/text/frameworks/prepared_map.py)与实际HTTP活动上界不是同一量，可能保守限制batch摊销，需独立验证后再决定修改。
+固定 `277d8f48` 的文本 Ray 校验曾混同HTTP活动与批次行包络；[首阶段修复](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)已按 `A×B≤C` 校验活动上界，`A×B×R` 仍只报告HTTP stage行包络。完整LOTUS与模型性能未由此重验。
 固定2.56.1原生HTTP stage按batch建session、逐条await；改为gather会改变原生执行，不能沿用原资格。
 当前图片RM新建Ray Data图不表示Ray整体必然逐查询重建全部进程，实际生命周期计数仍待采集。
 

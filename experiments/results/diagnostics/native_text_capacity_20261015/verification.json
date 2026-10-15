@@ -231,7 +231,7 @@
       "install-preview-network.txt": "30de79fe5caa186335c718ecf5af4f238e9fa86856166d497c433c5dcf4a0116",
       "install-preview-ca.txt": "6bd9c68835fb71d6731b511fa0613451c53f24274545a294d210749b450da913"
     },
-    "private_artifact_location": "Task validation directory outside the Git checkout; original logs and failed run identities retained."
+    "private_artifact_location": "Task validation directory outside the Git checkout; original logs and failed run identities retained. Request originals from the project maintainer using source f2749bf1, the observation/run identity and the filenames in private_artifact_hashes; verify each file against its recorded SHA-256."
   },
   "independent_reviews": {
     "design": "AB HTTP guard plus incremental finite inputs; no response-sum admission or new scheduler.",

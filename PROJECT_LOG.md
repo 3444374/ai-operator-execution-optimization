@@ -7,7 +7,9 @@
 独立审核发现的source／完整payload混同已按固定模板开销修正，方法、usage与厂商执行保持。
 [同题报告](experiments/results/diagnostics/native_text_capacity_20261015/README.md)保存最小API实跑、完整消费计时、
 Mac实验观测平台限制、实库／替身范围和全部失败；不新造formatter、session、runner或调度，不重跑模型矩阵。
-IMLane公共接点的每查询关闭与底层可选跨批session分别说明；main、integration及其他owner路径不在本次写入范围。
+IMLane公共接点的每查询关闭与底层可选跨批session分别说明；原独立职责未写入main、integration或其他owner路径。
+本集成按原提交顺序接纳并保留文档精简及统计修复，只补原件获取方式与首阶段范围说明；三个生产文件保持固定实测源码同blob。
+后续减法由原职责线继续，完整LOTUS路径结果／异常／清理验证前保留旧实现，确认无用后删除并补回归，不把本次API软件资格写成全部完成。
 
 ## 2026-10-15：独立接纳重复均值区间修复
 
