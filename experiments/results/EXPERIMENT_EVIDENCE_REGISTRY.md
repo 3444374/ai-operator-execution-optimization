@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[固定 main 原 Movie／Animals 实测](diagnostics/main_queries_20261015/README.md)。
+固定`464de926`，四臂16完整查询、9216实际模型POST及原始响应关联复算；Movie Q3四臂相对误差50%，Q1发生项判定不全相同，Animals64图一致。
+仅支持同源码接入／资源／有限质量检查及描述性时间，无稳定性能或新auto／多卡资格。
+
 2026-10-15：[HSE 身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
 
 固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。

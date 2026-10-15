@@ -30,4 +30,5 @@ Palimpzest 与 LOTUS 是平行的语义系统参照；其[研究定位](docs/res
 
 main 的执行与接入代码以 `425f0145` 为基点，已独立接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)；上面的新 LOTUS 图像入口和结果来自
 [integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)，研究分支按具体假设独立评价。
+[固定 main 的原Movie／Animals实际模型报告](experiments/results/diagnostics/main_queries_20261015/README.md)覆盖四臂完整查询，保留质量不足和单次边界。
 Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。

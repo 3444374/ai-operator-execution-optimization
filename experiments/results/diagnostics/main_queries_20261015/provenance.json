@@ -1,0 +1,86 @@
+{
+  "run_id": "main-model-r1",
+  "source_commit": "464de926cb85c2bc526a9402442776b8d60db966",
+  "runtime_source_files": 776,
+  "runtime_source_manifest_sha256": "0443d641cb072b3fe551f29128624365bf6973c2f36d3072668b8cce563a90f4",
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "model_fingerprints": {
+    "Qwen2.5-7B-Instruct": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+    "Qwen2-VL-2B-Instruct": "8cab19cbb8c5bc0da3305ac296605bcbbf19cada1d8bdc2c72b3fd08cc961500"
+  },
+  "started_utc": "2026-10-15T11:00:32.054819+00:00",
+  "ended_utc": "2026-10-15T11:14:47.264905+00:00",
+  "request_budget": 9216,
+  "requests_actual": 9216,
+  "unknown_requests": 0,
+  "model_http_errors": [],
+  "warmups": 0,
+  "repeats": 1,
+  "model_retries": 0,
+  "request_limit": 4,
+  "healthy_total_wall_timeout_s": null,
+  "work_no_activity_s": 120,
+  "startup_no_activity_s": 180,
+  "cleanup_s": 120,
+  "client_plus_controller_rss_capacity_bytes": 8589934592,
+  "rss_is_hard_limit": false,
+  "resource_sample_interval_s": 0.5,
+  "services": {
+    "movie": {
+      "startup_s": 35.23244369821623,
+      "exit": {
+        "returncode": 0,
+        "remaining_owned": []
+      }
+    },
+    "animals": {
+      "startup_s": 60.09446363011375,
+      "exit": {
+        "returncode": 0,
+        "remaining_owned": []
+      }
+    }
+  },
+  "controller_helpers_sha256": {
+    "main_model_controller.py": "00009a9c7bfd727275152cb7ca6ab74beaf491e6752cae9b12d5d1ae41726d58",
+    "main_model_worker.py": "27916baa67f619a08be56f4b8c32a173f84814b10577a13e721e5c86cc8a44ac",
+    "allocation_barrier.py": "8758424c672688724082ecbb6b6f06acc2a95229f5ddaa85fa33065c7504143f",
+    "fault_supervision.py": "1b6b8084b7802b2ae2c540cb0361ef2170a05147309f5da67356a7f8b4508708",
+    "task_progress.py": "139416dd92f7d207794155ebc785367431757e8ee5bed1c7b75410af7122b9a7",
+    "owned_controller.py": "ef2f71a887a89c254de0d36e0deea75cb187898a78c9b89d094927b6a14dd9ce"
+  },
+  "cleanup": {
+    "allocations_closed": true,
+    "owned_before": [],
+    "forced": [],
+    "survivors": [],
+    "actions": [],
+    "callback_seconds": 0.017409527208656073,
+    "errors": [],
+    "inventory_error": null,
+    "callback_wait_upper_bound_s": 8.0,
+    "observer_stopped": true
+  },
+  "lease_released": true,
+  "raw_archive": {
+    "bytes": 342093068,
+    "sha256": "a71ae517cf7c8e3d199a603d0104f05ebc6bc38c737f28c3b8fbc6b47ec20286",
+    "manifest_files": 364,
+    "access": "Private project artifact, obtain by run_id and SHA256 from the maintainer",
+    "independent_copy": "verified on separate Mac filesystem; every archived file hash matches",
+    "total_files": 365
+  },
+  "independent_reviews": {
+    "standards_P1P2": 0,
+    "spec_P1P2": 0,
+    "standards_original_raw_recomputation": "CPU-only independent replay equal to archived results"
+  },
+  "animals_application_seconds": {
+    "lotus-native": 38.753168442,
+    "daft": 45.6479825,
+    "ray-data": 77.221304399,
+    "semloom": 58.412485437
+  },
+  "animals_application_scope": "run_query entry clock to finally completed, including validation/preparation, query, evaluation/archive and resource close; excludes external model service startup and Python import",
+  "public_recompute_sha256": "2ed586f65bb0b727ff41d2a6c65b5b50b4dea9de201d7395b4256cbd58afac46"
+}

@@ -21,7 +21,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
 原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
 [本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
-当前不将旧模型结果升级为新main质量／性能；PZ、IMLane和图像检索仍按各自固定来源解释。
+[同一main实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)固定`464de926`，覆盖原Q1/Q2/Q3与Animals；模型质量不足及单次计时边界保留。PZ、IMLane和图像检索仍按各自固定来源解释。
 
 ## Animals 图文四臂
 
@@ -29,7 +29,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 图文profile整批校验，原图不缩放或拆分。native显式逐请求最多8MiB且须给总input，三工厂共同验证Ray容量；
 默认native／PG／wire仍为1MiB。
 [本批资格](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)固定来源、原CPU/真实Ray、独审和失败修复；
-不引入CLIP/HSE/RM/index或PZ依赖。最终main的模型测试另行绑定同一发布SHA。
+不引入CLIP/HSE/RM/index或PZ依赖。[实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)绑定同一发布main`464de926`，四臂64图判定及COUNT一致；不代表更大数据或其他源码已认证。
 
 ## Core 推进、元数据与完整响应
 

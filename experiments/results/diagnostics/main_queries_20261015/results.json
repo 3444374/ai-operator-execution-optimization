@@ -1,0 +1,859 @@
+{
+  "schema": "semloom.main_queries_recomputed.v1",
+  "source_commit": "464de926cb85c2bc526a9402442776b8d60db966",
+  "actual_model_requests": 9216,
+  "query_count": 16,
+  "repeats": 1,
+  "warmups": 0,
+  "query_tail_quantiles": null,
+  "query_tail_reason": "one complete query per cell; no query P99 or P99.99",
+  "rows": [
+    {
+      "workload": "Movie",
+      "query": 1,
+      "arm": "lotus-adapted-native",
+      "model_requests": 2000,
+      "full_query_s": 75.086480504,
+      "ready_query_s": 74.999746039,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1049,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 436,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -425
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 2000,
+      "request_response_row_associations": 2000,
+      "request_stats": {
+        "samples": 2000,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.091102305,
+        "maximum_s": 0.166277432,
+        "p50_s": 0.125022787,
+        "p95_s": 0.139133396,
+        "p99_s": 0.144671207,
+        "p99_unavailable_reason": null,
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 2,
+      "arm": "lotus-adapted-native",
+      "model_requests": 120,
+      "full_query_s": 4.992059363,
+      "ready_query_s": 4.896299232,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.087551545,
+        "maximum_s": 0.136835635,
+        "p50_s": 0.122069944,
+        "p95_s": 0.135223965,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 3,
+      "arm": "lotus-adapted-native",
+      "model_requests": 120,
+      "full_query_s": 4.431636795,
+      "ready_query_s": 4.334552438,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.5,
+          "absolute_error": 7.0,
+          "mean_absolute_percentage_error": 50.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.10150337,
+        "maximum_s": 0.131369062,
+        "p50_s": 0.117907383,
+        "p95_s": 0.129431174,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 1,
+      "arm": "lotus-method-native-daft",
+      "model_requests": 2000,
+      "full_query_s": 75.97851166,
+      "ready_query_s": 75.875375945,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1048,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 437,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -426
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 2000,
+      "request_response_row_associations": 2000,
+      "request_stats": {
+        "samples": 2000,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.093107098,
+        "maximum_s": 0.310971913,
+        "p50_s": 0.123868855,
+        "p95_s": 0.135754168,
+        "p99_s": 0.14835326,
+        "p99_unavailable_reason": null,
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 2,
+      "arm": "lotus-method-native-daft",
+      "model_requests": 120,
+      "full_query_s": 4.612666478,
+      "ready_query_s": 4.517337978,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.096749502,
+        "maximum_s": 0.144546631,
+        "p50_s": 0.122861854,
+        "p95_s": 0.136438026,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 3,
+      "arm": "lotus-method-native-daft",
+      "model_requests": 120,
+      "full_query_s": 4.421196294,
+      "ready_query_s": 4.336250035,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.5,
+          "absolute_error": 7.0,
+          "mean_absolute_percentage_error": 50.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.103569419,
+        "maximum_s": 0.134570176,
+        "p50_s": 0.120522312,
+        "p95_s": 0.128257047,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 1,
+      "arm": "lotus-method-native-ray-data",
+      "model_requests": 2000,
+      "full_query_s": 94.880946797,
+      "ready_query_s": 94.798797635,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1049,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 436,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -425
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 2000,
+      "request_response_row_associations": 2000,
+      "request_stats": {
+        "samples": 2000,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.078419693,
+        "maximum_s": 0.162805119,
+        "p50_s": 0.127506422,
+        "p95_s": 0.142768055,
+        "p99_s": 0.147878859,
+        "p99_unavailable_reason": null,
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 2,
+      "arm": "lotus-method-native-ray-data",
+      "model_requests": 120,
+      "full_query_s": 9.937847196,
+      "ready_query_s": 9.840693152,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.085085615,
+        "maximum_s": 0.140282083,
+        "p50_s": 0.117105556,
+        "p95_s": 0.136129697,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 3,
+      "arm": "lotus-method-native-ray-data",
+      "model_requests": 120,
+      "full_query_s": 9.651480481,
+      "ready_query_s": 9.551545873,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.5,
+          "absolute_error": 7.0,
+          "mean_absolute_percentage_error": 50.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.085042675,
+        "maximum_s": 0.141341882,
+        "p50_s": 0.112803633,
+        "p95_s": 0.133997777,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 1,
+      "arm": "lotus-method-semloom",
+      "model_requests": 2000,
+      "full_query_s": 75.738824655,
+      "ready_query_s": 75.652831543,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 1048,
+          "false_positive": 11,
+          "true_negative": 504,
+          "false_negative": 437,
+          "invalid": 0,
+          "evaluated_rows": 2000,
+          "missing_rows": 0,
+          "count_error_from_classifications": -426
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 2000,
+      "request_response_row_associations": 2000,
+      "request_stats": {
+        "samples": 2000,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.088574843,
+        "maximum_s": 0.145969526,
+        "p50_s": 0.119028499,
+        "p95_s": 0.134689119,
+        "p99_s": 0.138499181,
+        "p99_unavailable_reason": null,
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 2,
+      "arm": "lotus-method-semloom",
+      "model_requests": 120,
+      "full_query_s": 4.544439656,
+      "ready_query_s": 4.465068772,
+      "quality": {
+        "original_metric": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1_score": 1.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "supplement": {
+          "returned_rows": 5,
+          "unique_rows": 5,
+          "duplicates": 0,
+          "invalid_rows": 0,
+          "required_rows": 5,
+          "limit_exceeded": false
+        },
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.101735049,
+        "maximum_s": 0.136639401,
+        "p50_s": 0.117080225,
+        "p95_s": 0.13034183,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Movie",
+      "query": 3,
+      "arm": "lotus-method-semloom",
+      "model_requests": 120,
+      "full_query_s": 4.6176925,
+      "ready_query_s": 4.538329557,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.5,
+          "absolute_error": 7.0,
+          "mean_absolute_percentage_error": 50.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 7,
+          "false_positive": 0,
+          "true_negative": 106,
+          "false_negative": 7,
+          "invalid": 0,
+          "evaluated_rows": 120,
+          "missing_rows": 0,
+          "count_error_from_classifications": -7
+        },
+        "dataset_role": "original_movie_sf2000",
+        "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+        "quality_equivalence_proven": false
+      },
+      "original_parser_replayed": 120,
+      "request_response_row_associations": 120,
+      "request_stats": {
+        "samples": 120,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.094290062,
+        "maximum_s": 0.13410245,
+        "p50_s": 0.114594507,
+        "p95_s": 0.128920179,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Animals",
+      "query": 1,
+      "arm": "lotus-native",
+      "model_requests": 64,
+      "full_query_s": 36.856632188,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "ground_truth": 3,
+        "predicted": 3,
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "classification_audit": {
+        "true_positive": 3,
+        "false_positive": 0,
+        "true_negative": 61,
+        "false_negative": 0,
+        "evaluated_rows": 64
+      },
+      "original_parser_replayed": 64,
+      "request_response_pixel_associations": 64,
+      "request_stats": {
+        "samples": 64,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.134337924,
+        "maximum_s": 0.732403826,
+        "p50_s": 0.359067262,
+        "p95_s": 0.703565054,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Animals",
+      "query": 1,
+      "arm": "daft",
+      "model_requests": 64,
+      "full_query_s": 43.368208608,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "ground_truth": 3,
+        "predicted": 3,
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "classification_audit": {
+        "true_positive": 3,
+        "false_positive": 0,
+        "true_negative": 61,
+        "false_negative": 0,
+        "evaluated_rows": 64
+      },
+      "original_parser_replayed": 64,
+      "request_response_pixel_associations": 64,
+      "request_stats": {
+        "samples": 64,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.253644546,
+        "maximum_s": 0.53902392,
+        "p50_s": 0.350718045,
+        "p95_s": 0.488105803,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Animals",
+      "query": 1,
+      "arm": "ray-data",
+      "model_requests": 64,
+      "full_query_s": 63.207309949,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "ground_truth": 3,
+        "predicted": 3,
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "classification_audit": {
+        "true_positive": 3,
+        "false_positive": 0,
+        "true_negative": 61,
+        "false_negative": 0,
+        "evaluated_rows": 64
+      },
+      "original_parser_replayed": 64,
+      "request_response_pixel_associations": 64,
+      "request_stats": {
+        "samples": 64,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 2,
+        "minimum_s": 0.115590861,
+        "maximum_s": 0.35060416,
+        "p50_s": 0.282314116,
+        "p95_s": 0.330570364,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    },
+    {
+      "workload": "Animals",
+      "query": 1,
+      "arm": "semloom",
+      "model_requests": 64,
+      "full_query_s": 40.961454849,
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "ground_truth": 3,
+        "predicted": 3,
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "classification_audit": {
+        "true_positive": 3,
+        "false_positive": 0,
+        "true_negative": 61,
+        "false_negative": 0,
+        "evaluated_rows": 64
+      },
+      "original_parser_replayed": 64,
+      "request_response_pixel_associations": 64,
+      "request_stats": {
+        "samples": 64,
+        "scope": "actual model gateway dispatch to complete upstream body, one parent monotonic clock",
+        "quantile_method": "empirical nearest rank; no population-tail estimate",
+        "peak_http": 4,
+        "minimum_s": 0.215601134,
+        "maximum_s": 0.550075587,
+        "p50_s": 0.286581917,
+        "p95_s": 0.47453781,
+        "p99_s": null,
+        "p99_unavailable_reason": "fewer than 1000 model requests",
+        "p99_99": null
+      }
+    }
+  ],
+  "equivalence": {
+    "1": [
+      {
+        "arm": "lotus-adapted-native",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-native-daft",
+        "actual_request_values_equal": true,
+        "decisions_equal": false
+      },
+      {
+        "arm": "lotus-method-native-ray-data",
+        "actual_request_values_equal": true,
+        "decisions_equal": false
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "actual_request_values_equal": true,
+        "decisions_equal": false
+      }
+    ],
+    "2": [
+      {
+        "arm": "lotus-adapted-native",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-native-daft",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-native-ray-data",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      }
+    ],
+    "3": [
+      {
+        "arm": "lotus-adapted-native",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-native-daft",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-native-ray-data",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "lotus-method-semloom",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      }
+    ],
+    "AnimalsQ1": [
+      {
+        "arm": "lotus-native",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "daft",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "ray-data",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      },
+      {
+        "arm": "semloom",
+        "actual_request_values_equal": true,
+        "decisions_equal": true
+      }
+    ]
+  },
+  "vllm_request_success_counts": {
+    "movie": 8960,
+    "animals": 256
+  },
+  "all_official_quality_and_original_parser_recomputed": true,
+  "all_request_associations_verified": true,
+  "all_measured_model_http_peaks_within_four": true,
+  "no_performance_ranking": true,
+  "physical_cleanup_and_lease_release_verified": true
+}
