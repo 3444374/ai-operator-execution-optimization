@@ -109,3 +109,28 @@ MovieQuery、CLI和公共执行器继续读取同一显式行容量，旧配置1
 修后组合171项中157通过、14缺依赖跳过，0失败／错误；14项受影响跟进回归全部通过、0跳过，新增服务器／POST／模型／GPU仍为0。
 修后源码与命令见[修后机器记录](publisher_repair_verification.json)，输出见[修后回归](publisher_repair_tests.txt)；首轮记录保留。
 固定候选916e1f54的标准与需求两轴有限跟进剩余必修均为0；审阅者只读，完整7303文件隐私扫描无违规。
+
+<a id="persistent-query-archive"></a>
+## 常驻 query 的 trace 归档边界（2026-10-15）
+
+在固定集成源码 `331136cd` 上，用合成已结束记录和实际 asyncio snapshot 结构复现：
+同一 owner 连续64个 query、每个120行，最终保留7,680行，累计复制249,600行；HTTP／模型／GPU均0。
+这些记录不证明历史 HTTP 或 GPU 延迟的成因。
+
+常驻 owner 现按 `query_id` 取出记录；查询私有 trace 成功关闭并 fsync 后，gateway 再将同一快照
+写入 owner trace 并 fsync，最后回收两处索引。待结束集合独立维护，所有未结束请求仍阻止交接；
+unknown身份、变动后的快照和写出失败证据保留，失败继续毒化 group，原查询错误／取消仍优先。
+旧 `snapshot(timeout_s)` 调用者未显式归档时继续取得全历史副本；owner 不再需要已归档历史。
+
+15项新增检查包含同样64×120结构：每次仅复制120行，累计7,680行；保留一个unknown样本时
+索引峰值121行、归档后1行，owner文件最终保留全部7,681行且ID唯一。另覆空query、晚终止／晚到、
+export提交失败、归档fsync失败、取消／排队超时、直接上下文双错和localhost并发归属。
+执行中的同步写即使调用方超时，也须实际fsync成功后才能回收；排队超时不在稍后回收。
+连同旧gateway／详细计时／persistent清理共72项，68通过、4项未选择真实供应商库的条件跳过。
+首次沙盒localhost拒绝与图像测试环境缺psutil的失败均保留，随后用已有兼容SDK消除，未安装依赖。
+
+原件运行标识为 `owner-boundaries-20261015/gateway`，在任务仓外保留旧源码、复现脚本、原始失败及最终回归。
+其 `gateway/summary.json` SHA-256 为 `bf6ad08853a00690fbcdb708b6c210ebf3b046b5a0b0c0590dc1e51c108e841d`，清单固定源码和原件逐项摘要；
+按该运行标识向项目维护者取得本次交接保全包。
+这只验证归档边界与有界历史工作，不提供真实模型收益。默认仍为 `qualification`；正式性能配置须显式
+选择 `performance` 并报告，剩余 `model_dump`、摘要、事件和持久写出成本继续计入实际耗时，不能称零观测。

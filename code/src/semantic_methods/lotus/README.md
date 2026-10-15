@@ -296,6 +296,9 @@ worker 可重建自己的 handle/router，只有服务模型拟跨图保留，�
 只删除本次唯一应用并关闭自有 runtime；构造半途失败也执行清理。
 Data task 重试为0、`retried_map_errors=False`；Serve 仍可能原生重新路由／重建，不能据此保证推理恰好执行一次。
 任何错误、超时或实例身份变化都禁止继续复用；cancel／逻辑删除不代替物理退出核查。
+Ray2.56.1正常EOF、early close及开始迭代后的异常由原生end hook关闭图；不再重复关闭。
+若取得executor后BatchIterator构造失败，仅在该图明确`_shutdown is False`时补`shutdown(force=True)`；
+仍保留unknown及拒复用，由owner最终退出负责服务／runtime，见[真实CPU构造故障检查](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)。
 真实 CPU SDK 与完整 LOTUS 模型资格分别记录，服务化收益与调度机制收益分别论证。
 
 ### 输入、计时与实际模型观测

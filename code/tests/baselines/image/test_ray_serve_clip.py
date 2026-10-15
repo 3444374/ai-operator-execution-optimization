@@ -71,7 +71,7 @@ def sdk(monkeypatch):
     """Record public calls and return chosen batches, without simulating Ray."""
     state = SimpleNamespace(initialized=False, events=[], retried_map_errors=False,
                             iterator=BatchIterator(), items=[], maps=[], iterations=[],
-                            ready_response=Response(), failures={})
+                            ready_response=Response(), failures={}, graph_executor=None)
     state.synchronize_remote = Mock(return_value=Response(dict(service_uid="service-fixture")))
 
     def event(event_name, *args, **kwargs):
@@ -119,6 +119,10 @@ def sdk(monkeypatch):
     data.TaskPoolStrategy = lambda **kwargs: ("task_pool", kwargs)
 
     class Dataset:
+        @property
+        def _current_executor(self):
+            return state.graph_executor
+
         def map_batches(self, function, **kwargs):
             state.maps.append((function, kwargs))
             return self
@@ -414,6 +418,65 @@ def test_owner_iterator_cleanup_keeps_first_error_and_poisoned_state(sdk, primar
         assert any("iterator close also failed: OSError" in note for note in primary.__notes__)
 
 
+@pytest.mark.parametrize("cleanup_failure", [None, "close", "shutdown", "both"])
+def test_constructor_failure_cleans_unclosed_graph_and_preserves_primary(sdk, cleanup_failure):
+    executor = owner(sdk)
+    primary = MemoryError("fixture batch iterator construction")
+    sdk.iterator = BatchIterator(error=primary, close_error=(
+        OSError("fixture close") if cleanup_failure in ("close", "both") else None))
+    graph = SimpleNamespace(_shutdown=False)
+    def shutdown(*, force):
+        assert force is True
+        if cleanup_failure in ("shutdown", "both"):
+            raise RuntimeError("fixture graph shutdown")
+        graph._shutdown = True
+    graph.shutdown = Mock(side_effect=shutdown)
+    sdk.graph_executor = graph
+    with pytest.raises(MemoryError) as caught:
+        executor.embed_batch(("a",), [Image.fromarray(rgb(1)[0])])
+    assert caught.value is primary and executor._unconfirmed_work
+    assert sdk.iterator.close_calls == 1 and sdk.events == []
+    graph.shutdown.assert_called_once_with(force=True)
+    if cleanup_failure in ("close", "both"):
+        assert any("iterator close also failed: OSError" in note for note in primary.__notes__)
+    if cleanup_failure in ("shutdown", "both"):
+        assert any("graph shutdown also failed: RuntimeError" in note for note in primary.__notes__)
+    with pytest.raises(RuntimeError, match="completion unknown"):
+        executor.embed_batch(("retry",), [Image.fromarray(rgb(1)[0])])
+    assert len(sdk.items) == 1
+
+
+@pytest.mark.parametrize("error", [None, ValueError("fixture started iteration")])
+def test_owner_does_not_repeat_native_graph_shutdown(sdk, error):
+    executor = owner(sdk)
+    sdk.graph_executor = SimpleNamespace(_shutdown=False, shutdown=Mock())
+    class NativeIterator(BatchIterator):
+        def close(self):
+            super().close()
+            sdk.graph_executor.shutdown(force=True)
+            sdk.graph_executor._shutdown = True
+    sdk.iterator = NativeIterator([dict(doc_id=np.asarray(["a"]), embedding=vectors(1))],
+                                  error=error)
+    if error is None:
+        executor.embed_batch(("a",), [Image.fromarray(rgb(1)[0])])
+    else:
+        with pytest.raises(ValueError) as caught:
+            executor.embed_batch(("a",), [Image.fromarray(rgb(1)[0])])
+        assert caught.value is error and executor._unconfirmed_work
+    assert sdk.iterator.close_calls == 1
+    sdk.graph_executor.shutdown.assert_called_once_with(force=True)
+
+
+def test_owner_does_not_guess_unknown_graph_shutdown_state(sdk):
+    executor = owner(sdk)
+    sdk.graph_executor = SimpleNamespace(shutdown=Mock())
+    sdk.iterator = BatchIterator(error=MemoryError("fixture unrecognized executor"))
+    with pytest.raises(MemoryError):
+        executor.embed_batch(("a",), [Image.fromarray(rgb(1)[0])])
+    sdk.graph_executor.shutdown.assert_not_called()
+    assert executor._unconfirmed_work
+
+
 def test_cancelled_batch_retains_primary_releases_lock_and_closes_owned_work(sdk):
     executor = owner(sdk)
     synchronize = Mock()
@@ -512,6 +575,16 @@ def test_unknown_work_skips_sync_and_stays_unknown_after_cleanup(sdk):
     assert executor._close_error is caught.value and executor._unconfirmed_work
     with pytest.raises(RuntimeError, match="Prior CLIP close failed"):
         executor.close()
+
+
+def test_unknown_owner_does_not_delete_or_shutdown_a_foreign_runtime(sdk):
+    executor = owner(sdk)
+    executor._owns_runtime = False
+    executor._unconfirmed_work = True
+    with pytest.raises(RuntimeError, match="work completion unknown"):
+        executor.close()
+    assert sdk.events == [] and sdk.initialized
+    assert executor._unconfirmed_work
 
 
 def test_startup_owns_local_runtime_disabled_proxy_and_bounded_replica(sdk, startup):

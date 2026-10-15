@@ -182,14 +182,15 @@ class _ArmOwner:
             if self.execution is not None:
                 errors.attempt('query_core_drain', lambda: _drain_execution(self.execution, close=False))
             traces = errors.attempt('query_http_drain', lambda: self.gateway.snapshot(
-                self.group.model.timeout_ms/1000 + 1))
+                self.group.model.timeout_ms/1000 + 1, query_id=unit_id))
             if traces is not None:
-                selected = [row for row in traces if row.get('query_id') == unit_id]
                 def save_trace():
                     with open_private_text(Path(root) / 'http-trace.jsonl') as stream:
-                        for row in selected:
+                        for row in traces:
                             stream.write(json.dumps(redact_json_values(row), sort_keys=True) + '\n')
-                errors.attempt('query_trace_write', save_trace)
+                    return True
+                if errors.attempt('query_trace_write', save_trace):
+                    errors.attempt('query_trace_archive', lambda: self.gateway.archive_query(unit_id, traces))
             self.binding = self.service = None
             if errors.first is not None:
                 self.group.poisoned = True
