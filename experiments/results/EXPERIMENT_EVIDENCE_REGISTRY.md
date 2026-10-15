@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[PZ Movie 原生接线](diagnostics/palimpzest_movie_20261015/README.md)锁定 c814e／6efc 源码，实际原库 CPU 与8行localhost fixture的 Q3／Q2共12POST通过，模型0／GPU0。Q2 LIMIT5仍6调用；FP1／FN1抵消COUNT的反例保留。完整原始 Movie 模型、五组执行及性能资格尚未完成。
+
 2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
 分列`460d3870`三格与`17ac2aeb`八格实际来源；共28查询／39完整矩阵复用已有4个数组，原件独立复核通过。
 同形状图片向量逐值同stock，文本CPU／CUDA与跨batch差异保留；实际生命周期、完整查询原值和退出按来源记录。

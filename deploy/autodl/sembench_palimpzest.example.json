@@ -1,0 +1,21 @@
+{
+  "schema": "semloom.sembench_palimpzest.v1",
+  "dataset": {
+    "checkout_env": "SEMBENCH_CHECKOUT",
+    "manifest_env": "SEMBENCH_MOVIE_MANIFEST",
+    "csv_env": "SEMBENCH_MOVIE_CSV",
+    "manifest_content_digest": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2"
+  },
+  "palimpzest_checkout_env": "PALIMPZEST_CHECKOUT",
+  "model_config_env": "PALIMPZEST_MODEL_CONFIG",
+  "output_env": "PALIMPZEST_OUTPUT",
+  "host_scope_env": "PALIMPZEST_HOST_SCOPE",
+  "query_id": 3,
+  "max_attempts": 2000,
+  "query_timeout_s": 600,
+  "native_options": {
+    "max_workers": 64,
+    "join_parallelism": 64,
+    "batch_size": null
+  }
+}

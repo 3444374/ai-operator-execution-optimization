@@ -29,6 +29,16 @@
       {"module": "overrides", "install": "overrides>=7,<8"},
       {"module": "lotus", "install": "lotus-ai==1.2.4"}
     ],
+    "semantic-palimpzest": [
+      {"module": "palimpzest", "install": "palimpzest @ git+https://github.com/mitdbg/palimpzest.git@6efc19841c49d727ce42f5c2dd55e7433601d2d9"},
+      {"module": "litellm", "install": "litellm==1.95.0"},
+      {"module": "openai", "install": "openai==2.50.0"},
+      {"module": "pandas", "install": "pandas==2.3.3"},
+      {"module": "duckdb", "install": "duckdb==1.5.4"},
+      {"module": "scipy", "install": "scipy==1.17.1"},
+      {"module": "cdlib", "install": "cdlib>=0.4,<0.5"},
+      {"module": "overrides", "install": "overrides>=7,<8"}
+    ],
     "imlane-runtime": [
       {"module": "numpy", "install": "numpy>=1.25,<2"},
       {"module": "pyarrow", "install": "pyarrow==16.1.0"},

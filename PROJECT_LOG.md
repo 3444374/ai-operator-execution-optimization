@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：接入固定 PZ 原生 Movie 与执行边界
+
+新增原 Movie Q3／Q2 runner、显式本地模型绑定、失败／usage 台账和同物理计划检查。
+保留 PZ 原并行 DAG、提示／解析及异常默认；纯文档 `170c3867` 已单独交 main，工程未随其进入。
+[同题报告](experiments/results/diagnostics/palimpzest_movie_20261015/README.md)分列合同检查、真实原库 CPU、localhost fixture 和首次缺依赖失败。
+当前12次fixture POST、模型0／GPU0不替代原2000行模型或其余四后端资格；依赖组、CLI模板与模块入口同步。
+
 ## 2026-10-15：统一普通 LOTUS 图片输入
 
 按用户要求接纳已独审的公共输入精简：RGB 后端省去 PNG 往返，字节后端优先复用仍匹配当前
