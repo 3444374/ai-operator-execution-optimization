@@ -1,6 +1,12 @@
 # 实验与机制证据台账
 
-2026-10-15：[部署限定资源 auto 的 CPU 检查](diagnostics/resource_auto_20261015/README.md)。基点7a4c1846；vLLM native DP、图像原工厂／池及Ray HTTP范围只做配置、模拟多设备、完整输出与生命周期回归。独立审查、失败环境与修复后结果按同题摘要定位；无新模型／GPU／多卡性能或rank退出资格。 集成组合的297通过／68条件跳过只支持CPU与localhost合同，默认Ray重试修补和PZ精确守卫重绑见同题集成小节，原来源摘要保留。
+2026-10-15：[部署限定资源 auto 单卡回归](diagnostics/resource_auto_20261015/README.md#当前单卡检查)，实际模型源d2fa8c9b。一张4090、固定CLIP、原LOTUS index/search五路径各auto／explicit1；完整矩阵、原生持久化索引／排名、worker/GPU出生身份和正常退出通过。固定数学环境四组额外验收通过，HSE旧观察缺项的外层失败未改写；默认数值失败10行＋有限诊断6行＋五配对50行＝66/66，HTTP0。原件四归档分别73／28／102／169成员已备份并独立重算。单次组件检查不支持性能、多卡、DP>1或Serve；详见[机器摘要](diagnostics/resource_auto_20261015/single_gpu_qualification.json)。
+
+main服务资格独立归7b20四文件／发布main2041的12请求，由main owner交付；本线只做只读SHA／AST兼容核对，不移植资格到d2／CLIP，见[来源记录](diagnostics/resource_auto_20261015/main_service_provenance.json)。
+
+2026-10-15历史准备：[CPU 检查与单卡准备](diagnostics/resource_auto_20261015/README.md#单卡后续准备)。895原CPU资格保留；当时88f9b08c精确接回C的7bac93ad默认兼容修复，定向30pass。固定实库官方vLLM parser及原LOTUS两个三行Map／6fixture POST通过，模型请求0；58成员准备证据已独立备份。后续实际单卡结果按上述d2单独定位，不借旧源资格。 C的7bac融合CPU／localhost 297通过／68条件跳过仍保留该来源，PZ完整调用守卫未放宽。
+
+2026-10-15：[同题首单卡失败](diagnostics/resource_auto_20261015/README.md#首次单卡失败与-uuid-表示修复)：固定88f9在GPU模型构造前误拒Torch裸UUID，0推理；外部见证进程/GPU退出及lease正常释放。无模型探针确认表示差异，严格worker规范化修复及81 CPU检查/独审通过；后续d2模型结果另列，88失败原件不改写。
 
 2026-10-15：[HSE 身份与基础修正](diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
 

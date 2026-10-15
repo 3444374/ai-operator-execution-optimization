@@ -5,7 +5,20 @@ import json
 from contextlib import contextmanager
 import os
 from pathlib import Path
+import re
 import uuid
+
+
+_GPU_UUID = re.compile(r"(?:GPU-)?([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})")
+
+
+def _canonical_gpu_uuid(value, *, nvml=False):
+    if not isinstance(value, str) or (nvml and not value.startswith("GPU-")):
+        raise ValueError("CLIP worker requires a complete GPU UUID")
+    match = _GPU_UUID.fullmatch(value)
+    if match is None:
+        raise ValueError("CLIP worker GPU UUID format is unavailable or unsupported")
+    return "GPU-" + match.group(1).lower()
 
 
 @contextmanager
@@ -52,10 +65,17 @@ def assigned_gpu_uuid(torch, device, allowed_gpu_uuids):
         raise ValueError("scoped CLIP worker needs an explicit GPU UUID allocation")
     if torch.cuda.device_count() != 1:
         raise ValueError("scoped full-GPU CLIP workers must see exactly one backend-assigned CUDA device")
-    uid = str(torch.cuda.get_device_properties(device).uuid)
-    if uid not in allowed_gpu_uuids:
+    allowed = {}
+    for token in allowed_gpu_uuids:
+        canonical = _canonical_gpu_uuid(token, nvml=True)
+        if canonical in allowed:
+            raise ValueError("CLIP worker allocation contains duplicate GPU UUID identities")
+        allowed[canonical] = token
+    # Torch exposes a _CUuuid object whose string omits NVML's GPU- prefix.
+    uid = _canonical_gpu_uuid(str(getattr(torch.cuda.get_device_properties(device), "uuid", None)))
+    if uid not in allowed:
         raise ValueError("CLIP worker GPU UUID is outside its deployment allocation")
-    return uid
+    return allowed[uid]
 
 
 def validate_preprocessing_identity(identity):

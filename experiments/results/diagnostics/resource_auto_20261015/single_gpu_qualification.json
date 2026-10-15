@@ -1,0 +1,2852 @@
+{
+  "schema": "semloom.resource_auto.single_gpu_qualification.v1",
+  "status": "partial_single_gpu_qualification",
+  "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+  "scope": "Deployment-scoped auto versus explicit1, actual original LOTUS image sem_index/sem_search; five native paths. Four pairs pass extra precision-environment acceptance. HSE native output/identity/exit passes but original outer environment acceptance remains failed.",
+  "production_code_changed_during_gpu_runs": false,
+  "source_archive": {
+    "name": "source-d2fa8c9b.tar.gz",
+    "sha256": "ef7100cbe7136265e3888af2fb5fc11f98feb2b7c80b10134cbfade444a25ba2",
+    "selected_files": 1125
+  },
+  "preconditions": {
+    "driver_preflight": "passed",
+    "service_preflight_without_engine": "passed",
+    "cached_model_content_verified": true,
+    "shared_host_lease": "direct acquire_runner_lease with HOST_SCOPE_FINGERPRINT and recover_stale=False; per pair; never held waiting for development"
+  },
+  "hardware": {
+    "gpu_model": "NVIDIA GeForce RTX 4090",
+    "physical_gpus_used": 1,
+    "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+    "driver": "595.71.05"
+  },
+  "versions": {
+    "daft": "0.7.21",
+    "faiss-cpu": "1.15.0",
+    "lotus-ai": "1.2.4",
+    "numpy": "1.26.4",
+    "pandas": "2.3.3",
+    "pillow": "12.2.0",
+    "pyarrow": "24.0.0",
+    "ray": "2.56.1",
+    "sentence-transformers": "3.4.1",
+    "torch": "2.12.1+cu130",
+    "transformers": "4.57.6"
+  },
+  "lotus_source": {
+    "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "source_sha256": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "dtype_extensions/__init__.py": "757c8a2f23cebad55f16ccc9675849f3e942461d104dba13694fe9e530b7ffcc",
+      "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+      "models/rm.py": "b80e484e38183ba4e9c2738b1239407842902820186f41408ea55394f48e368a",
+      "models/sentence_transformers_rm.py": "9c5687c5647b11e98e81a0da2d2328648806944d26ff92c070bb1ff313b23742",
+      "sem_ops/load_sem_index.py": "01f30d66d2308c58013bfc0f2e29d4e72e8e6182e83f409bbeea7d2dae67ac3b",
+      "sem_ops/sem_index.py": "0f37ac28e5a313c3d61d9a45a1b4fe11b1d618836e4d64dc9c5f034e22a05820",
+      "sem_ops/sem_search.py": "6c2900f9cdd1c811ec7e6487c5bb4053e056a6996a28a57abd715ea4ba6925de",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "vector_store/faiss_vs.py": "694322929f9535ff0ee86ad41adf50d8a3b44eb3da61f2afbb24dc6243074181"
+    },
+    "version": "1.2.4"
+  },
+  "embedding": {
+    "repo": "openai/clip-vit-base-patch32",
+    "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+    "model_files_sha256": {
+      "config.json": "b575ef3c36f2a057fa19e221650105052d61cc9c1a972ec15019c6261ec98770",
+      "merges.txt": "f526393189112391ce6f9795d4695f704121ce452c3aad1f5335cc41337eba85",
+      "preprocessor_config.json": "910e70b3956ac9879ebc90b22fb3bc8a75b6a0677814500101a4c072bd7857bd",
+      "pytorch_model.bin": "a63082132ba4f97a80bea76823f544493bffa8082296d62d71581a4feff1576f",
+      "special_tokens_map.json": "f8c0d6c39aee3f8431078ef6646567b0aba7f2246e9c54b8b99d55c22b707cbf",
+      "tokenizer.json": "b556ac8c99757ffb677208af34bc8c6721572114111a6e0aaf5fa69ff0b8d842",
+      "tokenizer_config.json": "34b7336e4bee12e0a9730eaf5189f582ef3c3eea5027f65730e5717256755aad",
+      "vocab.json": "5047b556ce86ccaf6aa22b3ffccfc52d391ea4accdab9c2f2407da5b742d4363"
+    },
+    "candidate_parameters": {
+      "parameter_tensors": 398,
+      "sha256": "968f8926f4522526f88da56b4d5f47aa41d7cc28220136e3ab830666a70c56e6"
+    },
+    "dtype": "float32",
+    "dimension": 512,
+    "normalization": "L2",
+    "input": "RGB PIL decoded from original JPEG; slow CLIP processor",
+    "preexisting_embedding_identity_is_input_contract_not_new_stock_gpu_run": true
+  },
+  "workload": {
+    "gallery": [
+      {
+        "doc_id": "139",
+        "path": "000000000139.jpg",
+        "image_bytes": 161811,
+        "sha256": "ffe0f0cec3b2e27aab1967229cdf0a0d7751dcdd5800322f0b8ac0dffb3b8a8d"
+      },
+      {
+        "doc_id": "285",
+        "path": "000000000285.jpg",
+        "image_bytes": 335861,
+        "sha256": "f3a2974ce3686332609124c70e3e6a2e3aca43fccf1cd1bd7c5c03820977f57d"
+      },
+      {
+        "doc_id": "632",
+        "path": "000000000632.jpg",
+        "image_bytes": 155667,
+        "sha256": "a4cd7f45ac1ce27eaafb254b23af7c0b18a064be08870ceaaf03b2147f2ce550"
+      }
+    ],
+    "gallery_rows": 3,
+    "batch_size_maximum": 2,
+    "max_active_batches": 2,
+    "k": 3,
+    "query": "image-139",
+    "query_repeats": 2,
+    "query_arrival": "synchronous, one outstanding",
+    "image_rows_per_cli": 5,
+    "discarded_warmups": 0,
+    "native_cache": false,
+    "source_manifest_sha256": "d3378772951c45378d4b6a37909011c5f9247c381d3254c3b1e8031dcbb5ca90"
+  },
+  "thresholds_unchanged": {
+    "maximum_absolute_error": 1e-05,
+    "minimum_cosine": 0.99999,
+    "maximum_norm_error": 2e-05,
+    "checks": [
+      "full finite float32 matrices",
+      "expected row IDs and order",
+      "native vectors and FAISS payload equal captured gallery",
+      "inner product scores and full top-K ranks",
+      "self top1",
+      "second query repeat",
+      "worker birth and actual GPU UUID",
+      "all preprocessor identities",
+      "normal physical exit and lease release"
+    ]
+  },
+  "strict_deployment_environment": {
+    "NVIDIA_TF32_OVERRIDE": "0",
+    "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": null,
+    "CUDA_VISIBLE_DEVICES": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+    "scope": "External fixed numerical environment, not a production default or auto performance tuning. HSE explicit1 final environment observation is unavailable; its original outer failure remains."
+  },
+  "budget": {
+    "original_image_cap": 50,
+    "approved_additional_image_rows": 16,
+    "cumulative_image_cap": 66,
+    "image_rows_consumed": 66,
+    "image_rows_remaining": 0,
+    "http_model_post_cap": 12,
+    "own_http_model_posts": 0,
+    "own_http_plan_state": "not_executed_to_avoid_duplicating_main_independent_service_closure",
+    "ledger": [
+      {
+        "run": "88f9 static actor identity failure and no-model UUID probe",
+        "rows": 0
+      },
+      {
+        "run": "d2 static-r1 default numerical failure",
+        "rows": 10
+      },
+      {
+        "run": "d2 numeric-r1 normal lease denied before model",
+        "rows": 0
+      },
+      {
+        "run": "d2 numeric-r2 diagnostic",
+        "rows": 6
+      },
+      {
+        "run": "resource-auto-20261015-r3/static-r2",
+        "rows": 10
+      },
+      {
+        "run": "resource-auto-20261015-r3/hse-r1",
+        "rows": 10
+      },
+      {
+        "run": "resource-auto-20261015-r3/rayf-r1",
+        "rows": 10
+      },
+      {
+        "run": "resource-auto-20261015-r3/rays-r1",
+        "rows": 10
+      },
+      {
+        "run": "resource-auto-20261015-r3/daft-r1",
+        "rows": 10
+      }
+    ],
+    "no_replay_of_unknown_work": true,
+    "warmup_or_failed_rows_excluded": 0
+  },
+  "pairs": [
+    {
+      "run_id": "resource-auto-20261015-r3/static-r2",
+      "backend": "semloom_static",
+      "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+      "started_utc": "2026-10-15T12:17:19.880215+00:00",
+      "ended_utc": "2026-10-15T12:18:37.273121+00:00",
+      "native_controller_status": "passed",
+      "outer_wrapper_result": {
+        "status": "passed",
+        "exit_code": 0,
+        "drain_errors": [],
+        "drain_stopped": true,
+        "environment_validation": "passed"
+      },
+      "precision_environment_acceptance": "passed",
+      "lease_acquired": true,
+      "lease_released": true,
+      "recover_stale": false,
+      "paired_matrices": [
+        {
+          "key": "call_0",
+          "max_abs": 1.7508864402770996e-07,
+          "min_cosine": 0.9999999999997558,
+          "exact_equal": false
+        },
+        {
+          "key": "call_1",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        },
+        {
+          "key": "call_2",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        }
+      ],
+      "archive_key": "r3-strict-static-hse-evidence",
+      "cases": [
+        {
+          "configuration": "auto",
+          "native_status": "succeeded",
+          "resource_config_sha256": "dffcac213c7178001f6ad3a5d5eb2178f769a5dc811de8d57a97e5f77bee6def",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": "auto",
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 3,
+            "requested_count": "auto",
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "semloom_ray_pool"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 363178,
+              "process_start_time_ticks": "321518465",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "86e989fc9ca14653af6161d5ec061254"
+            },
+            {
+              "pid": 363179,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321518466",
+              "role": "clip_prepare",
+              "worker_uid": "ebeea6c23b174ea2bcc6b6de2bd652f4"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "7d104350896642bf86045b1cc18b3094",
+              "pid": 363178,
+              "process_start_ticks": "321518465",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215194474209190,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "resident_for_workflow",
+          "model_load_scope": "identity, stock text RM and eager CLIP/worker setup are in model_startup_s",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.057245621,
+              "submitted_monotonic_ns": 3215199372475913,
+              "returned_monotonic_ns": 3215199429323189,
+              "native_call_return_elapsed_s": 0.056847276
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.055060644,
+              "submitted_monotonic_ns": 3215199429724079,
+              "returned_monotonic_ns": 3215199484386270,
+              "native_call_return_elapsed_s": 0.054662191
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 28.879090265,
+            "index_s": 4.854316541,
+            "application_e2e_s": 5.000270115,
+            "native_workflow_s": 4.970309524,
+            "cleanup_s": 1.4543079,
+            "process_wall_s": 35.333673204
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 17,
+            "nvml_samples": 63
+          },
+          "raw_members_prefix": "static-r2/auto/"
+        },
+        {
+          "configuration": "explicit1",
+          "native_status": "succeeded",
+          "resource_config_sha256": "0c1c5b2743e1c080f3d44499d2864739f70a5de9b80b58a0a143770796df73c8",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": 1,
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 3,
+            "requested_count": 1,
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "semloom_ray_pool"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 5,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "pid": 364009,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321522288",
+              "role": "clip_prepare",
+              "worker_uid": "92845aab62d8442297c3e357197695a8"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 364010,
+              "process_start_time_ticks": "321522288",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "f4c0062a328b454c9b4516151e2da943"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "eca9206f9ffe4a9e9351242f3ff79757",
+              "pid": 364010,
+              "process_start_ticks": "321522288",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215232495423881,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "resident_for_workflow",
+          "model_load_scope": "identity, stock text RM and eager CLIP/worker setup are in model_startup_s",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.060737359,
+              "submitted_monotonic_ns": 3215237479248270,
+              "returned_monotonic_ns": 3215237539338402,
+              "native_call_return_elapsed_s": 0.060090132
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.059283791,
+              "submitted_monotonic_ns": 3215237540015590,
+              "returned_monotonic_ns": 3215237598872148,
+              "native_call_return_elapsed_s": 0.058856558
+            }
+          ],
+          "matrix_npz_sha256": "d6e21ce286c397d6217c8b758218b2fdc732abe448e97652f172002e9dc6cfa7",
+          "native_index_sha256": "f6699e4ee4876744391e96bd9add3115cfb3c8418015f2376aebe29afde46d02",
+          "native_persisted_matrix_sha256": "563dc530a7c485f25779db640ea7b34ecfba892ecae879dc1d9072d95040d0bd",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 1.5549558440852707e-07,
+          "timing_seconds": {
+            "model_startup_s": 28.481997753,
+            "index_s": 4.884799264,
+            "application_e2e_s": 5.04792605,
+            "native_workflow_s": 5.008580046,
+            "cleanup_s": 1.459278251,
+            "process_wall_s": 34.989207835
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 17,
+            "nvml_samples": 64
+          },
+          "raw_members_prefix": "static-r2/explicit1/"
+        }
+      ]
+    },
+    {
+      "run_id": "resource-auto-20261015-r3/hse-r1",
+      "backend": "semloom_hse",
+      "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+      "started_utc": "2026-10-15T12:19:27.039589+00:00",
+      "ended_utc": "2026-10-15T12:20:43.555335+00:00",
+      "native_controller_status": "passed",
+      "outer_wrapper_result": {
+        "status": "failed",
+        "exit_code": 0,
+        "drain_errors": [],
+        "drain_stopped": true,
+        "environment_validation": "failed",
+        "validation_error_type": "AssertionError",
+        "validation_reason": "",
+        "wrapper_error_type": "AssertionError",
+        "wrapper_reason": "",
+        "outer_cleanup_errors": [],
+        "controller_exit_code": 0,
+        "environment_observer_stopped": true
+      },
+      "precision_environment_acceptance": "unverified_for_explicit1_gpu_owner",
+      "lease_acquired": true,
+      "lease_released": true,
+      "recover_stale": false,
+      "paired_matrices": [
+        {
+          "key": "call_0",
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "exact_equal": true
+        },
+        {
+          "key": "call_1",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        },
+        {
+          "key": "call_2",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        }
+      ],
+      "archive_key": "r3-strict-static-hse-evidence",
+      "cases": [
+        {
+          "configuration": "auto",
+          "native_status": "succeeded",
+          "resource_config_sha256": "dffcac213c7178001f6ad3a5d5eb2178f769a5dc811de8d57a97e5f77bee6def",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": "auto",
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": 1,
+            "model_workers": 1,
+            "prepare_inflight": 1,
+            "ray_num_cpus": 3,
+            "requested_count": "auto",
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "semloom_ray_pool"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 5,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 364873,
+              "process_start_time_ticks": "321531206",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "6eed555643be41469b244239cf7d4f06"
+            },
+            {
+              "pid": 364872,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321531206",
+              "role": "clip_prepare",
+              "worker_uid": "a27ff36bc3c64689a1ddacefcc349c20"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "8d121b7efaee43fa9e7d7f17cf65014d",
+              "pid": 364873,
+              "process_start_ticks": "321531206",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215321555727181,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "resident_for_workflow",
+          "model_load_scope": "identity, stock text RM and eager CLIP/worker setup are in model_startup_s",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.066474968,
+              "submitted_monotonic_ns": 3215327062388605,
+              "returned_monotonic_ns": 3215327128340210,
+              "native_call_return_elapsed_s": 0.065951605
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.050594932,
+              "submitted_monotonic_ns": 3215327128861513,
+              "returned_monotonic_ns": 3215327179059622,
+              "native_call_return_elapsed_s": 0.050198109
+            }
+          ],
+          "matrix_npz_sha256": "d6e21ce286c397d6217c8b758218b2fdc732abe448e97652f172002e9dc6cfa7",
+          "native_index_sha256": "f6699e4ee4876744391e96bd9add3115cfb3c8418015f2376aebe29afde46d02",
+          "native_persisted_matrix_sha256": "563dc530a7c485f25779db640ea7b34ecfba892ecae879dc1d9072d95040d0bd",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 1.5549558440852707e-07,
+          "timing_seconds": {
+            "model_startup_s": 28.779555959,
+            "index_s": 5.463846189,
+            "application_e2e_s": 5.613858457,
+            "native_workflow_s": 5.584484711,
+            "cleanup_s": 1.459078929,
+            "process_wall_s": 35.852497409
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 16,
+            "nvml_samples": 64
+          },
+          "raw_members_prefix": "hse-r1/auto/"
+        },
+        {
+          "configuration": "explicit1",
+          "native_status": "succeeded",
+          "resource_config_sha256": "0c1c5b2743e1c080f3d44499d2864739f70a5de9b80b58a0a143770796df73c8",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": 1,
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": 1,
+            "model_workers": 1,
+            "prepare_inflight": 1,
+            "ray_num_cpus": 3,
+            "requested_count": 1,
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "semloom_ray_pool"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 5,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "pid": 365684,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321535029",
+              "role": "clip_prepare",
+              "worker_uid": "3668624d62a0489bba1689536f14ec21"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 365682,
+              "process_start_time_ticks": "321535028",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "919b1d22b2824432b59c905b8e1725f8"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "09cf18619a6247ffa967d8fb4ed7a4c1",
+              "pid": 365682,
+              "process_start_ticks": "321535028",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215359436508785,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "resident_for_workflow",
+          "model_load_scope": "identity, stock text RM and eager CLIP/worker setup are in model_startup_s",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.064127262,
+              "submitted_monotonic_ns": 3215364483973323,
+              "returned_monotonic_ns": 3215364547716382,
+              "native_call_return_elapsed_s": 0.063743059
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999997615814209,
+                0.7213637828826904,
+                0.6045244932174683
+              ],
+              "elapsed_s": 0.059438285,
+              "submitted_monotonic_ns": 3215364548105027,
+              "returned_monotonic_ns": 3215364607177094,
+              "native_call_return_elapsed_s": 0.059072067
+            }
+          ],
+          "matrix_npz_sha256": "d6e21ce286c397d6217c8b758218b2fdc732abe448e97652f172002e9dc6cfa7",
+          "native_index_sha256": "f6699e4ee4876744391e96bd9add3115cfb3c8418015f2376aebe29afde46d02",
+          "native_persisted_matrix_sha256": "563dc530a7c485f25779db640ea7b34ecfba892ecae879dc1d9072d95040d0bd",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 1.5549558440852707e-07,
+          "timing_seconds": {
+            "model_startup_s": 27.886009096,
+            "index_s": 5.004807514,
+            "application_e2e_s": 5.160455881,
+            "native_workflow_s": 5.131884179,
+            "cleanup_s": 1.459895384,
+            "process_wall_s": 34.50636549
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 17,
+            "nvml_samples": 62
+          },
+          "raw_members_prefix": "hse-r1/explicit1/"
+        }
+      ]
+    },
+    {
+      "run_id": "resource-auto-20261015-r3/rayf-r1",
+      "backend": "ray_data_fused",
+      "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+      "started_utc": "2026-10-15T12:30:05.141417+00:00",
+      "ended_utc": "2026-10-15T12:31:59.777642+00:00",
+      "native_controller_status": "passed",
+      "outer_wrapper_result": {
+        "status": "passed",
+        "exit_code": 0,
+        "drain_errors": [],
+        "drain_stopped": true,
+        "environment_validation": "passed"
+      },
+      "precision_environment_acceptance": "passed",
+      "lease_acquired": true,
+      "lease_released": true,
+      "recover_stale": false,
+      "paired_matrices": [
+        {
+          "key": "call_0",
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "exact_equal": true
+        },
+        {
+          "key": "call_1",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        },
+        {
+          "key": "call_2",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        }
+      ],
+      "archive_key": "r3-strict-ray-daft-evidence",
+      "cases": [
+        {
+          "configuration": "auto",
+          "native_status": "succeeded",
+          "resource_config_sha256": "dffcac213c7178001f6ad3a5d5eb2178f769a5dc811de8d57a97e5f77bee6def",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": "auto",
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 0,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 2,
+            "requested_count": "auto",
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "ray_data"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 372201,
+              "process_start_time_ticks": "321597377",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "15e0f06459334c9e908657429891b9fe"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 371854,
+              "process_start_time_ticks": "321595393",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "501d805e10984664aac587c5e8ca93ec"
+            },
+            {
+              "pid": 371854,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321595393",
+              "role": "clip_fused_prepare",
+              "worker_uid": "6685207cd7034915b7c1032a85377ba4"
+            },
+            {
+              "pid": 372201,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321597377",
+              "role": "clip_fused_prepare",
+              "worker_uid": "c959b5eee73d4b28b83c1e8aabc46435"
+            },
+            {
+              "pid": 372039,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321596379",
+              "role": "clip_fused_prepare",
+              "worker_uid": "d52d90eb92234d05afba496e1ab068e3"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 372039,
+              "process_start_time_ticks": "321596379",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "fd948442af9c47b7bc3cbaaf66ca90ae"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "85af24e08348410cbe0192c67cd91f1c",
+              "pid": 372039,
+              "process_start_ticks": "321596379",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215973386303055,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "aca6decae3f9469b8083ddfe7bc116af",
+              "pid": 371854,
+              "process_start_ticks": "321595393",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215963394822167,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "d96f8610cdbf43c1a44d921e57fb4563",
+              "pid": 372201,
+              "process_start_ticks": "321597377",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3215983302219043,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "cold_native_graph_per_rm_call",
+          "model_load_scope": "identity, stock CPU text RM and Ray owner setup are in model_startup_s; this adapter's per-RM native callable CLIP loads remain in index/query/application time",
+          "actual_native_batch_model_reuse": [
+            {
+              "batch_rows": 2,
+              "embed_calls": 1,
+              "model_uid": "aca6decae3f9469b8083ddfe7bc116af",
+              "pid": 371854,
+              "rows": 2
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 2,
+              "model_uid": "aca6decae3f9469b8083ddfe7bc116af",
+              "pid": 371854,
+              "rows": 3
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "85af24e08348410cbe0192c67cd91f1c",
+              "pid": 372039,
+              "rows": 1
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "d96f8610cdbf43c1a44d921e57fb4563",
+              "pid": 372201,
+              "rows": 1
+            }
+          ],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 9.985426659,
+              "submitted_monotonic_ns": 3215963750636643,
+              "returned_monotonic_ns": 3215973735583366,
+              "native_call_return_elapsed_s": 9.984946723
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 9.850878902,
+              "submitted_monotonic_ns": 3215973736073509,
+              "returned_monotonic_ns": 3215983586464760,
+              "native_call_return_elapsed_s": 9.850391251
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 21.457258626,
+            "index_s": 11.425109906,
+            "application_e2e_s": 31.290894143,
+            "native_workflow_s": 31.262670543,
+            "cleanup_s": 1.215319053,
+            "process_wall_s": 53.963476535
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 20,
+            "nvml_samples": 94
+          },
+          "raw_members_prefix": "rayf-r1/auto/"
+        },
+        {
+          "configuration": "explicit1",
+          "native_status": "succeeded",
+          "resource_config_sha256": "0c1c5b2743e1c080f3d44499d2864739f70a5de9b80b58a0a143770796df73c8",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": 1,
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 0,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 2,
+            "requested_count": 1,
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "ray_data"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 373213,
+              "process_start_time_ticks": "321603065",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "09dd619e40c74d259bcca6ec0bf93c35"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 373099,
+              "process_start_time_ticks": "321602065",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "2e078cc8a3bc46ce94df265060708518"
+            },
+            {
+              "pid": 373213,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321603065",
+              "role": "clip_fused_prepare",
+              "worker_uid": "536476a09b0b49da9f3702235ff74b2c"
+            },
+            {
+              "pid": 372923,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321601090",
+              "role": "clip_fused_prepare",
+              "worker_uid": "73637dbe9e254a178f54e6965bd30d98"
+            },
+            {
+              "pid": 373099,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321602065",
+              "role": "clip_fused_prepare",
+              "worker_uid": "8045eb08054047d3845e29a20d3a3e9e"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 372923,
+              "process_start_time_ticks": "321601090",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "baab0d8120bb45e789434a6e1b3f511a"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "6f64dc81a70644adb808ed9e2aeb8953",
+              "pid": 373213,
+              "process_start_ticks": "321603065",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216040510278627,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "9af7bf6ae0c34cff8a61f0b321b505a4",
+              "pid": 372923,
+              "process_start_ticks": "321601090",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216020230267551,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "ff71d3daff4f43148099e2219494a602",
+              "pid": 373099,
+              "process_start_ticks": "321602065",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216030281033923,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "cold_native_graph_per_rm_call",
+          "model_load_scope": "identity, stock CPU text RM and Ray owner setup are in model_startup_s; this adapter's per-RM native callable CLIP loads remain in index/query/application time",
+          "actual_native_batch_model_reuse": [
+            {
+              "batch_rows": 2,
+              "embed_calls": 1,
+              "model_uid": "9af7bf6ae0c34cff8a61f0b321b505a4",
+              "pid": 372923,
+              "rows": 2
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 2,
+              "model_uid": "9af7bf6ae0c34cff8a61f0b321b505a4",
+              "pid": 372923,
+              "rows": 3
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "ff71d3daff4f43148099e2219494a602",
+              "pid": 373099,
+              "rows": 1
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "6f64dc81a70644adb808ed9e2aeb8953",
+              "pid": 373213,
+              "rows": 1
+            }
+          ],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 10.014067471,
+              "submitted_monotonic_ns": 3216020609408659,
+              "returned_monotonic_ns": 3216030623074581,
+              "native_call_return_elapsed_s": 10.013665922
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 10.171575872,
+              "submitted_monotonic_ns": 3216030623490184,
+              "returned_monotonic_ns": 3216040794676311,
+              "native_call_return_elapsed_s": 10.171186127
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 20.968195549,
+            "index_s": 11.521919171,
+            "application_e2e_s": 31.736831034,
+            "native_workflow_s": 31.708561426,
+            "cleanup_s": 1.463476558,
+            "process_wall_s": 54.168510246
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 18,
+            "nvml_samples": 93
+          },
+          "raw_members_prefix": "rayf-r1/explicit1/"
+        }
+      ]
+    },
+    {
+      "run_id": "resource-auto-20261015-r3/rays-r1",
+      "backend": "ray_data_staged",
+      "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+      "started_utc": "2026-10-15T12:33:34.588784+00:00",
+      "ended_utc": "2026-10-15T12:35:28.681207+00:00",
+      "native_controller_status": "passed",
+      "outer_wrapper_result": {
+        "status": "passed",
+        "exit_code": 0,
+        "drain_errors": [],
+        "drain_stopped": true,
+        "environment_validation": "passed"
+      },
+      "precision_environment_acceptance": "passed",
+      "lease_acquired": true,
+      "lease_released": true,
+      "recover_stale": false,
+      "paired_matrices": [
+        {
+          "key": "call_0",
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "exact_equal": true
+        },
+        {
+          "key": "call_1",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        },
+        {
+          "key": "call_2",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        }
+      ],
+      "archive_key": "r3-strict-ray-daft-evidence",
+      "cases": [
+        {
+          "configuration": "auto",
+          "native_status": "succeeded",
+          "resource_config_sha256": "dffcac213c7178001f6ad3a5d5eb2178f769a5dc811de8d57a97e5f77bee6def",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": "auto",
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 3,
+            "requested_count": "auto",
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "ray_data"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "pid": 374228,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321617383",
+              "role": "clip_prepare",
+              "worker_uid": "395a12ff495b4fdbab229e2ec0c9f978"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 374035,
+              "process_start_time_ticks": "321616362",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "8904417ed34540e6995198026737a141"
+            },
+            {
+              "pid": 374406,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321618424",
+              "role": "clip_prepare",
+              "worker_uid": "89aede09050a48be88dd2e79df51e722"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 374407,
+              "process_start_time_ticks": "321618426",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "8ce294b6ad1a4b489b04d8a2137b1be4"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 374229,
+              "process_start_time_ticks": "321617385",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "8e00e44bd7204c2ba00ec687fa458608"
+            },
+            {
+              "pid": 373809,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321615959",
+              "role": "clip_prepare",
+              "worker_uid": "d7d2a2eddfe948b4a63c644356ab0944"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "17ed7579dfef41c189230a7095d9fe2f",
+              "pid": 374407,
+              "process_start_ticks": "321618426",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216193649830913,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "d9072988fd28462383a669b6c77c0d0b",
+              "pid": 374035,
+              "process_start_ticks": "321616362",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216173472188611,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "ea6e6024d6dd4dd8b4d6aaea9eb06b08",
+              "pid": 374229,
+              "process_start_ticks": "321617385",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216183875723630,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "cold_native_graph_per_rm_call",
+          "model_load_scope": "identity, stock CPU text RM and Ray owner setup are in model_startup_s; this adapter's per-RM native callable CLIP loads remain in index/query/application time",
+          "actual_native_batch_model_reuse": [
+            {
+              "batch_rows": 2,
+              "embed_calls": 1,
+              "model_uid": "d9072988fd28462383a669b6c77c0d0b",
+              "pid": 374035,
+              "rows": 2
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 2,
+              "model_uid": "d9072988fd28462383a669b6c77c0d0b",
+              "pid": 374035,
+              "rows": 3
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "ea6e6024d6dd4dd8b4d6aaea9eb06b08",
+              "pid": 374229,
+              "rows": 1
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "17ed7579dfef41c189230a7095d9fe2f",
+              "pid": 374407,
+              "rows": 1
+            }
+          ],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 10.410501793,
+              "submitted_monotonic_ns": 3216173796486884,
+              "returned_monotonic_ns": 3216184206579391,
+              "native_call_return_elapsed_s": 10.410092507
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 9.770465772,
+              "submitted_monotonic_ns": 3216184206987221,
+              "returned_monotonic_ns": 3216193977130178,
+              "native_call_return_elapsed_s": 9.770142957
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 21.441457151,
+            "index_s": 11.99838069,
+            "application_e2e_s": 32.216117753,
+            "native_workflow_s": 32.180634368,
+            "cleanup_s": 1.458674421,
+            "process_wall_s": 55.116253839
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 23,
+            "nvml_samples": 96
+          },
+          "raw_members_prefix": "rays-r1/auto/"
+        },
+        {
+          "configuration": "explicit1",
+          "native_status": "succeeded",
+          "resource_config_sha256": "0c1c5b2743e1c080f3d44499d2864739f70a5de9b80b58a0a143770796df73c8",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": 1,
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": 3,
+            "requested_count": 1,
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "ray_data"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "pid": 375611,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321624022",
+              "role": "clip_prepare",
+              "worker_uid": "1787ada8068140cd830718dc592ecdca"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 375437,
+              "process_start_time_ticks": "321623086",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "369f6b9d620b4b3eb3d1c241c927c93a"
+            },
+            {
+              "pid": 375016,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321621710",
+              "role": "clip_prepare",
+              "worker_uid": "3e273564efdb45fca7c00a09d22754eb"
+            },
+            {
+              "pid": 375436,
+              "preprocessing_identity": {
+                "decoder": "pillow_convert_rgb",
+                "decoder_version": "12.2.0",
+                "dtype": "float32",
+                "execution_variant": "clip_slow_pil",
+                "input_size": 224,
+                "layout": "NCHW",
+                "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+                "processor_version": "transformers=4.57.6;transformers.models.clip.image_processing_clip.CLIPImageProcessor;config-sha256=a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "representation": "prepared_fp32_nchw"
+              },
+              "process_start_time_ticks": "321623084",
+              "role": "clip_prepare",
+              "worker_uid": "ace4a11ef5984b77bef2b1eebd7bf8a1"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 375245,
+              "process_start_time_ticks": "321622146",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "b6c6a444cb6d416c9917d8793002a0e6"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 375613,
+              "process_start_time_ticks": "321624023",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "f7b1751b031f446b96e3bff7c32bb94f"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "3aae5a79f54847488ed4cc5edad079ee",
+              "pid": 375437,
+              "process_start_ticks": "321623086",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216239908531874,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "6e97be005a2840ceaca7fe7a3dc531df",
+              "pid": 375245,
+              "process_start_ticks": "321622146",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216230445889896,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            },
+            {
+              "model_uid": "d8332800ad6c44babad5786c4e5b7c64",
+              "pid": 375613,
+              "process_start_ticks": "321624023",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216249411125261,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "cold_native_graph_per_rm_call",
+          "model_load_scope": "identity, stock CPU text RM and Ray owner setup are in model_startup_s; this adapter's per-RM native callable CLIP loads remain in index/query/application time",
+          "actual_native_batch_model_reuse": [
+            {
+              "batch_rows": 2,
+              "embed_calls": 1,
+              "model_uid": "6e97be005a2840ceaca7fe7a3dc531df",
+              "pid": 375245,
+              "rows": 2
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 2,
+              "model_uid": "6e97be005a2840ceaca7fe7a3dc531df",
+              "pid": 375245,
+              "rows": 3
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "3aae5a79f54847488ed4cc5edad079ee",
+              "pid": 375437,
+              "rows": 1
+            },
+            {
+              "batch_rows": 1,
+              "embed_calls": 1,
+              "model_uid": "d8332800ad6c44babad5786c4e5b7c64",
+              "pid": 375613,
+              "rows": 1
+            }
+          ],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 9.3788001,
+              "submitted_monotonic_ns": 3216230808447237,
+              "returned_monotonic_ns": 3216240186806122,
+              "native_call_return_elapsed_s": 9.378358885
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 9.511137162,
+              "submitted_monotonic_ns": 3216240187262904,
+              "returned_monotonic_ns": 3216249698080861,
+              "native_call_return_elapsed_s": 9.510817957
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 20.955906102,
+            "index_s": 11.062907482,
+            "application_e2e_s": 29.981825157,
+            "native_workflow_s": 29.953773505,
+            "cleanup_s": 1.456061171,
+            "process_wall_s": 52.393797427
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 25,
+            "nvml_samples": 91
+          },
+          "raw_members_prefix": "rays-r1/explicit1/"
+        }
+      ]
+    },
+    {
+      "run_id": "resource-auto-20261015-r3/daft-r1",
+      "backend": "daft_native",
+      "source_commit": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+      "started_utc": "2026-10-15T12:37:11.250679+00:00",
+      "ended_utc": "2026-10-15T12:37:46.613289+00:00",
+      "native_controller_status": "passed",
+      "outer_wrapper_result": {
+        "status": "passed",
+        "exit_code": 0,
+        "drain_errors": [],
+        "drain_stopped": true,
+        "environment_validation": "passed"
+      },
+      "precision_environment_acceptance": "passed",
+      "lease_acquired": true,
+      "lease_released": true,
+      "recover_stale": false,
+      "paired_matrices": [
+        {
+          "key": "call_0",
+          "max_abs": 0.0,
+          "min_cosine": 0.9999999999999999,
+          "exact_equal": true
+        },
+        {
+          "key": "call_1",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        },
+        {
+          "key": "call_2",
+          "max_abs": 0.0,
+          "min_cosine": 1.0000000000000002,
+          "exact_equal": true
+        }
+      ],
+      "archive_key": "r3-strict-ray-daft-evidence",
+      "cases": [
+        {
+          "configuration": "auto",
+          "native_status": "succeeded",
+          "resource_config_sha256": "dffcac213c7178001f6ad3a5d5eb2178f769a5dc811de8d57a97e5f77bee6def",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": "auto",
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 0,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": null,
+            "requested_count": "auto",
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "daft_native"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "pid": 375935,
+              "preprocessing_identity": {
+                "effective_config_sha256": "a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "processor_type": "CLIPImageProcessor"
+              },
+              "process_start_time_ticks": "321635666",
+              "role": "daft_clip_prepare",
+              "worker_uid": "b43df54700e94736a1d96a5be5636730"
+            },
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 375935,
+              "process_start_time_ticks": "321635666",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "f640bb43ae96433ca2b6696290744faf"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "6f2d6bde403a4489bcac6e081ca784c9",
+              "pid": 375935,
+              "process_start_ticks": "321635666",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216370835958356,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "native_stateful_wrapper_across_graphs",
+          "model_load_scope": "identity, stock CPU text RM and Daft wrapper setup are in model_startup_s; first native UDF processor/CLIP load remains in index/query/application time",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.027626767,
+              "submitted_monotonic_ns": 3216371185709993,
+              "returned_monotonic_ns": 3216371212960867,
+              "native_call_return_elapsed_s": 0.027250874
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.028545868,
+              "submitted_monotonic_ns": 3216371213341252,
+              "returned_monotonic_ns": 3216371241502113,
+              "native_call_return_elapsed_s": 0.028160861
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 12.443889333,
+            "index_s": 1.798331529,
+            "application_e2e_s": 1.883529248,
+            "native_workflow_s": 1.855923086,
+            "cleanup_s": 0.000769322,
+            "process_wall_s": 14.32819158
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 3,
+            "nvml_samples": 29
+          },
+          "raw_members_prefix": "daft-r1/auto/"
+        },
+        {
+          "configuration": "explicit1",
+          "native_status": "succeeded",
+          "resource_config_sha256": "0c1c5b2743e1c080f3d44499d2864739f70a5de9b80b58a0a143770796df73c8",
+          "resources_requested": {
+            "allowed_gpus": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 1,
+            "gpu_workers": 1,
+            "model_inflight": "auto",
+            "prepare_inflight": 1,
+            "ray_num_cpus": "auto"
+          },
+          "resources_resolved": {
+            "adaptation": "deployment capacity only; no performance tuning",
+            "allocation_source": "allowed_gpus",
+            "allowed_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "cpu_workers": 0,
+            "model_inflight": null,
+            "model_workers": 1,
+            "prepare_inflight": null,
+            "ray_num_cpus": null,
+            "requested_count": 1,
+            "requested_devices": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "resolved_count": 1,
+            "selected_gpu_uuids": [
+              "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+            ],
+            "worker_scheduler_owner": "daft_native"
+          },
+          "actual_model_rows": 5,
+          "model_forward_count": 4,
+          "rm_call_rows": [
+            3,
+            1,
+            1
+          ],
+          "rm_calls_all_succeeded": true,
+          "worker_and_preprocessing_identities": [
+            {
+              "gpu_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+              "model_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "pid": 376070,
+              "process_start_time_ticks": "321637379",
+              "processor_revision": "openai/clip-vit-base-patch32@3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+              "role": "clip_model",
+              "worker_uid": "215cd79ffbc8498cb7960144ca1b9af5"
+            },
+            {
+              "pid": 376070,
+              "preprocessing_identity": {
+                "effective_config_sha256": "a69d3a60cc3d402f739e3748f6d239b538680fbbf43b67ce6d5087ec0011f304",
+                "processor_type": "CLIPImageProcessor"
+              },
+              "process_start_time_ticks": "321637379",
+              "role": "daft_clip_prepare",
+              "worker_uid": "56de5b6672154dabb2f91056db9180d4"
+            }
+          ],
+          "model_construction_receipts": [
+            {
+              "model_uid": "d90369f850a549998125dbe95b0940cd",
+              "pid": 376070,
+              "process_start_ticks": "321637379",
+              "role": "clip_tensor_actor",
+              "device": "cuda",
+              "constructed_monotonic_ns": 3216388892184482,
+              "hook_mode": "explicit_image_call",
+              "hook_errors": 0
+            }
+          ],
+          "model_lifecycle": "native_stateful_wrapper_across_graphs",
+          "model_load_scope": "identity, stock CPU text RM and Daft wrapper setup are in model_startup_s; first native UDF processor/CLIP load remains in index/query/application time",
+          "actual_native_batch_model_reuse": [],
+          "queries": [
+            {
+              "query_id": "image-139@0",
+              "query_ordinal": 0,
+              "repeat_index": 0,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.029374326,
+              "submitted_monotonic_ns": 3216389211443450,
+              "returned_monotonic_ns": 3216389240329340,
+              "native_call_return_elapsed_s": 0.02888589
+            },
+            {
+              "query_id": "image-139@1",
+              "query_ordinal": 1,
+              "repeat_index": 1,
+              "kind": "image",
+              "status": "succeeded",
+              "doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "positions": [
+                0,
+                2,
+                1
+              ],
+              "scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "observed_doc_ids": [
+                "139",
+                "632",
+                "285"
+              ],
+              "observed_positions": [
+                0,
+                2,
+                1
+              ],
+              "observed_scores": [
+                0.9999998211860657,
+                0.7213637828826904,
+                0.604524552822113
+              ],
+              "elapsed_s": 0.026702604,
+              "submitted_monotonic_ns": 3216389240822297,
+              "returned_monotonic_ns": 3216389267186636,
+              "native_call_return_elapsed_s": 0.026364339
+            }
+          ],
+          "matrix_npz_sha256": "1a362f83b6cc770aece732fd563cca97970a9b1791743ffdacc2459f3aead510",
+          "native_index_sha256": "4d7810efaa084c9507c963789fa41ca8238d19a0ae430bd4dce1ecfcbb58ca7b",
+          "native_persisted_matrix_sha256": "44016f5919ef6bb49e51cb1f0fef3224c1694a4234a3376fe9bcf668113610d2",
+          "persisted_npz_and_faiss_vectors_bitwise_verified": true,
+          "query_score_recompute_max_abs": 6.695016230295892e-08,
+          "timing_seconds": {
+            "model_startup_s": 13.331525702,
+            "index_s": 1.797479657,
+            "application_e2e_s": 1.885756351,
+            "native_workflow_s": 1.854990414,
+            "cleanup_s": 0.000790611,
+            "process_wall_s": 15.218075854
+          },
+          "physical_exit": {
+            "physical_exit_confirmed": true,
+            "observation_complete": true,
+            "remaining_owned_births": [],
+            "gpu_owners_after": [],
+            "emergency_signals": [],
+            "witness_errors": [],
+            "owned_births_observed": 3,
+            "nvml_samples": 30
+          },
+          "raw_members_prefix": "daft-r1/explicit1/"
+        }
+      ]
+    }
+  ],
+  "hse_environment_gap": {
+    "run": "hse-r1",
+    "mode": "explicit1",
+    "pid": 365682,
+    "start_ticks": "321535028",
+    "original_outer_status": "failed",
+    "native_controller_status": "passed",
+    "last_record": {
+      "CUDA_VISIBLE_DEVICES": null,
+      "NVIDIA_TF32_OVERRIDE": null,
+      "TORCH_ALLOW_TF32_CUBLAS_OVERRIDE": null
+    },
+    "historical_full_environment_length": null,
+    "reason": "Old last-wins observer retained only filtered fields. It did not record full environment size, so the old observation cannot establish empty exit-window data versus nonempty missing variables. Earlier values cannot be reconstructed.",
+    "later_observer_fix": "For future runs, empty full proc-environ is unavailable and preserves prior positive evidence. Nonempty missing or conflicting values cause sticky rejection. It never repairs historical observations.",
+    "rerun": "not_run; cumulative 66-row cap reached"
+  },
+  "independent_review": {
+    "scope": "CPU-only raw archives, matrices, original index payload, scores/ranks, actual inputs, births/NVML, lifecycle and budget; no new models or lease",
+    "static_hse_script_sha256": "4ebfb93d149dc7803149bdb9c068dfbbe913dcb1a038fd11d375cf4d0b63da31",
+    "ray_daft_script_sha256": "6ea85afdc2fbdeaf4ec2f9313ff2880e01a5bc75db6e1b1f113249998cfae75f",
+    "timing_review_sha256": "33c60388de9d20a232becaf00f0026837683e7ae0b44e7a34561eee7b1cbeec5",
+    "cpu_helper_checks": {
+      "initial": 26,
+      "strengthened_cleanup_red": {
+        "passed": 37,
+        "failed": 1
+      },
+      "cleanup_fix_green": 38,
+      "future_environment_observer_green": 44,
+      "overlapping_counts_not_added": true
+    },
+    "production_uuid_cpu_checks": {
+      "red": {
+        "passed": 12,
+        "failed": 3
+      },
+      "green": 81,
+      "independent_repeat_same_81": true
+    }
+  },
+  "archives": {
+    "r3-static-r1-evidence": {
+      "mac_archive_name": "r3-static-r1-evidence.tar.gz",
+      "server_archive_name": "static-r1-evidence.tar.gz",
+      "sha256": "ea6be512bf2ada92750865caee370b2a26cdc93ee48a2e0af892c08ef617c965",
+      "bytes": 139612,
+      "members": 73,
+      "per_member_manifest_sha256": "f592275063d12987ee9814c791321d537ed075604e10de4d6f0c0d27c99724c1",
+      "server_originals_retained": true,
+      "mac_members_verified": true
+    },
+    "r3-numeric-r2-evidence": {
+      "mac_archive_name": "r3-numeric-r2-evidence.tar.gz",
+      "server_archive_name": "numeric-r2-evidence.tar.gz",
+      "sha256": "a02f8fc062cced72163b8c232d9556549e0d834bcaddb6c7bf662171ed872fe0",
+      "bytes": 740951,
+      "members": 28,
+      "per_member_manifest_sha256": "9d2a2c001826fdcdfe2647941c56136820d597d557cbb4c45c4027d838f4afcf",
+      "server_originals_retained": true,
+      "mac_members_verified": true
+    },
+    "r3-strict-static-hse-evidence": {
+      "mac_archive_name": "r3-strict-static-hse-evidence.tar.gz",
+      "server_archive_name": "strict-static-hse-evidence.tar.gz",
+      "sha256": "acf093be582c38762dd2247446e45d48cce7b60934228951999ded2215937515",
+      "bytes": 839477,
+      "members": 102,
+      "per_member_manifest_sha256": "5de4422475a8eb7bd3d71ba0eb8fcf934e36ed2728ca926553db59a747af30fc",
+      "server_originals_retained": true,
+      "mac_members_verified": true
+    },
+    "r3-strict-ray-daft-evidence": {
+      "mac_archive_name": "r3-strict-ray-daft-evidence.tar.gz",
+      "server_archive_name": "strict-ray-daft-evidence.tar.gz",
+      "sha256": "c1c8f9631b2d245bfcbd4199381497f39c2130bf509f9d26226ad4defaee9459",
+      "bytes": 920457,
+      "members": 169,
+      "per_member_manifest_sha256": "bc6ee1abf7200c59aa491bc54e163edb4f913fa34fa1181fd1a9711c67cdb4c5",
+      "server_originals_retained": true,
+      "mac_members_verified": true
+    }
+  },
+  "raw_obtain": "Private task-13 resource-auto evidence and server run resource-auto-20261015-r3 are retained. Ask the project owner for the archive and per-member manifest identified by SHA-256; full commands, inputs, outputs, helper source and observer histories remain there. Machine paths and runtime secrets are not published.",
+  "timing_scope": {
+    "application_e2e": "source content check/decode through native index/search and output validation; eager owner/identity setup and evidence serialization separate; per-call or lazy model loads remain included where performed",
+    "native_query_timestamp_window": "submitted_monotonic_ns to returned_monotonic_ns ends immediately after native sem_search returns, before result validation",
+    "complete_query_elapsed_s": "queries[].elapsed_s includes native return plus complete output validation and query bookkeeping; repeat construction remains inside this query when the native backend performs it",
+    "startup": "owner/identity, stock CPU text RM and eager model setup, according to each native lifecycle",
+    "cleanup": "reported separately and corroborated by external physical-exit witness",
+    "comparison": "one trial per configuration; no speed ranking, reliable tail quantile, saturation or resource-optimal claim"
+  },
+  "pending": [
+    "real dual/multi-GPU correctness and performance",
+    "Daft native per-worker visibility with more than one GPU",
+    "vLLM actual DP rank greater than one and rank-to-GPU mapping/exit",
+    "Serve logical service versus replica identity and multi-replica execution",
+    "Ray HTTP real native min/max scaling",
+    "live GPU inference failure/cancellation injection and subsequent query",
+    "new VLM/model qualification",
+    "main-owner merged full LOTUS/PZ workload regression"
+  ],
+  "unsupported": [
+    "IMLane local CLIP",
+    "resource-config on stock/direct/external image providers, including Serve"
+  ],
+  "related_evidence": [
+    "single_gpu_first_attempt.json",
+    "single_gpu_static_failure.json",
+    "numeric_diagnostic.json",
+    "main_service_provenance.json"
+  ]
+}

@@ -1,0 +1,269 @@
+{
+  "schema": "semloom.resource_auto.single_gpu_preparation.v1",
+  "status": "cpu_preparation_passed_hardware_queued",
+  "source_commit": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
+  "initial_source_commit": "895daab3c771685c16ebb8685ad9f46b6a37d203",
+  "compatibility_origin": "7bac93ada893dd978b21d7935edd0bdb48d5980d",
+  "compatibility_files_sha256": {
+    "code/src/semantic_methods/lotus/image_backend.py": "3ba788797ade9b57bd60f830562b9830edab5944acfd9866aafc124a60078488",
+    "code/tests/semantic_methods/test_lotus_image_resources.py": "83fe1a02e79644269e7fdfdbdd1e7e3ce8a3a6e4b0516c6eec4d55a793cde29f"
+  },
+  "compatibility_tests": {
+    "passed": 30,
+    "failed": 0,
+    "modules": [
+      "semantic_methods.test_lotus_image_resources",
+      "semantic_methods.test_lotus_image_lifecycle"
+    ],
+    "independent_same_tests_passed": 30,
+    "counts_overlap_do_not_add": true
+  },
+  "cpu_environment": {
+    "status": "passed",
+    "source_commit": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
+    "image_rows": 3,
+    "model_identity_validated": true,
+    "gpu_work_started": false,
+    "versions": {
+      "torch": "2.12.1+cu130",
+      "transformers": "4.57.6",
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "lotus-ai": "1.2.4",
+      "sentence-transformers": "3.4.1",
+      "numpy": "1.26.4",
+      "pillow": "12.2.0"
+    }
+  },
+  "official_parser": {
+    "status": "passed",
+    "version": "0.25.1",
+    "effective_fields": {
+      "data_parallel_size": 1,
+      "tensor_parallel_size": 1,
+      "pipeline_parallel_size": 1,
+      "data_parallel_backend": "mp",
+      "distributed_executor_backend": "mp",
+      "nnodes": 1,
+      "node_rank": 0,
+      "headless": false,
+      "data_parallel_rank": null,
+      "data_parallel_size_local": null,
+      "data_parallel_hybrid_lb": false,
+      "data_parallel_external_lb": false,
+      "decode_context_parallel_size": 1,
+      "prefill_context_parallel_size": 1,
+      "grpc": false
+    },
+    "engine_config_created": false,
+    "model_started": false,
+    "scope": "CPU-only parser invocation with process CUDA visibility empty. The explicit allocated UUID and a separate allocation-environment argument build parser argv; the production launcher was not executed."
+  },
+  "actual_cpu_fixture": {
+    "status": "passed",
+    "actual_original_lotus_queries": 2,
+    "fixture_posts": 6,
+    "model_posts": 0,
+    "gpu_work_started": false,
+    "token_field": "max_completion_tokens",
+    "outputs": [
+      [
+        {
+          "row_id": "row-0",
+          "text": "alpha",
+          "_copied": "alpha",
+          "raw_output_copied": "alpha"
+        },
+        {
+          "row_id": "row-1",
+          "text": "beta",
+          "_copied": "beta",
+          "raw_output_copied": "beta"
+        },
+        {
+          "row_id": "row-2",
+          "text": "gamma",
+          "_copied": "gamma",
+          "raw_output_copied": "gamma"
+        }
+      ],
+      [
+        {
+          "row_id": "row-0",
+          "text": "alpha",
+          "_copied": "alpha",
+          "raw_output_copied": "alpha"
+        },
+        {
+          "row_id": "row-1",
+          "text": "beta",
+          "_copied": "beta",
+          "raw_output_copied": "beta"
+        },
+        {
+          "row_id": "row-2",
+          "text": "gamma",
+          "_copied": "gamma",
+          "raw_output_copied": "gamma"
+        }
+      ]
+    ],
+    "callbacks_sha256": "b839d57f2cbbf0ca19f2de3d36facc881291fa3eea05e08eb9ca470d107256a1"
+  },
+  "supervisor_offline_review": {
+    "independent_reviewer": "resource_review",
+    "blocking_findings_remaining": 0,
+    "checks": [
+      "single token field, exact limit16",
+      "valid GPU/process observations required for physical exit",
+      "full birth-bound live process tree included",
+      "torn evidence JSON cannot skip cleanup or replace first failure",
+      "lease release failure retains summary",
+      "stdout drain errors fail qualification",
+      "PID exit/reuse races do not signal a replacement"
+    ],
+    "scope": "AST/stub/static review and three actual CPU witness failure cases; no real GPU or service lifecycle validation"
+  },
+  "planned_single_gpu_work": {
+    "schema": "semloom.resource_auto.single_gpu_qualification.v1",
+    "source_commit": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
+    "purpose": "Bounded source-specific resource configuration and lifecycle correctness; descriptive full-query clocks only",
+    "queue": "main and PZ finish first; acquire the shared host lease normally, recover_stale=false, only for execution",
+    "image": {
+      "arms": [
+        "semloom_static",
+        "semloom_hse",
+        "ray_data:fused",
+        "ray_data:staged",
+        "daft_native"
+      ],
+      "configurations": [
+        "auto",
+        "explicit1"
+      ],
+      "gallery_rows": 3,
+      "batch_size": 2,
+      "k": 3,
+      "image_queries_per_arm": 2,
+      "maximum_image_model_rows": 50,
+      "discarded_warmup_rows": 0,
+      "maximum_absolute_error": 1e-05,
+      "minimum_cosine": 0.99999,
+      "maximum_norm_error": 2e-05,
+      "checks": [
+        "all gallery and query vectors, doc IDs and ranks",
+        "2+1 tail batch",
+        "same owner next query",
+        "actual constructed preprocessing/model identities",
+        "GPU UUID plus PID and Linux birth ticks",
+        "complete owner and GPU exit"
+      ]
+    },
+    "http": {
+      "model": "Qwen2.5-7B-Instruct",
+      "vllm_version": "0.25.1",
+      "native_dp": 1,
+      "tensor_parallel_size": 1,
+      "configurations": [
+        "auto",
+        "explicit1"
+      ],
+      "original_lotus_map_queries_per_configuration": 2,
+      "rows_per_query": 3,
+      "cpu_http_batch_size": 2,
+      "total_post_limit": 12,
+      "max_tokens": 16,
+      "seed": 0,
+      "temperature": 0,
+      "retries": 0,
+      "checks": [
+        "official parser before exec",
+        "original LOTUS Map and parser",
+        "full ordered input and output",
+        "every POST observed once",
+        "actual listener, API and GPU worker birth identities",
+        "normal service stop and physical exit"
+      ]
+    },
+    "stops": {
+      "per_pair_seconds": 1200,
+      "maximum_planned_child_wall_seconds_across_six_pairs": 3480,
+      "each_image_process_seconds": 240,
+      "each_http_process_seconds": 540,
+      "service_start_seconds": 360,
+      "cleanup_seconds": 30,
+      "policy": "Stop on the first failure; retain source and failure artifacts; no automatic replay of uncertain work or stale-lease recovery"
+    },
+    "pending": [
+      "real dual/multi-GPU correctness and performance",
+      "multi-GPU per-worker native isolation",
+      "Serve multiple replicas",
+      "native DP ranks greater than one",
+      "model-quality or stable performance ranking"
+    ]
+  },
+  "execution_boundaries": {
+    "runner_lease_acquired": false,
+    "gpu_model_starts": 0,
+    "model_posts": 0,
+    "priority": "main and PZ first; no stale lease auto-recovery",
+    "main_integration": "pending real single-GPU qualification, then main owner selects minimal closure and revalidates merged source",
+    "no_window_confirmed": true
+  },
+  "failures_retained": [
+    {
+      "id": "cpu-fixture-start-01",
+      "status": "interrupted_or_unconfirmed",
+      "reason": "local execution transport disconnected; readback found no fixture directory or matching active process; no model start"
+    },
+    {
+      "id": "cpu-http-attempt-02",
+      "status": "failed_before_fixture",
+      "reason": "system Python wrapper lacked psutil; use the already verified project driver, no install"
+    },
+    {
+      "id": "cpu-http-attempt-03",
+      "status": "passed",
+      "reason": "fixed driver, exact LOTUS and callbacks, two full fixture queries"
+    }
+  ],
+  "private_evidence": {
+    "run_ids": [
+      "resource-auto-20261015-r1",
+      "resource-auto-20261015-r2"
+    ],
+    "archive": "single-gpu-preparation-20261015.tar.gz",
+    "sha256": "34d3a54b865a8ec09e81505ab4218ab0fc92f46b95b6e7c8830242240d35e3ff",
+    "bytes": 171621,
+    "members": 58,
+    "member_digests_verified_after_Mac_backup": true,
+    "server_originals_retained": true,
+    "runtime_env_excluded": true,
+    "source_archive_sha256": "3f2ce556219b1a40e6b27d7ff5d5dba797916c810f98f8ca1f9bc3cef0c622fc",
+    "source_archive_files": 1125
+  },
+  "pending": [
+    "actual single-GPU auto/explicit CLIP full queries and physical exit",
+    "actual Daft native GPU allocation",
+    "actual vLLM DP1 startup, model queries and exit",
+    "real dual/multi-GPU correctness and complete-query performance",
+    "multiple DP-rank birth/exit",
+    "Serve multiple replicas",
+    "main merged-source qualification"
+  ],
+  "independent_evidence_review": {
+    "reviewer": "resource_review",
+    "status": "passed",
+    "checks": [
+      "58 archive members SHA256 and byte counts match local backup and manifest",
+      "1125 selected source files match fixed source archive",
+      "7 final helper identities match archived and local bytes",
+      "6 fixture POSTs, 6 unique gateway requests, no retries or errors, completed response writes",
+      "all three input/output rows and repeated outputs match",
+      "three missing/error observation cases fail closed",
+      "compatibility code files exactly equal C7bac; 895 original qualification retained"
+    ],
+    "new_blocking_findings": 0,
+    "scope": "read-only evidence scan; no new runner, model, GPU, SSH or lease work"
+  }
+}

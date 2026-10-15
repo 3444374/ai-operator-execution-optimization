@@ -1,0 +1,109 @@
+{
+  "schema": "semloom.resource_auto.single_gpu_first_attempt.v1",
+  "status": "failed_before_gpu_model_load",
+  "source_commit": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
+  "run_id": "resource-auto-20261015-r2/static-r1",
+  "requested_configuration": {
+    "allowed_gpus": [
+      "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+    ],
+    "cpu_workers": 1,
+    "gpu_workers": "auto",
+    "model_inflight": "auto",
+    "prepare_inflight": 1,
+    "ray_num_cpus": "auto"
+  },
+  "resolved_configuration": {
+    "adaptation": "deployment capacity only; no performance tuning",
+    "allocation_source": "allowed_gpus",
+    "allowed_gpu_uuids": [
+      "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+    ],
+    "cpu_workers": 1,
+    "model_inflight": null,
+    "model_workers": 1,
+    "prepare_inflight": null,
+    "ray_num_cpus": 3,
+    "requested_count": "auto",
+    "requested_devices": [
+      "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+    ],
+    "resolved_count": 1,
+    "selected_gpu_uuids": [
+      "GPU-b8905660-3863-5422-25f4-1426e61478d0"
+    ],
+    "worker_scheduler_owner": "semloom_ray_pool"
+  },
+  "failure": {
+    "type": "ActorDiedError",
+    "stage": "ClipTensorActor constructor UUID guard before CLIP weights load",
+    "cause": "Torch _CUuuid renders full UUID without the NVML GPU- prefix",
+    "index_or_query_started": false,
+    "clip_gpu_model_construction_records": 0,
+    "image_inference_rows": 0,
+    "model_posts": 0,
+    "native_process_s": 30.249039891,
+    "native_cleanup_s": 1.47648254,
+    "subsequent_arms_started": false
+  },
+  "ownership": {
+    "owned_process_births": 13,
+    "observation_complete": true,
+    "witness_errors": [],
+    "remaining": [],
+    "gpu_owners_after": [],
+    "emergency_signals": [],
+    "physical_exit_confirmed": true,
+    "lease_released": true,
+    "recover_stale": false
+  },
+  "no_model_probe": {
+    "torch_version": "2.12.1+cu130",
+    "cuda_visible_devices": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+    "visible_count": 1,
+    "actual_uuid_str": "b8905660-3863-5422-25f4-1426e61478d0",
+    "actual_uuid_repr": "<torch._C._CUuuid object at 0x7f929690c330>",
+    "actual_uuid_type": "torch._C._CUuuid",
+    "allowed_uuid": "GPU-b8905660-3863-5422-25f4-1426e61478d0",
+    "model_loaded": false,
+    "inference_rows": 0,
+    "existing_guard_error_type": "ValueError",
+    "existing_guard_error": "CLIP worker GPU UUID is outside its deployment allocation"
+  },
+  "probe_lease_released": true,
+  "fix": {
+    "files_sha256": {
+      "code/src/modalities/image/worker_identity.py": "e8ff5c80ebeaead12a0827706b8cde2205c52fdc0d82f5ea81bbb2017ac3275c",
+      "code/tests/infrastructure/test_gpu_allocation.py": "e1de721adcbbed78bac28684ec3c12d6db4504260b2490ce204c1eb84146375f"
+    },
+    "contract": "Full ASCII 8-4-4-4-12 UUID only; Torch may omit one GPU- prefix, allocated NVML identities require it. Exact normalized hex comparison and duplicate rejection; return the allowed original token. No bytes decoding.",
+    "cpu_red": {
+      "failed": 3,
+      "passed": 12
+    },
+    "cpu_green": {
+      "passed": 81,
+      "failed": 0
+    },
+    "independent_cpu_green": {
+      "passed": 81,
+      "failed": 0,
+      "overlaps_do_not_add": true
+    },
+    "independent_review": "no blocking findings",
+    "hardware_revalidation": "pending new fixed source; do not relabel 88 failure"
+  },
+  "raw_archive": {
+    "name": "single-gpu-static-r1-and-uuid-probe.tar.gz",
+    "sha256": "b5de6bce6da8b3ade64dde5044845c1a3d9658acb2a01e2004e891c075a7be01",
+    "bytes": 8552,
+    "members": 20,
+    "Mac_member_sha256_verified": true,
+    "server_originals_retained": true
+  },
+  "remaining_plan_budget": {
+    "image_inference_rows": 50,
+    "model_posts": 12,
+    "reason": "no inference or model POST occurred; no counter reset, enlargement or uncertain work retry"
+  }
+}

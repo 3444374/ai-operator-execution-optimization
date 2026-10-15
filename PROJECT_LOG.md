@@ -1,5 +1,34 @@
 # 项目日志
 
+## 2026-10-15：资源 auto 五条单卡查询与原件闭包
+
+模型固定源d2fa8c9b、单张4090；同一原LOTUS图像建库／两次搜索按auto与explicit1切换，五条原生路径的完整矩阵、索引、排名、所有worker身份和正常物理退出通过。
+固定数学环境四组额外验收通过，HSE旧环境观测缺项仍记外层失败；默认数值失败及有限诊断不改阈值、不伪称TF32根因。
+累计66/66图像行，自己的HTTP0；每组正常lease均已释放，未发外部信号。四原始归档、输入输出及独审脚本完整保留并在Mac逐成员备份。
+main的7b20四文件／PR25服务12请求保持独立来源，不覆盖发布main2041；C保留来源守卫职责，main owner继续拥有成熟代码合并及合并后完整查询复验。
+本次只补报告，不修改冻结模型源码；实际结果、单次计时边界及真实多卡／Serve／HSE缺项见[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md)。
+
+## 2026-10-15：单卡身份首轮失败与严格 UUID 修复
+
+正常排队、现场核验后，固定88f9的static auto在CLIP模型构造前误拒实际Torch裸UUID；
+无推理行，原件保留，自有出生身份／GPU owner退出和lease正常释放均确认。
+短lease无模型探针确认Torch与NVML前缀差异；只修worker边界的完整UUID规范化，未扩设备分配或框架范围。
+CPU先3失败重现、修后81通过及独审，真实单卡待新源重新固定和资格，见[首轮记录](experiments/results/diagnostics/resource_auto_20261015/single_gpu_first_attempt.json)。
+
+## 2026-10-15：固定库 CPU 预检与单卡排队准备
+
+资源分支固定88f9b08c；实际vLLM0.25.1官方parser、环境和缓存内容预检通过，没有创建engine。
+固定LOTUS原生Map两次三行查询经过6个localhost fixture POST，完整输出与重复一致，模型请求0。
+控制器独审问题已修，58成员原件与两次启动／传输失败保留并完成Mac逐字备份。
+真实单卡仍排main／PZ之后，未获窗口、未拿lease。单卡成熟闭包通过后交main owner独占合并和复验，
+实际边界见[准备摘要](experiments/results/diagnostics/resource_auto_20261015/single_gpu_preparation.json)。
+
+## 2026-10-15：资源分支接回默认兼容修复
+
+精确接回 C 在 baseline `7bac93ad` 的 Ray 图默认兼容修复，仅显式资源模式关闭重试；
+资源与生命周期定向检查 30 passed。保留 895 原始 CPU 资格，单卡模型回归按 main／PZ
+优先队列准备中，见[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md#单卡后续准备)。
+
 ## 2026-10-15：参数化部署允许集合内的资源配置
 
 从核实的7a4c1846建立独立资源分支，新增可选资源JSON：仅在部署允许集合解析GPU UUID，固定vLLM0.25.1单节点原生DP／显式TP，贯通LOTUS本地CLIP原工厂、池及独立准备深度。Ray HTTP使用原生minimum/maximum，按上限核容量；旧未传配置的单卡默认保留。全部worker身份及unknown责任、CPU回归失败／修复、独立审查和真实硬件pending由[同题报告](experiments/results/diagnostics/resource_auto_20261015/README.md)维护。未启动模型或占GPU，不改变main／baseline集成职责；Serve多副本分阶段保留。
