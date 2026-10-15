@@ -1,7 +1,6 @@
 {
   "baseline": "06854ecd462d17ecdf43f3da793fb009ba12dc0d",
   "source": "671a22dd4285319209396ece3572bb89ff5ab74e",
-  "candidate_code_tree": "436840240007279646788b3643599bcc9b24c7f1",
   "production": [
     {
       "path": "code/src/execution_provider/adapters/async_fixed_model.py",
@@ -107,5 +106,7 @@
     "GPU performance",
     "semantic model quality"
   ],
-  "source_deviation": "Ray worker-ID and payload timing observation additions omitted; existing materializer unchanged."
+  "source_deviation": "Ray worker-ID and payload timing observation additions omitted; existing materializer unchanged.",
+  "linux_tested_code_tree": "436840240007279646788b3643599bcc9b24c7f1",
+  "later_changes": "Documentation only; production/test byte hashes remain those qualified on Linux."
 }
