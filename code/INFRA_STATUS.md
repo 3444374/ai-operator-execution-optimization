@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[LOTUS文本薄接入与常驻边界](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#thin-lotus)固定`21d87786`与`efa65c18`：performance省去重复SDK响应落盘，健康代理连接跨查询复用且无Cookie积累；原方法／缓存／SDK／usage与取消清理保持。真实CPU缓存三态、200／429及既有SemLoom接点通过；新源Linux三臂各两fixture query通过，`1ba0fc1e`三臂720模型及原生LOTUS另scope240模型均闭环并经独审。两query原值、请求经验P99与7FN边界见报告；不作尾延迟或调度收益结论。`4271dc44`的IMLane可选owner复用分开验证，不借此成绩。
+
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
 分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
 原方法／SDK、厂商调度和既有默认保持，不提供新模型性能或全图RSS资格。

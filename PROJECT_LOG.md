@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-15：沿原LOTUS接点精简观测并保留健康常驻连接
+
+`21d87786`按performance开关省去重复响应落盘，`efa65c18`移除每query强制reset并以DummyCookieJar保留调用者Cookie语义；不扩大原生图scope，不增调度。固定SDK下真实LOTUS缓存三态、结果／usage／429和已有SemLoom API检查通过，56项公共网关与取消清理、1项既有Core常驻回归通过。独立审核及CPU原始证据见[同题报告](experiments/results/diagnostics/native_text_capacity_20261015/README.md#thin-lotus)；新源Linux常驻fixture与`1ba0fc1e`三臂720模型、原生LOTUS另scope240模型通过并退出，未重跑旧三臂。实际HTTP分位、资源工作点、首HTTP前／后跨度及质量仍7FN见报告；两次完整query不足以估计查询P99。IMLane可选owner借用在`4271dc44`独立提交，20次作者fixture通过、实库记录待独审，后续最小模型接线资格不借前述成绩。
+
 ## 2026-10-15：简化文本原生接入的容量与清理
 
 基于`277d8f48`独立完成`a9c6df63`的Daft清理修补与`f2749bf1`的容量分离，

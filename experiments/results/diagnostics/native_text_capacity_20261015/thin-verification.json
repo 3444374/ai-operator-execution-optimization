@@ -1,0 +1,146 @@
+{
+  "schema": "semloom.thin_lotus_text.v1",
+  "source_commits": {
+    "observation": "21d87786bb08b839d6750c00e870d49fdb79350e",
+    "resident": "efa65c187293c73938f9cb677f29ff680b5e6990",
+    "resident_test": "1ba0fc1e3261055c1eaa0736f15b4cbeb07df154",
+    "imlane_owner": "4271dc447820577dcbfa0b23530563fd7d3802ab"
+  },
+  "production_sha256": {
+    "code/src/experiments/postgresql/supplier_adapter_query.py": "edd3597bd52894bdc327ab281e323b8af3d42d1ff12c43f66eb6237e9169e399",
+    "code/src/experiments/postgresql/persistent_native_adapter_query.py": "9e796cdef718496e8d0e1316cd9ad70226c787a68a52852c47c8e22e98d6e3fc",
+    "code/src/observability/request_gateway.py": "041fbf9667279bbf3e9a77e96b9b1b8176ea5b419a871e49687aa9f90b7105d3"
+  },
+  "purpose": "Original LOTUS remains the main query; native API calls are auxiliary, zero-model CPU records are not GPU or model performance.",
+  "changes": {
+    "performance_duplicate_sdk_raw_records": false,
+    "qualification_complete_response_records": true,
+    "new_executor": false,
+    "new_scheduler": false,
+    "vendor_source_edited": false,
+    "normal_query_pool_reset": false,
+    "proxy_retains_cookies": false,
+    "whole_batch_wait": true
+  },
+  "cpu": {
+    "preflight_checks": 23,
+    "preflight_status": "ok",
+    "full_original_lotus_distinct_new_test_functions": 3,
+    "full_original_lotus_test_executions": 4,
+    "full_original_lotus_test_executions_passed": 4,
+    "full_original_lotus_direct_fixture_posts": 120,
+    "cache_states": [
+      "miss",
+      "mixed",
+      "hit"
+    ],
+    "native_backends": [
+      "ray-data",
+      "daft"
+    ],
+    "existing_semloom_api": true,
+    "statuses": [
+      200,
+      429
+    ],
+    "sdk_baseline_tests": 6,
+    "sdk_baseline_actual_differentials": 3,
+    "sdk_baseline_dispatch_tests": 3,
+    "observation_unit_tests": 9,
+    "supplier_effective_tests": 12,
+    "resident_gateway_and_cleanup_tests": 56,
+    "resident_existing_core_tests": 1,
+    "linux_persistent_real_lotus_test": "actual source1ba three arms, two queries and8fixturePOST each passed with physical closure",
+    "real_model_calls": 0,
+    "cache_scope": "Original LM + LotusNativeBatchExecutor uncached seam; cache-disabled experimental observer is not generally qualified with enabled cache.",
+    "imlane_owner_cleanup_tests": 15
+  },
+  "profiles": [
+    {
+      "backend": "daft",
+      "observation_mode": "performance",
+      "rows": 16,
+      "actual_posts": 16,
+      "graph_batches": [
+        16
+      ],
+      "query_seconds": 0.444702042,
+      "timing_scope": "original frame.sem_map submission through full frame consumption; driver cProfile active, runtime/LM/source/observer setup outside",
+      "raw_records": 32,
+      "raw_bytes": 46202
+    },
+    {
+      "backend": "daft",
+      "observation_mode": "performance",
+      "rows": 16,
+      "actual_posts": 16,
+      "graph_batches": [
+        16
+      ],
+      "query_seconds": 0.463852958,
+      "timing_scope": "original frame.sem_map submission through full frame consumption; driver cProfile active, runtime/LM/source/observer setup outside",
+      "raw_records": 0,
+      "raw_bytes": 0
+    }
+  ],
+  "profile_interpretation": "Separate single cProfile CPU observations with overlapping inclusive spans; not a speed comparison and no subtraction.",
+  "auxiliary": {
+    "ray": {
+      "actual_api_tests": 1,
+      "graphs": 2,
+      "fixture_posts": 32
+    },
+    "daft": {
+      "actual_api_tests": 2,
+      "fixture_posts": 40
+    },
+    "imlane": {
+      "author_binary_executed": false,
+      "author_coordinator_executed": false,
+      "arrow_http_udf_sdk_cases": 3,
+      "fixture_posts": 6,
+      "source_modified": false
+    }
+  },
+  "preserved_failures": [
+    "initial supplier sandbox process-inspection restriction",
+    "retry command included nonexistent test name; corrected target passed",
+    "initial cost report serialization failed after query/HTTP cleanup; rerun with a distinct identity",
+    "macOS lacks verified Linux full-query observation clock; no substitute",
+    "Ray shutdown ResourceWarning and later process inspection denied; no process-wide leak claim"
+  ],
+  "raw_evidence": {
+    "archive": "thin-cpu-fixtures.jsonl.gz",
+    "records": 57,
+    "sha256": "60d37e3cb5c9d0b6b601243e17f622d86ba5695a4b4c2c342e4ceac86673eae0",
+    "private_logs_sha256": {
+      "thin-lotus-full-sdk-r1.log": "5e6023a29f91a3150973bb689b2fe970b20c7d481653fdda87ffc3fbd188375f",
+      "thin-lotus-full-sdk-r2.log": "9680bbfcabea386d8d1ee126c05a4418912f5276411fdbd2909ba38c2fade199",
+      "thin-sdk-replay-baseline.log": "f0e7e829db89e6f8eb9c4820566df6945a4a99815f78d5b30d41c2ad425b904e",
+      "thin-observation-unit.log": "80fee763498bd9df6473f71079b1012f3469dbf58a6986a00925a9d2188a1285",
+      "thin-supplier-unit.log": "cd264b3ff738de11d75692c4a819576c3e9ab8e0733af7846a3f0f90588ff051",
+      "thin-supplier-network.log": "42d75668019ef166e89cc87ceba949f875aa3073c2be7c19ec17f9d84ac24e64",
+      "thin-supplier-network-corrected.log": "0cfd0e6a17f3c7bc82200cae3ca4ef47737e3ec761c3af9bc8878e2192f6fd83",
+      "thin-resident-gateway.log": "5bc5582a83f855928c4f1dee47d68d622fe24a46007cb18863fe60ea43543b4f",
+      "thin-resident-core.log": "7dc5afbd20d8f9e2f712f1a8be417b8340ff9ac8b5065ed9865b65e41a58661e",
+      "persistent-http-mac-skip.log": "585b2d6ab45fc0ebeb67448559609bc42c4e73019f5a9f6104ee5523af6a8bc0",
+      "thin-cost-before-daft.log": "4d85c16e706a8b333266717fd2d2009d2daa665a8f27cc8d163bc95bb8fbf752",
+      "thin-cost-before-daft-r2.log": "1c13f2e74278da28a200643bb3f0cd3b43337738eefed26407e199e710042c15",
+      "thin-cost-after-daft.log": "ee1a40cdcbc6965c92f982817c8ab74e2577cb197161f63709bddf9f0eb83d1a"
+    }
+  },
+  "unsupported": [
+    "Cross-query reuse of native graph HTTP clients or actors",
+    "Steady-state GPU ranking, query P99/P99.99, request P99.99, saturation or whole-graph RSS guarantee"
+  ],
+  "server_model_validation": "source1ba three arms720model/2160three-hop plus original LOTUS separate service scope240model/720three-hop passed; all8Q2 physically closed, leases released, independently reviewed",
+  "lotus_seam": "fixed internal _process_uncached_messages replacement, not an entirely public LOTUS plugin",
+  "native_lifecycle": "Per-graph native resource creation remains valid main-query configuration; service mode is optional.",
+  "new_imlane_author_validation": "source4271 owner reuse code and15unit tests complete; actual author CPython/Ray20fixture passed with closure; independent actual review pending, public Q2 model followup pending separately",
+  "model_evidence": [
+    "model-verification.json",
+    "model-request-receipts.jsonl.gz",
+    "native-verification.json",
+    "native-request-receipts.jsonl.gz"
+  ]
+}
