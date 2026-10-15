@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：单卡身份首轮失败与严格 UUID 修复
+
+正常排队、现场核验后，固定88f9的static auto在CLIP模型构造前误拒实际Torch裸UUID；
+无推理行，原件保留，自有出生身份／GPU owner退出和lease正常释放均确认。
+短lease无模型探针确认Torch与NVML前缀差异；只修worker边界的完整UUID规范化，未扩设备分配或框架范围。
+CPU先3失败重现、修后81通过及独审，真实单卡待新源重新固定和资格，见[首轮记录](experiments/results/diagnostics/resource_auto_20261015/single_gpu_first_attempt.json)。
+
 ## 2026-10-15：固定库 CPU 预检与单卡排队准备
 
 资源分支固定88f9b08c；实际vLLM0.25.1官方parser、环境和缓存内容预检通过，没有创建engine。

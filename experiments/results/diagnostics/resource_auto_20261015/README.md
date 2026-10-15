@@ -2,8 +2,8 @@
 
 基点为 `7a4c1846fa8c973225d2fe894ad4f0ab11deded1`，已核对它是本轮开始时
 `integration/baselines` 的 HEAD。实现使用独立功能 worktree；没有修改 baseline、main 或其他会话文件。
-本轮只做 CPU／graph double／合成进程身份检查及 localhost HTTP fixture，没有 GPU、真实模型、租机或性能实验。
-独立审查及最终检查身份见 [qualification.json](qualification.json)。
+初版895只做 CPU／graph double／合成进程身份检查及 localhost HTTP fixture，没有 GPU、真实模型、租机或性能实验。
+其独立审查及检查身份见 [qualification.json](qualification.json)；后续机器检查按本报告末尾的独立来源记录，不改写初版资格。
 
 ## 硬编码与本轮范围
 
@@ -136,3 +136,18 @@ parser 预检进程的 CUDA 可见性为空，显式 UUID 与独立配置环境�
 当前没有收到 main／PZ 正常完成后的队列窗口，因此这些真实模型检查全部 **pending**。
 通过后把最小依赖闭包、实际固定源、C 兼容修复和未验边界交 main owner，由其独占合并与合并后复验；
 双／多卡、多个实际 DP rank 和 Serve 多副本不会借用单卡结果。
+
+## 首次单卡失败与 UUID 表示修复
+
+main／PZ 正常释放后，现场核对源码、脚本、缓存模型内容、指定GPU UUID及空计算进程，再通过正常 lease
+运行固定88f9的首个 static auto。运行在 GPU actor 构造身份检查处停止，未进入 index/search；
+没有 CLIP GPU模型构造回执或推理行。原生关闭与外部出生身份见证均保留：自有进程和GPU owner全部退出，
+无强制信号，lease正常释放；没有自动继续 explicit1 或其他模型臂。
+
+另一次短正常 lease 的无模型探针确认，实际 Torch2.12.1的`torch._C._CUuuid`字符串为完整裸UUID，
+NVML为同一UUID加`GPU-`前缀。原来的字符串直接比较误拒合法设备；探针没有装载权重或推理，结束后正常释放。
+[PyTorch固定官方实现](https://github.com/pytorch/pytorch/blob/v2.12.1/torch/csrc/cuda/Module.cpp#L984)也定义了该对象的字符串转换。
+修复只在原 worker 身份边界接受完整ASCII `8-4-4-4-12`，实际值可有一次前缀，允许集合须为完整NVML UUID；
+hex大小写归一后精确匹配，拒畸形、MIG及规范化重复，返回允许集合原值。没有增加bytes解码或设备推断。
+CPU先重现3失败／12通过，修后五模块81通过，独立复跑同81并审查通过；计数重叠不相加。
+真实单卡资格须绑定修复后的新固定源重跑；88f9仍为失败来源。原始失败与探针摘要见[首轮记录](single_gpu_first_attempt.json)。

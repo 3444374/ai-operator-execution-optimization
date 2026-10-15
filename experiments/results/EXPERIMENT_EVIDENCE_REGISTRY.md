@@ -2,6 +2,8 @@
 
 2026-10-15：[部署限定资源 auto 的 CPU 检查与单卡准备](diagnostics/resource_auto_20261015/README.md)。895原CPU资格保留；新固定源88f9b08c精确接回C的7bac93ad默认兼容修复，定向30pass。固定实库官方vLLM parser及原LOTUS两个三行Map／6fixture POST通过，模型请求0；58成员准备证据已独立备份。实际单／多卡、Daft分配、DP进程退出、Serve多副本和main合并复验仍pending，不借旧源资格。
 
+2026-10-15：[同题首单卡失败](diagnostics/resource_auto_20261015/README.md#首次单卡失败与-uuid-表示修复)：固定88f9在GPU模型构造前误拒Torch裸UUID，0推理；外部见证进程/GPU退出及lease正常释放。无模型探针确认表示差异，严格worker规范化修复及81 CPU检查/独审通过，待新源真实重验；88失败原件不改写。
+
 2026-10-15：[HSE 身份与基础修正](diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
 
 固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。
