@@ -1,5 +1,8 @@
 # 实验与机制证据台账
 
+2026-10-15：[TwoMap完成推进顺序独立核验](diagnostics/lotus_completion_order_20261015/README.md)：原默认差分兼容，固定SDK／真实owner与localhost正负／窗口对照未建立稳定净收益。
+仅保留默认关闭研究分支，原始观测在仓库外，不进入主测试或生产／GPU资格。
+
 2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
 固定`f2749bf1`的CPU localhost SDK观测、回归及原失败分别保存；支持活动HTTP／批次存储分离和清理责任修补，
 不支持模型收益、全图内存保证或Mac上的Linux完整query观测。LOTUS方法与IMLane生命周期边界见同题说明。

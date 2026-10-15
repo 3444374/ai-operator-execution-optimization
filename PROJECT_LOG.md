@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-15：独立核验 TwoMap 完成推进顺序
+
+以`bf41757e`为固定实现源，在`exp/semloom-completion-order`加入默认关闭的剩余预算分段推进，保持原解析与资源责任。
+[同题核验](experiments/results/diagnostics/lotus_completion_order_20261015/README.md)记录默认差分、固定SDK、真实owner CPU及强FIFO／SJF／固定末阶段对照；本次未建立稳定净收益，不建议启用。
+独立审核后仅交研究分支，未合main／integration、未启动GPU、未触及文本／图像其他owner源码；原件在仓库外交C保留。
+
 ## 2026-10-15：明确全局执行层与 PG 接入的适用范围
 
 根规则原将全项目研究对象统一写成 PostgreSQL 内置算子；现明确 SemLoom 为多前端执行层，

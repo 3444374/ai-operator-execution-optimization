@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：独立研究分支的[TwoMap完成推进顺序](../experiments/results/diagnostics/lotus_completion_order_20261015/README.md)
+以默认关闭的`completion_first`先生成合法后继再使用剩余动作额度派发；CPU localhost未建立稳定净收益，不建议启用，不提供生产／GPU资格。
+
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
 分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
 原方法／SDK、厂商调度和既有默认保持；这只是容量／清理首阶段，后续薄接入减法未完成，不提供新模型性能或全图RSS资格。

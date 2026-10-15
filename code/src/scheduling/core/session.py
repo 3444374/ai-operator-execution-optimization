@@ -149,9 +149,15 @@ class SessionEngine:
             self._finish_retired()
             self.wake.notify()
 
-    def advance(self, max_actions: int | None = None) -> CleanupReport:
-        """One owner tick: settle globally, then grant bounded opportunities by Job."""
+    def advance(self, max_actions: int | None = None, *, dispatch: bool = True) -> CleanupReport:
+        """Settle globally, optionally granting bounded dispatch opportunities by Job.
+
+        dispatch=False retains timeout, cancellation and preparation processing. A
+        caller splitting one tick must subtract events before its dispatching call.
+        """
         with self._operation():
+            if type(dispatch) is not bool:
+                raise ValueError("dispatch must be boolean")
             maximum = self.capacity.limits.step_actions if max_actions is None else max_actions
             if type(maximum) is not int or not 0 < maximum <= self.capacity.limits.step_actions:
                 raise ValueError("invalid global action bound")
@@ -179,7 +185,7 @@ class SessionEngine:
                     if remaining == 1 and not self._prepared_candidates(session):
                         prepare_actions = 1
                     used += self._prepare_inputs(session, prepare_actions)
-            while used < maximum and not self.error:
+            while dispatch and used < maximum and not self.error:
                 try:
                     selected = self._select_job_flow(now)
                 except Exception:

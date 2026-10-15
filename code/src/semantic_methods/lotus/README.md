@@ -225,6 +225,11 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 调用方显式提供`MethodLimits`和`MethodCapacity`，其保留空间须能容纳两阶段输入、状态和完整结果。
 两条路径都使用原提示和默认parser，输入来自外部授权文本列。
 
+独立研究选项`iter_two_map_rows(..., completion_first=False)`保持原默认。显式开启后先推进完成／取消／timeout／prepare，
+由原MethodDriver解析并生成合法后继，再以同tick剩余额度派发，随后yield；MethodBudget仍保留到消费者归还。
+错误可能少派发后继，yield关闭前也可能已发出更多不可撤回工作；owner继续排空未知远端请求。
+[CPU localhost核验](../../../../experiments/results/diagnostics/lotus_completion_order_20261015/README.md)未建立稳定净收益，暂不建议启用；不作为普通LOTUS整阶段透明替换或生产／GPU资格。
+
 ## 验证入口
 
 [SDK与方法检查](../../../tests/semantic_methods/test_lotus_adapter.py)覆盖真实LOTUS/LiteLLM、
