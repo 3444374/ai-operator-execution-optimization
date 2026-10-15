@@ -1,5 +1,10 @@
 # SemLoom 脚本入口
 
+## 原始 SemBench Animals Q1
+
+`experiments/run_sembench_animals.py`使用固定上游Q1及原Species SQL／相对误差评价；输入是仓外冻结manifest与完整digest。`--preflight`零模型；执行需显式`--observation-mode performance`或`qualification`、模型／tokenizer／新输出与共享lease目录。`--arm lotus-native|daft|ray-data`保留原ImageArray、提示、缓存关闭和parser；生成上限默认沿用上游8192，无构造器预热。入口只测≤64图，一次完整query不提供可靠尾分位。数据准备及当前资格见[报告](../../experiments/results/diagnostics/sembench_animals_20261015/README.md)。
+
+
 ## LOTUS 原生图像检索
 
 同一owner连续调用可显式增加`--query-repeats 5 --observe-model-reuse`；默认一次查询序列且不开启复用观测。首轮保留、原生缓存关闭；计时、模型／worker身份及Ray接点用途见[连续查询说明](../src/semantic_methods/lotus/README.md#连续查询观测)和[计划](../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。

@@ -1,5 +1,10 @@
 # LOTUS方法与SemLoom执行适配
 
+## 原始 Animals 图文 Filter
+
+固定7d83的`lotus-image-text-v1`完整消息profile现已窄接至当前SDK／`LotusBatchExecutor`／`LotusNativeBatchExecutor`；默认纯文本行为、当前可空batch deadline及remote session_factory/session_limits均保留。图像profile在任何flow／native graph前校验完整批次的模型、字节和期限，保留原生PNG data URI及完整SDK响应解释。[Animals入口](../../../../experiments/results/diagnostics/sembench_animals_20261015/README.md)执行原ImageArray→Filter→COUNT；不是CLIP RM，且不会扩大Core现有1MiB单项容量。
+
+
 ## 原生 CLIP 图像检索
 
 固定融合源码 `2afcaf47` 的[最终十格资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)

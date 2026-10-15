@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询CPU资格、许可逐文件证明及单VLM三后端真实小轮已分列；保留原始失败、Daft初轮并发超限与容量补轮、完整请求及逐图核验，Core容量缺口仍pending，不作CLIP、排名、稳态或尾分位结论。
+
 2026-10-15：[PZ Movie 原生接线](diagnostics/palimpzest_movie_20261015/README.md)锁定 c814e／6efc 源码，实际原库 CPU 与8行localhost fixture的 Q3／Q2共12POST通过，模型0／GPU0。Q2 LIMIT5仍6调用；FP1／FN1抵消COUNT的反例保留。完整原始 Movie 模型、五组执行及性能资格尚未完成。
 2026-10-15：[Ray2.56.1迭代器构造故障](diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)。
 真实CPU Data／Serve替身证实构造异常未走原生end hook，最小兜底使本图线程停止；unknown和原MemoryError保留，owner仍负责最终退出。
