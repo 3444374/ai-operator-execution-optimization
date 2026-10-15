@@ -92,14 +92,16 @@ settings，原生 cache 关闭。未资格跨查询并发、filtered refill 或 
 CLI 分开记录 `index_s`、已有索引 `index_load_s`／每条完整 `sem_search`、`native_workflow_s`、
 source 内容核查／解码至完整查询输出的 `application_e2e_s`、启动及 evidence 写出。
 原 `sem_search` 实际加载索引的时间仍计入查询；`index_load_s` 只记录 `load_sem_index` 注册行为。
-默认使用低开销单调时钟，可选细计时借用已有模块，不新增计时平台。Ray Data 每次图片 RM 图含冷模型加载，
-其他内置图片路径 workflow 内驻留；非stock文本 RM 位于 CPU，stock 文本位于 CUDA。
-startup 还含身份核查、stock 构造和 runtime 启动。替换 RM 包含完整图片 PNG 编码、执行器内解码与传输；
+默认使用低开销单调时钟，可选细计时借用已有模块，不新增计时平台。源码中Ray Data每次图片RM新建图，
+Daft使用stateful wrapper，其他内置图片路径在workflow对象内持有模型；实际加载次数未独立采集。非stock文本RM位于CPU，stock文本位于CUDA。
+`model_startup_s` 包含身份核查、stock构造和runtime启动，但不保证覆盖Ray／Daft消费图时延迟发生的模型构造。
+原 `application_scope` 中的“model startup separate”不能据此解释为所有模型加载均排除在应用区间外，按[字段口径](../../../plans/reference/对照规范.md#measurement-field-scopes)及实际构造位置解释；原计时数值和字段保留。
+替换 RM 包含完整图片 PNG 编码、执行器内解码与传输；
 stock 直接使用 PIL，这些额外成本保持在实际计时内，不归因于调度。这些配置不可直接做性能排名。
 样本少，P99／P99.99 为 unavailable；失败、超时和实际输出在相应运行身份下保留。
 
 下表为 source-d 单次 256 图观察，单位秒；组合应用含源核查／解码、建索引及四条查询，已有索引应用
-含源核查／解码及四条查询。模型／runtime 启动另计，原始每条 `sem_search` 时间见压缩观测。
+含源核查／解码及四条查询。CLI准备区间另报；查询内发生的模型构造仍在原计时内，原始每条 `sem_search` 时间见压缩观测。
 
 | 路径 | 建索引 | 组合应用 | 已有索引应用 |
 |---|---:|---:|---:|

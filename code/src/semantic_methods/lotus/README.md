@@ -31,7 +31,7 @@ Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE�
 原生算子与作者源码均不修改，固定来源、资格及精简证据见[本轮记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 
 [资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
-组合workflow、模型启动和结果写出分别记录。源码中Ray Data每次RM调用新建CPU/GPU callable池图；其他内置路径
+组合workflow、CLI准备和结果写出分别记录；`model_startup_s` 不证明全部模型构造都在应用区间外，详见[字段口径](../../../../experiments/plans/reference/对照规范.md#measurement-field-scopes)。源码中Ray Data每次RM调用新建CPU/GPU callable池图；其他内置路径
 在workflow对象内持有模型／worker池。该生命周期声明不等于实测加载／销毁次数；本轮计数未采集，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU、stock文本在CUDA；数值通过不表示文本性能可比，耗时另列。
 默认只读低开销单调时钟；`SEMLOOM_DETAILED_TIMING_DIR`借用已集成的可选计时模块，缺模块时明确失败。
 原生缓存关闭；串行入口拒绝同进程第二个owner，尚未资格跨查询并发。失败查询与RM调用保留时间、状态和阶段。
