@@ -1,5 +1,10 @@
 # Existing AI Operator Execution Chains
 
+历史范围：本文为2026-08-05的公开链路核对，厂商能力和后续建议按当时来源解释。
+旧“下一步”中的worker／写回／sink安排不恢复为当前任务；当前优先级见[总纲](../../PROJECT_OUTLINE.md#8-当前执行顺序)，
+现行执行所有者与HTTP／tensor能力范围见[研究定位](研究定位.md#platform-and-work-contract)。
+
+
 更新日期：2026-08-05
 
 ## 结论

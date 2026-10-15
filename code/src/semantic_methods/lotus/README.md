@@ -2,8 +2,11 @@
 
 ## 原生 CLIP 图像检索
 
+固定融合源码 `2afcaf47` 的[最终十格资格](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)
+已经完成六路径64图组合与四格已有索引的完整数值／查询检查；单次资格不提供性能排名或稳定尾分位。
+
 PNG 参数已在`e50dd2b9`后作为显式可选项接纳，原默认与stock PIL保持。
-该共享适配开销作用于Direct／HSE等替换路径，不作为SemLoom独有创新；模型证据仍独立于`06332d4f`六路径资格。
+该共享适配开销作用于Direct／HSE等替换路径，不作为SemLoom独有创新；旧`06332d4f`资格与下述候选各保留原身份，最终融合版本的资格见上方链接。
 固定`eab9f11a`的Direct／HSE最小匹配模型资格与阶段观测见[候选证据](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
 `--png-compress-level` 仅作用于替换 RM，接受 `-1..9` 的整数；省略时仍按原调用不传 Pillow 参数，
 stock 的原生 PIL 路径拒绝该选项。研究候选为1，0仅用于诊断；各替换后端通过同一 RM 编码接点接收字节。
@@ -28,8 +31,8 @@ Direct复用既有慢CLIP预处理和tensor actor，SemLoom复用原driver/HSE�
 原生算子与作者源码均不修改，固定来源、资格及精简证据见[本轮记录](../../../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。
 
 [资格与查询CLI](../../../scripts/experiments/run_lotus_image_retrieval.py)将建库、已有索引查询、
-组合workflow、模型启动和结果写出分别记录。Ray Data每次RM调用的原生图含模型冷加载；其他内置路径
-在workflow内驻留模型，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU，文本耗时另列。
+组合workflow、模型启动和结果写出分别记录。源码中Ray Data每次RM调用新建CPU/GPU callable池图；其他内置路径
+在workflow对象内持有模型／worker池。该生命周期声明不等于实测加载／销毁次数；本轮计数未采集，不能直接用这些样本排名。非stock臂的可选文本RM位于CPU、stock文本在CUDA；数值通过不表示文本性能可比，耗时另列。
 默认只读低开销单调时钟；`SEMLOOM_DETAILED_TIMING_DIR`借用已集成的可选计时模块，缺模块时明确失败。
 原生缓存关闭；串行入口拒绝同进程第二个owner，尚未资格跨查询并发。失败查询与RM调用保留时间、状态和阶段。
 

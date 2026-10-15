@@ -1,14 +1,7 @@
 # 项目导航
 
-[单GPU文件CLIP复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)拥有静态／HSE／原生Ray Data冷计时、来源及全部值；已完成的[257图逐行诊断](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)及其数值、批形态与消费边界归同一报告。
-
-[同题阶段分析与账本修订](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)拥有离线阶段统计、无模型配对及后续计划；实现／调用入口见[发送计数说明](code/scripts/README.md#sembench-send-accounting)。
-
-[原Q2真实模型小轮](experiments/results/diagnostics/native_sembench_model_20261012/README.md)与[双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)拥有原轮与两个独立窗口的实际观测、失败和离线核验。
-
-[SemBench Movie原查询准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)拥有原Q1/Q2/Q3接线、官方评价、唯一CSV/清单及3×6资格；运行入口见[脚本说明](code/scripts/README.md)。
-
-更新时间：2026-10-14。本文件回答内容归属、阅读入口和旧路径定位，具体状态与数字从对应事实入口核对。
+维护日期：2026-10-15。本文件回答内容归属、阅读入口和旧路径定位；
+方向、实现与证据分别从[总纲](PROJECT_OUTLINE.md)、[代码状态](code/INFRA_STATUS.md)和[结果导航](experiments/results/README.md)核对，不复制运行进度。
 
 ## 内容与文档职责
 

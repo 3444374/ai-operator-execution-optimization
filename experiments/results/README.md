@@ -5,6 +5,7 @@
 
 | 内容 | 报告入口 |
 |---|---|
+| LOTUS原生CLIP建索引与检索 | [六路径历史与最终融合资格](diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)、[PNG共享适配](diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate) |
 | 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与257图数值补测](diagnostics/image_clip_file_operator_20261014/README.md) |
 | 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](postgresql/native_executor_baselines_20261012/README.md) |
 | 独立IMLane构建 | [无模型Arrow往返](diagnostics/imlane_build_20261012/README.md) |

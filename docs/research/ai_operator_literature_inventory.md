@@ -189,9 +189,9 @@ IMLane与DLPM复用已有精读，KEN仍待精读；这些核对不表示artifac
 
 - `docs/research/reading_notes/`：49 篇历史文献笔记，现按泛读库管理（不含 README 和模板）。
 - `docs/research/精读文献笔记/`：精读笔记权威库，当前有十八篇主笔记、160 张论文原图裁剪件；新增 SPEAR 主笔记，未增加论文原图裁剪件。Kalypso Figure 1–12 与 IMLane Figure 1–15 已加入对应笔记。Kalypso 按 arXiv 核心补充管理，IMLane 按正式 PVLDB 2026 论文记录，SPEAR 按 CIDR 2026 vision/early-design paper 解读；三篇均未进入原十五篇速览或开题正文。
-- `docs/research/reference/`：当前工作区有 7 份可解析 PDF 实体（Galois、Abacus、Palimpzest、Sema、Parrot、Kalypso、IMLane）；历史题录仍由 `reference/REFERENCE_INDEX.md` 保留。
+- `docs/research/reference/`：[本地PDF子集](reference/README.md)保存2026-08-28核验记录，实体依工作区／外部保存而异；[题录索引](reference/REFERENCE_INDEX.md)不代表文件已下载。
 - `docs/archive/opening/literature/top15_reading_notes/`：只保留当前 Top 15 的自包含快照。
-- 目录历史中曾登记但当前工作区没有实体 PDF 的条目，不再标为“已下载”；需要时按索引重新下载。
+- 目录历史登记不等于当前实体已下载；使用前按本地子集说明核对，缺失时按已核验来源获取。
 
 ## 上游调度与前缀复用的待核查线索
 

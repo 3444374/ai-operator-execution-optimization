@@ -1,5 +1,9 @@
 # AI_EMBED operator 正式对比：project vs Ray Data native（2026-08-03）
 
+历史适用范围：本文数值与因果解释只针对2026-08-03的固定实现、资源与模型配置，原值／失败保持。
+当时关于CPU/GPU分级、接纳及重叠的解释不证明流水本身新颖，也不外推当前LOTUS常驻查询。
+原生Ray Data已有CPU/GPU流水与背压，后续公平比较见[对照规范](../../plans/reference/对照规范.md#resident-query-timing)。
+
 2026-10-02存储整理：原始文件的路径、字节数和校验值见[恢复清单](raw/storage-manifest.jsonl)，
 原始数据与脚本的恢复方式见[文件恢复说明](../../../code/scripts/README.md#实验结果恢复)。直接引用的数据和脚本仍可就地读取。
 

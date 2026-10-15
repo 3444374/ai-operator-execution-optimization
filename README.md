@@ -1,73 +1,30 @@
 # SemLoom
 
-[单GPU文件CLIP冷算子复验](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md)保存现有静态、HSE与原生Ray Data的全部重复、部署失败及[257图逐行数值补测](experiments/results/diagnostics/image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)；外部文件入口保持原身份。
-
-[原Q2模型小轮与双卡独立补测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)保留原轮和新窗口；双卡18／18位置已分三波完成；旧失败及各波身份保持。质量、样本量及失败按同题报告解释。
-
-当前LOTUS线已完成[持久计数匹配复测](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#matched-budget-repair)。[测量链与阶段耗时](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)保留观察成本的诊断；后续建立少量合理的单／双卡工作点，再设计长短查询共享。六路径默认同步原Q2已真实运行；扩展性、稳定尾延迟和方法优势尚未由本轮证明。
-
-[早期SemBench准备](experiments/results/diagnostics/sembench_lotus_readiness_20261012/README.md)的16 pass／2 unsupported属于旧128行配置的软件历史。后续[显式2000行IMLane接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-publisher-integration)及完整原Q1软件检查已提供；省略容量配置仍默认128，真实模型Q1／Q3全路径资格尚未由Q2增加。
-
-分支按职责组织：
-
-| 分支 | 职责 |
-|---|---|
-| `main` | 经PR验证的稳定共同实现 |
-| `integration/baselines` | 统一原生系统接入、通用正确性修复与可选基础执行能力；各系统保留自己的语义与调度 |
-| `codex/native-execution-adapters` | 完整调用与原生系统接入的研究平台；已发布阶段按固定来源进入统一集成 |
-| `codex/semloom-stability-and-replicas` | 查询级错误、停止责任及资源归还的正确性基础，已进入统一集成 |
-| `feat/duckdb-native-paths` | DuckDB AI六条路径的临时接入，完成后合入统一基线 |
-| `feat/sema-native-paths` | Sema六条路径的临时接入，完成后合入统一基线 |
-| `exp/semloom-query-sharing` | 长短查询共享调度研究 |
-| `exp/semloom-stage-execution` | 多模态数据组织与阶段执行研究 |
-| `exp/semloom-replica-adaptation` | 多副本容量与路由自适应研究，使用固定共同基点 |
-| `maintenance/project-rules` | 规则整理已整合；原分支与tip保留供恢复 |
-| `codex/semloom-history-preservation` | 保存原提交与实验来源的恢复入口 |
-
-LOTUS、DuckDB、Sema等接入支线用于并行开发，完成整合后可移除对应checkout；
-研究分支按具体假设保留，通用修复进入共同基线。原始实验及各次运行的源码身份仍由报告和证据台账定位。
-完整调用、query／Job及资源责任接口提供研究平台；stability修补提供正确性基础。
-策略是否采用由显式配置、实际调用路径及独立验证证据确定，Git合并或历史保全只记录源码与证据来源。
-
 本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
-PostgreSQL负责SQL、计划、snapshot、权限及查询生命周期；SemLoom在数据库管理下组织任务并调用可替换的外部执行服务。
-Sema后置原生Daft／Ray Data／IMLane执行的适配与检查见[代码入口](code/integrations/sema/README.md)。
+数据库拥有 SQL、计划、快照、权限及查询生命周期；SemLoom 利用 Ray Core 的任务、actor 和对象设施组织外部执行，
+与 Ray Data、Daft 等原生数据执行路径比较。合理调优的原生批处理、actor 池、背压与 CPU/GPU 流水是共同起点。
 
-研究内容包括按token、frame、阶段工作量与局部性组织数据，以及固定容量下的提交、路由和多Job调度。
-算子代价估计为两项内容提供信息。文本`AI_COMPLETE`是首版主场景，图像用于跨模态验证。
-方向与近期顺序见[项目总纲](PROJECT_OUTLINE.md)，实际能力与待完成项见[代码状态](code/INFRA_STATUS.md)。
+近期优先加速**单查询／一批数据的完整执行**，检验能否少准备、少搬运、少做重复计算。
+端到端任务时间及有效吞吐是主要目标；GPU 利用率解释供给与等待，多查询共享属于后续场景。
+原生 tensor 路径可以研究表示、阶段工作量、准备位置、后继消费者和局部性；HTTP 路径控制供给与路由，
+模型服务仍拥有其内部 tensor、KV 和计算调度。方向与顺序只在[总纲](PROJECT_OUTLINE.md)维护。
 
-| 需求 | 入口 |
+| 要查什么 | 权威入口 |
 |---|---|
-| 查长期规则与领域术语 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md) |
-| 查内容归属、目录与旧路径 | [项目导航](PROJECT_INDEX.md) |
-| 查实现与命令 | [代码](code/README.md)、[脚本](code/scripts/README.md) |
-| 查研究依据与文献 | [研究入口](docs/research/README.md)、[研究定位](docs/research/研究定位.md) |
-| 按流程和场景分析优化 | [应用、工程与理论分析](docs/research/优化方法依据.md#query-specific-execution-opportunities)、[物理需求与准备时机](docs/research/优化方法依据.md#heterogeneous-demand-supplement)、[共享准备切片](experiments/plans/数据组织.md#scene-preparation-pilot) |
-| 查计划、结论和失败证据 | [实验方案](experiments/plans/README.md)、[结果](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
-| 准备机器和数据 | [运行手册](deploy/runtime/README.md)、[数据来源](data/README.md) |
-| 查图表与历史材料 | [图资产](figures/README.md)、[项目文档](docs/README.md) |
-| 追溯项目变更 | [项目日志](PROJECT_LOG.md) |
+| 规则、术语与内容归属 | [AGENTS.md](AGENTS.md)、[CONTEXT.md](CONTEXT.md)、[项目导航](PROJECT_INDEX.md) |
+| 方向、优先级与历史范围 | [项目总纲](PROJECT_OUTLINE.md) |
+| 实际能力与尚未验证项 | [代码状态](code/INFRA_STATUS.md)、[模块与命令](code/README.md) |
+| 架构职责与接入设计 | [系统架构](experiments/plans/系统架构.md) |
+| 最近邻、机制与文献版本 | [研究定位](docs/research/研究定位.md)、[方法依据](docs/research/优化方法依据.md)、[文献入口](docs/research/README.md) |
+| 实验设计与比较口径 | [方案](experiments/plans/README.md)、[对照规范](experiments/plans/reference/对照规范.md)、[报告核对](experiments/plans/reference/报告核对.md) |
+| 实际结果、全部重复与失败 | [结果导航](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
+| 环境、数据及历史材料 | [运行手册](deploy/runtime/README.md)、[数据](data/README.md)、[文档](docs/README.md)、[图资产](figures/README.md) |
+| 变更与来源恢复 | [项目日志](PROJECT_LOG.md) |
 
-[文本Map四路径比较](experiments/results/postgresql/text_map_four_path_comparison_20260930/README.md)与
-[worker复用](experiments/results/postgresql/text_map_worker_reuse_real_20260930/README.md)、
-[gateway诊断](experiments/results/postgresql/text_map_gateway_lifecycle_20261001/README.md)、
-[线程记账](experiments/results/postgresql/text_map_threaded_accounting_20261002/README.md)、
-[Arrow分批](experiments/results/postgresql/text_map_arrow_batches_20261002/README.md)分别保留实际重复值、负结果和适用条件。
-完整查询、质量与资源结论以各报告为准。
+当前图像接点与固定来源资格从[LOTUS 模块](code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)和
+[主报告](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)进入；
+外部文件 CLIP 冷算子、文本原 Q2、PG 路径及负结果保留各自运行身份，不能互借验证范围。
+常驻完整查询、一次性启动／建库及逐查询原生重建的计时按[统一口径](experiments/plans/reference/对照规范.md#resident-query-timing)解释。
 
-[同应用原生语义系统](experiments/results/postgresql/semantic_system_comparison_20261008/README.md)已完成五系统512行重复评价、
-PG／LOTUS原始Movie Q3及三种同后端控制的模型工程检查，共62条查询／14,408次真实请求。
-Sema格式与Daft文件容量修订通过，原32次和8,009次停止保留；方法性能、多Job及图像仍按自身计划。
-
-[数据就绪后的SQL／原生API比较](experiments/results/postgresql/query_ready_timing_20261008/README.md)
-补充分离准备后的查询、单行交付和统一HTTP计时，保留独立运行及全部重复值。
-
-[跨系统方法与执行接入](experiments/results/postgresql/native_adapter_integration_20261009/README.md)保存公共任务、LOTUS、DuckDB、Sema和原生Daft／Ray的接入、常驻检查及全部历史结果。
-当前[修复来源模型观察](experiments/results/postgresql/native_adapter_integration_20261009/README.md#repair-model)按来源区分工程修复、质量和实际请求容量；
-[有限容量筛查](experiments/results/postgresql/native_adapter_integration_20261009/README.md#capacity-screening-stop)已因运行包标签错误停止，尚无有效容量测量。实现状态见[代码状态](code/INFRA_STATUS.md)。
-
-[批量持久记账](experiments/results/diagnostics/request_budget_batch_20261003/README.md)保留组件、无模型改善与真实模型回退结果，默认同步保持。
-
-[gateway共享执行干扰](experiments/results/diagnostics/gateway_isolation_20261004/README.md)区分本地组件行为，另有Linux/真实Ray/本机HTTP核对，实际SQL和GPU验证另列。
-[共享预付观察API](experiments/results/diagnostics/mapped_request_budget_20261003/README.md#server-observer)完成有限服务器接入，完整消费未获净收益，正式同步默认保持。
+`main` 保存稳定共同来源，`integration/baselines` 接纳原生适配与通用修复；研究分支按具体假设独立评价。
+Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。
