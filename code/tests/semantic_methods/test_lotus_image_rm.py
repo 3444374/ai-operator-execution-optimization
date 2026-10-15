@@ -1,4 +1,5 @@
 """Image identity, full-vector and ordering checks without loading a model."""
+import io
 import sys
 import types
 
@@ -124,44 +125,37 @@ def test_entry_rejects_another_owner_and_releases_after_error(monkeypatch):
         pass
 
 
-@pytest.mark.parametrize("level", [None, -1, *range(10)])
-def test_png_levels_preserve_all_rgb_pixels(level):
+def test_png_fallback_is_lossless_with_fixed_level_one():
     image = Image.fromarray(np.random.default_rng(42).integers(0, 256, (29, 31, 3), dtype=np.uint8))
-    encoded = image_bytes(image, png_compress_level=level)
+    encoded = image_bytes(image)
     np.testing.assert_array_equal(np.asarray(decode_rgb_image(encoded)), np.asarray(image))
+    reference = io.BytesIO()
+    image.save(reference, format="PNG", compress_level=1)
+    assert encoded == reference.getvalue()
 
 
-def test_png_default_recovers_after_other_settings_and_rm_options_are_isolated(rm_module):
+def test_png_fallback_observations_and_payloads_are_isolated_per_rm(rm_module):
     image = Image.fromarray(np.random.default_rng(23).integers(0, 256, (37, 31, 3), dtype=np.uint8))
     original = image_bytes(image)
-    for level in (1, 0, -1, 9):
-        image_bytes(image, png_compress_level=level)
-        assert image_bytes(image) == original
     first, second = ReverseExecutor(), ReverseExecutor()
-    one = make_image_rm(first, text_rm, png_compress_level=1)
-    default = make_image_rm(second, text_rm)
+    one = make_image_rm(first, text_rm)
+    other = make_image_rm(second, text_rm)
     one([image])
-    default([image])
-    assert second.inputs == [original]
-    assert first.inputs == [image_bytes(image, png_compress_level=1)]
+    assert not other.observation.calls and not second.inputs
+    other([image])
+    assert first.inputs == second.inputs == [original]
     record = one.observation.calls[0]
     assert record["png_compress_level"] == 1
+    assert (record["source_reused_rows"], record["png_fallback_rows"]) == (0, 1)
     assert record["encoded_total_bytes"] == record["encoded_peak_single_bytes"] == len(first.inputs[0])
     assert record["image_encode_cpu_ns"] >= 0 and record["image_encode_wall_ns"] > 0
-
-
-@pytest.mark.parametrize("invalid", [True, False, -2, 10, 1.0, "1"])
-def test_invalid_png_level_rejected_before_execution(rm_module, invalid):
-    with pytest.raises(ValueError, match="compression level"):
-        image_bytes(Image.new("RGB", (1, 1)), png_compress_level=invalid)
-    with pytest.raises(ValueError, match="compression level"):
-        make_image_rm(ReverseExecutor(), text_rm, png_compress_level=invalid)
+    assert other.observation.calls is not one.observation.calls
 
 
 def test_encoder_failure_keeps_original_error_and_failure_timing(rm_module, monkeypatch):
     import src.semantic_methods.lotus.image_rm as module
     executor = ReverseExecutor()
-    rm = make_image_rm(executor, text_rm, png_compress_level=1)
+    rm = make_image_rm(executor, text_rm)
     failure = OSError("PNG encoder failed")
     def fail(*a, **k):
         raise failure
@@ -171,3 +165,24 @@ def test_encoder_failure_keeps_original_error_and_failure_timing(rm_module, monk
     assert caught.value is failure and not executor.inputs
     assert rm.observation.calls[0]["status"] == "failed"
     assert rm.observation.calls[0]["image_encode_wall_ns"] > 0
+
+
+def test_payload_preparation_failure_on_suffix_submits_no_prefix(rm_module, monkeypatch):
+    import src.semantic_methods.lotus.image_rm as module
+    executor = ReverseExecutor()
+    rm = make_image_rm(executor, text_rm)
+    failure = OSError("second PNG failed")
+    prepared = []
+
+    def prepare(image):
+        prepared.append(image)
+        if len(prepared) == 2:
+            raise failure
+        return image_bytes(image)
+
+    monkeypatch.setattr(module, "image_bytes", prepare)
+    images = [Image.new("RGB", (4, 5), "red"), Image.new("RGB", (5, 6), "blue")]
+    with pytest.raises(OSError) as caught:
+        rm(images)
+    assert caught.value is failure and prepared == images and not executor.inputs
+    assert rm.observation.calls[-1]["status"] == "failed"

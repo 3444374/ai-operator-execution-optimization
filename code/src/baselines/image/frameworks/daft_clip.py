@@ -1,4 +1,4 @@
-"""Local CLIP in Daft's native graph, for encoded-image or opt-in RGB RM batches.
+"""Local CLIP in Daft's native graph, for RGB RM batches or encoded file inputs.
 
 The stateful UDF is project-authored (``diagnostic_reference``); Daft owns its
 batching, resource placement and worker lifetime. No HTTP or SemLoom scheduler
@@ -147,15 +147,16 @@ class DaftClipExecutor:
     poisons this object because the SDK exposes no public worker-join handle.
     """
 
-    input_kind = "encoded_bytes"
+    input_kind = "rgb_pil"
 
     def __init__(self, *, model_path: str, processor_path: str | None = None,
                  dtype: str = "float32", batch_size: int = 32,
                  model_workers: int = 1, gpus_per_worker: float = 1,
                  device: str = "cuda", torch_threads: int = 1,
-                 max_batch_rows: int = 4096, native_image_input: bool = False):
-        if type(native_image_input) is not bool:
-            raise ValueError("native_image_input must be a boolean")
+                 max_batch_rows: int = 4096, input_kind: str = "rgb_pil"):
+        if input_kind not in ("rgb_pil", "encoded_bytes"):
+            raise ValueError("Daft CLIP input_kind must be rgb_pil or encoded_bytes")
+        self.input_kind = input_kind
         if any(type(v) is not int or v <= 0 for v in
                (batch_size, model_workers, torch_threads, max_batch_rows)):
             raise ValueError("batch size, worker count, threads and row limit must be positive integers")
@@ -201,9 +202,9 @@ class DaftClipExecutor:
             batch_size=batch_size, model_workers=model_workers, gpus_per_worker=gpus_per_worker,
             device=device, use_process_requested=True, max_retries=0, max_batch_rows=max_batch_rows,
             torch_threads=torch_threads, software=versions, model_lifetime="daft_owned_stateful_instance",
+            input_kind=input_kind,
         )
-        if native_image_input:
-            self.input_kind = "rgb_pil"
+        if input_kind == "rgb_pil":
             self.identity.update(
                 input_kind=self.input_kind,
                 input_adapter="PIL RGB -> HWC uint8 -> Daft Image[RGB]",

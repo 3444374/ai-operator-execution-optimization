@@ -3,7 +3,7 @@
 ## LOTUS 原生图像检索
 
 同一owner连续调用可显式增加`--query-repeats 5 --observe-model-reuse`；默认一次查询序列且不开启复用观测。首轮保留、原生缓存关闭；计时、模型／worker身份及Ray接点用途见[连续查询说明](../src/semantic_methods/lotus/README.md#连续查询观测)和[计划](../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。
-`--native-image-input`为Direct／Ray／Daft／SemLoom显式候选，默认关闭且与PNG设置互斥；原生输入及整批检查后提交语义见同一LOTUS说明。
+普通入口自动使用后端支持的图片输入：Direct、Ray、Daft 及 Ray＋Serve 接收 RGB PIL；SemLoom 复用仍匹配当前像素的源字节，缺少可复用源时使用无损 PNG。整批检查和输入准备完成后才提交，所有转换均计入完整查询。
 
 `experiments/qualify_lotus_clip.py`先对固定ST／cached CLIP检查实际参数、PIL预处理与数值资格；
 `experiments/run_lotus_image_retrieval.py`通过原生LOTUS建索引与查询。两者要求仓库外的新输出目录，
@@ -20,15 +20,14 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_image_retrieval.py \
 ```
 
 `--arm stock/direct/semloom_static/semloom_hse/ray_data/daft_native`保持LOTUS索引与结果组装。
-可选 PNG 参数支持 `--png-compress-level 1`，省略时保持原默认，stock拒绝该参数；
 HSE的 `--hse-encoded-bytes`／`--hse-encoded-block-bytes-upper-bound` 可固定原容量而不随候选字节增大。
-参数已接纳至集成分支，参数与超限行为见[LOTUS接点](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)，
-Direct／HSE最小匹配模型资格及完整阶段观测见[候选记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
-Daft臂惰性加载独立后端，要求固定0.7.21 native runner；默认RGB PIL由RM无损编码为PNG后原生解码，
-显式`--native-image-input`则在查询内将RGB PIL转成HWC uint8，通过公开cast进入`Image[RGB]`，不做PNG往返。
-两路共用原stateful batch UDF、slow预处理和模型生命周期；它不经过HTTP／SemLoom Core。
+参数与超限行为见[LOTUS接点](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)，
+旧 PNG 配置及其固定来源保留在[历史候选记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate)。
+Daft 臂惰性加载独立后端，要求固定 0.7.21 native runner；在查询内将 RGB PIL 转成 HWC uint8，通过公开 cast 进入 `Image[RGB]`，使用原 stateful batch UDF、slow 预处理和模型生命周期。
+Ray 默认 `--ray-image-pipeline fused`；`staged` 保留 CPU 预处理与 GPU 模型分阶段的原生执行图，两种配置均接收当前 RGB 输入。
 Ray路径还需独立`--ray-temp-dir`；`--arm external --executor-factory module:factory --executor-config`
-接纳独立后端的`embed_batch`接口。`--mode index/search/combined`分别保存建库、已有索引和组合耗时；
+接纳独立后端的`embed_batch`接口。Ray＋Serve 常驻模型配置使用 `src.baselines.image.frameworks.ray_serve_clip:RayServeClipExecutor`，参数和生命周期见[接入说明](../src/semantic_methods/lotus/README.md#ray-data-与-ray-serve-的独立配置)。
+`--mode index/search/combined`分别保存建库、已有索引和组合耗时；
 在线默认使用图库首张PIL查询，可用`--query-doc-id`选多张，`--text-query bird`只触发文本编码。
 输入/完整输出、模型启动、原生图冷加载与证据写出口径见[LOTUS说明](../src/semantic_methods/lotus/README.md#原生-clip-图像检索)。
 固定来源及完整12／64／256图和已有索引资格见[本轮记录](../../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md)。

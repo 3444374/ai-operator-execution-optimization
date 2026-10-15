@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：统一普通 LOTUS 图片输入
+
+按用户要求接纳已独审的公共输入精简：RGB 后端省去 PNG 往返，字节后端优先复用仍匹配当前
+PIL 像素的源；copy、变换、原地修改及无源输入均按当前像素无损回退。删除旧 native／PNG 参数，
+保留 Ray fused／staged、图内模型／Serve 和 Daft 编码文件配置的实际区别。
+必要 ID、完整矩阵、取消、首错与资源处理保持；转换和源检查仍进入完整查询。
+接纳后185项回归通过、1项本机 processor 条件跳过；Daft 真实 CPU SDK 52项零跳过。
+固定来源的八配置小轮按[计划](experiments/plans/语义系统对照.md#lotus-image-native-input-defaults)执行，结果另记，不覆盖历史来源。
+
 ## 2026-10-15：增加 LOTUS 的 Ray Data 与 Serve 组合配置
 
 按用户授权增加独立常驻 CLIP 配置，普通 Data 同步函数调用公开 Serve handle，保留原图内模型。

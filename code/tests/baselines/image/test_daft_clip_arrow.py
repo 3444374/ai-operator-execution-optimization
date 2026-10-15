@@ -144,6 +144,7 @@ def executor_fixture(monkeypatch, batches, *, close_error=None):
     monkeypatch.setitem(sys.modules, "daft", daft)
     monkeypatch.setitem(sys.modules, "daft.functions", functions)
     executor = daft_clip.DaftClipExecutor.__new__(daft_clip.DaftClipExecutor)
+    executor.input_kind = "encoded_bytes"
     executor._embedder = SimpleNamespace(embed=Mock())
     executor._lock = threading.Lock()
     executor._closed = executor._unconfirmed_work = False

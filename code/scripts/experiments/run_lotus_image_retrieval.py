@@ -59,10 +59,8 @@ def parser():
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--stock-outer-batch-size", type=int, default=64)
     p.add_argument("--max-active-batches", type=int, default=2)
-    p.add_argument("--png-compress-level", type=int, choices=range(-1, 10), default=None,
-                   help="replacement RM only; omitted preserves Pillow defaults")
-    p.add_argument("--native-image-input", action="store_true",
-                   help="direct/ray_data/daft_native accept RGB PIL; SemLoom reuses validated source bytes; no PNG round trip")
+    p.add_argument("--ray-image-pipeline", choices=("fused", "staged"),
+                   help="ray_data only: native RGB callable (default fused) or CPU/GPU stages")
     p.add_argument("--hse-encoded-bytes", type=int)
     p.add_argument("--hse-encoded-block-bytes-upper-bound", type=int)
     p.add_argument("--ray-temp-dir", type=Path)
@@ -81,11 +79,8 @@ def parser():
 
 def main(argv=None):
     args = parser().parse_args(argv)
-    if args.native_image_input and (args.arm not in ("direct", "ray_data", "daft_native", "semloom_static", "semloom_hse")
-                                    or args.png_compress_level is not None):
-        raise ValueError("native image input requires direct/ray_data/daft_native/semloom_static/semloom_hse and no PNG compression setting")
-    if args.arm == "stock" and args.png_compress_level is not None:
-        raise ValueError("stock native PIL path does not accept PNG compression settings")
+    if args.ray_image_pipeline is not None and args.arm != "ray_data":
+        raise ValueError("ray-image-pipeline requires ray_data")
     hse_bytes = (args.hse_encoded_bytes, args.hse_encoded_block_bytes_upper_bound)
     if any(x is not None for x in hse_bytes):
         if args.arm != "semloom_hse" or any(x is not None and x <= 0 for x in hse_bytes):
@@ -105,7 +100,7 @@ def main(argv=None):
                   stock_outer_batch_size=args.stock_outer_batch_size,
                   stock_encode_batch_size=32, direct_model_batch_size=args.batch_size,
                   private_vector_capture=args.retain_query_vectors,
-                  png_compress_level=args.png_compress_level,
+                  input_policy="backend_native",
                   hse_encoded_bytes=args.hse_encoded_bytes,
                   hse_encoded_block_bytes_upper_bound=args.hse_encoded_block_bytes_upper_bound,
                   detailed_timing=bool(os.environ.get("SEMLOOM_DETAILED_TIMING_DIR")))
@@ -117,13 +112,10 @@ def main(argv=None):
         "identity, stock CPU text RM and Daft wrapper setup are in model_startup_s; first native UDF processor/CLIP load remains in index/query/application time"
         if args.arm == "daft_native" else
         "eager identity/text RM/factory setup is in model_startup_s; external lazy loads remain in index/query/application time")
-    if args.native_image_input:
-        report.update(native_image_input=True, executor_input_kind=("rgb_pil"
-            if args.arm in ("direct", "ray_data", "daft_native") else "source_encoded_bytes"))
-        if args.arm == "ray_data":
-            report["ray_image_pipeline"] = "native_image_arrays_fused_slow_preprocess_clip"
+    if args.arm == "ray_data":
+        report["ray_image_pipeline"] = "native_image_arrays_" + (args.ray_image_pipeline or "fused") + "_slow_preprocess_clip"
     executor = None
-    source_images = {} if args.native_image_input and args.arm in ("semloom_static", "semloom_hse") else None
+    source_images = {} if args.arm in ("semloom_static", "semloom_hse") else None
     rm = None
     owned_ray = None
     startup_failure = None
@@ -178,8 +170,8 @@ def main(argv=None):
                     raise ValueError("direct arm requires its qualified CLIP checkpoint")
                 settings = dict(model=str(args.model), processor=str(args.processor) if args.processor else None,
                                 dtype=args.dtype, batch_size=args.batch_size)
-                if args.native_image_input and args.arm in ("direct", "ray_data"):
-                    settings["native_image_input"] = True
+                if args.arm == "ray_data":
+                    settings["pipeline"] = args.ray_image_pipeline or "fused"
                 if args.arm == "direct":
                     executor = DirectImageExecutor(**settings, device=args.device)
                 else:
@@ -207,8 +199,7 @@ def main(argv=None):
                     processor_path=str(args.processor) if args.processor else None,
                     dtype=args.dtype, batch_size=args.batch_size, device=args.device,
                     gpus_per_worker=1 if args.device == "cuda" else 0,
-                    max_batch_rows=args.max_gallery_rows,
-                    **({"native_image_input": True} if args.native_image_input else {}))
+                    max_batch_rows=args.max_gallery_rows, input_kind="rgb_pil")
                 report["executor_identity"] = executor.identity
                 report["image_model_lifecycle"] = "native_stateful_wrapper_across_graphs"
             else:
@@ -223,9 +214,10 @@ def main(argv=None):
             if args.arm in ("semloom_static", "semloom_hse", "ray_data", "daft_native"):
                 report["versions"].update({x: version(x) for x in ("ray", "daft", "pyarrow")})
             rm_options = {} if source_images is None else {"source_images": source_images}
+            report["executor_input_kind"] = getattr(executor, "input_kind", "encoded_bytes")
             rm = make_image_rm(executor, stock, max_rows=args.max_gallery_rows,
                                observation=RMObservation(capture_vectors=args.retain_query_vectors),
-                               png_compress_level=args.png_compress_level, **rm_options)
+                               **rm_options)
         if reuse_enabled:
             observe_phase("startup_complete")
         report["model_startup_s"] = (time.monotonic_ns() - started) / 1e9

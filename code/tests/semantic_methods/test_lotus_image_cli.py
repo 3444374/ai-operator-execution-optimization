@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import sys
 from types import SimpleNamespace
+from PIL import Image
 import pytest
 
 
@@ -61,16 +62,16 @@ def base_args(tmp_path, arm="direct"):
             "--index-dir", str(tmp_path / "index"), "--output-dir", str(tmp_path / "output")]
 
 
-def test_cli_codec_defaults_and_inapplicable_flags_fail_before_work(tmp_path):
+def test_cli_defaults_and_inapplicable_pipeline_or_capacity_fail_before_work(tmp_path):
     cli = load_cli()
     args = base_args(tmp_path)
-    assert cli.parser().parse_args(args).png_compress_level is None
+    assert cli.parser().parse_args(args).ray_image_pipeline is None
     assert cli.parser().parse_args(args).query_repeats == 1
     assert cli.parser().parse_args(args).observe_model_reuse is False
     with pytest.raises(SystemExit):
-        cli.parser().parse_args(args + ["--png-compress-level", "10"])
-    with pytest.raises(ValueError, match="stock native PIL"):
-        cli.main(base_args(tmp_path, "stock") + ["--png-compress-level", "1"])
+        cli.parser().parse_args(args + ["--ray-image-pipeline", "unknown"])
+    with pytest.raises(ValueError, match="requires ray_data"):
+        cli.main(args + ["--ray-image-pipeline", "staged"])
     with pytest.raises(ValueError, match="require semloom_hse"):
         cli.main(args + ["--hse-encoded-bytes", "4"])
     with pytest.raises(ValueError, match="dimensions"):
@@ -80,7 +81,7 @@ def test_cli_codec_defaults_and_inapplicable_flags_fail_before_work(tmp_path):
     assert not (tmp_path / "output").exists()
 
 
-def test_codec_cli_source_error_survives_observation_and_close_errors(tmp_path, monkeypatch):
+def test_cli_source_error_survives_observation_and_close_errors(tmp_path, monkeypatch):
     cli = load_cli()
     for name in ("validate_image_source", "validate_embedding_identity"):
         monkeypatch.setattr(cli, name, lambda *a, **kw: {})
@@ -100,16 +101,16 @@ def test_codec_cli_source_error_survives_observation_and_close_errors(tmp_path, 
     monkeypatch.setattr(cli, "DirectImageExecutor", lambda **k: Executor())
     received = []
     def rm_factory(*a, **kw):
-        received.append(kw["png_compress_level"])
+        received.append(kw)
         return SimpleNamespace(observation=SimpleNamespace(calls=[], vectors={}))
     monkeypatch.setattr(cli, "make_image_rm", rm_factory)
     def fail_source(*a):
         raise RuntimeError("source first error")
     monkeypatch.setattr(cli, "load_image_file_manifest", fail_source)
     (tmp_path / "identity.json").write_text(json.dumps(dict(qualified=True, model_dtype="float32")))
-    assert cli.main(base_args(tmp_path) + ["--png-compress-level", "1"]) == 1
+    assert cli.main(base_args(tmp_path)) == 1
     result = json.loads((tmp_path / "output/result.json").read_text())
-    assert received == [1] and result["png_compress_level"] == 1
+    assert len(received) == 1 and result["input_policy"] == "backend_native"
     assert result["error_type"] == "RuntimeError" and result["reason"] == "source first error"
     assert result["execution_observation_error"] == "KeyError" and result["cleanup_error"] == "ValueError"
 
@@ -154,14 +155,14 @@ def observation_getter_fixture(tmp_path, monkeypatch, observation_error, *, sour
             raise source_error
         return manifest
     monkeypatch.setattr(cli, "load_image_file_manifest", source)
-    monkeypatch.setattr(cli, "decode_rgb_image", lambda raw: object())
+    monkeypatch.setattr(cli, "decode_rgb_image", lambda raw: Image.new("RGB", (4, 5), "red"))
     monkeypatch.setattr(cli, "image_frame", lambda *a: object())
     def workflow(*a, **k):
         k["report"].update(status="succeeded", index_s=0.0, queries=[])
     monkeypatch.setattr(cli, "run_workflow", workflow)
     (tmp_path / "identity.json").write_text(json.dumps(dict(qualified=True, model_dtype="float32")))
     result = cli.main(base_args(tmp_path, "semloom_hse") + ["--rows", "1",
-        "--ray-temp-dir", str(tmp_path / "ray"), "--png-compress-level", "1"])
+        "--ray-temp-dir", str(tmp_path / "ray")])
     return result, json.loads((tmp_path / "output/result.json").read_text()), calls
 
 

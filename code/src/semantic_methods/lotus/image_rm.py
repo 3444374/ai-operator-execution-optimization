@@ -34,19 +34,12 @@ def timing_span(operation, **fields):
     return existing_span(operation, **fields)
 
 
-def validate_png_compress_level(level):
-    if level is not None and (type(level) is not int or not -1 <= level <= 9):
-        raise ValueError("PNG compression level must be None or an integer from -1 to 9")
-
-
-def image_bytes(image: Image.Image, *, png_compress_level=None) -> bytes:
-    """Losslessly transport the exact RGB pixels supplied to native LOTUS."""
+def image_bytes(image: Image.Image) -> bytes:
+    """Lossless current-pixel fallback for executors that require encoded bytes."""
     if not isinstance(image, Image.Image) or image.mode != "RGB":
         raise TypeError("LOTUS image embedding requires RGB PIL images")
-    validate_png_compress_level(png_compress_level)
     with io.BytesIO() as stream:
-        options = {} if png_compress_level is None else {"compress_level": png_compress_level}
-        image.save(stream, format="PNG", **options)
+        image.save(stream, format="PNG", compress_level=1)
         return stream.getvalue()
 
 
@@ -78,14 +71,13 @@ class RMObservation:
 
 
 def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
-                  max_output_bytes=32 * 1024 * 1024, observation=None, png_compress_level=None,
+                  max_output_bytes=32 * 1024 * 1024, observation=None,
                   source_images=None):
     """Replace only RM._embed; native RM query conversion and FAISS stay intact.
 
     A sem_index call requires a complete N×D matrix. This explicitly bounded
     collection is distinct from the existing streaming benchmark's capture.
     """
-    validate_png_compress_level(png_compress_level)
     input_kind = getattr(executor, "input_kind", "encoded_bytes")
     if input_kind not in ("encoded_bytes", "rgb_pil"):
         raise ValueError("LOTUS image executor input_kind must be encoded_bytes or rgb_pil")
@@ -93,9 +85,6 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
         from collections.abc import Mapping
         if input_kind != "encoded_bytes" or not isinstance(source_images, Mapping):
             raise ValueError("source images require an encoded-byte executor and an identity mapping")
-        input_kind = "source_encoded_bytes"
-    if input_kind != "encoded_bytes" and png_compress_level is not None:
-        raise ValueError("native image input does not accept PNG compression settings")
     from lotus.models.rm import RM
 
     if (type(max_rows) is not int or max_rows < 1 or type(max_output_bytes) is not int
@@ -122,38 +111,42 @@ def make_image_rm(executor: ImageBatchExecutor, text_rm, *, max_rows=5000,
                 if images:
                     ids = tuple(str(i) for i in images)
                     with timing_span("lotus.rm.image_embed", scope="rm_call"):
-                        if input_kind in ("rgb_pil", "source_encoded_bytes"):
-                            for i in images:
-                                if docs[i].mode != "RGB" or min(docs[i].size) <= 0:
-                                    raise TypeError("LOTUS image embedding requires nonempty RGB PIL images")
-                                docs[i].load()
+                        # Check every image before preparing or submitting a prefix.
+                        for i in images:
+                            if docs[i].mode != "RGB" or min(docs[i].size) <= 0:
+                                raise TypeError("LOTUS image embedding requires nonempty RGB PIL images")
+                            docs[i].load()
+                        if input_kind == "rgb_pil":
                             record.update(image_encoding="not_performed", png_compress_level=None,
                                 image_encode_wall_ns=None, image_encode_cpu_ns=None,
                                 encoded_total_bytes=0, encoded_peak_single_bytes=0)
-                            payload = []
-                            for i in images:
-                                if input_kind == "rgb_pil":
-                                    payload.append(docs[i])
-                                else:
-                                    source = source_images.get(id(docs[i]))
-                                    if (not isinstance(source, tuple) or len(source) != 4 or source[0] is not docs[i]
-                                            or type(source[1]) is not bytes or not source[1]
-                                            or source[2] != docs[i].size
-                                            or source[3] != hashlib.sha256(docs[i].tobytes()).hexdigest()):
-                                        raise ValueError("image is missing its identical validated source bytes")
-                                    payload.append(source[1])
-                            if input_kind == "source_encoded_bytes":
-                                record.update(image_encoding="source_bytes_reused",
-                                    encoded_total_bytes=sum(len(x) for x in payload),
-                                    encoded_peak_single_bytes=max(len(x) for x in payload))
+                            payload = [docs[i] for i in images]
                         else:
-                            encode_at, cpu_at = time.monotonic_ns(), time.process_time_ns()
-                            try:
-                                payload = [image_bytes(docs[i], png_compress_level=png_compress_level) for i in images]
-                            finally:
-                                record.update(png_compress_level=png_compress_level,
-                                    image_encode_wall_ns=time.monotonic_ns() - encode_at,
-                                    image_encode_cpu_ns=time.process_time_ns() - cpu_at)
+                            payload, reused, fallback = [], 0, 0
+                            record.update(image_encode_wall_ns=None, image_encode_cpu_ns=None)
+                            for i in images:
+                                image = docs[i]
+                                source = None if source_images is None else source_images.get(id(image))
+                                if (type(source) is tuple and len(source) == 4 and source[0] is image
+                                        and type(source[1]) is bytes and source[1]
+                                        and type(source[2]) is tuple and len(source[2]) == 2
+                                        and all(type(value) is int for value in source[2])
+                                        and source[2] == image.size and type(source[3]) is str
+                                        and source[3] == hashlib.sha256(image.tobytes()).hexdigest()):
+                                    payload.append(source[1])
+                                    reused += 1
+                                else:
+                                    encode_at, cpu_at = time.monotonic_ns(), time.process_time_ns()
+                                    try:
+                                        payload.append(image_bytes(image))
+                                        fallback += 1
+                                    finally:
+                                        record["image_encode_wall_ns"] = (record["image_encode_wall_ns"] or 0) + time.monotonic_ns() - encode_at
+                                        record["image_encode_cpu_ns"] = (record["image_encode_cpu_ns"] or 0) + time.process_time_ns() - cpu_at
+                            record.update(image_encoding=("source_bytes_reused" if not fallback
+                                else "lossless_png_fallback" if not reused else "mixed_source_and_png"),
+                                source_reused_rows=reused, png_fallback_rows=fallback,
+                                png_compress_level=1 if fallback else None)
                             record.update(encoded_total_bytes=sum(len(x) for x in payload),
                                           encoded_peak_single_bytes=max(len(x) for x in payload))
                         execute_at = time.monotonic_ns()

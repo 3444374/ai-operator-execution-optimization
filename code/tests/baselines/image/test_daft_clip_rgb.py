@@ -93,7 +93,7 @@ class TensorActorFixture:
 
 def executor_shell():
     executor = native.DaftClipExecutor.__new__(native.DaftClipExecutor)
-    executor.input_kind = "rgb_pil"
+    assert executor.input_kind == "rgb_pil"
     executor.identity = dict(batch_size=4, max_batch_rows=64)
     executor.semantics = EmbeddingSemantics("fixture", "fixture", 512)
     executor._lock = threading.Lock()
@@ -102,10 +102,10 @@ def executor_shell():
     return executor
 
 
-@pytest.mark.parametrize("value", [None, 0, 1, "true"])
-def test_native_input_flag_is_strictly_boolean_before_sdk_or_model_access(value):
-    with pytest.raises(ValueError, match="native_image_input must be a boolean"):
-        native.DaftClipExecutor(model_path="missing", native_image_input=value)
+@pytest.mark.parametrize("value", [None, False, "RGB", "png", ""])
+def test_invalid_input_kind_is_rejected_before_sdk_or_model_access(value):
+    with pytest.raises(ValueError, match="input_kind must be rgb_pil or encoded_bytes"):
+        native.DaftClipExecutor(model_path="missing", input_kind=value)
 
 
 @pytest.mark.parametrize("suffix", ["bytes", "path", "array", "gray", "rgba", "empty", "closed", "corrupt"])
@@ -174,13 +174,13 @@ def sdk(tmp_path, monkeypatch):
     monkeypatch.setattr(native, "ClipTensorActor", TensorActorFixture)
     executors = []
 
-    def make(name, native_input=True):
+    def make(name, *, input_kind=None):
         trace = tmp_path / name
         trace.mkdir()
         monkeypatch.setenv("SEMLOOM_DAFT_RGB_TRACE", str(trace))
+        options = {} if input_kind is None else {"input_kind": input_kind}
         executor = native.DaftClipExecutor(model_path=str(model), batch_size=4,
-                                           device="cpu", gpus_per_worker=0,
-                                           native_image_input=native_input)
+                                           device="cpu", gpus_per_worker=0, **options)
         executors.append((executor, trace))
         return executor, trace
 
@@ -228,21 +228,22 @@ def fixtures():
     return arrays, images, pngs
 
 
-def test_real_native_rgb_matches_png_pixels_full_slow_tensors_tail_ids_and_owned_output(sdk):
+def test_default_rgb_matches_explicit_encoded_pixels_full_slow_tensors_tail_ids_and_owned_output(sdk):
     make, model, _ = sdk
     arrays, images, pngs = fixtures()
     ids = ("suffix/8", "unicode-图", "0", "3", "x/y", "6", "5", "partial/7", "last")
     actual = {}
     traces = {}
-    for name, payload, enabled in (("png", pngs, False), ("rgb", images, True)):
-        executor, trace = make(name, enabled)
-        assert executor.input_kind == ("rgb_pil" if enabled else "encoded_bytes")
-        if enabled:
+    for name, payload, input_kind in (("png", pngs, "encoded_bytes"), ("rgb", images, None)):
+        executor, trace = make(name, input_kind=input_kind)
+        assert executor.input_kind == ("rgb_pil" if input_kind is None else input_kind)
+        assert executor.identity["input_kind"] == executor.input_kind
+        if input_kind is None:
             assert executor.identity["decode"] == "none (caller-decoded RGB)"
             assert executor.identity["input_adapter"] == "PIL RGB -> HWC uint8 -> Daft Image[RGB]"
         else:
             assert executor.identity["decode"] == "Daft RGB"
-            assert "input_kind" not in executor.identity and "input_adapter" not in executor.identity
+            assert "input_adapter" not in executor.identity
         result = executor.embed_batch(ids, payload)
         actual[name] = result.embeddings
         traces[name] = trace

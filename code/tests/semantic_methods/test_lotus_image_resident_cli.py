@@ -4,6 +4,7 @@ import hashlib
 import json
 import sys
 from types import SimpleNamespace
+from PIL import Image
 
 from src.experiments import image_reuse
 from tests.semantic_methods.test_lotus_image_cli import base_args, load_cli
@@ -50,7 +51,7 @@ def test_cancelled_query_does_not_poll_busy_workers_before_close(tmp_path, monke
     entry = SimpleNamespace(path="image", sha256=hashlib.sha256(raw).hexdigest(), doc_id="one")
     monkeypatch.setattr(cli, "load_image_file_manifest", lambda *a:
         SimpleNamespace(root=tmp_path, entries=(entry,), sha256="fixture"))
-    monkeypatch.setattr(cli, "decode_rgb_image", lambda raw: object())
+    monkeypatch.setattr(cli, "decode_rgb_image", lambda raw: Image.new("RGB", (4, 5), "red"))
     monkeypatch.setattr(cli, "image_frame", lambda *a: object())
 
     def workflow(*args, **kwargs):
