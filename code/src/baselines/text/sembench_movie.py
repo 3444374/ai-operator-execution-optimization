@@ -19,8 +19,11 @@ MOVIE_FILTER_INSTRUCTION = 'Determine whether the movie review is clearly positi
 
 def verify_checkout(checkout):
     root = Path(checkout).resolve()
-    commit = subprocess.check_output(['git','-C',str(root),'rev-parse','HEAD'],text=True,timeout=10).strip()
-    dirty = subprocess.check_output(['git','-C',str(root),'status','--porcelain','--untracked-files=no',
+    # Archived public checkouts may retain a different file owner. Trust only
+    # this caller-selected directory for these read-only commands, never globally.
+    git = ['git', '-c', 'safe.directory='+str(root), '-C', str(root)]
+    commit = subprocess.check_output(git+['rev-parse','HEAD'],text=True,timeout=10).strip()
+    dirty = subprocess.check_output(git+['status','--porcelain','--untracked-files=no',
                                      '--','src','files/movie/query'],text=True,timeout=10)
     if commit != SEMBENCH_COMMIT or dirty:
         raise ValueError('SemBench query/evaluator checkout does not match its pinned source')

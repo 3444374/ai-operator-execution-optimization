@@ -1,0 +1,945 @@
+"""Actual pinned LOTUS/LiteLLM, deterministic localhost responses, zero real models."""
+
+from contextlib import contextmanager
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from importlib.util import find_spec
+import io
+import json
+import threading
+import time
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+
+from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
+from src.execution_provider.adapters.model_config import FixedModelConfig
+from src.execution_provider.adapters.native_tasks import build_native_execution
+from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
+from src.semantic_methods.lotus.driver import iter_two_map_rows
+
+from src.semantic_methods.lotus.maps import LotusMapStage, LotusTwoMapMethod, encode, staged_two_map
+from src.semantic_methods.lotus.sdk import prepare_call, response_model, validate_batch
+
+
+HAS_LOTUS = find_spec("lotus") is not None
+STAGES = (
+    LotusMapStage("Summarize {text}.", "summary"),
+    LotusMapStage("Classify {summary}.", "label"),
+)
+
+
+def completion(body):
+    user = body["messages"][-1]["content"]
+    content = "label:" + user if "Classify" in user else "summary:" + user
+    return dict(
+        id="fixture-response",
+        object="chat.completion",
+        created=1,
+        model=body["model"],
+        choices=[
+            dict(
+                index=0,
+                message=dict(role="assistant", content=content),
+                finish_reason="stop",
+                logprobs=dict(
+                    content=[dict(token="fixture", logprob=-0.25, bytes=[102], top_logprobs=[])]
+                ),
+            )
+        ],
+        usage=dict(
+            prompt_tokens=7,
+            completion_tokens=3,
+            total_tokens=10,
+            prompt_tokens_details=dict(cached_tokens=2),
+        ),
+        provider_extra=dict(retained=True),
+    )
+
+
+@contextmanager
+def fixture_server(failure=None, delay=None):
+    class Calls(list):
+        def __init__(self):
+            self.events = []
+
+    calls = Calls()
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            calls.append(body)
+            calls.events.append(("start", time.monotonic_ns(), body))
+            if delay:
+                time.sleep(delay(body))
+            status, raw = failure(body) if failure else (200, encode(completion(body)))
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+            calls.events.append(("end", time.monotonic_ns(), body))
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_port}/v1", calls
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(5)
+        if thread.is_alive():
+            raise RuntimeError("fixture server did not stop")
+
+
+def model(base, model_id="lotus-fixture"):
+    from lotus.cache import InMemoryCache
+    from lotus.models import LM
+
+    return LM(
+        "openai/" + model_id,
+        api_base=base,
+        api_key="local-fixture",
+        max_tokens=19,
+        max_batch_size=2,
+        top_p=1,
+        timeout=5,
+        num_retries=0,
+        max_retries=0,
+        cache=InMemoryCache(max_size=128),
+    )
+
+
+def config(base, model_id="lotus-fixture"):
+    return FixedModelConfig(base + "/chat/completions", model_id, 5000, "local-fixture")
+
+
+def close_execution(execution):
+    deadline = time.monotonic() + 6
+    while execution.engine.capacity.usage().held_tasks and time.monotonic() < deadline:
+        execution.engine.advance()
+        time.sleep(0.005)
+    if execution.engine.capacity.usage().held_tasks or not execution.close():
+        raise RuntimeError("LOTUS test execution did not release resources")
+
+
+@contextmanager
+def local_execution(base):
+    execution = build_native_execution(
+        config(base), physical=None, max_tasks=2, max_active_requests=2
+    )
+    try:
+        yield execution
+    finally:
+        close_execution(execution)
+
+
+@unittest.skipUnless(HAS_LOTUS, "pinned LOTUS library is unavailable")
+class LotusSdkTests(unittest.TestCase):
+    def test_observation_modes_share_semloom_api_and_original_sem_map(self):
+        import lotus
+        import pandas as pd
+        from src.experiments.postgresql.supplier_adapter_query import (
+            MethodObservations,
+            _LotusBatchObservation,
+        )
+
+        frame = pd.DataFrame({"text": ["duplicate", "duplicate"]})
+        for mode in ("qualification", "performance"):
+            for status in (200, 429):
+                failure = (
+                    None
+                    if status == 200
+                    else lambda request: (
+                        429,
+                        b'{"error":{"message":"fixture quota","type":"rate_limit"}}',
+                    )
+                )
+                with (
+                    self.subTest(mode=mode, status=status),
+                    fixture_server(failure=failure) as (base, calls),
+                    local_execution(base) as execution,
+                ):
+                    expected_lm, lm = model(base), model(base)
+                    selected = LotusBatchExecutor(
+                        execution,
+                        config(base),
+                        query_id="observer",
+                        operator_id="map",
+                        prevalidate_batch=True,
+                        retain_full_responses=False,
+                    )
+                    events, raw = [], io.StringIO()
+                    observer = _LotusBatchObservation(
+                        lm,
+                        [dict(row_id="a"), dict(row_id="b")],
+                        MethodObservations(SimpleNamespace(record=events.append), raw, "fixture"),
+                        selected,
+                        observation_mode=mode,
+                    )
+                    results, errors = [], []
+                    for current, executor in ((expected_lm, None), (lm, observer)):
+                        with (
+                            lotus.settings.context(lm=current, enable_cache=False),
+                            lotus_executor(current, executor),
+                        ):
+                            try:
+                                result = frame.sem_map("Summarize {text}.", return_raw_outputs=True)
+                                results.append(list(result.itertuples(index=False, name=None)))
+                                errors.append(None)
+                            except Exception as error:
+                                results.append(None)
+                                errors.append(error)
+                    self.assertEqual(results[0], results[1])
+                    self.assertIs(type(errors[0]), type(errors[1]))
+                    if status == 200:
+                        self.assertIsNone(errors[0])
+                    else:
+                        self.assertEqual(
+                            (errors[0].status_code, errors[1].status_code), (status, status)
+                        )
+                    self.assertEqual(lm.stats, expected_lm.stats)
+                    self.assertEqual(len(calls), 4)
+                    self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+                    self.assertFalse(selected.last_cleanup_errors)
+                    self.assertEqual(
+                        len(raw.getvalue().splitlines()),
+                        (4 if status == 200 else 2) if mode == "qualification" else 0,
+                    )
+
+    def test_batch_validation_rejects_invalid_suffix_and_parameters_before_any_offer(self):
+        messages = [{"role": "user", "content": "first"}]
+        invalid_messages = (
+            [],
+            [{"role": "tool", "content": "last"}],
+            [{"role": "user", "content": None}],
+            [{"role": "user", "content": "last", "extra": 1}],
+            [{"role": "user", "content": "\ud800"}],
+            [{"role": "user", "content": "\ud83d\ude00"}],
+        )
+        invalid_parameters = (
+            {"stream": True},
+            {"n": 2},
+            {"num_retries": 1},
+            {"max_retries": 1},
+            {"timeout": float("inf")},
+            {"temperature": float("nan")},
+            {"response_format": {"type": "json_object"}},
+            {"logit_bias": {1: object()}},
+            {"api_key": None},
+            {"api_base": "http://localhost/v1?query=1"},
+        )
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            lm = model(base)
+            for tail in invalid_messages:
+                with self.subTest(tail=tail):
+                    with self.assertRaises((ValueError, TypeError, UnicodeError)):
+                        prepare_call(lm, tail, lm.kwargs)
+                    selected = LotusBatchExecutor(
+                        execution,
+                        config(base),
+                        query_id="bad-tail",
+                        operator_id="map",
+                        prevalidate_batch=True,
+                    )
+                    with patch(
+                        "src.semantic_methods.lotus.batch.NativeTaskSession",
+                        side_effect=AssertionError("invalid batch opened a flow"),
+                    ):
+                        with self.assertRaises((ValueError, TypeError, UnicodeError)):
+                            selected(
+                                lm,
+                                [(messages, None)] * 3 + [(tail, None)],
+                                lm.kwargs,
+                                False,
+                                "fixture",
+                            )
+            for changed in invalid_parameters:
+                kwargs = {**lm.kwargs, **changed}
+                with self.subTest(changed=changed):
+                    with self.assertRaises((ValueError, TypeError)):
+                        prepare_call(lm, messages, kwargs)
+                    selected = LotusBatchExecutor(
+                        execution,
+                        config(base),
+                        query_id="bad-parameters",
+                        operator_id="map",
+                        prevalidate_batch=True,
+                    )
+                    with patch(
+                        "src.semantic_methods.lotus.batch.NativeTaskSession",
+                        side_effect=AssertionError("invalid parameters opened a flow"),
+                    ):
+                        with self.assertRaises((ValueError, TypeError)):
+                            selected(lm, [(messages, None)] * 4, kwargs, False, "fixture")
+            from litellm import OpenAIConfig
+            from litellm.utils import ProviderConfigManager
+
+            for target, attribute, value in (
+                (OpenAIConfig, "get_config", dict(temperature=1)),
+                (ProviderConfigManager, "get_provider_chat_config", object()),
+            ):
+                with (
+                    self.subTest(attribute=attribute),
+                    patch.object(target, attribute, return_value=value),
+                ):
+                    selected = LotusBatchExecutor(
+                        execution,
+                        config(base),
+                        query_id="bad-configuration",
+                        operator_id="map",
+                        prevalidate_batch=True,
+                    )
+                    with patch(
+                        "src.semantic_methods.lotus.batch.NativeTaskSession",
+                        side_effect=AssertionError("unsupported configuration opened a flow"),
+                    ):
+                        with self.assertRaises(ValueError):
+                            selected(lm, [(messages, None)] * 4, lm.kwargs, False, "fixture")
+            self.assertEqual(calls, [])
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_optional_raw_retention_preserves_http_and_parse_errors_and_byte_limit(self):
+        import lotus
+        from openai import OpenAIError
+
+        cases = (
+            (429, b'{"error":{"message":"controlled"}}', 8192),
+            (200, b'{"broken":', 8192),
+            (200, b'{"value":"complete"}', 1),
+        )
+        for status, body, limit in cases:
+            with (
+                self.subTest(status=status, limit=limit),
+                fixture_server(failure=lambda request: (status, body)) as (base, calls),
+                local_execution(base) as execution,
+            ):
+                selected = LotusBatchExecutor(
+                    execution,
+                    config(base),
+                    query_id="no-raw-history",
+                    operator_id="map",
+                    prevalidate_batch=True,
+                    retain_full_responses=False,
+                    max_batch_result_bytes=limit,
+                )
+                lm = model(base)
+                messages = [dict(role="user", content="error")]
+                if limit == 1:
+                    with self.assertRaisesRegex(ValueError, "declared byte limit") as caught:
+                        selected(lm, [(messages, None)], lm.kwargs, False, "fixture")
+                    self.assertEqual(caught.exception.full_response.body, body)
+                    expected_calls = 1
+                else:
+                    with (
+                        lotus.settings.context(enable_cache=False),
+                        self.assertRaises(OpenAIError) as native_error,
+                    ):
+                        model(base)([messages], show_progress_bar=False)
+                    result = selected(lm, [(messages, None)], lm.kwargs, False, "fixture")
+                    self.assertIsInstance(result[0], type(native_error.exception))
+                    self.assertEqual(result[0].full_response.body, body)
+                    self.assertEqual(result[0].full_response.status_code, status)
+                    expected_calls = 2
+                self.assertEqual(selected.last_responses, ())
+                self.assertEqual(len(calls), expected_calls)
+                self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+                self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_batch_validation_preserves_unicode_and_canonical_call_values(self):
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            lm = model(base)
+            messages = [[dict(role="user", content=text)] for text in ("plain", "你好", "😀")]
+            data = [(value, None) for value in messages]
+            original = prepare_call
+            first = validate_batch(lm, data, lm.kwargs)
+            self.assertEqual(first, original(lm, messages[0], lm.kwargs))
+            prepared = []
+            selected = LotusBatchExecutor(
+                execution,
+                config(base),
+                query_id="one-preparation",
+                operator_id="map",
+                prevalidate_batch=True,
+                retain_full_responses=False,
+                on_prepared=lambda index, call: prepared.append((index, call)),
+            )
+            with (
+                patch(
+                    "src.semantic_methods.lotus.sdk.prepare_call", wraps=original
+                ) as first_preparation,
+                patch(
+                    "src.semantic_methods.lotus.batch.prepare_call", wraps=original
+                ) as remaining_preparation,
+            ):
+                responses = selected(lm, data, lm.kwargs, False, "fixture")
+            # Guard every row, then reuse the first call in finite execution.
+            self.assertEqual(
+                (first_preparation.call_count, remaining_preparation.call_count),
+                (len(data), len(data) - 1),
+            )
+            self.assertCountEqual(calls, [json.loads(call.payload) for _, call in prepared])
+            self.assertEqual([r.usage.total_tokens for r in responses], [10] * 3)
+            self.assertEqual(selected.last_responses, ())
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_native_surrogate_input_is_rejected_before_transport_or_flow(self):
+        import lotus
+        from openai import OpenAIError
+
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            for text in ("\ud800", "\ud83d\ude00"):
+                with self.subTest(text=ascii(text)):
+                    messages = [dict(role="user", content=text)]
+                    lm = model(base)
+                    with (
+                        lotus.settings.context(enable_cache=False),
+                        self.assertRaises(OpenAIError) as native_error,
+                    ):
+                        lm([messages], show_progress_bar=False)
+                    causes = []
+                    cause = native_error.exception
+                    while cause is not None and cause not in causes:
+                        causes.append(cause)
+                        cause = cause.__cause__ or cause.__context__
+                    self.assertTrue(any(isinstance(error, UnicodeEncodeError) for error in causes))
+                    selected = LotusBatchExecutor(
+                        execution,
+                        config(base),
+                        query_id="surrogate",
+                        operator_id="map",
+                        prevalidate_batch=True,
+                    )
+                    valid = [dict(role="user", content="valid prefix")]
+                    for data in ([(messages, None)], [(valid, None), (messages, None)]):
+                        with patch(
+                            "src.semantic_methods.lotus.batch.NativeTaskSession",
+                            side_effect=AssertionError("invalid Unicode opened a flow"),
+                        ):
+                            with self.assertRaises(UnicodeEncodeError):
+                                selected(lm, data, lm.kwargs, False, "fixture")
+            self.assertEqual(calls, [])
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_sdk_body_matches_native_http_and_complete_response(self):
+        import lotus
+
+        with fixture_server() as (base, calls):
+            lm = model(base)
+            messages = [
+                {"role": "system", "content": "native system"},
+                {"role": "user", "content": "你好"},
+            ]
+            kwargs = {**lm.kwargs, "logprobs": True, "top_logprobs": 10}
+            prepared = prepare_call(lm, messages, kwargs)
+            with lotus.settings.context(enable_cache=False):
+                native = lm([messages], show_progress_bar=False, logprobs=True)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(json.loads(prepared.payload), calls[0])
+            self.assertEqual(calls[0]["max_completion_tokens"], 19)
+            restored = response_model(encode(completion(calls[0])))
+            self.assertEqual(restored.usage.total_tokens, 10)
+            self.assertEqual(restored.usage.prompt_tokens_details.cached_tokens, 2)
+            self.assertEqual(lm._get_top_choice(restored), native.outputs[0])
+            self.assertEqual(lm._get_top_choice_logprobs(restored), native.logprobs[0])
+            self.assertEqual(restored.provider_extra, {"retained": True})
+
+    def test_unhandled_parameters_roles_and_postprocessor_are_rejected(self):
+        import lotus
+
+        with fixture_server() as (base, calls):
+            lm = model(base)
+            messages = [{"role": "user", "content": "text"}]
+            for kwargs in (
+                {"stream": True},
+                {"tools": []},
+                {"n": 2},
+                {"num_retries": 1},
+                {"response_format": {"type": "json_object"}},
+            ):
+                with self.assertRaises(ValueError):
+                    prepare_call(lm, messages, {**lm.kwargs, **kwargs})
+            with self.assertRaises(ValueError):
+                prepare_call(lm, [{"role": "tool", "content": "text"}], lm.kwargs)
+            with lotus.settings.context(enable_cache=False):
+                with self.assertRaisesRegex(ValueError, "postprocessor"):
+                    LotusTwoMapMethod(
+                        lm, STAGES, model_config=config(base), postprocessor=lambda *args: None
+                    )
+                with self.assertRaisesRegex(ValueError, "consume"):
+                    LotusTwoMapMethod(
+                        lm,
+                        (STAGES[0], LotusMapStage("Classify {text}", "label")),
+                        model_config=config(base),
+                    )
+            with lotus.settings.context(enable_cache=True):
+                with self.assertRaisesRegex(ValueError, "cache disabled"):
+                    LotusTwoMapMethod(lm, STAGES, model_config=config(base))
+            self.assertEqual(calls, [])
+
+    def test_two_map_method_matches_native_formatter_parser_and_stats(self):
+        import lotus
+        import pandas as pd
+        from src.scheduling.core.session_contract import TaskKey
+        from src.semantic_methods.continuation import MethodLimits, MethodRun
+
+        with fixture_server() as (base, calls), lotus.settings.context(enable_cache=False):
+            native_lm = model(base)
+            native_lm.kwargs["logprobs"] = True
+            frame = pd.DataFrame([{"text": "first"}, {"text": "second"}])
+            native = staged_two_map(frame, native_lm, STAGES)
+            lm = model(base)
+            lm.kwargs["logprobs"] = True
+            method = LotusTwoMapMethod(lm, STAGES, model_config=config(base))
+            completed = []
+            expected_calls = []
+            for sequence, row in enumerate(frame.to_dict("records")):
+                run = MethodRun(method, encode(row), MethodLimits(100000, 100000, 100000, 2))
+                for stage in range(2):
+                    payload = json.loads(run.pending.payload)
+                    expected_calls.append(payload)
+                    key = TaskKey(0, sequence * 2 + stage)
+                    run.accepted(key)
+                    run.complete(
+                        key,
+                        encode_full_response(
+                            FullModelResponse(200, (), encode(completion(payload)))
+                        ),
+                    )
+                final = json.loads(run.final.value)
+                completed.append(final["row"])
+                self.assertEqual(len(final["raw_responses"]), 2)
+            self.assertEqual(completed, native.to_dict("records"))
+            self.assertCountEqual(expected_calls, calls)
+            self.assertEqual(lm.stats, native_lm.stats)
+
+    def test_batch_cache_stats_native_dispatch_and_instance_restoration(self):
+        import lotus
+        import lotus.models.lm as lm_module
+        import pandas as pd
+
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            frame = pd.DataFrame({"text": ["one", "two", "one"]})
+            native_lm = model(base)
+            with lotus.settings.context(lm=native_lm, enable_cache=True):
+                with patch.object(
+                    lm_module, "batch_completion", wraps=lm_module.batch_completion
+                ) as native_dispatch:
+                    with lotus_executor(native_lm):
+                        native = frame.sem_map("Summarize {text}.")
+                        repeated = frame.sem_map("Summarize {text}.")
+                self.assertEqual(native_dispatch.call_count, 1)
+                self.assertEqual(native_lm.stats.operator_cache_hits, 1)
+                self.assertEqual(native.to_dict(), repeated.to_dict())
+            lm = model(base)
+            visible = []
+            executor = LotusBatchExecutor(
+                execution,
+                config(base),
+                query_id="cache-query",
+                operator_id="map",
+                on_batch=lambda batch, kwargs: visible.append(len(batch)),
+            )
+            # Both native limiters are bypassed after the whole miss batch is visible.
+            lm.rate_limit, lm.tpm_limit = 1, 1
+            with lotus.settings.context(lm=lm, enable_cache=True), lotus_executor(lm, executor):
+                with self.assertRaisesRegex(ValueError, "already has"), lotus_executor(lm):
+                    pass
+                with (
+                    patch.object(
+                        lm_module,
+                        "batch_completion",
+                        side_effect=AssertionError("native pool entered"),
+                    ),
+                    patch.object(
+                        lm,
+                        "_process_with_rate_limiting",
+                        side_effect=AssertionError("native RPM entered"),
+                    ),
+                    patch.object(
+                        lm,
+                        "_process_with_tpm_limiting",
+                        side_effect=AssertionError("native TPM entered"),
+                    ),
+                ):
+                    actual = frame.sem_map("Summarize {text}.")
+                    actual_repeat = frame.sem_map("Summarize {text}.")
+            self.assertNotIn("_process_uncached_messages", lm.__dict__)
+            self.assertEqual(visible, [3])
+            self.assertEqual(actual.to_dict(), native.to_dict())
+            self.assertEqual(actual_repeat.to_dict(), native.to_dict())
+            self.assertEqual(lm.stats, native_lm.stats)
+            self.assertEqual(len(executor.last_responses), 3)
+            self.assertEqual(len(calls), 6)
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_http_and_parser_errors_retain_full_response_and_release(self):
+        import lotus
+
+        for status, raw in ((429, b'{"error":{"message":"fixture quota"}}'), (200, b"{not-json}")):
+            with (
+                self.subTest(status=status),
+                fixture_server(lambda body: (status, raw)) as (base, calls),
+                local_execution(base) as execution,
+            ):
+                original_lm = model(base)
+                with (
+                    lotus.settings.context(enable_cache=False),
+                    self.assertRaises(Exception) as original,
+                ):
+                    original_lm([[{"role": "user", "content": "one"}]], show_progress_bar=False)
+                lm = model(base)
+                executor = LotusBatchExecutor(
+                    execution, config(base), query_id="error-query", operator_id="map"
+                )
+                with (
+                    lotus.settings.context(enable_cache=False),
+                    self.assertRaises(type(original.exception)),
+                    lotus_executor(lm, executor),
+                ):
+                    lm([[{"role": "user", "content": "one"}]], show_progress_bar=False)
+                self.assertNotIn("_process_uncached_messages", lm.__dict__)
+                self.assertEqual(executor.last_responses[0].status_code, status)
+                self.assertEqual(executor.last_responses[0].body, raw)
+                self.assertEqual(len(calls), 2)
+                self.assertEqual(lm.stats, original_lm.stats)
+                self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+
+    def test_lm_partial_cache_and_logprobs_preserve_full_response(self):
+        import lotus
+
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            lm = model(base)
+            executor = LotusBatchExecutor(
+                execution, config(base), query_id="partial-cache", operator_id="map"
+            )
+            prompts = [
+                [{"role": "user", "content": value}] for value in ("cached", "uncached", "cached")
+            ]
+            with lotus.settings.context(enable_cache=True), lotus_executor(lm, executor):
+                first = lm(prompts[:1], show_progress_bar=False, logprobs=True)
+                result = lm(prompts, show_progress_bar=False, logprobs=True)
+            self.assertEqual(result.outputs[0], first.outputs[0])
+            self.assertEqual(result.outputs[2], first.outputs[0])
+            self.assertEqual(lm.stats.cache_hits, 2)
+            self.assertEqual(len(calls), 2)
+            self.assertEqual(lm.stats.physical_usage.total_tokens, 20)
+            self.assertEqual(lm.stats.virtual_usage.total_tokens, 40)
+            self.assertEqual(len(executor.last_responses), 1)
+            self.assertEqual(result.logprobs[0], first.logprobs[0])
+
+    def test_batch_row_bound_and_cancellation_never_enter_native_pool(self):
+        import lotus
+
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            lm = model(base)
+            executor = LotusBatchExecutor(
+                execution, config(base), query_id="bounded", operator_id="map", max_batch_rows=1
+            )
+            prompts = [[{"role": "user", "content": "same"}]] * 2
+            with (
+                lotus.settings.context(enable_cache=False),
+                self.assertRaisesRegex(ValueError, "selected executor capacity"),
+                lotus_executor(lm, executor),
+            ):
+                lm(prompts, show_progress_bar=False)
+            self.assertEqual(executor.last_preflight["target_rows"], 2)
+            self.assertEqual(executor.last_preflight["call_limits"]["max_batch_rows"], 1)
+            executor = LotusBatchExecutor(
+                execution,
+                config(base),
+                query_id="cancel",
+                operator_id="map",
+                cancelled=lambda: True,
+            )
+            with self.assertRaisesRegex(RuntimeError, "cancelled"), lotus_executor(lm, executor):
+                lm(prompts, show_progress_bar=False)
+            self.assertEqual(calls, [])
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_inflight_cancel_retains_remote_credit_until_completion(self):
+        import lotus
+
+        with fixture_server(delay=lambda body: 0.2) as (base, calls):
+            execution = build_native_execution(config(base), physical=None, max_tasks=1)
+            try:
+                executor = LotusBatchExecutor(
+                    execution,
+                    config(base),
+                    query_id="inflight-cancel",
+                    operator_id="map",
+                    cancelled=lambda: bool(calls),
+                )
+                with (
+                    lotus.settings.context(enable_cache=False),
+                    self.assertRaisesRegex(RuntimeError, "cancelled"),
+                    lotus_executor(model(base), executor) as lm,
+                ):
+                    lm([[{"role": "user", "content": "slow"}]], show_progress_bar=False)
+                self.assertEqual(len(calls), 1)
+                self.assertEqual(execution.engine.capacity.usage().held_tasks, 1)
+                self.assertFalse(execution.close())
+            finally:
+                close_execution(execution)
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_invalid_or_excess_external_input_is_rejected_without_dropping_rows(self):
+        import lotus
+        from src.semantic_methods.budget import MethodCapacity, row_reservation
+        from src.semantic_methods.continuation import MethodLimits
+
+        with (
+            fixture_server() as (base, calls),
+            local_execution(base) as execution,
+            lotus.settings.context(enable_cache=False),
+        ):
+            method = LotusTwoMapMethod(model(base), STAGES, model_config=config(base))
+            limits = MethodLimits(100000, 100000, 100000, 2)
+            capacity = MethodCapacity(1, row_reservation(limits))
+            for rows in ([None], [encode({"text": "one"})] * 2):
+                with self.assertRaises(ValueError):
+                    list(
+                        iter_two_map_rows(
+                            execution,
+                            method,
+                            rows,
+                            query_id="bad-input",
+                            operator_id="chain",
+                            limits=limits,
+                            capacity=capacity,
+                            max_rows=1,
+                        )
+                    )
+                self.assertEqual(execution.engine.jobs.jobs, {})
+            self.assertEqual(calls, [])
+
+    def test_iterator_matches_staged_rows_and_closes_early(self):
+        import lotus
+        import pandas as pd
+        from src.semantic_methods.budget import MethodCapacity, row_reservation
+        from src.semantic_methods.continuation import MethodLimits
+
+        with (
+            fixture_server() as (base, calls),
+            local_execution(base) as execution,
+            lotus.settings.context(enable_cache=False),
+        ):
+            frame = pd.DataFrame({"text": ["one", "two", "one"]})
+            native = staged_two_map(frame, model(base), STAGES)
+            limits = MethodLimits(32768, 65536, 131072, 2)
+            capacity = MethodCapacity(2, 2 * row_reservation(limits))
+            method = LotusTwoMapMethod(
+                model(base), STAGES, model_config=config(base), max_response_bytes=32768
+            )
+            results = list(
+                iter_two_map_rows(
+                    execution,
+                    method,
+                    (encode(r) for r in frame.to_dict("records")),
+                    query_id="chain",
+                    operator_id="two-map",
+                    limits=limits,
+                    capacity=capacity,
+                )
+            )
+            self.assertEqual(
+                [json.loads(r.value)["row"] for r in sorted(results, key=lambda r: r.row.sequence)],
+                native.to_dict("records"),
+            )
+            self.assertEqual(len(calls), 12)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+            iterator = iter_two_map_rows(
+                execution,
+                method,
+                (encode(r) for r in frame.to_dict("records")),
+                query_id="early-close",
+                operator_id="two-map",
+                limits=limits,
+                capacity=capacity,
+            )
+            next(iterator)
+            iterator.close()
+            deadline = time.monotonic() + 5
+            while execution.engine.capacity.usage().held_tasks and time.monotonic() < deadline:
+                execution.engine.advance()
+                time.sleep(0.005)
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(execution.engine.jobs.jobs, {})
+
+    def test_gzip_decode_keeps_the_original_response_bytes(self):
+        import gzip
+        from src.semantic_methods.lotus.sdk import decode_lotus_response
+
+        raw = encode(completion(dict(model="lotus-fixture", messages=[{"content": "text"}])))
+        compressed = gzip.compress(raw)
+        full, response = decode_lotus_response(
+            encode_full_response(
+                FullModelResponse(200, (("content-encoding", "gzip"),), compressed)
+            )
+        )
+        self.assertEqual(full.body, compressed)
+        self.assertEqual(response.usage.total_tokens, 10)
+
+    def test_priced_response_preserves_native_usage_cost(self):
+        import lotus
+
+        with fixture_server() as (base, calls), lotus.settings.context(enable_cache=False):
+            native_lm = model(base, "gpt-4o-mini")
+            prompts = [[{"role": "user", "content": "priced"}]]
+            native = native_lm(prompts, show_progress_bar=False)
+            selected = config(base, "gpt-4o-mini")
+            execution = build_native_execution(selected, physical=None, max_tasks=1)
+            try:
+                lm = model(base, "gpt-4o-mini")
+                executor = LotusBatchExecutor(
+                    execution, selected, query_id="priced", operator_id="map"
+                )
+                with lotus_executor(lm, executor):
+                    actual = lm(prompts, show_progress_bar=False)
+                self.assertEqual(actual, native)
+                self.assertGreater(native_lm.stats.physical_usage.total_cost, 0)
+                self.assertEqual(lm.stats, native_lm.stats)
+                self.assertEqual(calls[0], calls[1])
+            finally:
+                close_execution(execution)
+
+    def test_response_retention_limit_preserves_rejected_body(self):
+        import lotus
+
+        with fixture_server() as (base, calls), local_execution(base) as execution:
+            saved = []
+            executor = LotusBatchExecutor(
+                execution,
+                config(base),
+                query_id="response-limit",
+                operator_id="map",
+                max_batch_result_bytes=1,
+                on_response=lambda index, full: saved.append(full),
+            )
+            with (
+                lotus.settings.context(enable_cache=False),
+                lotus_executor(model(base), executor) as lm,
+            ):
+                with self.assertRaisesRegex(ValueError, "byte limit") as caught:
+                    lm([[{"role": "user", "content": "complete"}]], show_progress_bar=False)
+            self.assertEqual(len(saved), 1)
+            self.assertEqual(caught.exception.full_response.body, encode(completion(calls[0])))
+            self.assertEqual(execution.engine.capacity.usage().held_tasks, 0)
+
+    def test_method_parse_failure_keeps_native_usage_and_response(self):
+        import lotus
+
+        def missing_content(body):
+            response = completion(body)
+            response["choices"][0]["message"]["content"] = None
+            return 200, encode(response)
+
+        with (
+            fixture_server(missing_content) as (base, calls),
+            lotus.settings.context(enable_cache=False),
+        ):
+            lm = model(base)
+            method = LotusTwoMapMethod(lm, STAGES, model_config=config(base))
+            step = method.start(encode({"text": "one"}))
+            native_lm = model(base)
+            with self.assertRaises(ValueError):
+                native_lm([json.loads(step.request.payload)["messages"]], show_progress_bar=False)
+            body = missing_content(calls[0])[1]
+            with self.assertRaises(ValueError) as caught:
+                method.resume(step.state, encode_full_response(FullModelResponse(200, (), body)))
+            self.assertEqual(caught.exception.full_response.body, body)
+            self.assertEqual(lm.stats, native_lm.stats)
+            self.assertEqual(lm.stats.physical_usage.total_tokens, 10)
+
+    def test_method_driver_releases_each_stage_and_advances_one_row_early(self):
+        import lotus
+        from src.scheduling.core.session_contract import SessionSpec, TaskProfile
+        from src.semantic_methods.budget import MethodBudgetPool, MethodCapacity, row_reservation
+        from src.semantic_methods.continuation import MethodLimits
+        from src.semantic_methods.driver import MethodDriver, RowIdentity
+        from tests.scheduling.test_incremental_session import setup
+
+        with fixture_server() as (base, calls), lotus.settings.context(enable_cache=False):
+            lm = model(base)
+            method = LotusTwoMapMethod(lm, STAGES, model_config=config(base))
+            engine, old, backend, _clock = setup(
+                metadata_bytes=1024,
+                held_tasks=2,
+                active_requests=2,
+                active_work=2,
+                input_bytes=200000,
+                result_bytes=200000,
+                item_input_bytes=100000,
+                item_result_bytes=100000,
+            )
+            old.close()
+            session = engine.open(
+                SessionSpec(
+                    "two-map",
+                    "map-chain",
+                    "model",
+                    task_profiles=(TaskProfile("lotus-map", "model"),),
+                )
+            )
+            limits = MethodLimits(100000, 100000, 100000, 2)
+            pool = MethodBudgetPool(MethodCapacity(2, 2 * row_reservation(limits)))
+            driver = MethodDriver(session, method, limits, pool.allocate(pool.capacity))
+            try:
+                for sequence in range(2):
+                    self.assertTrue(
+                        driver.offer_row(
+                            RowIdentity(sequence, "chain"), encode({"text": str(sequence)})
+                        )
+                    )
+                driver.end_input()
+                driver.advance(2)
+                driver.advance(2)
+                self.assertEqual(len(backend.pending), 2)
+                slow, fast = sorted(backend.pending, key=lambda k: k.sequence)
+
+                def finish(key):
+                    body = json.loads(backend.pending[key][1].task.payload)
+                    backend.complete(
+                        key,
+                        encode_full_response(FullModelResponse(200, (), encode(completion(body)))),
+                    )
+
+                finish(fast)
+                driver.advance(2)
+                driver.advance(2)
+                successor = next(k for k in backend.pending if k != slow)
+                self.assertEqual(backend.pending[successor][1].task.info.row_sequence, 1)
+                self.assertEqual(backend.pending[successor][1].task.info.stage_id, "1")
+                self.assertIn(
+                    "summary:",
+                    json.loads(backend.pending[successor][1].task.payload)["messages"][-1][
+                        "content"
+                    ],
+                )
+                finish(successor)
+                driver.advance(2)
+                (result,) = driver.results(2)
+                self.assertEqual(result.row.sequence, 1)
+                driver.release_result(result.row)
+                self.assertEqual(pool.used[0], 1)
+                self.assertIn(slow, backend.pending)
+            finally:
+                driver.close()
+                self.assertEqual(engine.capacity.usage().held_tasks, 1)
+                for key in tuple(backend.pending):
+                    backend.complete(key)
+                engine.advance()
+            self.assertEqual(pool.allocated, (0, 0))
+            self.assertEqual(engine.capacity.usage().held_tasks, 0)
+            self.assertEqual(calls, [])
+
+
+if __name__ == "__main__":
+    unittest.main()

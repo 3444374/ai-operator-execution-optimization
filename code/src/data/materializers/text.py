@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import pyarrow as pa
+from src.infrastructure.daft_runtime import configure_daft_runner
 
 from src.planning.packing.scalar import (
     PackItem,
@@ -42,7 +43,6 @@ BatchingPolicy = Literal[
     "prefix_aware_length_align_fixed_rows",
     "prefix_aware_length_align_token_budget",
 ]
-_CONFIGURED_DAFT_RUNNER: DaftRunner | None = None
 
 
 @dataclass(frozen=True)
@@ -63,25 +63,6 @@ class OrganizedBatches:
     metrics: dict[str, object]
     batch_cost_units: tuple[int, ...] = ()
     batch_row_counts: tuple[int, ...] = ()
-
-
-def configure_daft_runner(runner: DaftRunner) -> None:
-    """Configure Daft runner once before any Daft dataframe is materialized."""
-    import daft
-
-    global _CONFIGURED_DAFT_RUNNER
-    if _CONFIGURED_DAFT_RUNNER is None:
-        if runner == "ray":
-            daft.set_runner_ray(noop_if_initialized=True)
-        else:
-            daft.set_runner_native()
-        _CONFIGURED_DAFT_RUNNER = runner
-        return
-    if _CONFIGURED_DAFT_RUNNER != runner:
-        raise RuntimeError(
-            "Daft runner is already configured as "
-            f"{_CONFIGURED_DAFT_RUNNER}; cannot switch to {runner} in the same process."
-        )
 
 
 class ArrowOrganizer:
