@@ -21,7 +21,7 @@ from src.experiments.process_sampling import ProcessSampler
 from src.scheduling.core.session_contract import Usage, SessionTimeouts
 from src.observability.request_gateway import GatewayRoute, ObservationGateway
 from .cell_evidence import CellErrors
-from .native_adapter_metrics import summarize_calls, executor_phase_observations, sample_distribution
+from .native_adapter_metrics import summarize_calls, executor_phase_observations
 from .native_adapter_query import call_clock_domain, _runtime,load_bounded_rows,resolve_adapter_limits
 from .ready_query_recording import record_prepared_execution, proxy_http_peak
 from .semantic_system_query import record_native_response
@@ -618,13 +618,10 @@ def run_supplier_query(arm, *, load_source=None,plan,model,ledger,unit_id,root,o
                 summary['runtime']=runtime
                 summary['stages']['native_runtime_seconds']=(time.monotonic_ns()-runtime_started)/1e9
             elif arm in NATIVE_SUPPLIER_BACKENDS:
-                if NATIVE_SUPPLIER_BACKENDS[arm] == 'imlane':
-                    summary['runtime']=imlane_runtime_identity(imlane_config_for_arm(arm,imlane_call_configs))
-                else:
-                    runtime_arm={'daft':'fixed-map-native-daft', 'ray':'supplier-native-ray',
-                                 'ray-data':'fixed-map-native-ray'}[NATIVE_SUPPLIER_BACKENDS[arm]]
-                    _,runtime=_runtime(stack,runtime_arm,options,None,ray_temp_root,ray_address)
-                    summary['runtime']=runtime
+                runtime_arm={'daft':'fixed-map-native-daft', 'ray':'supplier-native-ray',
+                             'ray-data':'fixed-map-native-ray'}[NATIVE_SUPPLIER_BACKENDS[arm]]
+                _,runtime=_runtime(stack,runtime_arm,options,None,ray_temp_root,ray_address)
+                summary['runtime']=runtime
             if owner is None:
                 gateway=stack.enter_context(ObservationGateway(routes=(GatewayRoute(unit_id,'model',model.endpoint_url),),
                     trace_path=root/'http-trace.jsonl',request_timeout_s=model.timeout_ms/1000 if query_timeout_s is None else min(query_timeout_s,model.timeout_ms/1000),

@@ -21,7 +21,6 @@ from src.experiments.postgresql.native_adapter_metrics import summarize_calls
 from src.experiments.postgresql.supplier_adapter_query import (
     MethodObservations,_LotusBatchObservation,_LotusMethodObservation,run_supplier_query,_duckdb_rows,
     _record_supplier_http,_supplier_runtime,
-    _record_supplier_http,_supplier_runtime,
 )
 
 
