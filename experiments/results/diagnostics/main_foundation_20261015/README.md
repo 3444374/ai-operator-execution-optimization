@@ -48,5 +48,11 @@ Mac 默认 profile 无匹配后，使用仓库外的真实 Darwin CPU fixture pr
 | 1 | 11642.0 | 7239.4 | -37.817% |
 | 16 | 29511.0 | 10859.8 | -63.201% |
 
+计算入口保留为仓库外 artifact `main-convergence-20261015/core-transport/metadata-offer-cost-runner.tar.gz`，
+归档 SHA-256 `014bb647bcadadd02860cab900a555ff31951f99a8a1e899d78a7232f92e816c`；
+其中 `metadata_cost.py` 的摘要与 `metadata-cost.json.script_sha256` 一致。维护者可按该运行身份和摘要提供原件；
+将固定候选 checkout 恢复为 `main-prep` 后，在其上级目录执行该脚本，可重建同一基线比较与全部计时单元。
+此计算入口不进入生产目录。
+
 这是反复提交相同未接纳元数据时的组件诊断，不代表每次生产 offer 都可复用，也不代表查询或 GPU 加速。
 原 PZ 文档与统计修复保持；完整 LOTUS 查询、当前组合的 PG 图像和匹配真实模型验证仍需后续各批自己的证据。
