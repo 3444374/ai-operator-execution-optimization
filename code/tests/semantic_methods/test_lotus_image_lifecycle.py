@@ -4,6 +4,7 @@ from contextlib import contextmanager
 import importlib.util
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import threading
@@ -317,7 +318,7 @@ class DaftImageLifecycleTests(unittest.TestCase):
 class LotusImageCliLifecycleTests(unittest.TestCase):
     def run_retrieval(self, directory, primary, *, close_error=None, shutdown_error=None,
                       vectors=False, vector_error=None, write_error=False, receipt_error=False,
-                      startup=False):
+                      startup=False, resources=None):
         module = load_cli("run_lotus_image_retrieval.py")
         root = Path(directory)
         identity = root / "identity.json"
@@ -326,6 +327,10 @@ class LotusImageCliLifecycleTests(unittest.TestCase):
         args = ["--manifest", str(root / "unused"), "--image-root", str(root), "--stock-model", str(root),
                 "--model", str(root), "--embedding-identity", str(identity), "--arm", "semloom_hse",
                 "--index-dir", str(root / "index"), "--output-dir", str(output), "--ray-temp-dir", str(root / "ray"), "--rows", "1"]
+        if resources is not None:
+            resource_path = root / "resources.json"
+            resource_path.write_text(json.dumps(resources))
+            args += ["--resource-config", str(resource_path)]
         executor = SimpleNamespace(close=Mock(side_effect=close_error))
         ray = SimpleNamespace(is_initialized=lambda: False, init=Mock(), shutdown=Mock(side_effect=shutdown_error))
         observation = SimpleNamespace(calls=[], vectors={"fixture": np.zeros((1, 512))} if vectors else {})
@@ -359,6 +364,25 @@ class LotusImageCliLifecycleTests(unittest.TestCase):
                 patch("numpy.savez_compressed", side_effect=vector_error), patch.object(Path, "write_text", write):
             status = module.main(args)
         return status, output, executor, ray
+
+    def test_scoped_auto_config_flows_through_cli_and_restores_environment(self):
+        for count in (1, 2):
+            with self.subTest(count=count), tempfile.TemporaryDirectory() as directory, \
+                    patch("src.infrastructure.gpu_allocation._probe_uuid", side_effect=lambda token: token), \
+                    patch("src.modalities.image.resource_budget.available_cpu_slots", return_value=16), \
+                    patch.dict(os.environ, {"CUDA_VISIBLE_DEVICES": "GPU-a,GPU-b"}):
+                resources = dict(gpu_workers="auto", allowed_gpus=["GPU-a", "GPU-b"][:count],
+                                 cpu_workers=3, ray_num_cpus=6)
+                status, output, executor, ray = self.run_retrieval(directory, None, resources=resources)
+                self.assertEqual(status, 0)
+                self.assertEqual(ray.init.call_args.kwargs["num_gpus"], count)
+                self.assertEqual(ray.init.call_args.kwargs["num_cpus"], 6)
+                self.assertEqual(os.environ["CUDA_VISIBLE_DEVICES"], "GPU-a,GPU-b")
+                report = json.loads((output / "result.json").read_text())
+                self.assertEqual(report["resources_requested"]["gpu_workers"], "auto")
+                self.assertEqual(report["resources_resolved"]["resolved_count"], count)
+                self.assertEqual(report["resources_resolved"]["model_inflight"], count)
+                self.assertEqual(report["resources_resolved"]["prepare_inflight"], 1)
 
     def test_timing_failure_yields_to_stop_failure_and_shutdown_still_attempted(self):
         with tempfile.TemporaryDirectory() as directory:

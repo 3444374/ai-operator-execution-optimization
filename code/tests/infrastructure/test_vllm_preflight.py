@@ -49,6 +49,7 @@ class VllmPreflightPureTests(unittest.TestCase):
                 return_value=SimpleNamespace(
                     identity_output=sidecar,
                     port=8000,
+                    resource_config=None,
                     server_args=["--model", "/model", "--port", "8000"],
                 ),
             ), patch.object(

@@ -54,6 +54,8 @@ IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对
 `worker_errors`继续记录原错误，后续批次不再进入图。
 
 `NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
+可选`ray_min_actors`将原`(A,A)`改为原生`(min,A)`；旧默认保持，后续HTTP／CPU容量仍按最大A核对，
+关闭报告保存实际范围。该参数只控制CPU HTTP pool，不代表GPU数；[来源及边界](../../../experiments/results/diagnostics/resource_auto_20261015/README.md)与模型服务DP独立。
 Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data按活动请求检查A×B≤C，
 并要求`num_threads > ray_actors`，为原SDK的预处理／后处理task留出CPU。
 CPU1／A1会在导入和启动前拒绝；这项检查不改变原图或调度。

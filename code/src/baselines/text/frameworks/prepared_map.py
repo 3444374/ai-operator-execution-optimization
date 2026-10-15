@@ -108,12 +108,21 @@ class NativeGraphOptions:
     ray_async_batches_per_actor: int = 2
     ray_batch_rows: int = 1
     source_blocks: int = 4
+    ray_min_actors: int | None = None
 
     def __post_init__(self):
         values = (self.concurrency, self.num_threads, self.ray_actors,
                   self.ray_async_batches_per_actor, self.ray_batch_rows, self.source_blocks)
         if any(type(v) is not int or not 1 <= v <= 256 for v in values):
             raise ValueError('native graph sizes must be positive and bounded')
+        if self.ray_min_actors is not None and (type(self.ray_min_actors) is not int
+                or not 1 <= self.ray_min_actors <= self.ray_actors):
+            raise ValueError('native Ray minimum actors must be between 1 and ray_actors')
+
+    @property
+    def ray_actor_pool(self):
+        return (self.ray_actors if self.ray_min_actors is None else self.ray_min_actors, self.ray_actors)
+
     def validate_backend(self, backend):
         if backend == 'daft' and self.concurrency < 2:
             raise ValueError('pinned native Daft needs at least two request slots')
@@ -215,7 +224,7 @@ def open_ray_calls(calls, options, session_factory, *, headers=None, record_stat
             processor = build_processor(HttpRequestProcessorConfig(
                 url=session_factory.endpoint, headers={'Accept-Encoding':'identity',**(headers or {})},
                 batch_size=options.ray_batch_rows,
-                concurrency=(options.ray_actors,options.ray_actors), max_retries=0,
+                concurrency=options.ray_actor_pool, max_retries=0,
                 session_factory=session_factory), preprocess=graph_preprocess,
                 postprocess=graph_postprocess, preprocess_map_kwargs={'max_retries':0},
                 postprocess_map_kwargs={'max_retries':0})

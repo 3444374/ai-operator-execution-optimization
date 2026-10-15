@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
+from dataclasses import asdict
 import hashlib
 import importlib
 from importlib.metadata import version
@@ -50,6 +52,8 @@ def parser():
     p.add_argument("--arm", choices=("stock", "direct", "semloom_static", "semloom_hse", "ray_data", "daft_native", "external"), default="stock")
     p.add_argument("--executor-factory", help="module:factory implementing ImageBatchExecutor")
     p.add_argument("--executor-config", type=Path)
+    p.add_argument("--resource-config", type=Path,
+                   help="opt-in deployment-scoped local CLIP resources; gpu_workers may be auto")
     p.add_argument("--mode", choices=("combined", "index", "search"), default="combined")
     p.add_argument("--index-dir", type=Path, required=True)
     p.add_argument("--output-dir", type=Path, required=True)
@@ -121,6 +125,8 @@ def main(argv=None):
     owned_ray = None
     startup_failure = None
     error = None
+    resources = allocation = None
+    resource_stack = ExitStack()
     reuse_enabled = args.observe_model_reuse
     previous_reuse_directory = os.environ.get("SEMLOOM_IMAGE_REUSE_DIR")
     if reuse_enabled:
@@ -142,6 +148,28 @@ def main(argv=None):
 
     started = time.monotonic_ns()
     try:
+        if args.resource_config is not None:
+            from src.modalities.image.resource_budget import ImageWorkerResources
+            from src.modalities.image.worker_identity import resource_record_directory
+            if args.device != "cuda":
+                raise ValueError("scoped GPU resource config requires CUDA; explicit native CPU settings remain separate")
+            if args.resource_config.stat().st_size > 65536:
+                raise ValueError("image resource config exceeds its byte capacity")
+            raw_resources = args.resource_config.read_bytes()
+            resources = ImageWorkerResources(**json.loads(raw_resources))
+            report["resources_requested"] = asdict(resources)
+            report["resource_config_sha256"] = hashlib.sha256(raw_resources).hexdigest()
+            allocation = resources.resolve(arm=args.arm, pipeline=args.ray_image_pipeline or "fused",
+                                           max_active_batches=args.max_active_batches)
+            report["resources_resolved"] = dict(allocation.report(),
+                cpu_workers=resources.cpu_workers if args.arm.startswith("semloom_") or args.ray_image_pipeline == "staged" else 0,
+                model_workers=allocation.count,
+                worker_scheduler_owner="semloom_ray_pool" if args.arm.startswith("semloom_") else args.arm,
+                ray_num_cpus=resources.ray_slots(allocation, args.arm, args.ray_image_pipeline or "fused") if args.arm != "daft_native" else None,
+                prepare_inflight=resources.prepare_inflight if args.arm == "semloom_hse" else None,
+                model_inflight=resources.model_depth(allocation, args.max_active_batches) if args.arm == "semloom_hse" else None)
+            resource_stack.enter_context(allocation.visibility())
+            resource_stack.enter_context(resource_record_directory(args.output_dir / "resource-workers"))
         report["lotus_source"] = validate_image_source()
         report["versions"] = {x: version(x) for x in ("lotus-ai", "sentence-transformers", "transformers", "torch", "pandas", "numpy", "pillow", "faiss-cpu")}
         identity = json.loads(args.embedding_identity.read_text())
@@ -170,6 +198,9 @@ def main(argv=None):
                     raise ValueError("direct arm requires its qualified CLIP checkpoint")
                 settings = dict(model=str(args.model), processor=str(args.processor) if args.processor else None,
                                 dtype=args.dtype, batch_size=args.batch_size)
+                if resources is not None:
+                    settings.update(cpu_workers=resources.cpu_workers, gpu_workers=allocation.count,
+                                    allowed_gpu_uuids=allocation.selected_gpu_uuids)
                 if args.arm == "ray_data":
                     settings["pipeline"] = args.ray_image_pipeline or "fused"
                 if args.arm == "direct":
@@ -181,12 +212,16 @@ def main(argv=None):
                     import ray
                     if ray.is_initialized():
                         raise ValueError("CLI requires an exclusively owned Ray runtime")
-                    ray.init(num_cpus=4, num_gpus=1, include_dashboard=False,
+                    ray.init(address="local", num_cpus=resources.ray_slots(allocation, args.arm, args.ray_image_pipeline or "fused") if resources else 4,
+                             num_gpus=allocation.count if allocation else 1, include_dashboard=False,
                              _temp_dir=str(args.ray_temp_dir), log_to_driver=False)
                     owned_ray = ray
                     if args.arm == "ray_data":
                         executor = RayDataImageExecutor(**settings)
                     else:
+                        if resources is not None and args.arm == "semloom_hse":
+                            settings.update(prepare_inflight=resources.prepare_inflight,
+                                            model_inflight=resources.model_depth(allocation, args.max_active_batches))
                         executor = SemLoomImageExecutor(**settings, hse=args.arm == "semloom_hse",
                                                        max_active_batches=args.max_active_batches,
                             encoded_bytes_limit=args.hse_encoded_bytes,
@@ -199,6 +234,8 @@ def main(argv=None):
                     processor_path=str(args.processor) if args.processor else None,
                     dtype=args.dtype, batch_size=args.batch_size, device=args.device,
                     gpus_per_worker=1 if args.device == "cuda" else 0,
+                    **({"model_workers": allocation.count, "allowed_gpu_uuids": allocation.selected_gpu_uuids}
+                       if allocation is not None else {}),
                     max_batch_rows=args.max_gallery_rows, input_kind="rgb_pil")
                 report["executor_identity"] = executor.identity
                 report["image_model_lifecycle"] = "native_stateful_wrapper_across_graphs"
@@ -309,6 +346,16 @@ def main(argv=None):
                 report["owned_ray_shutdown_s"] = (time.monotonic_ns() - shutdown_at) / 1e9
         report["cleanup_s"] = (time.monotonic_ns() - cleanup_at) / 1e9
         report["process_wall_s"] = (time.monotonic_ns() - started) / 1e9
+        if resources is not None:
+            try:
+                report["resource_worker_records"] = [json.loads(path.read_text()) for path in
+                    sorted((args.output_dir / "resource-workers").glob("*.json"))]
+                report["resource_worker_records_scope"] = "constructed workers only; missing records do not prove physical exit"
+                if executor is not None and hasattr(executor, "worker_readiness"):
+                    report["worker_readiness"] = executor.worker_readiness
+            except BaseException as exc:
+                error = _retain_failure(report, error, exc, "resource worker evidence", cleanup=True)
+        resource_stack.close()
         sink = time.monotonic_ns()
         if rm is not None:
             report["rm_calls"] = list(rm.observation.calls)

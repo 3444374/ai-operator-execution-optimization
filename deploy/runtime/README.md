@@ -6,6 +6,10 @@ AutoDL、文本或图像专项 runbook，也不假设所有机器已经下载模
 
 ## 四层合同
 
+硬件/profile 自动识别不授予整机 GPU 使用权。可选[部署资源 auto](../../experiments/results/diagnostics/resource_auto_20261015/README.md)
+只在`allowed_gpus`／`GPU_IDS`／UUID可见集合内冻结物理身份，再选择原生 DP 或既有 CLIP worker 数；
+继承 mask 与声明取交集，数字 CUDA ordinal 的歧义组合提前拒绝。它不在线校准、不改查询源码，旧单卡入口仍可使用。
+
 | 层 | 权威文件 | 负责什么 | 不负责什么 |
 |---|---|---|---|
 | 机器 | `profiles/*.json` | OS、Python、CPU、GPU、显存、磁盘、命令和必要环境变量 | 最优 batch/K/actor 参数 |

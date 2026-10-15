@@ -257,6 +257,7 @@ class ClipTensorActor:
         model_commit: str | None = None,
         processor_commit: str | None = None,
         local_files_only: bool = False,
+        allowed_gpu_uuids: tuple[str, ...] | None = None,
     ) -> None:
         if model_commit is not None and os.path.exists(model_revision):
             raise ValueError("a revision-pinned model requires a repository identifier")
@@ -287,6 +288,12 @@ class ClipTensorActor:
             loading["revision"] = model_commit
         if local_files_only:
             loading["local_files_only"] = True
+        self._resource_identity = None
+        if allowed_gpu_uuids is not None:
+            from .worker_identity import assigned_gpu_uuid, worker_identity
+            uid = assigned_gpu_uuid(torch, device, allowed_gpu_uuids)
+            self._resource_identity = worker_identity("clip_model", gpu_uuid=uid,
+                model_revision=model_revision, processor_revision=processor_revision or model_revision)
         self._model = CLIPModel.from_pretrained(model_revision, **loading).eval()
         self._model = self._model.to(device=device, dtype=self._dtype)
         projection_dim = int(self._model.config.projection_dim)
@@ -300,6 +307,9 @@ class ClipTensorActor:
         )
         from src.experiments.image_reuse import observe_model
         self._reuse_probe = observe_model(self._model, role="clip_tensor_actor", device=device)
+        if self._resource_identity is not None:
+            from .worker_identity import record_worker_identity
+            record_worker_identity(self._resource_identity)
 
     def ready(self) -> dict[str, object]:
         ready = {
@@ -313,6 +323,8 @@ class ClipTensorActor:
         }
         if self._reuse_probe is not None:
             ready["model_reuse"] = self._reuse_probe.snapshot()
+        if self._resource_identity is not None:
+            ready["resource_identity"] = self._resource_identity
         return ready
 
     def synchronize(self) -> None:

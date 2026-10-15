@@ -168,6 +168,17 @@ class DaftConfigurationTests(unittest.TestCase):
 
 
 class RayConfigurationTests(unittest.TestCase):
+    def test_native_range_and_close_evidence_match_and_keep_capacity_at_the_maximum(self):
+        options = NativeGraphOptions(concurrency=8, ray_min_actors=1, ray_actors=4)
+        with ray_graph(records := {}):
+            executor = native.NativeCallExecutor('ray-data', options)
+            returned = tuple(executor.iter_batch(calls()))
+        self.assertEqual({outcome.call_id for outcome in returned}, {call.call_id for call in calls()})
+        self.assertEqual(records['config']['concurrency'], (1, 4))
+        report = executor.last_close_report['native_graph_parameters']
+        self.assertEqual(report['actor_pool_range'], [1, 4])
+        self.assertEqual(report['active_http_upper_bound'], 8)
+
     def test_ray_http_bound_is_checked_before_graph_creation_and_c1_can_be_selected(self):
         with ray_graph(records := {}, async_batches=1):
             with self.assertRaisesRegex(ValueError, 'active HTTP upper bound'):

@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-15：[部署限定资源 auto 的 CPU 检查](diagnostics/resource_auto_20261015/README.md)。基点7a4c1846；vLLM native DP、图像原工厂／池及Ray HTTP范围只做配置、模拟多设备、完整输出与生命周期回归。独立审查、失败环境与修复后结果按同题摘要定位；无新模型／GPU／多卡性能或rank退出资格。
+
 2026-10-15：[HSE 身份与基础修正](diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
 
 固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。

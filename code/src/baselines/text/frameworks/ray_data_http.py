@@ -25,6 +25,12 @@ class RayDataHttpConfig:
     batch_size: int
     concurrency: int
     ray_address: str | None = None
+    min_concurrency: int | None = None
+
+    def __post_init__(self):
+        if self.min_concurrency is not None and (type(self.min_concurrency) is not int
+                or type(self.concurrency) is not int or not 1 <= self.min_concurrency <= self.concurrency):
+            raise ValueError("Ray HTTP minimum concurrency must be between 1 and concurrency")
 
 
 def ray_data_preprocess(
@@ -123,6 +129,8 @@ def run_ray_data_http(
     if config.concurrency <= 0:
         raise ValueError("concurrency must be positive")
     runtime = modules or _load_ray_data_modules()
+    if config.min_concurrency is not None and runtime.ray.__version__ != "2.56.1":
+        raise RuntimeError("native Ray HTTP actor ranges require pinned Ray 2.56.1")
     if config.ray_address is not None:
         runtime.ray.init(
             address=config.ray_address,
@@ -138,7 +146,8 @@ def run_ray_data_http(
         batch_size=config.batch_size,
         url=config.endpoint_url,
         headers=headers,
-        concurrency=(config.concurrency, config.concurrency),
+        concurrency=(config.concurrency if config.min_concurrency is None else config.min_concurrency,
+                     config.concurrency),
         max_retries=0,
     )
     processor = runtime.build_processor(
@@ -150,6 +159,9 @@ def run_ray_data_http(
         ),
         postprocess=ray_data_postprocess,
     )
+    if config.min_concurrency is not None:
+        for stage in processor.stages.values():
+            stage.map_batches_kwargs.update(max_restarts=0, max_task_retries=0, max_concurrency=1)
     items = [
         {
             "doc_id": request.doc_id,
@@ -163,6 +175,8 @@ def run_ray_data_http(
     rows = processor(runtime.ray.data.from_items(items)).take_all()
     completed_at_s = time.time()
     row_by_id = {int(row["doc_id"]): row for row in rows}
+    if len(rows) != len(materialized) or len(row_by_id) != len(rows) or set(row_by_id) != {r.doc_id for r in materialized}:
+        raise ValueError("Ray HTTP results contain missing, duplicate or unexpected row identities")
     return tuple(
         BaselineRequestResult(
             doc_id=request.doc_id,

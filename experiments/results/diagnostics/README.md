@@ -1,5 +1,7 @@
 # Feasibility Results
 
+- [部署限定资源 auto](resource_auto_20261015/README.md)：只在允许 GPU 集解析原生配置，保存 requested/resolved、物理 UUID 与worker身份；CPU／模拟检查不替代单／多卡模型资格，Serve多副本仍pending。
+
 - [原始 SemBench Animals Q1](sembench_animals_20261015/README.md)：官方完整目录／seed42 SF64、原ImageArray Filter与原聚合评价；CPU和单VLM资格独立于CLIP检索。
 
 [HSE真实身份与基础修正](hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。

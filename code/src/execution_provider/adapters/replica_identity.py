@@ -83,9 +83,49 @@ def _serving_sha256(argv):
     return hashlib.sha256(json.dumps(result, separators=(",", ":")).encode()).hexdigest()
 
 
+def _native_topology(sidecar, argv, device_ids):
+    """Legacy TP1 endpoints or the opt-in pinned local native DP deployment."""
+    argv = tuple(token.split("=", 1)[0].replace("_", "-") +
+                 ("=" + token.split("=", 1)[1] if "=" in token else "")
+                 if token.startswith("--") else token for token in argv)
+    resolved = sidecar.get("resources_resolved")
+    if resolved is None:
+        if (len(device_ids) != 1 or _option(argv, "--tensor-parallel-size") != "1"
+                or _option(argv, "--data-parallel-size", required=False) not in (None, "1")
+                or _option(argv, "--pipeline-parallel-size", required=False) not in (None, "1")):
+            raise ValueError("legacy qualification requires exactly one declared GPU per TP1 replica")
+        return dict(data_parallel_size=1, tensor_parallel_size=1, pipeline_parallel_size=1)
+    if type(resolved) is not dict:
+        raise ValueError("invalid native vLLM resource identity")
+    canonical = {"--data-parallel-size", "--data-parallel-backend", "--tensor-parallel-size",
+                 "--pipeline-parallel-size", "--distributed-executor-backend"}
+    for token in argv:
+        flag = token.split("=", 1)[0].replace("_", "-")
+        if (flag.startswith(("-dp", "-tp", "-pp", "-dcp", "-pcp", "-ep", "-n", "-r", "--device-ids", "--headless",
+                             "--nnodes", "--node-rank", "--enable-expert-parallel", "--enable-elastic-ep", "--config"))
+                or (flag.startswith(("--data-parallel", "--tensor-parallel", "--pipeline-parallel",
+                                     "--distributed-executor", "--decode-context-parallel", "--prefill-context-parallel"))
+                    and flag not in canonical)):
+            raise ValueError("native vLLM resource identity forbids rank/device/backend overrides")
+    dp, tp = resolved.get("data_parallel_size"), resolved.get("tensor_parallel_size")
+    if (any(type(x) is not int or x <= 0 for x in (dp, tp))
+            or sidecar.get("package_version") != "0.25.1" or resolved.get("version") != "0.25.1"
+            or resolved.get("scope") != "single_node" or resolved.get("pipeline_parallel_size") != 1
+            or resolved.get("load_balancing") != "vllm_internal"
+            or dp * tp != len(device_ids) or resolved.get("resolved_count") != len(device_ids)
+            or sorted(resolved.get("selected_gpu_uuids", [])) != sorted(device_ids)):
+        raise ValueError("native vLLM DP topology differs from its declared physical allocation")
+    for flag, expected in (("--data-parallel-size", str(dp)), ("--tensor-parallel-size", str(tp)),
+                           ("--pipeline-parallel-size", "1"), ("--data-parallel-backend", "mp"),
+                           ("--distributed-executor-backend", "mp")):
+        if _option(argv, flag) != expected:
+            raise ValueError("native vLLM serving argv differs from its resource identity")
+    return dict(data_parallel_size=dp, tensor_parallel_size=tp, pipeline_parallel_size=1)
+
+
 def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, independent_devices=True,
                              localhost_addresses=None):
-    """Verify one-device replicas on this machine; Ray actors cannot satisfy these checks.
+    """Verify local model deployments; CPU HTTP actors are not model replicas.
 
     sidecars use launch_vllm_with_identity.py's existing schema. A model content
     audit must separately establish deployment_sha256; this verifies the live
@@ -131,11 +171,9 @@ def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, i
         if ("vllm.entrypoints.openai.api_server" not in process.argv
                 or _option(process.argv, "--port") != str(url.port)
                 or _option(process.argv, "--served-model-name") != directory.model_id
-                or _option(process.argv, "--model") is None
-                or _option(process.argv, "--tensor-parallel-size") != "1"):
-            raise ValueError("replica is not the declared one-device model API process")
-        if len(replica.device_ids) != 1:
-            raise ValueError("qualification requires exactly one declared GPU per replica")
+                or _option(process.argv, "--model") is None):
+            raise ValueError("replica is not the declared model API process")
+        topology = _native_topology(sidecar, process.argv, replica.device_ids)
         members = descendants(process.pid)
         if members & used_processes:
             raise ValueError("replicas share a model API process tree")
@@ -174,6 +212,13 @@ def verify_replica_processes(directory, sidecars, processes, gpu_processes, *, i
             api_pid=process.pid, process_start_time_ticks=process.start_ticks,
             gpu_process_ids=sorted({g.pid for g in gpu_members}), device_ids=sorted(devices),
             service_version=version, serving_arguments_sha256=signature,
+            native_topology=topology,
+            gpu_workers=[dict(pid=pid, process_start_time_ticks=by_pid[pid].start_ticks,
+                device_ids=sorted({g.device_id for g in gpu_members if g.pid == pid}))
+                for pid in sorted({g.pid for g in gpu_members})],
+            owned_process_tree=[dict(pid=pid, parent_pid=by_pid[pid].parent_pid,
+                process_start_time_ticks=by_pid[pid].start_ticks) for pid in sorted(members)],
+            actual_dp_rank_identity="not inferred from PID order; process/GPU ownership only",
             listener_bindings=[dict(pid=pid, process_start_time_ticks=by_pid[pid].start_ticks,
                 family=listener.family, address=listener.address, port=listener.port, inode=listener.inode)
                 for pid, listener in bindings]))
@@ -272,6 +317,9 @@ def inspect_local_model_replicas(directory, sidecar_paths, *, independent_device
     for replica in result["replicas"]:
         if _process_stat(proc_root / str(replica["api_pid"]) / "stat")[1] != replica["process_start_time_ticks"]:
             raise ValueError("model API process changed during device verification")
+        for worker in replica["owned_process_tree"]:
+            if _process_stat(proc_root / str(worker["pid"]) / "stat")[1] != worker["process_start_time_ticks"]:
+                raise ValueError("model worker process changed during device verification")
         for binding in replica["listener_bindings"]:
             path = proc_root / str(binding["pid"])
             expected = ReplicaListener(binding["family"], binding["address"], binding["port"], binding["inode"])

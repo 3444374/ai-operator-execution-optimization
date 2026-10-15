@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from contextlib import nullcontext
 import hashlib
+import json
 from importlib import metadata
 import math
 import os
@@ -51,7 +52,8 @@ def _load_processor(path):
 
 
 def _build_embedder(*, model_path, processor_path, dtype, batch_size,
-                    model_workers, gpus_per_worker, device, torch_threads):
+                    model_workers, gpus_per_worker, device, torch_threads,
+                    allowed_gpu_uuids=None, preprocessing_identity=None):
     import daft
 
     actor_type, load_processor = ClipTensorActor, _load_processor
@@ -62,11 +64,19 @@ def _build_embedder(*, model_path, processor_path, dtype, batch_size,
         def __init__(self):
             with _span("daft_image.model_load"):
                 self.processor = load_processor(processor_path)
+                if preprocessing_identity is not None:
+                    from src.modalities.image.worker_identity import worker_identity, record_worker_identity
+                    actual = _processor_identity(self.processor)
+                    if actual != preprocessing_identity:
+                        raise ValueError("Daft worker's actual CLIP processor differs from its owner")
+                    record_worker_identity(worker_identity("daft_clip_prepare", preprocessing_identity=actual))
+                options = {} if allowed_gpu_uuids is None else {"allowed_gpu_uuids": allowed_gpu_uuids}
                 self.actor = actor_type(
                     model_path, processor_revision=processor_path, device=device,
                     dtype=dtype, normalize=True, local_files_only=True,
                     detailed_stage_timing=False, torch_intraop_threads=torch_threads,
                     torch_interop_threads=torch_threads,
+                    **options,
                 )
                 if self.actor.semantics.dimension != 512:
                     raise ValueError("Daft CLIP requires a 512-dimensional projection")
@@ -103,6 +113,11 @@ def _build_embedder(*, model_path, processor_path, dtype, batch_size,
                 raise
 
     return NativeClip()
+
+
+def _processor_identity(processor):
+    return dict(processor_type=type(processor).__name__, effective_config_sha256=hashlib.sha256(
+        json.dumps(processor.to_dict(), sort_keys=True, separators=(",", ":")).encode()).hexdigest())
 
 
 def _digest(path):
@@ -153,7 +168,8 @@ class DaftClipExecutor:
                  dtype: str = "float32", batch_size: int = 32,
                  model_workers: int = 1, gpus_per_worker: float = 1,
                  device: str = "cuda", torch_threads: int = 1,
-                 max_batch_rows: int = 4096, input_kind: str = "rgb_pil"):
+                 max_batch_rows: int = 4096, input_kind: str = "rgb_pil",
+                 allowed_gpu_uuids=None):
         if input_kind not in ("rgb_pil", "encoded_bytes"):
             raise ValueError("Daft CLIP input_kind must be rgb_pil or encoded_bytes")
         self.input_kind = input_kind
@@ -170,6 +186,9 @@ class DaftClipExecutor:
         if not ((device == "cpu" and gpus_per_worker == 0)
                 or (device == "cuda" and gpus_per_worker > 0)):
             raise ValueError("CPU requires zero GPUs; CUDA requires a positive native GPU resource")
+        if allowed_gpu_uuids is not None and (device != "cuda" or gpus_per_worker != 1
+                or model_workers > len(allowed_gpu_uuids)):
+            raise ValueError("scoped Daft CLIP requires one full allocated GPU per model worker")
         import daft
         from daft.runners import get_or_create_runner
 
@@ -214,6 +233,9 @@ class DaftClipExecutor:
             model_path=str(model), processor_path=str(processor), dtype=dtype,
             batch_size=batch_size, model_workers=model_workers,
             gpus_per_worker=gpus_per_worker, device=device, torch_threads=torch_threads,
+            **({"allowed_gpu_uuids": tuple(allowed_gpu_uuids),
+                "preprocessing_identity": _processor_identity(_load_processor(str(processor)))}
+               if allowed_gpu_uuids is not None else {}),
         )
         self._lock = threading.Lock()
         self._closed = False

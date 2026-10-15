@@ -15,6 +15,59 @@ def available_cpu_slots() -> int:
 
 
 @dataclass(frozen=True)
+class ImageWorkerResources:
+    """Opt-in local CLIP launch settings; preparation depth is independent."""
+
+    gpu_workers: int | str = "auto"
+    allowed_gpus: tuple[str, ...] | None = None
+    cpu_workers: int = 1
+    ray_num_cpus: int | str = "auto"
+    prepare_inflight: int = 1
+    model_inflight: int | str = "auto"
+
+    def __post_init__(self):
+        if self.gpu_workers != "auto" and (type(self.gpu_workers) is not int or not 1 <= self.gpu_workers <= 256):
+            raise ValueError("gpu_workers must be auto or an integer from 1 to 256")
+        if any(type(x) is not int or not 1 <= x <= 256 for x in
+               (self.cpu_workers, self.prepare_inflight)):
+            raise ValueError("image CPU workers, slots and stage depths must be integers from 1 to 256")
+        if self.ray_num_cpus != "auto" and (type(self.ray_num_cpus) is not int or not 1 <= self.ray_num_cpus <= 256):
+            raise ValueError("ray_num_cpus must be auto or an integer from 1 to 256")
+        if self.model_inflight != "auto" and (type(self.model_inflight) is not int or not 1 <= self.model_inflight <= 256):
+            raise ValueError("model_inflight must be auto or an integer from 1 to 256")
+
+    def model_depth(self, allocation, max_active_batches):
+        return min(allocation.count, max_active_batches) if self.model_inflight == "auto" else self.model_inflight
+
+    def ray_slots(self, allocation, arm, pipeline="fused"):
+        prepare = self.cpu_workers if arm.startswith("semloom_") or pipeline == "staged" else 0
+        return prepare + allocation.count + 1 if self.ray_num_cpus == "auto" else self.ray_num_cpus
+
+    def resolve(self, *, arm, pipeline="fused", max_active_batches=2, **probe_options):
+        from src.infrastructure.gpu_allocation import resolve_gpu_allocation
+        if arm not in ("semloom_static", "semloom_hse", "ray_data", "daft_native"):
+            raise ValueError("resource config supports local SemLoom, Ray Data and Daft CLIP only; stock/direct/Serve/IMLane are not multi-device adapters")
+        if arm != "semloom_hse" and (self.prepare_inflight != 1 or self.model_inflight not in (1, "auto")):
+            raise ValueError("stage inflight settings require semloom_hse")
+        if (arm == "daft_native" or (arm == "ray_data" and pipeline == "fused")) and self.cpu_workers != 1:
+            raise ValueError("cpu_workers config requires a separate CPU preprocessing stage")
+        allocation = resolve_gpu_allocation(self.gpu_workers, self.allowed_gpus, **probe_options)
+        if arm == "semloom_static" and max_active_batches < allocation.count:
+            raise ValueError("SemLoom static max_active_batches must cover every GPU worker")
+        prepare_workers = self.cpu_workers if arm.startswith("semloom_") or pipeline == "staged" else 0
+        slots = self.ray_slots(allocation, arm, pipeline)
+        if arm != "daft_native" and slots < prepare_workers + allocation.count + 1:
+            raise ValueError("Ray CPU slots must cover CPU/GPU actors and a source/consumer slot")
+        if arm != "daft_native" and slots > available_cpu_slots():
+            raise ValueError("requested CPU slots exceed process CPU allocation")
+        if arm == "semloom_hse" and (self.prepare_inflight > self.cpu_workers
+                or self.model_depth(allocation, max_active_batches) > allocation.count
+                or max(self.prepare_inflight, self.model_depth(allocation, max_active_batches)) > max_active_batches):
+            raise ValueError("HSE stage depths exceed workers or max_active_batches; configure preparation depth independently")
+        return allocation
+
+
+@dataclass(frozen=True)
 class RayCpuBudget:
     """Explicit host and Ray CPU slots held by one image execution graph."""
 
