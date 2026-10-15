@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-15：[HSE 身份与基础修正](diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
+
+固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。
+8完整矩阵逐字同、真实forward计数和物理退出通过；NumPy／broker组件全值与原失败保留，小轮不证明GPU收益或总RSS有界。
+
 2026-10-15：[Ray2.56.1迭代器构造故障](diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)。
 真实CPU Data／Serve替身证实构造异常未走原生end hook，最小兜底使本图线程停止；unknown和原MemoryError保留，owner仍负责最终退出。
 68项单测及独立1项显式CPU实库回归通过，原件留仓外、最终Ray进程清单为空；无模型／GPU或旧来源资格外推。

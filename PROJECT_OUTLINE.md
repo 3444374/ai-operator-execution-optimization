@@ -4,6 +4,9 @@
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
 证据身份归[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)，完整数字、失败与重复归原报告。
 
+研究对象是 AI 语义算子与多模态数据任务的物理执行、数据组织与调度；SemLoom 面向语义 API 与数据库等前端，
+PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，资格按实际入口分别核对。
+
 ## 0. 当前优先级与历史记录范围
 
 近期首先回答：**同一查询／一批数据，能否通过少准备、少搬运和少做重复计算更早得到全部必要结果？**
@@ -20,6 +23,7 @@
 | 核对对象 | 当前解释与事实入口 |
 |---|---|
 | 图像可用起点 | LOTUS 公共 RM 已使用 batch32 的 slow CLIP 准备与 tensor actor；PG 单图接口单独解释，见[研究定位](docs/research/研究定位.md#existing-image-execution-paths) |
+| 图像基础修正 | 固定 `bdae61bb` 贯通真实身份、恢复已有HSE小优化及结果／已导出观测边界；[本轮检查](experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)保留CPU组件与GPU原值，不将小轮视为收益或新机制 |
 | 图像证据 | [最终融合资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)保留固定 `2afcaf47` 的六路径64图及已有索引结果；[普通输入与Serve补充](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)分列`460d3870`三格与`17ac2aeb`八格的28查询／39矩阵，均仅支持有限资格，不提供性能排名 |
 | 编码与内存 | 普通入口按后端自动接RGB或经当前像素核对的源字节，不可复用时无损PNG1回退；历史显式开关已移除。HSE逻辑额度不覆盖RM列表／复制，也不是RSS或硬显存限，见[实现状态](code/INFRA_STATUS.md#current-image-status) |
 | 文本与其他接点 | [原 Q2 历史观察](experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md)与[原生执行接入](experiments/results/postgresql/native_executor_baselines_20261012/README.md)按实际源码、质量、规模和生命周期解释 |
@@ -40,7 +44,7 @@ provider承接合法任务。当前支持范围、Filter真实校准缺口、Map
 工程参照、采用条件与自有落点由[系统架构](experiments/plans/系统架构.md#frontend-adapter-strategy)维护。
 目标数据库的语义／资源责任单独验证，内网复用与外部发布／部署按授权处理。
 
-### 0.2 核心研究链路
+### 0.2 数据库路径的核心研究链路
 
 ```text
 SQL semantic intent
