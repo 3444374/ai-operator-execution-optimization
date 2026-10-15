@@ -1,5 +1,11 @@
 # Daft/Ray/Lance 方向文献与证据审查
 
+历史范围：本文保存2026-07的文献与开题探索，后来的插入说明仍按其原日期解释。
+“三个研究岛没有桥接”“没有现有工作覆盖”等绝对空白叙述已被后续最近邻核对替代，不能作为当前研究结论。
+当前研究问题与待证增量见[研究定位](研究定位.md)，题录／阅读状态见[文献清单](ai_operator_literature_inventory.md)，
+实施与实际证据分别见[总纲](../../PROJECT_OUTLINE.md)和[台账](../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
+
+
 生成日期：2026-07-09
 
 > **2026-07-17 口径更新**：本文档为早期文献审查记录。当前技术栈已更新：Daft 从候选引擎升级为正式数据引擎（文本阶段直接接入），Ray 作为架构设计空间，vLLM 作为部署平台。写回使用 PostgreSQL + pgvector（COPY + deferred index），不作为独立研究方向。方向已从"Object Transfer/fan-in/coalescing"收敛为"上游调度策略（数据组织 + 提交控制）+ 多模态泛化验证"。最新方向、研究内容和实验优先级以根 `AGENTS.md`“项目范围/当前资格顺序”、`PROJECT_OUTLINE.md` 和 `docs/research/研究定位.md` 为准。本文档中的文献依据（Ray/Daft/Arrow/Lance 等）仍可作为参考资料使用。

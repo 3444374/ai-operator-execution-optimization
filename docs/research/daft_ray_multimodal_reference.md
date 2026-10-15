@@ -1,5 +1,11 @@
 # Daft+Ray 多模态执行引擎与具身智能连接分析
 
+历史范围：本文保留2026-07-17的引擎／产品资料与当时分析，不证明当前安装能力。
+旧文中“引擎不做调度”“不能作baseline”及将队列自适应视为差异化的判断已由[研究定位](研究定位.md#related-work)、
+[执行层分工](优化方法依据.md#engine-ownership-assessment)及[对照规范](../../experiments/plans/reference/对照规范.md)替代。
+当前原生Ray Data／Daft拥有数据执行、流水及背压，应保留合理调优的强对照；不把两者泛称零拷贝或无调度。
+
+
 生成日期：2026-07-17
 用途：记录 Daft+Ray 架构、Flotilla 分布式引擎、与具身智能的关联、及与本课题的关系分析。
 关联：[对应材料](daft_ray_multimodal_reference.md)

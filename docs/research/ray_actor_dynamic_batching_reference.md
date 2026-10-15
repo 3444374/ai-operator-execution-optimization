@@ -1,5 +1,10 @@
 # Ray Actor, Dynamic Batching & vLLM Integration Reference
 
+资料范围：本文汇集2026-07的机制研究和滚动官方／Anyscale材料，`latest/master`链接不证明固定环境已有对应功能。
+本项目当前Ray环境为2.56.1，实际能力按[固定版本对照](../../experiments/plans/reference/对照规范.md#ray-llm-provider-modes)及本地源码／结果核对；
+更新版本或托管产品特性只作候选。旧“vLLM瓶颈单一”假设不覆盖全部路径，近期先测完整任务再选择机制，见[总纲](../../PROJECT_OUTLINE.md#8-当前执行顺序)。
+
+
 > 研究日期: 2026-07-16（初始）, 2026-07-21（Ray 机制更新 + 2025 新文献）
 > 用途: 为构建 vLLM 上游自适应提交系统 (adaptive submission system) 提供 Ray 技术栈参考
 > 来源: Ray 官方文档 (docs.ray.io)、Ray GitHub (ray-project/ray)、Anyscale 博客、学术论文
