@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[文本原生API与容量](native_text_capacity_20261015/README.md)：最小Ray调用及完整消费、活动HTTP／有限存储合同、Daft清理配对与精简证据；原方法／作者调度保持。
+
 [单GPU文件CLIP冷算子](image_clip_file_operator_20261014/README.md)：静态／HSE／原生Ray Data的全部重复、部署失败、退出及已完成的[257图逐行补测](image_clip_file_operator_20261014/README.md#numeric-diagnostic-20261014)归同一报告。
 
 2026-10-14：[原生 LOTUS CLIP 图片建索引及图文检索](lotus_native_image_retrieval_20261014/README.md)：

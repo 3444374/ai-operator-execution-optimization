@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
+分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
+原方法／SDK、厂商调度和既有默认保持，不提供新模型性能或全图RSS资格。
+
 2026-10-14：固定融合源码`2afcaf47`的[LOTUS图像十格实际资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)完成；六路径64图组合及四格已有索引查询的完整数值、SDK与逐次物理退出核验通过，单次资格不提供性能排名或尾分位。
 
 2026-10-14：[原Movie任务完成期限兼容](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。

@@ -50,7 +50,7 @@ IMLane另持久记录调用者拥有的Coordinator未知状态，跨执行器对
 `worker_errors`继续记录原错误，后续批次不再进入图。
 
 `NativeGraphOptions`构造只核对正整数及有限大小；所选后端在创建执行器和进入原生图前另做检查。
-Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data保持A×B×R≤C，
+Daft保持C≥2及`batch_size=1/max_concurrency=C−1`；Ray Data按活动请求检查A×B≤C，
 并要求`num_threads > ray_actors`，为原SDK的预处理／后处理task留出CPU。
 CPU1／A1会在导入和启动前拒绝；这项检查不改变原图或调度。
 IMLane和Ray Core可声明C=1，不借未选用的Daft或Ray Data参数拒绝；实际作者线程数、
@@ -65,12 +65,27 @@ Ray Data完整调用路径的A为HTTP stage actor数，B为每actor的异步批�
 [固定HTTP stage](https://github.com/ray-project/ray/blob/ray-2.56.1/python/ray/llm/_internal/batch/stages/http_request_stage.py)
 逐个await批内的惰性`session.post`。当前stage的actor `max_concurrency=1`时，
 `active_http_upper_bound=A×B`，R增加单批保留行数与串行工作量；
-`request_row_envelope=A×B×R`继续用于原有保守容量检查，不因此放宽C。
-行数包络不是RSS或整个执行图的内存保证，活跃上界也不是已测峰值。
+`request_row_envelope=A×B×R`只记录HTTP stage的批内行包络，R不再占用HTTP活动名额。
+完整输入另受有限批次行数和payload字节约束；两个入口均在读到首个越界项时拒绝，尚未创建图。
+`NativeCallExecutor`沿用4096行／32MiB输入默认上限，32MiB结果阈值约束累计已消费的完整响应。
+`batch_storage`分列实际输入、输入上限、累计消费阈值及所有单响应allowance之和；后者不作新的准入条件。
+厂商图可以在消费前保留结果，base64、JSON与SDK还有副本，因此这些字节数和行包络均不保证整个图的RSS。
+prepared字典入口默认同样限制4096行／32MiB payload；固定Map查询按既有source额度加每行固定请求模板开销
+推导独立payload额度，不把raw source字节等同于完整请求字节。响应上限仍由其session factory负责。
+合同修正、最小原生API差异与实际核验见[文本接入检查](../../../experiments/results/diagnostics/native_text_capacity_20261015/README.md)。
+活跃上界不是已测峰值。
 实际`observed_peak_http`复用查询入口的统一代理记录，由同一monotonic时钟上的
 上游发送至完整正文读完区间计算，原件为`http-trace.jsonl`；不从C或参数乘积补造。
 数据量、source blocks与原生背压可以使实测峰值更小；该HTTP指标不表示GPU内核并发。
 无真实图验证的配置／批次循环替身检查，只说明调用与报告行为。
+
+Daft默认与详细计时共用已有清理helper：执行首错保持，iterator关闭次错附注；decorator、表达式或iterator
+建立失败也释放已登记的本地control。该对象留存修补不表示发现了GPU泄漏。
+
+IMLane继续使用已有作者桥。`reuse_bridge=False`默认逐batch写`input.jsonl`并创建桥进程；
+显式`True`复用同一执行器内的桥session。公共[`_lotus_rows`](../experiments/postgresql/supplier_adapter_query.py)
+每查询创建`NativeCallExecutor`，并在本查询的`ExitStack`关闭IMLane；常驻owner复用LM／运行时不代表跨查询桥复用。
+作者CPython／Ray两模式及外部Coordinator的拥有与退出责任不变，无需另造session接口。
 
 Daft已有按事件循环复用客户端、各调用保留期限、关闭失败与未知工作不可直接复用的检查。
 这些责任检查与“请求充分时是否持续供给”分别验证；`peak≤C`只说明未超额度，

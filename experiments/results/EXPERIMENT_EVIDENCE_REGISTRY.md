@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
+固定`f2749bf1`的CPU localhost SDK观测、回归及原失败分别保存；支持活动HTTP／批次存储分离和清理责任修补，
+不支持模型收益、全图内存保证或Mac上的Linux完整query观测。LOTUS方法与IMLane生命周期边界见同题说明。
+
 2026-10-14：[融合源码LOTUS图像资格](diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)固定`2afcaf47`；十格完整原生查询、全量数值及物理清理核验通过，参数、SDK子测试口径与缺失观测见同题结果。仅支持该固定配置的单次资格；旧轮数值及失败身份保持。
 
 2026-10-14：[原Movie任务完成期限兼容](postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。

@@ -1,0 +1,241 @@
+{
+  "schema": "semloom.native_text_capacity.v1",
+  "checked_utc": "2026-10-15T02:06:08.726279+00:00",
+  "base_commit": "277d8f4862c291bc2830cc6622f5a0b4f28b5c90",
+  "tested_source_commit": "f2749bf1addace8dcc6244e3bbbe0d9dc1b609e6",
+  "source_binding": "Tests ran on the same production file bytes subsequently committed here; no vendor source edit.",
+  "production_sha256": {
+    "code/src/baselines/text/frameworks/native_calls.py": "5dc337278a7b358498e05d8e826da551698cd72aeca55f01a4fab85976b88498",
+    "code/src/baselines/text/frameworks/prepared_map.py": "2f9d4bc7490a37af38e83c42a57130bd594a3ddeae7bc1cc62c2b244ad719a77",
+    "code/src/experiments/postgresql/native_adapter_query.py": "36425efff8a53a476c8b7b1c3576df5018639e048950ef9370a063e293d4224a"
+  },
+  "changes": {
+    "production_files": 3,
+    "production_net_lines_added": 24,
+    "daft_cleanup_net_lines_removed": 10,
+    "duplicate_cleanup_branches_removed": 1,
+    "state_flags_removed": 2,
+    "new_scheduler": false
+  },
+  "environment": {
+    "platform": "Darwin",
+    "architecture": "arm64",
+    "profile_selection": "explicit CPU component validation; no GPU required",
+    "preflight_status": "ok",
+    "preflight_checks": 19,
+    "packages": {
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "pyarrow": "24.0.0",
+      "aiohttp": "3.14.5",
+      "numpy": "2.5.4",
+      "pandas": "3.0.6",
+      "pydantic": "2.14.1",
+      "transformers": "4.57.6",
+      "torch": "2.8.0",
+      "Pillow": "11.3.0",
+      "psutil": "7.2.2"
+    },
+    "ray_cpus": 8,
+    "ray_gpus": 0,
+    "ray_object_store_bytes": 134217728,
+    "model_weights_downloaded": false,
+    "server_operations": 0
+  },
+  "base_regression": {
+    "effective_unique_tests": 139,
+    "passed": 120,
+    "skipped": 19,
+    "initial_loader_errors": 1,
+    "loader_error_resolution": "Existing helper expected test-directory import path; only that module retried, 12 explicit skips. No test implementation change.",
+    "query_scope_recheck": {
+      "tests": 9,
+      "passed": 9
+    }
+  },
+  "sdk": {
+    "distinct_test_functions": 12,
+    "test_executions": 13,
+    "passed": 13,
+    "skipped": 0,
+    "direct_localhost_posts": 233,
+    "real_model_requests": 0,
+    "gpu_requests": 0,
+    "runs": [
+      {
+        "id": "sdk-r1",
+        "tests": 10,
+        "passed": 10,
+        "direct_posts": 201,
+        "notes": "Initial minimal official fixture used simple index payloads; the same test was updated and rerun on full fixed-Map payloads in minimal-sdk-r3.",
+        "graph_invocations": 17
+      },
+      {
+        "id": "prepared-sdk-r2",
+        "tests": 1,
+        "passed": 1,
+        "direct_posts": 16,
+        "notes": "Two prepared entry functions, eight complete fixed-Map calls each.",
+        "graph_invocations": 2
+      },
+      {
+        "id": "sdk-fresh-import",
+        "tests": 1,
+        "passed": 1,
+        "direct_posts": 0,
+        "notes": "Upstream default B=4 and pre-import override B=2.",
+        "graph_invocations": 0
+      },
+      {
+        "id": "minimal-sdk-r3",
+        "tests": 1,
+        "passed": 1,
+        "direct_posts": 16,
+        "notes": "Final minimal official API, same fixed-Map complete payloads, whole JSON responses and usage preserved.",
+        "graph_invocations": 1
+      }
+    ],
+    "activity": [
+      {
+        "actors": 1,
+        "async_batches": 2,
+        "batch_rows": 1,
+        "http_allowance": 2,
+        "posts": 32,
+        "peak": 2,
+        "clean": true
+      },
+      {
+        "actors": 1,
+        "async_batches": 2,
+        "batch_rows": 4,
+        "http_allowance": 2,
+        "posts": 32,
+        "peak": 1,
+        "clean": true
+      },
+      {
+        "actors": 2,
+        "async_batches": 2,
+        "batch_rows": 4,
+        "http_allowance": 4,
+        "posts": 32,
+        "peak": 2,
+        "clean": true
+      }
+    ],
+    "minimal_api": {
+      "schema": 1,
+      "test_id": "tests.baselines.test_native_calls.RayDataHttpActivityTests.test_minimal_official_http_processor_with_multirow_batches",
+      "real_model_requests": 0,
+      "actual_posts": 16,
+      "peak_active": 1,
+      "batch_size": 4,
+      "actor_pool_range": [
+        1,
+        1
+      ],
+      "execution_seconds": 1.2892631250433624,
+      "timing_scope": "processor application, full iterator consumption and cleanup; source/method/runtime preparation excluded",
+      "observation_scope": "localhost server handlers through complete response write"
+    },
+    "daft_cleanup": [
+      {
+        "timing_enabled": false,
+        "primary_type": "ValueError",
+        "secondary_notes": [
+          "Native graph cleanup also failed: OSError"
+        ],
+        "controls_after_close": 0,
+        "reuse_allowed": false,
+        "actual_posts": 1
+      },
+      {
+        "timing_enabled": true,
+        "primary_type": "ValueError",
+        "secondary_notes": [
+          "Native graph cleanup also failed: OSError"
+        ],
+        "controls_after_close": 0,
+        "reuse_allowed": false,
+        "actual_posts": 1
+      }
+    ],
+    "resource_warning": "Ray shutdown emitted an unclosed BufferedWriter ResourceWarning; raw logs retained. This is not a GPU leak diagnosis.",
+    "graph_invocations_in_passing_tests": 20,
+    "graph_invocation_scope": "Native graph generator entry calls, including cancellation/timeout cases that may stop before the first HTTP."
+  },
+  "preserved_failed_attempts": [
+    {
+      "id": "daft-cleanup-reproduction",
+      "outcome": "1 expected failure and 1 expected error before production fix; actual repository function, vendor doubles."
+    },
+    {
+      "id": "local-regression",
+      "outcome": "6 localhost bind PermissionError cases in sandbox; same focused selection subsequently passed with local networking."
+    },
+    {
+      "id": "final-regression-loader",
+      "outcome": "One legacy test-helper import failed; corrected invocation retried only that module; skipped cases not counted as pass."
+    },
+    {
+      "id": "daft-query-sdk",
+      "outcome": "Eight logical calls and complete responses; final metrics rejected absent verified Linux clock domain on macOS.",
+      "client_to_proxy_posts": 8,
+      "proxy_to_fixture_posts": 8,
+      "passed": false
+    },
+    {
+      "id": "ray-query-sdk",
+      "outcome": "Legacy test supplied an existing Ray runtime directory; rejected before graph or HTTP. Test portability draft not retained in implementation.",
+      "posts": 0,
+      "passed": false
+    },
+    {
+      "id": "dependency-previews",
+      "outcome": "Initial DNS sandbox and missing Python CA-root previews retained; system CA bundle used with TLS verification for isolated installation."
+    }
+  ],
+  "all_recorded_sdk_http_posts_including_failed_query": 249,
+  "process_check": {
+    "checked_utc": "2026-10-15T02:04:54.880123+00:00",
+    "matching_processes": [],
+    "scope": "task-isolated SDK environment or owned Ray temporary roots; current inspector excluded"
+  },
+  "unsupported": [
+    "No new pinned LOTUS/OpenAI/LiteLLM complete-query or error/usage differential qualification.",
+    "No model/GPU performance, whole-graph RSS limit, or remote model-stop guarantee.",
+    "Linux full-query clock-domain observation remains unsupported on this macOS validation path."
+  ],
+  "evidence": {
+    "fixture_archive": "sdk-fixtures.jsonl.gz",
+    "fixture_archive_sha256": "bbf1c8f34ea1a34d1df97b3fbb62f868aff1ab439537fcf0d1b7abd8a1a3dab8",
+    "fixture_records": 30,
+    "private_artifact_hashes": {
+      "daft-cleanup-reproduction.log": "5c7a0420abcc9940389b847b3a95864a3611aee188c8545f23743999d2ab909a",
+      "local-regression.log": "2fdbfb3cb503c77b6b1103642f002ecb65dd5c6ae4c118677cff8cf42a9b38cf",
+      "local-regression-network.log": "882fa552f339fff18b9222af50922affc7c8de6751d170a584e1fe68a2b872a0",
+      "final-regression.log": "1fe5af73c048f913a8b5c4b43b140fc2a8096dc67ccc4444c738d8821ae26189",
+      "lotus-native-invocation-fix.log": "f9d8d869ef6a9142404d361cfef0a8165656978bb26f986175c021516a78e9d8",
+      "query-final-scope.log": "a0a71358a077e4174f112b858cb2438dfe487cd921695b73c6a09dfbce4c88cf",
+      "sdk-r1.log": "4a43acd0098102211d474b0407a8688a3919dd759f3ee46b69181d2f314250dc",
+      "prepared-sdk-r2.log": "64294405a687e1c03c11748fccb684f8f449991c905c19f1469c12f96eebfd28",
+      "sdk-fresh-import.log": "73646c77a6d9b9ab3af5220513b1c36d786f8645cfb98c8541cc5d9ecfcce79b",
+      "minimal-sdk-r3.log": "f1e8f3e98fd900c22478b20802350b66cea574b81ef5596bf2dfc67703b95a62",
+      "daft-query-sdk.log": "edc6c3022e2040fa58edda0153f83c968c950c4de3cd2d234f595eef90c17510",
+      "ray-query-sdk.log": "02fb675469b6ef4040f5a99b2c84bf66edb4e006ef6e5f466197339ff6a2c357",
+      "test_native_adapter_libraries_attempt.py": "a04de552962eaf6d430c6fb151c93bf3f4f866352fbb7bc61b5dc56b7997e50f",
+      "preflight-before.json": "e8d63023d881b13e617abc3d55d25f8f432aa28c5b725d7fd7d62e57088b8fb9",
+      "preflight-final.json": "ef602c6dd8860658458cee9c47e11ad355c3d963020e8a3267ca2454c6982c17",
+      "install-preview.txt": "29709bd4069d1892cb34d5404e4eeaea73ec9cd6e218dff1c7f48a4e7fafa29e",
+      "install-preview-network.txt": "30de79fe5caa186335c718ecf5af4f238e9fa86856166d497c433c5dcf4a0116",
+      "install-preview-ca.txt": "6bd9c68835fb71d6731b511fa0613451c53f24274545a294d210749b450da913"
+    },
+    "private_artifact_location": "Task validation directory outside the Git checkout; original logs and failed run identities retained."
+  },
+  "independent_reviews": {
+    "design": "AB HTTP guard plus incremental finite inputs; no response-sum admission or new scheduler.",
+    "code": "Source/payload allowance blocker found and fixed with S+N*O; follow-up found no remaining blocker.",
+    "lotus": "Removing light suffix validation changes error/callback/batch identity behavior; unchanged without evidence of necessity."
+  }
+}
