@@ -53,7 +53,6 @@ def run_session(
                 disconnect_on_task=disconnect_on_task,
                 completion_fixture=completion_fixture,
             )
-            return
         run_recording_session(
             connection,
             open_message=opened,
