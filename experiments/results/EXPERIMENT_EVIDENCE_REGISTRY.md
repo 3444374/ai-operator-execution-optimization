@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-2026-10-15：[LOTUS图像建库后连续调用](diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)已记录方案、旧40查询和当前接法用途；新增测量状态、实际复用及完整样本由同题报告维护，不由路径名称或旧资格推定。
+2026-10-15：[LOTUS图像建库后连续调用](diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`，九格180查询／189完整矩阵及实际模型出生计数已核对。原监督stdout失败仍failed，续跑只补两格；CPU只计一次，十二次实际监督调用均退出并清理。公共输入减负改善与Ray逐RM加载的负结果按当前接法解释，五次固定payload不提供可靠尾分位。
 
 
 2026-10-14：[融合源码LOTUS图像资格](diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)固定`2afcaf47`；十格完整原生查询、全量数值及物理清理核验通过，参数、SDK子测试口径与缺失观测见同题结果。仅支持该固定配置的单次资格；旧轮数值及失败身份保持。
