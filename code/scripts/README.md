@@ -1,5 +1,27 @@
 # SemLoom 脚本入口
 
+## 原生 LOTUS CLIP 查询
+
+三个公开入口按内容manifest、模型身份、完整查询衔接：
+
+- `data/build_image_file_manifest.py --image-root "$IMAGE_ROOT" --output "$IMAGE_MANIFEST"`只读取固定JPEG，拒绝覆盖已有manifest。
+- `experiments/qualify_lotus_clip.py`核对stock／candidate权重、processor和输出。它会真实执行编码器，CPU模式也计入模型预算；不能把它当零模型preflight。
+- `experiments/run_lotus_image_retrieval.py`运行原LOTUS1.2.4的RM、FAISS index／search；必填`--manifest`、`--image-root`、`--stock-model`、`--embedding-identity`、`--index-dir`和`--output-dir`，全部实际路径及产物放仓外。候选arm另给`--model`／可选`--processor`。
+
+arm为`stock`（默认）、`direct`、`semloom_static`、`semloom_hse`、`ray_data`、`daft_native`。
+Ray／SemLoom CUDA路径另给自有`--ray-temp-dir`，Ray的`--ray-image-pipeline fused|staged`保留原生graph。
+`--query-doc-id`／`--text-query`可重复指定；`--query-repeats`保留全部首次调用，建库／重载与查询分别计时。
+图库≤5000行，`--retain-query-vectors`仅用于≤256行私有资格；`--observe-model-reuse`默认关闭。
+
+本批可选资源JSON为`{"gpu_workers":"auto","cpu_workers":1,"ray_num_cpus":"auto"}`，通过`--resource-config "$IMAGE_RESOURCES"`传入；
+允许集合由私有JSON的`allowed_gpus`或既有部署GPU变量明确声明，缺失时拒绝。
+对该查询进程设置`NVIDIA_TF32_OVERRIDE=0`才接纳scoped配置；只开放static、Ray fused／staged及Daft。
+auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在模型构造前失败。
+不改变未配置路径的数学默认，不将条件通过说成默认数值问题已修复。
+真实GPU／模型运行须按既有normal shared lease、外层超时及物理退出监督；本轮没有追加模型运行。
+[来源与CPU检查](../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)保留d2条件资格与新main GPU pending。
+
+
 ## 可选 vLLM 部署资源分配
 
 `services/launch_vllm_with_identity.py`可用`--resource-config /path/to/private/resources.json`指定

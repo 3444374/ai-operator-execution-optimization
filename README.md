@@ -23,13 +23,12 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 
 Palimpzest 与 LOTUS 是平行的语义系统参照；其[研究定位](docs/research/研究定位.md#palimpzest-comparison)和[五组执行目标](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)区分完整系统与固定计划比较，目标接入仍需分别验证。
 
-集成分支的CLIP检索接点与固定来源资格从[LOTUS 模块](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)和
-[主报告](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)进入；
-外部文件 CLIP 冷算子、文本原 Q2、PG 路径及负结果保留各自运行身份，不能互借验证范围。
+main 的[原生CLIP查询入口](code/scripts/README.md#原生-lotus-clip-查询)保留RM、FAISS建库／检索及完整结果；
+[本批接纳记录](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列CPU接入和固定d2的条件模型证据，新main GPU仍待复验。
+历史外部文件CLIP、文本原Q2、PG路径与负结果保留各自身份。
 常驻完整查询、一次性启动／建库及逐查询原生重建的计时按[统一口径](experiments/plans/reference/对照规范.md#resident-query-timing)解释。
 
-main 已接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)，原提示、SDK解析和查询评价仍由LOTUS拥有；上面的CLIP检索入口和结果来自
-[integration/baselines 固定快照 `9c59dc9b`](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)，研究分支按具体假设独立评价。
+main 已接纳统计修复、[Core／完整响应基础](code/src/execution_provider/adapters/README.md)和[LOTUS Movie／Animals 四臂](code/src/semantic_methods/lotus/README.md)，原提示、SDK解析和查询评价仍由LOTUS拥有；CLIP条件入口与新main GPU pending从上方同题报告核对。
 [固定 main 的原Movie／Animals实际模型报告](experiments/results/diagnostics/main_queries_20261015/README.md)覆盖四臂完整查询，保留质量不足和单次边界。
 [可选vLLM部署资源](experiments/results/diagnostics/main_service_auto_20261015/README.md)按显式分配解析auto／数量，候选服务和main2041的单卡原Movie Q2／Animals Q1复验分列，未覆盖CLIP或多卡。
 Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。
