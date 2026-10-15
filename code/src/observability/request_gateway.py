@@ -25,6 +25,7 @@ import asyncio
 import hashlib
 import json
 import math
+import os
 import threading
 import time
 import uuid
@@ -138,11 +139,16 @@ class ObservationGateway:
         self._select_upstream = select_upstream
         self._upstream_pool_generation = 0
         self._reset_upstream: Callable[[], Any] | None = None
-        self._trace_rows: list[dict[str, object]] = []
+        self._trace_rows: dict[int, dict[str, Any]] = {}
+        self._query_rows: dict[str | None, dict[int, dict[str, Any]]] = {}
+        self._pending_rows: dict[int, dict[str, Any]] = {}
+        self._archived_rows = 0
+        self._archive_rows: Callable[[str, list[dict[str, Any]]], None] | None = None
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._ready = threading.Event()
         self._startup_error: BaseException | None = None
+        self._shutdown_error: BaseException | None = None
         self._port: int | None = None
         self._detailed_timing: Any = None
         self._detailed_timing_error: BaseException | None = None
@@ -156,7 +162,7 @@ class ObservationGateway:
         try:
             self.stop()
         except BaseException as cleanup_error:
-            if _error[1] is None or self._detailed_timing_error is None:
+            if _error[1] is None or (self._detailed_timing_error is None and self._shutdown_error is None):
                 raise
             if is_timing_error(_error[1]) and not is_timing_error(cleanup_error):
                 cleanup_error.add_note("Detailed timing also failed: " + type(_error[1]).__name__)
@@ -202,8 +208,22 @@ class ObservationGateway:
         self._thread = None
         self._loop = None
         self._reset_upstream = None
+        self._archive_rows = None
+        if self._shutdown_error is not None:
+            raise self._shutdown_error
         if self._detailed_timing_error is not None:
             raise _timing_error(RuntimeError("detailed gateway timing failed")) from self._detailed_timing_error
+
+    def _track_request(self, row: dict[str, Any]) -> None:
+        request_id = row["gateway_request_id"]
+        self._trace_rows[request_id] = row
+        self._query_rows.setdefault(row.get("query_id"), {})[request_id] = row
+        self._pending_rows[request_id] = row
+
+    def _request_settled(self, row: dict[str, Any]) -> None:
+        if row["request_terminal_monotonic_ns"] is not None:
+            self._pending_rows.pop(row["gateway_request_id"], None)
+        self._record_detailed_request(row)
 
     def _record_detailed_request(self, row: dict[str, Any]) -> None:
         """Reuse settled clocks after callbacks and local writing release control.
@@ -271,20 +291,73 @@ class ObservationGateway:
 
         return tuple(self.endpoint_url(job_id, endpoint) for endpoint in endpoint_ids)
 
-    def snapshot(self, timeout_s: float = 5.0) -> list[dict[str, Any]]:
-        """Copy settled observations on the gateway loop without stopping its client."""
+    def snapshot(
+        self, timeout_s: float = 5.0, *, query_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Wait for all pending requests, then copy retained rows or one query.
+
+        Existing callers retain full history unless they explicitly archive it.
+        Persistent owners select a query and acknowledge its durable export with
+        archive_query(); they do not need a copy of already archived history.
+        """
         if self._loop is None or not math.isfinite(timeout_s) or timeout_s <= 0:
             raise ValueError("a running gateway and positive snapshot timeout are required")
 
         async def copy_rows():
             deadline = time.monotonic() + timeout_s
-            while any(row["request_terminal_monotonic_ns"] is None for row in self._trace_rows):
+            while self._pending_rows:
                 if time.monotonic() >= deadline:
                     raise TimeoutError("gateway requests remain unsettled")
                 await asyncio.sleep(.001)
-            return json.loads(json.dumps(self._trace_rows))
+            rows = self._trace_rows if query_id is None else self._query_rows.get(query_id, {})
+            return json.loads(json.dumps(list(rows.values())))
 
         return asyncio.run_coroutine_threadsafe(copy_rows(), self._loop).result(timeout_s + 1)
+
+    def archive_query(
+        self, query_id: str, rows: list[dict[str, Any]], timeout_s: float = 5.0,
+    ) -> None:
+        """After the caller's durable export, persist and release exactly that snapshot.
+
+        A changed snapshot, unfinished work or failed owner-trace write retains
+        every row. Unknown identities are never reclaimed by this operation.
+        A queued timeout prevents archival. A synchronous write already running
+        may finish after timeout; only its successful fsync permits reclamation.
+        """
+        if (self._loop is None or self._archive_rows is None or not query_id
+                or not math.isfinite(timeout_s) or timeout_s <= 0):
+            raise ValueError("a running gateway, query identity and positive archive timeout are required")
+
+        abandoned = threading.Event()
+
+        async def archive():
+            if not abandoned.is_set():
+                self._archive_rows(query_id, rows)
+
+        future = asyncio.run_coroutine_threadsafe(archive(), self._loop)
+        try:
+            future.result(timeout_s)
+        except BaseException:
+            abandoned.set()
+            future.cancel()
+            raise
+
+    @staticmethod
+    def _write_trace_rows(stream: Any, rows: Any) -> None:
+        offset = stream.tell()
+        try:
+            for row in rows:
+                stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        except BaseException as failure:
+            try:
+                stream.seek(offset)
+                stream.truncate()
+                stream.flush()
+            except BaseException as rollback_error:
+                failure.add_note("Trace rollback also failed: " + type(rollback_error).__name__)
+            raise
 
     def reset_upstream_connections(self, timeout_s: float = 5.0) -> None:
         """Replace an idle pool between queries; reject any unsettled request."""
@@ -305,6 +378,25 @@ class ObservationGateway:
             from aiohttp import ClientSession, ClientTimeout, DummyCookieJar, TCPConnector, TraceConfig, web
 
             trace_stream = self._trace_path.open("x", encoding="utf-8")
+
+            def archive_rows(query_id: str, rows: list[dict[str, Any]]) -> None:
+                current = self._query_rows.get(query_id, {})
+                if self._pending_rows:
+                    raise RuntimeError("cannot archive while gateway requests remain unsettled")
+                if (len(current) != len(rows)
+                        or len({row["gateway_request_id"] for row in rows}) != len(rows)
+                        or any(row.get("query_id") != query_id
+                               or current.get(row["gateway_request_id"]) != row for row in rows)):
+                    raise RuntimeError("query observations changed after snapshot")
+                if not current:
+                    return
+                self._write_trace_rows(trace_stream, current.values())
+                for request_id in current:
+                    del trace_rows[request_id]
+                del self._query_rows[query_id]
+                self._archived_rows += len(current)
+
+            self._archive_rows = archive_rows
             session: Any = None
             sequence = iter(range(2**63))
             self_gateway = self
@@ -324,7 +416,7 @@ class ObservationGateway:
                         _record_failure(row, error, "response_prepare")
                         row["response_write_status"] = "failed"
                         row["request_terminal_monotonic_ns"] = time.monotonic_ns()
-                        self_gateway._record_detailed_request(row)
+                        self_gateway._request_settled(row)
                         raise
 
                 async def write_eof(self, data: bytes = b"") -> None:
@@ -340,13 +432,13 @@ class ObservationGateway:
                         _record_failure(row, error, "response_write")
                         row["response_write_status"] = "failed"
                         row["request_terminal_monotonic_ns"] = time.monotonic_ns()
-                        self_gateway._record_detailed_request(row)
+                        self_gateway._request_settled(row)
                         raise
                     completed = time.monotonic_ns()
                     row["response_write_completed_monotonic_ns"] = completed
                     row["request_terminal_monotonic_ns"] = completed
                     row["response_write_status"] = "completed"
-                    self_gateway._record_detailed_request(row)
+                    self_gateway._request_settled(row)
 
             class DisconnectedResponse(web.StreamResponse):
                 """Let aiohttp finish a closed connection without sending HTTP."""
@@ -392,7 +484,7 @@ class ObservationGateway:
 
             async def reset_upstream() -> None:
                 nonlocal session
-                if any(row["request_terminal_monotonic_ns"] is None for row in trace_rows):
+                if self._pending_rows:
                     raise RuntimeError("cannot replace upstream connections during a request")
                 previous = session
                 # Swap before yielding so a newly arriving request uses the new pool.
@@ -461,14 +553,14 @@ class ObservationGateway:
                     row.update(preserve_http=True, transport_error="", caller_connection_closed=False)
                 # The evidence buffer also retains failures during body reading.
                 # No synchronous disk I/O is added to request handling.
-                trace_rows.append(row)
+                self._track_request(row)
                 try:
                     body = await request.read()
                     row["request_body_read_completed_monotonic_ns"] = time.monotonic_ns()
                 except BaseException as error:
                     _record_failure(row, error, "request_body_read")
                     row["request_terminal_monotonic_ns"] = time.monotonic_ns()
-                    self._record_detailed_request(row)
+                    self._request_settled(row)
                     raise
                 body_sha256 = hashlib.sha256(body).hexdigest()
                 row["request_body_sha256"] = body_sha256
@@ -487,6 +579,8 @@ class ObservationGateway:
                 phase = "before_forward"
                 try:
                     row["before_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._query_identity is not None and row.get("query_id") != self._query_identity():
+                        raise RuntimeError("request query owner changed before forwarding")
                     if self._before_forward is not None:
                         self._before_forward(route, body)
                     if self._select_upstream is not None:
@@ -557,7 +651,7 @@ class ObservationGateway:
                         if row["request_terminal_monotonic_ns"] is not None:
                             row["request_terminal_monotonic_ns"] = time.monotonic_ns()
                     if row["request_terminal_monotonic_ns"] is not None:
-                        self._record_detailed_request(row)
+                        self._request_settled(row)
                 upstream_response_epoch_s = time.time()
                 row["upstream_response_epoch_s"] = upstream_response_epoch_s
                 client_status = upstream_status
@@ -566,13 +660,15 @@ class ObservationGateway:
                 client_reason = response_reason
                 try:
                     row["after_forward_started_monotonic_ns"] = time.monotonic_ns()
+                    if self._query_identity is not None and row.get("query_id") != self._query_identity():
+                        raise RuntimeError("request query owner changed before consuming response")
                     if self._after_forward is not None:
                         self._after_forward(route, body, response_body, upstream_status)
                     row["after_forward_completed_monotonic_ns"] = time.monotonic_ns()
                 except asyncio.CancelledError as error:
                     _record_failure(row, error, "after_forward")
                     row["request_terminal_monotonic_ns"] = time.monotonic_ns()
-                    self._record_detailed_request(row)
+                    self._request_settled(row)
                     raise
                 except Exception as error:
                     row["callback_error_type"] = type(error).__name__
@@ -647,19 +743,25 @@ class ObservationGateway:
             self._ready.set()
         finally:
             self._reset_upstream = None
+            self._archive_rows = None
             if runner is not None:
-                loop.run_until_complete(runner.cleanup())
+                try:
+                    loop.run_until_complete(runner.cleanup())
+                except BaseException as error:
+                    self._shutdown_error = error
             if trace_stream is not None:
-                for row in sorted(
-                    trace_rows,
-                    key=lambda item: int(item["gateway_request_id"]),
-                ):
-                    self._record_detailed_request(row)
-                    trace_stream.write(
-                        json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n"
-                    )
-                trace_stream.flush()
-                trace_stream.close()
+                try:
+                    rows = sorted(trace_rows.values(), key=lambda item: int(item["gateway_request_id"]))
+                    for row in rows:
+                        self._request_settled(row)
+                    self._write_trace_rows(trace_stream, rows)
+                except BaseException as error:
+                    if self._shutdown_error is None:
+                        self._shutdown_error = error
+                    else:
+                        self._shutdown_error.add_note("Trace write also failed: " + type(error).__name__)
+                finally:
+                    trace_stream.close()
             loop.close()
 
 
