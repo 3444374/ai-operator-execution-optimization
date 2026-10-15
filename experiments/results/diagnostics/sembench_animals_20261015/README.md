@@ -40,7 +40,7 @@ CPU检查先于真实模型：初轮23项通过、0跳过，包含真实固定LO
 vLLM自身初始化／profile成本另列，不解释为没有内部模型启动工作。请求超时有限，健康完整查询没有人为总时限；
 GPU服务从启动到物理退出全程持正常共享lease，`recover_stale=false`，不处置其他owner。
 
-原生PNG请求可超过1MiB；当前SemLoom Core单项上限不足，原样全64图臂保持pending，不缩像素或拆请求绕过。
+原生PNG请求可超过1MiB；初轮SemLoom Core默认单项上限不足，三臂阶段未加入Core，不缩像素或拆请求绕过。
 原生Daft的batch-UDF并行值及Ray的actors×async值分别记录；模型服务拥有内部批处理。
 初轮声明HTTP额度4，但离线实测LOTUS／Daft／Ray峰值为4／5／2；Daft超限，不能视为匹配资源的资格。
 后续修复去掉Daft多加的一个槽位，并在查询后按gateway同一单调时钟核对实际峰值；超限保留原质量和结果并失败。
@@ -80,8 +80,34 @@ GPU服务从启动到物理退出全程持正常共享lease，`recover_stale=fal
 首次 `model-01` 因当前vLLM不接受旧启动参数 `--disable-log-requests` 退出，模型POST为0；
 只改仓外controller为当前支持的 `--no-enable-log-requests`，以新运行标识执行，生产源码未改。
 成功轮服务退出码0，自有存活PID为空，GPU回到1MiB，共享lease已正常释放且未恢复stale owner。
-这只证明所列输入、模型和三个后端的原任务资格；SemLoom Core原样64图仍待容量支持，Ecomm另行安排。
+这只证明所列输入、模型和三个后端的原任务资格；Core显式容量的原64图VLM资格仍待补，Ecomm另行安排。
 少量查询不支持可靠P99／P99.99、稳态、性能排名、调度收益或数据库端到端结论。
+
+## Core 显式大请求入口
+
+工程决策是只给完整原生请求增加显式容量：`build_native_execution(max_request_bytes=...)`
+默认仍1MiB，显式范围1字节至8MiB；非默认必须同时声明足以容纳一项的总`input_bytes`。
+复用原SessionEngine／BoundedAsyncBackend／FullResponseTransport，不新增协议或执行平台。
+普通fixed-model／PG入口保持原显式签名和1MiB帧限制，拒绝通过额外参数绕过。
+Ray启动前检查window≥item+24、object≥window+8，启用preparation时还检查encoded≥item+24及ready≥2×(item+32)。
+这里只提前核对准备字节条件，不宣称所有preparation条件均提前；本轮显式关闭preparation。
+
+本轮Core配置为单项4MiB、总输入8MiB、held／active各4、4个Ray HTTP worker、Arrow，
+window4194328／object8388608字节；LOTUS批次准备上限128MiB单列。
+这些逻辑预算不覆盖SDK／proxy缓冲、Arrow复制或调用方未接纳suffix，也不是RSS硬上限。
+固定8CPU的有限入口只接受Core并发2–8。关闭失败保留首个查询异常并附注，unknown占用与Job继续留证。
+
+服务器实际CPU分组为74项Core／真实Ray、12项PG回归、27项原查询／SDK，共113项通过、0跳过，
+不与先前三臂检查或本地复测重复累加。实际Arrow检查覆盖3×3MiB请求的部分接纳、按身份乱序交付、
+完整429字节／重复header、释放后原suffix重投及4MiB边界；CPU本地另覆盖8MiB／超限、取消和unknown不假clean。
+首个实际Ray用例错误地在新flow使用sequence3，导致74项中最后边界项失败；改回首条sequence0后通过，
+生产行为未因该fixture错误调整，失败源码／日志和退出记录保留。两轴独审发现的首错覆盖与>8CPU并发问题已修并复核。
+原64图Core真实模型运行仍待在正常共享lease下追加一次，原256次模型调用保持不变。
+另将同一原始64图通过CPU像素端点走完整SDK／Core／Arrow路径，64次fixture HTTP全部返回，
+其中63条超过1MiB、最大2380559字节；Core占用及Job归零、关闭确认、实测HTTP峰值4，自有子进程为空。
+该端点只判断首像素是否白色，COUNT为11；这是软件搬运／解析检查，不是VLM、斑马质量或模型成绩。
+私有监督脚本首次生成有语法错误，未启动任务／模型；修正后新身份执行，错误脚本与记录保留。
+
 
 ## 证据与复算
 

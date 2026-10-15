@@ -627,12 +627,25 @@ class RayMapTransport:
             self._dispose()
 
 
+def _ray_transport_options(physical, item_input_bytes, before_request=None):
+    """Validate encoded capacity before constructing any owned Ray transport."""
+    if physical.window_bytes < item_input_bytes + 24:
+        raise ValueError("Ray payload window must fit one legal request and its keys")
+    if physical.object_bytes < physical.window_bytes + 8:
+        raise ValueError("Ray object capacity must fit one input window")
+    stage = physical.preparation
+    if stage is not None and (stage.encoded_bytes < item_input_bytes + 24
+                              or stage.ready_bytes < 2 * (item_input_bytes + 32)):
+        raise ValueError("Map preparation capacities cannot hold one legal input and all borrowed blocks")
+    return dict(
+        preparation_factory=(lambda transport, limits, notify:
+            transport.prepare_inputs(limits, notify)) if stage is not None else None,
+        transport_factory=partial(RayMapTransport, physical=physical, before_request=before_request),
+    )
+
+
 def ray_map_factory(physical, before_request=None):
     from .incremental_execution import build_fixed_model_execution
     from ..wire.framing import MAX_FRAME_BYTES
-    if physical.window_bytes < MAX_FRAME_BYTES + 24:
-        raise ValueError("Ray payload window must fit one legal protocol request and its keys")
     return partial(build_fixed_model_execution,
-                   preparation_factory=(lambda transport, limits, notify:
-                       transport.prepare_inputs(limits, notify)) if physical.preparation is not None else None,
-                   transport_factory=partial(RayMapTransport, physical=physical, before_request=before_request))
+                   **_ray_transport_options(physical, MAX_FRAME_BYTES, before_request))

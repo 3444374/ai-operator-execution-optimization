@@ -2,6 +2,7 @@
 
 2026-10-15：新增[原始 SemBench Animals Q1](../experiments/results/diagnostics/sembench_animals_20261015/README.md)有限图像入口及原评价；保留当前LOTUS1.2.4身份，复用既有完整图文profile。CPU与真实模型状态由同题报告拥有，CLIP检索不替代本任务。
 初轮原始请求独审发现Daft峰值超出声明HTTP额度；有限入口已修正其原生参数并增加实测资源gate，超限仍保留质量、结果及关闭报告。定向CPU与失败回归通过，真实补测状态见同题报告。
+Core完整原生请求新增显式≤8MiB单项与显式总输入预算，默认／PG帧仍1MiB。服务器113项CPU含实际大载荷Ray及PG回归通过；原64图Core模型资格仍待补，实际来源和逻辑容量边界见同题报告。
 
 2026-10-15：[Ray迭代器构造失败清理](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)
 在固定Ray2.56.1真实CPU图确认取得executor后的构造缺口，并只补尚未shutdown的本图；正常关闭不重复。
