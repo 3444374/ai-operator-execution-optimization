@@ -19,7 +19,7 @@ from .execution import (
     ExecutionResult,
     SemLoomRayWorkerPool,
 )
-from .staged import build_encoded_image_block_descriptor
+from .staged import build_encoded_image_block_descriptor, image_transform_signature
 from .hse_dispatch import bind_hse_dispatcher, image_model_routing_request
 
 
@@ -118,6 +118,7 @@ def run_project_ray_hse_pipeline(
     job_id: str = "single-image-job",
     embedding_capture: EmbeddingCapture | None = None,
     model_dispatch: StageModelDispatcher | None = None,
+    preprocessing_identity: dict[str, object] | None = None,
 ) -> ExecutionResult:
     """Run static HSE without materializing prepared tensors on the driver.
 
@@ -155,6 +156,19 @@ def run_project_ray_hse_pipeline(
             "one worst-case HSE source block exceeds encoded_bytes; reduce "
             "batch_size or increase the explicit byte limit"
         )
+    pool_identity = getattr(worker_pool, "preprocessing_identity", None)
+    if preprocessing_identity is None:
+        preprocessing_identity = pool_identity
+    elif pool_identity is not None and preprocessing_identity != pool_identity:
+        raise ValueError("HSE preprocessing identity does not match the worker pool")
+    if preprocessing_identity is not None:
+        if (not isinstance(preprocessing_identity, dict)
+                or not image_transform_signature(**preprocessing_identity).startswith("image-transform-v2:")
+                or preprocessing_identity.get("input_size") != input_size
+                or preprocessing_identity.get("representation") != "prepared_fp32_nchw"
+                or preprocessing_identity.get("layout") != "NCHW"
+                or preprocessing_identity.get("dtype") != "float32"):
+            raise ValueError("HSE preprocessing identity does not match its ready representation")
     if model_dispatch is not None:
         bind_hse_dispatcher(model_dispatch, worker_pool)
 
@@ -213,11 +227,67 @@ def run_project_ray_hse_pipeline(
         prepare_inflight_peak = max(prepare_inflight_peak, snapshot.prepare_inflight)
         model_inflight_peak = max(model_inflight_peak, snapshot.model_inflight)
 
+    capacity_retry_at_s: float | None = None
+
+    def submit_ready_models() -> bool:
+        nonlocal capacity_retry_at_s
+        capacity_retry_at_s = None
+        progressed = False
+        while True:
+            if not available_gpu_actors:
+                break
+            if model_dispatch is None:
+                lease = broker.lease_model(now_s=time.perf_counter())
+                actor_index = min(available_gpu_actors)
+            else:
+                candidate = broker.peek_model()
+                if candidate is None:
+                    break
+                decision = model_dispatch.choose(
+                    candidate, image_model_routing_request(candidate),
+                    available_actor_indices=available_gpu_actors,
+                    active=tuple(StageActiveWork(call.actor_index, call.lease.descriptor.model_work_units)
+                                 for call in active_calls.values() if isinstance(call, _ModelCall)),
+                    now_s=time.perf_counter(),
+                )
+                if decision.actor_index is None:
+                    capacity_retry_at_s = decision.retry_at_s
+                    break
+                actor_index = decision.actor_index
+                lease = broker.lease_model(now_s=time.perf_counter(), block_id=candidate.block_id)
+            if lease is None:
+                break
+            batch_ready_residence_s.append(
+                max(
+                    0.0,
+                    lease.issued_at_s
+                    - (lease.descriptor.ready_at_s or lease.issued_at_s),
+                )
+            )
+            available_gpu_actors.remove(actor_index)
+            gpu_actor = worker_pool.gpu_actors[actor_index]
+            submit_started = time.perf_counter()
+            call = _ModelCall(
+                lease=lease,
+                source_admitted_at_s=admitted_at[lease.descriptor.block_id],
+                actor_index=actor_index,
+                payload_ref=prepared_payloads.pop(lease.descriptor.block_id),
+            )
+            active_calls[lease.lease_id] = call
+            call.reference = gpu_actor.embed.remote(call.payload_ref)
+            submitted_at_s = time.perf_counter()
+            batch_submit_s.append(submitted_at_s - submit_started)
+            model_calls[call.reference] = call
+            del call
+            progressed = True
+            record_peaks()
+
+        return progressed
+
     execution_error: BaseException | None = None
     try:
         while not source_exhausted or not broker.is_drained():
-            progressed = False
-            capacity_retry_at_s = None
+            progressed = submit_ready_models()
 
             while broker.snapshot().active_blocks < max_active_batches and not source_exhausted:
                 snapshot = broker.snapshot()
@@ -248,6 +318,7 @@ def run_project_ray_hse_pipeline(
                     created_at_s=time.perf_counter(),
                     input_size=input_size,
                     embedding_dimension=embedding_dimension,
+                    preprocessing_identity=preprocessing_identity,
                 )
                 batch_driver_materialize_s.append(time.perf_counter() - materialize_started)
                 if descriptor.physical_bytes > encoded_block_bytes_upper_bound:
@@ -299,54 +370,7 @@ def run_project_ray_hse_pipeline(
                 del call
                 record_peaks()
 
-            while True:
-                if not available_gpu_actors:
-                    break
-                if model_dispatch is None:
-                    lease = broker.lease_model(now_s=time.perf_counter())
-                    actor_index = min(available_gpu_actors)
-                else:
-                    candidate = broker.peek_model()
-                    if candidate is None:
-                        break
-                    decision = model_dispatch.choose(
-                        candidate, image_model_routing_request(candidate),
-                        available_actor_indices=available_gpu_actors,
-                        active=tuple(StageActiveWork(call.actor_index, call.lease.descriptor.model_work_units)
-                                     for call in active_calls.values() if isinstance(call, _ModelCall)),
-                        now_s=time.perf_counter(),
-                    )
-                    if decision.actor_index is None:
-                        capacity_retry_at_s = decision.retry_at_s
-                        break
-                    actor_index = decision.actor_index
-                    lease = broker.lease_model(now_s=time.perf_counter(), block_id=candidate.block_id)
-                if lease is None:
-                    break
-                batch_ready_residence_s.append(
-                    max(
-                        0.0,
-                        lease.issued_at_s
-                        - (lease.descriptor.ready_at_s or lease.issued_at_s),
-                    )
-                )
-                available_gpu_actors.remove(actor_index)
-                gpu_actor = worker_pool.gpu_actors[actor_index]
-                submit_started = time.perf_counter()
-                call = _ModelCall(
-                    lease=lease,
-                    source_admitted_at_s=admitted_at[lease.descriptor.block_id],
-                    actor_index=actor_index,
-                    payload_ref=prepared_payloads.pop(lease.descriptor.block_id),
-                )
-                active_calls[lease.lease_id] = call
-                call.reference = gpu_actor.embed.remote(call.payload_ref)
-                submitted_at_s = time.perf_counter()
-                batch_submit_s.append(submitted_at_s - submit_started)
-                model_calls[call.reference] = call
-                del call
-                progressed = True
-                record_peaks()
+            progressed = submit_ready_models() or progressed
 
             pending_refs = tuple(prepare_calls) + tuple(model_calls)
             if not pending_refs:

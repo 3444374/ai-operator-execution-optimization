@@ -19,14 +19,14 @@ def source(rows):
     ])
 
 
-def run(source_df, pool, *, rows=("a", "b"), active=2, encoded=2, ready=2):
+def run(source_df, pool, *, rows=("a", "b"), active=2, encoded=2, ready=2, model_dispatch=None):
     return staged_execution.run_project_ray_hse_pipeline(
         source_df, worker_pool=pool, expected_doc_ids=frozenset(rows),
         batch_size=1, max_active_batches=active, encoded_block_bytes_upper_bound=1,
         limits=StageBrokerLimits(encoded, ready * 48, ready * 4,
             len(pool.preprocessors), len(pool.gpu_actors)),
         model_revision="model", processor_revision="processor", model_dtype="float16",
-        input_size=2, embedding_dimension=2,
+        input_size=2, embedding_dimension=2, model_dispatch=model_dispatch,
     )
 
 
@@ -104,6 +104,109 @@ class HSEStaticLifecycleTests(unittest.TestCase):
         self.assertTrue(result.audit["exactly_once"])
         self.assertEqual(live_at_creation, [[], []])
         self.assertTrue(all(ref() is None for ref in payload_refs))
+
+    def test_dispatches_existing_ready_work_before_reading_more_source(self):
+        from tests.modalities.image.test_hse_device_dispatch import policy_for
+
+        for use_dispatch in (False, True):
+            with self.subTest(model_dispatch=use_dispatch):
+                events = []
+
+                class LoggedSource(fixture._Source):
+                    def to_arrow_iter(self, *, results_buffer_size):
+                        for batch in self._batches:
+                            events.append("source_" + batch["doc_id"][0].as_py())
+                            yield batch
+
+                class LoggedGpu(fixture._GpuActor):
+                    def _embed(self, batch_ref):
+                        events.append("model_" + batch_ref.value.doc_ids[0])
+                        return super()._embed(batch_ref)
+
+                pool = ProjectRayWorkerPool((fixture._CpuActor(), fixture._CpuActor()), (LoggedGpu(),))
+                policy = policy_for(pool) if use_dispatch else None
+                rows = ("a", "b", "c", "d")
+                with fixture._fake_ray_module(fixture._FakeRay()):
+                    result = run(LoggedSource(source(rows)._batches), pool, rows=rows, active=3,
+                                 encoded=3, ready=3, model_dispatch=policy)
+                self.assertTrue(result.audit["exactly_once"])
+                self.assertLess(events.index("model_b"), events.index("source_d"), events)
+
+    def test_ready_dispatch_before_source_error_keeps_abort_ownership(self):
+        for error in (ValueError("source refill failed"), KeyboardInterrupt("source cancelled")):
+            for fence_error in (None, RuntimeError("device confirmation unknown")):
+                with self.subTest(error=type(error).__name__, confirmed=fence_error is None):
+                    events, brokers = [], []
+
+                    class FailingSource(fixture._Source):
+                        def to_arrow_iter(self, *, results_buffer_size):
+                            try:
+                                yield from self._batches
+                                events.append("source_error")
+                                raise error
+                            finally:
+                                events.append("source_close")
+
+                    class LoggedGpu(FenceGpu):
+                        def _embed(self, batch_ref):
+                            events.append("model_" + batch_ref.value.doc_ids[0])
+                            return super()._embed(batch_ref)
+
+                    class ObservedBroker(BoundedStageBroker):
+                        def __init__(self, limits):
+                            super().__init__(limits)
+                            brokers.append(self)
+
+                    pool = ProjectRayWorkerPool((FenceCpu(events), FenceCpu(events)),
+                        (LoggedGpu(events, fence_error=fence_error),))
+                    rows = ("a", "b", "c")
+                    with fixture._fake_ray_module(AbortRay()), patch.object(
+                            staged_execution, "BoundedStageBroker", ObservedBroker):
+                        with self.assertRaises(type(error)) as caught:
+                            run(FailingSource(source(rows)._batches), pool, rows=rows,
+                                active=3, encoded=3, ready=3)
+                        self.assertIs(caught.exception, error)
+                        self.assertIn("model_b", events)
+                        self.assertLess(events.index("model_b"), events.index("source_error"), events)
+                        self.assertLess(events.index("source_close"), events.index("gpu_fence"), events)
+                        snapshot = brokers[0].snapshot()
+                        if fence_error is None:
+                            self.assertTrue(brokers[0].is_drained())
+                            self.assertEqual(snapshot.ready_held_bytes, 0)
+                            self.assertNotIn(pool, staged_execution._unconfirmed_runs)
+                        else:
+                            self.assertEqual((snapshot.model_inflight, snapshot.ready_held_bytes), (1, 48))
+                            self.assertEqual(len(error.hse_unconfirmed_work.calls), 1)
+                            self.assertIsNotNone(error.hse_unconfirmed_work.calls[0].payload_ref)
+                            with self.assertRaisesRegex(RuntimeError, "unconfirmed work"):
+                                run(source(("d",)), pool, rows=("d",), active=1)
+
+    def test_dispatches_ready_work_before_eof_and_drains_without_abort_fences(self):
+        events = []
+
+        class LoggedSource(fixture._Source):
+            def to_arrow_iter(self, *, results_buffer_size):
+                try:
+                    yield from self._batches
+                    events.append("source_eof")
+                finally:
+                    events.append("source_close")
+
+        class LoggedGpu(FenceGpu):
+            def _embed(self, batch_ref):
+                events.append("model_" + batch_ref.value.doc_ids[0])
+                return super()._embed(batch_ref)
+
+        pool = ProjectRayWorkerPool((FenceCpu(events), FenceCpu(events)), (LoggedGpu(events),))
+        rows = ("a", "b", "c")
+        with fixture._fake_ray_module(AbortRay()):
+            result = run(LoggedSource(source(rows)._batches), pool, rows=rows,
+                         active=3, encoded=3, ready=3)
+        self.assertTrue(result.audit["exactly_once"])
+        self.assertLess(events.index("model_b"), events.index("source_eof"), events)
+        self.assertEqual(events.count("source_close"), 1)
+        self.assertNotIn("cpu_fence", events)
+        self.assertNotIn("gpu_fence", events)
 
     def test_records_admission_peak_when_preparing_is_capacity_blocked(self):
         rows = ("a", "b", "c", "d", "e")

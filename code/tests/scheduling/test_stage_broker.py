@@ -109,6 +109,80 @@ class BoundedStageBrokerTest(unittest.TestCase):
                 broker.complete_model(model.lease_id, output_row_ids=descriptors[0].row_ids)
                 self.assertEqual(broker.lease_prepare(now_s=7).descriptor, descriptors[1])
 
+    def test_observation_and_transitions_do_not_rescan_terminal_history(self):
+        for sequence in range(20):
+            descriptor = _descriptor(sequence)
+            self.broker.enqueue_encoded(descriptor)
+            prepare = self.broker.lease_prepare(now_s=sequence + 1)
+            self.broker.complete_prepare(prepare.lease_id,
+                replace(descriptor, representation="ready"), now_s=sequence + 2)
+            model = self.broker.lease_model(now_s=sequence + 3)
+            self.broker.complete_model(model.lease_id, output_row_ids=descriptor.row_ids)
+
+        class RetainedHistory(dict):
+            def items(self):
+                raise AssertionError("transition rescanned terminal history")
+
+            def values(self):
+                raise AssertionError("observation rescanned terminal history")
+
+        self.broker._states = RetainedHistory(self.broker._states)
+        self.assertEqual(self.broker.snapshot().completed, 20)
+        self.broker.enqueue_encoded(_descriptor(20))
+        prepare = self.broker.lease_prepare(now_s=21)
+        self.broker.fail_prepare(prepare.lease_id, requeue=False)
+        self.assertEqual(self.broker.snapshot().failed, 1)
+        self.broker.release_terminal("block-20")
+        self.broker.release_terminal("block-0")
+        self.assertEqual(self.broker.snapshot().completed, 19)
+        with self.assertRaisesRegex(ValueError, "already admitted"):
+            self.broker.enqueue_encoded(replace(_descriptor(21), row_ids=("row-1",)))
+
+    def test_retry_and_cancel_preserve_terminal_counts_and_held_capacity(self):
+        for stage in ("prepare", "model"):
+            with self.subTest(stage=stage):
+                broker = BoundedStageBroker(self.broker.limits)
+                descriptor = _descriptor(0)
+                broker.enqueue_encoded(descriptor)
+                prepare = broker.lease_prepare(now_s=1)
+                if stage == "prepare":
+                    broker.fail_prepare(prepare.lease_id, requeue=True)
+                    prepare = broker.lease_prepare(now_s=2)
+                    self.assertEqual(prepare.descriptor.retry_count, 1)
+                broker.complete_prepare(prepare.lease_id,
+                    replace(prepare.descriptor, representation="ready"), now_s=3)
+                model = broker.lease_model(now_s=4)
+                if stage == "model":
+                    broker.fail_model(model.lease_id, requeue=True)
+                    self.assertEqual(broker.snapshot().ready_held_bytes, 10)
+                    model = broker.lease_model(now_s=5)
+                    self.assertEqual(model.descriptor.retry_count, 1)
+                self.assertEqual((broker.snapshot().completed, broker.snapshot().failed), (0, 0))
+                broker.fail_model(model.lease_id, requeue=False)
+                broker.enqueue_encoded(_descriptor(1))
+                broker.cancel_queued("block-1")
+                self.assertEqual(broker.snapshot().failed, 2)
+                self.assertEqual((broker.snapshot().encoded_held_bytes,
+                                  broker.snapshot().ready_held_bytes), (0, 0))
+                for block_id in ("block-0", "block-1"):
+                    broker.release_terminal(block_id)
+                self.assertEqual((broker.snapshot().completed, broker.snapshot().failed), (0, 0))
+
+    def test_active_stage_and_terminal_accounting_still_fail_closed(self):
+        for corruption in ("active_set", "active_stage", "terminal_count"):
+            with self.subTest(corruption=corruption):
+                broker = BoundedStageBroker(self.broker.limits)
+                descriptor = _descriptor(0)
+                broker.enqueue_encoded(descriptor)
+                if corruption == "active_set":
+                    broker._active_blocks.clear()
+                elif corruption == "active_stage":
+                    broker._states[descriptor.block_id] = "ready"
+                else:
+                    broker._failed_count += 1
+                with self.assertRaisesRegex(AssertionError, "diverged"):
+                    broker._assert_invariants()
+
     def test_extended_tail_is_charged_once_and_leased_with_all_rows(self):
         original = _descriptor(0)
         extended = replace(original, row_ids=('row-0', 'row-new'), shape=(2,),

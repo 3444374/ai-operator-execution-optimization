@@ -65,7 +65,8 @@ class SlowClipPrepare:
         self.processor = ClipImagePreprocessor(processor_revision, local_files_only=True)
 
     def ready(self):
-        return {"input_kind": "encoded_bytes", "processor_backend": "PIL"}
+        return {"input_kind": "encoded_bytes", "processor_backend": "PIL",
+                "preprocessing_identity": self.processor.preprocessing_identity()}
 
     def preprocess(self, doc_ids, encoded_images):
         pixels = self.processor.preprocess(encoded_images)
@@ -73,11 +74,17 @@ class SlowClipPrepare:
                                    len(doc_ids) * 224 * 224, "pixels")
 
     def preprocess_staged(self, descriptor, encoded_images):
-        from src.modalities.image.staged import build_prepared_image_block_descriptor
+        from src.modalities.image.staged import build_prepared_image_block_descriptor, image_transform_signature
+        identity = None
+        if descriptor.transform_signature.startswith("image-transform-v2:"):
+            identity = self.processor.preprocessing_identity()
+            if descriptor.transform_signature != image_transform_signature(**identity):
+                raise ValueError("image preprocessor identity does not match its source descriptor")
         at = time.perf_counter()
         pixels = self.processor.preprocess(encoded_images)
         preprocess_s = time.perf_counter() - at
-        prepared = build_prepared_image_block_descriptor(descriptor, pixels, ready_at_s=time.perf_counter())
+        prepared = build_prepared_image_block_descriptor(descriptor, pixels, ready_at_s=time.perf_counter(),
+            preprocessing_identity=identity)
         batch = ImageEmbeddingBatch(descriptor.row_ids, pixels, "preprocessed_tensor",
                                    descriptor.model_work_units, "pixels", work_descriptor=descriptor.work,
                                    telemetry=ImageBatchTelemetry(preprocess_s=preprocess_s,
@@ -95,21 +102,29 @@ class OrderedMatrix:
     def __init__(self, ids, semantics):
         if len(ids) > 5000:
             raise ValueError("native index collection exceeds 5000 rows")
-        self.ids, self.semantics, self.rows = tuple(ids), semantics, {}
+        import numpy as np
+        self.ids, self.semantics = tuple(ids), semantics
+        self.positions = {doc_id: i for i, doc_id in enumerate(self.ids)}
+        self.matrix = np.empty((len(self.ids), semantics.dimension), dtype=np.float32)
+        self.seen = np.zeros(len(self.ids), dtype=bool)
 
     def add(self, ids, matrix):
         from .image_rm import checked_matrix
         values = checked_matrix(matrix, len(ids), self.semantics)
         for doc_id, row in zip(ids, values, strict=True):
-            if doc_id not in self.ids or doc_id in self.rows:
+            position = self.positions.get(doc_id)
+            if position is None or self.seen[position]:
                 raise ValueError("native index collection returned an unexpected or duplicate ID")
-            self.rows[doc_id] = row.copy()
+            self.matrix[position] = row
+            self.seen[position] = True
 
     def finish(self):
-        import numpy as np
-        if len(self.rows) != len(self.ids):
+        if not self.seen.all():
             raise ValueError("native index collection is incomplete")
-        return np.stack([self.rows[x] for x in self.ids])
+        if not self.ids:
+            raise ValueError("need at least one array to stack")
+        # Preserve the original independent ownership of every finished matrix.
+        return self.matrix.copy()
 
 
 class SemLoomImageExecutor:
@@ -146,8 +161,16 @@ class SemLoomImageExecutor:
                 model, processor_revision=self.processor, dtype=dtype, normalize=True,
                 local_files_only=True, torch_intraop_threads=1, torch_interop_threads=1)
             handles.append(gpu)
-            ray.get([cpu.ready.remote(), gpu.ready.remote()])
-            self.pool = SemLoomRayWorkerPool((cpu,), (gpu,))
+            readiness = ray.get([cpu.ready.remote(), gpu.ready.remote()])
+            from src.modalities.image.staged import image_transform_signature
+            identity = readiness[0].get("preprocessing_identity")
+            if (not isinstance(identity, dict)
+                    or not image_transform_signature(**identity).startswith("image-transform-v2:")
+                    or identity.get("input_size") != 224 or identity.get("layout") != "NCHW"
+                    or identity.get("dtype") != "float32"
+                    or identity.get("representation") != "prepared_fp32_nchw"):
+                raise ValueError("Slow CLIP worker readiness requires its actual preprocessing identity")
+            self.pool = SemLoomRayWorkerPool((cpu,), (gpu,), preprocessing_identity=identity)
         except BaseException as error:
             failure = RayWorkerPoolStartupFailure(tuple(handles))
             error.image_worker_pool_startup = failure

@@ -20,6 +20,9 @@ def image_transform_signature(
     representation: str,
     layout: str,
     dtype: str,
+    decoder_version: str | None = None,
+    processor_version: str | None = None,
+    execution_variant: str | None = None,
 ) -> str:
     """Identify a byte-level preprocessing contract for reuse and validation."""
     payload = {
@@ -31,7 +34,17 @@ def image_transform_signature(
         "representation": representation,
         "schema": "image-transform-v1",
     }
-    return _signature("image-transform-v1", payload)
+    versions = {"decoder_version": decoder_version, "processor_version": processor_version,
+                "execution_variant": execution_variant}
+    if any(value is not None for value in versions.values()):
+        if any(not isinstance(value, str) or not value for value in versions.values()):
+            raise ValueError("explicit image transform identity requires versions and execution variant")
+        if (any(not isinstance(value, str) or not value for value in
+                (processor_revision, decoder, representation, layout, dtype))
+                or type(input_size) is not int or input_size <= 0):
+            raise ValueError("explicit image transform identity fields must be nonempty and valid")
+        payload.update(versions, schema="image-transform-v2")
+    return _signature(payload["schema"], payload)
 
 
 def image_model_signature(
@@ -69,6 +82,7 @@ def build_encoded_image_block_descriptor(
     prepared_dtype: str = "float32",
     prepared_representation: str = "prepared_fp32_nchw",
     decoder: str = "torchvision_decode_image_rgb",
+    preprocessing_identity: dict[str, object] | None = None,
 ) -> StageBlockDescriptor:
     """Describe one encoded source block and exact fixed-shape ready reservation."""
     if len(row_ids) != len(encoded_images):
@@ -86,7 +100,7 @@ def build_encoded_image_block_descriptor(
     encoded_bytes = sum(len(item) for item in encoded_images)
     ready_bytes = len(row_ids) * 3 * input_size * input_size * element_bytes
     digest = _encoded_digest(row_ids, encoded_images)
-    transform_signature = image_transform_signature(
+    transform_identity = dict(
         processor_revision=processor_revision,
         decoder=decoder,
         input_size=input_size,
@@ -94,6 +108,17 @@ def build_encoded_image_block_descriptor(
         layout="NCHW",
         dtype=prepared_dtype,
     )
+    if preprocessing_identity is not None:
+        if (preprocessing_identity.get("input_size") != input_size
+                or preprocessing_identity.get("representation") != prepared_representation
+                or preprocessing_identity.get("layout") != "NCHW"
+                or preprocessing_identity.get("dtype") != prepared_dtype):
+            raise ValueError("preprocessor identity does not match the declared ready representation")
+        if any(not preprocessing_identity.get(name)
+               for name in ("decoder_version", "processor_version", "execution_variant")):
+            raise ValueError("explicit preprocessor identity requires versions and execution variant")
+        transform_identity = preprocessing_identity
+    transform_signature = image_transform_signature(**transform_identity)
     model_signature = image_model_signature(
         model_revision=model_revision,
         processor_revision=processor_revision,
@@ -109,6 +134,9 @@ def build_encoded_image_block_descriptor(
         dtype=model_dtype,
         input_size=input_size,
         embedding_dimension=embedding_dimension,
+        decoder=transform_identity["decoder"],
+        execution_variant=transform_identity.get("execution_variant", "staged"),
+        transform_signature=transform_signature,
     )
     block_id = hashlib.sha256(
         f"{job_id}\0{ordered_sequence}\0{digest}".encode("utf-8")
@@ -139,9 +167,15 @@ def build_prepared_image_block_descriptor(
     *,
     ready_at_s: float,
     representation: str = "prepared_fp32_nchw",
+    preprocessing_identity: dict[str, object] | None = None,
 ) -> StageBlockDescriptor:
     """Validate a packed NCHW tensor against its reserved source descriptor."""
     payload = np.asarray(tensor)
+    if preprocessing_identity is not None:
+        if encoded.transform_signature != image_transform_signature(**preprocessing_identity):
+            raise ValueError("prepared image preprocessor identity does not match its source descriptor")
+        if preprocessing_identity.get("representation") != representation:
+            raise ValueError("prepared representation does not match the preprocessor identity")
     if payload.ndim != 4 or payload.shape[0] != len(encoded.row_ids):
         raise ValueError("prepared image tensor must have NCHW shape matching row_ids")
     if payload.shape[1] != 3:

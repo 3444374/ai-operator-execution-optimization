@@ -28,8 +28,11 @@ def image_work_calibration_signature(
     dtype: str,
     input_size: int = 224,
     embedding_dimension: int = 512,
+    decoder: str | None = None,
+    execution_variant: str | None = None,
+    transform_signature: str | None = None,
 ) -> str:
-    """Return a stable identity for comparable image stage-work estimates."""
+    """Identify estimates; omitted path identity preserves legacy v1 sources."""
     if not model_revision or not processor_revision or not dtype:
         raise ValueError("image work calibration identity fields must be non-empty")
     if input_size <= 0 or embedding_dimension <= 0:
@@ -42,10 +45,17 @@ def image_work_calibration_signature(
         "processor_revision": processor_revision,
         "schema": "image-stage-work-v1",
     }
+    path_identity = {"decoder": decoder, "execution_variant": execution_variant,
+                     "transform_signature": transform_signature}
+    if any(value is not None for value in path_identity.values()):
+        if any(value is not None and (not isinstance(value, str) or not value)
+               for value in path_identity.values()):
+            raise ValueError("image work path identity fields must be non-empty strings")
+        payload.update(path_identity, schema="image-stage-work-v2")
     digest = hashlib.sha256(
         json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    return f"image-stage-work-v1:{digest}"
+    return f"{payload['schema']}:{digest}"
 
 
 def build_image_work_descriptor(
@@ -57,6 +67,9 @@ def build_image_work_descriptor(
     dtype: str,
     input_size: int = 224,
     embedding_dimension: int = 512,
+    decoder: str | None = None,
+    execution_variant: str | None = None,
+    transform_signature: str | None = None,
 ) -> WorkDescriptor:
     """Describe source, prepare, model, and result demand for one image batch."""
     if row_count <= 0 or encoded_bytes < 0:
@@ -76,6 +89,9 @@ def build_image_work_descriptor(
             dtype=dtype,
             input_size=input_size,
             embedding_dimension=embedding_dimension,
+            decoder=decoder,
+            execution_variant=execution_variant,
+            transform_signature=transform_signature,
         ),
         locality_key=f"shape-{input_size}x{input_size}",
     )
