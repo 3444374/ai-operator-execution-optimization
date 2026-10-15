@@ -1,4 +1,4 @@
-"""Use the pinned provider SDK to prepare text Map calls without submitting them."""
+"""Use the pinned provider SDK to prepare complete LOTUS calls without submitting them."""
 
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -22,6 +22,12 @@ SOURCE_HASHES = {
     "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
     "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
 }
+IMAGE_SOURCE_HASHES = {
+    "utils.py": "2d8d38af8230f447a354f460e25a8f523f1dc1aa5edebf977a8297ed04458ebe",
+    "dtype_extensions/image.py": "f17e136923f4d2d24dd2dc64a80a919b4503a8649276545a65fec22357c5b743",
+    "sem_ops/sem_filter.py": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
+}
+IMAGE_TEXT_PROFILE = "lotus-image-text-v1"
 LITELLM_SOURCE_HASHES = {
     "llms/openai/chat/gpt_transformation.py": "5a19feeb4b9957b8d2fb7c941ef0573e4e3b2931ae85db7609f876cff9e07016",
     "utils.py": "8ef5db22a20cd45740788756aabc0e394efe20877311f0eff4ce491c94335d2a",
@@ -47,9 +53,16 @@ GENERATION_PARAMS = frozenset(
 CLIENT_PARAMS = frozenset({"api_base", "api_key", "timeout", "num_retries", "max_retries"})
 
 
-@lru_cache(maxsize=1)
-def validate_source():
+def check_message_profile(profile):
+    if type(profile) is not str or profile not in ("text", IMAGE_TEXT_PROFILE):
+        raise ValueError("unsupported LOTUS message profile")
+    return profile
+
+
+@lru_cache(maxsize=4)
+def validate_source(*, message_profile="text"):
     """A wheel version alone does not establish the source used by this private seam."""
+    check_message_profile(message_profile)
     for package, expected in (("lotus-ai", "1.2.4"), ("litellm", "1.95.0"), ("openai", "2.50.0")):
         if version(package) != expected:
             raise ValueError(f"LOTUS adapter requires {package} {expected}")
@@ -58,6 +71,11 @@ def validate_source():
         for relative, digest in hashes.items():
             if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
                 raise ValueError(f"LOTUS adapter source differs at {package}/{relative}")
+    if message_profile == IMAGE_TEXT_PROFILE:
+        root = Path(import_module("lotus").__file__).parent
+        for relative, digest in IMAGE_SOURCE_HASHES.items():
+            if hashlib.sha256((root / relative).read_bytes()).hexdigest() != digest:
+                raise ValueError(f"LOTUS image adapter source differs at lotus/{relative}")
 
 
 @dataclass(frozen=True)
@@ -66,6 +84,7 @@ class PreparedLotusCall:
     api_base: str
     api_key: str = field(repr=False)
     timeout_s: float
+    message_profile: str = "text"
 
 
 def _validate_utf8(value):
@@ -75,39 +94,79 @@ def _validate_utf8(value):
         value.encode("utf-8")
 
 
-def _validate_messages(messages):
+def _validate_messages(messages, *, message_profile="text"):
+    check_message_profile(message_profile)
     if not isinstance(messages, list) or not messages:
-        raise ValueError("LOTUS adapter requires a complete text message list")
+        raise ValueError("LOTUS adapter requires a complete message list")
     for message in messages:
         if (
             type(message) is not dict
             or set(message) != {"role", "content"}
             or message["role"] not in ("system", "user", "assistant")
-            or type(message["content"]) is not str
         ):
             raise ValueError("LOTUS adapter supports text messages with role and content")
-        _validate_utf8(message["content"])
+        content = message["content"]
+        if type(content) is str:
+            _validate_utf8(content)
+            continue
+        if message_profile == "text":
+            raise ValueError("LOTUS adapter supports text messages with role and content")
+        if message["role"] != "user" or type(content) is not list or not content:
+            raise ValueError("LOTUS image content must be a non-empty user content list")
+        for part in content:
+            if type(part) is not dict:
+                raise ValueError("LOTUS image content parts must be dictionaries")
+            if part.get("type") == "text":
+                if set(part) != {"type", "text"} or type(part["text"]) is not str:
+                    raise ValueError("invalid LOTUS image text part")
+                _validate_utf8(part["text"])
+            elif part.get("type") == "image_url":
+                if (
+                    set(part) != {"type", "image_url"}
+                    or type(part["image_url"]) is not dict
+                    or set(part["image_url"]) != {"url"}
+                    or type(part["image_url"]["url"]) is not str
+                    or not part["image_url"]["url"].startswith("data:image/png;base64,")
+                    or not part["image_url"]["url"][len("data:image/png;base64,") :]
+                ):
+                    raise ValueError("LOTUS image profile requires the native PNG data URI")
+                _validate_utf8(part["image_url"]["url"])
+            else:
+                raise ValueError("unsupported LOTUS image content part")
 
 
 def validate_batch(
-    lm, uncached_data, all_kwargs, *, check_stop=None, model_config=None, call_limits=None
+    lm,
+    uncached_data,
+    all_kwargs,
+    *,
+    check_stop=None,
+    message_profile="text",
+    model_config=None,
+    call_limits=None,
 ):
     """Reject an invalid suffix before I/O and retain only its first prepared call.
 
-    Unguarded text keeps the light structure/UTF-8 check after the first call.
-    Guards prepare each complete call to check model and declared byte capacity,
-    discarding suffix bodies. Execution prepares them again in finite blocks.
+    Without capacity/configuration guards, text keeps its existing light preflight:
+    common parameters use the provider once and suffixes check structure/UTF-8.
+    Image messages and explicitly guarded calls use the provider for every row;
+    guards check complete request bytes and their sum without caching those bodies.
+    Execution still prepares suffix calls in finite blocks.
     """
+    check_message_profile(message_profile)
     if not uncached_data:
         return None
-    guarded = model_config is not None or call_limits is not None
+    profile_kwargs = {} if message_profile == "text" else {"message_profile": message_profile}
+    prepare_suffix = (
+        message_profile == IMAGE_TEXT_PROFILE or model_config is not None or call_limits is not None
+    )
     first, input_bytes = None, 0
     for index, item in enumerate(uncached_data):
         if check_stop:
             check_stop()
         messages = item[0]
-        if index == 0 or guarded:
-            call = prepare_call(lm, messages, all_kwargs)
+        if index == 0 or prepare_suffix:
+            call = prepare_call(lm, messages, all_kwargs, **profile_kwargs)
             if check_stop:
                 check_stop()
             if model_config is not None:
@@ -138,16 +197,20 @@ def validate_batch(
     return first
 
 
-def prepare_call(lm, messages, all_kwargs) -> PreparedLotusCall:
+def prepare_call(lm, messages, all_kwargs, *, message_profile="text") -> PreparedLotusCall:
     """Mirror the ordinary OpenAI provider's nonstreaming transformation, before I/O."""
-    validate_source()
+    check_message_profile(message_profile)
+    if message_profile == "text":
+        validate_source()
+    else:
+        validate_source(message_profile=message_profile)
     from litellm import OpenAIConfig
     from litellm.utils import get_optional_params
     from litellm.utils import ProviderConfigManager
     from litellm.types.utils import LlmProviders
 
     if not lm.model.startswith("openai/") or not lm.model[len("openai/") :]:
-        raise ValueError("LOTUS adapter requires one explicit openai/ text model")
+        raise ValueError("LOTUS adapter requires one explicit openai/ model")
     model = lm.model[len("openai/") :]
     kwargs = dict(all_kwargs)
     unsupported = set(kwargs) - GENERATION_PARAMS - CLIENT_PARAMS
@@ -159,7 +222,7 @@ def prepare_call(lm, messages, all_kwargs) -> PreparedLotusCall:
         raise ValueError("LOTUS paired execution requires explicit zero retries")
     if OpenAIConfig.get_config():
         raise ValueError("global LiteLLM OpenAI configuration must be empty")
-    _validate_messages(messages)
+    _validate_messages(messages, message_profile=message_profile)
     api_base = kwargs.get("api_base")
     if type(api_base) is not str:
         raise ValueError("LOTUS adapter requires an explicit API base")
@@ -212,6 +275,7 @@ def prepare_call(lm, messages, all_kwargs) -> PreparedLotusCall:
         api_base.rstrip("/"),
         api_key,
         float(timeout),
+        message_profile,
     )
 
 
@@ -311,7 +375,10 @@ class LotusResponseReplay:
         )
 
     def parse(self, lm, messages, all_kwargs, prepared, full, transport_error=""):
-        validate_source()
+        if prepared.message_profile == "text":
+            validate_source()
+        else:
+            validate_source(message_profile=prepared.message_profile)
         import httpx
         from openai import OpenAI
         from litellm import completion

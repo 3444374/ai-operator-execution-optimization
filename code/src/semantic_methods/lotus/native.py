@@ -9,6 +9,7 @@ from src.baselines.text.frameworks.native_calls import NativeCall, raise_executi
 from src.execution_provider.adapters.full_response import encode_full_response
 from .sdk import (
     LotusResponseReplay,
+    check_message_profile,
     check_model_config,
     parse_lotus_response,
     prepare_call,
@@ -49,6 +50,7 @@ class LotusNativeBatchExecutor:
         retain_full_responses=True,
         follow_redirects=True,
         call_limits=None,
+        message_profile="text",
     ):
         if any(
             type(value) is not int or value <= 0
@@ -64,6 +66,7 @@ class LotusNativeBatchExecutor:
         if type(retain_full_responses) is not bool or type(follow_redirects) is not bool:
             raise ValueError("LOTUS raw response retention choice must be boolean")
         self.native, self.model_config = native, model_config
+        self.message_profile = check_message_profile(message_profile)
         if call_limits is not None and type(call_limits) is not LotusCallLimits:
             raise TypeError("LOTUS call_limits requires LotusCallLimits")
         self.call_limits = call_limits or LotusCallLimits(
@@ -123,14 +126,24 @@ class LotusNativeBatchExecutor:
         check_stop()
         if self.on_batch:
             self.on_batch(uncached_data, all_kwargs)
-        first = validate_batch(lm, uncached_data, all_kwargs, check_stop=check_stop)
+        profile_kwargs = (
+            {} if self.message_profile == "text" else {"message_profile": self.message_profile}
+        )
+        validation_kwargs = dict(profile_kwargs)
+        if self.message_profile != "text":
+            validation_kwargs.update(model_config=self.model_config, call_limits=self.call_limits)
+        first = validate_batch(
+            lm, uncached_data, all_kwargs, check_stop=check_stop, **validation_kwargs
+        )
         self._batch_number += 1
         prepared_calls = []
         calls = []
         input_bytes = 0
         for index, (messages, _) in enumerate(uncached_data):
             check_stop()
-            prepared = first if index == 0 else prepare_call(lm, messages, all_kwargs)
+            prepared = (
+                first if index == 0 else prepare_call(lm, messages, all_kwargs, **profile_kwargs)
+            )
             check_model_config(prepared, self.model_config)
             self.call_limits.check_prepared(prepared)
             input_bytes += len(prepared.payload)

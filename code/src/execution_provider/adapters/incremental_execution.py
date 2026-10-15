@@ -130,6 +130,39 @@ def build_fixed_model_execution(
     transport_factory=None,
     preparation_factory=None,
 ):
+    """PG/default assembly retains its fixed protocol request capacity."""
+    return _build_model_execution(config, item_input_bytes=MAX_FRAME_BYTES,
+        execute=execute, observer=observer, max_tasks=max_tasks,
+        max_active_requests=max_active_requests, input_bytes=input_bytes, result_bytes=result_bytes,
+        policies=policies, organize=organize, describe_work=describe_work,
+        active_work=active_work, work_unit=work_unit, timeouts=timeouts,
+        max_jobs=max_jobs, allocate_job=allocate_job, choose_flow=choose_flow,
+        transport_factory=transport_factory, preparation_factory=preparation_factory,
+    )
+
+
+def _build_model_execution(
+    config,
+    *,
+    item_input_bytes,
+    execute=None,
+    observer=None,
+    max_tasks=1,
+    max_active_requests=None,
+    input_bytes=None,
+    result_bytes=None,
+    policies=None,
+    organize=None,
+    describe_work=request_count_work,
+    active_work=None,
+    work_unit="work_units",
+    timeouts=None,
+    max_jobs=1,
+    allocate_job=equal_share_job_budget,
+    choose_flow=round_robin_flow,
+    transport_factory=None,
+    preparation_factory=None,
+):
     """Default single-endpoint assembly; supplied policies/work reuse the same core and transport."""
     if policies is not None and organize is not None:
         raise ValueError("provide policies or an organizer, not both")
@@ -144,12 +177,12 @@ def build_fixed_model_execution(
     drain_timeout_s = config.timeout_ms / 1000 + 1
     limits = SessionLimits(
         held_tasks=max_tasks,
-        input_bytes=max_tasks * MAX_FRAME_BYTES if input_bytes is None else input_bytes,
+        input_bytes=max_tasks * item_input_bytes if input_bytes is None else input_bytes,
         result_bytes=max_tasks * MAX_MODEL_RESPONSE_BYTES if result_bytes is None else result_bytes,
         active_requests=max_active_requests,
         active_work=max_active_requests if active_work is None else active_work,
         offer_tasks=max_tasks,
-        item_input_bytes=MAX_FRAME_BYTES,
+        item_input_bytes=item_input_bytes,
         item_result_bytes=MAX_MODEL_RESPONSE_BYTES,
         metadata_bytes=1024,
         step_actions=8,
