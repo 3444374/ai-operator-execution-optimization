@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-15：[HSE 身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
+
+固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。
+8完整矩阵逐字同、真实forward计数和物理退出通过；NumPy／broker组件全值与原失败保留，小轮不证明GPU收益或总RSS有界。
+
 本页保留 main 已有证据并归并重复摘要。后续集成结果从
 [固定 `9c59dc9b` 台账](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)定位；
 文档引用不把该分支的实现或运行资格转给 main，原始报告、全部失败及重复值保持原身份。

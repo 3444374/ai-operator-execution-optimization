@@ -1,5 +1,9 @@
 # SemLoom Code
 
+固定 `bdae61bb` 的[图像基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)
+统一真实预处理身份、恢复历史 B/C 小优化及 RM 结果／已导出观测成本；当前默认、入口、最近实测与未验证项见[能力表](INFRA_STATUS.md#current-image-status)。
+本段只导航该固定分支的修正与资格；main 执行代码范围仍按下文原记录核对。
+
 [待准备尾块追加](../experiments/results/diagnostics/map_queued_preparation_20261008/README.md)由
 `RayMapConfig.coalesce_queued_preparation=False`显式控制，仅追加同session/Job、尚未取lease且未取消的有限尾块。
 不设置凑批计时器，不扩展已经开始准备的描述；每行独立请求与Core动作额度保持。

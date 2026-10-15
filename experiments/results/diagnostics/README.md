@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[HSE真实身份与基础修正](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)：历史B/C按hunk恢复、RM结果／导出边界与固定来源CPU／少量同任务GPU资格；组件不外推系统收益。
+
 本目录保存可行性 benchmark、环境验证和连接验证结果。
 
 [待准备尾块追加](map_queued_preparation_20261008/README.md)：原逐行补充记录、可关闭原型、本地高/低成本对照及服务器147项检查；后续PG与8224次模型验证仍慢于即时默认，全部证据归同一报告。

@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-15：图像预处理身份、历史 HSE 小优化与 RM 边界修正
+
+固定实现 `bdae61bb`、基点 `671a22dd`；真实 processor 身份贯通 ready／descriptor／worker 完成，旧 v1 校准保留原来源。
+从 `7c47e2cc`／`d1db2ea9` 按 hunk 恢复活动集合／终态计数和 ready 先派发，保留 model_dispatch、unknown 与重复责任。
+结果矩阵预分配／左侧 scatter 保留数学和输出所有权；图像观测只回收已明确成功导出的记录，不动网关历史职责。
+CPU定向与独审修复身份早拒绝、workflow退出异常快照两项；实际SDK、同任务GPU原值、全部失败与退出边界见[本轮报告](https://github.com/3444374/ai-operator-execution-optimization/blob/42ba085f80dba78937a3e2b3efb3e00685401d90/experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#foundation-restoration-20261015)。
+单GPU四owner的8矩阵逐字相同，但小轮未显示可主张的端到端收益；共享lease正常归还后无新GPU预留。
+纯文档同步多前端物理执行定位、自动RGB／源字节能力、内存域与研究负例；PZ `170c3867` 段落及历史身份独立保留。
+
 ## 2026-10-15：main 接纳独立统计正确性修复
 
 以纯文档 main `170c3867` 为底稿，仅移植 `4b1c834b` 的重复均值 Student-t 临界值与浮点计算修复、
