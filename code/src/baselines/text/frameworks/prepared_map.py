@@ -63,6 +63,22 @@ def graph_input(call):
                 call_id=call['call_id'], payload=json.loads(call['payload']))
 
 
+def _graph_inputs(calls, max_batch_rows, max_batch_bytes):
+    """Bound the fully retained input before building either vendor graph."""
+    if any(type(value) is not int or value <= 0 for value in (max_batch_rows, max_batch_bytes)):
+        raise ValueError('native prepared-call batch limits must be positive integers')
+    inputs, payload_bytes = [], 0
+    for call in calls:
+        if len(inputs) == max_batch_rows:
+            raise ValueError('native prepared-call input batch exceeds its declared allowance')
+        payload = call['payload']
+        payload_bytes += len(payload.encode() if isinstance(payload, str) else payload)
+        if payload_bytes > max_batch_bytes:
+            raise ValueError('native prepared-call input batch exceeds its declared allowance')
+        inputs.append(graph_input(call))
+    return tuple(inputs)
+
+
 def graph_preprocess(row):
     identity = dict(row_id=row['row_id'], source_position=row['source_position'])
     if RAY_IDENTITY_FIELD in row['payload']:
@@ -101,13 +117,14 @@ class NativeGraphOptions:
     def validate_backend(self, backend):
         if backend == 'daft' and self.concurrency < 2:
             raise ValueError('pinned native Daft needs at least two request slots')
-        if backend == 'ray-data' and self.ray_request_row_envelope > self.concurrency:
-            raise ValueError('native Ray batch request envelope exceeds the declared HTTP allowance')
+        if backend == 'ray-data' and self.ray_active_http_upper_bound > self.concurrency:
+            raise ValueError('native Ray active HTTP upper bound exceeds the declared HTTP allowance')
         if backend == 'ray-data' and self.num_threads <= self.ray_actors:
             raise ValueError('native Ray Data needs a spare CPU slot for preprocessing and postprocessing')
 
     @property
     def ray_request_row_envelope(self):
+        # HTTP-stage batch rows only; not active requests or whole-graph storage.
         return self.ray_actors * self.ray_async_batches_per_actor * self.ray_batch_rows
 
     @property
@@ -117,7 +134,8 @@ class NativeGraphOptions:
 
 
 @contextmanager
-def open_daft_calls(calls, options, session_factory, *, headers=None):
+def open_daft_calls(calls, options, session_factory, *, headers=None,
+                    max_batch_rows=4096, max_batch_bytes=32 * 1024 * 1024):
     options.validate_backend('daft')
     import daft
     if daft.__version__ != '0.7.21':
@@ -127,7 +145,7 @@ def open_daft_calls(calls, options, session_factory, *, headers=None):
     def rows():
         nonlocal iterator
         with timing_span('native.graph_input', backend='daft'):
-            inputs = tuple(graph_input(call) for call in calls)
+            inputs = _graph_inputs(calls, max_batch_rows, max_batch_bytes)
         if not inputs:
             return
         with timing_span('native.graph_build', backend='daft', scope='adapter vendor graph API calls'):
@@ -173,7 +191,8 @@ def open_daft_calls(calls, options, session_factory, *, headers=None):
 
 
 @contextmanager
-def open_ray_calls(calls, options, session_factory, *, headers=None, record_stats=None):
+def open_ray_calls(calls, options, session_factory, *, headers=None, record_stats=None,
+                   max_batch_rows=4096, max_batch_bytes=32 * 1024 * 1024):
     options.validate_backend('ray-data')
     import ray
     from ray.data.llm import HttpRequestProcessorConfig, build_processor
@@ -187,7 +206,7 @@ def open_ray_calls(calls, options, session_factory, *, headers=None, record_stat
     def rows():
         nonlocal iterator, result
         with timing_span('native.graph_input', backend='ray-data'):
-            inputs = tuple(graph_input(call) for call in calls)
+            inputs = _graph_inputs(calls, max_batch_rows, max_batch_bytes)
         if not inputs:
             return
         with timing_span('native.graph_build', backend='ray-data', scope='adapter vendor graph API calls'):

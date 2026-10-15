@@ -378,6 +378,10 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                     method_started=time.monotonic_ns()
                     calls=prepare_fixed_calls(values,plan,record,clock_domain=domain)
                     summary['stages']['method_preparation_seconds']=(time.monotonic_ns()-method_started)/1e9
+                    if arm in ('fixed-map-native-daft','fixed-map-native-ray'):
+                        # Source bytes cover escaped text; each request also repeats this fixed template.
+                        prepared_byte_limit=max_source_bytes+len(values)*len(json.dumps(
+                            request_body(plan,''),ensure_ascii=False,separators=(',',':')).encode())
                     expected=Counter(c['request_values_sha256'] for c in calls)
                     lookup={c['call_id']:c for c in calls}
                     metadata=tuple({k:c[k] for k in ('row_id','source_position','call_id','stage_id',
@@ -385,9 +389,11 @@ def run_prepared_map_query(arm, *, load_source, plan, model, ledger, unit_id, ro
                     factory=PreparedSessionFactory(ProxyAccountedAttempts(),str(event_root),
                         routed.endpoint_url,model.timeout_ms/1000,metadata)
                     if arm=='fixed-map-native-daft':
-                        context=open_daft_calls(calls,options,factory,headers=headers)
+                        context=open_daft_calls(calls,options,factory,headers=headers,
+                            max_batch_rows=max_rows,max_batch_bytes=prepared_byte_limit)
                     elif arm=='fixed-map-native-ray':
-                        context=open_ray_calls(calls,options,factory,headers=headers)
+                        context=open_ray_calls(calls,options,factory,headers=headers,
+                            max_batch_rows=max_rows,max_batch_bytes=prepared_byte_limit)
                     else:
                         context=open_semloom_calls(calls,execution,unit_id,record,cleanup_report=core_cleanup)
                     with context as results:

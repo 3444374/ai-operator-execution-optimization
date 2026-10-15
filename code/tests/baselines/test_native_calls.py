@@ -1,5 +1,6 @@
 """Complete-call HTTP behavior and opt-in actual Daft/Ray Data graphs; no models."""
 from contextlib import contextmanager
+from dataclasses import replace
 import asyncio
 import base64
 import gzip
@@ -233,6 +234,31 @@ class NativeGraphTests(unittest.TestCase):
                 self.assertTrue(executor.last_close_report["clean"])
                 self.assertEqual(_DAFT_CONTROLS, {})
 
+    def test_prepared_map_entries_keep_complete_responses_with_multirow_ray_batches(self):
+        from src.baselines.text.frameworks.prepared_map import open_daft_calls, open_ray_calls
+        from src.experiments.postgresql.native_adapter_http import PreparedSessionFactory
+        from src.experiments.postgresql.native_adapter_query import ProxyAccountedAttempts, prepare_fixed_calls
+        from src.execution_provider.adapters.full_response import decode_full_response
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        import tempfile
+        values = tuple(dict(row_id=str(i), text='duplicate fixture text') for i in range(8))
+        prepared = prepare_fixed_calls(values, SemanticMapPlan('fixture instruction', 'fixture', 16), lambda _: None)
+        limits = dict(max_batch_rows=8, max_batch_bytes=sum(len(row['payload']) for row in prepared))
+        options = replace(self.options, ray_batch_rows=4)
+        for backend, opener in (('daft', open_daft_calls), ('ray-data', open_ray_calls)):
+            with self.subTest(backend=backend), tempfile.TemporaryDirectory() as events, \
+                    complete_server(body=b'{"usage":{"prompt_tokens":2,"completion_tokens":1}}') as (endpoint, calls, raw):
+                factory = PreparedSessionFactory(ProxyAccountedAttempts(), events, endpoint, 5, prepared)
+                with opener(prepared, options, factory, **limits) as stream:
+                    returned = tuple(stream)
+                self.assertEqual({(call_id, row_id) for call_id, row_id, _ in returned},
+                                 {(row['call_id'], row['row_id']) for row in prepared})
+                self.assertTrue(all(decode_full_response(wire).body == raw for _, _, wire in returned))
+                self.assertEqual((len(calls), calls.active), (8, 0))
+                record_fixture('prepared-map-sdk', dict(backend=backend, actual_posts=len(calls),
+                    peak_active=calls.peak, rows=len(returned), ray_batch_rows=4,
+                    input_payload_bytes=limits['max_batch_bytes'], complete_response_bytes_preserved=True))
+
     def test_provider_errors_are_values_but_byte_limit_failure_stops_the_graph(self):
         for backend in self.BACKENDS:
             with self.subTest(backend=backend), complete_server(body=b"long-body") as (endpoint, calls, raw):
@@ -300,7 +326,7 @@ class RayDataHttpActivityTests(unittest.TestCase):
         ray.shutdown()
 
     def check_activity(self, actors, rows):
-        options = NativeGraphOptions(concurrency=16, ray_actors=actors,
+        options = NativeGraphOptions(concurrency=actors*2, ray_actors=actors,
             ray_async_batches_per_actor=2, ray_batch_rows=rows, source_blocks=8)
         with complete_server(delay=.05) as (endpoint, calls, raw):
             executor = NativeCallExecutor('ray-data', options)
@@ -324,6 +350,47 @@ class RayDataHttpActivityTests(unittest.TestCase):
 
     def test_two_actors_multirow_batches(self):
         self.check_activity(2, 4)
+
+    def test_minimal_official_http_processor_with_multirow_batches(self):
+        import ray
+        from ray.data.llm import HttpRequestProcessorConfig, build_processor
+        from src.execution_provider.semantic_map import SemanticMapPlan
+        from src.experiments.postgresql.native_adapter_query import prepare_fixed_calls
+        prepared = prepare_fixed_calls(tuple(dict(row_id=str(i), text='duplicate fixture text') for i in range(16)),
+            SemanticMapPlan('fixture instruction', 'fixture', 16), lambda _: None)
+        body = b'{"choices":[{"message":{"content":"ok"}}],"usage":{"prompt_tokens":2,"completion_tokens":1}}'
+        with complete_server(body=body, delay=.02) as (endpoint, calls, _):
+            dataset = ray.data.from_items([dict(row_id=row['row_id'], payload=json.loads(row['payload'])) for row in prepared],
+                                          override_num_blocks=4)
+            processor = build_processor(HttpRequestProcessorConfig(url=endpoint, batch_size=4,
+                concurrency=(1, 1), max_retries=0),
+                preprocess=lambda row: {'payload': row['payload']},
+                postprocess=lambda row: {'row_id': row['row_id'], 'response': row['http_response']})
+            started = time.perf_counter()
+            result = processor(dataset)
+            iterator = iter(result.iter_rows())
+            try:
+                returned = list(iterator)
+            finally:
+                try:
+                    iterator.close()
+                finally:
+                    executor = getattr(result, '_current_executor', None)
+                    if executor is not None:
+                        executor.shutdown(force=True)
+            elapsed = time.perf_counter() - started
+            self.assertEqual({row['row_id'] for row in returned}, {str(i) for i in range(16)})
+            self.assertTrue(all(row['response'] == json.loads(body) for row in returned))
+            self.assertEqual((len(calls), calls.active), (16, 0))
+            self.assertEqual(sorted((json.loads(payload) for _, payload, _ in calls),
+                                    key=lambda value: json.dumps(value, sort_keys=True)),
+                             sorted((json.loads(row['payload']) for row in prepared),
+                                    key=lambda value: json.dumps(value, sort_keys=True)))
+            record_fixture('minimal-official-ray-http', dict(actual_posts=len(calls),
+                peak_active=calls.peak, batch_size=4, actor_pool_range=[1, 1],
+                execution_seconds=elapsed,
+                timing_scope='processor application, full iterator consumption and cleanup; source/method/runtime preparation excluded',
+                observation_scope='localhost server handlers through complete response write'))
 
 
 @unittest.skipUnless(ENABLED, "actual pinned Ray Core reference validation is explicitly opt-in")

@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from src.baselines.text.frameworks.prepared_map import graph_input, graph_preprocess, graph_postprocess
 from src.execution_provider.adapters.full_response import FullModelResponse, encode_full_response
@@ -46,6 +47,31 @@ def fixture_server(*, http_status=200, delay=.005, content='ok'):
 
 
 class NativeAdapterQueryTests(unittest.TestCase):
+    def test_prepared_payload_allowance_accounts_for_repeated_method_template(self):
+        from src.baselines.text.frameworks.prepared_map import _graph_inputs
+        row=dict(row_id='a',text='raw "\\\n重复')
+        source_bytes=len(json.dumps(row,ensure_ascii=False).encode())
+        class GraphReached(Exception):
+            pass
+        for arm,opener in (('fixed-map-native-daft','open_daft_calls'),
+                           ('fixed-map-native-ray','open_ray_calls')):
+            with self.subTest(arm=arm), tempfile.TemporaryDirectory() as directory:
+                root=Path(directory)
+                ledger=CellBudgetLedger.create(root/'budget.sqlite',AttemptBudget('fixture',1),
+                                               deadline_utc=time.time()+10)
+                with patch('src.experiments.postgresql.native_adapter_query._runtime',return_value=(None,{})), \
+                        patch('src.experiments.postgresql.native_adapter_query.'+opener,
+                              side_effect=GraphReached) as graph, self.assertRaises(GraphReached):
+                    run_prepared_map_query(arm,load_source=lambda:iter((row,)),
+                        plan=SemanticMapPlan('instruction "\\\n重复'*100,'fixture',16),
+                        model=FixedModelConfig('http://localhost:1/unused','fixture',1000),
+                        ledger=ledger,unit_id='fixture',root=root/'query',max_rows=1,
+                        max_source_bytes=source_bytes)
+                prepared=graph.call_args.args[0]
+                limits=graph.call_args.kwargs
+                self.assertGreater(len(prepared[0]['payload']),source_bytes)
+                self.assertEqual(len(_graph_inputs(prepared,limits['max_batch_rows'],limits['max_batch_bytes'])),1)
+
     def test_method_prepares_duplicate_text_as_distinct_calls_before_graph(self):
         events=[]
         values=[dict(row_id='a',text='same'),dict(row_id='b',text='same')]
