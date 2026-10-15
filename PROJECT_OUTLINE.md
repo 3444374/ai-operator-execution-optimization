@@ -376,6 +376,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
+| Palimpzest 文档与原生资格 | PZ 的算子／优化器职责、原生并行及模型映射是否明确，完整查询能否独立复现 | [研究定位](docs/research/研究定位.md#palimpzest-comparison)与[两层对照](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)；文档先行，接入实现与 LOTUS 检查并行，实际资格分别确认 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
@@ -384,7 +385,10 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 | 后续共享与训练 | 何时存在多查询竞争或训练供给需求 | 各自定义任务与质量，不能由推理软件检查推定训练或公平性收益 |
 
 PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
-独立核心和外部 LOTUS 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
+独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
+PZ 原生先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
+Q2 `LIMIT 5` 另保留，实际提交、完成及残余工作按观测记录，不由结果上限推定只有五次模型请求。
+共享 GPU 按既有 lease 及 LOTUS 优先安排；文档更新不表示 PZ 接入、真实模型或五组性能比较已经完成。
 公司移植按[架构计划](experiments/plans/系统架构.md#company-integration-questions)核对实际接口和授权。
 原 Q2 后续工作点、常驻连续查询与其他新运行仅在其对应计划及实际结果就绪后更新状态；
 不恢复旧 GPU 矩阵或沿用已结束运行额度。

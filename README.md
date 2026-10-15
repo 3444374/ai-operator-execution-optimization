@@ -1,7 +1,7 @@
 # SemLoom
 
-本项目研究**PostgreSQL 内置 AI 语义算子的外部分布式物理执行与调度优化**。
-数据库拥有 SQL、计划、快照、权限及查询生命周期；SemLoom 利用 Ray Core 的任务、actor 和对象设施组织外部执行，
+本项目研究**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
+PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、快照、权限及查询生命周期；SemLoom 利用 Ray Core 的任务、actor 和对象设施组织外部执行，
 与 Ray Data、Daft 等原生数据执行路径比较。合理调优的原生批处理、actor 池、背压与 CPU/GPU 流水是共同起点。
 
 近期优先加速**单查询／一批数据的完整执行**，检验能否少准备、少搬运、少做重复计算。
@@ -20,6 +20,8 @@
 | 实际结果、全部重复与失败 | [结果导航](experiments/results/README.md)、[证据台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md) |
 | 环境、数据及历史材料 | [运行手册](deploy/runtime/README.md)、[数据](data/README.md)、[文档](docs/README.md)、[图资产](figures/README.md) |
 | 变更与来源恢复 | [项目日志](PROJECT_LOG.md) |
+
+Palimpzest 与 LOTUS 是平行的语义系统参照；其[研究定位](docs/research/研究定位.md#palimpzest-comparison)和[五组执行目标](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)区分完整系统与固定计划比较，目标接入仍需分别验证。
 
 当前图像接点与固定来源资格从[LOTUS 模块](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/src/semantic_methods/lotus/README.md#原生-clip-图像检索)和
 [主报告](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)进入；

@@ -1,6 +1,6 @@
 # 数据库 AI 算子相关文献清单
 
-更新日期：2026-10-03；历史选目与精读状态沿各节原日期解释。
+更新日期：2026-10-15；历史选目与精读状态沿各节原日期解释。
 
 权威 Top 15：`top15_ranked_papers.md`
 
@@ -52,7 +52,7 @@ PDF 索引：`reference/REFERENCE_INDEX.md`
 
 | 文献 | 题录状态 | 项目角色 |
 |---|---|---|
-| Palimpzest | CIDR 2025，非 CCF-A | 声明式计划搜索与 time/cost/quality profile；可部署系统 baseline |
+| [Palimpzest: Optimizing AI-Powered Analytics with Declarative Query Processing](https://www.vldb.org/cidrdb/papers/2025/p12-liu.pdf) | Liu et al.，CIDR 2025，非 CCF-A | 语义算子、计划搜索与 time/cost/quality；§5 已评估 convert/filter 并行，作为与 LOTUS 平行的系统参照 |
 | Sema | VLDB 2026 Research Track 已录用；本地全文为 arXiv:2603.11622v1 | DuckDB 原生 semantic operator、expression optimization 与运行时 AQE；正式卷期页码待发布 |
 | SemBench | PVLDB 2026 正式 benchmark paper | 55 queries、多模态、质量/时间/成本/内存统一评价 |
 | Database Perspective on LLM Inference Systems | PVLDB 2025 Tutorial | 推理系统地图与代价估计 open problem |
@@ -112,7 +112,11 @@ IMLane artifact核查（来源：公开源码，2026-09-10）：[作者仓库](h
 | Beyond Prediction: Tail-Aware Scheduling | ICML 2026 | 证明长度预测策略在分布漂移、burst、GPU memory pressure 下可能脆弱；作为 prediction-free/tail baseline 依据 |
 | FastServe | NSDI 2026 | 用输入长度和多级反馈队列做 prediction-light 抢占调度；本项目只迁移强对照思想，不实现 serving 内部抢占 |
 | Palimpzest | CIDR 2025 | 小样本 sentinel profile |
-| LOTUS / Abacus | PVLDB | semantic operator cost-quality optimization |
+| LOTUS | PVLDB 2025 | semantic operator cost-quality optimization |
+| [Abacus: A Cost-Based Optimizer for Semantic Operator Systems](https://www.vldb.org/pvldb/vol19/p1060-russo.pdf) | Russo et al.，PVLDB 19(5): 1060–1073, 2026；DOI 10.14778/3796195.3796215 | 在 Palimpzest 中实现；算子采样与 Pareto-Cascades 的质量／成本／延迟计划优化 |
+
+2026-10-15 已核对上述 Palimpzest、Abacus 正式论文的题录及所引章节；不据此补登记全文精读或 artifact 运行完成。
+二者的系统层比较与固定计划执行归因见[研究定位](研究定位.md#palimpzest-comparison)及[对照规范](../../experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)。
 
 以上新增 serving 文献不能全部当作可直接实现的系统 baseline：Past-Future、JITServe、Beyond Prediction 与 FastServe 都进入或修改 serving scheduler，而本项目固定 vLLM 为黑盒。它们在本项目中的角色是：定义输出 work 的不确定性表示、SLO goodput/tail/regret 指标，以及要求保留不依赖预测的强静态回退。可直接落地的首版仍是解析模型 + profile residual + 分位数/区间，作用点位于 Daft/Ray admission 之前。
 
@@ -181,7 +185,7 @@ IMLane与DLPM复用已有精读，KEN仍待精读；这些核对不表示artifac
 | direct model service | vLLM、Orca、Sarathi-Serve | 下游 serving ceiling |
 | 简单上游 | vLLM official benchmark、bounded HTTP | 去除 Daft/Ray 后的强客户端对照 |
 | 官方数据引擎/runtime | Ray、Ray Data Streaming Batch、Daft 官方 API | 引擎默认执行与受控并发 |
-| 数据库 AI 算子系统 | LOTUS、Palimpzest、SemBench、Galois、IMLane | 算子/计划/质量-成本与内置外部执行 baseline |
+| 语义系统与执行参照 | LOTUS、Palimpzest、Galois；IMLane | 前三者比较算子／计划及质量-成本，IMLane 比较执行机制；SemBench 提供 workload 与评价协议 |
 | 多 job 调度 | VTC、Llumnix；补充 FairServe、DLPM、Agentix | shared credit、公平性、job-level JCT |
 | 代价估计 | Learned Cost Models、GRACEFUL、COSTREAM、Abacus | 配置和路由选择依据 |
 
