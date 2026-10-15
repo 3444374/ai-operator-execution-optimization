@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：常驻 owner 按 query 归档 trace
+
+复现331源码按全历史等待／复制的增长，改为query索引与独立未结束集合；私有query文件和owner归档均持久写出后才回收。
+空query、晚到、失败写出、取消及unknown责任保持，原错误优先；继续复用原owner和连接池。
+68项定向检查通过、4项真实供应商条件跳过，旧失败原件保留仓外；[同题说明](experiments/results/diagnostics/lotus_observation_modes_20261012/README.md#persistent-query-archive)
+限定为合成历史／实际asyncio和少量localhost检查，无模型／GPU，不改变资格默认或宣称零观测。
+
 ## 2026-10-15：统一普通 LOTUS 图片输入
 
 按用户要求接纳已独审的公共输入精简：RGB 后端省去 PNG 往返，字节后端优先复用仍匹配当前

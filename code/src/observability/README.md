@@ -19,6 +19,17 @@ an active request makes this operation fail. A failed persistent query stops its
 Public aiohttp trace signals record connection creation, reuse, connector waiting and pool generation.
 `fresh_upstream_connections=True` is an optional transport diagnostic; it does not replay a failed POST.
 
+`snapshot(timeout_s)` still returns detached retained observations after all pending requests settle.
+Persistent owners use `snapshot(timeout_s, query_id=unit_id)` to copy only that query, commit its
+private query trace, then call `archive_query(unit_id, rows)`. The gateway flushes/fsyncs those exact
+rows to its owner trace before releasing them from both indexes. A changed snapshot, unfinished work,
+unknown query identity or failed export is retained; archive failure stops the persistent group.
+The owner trace therefore contains archived batches plus any retained remainder at shutdown.
+This avoids scanning/copying archived history and preserves the existing pooled client and owner.
+An archive timeout stops the owner group. A queued archive is abandoned; a synchronous write already
+running may finish, but rows are released only after the owner trace's successful fsync. Final trace
+write errors are attached to an active query error/cancellation rather than replacing it.
+
 `process_resources/` provides Linux FD identity observations, explicit missing values, sampling windows,
 stable baselines, operation/error capture and gzip JSONL persistence. A tick is a sequential observation
 batch, not an atomic snapshot. PostgreSQL session attribution and threshold policies live under

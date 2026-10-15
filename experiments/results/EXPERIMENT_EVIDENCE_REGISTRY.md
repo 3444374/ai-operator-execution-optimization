@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-15：[常驻query trace归档边界](diagnostics/lotus_observation_modes_20261012/README.md#persistent-query-archive)。
+固定331源码的64×120合成已结束记录／实际asyncio复现保留7,680行、累计复制249,600行；按query归档后累计仅复制7,680行，
+unknown／未结束责任及失败证据保持。68项本地定向通过、4项条件跳过；原始失败及复现留仓外，无新增模型／GPU，不归因旧延迟。
+
 2026-10-15：[普通图片输入与 Ray Serve 补充](diagnostics/lotus_native_image_retrieval_20261014/README.md#native-input-and-serve)
 分列`460d3870`三格与`17ac2aeb`八格实际来源；共28查询／39完整矩阵复用已有4个数组，原件独立复核通过。
 同形状图片向量逐值同stock，文本CPU／CUDA与跨batch差异保留；实际生命周期、完整查询原值和退出按来源记录。

@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[常驻query trace归档](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md#persistent-query-archive)
+改为按query复制并在双份持久写出确认后回收；未结束／unknown及失败证据保留，owner和连接池继续复用。
+68项定向检查通过、4项供应商实库条件跳过；合成历史检查只支持已归档历史不再累积扫描／复制，不作模型性能结论。
+
 2026-10-15：普通 LOTUS 图像入口按后端能力自动选择输入，移除历史 native／PNG 调参开关。
 Direct／Ray／Daft／Serve 默认 RGB；SemLoom 核对当前像素后复用源字节，不可复用时无损 PNG1 回退。
 Ray fused／staged 和 Daft 实际 encoded 文件输入仍保留。独立源码／测试审核及接纳后185项回归通过，
