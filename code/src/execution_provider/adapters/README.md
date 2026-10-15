@@ -21,6 +21,16 @@ the same full response. No new method scheduler is introduced.
   `build_fixed_model_execution`. `physical=None` explicitly selects a local diagnostic.
   An optional `transport_factory` selects a complete-response local transport with the same
   backend lifecycle; Ray rejects a custom factory or `execute` replacement.
+  Complete native requests default to 1 MiB. `max_request_bytes` explicitly accepts 1 byte through
+  8 MiB; any nondefault value requires explicit total `input_bytes` fitting at least one item.
+  `item_input_bytes` cannot be supplied through options. The ordinary fixed-model factory,
+  PG gateway and wire frame limit remain 1 MiB. Ray input windows must fit `item + 24` bytes
+  and object capacity must fit `window + 8`; optional preparation also requires encoded
+  capacity `item + 24` and ready capacity `2 * (item + 32)`. These byte checks precede
+  transport construction. Result, cancellation and unknown-ownership rules are unchanged.
+  These are logical Core/transport budgets, separate from SDK buffers, Arrow copies,
+  unaccepted producer suffixes and process RSS. Directed checks are in
+  [native request capacity tests](../../../tests/execution_provider/test_native_request_capacity.py).
 - `prepare_native_task(payload, sequence, row_sequence=..., call_id=..., stage_id="model",
   work=..., max_result_bytes=...)` produces the existing `OfferedTask`. Its payload is the
   supplier-converted HTTP request body. The default descriptor measures request count; it is

@@ -83,7 +83,8 @@
       "median": 1598858,
       "max": 2380568,
       "total_each_arm": 108068304
-    }
+    },
+    "scope": "initial three-arm stage with default Core1MiB; explicit Core follow-up is separate"
   },
   "raw_bundle": {
     "run_ids": [
@@ -198,6 +199,116 @@
       "model-02/daft": "observed HTTP peak5 exceeds declared4; semantic result and all raw evidence retained"
     },
     "performance_ranking_supported": false,
-    "query_tail_quantiles_supported": false
+    "query_tail_quantiles_supported": false,
+    "semloom": "model-04"
+  },
+  "core_capacity_cpu": {
+    "role": "directed CPU and original-photo software transport fixture; zero model/GPU",
+    "source_archive": {
+      "member": "core-source-cpu04.tar.gz",
+      "bytes": 2603762,
+      "sha256": "f654c75d80cc54fdb3ceb4107009320952c1bf96e12ce3184c8f747bdaeb0025",
+      "verified_files": 1115,
+      "base_commit": "0da59fea061b415353ff0af79ef2a91a451c0bec",
+      "phase": "uncommitted CPU snapshot; six changed Python files preserved byte-for-byte in a0d1f6ac"
+    },
+    "run_ids": [
+      "core-cpu-01",
+      "core-cpu-02",
+      "core-photo-supervisor-01",
+      "core-photo-cpu-01"
+    ],
+    "checks": {
+      "core_and_actual_ray": 74,
+      "pg_regression": 12,
+      "animals_sdk": 27,
+      "total": 113,
+      "skipped": 0,
+      "repeated_runs_not_added": true
+    },
+    "original64_fixture": {
+      "real_model_calls": 0,
+      "gpu_requested": false,
+      "http_calls": 64,
+      "requests_over_1mib": 63,
+      "max_request_bytes": 2380559,
+      "stub_count": 11,
+      "semantics": "first RGB pixel equals white; not zebra/VLM quality",
+      "http_peak": 4,
+      "core_closed": true,
+      "open_jobs": 0,
+      "empty_core_usage": true,
+      "owned_children_empty": true
+    },
+    "retained_failures": [
+      "core-cpu-01: new flow incorrectly used first sequence3; corrected to0 without production change",
+      "private supervisor initial syntax error before any task or model start",
+      "first local directed fixture had polling/cleanup-property mistakes; corrected helpers before server qualification, logs retained"
+    ],
+    "raw_bundle_ref": "core_capacity.raw_bundle"
+  },
+  "core_capacity": {
+    "execution_source_commit": "a0d1f6acdc50ebe190dbe605732be770a6b55b28",
+    "execution_source_bundle": {
+      "bytes": 2582292,
+      "sha256": "f51d1f019c4b64981127823dda9e06642d5632eea6be7558d0a2aab8b732495b"
+    },
+    "source_identity_file": "source-identity-core.json",
+    "previous_model_calls": 256,
+    "additional_call_limit": 64,
+    "cumulative_call_limit": 320,
+    "item_input_bytes": 4194304,
+    "input_bytes": 8388608,
+    "held_tasks": 4,
+    "active_requests": 4,
+    "ray_workers": 4,
+    "ray_window_bytes": 4194328,
+    "ray_object_bytes": 8388608,
+    "payload_backend": "arrow",
+    "preparation": null,
+    "lotus_prepared_batch_input_bytes": 134217728,
+    "logical_budget_scope": "Core input and transport objects; SDK/proxy/producer suffix/RSS separate",
+    "default_native_and_pg_request_bytes": 1048576,
+    "explicit_native_max_bytes": 8388608,
+    "run_id": "model-04",
+    "status": "completed; original semantic and measured resource gates passed",
+    "model_calls": 64,
+    "full_query_seconds": 40.712867874,
+    "application_seconds": 59.222574832,
+    "http_peak": 4,
+    "predicted": 3,
+    "truth": 3,
+    "relative_error": 0,
+    "true_positive": 3,
+    "true_negative": 61,
+    "false_positive": 0,
+    "false_negative": 0,
+    "core_closed": true,
+    "open_jobs": 0,
+    "all_core_usage_zero": true,
+    "service_exit": 0,
+    "lease_released": true,
+    "tracker_stopped": true,
+    "owned_processes_empty": true,
+    "gpu_after_mib": 1,
+    "controller_sha256": "c54e254c536aca3c90853af211230c762102f413413c2130715b555a41ad2224",
+    "raw_bundle": {
+      "bytes": 169186736,
+      "sha256": "b79cb17609e6677922a93db44e03f247ac45e8a17a2269916740503a4104905b",
+      "run_ids": [
+        "core-cpu-01",
+        "core-cpu-02",
+        "core-photo-supervisor-01",
+        "core-photo-cpu-01",
+        "model-04"
+      ],
+      "retained_outside_git": true,
+      "retrieval": "project artifact owner, by run IDs and SHA-256; CPU failure/source snapshots and model requests preserved"
+    },
+    "raw_backup_verified_on_two_hosts": true,
+    "original_pixels_verified": true,
+    "complete_request_json_identical_to_lotus": true,
+    "complete_request_wire_bytes_identical_to_lotus": false,
+    "wire_difference": "JSON object key order only; original PNG URI and all model/generation/messages content identical"
   }
 }

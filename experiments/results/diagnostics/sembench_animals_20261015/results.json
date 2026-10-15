@@ -284,9 +284,111 @@
         "status": "unavailable",
         "reason": "no local model pricing; LM numeric zero is not a measured cost"
       }
+    },
+    {
+      "schema": "semloom.sembench_animals_audit.v1",
+      "run_id": "model-04",
+      "archives": {
+        "raw": {
+          "bytes": 169186736,
+          "sha256": "b79cb17609e6677922a93db44e03f247ac45e8a17a2269916740503a4104905b"
+        },
+        "inputs": {
+          "bytes": 41565481,
+          "sha256": "e20af2be0643898f301bb1ae8d79ff4ec9eafbe6e9a1e3766e218e7c01f4ad3d"
+        },
+        "execution_source": {
+          "bytes": 2582292,
+          "sha256": "f51d1f019c4b64981127823dda9e06642d5632eea6be7558d0a2aab8b732495b"
+        }
+      },
+      "source_commit": "a0d1f6acdc50ebe190dbe605732be770a6b55b28",
+      "verified_source_files": 1115,
+      "rows": 64,
+      "arms": [
+        {
+          "arm": "semloom",
+          "status": "completed",
+          "resource_allowance_passed": true,
+          "qualification_status": "passed",
+          "query_count": 1,
+          "model_calls": 64,
+          "full_query_seconds": 40.712867874,
+          "application_seconds": 59.222574832,
+          "predicted": 3,
+          "truth": 3,
+          "original_relative_error": 0.0,
+          "true_positive": 3,
+          "false_positive": 0,
+          "true_negative": 61,
+          "false_negative": 0,
+          "request_bytes": {
+            "min": 380284,
+            "median": 1598858.0,
+            "max": 2380568,
+            "total": 108068304
+          },
+          "requests_over_core_1mib": 63,
+          "usage": {
+            "prompt_tokens": 81307,
+            "completion_tokens": 128,
+            "total_tokens": 81435
+          },
+          "handler_to_terminal_seconds": {
+            "min": 0.214042262,
+            "median": 0.43674727950000003,
+            "max": 0.742926101,
+            "total": 28.937676626000002
+          },
+          "peak_observed_upstream_inflight": 4,
+          "versions": {
+            "lotus-ai": "1.2.4",
+            "litellm": "1.95.0",
+            "openai": "2.50.0",
+            "pandas": "2.3.3",
+            "duckdb": "1.5.4"
+          },
+          "evidence_sha256": {
+            "summary.json": "0f8b3379ac83cd2f9d6bf0dacd85b19bfa0d31e5cc2fa1c7736f62c10f7dfa54",
+            "attempts.jsonl": "1f8b496ad2b63baab032bd1f549caa793931da4ea96050d493abe22d8d0f46c1",
+            "requests.jsonl": "6f99ff318718cf7fbef61b1d38de2dfa4d9ebbd3a3b16907468fb67da3d2d027",
+            "responses.jsonl": "c20874761242620c47fef9d53b9f5429a90f5a735fb6411d4afaaf6d60b704ad",
+            "http-trace.jsonl": "49125730873366d2a583afdad2e73154e668050a891fcf43dafeaf961adbada5",
+            "filter-decisions.json": "2b3fbaee75900a8c026959febec3188df6ddf643f0075527740278f10d9eba45",
+            "original-result.json": "a8d52e0a463d9dad84b853516c165360d40c15f21db904b9fb15e0967e1ade8d"
+          }
+        }
+      ],
+      "core_cpu_qualification": {
+        "tests": {
+          "core": 74,
+          "pg-regression": 12,
+          "animals": 27
+        },
+        "total": 113,
+        "skipped": 0,
+        "verified_source_files": 1115
+      },
+      "messages_identical_across_arms": true,
+      "original_pixels_verified": true,
+      "total_model_calls": 64,
+      "all_retained_arms_pass_resource_allowance": true,
+      "service_startup_seconds": 58.440012336708605,
+      "service_exit": 0,
+      "lease_released": true,
+      "query_tail_quantiles": {
+        "status": "unavailable",
+        "reason": "one complete query per arm"
+      },
+      "monetary_cost": {
+        "status": "unavailable",
+        "reason": "no local model pricing; LM numeric zero is not a measured cost"
+      },
+      "complete_request_json_identical_to_lotus": true,
+      "complete_request_bytes_identical_to_lotus": false
     }
   ],
-  "total_model_calls": 256,
+  "total_model_calls": 320,
   "selected_qualification_arms": [
     {
       "run_id": "model-02",
@@ -301,6 +403,11 @@
     {
       "run_id": "model-02",
       "arm": "ray-data",
+      "resource_allowance_passed": true
+    },
+    {
+      "run_id": "model-04",
+      "arm": "semloom",
       "resource_allowance_passed": true
     }
   ],

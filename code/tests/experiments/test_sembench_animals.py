@@ -1,6 +1,7 @@
 """CPU-only input contracts and actual pinned LOTUS image HTTP fixture checks."""
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
+from dataclasses import make_dataclass
 from functools import wraps
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,7 @@ import subprocess
 import sys
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from src.baselines.common.private_artifacts import content_digest
 from src.baselines.image.sembench_animals import (
@@ -103,6 +105,41 @@ class AnimalsInputsTests(unittest.TestCase):
         for values in (good[:-1],good[::-1],[(r['row_id'],1) for r in self.rows]):
             with self.subTest(values=values),self.assertRaises(ValueError):
                 classification_audit(self.rows,values)
+
+    def test_core_cleanup_keeps_primary_error_and_unknown_ownership(self):
+        from src.experiments.sembench_animals import close_core_execution
+        Usage = make_dataclass('Usage', [('input_bytes',int),('unknown',int)])
+        for close_error in (None,OSError('fixture close failure')):
+            with self.subTest(close_error=close_error):
+                summary={}
+                def close():
+                    if close_error is not None:
+                        raise close_error
+                    return False
+                execution=SimpleNamespace(close=close,engine=SimpleNamespace(
+                    capacity=SimpleNamespace(usage=lambda:Usage(3*1024*1024,1)),
+                    jobs=SimpleNamespace(jobs={'unknown-job':object()})))
+                original=TimeoutError('fixture original query failure')
+                with self.assertRaises(TimeoutError) as caught:
+                    with ExitStack() as stack:
+                        stack.push(lambda _type,error,_trace:close_core_execution(execution,summary,error))
+                        raise original
+                self.assertIs(caught.exception,original)
+                self.assertEqual(str(caught.exception),'fixture original query failure')
+                self.assertTrue(any('Animals Core cleanup:' in note for note in original.__notes__))
+                persisted=json.loads(json.dumps(summary))['core_cleanup']
+                self.assertFalse(persisted['closed'])
+                self.assertEqual(persisted['usage'],dict(input_bytes=3*1024*1024,unknown=1))
+                self.assertEqual(persisted['open_jobs'],1)
+                with self.assertRaises((RuntimeError,OSError)):
+                    close_core_execution(execution,{})
+
+    def test_core_rejects_unavailable_cpu_concurrency_before_preflight(self):
+        from src.experiments.sembench_animals import run_query
+        dataset=SimpleNamespace(preflight=lambda:self.fail('must reject before data/runtime preparation'))
+        with self.assertRaisesRegex(ValueError,'eight Ray CPUs'):
+            run_query(dataset,None,arm='semloom',output=None,tokenizer_path=None,
+                concurrency=9,observation_mode='performance')
 
 
 @contextmanager
@@ -200,7 +237,10 @@ class ActualAnimalsLibrariesTests(unittest.TestCase):
                 summary=run_query(self.dataset,FixedModelConfig(url,'fixture-vlm',10000),
                     arm=arm,output=self.root/('run-'+arm),tokenizer_path=tokenizer,
                     concurrency=4,max_tokens=32,observation_mode='performance',
-                    ray_temp_root=Path(tempfile.gettempdir())/('sba-'+str(os.getpid())+'-'+str(number)))
+                    ray_temp_root=Path(tempfile.gettempdir())/('sba-'+str(os.getpid())+'-'+str(number)),
+                    **(dict(core_request_bytes=4*1024*1024,core_input_bytes=8*1024*1024,
+                            core_ray_window_bytes=4*1024*1024+24,core_ray_object_bytes=8*1024*1024)
+                       if arm=='semloom' else {}))
                 self.assertEqual(summary['status'],'completed')
                 self.assertEqual(summary['model_calls'],4)
                 self.assertEqual(summary['quality']['predicted'],2)
@@ -209,6 +249,10 @@ class ActualAnimalsLibrariesTests(unittest.TestCase):
                 self.assertEqual(len(received),4)
                 self.assertTrue(all('Species' not in json.dumps(v) for v in received))
                 self.assertEqual(summary['warmup_model_calls'],0)
+                if arm=='semloom':
+                    self.assertTrue(summary['core_cleanup']['closed'])
+                    self.assertEqual(summary['core_cleanup']['open_jobs'],0)
+                    self.assertTrue(all(v==0 for v in summary['core_cleanup']['usage'].values()))
 
     def test_evaluation_failure_keeps_summary_when_version_metadata_is_missing(self):
         from tokenizers import Tokenizer,models

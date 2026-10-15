@@ -26,7 +26,7 @@ from src.execution_provider.adapters.model_config import load_fixed_model_config
 from src.experiments.attempt_ledger import AttemptBudget, AttemptLedger
 from src.infrastructure.runner_lease import acquire_runner_lease, HOST_SCOPE_FINGERPRINT
 from src.observability.request_gateway import GatewayRoute, ObservationGateway
-from src.semantic_methods.lotus.batch import lotus_executor
+from src.semantic_methods.lotus.batch import LotusBatchExecutor, lotus_executor
 from src.semantic_methods.lotus.limits import LotusCallLimits
 from src.semantic_methods.lotus.native import LotusNativeBatchExecutor
 from src.semantic_methods.lotus.sdk import IMAGE_TEXT_PROFILE, validate_source
@@ -64,10 +64,33 @@ def observed_http_peak(trace):
     return peak
 
 
+def close_core_execution(execution, summary, primary_error=None):
+    """Record unresolved ownership without replacing an earlier query failure."""
+    close_error = None
+    try:
+        closed = execution.close()
+    except BaseException as error:
+        closed = False
+        close_error = error
+    summary['core_cleanup'] = dict(closed=closed,
+        usage=asdict(execution.engine.capacity.usage()),
+        open_jobs=len(execution.engine.jobs.jobs))
+    if close_error is not None:
+        summary['core_cleanup']['error_type'] = type(close_error).__name__
+    if not closed:
+        error = close_error or RuntimeError('Animals Core retained unconfirmed ownership at close')
+        if primary_error is None:
+            raise error
+        primary_error.add_note('Animals Core cleanup: ' + type(error).__name__ + ': ' + str(error))
+    return False
+
+
 def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
-              max_tokens=8192, observation_mode, ray_temp_root=None):
+              max_tokens=8192, observation_mode, ray_temp_root=None,
+              core_request_bytes=None, core_input_bytes=None,
+              core_ray_window_bytes=None, core_ray_object_bytes=None):
     """No constructor warmup; actual POST/response bodies, status and original decisions persist."""
-    if arm not in ('lotus-native', 'daft', 'ray-data'):
+    if arm not in ('lotus-native', 'daft', 'ray-data', 'semloom'):
         raise ValueError('Animals requires an explicitly supported full-request executor')
     if observation_mode not in ('performance', 'qualification'):
         raise ValueError('Animals requires an explicit observation mode')
@@ -75,6 +98,15 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
         raise ValueError('Animals request allowance must be between 2 and 16')
     if type(max_tokens) is not int or not 1 <= max_tokens <= 8192:
         raise ValueError('Animals generation allowance must be between 1 and 8192')
+    if arm == 'semloom':
+        if concurrency > 8:
+            raise ValueError('Animals Core request allowance exceeds its eight Ray CPUs')
+        values=(core_request_bytes,core_input_bytes,core_ray_window_bytes,core_ray_object_bytes)
+        if (any(type(v) is not int or v < 1 for v in values)
+                or core_request_bytes > 8*1024*1024 or core_input_bytes < core_request_bytes
+                or core_ray_window_bytes < core_request_bytes+24
+                or core_ray_object_bytes < core_ray_window_bytes+8):
+            raise ValueError('Animals Core requires explicit compatible item/input and Ray window/object bytes')
     preflight = dataset.preflight()
     validate_source(message_profile=IMAGE_TEXT_PROFILE)
     root = Path(output)
@@ -126,7 +158,7 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
             if ledger.attempts:
                 raise ValueError('unexpected model call during preparation')
             executor = None
-            if arm != 'lotus-native':
+            if arm in ('daft', 'ray-data'):
                 ray_actors = 2 if concurrency % 2 == 0 else 1
                 options = NativeGraphOptions(concurrency=concurrency,num_threads=8,
                     ray_actors=ray_actors,ray_async_batches_per_actor=concurrency//ray_actors,
@@ -150,6 +182,29 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
                 limits = LotusCallLimits(routed.timeout_ms/1000,max_request_bytes=8*1024*1024,
                     max_batch_rows=64,max_batch_input_bytes=256*1024*1024,batch_timeout_s=None)
                 executor = LotusNativeBatchExecutor(native,routed,query_id='animals-q1',operator_id='filter',
+                    call_limits=limits,message_profile=IMAGE_TEXT_PROFILE,retain_full_responses=False)
+            elif arm == 'semloom':
+                import ray
+                from src.execution_provider.adapters.native_tasks import build_native_execution
+                from src.execution_provider.adapters.ray_map_transport import RayMapConfig
+                from src.experiments.postgresql.query_config import NativeRayRuntimeConfig
+                from src.experiments.postgresql.query_execution import native_ray_runtime
+                summary['ray_runtime'] = stack.enter_context(native_ray_runtime(ray,
+                    NativeRayRuntimeConfig(8,2,ray_object_store_bytes=512*1024*1024),ray_temp_root))
+                physical=RayMapConfig(ray.get_runtime_context().gcs_address,concurrency,1,
+                    core_ray_window_bytes,core_ray_object_bytes,payload_backend='arrow')
+                summary['core_capacity']=dict(item_input_bytes=core_request_bytes,input_bytes=core_input_bytes,
+                    held_tasks=concurrency,active_requests=concurrency,ray_workers=concurrency,
+                    ray_window_bytes=core_ray_window_bytes,ray_object_bytes=core_ray_object_bytes,
+                    preparation=None,lotus_prepared_batch_input_bytes=128*1024*1024,
+                    scope='Core logical input; SDK/proxy/Arrow and unaccepted producer suffix are separate')
+                summary['configured_http_upper_bound']=concurrency
+                execution=build_native_execution(routed,physical=physical,max_request_bytes=core_request_bytes,
+                    input_bytes=core_input_bytes,max_tasks=concurrency,max_active_requests=concurrency)
+                stack.push(lambda _type,error,_trace: close_core_execution(execution,summary,error))
+                limits=LotusCallLimits(routed.timeout_ms/1000,max_request_bytes=core_request_bytes,
+                    max_batch_rows=64,max_batch_input_bytes=128*1024*1024,batch_timeout_s=None)
+                executor=LotusBatchExecutor(execution,routed,query_id='animals-q1',operator_id='filter',
                     call_limits=limits,message_profile=IMAGE_TEXT_PROFILE,retain_full_responses=False)
             def record_prompts(values):
                 if prompts or [p['row_id'] for p in values] != [r['row_id'] for r in rows]:
@@ -178,7 +233,9 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
             write_private_json(root/'original-result.json',json.loads(result.to_json(orient='split')))
             write_private_json(root/'filter-decisions.json',decisions)
             if executor is not None:
-                summary['executor_close_report'] = executor.last_close_report
+                summary['executor_close_report'] = (dict(lotus_cleanup_errors=[dict(phase=phase,
+                    error_type=type(error).__name__) for phase,error in executor.last_cleanup_errors])
+                    if arm == 'semloom' else executor.last_close_report)
             peak = observed_http_peak(trace)
             summary['resource_gate'] = dict(request_allowance=concurrency,
                 observed_upstream_peak=peak, passed=peak <= concurrency,
@@ -218,11 +275,15 @@ def main(argv=None):
     parser.add_argument('--output',type=Path)
     parser.add_argument('--model',type=Path)
     parser.add_argument('--tokenizer',type=Path)
-    parser.add_argument('--arm',choices=('lotus-native','daft','ray-data'),default='lotus-native')
+    parser.add_argument('--arm',choices=('lotus-native','daft','ray-data','semloom'),default='lotus-native')
     parser.add_argument('--observation-mode',choices=('qualification','performance'))
     parser.add_argument('--concurrency',type=int,default=4)
     parser.add_argument('--max-tokens',type=int,default=8192)
     parser.add_argument('--ray-temp-root',type=Path)
+    parser.add_argument('--core-request-bytes',type=int)
+    parser.add_argument('--core-input-bytes',type=int)
+    parser.add_argument('--core-ray-window-bytes',type=int)
+    parser.add_argument('--core-ray-object-bytes',type=int)
     parser.add_argument('--lease-root',type=Path)
     parser.add_argument('--repository-commit')
     args = parser.parse_args(argv)
@@ -237,6 +298,8 @@ def main(argv=None):
                               repository_commit=args.repository_commit,recover_stale=False):
         summary = run_query(dataset,load_fixed_model_config(args.model),arm=args.arm,
             output=args.output,tokenizer_path=args.tokenizer,concurrency=args.concurrency,
-            max_tokens=args.max_tokens,observation_mode=args.observation_mode,ray_temp_root=args.ray_temp_root)
+            max_tokens=args.max_tokens,observation_mode=args.observation_mode,ray_temp_root=args.ray_temp_root,
+            core_request_bytes=args.core_request_bytes,core_input_bytes=args.core_input_bytes,
+            core_ray_window_bytes=args.core_ray_window_bytes,core_ray_object_bytes=args.core_ray_object_bytes)
     print(json.dumps({k:summary[k] for k in ('status','arm','rows','model_calls','full_query_seconds','quality')},indent=2))
     return 0

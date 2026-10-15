@@ -11,7 +11,7 @@ CPU定向与独审修复身份早拒绝、workflow退出异常快照两项；实
 
 ## 2026-10-15：接入原始 SemBench Animals Q1
 
-新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和真实VLM小轮集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；单项请求超Core容量的臂明确pending，未改依赖或使用CLIP检索代替。45dd1524初轮及ce7d3285的Daft容量补轮完成原64图与原质量评价；独审发现的初轮并发超限、补轮、来源包和正常释放均保留，累计256真实调用，单次值不作性能排名。
+新增固定原图像Filter→COUNT与官方Species SQL／聚合评价，原输入来源及逐文件许可核对、CPU失败／修复和真实VLM小轮集中在[同题报告](experiments/results/diagnostics/sembench_animals_20261015/README.md)。既有图文profile只扩展当前SDK／批次接点，保留当前deadline与远程session合同；初轮单项请求超Core默认容量的臂明确pending，未改依赖或使用CLIP检索代替。45dd1524初轮及ce7d3285的Daft容量补轮完成原64图与原质量评价；独审发现的初轮并发超限、补轮、来源包和正常释放均保留，累计256真实调用，单次值不作性能排名。 随后复用同一工作目录实现native显式≤8MiB／总输入预算，普通PG默认不变；113项服务器CPU含实际大载荷Ray通过、原失败保留，Core原64图补轮也完成64调用、计数与逐图误差均0，累计320调用，正常释放。
 
 ## 2026-10-15：接入固定 PZ 原生 Movie 与执行边界
 

@@ -6,9 +6,13 @@ import threading
 from ...planning.work import StageWork, WorkDescriptor
 from ...scheduling.core.session_contract import OfferedTask, SessionSpec, TaskInfo
 from .full_response import FullResponseTransport
-from .incremental_execution import build_fixed_model_execution
+from .incremental_execution import _build_model_execution
 from .model_config import MAX_MODEL_RESPONSE_BYTES
-from .ray_map_transport import RayMapConfig, ray_map_factory
+from .ray_map_transport import RayMapConfig, _ray_transport_options
+from ..wire.framing import MAX_FRAME_BYTES
+
+
+MAX_NATIVE_REQUEST_BYTES = 8 * 1024 * 1024
 
 
 def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, call_id: str,
@@ -25,15 +29,25 @@ def prepare_native_task(payload: bytes, sequence: int, *, row_sequence: int, cal
 
 
 def build_native_execution(config, *, physical: RayMapConfig | None, execute=None,
-                           transport_factory=None, **options):
+                           transport_factory=None, max_request_bytes=MAX_FRAME_BYTES, **options):
     """Use the declared Ray payload backend; physical=None selects a local diagnostic."""
+    if type(max_request_bytes) is not int or not 1 <= max_request_bytes <= MAX_NATIVE_REQUEST_BYTES:
+        raise ValueError("native request capacity must be between one byte and eight MiB")
+    if 'item_input_bytes' in options:
+        raise ValueError("native item capacity is selected only by max_request_bytes")
+    if max_request_bytes != MAX_FRAME_BYTES:
+        total = options.get('input_bytes')
+        if type(total) is not int or total < max_request_bytes:
+            raise ValueError("nondefault native request capacity requires explicit total input_bytes fitting one item")
     if physical is None:
-        execution = build_fixed_model_execution(config, execute=execute,
+        execution = _build_model_execution(config, item_input_bytes=max_request_bytes, execute=execute,
             transport_factory=transport_factory or (None if execute else FullResponseTransport), **options)
     else:
         if execute is not None or transport_factory is not None or type(physical) is not RayMapConfig:
             raise ValueError("native Ray execution requires RayMapConfig and its own transport")
-        execution = ray_map_factory(replace(physical, response_mode="full"))(config, **options)
+        selected = _ray_transport_options(replace(physical, response_mode="full"), max_request_bytes)
+        selected.update(options)
+        execution = _build_model_execution(config, item_input_bytes=max_request_bytes, **selected)
 
     def close(timeout=5.0):
         # Backend teardown cannot claim service cleanup while a flow or unknown

@@ -5,7 +5,7 @@
 固定实现 `bdae61bb`；旧 `671a22dd` 与历史 B/C 原来源分开。CPU定向、真实Ray零GPU及同任务33图ABBA均按[独立摘要](https://github.com/3444374/ai-operator-execution-optimization/blob/3f8748fd273f5a0d5c99e31fa6663dc500a68af9/experiments/results/diagnostics/hse_static_lifecycle_20261014/restoration_qualification.json)定位。
 8完整矩阵逐字同、真实forward计数和物理退出通过；NumPy／broker组件全值与原失败保留，小轮不证明GPU收益或总RSS有界。
 
-2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询CPU资格、许可逐文件证明及单VLM三后端真实小轮已分列；保留原始失败、Daft初轮并发超限与容量补轮、完整请求及逐图核验，Core容量缺口仍pending，不作CLIP、排名、稳态或尾分位结论。
+2026-10-15：[原始 Animals Q1](diagnostics/sembench_animals_20261015/README.md)固定官方完整目录／seed42 SF64及原SQL／聚合评价。原查询CPU资格、许可逐文件证明及单VLM三后端真实小轮已分列；保留原始失败、Daft初轮并发超限与容量补轮、完整请求及逐图核验，Core显式大请求入口已通过113项CPU／真实Ray／PG回归，Core原64图单VLM补轮也完成64调用／误差0，不作CLIP、排名、稳态或尾分位结论。
 
 2026-10-15：[PZ Movie 原生接线](diagnostics/palimpzest_movie_20261015/README.md)锁定 c814e／6efc 源码，实际原库 CPU 与8行localhost fixture的 Q3／Q2共12POST通过，模型0／GPU0。Q2 LIMIT5仍6调用；FP1／FN1抵消COUNT的反例保留。完整原始 Movie 模型、五组执行及性能资格尚未完成。
 2026-10-15：[Ray2.56.1迭代器构造故障](diagnostics/lotus_native_image_retrieval_20261014/README.md#ray-iterator-construction)。

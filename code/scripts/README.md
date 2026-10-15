@@ -2,7 +2,15 @@
 
 ## 原始 SemBench Animals Q1
 
-`experiments/run_sembench_animals.py`使用固定上游Q1及原Species SQL／相对误差评价；输入是仓外冻结manifest与完整digest。`--preflight`零模型；执行需显式`--observation-mode performance`或`qualification`、模型／tokenizer／新输出与共享lease目录。`--arm lotus-native|daft|ray-data`保留原ImageArray、提示、缓存关闭和parser；生成上限默认沿用上游8192，无构造器预热。入口只测≤64图，一次完整query不提供可靠尾分位。数据准备及当前资格见[报告](../../experiments/results/diagnostics/sembench_animals_20261015/README.md)。
+`experiments/run_sembench_animals.py`使用固定上游Q1及原Species SQL／相对误差评价；输入是仓外冻结manifest与完整digest。`--preflight`零模型；执行需显式`--observation-mode performance`或`qualification`、模型／tokenizer／新输出与共享lease目录。`--arm lotus-native|daft|ray-data|semloom`保留原ImageArray、提示、缓存关闭和parser；生成上限默认沿用上游8192，无构造器预热。入口只测≤64图，一次完整query不提供可靠尾分位。数据准备及当前资格见[报告](../../experiments/results/diagnostics/sembench_animals_20261015/README.md)。
+
+
+`semloom`须同时显式传`--core-request-bytes`、`--core-input-bytes`、
+`--core-ray-window-bytes`及`--core-ray-object-bytes`；默认不扩容。原图64行所用配置是
+4194304／8388608／4194328／8388608字节，并发4、Arrow、无preparation。
+固定runtime为8 CPU，因此该臂并发只接受2–8；单项最多8MiB，总输入至少容纳一项，
+window／object条件在准备前校验。LOTUS准备批次128MiB与Core输入、Arrow预算分列，
+不能据此声称RSS受硬限制。该入口保留首个查询异常并另记Core关闭和未知占用。
 
 
 ## LOTUS 原生图像检索
