@@ -41,18 +41,21 @@ PG＋SemLoom继续使用原有`query_cli.py`，同任务比较说明见[方案](
 
 LOTUS 可显式选择 `lotus_observation_mode=performance`（CLI：`--lotus-observation-mode performance`），
 省去原请求池前为观测重复构造的预期 HTTP 值；默认 `qualification` 保留原核对。
+performance 同时省去完整 SDK 响应的重复落盘；原解析、usage、响应摘要和错误／取消／关闭保持。
 行／阶段身份、真实 POST 额度、原结果与计时保持，未构造值明确为不可观测；
 配置、57 项本地通过／25 项跳过及局部替身成本见[观测核查](../../../../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)。
 
 LOTUS与DuckDB新增三种独立执行参照，具体支持范围及取消检查见[本轮报告](../../../../experiments/results/postgresql/native_executor_baselines_20261012/README.md)。
 新路径不创建SemLoom Core；Ray Core与Ray Data分别命名，旧`fixed-map-native-ray`仍表示Ray Data。
 单查询和`PersistentAdapterGroup`共用新名字，后者保留LM／连接及调用方Ray runtime，查询各建自己的图／actor。
+健康网关连接在完整 drain 后跨查询复用，Cookie 由调用者拥有；失败查询仍停止整个 group。
 Daft在Ray初始化前显式设置Native runner，Ray入口仍需要新的短私有暂存目录；所有HTTP结果交回原方法。
 准备调用的Ray连接只核地址、CPU、object-store字节和导入异步批次数；
 Ray Core与SemLoom不借未选用的Ray Data参数拒绝小容量配置，准备调用也不套用SQL reader所需的额外CPU。
 所选Ray Data仍须满足`num_threads > ray_actors`，供原SDK预处理／后处理task使用；
 CPU1／A1在导入、修改异步批次环境和runtime启动前拒绝，Core与SemLoom的CPU1继续允许。
-Ray Data仍在启动前核对自己的A×B×R行数容量，原SQL reader的`QueryConfig`检查保持。
+Ray Data在启动前核对活动HTTP上界A×B，另报A×B×R行包络及有限批次行／字节额度；
+这些额度不保证全图RSS。原SQL reader的`QueryConfig`检查保持。
 
 `native_adapter_query.py`提供外部有限输入的共同固定Map参照，`supplier_adapter_query.py`装配已交付的供应商方法。
 输入加载与组件准备计入完整应用；`record_prepared_execution`直接记录实际API入口至消费结束，方法／图构建留在查询内。

@@ -12,9 +12,10 @@ over the execution policy it observes.
 The gateway is an observation boundary, not a baseline executor or scheduler. Any future queue,
 backpressure, batching, or retry belongs in the measured system and must not be added here.
 
-Upstream HTTP connections are pooled by default. Sequential query owners call
-`reset_upstream_connections()` before preparing each query, after the preceding query has drained;
-an active request makes this operation fail. Within a query, connections remain reusable.
+Upstream HTTP connections are pooled by default, including across drained queries in a persistent
+owner. The proxy forwards caller cookies and response Set-Cookie headers without retaining cookies
+in its own client. `reset_upstream_connections()` remains an explicit cold-connection diagnostic;
+an active request makes this operation fail. A failed persistent query stops its owner group.
 Public aiohttp trace signals record connection creation, reuse, connector waiting and pool generation.
 `fresh_upstream_connections=True` is an optional transport diagnostic; it does not replay a failed POST.
 
