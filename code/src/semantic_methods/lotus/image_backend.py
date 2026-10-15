@@ -1,0 +1,430 @@
+"""Direct reference reusing the project's slow CLIP preprocessing and actor."""
+from __future__ import annotations
+
+import time
+import threading
+import operator
+import json
+
+from src.modalities.image.clip import ClipImagePreprocessor, ClipTensorActor
+from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult, ImageBatchTelemetry
+
+
+class DirectImageExecutor:
+    input_kind = "rgb_pil"
+
+    def __init__(self, *, model, processor=None, device="cuda", dtype="float32", batch_size=32):
+        if type(batch_size) is not int or batch_size < 1:
+            raise ValueError("image model batch size must be positive")
+        self.batch_size = batch_size
+        self.processor = ClipImagePreprocessor(processor or model, local_files_only=True)
+        self.actor = ClipTensorActor(model, processor_revision=processor or model,
+                                    device=device, dtype=dtype, local_files_only=True,
+                                    normalize=True, detailed_stage_timing=False)
+        self.semantics = self.actor.semantics
+        self.execution_observations = []
+
+    def embed_batch(self, doc_ids, images):
+        if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
+            raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
+        from PIL import Image
+        for image in images:
+            if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                raise TypeError("native image input requires nonempty RGB PIL images")
+            image.load()
+        import numpy as np
+
+        started = time.perf_counter()
+        chunks = []
+        costs = []
+        for offset in range(0, len(doc_ids), self.batch_size):
+            ids = doc_ids[offset:offset + self.batch_size]
+            at = time.perf_counter()
+            pixels = self.processor.preprocess_decoded(images[offset:offset + self.batch_size])
+            preprocess_s = time.perf_counter() - at
+            batch = ImageEmbeddingBatch(ids, pixels, "preprocessed_tensor",
+                                        len(ids) * 224 * 224, "pixels")
+            result = self.actor.embed(batch)
+            chunks.append(result.embeddings)
+            costs.append(dict(decode_resize_normalize_s=preprocess_s, actor_service_s=result.service_s,
+                host_copy_s=result.telemetry.host_copy_s, device_input_bytes=result.telemetry.device_input_bytes,
+                output_bytes=result.telemetry.output_bytes))
+        self.execution_observations.append(dict(batches=costs, detailed_cuda_timing=False,
+            transport_time_s=None))
+        return ImageEmbeddingResult(tuple(doc_ids), np.concatenate(chunks), self.semantics,
+                                    time.perf_counter() - started)
+
+    def close(self):
+        self.actor.synchronize()
+
+
+class SlowClipPrepare:
+    """A workload preprocessor; execution and queues belong to the chosen engine."""
+    def __init__(self, processor_revision, torch_intraop_threads=1, torch_interop_threads=1,
+                 preprocessing_identity=None):
+        from src.modalities.image.clip import configure_torch_thread_pools
+        configure_torch_thread_pools(torch_intraop_threads, torch_interop_threads)
+        self.processor = ClipImagePreprocessor(processor_revision, local_files_only=True)
+        self.identity = self.processor.preprocessing_identity()
+        self.resource_identity = None
+        if preprocessing_identity is not None:
+            from src.modalities.image.worker_identity import validate_preprocessing_identity, worker_identity, record_worker_identity
+            if validate_preprocessing_identity(self.identity) != preprocessing_identity:
+                raise ValueError("CLIP preprocessor differs from the owner's actual identity")
+            self.resource_identity = worker_identity("clip_prepare", preprocessing_identity=self.identity)
+            record_worker_identity(self.resource_identity)
+
+    def ready(self):
+        import torch
+        return {"input_kind": "encoded_bytes", "processor_backend": "PIL",
+                "preprocessing_identity": self.identity,
+                "torch_intraop_threads": torch.get_num_threads(),
+                "torch_interop_threads": torch.get_num_interop_threads()}
+
+    def preprocess(self, doc_ids, encoded_images):
+        pixels = self.processor.preprocess(encoded_images)
+        return ImageEmbeddingBatch(tuple(doc_ids), pixels, "preprocessed_tensor",
+                                   len(doc_ids) * 224 * 224, "pixels")
+
+    def preprocess_staged(self, descriptor, encoded_images):
+        from src.modalities.image.staged import build_prepared_image_block_descriptor, image_transform_signature
+        identity = None
+        if descriptor.transform_signature.startswith("image-transform-v2:"):
+            identity = self.processor.preprocessing_identity()
+            if descriptor.transform_signature != image_transform_signature(**identity):
+                raise ValueError("image preprocessor identity does not match its source descriptor")
+        at = time.perf_counter()
+        pixels = self.processor.preprocess(encoded_images)
+        preprocess_s = time.perf_counter() - at
+        prepared = build_prepared_image_block_descriptor(descriptor, pixels, ready_at_s=time.perf_counter(),
+            preprocessing_identity=identity)
+        batch = ImageEmbeddingBatch(descriptor.row_ids, pixels, "preprocessed_tensor",
+                                   descriptor.model_work_units, "pixels", work_descriptor=descriptor.work,
+                                   telemetry=ImageBatchTelemetry(preprocess_s=preprocess_s,
+                                       encoded_bytes=sum(len(x) for x in encoded_images), input_tensor_bytes=pixels.nbytes))
+        return prepared, batch
+
+    def __call__(self, batch):
+        import numpy as np
+        result = {"doc_id": np.asarray(batch["doc_id"]),
+                  "pixel_values": self.processor.preprocess_decoded(list(batch["image"]))}
+        if self.resource_identity is not None:
+            result["_semloom_preprocessing_identity"] = np.full(len(batch["doc_id"]), json.dumps(self.identity, sort_keys=True))
+        return result
+
+
+class OrderedMatrix:
+    """Collect the complete explicitly bounded matrix required by native sem_index."""
+    def __init__(self, ids, semantics):
+        if len(ids) > 5000:
+            raise ValueError("native index collection exceeds 5000 rows")
+        import numpy as np
+        self.ids, self.semantics = tuple(ids), semantics
+        self.positions = {doc_id: i for i, doc_id in enumerate(self.ids)}
+        self.matrix = np.empty((len(self.ids), semantics.dimension), dtype=np.float32)
+        self.seen = np.zeros(len(self.ids), dtype=bool)
+
+    def add(self, ids, matrix):
+        from .image_rm import checked_matrix
+        values = checked_matrix(matrix, len(ids), self.semantics)
+        for doc_id, row in zip(ids, values, strict=True):
+            position = self.positions.get(doc_id)
+            if position is None or self.seen[position]:
+                raise ValueError("native index collection returned an unexpected or duplicate ID")
+            self.matrix[position] = row
+            self.seen[position] = True
+
+    def finish(self):
+        if not self.seen.all():
+            raise ValueError("native index collection is incomplete")
+        if not self.ids:
+            raise ValueError("need at least one array to stack")
+        # Preserve the original independent ownership of every finished matrix.
+        return self.matrix.copy()
+
+
+class SemLoomImageExecutor:
+    """Adapt the existing SemLoom driver/HSE to the public image batch interface."""
+    def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
+                 max_active_batches=2, hse=True, encoded_bytes_limit=None,
+                 encoded_block_bytes_upper_bound=None, allowed_gpu_uuids=None):
+        cpu_workers = gpu_workers = prepare_inflight = model_inflight = 1
+        if any(type(x) is not int or x <= 0 for x in
+               (cpu_workers, gpu_workers, prepare_inflight, model_inflight, batch_size, max_active_batches)):
+            raise ValueError("image worker counts, batch size and depths must be positive integers")
+        if (prepare_inflight > cpu_workers or model_inflight > gpu_workers
+                or max(prepare_inflight, model_inflight) > max_active_batches):
+            raise ValueError("HSE stage depths exceed workers or active batches")
+        if not hse and max_active_batches < gpu_workers:
+            raise ValueError("SemLoom static max_active_batches must cover every GPU worker")
+        for value in (encoded_bytes_limit, encoded_block_bytes_upper_bound):
+            if value is not None and (type(value) is not int or value <= 0):
+                raise ValueError("HSE encoded byte settings must be positive integers")
+        if not hse and (encoded_bytes_limit is not None or encoded_block_bytes_upper_bound is not None):
+            raise ValueError("encoded byte settings require HSE")
+        import ray
+        from src.modalities.image.contracts import EmbeddingSemantics
+        from src.modalities.image.execution import SemLoomRayWorkerPool, RayWorkerPoolStartupFailure
+        if not ray.is_initialized():
+            raise ValueError("caller must initialize an exclusively owned Ray runtime")
+        if min(batch_size, max_active_batches) < 1:
+            raise ValueError("positive SemLoom batch and activity settings are required")
+        self.batch_size, self.window, self.hse = batch_size, max_active_batches, hse
+        self.model, self.processor, self.dtype = model, processor or model, dtype
+        self.encoded_bytes_limit = encoded_bytes_limit
+        self.encoded_block_bytes_upper_bound = encoded_block_bytes_upper_bound
+        self.prepare_inflight, self.model_inflight = prepare_inflight, model_inflight
+        self.execution_observations = []
+        self.semantics = EmbeddingSemantics(model, self.processor, 512)
+        self.pool = None
+        self._closed = self._unconfirmed_work = False
+        self._lock = threading.Lock()
+        handles = []
+        try:
+            expected = (ClipImagePreprocessor(self.processor, local_files_only=True).preprocessing_identity()
+                        if allowed_gpu_uuids is not None else None)
+            cpus, gpus = [], []
+            for _ in range(cpu_workers):
+                options = {} if expected is None else {"preprocessing_identity": expected}
+                cpu = ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)(SlowClipPrepare).remote(self.processor, **options)
+                handles.append(cpu)
+                cpus.append(cpu)
+            for _ in range(gpu_workers):
+                options = {} if allowed_gpu_uuids is None else {"allowed_gpu_uuids": tuple(allowed_gpu_uuids)}
+                gpu = ray.remote(num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0)(ClipTensorActor).remote(
+                    model, processor_revision=self.processor, dtype=dtype, normalize=True,
+                    local_files_only=True, torch_intraop_threads=1, torch_interop_threads=1, **options)
+                handles.append(gpu)
+                gpus.append(gpu)
+            readiness = ray.get([worker.ready.remote() for worker in handles])
+            from src.modalities.image.worker_identity import validate_preprocessing_identity
+            identities = [validate_preprocessing_identity(item.get("preprocessing_identity")) for item in readiness[:cpu_workers]]
+            identity = identities[0]
+            if any(item != identity for item in identities) or (expected is not None and identity != expected):
+                raise ValueError("all CLIP preprocessors must share the owner's actual identity")
+            if allowed_gpu_uuids is not None:
+                if any(item.get("torch_intraop_threads") != 1 or item.get("torch_interop_threads") != 1 for item in readiness):
+                    raise ValueError("all CLIP CPU/GPU workers must match the declared Torch thread pools")
+                actual = [item.get("resource_identity", {}).get("gpu_uuid") for item in readiness[cpu_workers:]]
+                if len(set(actual)) != gpu_workers or not set(actual).issubset(allowed_gpu_uuids):
+                    raise ValueError("CLIP model workers must own distinct allocated physical GPUs")
+            self.worker_readiness = readiness
+            self.pool = SemLoomRayWorkerPool(tuple(cpus), tuple(gpus), preprocessing_identity=identity)
+        except BaseException as error:
+            failure = RayWorkerPoolStartupFailure(tuple(handles))
+            error.image_worker_pool_startup = failure
+            try:
+                failure.request_termination()
+            except BaseException as cleanup_error:
+                error.add_note("worker startup termination raised " + type(cleanup_error).__name__)
+            error.add_note("retained startup actors are cleanup-only; physical exit is unconfirmed")
+            raise
+
+    def embed_batch(self, doc_ids, images):
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("SemLoom image executor already has an active batch")
+        try:
+            if self._closed or self.pool is None:
+                raise RuntimeError("SemLoom image executor is closed")
+            if self._unconfirmed_work:
+                raise RuntimeError("SemLoom image worker exit is unconfirmed")
+            return self._embed_batch(doc_ids, images)
+        finally:
+            self._lock.release()
+
+    def _embed_batch(self, doc_ids, images):
+        import daft
+        from src.modalities.image.execution import run_semloom_ray_pipeline
+        from src.modalities.image.staged_execution import run_semloom_ray_hse_pipeline
+        from src.scheduling.runtime.stage_broker import StageBrokerLimits
+        if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
+            raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
+        source = daft.from_pydict({"doc_id": list(doc_ids), "image": list(images)})
+        collector = OrderedMatrix(doc_ids, self.semantics)
+        kwargs = dict(worker_pool=self.pool, expected_doc_ids=frozenset(doc_ids),
+                      batch_size=self.batch_size, max_active_batches=self.window,
+                      embedding_dimension=512, embedding_capture=collector)
+        started = time.perf_counter()
+        self._unconfirmed_work = True
+        if self.hse:
+            encoded = max(len(x) for x in images) * self.batch_size
+            block_upper = self.encoded_block_bytes_upper_bound if self.encoded_block_bytes_upper_bound is not None else encoded
+            capacity = self.encoded_bytes_limit if self.encoded_bytes_limit is not None else encoded * self.window
+            prepared = self.batch_size * 3 * 224 * 224 * 4
+            execution = run_semloom_ray_hse_pipeline(source, **kwargs,
+                encoded_block_bytes_upper_bound=block_upper,
+                limits=StageBrokerLimits(encoded_bytes=capacity,
+                    prepare_inflight=getattr(self, "prepare_inflight", 1), ready_bytes=prepared * self.window,
+                    ready_work=self.batch_size * 224 * 224 * self.window,
+                    model_inflight=getattr(self, "model_inflight", 1)),
+                model_revision=self.model, processor_revision=self.processor, model_dtype=self.dtype)
+            self.execution_observations.append(dict(encoded_bytes_limit=capacity,
+                encoded_block_bytes_upper_bound=block_upper, encoded_bytes_peak=execution.encoded_bytes_peak,
+                ready_bytes_peak=execution.ready_bytes_peak, batch_preprocess_s=execution.batch_preprocess_s,
+                batch_host_copy_s=execution.batch_host_copy_s, batch_actor_service_s=execution.batch_actor_service_s,
+                batch_submit_s=execution.batch_submit_s, device_input_bytes=execution.device_input_bytes,
+                detailed_cuda_timing=False, transport_time_s=None))
+        else:
+            run_semloom_ray_pipeline(source, **kwargs)
+        result = ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,
+                                      time.perf_counter() - started)
+        self._unconfirmed_work = False
+        return result
+
+    def close(self):
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("cannot close SemLoom image executor while a batch is active")
+        try:
+            self._closed = True
+            if self.pool is not None:
+                from src.modalities.image.execution import stop_semloom_ray_worker_pool
+                stop_semloom_ray_worker_pool(self.pool)
+                self.pool = None
+        finally:
+            self._lock.release()
+
+
+class RayDataImageExecutor:
+    """Native Ray Data graph reusing the existing tensor predictor."""
+    input_kind = "rgb_pil"
+
+    def __init__(self, *, model, processor=None, dtype="float32", batch_size=32,
+                 pipeline="fused", allowed_gpu_uuids=None):
+        cpu_workers = gpu_workers = 1
+        from src.modalities.image.contracts import EmbeddingSemantics
+        if pipeline not in ("fused", "staged"):
+            raise ValueError("Ray image pipeline must be fused or staged")
+        if any(type(x) is not int or x <= 0 for x in (batch_size, cpu_workers, gpu_workers)):
+            raise ValueError("Ray image batch size and worker counts must be positive integers")
+        self.cpu_workers, self.gpu_workers = cpu_workers, gpu_workers
+        self.worker_options = {}
+        if allowed_gpu_uuids is not None:
+            from src.modalities.image.worker_identity import validate_preprocessing_identity
+            expected = validate_preprocessing_identity(ClipImagePreprocessor(processor or model, local_files_only=True).preprocessing_identity())
+            self.worker_options = dict(allowed_gpu_uuids=tuple(allowed_gpu_uuids), preprocessing_identity=expected)
+        self.pipeline = pipeline
+        self.model, self.processor, self.dtype = model, processor or model, dtype
+        self.batch_size = batch_size
+        self.semantics = EmbeddingSemantics(model, self.processor, 512)
+        self._closed = self._unconfirmed_work = False
+        self._lock = threading.Lock()
+        self.reuse_observations = []
+
+    def embed_batch(self, doc_ids, images):
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("Ray Data image executor already has an active batch")
+        try:
+            if self._closed:
+                raise RuntimeError("Ray Data image executor is closed")
+            if self._unconfirmed_work:
+                raise RuntimeError("Ray Data image worker exit is unconfirmed")
+            return self._embed_batch(doc_ids, images)
+        finally:
+            self._lock.release()
+
+    def _embed_batch(self, doc_ids, images):
+        import ray
+        import ray.data
+        from src.baselines.image.frameworks.ray_data import RayDataClipPredictor
+        if not ray.is_initialized():
+            raise ValueError("caller must initialize an exclusively owned Ray runtime")
+        if not doc_ids or len(set(doc_ids)) != len(doc_ids) or len(images) != len(doc_ids):
+            raise ValueError("image IDs and inputs must be nonempty, unique and aligned")
+        collector = OrderedMatrix(doc_ids, self.semantics)
+        started = time.perf_counter()
+        from PIL import Image
+        import numpy as np
+        for image in images:
+            if not isinstance(image, Image.Image) or image.mode != "RGB" or min(image.size) <= 0:
+                raise TypeError("native image input requires nonempty RGB PIL images")
+            image.load()
+        data = ray.data.from_items([{"doc_id": x, "image": np.asarray(y)}
+                                   for x, y in zip(doc_ids, images, strict=True)])
+        retry_options = dict(max_restarts=0, max_task_retries=0) if self.worker_options else {}
+        if self.pipeline == "fused":
+            from src.baselines.image.frameworks.ray_data import RayDataClipImagePredictor
+            data = data.map_batches(RayDataClipImagePredictor, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
+                **retry_options,
+                fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
+        else:
+            data = data.map_batches(SlowClipPrepare, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=self.cpu_workers), num_cpus=1,
+                **retry_options,
+                fn_constructor_kwargs={"processor_revision": self.processor,
+                    **({"preprocessing_identity": self.worker_options["preprocessing_identity"]} if self.worker_options else {})})
+            data = data.map_batches(RayDataClipPredictor, batch_format="numpy", batch_size=self.batch_size,
+                compute=ray.data.ActorPoolStrategy(size=self.gpu_workers), num_cpus=1, num_gpus=1,
+                **retry_options,
+                fn_constructor_kwargs={"model_revision": self.model, "processor_revision": self.processor,
+                    "dtype": self.dtype, "torch_intraop_threads": 1, "torch_interop_threads": 1, **self.worker_options})
+        iterator = None
+        error = None
+        self._unconfirmed_work = True
+        try:
+            iterator = iter(data.iter_batches(batch_format="numpy", prefetch_batches=1))
+            for batch in iterator:
+                collector.add(tuple(str(x) for x in batch["doc_id"]), __import__("numpy").asarray(batch["embedding"], dtype="float32"))
+                self._observe_reuse_batch(batch)
+            result = ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,
+                                          time.perf_counter() - started)
+        except BaseException as exc:
+            error = exc
+        finally:
+            actions = []
+            close = getattr(iterator, "close", None)
+            if close is not None:
+                actions.append(("iterator close", close))
+            executor = getattr(data, "_current_executor", None)
+            if executor is not None:
+                actions.append(("graph shutdown", lambda: executor.shutdown(force=True)))
+            for name, action in actions:
+                try:
+                    action()
+                except BaseException as cleanup_error:
+                    from src.experiments.execution_timing import is_timing_error
+                    if error is None:
+                        error = cleanup_error
+                    elif is_timing_error(error) and not is_timing_error(cleanup_error):
+                        cleanup_error.add_note("Prior image timing failure: " + type(error).__name__)
+                        error = cleanup_error
+                    else:
+                        error.add_note(name + " also raised " + type(cleanup_error).__name__)
+        if error is not None:
+            raise error
+        self._unconfirmed_work = False
+        return result
+
+    def _observe_reuse_batch(self, batch):
+        columns = ("uid", "pid", "embed_calls", "rows")
+        names = tuple("_semloom_model_" + column for column in columns)
+        if not any(name in batch for name in names):
+            return
+        if not all(name in batch and len(batch[name]) == len(batch["doc_id"]) for name in names):
+            raise ValueError("Ray Data model reuse columns must be complete and aligned")
+        # A returned native batch may combine predictor calls. Preserve each
+        # distinct cumulative count rather than assuming one model per batch.
+        groups = {}
+        for uid, pid, calls, rows in zip(*(batch[name] for name in names), strict=True):
+            try:
+                key = (str(uid), operator.index(pid), operator.index(calls), operator.index(rows))
+            except TypeError as error:
+                raise ValueError("Ray Data model reuse counters must be integers") from error
+            if not key[0] or min(key[1:]) <= 0:
+                raise ValueError("Ray Data model reuse identity/counters are invalid")
+            groups[key] = groups.get(key, 0) + 1
+        for (uid, pid, calls, rows), count in groups.items():
+            self.reuse_observations.append(dict(model_uid=uid, pid=pid,
+                embed_calls=calls, rows=rows, batch_rows=count))
+
+    def close(self):
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("cannot close Ray Data image executor while a batch is active")
+        try:
+            self._closed = True
+            if self._unconfirmed_work:
+                raise RuntimeError("Ray Data image worker exit is unconfirmed")
+            # Caller-owned Ray shutdown and physical process-exit checks remain separate.
+        finally:
+            self._lock.release()

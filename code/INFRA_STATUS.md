@@ -2,7 +2,7 @@
 
 ## main 与集成分支的阅读范围
 
-main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals 完整请求接点及可选vLLM部署资源。每批固定源码和资格从下文报告核对；
+main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals完整请求、可选vLLM部署资源及原生CLIP查询的必要工程闭包。每批固定源码和资格从下文报告核对；
 `425f0145` 是这些批次之前的运行基点，不能再代表当前main的全部接入范围。
 下文保留该来源在2026-10-08记录的实现与验证情况，
 不将后续集成分支的能力写成 main 已实现。未在下文明确接纳的适配与修复从
@@ -23,6 +23,14 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 [同题资格](../experiments/results/diagnostics/main_service_auto_20261015/README.md)分列`7b20feb5`候选服务的12次原SDK请求和合并后main`2041da67`的原Movie Q2／Animals Q1四臂auto／显式1复验。
 新main的Mac／Linux各30项、16完整查询／1472实际请求、逐行／像素关联、物理GPU身份、退出与正常lease均核同；Movie Q2仍有7个漏判，Animals八格COUNT3／真值3。
 仅认证所用单卡与查询，不包含CLIP/PZ/新平台；多卡／Serve仍pending，单次计时无稳定收益结论。
+
+## 原生 CLIP 查询与单卡资源入口
+
+本批提供原LOTUS RM／FAISS index／search、公开manifest／模型身份入口和static、Ray fused／staged、Daft执行接点。
+显式资源配置要求单GPU／CPU1及该进程外置`NVIDIA_TF32_OVERRIDE=0`；HSEscoped、多卡和额外深度在模型前拒绝。
+普通入口保留stock默认；HSE仅带身份／启动／取消／unknown和结果所有权基础，未带新dispatcher、路由或Broker历史计数。
+[本批接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)绑定8834的CPU／SDK检查；新main GPU仍pending。
+固定d2的四路径条件模型证据、默认数值失败及HSE环境缺项保留原身份，不继承上节服务或Movie／Animals模型资格。
 
 ## LOTUS 文本四臂
 

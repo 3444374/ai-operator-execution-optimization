@@ -1,5 +1,7 @@
 # Baseline and comparison harnesses
 
+[原生CLIP检索](../semantic_methods/lotus/README.md#原生-clip-图像检索)使用[Daft CLIP UDF](image/frameworks/daft_clip.py)与Ray CLIP predictor；图与模型批次仍由原生系统拥有，当前资格按同题main报告解释。
+
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。

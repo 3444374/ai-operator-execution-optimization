@@ -170,14 +170,53 @@ class ProjectRayWorkerPool:
 
     preprocessors: tuple[object, ...]
     gpu_actors: tuple[object, ...]
+    preprocessing_identity: dict[str, object] | None = field(default=None, compare=False, hash=False)
+
+
+def _request_ray_actor_termination(actor_handles: tuple[object, ...]) -> tuple[str, ...]:
+    """Attempt every known handle; a successful request does not prove exit."""
+    import ray
+
+    outcomes = []
+    first_error = None
+    for actor in actor_handles:
+        try:
+            ray.kill(actor, no_restart=True)
+            outcomes.append("requested")
+        except BaseException as error:
+            outcomes.append(f"request_error:{type(error).__name__}")
+            if first_error is None:
+                first_error = error
+            else:
+                first_error.add_note(f"actor termination also raised {type(error).__name__}")
+    if first_error is not None:
+        first_error.image_actor_termination_outcomes = tuple(outcomes)
+        raise first_error
+    return tuple(outcomes)
+
+
+@dataclass
+class RayWorkerPoolStartupFailure:
+    """Cleanup-only ownership of created actors; never an executable pool."""
+
+    actor_handles: tuple[object, ...]
+    termination_request_outcomes: tuple[str, ...] = ()
+    physical_exit_status: str = "unconfirmed"
+
+    def request_termination(self) -> None:
+        try:
+            self.termination_request_outcomes = _request_ray_actor_termination(self.actor_handles)
+        except BaseException as error:
+            self.termination_request_outcomes = getattr(
+                error, "image_actor_termination_outcomes",
+                tuple("request_unavailable" for _ in self.actor_handles),
+            )
+            raise
 
 
 def stop_project_ray_worker_pool(worker_pool: ProjectRayWorkerPool) -> None:
-    """Terminate one per-query worker pool after warmup or formal execution."""
-    import ray
-
-    for actor in (*worker_pool.preprocessors, *worker_pool.gpu_actors):
-        ray.kill(actor, no_restart=True)
+    """Request termination of every actor after warmup or formal execution."""
+    _request_ray_actor_termination((*worker_pool.preprocessors, *worker_pool.gpu_actors))
 
 
 def build_project_ray_worker_pool(
@@ -191,14 +230,18 @@ def build_project_ray_worker_pool(
     torch_intraop_threads: int = 1,
     torch_interop_threads: int = 1,
 ) -> ProjectRayWorkerPool:
-    """Create persistent CPU preprocess and tensor-only GPU actors."""
+    """Create persistent CPU preprocess and tensor-only GPU actors.
+
+    Startup errors retain cleanup-only handles on ``image_worker_pool_startup``.
+    Termination requests leave physical exit unconfirmed until separately observed.
+    """
     if min(cpu_workers, gpu_workers) <= 0:
         raise ValueError("worker counts must be positive")
     import ray
 
     from .clip import ClipTensorActor, FastClipImagePreprocessor
     from .contracts import ImageEmbeddingBatch
-    from .staged import build_prepared_image_block_descriptor
+    from .staged import build_prepared_image_block_descriptor, image_transform_signature
 
     @ray.remote(num_cpus=1, max_restarts=0, max_task_retries=0)
     class CpuPreprocessActor:
@@ -214,13 +257,17 @@ def build_project_ray_worker_pool(
                 torch_interop_threads=interop_threads,
             )
 
-        def ready(self) -> dict[str, int]:
+        def ready(self) -> dict[str, object]:
             import torch
 
-            return {
+            ready = {
                 "torch_intraop_threads": torch.get_num_threads(),
                 "torch_interop_threads": torch.get_num_interop_threads(),
             }
+            identity = getattr(self._preprocessor, "preprocessing_identity", None)
+            if identity is not None:
+                ready["preprocessing_identity"] = identity()
+            return ready
 
         def preprocess(
             self,
@@ -254,6 +301,11 @@ def build_project_ray_worker_pool(
             remains an ObjectRef and becomes a top-level GPU actor argument
             only after the stage broker admits it to the real ready queue.
             """
+            identity = None
+            if encoded_descriptor.transform_signature.startswith("image-transform-v2:"):
+                identity = self._preprocessor.preprocessing_identity()
+                if encoded_descriptor.transform_signature != image_transform_signature(**identity):
+                    raise ValueError("image preprocessor identity does not match its source descriptor")
             started = time.perf_counter()
             pixels = self._preprocessor.preprocess(encoded_images)
             preprocess_s = time.perf_counter() - started
@@ -263,6 +315,7 @@ def build_project_ray_worker_pool(
                 # The driver overwrites ready_at_s with its atomic completion
                 # observation; this worker timestamp is a schema-valid placeholder.
                 ready_at_s=time.perf_counter(),
+                preprocessing_identity=identity,
             )
             batch = ImageEmbeddingBatch(
                 doc_ids=encoded_descriptor.row_ids,
@@ -285,45 +338,61 @@ def build_project_ray_worker_pool(
         max_restarts=0,
         max_task_retries=0,
     )(ClipTensorActor)
-    preprocessors = tuple(
-        CpuPreprocessActor.remote(
-            processor_revision,
-            torch_intraop_threads,
-            torch_interop_threads,
+    preprocessors, gpu_actors = [], []
+    try:
+        for _ in range(cpu_workers):
+            preprocessors.append(CpuPreprocessActor.remote(
+                processor_revision, torch_intraop_threads, torch_interop_threads,
+            ))
+        for _ in range(gpu_workers):
+            gpu_actors.append(RemoteGpuActor.remote(
+                model_revision,
+                processor_revision=processor_revision,
+                dtype=dtype,
+                normalize=True,
+                detailed_stage_timing=detailed_stage_timing,
+                torch_intraop_threads=torch_intraop_threads,
+                torch_interop_threads=torch_interop_threads,
+            ))
+        cpu_readiness = ray.get([actor.ready.remote() for actor in preprocessors])
+        readiness = cpu_readiness + ray.get([actor.ready.remote() for actor in gpu_actors])
+        expected_threads = {
+            "torch_intraop_threads": torch_intraop_threads,
+            "torch_interop_threads": torch_interop_threads,
+        }
+        mismatches = [
+            item for item in readiness
+            if any(item.get(key) != value for key, value in expected_threads.items())
+        ]
+        if mismatches:
+            raise RuntimeError(
+                "Ray worker Torch thread contract mismatch: "
+                f"expected={expected_threads}, observed={mismatches}"
+            )
+        identities = [item.get("preprocessing_identity") for item in cpu_readiness]
+        preprocessing_identity = identities[0]
+        if any(identity != preprocessing_identity for identity in identities):
+            raise RuntimeError("Ray preprocessors do not share one preprocessing identity")
+        if preprocessing_identity is not None:
+            if (not isinstance(preprocessing_identity, dict)
+                    or not image_transform_signature(**preprocessing_identity).startswith("image-transform-v2:")):
+                raise ValueError("Ray preprocessor readiness requires an explicit versioned identity")
+    except BaseException as error:
+        failure = RayWorkerPoolStartupFailure(tuple((*preprocessors, *gpu_actors)))
+        error.image_worker_pool_startup = failure
+        try:
+            failure.request_termination()
+        except BaseException as cleanup_error:
+            error.add_note(f"worker startup termination raised {type(cleanup_error).__name__}")
+        error.add_note(
+            f"worker startup failed with {len(failure.actor_handles)} known actor handle(s); "
+            "physical exit is unconfirmed; retained handles are cleanup-only"
         )
-        for _ in range(cpu_workers)
-    )
-    gpu_actors = tuple(
-        RemoteGpuActor.remote(
-            model_revision,
-            processor_revision=processor_revision,
-            dtype=dtype,
-            normalize=True,
-            detailed_stage_timing=detailed_stage_timing,
-            torch_intraop_threads=torch_intraop_threads,
-            torch_interop_threads=torch_interop_threads,
-        )
-        for _ in range(gpu_workers)
-    )
-    readiness = ray.get([actor.ready.remote() for actor in preprocessors])
-    readiness.extend(ray.get([actor.ready.remote() for actor in gpu_actors]))
-    expected_threads = {
-        "torch_intraop_threads": torch_intraop_threads,
-        "torch_interop_threads": torch_interop_threads,
-    }
-    mismatches = [
-        item
-        for item in readiness
-        if any(item.get(key) != value for key, value in expected_threads.items())
-    ]
-    if mismatches:
-        raise RuntimeError(
-            "Ray worker Torch thread contract mismatch: "
-            f"expected={expected_threads}, observed={mismatches}"
-        )
+        raise
     return ProjectRayWorkerPool(
-        preprocessors=preprocessors,
-        gpu_actors=gpu_actors,
+        preprocessors=tuple(preprocessors),
+        gpu_actors=tuple(gpu_actors),
+        preprocessing_identity=preprocessing_identity,
     )
 
 

@@ -49,7 +49,7 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 本批来源、检查和未验证范围统一记录在[main 文本接入资格](../../../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
 [固定main原查询实测](../../../../experiments/results/diagnostics/main_queries_20261015/README.md)记录原Movie与Animals的完整模型请求、质量不足和单次计时；
 可选服务资源配置的后续源码资格见[同题报告](../../../../experiments/results/diagnostics/main_service_auto_20261015/README.md)。
-本模块说明不认证其他分支的图像 RM／index／search、PZ 或 IMLane；软件 fixture 不代表真实模型质量或性能收益。
+图像 RM／index／search 的本批工程接点见下节；PZ／IMLane继续按各自来源解释，软件 fixture不代表真实模型质量或性能收益。
 
 ## 原版 Animals 图文查询
 
@@ -61,3 +61,19 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 请求／总输入与 Ray window／object 字节额度，原 PG／wire 默认不变。CLI、正常 lease 和外层故障监督要求见
 [脚本说明](../../../scripts/README.md#animals-原版图文-q1)；源码闭包与实际 CPU 来源见
 [Animals 接入资格](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
+
+
+## 原生 CLIP 图像检索
+
+`image_source.py`核对原LOTUS1.2.4；`image_identity.py`绑定模型参数、processor内容与版本。
+`image_rm.py`把完整图像批交给原执行owner，保留RGB／源字节内容、行ID、shape／finite及独立矩阵所有权；
+`image_workflow.py`保留原生FAISS建库、重载、完整检索结果和settings恢复。
+`image_backend.py`提供固定单worker的Direct、SemLoom static／静态HSE和Ray fused／staged；
+[Daft原生UDF](../../baselines/image/frameworks/daft_clip.py)保留自己的模型批次与生命周期。
+
+[公开命令](../../../scripts/README.md#原生-lotus-clip-查询)包括文件manifest、模型资格producer及完整查询。
+`--observe-model-reuse`显式保存真实构造身份与整数调用计数，默认关闭；已导出的观测可回收，返回矩阵独立拥有。
+可选resource配置只开放static／Ray／Daft单卡、CPU1和外置TF32关闭环境，模型启动前拒绝HSEauto及多卡。
+HSE仅带必要身份／取消／unknown基础，新dispatcher／路由未纳入。
+[本批来源与检查](../../../../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)明确区分当前CPU接入、
+固定d2的条件模型证据和新main仍待GPU复验；默认数值失败、HSE环境缺项及性能边界保留。

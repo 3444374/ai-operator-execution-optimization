@@ -27,8 +27,14 @@ import argparse
 import os
 import sys
 import time
-from pathlib import Path, PurePath, PurePosixPath
+from pathlib import Path
 from zipfile import ZipFile
+
+CODE_ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "src").is_dir())
+if str(CODE_ROOT) not in sys.path:
+    sys.path.insert(0, str(CODE_ROOT))
+
+from src.data.coco import coco_doc_id, list_images, list_zip_images
 
 
 def parse_args():
@@ -58,28 +64,10 @@ def parse_args():
     return p.parse_args()
 
 
-def list_images(directory, pattern, limit, offset=0):
-    """Return a deterministic path list; IDs come from COCO filenames."""
-    paths = sorted(Path(directory).glob(pattern))
-    return paths[offset : offset + limit] if limit > 0 else paths[offset:]
 
 
-def list_zip_images(archive: ZipFile, pattern: str, limit: int, offset: int = 0) -> list[PurePosixPath]:
-    """Return deterministic matching ZIP members without extracting the archive."""
-    paths = sorted(
-        PurePosixPath(info.filename)
-        for info in archive.infolist()
-        if not info.is_dir() and PurePosixPath(info.filename).match(pattern)
-    )
-    return paths[offset : offset + limit] if limit > 0 else paths[offset:]
 
 
-def coco_doc_id(path: PurePath) -> int:
-    """Preserve the stable numeric COCO image ID encoded in the filename."""
-    try:
-        return int(path.stem)
-    except ValueError as exc:
-        raise ValueError(f"COCO image filename must have a numeric stem: {path}") from exc
 
 
 def get_versions(conn):

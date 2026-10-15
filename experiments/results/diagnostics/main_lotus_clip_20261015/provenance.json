@@ -1,0 +1,402 @@
+{
+  "schema": "semloom.main_lotus_clip_adoption.v1",
+  "base_main": "3b1eb789365373c79ae2ee2aa6bdd6237631c246",
+  "candidate_code_commit": "8834761416912c71fac58b8e715f5d635c8ebc57",
+  "source_runtime": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+  "source_report_commit": "95f8266f9245b4e30f337ea7a5a957dc86f1095d",
+  "baseline_accepted": "d93dbdbba0de1c8e291338613490c36ddac8d514",
+  "production_or_scripts": 21,
+  "test_files": 22,
+  "files": {
+    "code/scripts/data/build_image_file_manifest.py": {
+      "sha256": "0df36b30ce87cc9361e0e3f628e2ec09977eee80b6cd22197b7e2cafaf3ea930",
+      "bytes": 1267,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/scripts/data/import_coco_images.py": {
+      "sha256": "2f7521d433c91ba30f3f32c74c79c73c3b23938dccf7bffd4da31bc91d2a7007",
+      "bytes": 7725,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/scripts/experiments/qualify_lotus_clip.py": {
+      "sha256": "90ba86352f0b03402f38149ec422486942f2da18be8dea94f328b27b473a0cec",
+      "bytes": 8632,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/scripts/experiments/run_lotus_image_retrieval.py": {
+      "sha256": "b1210c2541c200bc20a1331682c17fd16e001fc72eadd33b3c7da1449ff3a525",
+      "bytes": 25039,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/src/baselines/image/frameworks/daft_clip.py": {
+      "sha256": "fa34049d472e31597e9ccdf6d1f20a63adc2afdb715af5cbef78b1de0cce820b",
+      "bytes": 17128,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/baselines/image/frameworks/ray_data.py": {
+      "sha256": "436631de50d466c0dc16640a3a96254b0dfb5ab7603439bcd61836b779887498",
+      "bytes": 10069,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/src/data/coco.py": {
+      "sha256": "9f15fb6ec9da846dbfea53075dbe0f08c4273e7f499a058d3dfff0d400125571",
+      "bytes": 1053,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/experiments/image_reuse.py": {
+      "sha256": "4751bc82fce5250583b2570c1b92b5e83ea15e1c3730fd6bd2d3cbdb2c6a63eb",
+      "bytes": 6698,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/clip.py": {
+      "sha256": "18cf0dd12dfb4785af87bbe93d189e3cc50f7bf014ad7d3ce312fdc57f5f46ea",
+      "bytes": 17079,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/contracts.py": {
+      "sha256": "5226d33734e1163fa847f3175385d88b481366ba6095d708c6ca0fa8ac5372ee",
+      "bytes": 10221,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/execution.py": {
+      "sha256": "9470925aa55592a5ba4afb8ad89e39575db022fe4bd47b279962fdb75d68784d",
+      "bytes": 22203,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/file_source.py": {
+      "sha256": "051163cc6e13288597d6a2551dac250feb7bbebe59d7b07ea3771eb29cd934c7",
+      "bytes": 9898,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/resource_budget.py": {
+      "sha256": "c2424a036dbcc65fe4e780ea538b56741895791120c02e60c777fee8beea6c11",
+      "bytes": 7376,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/staged.py": {
+      "sha256": "6fe643f8f982c455284d5b955149459279b5355f109fb2d41229c35aa339825c",
+      "bytes": 9400,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/staged_execution.py": {
+      "sha256": "5c75eba6e85b8f304e171dd821d9666ff0de8fb92fd50f2d3c341ec2a7687839",
+      "bytes": 21290,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/src/modalities/image/worker_identity.py": {
+      "sha256": "e8ff5c80ebeaead12a0827706b8cde2205c52fdc0d82f5ea81bbb2017ac3275c",
+      "bytes": 3607,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/semantic_methods/lotus/image_backend.py": {
+      "sha256": "447b3ed3d12108d4fb748bce0ba2efb51ebf7f44a555a69540a0f7a8778444d0",
+      "bytes": 25162,
+      "source_byte_equal": false,
+      "role": "production_or_public_script"
+    },
+    "code/src/semantic_methods/lotus/image_identity.py": {
+      "sha256": "44f167d96586b4da99b808e4a99ef760957da549c8288bf43a15d94f95dcdd03",
+      "bytes": 5732,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/semantic_methods/lotus/image_rm.py": {
+      "sha256": "73f7faf808d71528fca0a816989348c7a06be5cbc83096cafc45f28f1019cf9f",
+      "bytes": 12296,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/semantic_methods/lotus/image_source.py": {
+      "sha256": "6ae35e2c2750fded14d3e93eb16d2b7df63ce6c2a56104aa92025c1b0a1369b1",
+      "bytes": 1703,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/src/semantic_methods/lotus/image_workflow.py": {
+      "sha256": "b4c53543bce067f62bc038de7372996d5c896b0f254a1e2e17711d22bae66a65",
+      "bytes": 9703,
+      "source_byte_equal": true,
+      "role": "production_or_public_script"
+    },
+    "code/tests/baselines/image/test_daft_clip_rgb.py": {
+      "sha256": "c6c935852a7d59a5c5049799608ed8538e27770c72ef2a27652e6a782ce995cd",
+      "bytes": 15504,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/experiments/test_image_reuse.py": {
+      "sha256": "44d31ed23424b1f7fdf24b5a699a363a747b1fba9c1e48376ca5c3a3efe779a4",
+      "bytes": 17040,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/infrastructure/test_image_worker_identity.py": {
+      "sha256": "9377f99c032a14da11567a3506cae798aaad5213a26652cda78054f4c61f08a3",
+      "bytes": 3139,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/modalities/image/test_hse_static_lifecycle.py": {
+      "sha256": "72c7f3b6328423b79e46fa2d5a04dd3f23f1ac6eca48d2f780c099338c08e876",
+      "bytes": 19816,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/modalities/image/test_hse_static_ray.py": {
+      "sha256": "e363fe411099f32c41ece68c25102a30419b17ccf79d4c38f561583ec3b973dc",
+      "bytes": 14677,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/modalities/image/test_image_file_source.py": {
+      "sha256": "d3a7f928db4fa08151e7c8e9b376c3c5a5a096433f9f3282bb6a2c4f4ed1dfd1",
+      "bytes": 5503,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/modalities/image/test_image_preprocessing_identity.py": {
+      "sha256": "2f589ac022019a50b72f08b47755b9ebc1fe491b9362e9782144c263167db107",
+      "bytes": 17532,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/modalities/image/test_image_worker_startup.py": {
+      "sha256": "65ab1df4a67762dffe6ba14623f82e48fe8f8b6027395092c4f59777374dbda4",
+      "bytes": 12876,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/__init__.py": {
+      "sha256": "60c71efb4a5615d2af1d7db1dafef56f83578f1bc2d8ba3950779548f6cb7335",
+      "bytes": 51,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_capacity.py": {
+      "sha256": "87589e0695e261b798e801c9db656f066fc017203cb80ce8f0ef962df25245af",
+      "bytes": 3963,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_cli.py": {
+      "sha256": "1d4d82cfd41e44c4b90ed90448441d466e5bffd79402e9d9bc7e03202ff438d7",
+      "bytes": 12771,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_collection_results.py": {
+      "sha256": "dd270bce2cbef47c8b7757de95720cfd1bdef14dc46343555e84e45436a02cc5",
+      "bytes": 7510,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_identity.py": {
+      "sha256": "3be49eb56c474fdc81eb36264d0686360c2774f23644d26fe5c07cf62674a665",
+      "bytes": 4103,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_lifecycle.py": {
+      "sha256": "425dfa7ca0ead685d3f74958ce4e1a0a07d5ea763f92641d8950695cce5f5369",
+      "bytes": 26512,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_native.py": {
+      "sha256": "4c5e8589800f866df6efe1f21ad6f6603f41df7c02bb8fd3cd9c85a8ab2a16a7",
+      "bytes": 5428,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_native_input.py": {
+      "sha256": "b9d1eb601f243a87d7c1e4befb7d4c4ad167010054cadf6195e991673fd1bd35",
+      "bytes": 25394,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_observation_release.py": {
+      "sha256": "853a8abcd35718ca9f32ede118ca2e94d478ceeb0f56d7a5ae1e8591ecc5a635",
+      "bytes": 18827,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_resident.py": {
+      "sha256": "76f33a4759880514ff4bd5aa676a7034d6c16d9e101011679a8c1793fc78217e",
+      "bytes": 5366,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_resident_cli.py": {
+      "sha256": "547931cd19b87b7c9284c90dfa71682aa4937f646c71fdeef67438e99e30fe33",
+      "bytes": 4455,
+      "source_byte_equal": true,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_resource_scope.py": {
+      "sha256": "5bf8900975f1e02b02bc9b787d6ba8dccf2cd8c961427680cd099cc1fd17d7f7",
+      "bytes": 3681,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_resources.py": {
+      "sha256": "bef0804bbe780483700aab8ea251730cad77c91e3a934683722a2cfce0d3d9b1",
+      "bytes": 8562,
+      "source_byte_equal": false,
+      "role": "test"
+    },
+    "code/tests/semantic_methods/test_lotus_image_rm.py": {
+      "sha256": "4f210e9ee3b90d9db1c29508d3e2ec6575ee9bad9bb1b86e8dbc4fdff978a73d",
+      "bytes": 8235,
+      "source_byte_equal": true,
+      "role": "test"
+    }
+  },
+  "main_resource_scope": {
+    "arms": [
+      "semloom_static",
+      "ray_data_fused",
+      "ray_data_staged",
+      "daft_native"
+    ],
+    "GPU_count": 1,
+    "CPU_workers": 1,
+    "environment": "external NVIDIA_TF32_OVERRIDE=0",
+    "HSE_resource_auto": "rejected before model startup",
+    "multi_GPU": "rejected; not truncated to1"
+  },
+  "source_only_model_qualification": {
+    "runtime": "d2fa8c9b83470057cd3bd10118ba7e44339695eb",
+    "rows": 66,
+    "cap": 66,
+    "model_HTTP_requests": 0,
+    "strict_pairs": [
+      "static",
+      "Ray fused",
+      "Ray staged",
+      "Daft"
+    ],
+    "HSE_extra_environment": "failed/incomplete; not accepted as a fully qualified pair",
+    "default_static_max_abs": 0.0001182854175567627,
+    "original_tolerance": 1e-05,
+    "default_failure_retained": true,
+    "TF32_causality_proven": false
+  },
+  "candidate_checks": {
+    "new_model_calls": 0,
+    "new_GPU_or_lease_actions": 0,
+    "runtime_files_verified_Linux": 813,
+    "Mac": {
+      "passed": 463,
+      "conditional_skipped": 20,
+      "subtests_passed": 250,
+      "scope": "new closure plus affected image, original LOTUS software HTTP and service compatibility; localhost enabled; no real models",
+      "raw_log": "main-clip-cpu-final-mac-localhost.log"
+    },
+    "Linux_native_isolated": {
+      "passed": 320,
+      "skipped": 0,
+      "subtests_passed": 116,
+      "scope": "native LOTUS/FAISS deterministic embeddings, real Daft CPU tensors, real Ray CPU static lifecycle/partial-start process-exit, real slow processor; CUDA hidden",
+      "raw_log": "linux-native-isolated-r3.log"
+    },
+    "Linux_old_path_compatibility": {
+      "passed": 136,
+      "conditional_skipped": 8,
+      "subtests_passed": 132,
+      "scope": "old image/Map preparation, original LOTUS software HTTP and service resource validators in a separate process",
+      "raw_log": "linux-compat-r1.log"
+    },
+    "counts_overlap_not_added": true,
+    "GPU": "pending; no new image/model budget or run",
+    "public_entries": "three-JPEG manifest and help for importer/qualification/query; qualification producer not executed"
+  },
+  "independent_review": {
+    "Standards_code_P1P2": 0,
+    "Spec_code_P1P2": 0,
+    "Spec_targeted_CPU_checks": [
+      {
+        "passed": 64,
+        "skipped": 1
+      },
+      {
+        "passed": 82,
+        "skipped": 5
+      }
+    ],
+    "counts_overlap_not_added": true,
+    "final_document_review": {
+      "Standards_P1P2": 0,
+      "Spec_P1P2": 0,
+      "reviewed_files": 57,
+      "reviewed_seal_sha256": "a5f549357851bfdaa840a6e61afb365a7b458b1500597152908bcb791c3cf95d",
+      "code_source_unchanged": true,
+      "receipt_scope": "all sealed code/docs, original CPU logs and archive28payload+manifest; no new model qualification"
+    }
+  },
+  "pending": [
+    "merged-source GPU qualification",
+    "default precision qualification",
+    "HSE extra environment acceptance",
+    "multi-GPU/DP>1/Serve",
+    "real GPU failure/cancel and subsequent query",
+    "performance/scale conclusions"
+  ],
+  "preserved_base_files": {
+    "code/src/infrastructure/gpu_allocation.py": "3f0fd02d756aeb7d286673b314a622cda3b9a5e68db7ef1a62dc77f464db4f19",
+    "code/src/serving/vllm_resources.py": "7708a7aa9cb31c45b3fe773e44f926b9df49518854dffcf00fb37643a4ba702b",
+    "code/scripts/services/launch_vllm_with_identity.py": "35240b30d55dac0f805f60b16fc4a4f526b21becacfb967f5df5b9218b6e4173",
+    "code/src/infrastructure/vllm_preflight.py": "d347c431e64b8b71ad009dc020962657fcbdb04be4579542207b88e1a9c77482",
+    "code/src/experiments/execution_timing.py": "6f128848a789465c2117e0e08ae9261d4c6152c4ab3493fccbe65f5a53b468c3",
+    "code/src/infrastructure/daft_runtime.py": "f245747488d799fbea43dbdc09d2a1446ed2b27c2f01e47e524a2142b0700c69",
+    "code/src/scheduling/runtime/stage_broker.py": "a6c2b825e67affe5d139e616aa1ab5bcb32514120ecda75bf2176e37091705e3",
+    "code/src/execution_provider/adapters/ray_map_transport.py": "d58de2fdfae52162713e0429d60b427471699acf1645eae9690c64fa0f94431e"
+  },
+  "failures_retained": [
+    {
+      "run": "first Mac unittest",
+      "result": "missing pytest collected some functional tests as imports; fixture __new__ state and old multicard test scope required alignment; not accepted as final regression"
+    },
+    {
+      "run": "Mac pytest r1",
+      "result": "Torch first import under component mocks left partial import state; fixed harness loads real torch/LOTUS before mocks; no math change"
+    },
+    {
+      "run": "Mac extended sandbox",
+      "result": "localhost socket binding denied by filesystem/network sandbox; same tests passed with localhost permission; no model endpoint"
+    },
+    {
+      "run": "Linux r1",
+      "result": "1ctime metadata test assumed sub-clock filesystem resolution; deterministic ctime check and separate actual CLI SHA rejection now pass; production loader unchanged"
+    },
+    {
+      "run": "Linux combined native r2",
+      "result": "385passed/178subtests and1old Map Daft handshake subtest timeout; no source or timeout relaxation; fresh old-path136pass and isolated native320pass",
+      "root_cause": "not isolated; same-process continuation across these failure fixtures is not qualified"
+    }
+  ],
+  "raw_evidence": {
+    "archive": "main-clip-cpu-evidence-20261015.tar.gz",
+    "bytes": 293476,
+    "sha256": "94942fcb1192084456928c13fd9d30b78f3b37719ebad1ae568cfaf28c793e29",
+    "payload_members_verified": 28,
+    "members_including_manifest": 29,
+    "independent_server_copy": true,
+    "obtain": "project owner by run_id/archive digest; raw evidence remains outside Git"
+  }
+}

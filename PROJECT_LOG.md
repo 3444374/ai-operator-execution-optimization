@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-15：main 收敛原生 CLIP 查询的必要工程闭包
+
+固定88347614按d2来源选取原LOTUS RM／index／search、公开manifest／身份入口及static／Ray／Daft，保留必要静态HSE身份、失败和unknown责任。
+单卡资源入口显式要求CPU1／外置TF32关闭环境，拒绝多卡及HSEauto；未纳入dispatcher、路由、Broker历史计数、external factory或PZ。
+[本批记录](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)分列当前CPU回归和d2原条件资格；无新模型行，新main GPU复验仍pending，默认数值／HSE环境失败均保留。
+
+
 ## 2026-10-15：收敛可选 vLLM 部署资源闭包
 
 固定候选`7b20feb5`只引入部署GPU解析、原生vLLM资源配置、launcher及严格reader兼容，保留旧默认和现有前端。
