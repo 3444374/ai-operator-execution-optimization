@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-15：[PZ固定计划六臂模型与SemLoom失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r3)固定bebf，一次选定计划、六臂各120真实POST；COUNT7／真值14与完整120行解析／过滤矩阵本轮相同，raw输出及tokens不同。SemLoom在Daft runner配置处0POST失败，整轮failed；累计720／840、余120不自动补跑。八GET、197份原件及3815项一致性检查分列，服务与自有物理退出及正常lease已核；不授七臂、SemLoom或性能资格。
+
+2026-10-15：[PZ固定计划模型两轮失败](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-rounds)固定adde，首轮metadata流式GET被原观察器拒绝，第二轮GET通过后完整metadata身份比较失败；两轮真实POST／Generator／账本消费均0。服务准备86.114秒／50.121秒已初始化GPU，自有责任与正常lease关闭，原件保留。三处动态字段解释来自安装源码，非重复GET实测diff；不授模型或质量资格，累计额度仍840POST。
+
+2026-10-15：[IMLane四lane健康补轮](diagnostics/palimpzest_movie_20261015/README.md#imlane-four-lane-health)固定adde及原作者构建，CP／Ray各两批×4次localhost HTTP，共16fixture POST、模型0／GPU0。每批4个实际worker、4lane恢复及屏障峰值4，Ray另核4actor；二批复用worker／actor，仍每批DBEnd注册。自有进程／SHM／线程和正常lease退出通过；7条取消告警保留，精确ID均有GCS无引用销毁记录且与完成actor无重合。只授HTTP健康，不授完整PZ、模型或性能资格。
+
 2026-10-15：[PZ固定计划交接与CPU后端资格](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-cpu-backends)新增查询私有就绪工作／原SDK继续，六条PZ接入各2fixture POST与COUNT1，另Core物理检查5POST；合计17POST、模型0／GPU0，正常lease与自有退出。固定计划／fresh、nonredirect profile及unknown责任分列；Ray配置失败、IMLane META6/8/4与2条注册取消保留。仅三行Q3形状软件资格，原任务逐臂模型／质量／费用／总时及满载能力仍待验证。
 
 2026-10-15：[PZ原生Movie Q3模型资格](diagnostics/palimpzest_movie_20261015/README.md#一次原生-movie-q3-模型资格)，源码7ac292e0；120模型请求完整结束，COUNT7／真值14、官方相对误差0.5，TP7／FN7／FP0／TN106，无无效预测。单查询8.876秒、服务准备87.284秒分列，prefix cache实际关闭；自有进程／GPU及lease退出已核。未保存完整所选plan，不授固定计划后端资格或性能排名。
