@@ -47,6 +47,8 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 
 依赖检查、环境变量和三种 CLI 动作见[脚本入口](../../../scripts/README.md#lotus-原版-movie-四臂)。
 本批来源、检查和未验证范围统一记录在[main 文本接入资格](../../../../experiments/results/diagnostics/main_lotus_text_20261015/README.md)。
+[固定main原查询实测](../../../../experiments/results/diagnostics/main_queries_20261015/README.md)记录原Movie与Animals的完整模型请求、质量不足和单次计时；
+可选服务资源配置的后续源码资格见[同题报告](../../../../experiments/results/diagnostics/main_service_auto_20261015/README.md)。
 本模块说明不认证其他分支的图像 RM／index／search、PZ 或 IMLane；软件 fixture 不代表真实模型质量或性能收益。
 
 ## 原版 Animals 图文查询
@@ -57,5 +59,5 @@ Q1／Q2 的原 `LIMIT 5`、Q3 的 `COUNT` 和原 evaluator 保持。
 
 原图不缩放、拆分或转为 CLIP 输入；模型 processor 的内部处理另行固定。SemLoom 使用显式 native
 请求／总输入与 Ray window／object 字节额度，原 PG／wire 默认不变。CLI、正常 lease 和外层故障监督要求见
-[脚本说明](../../../scripts/README.md#animals-原版图文-q1)；源码闭包、实际 CPU 与未运行的模型范围见
+[脚本说明](../../../scripts/README.md#animals-原版图文-q1)；源码闭包与实际 CPU 来源见
 [Animals 接入资格](../../../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。

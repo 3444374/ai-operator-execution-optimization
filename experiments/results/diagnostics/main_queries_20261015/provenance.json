@@ -82,5 +82,15 @@
     "semloom": 58.412485437
   },
   "animals_application_scope": "run_query entry clock to finally completed, including validation/preparation, query, evaluation/archive and resource close; excludes external model service startup and Python import",
-  "public_recompute_sha256": "2ed586f65bb0b727ff41d2a6c65b5b50b4dea9de201d7395b4256cbd58afac46"
+  "public_recompute_sha256": "98d1b254fe31775d9719c4d945889046c8bacf3c05ead7a78df7bb8b0b7161aa",
+  "original_public_recompute": {
+    "commit": "90013a5576eab77e6763c94c784d333de557d657",
+    "sha256": "2ed586f65bb0b727ff41d2a6c65b5b50b4dea9de201d7395b4256cbd58afac46"
+  },
+  "analysis_maintenance": {
+    "reason": "Extract the unchanged Animals consume-once PNG/response association into one helper reused by both fixed-source reports; no model rerun or source-qualification transfer.",
+    "verification": "CPU-only replay of retained main464 raw evidence equals the published full results JSON exactly.",
+    "recomputed_result_sha256": "d7b8428dd7428ab8defcc4cf65cc199dd2e1346108d69e3efd386574ba7988be",
+    "actual_extra_model_requests": 0
+  }
 }

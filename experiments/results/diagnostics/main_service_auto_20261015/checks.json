@@ -4,7 +4,7 @@
   "base_main": "464de926cb85c2bc526a9402442776b8d60db966",
   "upstream_service_source": "88f9b08c0a1de6f4c0516b18a89d6aa4b909d3cf",
   "baseline_cpu_source": "7bac93ada893dd978b21d7935edd0bdb48d5980d",
-  "scope": "optional single-node native vLLM service allocation and native LOTUS SDK health; not SemBench or performance qualification",
+  "scope": "source-specific optional single-node vLLM allocation: candidate SDK health and merged-main original-query integration, not general performance or multi-GPU qualification",
   "production_files": [
     "code/src/infrastructure/gpu_allocation.py",
     "code/src/serving/vllm_resources.py",
@@ -129,7 +129,118 @@
     "independent_copy_verified": true,
     "all_files_verified": 50
   },
-  "postmerge_original_query_qualification": "pending new published main, 1472 planned model requests; source464 results kept separate",
+  "postmerge_original_query_qualification": {
+    "source_commit": "2041da67d883f54285952042482493a4a76a6ba1",
+    "merged_pr": "https://github.com/3444374/ai-operator-execution-optimization/pull/25",
+    "run_id": "main-auto-model-r1",
+    "started_utc": "2026-10-15T12:49:26.503442+00:00",
+    "ended_utc": "2026-10-15T13:07:19.226291+00:00",
+    "runtime_files": 780,
+    "runtime_manifest_sha256": "bfc2ad29e39db79b3ef3a82f70358c66bdcf5ccb2054280d3d906ff75cf0e95b",
+    "plan_sha256": "12fb7b38349c53b02cd602c519a52a269869ca3948a0e597c5873ada235a2a2b",
+    "helper_sha256": {
+      "main_auto_model_controller.py": "7873a619a9167420adcfb19247c7448c981d4274e262da5d19d79f4ff5da5722",
+      "main_model_worker.py": "27916baa67f619a08be56f4b8c32a173f84814b10577a13e721e5c86cc8a44ac",
+      "allocation_barrier.py": "8758424c672688724082ecbb6b6f06acc2a95229f5ddaa85fa33065c7504143f",
+      "fault_supervision.py": "1b6b8084b7802b2ae2c540cb0361ef2170a05147309f5da67356a7f8b4508708",
+      "owned_controller.py": "ef2f71a887a89c254de0d36e0deea75cb187898a78c9b89d094927b6a14dd9ce",
+      "task_progress.py": "139416dd92f7d207794155ebc785367431757e8ee5bed1c7b75410af7122b9a7"
+    },
+    "model_fingerprints": {
+      "Qwen2.5-7B-Instruct": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+      "Qwen2-VL-2B-Instruct": "8cab19cbb8c5bc0da3305ac296605bcbbf19cada1d8bdc2c72b3fd08cc961500"
+    },
+    "query_count": 16,
+    "actual_model_posts": 1472,
+    "returned_model_posts": 1472,
+    "unknown": 0,
+    "http_errors": [],
+    "warmups": 0,
+    "retries": 0,
+    "repeats": 1,
+    "request_limit": 4,
+    "mac_passed": 30,
+    "linux_passed": 30,
+    "skips": 0,
+    "private_guard_and_replay_mac_passed": 15,
+    "private_queue_and_physical_linux_passed": 9,
+    "actual_request_values_equal": true,
+    "selected_occurrence_decisions_equal": true,
+    "all_original_quality_recomputed": true,
+    "all_request_associations_verified": true,
+    "query_tail_percentiles": null,
+    "request_p99_available": false,
+    "service_startups": {
+      "movie-auto": 56.864149681292474,
+      "movie-explicit1": 54.111027787905186,
+      "animals-auto": 79.93990663811564,
+      "animals-explicit1": 80.28127052402124
+    },
+    "service_exits": {
+      "movie-auto": {
+        "returncode": 0,
+        "remaining_owned": []
+      },
+      "movie-explicit1": {
+        "returncode": 0,
+        "remaining_owned": []
+      },
+      "animals-auto": {
+        "returncode": 0,
+        "remaining_owned": []
+      },
+      "animals-explicit1": {
+        "returncode": 0,
+        "remaining_owned": []
+      }
+    },
+    "cleanup": {
+      "allocations_closed": true,
+      "owned_before": [],
+      "forced": [],
+      "survivors": [],
+      "actions": [],
+      "callback_seconds": 0.030978519935160875,
+      "errors": [],
+      "inventory_error": null,
+      "callback_wait_upper_bound_s": 8.0,
+      "observer_stopped": true
+    },
+    "lease_released": true,
+    "recover_stale": false,
+    "raw_archive": {
+      "run_id": "main-auto-model-r1",
+      "source_commit": "2041da67d883f54285952042482493a4a76a6ba1",
+      "bytes": 657225086,
+      "sha256": "4b7b2942dc9c73e1bfb4386275185535e14c29d8da1c4558622c89bb624ae6f7",
+      "manifest_files": 444,
+      "total_files": 445,
+      "independent_copy_verified": true,
+      "all_files_verified": 445,
+      "recovery_method": "independent Mac filesystem; rsync delta reconstructed actual new files from existing basis, every new SHA and byte count verified",
+      "compressed_archive_independent_copy": false
+    },
+    "public_recompute_sha256": "4e38422a2d4f06084231c02e08d2a9a7a69e30b0eaf7d193b595f4eecc29713b",
+    "shared_recompute_sha256": "98d1b254fe31775d9719c4d945889046c8bacf3c05ead7a78df7bb8b0b7161aa",
+    "pre_model_attempts": {
+      "normal_lease_busy_attempts": 2,
+      "output_directory_guard_attempts": 1,
+      "total_model_posts": 0,
+      "limitation": "Initial busy stderr was overwritten by the zero-request directory-guard invocation; original controller result and preflights retained. Both normal-busy attempts and guard log/history are archived."
+    },
+    "independent_reviews": {
+      "standards_P1P2": 0,
+      "spec_P1P2": 0,
+      "reviewed_files": 15,
+      "raw_files_verified": 445,
+      "reviewed_seal_sha256": "a0b6c3980fc28cad41ea96e4f0316353efa734a4740ac2a5a797a7532252fbbc",
+      "scope": "final source-specific report and replay code, original raw accounting/identity/quality/timing and restoration",
+      "spec_local_original_parser_and_associations_replayed": 1472,
+      "spec_local_full_original_evaluator_repeated": false,
+      "spec_local_evaluator_limitation": "DuckDB unavailable locally; original evaluator source and fixed-environment archived CPU output checked against public JSON",
+      "standards_full_sdk_evaluator_local_repeated": false
+    }
+  },
   "independent_reviews": {
     "standards_P1P2": 0,
     "spec_P1P2": 0,

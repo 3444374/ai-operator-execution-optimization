@@ -68,6 +68,8 @@ Animals四臂COUNT均3／真值3，原评价误差0；逐图TP3、FP0、TN61、F
 
 完整原件以run id `main-model-r1`、归档342093068bytes、SHA256 `a71ae517cf7c8e3d199a603d0104f05ebc6bc38c737f28c3b8fbc6b47ec20286`定位，364份证据逐一列于内部evidence-manifest，加清单自身共365文件；独立Mac副本逐文件字节数／SHA已核同。原件包含实际请求／响应、逐行结果、服务metrics／启动退出、源码和模型身份、预算与全部失败；由项目维护者按run id和SHA提供，仓库不复制大量原数据或私有机器路径。[复算入口](recompute.py)接受恢复目录及原SemBench／数据manifest路径，不发HTTP或启动模型；输出与[results.json](results.json)相同。
 
+后续auto报告复用本入口的Animals响应／像素关联函数，原算法抽取后再次用全部保留响应做CPU复算，完整结果JSON与本页发布值相同，额外模型请求0。当前脚本指纹和更正原因见[provenance](provenance.json)；[初次不可变报告](https://github.com/3444374/ai-operator-execution-optimization/tree/90013a5576eab77e6763c94c784d333de557d657/experiments/results/diagnostics/main_queries_20261015)及其原指纹保留。本页模型来源仍为main464，未转给新源码。
+
 恢复控制器时将`controls/`中的controller／worker放至运行根，将`controls/helpers/`恢复为同根`main-model-helpers/`；控制器计划中的6份文件哈希必须先一致。只复算时使用固定main464及上述SDK环境：
 
 ```bash
