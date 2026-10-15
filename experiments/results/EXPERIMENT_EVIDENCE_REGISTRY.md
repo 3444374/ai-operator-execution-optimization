@@ -8,6 +8,8 @@ stock／Daft PNG／RGB的12条完整LOTUS查询、15矩阵与退出通过。全�
 2026-10-15：[LOTUS图像建库后连续调用](diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`，九格180查询／189完整矩阵及实际模型出生计数已核对。原监督stdout失败仍failed，续跑只补两格；CPU只计一次，十二次实际监督调用均退出并清理。公共输入减负改善与Ray逐RM加载的负结果按当前接法解释，五次固定payload不提供可靠尾分位。
 
 
+2026-10-15：[LOTUS文本薄观测与常驻连接](diagnostics/native_text_capacity_20261015/README.md#thin-lotus)。3个新完整LOTUS函数／4次CPU执行通过，Ray Data／Daft缓存三态、200／429与既有SemLoom路径分列；performance原SDK重复raw由32条／46,202B降为0，未据此推导性能收益。`efa65c18`跨query池复用与Cookie隔离保持drain／失败停止；`1ba0fc1e`三臂720及原生LOTUS另scope240模型请求、共八条完整Q2均闭环并独审通过。HTTP经验P99每臂n240，完整query仅n2；质量仍7FN/120，不作稳态排名。`4271dc44`的IMLane owner复用资格单列。
+
 2026-10-15：[文本原生API、容量与Daft清理](diagnostics/native_text_capacity_20261015/README.md)。
 固定`f2749bf1`的CPU localhost SDK观测、回归及原失败分别保存；支持活动HTTP／批次存储分离和清理责任修补，
 不支持模型收益、全图内存保证或Mac上的Linux完整query观测。LOTUS方法与IMLane生命周期边界见同题说明。

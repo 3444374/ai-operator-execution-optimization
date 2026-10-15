@@ -1,0 +1,959 @@
+{
+  "schema": "semloom.thin_text_q2_model.v1",
+  "source_head": "1ba0fc1e3261055c1eaa0736f15b4cbeb07df154",
+  "package_sha256": "b8c0aabf1fdadbaa34c7fdbda4b4c853cdb9b0284d0ffb05d8c307a621d9cba8",
+  "source_archive_sha256": "6ede45119ff248f6aea0619da7a99fa0ffe9ebfbf8e56bb07da0e07ddf0c695b",
+  "source_files": 814,
+  "arms": [
+    {
+      "arm": "lotus-method-native-ray-data",
+      "owner_startup_seconds": 19.545096155,
+      "query_samples": 2,
+      "query_p99_seconds": null,
+      "query_p99_reason": "only first and subsequent query; no stable query tail estimate",
+      "http_latency": {
+        "samples": 240,
+        "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+        "p50_ms": 126.611337,
+        "p95_ms": 147.59561,
+        "empirical_p99_ms": 168.222906,
+        "max_ms": 181.090925,
+        "p99_99_ms": null,
+        "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+        "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+      },
+      "interquery_gap_seconds": 1.058789095,
+      "interquery_gap_scope": "prior EOF through next preparation start; includes post-EOF cleanup/audit/metadata and caller bookkeeping, not pure cleanup",
+      "two_query_window_seconds": 34.154736766,
+      "logical_calls_per_two_query_window_second": 7.026843791661504,
+      "queries": [
+        {
+          "unit": "a0-measurement-0-q2",
+          "repeat": 0,
+          "status": "passed",
+          "full_query_seconds": 23.055832872,
+          "ready_query_seconds": 22.952831124,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 5.204756673342007,
+          "http_peak": 4,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 124.590884,
+            "p95_ms": 148.158003,
+            "empirical_p99_ms": 179.568116,
+            "max_ms": 181.090925,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 4,
+            "reused": 116
+          },
+          "release_ns": 3183197581666510,
+          "eof_ns": 3183220637499382,
+          "lifecycle": {
+            "owner_id": "1103a5398afb4167a8d41782343afa85",
+            "ray_session_id": "9ff458f490fb45c0859978ca68de0dc2",
+            "execution_id": null,
+            "lm_id": "140418039190048",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 1,
+            "result_cache": false,
+            "core_usage": null,
+            "core_jobs": null,
+            "sema_executor": null,
+            "native_ray_actor_scope": "original Ray Data graph creates its own actors",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "a13e425588247ed4285066aa457794331b9323a01e8d57835cafcf1ab39fd359",
+            "persistent-query.json": "f94c86cf102231c126e461650f13e7b33467ac50163e82e33c5f23aa8aca8c24",
+            "final-directed-check.json": "df757390449248418b9bf5e47174b26d4b0f78d06225bab4175b0eab60d6f8ba",
+            "protocols.jsonl": "7e044abca70f8d82b2c1f24d1b17647883331feb93639f45d9aa9e4dfdb194d0",
+            "http-trace.jsonl": "24cd26ba274ea7ad92c2fd85b16828fcf715856c0396e43a50bc8c5673f70ce9",
+            "upstream-response-bodies.jsonl": "481710d21c3f83a4130938adbd7b900af2a76bc30a1172628a06011f1e7d5ced",
+            "method-events.jsonl": "7d6fea90828040e5585c60d286aa36cb5b10c51ade5bc6fa5d1bf131d1f5b040",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 17.099968003,
+          "last_http_body_to_eof_seconds": 0.987033519,
+          "http_window_seconds": 4.96883135,
+          "http_window_average_inflight": 3.032067440767536,
+          "full_query_average_inflight": 0.653449903052368
+        },
+        {
+          "unit": "a0-measurement-1-q2",
+          "repeat": 1,
+          "status": "passed",
+          "full_query_seconds": 10.040114799,
+          "ready_query_seconds": 9.958390018,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 11.952054573315444,
+          "http_peak": 4,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 126.766666,
+            "p95_ms": 141.634377,
+            "empirical_p99_ms": 165.789103,
+            "max_ms": 168.222906,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 0,
+            "reused": 120
+          },
+          "release_ns": 3183221696288477,
+          "eof_ns": 3183231736403276,
+          "lifecycle": {
+            "owner_id": "1103a5398afb4167a8d41782343afa85",
+            "ray_session_id": "9ff458f490fb45c0859978ca68de0dc2",
+            "execution_id": null,
+            "lm_id": "140418039190048",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 2,
+            "result_cache": false,
+            "core_usage": null,
+            "core_jobs": null,
+            "sema_executor": null,
+            "native_ray_actor_scope": "original Ray Data graph creates its own actors",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "41270c84c1cac6007f05790adefbfc9a6cecb637a18822f7bb39d9204b5e027c",
+            "persistent-query.json": "7adbb1e3b9d85ca661f0eb576396f2097468f4b985b30435bce75bc2edabe457",
+            "final-directed-check.json": "422223ea853e1b1c486943af726401bcfe87bbfa518ba56e04d9ce1cc5a57ac8",
+            "protocols.jsonl": "9973f1e203dcb5972659021d78cb94be52ac5b3f062765c77fd8d9b493723565",
+            "http-trace.jsonl": "002a44c4fd9487d53ffa873a9aced28d757f8a7d882df40bc4c05fa4c9289570",
+            "upstream-response-bodies.jsonl": "42c85818fa5a90d1f7bc0938c3fdddc1120e469c11f1080bac2f46bbdc6a2b36",
+            "method-events.jsonl": "ce6ed133be864e453445ed6c2d44459f1fda8f43a6a20c867d5e58caf586f66e",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 5.150117795,
+          "last_http_body_to_eof_seconds": 0.645488582,
+          "http_window_seconds": 4.244508422,
+          "http_window_average_inflight": 3.607871343033938,
+          "full_query_average_inflight": 1.5252455382806227
+        }
+      ],
+      "configuration": {
+        "http_capacity": 8,
+        "num_threads": 8,
+        "ray_actors": 2,
+        "ray_async_batches_per_actor": 2,
+        "ray_batch_rows": 1,
+        "daft_native_max_concurrency": null,
+        "semloom_held_tasks": null,
+        "semloom_physical_workers": null,
+        "semloom_physical_batch_rows": null
+      }
+    },
+    {
+      "arm": "lotus-method-native-daft",
+      "owner_startup_seconds": 8.329681198,
+      "query_samples": 2,
+      "query_p99_seconds": null,
+      "query_p99_reason": "only first and subsequent query; no stable query tail estimate",
+      "http_latency": {
+        "samples": 240,
+        "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+        "p50_ms": 157.044702,
+        "p95_ms": 213.159729,
+        "empirical_p99_ms": 334.118916,
+        "max_ms": 387.83174,
+        "p99_99_ms": null,
+        "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+        "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+      },
+      "interquery_gap_seconds": 0.783638223,
+      "interquery_gap_scope": "prior EOF through next preparation start; includes post-EOF cleanup/audit/metadata and caller bookkeeping, not pure cleanup",
+      "two_query_window_seconds": 10.151453166,
+      "logical_calls_per_two_query_window_second": 23.641935403280566,
+      "queries": [
+        {
+          "unit": "a0-measurement-0-q2",
+          "repeat": 0,
+          "status": "passed",
+          "full_query_seconds": 6.46225923,
+          "ready_query_seconds": 6.361848713,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 18.569357206055628,
+          "http_peak": 8,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 167.690259,
+            "p95_ms": 285.162006,
+            "empirical_p99_ms": 375.879646,
+            "max_ms": 387.83174,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 8,
+            "reused": 112
+          },
+          "release_ns": 3183262042595310,
+          "eof_ns": 3183268504854540,
+          "lifecycle": {
+            "owner_id": "4456215392dd48acaeb99b779e796f15",
+            "ray_session_id": null,
+            "execution_id": null,
+            "lm_id": "140158486598320",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 1,
+            "result_cache": false,
+            "core_usage": null,
+            "core_jobs": null,
+            "sema_executor": null,
+            "native_ray_actor_scope": "Daft Native owns per-query batch function graph",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "0aa270cb6e89f4dea35dce4ce122f2355371bb6b20a1170a54acd03b5c1955a4",
+            "persistent-query.json": "cd241943a4466c74b5e751dee210f7b60fd6d6545d91e0644d73d08b6f481297",
+            "final-directed-check.json": "77126e4486559995bc293194b08abbe0c5121d16debba70ac2112b34db7a11cc",
+            "protocols.jsonl": "2e9e7513dd4cdb3a87663f5df5a99f1a126d5a9869536dabafb3baea1ab629d8",
+            "http-trace.jsonl": "bb0bc6a6b5df4a5145f7832ddb5c0ec46e4f5487c7ec847fc9eda1fe6c79e84b",
+            "upstream-response-bodies.jsonl": "e6cb840e981750b4fb01a9d1ca00e556ce621155489ca934cea5f32b1c4884fe",
+            "method-events.jsonl": "a07fe65ae7930bf77cb0fd943ca7d37449f3c45ca8e1fd994a7fba22d556d3ec",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 3.136821375,
+          "last_http_body_to_eof_seconds": 0.055465242,
+          "http_window_seconds": 3.269972613,
+          "http_window_average_inflight": 6.506925882623593,
+          "full_query_average_inflight": 3.292574419209735
+        },
+        {
+          "unit": "a0-measurement-1-q2",
+          "repeat": 1,
+          "status": "passed",
+          "full_query_seconds": 2.905555713,
+          "ready_query_seconds": 2.808520849,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 41.30018896663986,
+          "http_peak": 8,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 148.145087,
+            "p95_ms": 177.119569,
+            "empirical_p99_ms": 203.476383,
+            "max_ms": 209.321171,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 0,
+            "reused": 120
+          },
+          "release_ns": 3183269288492763,
+          "eof_ns": 3183272194048476,
+          "lifecycle": {
+            "owner_id": "4456215392dd48acaeb99b779e796f15",
+            "ray_session_id": null,
+            "execution_id": null,
+            "lm_id": "140158486598320",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 2,
+            "result_cache": false,
+            "core_usage": null,
+            "core_jobs": null,
+            "sema_executor": null,
+            "native_ray_actor_scope": "Daft Native owns per-query batch function graph",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "native graph HTTP kernels; LOTUS SDK parser receives full responses"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "9c8240e327434423048b22d57c0aba1129e7421216e6e6dc7216038c92f0bb3d",
+            "persistent-query.json": "037fe268ade20d2bc8951293f84d86310a8da29db16efce5de69455aeeb42bba",
+            "final-directed-check.json": "ee6a3b297a1f73ecf8ef5327882317a05dbe6b2937efce4713dcda2cdfbd247b",
+            "protocols.jsonl": "2d2f399ad42a07c33d13ff5d727cb19de933065c620d9ca8ee578ade2d0c6758",
+            "http-trace.jsonl": "0923ee649c7b88ab078e95b3fb8214744bbff274b739c5384d99f847ef062317",
+            "upstream-response-bodies.jsonl": "45bf3b4a91c30155650ec0923813a31f8724343d5571cac6ba896d703c5b54c9",
+            "method-events.jsonl": "fc049b3439d9160355e21304809adcfa8dd80d3ed9ccf1e67b1470b51c2e82fd",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 0.195868066,
+          "last_http_body_to_eof_seconds": 0.055948924,
+          "http_window_seconds": 2.653738723,
+          "http_window_average_inflight": 6.878121490560923,
+          "full_query_average_inflight": 6.282012511181196
+        }
+      ],
+      "configuration": {
+        "http_capacity": 8,
+        "num_threads": 8,
+        "ray_actors": null,
+        "ray_async_batches_per_actor": null,
+        "ray_batch_rows": null,
+        "daft_native_max_concurrency": 7,
+        "semloom_held_tasks": null,
+        "semloom_physical_workers": null,
+        "semloom_physical_batch_rows": null
+      }
+    },
+    {
+      "arm": "lotus-method-semloom",
+      "owner_startup_seconds": 23.943143958,
+      "query_samples": 2,
+      "query_p99_seconds": null,
+      "query_p99_reason": "only first and subsequent query; no stable query tail estimate",
+      "http_latency": {
+        "samples": 240,
+        "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+        "p50_ms": 161.156892,
+        "p95_ms": 198.449735,
+        "empirical_p99_ms": 529.324806,
+        "max_ms": 580.916222,
+        "p99_99_ms": null,
+        "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+        "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+      },
+      "interquery_gap_seconds": 0.690417195,
+      "interquery_gap_scope": "prior EOF through next preparation start; includes post-EOF cleanup/audit/metadata and caller bookkeeping, not pure cleanup",
+      "two_query_window_seconds": 10.401194514,
+      "logical_calls_per_two_query_window_second": 23.074272832505937,
+      "queries": [
+        {
+          "unit": "a0-measurement-0-q2",
+          "repeat": 0,
+          "status": "passed",
+          "full_query_seconds": 5.83768721,
+          "ready_query_seconds": 5.740190904,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 20.556085943494733,
+          "http_peak": 8,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 163.319024,
+            "p95_ms": 194.138266,
+            "empirical_p99_ms": 198.449735,
+            "max_ms": 202.81749,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 8,
+            "reused": 112
+          },
+          "release_ns": 3183302614434546,
+          "eof_ns": 3183308452121756,
+          "lifecycle": {
+            "owner_id": "edf6c567e3d042a4a22e9fede53bb774",
+            "ray_session_id": "18b943881a9a49eca290aefa077d77f4",
+            "execution_id": "140249613747792",
+            "lm_id": "140250162860672",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 1,
+            "result_cache": false,
+            "core_usage": {
+              "held_tasks": 0,
+              "input_bytes": 0,
+              "result_bytes": 0,
+              "active_requests": 0,
+              "active_work": 0
+            },
+            "core_jobs": 0,
+            "sema_executor": null,
+            "native_ray_actor_scope": "supplier SDK/client owns execution",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "b5108ed2593d32b1875a97c64a74906d421377aed7d87d559a496ca9476d2ede",
+            "persistent-query.json": "880e4d069ad51893ae0cf946968836cf79e2fa7ea807299e5a80a00936a78d36",
+            "final-directed-check.json": "28be256ba7ce6266870aeb89037f0b4fb1e4aa5b0cd94c8e3d42028b18257de8",
+            "protocols.jsonl": "effe283335316d1026578e07eaa349499abf4c6c9ad5f43daf9bd4821f0b09c6",
+            "http-trace.jsonl": "863aefb84887a096b1d3884b1f82c468652396b622eb0ea996fe353fd7ffa8e0",
+            "upstream-response-bodies.jsonl": "d2d7255e7f53f53c028df96e8a6258765479372cbe1b9d6ee60ad516dd6e1deb",
+            "method-events.jsonl": "dbcfa500923c36b1247b13428e6fa796b8c7056cdef8a5ffdc64e58b8f64a803",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 1.953978708,
+          "last_http_body_to_eof_seconds": 0.049523336,
+          "http_window_seconds": 3.834185166,
+          "http_window_average_inflight": 5.022903248069162,
+          "full_query_average_inflight": 3.2990361475705035
+        },
+        {
+          "unit": "a0-measurement-1-q2",
+          "repeat": 1,
+          "status": "passed",
+          "full_query_seconds": 3.873090109,
+          "ready_query_seconds": 3.789448097,
+          "logical_calls": 120,
+          "distinct_values": 119,
+          "logical_calls_per_full_query_second": 30.983012690862235,
+          "http_peak": 8,
+          "http_latency": {
+            "samples": 120,
+            "quantile_method": "nearest rank: sorted[ceil(p*n)-1]",
+            "p50_ms": 155.818019,
+            "p95_ms": 209.174281,
+            "empirical_p99_ms": 547.943106,
+            "max_ms": 580.916222,
+            "p99_99_ms": null,
+            "p99_99_reason": "240 or fewer observations; not estimable as a useful tail quantile",
+            "scope": "proxy upstream dispatch through complete upstream body read; one actual owner-gateway hop only"
+          },
+          "usage": {
+            "prompt_tokens": 14926,
+            "completion_tokens": 480,
+            "total_tokens": 15406
+          },
+          "quality": {
+            "original_metric": {
+              "precision": 1.0,
+              "recall": 1.0,
+              "f1_score": 1.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+            "supplement": {
+              "returned_rows": 5,
+              "unique_rows": 5,
+              "duplicates": 0,
+              "invalid_rows": 0,
+              "required_rows": 5,
+              "limit_exceeded": false
+            },
+            "classification_audit": {
+              "true_positive": 7,
+              "false_positive": 0,
+              "true_negative": 106,
+              "false_negative": 7,
+              "invalid": 0,
+              "evaluated_rows": 120,
+              "missing_rows": 0,
+              "count_error_from_classifications": -7
+            },
+            "dataset_role": "original_movie_sf2000",
+            "audit_scope": "parsed native Filter decisions on every eligible occurrence; before LIMIT",
+            "quality_equivalence_proven": false
+          },
+          "performance_qualified": false,
+          "response_checks": {
+            "passed": true,
+            "original_requests": 120,
+            "original_request_values": true,
+            "row_response_associations": 120,
+            "filter_decisions_equal": true,
+            "original_query_result_equal": true,
+            "official_quality_equal": true,
+            "model_id": "Qwen2.5-7B-Instruct",
+            "observation_mode": "performance",
+            "response_verification": "fixed SDK replay of captured HTTP body bytes matches complete caller ModelResponse canonical digest",
+            "sdk_fields": [
+              "id",
+              "model",
+              "complete caller choices",
+              "usage",
+              "finish_reason",
+              "logprobs"
+            ],
+            "replay_scope": "after query/CLI completion; network-free existing LotusResponseReplay; zero added model requests",
+            "http_metadata": {
+              "status": "observed",
+              "body": "captured bytes and SHA verified",
+              "headers": "unavailable",
+              "version": "unavailable; parser container default HTTP/1.1 used only offline"
+            },
+            "request_value_occurrences": 120,
+            "distinct_request_values": 119
+          },
+          "pool": {
+            "generations": [
+              0
+            ],
+            "created": 0,
+            "reused": 120
+          },
+          "release_ns": 3183309142538951,
+          "eof_ns": 3183313015629060,
+          "lifecycle": {
+            "owner_id": "edf6c567e3d042a4a22e9fede53bb774",
+            "ray_session_id": "18b943881a9a49eca290aefa077d77f4",
+            "execution_id": "140249613747792",
+            "lm_id": "140250162860672",
+            "duckdb_connection_id": null,
+            "sema_pid": null,
+            "completed_queries": 2,
+            "result_cache": false,
+            "core_usage": {
+              "held_tasks": 0,
+              "input_bytes": 0,
+              "result_bytes": 0,
+              "active_requests": 0,
+              "active_work": 0
+            },
+            "core_jobs": 0,
+            "sema_executor": null,
+            "native_ray_actor_scope": "supplier SDK/client owns execution",
+            "request_service_scope": "no Sema request service",
+            "native_http_client_scope": "supplier owns its SDK/client lifecycle"
+          },
+          "source_artifact_sha256": {
+            "summary.json": "f63c7c7e761f85f7b599796d3f4cbfe226b430ba8a63d792493c1f7f822cc352",
+            "persistent-query.json": "54cf8d562c070e9712072e61b82bd6b645bc5bc57dedcc1a7417f6a3d12452f0",
+            "final-directed-check.json": "74db7f601c8715e0c8c9345eec5ecdde925b7524b0a1b204b8058b71de24db4c",
+            "protocols.jsonl": "00ec1897d93f2e3aeece40b24bd9afddbb58513ef778de289566d189c7ce19f7",
+            "http-trace.jsonl": "d95a2d6089ff684a606e01a199a35b952d7023d5ccec05a96f481b306d75ea16",
+            "upstream-response-bodies.jsonl": "afa1af51a0563faf6d70fc7fd642971b7724db6a3d323d5391fc98521129ee0b",
+            "method-events.jsonl": "c81d76059a7755d35b434f88fabc9d942426ccafc929cbaf0fd7214664b91d9d",
+            "calls.json": "945335283da303909031176e7a415f3013955e3f76d02282e947343c221ef961"
+          },
+          "first_http_from_preparation_seconds": 0.185538151,
+          "last_http_body_to_eof_seconds": 0.044543347,
+          "http_window_seconds": 3.643008611,
+          "http_window_average_inflight": 5.606818775372914,
+          "full_query_average_inflight": 5.273744866285527
+        }
+      ],
+      "configuration": {
+        "http_capacity": 8,
+        "num_threads": 8,
+        "ray_actors": null,
+        "ray_async_batches_per_actor": null,
+        "ray_batch_rows": null,
+        "daft_native_max_concurrency": null,
+        "semloom_held_tasks": 64,
+        "semloom_physical_workers": 2,
+        "semloom_physical_batch_rows": 2
+      }
+    }
+  ],
+  "counts": {
+    "total": 2160,
+    "gateway": 720,
+    "router": 720,
+    "model": 720,
+    "fixture": 0
+  },
+  "logical_model_calls": 720,
+  "extra_model_protocol_requests": 0,
+  "closure": {
+    "passed": true,
+    "source_head": "1ba0fc1e3261055c1eaa0736f15b4cbeb07df154",
+    "stage": "model",
+    "model_started": true,
+    "lease_released": true,
+    "physical_exit_verified": true,
+    "author_exit_verified": true,
+    "gpu_after": [],
+    "service_exit_verified": true,
+    "shared_lease_retained_on_uncertain_cleanup": false
+  },
+  "quality_scope": "all decisions and official LIMIT5 results equal frozen original reference; pre-LIMIT still has7 false negatives/120 in every query; not all classifications correct",
+  "metric_scope": "fixed-order, single-configuration diagnostic; first retained,0warmup/0retry; empirical HTTP tail only, no ranking/steady state/scheduler attribution",
+  "common_service": {
+    "model": "Qwen2.5-7B-Instruct",
+    "weight_fingerprint": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+    "GPU": "single RTX4090",
+    "driver_cpus": [
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81
+    ],
+    "service_cpus": [
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89
+    ],
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 16,
+    "max_num_batched_tokens": 2048,
+    "prefix_cache": false,
+    "result_cache": false
+  },
+  "evidence": {
+    "request_receipts": "model-request-receipts.jsonl.gz",
+    "request_receipts_sha256": "1d1e3447e18c14c3a947756c95771291e0fe2afb3dbf0f72280e9733c82385ba",
+    "private_closed_artifact_sha256": "efe01a2d57ef19a49c1662b0b924b255a085af7b0ee411c67610422ac629db62",
+    "private_logs_and_full_raw_requests": "retained outside Git; no server target or runtime environment published",
+    "harness_sha256": {
+      "allocation_barrier.py": "8758424c672688724082ecbb6b6f06acc2a95229f5ddaa85fa33065c7504143f",
+      "fault_supervision.py": "1b6b8084b7802b2ae2c540cb0361ef2170a05147309f5da67356a7f8b4508708",
+      "launch.py": "0b4f13bcf7d9998db94e93f3f34b262bf3c107ba21c656e73a3a4b5f666b067d",
+      "model_identity_gate.py": "9d0fc2bb7c7820ac7abbac53a4df42331ed087ed8d87df571421fe6c03058851",
+      "owned_controller.py": "ef2f71a887a89c254de0d36e0deea75cb187898a78c9b89d094927b6a14dd9ce",
+      "pre_send_ledger.py": "f516bdfb518cacdd217be6bc739e6aad31b73be331b2159f0d813293417c7d46",
+      "preflight_assets.py": "524336293046cc67603fd51c53267930f4ec2310391642944f9c06305ab1116a",
+      "send_counts.py": "2b08c3f9a9e69845d236c29b8e532e85ba82b9a9473d58080d9b3a7907d33e25",
+      "sitecustomize.py": "eb3aa57f8de9f575c326b7d6e071b7a14d01030a97277af6616f91e0e75999f7",
+      "task_progress.py": "139416dd92f7d207794155ebc785367431757e8ee5bed1c7b75410af7122b9a7",
+      "workload.py": "1c9b1bba0ca7abffcfa69262ccd97f6c0c8b41d70719858711f327ea6e8ae4e2"
+    }
+  },
+  "inflight_scope": "dispatch-to-body-read proxy responsibilities. Active-window average integrates all intervals over first-dispatch to last-body-read; whole-query average additionally includes before/after HTTP spans.",
+  "timing_spans_scope": "first HTTP and last HTTP offsets are same-run observed boundaries, not additive isolated component timings or auxiliary-test subtraction."
+}

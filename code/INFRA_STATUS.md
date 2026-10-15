@@ -8,6 +8,8 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 2026-10-15：[LOTUS图像建库后连续查询](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)固定`485c86a8`完成九格180条完整查询、189份完整矩阵；248项SDK／fixture及43个子测试通过、0跳过。Direct／Ray新增显式原生图片输入，HSE复用已核原源字节，Daft返回改Arrow缓冲视图；默认及旧PNG参照保持。实际模型计数确认七格复用、两格Ray逐RM重建；监督输出BrokenPipe失败与仅补剩余两格的成功续跑分别保留，未形成可靠尾分位或稳态结论。
 
 
+2026-10-15：[LOTUS文本薄接入与常驻边界](../experiments/results/diagnostics/native_text_capacity_20261015/README.md#thin-lotus)固定`21d87786`与`efa65c18`：performance省去重复SDK响应落盘，健康代理连接跨查询复用且无Cookie积累；原方法／缓存／SDK／usage与取消清理保持。真实CPU缓存三态、200／429及既有SemLoom接点通过；新源Linux三臂各两fixture query通过，`1ba0fc1e`三臂720模型及原生LOTUS另scope240模型均闭环并经独审。两query原值、请求经验P99与7FN边界见报告；不作尾延迟或调度收益结论。`4271dc44`的IMLane可选owner复用分开验证，不借此成绩。
+
 2026-10-15：[文本最小原生API与容量修正](../experiments/results/diagnostics/native_text_capacity_20261015/README.md)
 分离Ray活动HTTP和有限批次存储，统一Daft默认／计时清理。代码来源`f2749bf1`、实库范围、失败与未验证项由同题记录定位；
 原方法／SDK、厂商调度和既有默认保持；这只是容量／清理首阶段，后续薄接入减法未完成，不提供新模型性能或全图RSS资格。
