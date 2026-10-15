@@ -68,6 +68,10 @@ def parser():
     p.add_argument("--dtype", choices=("float32",), default="float32")
     p.add_argument("--query-doc-id", action="append", default=[])
     p.add_argument("--text-query", action="append", default=[])
+    p.add_argument("--query-repeats", type=int, default=1,
+                   help="repeat the same ordered queries in one native owner; all first calls are retained")
+    p.add_argument("--observe-model-reuse", action="store_true",
+                   help="opt-in actual model/worker identities and integer invocation counters")
     p.add_argument("--retain-query-vectors", action="store_true",
                    help="private numeric qualification only, maximum 256 gallery rows")
     return p
@@ -82,8 +86,10 @@ def main(argv=None):
         if args.arm != "semloom_hse" or any(x is not None and x <= 0 for x in hse_bytes):
             raise ValueError("positive HSE encoded byte settings require semloom_hse")
     if (not 0 < args.rows <= args.max_gallery_rows <= 5000
-            or args.k < 1 or min(args.batch_size, args.stock_outer_batch_size) < 1):
+            or args.k < 1 or min(args.batch_size, args.stock_outer_batch_size, args.query_repeats) < 1):
         raise ValueError("invalid bounded qualification dimensions")
+    if args.mode == "index" and args.query_repeats != 1:
+        raise ValueError("query repeats require search or combined mode")
     if args.retain_query_vectors and args.rows > 256:
         raise ValueError("private vector capture is limited to 256 qualification rows")
     require_outside_git(args.output_dir)
@@ -103,6 +109,25 @@ def main(argv=None):
     owned_ray = None
     startup_failure = None
     error = None
+    reuse_enabled = args.observe_model_reuse
+    previous_reuse_directory = os.environ.get("SEMLOOM_IMAGE_REUSE_DIR")
+    if reuse_enabled:
+        os.environ["SEMLOOM_IMAGE_REUSE_DIR"] = str(args.output_dir / "reuse")
+        report["model_reuse_observations"] = []
+
+    def observe_phase(phase, *, allow_workers=True):
+        from src.experiments.image_reuse import snapshot_models
+        at = time.monotonic_ns()
+        snapshot = dict(phase=phase, local_models=snapshot_models(), worker_models=[])
+        if args.arm in ("semloom_static", "semloom_hse") and executor is not None and executor.pool is not None:
+            if allow_workers and not executor._unconfirmed_work:
+                snapshot["worker_models"] = owned_ray.get(
+                    [actor.ready.remote() for actor in executor.pool.gpu_actors])
+            else:
+                snapshot["worker_models_unavailable"] = "failed_or_cancelled_workflow; do not wait before cleanup"
+        snapshot["observation_wall_s"] = (time.monotonic_ns() - at) / 1e9
+        report["model_reuse_observations"].append(snapshot)
+
     started = time.monotonic_ns()
     try:
         report["lotus_source"] = validate_image_source()
@@ -119,6 +144,10 @@ def main(argv=None):
         stock = SentenceTransformersRM(str(args.stock_model),
             max_batch_size=args.stock_outer_batch_size, normalize_embeddings=True, device=stock_device)
         stock.transformer.to(dtype=__import__("torch").__dict__[args.dtype])
+        stock_probe = None
+        if reuse_enabled:
+            from src.experiments.image_reuse import observe_stock_model
+            stock_probe = observe_stock_model(stock.transformer[0].model, device=stock_device)
         report["stock_rm_device"] = stock_device
         report["image_model_lifecycle"] = ("cold_native_graph_per_rm_call" if args.arm == "ray_data"
             else "resident_for_workflow" if args.arm != "external" else "declared_by_external_executor")
@@ -174,6 +203,8 @@ def main(argv=None):
             rm = make_image_rm(executor, stock, max_rows=args.max_gallery_rows,
                                observation=RMObservation(capture_vectors=args.retain_query_vectors),
                                png_compress_level=args.png_compress_level)
+        if reuse_enabled:
+            observe_phase("startup_complete")
         report["model_startup_s"] = (time.monotonic_ns() - started) / 1e9
         application_started = time.monotonic_ns()
         report["stage"] = "gallery_source_decode"
@@ -196,9 +227,18 @@ def main(argv=None):
                 raise ValueError("query image ID is not in this gallery")
             queries.append(RetrievalQuery("image-" + doc_id, images[ids.index(doc_id)], doc_id))
         queries.extend(RetrievalQuery("text-" + str(i), text) for i, text in enumerate(args.text_query))
+        workflow_options = {}
+        if args.query_repeats != 1:
+            workflow_options["query_repeats"] = args.query_repeats
+            report["query_policy"] = dict(repeats=args.query_repeats,
+                payload_count=len(queries), retained_first_round=True, discarded_warmup_queries=0,
+                input_ready="RGB PIL images and text prepared before submission",
+                arrival="synchronous closed loop; one outstanding query", native_cache=False)
+        if reuse_enabled:
+            workflow_options["phase_observer"] = observe_phase
         run_workflow(image_frame(ids, images), rm, queries, index_dir=args.index_dir,
                      embedding_identity=identity, k=args.k, mode=args.mode,
-                     max_gallery_rows=args.max_gallery_rows, report=report)
+                     max_gallery_rows=args.max_gallery_rows, report=report, **workflow_options)
         report["application_e2e_s"] = (time.monotonic_ns() - application_started) / 1e9
         report["application_scope"] = "source content check/decode through native index/search and output validation; model startup and evidence serialization separate"
     except BaseException as exc:
@@ -206,8 +246,16 @@ def main(argv=None):
         startup_failure = getattr(exc, "image_worker_pool_startup", None)
         report.update(status="failed", error_type=type(exc).__name__, reason=redact_text(str(exc)))
     finally:
+        cleanup_at = time.monotonic_ns()
         if rm is not None:
             report["rm_calls"] = rm.observation.calls
+        if reuse_enabled:
+            try:
+                observe_phase("before_close", allow_workers=error is None)
+                report["native_batch_model_reuse"] = getattr(executor, "reuse_observations", [])
+            except BaseException as exc:
+                report["reuse_observation_error"] = type(exc).__name__
+                error = _retain_failure(report, error, exc, "model reuse observations", cleanup=True)
         if startup_failure is not None:
             try:
                 startup_failure.request_termination()
@@ -225,17 +273,24 @@ def main(argv=None):
                 if not isinstance(exc, Exception):
                     error = _retain_failure(report, error, exc, "execution observations", cleanup=True)
             try:
+                close_at = time.monotonic_ns()
                 executor.close()
             except BaseException as exc:
                 report["cleanup_error"] = type(exc).__name__
                 error = _retain_failure(report, error, exc, "executor cleanup", cleanup=True)
+            finally:
+                report["executor_close_s"] = (time.monotonic_ns() - close_at) / 1e9
         if owned_ray is not None:
             try:
+                shutdown_at = time.monotonic_ns()
                 owned_ray.shutdown()
                 report["ray_shutdown_returned"] = True
             except BaseException as exc:
                 report["ray_cleanup_error"] = type(exc).__name__
                 error = _retain_failure(report, error, exc, "Ray shutdown", cleanup=True)
+            finally:
+                report["owned_ray_shutdown_s"] = (time.monotonic_ns() - shutdown_at) / 1e9
+        report["cleanup_s"] = (time.monotonic_ns() - cleanup_at) / 1e9
         report["process_wall_s"] = (time.monotonic_ns() - started) / 1e9
         sink = time.monotonic_ns()
         if rm is not None and rm.observation.vectors:
@@ -263,6 +318,11 @@ def main(argv=None):
                 report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
             except BaseException as update_error:
                 error.add_note("updated result evidence write also raised " + type(update_error).__name__)
+        if reuse_enabled:
+            if previous_reuse_directory is None:
+                os.environ.pop("SEMLOOM_IMAGE_REUSE_DIR", None)
+            else:
+                os.environ["SEMLOOM_IMAGE_REUSE_DIR"] = previous_reuse_directory
     if error is not None:
         print("native LOTUS qualification failed: " + type(error).__name__, file=sys.stderr)
         return 1

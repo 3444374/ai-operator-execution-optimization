@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import time
 import threading
+import operator
 
 from src.modalities.image.clip import ClipImagePreprocessor, ClipTensorActor
 from src.modalities.image.contracts import ImageEmbeddingBatch, ImageEmbeddingResult, ImageBatchTelemetry
@@ -223,6 +224,7 @@ class RayDataImageExecutor:
         self.semantics = EmbeddingSemantics(model, self.processor, 512)
         self._closed = self._unconfirmed_work = False
         self._lock = threading.Lock()
+        self.reuse_observations = []
 
     def embed_batch(self, doc_ids, images):
         if not self._lock.acquire(blocking=False):
@@ -261,6 +263,7 @@ class RayDataImageExecutor:
             iterator = iter(data.iter_batches(batch_format="numpy", prefetch_batches=1))
             for batch in iterator:
                 collector.add(tuple(str(x) for x in batch["doc_id"]), __import__("numpy").asarray(batch["embedding"], dtype="float32"))
+                self._observe_reuse_batch(batch)
             result = ImageEmbeddingResult(tuple(doc_ids), collector.finish(), self.semantics,
                                           time.perf_counter() - started)
         except BaseException as exc:
@@ -289,6 +292,28 @@ class RayDataImageExecutor:
             raise error
         self._unconfirmed_work = False
         return result
+
+    def _observe_reuse_batch(self, batch):
+        columns = ("uid", "pid", "embed_calls", "rows")
+        names = tuple("_semloom_model_" + column for column in columns)
+        if not any(name in batch for name in names):
+            return
+        if not all(name in batch and len(batch[name]) == len(batch["doc_id"]) for name in names):
+            raise ValueError("Ray Data model reuse columns must be complete and aligned")
+        # A returned native batch may combine predictor calls. Preserve each
+        # distinct cumulative count rather than assuming one model per batch.
+        groups = {}
+        for uid, pid, calls, rows in zip(*(batch[name] for name in names), strict=True):
+            try:
+                key = (str(uid), operator.index(pid), operator.index(calls), operator.index(rows))
+            except TypeError as error:
+                raise ValueError("Ray Data model reuse counters must be integers") from error
+            if not key[0] or min(key[1:]) <= 0:
+                raise ValueError("Ray Data model reuse identity/counters are invalid")
+            groups[key] = groups.get(key, 0) + 1
+        for (uid, pid, calls, rows), count in groups.items():
+            self.reuse_observations.append(dict(model_uid=uid, pid=pid,
+                embed_calls=calls, rows=rows, batch_rows=count))
 
     def close(self):
         if not self._lock.acquire(blocking=False):

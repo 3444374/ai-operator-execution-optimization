@@ -116,10 +116,20 @@ class RayDataClipPredictor:
             work_unit="pixels",
         )
         result = self._actor.embed(request)
-        return {
+        output = {
             "doc_id": np.asarray(batch["doc_id"]),
             "embedding": result.embeddings,
         }
+        probe = self._actor._reuse_probe
+        if probe is not None:
+            # Scalar identity/counters travel in the native returned batch, so
+            # graph shutdown need not flush a worker-side per-request writer.
+            observed = probe.snapshot()
+            for name, value in (("uid", observed["model_uid"]), ("pid", observed["pid"]),
+                                ("embed_calls", observed["image_returns"]),
+                                ("rows", observed["image_returned_rows"])):
+                output["_semloom_model_" + name] = np.full(len(doc_ids), value)
+        return output
 
 
 def build_ray_data_clip_pipeline(

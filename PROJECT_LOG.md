@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-15：准备LOTUS图像连续查询观测
+
+从`277d8f48`建立独立职责分支，保留原生算子、图库／查询／模型数学及baseline执行所有权。既有入口添加显式同owner重复、原生返回时刻与实际模型／worker计数；错误／取消跳过忙碌worker观测，继续既有关闭。旧40查询已按原运行身份整理，Ray逐RM图、Daft UDF内准备与返回拷贝的用途均单列；[计划及实际状态](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)不宣称已取得新模型或尾分位结论。
+
+
 ## 2026-10-14：接纳最终融合源码图像资格
 
 固定`2afcaf47`的[LOTUS十格实际资格](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)接入原报告：151个SDK测试项及37个通过子测试、40条完整查询／46份完整矩阵与逐次退出证据均保留。

@@ -1,5 +1,8 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-15：[LOTUS图像连续查询准备](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#resident-query-measurement)在既有owner内添加显式重复和实际模型／worker计数；默认路径保持。计划与旧40查询已整理，新SDK／模型状态以同题结果为准。
+
+
 2026-10-14：固定融合源码`2afcaf47`的[LOTUS图像十格实际资格](../experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)完成；六路径64图组合及四格已有索引查询的完整数值、SDK与逐次物理退出核验通过，单次资格不提供性能排名或尾分位。
 
 2026-10-14：[原Movie任务完成期限兼容](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#original-movie-completion-integration)已接纳；默认有限期限保持，显式空总期限不安装故障监督，本地资格及历史ab3来源分列。

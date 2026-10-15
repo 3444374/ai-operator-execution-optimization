@@ -251,3 +251,15 @@ Ray拥有actor队列与调度；该静态拓扑属于`diagnostic_reference`，�
 同一 executor 互斥批次，关闭先封口，未知工作拒绝复用；部分启动 actor 只保留清理用途。
 Ray Data 的 iterator／graph 和 Daft iterator 会在失败或 EOF 尝试关闭，caller-owned runtime
 与物理退出证明仍归调用方。两个资格 CLI 保留执行／取消首错及独立证据写入失败。
+
+## 连续查询观测
+
+显式`--query-repeats N`在同一native owner／FaissVS内重复原有有序查询；默认1保持原query ID，重复时增加source_query_id、repeat_index与query_ordinal。`native_call_return_elapsed_s`紧接原生`sem_search`返回采样，失败时为null；旧elapsed_s保留输出检查和失败耗时，原生实际加载／建图／传输不会扣除。
+
+`--observe-model-reuse`仅用于短诊断，使用实际模型UUID、PID和整数计数。stock观测vision/text子模块，其他图片路径观测完整GPU模型调用至CPU NumPy返回；阶段快照与Ray批次标量采用不同取得方式，缺项不推定复用。模型构造每实例写一次私有记录；默认关闭，观测不持有模型强引用，失败／取消后不等待忙碌worker的观测RPC而继续关闭。
+
+固定[Ray2.56.1批推理说明](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/doc/source/data/batch_inference.rst)及[actor pool实现](https://raw.githubusercontent.com/ray-project/ray/ray-2.56.1/python/ray/data/_internal/execution/operators/actor_pool_map_operator.py)支持单图内多batch复用与流水。本接点每个同步RM调用创建独立图并完整消费关闭；ActorPoolStrategy只指定配置，未提供跨独立图传入现有pool的公开参数。仅删显式shutdown不产生复用保证。单长图动态source或Ray Core／Serve常驻是另一个接法，需独立验证，不能借此结果概括Ray Data一般能力。图库batch32和在线单图1行的来源分开保留；现有较大图pipeline的Fast预处理也不能直接替代本轮slow数学。
+
+规模、预热／缓存及不能支持的判断见[连续查询计划](../../../../experiments/plans/语义系统对照.md#lotus-image-resident-queries)。实际模型状态以同题结果为准。
+
+当前Daft接点先原生RGB decode，然后在声明GPU资源的stateful UDF内依序执行slow resize／crop／normalize和CLIP forward；CPU准备尚未独立成可流水阶段。这是已测接法，不代表Daft能力上限。batch32由当前图和UDF声明，模型实际批形态以调用计数和完整向量核对；仓库其他staged实现的Fast处理／不同runner不能直接继承本轮slow资格。fixed_size_list返回经pylist再转NumPy，实际拷贝保留在返回路径，不声称零拷贝或独立拷贝收益。本轮不新增CPU分阶段候选。
