@@ -126,6 +126,13 @@ Q2 LIMIT5 可单独选用；原生 `parallel`、实际 worker/batch 配置与额
 PZ 原方法继续生成提示、解析和结果；模型错误、解析默认及 usage 缺失不算真实 negative 或免费。
 CPU 原库/fixture 和真实模型检查分别登记，接口存在不代表五组比较完成。
 
+同一入口也接受 `semloom.sembench_palimpzest_fixed.v1` 与显式 `fixed_execution`，
+选择 original-native／native-adapted／Daft／Ray Data／作者 IMLane CP、Ray／SemLoom。
+后端选项、外部就绪服务、owner 关闭责任及新旧计时字段见
+[固定计划公开入口](../src/semantic_methods/palimpzest/README.md#fixed-public-runner)。
+固定范围仍为 Q3；主查询时间覆盖每查询 fresh 与执行器／progress 准备，在原结果可用时停止，评价另报。
+旧 schema、Q2/Q3 原生默认与历史 `query_seconds` 含义保持。
+
 <a id="sembench-send-accounting"></a>
 
 ### 本轮逐跳发送预算

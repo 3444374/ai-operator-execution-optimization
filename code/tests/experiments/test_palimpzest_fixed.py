@@ -112,6 +112,108 @@ class FixedMovieLibraryTests(unittest.TestCase):
             environment=kwargs.pop('environment', self.environment),
             profile=kwargs.pop('profile', FixedMovieProfile(NativeOptions(2, 2))), **kwargs)
 
+    def test_result_ready_timing_excludes_evaluation_and_legacy_query_seconds_keeps_it(self):
+        from palimpzest.query.generators import generators
+        from src.experiments.palimpzest import fixed_runner
+        fresh = self.fixed().fresh('timing-boundary')
+        clock = [100_000_000_000]
+        def metadata(*args, **kwargs):
+            clock[0] += 2_000_000_000
+            return self.verified
+        def completion(**kwargs):
+            clock[0] += 3_000_000_000
+            return native_response('TRUE')
+        original_status = fixed_runner.result_status
+        def evaluate(*args):
+            clock[0] += 25_000_000_000
+            return original_status(*args)
+        with patch.object(fixed_runner.time, 'monotonic_ns', side_effect=lambda: clock[0]), \
+                patch.object(fixed_runner, 'fetch_model_metadata', side_effect=metadata), \
+                patch.object(fixed_runner, 'result_status', side_effect=evaluate), \
+                patch.object(generators.litellm, 'completion', side_effect=completion), patch('sys.stdout', StringIO()):
+            result = execute_fixed_movie(fresh, arm='original-native', backend_profile=self.backend_profile,
+                                         query_started_ns=90_000_000_000)
+        self.assertEqual(result.records[0].count, 2)
+        self.assertEqual(result.evidence['result_ready_seconds'], 8)
+        self.assertEqual(result.evidence['full_query_seconds'], 18)
+        self.assertEqual(result.evidence['quality_evaluation_seconds'], 25)
+        self.assertEqual(result.evidence['query_seconds'], 33)
+
+    def test_evaluator_failure_keeps_result_boundary_and_its_own_elapsed_time(self):
+        from palimpzest.query.generators import generators
+        from src.experiments.palimpzest import fixed_runner
+        fresh, evidence = self.fixed().fresh('evaluator-failure'), {}
+        clock = [100_000_000_000]
+        def evaluate(*args):
+            clock[0] += 9_000_000_000
+            raise ValueError('quality fixture')
+        with patch.object(fixed_runner.time, 'monotonic_ns', side_effect=lambda: clock[0]), \
+                patch.object(fixed_runner, 'fetch_model_metadata', return_value=self.verified), \
+                patch.object(fixed_runner, 'result_status', side_effect=evaluate), \
+                patch.object(generators.litellm, 'completion', side_effect=lambda **kwargs: native_response('TRUE')), \
+                patch('sys.stdout', StringIO()), self.assertRaisesRegex(ValueError, 'quality fixture'):
+            execute_fixed_movie(fresh, arm='original-native', backend_profile=self.backend_profile, evidence=evidence)
+        self.assertEqual(evidence['status'], 'failed')
+        self.assertEqual(evidence['quality_evaluation_seconds'], 9)
+        self.assertEqual(evidence['query_seconds'], 9)
+        self.assertEqual(evidence['result_ready_seconds'], 0)
+        self.assertIsNone(evidence['full_query_seconds'])
+
+    @unittest.skipUnless(os.environ.get('SEMLOOM_PZ_RUNNER_HTTP_TEST') == '1', 'explicit localhost public-runner fixture')
+    def test_public_runner_original_and_adapted_use_original_pz_sdk_budget_and_cleanup(self):
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        import threading
+        from src.experiments.palimpzest import runner
+        from test_palimpzest_runner import fixed_config
+        posts, summaries = [], []
+        model = self.binding.model.model_id
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_POST(self):
+                posts.append(json.loads(self.rfile.read(int(self.headers['Content-Length']))))
+                body = json.dumps(dict(id='public-fixture', object='chat.completion', created=1, model=model,
+                    choices=[dict(index=0, finish_reason='stop', message=dict(role='assistant', content='ANSWER: TRUE\n---'))],
+                    usage=dict(prompt_tokens=11, completion_tokens=3, total_tokens=14))).encode()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            binding = LocalModelBinding(replace(self.binding.model,
+                endpoint_url=f'http://127.0.0.1:{server.server_port}/v1/chat/completions'))
+            verified = verify_model_metadata(binding, dict(object='list', data=[dict(id=model, object='model', owned_by='vllm')]))
+            for arm in ('original-native', 'native-adapted'):
+                output, scope = self.root/arm, self.root/(arm+'-scope')
+                config = fixed_config(arm, {'max_workers': 1} if arm == 'native-adapted' else {})
+                config['fixed_execution']['run_id'] = arm
+                prepared = (self.dataset, self.dataset.load_rows(), self.pz_root, binding, output, scope, {})
+                with patch.object(runner, 'preflight', return_value=prepared), \
+                        patch.object(runner, 'fetch_model_metadata', return_value=verified), \
+                        patch('src.experiments.palimpzest.fixed_runner.fetch_model_metadata', return_value=verified), \
+                        patch('sys.stdout', StringIO()):
+                    summary = runner.run_fixed(config)
+                summaries.append(summary)
+                self.assertEqual(summary['status'], 'completed')
+                self.assertEqual(summary['actual_posts'], 2)
+                self.assertFalse(summary['owner_cleanup_pending'])
+                self.assertEqual(summary['completion_ledger']['completion_completed'], 2)
+                self.assertGreaterEqual(summary['execution']['full_query_seconds'], summary['execution']['result_ready_seconds'])
+                self.assertFalse((scope/'.runner-lease.json').exists())
+                self.assertEqual(json.loads((output/'original-result.json').read_text())['data'], [[2]])
+            self.assertEqual(len(posts), 4)
+            self.assertEqual(sorted(json.dumps(p, sort_keys=True) for p in posts[:2]),
+                             sorted(json.dumps(p, sort_keys=True) for p in posts[2:]))
+            self.assertTrue(summaries[1]['prepared_execution']['sdk_closed'])
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(2)
+
     def test_daft_registers_before_lazy_calls_and_reuses_shared_runtime_for_payloads(self):
         from src.baselines.text.frameworks import native_calls
         from src.data.materializers.payloads import PayloadBatchLimits,iter_payload_batches

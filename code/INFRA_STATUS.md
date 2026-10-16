@@ -77,6 +77,10 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 独立[SemLoom模型R4](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)使用620，120POST200／COUNT7经1682项原件独审通过，外层正常退出另核；新增后累计840／840、余0。与bebf物理计划相同但完整身份变化，保留原R3 failed，不授同身份七臂或性能资格。
 作者IMLane的[四lane HTTP健康补轮](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#imlane-four-lane-health)已核CP／Ray各两批、实际4worker及正常自有退出；16次fixture与7条保留告警单列，模型／GPU为0。
 
+2026-10-16：[PZ 查询计时与 owner 回归](../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#query-timing-owner-regression)
+保留旧计时字段，新增原结果就绪／外层准备计时，并在既有脚本选择七臂固定计划；finish 异常、活动 SDK sender、
+IMLane 未确认工作及失败证据均按原 owner 责任处理。CPU／localhost 回归与两轴独审通过，真实物理矩阵和历史模型资格保持分列。
+
 ## 当前文本、接入与公共基础
 
 重复均值区间已单独吸收 `4b1c834b`；公式、保守取值与发布影响见[统计说明](src/observability/README.md#repeat-mean-confidence)。固定源码40项定向检查通过，不证明重复独立或尾分位充分，也不改写原始观测。

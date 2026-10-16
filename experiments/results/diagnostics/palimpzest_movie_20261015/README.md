@@ -261,3 +261,34 @@ R3 failed与六完成臂720原账不改；本轮新增120后累计840／840、�
 首版适配仅接受已核单模型 LLMFilter、单字段 ONE_TO_ONE LLMConvertBonded 及普通扫描／谓词／投影／结构 count；
 LIMIT、join、distinct、语义聚合或未核多调用形状明确 unsupported。计划中的六臂另加 native-adapted 控制，
 默认 work=1 只表示请求计数；软件与实际模型资格按本页分列，不外推未核算子或性能。
+
+<a id="query-timing-owner-regression"></a>
+## 查询计时、公开入口与异常关闭回归（2026-10-16）
+
+本次以 `integration/baselines@7e59e5a1` 为基点，按新审查附件局部修补，未改原 PZ
+查询、优化器、Generator、SDK parser 或 evaluator。原 `query_seconds`／fresh 合计仍含评价；
+新增结果就绪与外层完整查询时间，评价独立记录。现有公开脚本贯通七种固定计划 arm，
+主计时从每查询 fresh、执行器及 `SemLoomProgress` 创建之前开始；一次选计划与外部服务启动分列。
+配置、边界和 owner 责任以[模块说明](../../../../code/src/semantic_methods/palimpzest/README.md#fixed-public-runner)为准。
+
+`progress.finish()` 异常后继续尝试安全栈清理、SDK 关闭和最终报告，保留首因。
+独审额外复现 reader 已结束但 native sender future 仍使用 SDK 的情形；现在发送结束前保持 SDK 打开。
+外层读取 IMLane 已有外部清理标记；未确认工作或资源关闭失败保留 owner 与 lease，
+不误记完成或自动恢复。`_send/after_send` 的既有实现保持。
+
+[紧凑回归记录](lifecycle-regression.json)绑定改动源码摘要和分批日志：实验／入口 56 个、
+语义层 74 个，去重共 **130 个用例通过**。使用既有独立 PZ／SDK 环境与显式 Darwin CPU profile；
+PZ 能力组通过，通用 core 组缺 Ray／Daft／psycopg，未混装依赖。最终公开入口实际运行
+original-native、native-adapted 两个两行合成查询，共 4 次 localhost POST，均 COUNT2；
+请求多重集合、原 SDK、实际预算及正常 owner／临时 lease 关闭断言通过。另一批同一 fixture 的
+4 次 POST 分列在实验回归日志中，不是新模型工作。
+
+测试首轮的 unittest 辅助方法命名／mock 报告错误、目标测试导入顺序及 sandbox localhost 拒绝均保留，
+修正后只复验受影响项；无模型／GPU 请求，未取得共享服务器 lease。
+Standards 与 Spec 两轴独审提出的首因、sender、IMLane 责任和失败摘要问题均修复并复核通过。
+测试源码随本次 Git 提交保留，摘要见上述 JSON；脱敏日志以运行标识
+`pz-query-lifecycle-cpu-20261016` 留仓外，可按批次运行标识和校验值向项目维护者索取
+`<批次run_id>.redacted.txt`。临时 unittest 响应已由测试清理，不声称可恢复原响应。
+
+七臂配置只补软件接线检查，本轮未重跑真实 Daft／Ray／IMLane 或 SemLoom 物理矩阵，
+不授模型、性能或 GPU 资格；上述历史模型、失败与费用／计时原值保持原来源。

@@ -220,6 +220,7 @@ class PreparedExecutionStrategy:
         self._prepare_secs = self._finish_secs = 0.0
         self._batches = Counter()
         self._occurrences, self._semantic, self._expected = {}, set(), {}
+        self._sdk_closed, self._close_errors = False, []
         self.last_close_report = None
 
     def fail(self, error):
@@ -478,28 +479,60 @@ class PreparedExecutionStrategy:
             return
         self._closing = True
         deadline = time.monotonic() + self.limits.close_timeout_s
+        primary = self._fatal
+        def failed(error):
+            nonlocal primary
+            self._close_errors.append(type(error).__name__)
+            if primary is None:
+                primary = self._fatal or error
+            if error is not primary:
+                primary.add_note("PZ prepared cleanup also failed: " + type(error).__name__)
         # Only a failing/cancelled method may leave stacks pending at executor exit.
         if self._live and self._fatal is None:
             self.fail(PalimpzestAdapterError("PZ method exited with unfinished original operator stacks"))
+            primary = self._fatal
         if self.progress.finite_batches:
-            while self.progress.active and time.monotonic() < deadline:
-                self._event(min(0.05, max(0, deadline - time.monotonic())))
-        progress_report = self.progress.finish(method_complete=method_complete and not self._live and self._fatal is None,
-                                               timeout_s=max(0, deadline - time.monotonic()))
+            try:
+                while self.progress.active and time.monotonic() < deadline:
+                    self._event(min(0.05, max(0, deadline - time.monotonic())))
+            except BaseException as error:
+                failed(error)
+        try:
+            progress_report = self.progress.finish(method_complete=method_complete and not self._live and primary is None and self._fatal is None,
+                                                   timeout_s=max(0, deadline - time.monotonic()))
+        except BaseException as error:
+            failed(error)
+            progress_report = getattr(self.progress, "last_close_report", None) or {}
         if self.progress.active or progress_report.get("unconfirmed_work"):
             self._unconfirmed = True
             self.fail(PalimpzestAdapterError("PZ progress finish retains unconfirmed work; query completion rejected"))
+            if primary is None:
+                primary = self._fatal
         for future in tuple(self._live.values()):
             if self.progress.finite_batches:
                 self._unconfirmed |= future.call_id in self._expected
-            self._resume(future, error=_StackCancelled("PZ method cancelled; backend ownership recorded separately"))
+            try:
+                self._resume(future, error=_StackCancelled("PZ method cancelled; backend ownership recorded separately"))
+            except BaseException as error:
+                failed(error)
         self._ready.clear()
-        if not self.progress.active and self._sdk is not None:
-            self._sdk.close()
-        self._closed = not self.progress.active
+        # An active reader may still call its captured original SDK sender.
+        # Keep this strategy/SDK owned so the caller can retry close after it stops.
+        sdk_in_use = self.progress.active or isinstance(self.executor, NativeAdaptedExecutor) and self.executor.sdk_in_use
+        if not sdk_in_use and not self._live and self._sdk is not None and not self._sdk_closed:
+            try:
+                self._sdk.close()
+                self._sdk_closed = True
+            except BaseException as error:
+                failed(error)
+        self._closed = not sdk_in_use and not self._live and (self._sdk is None or self._sdk_closed)
+        if primary is None:
+            primary = self._fatal
+        if primary is not None:
+            self._fatal = primary
         self.last_close_report = self.snapshot()
-        if self._fatal is not None:
-            raise self._fatal
+        if primary is not None:
+            raise primary
         if not self._closed:
             raise PalimpzestAdapterError("PZ prepared close retains backend iterator ownership")
 
@@ -514,6 +547,9 @@ class PreparedExecutionStrategy:
             finish_seconds=self._finish_secs, iterator_reader_stopped=not self.progress.active,
             progress_active=self.progress.active, progress_type=type(self.progress).__name__,
             unconfirmed_work=self._unconfirmed, closed=self._closed, reuse_allowed=False,
+            sdk_closed=self._sdk_closed, sdk_close_deferred=self._sdk is not None and bool(self.progress.active or self._live
+                or isinstance(self.executor, NativeAdaptedExecutor) and self.executor.sdk_in_use),
+            cleanup_errors=list(self._close_errors),
             fatal_error_type=None if self._fatal is None else type(self._fatal).__name__,
             remote_http_stopped="unavailable", actual_http_attempts="separate actual POST observer required",
             preparation_memory_slots=self.limits.max_pending_calls,

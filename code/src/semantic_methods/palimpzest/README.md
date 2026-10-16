@@ -35,8 +35,8 @@ the original processor rather than silently skipping sentinel work.
 `plan_id` alone is insufficient: source contents, configuration, dependencies,
 request hashes and service/cache state remain separate runner evidence.
 
-The [native Movie runner](../../../scripts/experiments/run_sembench_palimpzest.py)
-uses unchanged Q3/Q2 method bodies from SemBench
+The [Movie runner](../../../scripts/experiments/run_sembench_palimpzest.py)
+defaults to original native execution and uses unchanged Q3/Q2 method bodies from SemBench
 `c814e3807e72d4cf876b852b17e77f3cc94575c2`. It captures their terminal explicit
 `Dataset.run(config)` call to avoid the generic runner's Gemini fallback, then
 uses PZ's original run with explicit `QueryProcessorConfig` and parallel workers.
@@ -108,6 +108,90 @@ IMLane CP/Ray and SemLoom. `BackendRunProfile` currently accepts only explicit f
 deployment budgets; native automatic tuning remains unsupported. The original
 zero-survivor empty relation is preserved and marked compatibility-invalid rather
 than silently changed to COUNT=0.
+
+<a id="fixed-public-runner"></a>
+### Public fixed-plan execution and timing
+
+The same script accepts `schema: "semloom.sembench_palimpzest_fixed.v1"` with the
+original path/budget fields plus `fixed_execution`. The original
+`semloom.sembench_palimpzest.v1` configuration and native Q2/Q3 behavior remain supported.
+The fixed scope is Q3 only. Copy the existing configuration, change its schema, and
+add the following block with real service/cache/dependency/deployment digests;
+`limits.pz_workers` must match `native_options.max_workers` (20 in this example):
+
+```json
+{
+  "arm": "native-adapted",
+  "run_id": "movie-q3-adapted",
+  "environment": {
+    "service_config_sha256": "<service-config-sha256>",
+    "service_cache_sha256": "<service-cache-sha256>",
+    "dependency_lock_sha256": "<dependency-lock-sha256>"
+  },
+  "backend_profile": {
+    "deployment_budget_sha256": "<deployment-budget-sha256>",
+    "mode": "fixed"
+  },
+  "limits": {"pz_workers": 20, "max_pending_calls": 32, "max_batch_rows": 16},
+  "backend_options": {"max_workers": 4}
+}
+```
+
+`--data-preflight`, `--preflight` and `--execute` select the same configured arm.
+Each native backend retains its existing configuration and concurrency controls:
+
+| `arm` | `backend_options` |
+|---|---|
+| `original-native` | `{}`; use `limits: null` and original PZ controls |
+| `native-adapted` | `{"max_workers": 4}` for its original SDK I/O pool |
+| `daft` | `{"graph_options": {}}`; existing `NativeGraphOptions` overrides are allowed |
+| `ray-data` | `{"graph_options": {}, "ray_address_env": "PZ_RAY_ADDRESS"}` |
+| `imlane-cpython`, `imlane-ray` | `{"graph_options": {}, "call_config_env": "PZ_IMLANE_CALL_CONFIG"}`; existing private call config must match the arm |
+| `semloom` | `{"max_active_requests": 8, "physical_config_env": "PZ_PHYSICAL_CONFIG"}` |
+
+Ray addresses name an existing caller-owned cluster; automatic/local cluster creation
+is refused. SemLoom uses the existing `RayMapConfig` with
+`response_mode="native-call-full"`, `payload_backend="daft"`, no preparation and no
+borrowed worker pool. This entry owns its query workers; the local SemLoom diagnostic
+remains available through the Python helper. Model services and IMLane Coordinators
+remain caller-owned. Preflight checks configuration and PZ/SDK libraries; actual
+vendor execution and physical cleanup require their own runtime evidence.
+
+The [runner implementation](../../experiments/palimpzest/runner.py) selects once,
+then starts the fixed-query clock before fresh state, event writer, Ray connection,
+observation gateway and executor/`SemLoomProgress` construction. Only adapted arms
+use the existing HTTP-preserving gateway; it charges the durable budget before
+forwarding, without changing backend scheduling. The native arm uses the existing
+actual-send SDK observer. Selection/optimization is separately reported and is not
+repeated inside this fixed-plan execution interval.
+
+| Evidence field | Boundary |
+|---|---|
+| `query_seconds`, `total_seconds_with_fresh_state` | Legacy meanings retained, including evaluation; the latter adds only the helper's recorded fresh-state duration |
+| `result_ready_seconds` | Helper entry through complete original PZ records/COUNT and SDK parsing; truth/quality audit excluded |
+| `full_query_seconds` | Outer fixed-query submission through those complete results, including all per-query objects above |
+| `outer_query_preparation_seconds` | Outer submission through helper entry, already included in `full_query_seconds` |
+| `quality_evaluation_seconds` | Relation/truth/quality audit, also retained if evaluation fails |
+| `service_startup_seconds` | `null`: external service startup is not measured by this runner and needs separate evidence |
+
+Direct helper calls without `query_started_ns` report `full_query_seconds: null`
+with an explicit scope reason. These new fields do not relabel historical timings
+or grant performance qualification.
+
+Strategy close independently attempts finish, safe continuation cleanup, SDK close
+and its final report, preserving the first error. A stopped finite reader does not
+prove that a native SDK sender future ended: `sdk_in_use` retains that responsibility
+until it completes. An active reader/sender keeps the SDK open. The outer runner
+also respects existing IMLane external-cleanup markers and failed resource closes.
+Unsettled work retains its executor/gateway/SDK dependencies and host lease, records
+`owner_cleanup_pending`, and exposes the live owner as `error.pz_execution_owner`
+for explicit caller cleanup. It does not recover stale leases or replace an unknown
+runtime automatically. Normal cleanup closes query-owned resources and releases
+the lease; caller-owned Ray connections and Coordinators are preserved.
+
+The [CPU regression record](../../../../experiments/results/diagnostics/palimpzest_movie_20261015/README.md#query-timing-owner-regression)
+separates deterministic control-flow fixtures and localhost original-SDK execution
+from unchanged historical model/backend evidence.
 
 Finite Daft/Ray Data/IMLane paths reuse the existing complete-call native API graphs.
 [`SemLoomProgress`](semloom.py) instead keeps one query Job and open operator flows,
