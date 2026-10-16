@@ -1,6 +1,6 @@
 # 实验与机制证据台账
 
-2026-10-16：[IMLane长测监督计数隔离](diagnostics/imlane_progress_scan_20261016/README.md)固定7e59，35项定向回归、已关闭账本副本与Mac多规模零模型配对验证三元组、预算和unknown保持；进度CPU降低但完整fixture无稳定收益，索引写入成本和顺序效应保留。没有作者机制、活动包或服务器变更，Linux及真实模型匹配待运行owner，不认领现场17%已解决。
+2026-10-16：[IMLane原Q1与监督计数成本](diagnostics/imlane_progress_scan_20261016/README.md)固定7e59／c994：两模式各19轮原2000行共76000模型补测完成；Linux资格后，CPython八格匹配历史新增16000模型。高历史query均值−14.03%，低历史+2.12%，Mac完整fixture无稳定收益仍保留。新配对每格fresh owner/service，只验证历史观测成本，不授持续19轮漂移修复或作者Ray Lane2恢复资格；完整Filter质量仍不足。
 
 2026-10-15：[PZ独立SemLoom模型R4](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)固定620，120POST200、COUNT7／真值14，经1682项原件独审通过；外层退出与正常lease释放已记录。bebf R3 failed／六臂720原账及CPU累计6fixture另列，模型累计840／840余0；完整身份不同，不授同身份七臂或性能排名，离线reader首轮形状错误保留。
 

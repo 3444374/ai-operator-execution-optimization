@@ -1,6 +1,6 @@
 # AI 算子执行 Infra 当前状态
 
-2026-10-16：[IMLane长测监督去扫描候选](../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)复用五行计数并加双时间索引，短只读事务保留原三元组；阶段counts和完整初始化审计保持。35项定向回归通过，Mac零模型降低进度扫描CPU但完整fixture无稳定加速，写入成本与顺序波动保留。未改作者执行或活动包，Linux少量匹配与真实模型验证待唯一owner安排。
+2026-10-16：[IMLane原Q1与监督计数候选](../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)固定7e59生产源／c994测量差分；原两模式各19轮完成，新Linux CPython八格配对仅验证匹配历史成本。高历史缩短、低历史回退与Mac负结果均保留，未修持续漂移或作者Ray参与异常；不改作者调度或冻结活动baseline，模型已自然关闭。
 
 2026-10-15：[部署限定资源 auto](../experiments/results/diagnostics/resource_auto_20261015/README.md)只在已分配 UUID 集内参数化原工厂／池、原生 vLLM DP 和 Ray HTTP min/max，保持旧单卡／重试默认，准备深度独立。严格 worker UUID 修复固定 d2 后，一张4090的 LOTUS CLIP 五原生路径 auto／explicit1 完整输出、身份与物理退出通过；固定精度环境四组通过，HSE 旧额外环境验收仍失败。默认环境数值失败、6行诊断及66/66累计行全部保留，无性能结论。main 独立7b20／PR25服务12请求保持单独来源；本线HTTP0。真实多卡、Daft多卡mask、DP>1 rank、Serve多副本及真实扩缩仍pending。 C在7bac历史集成保留默认Ray重试并精确重绑PZ守卫，297通过／68条件跳过仅属该CPU组合；本次d2单卡结果单列。
 
@@ -86,12 +86,12 @@ stock／Daft PNG／RGB共12条完整查询、15矩阵及退出通过；PNG／RGB
 | PG 语义与增量执行 | [代码入口](README.md)、[数据库接入](../experiments/plans/数据库接入.md)、[架构](../experiments/plans/系统架构.md) | 真实 Map／Filter 与各条协议按自身验证范围；外部完整任务不是 PG 原生节点证明 |
 | LOTUS／DuckDB／Sema 六路径 | [原生执行接入报告](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)及各 integration README | 原图／原算子拥有语义和执行；Sema 后置 HTTP 接入不能称原池前替换 |
 | 原 Q2 与账本修订 | [原窗口、双卡分波及匹配复测](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md) | 旧质量不足、失败、分波与配置保持；最终文本三条 Q2 新来源验证未通过，不借旧结果写完成 |
-| IMLane 桥与可选 context | [生命周期](integrations/sema/imlane_calls.md#bridge-lifecycle)、[固定实库报告](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session) | 可选 session 桥已有作者两模式多批软件资格；默认128可显式配置2000，逐批桥／同步默认保持；有限软件资格不覆盖原规模模型、PG 与 async 组合 |
+| IMLane 桥与可选 context | [生命周期](integrations/sema/imlane_calls.md#bridge-lifecycle)、[固定实库报告](../experiments/results/diagnostics/imlane_bridge_lifecycle_20261014/README.md#author-session) | 可选session桥保留历史多批／Q2资格；默认128可显式配置2000。默认同步、逐query桥已完成两作者模式原Q1各19轮模型补测；PG、async＋reuse和并行query组合仍未覆盖 |
 | 完整调用稳定性 | [停止责任组合](../experiments/results/diagnostics/semloom_stability_composition_20261012/README.md)、[公共生命周期](src/baselines/README.md) | 关联、未知责任隔离、取消和资源回收是正确性基础，不等于性能或调度贡献 |
 | Ray 清理、HSE 源关闭与计时 | [Ray 成对核验](../experiments/results/diagnostics/optional_execution_timing_20261014/README.md#ray-cleanup-sdk)、[源关闭](../experiments/results/diagnostics/hse_static_lifecycle_20261014/README.md#source-iterator-closure) | 真实 SDK、CPU 替身与 CUDA／模型检查按各来源分列；旧窗口不改成新来源实测 |
 | 供给、组织与观察 | [查询调优](../experiments/plans/查询调优.md)、[数据组织](../experiments/plans/数据组织.md)、[结果导航](../experiments/results/README.md) | 线程记账、准备分段、尾块追加等已定位负结果保留；同步及显式选项按原默认解释 |
 
-常驻 owner 复用 LM／Core／Ray 连接不自动代表跨查询复用 IMLane 桥；当前[_lotus_rows](src/experiments/postgresql/supplier_adapter_query.py)逐查询创建 `NativeCallExecutor`。
+常驻owner复用LM／Core／Ray连接不自动代表复用IMLane桥；[_lotus_rows](src/experiments/postgresql/supplier_adapter_query.py)默认逐query创建`NativeCallExecutor`，显式`reuse_bridge=True`时借用owner持有的executor／桥。两种寿命按各自实际资格解释。
 图像 stock 文本在 CUDA、替换臂文本在 CPU，数值资格通过不等于这些文本耗时可作同配置性能比较。
 
 Daft 的[当前图片适配](src/baselines/image/frameworks/daft_clip.py)在同一 GPU stateful 方法中执行 resize／normalize 与 forward；

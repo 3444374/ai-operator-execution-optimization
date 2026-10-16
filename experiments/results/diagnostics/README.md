@@ -1,6 +1,6 @@
 # Feasibility Results
 
-- [IMLane监督计数去扫描](imlane_progress_scan_20261016/README.md)：Mac零模型账本副本、三字段语义、失败／未返回、并发与锁核验；进度读CPU降低但完整fixture无稳定收益，Linux与模型配对待验证。
+- [IMLane原Q1与监督计数成本](imlane_progress_scan_20261016/README.md)：原两模式长测、CPython匹配历史配对、实际配置与复算；保留Mac负结果、低历史回退和持续漂移／作者Ray未修边界。
 
 - [部署限定资源 auto](resource_auto_20261015/README.md)：只在允许 GPU 集解析原生配置，保存 requested/resolved、物理 UUID 与worker身份；CPU／模拟检查不替代单／多卡模型资格，Serve多副本仍pending。
 

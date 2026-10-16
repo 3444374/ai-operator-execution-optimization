@@ -1,0 +1,525 @@
+{
+  "schema": "imlane_model_evidence.v1",
+  "production_source": "7e59e5a10eaceb7ac4a1bd0766b10244ca3e192d",
+  "progress_candidate": "c994cf4a6f6095246838003c7362b830a9822960",
+  "candidate_scope": "measurement/controller ledger only; no production query or author scheduling change",
+  "common_runtime": {
+    "gpu": "single NVIDIA GeForce RTX 4090",
+    "gpu_memory_MiB": 24564,
+    "model_id": "Qwen2.5-7B-Instruct",
+    "model_fingerprint": "42e668a0fdf19c707174fec29df11020c768a77238bc8646e633a87dcf201295",
+    "model_config_sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+    "sem_filter_sha256": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
+    "versions": {
+      "LOTUS": "1.2.4",
+      "LiteLLM": "1.95.0",
+      "OpenAI": "2.50.0",
+      "pandas": "2.3.3",
+      "Daft": "0.7.21",
+      "Ray": "2.56.1",
+      "vLLM": "0.25.1"
+    },
+    "author_upstream": "https://github.com/IM-DM4AI/IMLane0",
+    "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+    "bridge_source_sha256": "c726cbb806dc458461ac5517e586d7e4b170f41e32920c60f167e722c4e48e58",
+    "bridge_binary_sha256": "8f7d48aa3a73bd6ef35c2da7426c0b0f8e2cbc4dbc985dc15834de5d51de396d",
+    "author_executors": 4,
+    "native_metadata_executors": 6,
+    "host_task_threads": 8,
+    "declared_concurrency": 8,
+    "max_pending_calls": 128,
+    "reuse_bridge": false,
+    "udf": "default synchronous; asyncio.run per call, restore original loop; per-call HTTP session",
+    "driver_author_cpus": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "service_cpus": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ],
+    "service": {
+      "dtype": "bfloat16",
+      "eager": true,
+      "tensor_parallel": 1,
+      "pipeline_parallel": 1,
+      "max_model_len": 4096,
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 2048,
+      "gpu_memory_utilization": 0.8,
+      "seed": 0,
+      "prefix_cache": false,
+      "chunked_prefill": true
+    },
+    "request_timeout_seconds": 30,
+    "healthy_query_owner_total_wall_timeout": null,
+    "fault_policy": {
+      "startup_seconds": 180,
+      "work_no_progress_seconds": 120,
+      "backend_no_progress_seconds": 120,
+      "cleanup_seconds": 120
+    },
+    "resource_interval_seconds": 1,
+    "dataset": {
+      "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+      "manifest_content_digest": "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2",
+      "query": 1,
+      "rows": 2000,
+      "original_limit": 5
+    },
+    "generation": {
+      "max_completion_tokens": 8,
+      "temperature": 0,
+      "top_p": 1,
+      "stop": [
+        "\n"
+      ],
+      "logprobs": false
+    }
+  },
+  "long_run": {
+    "model_calls": 76000,
+    "transmissions": 228000,
+    "fixture_calls": 0,
+    "modes": [
+      "CPython",
+      "author_ray"
+    ],
+    "queries_per_mode": 19,
+    "model_warmups": 0,
+    "lifetime": "one CLI/Coordinator/LM owner per mode; per-query DBEnd bridge; one service across both mode groups",
+    "row_groups": "first query is qualification; next eighteen reported separately",
+    "source_ledger_sha256": "61e8f6ebc7567e2a5d6539bc5129f7a2e941c92d5d94677577ec95100a5a6abc",
+    "lifecycle": {
+      "status": "completed",
+      "model_started_epoch": 1792114825.914877,
+      "ended_epoch": 1792118686.7602394,
+      "controller_exit_code": 0,
+      "service_start_to_first_verified_engine_seconds": 48.387223556637764,
+      "modes": [
+        {
+          "mode": "CPython",
+          "public_owner_startup_seconds": 8.603710061,
+          "author_startup_seconds": 1.520730942,
+          "author_close_seconds": 0.621929379,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.325036759,
+          "source_records": [
+            {
+              "member": "model-0/output/owner-0/startup.json",
+              "sha256": "856fdcab50a6bf98631cc4cfdfc37300a4a8c712a8a151a937f8e1463c96c7fa"
+            },
+            {
+              "member": "model-0/output/owner-0/owners/lotus-method-native-imlane/owner-summary.json",
+              "sha256": "fa731c31808cc8942ef6518daec3eb9d492a08c5391a646dda86a293d1b1c151"
+            },
+            {
+              "member": "model-author-cpython-imlane-cpython-n4/author-start.json",
+              "sha256": "0c1e5b8f07a1f77cefbcbfc583cee7083ce6c314a42d6c673c49f30a83d5e82f"
+            },
+            {
+              "member": "model-author-cpython-imlane-cpython-n4/author-cleanup.json",
+              "sha256": "f1f3ce158248ed072f2ef7f4abf65719c741f90a87dab02e98d977f0807c7ab1"
+            }
+          ]
+        },
+        {
+          "mode": "author_ray",
+          "public_owner_startup_seconds": 8.534395901,
+          "author_startup_seconds": 7.15048871,
+          "author_close_seconds": 2.539579976,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.101096613,
+          "source_records": [
+            {
+              "member": "model-1/output/owner-0/startup.json",
+              "sha256": "483c46a244bf98ec112e3ac19ddf46b5cd07cbabf5576b27ceb6d5b7a2078f85"
+            },
+            {
+              "member": "model-1/output/owner-0/owners/lotus-method-native-imlane-ray/owner-summary.json",
+              "sha256": "73abb692732f301d014bf16f717d698eabb5260da6feedce198e5aac079c145b"
+            },
+            {
+              "member": "model-author-ray-imlane-ray-n4/author-start.json",
+              "sha256": "2bbe99b15f8c7678b0f31f009d32093bd080c61377caa97549b4a4895b3df242"
+            },
+            {
+              "member": "model-author-ray-imlane-ray-n4/author-cleanup.json",
+              "sha256": "fb0cf22214441bced36d50a045fc487a304130f1cad4d80dd5bcc59e287ca7e3"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "matched_history": {
+    "model_calls": 16000,
+    "transmissions": 48000,
+    "fixture_calls": 0,
+    "mode": "CPython",
+    "query_per_case": 1,
+    "model_warmups": 0,
+    "lifetime": "fresh original CLI/Coordinator/LM/four author workers and model service per case",
+    "history_prefix_rows": 114000,
+    "history_prefix_sha256": "50be3b109e30e05a95128d5f8c9de0f0a8f8117ea541a6bbccd253736d189264",
+    "new_rows_predicate": "sequence > imported prefix_rows",
+    "historical_rows_never_resent": true,
+    "old_ledger_unchanged": true,
+    "cases": [
+      {
+        "case_id": "m0-low-before",
+        "pair_variant": "before",
+        "history_rows": 0,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 2000,
+        "absolute_transmission_limit": 6000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792122299.0488718,
+          "ended_epoch": 1792122463.026414,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 48.25999281462282,
+          "model_start_to_query_release_seconds": 61.992990364,
+          "public_owner_startup_seconds": 8.829903316,
+          "author_startup_seconds": 1.524579213,
+          "author_close_seconds": 0.617500665,
+          "last_eof_to_public_owner_closed_marker_seconds": 2.003397054
+        }
+      },
+      {
+        "case_id": "m1-high-before",
+        "pair_variant": "before",
+        "history_rows": 114000,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 40000,
+        "absolute_transmission_limit": 120000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792122500.6304219,
+          "ended_epoch": 1792122678.3060324,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 48.296490932349116,
+          "model_start_to_query_release_seconds": 62.856988735,
+          "public_owner_startup_seconds": 8.685220121,
+          "author_startup_seconds": 1.906304291,
+          "author_close_seconds": 0.616273205,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.880310671
+        }
+      },
+      {
+        "case_id": "m2-high-after",
+        "pair_variant": "after",
+        "history_rows": 114000,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 40000,
+        "absolute_transmission_limit": 120000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792122716.3497686,
+          "ended_epoch": 1792122879.9961197,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 46.22369117103517,
+          "model_start_to_query_release_seconds": 60.510014681,
+          "public_owner_startup_seconds": 8.592691033,
+          "author_startup_seconds": 1.910711534,
+          "author_close_seconds": 0.61662665,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.906170651
+        }
+      },
+      {
+        "case_id": "m3-low-after",
+        "pair_variant": "after",
+        "history_rows": 0,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 2000,
+        "absolute_transmission_limit": 6000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792122912.51464,
+          "ended_epoch": 1792123082.8310447,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 47.31782488711178,
+          "model_start_to_query_release_seconds": 61.90027939,
+          "public_owner_startup_seconds": 9.626351765,
+          "author_startup_seconds": 1.487936271,
+          "author_close_seconds": 0.617309896,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.976876418
+        }
+      },
+      {
+        "case_id": "m4-low-after",
+        "pair_variant": "after",
+        "history_rows": 0,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 2000,
+        "absolute_transmission_limit": 6000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792123116.849876,
+          "ended_epoch": 1792123284.1783357,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 48.29917663708329,
+          "model_start_to_query_release_seconds": 62.1985798,
+          "public_owner_startup_seconds": 9.033171413,
+          "author_startup_seconds": 1.395406197,
+          "author_close_seconds": 0.617361858,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.934308152
+        }
+      },
+      {
+        "case_id": "m5-high-after",
+        "pair_variant": "after",
+        "history_rows": 114000,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 40000,
+        "absolute_transmission_limit": 120000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792123321.3719246,
+          "ended_epoch": 1792123490.553796,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 48.22714306367561,
+          "model_start_to_query_release_seconds": 63.38074043,
+          "public_owner_startup_seconds": 9.353208181,
+          "author_startup_seconds": 1.904207421,
+          "author_close_seconds": 0.617493034,
+          "last_eof_to_public_owner_closed_marker_seconds": 2.013597999
+        }
+      },
+      {
+        "case_id": "m6-high-before",
+        "pair_variant": "before",
+        "history_rows": 114000,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 40000,
+        "absolute_transmission_limit": 120000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792123527.2998886,
+          "ended_epoch": 1792123703.8390725,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 46.44864582223818,
+          "model_start_to_query_release_seconds": 61.681427114,
+          "public_owner_startup_seconds": 9.145136112,
+          "author_startup_seconds": 2.031849106,
+          "author_close_seconds": 0.616863135,
+          "last_eof_to_public_owner_closed_marker_seconds": 1.945573654
+        }
+      },
+      {
+        "case_id": "m7-low-before",
+        "pair_variant": "before",
+        "history_rows": 0,
+        "query_rows": 2000,
+        "new_model_logical_limit": 2000,
+        "new_transmission_limit": 6000,
+        "absolute_model_logical_limit": 2000,
+        "absolute_transmission_limit": 6000,
+        "lifecycle": {
+          "status": "completed",
+          "model_started_epoch": 1792123736.1351345,
+          "ended_epoch": 1792123907.486713,
+          "controller_exit_code": 0,
+          "service_start_to_first_verified_engine_seconds": 49.37726363213733,
+          "model_start_to_query_release_seconds": 63.352152522,
+          "public_owner_startup_seconds": 9.106172617,
+          "author_startup_seconds": 1.484402501,
+          "author_close_seconds": 0.616871011,
+          "last_eof_to_public_owner_closed_marker_seconds": 2.063932681
+        }
+      }
+    ],
+    "software_qualification": {
+      "cases": 2,
+      "fixture_calls": 4000,
+      "model_calls": 0,
+      "linux_history_tests_per_variant": 12,
+      "actual_controls_per_variant": 22,
+      "before_gate_sha256": "1a0493fa67e3929500cb3fc3b3b86d71977504ccdfa8603e80fa401de9560aa9",
+      "after_gate_sha256": "e54527127087a3334725f93f43d8055c9ee28f17d32dcac5a24bb62afa38dfa4"
+    }
+  },
+  "metric_definitions": {
+    "full_query": "release to complete consumer EOF",
+    "postprep_query": "prepared API submit to EOF",
+    "request_latency": "owner gateway dispatch to complete upstream response body; includes accounting, queue and transport",
+    "http_span": "first dispatch to last complete body",
+    "request_p99": "nearest rank on the 2000 actual successful requests of each query; pair summaries average per-query P99, not pooled independent samples",
+    "http_mean_inflight": "sum(body_ns-dispatch_ns)/(last_body_ns-first_dispatch_ns)",
+    "resource_window": "prepared API submit to EOF; PID/birth matched CPU deltas; adjacent in-window GPU/gauge trapezoid interpolation; boundaries not extrapolated",
+    "mfu": {
+      "coefficients": [
+        13050576896,
+        200704,
+        1089994752
+      ],
+      "effective_prefill_T": "P+O-1 per request",
+      "flops": "13050576896*sum(T) + 200704*sum(T*(T+1)) + 1089994752*sum(O)",
+      "peak_dense_BF16_FP32_accumulate_flops": 165200000000000,
+      "source": "https://images.nvidia.com/aem-dam/Solutions/geforce/ada/nvidia-ada-gpu-architecture.pdf",
+      "appendix": "A",
+      "page": 30,
+      "all_eleven_qualifications_passed": true,
+      "scope": "useful-forward estimate, not hardware FLOPs"
+    },
+    "lifecycle": {
+      "public_owner_startup": "startup.json started_ns to ready_ns; author startup precedes it, LM may still initialize inside query",
+      "author_startup": "author-start.json started_ns to ready_ns",
+      "author_close": "author-cleanup.json close_started_ns to close_completed_ns, after public query group",
+      "last_eof_to_public_owner_closed_marker": "last consumer EOF to owner-summary closed_ns, includes intervening final bookkeeping; not isolated close cost",
+      "whole_service_exit_seconds": null,
+      "whole_service_exit_unavailable_reason": "service-cleanup.json records callback duration and physical inventory/closure result, but no enclosing cleanup begin/end clocks; callback time is not whole service exit",
+      "model_started_ended_epoch": "scope model-start to final exit.json, includes queries and audits/cleanup; not query time"
+    }
+  },
+  "validation": {
+    "original_analysis_sha256": "319c0e1f00eb8e810f04f6132e29b4c1fd5361b4367cc27f80f8daa3307b8042",
+    "paired_analysis_sha256": "90857a7388771919e2235206f8ea0b13adc900cb8f1e73a1a25f8527cef155f9",
+    "paired_analyzer_sha256": "6f0e5a64a50ed3742ce1037c5f8bbbd709327f9c3c7f95a4fcabd03e046bccd0",
+    "independent_result_check_sha256": "b6546dc8de6c8c90af81676cf593b7e07e750910361ed510c5d3da3e7fba0c32",
+    "independent_closure_check_sha256": "d0d927903c24010f96b263bec44bbcd5e7593338c0b33d639f2010a50d9838c6",
+    "closed_inputs_check_sha256": "798d12c2b2055efadf61eb9e6346934d46661c956f46257f921d46f0128b0b82",
+    "natural_closure": true,
+    "forced_actions_survivors_errors": [],
+    "model_protocol_extra_requests": 0,
+    "automatic_retries": 0,
+    "quality_equivalence_proven": false,
+    "generation_protocol_requests_checked": 92000
+  },
+  "artifacts": [
+    {
+      "id": "original_software",
+      "run_id": "imlane-q1-7e59-20261016-b4a793-zero",
+      "archive_sha256": "5cc81ae679607aadd43ca6db61529347ba9538e77307aa80a9d46fb4b42ee804",
+      "archive_bytes": 8718496,
+      "regular_files": 273
+    },
+    {
+      "id": "original_model",
+      "run_id": "imlane-q1-7e59-20261016-b4a793-model",
+      "archive_sha256": "4aafcbfa207fdf7414f3db5187650f95bd74a45cc7483bdb5aad61d834e92e15",
+      "archive_bytes": 188235989,
+      "regular_files": 1193
+    },
+    {
+      "id": "m0-low-before",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m0",
+      "archive_sha256": "a126bc31bba09dfa71ceaf7779c6a80886957a9abcb67e1f9ac872fd4f00739c",
+      "archive_bytes": 4612100,
+      "regular_files": 124,
+      "export_manifest_sha256": "104e383e48ae7838ce74ee8d116dd01cd76bc9e4342a73c9fb303802d8da3042",
+      "frozen_inputs_archive_sha256": "0f591c3a6c242ac6ae5947fe190a93f62434909c765bfa4b2836d2e00636cd6f"
+    },
+    {
+      "id": "m1-high-before",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m1",
+      "archive_sha256": "8f09ea4896c762d7b8289311d5b2d7390f899793a74c32198a7f26a69b01e09f",
+      "archive_bytes": 10585811,
+      "regular_files": 125,
+      "export_manifest_sha256": "f97a029d080d5e2d4dfd8f92954cf9187c1cd084b0d99aaac58de70b00ba987a",
+      "frozen_inputs_archive_sha256": "95cfeb7822a83d21bbde599c9d61c16962673028043346e03ae07a588869b28f"
+    },
+    {
+      "id": "m2-high-after",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m2",
+      "archive_sha256": "de74c1ad15343fb109770c3f22d71e8449e694740314ba779ad5f5e203f2230c",
+      "archive_bytes": 12651643,
+      "regular_files": 125,
+      "export_manifest_sha256": "ecac3e2cd2ccb91faf1fc4f985d4af3431ef90a3e2f7b250c1c27e7956bd2eaf",
+      "frozen_inputs_archive_sha256": "348fabe8d83b765e5ce00552d9e85b2c951335310a44ab943b4cfb45b62cd68b"
+    },
+    {
+      "id": "m3-low-after",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m3",
+      "archive_sha256": "e681b7fdbf07ef96e9cf66aa5a7a60218f922c5bfb1b0a515cb9ee22664f1834",
+      "archive_bytes": 4725832,
+      "regular_files": 124,
+      "export_manifest_sha256": "6679c3e6dc3252c88d854bceab80b99279b8cae8fa0e4be4c0ce579893a03517",
+      "frozen_inputs_archive_sha256": "87664ac023401b23341668d8e9173f6614a28e244288a580850d090cc7c26726"
+    },
+    {
+      "id": "m4-low-after",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m4",
+      "archive_sha256": "5b456854eb29a449489ea3c2c0b9b36a7b21c8cf336a6c17ae538f3496ae2387",
+      "archive_bytes": 4721206,
+      "regular_files": 124,
+      "export_manifest_sha256": "32db1df70d55b857c624f235b4e41fd78e5c1a005b0b5696ef39c095770c6669",
+      "frozen_inputs_archive_sha256": "af30ffd78ebd84138d15301424a03479ee3b11a7daf970c8828eb39ce082c959"
+    },
+    {
+      "id": "m5-high-after",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m5",
+      "archive_sha256": "21720f3cd45ab325ca4d3dc683537e19b1d3c7c5b28986fe4c2411c980af103f",
+      "archive_bytes": 12658227,
+      "regular_files": 125,
+      "export_manifest_sha256": "091aed5e48b295cad69de4f948b1f656e170069ec7c4f63923288c07f8e8502d",
+      "frozen_inputs_archive_sha256": "a698365d4dceafd7702eaaeb3beb25fedd4f7a7c10bbd602daae0e6e9af80d5f"
+    },
+    {
+      "id": "m6-high-before",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m6",
+      "archive_sha256": "70d4c356143f7306e5a1706e5c6ce873dce0aa4e429294306c59302a38325de5",
+      "archive_bytes": 10585935,
+      "regular_files": 125,
+      "export_manifest_sha256": "be646ffd791896c7799a78e513dff92eb442caf867ba3b2545e13492de27291e",
+      "frozen_inputs_archive_sha256": "fa431ad1e72e1b246686e41e5cc057270a0dd38116316b6c3ec822a26c273211"
+    },
+    {
+      "id": "m7-low-before",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-m7",
+      "archive_sha256": "e993401a1c844fddcf8f5400c22294812a9d67c52a4cb3d7cfe772328398adb7",
+      "archive_bytes": 4625974,
+      "regular_files": 124,
+      "export_manifest_sha256": "3f226cf0a82f29a8f02f24ca58b0cee0f23e03259d44c53d0de6d873e66e22cc",
+      "frozen_inputs_archive_sha256": "da5f23aaf273bb130f62727a963e728de4f833214b828fc4ba1bdd720548ef41"
+    },
+    {
+      "id": "z-before",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-z-before",
+      "archive_sha256": "f03978b89273eadf885f0fdd12e732ed955c9609a55011e054c4072eebe07762",
+      "archive_bytes": 3986933,
+      "regular_files": 120,
+      "export_manifest_sha256": "2bde05e0254d38130ecf287dea2904bbe1669e83974f13953b0a9d271e8f0d4e",
+      "frozen_inputs_archive_sha256": "92a1c0afcbcd011f8ceb2de425111a94e8ddb291f7c4efd4a4bebb27b39f591c"
+    },
+    {
+      "id": "z-after",
+      "run_id": "imlane-progress-c994-20261016-9f37a2-z-after",
+      "archive_sha256": "d3917d2a52a8370fec4f454f2021e7f330848ba36c9edc5806eb35986e5b79b7",
+      "archive_bytes": 4044170,
+      "regular_files": 120,
+      "export_manifest_sha256": "1ef57c5215607d86780e4fe931b45bc1d5e217d02edd0ca2042b75ebaa9a0f98",
+      "frozen_inputs_archive_sha256": "7477f40af586e7334c7ac173421541ffe954dfc5a379b5519e4d8ae2883e1a75"
+    }
+  ],
+  "artifact_recovery": "Raw regular-file archives and original frozen inputs are retained outside Git by the run owner. Request by run_id and archive SHA; no host, credentials, workstation paths, models, database, or raw request text is published.",
+  "public_files": {
+    "model_queries_csv_sha256": "43f9be57e6692e5c7e01710463ba73156602bd88c923f9db2a7895a49de6eb87"
+  }
+}

@@ -395,6 +395,8 @@ PG 接入随实际路径核对同步语义、关联／顺序、快照／权限�
 不恢复旧 GPU 矩阵或沿用已结束运行额度。
 [固定`1c05a191`的有限原生配置校准](experiments/results/diagnostics/native_text_capacity_20261015/README.md#native-config-calibration)保留全部首次／后续及资源波动；IMLane n4列后续同预算测试配置、n2保留参照，Ray A4不冻结稳态赢家。此为完整LOTUS原生配置诊断，质量不足、固定块顺序和历史独立服务实例边界不变，不作为SemLoom调度创新或长测结论。
 
+[IMLane原Q1补测与监督计数配对](experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)补齐固定7e59的两模式原2000行19轮；c994仅改测量链，fresh owner的匹配历史结果支持观测成本解释，低历史回退保留。它不证明持续漂移或作者Ray参与异常已修复，不与旧C4四臂拼成严格排名，完整Filter质量仍不足。
+
 ## 9. 结果解释与写作规则
 
 每个正式实验按以下顺序记录：目的、设置、合规自检、设计、全组件数据、解释、对课题含义、下一步。解释明确区分事实、推断、待确认和不能声称。

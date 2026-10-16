@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-16：发布IMLane原Q1补测与匹配历史结果
+
+固定7e59生产源，两作者模式各19×2000原Q1共76000模型自然完成；c994只改监督测量链，Linux资格后八格CPython配对新增16000模型。
+高历史query均值−14.03%，低历史+2.12%，Mac完整fixture负结果保留。逐格fresh owner/service不证明持续19轮漂移或作者Ray Lane2问题已修；完整Filter质量仍不足。
+[同题报告、46条原表与CPU复算](experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)保存实际配置、独审指纹和仓外归档恢复映射；模型／数据／大量原始日志不入Git。发布复用计数候选分支，不改冻结活动baseline、不合main、不新增模型运行。
+
 ## 2026-10-15：记录source620的SemLoom单臂模型补轮
 
 独立R4使用62018855，完成120次真实POST200、原COUNT7／真值14，query15.110秒／application29.739秒；服务准备49.091秒另报，1682项原件独审与物理旁审通过。
