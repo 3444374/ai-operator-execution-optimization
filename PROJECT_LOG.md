@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-16：局部补齐PZ计时、公开入口与异常关闭
+
+在独立职责分支以7e59e5a1为基点，保留原PZ方法、原生后端并发和旧计时字段，新增完整结果边界及外层准备计时，既有脚本贯通显式固定计划选择。
+finish、SDK sender及IMLane未确认工作的owner责任按独审反例补齐，失败摘要保持真实；130个去重CPU用例与Standards／Spec复审通过。
+本轮模型／GPU为0，历史数据不改、物理矩阵未重跑，见[同题回归记录](experiments/results/diagnostics/palimpzest_movie_20261015/README.md#query-timing-owner-regression)。
+
 ## 2026-10-15：记录source620的SemLoom单臂模型补轮
 
 独立R4使用62018855，完成120次真实POST200、原COUNT7／真值14，query15.110秒／application29.739秒；服务准备49.091秒另报，1682项原件独审与物理旁审通过。

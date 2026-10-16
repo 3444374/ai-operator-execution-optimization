@@ -1,0 +1,121 @@
+{
+  "schema": "semloom.palimpzest_query_lifecycle_regression.v1",
+  "run_id": "pz-query-lifecycle-cpu-20261016",
+  "base_commit": "7e59e5a10eaceb7ac4a1bd0766b10244ca3e192d",
+  "status": "passed",
+  "changed_python_sha256": {
+    "code/scripts/experiments/run_sembench_palimpzest.py": "e8a8cf6ac76e2188a2dc5ad10c7399546bce4d4c975481824cfb639c5c500d1b",
+    "code/src/experiments/palimpzest/fixed_runner.py": "f30cf7841eae9e6814b8032a6fc645e84016f00fbdca0050007f84356cb76b17",
+    "code/src/experiments/palimpzest/native.py": "8817646815fd875519b406cf1ddf648d1ac353be30bac175eea9563becff31e6",
+    "code/src/experiments/palimpzest/runner.py": "2fa284ba450ad27930cc19b8a60dd3654a645375e3838aa0216cd143cafc0d47",
+    "code/src/semantic_methods/palimpzest/native_control.py": "65305fec5d6f68c369a3a28cb91b4689fd32fb72556ed5ac44d2fdcabe884c2c",
+    "code/src/semantic_methods/palimpzest/query_execution.py": "deaee5286dfc6768d99ea23491e9ac8a1131a69a5fa370ba5cc768b5c3d097df",
+    "code/tests/experiments/test_palimpzest_fixed.py": "a0a1431f6bdb977cf4497708fe06e739ab2d0ad41ddc42e4e25f55b0d86bd4e2",
+    "code/tests/experiments/test_palimpzest_runner.py": "bde26406fe8e03346818f934f547e63fd9107ba164a3e916ca67ae1ec5a8a079",
+    "code/tests/semantic_methods/test_palimpzest_query_execution.py": "563ddb0a43f0ab5f23a9b180148a911dd0acb13acbe7921d724c8391dd349a29"
+  },
+  "distinct_passing_tests": 130,
+  "batches": [
+    {
+      "run_id": "experiments-r2",
+      "status": "passed",
+      "passed": 53,
+      "new_distinct_tests": 53,
+      "log_sha256": "19da3e36b77f66c81a943adb9881d9c2b1cb6ff637892c15b3fbe5483988618a"
+    },
+    {
+      "run_id": "semantic-r2",
+      "status": "passed",
+      "passed": 74,
+      "new_distinct_tests": 74,
+      "log_sha256": "62f4daaabecc1becce5e0bbf723bcdea951331c1c49ec07dc045bca06eda6ab2"
+    },
+    {
+      "run_id": "runner-final-r2",
+      "status": "passed",
+      "passed": 12,
+      "new_distinct_tests": 3,
+      "log_sha256": "f498e8b80886d712f0c952584199ec8f49e4b938e43bdbb110d7e94276ed46d4"
+    }
+  ],
+  "runtime": {
+    "python": "3.12.6",
+    "palimpzest": "0.8.2",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "greenlet": "3.5.6",
+    "pandas": "2.3.3",
+    "numpy": "2.0.2",
+    "pyarrow": "20.0.0",
+    "httpx": "0.28.1",
+    "profile_selection": "explicit Darwin CPU diagnostic",
+    "semantic_palimpzest_preflight": "passed",
+    "general_core_preflight": "missing Ray, Daft and psycopg; no installation attempted"
+  },
+  "public_runner_fixture": {
+    "run_id": "runner-final-r2",
+    "arms": [
+      "original-native",
+      "native-adapted"
+    ],
+    "actual_localhost_posts": 4,
+    "counts": [
+      2,
+      2
+    ],
+    "request_multisets_equal": true,
+    "normal_owner_cleanup_confirmed": true,
+    "scope": "real pinned PZ/SDK and production runner; synthetic two-row input and HTTP responses",
+    "earlier_pass": "experiments-r2 repeated the same fixture with four localhost POSTs; not model work"
+  },
+  "scope": {
+    "model_inference_requests": 0,
+    "gpus_used": 0,
+    "shared_host_lease_acquired": false,
+    "original_method_parser_evaluator_preserved": true,
+    "vendor_physical_execution_rerun": false,
+    "seven_arm_configuration": "typed factory/configuration fixtures only",
+    "native_send_close_and_after_send_implementation_changed": false,
+    "performance_qualified": false,
+    "backend_qualified": false,
+    "model_quality_qualified": false
+  },
+  "retained_failures": [
+    {
+      "run_id": "cpu-preflight",
+      "log_sha256": "e46ebd0c1637fd51f6d60a1e6c82067c7ea9bc10607589510b0dd43f68d78300",
+      "reason": "no automatic Darwin machine profile"
+    },
+    {
+      "run_id": "cpu-preflight-explicit",
+      "log_sha256": "d5d8645ab3696bcdd7f41219a05af15150ab04aca68b059642b23832401feb34",
+      "reason": "general core capability group lacks Ray/Daft/psycopg in separate PZ driver"
+    },
+    {
+      "run_id": "experiments-r1",
+      "log_sha256": "6dd1840f8140c3ca5d056eb9eeb80e47244932a254b900bea18dda2035bb7fd0",
+      "reason": "unittest fixture method named run interrupted suite; localhost bind also denied in sandbox"
+    },
+    {
+      "run_id": "native-http-sandbox-r1",
+      "log_sha256": "3da5c4f86f657c7c9b4aea1cdcbec2b4605bf82b9ff3969aced9cc7567b2b87a",
+      "reason": "sandbox denied temporary localhost bind; authorized CPU retry passed"
+    },
+    {
+      "run_id": "runner-r2",
+      "log_sha256": "3a048631c596701ac226212442abcfb6a36de08d7917ce19f11a574ec985d869",
+      "reason": "mock close report was not JSON serializable; fixture corrected"
+    },
+    {
+      "run_id": "runner-final",
+      "log_sha256": "e3cfe1fc423bd515d268336e7c764b27046851b353abeb0063a8834cd75f965b",
+      "reason": "targeted test imported installed PZ before declared checkout; fixture now loads declared source first"
+    }
+  ],
+  "evidence_scope": "source tests retained in this Git change; request outside-Git <batch run_id>.redacted.txt from the project maintainer by run ID and SHA-256; temporary unittest responses are not retained or claimed recoverable",
+  "independent_review": {
+    "standards": "passed after counterexample fixes",
+    "spec": "passed after SDK-sender/IMLane owner fixes",
+    "remaining_code_findings": 0
+  }
+}

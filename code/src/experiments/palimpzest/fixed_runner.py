@@ -116,7 +116,8 @@ def _prepare_daft_runtime(arm, evidence):
 
 
 def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=None, ledger=None,
-                        record=None, cancelled=None, evidence=None, request_route=None):
+                        record=None, cancelled=None, evidence=None, request_route=None,
+                        query_started_ns=None, owner=None):
     """Execute once; actual-send budget/lease and executor teardown stay caller-owned.
 
     Metadata is checked anew before this run. The selection manifest and fresh state
@@ -149,6 +150,9 @@ def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=No
         executor_lifecycle='caller-owned; runtime close and residual work require separate evidence',
         performance_qualified=False, backend_qualified=False, model_quality_qualified=False)
     started, strategy, bridge = time.monotonic_ns(), None, None
+    if query_started_ns is not None and (type(query_started_ns) is not int or not 0 <= query_started_ns <= started):
+        raise ValueError('outer query start must be an earlier monotonic timestamp')
+    evidence['outer_query_preparation_seconds'] = (started-query_started_ns)/1e9 if query_started_ns is not None else None
     try:
         if type(backend_profile) is not BackendRunProfile:
             raise TypeError('fixed execution requires an explicit backend deployment profile')
@@ -209,14 +213,25 @@ def execute_fixed_movie(fresh, *, arm, backend_profile, executor=None, limits=No
                 validate_response=local.validate_response, executor=executor, limits=limits,
                 query_id=fresh.run_id, observer=ledger, cancelled=cancelled, record=record,
                 request_route=request_route, progress=executor if arm == 'semloom' else None)
+            if owner is not None:
+                owner['strategy'] = strategy
             records, stats = strategy.execute_plan(plan=fresh.frozen.plan)
             state = strategy.snapshot()
             if not state['closed'] or state['active_stacks'] or state['unconfirmed_work']:
                 raise PalimpzestAdapterError('fixed execution retains unconfirmed backend or original continuation ownership')
         evidence['plan_execution_seconds'] = (time.monotonic_ns()-execute_started)/1e9
+        # Original SDK parsing and PZ record/COUNT assembly have returned in full.
+        # Truth lookup and relation/quality audits below are outside this boundary.
+        ready_ns = time.monotonic_ns()
+        evidence.update(result_ready_ns=ready_ns, result_ready_seconds=(ready_ns-started)/1e9,
+            full_query_seconds=(ready_ns-query_started_ns)/1e9 if query_started_ns is not None else None,
+            full_query_timing_scope='caller submission through complete original PZ results; evaluation excluded'
+                if query_started_ns is not None else 'unavailable: helper does not own outer query preparation')
         quality_started = time.monotonic_ns()
-        evidence.update(result_status(prepared, records, ledger))
-        evidence['quality_evaluation_seconds'] = (time.monotonic_ns()-quality_started)/1e9
+        try:
+            evidence.update(result_status(prepared, records, ledger))
+        finally:
+            evidence['quality_evaluation_seconds'] = (time.monotonic_ns()-quality_started)/1e9
         return FixedRunResult(records, stats, ledger, evidence)
     except BaseException as error:
         prepared.invalidate(error)

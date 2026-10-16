@@ -22,6 +22,7 @@ class NativeAdaptedExecutor:
         self.before_send, self.after_send = before_send, after_send
         self._senders, self._lock = {}, threading.Lock()
         self._active = self._closed = self._unsettled = False
+        self._sender_futures = ()
         self._pool = ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="pz-native-http")
         self.last_close_report = None
 
@@ -30,6 +31,12 @@ class NativeAdaptedExecutor:
             if self._closed or self._unsettled or call_id in self._senders:
                 raise PalimpzestAdapterError("native-adapted SDK request owner is not available")
             self._senders[call_id] = (request, sender)
+
+    @property
+    def sdk_in_use(self):
+        with self._lock:
+            self._sender_futures = tuple(future for future in self._sender_futures if not future.done())
+            return self._active or bool(self._sender_futures)
 
     def _send(self, call, request, sender):
         import httpx
@@ -95,8 +102,8 @@ class NativeAdaptedExecutor:
         try:
             if cancelled and cancelled():
                 raise InterruptedError("native-adapted batch cancelled before send")
-            futures = {self._pool.submit(self._send, call, *sender): call
-                       for call, sender in zip(calls, senders, strict=True)}
+            for call, sender in zip(calls, senders, strict=True):
+                futures[self._pool.submit(self._send, call, *sender)] = call
             for future in as_completed(futures, timeout=timeout_s):
                 if cancelled and cancelled():
                     raise InterruptedError("native-adapted batch cancelled")
@@ -111,6 +118,7 @@ class NativeAdaptedExecutor:
                 future.cancel()
             unfinished = any(not future.done() for future in futures)
             with self._lock:
+                self._sender_futures = tuple(future for future in futures if not future.done())
                 self._unsettled |= unfinished or received != len(calls)
                 self._active = False
                 self.last_close_report = dict(clean=clean and not self._unsettled,

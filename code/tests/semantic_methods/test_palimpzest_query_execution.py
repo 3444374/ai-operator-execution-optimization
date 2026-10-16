@@ -9,10 +9,11 @@ import tempfile
 import threading
 import time
 import unittest
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 import weakref
 
-from src.baselines.text.frameworks.native_calls import NativeCallOutcome
+from src.baselines.text.frameworks.native_calls import NativeCall, NativeCallOutcome
 from src.execution_provider.adapters.full_response import FullModelResponse
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.experiments.palimpzest.ledger import PalimpzestLedger
@@ -109,6 +110,133 @@ class PreparedQueryTests(unittest.TestCase):
             limits=limits or QueryExecutionLimits(processor.execution_strategy.max_workers,
                 processor.execution_strategy.max_workers, processor.execution_strategy.max_workers),
             query_id="query-fixture", observer=observer, record=record)
+
+    def test_finish_failure_still_closes_idle_sdk_and_retains_first_error_and_report(self):
+        strategy = self.strategy(self.processor(self.query()), FixtureExecutor(self.model.model_id))
+        first, later = ValueError('finish fixture'), RuntimeError('SDK close fixture')
+        strategy.progress = SimpleNamespace(finite_batches=False, active=False,
+            finish=Mock(side_effect=first), last_close_report=None)
+        strategy._sdk = Mock()
+        strategy._sdk.close.side_effect = later
+        with self.assertRaises(ValueError) as caught:
+            strategy.close(method_complete=True)
+        self.assertIs(caught.exception, first)
+        strategy._sdk.close.assert_called_once()
+        self.assertFalse(strategy.last_close_report['closed'])
+        self.assertEqual(strategy.last_close_report['cleanup_errors'], ['ValueError', 'RuntimeError'])
+        self.assertIn('PZ prepared cleanup also failed: RuntimeError', first.__notes__)
+        strategy._sdk.close.side_effect = None
+        with self.assertRaises(ValueError) as caught:
+            strategy.close()
+        self.assertIs(caught.exception, first)
+        self.assertTrue(strategy.last_close_report['closed'])
+        self.assertTrue(strategy.last_close_report['sdk_closed'])
+
+    def test_active_reader_retains_sdk_owner_after_finish_failure_until_reader_stops(self):
+        strategy = self.strategy(self.processor(self.query()), FixtureExecutor(self.model.model_id))
+        first = ValueError('active finish fixture')
+        strategy.progress = SimpleNamespace(finite_batches=False, active=True,
+            finish=Mock(side_effect=first), last_close_report={'unconfirmed_work': True})
+        strategy._sdk = Mock()
+        with self.assertRaises(ValueError) as caught:
+            strategy.close()
+        self.assertIs(caught.exception, first)
+        strategy._sdk.close.assert_not_called()
+        self.assertTrue(strategy.last_close_report['sdk_close_deferred'])
+        self.assertTrue(strategy.last_close_report['unconfirmed_work'])
+        self.assertFalse(strategy.last_close_report['closed'])
+        strategy.progress.active = False
+        strategy.progress.finish.side_effect = None
+        strategy.progress.finish.return_value = {'unconfirmed_work': False}
+        with self.assertRaises(ValueError):
+            strategy.close()
+        strategy._sdk.close.assert_called_once()
+        self.assertTrue(strategy.last_close_report['closed'])
+        self.assertTrue(strategy.last_close_report['unconfirmed_work'])
+
+    def test_prior_contract_error_keeps_priority_when_finish_fails_but_sdk_closes(self):
+        strategy = self.strategy(self.processor(self.query()), FixtureExecutor(self.model.model_id))
+        primary = PalimpzestAdapterError('earlier contract fixture')
+        strategy.fail(primary)
+        strategy.progress = SimpleNamespace(finite_batches=False, active=False,
+            finish=Mock(side_effect=ValueError('finish fixture')), last_close_report=None)
+        strategy._sdk = Mock()
+        with self.assertRaises(PalimpzestAdapterError) as caught:
+            strategy.close()
+        self.assertIs(caught.exception, primary)
+        strategy._sdk.close.assert_called_once()
+        self.assertTrue(strategy.last_close_report['closed'])
+
+    def test_error_observed_during_reader_drain_precedes_later_finish_failure(self):
+        strategy = self.strategy(self.processor(self.query()), FixtureExecutor(self.model.model_id))
+        first = PalimpzestAdapterError('earlier reader outcome fixture')
+        strategy.progress = SimpleNamespace(finite_batches=True, active=True,
+            finish=Mock(side_effect=ValueError('later finish fixture')), last_close_report=None)
+        strategy._sdk = Mock()
+        def drain(timeout):
+            strategy.fail(first)
+            strategy.progress.active = False
+        with patch.object(strategy, '_event', side_effect=drain), self.assertRaises(PalimpzestAdapterError) as caught:
+            strategy.close()
+        self.assertIs(caught.exception, first)
+        strategy._sdk.close.assert_called_once()
+        self.assertTrue(strategy.last_close_report['closed'])
+
+    def test_actual_completed_plan_finish_failure_still_closes_original_sdk(self):
+        from src.semantic_methods.palimpzest.prepared_progress import FiniteBatchProgress
+        from src.semantic_methods.palimpzest.prepared_sdk import PreparedSDK
+        first, closes = ValueError('finish after reader stopped fixture'), []
+        class FailingFinish(FiniteBatchProgress):
+            def finish(self, **kwargs):
+                super().finish(**kwargs)
+                raise first
+        processor = self.processor(self.query(rows=2))
+        executor = FixtureExecutor(self.model.model_id)
+        strategy = self.strategy(processor, executor)
+        strategy.progress = FailingFinish(executor)
+        original_close = PreparedSDK.close
+        def close(sdk):
+            closes.append(sdk)
+            original_close(sdk)
+        with patch.object(PreparedSDK, 'close', close), self.assertRaises(ValueError) as caught:
+            strategy.execute_plan(processor.optimizer.optimize(processor.dataset)[0])
+        self.assertIs(caught.exception, first)
+        self.assertEqual(len(closes), 1)
+        self.assertTrue(strategy.last_close_report['closed'])
+        self.assertEqual(strategy.last_close_report['active_stacks'], 0)
+
+    def test_finished_reader_does_not_close_sdk_while_native_sender_future_is_running(self):
+        executor = NativeAdaptedExecutor(max_workers=1)
+        strategy = self.strategy(self.processor(self.query()), executor,
+            limits=QueryExecutionLimits(2, 3, 2, close_timeout_s=0.5))
+        strategy._sdk = Mock()
+        entered, release = threading.Event(), threading.Event()
+        def sender(*args, **kwargs):
+            entered.set()
+            release.wait(3)
+            raise RuntimeError('held original SDK sender fixture')
+        call = NativeCall('held-sdk', 0, b'{}', self.model.endpoint_url, (), 1)
+        executor.bind_sdk_request(call.call_id, object(), sender)
+        strategy.progress.start((call,), identities={call.call_id: {}}, cancelled=lambda: False, timeout_s=0.01)
+        try:
+            self.assertTrue(entered.wait(1))
+            with self.assertRaises(PalimpzestAdapterError):
+                strategy.close()
+            self.assertFalse(strategy.progress.active)
+            self.assertTrue(executor.sdk_in_use)
+            strategy._sdk.close.assert_not_called()
+            self.assertFalse(strategy.last_close_report['closed'])
+            future = executor._sender_futures[0]
+            release.set()
+            with self.assertRaisesRegex(RuntimeError, 'held original SDK sender'):
+                future.result(timeout=1)
+            with self.assertRaises(PalimpzestAdapterError):
+                strategy.close()
+            strategy._sdk.close.assert_called_once()
+            self.assertTrue(strategy.last_close_report['closed'])
+        finally:
+            release.set()
+            executor.close()
 
     def test_original_dag_code_and_sdk_complete_all_rows_with_bounded_reversed_results(self):
         from palimpzest.query.execution import parallel_execution_strategy as module

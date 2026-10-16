@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-16：[PZ 计时、公开入口与异常关闭](diagnostics/palimpzest_movie_20261015/README.md#query-timing-owner-regression)
+以7e59e5a1为基点，130个去重CPU用例与两轴独审通过；公开原生／native-adapted两行fixture各COUNT2、最终轮4个localhost POST。
+新字段覆盖每查询准备并分离评价，旧计时原值保持；sender／IMLane未知工作保留owner。七臂配置是软件接线范围，模型／GPU为0，未授物理矩阵或性能资格。
+
 2026-10-15：[PZ独立SemLoom模型R4](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)固定620，120POST200、COUNT7／真值14，经1682项原件独审通过；外层退出与正常lease释放已记录。bebf R3 failed／六臂720原账及CPU累计6fixture另列，模型累计840／840余0；完整身份不同，不授同身份七臂或性能排名，离线reader首轮形状错误保留。
 
 2026-10-15：[PZ同进程Daft到SemLoom CPU组合](diagnostics/palimpzest_movie_20261015/README.md#daft-semloom-cpu-composition)固定62018855，原PZ／SDK及生产固定入口依次完成各2次合成HTTP、COUNT1／TP1TN1／usage22+6，共享同一native runner，正常Core／HTTP／Ray／自有进程及lease退出。CPUr1导入顺序错误0POST、r2 checker错误前Daft2POST仍保留failed；通过轮4、本阶段累计6fixture、模型／GPU0。91份原件及独审分列；bebf两case只记录runner模式，原R3内部原错未补回，该CPU阶段模型仍720／840余120，不授全七臂或性能资格。

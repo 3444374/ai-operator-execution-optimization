@@ -1,5 +1,4 @@
 """Run original SemBench Movie Q3 with PZ-owned parallel execution."""
-import argparse
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from enum import Enum
@@ -120,8 +119,9 @@ def load_config(path):
     config = json.loads(Path(path).read_text())
     required = {'schema', 'dataset', 'palimpzest_checkout_env', 'model_config_env', 'output_env',
                 'host_scope_env', 'query_id', 'max_attempts', 'query_timeout_s', 'native_options'}
-    if (type(config) is not dict or set(config) != required
-            or config['schema'] != 'semloom.sembench_palimpzest.v1'):
+    fixed = type(config) is dict and config.get('schema') == 'semloom.sembench_palimpzest_fixed.v1'
+    if (type(config) is not dict or set(config) != required | ({'fixed_execution'} if fixed else set())
+            or config['schema'] not in ('semloom.sembench_palimpzest.v1', 'semloom.sembench_palimpzest_fixed.v1')):
         raise ValueError('PZ configuration has missing or unsupported fields')
     data = config['dataset']
     if (type(data) is not dict or set(data) != {'checkout_env', 'manifest_env', 'csv_env', 'manifest_content_digest'}
@@ -134,6 +134,9 @@ def load_config(path):
             or type(config['native_options']) is not dict):
         raise ValueError('PZ query, attempt allowance and request deadline must be explicitly bounded')
     NativeOptions(**config['native_options'])
+    if fixed:
+        from .runner import fixed_settings
+        fixed_settings(config)
     return config
 
 
@@ -307,14 +310,5 @@ def run(config):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config', type=Path, required=True)
-    action = parser.add_mutually_exclusive_group(required=True)
-    action.add_argument('--data-preflight', action='store_true')
-    action.add_argument('--preflight', action='store_true')
-    action.add_argument('--execute', action='store_true')
-    args = parser.parse_args(argv)
-    config = load_config(args.config)
-    value = run(config) if args.execute else preflight(config, libraries=args.preflight)[-1]
-    print(json.dumps(redact_json_values(value), ensure_ascii=False, allow_nan=False))
-    return 0 if not args.execute or value['status'] == 'passed' else 2
+    from .runner import main as run_main
+    return run_main(argv)
