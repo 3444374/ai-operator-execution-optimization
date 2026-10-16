@@ -1,0 +1,201 @@
+{
+  "schema": "semloom.daft_model_preparation.v1",
+  "status": "blocked_before_remote_preflight",
+  "date_utc": "2026-10-16T12:48:53.978296+00:00",
+  "production_source": {
+    "commit": "7d12d63cc12acce27713b4c8cf9666c92b9c4e0a",
+    "kind": "fixed Git bytes archive",
+    "files": 389,
+    "archive_sha256": "b5f5558ed2a6e225ac1c1dced28aedc9eccd4ed25e90aa6789018e3359e4bc45",
+    "canonical_source_map_sha256": "b78e9d1ce059807c7ae6baeb87b3e3dc6cd16283a1320d29695c54b674239720",
+    "production_code_changed_this_phase": false
+  },
+  "frozen_entry": {
+    "config_raw_sha256": "d30a9e66eb2ba43cc5e6a68cff9d44fab8b14f6b1babd5c1febbb725ed9660c8",
+    "controller_sha256": "fca95d09ad3468542ebfed5aa2e22f02cdcff0b49e599bbd87794376fddae30d",
+    "child_sha256": "584f79f6d09db9ab0487a70a86a0c222bca858adb5980eabbe3fa73b218ecf7b",
+    "lifetime_proof_sha256": "4ee23562db92ffa349b074f09c493c957c81bae9a19f9b68a6510549df513b9b",
+    "review_receipt_sha256": "f0ab564bbe158cb3bae217052ee05b739facf1a8dc99d5f8f57e931097a9af80",
+    "review_axes": [
+      "Spec",
+      "Standards"
+    ],
+    "review_status": "passed_before_remote_preflight"
+  },
+  "planned_budget": {
+    "identity": "records-daft-model-20261016",
+    "independent_limit": 16,
+    "budget_deadline_utc": null,
+    "unit_id": "daft-double-query",
+    "planned_permanent_reservation": 4,
+    "queries": 2,
+    "expected_application_calls_per_query": 2,
+    "engine_call_cap_per_query": 2,
+    "expected_engine_lifetimes": 2,
+    "automatic_retries": 0,
+    "extra_application_warmup_calls": 0,
+    "unused_capacity_not_automatically_consumed": 12,
+    "new_ledger_created": false,
+    "reservation_performed": false,
+    "unit_timeout_s": 1200,
+    "cleanup_reserve_s": 15,
+    "old_ledger_limit_and_permanent_reservations": 32,
+    "old_ledger_reference_sha256": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+    "old_ledger_write_performed": false,
+    "old_ledger_live_before_after_hash_check": "pending"
+  },
+  "source_budget_proof": {
+    "requirements": {
+      "single_physical_infer": true,
+      "single_physical_prepare": true,
+      "max_concurrency": 1,
+      "max_retries": 0,
+      "consumption_actions_per_query": 1,
+      "close_preserves_kernel_identity": true,
+      "automatic_retries": 0,
+      "execution_config_stable": true,
+      "planning_config_stable": true,
+      "dynamic_batching": false,
+      "explained_plan_is_execution_object": false,
+      "queries": 2,
+      "engines_per_query_upper_bound": 1,
+      "max_calls_per_engine": 2,
+      "unit_calls_upper_bound": 4,
+      "permanent_reserved_calls": 4,
+      "independent_ledger_limit": 16
+    },
+    "upstream_file_sha256": {
+      "src/daft-local-execution/src/intermediate_ops/intermediate_op.rs": "8a5ed26a1999613127a76c1b67f3f3c0d4bc592d4adae269541874c865df726b",
+      "src/daft-local-execution/src/intermediate_ops/udf.rs": "858e0ade01ce652341309a20e74fde7f4b41b9a2ce105091f4647bdbb23bf2a9",
+      "daft/execution/udf.py": "0cb9b1ec6b831903d01dfb8160ae8766b45a35cb1db04489da9bf025d5bcd47d",
+      "daft/dataframe/dataframe.py": "1fdb2823003e2cb6feebc108bdabce7cccde8c2d0af621805f9854af8130a6f2",
+      "daft/execution/native_executor.py": "9cfd4cbfffbde4732aa3f56cfe1c89e640e03bc26e2f519534b1abafcf5a3c77",
+      "src/daft-local-execution/src/run.rs": "ccb0d0b456b98f352a5a150adbe3b30f81eac7cd24097ef8efb8b1bd2fec04ea",
+      "src/daft-local-execution/src/pipeline.rs": "0f2bfc5534baa9693a4de7ce4f1a5b357ce31ba120ea96410c3db65acb726e1c"
+    },
+    "scope": "Source inference for this fixed isolated linear graph. Explain is a forecast; consumption reoptimizes. Complete config snapshots are observations, not an atomic framework lock.",
+    "actual_gpu_plan_gate": "pending"
+  },
+  "cpu": {
+    "controller": {
+      "schema": "semloom.cpu_harness_verification.v1",
+      "status": "passed",
+      "tests": 8,
+      "skip": 0,
+      "exit_code": 0,
+      "python": "3.12.6",
+      "script_sha256": "fca95d09ad3468542ebfed5aa2e22f02cdcff0b49e599bbd87794376fddae30d",
+      "elapsed_s": 0.1277063749730587,
+      "model_calls": 0,
+      "gpu_commands": 0,
+      "ssh_commands": 0,
+      "real_model_execution": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "8c4e09bc18bb115c9c6e1157ba3e99738e86c8151315fa25be75ee97c09bc744"
+    },
+    "child": {
+      "schema": "semloom.cpu_harness_verification.v1",
+      "status": "passed",
+      "tests": 7,
+      "skip": 0,
+      "exit_code": 0,
+      "python": "3.12.6",
+      "script_sha256": "584f79f6d09db9ab0487a70a86a0c222bca858adb5980eabbe3fa73b218ecf7b",
+      "elapsed_s": 0.04647650010883808,
+      "model_calls": 0,
+      "gpu_commands": 0,
+      "ssh_commands": 0,
+      "real_model_execution": false,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e17b8e7ba6e9c25fef93d652582b888bfb81a9fd7843b26acbb3413a28948635"
+    },
+    "installed_source_and_plan": {
+      "schema": "semloom.daft_cpu_source_plan_gate.v1",
+      "status": "passed",
+      "python": "3.12.6",
+      "child_sha256": "584f79f6d09db9ab0487a70a86a0c222bca858adb5980eabbe3fa73b218ecf7b",
+      "controller_sha256": "fca95d09ad3468542ebfed5aa2e22f02cdcff0b49e599bbd87794376fddae30d",
+      "frozen_input_sha256": "d30a9e66eb2ba43cc5e6a68cff9d44fab8b14f6b1babd5c1febbb725ed9660c8",
+      "installed_daft_proof": {
+        "proof_sha256": "4ee23562db92ffa349b074f09c493c957c81bae9a19f9b68a6510549df513b9b",
+        "daft_version": "0.7.21",
+        "build_type": "release",
+        "installed_udf_sha256": "0cb9b1ec6b831903d01dfb8160ae8766b45a35cb1db04489da9bf025d5bcd47d",
+        "installed_dataframe_sha256": "1fdb2823003e2cb6feebc108bdabce7cccde8c2d0af621805f9854af8130a6f2",
+        "installed_native_executor_sha256": "9cfd4cbfffbde4732aa3f56cfe1c89e640e03bc26e2f519534b1abafcf5a3c77",
+        "native_binary_sha256": "a26093911c969ad754aee47dbaee92f5d10e6d016020fb6ca705a69eab6df701",
+        "native_source_association": "fixed release version; binary SHA recorded, no independent wheel provenance claim",
+        "model_allocations_during_proof_check": 0
+      },
+      "execution_config": {
+        "serialization": "Daft 0.7.21 bincode __reduce__ arguments",
+        "sha256": "e24796db1f59ab35c8ab252091fe62e30dc1c7fd999e5b2191c2f2108037c980",
+        "bytes": 269,
+        "planning_sha256": "ae1ade33a4a04a4a43ff2df9182b7165bd525513bdde676b27d252c505633f92",
+        "planning_bytes": 371,
+        "enable_dynamic_batching": false,
+        "dynamic_batching_strategy": "auto",
+        "snapshot_is_lock": false,
+        "scope": "same fixed graph and no configuration setters/subscribers in the qualification source"
+      },
+      "configuration_bytes_stable": true,
+      "physical_plan_gate": {
+        "physical_infer_nodes": 1,
+        "physical_prepare_nodes": 1,
+        "plan_sha256": "9c924f947597df1548b92d2ddc26afb558aef698693a50cd5b32754b6796ddd1",
+        "model_gpus": 0,
+        "max_concurrency": 1,
+        "max_retries": 0,
+        "explained_plan_is_execution_object": false,
+        "consumption_actions_before_gate": 0
+      },
+      "gpu_qualification_gate_rejected_cpu_plan": true,
+      "source_plan_artifact": "daft-plan-cpu-r1/plan.txt",
+      "model_calls": 0,
+      "graph_consumptions": 0,
+      "gpu_resource_requests": 0,
+      "scope": "Fixed installed CPU release and already generated zero-consumption physical plan; no actual model, runtime invocation or GPU verification"
+    }
+  },
+  "transport": {
+    "status": "pending_connection_material",
+    "target": "previously authorized existing model server",
+    "action": "read-only resource and normal-lease preflight",
+    "existing_control_master": "previous socket absent; no live exact-target master found",
+    "strict_public_key_connection": "closed before authentication; no remote command executed",
+    "earlier_proxy_false_local_short_circuit": "retained separately; not a model or remote execution",
+    "failure_artifacts_sha256": {
+      "daft-existing-master-candidates.json": "364b37738032a28a72829f4d2192b70bd9353c9ee8dddfc5b70c2785f995d6ac",
+      "daft-phase-direct-preflight.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "daft-phase-direct-preflight.stderr": "c414bf93714ec20aa3ea8891a7dc5d4b98172d94bebcee035b8b5aa43f49f3df",
+      "daft-phase-direct-preflight-r2.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "daft-phase-direct-preflight-r2.stderr": "cc7092d7c123ebb0a87ba99fd2ea1a9d76ad6235c0a121c260003828597ba4a4"
+    },
+    "action_denied": false,
+    "outcome": "blocked before command execution; awaiting usable connection configuration file or verified socket path",
+    "new_remote_uploads": 0,
+    "new_remote_model_commands": 0,
+    "live_resource_inventory": "unavailable: connection not established"
+  },
+  "model_qualification": {
+    "status": "pending",
+    "actual_application_calls": null,
+    "actual_engine_lifetimes": null,
+    "independent_gpu_exit": null,
+    "issued_model_calls_during_this_preparation": 0,
+    "performance_claim": false,
+    "quality_claim": false
+  },
+  "imlane": {
+    "activity": "handoff only in existing module README",
+    "new_author_environment_runs": 0,
+    "new_model_units": 0,
+    "new_gpu_units": 0
+  },
+  "private_evidence": {
+    "retrieval": "Obtain the named private artifacts from this task execution environment using their SHA256; no host or credentials are published.",
+    "entry_group": "private-server-qualification: frozen r2 config, qualification_daft_controller.py, qualification_daft_child.py, daft-lifetime-proof.json, source-daft-7d12d63c.tar.gz, daft-frozen-entry-review.json",
+    "cpu_group": "nonmodel-evidence/daft-model-preparation-r2",
+    "earlier_cpu_group": "nonmodel-evidence/daft-model-preparation-r1 retained as draft-source evidence"
+  }
+}

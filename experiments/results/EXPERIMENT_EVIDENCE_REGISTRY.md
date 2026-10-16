@@ -8,6 +8,7 @@
 首阶段为固定响应无推理，失败与进程监督保留；该阶段不支持真实vLLM／GPU、级联、production Core或性能结论。
 后续[Daft职责证据](diagnostics/lotus_records_local_model_20261016/daft_verification.json)为65项实库CPU及独立旧引擎替身30项；共享selector集成另有26项／2subtests零skip，日志与源码摘要见主报告verification.json，不合并为重复计数。
 后续单实例cap与消息／prompt token来源的52项CPU检查单列；实际06f4b687原生参照／Ray Data分别4／2请求，e4c07188静态双查询4请求，全部与原方法／token／usage／COUNT／原评价核同。首次static Native guard失败及null未知保留；修复21项合同与真实CPU图、补充控制器8项CPU及两轴审查均有独立来源。同一预算24→32永久预留、零自动重试，owned进程退出／GPU1MiB无compute／正常lease已核同。模型和模板内容身份、冻结cfg及两轮原件SHA见同题model_*.json；仅普通小切片，不扩Daft GPU、级联、Core或性能资格。
+固定7d12d63c的[Daft双查询准备](diagnostics/lotus_records_local_model_20261016/README.md#daft-双查询模型资格准备尚未运行)另记新入口、389文件闭包及控制器8／child7项CPU检查。16次独立预算只计划首单元4次永久预留，尚未创建新账本；连接在现场预检前关闭，本轮模型调用0、Daft GPU资格仍pending，不改旧32/32或历史null。
 
 2026-10-16：[Animals观测模式CPU回归](diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)。紧凑body留证与原SDK／Daft连续查询按新源码单列，旧模型与RSS证据保持原身份。
 

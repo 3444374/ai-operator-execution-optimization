@@ -129,3 +129,23 @@ Arrow，其余不依赖作者库。新增检查覆盖无旧树独立导入、不
 [qualification.json](../../../experiments/results/diagnostics/imlane_records_echo_20261016/qualification.json)。
 完整 CLI 可由已有 `lotus_records_supervisor.supervise` 在外层作有限进程监督；本桥的 Linux
 namespace／SHM 核验仍由 owner helper 负责。这不是本地模型或 GPU 生命周期资格。
+
+## 普通 Filter 方法接入交接
+
+下一步先复用现有 `FilterMethod`／`LotusFilterMethod`、`GenerationSpec` 和隔离的 `EngineSpec`，
+再接原 parser、调用账本与 SemBench evaluator。主链的字符串 `row_id` 需要到本桥 `int64`
+的可逆映射，同时保留原 `row_id`、`source_position`、`call_index` 与完整 `call_id/query_id/stage_id`；
+不把重复来源合并，也不将评价标签放入 `record_json`。五列 Arrow 传输和作者 DBEnd 的调度归属保持。
+
+模型准备／执行的解释器 owner 必须先通过无模型 fixture 验证：作者 CPython／Arrow16.1 ABI
+不能与查询 driver 的 Arrow24 混装；模型环境保持无 LOTUS，每解释器固定一个模型角色。
+逐行模型终态需保留原 messages 摘要、实际 token IDs、usage、finish reason、engine UID 和
+已知／未知提交状态。当前 `collect_ready` 遇错误拒绝整块、错误 `result=null`，还不能保留块内
+已经完成的模型调用；正式接入前须增加明确版本的结果／错误交接，先记下已知 usage，再交付错误，
+未确认项保持 unknown。块数、Arrow 字节限额不能替代应用请求预算。
+
+完成身份、部分结果、取消和关闭的 CPU 检查后，先用新 owner helper 重跑作者 CPython 无模型
+scope，再独立准备双查询模型资格；保留原 10 个 scope 的历史来源。作者 Ray 另核 `num_gpus=1`、
+环境传播及自身模型 owner，不能借用其他路径的 Ray pool 或 GPU 退出结论。模型进程的 PID 出生身份、
+全部后代、namespace／SHM 与独立 GPU 清点均结清后才能关闭 owner／释放自己的 lease。
+本轮只完成交接，没有进入作者环境、增加模型单元或修改桥协议。
