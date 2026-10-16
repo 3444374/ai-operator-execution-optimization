@@ -135,6 +135,10 @@ CPU 原库/fixture 和真实模型检查分别登记，接口存在不代表五�
 
 [sembench_pre_send_ledger.py](benchmarks/sembench_pre_send_ledger.py)是上述模型小轮私有harness的发送hook，配合[send_counts.py](../src/experiments/send_counts.py)。部署时分别复制为validation/pre_send_ledger.py与validation/send_counts.py，并将两者SHA写入既有harness-identity.json；它不是独立查询CLI，启动、额度和新窗口由唯一owner提供。普通初始化只接受新账本或已带核验计数的账本；旧非空格式需要显式离线副本迁移及预计行数，不能直接重置真实窗口。14项回归、源码签名、完整配对数据与已执行的有限匹配方案见[同题报告](../../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
 
+[进度去扫描候选](../../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)保留既有预算与完整审计，增加时间索引及短只读快照；冻结监督器须配套应用报告内的最小补丁并重绑指纹。
+Mac零模型只证明减少扫描CPU，完整fixture未稳定加速，Linux／模型配对待验证，不在线替换活动包。
+[probe_send_progress.py](benchmarks/probe_send_progress.py)默认只打印有界计划；`--execute` 要求账本副本、before两helper、监督器前后副本及新输出目录，`--checks-only`只核整本／锁，`--attribution`分开索引写成本与读扫描。
+
 ## 原生语义系统单查询
 
 `baselines/run_semantic_system_query.py`调用LOTUS原生`sem_map`、Daft内置`prompt`、

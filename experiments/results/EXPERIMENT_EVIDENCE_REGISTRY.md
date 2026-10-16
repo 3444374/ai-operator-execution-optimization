@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-16：[IMLane长测监督计数隔离](diagnostics/imlane_progress_scan_20261016/README.md)固定7e59，35项定向回归、已关闭账本副本与Mac多规模零模型配对验证三元组、预算和unknown保持；进度CPU降低但完整fixture无稳定收益，索引写入成本和顺序效应保留。没有作者机制、活动包或服务器变更，Linux及真实模型匹配待运行owner，不认领现场17%已解决。
+
 2026-10-15：[PZ独立SemLoom模型R4](diagnostics/palimpzest_movie_20261015/README.md#fixed-plan-model-r4)固定620，120POST200、COUNT7／真值14，经1682项原件独审通过；外层退出与正常lease释放已记录。bebf R3 failed／六臂720原账及CPU累计6fixture另列，模型累计840／840余0；完整身份不同，不授同身份七臂或性能排名，离线reader首轮形状错误保留。
 
 2026-10-15：[PZ同进程Daft到SemLoom CPU组合](diagnostics/palimpzest_movie_20261015/README.md#daft-semloom-cpu-composition)固定62018855，原PZ／SDK及生产固定入口依次完成各2次合成HTTP、COUNT1／TP1TN1／usage22+6，共享同一native runner，正常Core／HTTP／Ray／自有进程及lease退出。CPUr1导入顺序错误0POST、r2 checker错误前Daft2POST仍保留failed；通过轮4、本阶段累计6fixture、模型／GPU0。91份原件及独审分列；bebf两case只记录runner模式，原R3内部原错未补回，该CPU阶段模型仍720／840余120，不授全七臂或性能资格。

@@ -98,6 +98,7 @@ def initialize():
   db.execute('CREATE TABLE IF NOT EXISTS fixture_received (sequence INTEGER PRIMARY KEY,received_ns INTEGER)')
   _timed_call(samples,'begin_immediate_call',db.execute,'BEGIN IMMEDIATE')
   _timed_call(samples,'initialize_counts',_send_counts.initialize_counts,db,timings=samples)
+  _timed_call(samples,'initialize_progress_indexes',_send_counts.initialize_progress_indexes,db)
  _outside_call('initialize.identity_publish',_send_counts.mark_initialized,ROOT,DB)
 def activate(phase,slot,started,seconds,reserve):
  with sqlite3.connect(DB,timeout=10) as db:

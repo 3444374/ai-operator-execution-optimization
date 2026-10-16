@@ -1,7 +1,8 @@
 """Durable per-phase counters for the experiment's append-only send records.
 
-The caller holds BEGIN IMMEDIATE. INSERT triggers update counters in that same
-transaction; neither a returned response nor an error refunds a reservation.
+Accounting callers hold BEGIN IMMEDIATE. INSERT triggers update counters in that
+same transaction; neither a returned response nor an error refunds a reservation.
+Progress polling uses a short explicit read transaction.
 Full history verification belongs to initialization or explicit offline migration.
 """
 import json
@@ -14,6 +15,10 @@ MODEL = '__model__'
 SCOPES = PHASES + (MODEL,)
 KINDS = ('gateway', 'router', 'model', 'fixture')
 TABLE = 'send_totals'
+PROGRESS_INDEXES = {
+    'send_progress_at_ns': 'CREATE INDEX send_progress_at_ns ON sends(at_ns)',
+    'send_progress_returned_ns': 'CREATE INDEX send_progress_returned_ns ON sends(returned_ns)',
+}
 TRIGGERS = {
     'send_totals_insert': """CREATE TRIGGER send_totals_insert AFTER INSERT ON sends BEGIN
         SELECT CASE WHEN NEW.phase NOT IN ('software','quality','single','dual')
@@ -166,3 +171,27 @@ def verify_increment(connection, before, phase, kind, sequence):
         expected[scope] = (total + 1, logical + int(kind == 'gateway'))
     if sequence != sum(before[phase][0] for phase in PHASES) + 1 or snapshot(connection) != expected:
         raise RuntimeError('send insert and durable counter update were not atomic')
+
+
+def initialize_progress_indexes(connection):
+    """Install after the existing full initialization audit, never during polling."""
+    _require_transaction(connection)
+    for name, expected in PROGRESS_INDEXES.items():
+        row = connection.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()
+        if row is None:
+            connection.execute(expected)
+        elif row[0] != expected:
+            raise RuntimeError('send progress index identity changed')
+
+
+def progress_snapshot(connection):
+    """Return the original (count, max sent, max returned) in one read snapshot.
+
+    The caller holds a short explicit read transaction. Failed and unfinished
+    sends stay charged. Missing counters or indexes fail closed; polling never
+    repairs a ledger or falls back to a history scan.
+    """
+    values = snapshot(connection)
+    sent = connection.execute('SELECT max(at_ns) FROM sends INDEXED BY send_progress_at_ns').fetchone()[0]
+    returned = connection.execute('SELECT max(returned_ns) FROM sends INDEXED BY send_progress_returned_ns').fetchone()[0]
+    return sum(values[phase][0] for phase in PHASES), sent, returned

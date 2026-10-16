@@ -1,5 +1,9 @@
 # 组件测量与历史模拟
 
+[IMLane监督计数隔离](probe_send_progress.py)仅使用Mac本地账本副本和四worker localhost替身，默认打印计划；
+完整配对、索引写入负担、闭合账本和锁边界见[同题报告](../../../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)。
+它不启动作者runtime或模型，不把进度读CPU改善解释为完整查询收益。
+
 [可选 Ray 图诊断](probe_optional_ray_timing.py)默认只打印有限计划，`--execute` 才执行四个独立新 owner、
 0／2520 行副本和总计最多 8 次 localhost 响应；不启动模型、不改原账本。环境、lease、停止条件及结果见
 [计时报告](../../../experiments/results/diagnostics/optional_execution_timing_20261014/README.md)。

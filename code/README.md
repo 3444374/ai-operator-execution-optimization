@@ -26,6 +26,7 @@ actor/group声明额度与完成速率分开，live model calls派生占用，un
 只拒绝同一Python对象重复占槽，不认领实际Ray别名或物理GPU身份。
 
 [SemBench逐跳发送计数](src/experiments/send_counts.py)在同一持久事务中维护固定phase计数，配合[私有harness hook](scripts/benchmarks/sembench_pre_send_ledger.py)保留发送前扣记。14项零模型回归与本地配对通过；部署、真实性能与观测开关状态见[同题报告](../experiments/results/diagnostics/native_sembench_model_dual_supplement_20261012/README.md#retained-stage-analysis)。
+后续[监督进度去扫描候选](../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)只涉及测试链，Mac降低读取CPU却无稳定完整fixture收益；Linux／模型验证仍待完成。
 
 2026-10-12：[LOTUS原生观测准备核查](../experiments/results/diagnostics/lotus_observation_modes_20261012/README.md)增加显式性能观测选项，默认资格核对保持；真实POST、总额度和结果继续记录。局部替身回归不授予实际库或模型性能资格。
 

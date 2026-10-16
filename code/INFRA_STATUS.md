@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+2026-10-16：[IMLane长测监督去扫描候选](../experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)复用五行计数并加双时间索引，短只读事务保留原三元组；阶段counts和完整初始化审计保持。35项定向回归通过，Mac零模型降低进度扫描CPU但完整fixture无稳定加速，写入成本与顺序波动保留。未改作者执行或活动包，Linux少量匹配与真实模型验证待唯一owner安排。
+
 2026-10-15：[部署限定资源 auto](../experiments/results/diagnostics/resource_auto_20261015/README.md)只在已分配 UUID 集内参数化原工厂／池、原生 vLLM DP 和 Ray HTTP min/max，保持旧单卡／重试默认，准备深度独立。严格 worker UUID 修复固定 d2 后，一张4090的 LOTUS CLIP 五原生路径 auto／explicit1 完整输出、身份与物理退出通过；固定精度环境四组通过，HSE 旧额外环境验收仍失败。默认环境数值失败、6行诊断及66/66累计行全部保留，无性能结论。main 独立7b20／PR25服务12请求保持单独来源；本线HTTP0。真实多卡、Daft多卡mask、DP>1 rank、Serve多副本及真实扩缩仍pending。 C在7bac历史集成保留默认Ray重试并精确重绑PZ守卫，297通过／68条件跳过仅属该CPU组合；本次d2单卡结果单列。
 
 2026-10-15：新增[原始 SemBench Animals Q1](../experiments/results/diagnostics/sembench_animals_20261015/README.md)有限图像入口及原评价；保留当前LOTUS1.2.4身份，复用既有完整图文profile。CPU与真实模型状态由同题报告拥有，CLIP检索不替代本任务。

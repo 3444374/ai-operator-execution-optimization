@@ -1,0 +1,82 @@
+--- a/validation/owned_controller.py
++++ b/validation/owned_controller.py
+@@ -12,6 +12,7 @@
+ import psutil
+ from fault_supervision import FaultPolicy, wait_owned
+ import allocation_barrier
++import send_counts
+
+
+ def save(path, value):
+@@ -241,7 +242,8 @@
+     if (root / 'sends.sqlite').is_file():
+         with sqlite3.connect((root / 'sends.sqlite').as_uri() + '?mode=ro',
+                              uri=True, timeout=.5) as database:
+-            events = database.execute('SELECT count(*),max(at_ns),max(returned_ns) FROM sends').fetchone()
++            database.execute('BEGIN')
++            events = send_counts.progress_snapshot(database)
+     work = []
+     ownership.observe()
+     for row in ownership.live():
+--- a/validation/launch.py
++++ b/validation/launch.py
+@@ -107,6 +107,8 @@
+         save(ROOT/'phase.json',dict(phase='startup-controller',started_monotonic=time.monotonic()))
+         env=dict(os.environ,MODELRUN_ROOT=str(ROOT),MODELRUN_ACCOUNT='0',MODELRUN_QUERY_OBSERVER='0',
+             CUDA_VISIBLE_DEVICES='',PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(ROOT/'validation')+os.pathsep+str(SOURCE/'code'))
++        import pre_send_ledger
++        pre_send_ledger.initialize()
+         run_owned([STATE['driver_python'],'-B',str(ROOT/'validation/workload.py')],root=ROOT,env=env,
+             policy=FaultPolicy(),driver_cpus=driver,service_cpus=service,cancelled=lambda:cancelled['value'])
+         qualification=json.loads((ROOT/'qualification-result.json').read_text())
+--- a/validation/pre_send_ledger.py
++++ b/validation/pre_send_ledger.py
+@@ -26,6 +26,7 @@
+   db.execute('CREATE TABLE IF NOT EXISTS fixture_received (sequence INTEGER PRIMARY KEY,received_ns INTEGER)')
+   db.execute('BEGIN IMMEDIATE')
+   _send_counts.initialize_counts(db)
++  _send_counts.initialize_progress_indexes(db)
+  _send_counts.mark_initialized(ROOT,DB)
+ def activate(phase,slot,started,seconds,reserve):
+  with sqlite3.connect(DB,timeout=10) as db:
+--- a/validation/send_counts.py
++++ b/validation/send_counts.py
+@@ -13,6 +13,10 @@
+ SCOPES = PHASES + (MODEL,)
+ KINDS = ('gateway', 'router', 'model', 'fixture')
+ TABLE = 'send_totals'
++PROGRESS_INDEXES = {
++    'send_progress_at_ns': 'CREATE INDEX send_progress_at_ns ON sends(at_ns)',
++    'send_progress_returned_ns': 'CREATE INDEX send_progress_returned_ns ON sends(returned_ns)',
++}
+ TRIGGERS = {
+     'send_totals_insert': """CREATE TRIGGER send_totals_insert AFTER INSERT ON sends BEGIN
+         SELECT CASE WHEN NEW.phase NOT IN ('software','quality','single','dual')
+@@ -151,3 +155,27 @@
+         expected[scope] = (total + 1, logical + int(kind == 'gateway'))
+     if sequence != sum(before[phase][0] for phase in PHASES) + 1 or snapshot(connection) != expected:
+         raise RuntimeError('send insert and durable counter update were not atomic')
++
++
++def initialize_progress_indexes(connection):
++    """Install after the existing full initialization audit, never during polling."""
++    _require_transaction(connection)
++    for name, expected in PROGRESS_INDEXES.items():
++        row = connection.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()
++        if row is None:
++            connection.execute(expected)
++        elif row[0] != expected:
++            raise RuntimeError('send progress index identity changed')
++
++
++def progress_snapshot(connection):
++    """Return the original (count, max sent, max returned) in one read snapshot.
++
++    The caller holds a short explicit read transaction. Failed and unfinished
++    sends stay charged. Missing counters or indexes fail closed; polling never
++    repairs a ledger or falls back to a history scan.
++    """
++    values = snapshot(connection)
++    sent = connection.execute('SELECT max(at_ns) FROM sends INDEXED BY send_progress_at_ns').fetchone()[0]
++    returned = connection.execute('SELECT max(returned_ns) FROM sends INDEXED BY send_progress_returned_ns').fetchone()[0]
++    return sum(values[phase][0] for phase in PHASES), sent, returned

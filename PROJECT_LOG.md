@@ -11409,3 +11409,7 @@ HSE固定58,110,400／29,055,200 bytes，全部物理退出、lease释放；344.
 只读核验76原件、1054源码blob、30完整RM矩阵／6原生vecs及24候选查询；原模型与默认结果保持原身份。
 固定58,110,400 bytes、batch32的Direct／HSE单轮应用区间改善不含启动，也不作SemLoom独有创新或六路径新性能资格。
 本次SDK／HTTP／服务器／模型／GPU0；独立审查与恢复材料见[同题集成记录](experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#可选-png-参数的集成接纳)。
+
+## 2026-10-16 IMLane测试链进度去扫描候选
+
+固定7e59隔离职责分支保留发送预算、三元组、失败及未完成，使用短只读事务和双时间索引替换监督全史扫描；阶段counts与完整启动审计保持。35项定向回归及Mac零模型多规模配对完成，进度读取CPU下降但完整fixture无稳定加速，索引写成本与顺序差异照实保留。作者执行、活动checkout与服务器均未改，模型0；独立审核、源身份和全部紧凑观测见[同题报告](experiments/results/diagnostics/imlane_progress_scan_20261016/README.md)。Linux少量匹配及真实模型验证由唯一owner后续安排，本项不认领17%减速已解决。
