@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-16：收敛本地模型候选与 PZ 旧方案的可复用边界
+
+结合六份附件及固定源码核查，在[架构](experiments/plans/系统架构.md#model-engine-execution)补齐 LOTUS／模型依赖隔离、类型化引擎合同与三种原生接入所有权；区分准备批、引擎提交集合及内部计算批。
+[实施路线](experiments/plans/数据组织.md#model-engine-roadmap)只择用候选准备／计算内核，保留原控制器、逐调用账本、LM 职责及 SemBench 评价；独立静态原型不标为生产 Core。
+[对照规范](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)核明 PZ 1.5.3 附件与冻结 SemBench tag 的差别，已修内容不重复立项。本次仅改文档，未导入候选代码或运行模型；CPU／替身结果不提升为真实库、GPU 或完整系统资格。
+
 ## 2026-10-16：解除 records 主链对旧请求接入的前置依赖
 
 将[架构](experiments/plans/系统架构.md#lotus-data-execution)中的旧图段／控制结构与 bytes-task 扩展改为按需复用，PG 分工限定于 PG 接入。
