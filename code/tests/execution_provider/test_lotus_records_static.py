@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 import unittest
@@ -16,6 +17,7 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.execution_provider.adapters import lotus_records_static as static
+from src.infrastructure import daft_runtime
 from src.semantic_methods.lotus import engine as lotus_engine
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
 from src.serving.backends import vllm_engine
@@ -48,7 +50,7 @@ class StaticRecordsTests(unittest.TestCase):
                                  reviewId="other", id="other", reviewText="excluded"))
         self.spec = EngineSpec("/tmp/fixture-model", "/tmp/model-python", "/tmp/driver-python")
 
-    def _runtime(self, *, fail_first_close=False, fail_on_batch=None):
+    def _runtime(self, *, fail_first_close=False, fail_on_batch=None, initial_runner=None):
         events = []
         engines = []
         formatters = []
@@ -184,9 +186,28 @@ class StaticRecordsTests(unittest.TestCase):
 
         daft.read_csv = read_csv
         runners = ModuleType("daft.runners")
-        runners.get_or_create_runner = lambda: SimpleNamespace(name="native")
+        selected = [None if initial_runner is None else SimpleNamespace(name=initial_runner)]
+        runners._get_runner = lambda: selected[0]
+
+        def select_native():
+            events.append(("set_runner_native",))
+            if selected[0] is not None:
+                raise RuntimeError("cannot set runner more than once")
+            selected[0] = SimpleNamespace(name="native")
+
+        def get_runner():
+            events.append(("get_or_create_runner",))
+            if selected[0] is None:
+                selected[0] = SimpleNamespace(name="ray" if ray.is_initialized() else "native")
+            return selected[0]
+
+        daft.set_runner_native = select_native
+        runners.get_or_create_runner = get_runner
         stack = ExitStack()
         stack.enter_context(patch.dict(sys.modules, {"ray": ray, "daft": daft, "daft.runners": runners}))
+        stack.enter_context(patch.object(daft_runtime, "_configured", None))
+        stack.enter_context(patch.dict(os.environ))
+        os.environ.pop("DAFT_RUNNER", None)
         stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
@@ -241,6 +262,88 @@ class StaticRecordsTests(unittest.TestCase):
                 owner.evaluate(source, query_id="q")
         self.assertEqual(events, [])
         self.assertEqual(engines, [])
+
+    def test_unselected_runner_is_native_before_ray_can_infer_its_default(self):
+        stack, events, _, _ = self._runtime()
+        with stack:
+            owner = self._owner()
+            owner.evaluate(Source(self.rows), query_id="q")
+            self.assertEqual(sys.modules["daft.runners"]._get_runner().name, "native")
+            owner.close()
+        names = [event[0] for event in events]
+        self.assertLess(names.index("set_runner_native"), names.index("get_or_create_runner"))
+        self.assertLess(names.index("get_or_create_runner"), names.index("read_csv"))
+
+    def test_existing_native_runner_is_reused_without_reconfiguration(self):
+        stack, events, _, _ = self._runtime(initial_runner="native")
+        with stack:
+            owner = self._owner()
+            list(owner.evaluate(Source(self.rows), query_id="q"))
+            owner.close()
+        self.assertFalse(any(event[0] == "set_runner_native" for event in events))
+
+    def test_existing_ray_runner_is_rejected_without_switch_or_model_allocation(self):
+        stack, events, engines, _ = self._runtime(initial_runner="ray")
+        with stack:
+            with self.assertRaisesRegex(RuntimeError, "Daft 0.7.21 Native"):
+                self._owner().evaluate(Source(self.rows), query_id="q")
+            self.assertEqual(sys.modules["daft.runners"]._get_runner().name, "ray")
+        self.assertEqual(engines, [])
+        self.assertFalse(any(event[0] in ("set_runner_native", "read_csv", "actor") for event in events))
+
+    def test_shared_ray_configuration_is_not_overridden(self):
+        stack, events, engines, _ = self._runtime()
+        with stack, patch.object(daft_runtime, "_configured", ("ray", None)):
+            with self.assertRaisesRegex(RuntimeError, "already configured as ray"):
+                self._owner().evaluate(Source(self.rows), query_id="q")
+        self.assertEqual(events, [])
+        self.assertEqual(engines, [])
+
+    def test_explicit_ray_environment_is_rejected_before_runner_creation(self):
+        stack, events, engines, _ = self._runtime()
+        with stack, patch.dict(os.environ, {"DAFT_RUNNER": "ray"}):
+            with self.assertRaisesRegex(RuntimeError, "explicit Daft Native"):
+                self._owner().evaluate(Source(self.rows), query_id="q")
+        self.assertEqual(events, [])
+        self.assertEqual(engines, [])
+
+    def test_bad_driver_or_vendor_version_does_not_select_a_runner(self):
+        for failure in ("driver", "daft", "ray"):
+            with self.subTest(failure=failure):
+                stack, events, engines, _ = self._runtime()
+                with stack:
+                    if failure == "driver":
+                        stack.enter_context(patch.object(EngineSpec, "validate_driver_environment",
+                                                         side_effect=ValueError("driver mismatch")))
+                    else:
+                        sys.modules[failure].__version__ = "unsupported"
+                    with self.assertRaises((ValueError, RuntimeError)):
+                        self._owner().evaluate(Source(self.rows), query_id="q")
+                self.assertEqual(events, [])
+                self.assertEqual(engines, [])
+
+    def test_source_method_and_driver_preflight_precede_runner_selection(self):
+        stack, events, _, _ = self._runtime()
+        source = Source(self.rows)
+        with stack, patch.object(source, "preflight", side_effect=lambda _: events.append(("source",))), \
+                patch.object(lotus_engine, "validate_filter_source", side_effect=lambda: events.append(("method",))), \
+                patch.object(EngineSpec, "validate_driver_environment", side_effect=lambda: events.append(("driver",))):
+            owner = self._owner()
+            owner.evaluate(source, query_id="q")
+            owner.close()
+        self.assertEqual([event[0] for event in events[:4]], ["source", "method", "driver", "set_runner_native"])
+
+    def test_two_queries_reuse_native_selection_and_one_model_engine(self):
+        stack, events, engines, _ = self._runtime()
+        with stack:
+            owner = self._owner()
+            first = list(owner.evaluate(Source(self.rows), query_id="first"))
+            second = list(owner.evaluate(Source(self.rows), query_id="second"))
+            owner.close()
+        self.assertEqual(len(engines), 1)
+        self.assertEqual(sum(engines[0].calls), 10)
+        self.assertEqual(sum(event[0] == "set_runner_native" for event in events), 1)
+        self.assertTrue({row["call_id"] for row in first}.isdisjoint(row["call_id"] for row in second))
 
     def test_failed_engine_close_retains_actor_for_retry_and_unknown_report(self):
         stack, events, engines, _ = self._runtime(fail_first_close=True)

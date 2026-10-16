@@ -6,6 +6,7 @@ directly to a single model actor. The driver receives only compact terminal rows
 
 from __future__ import annotations
 
+import os
 import shlex
 import time
 from dataclasses import asdict
@@ -297,11 +298,20 @@ class SemLoomRecordsStaticReference:
         _check(deadline, cancelled)
         import daft
         import ray
-        from daft.runners import get_or_create_runner
+        from daft.runners import _get_runner, get_or_create_runner
+        from src.infrastructure.daft_runtime import configure_daft_runner
 
         if ray.__version__ != "2.56.1" or not ray.is_initialized():
             raise RuntimeError("static reference requires caller-owned Ray 2.56.1")
-        if daft.__version__ != "0.7.21" or get_or_create_runner().name != "native":
+        if daft.__version__ != "0.7.21":
+            raise RuntimeError("static reference requires Daft 0.7.21 Native")
+        # get_or_create_runner infers Ray when Ray is already initialized.
+        # Select Native first, while preserving an existing process runner.
+        if _get_runner() is None:
+            if os.environ.get("DAFT_RUNNER") not in (None, "native"):
+                raise RuntimeError("static reference requires an explicit Daft Native configuration")
+            configure_daft_runner("native")
+        if get_or_create_runner().name != "native":
             raise RuntimeError("static reference requires Daft 0.7.21 Native")
         frame = daft.read_csv(str(source.csv_path), infer_schema=False, schema={
             "row_id": daft.DataType.string(),
