@@ -85,3 +85,9 @@ source 目前限制 4,096 行、CSV 16 MiB、单 review UTF-8 1 MiB；这些是�
 LM result cache 关闭，非默认 serialization、rate／TPM、logprobs、repetition override 等未支持配置明确拒绝。
 进程监督仅确认已观测且身份匹配的 owned 进程；未观测 detached 后代和 GPU 物理退出始终保留 unknown，
 `ray.kill`、API shutdown 或 iterator close 均不作为 GPU 退出证明。真实运行须由父线程协调既有服务器及资源 owner，未新增租用或接触学校服务器。
+
+## 真实资格准备
+
+在已发布 `957e91eb` 后准备既有服务器的单 4090／Qwen2.5／vLLM0.25.1 资格，应用模型请求总上限32、零自动重试，不下载权重或修改共享环境。
+源码加入可选 `max_model_calls` 单引擎上限及真实 prompt token IDs／规范 messages SHA；52 项受影响 CPU 测试和74 subtests通过。
+原 114 项资格仍绑定其记录源码，不转授这些后续改动。真实运行的精确 source、模型／模板、unit、版本和结果另按实际记录，本段不表示模型已运行。

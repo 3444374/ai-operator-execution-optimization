@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import json
 import os
 import subprocess
@@ -11,7 +12,7 @@ import tempfile
 import types
 import unittest
 from contextlib import ExitStack
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -134,6 +135,16 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(engine.ready()["batch_mode"], "finite_synchronous_chat")
         json.dumps(engine.ready())
 
+    def test_results_bind_actual_messages_and_prompt_token_ids(self):
+        engine = self.build()
+        row = prepared()
+        result = engine.run_prepared([row])[0]
+        canonical = json.dumps(json.loads(row["messages_json"]), ensure_ascii=False,
+                               sort_keys=True, separators=(",", ":"), allow_nan=False)
+        self.assertEqual(result["messages_sha256"], hashlib.sha256(canonical.encode()).hexdigest())
+        self.assertEqual(json.loads(result["prompt_token_ids_json"]), [1, 2, 3])
+        self.assertEqual(result["prompt_tokens"], len(json.loads(result["prompt_token_ids_json"])))
+
     def test_public_driver_preflight_rejects_other_interpreter_before_sampling(self):
         with patch.object(EngineSpec, "validate_local", return_value={
             "model": self.model_identity, "driver": self.driver_identity,
@@ -161,6 +172,16 @@ class KernelTests(unittest.TestCase):
         with self.environment(), self.assertRaises(ValueError):
             VllmEngine(self.spec, generation)
         self.assertEqual(self.events, [])
+
+    def test_mutated_invalid_call_limit_is_rechecked_before_probe_or_allocation(self):
+        for value in (True, 0, float("nan")):
+            with self.subTest(value=value):
+                object.__setattr__(self.spec, "max_model_calls", value)
+                with self.environment(), patch.object(kernel, "_probe_python") as probe:
+                    with self.assertRaisesRegex(ValueError, "max_model_calls"):
+                        VllmEngine(self.spec, GenerationSpec())
+                probe.assert_not_called()
+                self.assertEqual(self.events, [])
 
     def test_invalid_explicit_template_is_rejected_before_model_allocation(self):
         chat_utils = types.ModuleType("vllm.entrypoints.chat_utils")
@@ -283,6 +304,90 @@ class KernelTests(unittest.TestCase):
         self.assertIs(result["submission_confirmed"], False)
         self.assertIs(result["chat_invoked"], True)
 
+    def test_default_call_limit_is_unbounded_and_reports_reserved_rows(self):
+        engine = self.build()
+        for index in range(2):
+            self.assertEqual(engine.run_prepared([prepared(index)])[0]["status"], "succeeded")
+        self.assertIsNone(engine.ready()["max_model_calls"])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 2)
+        report = engine.close()
+        self.assertIsNone(report["max_model_calls"])
+        self.assertEqual(report["reserved_model_calls"], 2)
+
+    def test_call_limit_counts_rows_across_batches_and_rejects_excess(self):
+        self.spec = replace(self.spec, max_model_calls=3)
+        engine = self.build()
+        self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+        self.fake_llm.outputs = [output("request-0"), output("request-1")]
+        self.assertTrue(all(result["status"] == "succeeded" for result in
+                            engine.run_prepared([prepared(0), prepared(1)])))
+        self.fake_llm.outputs = [output("request-2")]
+        self.assertEqual(engine.run_prepared([prepared(2)])[0]["status"], "succeeded")
+        with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+            engine.run_prepared([prepared(3)])
+        self.assertEqual(len(self.fake_llm.calls), 2)
+        for report in (engine.ready(), engine.close(), engine.close()):
+            self.assertEqual(report["max_model_calls"], 3)
+            self.assertEqual(report["reserved_model_calls"], 3)
+
+    def test_over_limit_batch_is_rejected_without_partial_chat_or_reservation(self):
+        self.spec = replace(self.spec, max_model_calls=2)
+        engine = self.build()
+        with self.assertRaisesRegex(RuntimeError, "entire batch was not submitted"):
+            engine.run_prepared([prepared(0), prepared(1), prepared(2)])
+        self.assertEqual(self.fake_llm.calls, [])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+        self.fake_llm.outputs = [output("request-0"), output("request-1")]
+        self.assertTrue(all(result["status"] == "succeeded" for result in
+                            engine.run_prepared([prepared(0), prepared(1)])))
+        self.assertEqual(engine.ready()["reserved_model_calls"], 2)
+
+    def test_unknown_and_failed_results_never_refund_reserved_calls(self):
+        self.spec = replace(self.spec, max_model_calls=2)
+        for failure in ("chat_exception", "association", "unfinished"):
+            with self.subTest(failure=failure):
+                self.fake_llm = FakeLLM()
+                engine = self.build()
+                if failure == "chat_exception":
+                    self.fake_llm.error = RuntimeError("fake possible acceptance")
+                elif failure == "association":
+                    self.fake_llm.outputs = []
+                else:
+                    self.fake_llm.outputs = [output("request-0", finished=False),
+                                             output("request-1", finished=False)]
+                results = engine.run_prepared([prepared(0), prepared(1)])
+                expected = "failed" if failure == "unfinished" else "unknown"
+                self.assertEqual([result["status"] for result in results], [expected] * 2)
+                self.assertEqual(engine.ready()["reserved_model_calls"], 2)
+                with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+                    engine.run_prepared([prepared(2)])
+                self.assertEqual(len(self.fake_llm.calls), 1)
+
+    def test_empty_and_expired_batches_do_not_consume_call_limit(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        for reserved in (0, 1):
+            with self.subTest(reserved=reserved):
+                self.assertEqual(engine.run_prepared([]), [])
+                with patch.object(kernel.time, "monotonic", return_value=5.0):
+                    result = engine.run_prepared([prepared()], deadline_monotonic=4.0)[0]
+                self.assertIs(result["submission_confirmed"], False)
+                self.assertIs(result["deadline_expired"], True)
+                self.assertEqual(engine.ready()["reserved_model_calls"], reserved)
+                self.assertEqual(len(self.fake_llm.calls), reserved)
+                if reserved == 0:
+                    self.assertEqual(engine.run_prepared([prepared()])[0]["status"], "succeeded")
+
+    def test_engine_limit_snapshot_cannot_be_increased_by_later_spec_mutation(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        object.__setattr__(self.spec, "max_model_calls", None)
+        engine.run_prepared([prepared()])
+        with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+            engine.run_prepared([prepared(1)])
+        self.assertEqual(engine.ready()["max_model_calls"], 1)
+        self.assertEqual(len(self.fake_llm.calls), 1)
+
     def test_bad_prepared_input_is_rejected_before_chat(self):
         engine = self.build()
         row = prepared()
@@ -307,6 +412,7 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(self.fake_llm.calls, [])
 
     def test_deadline_after_completion_keeps_usage_and_rejects_semantic_text(self):
+        self.spec = replace(self.spec, max_model_calls=1)
         engine = self.build()
         with patch.object(kernel.time, "monotonic", side_effect=[2.0, 7.0]):
             result = engine.run_prepared([prepared()], deadline_monotonic=5.0)[0]
@@ -315,6 +421,9 @@ class KernelTests(unittest.TestCase):
         self.assertIs(result["submission_confirmed"], True)
         self.assertEqual(result["total_tokens"], 5)
         self.assertIsNone(result["text"])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+        with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+            engine.run_prepared([prepared(1)])
 
     def test_bad_deadlines_and_timeouts_never_call_chat_or_shutdown(self):
         engine = self.build()
@@ -328,11 +437,14 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(self.fake_llm.core.calls, [])
 
     def test_close_failure_is_unknown_and_retry_retains_handle(self):
+        self.spec = replace(self.spec, max_model_calls=1)
         engine = self.build()
+        engine.run_prepared([prepared()])
         self.fake_llm.core.errors = [RuntimeError("fake shutdown failure")]
         first = engine.close(timeout=1.5)
         self.assertEqual(first["status"], "unknown")
         self.assertFalse(first["engine_api_shutdown_confirmed"])
+        self.assertEqual((first["max_model_calls"], first["reserved_model_calls"]), (1, 1))
         self.assertIsNone(first["gpu_exit_confirmed"])
         self.assertFalse(engine.ready()["closed"])
         with self.assertRaisesRegex(RuntimeError, "cleanup is uncertain"):
@@ -341,6 +453,7 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(second["status"], "closed")
         self.assertEqual(second["cleanup_scope"], "engine_core_api")
         self.assertTrue(second["engine_api_shutdown_confirmed"])
+        self.assertEqual((second["max_model_calls"], second["reserved_model_calls"]), (1, 1))
         self.assertEqual(self.fake_llm.core.calls, [1.5, 2.5])
         self.assertEqual(engine.close(), second)
         with self.assertRaisesRegex(RuntimeError, "closed"):
@@ -358,6 +471,14 @@ class KernelTests(unittest.TestCase):
 
 
 class SpecificationTests(unittest.TestCase):
+    def test_optional_call_limit_preserves_old_configs_and_roundtrips(self):
+        old_config = dict(model_path="/model", model_python="/model-python",
+                          driver_python="/driver-python")
+        self.assertIsNone(EngineSpec.from_dict(old_config).max_model_calls)
+        spec = EngineSpec.from_dict({**old_config, "max_model_calls": 8})
+        self.assertEqual(EngineSpec.from_dict(json.loads(json.dumps(asdict(spec)))), spec)
+        self.assertEqual(spec.max_model_calls, 8)
+
     def test_generation_roundtrip_preserves_effective_parameters(self):
         generation = GenerationSpec.from_dict(json.loads(json.dumps(asdict(GenerationSpec()))))
         self.assertEqual(generation, GenerationSpec())
@@ -386,6 +507,10 @@ class SpecificationTests(unittest.TestCase):
             ("gpu_memory_utilization", float("inf")), ("gpu_memory_utilization", True),
             ("gpu_memory_utilization", 0), ("gpu_memory_utilization", 1.1),
             ("seed", True), ("dtype", "int8"),
+            ("max_model_calls", True), ("max_model_calls", False),
+            ("max_model_calls", 0), ("max_model_calls", -1),
+            ("max_model_calls", 1.5), ("max_model_calls", "8"),
+            ("max_model_calls", float("nan")), ("max_model_calls", float("inf")),
         ):
             with self.subTest(name=name, value=value), self.assertRaises(ValueError):
                 EngineSpec("/model", "/model-python", "/driver-python", **{name: value})

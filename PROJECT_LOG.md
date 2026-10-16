@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-16：准备有界的 records 真实引擎资格
+
+在已发布 `957e91eb` 上增加可选单引擎应用请求上限、规范 messages 摘要与实际 prompt token IDs，以核验模板、参数和usage；默认 `None` 保持现有接入。
+单实例计费在chat前按行预留，异常／unknown不退款；全轮仍由既有持久unit账本先分配，并限定无重启、一次消费。
+52项受影响CPU检查／74 subtests通过；既有服务器与隔离环境先只读核查，真实模型结果尚未登记，不扩性能或其他后端资格。
+
 ## 2026-10-16：实现普通 Movie Q3 records 与本地模型最小接点
 
 从已审阅 main `52391e37` 建立独立 `integration/data-execution`，不改活动 baseline 或旧测试。

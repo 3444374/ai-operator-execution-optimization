@@ -15,6 +15,10 @@ Ray Data 原生图与 Daft＋Ray Core 的 SemLoom 静态参照共享原 LOTUS �
 `run_movie_query()` 的 lazy `execute` 工厂在 source／版本／LM policy 检查后才调用；失败的 `query_report` 保留逐调用账本。
 输入上限和清理／unknown 的实际保证从上述资格记录核对。
 
+本地引擎结果另保留规范消息 SHA256 与实际 prompt／output token IDs，供一次模板及 usage 核验。
+可选 `EngineSpec.max_model_calls` 限制单个引擎 lifetime 的应用请求数，按行在 chat 前预留，失败／unknown 不退；默认 `None` 保持原行为。
+它不是跨实例总预算；资格 runner 仍须先持久预留每个 unit 的上限，并证明一次性 owner／无重启／无重复消费。
+
 ## 完整请求级接点
 
 本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，

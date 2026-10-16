@@ -10,6 +10,9 @@ Ray Data 原生图与 SemLoom Daft＋Ray Core 静态参照分列，静态路径�
 实际 vLLM／模型环境／GPU、级联、图像、持续供给与完整原生后端矩阵均 pending。
 这不是 main 已接纳或旧 `integration/baselines` 的新资格；旧请求实现及测试保持原样。
 
+后续真实资格准备新增可选单实例请求上限、规范 messages 摘要及实际 prompt token IDs；
+52 项受影响 CPU 检查／74 subtests 通过，默认配置保持兼容。实际模型结果尚待本轮独立登记，不能继承此前 CPU 资格。
+
 ## main 与集成分支的阅读范围
 
 main 已按必要闭包接纳公共统计修复、Core／完整响应、LOTUS Movie／Animals完整请求、可选vLLM部署资源及原生CLIP查询的必要工程闭包。每批固定源码和资格从下文报告核对；

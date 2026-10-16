@@ -3,6 +3,7 @@
 2026-10-16：[Movie Q3 records 本地模型接点](diagnostics/lotus_records_local_model_20261016/README.md)。
 已审阅 main `52391e37` 上独立实现，独审修复后Python3.12的114项及213 subtests通过；原LOTUS方法差分、原SemBench评价、真实Ray CPU formatter图和Daft typed CSV分列。
 固定响应无推理，失败与进程监督保留；不支持真实vLLM／GPU、级联、production Core或性能结论。
+后续单卡真实资格准备仅增加单实例请求上限及消息／prompt token 来源，52项受影响CPU检查通过；真实模型结果仍待本轮绑定源码登记。
 
 2026-10-16：[Animals观测模式CPU回归](diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)。紧凑body留证与原SDK／Daft连续查询按新源码单列，旧模型与RSS证据保持原身份。
 

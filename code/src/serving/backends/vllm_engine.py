@@ -7,6 +7,7 @@ with ``model_python`` and supervise that process for deadlines and physical exit
 from __future__ import annotations
 
 import importlib.metadata
+import hashlib
 import json
 import math
 import os
@@ -130,6 +131,7 @@ class EngineSpec:
     gpu_memory_utilization: float = 0.8
     seed: int = 0
     chat_template: str | None = None
+    max_model_calls: int | None = None
 
     def __post_init__(self) -> None:
         for name in ("model_path", "model_python", "driver_python"):
@@ -145,6 +147,8 @@ class EngineSpec:
                 high=1.0, inclusive_low=False)
         if self.chat_template is not None:
             _string(self.chat_template, "chat_template")
+        if self.max_model_calls is not None:
+            _integer(self.max_model_calls, "max_model_calls", minimum=1)
 
     @classmethod
     def from_dict(cls, value: dict) -> EngineSpec:
@@ -244,6 +248,10 @@ def _prepared(rows: list[dict]) -> tuple[list[dict], list[list[dict]]]:
                     for part in content
                 ):
                     raise ValueError("ordinary-filter messages support text content only")
+        identity["messages_sha256"] = hashlib.sha256(json.dumps(
+            conversation, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+            allow_nan=False,
+        ).encode()).hexdigest()
         identities.append(identity)
         conversations.append(conversation)
     return identities, conversations
@@ -279,6 +287,8 @@ class VllmEngine:
         self._closed = False
         self._close_attempt = 0
         self._shutdown_failed = False
+        self._max_model_calls = engine.max_model_calls
+        self._reserved_model_calls = 0
         self._lock = threading.Lock()
         self._versions = {"vllm": VLLM_VERSION, "python": sys.version.split()[0]}
         self._llm = vllm.LLM(
@@ -298,12 +308,15 @@ class VllmEngine:
             "prefix": sys.prefix, "versions": dict(self._versions),
             "model_config": asdict(self.spec), "generation": asdict(self.generation),
             "closed": self._closed, "batch_mode": "finite_synchronous_chat",
+            "max_model_calls": self._max_model_calls,
+            "reserved_model_calls": self._reserved_model_calls,
         }
 
     def _result(self, identity: dict, start: float, end: float, *, status: str,
                 submitted: bool, error_type: str | None = None) -> dict:
         return {
-            **identity, "status": status, "text": None, "output_token_ids_json": "null",
+            **identity, "status": status, "text": None,
+            "prompt_token_ids_json": "null", "output_token_ids_json": "null",
             "logprobs_json": "null", "prompt_tokens": None, "completion_tokens": None,
             "total_tokens": None, "finish_reason": None, "engine_request_id": None,
             "engine_uid": self.engine_uid, "model_start_monotonic": start,
@@ -335,6 +348,11 @@ class VllmEngine:
                 return results
             if not rows:
                 return []
+            if (self._max_model_calls is not None
+                    and self._reserved_model_calls + len(rows) > self._max_model_calls):
+                raise RuntimeError("max_model_calls exceeded; entire batch was not submitted")
+            # Each row is one request; reserve before chat and never refund unknown/failure.
+            self._reserved_model_calls += len(rows)
             try:
                 outputs = self._llm.chat(
                     conversations, sampling_params=self._sampling, use_tqdm=False,
@@ -369,6 +387,7 @@ class VllmEngine:
                 try:
                     prompt_ids = _token_ids(getattr(output, "prompt_token_ids", None),
                                             "prompt_token_ids")
+                    result["prompt_token_ids_json"] = json.dumps(prompt_ids)
                     result["prompt_tokens"] = None if prompt_ids is None else len(prompt_ids)
                     choices = getattr(output, "outputs", None)
                     if not isinstance(choices, (list, tuple)) or len(choices) != 1:
@@ -404,6 +423,8 @@ class VllmEngine:
             "pid": os.getpid(), "engine_api_shutdown_confirmed": self._closed,
             "gpu_exit_confirmed": None, "cleanup_scope": "engine_core_api",
             "attempt": self._close_attempt, "error_type": None,
+            "max_model_calls": self._max_model_calls,
+            "reserved_model_calls": self._reserved_model_calls,
         }
         if self._closed:
             return report
