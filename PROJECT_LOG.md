@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-16：补齐 Daft 原生布局、消费与有效配置
+
+完整读取五份 Daft 补充附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性构图／最终消费、staged／fused 布局、独立配置、rebatch 逻辑额度及真实 worker 收尾；原方法、全局结果复用和 IPC 归属直接引用既有合同。
+核对固定新集成分支与 Daft 0.7.21 源码；候选的替身检查不转为实库资格。本次只改文档，未导入或运行附件、改代码或启动模型。
+
 ## 2026-10-16：明确最终原生对照与 IMLane 记录级接入
 
 完整读取八份补充材料，收敛到[既有架构](experiments/plans/系统架构.md#model-engine-execution)与[Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)：最终必含 Daft／Ray Data／IMLane，首切片仍可先行；IMLane 分 CPython／作者 Ray，依次验证多行桥、替身和单卡模型，保留作者调度、输出所有权与独立生命周期。
