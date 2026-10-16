@@ -61,7 +61,10 @@ PYTHONPATH=code python code/scripts/experiments/run_sembench_lotus_queries.py --
 SemLoom 图文路径另须显式给出`--core-request-bytes`、`--core-input-bytes`、
 `--core-ray-window-bytes`和`--core-ray-object-bytes`；原64图选择分别为4194304、8388608、4194328、8388608。
 Ray臂使用新的短`--ray-temp-root`。模型逐请求超时有限且不超过120秒，默认并发4、max_tokens8192；
-重试与结果缓存关闭，实际请求／完整响应／逐行判定、COUNT、原评价及观测HTTP峰值共同保存。
+重试与结果缓存关闭。`performance`保存请求序号、模型／消息／body摘要、字节数及响应状态，
+不复制完整请求或响应body；`qualification`额外保存请求JSON与原始响应base64，供完整离线核验。
+两种模式保留相同消息身份、预算、HTTP透传、逐行判定、COUNT、原评价及观测HTTP峰值；
+`summary.body_capture`明确记录选择。performance仍解析消息以做身份校验，其紧凑记录不能独立重放完整body。
 资源失败保留质量与结果，账本收尾不可读时计数标为unavailable，不覆盖原查询异常或重开预算。
 [实际资格与适用边界](../../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)。
 

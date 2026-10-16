@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-16：Animals performance关闭完整body副本
+
+复用现有observation_mode，保留消息身份、完整HTTP透传与错误／清理边界；qualification继续完整留证。
+[CPU回归](experiments/results/diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)覆盖实际SDK／Daft连续查询及失败路径，未增加模型／GPU运行或改变GC策略。
+
 ## 2026-10-15：补齐固定main原查询连续运行报告
 
 实际来源`eb697477`的Movie每臂19次、Animals每臂8次已正常完成；[同题报告](experiments/results/diagnostics/main_queries_20261015/README.md#long-run)分列首轮、后续完整查询与Animals应用成本。

@@ -118,7 +118,7 @@ def run_query(
     core_ray_window_bytes=None,
     core_ray_object_bytes=None,
 ):
-    """No constructor warmup; actual POST/response bodies, status and original decisions persist."""
+    """No constructor warmup; full HTTP body copies are qualification-only."""
     if arm not in ("lotus-native", "daft", "ray-data", "semloom"):
         raise ValueError("Animals requires an explicitly supported full-request executor")
     if observation_mode not in ("performance", "qualification"):
@@ -156,6 +156,7 @@ def run_query(
     expected, actual = Counter(), Counter()
     decisions, prompts = [], []
     lock = threading.Lock()
+    capture_bodies = observation_mode == "qualification"
     started = time.monotonic_ns()
     summary = dict(
         schema="semloom.sembench_animals_query.v1",
@@ -165,6 +166,7 @@ def run_query(
         rows=len(rows),
         model_id=model.model_id,
         observation_mode=observation_mode,
+        body_capture=capture_bodies,
         cache=False,
         retries=0,
         max_tokens=max_tokens,
@@ -175,7 +177,7 @@ def run_query(
         selected_lotus_version="1.2.4",
         execution_scope="original Q1 on finite external ImageArray; no PostgreSQL claim",
         query_tail_quantiles="unavailable: one complete query",
-        observation_scope="matched proxy, request/response body and status persistence; message identity checks",
+        observation_scope="matched proxy, request/response digests and status; mode-selected body capture; message identity checks",
         full_query_scope="source verification/read, original query/import, native graph and complete result",
         constructor_warmup="not invoked; unbound original Q1 method with caller-configured LM",
     )
@@ -188,38 +190,36 @@ def run_query(
             def before(_route, body):
                 value = json.loads(body)
                 digest = content_digest(value.get("messages"))
+                body_sha256 = hashlib.sha256(body).hexdigest()
                 with lock:
                     if value.get("model") != model.model_id or actual[digest] >= expected[digest]:
                         raise ValueError(
                             "Animals outgoing request differs from its original LM message batch"
                         )
-                    attempt = ledger.reserve(hashlib.sha256(body).hexdigest())
+                    attempt = ledger.reserve(body_sha256)
                     actual[digest] += 1
-                    requests.write(
-                        json.dumps(
-                            dict(
-                                attempt=attempt,
-                                body=value,
-                                bytes=len(body),
-                                body_sha256=hashlib.sha256(body).hexdigest(),
-                            ),
-                            ensure_ascii=False,
-                        )
-                        + "\n"
+                    record = dict(
+                        attempt=attempt,
+                        model_id=value["model"],
+                        messages_sha256=digest,
+                        bytes=len(body),
+                        body_sha256=body_sha256,
                     )
+                    if capture_bodies:
+                        record["body"] = value
+                    requests.write(json.dumps(record, ensure_ascii=False) + "\n")
 
             def after(_route, body, response, status):
                 with lock:
-                    responses.write(
-                        json.dumps(
-                            dict(
-                                request_sha256=hashlib.sha256(body).hexdigest(),
-                                status=status,
-                                body_base64=base64.b64encode(response).decode("ascii"),
-                            )
-                        )
-                        + "\n"
+                    record = dict(
+                        request_sha256=hashlib.sha256(body).hexdigest(),
+                        status=status,
+                        bytes=len(response),
+                        body_sha256=hashlib.sha256(response).hexdigest(),
                     )
+                    if capture_bodies:
+                        record["body_base64"] = base64.b64encode(response).decode("ascii")
+                    responses.write(json.dumps(record) + "\n")
 
             gateway = stack.enter_context(
                 ObservationGateway(
