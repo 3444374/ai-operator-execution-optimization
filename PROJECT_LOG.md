@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-16：Animals观测模式与同进程Daft查询修复
+
+performance关闭完整body副本，qualification继续完整留证；baseline入口复用已有Daft helper。
+[CPU回归](experiments/results/diagnostics/sembench_animals_20261015/README.md#observation-body-capture)核对模式、原SDK／Daft连续查询及失败路径，未增加模型／GPU运行或改变GC策略。
+
 ## 2026-10-15：记录source620的SemLoom单臂模型补轮
 
 独立R4使用62018855，完成120次真实POST200、原COUNT7／真值14，query15.110秒／application29.739秒；服务准备49.091秒另报，1682项原件独审与物理旁审通过。
