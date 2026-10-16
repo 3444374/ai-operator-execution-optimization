@@ -38,6 +38,9 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
 后续文本级联也需补相应来源资格，records 扩展须保留原提交、补丁与独立校验身份；不能覆盖旧摘要后仍称原源码未改。
 当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；新记录路径的图追加和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)分别验证。
+`prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
+[第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，
+但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。拟增 records／引擎适配及现有文件的改动见[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，尚未成为本模块实现。
 
 ## 原版 Movie 查询
 

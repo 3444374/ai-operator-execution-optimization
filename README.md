@@ -11,7 +11,8 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 
 LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化；SemLoom 的目标底座保持 Daft 扫描／普通关系处理＋Ray Core／Actor，
 自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
-当前仍为完整请求接点，目标接口尚未实现；边界由[系统架构](experiments/plans/系统架构.md#lotus-data-execution)维护。
+并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
+HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎接点尚未实现，边界由架构文档维护。
 
 | 要查什么 | 权威入口 |
 |---|---|

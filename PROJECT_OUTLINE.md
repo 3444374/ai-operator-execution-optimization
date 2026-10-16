@@ -22,6 +22,8 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 LOTUS 主线保留 SemBench 任务评价与 LOTUS 原算法及优化；下一单元限定[普通／级联 Filter 的记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)。
 SemLoom 以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；
 Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
+实际模型实例纳入执行 worker／actor 是明确的后续目标：[第二层接点](experiments/plans/系统架构.md#model-engine-execution)沿 records 合同接受受支持模型输入并调用真实推理 API。
+先以文本小单元取得资格，再保持 Animals 原任务验证 VLM；不等待全部 HTTP 后端／图像矩阵，HTTP 流水仍作阶段实现与参照。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
 后几项须由前面的实际瓶颈决定，训练为远期适用场景。保持合理调优的原生 Ray Data 与高效静态参照，
@@ -387,7 +389,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
 | LOTUS 普通／级联 Filter 资格 | Q3 文本 records 与原生控制是否保留原阶段、样本、阈值、回退与合并 | [Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)；确定性方法差分先行，少量真实调用与质量在首次性能测量前核实 |
-| Filter 记录级执行与匹配对照 | 所选后端是否从记录／媒体引用负责准备、调用与结果，是否仍有额外收益 | SemLoom／Ray Data／Daft 三后端，保留旧请求参照；按[同一 LOTUS 优化对照](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)分开算法收益与执行收益 |
+| Filter 记录级执行与匹配对照 | 所选后端是否从记录／媒体引用负责准备、调用与结果 | 先贯通一个 HTTP 后端与原生控制；其余后端扩展不阻塞模型引擎接点，旧请求参照保留 |
+| 模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
