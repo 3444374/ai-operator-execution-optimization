@@ -89,5 +89,7 @@ LM result cache 关闭，非默认 serialization、rate／TPM、logprobs、repet
 ## 真实资格准备
 
 在已发布 `957e91eb` 后准备既有服务器的单 4090／Qwen2.5／vLLM0.25.1 资格，应用模型请求总上限32、零自动重试，不下载权重或修改共享环境。
-源码加入可选 `max_model_calls` 单引擎上限及真实 prompt token IDs／规范 messages SHA；52 项受影响 CPU 测试和74 subtests通过。
+源码 `06f4b687` 加入可选 `max_model_calls` 单引擎上限及真实 prompt token IDs／规范 messages SHA；隔离 Python3.12.6 下52 项受影响 CPU 测试和74 subtests通过、零skip。
+对应命令与环境记录在 `verification.json` 的 `qualification_cap_cpu.run_3`，原件为私有 `nonmodel-evidence/model-qualification-cpu-r3.{json,log}`，字节数及 SHA256 见 `raw_evidence`。
+先前系统 Python 的37通过／1依赖skip及另次52通过的简略日志分别登记为 run_1/run_2；run_2 的pytest通过后，外层zsh因使用只读变量 `status` 退出1，现由完整记录的 run_3 补齐调用来源。
 原 114 项资格仍绑定其记录源码，不转授这些后续改动。真实运行的精确 source、模型／模板、unit、版本和结果另按实际记录，本段不表示模型已运行。

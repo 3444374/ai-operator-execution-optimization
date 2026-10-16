@@ -144,6 +144,31 @@
       "artifact": "nonmodel-evidence/post-review-tests/supervisor.json",
       "bytes": 4799,
       "sha256": "8003767829eba9b9f09acca4a85883bdc675bb5ff4d78030be246c1c18796a20"
+    },
+    {
+      "artifact": "nonmodel-evidence/vllm-engine-call-limit-tests-20261016-r1.log",
+      "bytes": 6316,
+      "sha256": "cb8224d2cee291bf35954aaeda4cb92597441bdc30b2e8a46b750f85fef9d37a"
+    },
+    {
+      "artifact": "nonmodel-evidence/vllm-engine-call-limit-tests-20261016-r1.json",
+      "bytes": 1253,
+      "sha256": "38f098571d57c5051dfe6e31f067881d5d9451996dfddd9456fd4f6848448ede"
+    },
+    {
+      "artifact": "nonmodel-evidence/model-qualification-cpu-r2.log",
+      "bytes": 117,
+      "sha256": "27605552ac64b69c47105576389b8199a1e7475129c616894025e16e1b2c53e5"
+    },
+    {
+      "artifact": "nonmodel-evidence/model-qualification-cpu-r3.log",
+      "bytes": 117,
+      "sha256": "32a823042ef8bb98ddd3e722e2df02adc04868e509fc90ef0eef3e2f3c2fe7f8"
+    },
+    {
+      "artifact": "nonmodel-evidence/model-qualification-cpu-r3.json",
+      "bytes": 908,
+      "sha256": "62022b66e574e7918354d0a0518577c93006e0cac9d99c95b6b5d9bbac463452"
     }
   ],
   "raw_evidence_location": "Private local task-8 artifact directory; original files retained. Obtain from execution owner by artifact name and verify SHA256.",
@@ -269,5 +294,56 @@
       "read_only": true
     }
   },
-  "final_code_matches_post_review_qualification": true
+  "final_code_matches_post_review_qualification": true,
+  "qualification_cap_cpu": {
+    "source_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+    "scope": "CPU fake model and graph only; no actual inference or GPU",
+    "run_1": {
+      "artifact": "nonmodel-evidence/vllm-engine-call-limit-tests-20261016-r1.json",
+      "python": "3.12.6 system interpreter",
+      "tests_run": 38,
+      "passed": 37,
+      "skipped": 1,
+      "reason": "normal package import requires numpy/pyarrow absent from this interpreter"
+    },
+    "run_2": {
+      "log": "nonmodel-evidence/model-qualification-cpu-r2.log",
+      "passed": 52,
+      "subtests_passed": 74,
+      "skipped": 0,
+      "command_capture": "not retained in original compact log; superseded by auditable run_3",
+      "outer_shell_exit": 1,
+      "outer_shell_reason": "zsh readonly status assignment after pytest passed; no test failure"
+    },
+    "run_3": {
+      "metadata": "nonmodel-evidence/model-qualification-cpu-r3.json",
+      "log": "nonmodel-evidence/model-qualification-cpu-r3.log",
+      "passed": 52,
+      "subtests_passed": 74,
+      "skipped": 0,
+      "failed": 0,
+      "exit_code": 0,
+      "python": "3.12.6 isolated nonmodel-venv",
+      "command": [
+        "<cpu-venv>/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "code/tests/serving/test_vllm_engine.py",
+        "code/tests/baselines/text/test_ray_data_lotus_records.py",
+        "code/tests/execution_provider/test_lotus_records_static.py"
+      ],
+      "environment": {
+        "PYTHONPATH": "code",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+        "MPLCONFIGDIR": "<private-evidence>/matplotlib"
+      }
+    },
+    "code_sha256": {
+      "code/src/serving/backends/vllm_engine.py": "3fe410e47899f182e0294718261fd2aefd275dbef4b01aeee40401964bf12686",
+      "code/tests/serving/test_vllm_engine.py": "3f1005420ef6390bbfee6a8ad5afc76f3af3a6bf270b6a7eef0a2ebe8f739a6f"
+    }
+  }
 }
