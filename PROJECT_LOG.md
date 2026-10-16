@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-16：解除 records 主链对旧请求接入的前置依赖
+
+将[架构](experiments/plans/系统架构.md#lotus-data-execution)中的旧图段／控制结构与 bytes-task 扩展改为按需复用，PG 分工限定于 PG 接入。
+[实施路线](experiments/plans/数据组织.md#lotus-filter-data-execution)改为原生 Ray Data 普通 Filter 对原生 LOTUS、同范围全局级联、SemLoom 静态两臂，再按需扩后端；模型引擎路线可并行。
+同步总纲、根／LOTUS 入口及[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)，保留身份、错误、取消和原全局算法依赖。仅修改文档，CPU／替身原型不转为 main 或真实库／GPU 资格。
+
 ## 2026-10-16：明确模型引擎纳入数据执行的路线
 
 完整吸收第四份附件及固定源码审查，将[常驻模型引擎接点](experiments/plans/系统架构.md#model-engine-execution)列为明确后续目标，保留 HTTP records 阶段与对照，不等待完整 HTTP 矩阵。
