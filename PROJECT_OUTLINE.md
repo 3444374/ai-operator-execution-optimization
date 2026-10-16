@@ -386,7 +386,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
-| LOTUS 普通／级联 Filter 资格 | 原优化是否实际启用，阶段、样本、阈值、回退与合并是否保持 | [Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)；先确定性响应，再少量真实数据核实调用与质量 |
+| LOTUS 普通／级联 Filter 资格 | Q3 文本 records 与原生控制是否保留原阶段、样本、阈值、回退与合并 | [Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)；确定性方法差分先行，少量真实调用与质量在首次性能测量前核实 |
 | Filter 记录级执行与匹配对照 | 所选后端是否从记录／媒体引用负责准备、调用与结果，是否仍有额外收益 | SemLoom／Ray Data／Daft 三后端，保留旧请求参照；按[同一 LOTUS 优化对照](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)分开算法收益与执行收益 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
