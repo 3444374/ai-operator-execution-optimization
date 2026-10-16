@@ -20,6 +20,7 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 工程优先减少可避免的表示往返、整批输入物化与重复启动；固定资源下的候选联合选择及真实消费者范围见[研究定位](docs/research/研究定位.md#representation-consumer-choice)。
 
 LOTUS 主线保留 SemBench 任务评价与 LOTUS 原算法及优化；下一单元限定[普通／级联 Filter 的记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)。
+records→结果独立建设；旧 request 冻结接入范围作参照和选择性复用，不作为新主链的接口或重构前提。
 SemLoom 以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；
 Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
 实际模型实例纳入执行 worker／actor 是明确的后续目标：[第二层接点](experiments/plans/系统架构.md#model-engine-execution)沿 records 合同接受受支持模型输入并调用真实推理 API。
@@ -388,9 +389,10 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
-| LOTUS 普通／级联 Filter 资格 | Q3 文本 records 与原生控制是否保留原阶段、样本、阈值、回退与合并 | [Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)；确定性方法差分先行，少量真实调用与质量在首次性能测量前核实 |
-| Filter 记录级执行与匹配对照 | 所选后端是否从记录／媒体引用负责准备、调用与结果 | 先贯通一个 HTTP 后端与原生控制；其余后端扩展不阻塞模型引擎接点，旧请求参照保留 |
-| 模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证 |
+| 原生 Ray Data 普通 Filter 首闭环 | 独立 records 主链能否保留同一 SemBench 查询和原方法结果 | 直接与原生 LOTUS 核对，旧 adapter 仅补充参照；[方法差分与真实库资格](experiments/plans/数据组织.md#lotus-filter-data-execution)先于性能 |
+| 同范围原全局级联 | Q3 helper、样本、校准、阈值、回退与合并是否保留 | 在普通闭环上逐项核对原 LOTUS 动态算法，不按物理批次重跑校准 |
+| Ray Data／SemLoom 静态两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 先同范围闭环，再评价候选；Daft 原生与 IMLane 按需补充，不要求三后端齐备 |
+| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证，不等待完整 HTTP 矩阵 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
@@ -400,7 +402,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
 独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
-本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 后续加入，不阻塞三后端比较。
+本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 后续按需加入，不阻塞首组 Ray Data／SemLoom 对照。
 PZ 的[独立计划](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)保留，后续先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
 Q2 `LIMIT 5` 另保留，实际提交、完成及残余工作按观测记录，不由结果上限推定只有五次模型请求。
 共享 GPU 按既有 lease 及 LOTUS 优先安排；文档更新不表示 PZ 接入、真实模型或五组性能比较已经完成。
