@@ -1,0 +1,216 @@
+{
+  "schema": "semloom.daft_records_cpu_verification.v1",
+  "base_commit": "957e91eb36f27d0931c89b38f515df883c2f7b2e",
+  "implementation_commit": "7ac8aaf62009d6c815020a06239cb032b765f783",
+  "responsibility_branch": "codex/daft-lotus-records",
+  "scope": "real Daft Native process-mode CPU wiring with existing LOTUS method and original SemBench evaluator; fixed model responses only",
+  "inference_calls": 0,
+  "gpu_used": false,
+  "model_weights_loaded": false,
+  "python": "3.12.6",
+  "platform": "Darwin arm64",
+  "versions": {
+    "daft": "0.7.21",
+    "pyarrow": "24.0.0",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "psutil": "7.2.2",
+    "pandas": "2.3.3",
+    "duckdb": "1.5.4",
+    "pytest": "8.4.2"
+  },
+  "installed_source_sha256": {
+    "daft/udf/__init__.py": "796fcaa0197638e615493398204bebb67cd27a0860072f6797094427b731126e",
+    "daft/udf/udf_v2.py": "7152c7d9850769fd6bdde72a4b2b8390f220104d057f4bf304b1789cf5236742",
+    "daft/execution/udf.py": "0cb9b1ec6b831903d01dfb8160ae8766b45a35cb1db04489da9bf025d5bcd47d",
+    "daft/execution/native_executor.py": "9cfd4cbfffbde4732aa3f56cfe1c89e640e03bc26e2f519534b1abafcf5a3c77",
+    "daft/runners/native_runner.py": "aa9740e20fea10ae175f6a08841e24cfb52daf3901206f0d2864075125cc6a54"
+  },
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "final_checks": {
+    "records_method_source_evaluator_tests": 65,
+    "private_daft_tests_within_that_suite": 17,
+    "engine_stub_tests_separate_fresh_python": 30,
+    "skips": 0,
+    "known_fixture_query_result": {
+      "positive_review_cnt": 1,
+      "true_positive": 1,
+      "true_negative": 2,
+      "prompt_tokens": 36,
+      "completion_tokens": 6
+    },
+    "tail_fixture": {
+      "input_rows": 17,
+      "prepare_batch_rows": 5,
+      "model_batch_rows": 2,
+      "observed_model_batch_rows": [
+        1,
+        2
+      ],
+      "duplicate_occurrences_preserved": true
+    }
+  },
+  "runs": [
+    {
+      "run_id": "qualified-tests-1",
+      "status": "failed",
+      "elapsed_s": 55.54659379180521,
+      "worker_exit": 1,
+      "observed_owned_count": 41,
+      "observed_owned_exit_confirmed": true,
+      "remaining_owned_count": 0,
+      "redacted_before_write": true,
+      "output_complete": true,
+      "files": [
+        {
+          "file": "supervisor.json",
+          "bytes": 4439,
+          "sha256": "400b82af9e7ac6817da007195a634957033547feea53977c00fbb63e656e0b96"
+        },
+        {
+          "file": "worker.log",
+          "bytes": 14469,
+          "sha256": "a1ff90643ed6140bac137129a63135aa7944f7dfc894b132edd1ba119b7ab07d"
+        }
+      ]
+    },
+    {
+      "run_id": "qualified-tests-2",
+      "status": "failed",
+      "elapsed_s": 57.530873666051775,
+      "worker_exit": 1,
+      "observed_owned_count": 66,
+      "observed_owned_exit_confirmed": true,
+      "remaining_owned_count": 0,
+      "redacted_before_write": true,
+      "output_complete": true,
+      "files": [
+        {
+          "file": "supervisor.json",
+          "bytes": 6222,
+          "sha256": "a38db386e8643e7b22580f5c8118614c9e1413940b72aeb03915f55ce725061f"
+        },
+        {
+          "file": "worker.log",
+          "bytes": 2529,
+          "sha256": "ecebdb7ea57b66a1ec5af4cb0d1b02f0670dce67de668afaabb0c6245bd45ae3"
+        }
+      ]
+    },
+    {
+      "run_id": "qualified-tests-3",
+      "status": "passed",
+      "elapsed_s": 59.859368624631315,
+      "worker_exit": 0,
+      "observed_owned_count": 68,
+      "observed_owned_exit_confirmed": true,
+      "remaining_owned_count": 0,
+      "redacted_before_write": true,
+      "output_complete": true,
+      "files": [
+        {
+          "file": "supervisor.json",
+          "bytes": 6295,
+          "sha256": "a1aa1a46497a98e57bdd001d75f568181ee749e9a25b5fc025b29b3f251ecca0"
+        },
+        {
+          "file": "worker.log",
+          "bytes": 1812,
+          "sha256": "70eac167fcc7502dc90426ed37f9e82cc77950bae38a1fe543f49beae8e32761"
+        }
+      ]
+    },
+    {
+      "run_id": "isolated-engine-tests",
+      "status": "passed",
+      "elapsed_s": 0.7248103329911828,
+      "worker_exit": 0,
+      "observed_owned_count": 3,
+      "observed_owned_exit_confirmed": true,
+      "remaining_owned_count": 0,
+      "redacted_before_write": true,
+      "output_complete": true,
+      "files": [
+        {
+          "file": "supervisor.json",
+          "bytes": 1441,
+          "sha256": "a8244414ab5cac3c28e9fcfdc501bf8e8d92774f8e9d19e7d87b1a5fe06249ae"
+        },
+        {
+          "file": "worker.log",
+          "bytes": 99,
+          "sha256": "dbbec45e11dbb41d74a6e2189be03d30ab4c2df46468aa2ce7ea6413f1df5dd7"
+        }
+      ]
+    }
+  ],
+  "failures_retained": [
+    {
+      "run_id": "sandbox-private-tool-output",
+      "failed": 5,
+      "reason": "macOS sandbox denies psutil process-table sysctl; chunk af17af retains output, no independent file"
+    },
+    {
+      "run_id": "sandbox-graph-tool-output",
+      "failed": 7,
+      "passed": 2,
+      "skipped": 1,
+      "reason": "sandbox denies Daft AF_UNIX worker sockets and process-table sysctl; chunk b1d1e0 retains output, no independent file"
+    },
+    {
+      "run_id": "qualified-tests-1",
+      "failed": 16,
+      "passed": 66,
+      "reason": "existing model-engine stub tests reject LOTUS already imported by earlier driver tests; run separately in fresh Python without changing shared engine"
+    },
+    {
+      "run_id": "qualified-tests-2",
+      "failed": 1,
+      "passed": 64,
+      "reason": "test assumed exact 5-row downstream batches; Daft kept upstream smaller batches. Revised fixture qualifies 5-row prepare split into actual 2/1 inference batches without changing vendor batching"
+    }
+  ],
+  "preflight": {
+    "status": "ok for dedicated CPU groups",
+    "groups": [
+      "daft-cpu",
+      "semantic-benchmarks"
+    ],
+    "explicit_outside_git_cpu_profile": true,
+    "full_core_status": "missing ray and psycopg; neither is required or installed for this Daft CPU slice"
+  },
+  "scope_limits": [
+    "No actual vLLM process/model interpreter qualification on this Mac",
+    "No GPU assignment or physical GPU exit proof",
+    "No performance or CPU/GPU overlap conclusion",
+    "No fused layout, cascade or image qualification",
+    "query_timeout_s is cooperative for synchronous native/CPU phases; shared runner must retain outer process supervisor",
+    "Process-table and AF_UNIX restrictions require the documented CPU test execution outside the macOS filesystem sandbox; those sandbox failures are retained"
+  ],
+  "integration_owner_actions": [
+    "Add daft-local-model selector without Ray initialization",
+    "Wrap dedicated query process with existing supervisor for hard wall deadline",
+    "Register module README/evidence in shared status, report, ledger and project log"
+  ],
+  "artifact_retention": "Complete redacted worker.log and supervisor.json remain under task artifact directory daft-cpu-artifacts, addressed by run_id and SHA256; no failed run deleted",
+  "requirements_resolved_sha256": "072355855189586f584d3f20d52420d55f37978d48d3e1009d3651b0c6bbc743",
+  "reviews": {
+    "standards": {
+      "initial_findings": 2,
+      "behavior_fixed": true,
+      "shared_docs_assigned_to_integration_owner": true,
+      "revision_checked": "7ac8aaf6",
+      "revision_result": "no remaining module defect; shared documentation assigned to integration owner"
+    },
+    "spec": {
+      "initial_findings": 3,
+      "module_defects_fixed": true,
+      "revision_checked": "7ac8aaf6",
+      "remaining_owner_actions": [
+        "outer supervisor in shared CLI",
+        "shared status/report navigation integration"
+      ]
+    }
+  }
+}
