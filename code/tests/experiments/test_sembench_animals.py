@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import importlib.metadata
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -256,6 +257,98 @@ class AnimalsInputsTests(unittest.TestCase):
         )
         self.assertIn("Animals attempt accounting cleanup: BudgetError", summary["error_notes"])
 
+    def test_observation_modes_keep_identity_status_and_primary_failure(self):
+        from src.experiments import sembench_animals as animals
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+
+        messages = [dict(role="user", content="data:image/png;base64," + "A" * 1024 * 1024)]
+        body = json.dumps(dict(model="fixture", messages=messages)).encode()
+        response = b'{"error":{"message":"fixture rate limit"}}'
+        values = [dict(row_id=row["row_id"], messages=messages) for row in self.rows]
+        dataset = SimpleNamespace(
+            preflight=lambda: {},
+            read=lambda: {"rows": self.rows},
+            expected_digest=self.value["sha256"],
+            checkout=self.root,
+            frame=lambda: None,
+        )
+        for mode in ("performance", "qualification"):
+            with self.subTest(mode=mode), ExitStack() as stack:
+                callbacks = {}
+
+                def gateway(**kwargs):
+                    callbacks.update(kwargs)
+                    return nullcontext(
+                        SimpleNamespace(
+                            endpoint_url=lambda *_: "http://localhost/v1/chat/completions"
+                        )
+                    )
+
+                def observe(_decisions, record):
+                    record(values)
+                    return nullcontext()
+
+                original = TimeoutError("fixture query failure after HTTP response")
+
+                def query(*_args):
+                    for invalid in (
+                        body.replace(b'"fixture"', b'"other"'),
+                        body.replace(b"data:image", b"other:image"),
+                    ):
+                        with self.assertRaisesRegex(ValueError, "differs"):
+                            callbacks["before_forward"](None, invalid)
+                    callbacks["before_forward"](None, body)
+                    callbacks["after_forward"](None, body, response, 429)
+                    raise original
+
+                for name, value in (
+                    ("validate_source", None),
+                    ("configure_lm", SimpleNamespace()),
+                    ("lotus_executor", nullcontext()),
+                ):
+                    stack.enter_context(patch.object(animals, name, return_value=value))
+                stack.enter_context(
+                    patch.object(animals, "ObservationGateway", side_effect=gateway)
+                )
+                stack.enter_context(
+                    patch.object(animals, "observe_filter_rows", side_effect=observe)
+                )
+                stack.enter_context(patch.object(animals, "run_original_query", side_effect=query))
+                output = self.root / ("recording-" + mode)
+                with self.assertRaises(TimeoutError) as caught:
+                    animals.run_query(
+                        dataset,
+                        FixedModelConfig("http://localhost/v1/chat/completions", "fixture", 1000),
+                        arm="lotus-native",
+                        output=output,
+                        tokenizer_path=None,
+                        observation_mode=mode,
+                    )
+                self.assertIs(caught.exception, original)
+                request = json.loads((output / "requests.jsonl").read_text())
+                returned = json.loads((output / "responses.jsonl").read_text())
+                self.assertEqual(request["attempt"], 1)
+                self.assertEqual(request["bytes"], len(body))
+                self.assertEqual(request["body_sha256"], hashlib.sha256(body).hexdigest())
+                self.assertEqual(request["messages_sha256"], content_digest(messages))
+                self.assertEqual(request["model_id"], "fixture")
+                self.assertEqual(returned["request_sha256"], request["body_sha256"])
+                self.assertEqual(returned["status"], 429)
+                self.assertEqual(returned["bytes"], len(response))
+                self.assertEqual(returned["body_sha256"], hashlib.sha256(response).hexdigest())
+                if mode == "performance":
+                    self.assertNotIn("body", request)
+                    self.assertNotIn("body_base64", returned)
+                    self.assertLess((output / "requests.jsonl").stat().st_size, 1024)
+                else:
+                    self.assertEqual(request["body"], json.loads(body))
+                    self.assertEqual(base64.b64decode(returned["body_base64"]), response)
+                summary = json.loads((output / "summary.json").read_text())
+                self.assertEqual(summary["model_calls"], 1)
+                self.assertEqual(summary["error_type"], "TimeoutError")
+                self.assertEqual(summary["body_capture"], mode == "qualification")
+                self.assertTrue(callbacks["preserve_http"])
+
 
 @contextmanager
 def image_http_fixture(*, gzip_response=False, delay_s=0):
@@ -332,6 +425,77 @@ class ActualAnimalsLibrariesTests(unittest.TestCase):
 
     setUp = AnimalsInputsTests.setUp
     freeze = AnimalsInputsTests.freeze
+
+    @fresh_daft_runtime
+    def test_daft_two_queries_reuse_runtime_with_both_observation_modes(self):
+        from tokenizers import Tokenizer, models
+        from src.execution_provider.adapters.model_config import FixedModelConfig
+        from src.experiments.sembench_animals import run_query
+        from src.infrastructure.daft_runtime import configure_daft_runner
+
+        dataset = AnimalsDataset(
+            Path(os.environ["SEMLOOM_TEST_SEMBENCH_ROOT"]), self.path, self.value["sha256"]
+        )
+        tokenizer = self.root / "repeat-tokenizer.json"
+        Tokenizer(models.WordLevel({"[UNK]": 0}, unk_token="[UNK]")).save(str(tokenizer))
+        summaries = []
+        with image_http_fixture() as (url, received):
+            for mode in ("performance", "qualification"):
+                output = self.root / ("repeat-" + mode)
+                summary = run_query(
+                    dataset,
+                    FixedModelConfig(url, "fixture-vlm", 10000),
+                    arm="daft",
+                    output=output,
+                    tokenizer_path=tokenizer,
+                    concurrency=4,
+                    max_tokens=32,
+                    observation_mode=mode,
+                )
+                summaries.append(summary)
+                self.assertEqual(summary["status"], "completed")
+                self.assertEqual(summary["model_calls"], 4)
+                self.assertEqual(summary["quality"]["predicted"], 2)
+                self.assertTrue(summary["resource_gate"]["passed"])
+                self.assertTrue(summary["executor_close_report"]["clean"])
+                requests = [
+                    json.loads(line)
+                    for line in (output / "requests.jsonl").read_text().splitlines()
+                ]
+                responses = [
+                    json.loads(line)
+                    for line in (output / "responses.jsonl").read_text().splitlines()
+                ]
+                self.assertEqual(len(requests), 4)
+                self.assertEqual(len(responses), 4)
+                self.assertTrue(
+                    all(("body" in row) == (mode == "qualification") for row in requests)
+                )
+                self.assertTrue(
+                    all(("body_base64" in row) == (mode == "qualification") for row in responses)
+                )
+                self.assertEqual(
+                    {r["body_sha256"] for r in requests}, {r["request_sha256"] for r in responses}
+                )
+                trace = [
+                    json.loads(line)
+                    for line in (output / "http-trace.jsonl").read_text().splitlines()
+                ]
+                self.assertEqual(len(trace), 4)
+                self.assertTrue(all(row["actual_prompt_tokens"] == 10 for row in trace))
+                self.assertTrue(all(row["actual_output_tokens"] == 4 for row in trace))
+                self.assertTrue(
+                    all(row["request_body_sha256"] == row["forwarded_body_sha256"] for row in trace)
+                )
+            self.assertEqual(len(received), 8)
+        self.assertEqual(summaries[0]["quality"], summaries[1]["quality"])
+        self.assertEqual(summaries[0]["classification_audit"], summaries[1]["classification_audit"])
+        configure_daft_runner("native", num_threads=8)
+        configure_daft_runner("native")
+        with self.assertRaisesRegex(RuntimeError, "thread count"):
+            configure_daft_runner("native", num_threads=4)
+        with self.assertRaisesRegex(RuntimeError, "already configured"):
+            configure_daft_runner("ray")
 
     @fresh_daft_runtime
     def test_daft_complete_image_requests_stay_within_four_http_slots(self):

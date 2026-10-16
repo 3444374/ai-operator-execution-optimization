@@ -48,3 +48,13 @@ PG条件跳过不计作真实运行中数据库或图像集成资格。Mac、CPU
 原来源的历史模型与恢复仍从[原报告](https://github.com/3444374/ai-operator-execution-optimization/blob/f0b4cd9e5a99a0ff9e3a72a0fff1e1d70f784172/experiments/results/diagnostics/sembench_animals_20261015/README.md)定位；
 本批仅在当前main重新做必要资格，未重跑全部旧模型。最终真实查询采用正常共享lease、有限请求／故障／清理监督，健康累计wall不作截止。
 原始CPU运行用`main-animals-cpu-20261015`及机器摘要的归档SHA定位，由维护者提供；公开仓库保留紧凑来源与结果，完整原件单份封存。
+
+<a id="observation-body-capture"></a>
+## Animals 观测模式补充修复（2026-10-16）
+
+底稿为main `f1820755564532fff39bafc1fd0f708e0f8c7739`；[本批机器摘要](observation_checks.json)以生产／测试文件SHA固定实际检查源码，与上文和旧连续模型运行分别解释。
+`performance`关闭完整请求JSON／响应base64副本，保留序号、模型、消息／body摘要、字节数、HTTP状态，时钟和usage仍由原HTTP trace拥有；`qualification`继续保存完整body。必要的JSON解析与消息摘要校验保留，摘要模式不能独立恢复原body。
+两种模式仍使用同一原SDK、HTTP透传、预算和原查询；未增加队列、日志服务、runtime manager或GC策略。
+
+Mac CPU实际固定LOTUS1.2.4／LiteLLM1.95.0／OpenAI2.50.0／Daft0.7.21通过16项Animals、25项网关及2项Daft组合回归，0跳过。新增用例在同一进程执行performance／qualification两个完整Daft查询，每次4个loopback POST，均COUNT2，质量／usage／身份／关闭一致；兼容配置复用、不兼容runner／线程数拒绝。1MiB故障请求在performance中的请求记录不足1KiB，两模式保留429状态、模型／消息校验及查询首错。
+本批只验证记录体积与行为，不测内存回落、JCT收益、模型质量或其他执行臂的新资格；模型／GPU运行0，服务器与现有lease未使用。原始失败与成功日志按摘要中的运行标识／SHA由维护者提供；可复现fixture在代码测试中，旧PR29和raw不改。

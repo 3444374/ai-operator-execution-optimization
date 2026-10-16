@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-16：[Animals观测模式CPU回归](diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)。紧凑body留证与原SDK／Daft连续查询按新源码单列，旧模型与RSS证据保持原身份。
+
 2026-10-15：[固定main Movie／Animals连续运行](diagnostics/main_queries_20261015/README.md#long-run)。
 来源`eb697477`，Movie每臂19次／Animals每臂8次；首轮、后续、请求分布、生命周期与实际质量分别报告。
 独立离线审计核同MFU分子及同墙钟分母；四个固定Animals客户端RSS增长尚未归因，终态进程退出不证明存活期间内存回落。

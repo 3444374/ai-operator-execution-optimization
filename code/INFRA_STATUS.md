@@ -48,6 +48,8 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 [本批资格](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md)固定来源、原CPU/真实Ray、独审和失败修复；
 不引入CLIP/HSE/RM/index或PZ依赖。[实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)绑定同一发布main`464de926`，四臂64图判定及COUNT一致；不代表更大数据或其他源码已认证。
 
+Animals 的[观测模式回归](../experiments/results/diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)区分performance紧凑摘要与qualification完整body，保留原SDK及共享Daft runner；仅属零模型CPU修复资格。
+
 ## Core 推进、元数据与完整响应
 
 从固定 `671a22dd` 选择七个生产文件组成必要依赖，保留完整取消、unknown、Job 和结果租约责任；

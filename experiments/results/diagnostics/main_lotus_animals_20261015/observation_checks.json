@@ -1,0 +1,99 @@
+{
+  "schema": "semloom.animals_observation_checks.v1",
+  "run_id": "animals-observation-main-r1",
+  "base_commit": "f1820755564532fff39bafc1fd0f708e0f8c7739",
+  "source_sha256": {
+    "code/src/experiments/sembench_animals.py": "c8581056d26088651ba85ae5613948f0cd16c67e023a4ade86076fac90051507",
+    "code/tests/experiments/test_sembench_animals.py": "3380f2f68aed4403c05aa969c6d45bc35c288832a5616bf88d02feeb53254082"
+  },
+  "environment": {
+    "platform": "macOS arm64 CPU",
+    "python": "3.12.6",
+    "packages": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "daft": "0.7.21",
+      "pandas": "2.3.3",
+      "duckdb": "1.5.4",
+      "pyarrow": "24.0.0",
+      "tokenizers": "0.22.2"
+    },
+    "model_calls": 0,
+    "gpu_runs": 0,
+    "server_or_runner_lease_used": false,
+    "dependency_mutations": 0,
+    "preflight_unavailable": [
+      "core.psycopg: unused PostgreSQL dependency; no PostgreSQL test claimed"
+    ]
+  },
+  "checks": {
+    "animals": {
+      "run": 16,
+      "passed": 16,
+      "skipped": 0
+    },
+    "http_gateway": {
+      "run": 25,
+      "passed": 25,
+      "skipped": 0
+    },
+    "daft_runtime_composition": {
+      "run": 2,
+      "passed": 2,
+      "skipped": 0
+    },
+    "same_process_daft_queries_per_test": 2,
+    "loopback_requests_per_repeat_test": 8,
+    "count_per_repeat_query": 2,
+    "observation_modes": [
+      "performance",
+      "qualification"
+    ],
+    "body_capture_default_for_performance": false,
+    "fault_request_body_bytes": 1048665,
+    "performance_request_record_bytes_upper_bound": 1024,
+    "primary_failure": "TimeoutError retained after recorded HTTP 429",
+    "negative_identity_checks": [
+      "model mismatch",
+      "message mismatch"
+    ],
+    "runtime_checks": [
+      "compatible native threads",
+      "unspecified native threads",
+      "incompatible thread count rejected",
+      "incompatible runner rejected"
+    ]
+  },
+  "failures_preserved": {
+    "red-recording": "expected missing messages_sha256 before fix",
+    "main-real-repeat": "sandbox denied loopback bind; repeated with approved loopback capability"
+  },
+  "logs": {
+    "red-recording": {
+      "sha256": "adcfe40a9dc98daba314e1f8a355bae4e37d2ea5a3f9170d38ee1d27180a0cdd",
+      "bytes": 1596
+    },
+    "main-real-repeat": {
+      "sha256": "0afed30cd4a9d89cd8b687334f2db132e3854a2e65cfa8a280c66033d011abbf",
+      "bytes": 2597
+    },
+    "main-real-repeat-network": {
+      "sha256": "e3a171a848ffb7e847df3c3aa5c437f00bb6394ed8085130481096c0c33c8902",
+      "bytes": 99
+    },
+    "main-animals-full": {
+      "sha256": "9604743cafd583310d9d854f9fc5cf102b0e29212a5ba52b1942e286849a858d",
+      "bytes": 2543
+    },
+    "main-gateway": {
+      "sha256": "b092c30b185be4591762c01e4619844be23bdc34406472ec1f9410d3fc0f380b",
+      "bytes": 1643
+    },
+    "main-daft-composition": {
+      "sha256": "f113230a2cf22aed0dcaf29c5e6e00b72b63d487577995393256d106f6f24de1",
+      "bytes": 100
+    }
+  },
+  "raw_retrieval": "Maintainer provides full logs by run_id and SHA-256; fixtures are reproducible from committed tests."
+}
