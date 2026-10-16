@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-16：实现普通 Movie Q3 records 与本地模型最小接点
+
+从已审阅 main `52391e37` 建立独立 `integration/data-execution`，不改活动 baseline 或旧测试。
+新增来源／逐调用账本、原LOTUS worker准备与解释、隔离的同步vLLM接点、Ray Data原生图及明确未接Core的SemLoom静态参照；接回原SemBench evaluator。
+Library附件仅安全材料化／静态审查，选择性吸收并重写必要合同，未执行附件脚本／测试或加载模型。
+[切片记录](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)保留全部失败与非模型范围：
+Python3.12的106项／211 subtests通过，实际LOTUS／原评价及部分Ray／Daft CPU图接线，进程监督确认已观测owned退出。
+真实vLLM／GPU与模型身份、级联、持续供给、图像、其他原生后端及production Core资格仍pending，未作main合并或性能结论。
+
 ## 2026-10-16：收敛本地模型候选与 PZ 旧方案的可复用边界
 
 结合六份附件及固定源码核查，在[架构](experiments/plans/系统架构.md#model-engine-execution)补齐 LOTUS／模型依赖隔离、类型化引擎合同与三种原生接入所有权；区分准备批、引擎提交集合及内部计算批。

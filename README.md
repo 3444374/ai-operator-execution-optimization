@@ -13,7 +13,8 @@ LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化�
 自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
 records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
-HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎接点尚未实现，边界由架构文档维护。
+HTTP records 流水保留为阶段实现与对照；独立集成分支的[普通 Movie Q3 最小切片](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
+已有代码与非模型资格，真实引擎／GPU及更完整范围待验证，边界由架构文档维护。
 
 | 要查什么 | 权威入口 |
 |---|---|

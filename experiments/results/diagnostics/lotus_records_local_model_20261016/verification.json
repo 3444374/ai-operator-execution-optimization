@@ -1,0 +1,162 @@
+{
+  "schema": "semloom.movie_records_nonmodel_qualification.v1",
+  "source_base": "52391e375b6d9699e5bd76bb6d37bdbd939ef23e",
+  "execution_kind": "non-model software and partial real-library CPU qualification",
+  "inference_calls": 0,
+  "gpu_calls": 0,
+  "production_core_used": false,
+  "system": "Darwin",
+  "machine": "arm64",
+  "python": "3.12.6",
+  "versions": {
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "ray": "2.56.1",
+    "daft": "0.7.21",
+    "pandas": "2.3.3",
+    "pyarrow": "24.0.0",
+    "duckdb": "1.5.4",
+    "pytest": "9.1.1",
+    "psutil": "7.2.2"
+  },
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "attachment_zip": {
+    "bytes": 48603,
+    "sha256": "42251c0e02b422dc3ee4e4a3d821d5b447d49ff23bea9d1783f14845cd395a46"
+  },
+  "attachment_audit": {
+    "zip_safe_paths": true,
+    "zip_entries": 29,
+    "checksum_entries_matched": 28,
+    "python_ast_parsed": 16,
+    "execution": false
+  },
+  "final_tests": {
+    "passed": 106,
+    "subtests_passed": 211,
+    "skipped": 0,
+    "failed": 0,
+    "wall_s": 18.29,
+    "supervision": {
+      "status": "passed",
+      "worker_exit": 0,
+      "timeout_s": 180,
+      "grace_s": 10,
+      "elapsed_s": 19.672113541979343,
+      "remaining_owned_pids": [],
+      "observed_owned_exit_confirmed": true,
+      "physical_gpu_exit_checked": false,
+      "gpu_exit_confirmed": null,
+      "unobserved_descendants_confirmed": false,
+      "process_exit_scope": "observed_owned_processes"
+    }
+  },
+  "real_ray_cpu": {
+    "status": "completed",
+    "fixture_model": true,
+    "model_interpreter_checked": false,
+    "result": {
+      "positive_review_cnt": 1
+    },
+    "classification": {
+      "true_positive": 1,
+      "true_negative": 2,
+      "false_positive": 0,
+      "false_negative": 0
+    },
+    "query_seconds": 6.094878791831434,
+    "observed_owned_count": 18,
+    "observed_owned_exit_confirmed": true
+  },
+  "raw_evidence": [
+    {
+      "artifact": "nonmodel-evidence/preflight-before.json",
+      "bytes": 4633,
+      "sha256": "fcfb55f2167b7838a96e3cde795bf5572b16c094ef48bf8102c27dd70e876818"
+    },
+    {
+      "artifact": "nonmodel-evidence/preflight-after.json",
+      "bytes": 4658,
+      "sha256": "8d10c4aa0f3ac58d6a6ce5d40c4c28dcb985ec1c80ec5f87bb0654607c147e52"
+    },
+    {
+      "artifact": "nonmodel-evidence/initial-tests.log",
+      "bytes": 20037,
+      "sha256": "8c57f25a51044bb7eb347bdd4598680e7fc35ee2fd10f140269924098836cff2"
+    },
+    {
+      "artifact": "nonmodel-evidence/method-query-tests.log",
+      "bytes": 2937,
+      "sha256": "7986f4199f9e278c37f5b6eb31620fd3b95274dc7f59cad9ef7d651afd0e7248"
+    },
+    {
+      "artifact": "nonmodel-evidence/supervisor-tests.log",
+      "bytes": 3114,
+      "sha256": "f1ac33241142fd8c524f6ec4b3717bf049d195576f8a8b8a663ed6ae8839401c"
+    },
+    {
+      "artifact": "nonmodel-evidence/ray-cpu/worker.log",
+      "bytes": 1664,
+      "sha256": "16e53ed744625652a51dc04c00bee24f55e8a58d26b9ae28c1b6fff6b48a4fb5"
+    },
+    {
+      "artifact": "nonmodel-evidence/ray-cpu/supervisor.json",
+      "bytes": 1094,
+      "sha256": "263f36b0bf8963f8558522f444ea036cbce86fabf1e8af4c9079373699ff7d75"
+    },
+    {
+      "artifact": "nonmodel-evidence/ray-cpu-shortpath/worker.log",
+      "bytes": 4404,
+      "sha256": "6f53870d9867d123b608cf20359985a880aae20a3879635875c2479e4bf8b8ae"
+    },
+    {
+      "artifact": "nonmodel-evidence/ray-cpu-shortpath/supervisor.json",
+      "bytes": 2244,
+      "sha256": "d49d92bb7333d318976dd69d62e1d0248afcc0cc7af9881d160a3dfff0523460"
+    },
+    {
+      "artifact": "nonmodel-evidence/final-tests/worker.log",
+      "bytes": 21820,
+      "sha256": "ea5c55f41d687f0d2915599535b692cbb2e23ded4f28e6411a9293eb3abc5e86"
+    },
+    {
+      "artifact": "nonmodel-evidence/final-tests/supervisor.json",
+      "bytes": 3892,
+      "sha256": "c7cc6e437ded197e622b14c69f6671f94a7a85ea50354520bb1e449fa7e4639b"
+    }
+  ],
+  "raw_evidence_location": "Private local task-8 artifact directory; original files retained. Obtain from execution owner by artifact name and verify SHA256.",
+  "code_sha256": {
+    "code/scripts/experiments/run_lotus_records_movie.py": "aa57bce8895de993b5cf6ad6bb404c11fba6de7a831a7dfb465079d06ba043c2",
+    "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "cbcbd7db8b5f2c9c75e7dadb371300a5de87193c43ec7b31f08eac430f4ca626",
+    "code/src/baselines/text/movie_records.py": "379a1542c37e3c8ed70f0bd98908a727dbd66e3f737ae683943defec24a6d414",
+    "code/src/execution_provider/adapters/lotus_records_static.py": "c6e52b2c51544f54b93bee34cb4d1689375044e5c1cdcc4c164e71e431d68354",
+    "code/src/experiments/lotus_records_movie.py": "916baf94de43d2134bc24fa4066c77dba2b9921a04485f3863ed439a66766a16",
+    "code/src/experiments/lotus_records_supervisor.py": "659ff0eb051499b97d0de404cc6012d742c16ef1c88bc420ffecfaf4d9fe7c0f",
+    "code/src/semantic_methods/lotus/engine.py": "4b89a3466d17232652458f242a12680c39a1af2fdbdd9a1bd7bc3e2824584a20",
+    "code/src/semantic_methods/lotus/records.py": "987ea0537151dddeba40d2c523af3a5f754c183efcbff8647ab46d7b6cf344e7",
+    "code/src/serving/backends/vllm_engine.py": "b03c3d17117fe8ab5d119ffd23b444813677b1a8b06011b02f454e5bce691c00",
+    "code/tests/baselines/text/test_movie_records.py": "3fd8ff1c9cfc0edfd62ef361bdc1eeba7c60d602c2c90342f5018d48719178ac",
+    "code/tests/baselines/text/test_ray_data_lotus_records.py": "06a7d8b63f16e33575b8067f17c5d95fbf291bee6a0779e8d365a7c97b80d3af",
+    "code/tests/execution_provider/test_lotus_records_static.py": "26399e2f9f9a54ab094b84c93aa687437b658ec5f82cf1f34f275f57be6e8e43",
+    "code/tests/experiments/test_lotus_records_libraries.py": "11708320267d5470dc8550ec88575373cc73440fb319712d999718f8c06e2d62",
+    "code/tests/experiments/test_lotus_records_movie.py": "38889ec9460a4020b5b680474574f4cab741faede208655b15bb6e54f0c724dc",
+    "code/tests/experiments/test_lotus_records_supervisor.py": "1e43f0e68681b347e4d976cb03f24c2d3f293329d97ec83d32c170c2e8800555",
+    "code/tests/semantic_methods/test_lotus_engine.py": "48f7c97149d3998e9f854b002ea84607f180ba072d7544130f6abd456e8e0dcc",
+    "code/tests/semantic_methods/test_lotus_records.py": "4f256123e6d258c2006ed8504f880dcfec909164c617f4568855331642dae122",
+    "code/tests/serving/test_vllm_engine.py": "4e21a8b32bf2a0adb259a93a2b9f93af15cd23cb05af0e1f4a94e6f26c2247af"
+  },
+  "pending": [
+    "actual vllm and model-interpreter worker qualification",
+    "model/tokenizer/template artifact identity",
+    "real Movie source subset",
+    "GPU resource and independent physical-exit qualification",
+    "real static actor graph and continuous-query isolation",
+    "first-submit/last-prepare and retention observations",
+    "upstream global cascade",
+    "AsyncLLM continuous supply",
+    "image and additional native backend arms",
+    "production Core integration"
+  ]
+}

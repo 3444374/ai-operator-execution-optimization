@@ -30,6 +30,56 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 未提供此选项时保持既有launcher／sidecar路径。声明映射与live进程／GPU证明分别记录；
 [配置、固定来源和单卡实际资格](../../experiments/results/diagnostics/main_service_auto_20261015/README.md)不外推多GPU或性能。
 
+## Movie Q3 records 本地模型接点
+
+`experiments/run_lotus_records_movie.py` 是独立入口，限定普通 Movie Q3 Filter＋COUNT。
+`prepare` 生成不含标签的 records、独立 references 和来源 manifest；原 CSV 不改，输出必须在 Git 外且不存在。
+`--role software_fixture` 明示软件输入；`sembench_movie_subset` 只接纳固定原 CSV 摘要。
+选取原 CSV 的前 `max_rows` 行，随后按原 `id=taken_3` 谓词过滤；最多 4,096 行、原 CSV／投影各 16 MiB、单 review UTF-8 1 MiB。
+
+```bash
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py prepare --input-csv "$MOVIE_CSV" --input-sha256 "$MOVIE_CSV_SHA256" --max-rows 16 --role sembench_movie_subset --output-dir "$NEW_PRIVATE_SOURCE"
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py check --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$RECORDS_CONFIG"
+```
+
+配置放仓库外，示例中的路径均须替换为已核对的本地绝对路径：
+
+```json
+{
+  "schema": "semloom.movie_records_run.v1",
+  "backend": "ray-data-local-model",
+  "query_id": "movie-q3-qualification",
+  "method": {"model_name": "openai/local-text-model"},
+  "generation": {"max_tokens": 8, "temperature": 0, "top_p": 1, "stop": ["\n"]},
+  "resources": {"cpu_workers": 1, "gpu_workers": 1, "prepare_batch_rows": 4,
+    "model_batch_rows": 4, "max_active_batches": 2, "startup_timeout_s": 120,
+    "query_timeout_s": 60},
+  "engine": {"model_path": "/path/to/local/model", "tokenizer_path": "/path/to/local/tokenizer",
+    "driver_python": "/path/to/driver/bin/python", "model_python": "/path/to/model-env/bin/python",
+    "dtype": "bfloat16", "max_model_len": 4096, "max_num_seqs": 8,
+    "max_num_batched_tokens": 4096, "gpu_memory_utilization": 0.8, "seed": 0}
+}
+```
+
+另一臂为 `semloom-local-model-static-reference`，明确未接 production Core。
+driver 固定 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1／Daft 0.7.21；模型环境单独安装 vLLM 0.25.1，不能含 LOTUS。
+当前只核 Python prefix、固定版本和本地目录，模型／tokenizer／template 内容身份与 GPU 资源由运行 owner 在资格前进一步固定。
+缓存关闭，非默认 serialization、LM rate／TPM、logprobs、repetition override 明确拒绝，不会降为普通空结果。
+`check` 和不含 `--execute-model` 的 `run` 只预检，不构造模型。真实执行另显式运行：
+
+```bash
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py run --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$RECORDS_CONFIG" --output-dir "$NEW_PRIVATE_RUN" --execute-model
+```
+
+入口独占本地 Ray，重试关闭；外层监督覆盖 startup＋query＋30 秒总期限，保存私有 preflight／query／supervisor JSON 和 worker log。
+调用方仍须按既有授权、normal shared lease、固定 GPU mask／模型身份与独立 GPU 物理退出核查安排运行。
+监督器仅确认已观测身份匹配的 owned 进程，未观测 detached 后代与 GPU 退出不作确认；直接库调用者也须提供等价外层监督。
+本轮未执行该模型命令，实际范围及下一步门槛见[资格记录](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
+
+纯软件差分使用 `fixture --source-manifest ... --sembench-checkout ... --responses ... --output-dir ...`，
+responses 为按 `row_id` 绑定的 `text`／`prompt_tokens`／`completion_tokens` 列表，必须显式标为人工固定响应；
+该入口将新 records 结果与未改原 LOTUS Q3 的 messages／逐行决策／COUNT／LM stats 对照，并调用原评价器，不运行推理。
+
 ## LOTUS 原版 Movie 四臂
 
 `experiments/run_sembench_lotus_queries.py --config CONFIG`提供互斥的`--data-preflight`、

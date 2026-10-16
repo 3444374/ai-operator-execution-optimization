@@ -1,4 +1,21 @@
-# LOTUS 完整请求执行接点
+# LOTUS 方法与执行接点
+
+## Movie Q3 records 最小切片
+
+本分支新增独立的[普通 Filter records 接口](records.py)、[worker 准备／原结果解释](engine.py)，
+以及[查询入口](../../../scripts/README.md#movie-q3-records-本地模型接点)。
+Ray Data 原生图与 Daft＋Ray Core 的 SemLoom 静态参照共享原 LOTUS 方法，后者尚未接生产 Core。
+新链直接消费不含标签的原记录，worker 准备 messages，模型 worker 负责一次模板；不经过下方旧完整请求执行器或 HTTP replay。
+固定 LOTUS／SemBench 的真实 Python 3.12 差分和部分 Ray／Daft CPU 接线见[资格记录](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
+真实引擎／GPU、原全局级联、图像、持续供给及其他后端仍 pending；旧 request 接入范围与资格保持独立。
+
+`LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 固定普通 Q3，
+`GenerationSpec` 显式拒绝当前不支持的 logprobs／repetition override。
+模型 terminal rows 必须保留全部 call 身份、状态及真实 usage，不能以最终 COUNT 重建工作量。
+`run_movie_query()` 的 lazy `execute` 工厂在 source／版本／LM policy 检查后才调用；失败的 `query_report` 保留逐调用账本。
+输入上限和清理／unknown 的实际保证从上述资格记录核对。
+
+## 完整请求级接点
 
 本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，
 只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
@@ -33,7 +50,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 
 `lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
 现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
-记录／媒体引用到准备、调用与结果的[新主链](../../../../experiments/plans/系统架构.md#lotus-data-execution)独立建设，尚未实现；旧请求路径冻结接入范围作参照和选择性复用。
+记录／媒体引用到准备、调用与结果的[新主链](../../../../experiments/plans/系统架构.md#lotus-data-execution)独立建设；上方普通 Q3 为本分支最小实现，更完整算法与模态仍待实现。旧请求路径冻结接入范围作参照和选择性复用。
 首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
 
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
@@ -41,7 +58,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；旧内核／图段仅可选提取，新链的输入、执行和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)独立验证。
 `prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
 [第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，
-但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。拟增 records／引擎适配及现有文件的改动见[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，尚未成为本模块实现。
+但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)中的普通 Q3 接点现有上方分支实现，真实引擎与其余范围尚未取得资格。
 
 ## 原版 Movie 查询
 

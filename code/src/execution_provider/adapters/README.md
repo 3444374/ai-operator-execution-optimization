@@ -1,5 +1,10 @@
 # Native task execution
 
+The independent [Movie records static reference](lotus_records_static.py) uses Daft plus
+Ray actors and is a `diagnostic_reference`, with no production Core connection.
+Its shared method API, CPU checks and pending model qualification are documented in the
+[slice record](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md).
+
 This module accepts prepared single-model request bytes through the existing Core.
 It does not interpret prompts, change generation parameters, or replace a supplier's parser.
 The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;
