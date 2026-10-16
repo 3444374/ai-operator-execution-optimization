@@ -1,8 +1,8 @@
 # 项目日志
 
-## 2026-10-16：补齐 Daft 原生布局、消费与有效配置
+## 2026-10-16：补齐 Daft 原生布局与后续算子复用路线
 
-完整读取五份 Daft 补充附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性构图／最终消费、staged／fused 布局、独立配置、rebatch 逻辑额度及真实 worker 收尾；原方法、全局结果复用和 IPC 归属直接引用既有合同。
+完整读取五份 Daft 及一份后续算子扩展附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性消费、布局、有效配置与真实 worker 收尾；[算子扩展](experiments/plans/数据组织.md#lotus-operator-extension)以普通 Map／有限链检验复用，与原级联接线并行，映射当前实际文件，不整仓搬迁。原方法、全局结果复用和 IPC 归属直接引用既有合同。
 核对固定新集成分支与 Daft 0.7.21 源码；候选的替身检查不转为实库资格。本次只改文档，未导入或运行附件、改代码或启动模型。
 
 ## 2026-10-16：明确最终原生对照与 IMLane 记录级接入
