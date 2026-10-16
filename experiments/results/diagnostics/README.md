@@ -1,5 +1,7 @@
 # Feasibility Results
 
+- [IMLane多行记录echo](imlane_records_echo_20261016/README.md)：作者单CPython执行器、两块在途、实际Lane后旧Table、查询隔离及异常监督清理；7＋2＋1个scope，模型／GPU0。
+
 - [部署限定资源 auto](resource_auto_20261015/README.md)：只在允许 GPU 集解析原生配置，保存 requested/resolved、物理 UUID 与worker身份；CPU／模拟检查不替代单／多卡模型资格，Serve多副本仍pending。
 
 - [原始 SemBench Animals Q1](sembench_animals_20261015/README.md)：官方完整目录／seed42 SF64、原ImageArray Filter与原聚合评价；CPU和单VLM资格独立于CLIP检索。

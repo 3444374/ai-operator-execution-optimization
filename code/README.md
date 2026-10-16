@@ -48,6 +48,9 @@ Sema后置Core／worker仍按查询创建。当前参数分开持有任务、模
 Sema还可把已抵达的完整HTTP请求交给原生Daft／Ray Data或IMLane；
 [后置原生检查与客户端](integrations/sema/README.md)说明来源、独立运行环境和不改算子策略的接法。
 
+[IMLane多行记录桥](integrations/imlane_records/README.md)提供独立轻量记录提交、就绪与收集；
+[无模型echo记录](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)核对实际作者CPython、输出内存和异常资源责任，本地模型接入仍pending。
+
 [原生执行统一入口](../experiments/results/postgresql/native_executor_baselines_20261012/README.md)登记LOTUS／DuckDB／Sema与Daft、Ray Data、作者IMLane的接入；
 IMLane明确区分CPython与作者Ray，原方法继续解析完整响应。
 两模式的原SemBench Q1完整2000调用已通过[有限容量软件检查](../experiments/results/postgresql/native_executor_baselines_20261012/README.md#imlane-2000-capacity)，需显式新桥配置；MovieQuery与CLI已读取所选显式容量，旧配置保留128行。

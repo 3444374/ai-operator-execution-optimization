@@ -26,5 +26,8 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 外部文件 CLIP 冷算子、文本原 Q2、PG 路径及负结果保留各自运行身份，不能互借验证范围。
 常驻完整查询、一次性启动／建库及逐查询原生重建的计时按[统一口径](experiments/plans/reference/对照规范.md#resident-query-timing)解释。
 
+新增[IMLane多行记录桥](code/integrations/imlane_records/README.md)的无模型echo与输出资源检查；
+[实库证据](experiments/results/diagnostics/imlane_records_echo_20261016/README.md)与后续本地模型主链资格分别记录。
+
 `main` 保存稳定共同来源，`integration/baselines` 接纳原生适配与通用修复；研究分支按具体假设独立评价。
 Git 合并不等于性能、质量或新来源实测通过。分支与工作区安排由集成负责人维护，根入口不缓存临时支线清单。

@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-16：[IMLane多行记录与资源责任](diagnostics/imlane_records_echo_20261016/README.md)以e9a54e3为基点，保留作者DBEnd／Coordinator／Lane与单CPython executor，实际7＋2＋1个无模型scope通过预期检查。最终旧C++Table在真实Lane后重读3次一致；8个scope正常作者退出，2个裸异常由owner监督清理且全部残留为空。9项Python与C++原语及双独审分列；模型／GPU0，不授模型或完整数据主链资格。
+
 2026-10-16：[Animals观测与连续查询CPU回归](diagnostics/sembench_animals_20261015/README.md#observation-body-capture)。紧凑留证及baseline共享Daft初始化按新源码单列，旧模型与RSS证据保持原身份。
 
 2026-10-16：[PZ 计时、公开入口与异常关闭](diagnostics/palimpzest_movie_20261015/README.md#query-timing-owner-regression)

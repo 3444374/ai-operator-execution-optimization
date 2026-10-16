@@ -113,6 +113,9 @@ Linux 上设置 `SEMLOOM_IMAGE_WORKER_SDK_TESTS=1`，运行
 省略时仍为128，原2000行Q1明确拒绝。MovieQuery预检和公共执行器使用同一容量，不隐式切块。
 `--data-preflight`可只读已提供的调用配置；未提供时报告旧128行范围，不连接Coordinator或模型。
 新桥摘要、字段和已有软件资格见[完整调用说明](../integrations/sema/imlane_calls.md#调用与配置)。
+
+[IMLane轻量多行记录](../integrations/imlane_records/README.md)另提供 `build.py`／`verify.py`，
+直接使用作者DBEnd提交记录块，先验证无模型echo、输出内存和异常资源责任，本地模型接入仍pending。
 `--execute`只用于另行授权且完整预检通过的具体清单，正常软件检查不提供性能资格。
 
 ## SemBench Palimpzest 原查询

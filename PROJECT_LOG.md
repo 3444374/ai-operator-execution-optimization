@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-16：完成独立IMLane多行记录echo桥
+
+以e9a54e3为基点新增记录桥与确定性UDF，保留作者DBEnd／Coordinator／Lane／执行器及旧HTTP路径。
+转换异常在作者清理路径返回后重抛，`future`只消费一次；块输入及逐发生项结果均检查，并在复制前限制缓冲区字节。
+作者Arrow16.1实际编译、9项Python与C++原语、7＋2＋1个无模型scope及双独审通过；真实Lane后旧Table三次重读一致，裸异常仍靠期限与owner监督。
+接入接口、准确来源和132项原件定位见[结果记录](experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。模型／GPU0，交给数据执行主链负责人整合，未合main。
+
 ## 2026-10-16：Animals观测模式与同进程Daft查询修复
 
 performance关闭完整body副本，qualification继续完整留证；baseline入口复用已有Daft helper。

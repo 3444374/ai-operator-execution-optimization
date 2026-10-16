@@ -1,0 +1,373 @@
+{
+  "schema": "imlane.records.echo.public.v1",
+  "base_commit": "e9a54e3e43ef9ce9e3b6973530715655028b1da5",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "runtime": "cpython",
+  "author_python": "3.12.3",
+  "author_arrow": "16.1.0",
+  "executor_count": 1,
+  "cpu_affinity": [
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "author_source_modified": false,
+  "host_lease_released": true,
+  "private_evidence": {
+    "archive_name": "records-echo-evidence-final.tgz",
+    "archive_members": 132,
+    "sha256": "a2c702c0f408ade3a51efc0ee18e5a761e39a4fc80ba105a11fd3232c31d89e5",
+    "previous_archive": {
+      "archive_name": "records-echo-evidence.tgz",
+      "archive_members": 118,
+      "sha256": "2363bcadcfe60cf421d97defeba0383ca01931ccd914029e20dea3f5e09e0162"
+    }
+  },
+  "tests": {
+    "local_python": "3.12.6",
+    "local_arrow": "24.0.0",
+    "local_python_tests_passed": 9,
+    "author_python_tests_passed": 9,
+    "cpp_negative_output_cases": 9,
+    "cpp_owned_copy_mutation_check": true,
+    "cpp_future_single_consumption_check": true,
+    "cpp_nonnullable_input_check": true
+  },
+  "reviews": {
+    "independent_reviews": 2,
+    "accepted": true
+  },
+  "reviewed_sources_sha256": {
+    "build.py": "5f066686fc6d85489a5be0ec2aa4e27cf7d62722b6fc41cd23a57b96f4e08607",
+    "client.py": "ce4eb4df273d81e5342fa4a939c4f918a220692faebdffa245566a42a30ff94a",
+    "echo_udf.py": "d605e9d8e5253c17ac08eda52dbd2bfb4dcada4157197b8ad6f5a90d58cf14d7",
+    "records_checks.cpp": "d138f4b8ce6047198310a642c128b166c4d6972c2a63d66535fda7a0c9ff14e5",
+    "record_dbend_adapter.hpp": "78db8e9c3ab65bd987ed89ec9ec0174cf233d27f51e16fc8d3b2257c1b8e0238",
+    "imlane_records.cpp": "a4ff0ac26e10403564c1d432109cc093a4db628ca5ec57862ef2bc17988a1be5",
+    "verify.py": "d32290a6aeab26a199630c09525f97ca5ff36c12e9d656897841bc9c16d1d2cf"
+  },
+  "supervisor_sha256": "e5470beef12c8db38570216843033bc953fe16807766c3a67a20567975eefa38",
+  "builds": {
+    "initial_bridge": {
+      "returncode": 0,
+      "author_modified": false,
+      "sources_sha256": {
+        "imlane_records.cpp": "e8ce14a23823b6a0368634d10e71fc38e556f16ff035edab90cb8c45746fca6d",
+        "record_dbend_adapter.hpp": "f761bf0df4433ff2c8be7c23c75647916a8904d2c06f9a0a4f80368db48e7632"
+      },
+      "binary_sha256": "fb3fc5e20458f1b205bd60c9a2a3dbfdd34a4c5232e73e2e6e83dbb39eb01b42"
+    },
+    "final_bridge": {
+      "returncode": 0,
+      "author_modified": false,
+      "sources_sha256": {
+        "imlane_records.cpp": "a4ff0ac26e10403564c1d432109cc093a4db628ca5ec57862ef2bc17988a1be5",
+        "record_dbend_adapter.hpp": "78db8e9c3ab65bd987ed89ec9ec0174cf233d27f51e16fc8d3b2257c1b8e0238"
+      },
+      "binary_sha256": "80dd3f4727fdec5eb9b89fdf43c6855d5e17c5451c3607d8eb36395f35c879bf"
+    },
+    "final_primitives": {
+      "returncode": 0,
+      "author_modified": false,
+      "sources_sha256": {
+        "records_checks.cpp": "d138f4b8ce6047198310a642c128b166c4d6972c2a63d66535fda7a0c9ff14e5",
+        "record_dbend_adapter.hpp": "78db8e9c3ab65bd987ed89ec9ec0174cf233d27f51e16fc8d3b2257c1b8e0238"
+      },
+      "binary_sha256": "62472392b886edefd20de5b8fa6e2fda2cf01442ca9d3cd6ae902d2408ccf011"
+    }
+  },
+  "runs": [
+    {
+      "run_id": "echo-r1",
+      "passed": true,
+      "raw_report_sha256": "01e370e7863df1324546cd8ddc034e6476b6c3ad89a15edae18815ef99ec4c87",
+      "rss_peak_bytes": 161484800,
+      "shm_peak_bytes": 134234912,
+      "cases": [
+        {
+          "function": "infer_records",
+          "real_model_requests": 0,
+          "physical_blocks": 4,
+          "rows": 7,
+          "pending_blocks_before_collect": 2,
+          "worker_instances": 1,
+          "prior_output_unchanged": true,
+          "query_isolation": true,
+          "rejected_input_cases": 10,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "reversed_records",
+          "real_model_requests": 0,
+          "observed_error": "records occurrence/order differs",
+          "deadline_triggered": false,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "missing_record",
+          "real_model_requests": 0,
+          "observed_error": "records result cardinality differs",
+          "deadline_triggered": false,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "malformed_records",
+          "real_model_requests": 0,
+          "observed_error": "records success/error fields are inconsistent",
+          "deadline_triggered": false,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "error_records",
+          "real_model_requests": 0,
+          "observed_error": "records worker reported an error; owner must stop",
+          "deadline_triggered": false,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "oversized_records",
+          "real_model_requests": 0,
+          "observed_error": "records buffers exceed byte allowance before copy",
+          "deadline_triggered": false,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "raw_exception",
+          "real_model_requests": 0,
+          "observed_error": "records native task deadline exceeded; owner must stop",
+          "deadline_triggered": true,
+          "expected_check_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": false,
+          "cleanup": {
+            "passed": false,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 1,
+            "forced_shm_count": 0
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "echo-r2",
+      "passed": true,
+      "raw_report_sha256": "d5a43aa7011bfe199c63023ab8c1339bc3a0c58e3c1ef0fd7a852b2e23efcff8",
+      "rss_peak_bytes": 152424448,
+      "shm_peak_bytes": 134234912,
+      "cases": [
+        {
+          "function": "infer_records",
+          "real_model_requests": 0,
+          "physical_blocks": 4,
+          "rows": 7,
+          "pending_blocks_before_collect": 2,
+          "worker_instances": 1,
+          "python_result_unchanged": true,
+          "native_retained_output_checks": 3,
+          "query_isolation": true,
+          "rejected_input_cases": 10,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        },
+        {
+          "function": "raw_exception",
+          "real_model_requests": 0,
+          "observed_error": "records native task deadline exceeded; owner must stop",
+          "deadline_triggered": true,
+          "expected_check_observed": true,
+          "author_raw_exception_observed": true,
+          "terminal_reuse_rejected": true,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": false,
+          "cleanup": {
+            "passed": false,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 1,
+            "forced_shm_count": 0
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "echo-r3",
+      "passed": true,
+      "raw_report_sha256": "6ff0031bb1ebba3aa47c6861f900550dea481985a811a52e70286fa6bede381a",
+      "rss_peak_bytes": 152150016,
+      "shm_peak_bytes": 134234912,
+      "cases": [
+        {
+          "function": "infer_records",
+          "real_model_requests": 0,
+          "physical_blocks": 4,
+          "rows": 7,
+          "pending_blocks_before_collect": 2,
+          "worker_instances": 1,
+          "python_result_unchanged": true,
+          "native_retained_output_checks": 3,
+          "query_isolation": true,
+          "rejected_input_cases": 10,
+          "passed": true,
+          "cleanup_confirmed": true,
+          "author_normal_exit": true,
+          "cleanup": {
+            "passed": true,
+            "owned_threads_stopped": true,
+            "errors": [],
+            "coordinator": {
+              "returncode": 0,
+              "forced": false
+            },
+            "owned_survivor_count": 0,
+            "remaining_shm": {},
+            "forced_process_count": 0,
+            "forced_shm_count": 0
+          }
+        }
+      ]
+    }
+  ],
+  "evidence_notes": [
+    "echo-r1 prior_output_unchanged checks retained Python values only; native retained Arrow Table verification is separately recorded by echo-r2 native_retained_output_checks=3.",
+    "Both raw_exception cases pass the expected-failure-and-supervised-cleanup check; author normal cleanup is false and is not reclassified.",
+    "All ten scopes ended with no owned process survivors or namespaced shared memory; no forced shared-memory unlink was needed.",
+    "echo-r1 and echo-r2 repeat row_id but use occurrence-specific text suffixes; echo-r3 uses fully identical source text with distinct call_id and confirms both occurrences are delivered."
+  ]
+}
