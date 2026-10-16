@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-16：明确最终原生对照与 IMLane 记录级接入
+
+完整读取八份补充材料，收敛到[既有架构](experiments/plans/系统架构.md#model-engine-execution)与[Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)：最终必含 Daft／Ray Data／IMLane，首切片仍可先行；IMLane 分 CPython／作者 Ray，依次验证多行桥、替身和单卡模型，保留作者调度、输出所有权与独立生命周期。
+同步[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)及总纲，将 `integration/data-execution` 登记为新主链集成目标，现有 request 分支保留身份；只改文档，未建集成分支、导入或运行候选代码。
+
 ## 2026-10-16：收敛本地模型候选与 PZ 旧方案的可复用边界
 
 结合六份附件及固定源码核查，在[架构](experiments/plans/系统架构.md#model-engine-execution)补齐 LOTUS／模型依赖隔离、类型化引擎合同与三种原生接入所有权；区分准备批、引擎提交集合及内部计算批。

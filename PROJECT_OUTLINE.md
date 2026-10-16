@@ -391,7 +391,7 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 |---|---|---|
 | 原生 Ray Data 普通 Filter 首闭环 | 独立 records 主链能否保留同一 SemBench 查询和原方法结果 | 直接与原生 LOTUS 核对，旧 adapter 仅补充参照；[方法差分与真实库资格](experiments/plans/数据组织.md#lotus-filter-data-execution)先于性能 |
 | 同范围原全局级联 | Q3 helper、样本、校准、阈值、回退与合并是否保留 | 在普通闭环上逐项核对原 LOTUS 动态算法，不按物理批次重跑校准 |
-| Ray Data／SemLoom 静态两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 先同范围闭环，再评价候选；Daft 原生与 IMLane 按需补充，不要求三后端齐备 |
+| Ray Data／SemLoom 静态首两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 首切片可先行；最终对照必须补齐 Daft、Ray Data、IMLane，保留原生 LOTUS 及 SemLoom 静态／候选 |
 | 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证，不等待完整 HTTP 矩阵 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
@@ -402,7 +402,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
 独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
-本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 后续按需加入，不阻塞首组 Ray Data／SemLoom 对照。
+本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 是最终对照必需项，CPython 与作者 Ray 分列，不阻塞首组 Ray Data／SemLoom 对照。
+记录级新链与旧 request 的[分支安排及实施次序](experiments/plans/数据组织.md#lotus-filter-data-execution)单独登记，不把旧请求资格视为新链已完成。
 PZ 的[独立计划](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)保留，后续先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
 Q2 `LIMIT 5` 另保留，实际提交、完成及残余工作按观测记录，不由结果上限推定只有五次模型请求。
 共享 GPU 按既有 lease 及 LOTUS 优先安排；文档更新不表示 PZ 接入、真实模型或五组性能比较已经完成。
