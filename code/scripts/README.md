@@ -71,7 +71,8 @@ driver 固定 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1／Daft 0
 PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py run --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$RECORDS_CONFIG" --output-dir "$NEW_PRIVATE_RUN" --execute-model
 ```
 
-入口独占本地 Ray，重试关闭；外层监督覆盖 startup＋query＋30 秒总期限，保存私有 preflight／query／supervisor JSON 和 worker log。
+入口独占本地 Ray，重试关闭；外层监督覆盖 startup＋query＋30 秒总期限，保存私有 preflight／query／supervisor JSON 和落盘前脱敏的 worker log。
+输出整行最多保留16 KiB，超长行省略并报告；无换行尾部同样脱敏，输出不完整时保留对应 capture 状态。
 调用方仍须按既有授权、normal shared lease、固定 GPU mask／模型身份与独立 GPU 物理退出核查安排运行。
 监督器仅确认已观测身份匹配的 owned 进程，未观测 detached 后代与 GPU 退出不作确认；直接库调用者也须提供等价外层监督。
 本轮未执行该模型命令，实际范围及下一步门槛见[资格记录](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。

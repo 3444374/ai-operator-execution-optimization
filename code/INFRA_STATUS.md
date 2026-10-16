@@ -6,7 +6,7 @@
 records→worker 原 LOTUS 准备→同步本地模型接点→原解析／COUNT→原 SemBench evaluator。
 Ray Data 原生图与 SemLoom Daft＋Ray Core 静态参照分列，静态路径未接 production Core。
 [实现、非模型资格与失败原件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
-包含 Python 3.12 的 106 项／211 subtests、真实 LOTUS 和部分 Ray／Daft CPU 接线。
+包含修复后 Python 3.12 的 114 项／213 subtests、真实 LOTUS 和部分 Ray／Daft CPU 接线。
 实际 vLLM／模型环境／GPU、级联、图像、持续供给与完整原生后端矩阵均 pending。
 这不是 main 已接纳或旧 `integration/baselines` 的新资格；旧请求实现及测试保持原样。
 

@@ -310,7 +310,7 @@ def evaluate(
     source.preflight(method)
     validate_generation(method, generation)
     validate_filter_source()
-    engine.validate_local()
+    engine.validate_driver_environment()
     expected = source.expected(query_id)
     _check_deadline(deadline)
     if cancelled is not None and cancelled():

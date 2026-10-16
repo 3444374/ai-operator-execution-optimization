@@ -166,7 +166,7 @@ class NativeRecordsTests(unittest.TestCase):
                 csv=SimpleNamespace(ConvertOptions=lambda **kwargs: kwargs),
             ),
         }))
-        stack.enter_context(patch.object(EngineSpec, "validate_local", return_value={}))
+        stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
         stack.enter_context(patch.object(vllm_engine, "VllmEngine", Engine))

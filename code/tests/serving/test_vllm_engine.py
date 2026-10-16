@@ -134,6 +134,18 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(engine.ready()["batch_mode"], "finite_synchronous_chat")
         json.dumps(engine.ready())
 
+    def test_public_driver_preflight_rejects_other_interpreter_before_sampling(self):
+        with patch.object(EngineSpec, "validate_local", return_value={
+            "model": self.model_identity, "driver": self.driver_identity,
+        }), self.assertRaisesRegex(RuntimeError, "driver_python"):
+            self.spec.validate_driver_environment()
+        self.assertEqual(self.events, [])
+
+    def test_public_driver_preflight_accepts_matching_runtime(self):
+        identity = {"model": self.driver_identity, "driver": self.model_identity}
+        with patch.object(EngineSpec, "validate_local", return_value=identity):
+            self.assertEqual(self.spec.validate_driver_environment(), identity)
+
     def test_vllm_sampling_constructor_failure_allocates_nothing(self):
         def reject(**kwargs):
             self.events.append(("sample", kwargs))

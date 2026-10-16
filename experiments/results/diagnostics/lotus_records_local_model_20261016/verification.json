@@ -124,6 +124,26 @@
       "artifact": "nonmodel-evidence/final-tests/supervisor.json",
       "bytes": 3892,
       "sha256": "c7cc6e437ded197e622b14c69f6671f94a7a85ea50354520bb1e449fa7e4639b"
+    },
+    {
+      "artifact": "nonmodel-evidence/supervisor-redaction-tests-20261016.log",
+      "bytes": 3984,
+      "sha256": "984d1063393ebc4092110b63adb561d2869e1c0290edce43e7ae841ca46e046d"
+    },
+    {
+      "artifact": "nonmodel-evidence/supervisor-redaction-tests-20261016.json",
+      "bytes": 548,
+      "sha256": "b62ba232b9422ad8668b342cdbb70abfeb62a1f45e44e8b0691f5041a78c0138"
+    },
+    {
+      "artifact": "nonmodel-evidence/post-review-tests/worker.log",
+      "bytes": 23156,
+      "sha256": "6d815c94c178d88cede3f3b3da761da765de81ff69097f58e4a494846bf36baa"
+    },
+    {
+      "artifact": "nonmodel-evidence/post-review-tests/supervisor.json",
+      "bytes": 4799,
+      "sha256": "8003767829eba9b9f09acca4a85883bdc675bb5ff4d78030be246c1c18796a20"
     }
   ],
   "raw_evidence_location": "Private local task-8 artifact directory; original files retained. Obtain from execution owner by artifact name and verify SHA256.",
@@ -158,5 +178,78 @@
     "AsyncLLM continuous supply",
     "image and additional native backend arms",
     "production Core integration"
+  ],
+  "stage_commit": "d5c9b76a66b76d48bb8ccf2a1b4a2b84ec71b88f",
+  "post_review_tests": {
+    "passed": 114,
+    "subtests_passed": 213,
+    "skipped": 0,
+    "failed": 0,
+    "wall_s": 18.15,
+    "supervision": {
+      "status": "passed",
+      "worker_exit": 0,
+      "timeout_s": 180,
+      "grace_s": 10,
+      "elapsed_s": 19.432761416304857,
+      "remaining_owned_pids": [],
+      "observed_owned_exit_confirmed": true,
+      "physical_gpu_exit_checked": false,
+      "gpu_exit_confirmed": null,
+      "unobserved_descendants_confirmed": false,
+      "process_exit_scope": "observed_owned_processes",
+      "output_capture": {
+        "redacted_before_write": true,
+        "max_line_bytes": 16384,
+        "max_buffer_bytes": 342,
+        "bytes_read": 23156,
+        "omitted_long_lines": 0,
+        "omitted_bytes": 0,
+        "eof_observed": true,
+        "pipe_closed": true,
+        "complete": true
+      }
+    },
+    "code_sha256": {
+      "code/scripts/experiments/run_lotus_records_movie.py": "aa57bce8895de993b5cf6ad6bb404c11fba6de7a831a7dfb465079d06ba043c2",
+      "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "7ae82cb534fea28c6fe86314f0e6014f93252d7a0f6a186f50927f041dd5fdde",
+      "code/src/baselines/text/movie_records.py": "379a1542c37e3c8ed70f0bd98908a727dbd66e3f737ae683943defec24a6d414",
+      "code/src/execution_provider/adapters/lotus_records_static.py": "fe928aa54f51cdcca50f4f8a79c9d577ea48c62a716d5973dee28b3cb0956463",
+      "code/src/experiments/lotus_records_movie.py": "4c42d0d59f696b93a9a3c09e90a2369d949f35d3ae40966bd28051a1528766d5",
+      "code/src/experiments/lotus_records_supervisor.py": "8276aca94274aa2467e300ee5f3b7be3ba8864460735548fbe3ddbaa70aef12a",
+      "code/src/semantic_methods/lotus/engine.py": "4b89a3466d17232652458f242a12680c39a1af2fdbdd9a1bd7bc3e2824584a20",
+      "code/src/semantic_methods/lotus/records.py": "987ea0537151dddeba40d2c523af3a5f754c183efcbff8647ab46d7b6cf344e7",
+      "code/src/serving/backends/vllm_engine.py": "650eb497ad00c07014089062eb37fd9fe55b6b9a6a6dd248906686db2db693ea",
+      "code/tests/baselines/text/test_movie_records.py": "3fd8ff1c9cfc0edfd62ef361bdc1eeba7c60d602c2c90342f5018d48719178ac",
+      "code/tests/baselines/text/test_ray_data_lotus_records.py": "4eb08e11255959ae0792e229a85cd2f5197226056d02112ad8e11b46cf776fb9",
+      "code/tests/execution_provider/test_lotus_records_static.py": "5a5a65c07f488b0e0d5cb17e60eb44c4f723a0fc898cb016216e8ffcf2170ae7",
+      "code/tests/experiments/test_lotus_records_libraries.py": "11708320267d5470dc8550ec88575373cc73440fb319712d999718f8c06e2d62",
+      "code/tests/experiments/test_lotus_records_movie.py": "73e64a6503ff1dba93634c6bdabfbe7e3a6dc5564a7c1c854da8d3fd4a1cbf5f",
+      "code/tests/experiments/test_lotus_records_supervisor.py": "31192f314014b163820e38ded17a3384d91ed38c1923fbba3b75e271daaf204b",
+      "code/tests/semantic_methods/test_lotus_engine.py": "48f7c97149d3998e9f854b002ea84607f180ba072d7544130f6abd456e8e0dcc",
+      "code/tests/semantic_methods/test_lotus_records.py": "4f256123e6d258c2006ed8504f880dcfec909164c617f4568855331642dae122",
+      "code/tests/serving/test_vllm_engine.py": "51540b0b605cfad6d2b1ec5247bddc4b028eb74b947e91d4a62af788713a058a"
+    }
+  },
+  "repairs": [
+    "Standards: worker output redacted before disk; bounded long-line omission",
+    "Spec: empty native-reference frame retains schema and original empty LM batch kwargs",
+    "Self review: configured driver interpreter is bound before model allocation",
+    "Self review: static model actor explicitly reserves one CPU and one GPU"
+  ],
+  "tool_only_evidence": [
+    {
+      "run": "supervisor_leader_exit_repeat20_20261016",
+      "chunk_id": "fe8d21",
+      "passed": 20,
+      "file_sha256_available": false
+    },
+    {
+      "run": "first_empty_source_regression",
+      "chunk_id": "2fce28",
+      "subtests_failed": 2,
+      "reason": "incorrect empty-LM-wrapper call-count expectation; corrected against fixed source",
+      "file_sha256_available": false
+    }
   ]
 }

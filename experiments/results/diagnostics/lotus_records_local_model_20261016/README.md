@@ -36,10 +36,17 @@
 | 运行身份 | 实际范围与结果 |
 |---|---|
 | `initial-tests` | 首次 82 项发现 3 个 `LMStats.model_dump` 兼容错误；改用原 dataclass 后，8 项受影响的真实 LOTUS／SemBench 测试通过 |
-| `supervisor-tests` | 首次真实进程检查发现 leader 消失与 children 枚举竞争；仅处理 `NoSuchProcess` 并继续 owned PGID 检查后，16 项通过，leader-exit 用例额外 20 次通过 |
+| `supervisor-tests` | 首次真实进程检查发现 leader 消失与 children 枚举竞争；仅处理 `NoSuchProcess` 并继续 owned PGID 检查后，16 项通过。leader-exit 额外 20 次通过只保留工具输出（chunk `fe8d21`），没有独立日志／文件 SHA |
 | `ray-cpu` | 首次 Ray 启动因 macOS 临时路径超过 Unix socket 长度失败；无模型调用。保留原失败，下一运行使用新的短 `/tmp` 目录 |
 | `ray-cpu-shortpath` | 真实 Ray 2.56.1 的 CSV／filter／projection／worker LOTUS formatter／CPU 固定响应／原 parser／原 evaluator 通过；COUNT 1、TP 1、TN 2。监督器确认 18 个已观测 owned 进程退出 |
 | `final-tests` | Python 3.12.6，106 项和 211 个 subtests 全部通过，无跳过；含真实 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1、Daft 0.7.21。18.29 秒为测试墙钟，非查询性能；外层监督 19.67 秒、已观测 owned 进程剩余 0 |
+| `supervisor_redaction_regression_20261016` | Standards 独审指出原 worker.log 未经脱敏落盘；改为非阻塞 PIPE、落盘前逐行脱敏、16 KiB 长行整行省略及计数。21 项实际进程／替身回归通过，不等待未知 writer |
+| `post-review-tests` | 修复两轴 P2 并补 driver 绑定和静态模型 CPU 预留后，114 项／213 subtests 全通过、0 跳过，18.15 秒；外层监督 19.43 秒、已观测 owned 进程剩余 0、输出完整且已脱敏 |
+
+Spec 独审指出空源原生参照丢失 DataFrame schema，现显式保留列；空源和无谓词命中均通过原 Q3 差分。
+首次补测误以为原 Q3 跳过 LM 包装层，2 个 subtests 失败（工具输出 chunk `2fce28`，无独立日志），
+按固定源码改为保留一次空 batch 的包装调用／有效 kwargs，实际模型 call 和 usage 仍为 0。
+公开 graph／CLI 的 driver 解释器现与配置 prefix／executable 目录／base prefix 绑定，检查先于模型分配；静态模型 actor 显式预留 1 CPU／1 GPU。
 
 真实库检查明确区分两部分：
 

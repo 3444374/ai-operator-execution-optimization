@@ -187,7 +187,7 @@ class StaticRecordsTests(unittest.TestCase):
         runners.get_or_create_runner = lambda: SimpleNamespace(name="native")
         stack = ExitStack()
         stack.enter_context(patch.dict(sys.modules, {"ray": ray, "daft": daft, "daft.runners": runners}))
-        stack.enter_context(patch.object(EngineSpec, "validate_local", return_value={}))
+        stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
         stack.enter_context(patch.object(vllm_engine, "VllmEngine", Engine))
@@ -224,6 +224,7 @@ class StaticRecordsTests(unittest.TestCase):
         self.assertIsNone(report["gpu_exit_confirmed"])
         actors = [event for event in events if event[0] == "actor"]
         self.assertEqual(actors[-1][2]["num_gpus"], 1)
+        self.assertEqual(actors[-1][2]["num_cpus"], 1)
         self.assertEqual(actors[-1][2]["runtime_env"]["py_executable"], "/tmp/model-python")
         self.assertTrue(all(event[2]["max_task_retries"] == 0 for event in actors))
 

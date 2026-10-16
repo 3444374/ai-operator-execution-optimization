@@ -68,6 +68,28 @@ class MovieRecordsTests(unittest.TestCase):
                 run_movie_query(self.source, CHECKOUT, self.method, self.generation, execute, query_id="q")
         execute.assert_not_called()
 
+    def test_empty_and_no_eligible_sources_match_native_zero_call_query(self):
+        from src.experiments.lotus_records_movie import fixed_response_qualification
+        for index, rows in enumerate(([], [["id", "other", "no predicate match", "NEGATIVE"]])):
+            directory = Path(self.temporary.name) / ("empty-" + str(index))
+            directory.mkdir()
+            original = directory / "Reviews.csv"
+            with original.open("w", newline="") as stream:
+                writer = csv.writer(stream)
+                writer.writerow(["reviewId", "id", "reviewText", "scoreSentiment"])
+                writer.writerows(rows)
+            manifest = prepare_movie_source(original, directory / "prepared",
+                expected_csv_sha256=hashlib.sha256(original.read_bytes()).hexdigest(), max_rows=1)
+            with self.subTest(rows=len(rows)):
+                report = fixed_response_qualification(MovieRecordSource.from_manifest(manifest), CHECKOUT,
+                    self.method, self.generation, [], query_id="empty-q3")
+                self.assertEqual(report["status"], "completed")
+                self.assertEqual(report["result"], {"positive_review_cnt": 0})
+                self.assertEqual(report["calls"]["counts"]["expected"], 0)
+                self.assertEqual(report["calls"]["usage"]["total_tokens"], 0)
+                self.assertTrue(report["native_reference"]["messages_equal"])
+                self.assertIsInstance(report["native_reference"]["effective_kwargs"], dict)
+
     def test_partial_failure_retains_known_usage_and_marks_missing_unconfirmed(self):
         from src.experiments.lotus_records_movie import run_movie_query
         first = dict(identity("q", "movie-row-0", 0), status="succeeded", text="Answer: True",

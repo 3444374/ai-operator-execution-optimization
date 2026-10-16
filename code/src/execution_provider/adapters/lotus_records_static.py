@@ -271,7 +271,7 @@ class SemLoomRecordsStaticReference:
                 runtime_env=_runtime_env(self.engine.driver_python),
             ).remote(asdict(self.method)))
         self._model_actor = model.options(
-            num_gpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
+            num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
             runtime_env=_runtime_env(self.engine.model_python),
         ).remote(asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows)
         self._model_ready = self._wait_ready(
@@ -292,7 +292,7 @@ class SemLoomRecordsStaticReference:
         source.preflight(self.method)
         validate_generation(self.method, self.generation)
         validate_filter_source()
-        self.engine.validate_local()
+        self.engine.validate_driver_environment()
         expected = source.expected(query_id)
         _check(deadline, cancelled)
         import daft

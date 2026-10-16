@@ -173,6 +173,17 @@ class EngineSpec:
             raise ValueError("model environment must be separate from the LOTUS installation")
         return {"model": model, "driver": driver}
 
+    def validate_driver_environment(self) -> dict:
+        """Bind public graph preflight to the interpreter that owns LOTUS preparation."""
+        identity = self.validate_local()
+        driver = identity["driver"]
+        if (_prefix(sys.prefix) != _prefix(driver["prefix"])
+                or Path(sys.executable).absolute().parent.resolve() !=
+                Path(driver["executable"]).absolute().parent.resolve()
+                or _prefix(sys.base_prefix) != _prefix(driver["base_prefix"])):
+            raise RuntimeError("construct the records graph with its configured driver_python")
+        return identity
+
 
 def _validate_current_runtime(identity: dict) -> None:
     model = identity["model"]

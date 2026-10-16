@@ -9,7 +9,7 @@ import time
 
 from src.baselines.common.private_artifacts import new_private_directory, write_private_json
 from src.baselines.common.redact import redact_text
-from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_source
+from src.baselines.text.movie_records import MovieRecordSource, RECORD_COLUMNS, prepare_movie_source
 from src.baselines.text.sembench_movie import (
     classification_audit, evaluate_original, run_original_lotus_query, verify_checkout,
 )
@@ -163,11 +163,14 @@ def fixed_response_qualification(source, checkout, method, generation, responses
                 raise ValueError("native Q3 requested an unexpected fixture call shape")
             return [engine_response(row, reference) for row in raw]
         reference._process_uncached_messages = fixed
-        frame = pd.DataFrame(source.rows()).rename(columns={"row_id": "_execution_row_id"})
+        frame = pd.DataFrame(source.rows(), columns=RECORD_COLUMNS).rename(
+            columns={"row_id": "_execution_row_id"})
         with lotus.settings.context(lm=reference, enable_cache=False):
             with observe_filter_rows(native_decisions.extend, native_prompts.extend):
                 result = run_original_lotus_query(checkout, 3, lambda: frame)
-        if len(captured) != 1 or captured[0]["messages"] != [json.loads(row["messages_json"]) for row in prepared]:
+        native_messages = [message for call in captured for message in call["messages"]]
+        if (len(captured) != 1
+                or native_messages != [json.loads(row["messages_json"]) for row in prepared]):
             raise ValueError("records preparation differs from original LOTUS messages")
         observed = [(row["row_id"], row["decision"]) for row in report["decisions"]]
         if native_decisions != observed or int(result.iloc[0, 0]) != report["result"]["positive_review_cnt"]:
@@ -217,7 +220,7 @@ def model_preflight(source, checkout, method, generation, engine):
     lm = make_lm(method, generation)
     with lotus.settings.context(lm=lm, enable_cache=False):
         validate_lm(lm, method, generation)
-    environment = engine.validate_local()
+    environment = engine.validate_driver_environment()
     return dict(status="preflight_only", inference_calls=0, source=inputs,
                 method_source=method_source, engine_environment=environment)
 
