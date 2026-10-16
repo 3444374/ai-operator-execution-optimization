@@ -3,7 +3,7 @@
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
 main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
-维护日期：2026-10-15。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
+维护日期：2026-10-16。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
 证据身份归[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)，完整数字、失败与重复归原报告。
 
@@ -18,6 +18,10 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 多请求服务分配和多 Job 共享保留为后续问题，不能代替这一首要目标。
 
 工程优先减少可避免的表示往返、整批输入物化与重复启动；固定资源下的候选联合选择及真实消费者范围见[研究定位](docs/research/研究定位.md#representation-consumer-choice)。
+
+LOTUS 主线保留 SemBench 任务评价与 LOTUS 原算法及优化；下一单元限定[普通／级联 Filter 的记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)。
+SemLoom 以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；
+Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
 后几项须由前面的实际瓶颈决定，训练为远期适用场景。保持合理调优的原生 Ray Data 与高效静态参照，
@@ -382,7 +386,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
-| Palimpzest 文档与原生资格 | PZ 的算子／优化器职责、原生并行及模型映射是否明确，完整查询能否独立复现 | [研究定位](docs/research/研究定位.md#palimpzest-comparison)与[两层对照](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)；文档先行，接入实现与 LOTUS 检查并行，实际资格分别确认 |
+| LOTUS 普通／级联 Filter 资格 | 原优化是否实际启用，阶段、样本、阈值、回退与合并是否保持 | [Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)；先确定性响应，再少量真实数据核实调用与质量 |
+| Filter 记录级执行与匹配对照 | 所选后端是否从记录／媒体引用负责准备、调用与结果，是否仍有额外收益 | SemLoom／Ray Data／Daft 三后端，保留旧请求参照；按[同一 LOTUS 优化对照](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)分开算法收益与执行收益 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
@@ -392,7 +397,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
 独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
-PZ 原生先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
+本轮不扩 PZ、所有算子、任意 DAG、多节点或通用 compiler；IMLane 新数据函数／schema 后续加入，不阻塞三后端比较。
+PZ 的[独立计划](experiments/plans/reference/对照规范.md#palimpzest-fixed-plan)保留，后续先复现 SemBench Movie Q3 完整过滤与 count，再固定物理计划逐一检查五组执行目标；
 Q2 `LIMIT 5` 另保留，实际提交、完成及残余工作按观测记录，不由结果上限推定只有五次模型请求。
 共享 GPU 按既有 lease 及 LOTUS 优先安排；文档更新不表示 PZ 接入、真实模型或五组性能比较已经完成。
 公司移植按[架构计划](experiments/plans/系统架构.md#company-integration-questions)核对实际接口和授权。

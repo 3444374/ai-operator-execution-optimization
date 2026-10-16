@@ -6,8 +6,12 @@ PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、�
 
 近期优先加速**单查询／一批数据的完整执行**，检验能否少准备、少搬运、少做重复计算。
 端到端任务时间及有效吞吐是主要目标；GPU 利用率解释供给与等待，多查询共享属于后续场景。
-原生 tensor 路径可以研究表示、阶段工作量、准备位置、后继消费者和局部性；HTTP 路径控制供给与路由，
+原生 tensor 路径可以研究表示、阶段工作量、准备位置、后继消费者和局部性；当前完整 HTTP 请求接点控制供给与路由，
 模型服务仍拥有其内部 tensor、KV 和计算调度。方向与顺序只在[总纲](PROJECT_OUTLINE.md)维护。
+
+LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化；SemLoom 的目标底座保持 Daft 扫描／普通关系处理＋Ray Core／Actor，
+自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
+当前仍为完整请求接点，目标接口尚未实现；边界由[系统架构](experiments/plans/系统架构.md#lotus-data-execution)维护。
 
 | 要查什么 | 权威入口 |
 |---|---|

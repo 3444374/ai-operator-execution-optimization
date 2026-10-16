@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-16：收敛 LOTUS 算法复用与 Filter 数据执行计划
+
+结合两份用户附件及固定 main／LOTUS／SemBench 源码，将[算法与执行分工](experiments/plans/系统架构.md#lotus-data-execution)、
+[Filter 下一单元](experiments/plans/数据组织.md#lotus-filter-data-execution)与[同算法对照](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)并入既有权威文档。
+区分完整请求接点与尚未实现的记录级流水，核明实例级 LM／logprobs／作用域设置已有基础，剩余接线为阶段关联、索引兼容、预算及级联来源资格。
+总纲与根入口同步近期顺序；本次只改文档，不增加接口、模型运行、实验结果或修改冻结 baseline。
+
 ## 2026-10-16：Animals performance关闭完整body副本
 
 复用现有observation_mode，保留消息身份、完整HTTP透传与错误／清理边界；qualification继续完整留证。
