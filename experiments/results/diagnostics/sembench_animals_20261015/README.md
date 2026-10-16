@@ -147,3 +147,14 @@ python recompute.py --raw-archive "$RAW_ARCHIVE" --input-archive "$INPUT_ARCHIVE
 `src/run.py --systems lotus --use-cases animals --queries 1 --model <image-LM> --scale-factor 64`；
 本次使用[有限适配入口](../../../../code/scripts/experiments/run_sembench_animals.py)调用其未改动Q1方法及评价器，
 以固定manifest替换CSV定位，并单独配置LM，避免上游构造器预热。没有声称整套官方CLI／依赖环境原样执行。
+
+<a id="observation-body-capture"></a>
+## Animals 观测与连续查询补充修复（2026-10-16）
+
+底稿为baseline `7e59e5a10eaceb7ac4a1bd0766b10244ca3e192d`；[本批机器摘要](observation_checks.json)以生产／测试文件SHA固定实际检查源码，与上文模型运行分别解释。
+入口只将直接`daft.set_runner_native`接回已有`configure_daft_runner`；实际用例先复现同进程第二次查询的线程数已设置异常，再核对修复。未增加runtime manager。
+`performance`关闭完整请求JSON／响应base64副本，保留序号、模型、消息／body摘要、字节数、HTTP状态，时钟和usage仍由原HTTP trace拥有；`qualification`继续保存完整body。必要的JSON解析与消息摘要校验保留，摘要模式不能独立恢复原body。
+两种模式保留原SDK、HTTP透传、预算和原查询；未增加队列、日志服务或GC策略。
+
+Mac CPU实际固定LOTUS1.2.4／LiteLLM1.95.0／OpenAI2.50.0／Daft0.7.21通过15项Animals、25项网关及2项Daft组合回归，0跳过。新增用例在同一进程执行performance／qualification两个完整Daft查询，每次4个loopback POST，均COUNT2，质量／usage／身份／关闭一致；兼容配置复用、不兼容runner／线程数拒绝。1MiB故障请求在performance中的请求记录不足1KiB，两模式保留429状态、模型／消息校验及查询首错。
+本批只验证记录体积与行为，不测内存回落、JCT收益、模型质量或其他执行臂的新资格；模型／GPU运行0，服务器与现有lease未使用。测试fixture原有的7处单行多语句拆行后，目标lint通过；未整文件重排。原始失败与成功日志按摘要中的运行标识／SHA由维护者提供；可复现fixture在代码测试中，旧模型与raw不改。

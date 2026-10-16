@@ -1,0 +1,118 @@
+{
+  "schema": "semloom.animals_observation_checks.v1",
+  "run_id": "animals-observation-baseline-r1",
+  "base_commit": "7e59e5a10eaceb7ac4a1bd0766b10244ca3e192d",
+  "source_sha256": {
+    "code/src/experiments/sembench_animals.py": "201b518c64bfa5b523240dfd7c7c6828c6a4dc361f230eb656e5cf3df7132fb5",
+    "code/tests/experiments/test_sembench_animals.py": "c2de7f3c77cf842174ffd85b9b03a85bca01bab6c0770d46f8f922edc6b03e0e"
+  },
+  "environment": {
+    "platform": "macOS arm64 CPU",
+    "python": "3.12.6",
+    "packages": {
+      "lotus-ai": "1.2.4",
+      "litellm": "1.95.0",
+      "openai": "2.50.0",
+      "daft": "0.7.21",
+      "pandas": "2.3.3",
+      "duckdb": "1.5.4",
+      "pyarrow": "24.0.0",
+      "tokenizers": "0.22.2"
+    },
+    "model_calls": 0,
+    "gpu_runs": 0,
+    "server_or_runner_lease_used": false,
+    "dependency_mutations": 0,
+    "preflight_unavailable": [
+      "core.psycopg: unused PostgreSQL dependency; no PostgreSQL test claimed"
+    ]
+  },
+  "checks": {
+    "animals": {
+      "run": 15,
+      "passed": 15,
+      "skipped": 0
+    },
+    "http_gateway": {
+      "run": 25,
+      "passed": 25,
+      "skipped": 0
+    },
+    "daft_runtime_composition": {
+      "run": 2,
+      "passed": 2,
+      "skipped": 0
+    },
+    "same_process_daft_queries_per_test": 2,
+    "loopback_requests_per_repeat_test": 8,
+    "count_per_repeat_query": 2,
+    "observation_modes": [
+      "performance",
+      "qualification"
+    ],
+    "body_capture_default_for_performance": false,
+    "fault_request_body_bytes": 1048665,
+    "performance_request_record_bytes_upper_bound": 1024,
+    "primary_failure": "TimeoutError retained after recorded HTTP 429",
+    "negative_identity_checks": [
+      "model mismatch",
+      "message mismatch"
+    ],
+    "runtime_checks": [
+      "compatible native threads",
+      "unspecified native threads",
+      "incompatible thread count rejected",
+      "incompatible runner rejected"
+    ],
+    "lint": "targeted Ruff check passed; seven pre-existing E702 statements split, no whole-file formatting",
+    "final_lightweight_unit": {
+      "run": 10,
+      "passed": 10,
+      "skipped": 0
+    },
+    "final_repeat_test": {
+      "run": 1,
+      "passed": 1,
+      "skipped": 0
+    }
+  },
+  "failures_preserved": {
+    "baseline-red-repeat": "first query completed; second fails at direct set_runner_native with DaftCoreException: Compute runtime num worker threads already set; logging patch was already present to reach the second query",
+    "baseline-existing-lint": "seven E702 and one F401 on fixed base; new hashlib assertions consume the import, seven statements minimally split"
+  },
+  "logs": {
+    "baseline-red-repeat": {
+      "sha256": "f62c837425a2d3d64e9630f407794555f9e20d0ea62b213bd3155d90eeb3d311",
+      "bytes": 4045
+    },
+    "baseline-animals-full": {
+      "sha256": "319ffaf4d7a016a573507acc8cdebbe8ae70bd1c013926f2c63a8ed0c8f76c56",
+      "bytes": 2542
+    },
+    "baseline-gateway": {
+      "sha256": "b151e9d097a0ee576ad4ca579e2dbef50d39b13d7758b78ff5642596e19a463e",
+      "bytes": 1643
+    },
+    "baseline-daft-composition": {
+      "sha256": "88f13326077a7e0c1fc28fa065904bbbf4373f0ac62e02fc9cac790d08e05093",
+      "bytes": 100
+    },
+    "baseline-existing-lint": {
+      "sha256": "76f9267ffe94d39d23d4f72eb0aac11a423c14d25833fffefad3cac2d2352ec4",
+      "bytes": 4245
+    },
+    "baseline-lint": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "bytes": 19
+    },
+    "baseline-unit-final": {
+      "sha256": "47c7fb823d04225fc45f6cd33bd085d935d78ee9cf14aa488c0a6138bac1efc9",
+      "bytes": 109
+    },
+    "baseline-final-repeat": {
+      "sha256": "35d71a5327df8734f6adf3d9d38da830f04bacd56dd8bbd7f8a66c13ab0ec1f5",
+      "bytes": 99
+    }
+  },
+  "raw_retrieval": "Maintainer provides full logs by run_id and SHA-256; fixtures are reproducible from committed tests."
+}

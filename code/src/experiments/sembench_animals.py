@@ -89,7 +89,7 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
               max_tokens=8192, observation_mode, ray_temp_root=None,
               core_request_bytes=None, core_input_bytes=None,
               core_ray_window_bytes=None, core_ray_object_bytes=None):
-    """No constructor warmup; actual POST/response bodies, status and original decisions persist."""
+    """No constructor warmup; full HTTP body copies are qualification-only."""
     if arm not in ('lotus-native', 'daft', 'ray-data', 'semloom'):
         raise ValueError('Animals requires an explicitly supported full-request executor')
     if observation_mode not in ('performance', 'qualification'):
@@ -117,15 +117,17 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
     expected, actual = Counter(), Counter()
     decisions, prompts = [], []
     lock = threading.Lock()
+    capture_bodies = observation_mode == 'qualification'
     started = time.monotonic_ns()
     summary = dict(schema='semloom.sembench_animals_query.v1', status='failed', arm=arm,
         manifest_digest=dataset.expected_digest, rows=len(rows), model_id=model.model_id,
-        observation_mode=observation_mode, cache=False, retries=0, max_tokens=max_tokens,
+        observation_mode=observation_mode, body_capture=capture_bodies,
+        cache=False, retries=0, max_tokens=max_tokens,
         concurrency=concurrency, warmup_model_calls=0, query_count=1,
         upstream_lotus_version='1.1.3', selected_lotus_version='1.2.4',
         execution_scope='original Q1 on finite external ImageArray; no PostgreSQL claim',
         query_tail_quantiles='unavailable: one complete query',
-        observation_scope='matched proxy, request/response body and status persistence; message identity checks',
+        observation_scope='matched proxy, request/response digests and status; mode-selected body capture; message identity checks',
         full_query_scope='source verification/read, original query/import, native graph and complete result',
         constructor_warmup='not invoked; unbound original Q1 method with caller-configured LM')
     failure = None
@@ -136,17 +138,24 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
             def before(_route, body):
                 value = json.loads(body)
                 digest = content_digest(value.get('messages'))
+                body_sha256 = hashlib.sha256(body).hexdigest()
                 with lock:
                     if value.get('model') != model.model_id or actual[digest] >= expected[digest]:
                         raise ValueError('Animals outgoing request differs from its original LM message batch')
-                    attempt = ledger.reserve(hashlib.sha256(body).hexdigest())
+                    attempt = ledger.reserve(body_sha256)
                     actual[digest] += 1
-                    requests.write(json.dumps(dict(attempt=attempt,body=value,bytes=len(body),
-                        body_sha256=hashlib.sha256(body).hexdigest()),ensure_ascii=False)+'\n')
+                    record = dict(attempt=attempt,model_id=value['model'],messages_sha256=digest,
+                        bytes=len(body),body_sha256=body_sha256)
+                    if capture_bodies:
+                        record['body'] = value
+                    requests.write(json.dumps(record,ensure_ascii=False)+'\n')
             def after(_route, body, response, status):
                 with lock:
-                    responses.write(json.dumps(dict(request_sha256=hashlib.sha256(body).hexdigest(),
-                        status=status,body_base64=base64.b64encode(response).decode('ascii')))+'\n')
+                    record = dict(request_sha256=hashlib.sha256(body).hexdigest(),status=status,
+                        bytes=len(response),body_sha256=hashlib.sha256(response).hexdigest())
+                    if capture_bodies:
+                        record['body_base64'] = base64.b64encode(response).decode('ascii')
+                    responses.write(json.dumps(record)+'\n')
             gateway = stack.enter_context(ObservationGateway(
                 routes=(GatewayRoute('animals-q1','model',model.endpoint_url),),
                 trace_path=root/'http-trace.jsonl',request_timeout_s=model.timeout_ms/1000,
@@ -167,8 +176,8 @@ def run_query(dataset, model, *, arm, output, tokenizer_path, concurrency=4,
                 summary['configured_http_upper_bound'] = (options.concurrency if arm == 'daft'
                                                          else options.ray_active_http_upper_bound)
                 if arm == 'daft':
-                    import daft
-                    daft.set_runner_native(num_threads=options.num_threads)
+                    from src.infrastructure.daft_runtime import configure_daft_runner
+                    configure_daft_runner('native', num_threads=options.num_threads)
                 else:
                     os.environ['RAY_DATA_DEFAULT_ASYNC_BATCH_UDF_MAX_CONCURRENCY']=str(options.ray_async_batches_per_actor)
                     import ray

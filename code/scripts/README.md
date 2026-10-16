@@ -7,6 +7,8 @@
 
 ## 原始 SemBench Animals Q1
 
+`performance`只保存请求序号、模型／消息／body摘要、字节数和响应状态，`qualification`继续完整请求JSON／响应base64留证；`summary.body_capture`标明选择。必要的消息解析／身份校验、原SDK和HTTP透传保持，紧凑记录不能独立恢复完整body。同进程Daft查询复用已有runner，配置变化明确拒绝。
+
 `experiments/run_sembench_animals.py`使用固定上游Q1及原Species SQL／相对误差评价；输入是仓外冻结manifest与完整digest。`--preflight`零模型；执行需显式`--observation-mode performance`或`qualification`、模型／tokenizer／新输出与共享lease目录。`--arm lotus-native|daft|ray-data|semloom`保留原ImageArray、提示、缓存关闭和parser；生成上限默认沿用上游8192，无构造器预热。入口只测≤64图，一次完整query不提供可靠尾分位。数据准备及当前资格见[报告](../../experiments/results/diagnostics/sembench_animals_20261015/README.md)。
 
 
