@@ -1,0 +1,1052 @@
+{
+  "budget_and_deadline": {
+    "budget_sqlite_sha256": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+    "correction_claim_before_allocation": true,
+    "correction_claimed_once": true,
+    "correction_reservation": {
+      "first_attempt": 25,
+      "requests": 8,
+      "unit_id": "static-corrected"
+    },
+    "deadline_clamp": {
+      "all_recorded_calls_returned_before_child_work_deadline": true,
+      "all_recorded_snapshots_before_original_deadline": true,
+      "child_hard_deadline_from_unit_start_s": 201.6343689323403,
+      "child_work_deadline_from_unit_start_s": 186.6343689323403,
+      "cleanup_reserved_s": 15,
+      "configured_unit_timeout_s": 600,
+      "hard_minus_work_s": 15.0,
+      "scope": "Original UTC budget bounds both outer supervisor and child hard/work deadlines before model allocation.",
+      "supervisor_rejects_remaining_seconds_at_or_below_45": true,
+      "supervisor_timeout_s": 201.84328079223633
+    },
+    "existing_first_three_claims_preserved": true,
+    "final_permanent_reserved_requests": 32,
+    "final_units": [
+      {
+        "claimed": 1,
+        "first_attempt": 1,
+        "requests": 8,
+        "unit_id": "engine-native"
+      },
+      {
+        "claimed": 1,
+        "first_attempt": 9,
+        "requests": 8,
+        "unit_id": "ray-data"
+      },
+      {
+        "claimed": 1,
+        "first_attempt": 17,
+        "requests": 8,
+        "unit_id": "static"
+      },
+      {
+        "claimed": 1,
+        "first_attempt": 25,
+        "requests": 8,
+        "unit_id": "static-corrected"
+      }
+    ],
+    "hard_cap": 32,
+    "new_permanent_reserved_requests": 8,
+    "no_refund_observed": true,
+    "original_deadline_unchanged": true,
+    "original_deadline_utc": 1792145034.7485027,
+    "permanent_reservations_are_not_actual_model_call_counts": true,
+    "prior_permanent_reserved_requests": 24,
+    "remaining_unallocated_requests": 0,
+    "reserved_snapshot_units": [
+      {
+        "claimed": 1,
+        "first_attempt": 1,
+        "requests": 8,
+        "unit_id": "engine-native"
+      },
+      {
+        "claimed": 1,
+        "first_attempt": 9,
+        "requests": 8,
+        "unit_id": "ray-data"
+      },
+      {
+        "claimed": 1,
+        "first_attempt": 17,
+        "requests": 8,
+        "unit_id": "static"
+      },
+      {
+        "claimed": 0,
+        "first_attempt": 25,
+        "requests": 8,
+        "unit_id": "static-corrected"
+      }
+    ],
+    "sqlite_read_only_check_matches_final_report": true
+  },
+  "claims": {
+    "full_dataset_quality_claimed": false,
+    "implementation": "SemLoom static reference; production Core is not connected.",
+    "performance_ranking_claimed": false,
+    "production_core_strategy_qualified": false,
+    "purpose": "Small software, local model, original-method differential and observed lifecycle qualification.",
+    "quality_gain_claimed": false,
+    "sample": "Fixed fifteen-row SemBench Movie prefix, with two eligible negative records at positions 1 and 14.",
+    "stable_tail_latency_claimed": false
+  },
+  "combined_call_accounting": {
+    "all_runs_actual_model_calls": null,
+    "all_runs_actual_model_calls_remains_unknown": true,
+    "all_runs_usage": {
+      "completion_tokens": null,
+      "prompt_tokens": null,
+      "total_tokens": null
+    },
+    "engine_native_known_actual_calls": 4,
+    "known_actual_calls": 10,
+    "known_usage": {
+      "completion_tokens": 40,
+      "prompt_tokens": 1265,
+      "total_tokens": 1305
+    },
+    "original_failed_static_actual_calls": null,
+    "ray_data_known_actual_calls": 2,
+    "static_corrected_known_actual_calls": 4,
+    "unknown_counts_are_not_zero": true
+  },
+  "engine_configuration": {
+    "chat_template_override": null,
+    "dtype": "bfloat16",
+    "gpu_memory_utilization": 0.8,
+    "max_model_calls": 8,
+    "max_model_len": 4096,
+    "max_num_batched_tokens": 2048,
+    "max_num_seqs": 4,
+    "model_alias": "openai/qwen2.5-7b",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "seed": 0
+  },
+  "generation": {
+    "frequency_penalty": 0.0,
+    "logprobs": null,
+    "max_tokens": 8,
+    "presence_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "temperature": 0.0,
+    "top_p": 1.0
+  },
+  "identities": {
+    "all_local_hash_checks_passed": true,
+    "continuation_script_sha256": "6913a8b7f309d9db81f5960c5313944b79fc67d3906a28a09227a04cf0486a55",
+    "controller_report_sha256": "365541b7b3d9dc7acab550d159d2c5981f095969a73c9e35cd94f999776842cc",
+    "declared_repository_commit": "e4c07188fd45c6969063dfca5c7c49a671acff65",
+    "first_run_public_summary_sha256": "82aca5d3e9e3c02ad612c26cd9b5186cd2bd65111309b46162903f10d3f7d2f8",
+    "frozen_config_canonical_sha256": "ece88d3ccd1947509e46cb7249ef0f95e18060db3530c564057c9318c20af075",
+    "frozen_config_file_sha256": "0c38a1f12503525018f60558b295a8896d78487deb5216ed9f57ecbf962b0d3d",
+    "frozen_config_hash_encoding": "SHA256 of compact UTF-8 sorted-key JSON excluding config_sha256",
+    "git_checkout_verified": false,
+    "input_config_file_sha256": "e8f2fd79c728f27b7ca585bd71eec95953713b28bebcea0291949d13ffe37f74",
+    "original_controller_script_sha256": "19c0e7f419dfa4ce0464d16bc50c131e93f51c2198264c1a278d0128f372bde0",
+    "original_unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d",
+    "predecessor_config_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
+    "predecessor_controller_report_sha256": "cd1f561c56a0ccaef765dcdb67f5cf9eed3a447dab1c8b698686d7914bfa95d5",
+    "raw_bundle_bytes": 69926,
+    "raw_bundle_sha256": "b0b516b6d372ace4b5d130085e131c9896ac0d1ab3a17edb2ae53fd5d6c4ccd4",
+    "raw_index_sha256": "a49ecb1bcb8d831bfd5e7a82bf52457ed78752bc99a7c16e949d64dfb799b97d",
+    "raw_indexed_files": 21,
+    "source_archive_sha256": "287f3b3c3d6474125d12ef99e15548382642fc1f787b53836b38aa6608dc3b0c",
+    "source_file_manifest_sha256": "fedbb711d59f2f78043cd1e8b1d93c3b7a8a75bb666a595c2f856cd9129c3a57",
+    "source_files_matched": 387,
+    "source_mode": "git_archive",
+    "unit_report_sha256": "4001943aecec82c0677f796cb7afb49dd4f62c8b660aa7d007c408565ab51d44",
+    "unit_script_sha256": "25575c55295bac977bd9d55f47aba14dcd897ca303f4b42bbfa92f73a75086ec"
+  },
+  "lifecycle": {
+    "backend_gpu_exit_unknowns_preserved": true,
+    "controller_observed_owned_count": 37,
+    "controller_remaining_owned_count": 0,
+    "controller_resource_exit_confirmed": true,
+    "lease": "released-owned-only",
+    "pid_exit_scope": "Observed owned PID plus creation-time identities; no claim that unobserved descendants were independently confirmed.",
+    "post_controller_independent_resource_audit": {
+      "all_observed_controller_identities_exited": true,
+      "controllers_checked": 2,
+      "foreign_work_count": 0,
+      "gpu_compute_inventory_complete": true,
+      "gpu_compute_process_count": 0,
+      "gpu_used_mib": 1,
+      "inventory_complete": true,
+      "inventory_error_count": 0,
+      "model_calls": 0,
+      "normal_host_lease_absent": true,
+      "predecessor_reports_unchanged": true,
+      "raw_sha256": "6aaff0902441e013b5fc42e54f15962359af944643e3707e7f2316fdfee0919c",
+      "source": {
+        "declared_repository_commit": "e4c07188fd45c6969063dfca5c7c49a671acff65",
+        "git_checkout_verified": false,
+        "matched_files": 387,
+        "source_archive_sha256": "287f3b3c3d6474125d12ef99e15548382642fc1f787b53836b38aa6608dc3b0c",
+        "source_mode": "git_archive"
+      },
+      "status": "passed",
+      "unverified_idle_allowlist_count": 0
+    },
+    "snapshots": {
+      "before-reservation": {
+        "captured_before_original_budget_deadline": true,
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "continuation-final": {
+        "captured_before_original_budget_deadline": true,
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "static-corrected-after": {
+        "captured_before_original_budget_deadline": true,
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "static-corrected-before": {
+        "captured_before_original_budget_deadline": true,
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      }
+    },
+    "supervisor": {
+      "cleanup_errors": [],
+      "gpu_exit_confirmed": null,
+      "observed_owned_count": 37,
+      "observed_owned_exit_confirmed": true,
+      "output_capture": {
+        "bytes_read": 12975,
+        "complete": true,
+        "eof_observed": true,
+        "max_buffer_bytes": 3718,
+        "max_line_bytes": 16384,
+        "omitted_bytes": 0,
+        "omitted_long_lines": 0,
+        "pipe_closed": true,
+        "redacted_before_write": true
+      },
+      "physical_gpu_exit_checked": false,
+      "process_exit_scope": "observed_owned_processes",
+      "remaining_owned_count": 0,
+      "signals_count": 0,
+      "status": "passed",
+      "unobserved_descendants_confirmed": false,
+      "worker_exit": 0
+    }
+  },
+  "method": {
+    "default": true,
+    "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+    "model_name": "openai/qwen2.5-7b",
+    "output_tokens": [
+      "True",
+      "False"
+    ],
+    "system_prompt": null
+  },
+  "method_source": {
+    "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "profile": "lotus-ordinary-filter-records-v1",
+    "source_hashes": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "models/lm.py": "83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3",
+      "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
+      "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
+      "sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+      "sem_ops/sem_filter.py": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3"
+    },
+    "versions": {
+      "litellm": "1.95.0",
+      "lotus-ai": "1.2.4",
+      "openai": "2.50.0"
+    }
+  },
+  "original_static_failure_preserved": {
+    "actual_model_calls": null,
+    "engine_lifetimes": null,
+    "error": "static reference requires Daft 0.7.21 Native",
+    "error_type": "RuntimeError",
+    "known_engine_result_records": 0,
+    "observed_engine_uids": [],
+    "query_ledgers": [
+      {
+        "count": null,
+        "counts": {
+          "expected": 2,
+          "failed": 0,
+          "missing": 0,
+          "recorded": 2,
+          "submission_confirmed": 0,
+          "submission_unconfirmed": 2,
+          "succeeded": 0,
+          "unknown": 2
+        },
+        "evaluation": null,
+        "query_id": "static-first-q3",
+        "status": "failed",
+        "usage": {
+          "completion_tokens": null,
+          "known_completion_tokens": 0,
+          "known_prompt_tokens": 0,
+          "prompt_tokens": null,
+          "total_tokens": null,
+          "unknown_completion_tokens_calls": 2,
+          "unknown_prompt_tokens_calls": 2
+        }
+      }
+    ],
+    "status": "failed",
+    "unit_report_sha256": "c8acba193fdb0d11d55e08e903fee2d4358c56d5e827e84a4fea93f3ae33817a",
+    "usage": {
+      "completion_tokens": null,
+      "known_completion_tokens": 0,
+      "known_prompt_tokens": 0,
+      "known_total_tokens": 0,
+      "prompt_tokens": null,
+      "total_tokens": null,
+      "unknown_completion_tokens_calls": 2,
+      "unknown_prompt_tokens_calls": 2,
+      "unknown_total_tokens_calls": 2
+    }
+  },
+  "public_derivation": {
+    "credentials_included": false,
+    "paths_commands_and_pid_birth_times_omitted": true,
+    "private_environment_values_included": false,
+    "private_host_targets_included": false,
+    "raw_messages_included": false,
+    "raw_token_arrays_included": false,
+    "source_evidence_modified": false,
+    "source_recheck_only": true,
+    "unknown_values_preserved_as_json_null": true
+  },
+  "qualification_status": "completed",
+  "raw_evidence_catalog": {
+    "bundle_sha256": "b0b516b6d372ace4b5d130085e131c9896ac0d1ab3a17edb2ae53fd5d6c4ccd4",
+    "index_sha256": "a49ecb1bcb8d831bfd5e7a82bf52457ed78752bc99a7c16e949d64dfb799b97d",
+    "note": "Logical artifact names and content hashes only; raw private file contents and runtime paths are omitted.",
+    "verified_files": [
+      {
+        "artifact": "artifacts-correction/budget-after-reservation.json",
+        "bytes": 631,
+        "sha256": "ecf30ea7e6cba3141cc991cd3f30b5da737787e75a41aebf6832b99e0a7ee8eb"
+      },
+      {
+        "artifact": "artifacts-correction/controller-report.json",
+        "bytes": 12618,
+        "sha256": "365541b7b3d9dc7acab550d159d2c5981f095969a73c9e35cd94f999776842cc"
+      },
+      {
+        "artifact": "artifacts-correction/frozen-config.json",
+        "bytes": 53633,
+        "sha256": "0c38a1f12503525018f60558b295a8896d78487deb5216ed9f57ecbf962b0d3d"
+      },
+      {
+        "artifact": "artifacts-correction/snapshots/before-reservation.json",
+        "bytes": 2767,
+        "sha256": "f7598ad969937d0b6eaa59b5fb0eaefa24be4b1be107591fef36e7b6b4a2c7e5"
+      },
+      {
+        "artifact": "artifacts-correction/snapshots/continuation-final.json",
+        "bytes": 2754,
+        "sha256": "593328b777a5e6d76a2f22eeba78faef26bd075218fcf5045a2ac04e68a801fb"
+      },
+      {
+        "artifact": "artifacts-correction/snapshots/static-corrected-after.json",
+        "bytes": 2759,
+        "sha256": "bca5566b4e56500b7539a8d72e94bcad09b9e1ebc9987a4395addb0da2650c21"
+      },
+      {
+        "artifact": "artifacts-correction/snapshots/static-corrected-before.json",
+        "bytes": 2760,
+        "sha256": "440f879e57958ddf35b7a2ac5bb6fa5ecc65ae1d97a956272c873f85a94c1242"
+      },
+      {
+        "artifact": "artifacts-correction/status.json",
+        "bytes": 137,
+        "sha256": "d7d77c651789e1d67a0d892a2727bc6f43c540cfdca713743150b68ce61d3246"
+      },
+      {
+        "artifact": "artifacts-correction/supervision/static-corrected/supervisor.json",
+        "bytes": 3879,
+        "sha256": "35eaf8c37e2ec397f9dfecbdd266943a9d2a098675be90353cf831caecacbe58"
+      },
+      {
+        "artifact": "artifacts-correction/supervision/static-corrected/worker.log",
+        "bytes": 12975,
+        "sha256": "aefb45fdb07e8b111dfd423ac66c9663b7f49cb6abfa9237b70c34560b58a508"
+      },
+      {
+        "artifact": "artifacts-correction/unit-static-corrected.json",
+        "bytes": 7192,
+        "sha256": "7e08021fcc239aa193ed929856b462850907d888df21dcd030e90f3fd12c06ae"
+      },
+      {
+        "artifact": "artifacts-correction/units/static-corrected/static-corrected-first-q3.json",
+        "bytes": 12677,
+        "sha256": "8d902624d107f2b551d4a5196af59c049124bdd9a92aec78408923d2fc093c02"
+      },
+      {
+        "artifact": "artifacts-correction/units/static-corrected/static-corrected-second-q3.json",
+        "bytes": 12691,
+        "sha256": "87decb8ad38107913a7ab51acb866b9bf79994ed46c28845cbfcce27fc7ca5c6"
+      },
+      {
+        "artifact": "artifacts-correction/units/static-corrected/unit_report.json",
+        "bytes": 39356,
+        "sha256": "4001943aecec82c0677f796cb7afb49dd4f62c8b660aa7d007c408565ab51d44"
+      },
+      {
+        "artifact": "artifacts/budget.sqlite",
+        "bytes": 16384,
+        "sha256": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6"
+      },
+      {
+        "artifact": "qualification_static_continuation.py",
+        "bytes": 23438,
+        "sha256": "6913a8b7f309d9db81f5960c5313944b79fc67d3906a28a09227a04cf0486a55"
+      },
+      {
+        "artifact": "qualification_static_child.py",
+        "bytes": 8810,
+        "sha256": "25575c55295bac977bd9d55f47aba14dcd897ca303f4b42bbfa92f73a75086ec"
+      },
+      {
+        "artifact": "qualification-static-correction.input.json",
+        "bytes": 53306,
+        "sha256": "e8f2fd79c728f27b7ca585bd71eec95953713b28bebcea0291949d13ffe37f74"
+      },
+      {
+        "artifact": "static-correction-bootstrap.json",
+        "bytes": 3768,
+        "sha256": "53afc1d96de53af62ce4ef1c3b3e4e6c5e1b65fac86de81b08781e27e4f919b1"
+      },
+      {
+        "artifact": "static-correction-launch-intent.json",
+        "bytes": 294,
+        "sha256": "16575050754669d693c4351cfdfe3e3f9f28d96f169f535dee159965dd628e17"
+      },
+      {
+        "artifact": "static-correction-launch.json",
+        "bytes": 516,
+        "sha256": "0f8bce28cba79a4b5f8e2ddcfc3425dcabf5fd80e511329f772093bf5fde8a8d"
+      }
+    ]
+  },
+  "resources": {
+    "cpu_workers": 1,
+    "gpu_workers": 1,
+    "max_active_batches": 1,
+    "model_batch_rows": 1,
+    "prepare_batch_rows": 2,
+    "query_timeout_s": 480,
+    "startup_timeout_s": 300
+  },
+  "review_and_deadline_validation": {
+    "cpu_test_evidence": {
+      "exit_code": 0,
+      "gpu_work": false,
+      "log_bytes": 1338,
+      "log_sha256": "06e3d393c34bc8cda197ee375b0af2db7b2f240e148fac09782a0374c1316619",
+      "metadata_sha256": "17c319964e82cd977a146f1a2f03ec0201b7e3bed904f2cb206e8d354ab1822c",
+      "model_calls": 0,
+      "prior_agent_run_retained_as_tool_output_only": true,
+      "scripts_sha256": {
+        "qualification_static_child.py": "25575c55295bac977bd9d55f47aba14dcd897ca303f4b42bbfa92f73a75086ec",
+        "qualification_static_continuation.py": "6913a8b7f309d9db81f5960c5313944b79fc67d3906a28a09227a04cf0486a55"
+      },
+      "status": "passed",
+      "test_results": [
+        {
+          "name": "test_actual_first_run_provenance_and_unchanged_method_gate",
+          "result": "ok"
+        },
+        {
+          "name": "test_child_claim_precedes_class_and_reuses_original_close",
+          "result": "ok"
+        },
+        {
+          "name": "test_child_clamps_hard_and_work_deadlines_before_model_allocation",
+          "result": "ok"
+        },
+        {
+          "name": "test_deadline_and_old_claims_are_not_resettable",
+          "result": "ok"
+        },
+        {
+          "name": "test_original_and_reserved_claim_shapes",
+          "result": "ok"
+        },
+        {
+          "name": "test_original_templates_load_without_their_main",
+          "result": "ok"
+        },
+        {
+          "name": "test_static_subclass_reuses_one_owner_and_new_query_namespace",
+          "result": "ok"
+        },
+        {
+          "name": "test_supervisor_uses_actual_original_deadline_and_full_cleanup",
+          "result": "ok"
+        }
+      ],
+      "tests": 8
+    },
+    "review_evidence_origin": "Parent thread reports the final Spec and Standards review results; review conversations are retained in that thread tool messages, not in the downloaded model-evidence bundle.",
+    "reviewed_hashes": {
+      "continuation_script_sha256": "6913a8b7f309d9db81f5960c5313944b79fc67d3906a28a09227a04cf0486a55",
+      "input_config_file_sha256": "e8f2fd79c728f27b7ca585bd71eec95953713b28bebcea0291949d13ffe37f74",
+      "source_archive_sha256": "287f3b3c3d6474125d12ef99e15548382642fc1f787b53836b38aa6608dc3b0c",
+      "unit_script_sha256": "25575c55295bac977bd9d55f47aba14dcd897ca303f4b42bbfa92f73a75086ec"
+    },
+    "reviewed_scope": [
+      "387-file closure differs only in the reviewed static adapter at the corrected commit",
+      "Original UTC deadline clamps outer supervisor plus child hard/work deadlines",
+      "Remaining time at or below 45 seconds is rejected to preserve 15-second cleanup reserve"
+    ],
+    "spec": {
+      "remaining_findings": 0,
+      "status": "passed"
+    },
+    "standards": {
+      "remaining_findings": 0,
+      "status": "passed"
+    }
+  },
+  "schema": "semloom.static_correction_public_summary.v1",
+  "scope": "Successful explicit one-shot static continuation, bound to the unmodified first-run control and shared original budget.",
+  "source": {
+    "eligible_rows": 2,
+    "label_scope": "preflight association and post-query evaluation only",
+    "manifest_sha256": "096182f750c1767e67b3afc63173a082c38b17704a5948a787ee44c712aeb8cf",
+    "predicate": {
+      "column": "id",
+      "operator": "eq",
+      "value": "taken_3"
+    },
+    "records_sha256": "e45c0b3f1b2b0c78d027057a6f98fa42b6c6588b6e0998b2bd2bdc5b24fcefa5",
+    "references_sha256": "2f3b8482a388c24f087485bcaa3952b0662843636e747d4d471bea477ff86195",
+    "role": "sembench_movie_subset",
+    "rows": 15,
+    "schema": "semloom.movie_records_preflight.v1",
+    "source_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "source_positions": [
+      1,
+      14
+    ],
+    "status": "passed",
+    "task": "movie-q3"
+  },
+  "source_closure": {
+    "all_archive_members_matched_source_hashes": true,
+    "change_description": "Select the existing Daft Native runner before Ray can cause automatic runner selection; preserve an existing runner and reject an incompatible explicit runner configuration.",
+    "changed_files": [
+      {
+        "after_sha256": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
+        "before_sha256": "fe928aa54f51cdcca50f4f8a79c9d577ea48c62a716d5973dee28b3cb0956463",
+        "path": "code/src/execution_provider/adapters/lotus_records_static.py"
+      }
+    ],
+    "corrected_commit": "e4c07188fd45c6969063dfca5c7c49a671acff65",
+    "corrected_source_files": 387,
+    "input_model_generation_method_resources_unchanged": true,
+    "original_reports_modified": false,
+    "predecessor_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+    "predecessor_source_files": 387,
+    "same_file_set": true,
+    "unchanged_files": 386
+  },
+  "unit": {
+    "actual_engine_result_hash_verified": true,
+    "actual_messages_hash_measured_in_model_actor": true,
+    "actual_model_calls": 4,
+    "actual_model_calls_scope": "engine rows reserved before chat; conservative and never refunded",
+    "automatic_retries": 0,
+    "claimed": true,
+    "cleanup_errors": [],
+    "cleanup_scope": "engine API and owned Ray runtime; physical exit belongs to controller",
+    "control_provenance": {
+      "corrected_config_sha256": "ece88d3ccd1947509e46cb7249ef0f95e18060db3530c564057c9318c20af075",
+      "engine_native_report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+      "original_reports_modified": false,
+      "predecessor_config_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
+      "unchanged_input_model_generation_method": true
+    },
+    "corrected_call_ids_disjoint_from_original_failed_static": true,
+    "engine_close": {
+      "attempt": 1,
+      "cleanup_scope": "engine_core_api",
+      "engine_api_shutdown_confirmed": true,
+      "engine_uid": "a1e30d1a76e04889bdb8f12544f861c5",
+      "error_type": null,
+      "gpu_exit_confirmed": null,
+      "max_model_calls": 8,
+      "reserved_model_calls": 4,
+      "status": "closed"
+    },
+    "engine_lifetimes": 1,
+    "extra_warmup_calls": 0,
+    "formatter_before_allocation": {
+      "message_types": [
+        [
+          {
+            "content_type": "str",
+            "role": "system"
+          },
+          {
+            "content_type": "str",
+            "role": "user"
+          }
+        ],
+        [
+          {
+            "content_type": "str",
+            "role": "system"
+          },
+          {
+            "content_type": "str",
+            "role": "user"
+          }
+        ]
+      ],
+      "messages_sha256": [
+        "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+        "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a"
+      ],
+      "scope": "both actual eligible occurrences prepared before Ray/model allocation"
+    },
+    "gpu_exit_confirmed": null,
+    "independent_gpu_process_exit_check": false,
+    "known_engine_result_records": 4,
+    "manual_continuation": true,
+    "messages_hash_scope": "actual result message hashes and token IDs compared with original engine-native control",
+    "model_owners_allocated": 1,
+    "observed_engine_uids": [
+      "a1e30d1a76e04889bdb8f12544f861c5"
+    ],
+    "owner_close": {
+      "actor_kill_requests_confirmed": true,
+      "cleanup_errors": [],
+      "cleanup_scope": "ray_actor_and_engine_api",
+      "gpu_exit_confirmed": null,
+      "implementation": "semloom_records_static_reference",
+      "model_actor_handle_retained": true,
+      "production_core_connected": false,
+      "status": "unknown"
+    },
+    "physical_gpu_exit_check": false,
+    "queries": [
+      {
+        "backend_close": {
+          "cleanup_errors": [],
+          "cleanup_scope": "static_query_input_and_refs",
+          "expected_occurrences": 2,
+          "pending_batches": 0,
+          "received_occurrences": 2,
+          "source_closed": true,
+          "status": "closed"
+        },
+        "calls": [
+          {
+            "actual_engine_result_hash_verified": true,
+            "actual_messages_measured_in_model_actor": true,
+            "algorithm_stage": "filter",
+            "call_id": "lotus-filter-v1:[\"static-corrected-first-q3\",\"movie-row-1\",1,0]",
+            "call_index": 0,
+            "completion_tokens": 4,
+            "deadline_expired": false,
+            "decision": false,
+            "engine_uid": "a1e30d1a76e04889bdb8f12544f861c5",
+            "error_type": null,
+            "finish_reason": "stop",
+            "matches_engine_native_control": {
+              "completion_tokens": true,
+              "decision": true,
+              "finish_reason": true,
+              "messages_sha256": true,
+              "output_token_ids": true,
+              "prompt_token_ids": true,
+              "prompt_tokens": true,
+              "text": true,
+              "total_tokens": true
+            },
+            "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+            "model_role": "main",
+            "prompt_tokens": 140,
+            "query_id": "static-corrected-first-q3",
+            "row_id": "movie-row-1",
+            "source_position": 1,
+            "status": "succeeded",
+            "submission_confirmed": true,
+            "text": "Answer: False",
+            "tokens": {
+              "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+              "output_ids_count": 4,
+              "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+              "prompt_ids_count": 140,
+              "prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+              "usage_matches_token_id_lengths": true
+            },
+            "total_tokens": 144,
+            "within_clamped_work_deadline": true
+          },
+          {
+            "actual_engine_result_hash_verified": true,
+            "actual_messages_measured_in_model_actor": true,
+            "algorithm_stage": "filter",
+            "call_id": "lotus-filter-v1:[\"static-corrected-first-q3\",\"movie-row-14\",14,0]",
+            "call_index": 0,
+            "completion_tokens": 4,
+            "deadline_expired": false,
+            "decision": false,
+            "engine_uid": "a1e30d1a76e04889bdb8f12544f861c5",
+            "error_type": null,
+            "finish_reason": "stop",
+            "matches_engine_native_control": {
+              "completion_tokens": true,
+              "decision": true,
+              "finish_reason": true,
+              "messages_sha256": true,
+              "output_token_ids": true,
+              "prompt_token_ids": true,
+              "prompt_tokens": true,
+              "text": true,
+              "total_tokens": true
+            },
+            "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+            "model_role": "main",
+            "prompt_tokens": 113,
+            "query_id": "static-corrected-first-q3",
+            "row_id": "movie-row-14",
+            "source_position": 14,
+            "status": "succeeded",
+            "submission_confirmed": true,
+            "text": "Answer: False",
+            "tokens": {
+              "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+              "output_ids_count": 4,
+              "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+              "prompt_ids_count": 113,
+              "prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+              "usage_matches_token_id_lengths": true
+            },
+            "total_tokens": 117,
+            "within_clamped_work_deadline": true
+          }
+        ],
+        "calls_counts": {
+          "expected": 2,
+          "failed": 0,
+          "missing": 0,
+          "recorded": 2,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0,
+          "succeeded": 2,
+          "unknown": 0
+        },
+        "control_equal_from_unit_report": true,
+        "count": 0,
+        "lm": {
+          "cost_available": false,
+          "cost_reason": "local engine compute is not assigned an API dollar price",
+          "stats": {
+            "cache_hits": 0,
+            "operator_cache_hits": 0,
+            "physical_usage": {
+              "cache_creation_tokens": 0,
+              "cached_prompt_tokens": 0,
+              "completion_tokens": 8,
+              "prompt_tokens": 253,
+              "total_cost": 0.0,
+              "total_tokens": 261
+            },
+            "virtual_usage": {
+              "cache_creation_tokens": 0,
+              "cached_prompt_tokens": 0,
+              "completion_tokens": 8,
+              "prompt_tokens": 253,
+              "total_cost": 0.0,
+              "total_tokens": 261
+            }
+          }
+        },
+        "original_sembench_evaluation": {
+          "classification_audit": {
+            "count_error_from_classifications": 0,
+            "evaluated_rows": 2,
+            "false_negative": 0,
+            "false_positive": 0,
+            "invalid": 0,
+            "missing_rows": 0,
+            "true_negative": 2,
+            "true_positive": 0
+          },
+          "original_metric": {
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0,
+            "relative_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        },
+        "production_core_used": false,
+        "query_id": "static-corrected-first-q3",
+        "query_report_sha256": "8d902624d107f2b551d4a5196af59c049124bdd9a92aec78408923d2fc093c02",
+        "status": "completed",
+        "upstream_accessor_used_in_records": false,
+        "usage": {
+          "completion_tokens": 8,
+          "known_completion_tokens": 8,
+          "known_prompt_tokens": 253,
+          "prompt_tokens": 253,
+          "total_tokens": 261,
+          "unknown_completion_tokens_calls": 0,
+          "unknown_prompt_tokens_calls": 0
+        }
+      },
+      {
+        "backend_close": {
+          "cleanup_errors": [],
+          "cleanup_scope": "static_query_input_and_refs",
+          "expected_occurrences": 2,
+          "pending_batches": 0,
+          "received_occurrences": 2,
+          "source_closed": true,
+          "status": "closed"
+        },
+        "calls": [
+          {
+            "actual_engine_result_hash_verified": true,
+            "actual_messages_measured_in_model_actor": true,
+            "algorithm_stage": "filter",
+            "call_id": "lotus-filter-v1:[\"static-corrected-second-q3\",\"movie-row-1\",1,0]",
+            "call_index": 0,
+            "completion_tokens": 4,
+            "deadline_expired": false,
+            "decision": false,
+            "engine_uid": "a1e30d1a76e04889bdb8f12544f861c5",
+            "error_type": null,
+            "finish_reason": "stop",
+            "matches_engine_native_control": {
+              "completion_tokens": true,
+              "decision": true,
+              "finish_reason": true,
+              "messages_sha256": true,
+              "output_token_ids": true,
+              "prompt_token_ids": true,
+              "prompt_tokens": true,
+              "text": true,
+              "total_tokens": true
+            },
+            "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+            "model_role": "main",
+            "prompt_tokens": 140,
+            "query_id": "static-corrected-second-q3",
+            "row_id": "movie-row-1",
+            "source_position": 1,
+            "status": "succeeded",
+            "submission_confirmed": true,
+            "text": "Answer: False",
+            "tokens": {
+              "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+              "output_ids_count": 4,
+              "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+              "prompt_ids_count": 140,
+              "prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+              "usage_matches_token_id_lengths": true
+            },
+            "total_tokens": 144,
+            "within_clamped_work_deadline": true
+          },
+          {
+            "actual_engine_result_hash_verified": true,
+            "actual_messages_measured_in_model_actor": true,
+            "algorithm_stage": "filter",
+            "call_id": "lotus-filter-v1:[\"static-corrected-second-q3\",\"movie-row-14\",14,0]",
+            "call_index": 0,
+            "completion_tokens": 4,
+            "deadline_expired": false,
+            "decision": false,
+            "engine_uid": "a1e30d1a76e04889bdb8f12544f861c5",
+            "error_type": null,
+            "finish_reason": "stop",
+            "matches_engine_native_control": {
+              "completion_tokens": true,
+              "decision": true,
+              "finish_reason": true,
+              "messages_sha256": true,
+              "output_token_ids": true,
+              "prompt_token_ids": true,
+              "prompt_tokens": true,
+              "text": true,
+              "total_tokens": true
+            },
+            "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+            "model_role": "main",
+            "prompt_tokens": 113,
+            "query_id": "static-corrected-second-q3",
+            "row_id": "movie-row-14",
+            "source_position": 14,
+            "status": "succeeded",
+            "submission_confirmed": true,
+            "text": "Answer: False",
+            "tokens": {
+              "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+              "output_ids_count": 4,
+              "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+              "prompt_ids_count": 113,
+              "prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+              "usage_matches_token_id_lengths": true
+            },
+            "total_tokens": 117,
+            "within_clamped_work_deadline": true
+          }
+        ],
+        "calls_counts": {
+          "expected": 2,
+          "failed": 0,
+          "missing": 0,
+          "recorded": 2,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0,
+          "succeeded": 2,
+          "unknown": 0
+        },
+        "control_equal_from_unit_report": true,
+        "count": 0,
+        "lm": {
+          "cost_available": false,
+          "cost_reason": "local engine compute is not assigned an API dollar price",
+          "stats": {
+            "cache_hits": 0,
+            "operator_cache_hits": 0,
+            "physical_usage": {
+              "cache_creation_tokens": 0,
+              "cached_prompt_tokens": 0,
+              "completion_tokens": 8,
+              "prompt_tokens": 253,
+              "total_cost": 0.0,
+              "total_tokens": 261
+            },
+            "virtual_usage": {
+              "cache_creation_tokens": 0,
+              "cached_prompt_tokens": 0,
+              "completion_tokens": 8,
+              "prompt_tokens": 253,
+              "total_cost": 0.0,
+              "total_tokens": 261
+            }
+          }
+        },
+        "original_sembench_evaluation": {
+          "classification_audit": {
+            "count_error_from_classifications": 0,
+            "evaluated_rows": 2,
+            "false_negative": 0,
+            "false_positive": 0,
+            "invalid": 0,
+            "missing_rows": 0,
+            "true_negative": 2,
+            "true_positive": 0
+          },
+          "original_metric": {
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0,
+            "relative_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+        },
+        "production_core_used": false,
+        "query_id": "static-corrected-second-q3",
+        "query_report_sha256": "87decb8ad38107913a7ab51acb866b9bf79994ed46c28845cbfcce27fc7ca5c6",
+        "status": "completed",
+        "upstream_accessor_used_in_records": false,
+        "usage": {
+          "completion_tokens": 8,
+          "known_completion_tokens": 8,
+          "known_prompt_tokens": 253,
+          "prompt_tokens": 253,
+          "total_tokens": 261,
+          "unknown_completion_tokens_calls": 0,
+          "unknown_prompt_tokens_calls": 0
+        }
+      }
+    ],
+    "query_call_ids_disjoint": true,
+    "ray_retry_preflight": {
+      "actor_init_retry_on_errors": false,
+      "actor_pool_size": 1,
+      "actor_task_retry_on_errors": false,
+      "dataset_consumptions": 1,
+      "max_errored_blocks": 0,
+      "max_restarts": 0,
+      "max_task_retries": 0,
+      "retried_map_errors": false
+    },
+    "ray_shutdown_returned": true,
+    "reserved_cap": 8,
+    "source_proof": {
+      "continuation_script_sha256": "6913a8b7f309d9db81f5960c5313944b79fc67d3906a28a09227a04cf0486a55",
+      "corrected_child_script_sha256": "25575c55295bac977bd9d55f47aba14dcd897ca303f4b42bbfa92f73a75086ec",
+      "engine_source": {
+        "path": "code/src/serving/backends/vllm_engine.py",
+        "sha256": "3fe410e47899f182e0294718261fd2aefd275dbef4b01aeee40401964bf12686"
+      },
+      "original_unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d",
+      "static_adapter_source": {
+        "path": "code/src/execution_provider/adapters/lotus_records_static.py",
+        "sha256": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f"
+      },
+      "verification": "Production engine hashes decoded input conversations passed to LLM.chat and retains that identity hash in results. Inherited Qualification.control requires result messages_sha256 to equal original formatter preparation, then compares actual messages hash, prompt/output token IDs, text, decisions, token usage and finish_reason against the pinned engine-native control."
+    },
+    "static_reuse": {
+      "disjoint_from_failed_static": true,
+      "distinct_query_calls": true,
+      "production_core_connected": false,
+      "same_engine_uid": "a1e30d1a76e04889bdb8f12544f861c5"
+    },
+    "status": "completed",
+    "unit_id": "static-corrected",
+    "usage": {
+      "completion_tokens": 16,
+      "known_completion_tokens": 16,
+      "known_prompt_tokens": 506,
+      "known_total_tokens": 522,
+      "prompt_tokens": 506,
+      "total_tokens": 522,
+      "unknown_completion_tokens_calls": 0,
+      "unknown_prompt_tokens_calls": 0,
+      "unknown_total_tokens_calls": 0
+    },
+    "usage_scope": "recorded query occurrences; unresolved calls remain unknown in each ledger"
+  }
+}

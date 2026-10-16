@@ -16,7 +16,7 @@ from src.baselines.text.sembench_movie import (
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 
 
-BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference")
+BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model")
 
 
 def _fixed_method(method):
@@ -226,21 +226,26 @@ def model_preflight(source, checkout, method, generation, engine):
 
 
 def _model_worker(config, source, checkout, method, generation, resources, engine, root):
-    import ray
-
+    ray = None
     owner = None
     failure = None
     report = {}
     runtime_started = time.monotonic()
     try:
-        ray.init(address="local", num_cpus=resources.cpu_workers + resources.gpu_workers + 1,
-                 num_gpus=1, include_dashboard=False,
-                 runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
-                                             "LITELLM_LOCAL_MODEL_COST_MAP": "True",
-                                             "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
+        if config["backend"] != "daft-native-local-model":
+            import ray
+
+            ray.init(address="local", num_cpus=resources.cpu_workers + resources.gpu_workers + 1,
+                     num_gpus=1, include_dashboard=False,
+                     runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                                                 "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+                                                 "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
         runtime_seconds = time.monotonic() - runtime_started
         def execute():
             nonlocal owner
+            if config["backend"] == "daft-native-local-model":
+                from src.baselines.text.frameworks.daft_lotus_records import evaluate
+                return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
             if config["backend"] == "ray-data-local-model":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
@@ -267,7 +272,7 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             else:
                 failure.add_note("static owner close also failed: " + type(cleanup).__name__)
         try:
-            if ray.is_initialized():
+            if ray is not None and ray.is_initialized():
                 ray.shutdown()
         except BaseException as cleanup:
             report.update(status="failed", ray_close_error_type=type(cleanup).__name__)

@@ -1,0 +1,1432 @@
+{
+  "call_accounting": {
+    "allocation": {
+      "allocated_requests": 24,
+      "limit": 32,
+      "units": [
+        {
+          "claimed": 1,
+          "first_attempt": 1,
+          "requests": 8,
+          "unit_id": "engine-native"
+        },
+        {
+          "claimed": 1,
+          "first_attempt": 9,
+          "requests": 8,
+          "unit_id": "ray-data"
+        },
+        {
+          "claimed": 1,
+          "first_attempt": 17,
+          "requests": 8,
+          "unit_id": "static"
+        }
+      ]
+    },
+    "application_call_limit_scope": "application request rows; vLLM internal startup profiling/compile is startup work and is not an additional user prompt",
+    "automatic_retries": 0,
+    "engine_native_actual_calls": 4,
+    "extra_application_warmup_calls": 0,
+    "hard_cap": 32,
+    "known_calls_from_completed_units": 6,
+    "model_downloads": false,
+    "nominal_first_run_calls": 10,
+    "permanent_reserved_calls": 24,
+    "ray_data_actual_calls": 2,
+    "static_actual_calls": null,
+    "total_actual_calls": null,
+    "unknown_counts_are_not_zero": true
+  },
+  "claims": {
+    "full_dataset_quality_claimed": false,
+    "performance_ranking_claimed": false,
+    "production_core_strategy_qualified": false,
+    "purpose": "Small software, local model, differential-method and observed lifecycle qualification.",
+    "quality_gain_claimed": false,
+    "sample": "Fixed fifteen-row SemBench Movie prefix; exactly two eligible negative records at source positions 1 and 14.",
+    "stable_tail_latency_claimed": false,
+    "static_reference_qualified_in_this_run": false
+  },
+  "engine_configuration": {
+    "chat_template_override": null,
+    "dtype": "bfloat16",
+    "gpu_memory_utilization": 0.8,
+    "max_model_calls": 8,
+    "max_model_len": 4096,
+    "max_num_batched_tokens": 2048,
+    "max_num_seqs": 4,
+    "model_alias": "openai/qwen2.5-7b",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "seed": 0
+  },
+  "engine_native_audit_configuration": {
+    "actual_dtype": "torch.bfloat16",
+    "actual_generation_config": "vllm",
+    "actual_max_model_len": 4096,
+    "actual_sampling": {
+      "allowed_token_ids": null,
+      "bad_words": [],
+      "detokenize": true,
+      "extra_args": null,
+      "flat_logprobs": false,
+      "frequency_penalty": 0.0,
+      "ignore_eos": false,
+      "include_stop_str_in_output": false,
+      "logit_bias": null,
+      "logprob_token_ids": null,
+      "logprobs": null,
+      "max_tokens": 8,
+      "min_p": 0.0,
+      "min_tokens": 0,
+      "n": 1,
+      "output_kind": 0,
+      "output_text_buffer_length": 0,
+      "presence_penalty": 0.0,
+      "prompt_logprobs": null,
+      "repetition_detection": null,
+      "repetition_penalty": 1.0,
+      "routed_experts_prompt_start": 0,
+      "seed": 0,
+      "skip_clone": false,
+      "skip_reading_prefix_cache": false,
+      "skip_special_tokens": true,
+      "spaces_between_special_tokens": true,
+      "stop": [
+        "\n"
+      ],
+      "stop_token_ids": [],
+      "structured_outputs": null,
+      "temperature": 0.0,
+      "thinking_token_budget": null,
+      "top_k": 0,
+      "top_p": 1.0
+    },
+    "apply_chat_template_kwargs": {
+      "add_generation_prompt": true,
+      "continue_final_message": false,
+      "return_dict": false,
+      "tokenize": true,
+      "tools": null
+    },
+    "chat_encode_kwargs": {
+      "add_special_tokens": false,
+      "max_length": 4097,
+      "truncation": true
+    },
+    "renderer_type": "HfRenderer",
+    "resolved_content_format": "string",
+    "supplied_sampling": {
+      "frequency_penalty": 0.0,
+      "logprobs": null,
+      "max_tokens": 8,
+      "n": 1,
+      "presence_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "seed": 0,
+      "stop": [
+        "\n"
+      ],
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "tokenizer_type": "TokenizerPoolCachedQwen2Tokenizer"
+  },
+  "environment_observations": {
+    "driver": {
+      "lotus_available": true,
+      "python_version": [
+        3,
+        12,
+        3
+      ],
+      "vllm_version": null
+    },
+    "model": {
+      "lotus_available": false,
+      "python_version": [
+        3,
+        12,
+        3
+      ],
+      "vllm_version": "0.25.1"
+    },
+    "required_ray_version": "2.56.1",
+    "static_requires_daft_version": "0.7.21",
+    "static_requires_runner": "Native"
+  },
+  "failure": {
+    "error": "qualification stopped after its first failed or uncertain unit",
+    "error_type": "RuntimeError",
+    "first_failed_unit": "static",
+    "first_static_error": "static reference requires Daft 0.7.21 Native",
+    "static_cleanup_errors": [
+      {
+        "error_type": "TypeError",
+        "stage": "static_close"
+      }
+    ],
+    "subsequent_qualification_stopped": true
+  },
+  "generation": {
+    "frequency_penalty": 0.0,
+    "logprobs": null,
+    "max_tokens": 8,
+    "presence_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "temperature": 0.0,
+    "top_p": 1.0
+  },
+  "identities": {
+    "controller_report_sha256": "cd1f561c56a0ccaef765dcdb67f5cf9eed3a447dab1c8b698686d7914bfa95d5",
+    "controller_script_sha256": "19c0e7f419dfa4ce0464d16bc50c131e93f51c2198264c1a278d0128f372bde0",
+    "declared_repository_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+    "frozen_config_canonical_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
+    "frozen_config_file_sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+    "frozen_config_hash_encoding": "Canonical compact UTF-8 sorted-key JSON excluding config_sha256",
+    "git_checkout_verified": false,
+    "input_config_file_sha256": "487a48335e48c796ed37c4bfe38983930c4f04e0ded955d5ed0e2d59454a716b",
+    "local_identity_checks_all_passed": true,
+    "raw_evidence_bundle_bytes": 126251,
+    "raw_evidence_bundle_sha256": "e8daf036a36b2576c991c03a6a7432df55251fc2d6c37a9b9e9fb19b8c3bf2f5",
+    "raw_evidence_index_file_sha256": "239c1ef35a0ffba5c53de45f792cbdd620ada7fbe9fe306e176fe449405a0359",
+    "raw_evidence_indexed_files": 42,
+    "source_archive_sha256": "cfd3c95aa5ff679bdfacd861dd60ef220900b67c783d9cce8c2f5277b6ab3a08",
+    "source_file_manifest_hash_encoding": "SHA256 of UTF-8 JSON sources map; sort_keys=true, ensure_ascii=false, compact separators",
+    "source_file_manifest_sha256": "375fed57cf208db53bb4341cb3bfda5f65179fd8548e1b2a24225542c570867a",
+    "source_files_matched": 387,
+    "source_identity_json_sha256": "fb54dd1911c4cf76cf5c5d6cbc6a876a180f78e57cbc39d93f21e35bcb0df097",
+    "source_mode": "git_archive",
+    "unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d"
+  },
+  "lifecycle": {
+    "backend_gpu_exit_unknowns_preserved": true,
+    "controller_gpu_evidence_scope": "Independent GPU compute-process inventory plus return to the frozen one-MiB memory baseline before/after each unit and at controller final.",
+    "controller_observed_owned_count": 204,
+    "controller_resource_exit_confirmed": true,
+    "lease": "released-owned-only",
+    "pid_exit_scope": "Observed owned PID plus creation-time identities; no claim that unobserved descendants were independently confirmed.",
+    "snapshots": {
+      "controller-final": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "engine-native-after": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "engine-native-before": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "ray-data-after": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "ray-data-before": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "static-after": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      },
+      "static-before": {
+        "foreign_work_count": 0,
+        "gpu_compute_inventory_complete": true,
+        "gpu_compute_process_count": 0,
+        "gpu_used_mib": 1,
+        "inventory_complete": true,
+        "inventory_error_count": 0,
+        "unverified_idle_allowlist_count": 0
+      }
+    }
+  },
+  "method": {
+    "default": true,
+    "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+    "model_name": "openai/qwen2.5-7b",
+    "output_tokens": [
+      "True",
+      "False"
+    ],
+    "system_prompt": null
+  },
+  "method_source": {
+    "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "profile": "lotus-ordinary-filter-records-v1",
+    "source_hashes": {
+      "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+      "models/lm.py": "83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3",
+      "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
+      "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
+      "sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+      "sem_ops/sem_filter.py": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
+      "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+      "templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3"
+    },
+    "versions": {
+      "litellm": "1.95.0",
+      "lotus-ai": "1.2.4",
+      "openai": "2.50.0"
+    }
+  },
+  "public_derivation": {
+    "credentials_included": false,
+    "messages_provenance_revision": {
+      "previous_summary_sha256": "be37f74e575687bec1156789fc90f17c5dacba1edcfae196d4f8b25cb11fcc77",
+      "reason": "Corrected the derived interpretation of Ray messages hashes using the original pinned source; original raw report scope text is retained and marked stale.",
+      "static_source_recheck_only": true
+    },
+    "paths_commands_and_pid_birth_times_omitted": true,
+    "private_environment_values_included": false,
+    "private_host_targets_included": false,
+    "raw_messages_included": false,
+    "raw_token_arrays_included": false,
+    "redaction_helper_sha256": "eea2b1435144bd2206f6a1f289a379661d2f1737e92d162e137d5d5efb1c9c0d",
+    "source_evidence_modified": false,
+    "unknown_values_preserved_as_json_null": true
+  },
+  "qualification_status": "failed",
+  "resources": {
+    "cpu_workers": 1,
+    "gpu_workers": 1,
+    "max_active_batches": 1,
+    "model_batch_rows": 1,
+    "prepare_batch_rows": 2,
+    "query_timeout_s": 480,
+    "startup_timeout_s": 300
+  },
+  "schema": "semloom.first_model_run_public_summary.v1",
+  "scope": "Original first model run only; later static-corrected evidence is not included.",
+  "source": {
+    "eligible_rows": 2,
+    "input_manifest_file_sha256": "096182f750c1767e67b3afc63173a082c38b17704a5948a787ee44c712aeb8cf",
+    "label_scope": "preflight association and post-query evaluation only",
+    "limit_scope": "logical input limits; not RSS or GPU memory hard limits",
+    "logical_limits": {
+      "file_bytes": 16777216,
+      "manifest_bytes": 2097152,
+      "max_rows": 4096,
+      "review_utf8_bytes": 1048576
+    },
+    "manifest_sha256": "096182f750c1767e67b3afc63173a082c38b17704a5948a787ee44c712aeb8cf",
+    "predicate": {
+      "column": "id",
+      "operator": "eq",
+      "value": "taken_3"
+    },
+    "records_sha256": "e45c0b3f1b2b0c78d027057a6f98fa42b6c6588b6e0998b2bd2bdc5b24fcefa5",
+    "references_sha256": "2f3b8482a388c24f087485bcaa3952b0662843636e747d4d471bea477ff86195",
+    "role": "sembench_movie_subset",
+    "rows": 15,
+    "schema": "semloom.movie_records_preflight.v1",
+    "source_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "source_positions": [
+      1,
+      14
+    ],
+    "status": "passed",
+    "task": "movie-q3"
+  },
+  "units": {
+    "engine-native": {
+      "actual_messages_hash_measured_in_model_actor": true,
+      "actual_model_calls": 4,
+      "actual_model_calls_scope": "engine rows reserved before chat; conservative and never refunded",
+      "automatic_retries": 0,
+      "cleanup_errors": [],
+      "cleanup_scope": "engine API and owned Ray runtime; physical exit belongs to controller",
+      "engine_close": {
+        "attempt": 1,
+        "cleanup_scope": "engine_core_api",
+        "engine_api_shutdown_confirmed": true,
+        "engine_uid": "a73868abe167492ebc91750d04654978",
+        "error_type": null,
+        "gpu_exit_confirmed": null,
+        "max_model_calls": 8,
+        "reserved_model_calls": 4,
+        "status": "closed"
+      },
+      "engine_lifetimes": 1,
+      "extra_warmup_calls": 0,
+      "formatter_before_allocation": {
+        "message_types": [
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ],
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ]
+        ],
+        "messages_sha256": [
+          "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+          "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a"
+        ],
+        "scope": "both actual eligible occurrences prepared before Ray/model allocation"
+      },
+      "gpu_exit_confirmed": null,
+      "independent_gpu_process_exit_check": false,
+      "known_engine_result_records": 4,
+      "messages_hash_scope": "actual input messages passed to the model actor and original accessor",
+      "model_owners_allocated": 1,
+      "observed_engine_uids": [
+        "a73868abe167492ebc91750d04654978"
+      ],
+      "physical_gpu_exit_check": false,
+      "process_exit": {
+        "child_observed_owned_count": 14,
+        "controller_remaining_owned_count": 0,
+        "controller_resource_exit_confirmed": true,
+        "controller_unit_status": "completed",
+        "supervisor": {
+          "cleanup_errors": [],
+          "gpu_exit_confirmed": null,
+          "observed_owned_count": 149,
+          "observed_owned_exit_confirmed": true,
+          "physical_gpu_exit_checked": false,
+          "process_exit_scope": "observed_owned_processes",
+          "remaining_owned_count": 0,
+          "signals_count": 0,
+          "status": "passed",
+          "unobserved_descendants_confirmed": false,
+          "worker_exit": 0
+        }
+      },
+      "queries": [
+        {
+          "backend_close_status": null,
+          "calls": [
+            {
+              "actual_input_audit": {
+                "actual_messages_measured_in_model_actor": true,
+                "actual_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "messages_equal_after_normalization": true,
+                "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+                "normalized_messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+                "rendered_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "reported_prompt_token_ids_equal": true,
+                "tokenizer_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "tokenizer_rendered_actual_prompt_ids_equal": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"engine-direct\",\"movie-row-1\",1,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "a73868abe167492ebc91750d04654978",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+              "model_role": "main",
+              "prompt_tokens": 140,
+              "query_id": "engine-direct",
+              "row_id": "movie-row-1",
+              "source_position": 1,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 140,
+                "prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 144
+            },
+            {
+              "actual_input_audit": {
+                "actual_messages_measured_in_model_actor": true,
+                "actual_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "messages_equal_after_normalization": true,
+                "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+                "normalized_messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+                "rendered_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "reported_prompt_token_ids_equal": true,
+                "tokenizer_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "tokenizer_rendered_actual_prompt_ids_equal": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"engine-direct\",\"movie-row-14\",14,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "a73868abe167492ebc91750d04654978",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+              "model_role": "main",
+              "prompt_tokens": 113,
+              "query_id": "engine-direct",
+              "row_id": "movie-row-14",
+              "source_position": 14,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 113,
+                "prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 117
+            }
+          ],
+          "calls_counts": {
+            "expected": 2,
+            "failed": 0,
+            "missing": 0,
+            "recorded": 2,
+            "submission_confirmed": 2,
+            "submission_unconfirmed": 0,
+            "succeeded": 2,
+            "unknown": 0
+          },
+          "count": 0,
+          "decisions": [
+            {
+              "decision": false,
+              "row_id": "movie-row-1"
+            },
+            {
+              "decision": false,
+              "row_id": "movie-row-14"
+            }
+          ],
+          "error_type": null,
+          "lm": {
+            "cost_available": false,
+            "cost_reason": "local engine compute is not assigned an API dollar price",
+            "stats": {
+              "cache_hits": 0,
+              "operator_cache_hits": 0,
+              "physical_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              },
+              "virtual_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              }
+            }
+          },
+          "original_sembench_evaluation": {
+            "classification_audit": {
+              "count_error_from_classifications": 0,
+              "evaluated_rows": 2,
+              "false_negative": 0,
+              "false_positive": 0,
+              "invalid": 0,
+              "missing_rows": 0,
+              "true_negative": 2,
+              "true_positive": 0
+            },
+            "original_metric": {
+              "absolute_error": 0.0,
+              "mean_absolute_percentage_error": 0.0,
+              "relative_error": 0.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+          },
+          "production_core_used": false,
+          "query_id": "engine-direct",
+          "status": "completed",
+          "upstream_accessor_used_in_records": false,
+          "usage": {
+            "completion_tokens": 8,
+            "known_completion_tokens": 8,
+            "known_prompt_tokens": 253,
+            "prompt_tokens": 253,
+            "total_tokens": 261,
+            "unknown_completion_tokens_calls": 0,
+            "unknown_prompt_tokens_calls": 0
+          }
+        },
+        {
+          "backend_close_status": null,
+          "calls": [
+            {
+              "actual_input_audit": {
+                "actual_messages_measured_in_model_actor": true,
+                "actual_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "messages_equal_after_normalization": true,
+                "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+                "normalized_messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+                "rendered_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "reported_prompt_token_ids_equal": true,
+                "tokenizer_prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "tokenizer_rendered_actual_prompt_ids_equal": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"original-native-q3\",\"movie-row-1\",1,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "a73868abe167492ebc91750d04654978",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+              "model_role": "main",
+              "prompt_tokens": 140,
+              "query_id": "original-native-q3",
+              "row_id": "movie-row-1",
+              "source_position": 1,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 140,
+                "prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 144
+            },
+            {
+              "actual_input_audit": {
+                "actual_messages_measured_in_model_actor": true,
+                "actual_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "messages_equal_after_normalization": true,
+                "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+                "normalized_messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+                "rendered_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "reported_prompt_token_ids_equal": true,
+                "tokenizer_prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "tokenizer_rendered_actual_prompt_ids_equal": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"original-native-q3\",\"movie-row-14\",14,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "a73868abe167492ebc91750d04654978",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+              "model_role": "main",
+              "prompt_tokens": 113,
+              "query_id": "original-native-q3",
+              "row_id": "movie-row-14",
+              "source_position": 14,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 113,
+                "prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 117
+            }
+          ],
+          "calls_counts": {
+            "expected": 2,
+            "failed": 0,
+            "missing": 0,
+            "recorded": 2,
+            "submission_confirmed": 2,
+            "submission_unconfirmed": 0,
+            "succeeded": 2,
+            "unknown": 0
+          },
+          "count": 0,
+          "decisions": [
+            {
+              "decision": false,
+              "row_id": "movie-row-1"
+            },
+            {
+              "decision": false,
+              "row_id": "movie-row-14"
+            }
+          ],
+          "differential": {
+            "count": true,
+            "decisions": true,
+            "lm_stats": true,
+            "messages": true,
+            "token_ids": true
+          },
+          "error_type": null,
+          "lm": {
+            "cost_available": false,
+            "cost_reason": "local engine compute is not assigned an API dollar price",
+            "stats": {
+              "cache_hits": 0,
+              "operator_cache_hits": 0,
+              "physical_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              },
+              "virtual_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              }
+            }
+          },
+          "native_uncached_calls": [
+            {
+              "effective_kwargs": {
+                "frequency_penalty": 0.0,
+                "logprobs": false,
+                "max_completion_tokens": 8,
+                "presence_penalty": 0.0,
+                "seed": 0,
+                "stop": [
+                  "\n"
+                ],
+                "temperature": 0.0,
+                "top_p": 1.0
+              },
+              "messages_count": 2
+            }
+          ],
+          "original_sembench_evaluation": {
+            "original_metric": {
+              "absolute_error": 0.0,
+              "mean_absolute_percentage_error": 0.0,
+              "relative_error": 0.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+          },
+          "query_id": "original-native-q3",
+          "status": "completed",
+          "upstream_accessor_used": true,
+          "usage": {
+            "completion_tokens": 8,
+            "known_completion_tokens": 8,
+            "known_prompt_tokens": 253,
+            "prompt_tokens": 253,
+            "total_tokens": 261,
+            "unknown_completion_tokens_calls": 0,
+            "unknown_prompt_tokens_calls": 0
+          }
+        }
+      ],
+      "ray_retry_preflight": {
+        "actor_init_retry_on_errors": false,
+        "actor_pool_size": 1,
+        "actor_task_retry_on_errors": false,
+        "dataset_consumptions": 1,
+        "max_errored_blocks": 0,
+        "max_restarts": 0,
+        "max_task_retries": 0,
+        "retried_map_errors": false
+      },
+      "ray_shutdown_returned": true,
+      "reserved_cap": 8,
+      "source_identity": {
+        "declared_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+        "git_checkout_verified": false,
+        "kind": "archive source bytes",
+        "matched_files": 387,
+        "source_archive_sha256": "cfd3c95aa5ff679bdfacd861dd60ef220900b67c783d9cce8c2f5277b6ab3a08",
+        "unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d"
+      },
+      "status": "completed",
+      "unit_id": "engine-native",
+      "unit_report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+      "usage": {
+        "completion_tokens": 16,
+        "known_completion_tokens": 16,
+        "known_prompt_tokens": 506,
+        "known_total_tokens": 522,
+        "prompt_tokens": 506,
+        "total_tokens": 522,
+        "unknown_completion_tokens_calls": 0,
+        "unknown_prompt_tokens_calls": 0,
+        "unknown_total_tokens_calls": 0
+      },
+      "usage_scope": "recorded query occurrences; unresolved calls remain unknown in each ledger"
+    },
+    "ray-data": {
+      "actual_engine_result_hash_verified": true,
+      "actual_messages_hash_measured_in_model_actor": true,
+      "actual_model_calls": 2,
+      "actual_model_calls_scope": "engine rows reserved before chat; conservative and never refunded",
+      "automatic_retries": 0,
+      "cleanup_errors": [],
+      "cleanup_scope": "engine API and owned Ray runtime; physical exit belongs to controller",
+      "control_report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+      "engine_close": {
+        "attempt": 1,
+        "cleanup_scope": "engine_core_api",
+        "engine_api_shutdown_confirmed": true,
+        "engine_uid": "06b1cc132c5e4e768536c6abc6c68332",
+        "error_type": null,
+        "gpu_exit_confirmed": null,
+        "max_model_calls": 8,
+        "reserved_model_calls": 2,
+        "status": "closed"
+      },
+      "engine_lifetimes": 1,
+      "extra_warmup_calls": 0,
+      "formatter_before_allocation": {
+        "message_types": [
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ],
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ]
+        ],
+        "messages_sha256": [
+          "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+          "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a"
+        ],
+        "scope": "both actual eligible occurrences prepared before Ray/model allocation"
+      },
+      "gpu_exit_confirmed": null,
+      "independent_gpu_process_exit_check": false,
+      "known_engine_result_records": 2,
+      "messages_hash_scope": "expected messages from original driver formatter; production preparation source bytes pinned; actual engine prompt/output token IDs compared with engine-native control",
+      "messages_provenance_limit": "The engine-input messages hash is verified in the production model worker and by Qualification.control. The separate tokenizer direct-template/rendered-token audit was performed for engine-native; Ray prompt/output token IDs are actual engine results compared against that audited control.",
+      "model_owners_allocated": 1,
+      "observed_engine_uids": [
+        "06b1cc132c5e4e768536c6abc6c68332"
+      ],
+      "physical_gpu_exit_check": false,
+      "process_exit": {
+        "child_observed_owned_count": 17,
+        "controller_remaining_owned_count": 0,
+        "controller_resource_exit_confirmed": true,
+        "controller_unit_status": "completed",
+        "supervisor": {
+          "cleanup_errors": [],
+          "gpu_exit_confirmed": null,
+          "observed_owned_count": 38,
+          "observed_owned_exit_confirmed": true,
+          "physical_gpu_exit_checked": false,
+          "process_exit_scope": "observed_owned_processes",
+          "remaining_owned_count": 0,
+          "signals_count": 0,
+          "status": "passed",
+          "unobserved_descendants_confirmed": false,
+          "worker_exit": 0
+        }
+      },
+      "queries": [
+        {
+          "backend_close_status": "unknown",
+          "calls": [
+            {
+              "actual_input_audit": {
+                "actual_engine_result_hash_verified": true,
+                "actual_messages_measured_in_model_actor": true,
+                "equals_original_formatter_messages": true,
+                "independent_tokenizer_rendering_audit_in_ray_worker": false,
+                "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+                "source_proof_sha256": "7cd76a656e8b480d413af572dd7c8d77eb8de0621a65b7c2f589d7cd7de0fe13",
+                "token_ids_compared_with_audited_engine_native_control": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"ray-data-q3\",\"movie-row-1\",1,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "06b1cc132c5e4e768536c6abc6c68332",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+              "model_role": "main",
+              "prompt_tokens": 140,
+              "query_id": "ray-data-q3",
+              "row_id": "movie-row-1",
+              "source_position": 1,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 140,
+                "prompt_ids_sha256": "eb7c09d642ab9379bdfd6a42d4652b762ddd4270937df1a9e89deed459086a4c",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 144
+            },
+            {
+              "actual_input_audit": {
+                "actual_engine_result_hash_verified": true,
+                "actual_messages_measured_in_model_actor": true,
+                "equals_original_formatter_messages": true,
+                "independent_tokenizer_rendering_audit_in_ray_worker": false,
+                "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+                "source_proof_sha256": "7cd76a656e8b480d413af572dd7c8d77eb8de0621a65b7c2f589d7cd7de0fe13",
+                "token_ids_compared_with_audited_engine_native_control": true
+              },
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"ray-data-q3\",\"movie-row-14\",14,0]",
+              "call_index": 0,
+              "completion_tokens": 4,
+              "deadline_expired": false,
+              "engine_uid": "06b1cc132c5e4e768536c6abc6c68332",
+              "error_type": null,
+              "finish_reason": "stop",
+              "matches_engine_native_control": {
+                "finish_reason": true,
+                "messages_sha256": true,
+                "output_token_ids": true,
+                "prompt_token_ids": true,
+                "text": true,
+                "usage": true
+              },
+              "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+              "model_role": "main",
+              "prompt_tokens": 113,
+              "query_id": "ray-data-q3",
+              "row_id": "movie-row-14",
+              "source_position": 14,
+              "status": "succeeded",
+              "submission_confirmed": true,
+              "text": "Answer: False",
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": 4,
+                "output_ids_sha256": "66e0a6cc2f3fc742dbeb955f8cb296985e3d2cf682caed898da1039c1ec254b5",
+                "prompt_ids_count": 113,
+                "prompt_ids_sha256": "498bd25d7acb75cb19e7d204c05adb9eb43f5e01382473e53f6e2e37e2f2a24e",
+                "usage_matches_token_id_lengths": true
+              },
+              "total_tokens": 117
+            }
+          ],
+          "calls_counts": {
+            "expected": 2,
+            "failed": 0,
+            "missing": 0,
+            "recorded": 2,
+            "submission_confirmed": 2,
+            "submission_unconfirmed": 0,
+            "succeeded": 2,
+            "unknown": 0
+          },
+          "control_equal": true,
+          "count": 0,
+          "decisions": [
+            {
+              "decision": false,
+              "row_id": "movie-row-1"
+            },
+            {
+              "decision": false,
+              "row_id": "movie-row-14"
+            }
+          ],
+          "error_type": null,
+          "lm": {
+            "cost_available": false,
+            "cost_reason": "local engine compute is not assigned an API dollar price",
+            "stats": {
+              "cache_hits": 0,
+              "operator_cache_hits": 0,
+              "physical_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              },
+              "virtual_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 8,
+                "prompt_tokens": 253,
+                "total_cost": 0.0,
+                "total_tokens": 261
+              }
+            }
+          },
+          "original_sembench_evaluation": {
+            "classification_audit": {
+              "count_error_from_classifications": 0,
+              "evaluated_rows": 2,
+              "false_negative": 0,
+              "false_positive": 0,
+              "invalid": 0,
+              "missing_rows": 0,
+              "true_negative": 2,
+              "true_positive": 0
+            },
+            "original_metric": {
+              "absolute_error": 0.0,
+              "mean_absolute_percentage_error": 0.0,
+              "relative_error": 0.0
+            },
+            "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+          },
+          "production_core_used": false,
+          "query_id": "ray-data-q3",
+          "status": "completed",
+          "upstream_accessor_used_in_records": false,
+          "usage": {
+            "completion_tokens": 8,
+            "known_completion_tokens": 8,
+            "known_prompt_tokens": 253,
+            "prompt_tokens": 253,
+            "total_tokens": 261,
+            "unknown_completion_tokens_calls": 0,
+            "unknown_prompt_tokens_calls": 0
+          }
+        }
+      ],
+      "ray_retry_preflight": {
+        "actor_init_retry_on_errors": false,
+        "actor_pool_size": 1,
+        "actor_task_retry_on_errors": false,
+        "dataset_consumptions": 1,
+        "max_errored_blocks": 0,
+        "max_restarts": 0,
+        "max_task_retries": 0,
+        "retried_map_errors": false
+      },
+      "ray_shutdown_returned": true,
+      "reserved_cap": 8,
+      "rows_close": {
+        "cleanup_error_history": [],
+        "cleanup_errors": [],
+        "cleanup_scope": "ray_data_graph_and_engine_api",
+        "engine_close_report": {
+          "attempt": 1,
+          "cleanup_scope": "engine_core_api",
+          "engine_api_shutdown_confirmed": true,
+          "engine_uid": "06b1cc132c5e4e768536c6abc6c68332",
+          "error_type": null,
+          "gpu_exit_confirmed": null,
+          "max_model_calls": 8,
+          "reserved_model_calls": 2,
+          "status": "closed"
+        },
+        "executor_shutdown_confirmed": true,
+        "expected_occurrences": 2,
+        "gpu_exit_confirmed": null,
+        "iterator_closed": true,
+        "received_occurrences": 2,
+        "status": "unknown",
+        "watchdog_stopped": true
+      },
+      "source_based_clarification": "The preserved messages_hash_scope text is stale. Pinned production VllmEngine._prepared hashes each decoded input conversation and run_prepared passes those same conversations to LLM.chat, retaining the hash in terminal engine results. Pinned Qualification.control requires each result messages_sha256 to equal the original prepared formatter hash and carries the result field into control comparison. Thus the Ray per-call hash is an actual engine-input hash verified against the original formatter, in addition to the actual token-ID differential.",
+      "source_identity": {
+        "declared_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+        "git_checkout_verified": false,
+        "kind": "archive source bytes",
+        "matched_files": 387,
+        "source_archive_sha256": "cfd3c95aa5ff679bdfacd861dd60ef220900b67c783d9cce8c2f5277b6ab3a08",
+        "unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d"
+      },
+      "source_proof": {
+        "canonical_sha256": "7cd76a656e8b480d413af572dd7c8d77eb8de0621a65b7c2f589d7cd7de0fe13",
+        "engine_source": {
+          "hash_actual_decoded_conversation_lines": [
+            233,
+            257
+          ],
+          "path": "code/src/serving/backends/vllm_engine.py",
+          "preserve_hash_in_result_lines": [
+            315,
+            325
+          ],
+          "same_conversations_passed_to_chat_lines": [
+            328,
+            359
+          ],
+          "sha256": "3fe410e47899f182e0294718261fd2aefd275dbef4b01aeee40401964bf12686"
+        },
+        "ray_source": {
+          "model_worker_run_prepared_lines": [
+            104,
+            109
+          ],
+          "path": "code/src/baselines/text/frameworks/ray_data_lotus_records.py",
+          "sha256": "7ae82cb534fea28c6fe86314f0e6014f93252d7a0f6a186f50927f041dd5fdde"
+        },
+        "source_archive_sha256": "cfd3c95aa5ff679bdfacd861dd60ef220900b67c783d9cce8c2f5277b6ab3a08",
+        "unit_script": {
+          "control_hash_equality_lines": [
+            362,
+            393
+          ],
+          "name": "qualification_unit.py",
+          "ray_query_control_comparison_lines": [
+            516,
+            521
+          ],
+          "sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d"
+        }
+      },
+      "stale_description": true,
+      "status": "completed",
+      "unit_id": "ray-data",
+      "unit_report_sha256": "6d90f1e4b1e7d882645abf5cc730c6d58d42862a644174d35042640ca2d39fb2",
+      "usage": {
+        "completion_tokens": 8,
+        "known_completion_tokens": 8,
+        "known_prompt_tokens": 253,
+        "known_total_tokens": 261,
+        "prompt_tokens": 253,
+        "total_tokens": 261,
+        "unknown_completion_tokens_calls": 0,
+        "unknown_prompt_tokens_calls": 0,
+        "unknown_total_tokens_calls": 0
+      },
+      "usage_scope": "recorded query occurrences; unresolved calls remain unknown in each ledger"
+    },
+    "static": {
+      "actual_messages_hash_measured_in_model_actor": false,
+      "actual_model_calls": null,
+      "actual_model_calls_scope": "engine rows reserved before chat; conservative and never refunded",
+      "automatic_retries": 0,
+      "cleanup_errors": [
+        {
+          "error_type": "TypeError",
+          "stage": "static_close"
+        }
+      ],
+      "cleanup_scope": "engine API and owned Ray runtime; physical exit belongs to controller",
+      "engine_close": null,
+      "engine_lifetimes": null,
+      "error": "static reference requires Daft 0.7.21 Native",
+      "error_type": "RuntimeError",
+      "extra_warmup_calls": 0,
+      "formatter_before_allocation": {
+        "message_types": [
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ],
+          [
+            {
+              "content_type": "str",
+              "role": "system"
+            },
+            {
+              "content_type": "str",
+              "role": "user"
+            }
+          ]
+        ],
+        "messages_sha256": [
+          "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+          "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a"
+        ],
+        "scope": "both actual eligible occurrences prepared before Ray/model allocation"
+      },
+      "gpu_exit_confirmed": null,
+      "independent_gpu_process_exit_check": false,
+      "known_engine_result_records": 0,
+      "messages_hash_scope": "expected messages from original driver formatter; production preparation source bytes pinned; actual engine prompt/output token IDs compared with engine-native control",
+      "model_owners_allocated": 1,
+      "observed_engine_uids": [],
+      "owner_close": {
+        "actor_kill_requests_confirmed": true,
+        "cleanup_errors": [],
+        "cleanup_scope": "ray_actor_and_engine_api",
+        "engine_close_report": null,
+        "gpu_exit_confirmed": true,
+        "implementation": "semloom_records_static_reference",
+        "last_query_report": null,
+        "model_actor_handle_retained": false,
+        "model_ready": null,
+        "production_core_connected": false,
+        "status": "closed"
+      },
+      "owner_close_claim_scope": "Preserved original owner-close report. Its gpu_exit_confirmed=true is not an independent physical GPU exit measurement; the unit itself reports gpu_exit_confirmed=null. Independent controller observations are recorded separately.",
+      "physical_gpu_exit_check": false,
+      "process_exit": {
+        "child_observed_owned_count": 11,
+        "controller_remaining_owned_count": 0,
+        "controller_resource_exit_confirmed": true,
+        "controller_unit_status": "failed",
+        "supervisor": {
+          "cleanup_errors": [],
+          "gpu_exit_confirmed": null,
+          "observed_owned_count": 17,
+          "observed_owned_exit_confirmed": true,
+          "physical_gpu_exit_checked": false,
+          "process_exit_scope": "observed_owned_processes",
+          "remaining_owned_count": 0,
+          "signals_count": 0,
+          "status": "failed",
+          "unobserved_descendants_confirmed": false,
+          "worker_exit": 1
+        }
+      },
+      "qualification_completed": false,
+      "queries": [
+        {
+          "backend_close_status": null,
+          "calls": [
+            {
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"static-first-q3\",\"movie-row-1\",1,0]",
+              "call_index": 0,
+              "completion_tokens": null,
+              "error_type": "RuntimeError",
+              "model_role": "main",
+              "prompt_tokens": null,
+              "query_id": "static-first-q3",
+              "row_id": "movie-row-1",
+              "source_position": 1,
+              "status": "unknown",
+              "submission_confirmed": false,
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": null,
+                "output_ids_sha256": null,
+                "prompt_ids_count": null,
+                "prompt_ids_sha256": null,
+                "usage_matches_token_id_lengths": null
+              }
+            },
+            {
+              "algorithm_stage": "filter",
+              "call_id": "lotus-filter-v1:[\"static-first-q3\",\"movie-row-14\",14,0]",
+              "call_index": 0,
+              "completion_tokens": null,
+              "error_type": "RuntimeError",
+              "model_role": "main",
+              "prompt_tokens": null,
+              "query_id": "static-first-q3",
+              "row_id": "movie-row-14",
+              "source_position": 14,
+              "status": "unknown",
+              "submission_confirmed": false,
+              "tokens": {
+                "hash_encoding": "SHA256 of UTF-8 compact JSON integer array",
+                "output_ids_count": null,
+                "output_ids_sha256": null,
+                "prompt_ids_count": null,
+                "prompt_ids_sha256": null,
+                "usage_matches_token_id_lengths": null
+              }
+            }
+          ],
+          "calls_counts": {
+            "expected": 2,
+            "failed": 0,
+            "missing": 0,
+            "recorded": 2,
+            "submission_confirmed": 0,
+            "submission_unconfirmed": 2,
+            "succeeded": 0,
+            "unknown": 2
+          },
+          "count": null,
+          "decisions": [],
+          "error": "static reference requires Daft 0.7.21 Native",
+          "error_type": "RuntimeError",
+          "lm": {
+            "cost_available": false,
+            "cost_reason": "local engine compute is not assigned an API dollar price",
+            "stats": {
+              "cache_hits": 0,
+              "operator_cache_hits": 0,
+              "physical_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 0,
+                "prompt_tokens": 0,
+                "total_cost": 0.0,
+                "total_tokens": 0
+              },
+              "virtual_usage": {
+                "cache_creation_tokens": 0,
+                "cached_prompt_tokens": 0,
+                "completion_tokens": 0,
+                "prompt_tokens": 0,
+                "total_cost": 0.0,
+                "total_tokens": 0
+              }
+            }
+          },
+          "lm_stats_do_not_resolve_unknown_engine_usage": true,
+          "original_sembench_evaluation": null,
+          "production_core_used": false,
+          "query_id": "static-first-q3",
+          "status": "failed",
+          "upstream_accessor_used_in_records": false,
+          "usage": {
+            "completion_tokens": null,
+            "known_completion_tokens": 0,
+            "known_prompt_tokens": 0,
+            "prompt_tokens": null,
+            "total_tokens": null,
+            "unknown_completion_tokens_calls": 2,
+            "unknown_prompt_tokens_calls": 2
+          }
+        }
+      ],
+      "ray_retry_preflight": {
+        "actor_init_retry_on_errors": false,
+        "actor_pool_size": 1,
+        "actor_task_retry_on_errors": false,
+        "dataset_consumptions": 1,
+        "max_errored_blocks": 0,
+        "max_restarts": 0,
+        "max_task_retries": 0,
+        "retried_map_errors": false
+      },
+      "ray_shutdown_returned": true,
+      "reserved_cap": 8,
+      "source_identity": {
+        "declared_commit": "06f4b687039da4d31115cc30c48b8ead591b9369",
+        "git_checkout_verified": false,
+        "kind": "archive source bytes",
+        "matched_files": 387,
+        "source_archive_sha256": "cfd3c95aa5ff679bdfacd861dd60ef220900b67c783d9cce8c2f5277b6ab3a08",
+        "unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d"
+      },
+      "status": "failed",
+      "unit_id": "static",
+      "unit_report_sha256": "c8acba193fdb0d11d55e08e903fee2d4358c56d5e827e84a4fea93f3ae33817a",
+      "usage": {
+        "completion_tokens": null,
+        "known_completion_tokens": 0,
+        "known_prompt_tokens": 0,
+        "known_total_tokens": 0,
+        "prompt_tokens": null,
+        "total_tokens": null,
+        "unknown_completion_tokens_calls": 2,
+        "unknown_prompt_tokens_calls": 2,
+        "unknown_total_tokens_calls": 2
+      },
+      "usage_scope": "recorded query occurrences; unresolved calls remain unknown in each ledger"
+    }
+  }
+}

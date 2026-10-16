@@ -4,6 +4,10 @@
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
+[Movie Q3 records](../semantic_methods/lotus/README.md#movie-q3-records-最小切片)提供原生 Ray Data 与
+[Daft Native process 图](text/frameworks/daft_lotus_records.README.md)，各自拥有准备、传输与模型执行接点。
+普通Filter共享原LOTUS提示、解释和SemBench评价；Ray Data已完成Qwen／单4090普通Q3小切片差分，Daft的实库CPU／固定响应资格与真实GPU待验范围分别登记。
+
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。
 `text/frameworks/lotus_pg.py`从PG读取原始列、保留重复reviewId，执行原生LOTUS程序；
 `text/frameworks/ray_data_pg_http.py`使用Ray2.56.1的SQL reader与HTTP Processor。

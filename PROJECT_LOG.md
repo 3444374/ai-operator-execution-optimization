@@ -1,5 +1,23 @@
 # 项目日志
 
+## 2026-10-16：完成普通 Q3 小切片的独立单卡模型资格
+
+固定06f4b687的原生LOTUS／SemBench参照4次与Ray Data2次真实请求通过。首次static在模型创建前因Daft runner推断Ray被拒，原错误、close TypeError和未知计数保留；e4c07188显式Native修复通过21项合同及真实CPU双查询图，两轴独审无残留。
+同一SQLite永久预留24→32，旧unit不重跑，补充控制器按原deadline夹紧工作／监督并留15秒清理；两独审闭合期限缺口、8项CPU可恢复证据通过后，静态两次新query共4请求成功，同engine及调用身份隔离。
+三成功单元已确认10次请求，原提示／模板／真实token／usage／parser／COUNT／原SemBench评价一致；首次static的null未知不置0。两轮204／37个owned身份退出，最终独立核对controller、GPU1MiB无compute及正常lease释放。已有四权重／七配置与官方revision匹配，不下载权重或改共享环境。
+[分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#普通-q3-的单卡真实模型资格)保存固定来源、原件SHA与失败；仅两个负例的软件／模型／生命周期资格，不扩为性能、完整质量或production Core结论。Daft GPU、IMLane模型方法／作者Ray、全局级联、图像与AsyncLLM仍pending。
+
+## 2026-10-16：选择性整合 IMLane 多行记录桥
+
+从职责 `feat/imlane-records-echo@78f05783` 仅取新bridge、测试和资格目录；未合并旧baseline树。为移除对已清理验证树的依赖，将必要AuthorScope生命周期／StopBudget／namespace／SHM helper收口到独立模块，复用受信Linux出生标识和正常host lease，禁止stale接管。
+原7项源码摘要及10个作者CPython无模型scope保持各自身份；集成patch另记摘要，初次15项CPU检查通过；独审发现的lease释放、未知PID身份与stderr落盘边界修复后22项CPU／Arrow／PID-SHM替身检查通过，原日志保留。报告研究对象已修为AI语义算子数据执行和独立DBEnd桥，方法／usage／GPU和作者Ray仍pending，未在本轮重跑作者环境，见[报告](experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
+
+## 2026-10-16：接入独立 Daft records 原生图
+
+选择性接纳职责 `codex/daft-lotus-records@fc5380a9` 的三提交，新增 Daft Native 0.7.21 process 准备／推理 UDF 和独占模型子进程；复用原 source、方法、引擎、调用账本与原评价，不恢复旧 baseline。
+共享入口新增 `daft-native-local-model`，不导入或启动 Ray；协作取消、实际批检查、完整结果／已知usage及清理错误保持分离，硬墙钟由外层监督提供。
+集成后真实 CPU 图与 selector 的26项／2subtests零skip通过，已观测owned进程全部退出；[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分列作者65项与引擎30项资格、失败原件及本次集成摘要。真实 vLLM／GPU、级联和性能仍pending。
+
 ## 2026-10-16：准备有界的 records 真实引擎资格
 
 在已发布 `957e91eb` 上增加可选单引擎应用请求上限、规范 messages 摘要与实际 prompt token IDs，以核验模板、参数和usage；默认 `None` 保持现有接入。

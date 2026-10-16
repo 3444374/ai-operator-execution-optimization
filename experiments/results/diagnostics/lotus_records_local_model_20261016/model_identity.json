@@ -1,0 +1,102 @@
+{
+  "schema": "semloom.local_model_identity.v1",
+  "model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "official_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "official_revision_url": "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/tree/a09a35458c702b33eeacc393d103063234e8bc28",
+  "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+  "files": {
+    "config.json": {
+      "bytes": 663,
+      "sha256": "7463bb0ea78315365e6c6b74de4e73bbcc8359dfb0c5a737584e077d42c0b03c",
+      "actual_git_blob_id": "0178295f88afc3c7f279ed284f961f8c1be00654",
+      "official_git_blob_id": "0178295f88afc3c7f279ed284f961f8c1be00654",
+      "matches_official": true
+    },
+    "generation_config.json": {
+      "bytes": 243,
+      "sha256": "3a8f9087e486054c8a4a08dae2e5a3ba62e23da212b5b8c08bc42cb983c3459f",
+      "actual_git_blob_id": "0eb3c536657dcd12626e09eca4b6198c0cbcde1e",
+      "official_git_blob_id": "0eb3c536657dcd12626e09eca4b6198c0cbcde1e",
+      "matches_official": true
+    },
+    "tokenizer_config.json": {
+      "bytes": 7305,
+      "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+      "actual_git_blob_id": "07bfe0640cb5a0037f9322287fbfc682806cf672",
+      "official_git_blob_id": "07bfe0640cb5a0037f9322287fbfc682806cf672",
+      "matches_official": true
+    },
+    "tokenizer.json": {
+      "bytes": 7031645,
+      "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+      "actual_git_blob_id": "443909a61d429dff23010e5bddd28ff530edda00",
+      "official_git_blob_id": "443909a61d429dff23010e5bddd28ff530edda00",
+      "matches_official": true
+    },
+    "merges.txt": {
+      "bytes": 1671839,
+      "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+      "actual_git_blob_id": "20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0",
+      "official_git_blob_id": "20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0",
+      "matches_official": true
+    },
+    "vocab.json": {
+      "bytes": 2776833,
+      "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+      "actual_git_blob_id": "4783fe10ac3adce15ac8f358ef5462739852c569",
+      "official_git_blob_id": "4783fe10ac3adce15ac8f358ef5462739852c569",
+      "matches_official": true
+    },
+    "model.safetensors.index.json": {
+      "bytes": 27752,
+      "sha256": "624bf7c47cd12468fdc16e38a47cf4f19e0415b859a223ba3c027eed2f0e1028",
+      "actual_git_blob_id": "14d037fdda5a1311dcc0275003a7a370d84114e6",
+      "official_git_blob_id": "14d037fdda5a1311dcc0275003a7a370d84114e6",
+      "matches_official": true
+    },
+    "model-00001-of-00004.safetensors": {
+      "bytes": 3945441440,
+      "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "official_lfs_sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7",
+      "official_bytes": 3945441440,
+      "matches_official": true
+    },
+    "model-00002-of-00004.safetensors": {
+      "bytes": 3864726352,
+      "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "official_lfs_sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185",
+      "official_bytes": 3864726352,
+      "matches_official": true
+    },
+    "model-00003-of-00004.safetensors": {
+      "bytes": 3864726424,
+      "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "official_lfs_sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5",
+      "official_bytes": 3864726424,
+      "matches_official": true
+    },
+    "model-00004-of-00004.safetensors": {
+      "bytes": 3556377672,
+      "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "official_lfs_sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd",
+      "official_bytes": 3556377672,
+      "matches_official": true
+    }
+  },
+  "weights_downloaded": false,
+  "official_metadata_only_fetched": true,
+  "raw_evidence": {
+    "remote-identity-r2.stdout": {
+      "bytes": 3075,
+      "sha256": "d8e36d7a073f18f3fa6ccc856c004380f172ba900bbdefaebe5d7e1de72c3dfe"
+    },
+    "remote-smallfiles.stdout": {
+      "bytes": 839,
+      "sha256": "bde77e25a01d515d6da98996b735e5f1d61fe1b699439cc919e7622616428f6e"
+    },
+    "qwen-official-revision-metadata.json": {
+      "bytes": 9311,
+      "sha256": "2fa534383ceb3b8719980dcc38e448da6c2caf558972535fb78ab773fb596d4b"
+    }
+  }
+}

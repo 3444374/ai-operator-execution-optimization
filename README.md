@@ -14,7 +14,8 @@ LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化�
 records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
 HTTP records 流水保留为阶段实现与对照；独立集成分支的[普通 Movie Q3 最小切片](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
-已有代码与非模型资格，真实引擎／GPU及更完整范围待验证，边界由架构文档维护。
+已完成分列的CPU资格，以及原生参照／Ray Data／静态参照的Qwen单4090普通Q3小切片实测；Daft独立路径GPU与更完整范围待验证，边界由架构文档维护。
+[独立 IMLane 多行桥](code/integrations/imlane_records/README.md)保留作者 DBEnd／Lane 所有权；CPython 无模型 echo 与主线依赖收口分别有证据，LOTUS／本地模型和作者 Ray 接入仍待实现。
 
 | 要查什么 | 权威入口 |
 |---|---|

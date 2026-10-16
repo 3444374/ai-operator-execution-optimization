@@ -1,17 +1,24 @@
 # AI 算子执行 Infra 当前状态
 
+## 独立 IMLane 记录桥
+
+[多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
+当前主线新增独立owner helper，复用精确PID出生标识、namespace／SHM核验与禁止stale恢复的host lease；22项本机CPU检查通过。
+原作者实测不重新绑定为新helper实测，作者Ray、LOTUS／模型方法、逐调用usage、完整真实模型生命周期及新helper作者实机重跑仍pending，见[报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
+
 ## 独立 records 数据执行切片
 
 `integration/data-execution` 从已审阅 main `52391e37` 建立；本分支新增普通 Movie Q3 的
 records→worker 原 LOTUS 准备→同步本地模型接点→原解析／COUNT→原 SemBench evaluator。
-Ray Data 原生图与 SemLoom Daft＋Ray Core 静态参照分列，静态路径未接 production Core。
-[实现、非模型资格与失败原件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
+Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom Daft＋Ray Core 静态参照分列，静态路径未接 production Core。
+Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2subtests通过分开登记；实际Daft／LOTUS／原evaluator固定响应，零模型／GPU，完整usage与清理错误分离。
+[实现、分层资格与失败原件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
 包含修复后 Python 3.12 的 114 项／213 subtests、真实 LOTUS 和部分 Ray／Daft CPU 接线。
-实际 vLLM／模型环境／GPU、级联、图像、持续供给与完整原生后端矩阵均 pending。
+原生参照／Ray Data／SemLoom静态参照已完成Qwen2.5-7B／vLLM0.25.1／单4090普通Q3小切片：已确认4＋2＋4条请求，提示／真实token／usage／COUNT／原评价一致，静态同engine连续查询隔离通过。首次Native guard失败保留null与未知账本；修后static e4c07188、原生及Ray 06f4b687分别绑定387文件字节闭包。两轮owned进程与GPU1MiB／无compute退出、正常lease均核同；同一预算32/32永久预留，零自动重试。Daft GPU、级联、图像、持续供给与完整矩阵仍pending。
 这不是 main 已接纳或旧 `integration/baselines` 的新资格；旧请求实现及测试保持原样。
 
 后续真实资格准备新增可选单实例请求上限、规范 messages 摘要及实际 prompt token IDs；
-52 项受影响 CPU 检查／74 subtests 通过，默认配置保持兼容。实际模型结果尚待本轮独立登记，不能继承此前 CPU 资格。
+52项受影响CPU检查／74subtests通过，默认保持兼容。static显式Native选择另有21项合同／真实CPU双查询图；真实结果从上述独立报告核对，不继承CPU资格。
 
 ## main 与集成分支的阅读范围
 
@@ -50,7 +57,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 [当前模块](src/semantic_methods/lotus/README.md)已提供完整 uncached batch 的原 SDK／Daft／Ray Data／SemLoom 接点，
 以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
 当前是[完整请求级接点](src/semantic_methods/lotus/README.md#filter-execution-boundary)；普通 Movie 未传级联配置，图片准备仍先于后端。
-普通／级联 Filter 的记录级准备到结果入口属于[下一单元计划](../experiments/plans/数据组织.md#lotus-filter-data-execution)；本分支普通 Q3 切片见本页首节，main 与新模型资格尚未取得。
+普通／级联 Filter 的记录级准备到结果入口属于[下一单元计划](../experiments/plans/数据组织.md#lotus-filter-data-execution)；本分支普通Q3切片及其限定模型资格见本页首节，尚未合入main。
 原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
 [本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
 [同一main实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)固定`464de926`，覆盖原Q1/Q2/Q3与Animals；模型质量不足及单次计时边界保留。PZ、IMLane和图像检索仍按各自固定来源解释。

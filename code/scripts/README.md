@@ -30,6 +30,11 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 未提供此选项时保持既有launcher／sidecar路径。声明映射与live进程／GPU证明分别记录；
 [配置、固定来源和单卡实际资格](../../experiments/results/diagnostics/main_service_auto_20261015/README.md)不外推多GPU或性能。
 
+## IMLane 独立多行记录桥
+
+`PYTHONPATH=code python code/integrations/imlane_records/verify.py --help` 可独立读取无模型echo验证器的固定作者prefix／workload／资源参数，实际启动需依照[模块合同](../integrations/imlane_records/README.md)与正常共享lease。
+本轮只选择性整合桥与owner helper，本机检查没有启动作者组件；[原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)分列。真实模型命令与完整LOTUS接线尚未提供。
+
 ## Movie Q3 records 本地模型接点
 
 `experiments/run_lotus_records_movie.py` 是独立入口，限定普通 Movie Q3 Filter＋COUNT。
@@ -61,7 +66,9 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py check
 }
 ```
 
-另一臂为 `semloom-local-model-static-reference`，明确未接 production Core。
+另可选择 `semloom-local-model-static-reference`（明确未接production Core）或 `daft-native-local-model`。静态路径在Ray初始化后、Daft首次推断前显式选Native；复用已有Native，拒绝已有Ray或冲突配置。
+Daft 路径由原生 process UDF 和私有模型进程拥有执行，不 import／init Ray；[模块合同](../src/baselines/text/frameworks/daft_lotus_records.README.md)说明协作取消与 IPC 观测范围。
+本入口沿用 Daft 默认 runner_threads／64 MiB 实际准备批上限，不新增专属配置键；`max_active_batches` 属于 Ray 设置，不表示 Daft 提交窗口。
 driver 固定 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1／Daft 0.7.21；模型环境单独安装 vLLM 0.25.1，不能含 LOTUS。
 当前只核 Python prefix、固定版本和本地目录，模型／tokenizer／template 内容身份与 GPU 资源由运行 owner 在资格前进一步固定。
 缓存关闭，非默认 serialization、LM rate／TPM、logprobs、repetition override 明确拒绝，不会降为普通空结果。
@@ -71,11 +78,12 @@ driver 固定 LOTUS 1.2.4／LiteLLM 1.95.0／OpenAI 2.50.0、Ray 2.56.1／Daft 0
 PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py run --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$RECORDS_CONFIG" --output-dir "$NEW_PRIVATE_RUN" --execute-model
 ```
 
-入口独占本地 Ray，重试关闭；外层监督覆盖 startup＋query＋30 秒总期限，保存私有 preflight／query／supervisor JSON 和落盘前脱敏的 worker log。
+Ray 路径独占本地 Ray，Daft 路径只启动原生 runtime；均关闭重试。同步扫描／worker 初始化的硬墙钟由外层监督覆盖 startup＋query＋30 秒总期限，保存私有 preflight／query／supervisor JSON 和落盘前脱敏的 worker log。
 输出整行最多保留16 KiB，超长行省略并报告；无换行尾部同样脱敏，输出不完整时保留对应 capture 状态。
 `engine.max_model_calls` 可选设置单实例应用请求数上限；整批超过剩余额度在 chat 前拒绝，失败／unknown 保守计费，ready／close 报告累计数。
 多 unit／新实例的全轮预算仍由资格 runner 的持久账本先行分配，不能靠该内存上限覆盖重建实例。
-调用方仍须按既有授权、normal shared lease、固定 GPU mask／模型身份与独立 GPU 物理退出核查安排运行。
+调用方仍须按既有授权、normal shared lease、固定GPU mask／模型身份与独立GPU物理退出核查安排运行。
+本轮原生参照／Ray Data／静态参照的已确认10条Qwen单卡请求、首次失败、同账本32/32及独立退出见[分层资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#普通-q3-的单卡真实模型资格)；Daft真实模型仍pending。
 监督器仅确认已观测身份匹配的 owned 进程，未观测 detached 后代与 GPU 退出不作确认；直接库调用者也须提供等价外层监督。
 本轮未执行该模型命令，实际范围及下一步门槛见[资格记录](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
 

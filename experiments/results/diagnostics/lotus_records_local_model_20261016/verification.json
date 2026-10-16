@@ -169,6 +169,16 @@
       "artifact": "nonmodel-evidence/model-qualification-cpu-r3.json",
       "bytes": 908,
       "sha256": "62022b66e574e7918354d0a0518577c93006e0cac9d99c95b6b5d9bbac463452"
+    },
+    {
+      "artifact": "nonmodel-evidence/daft-integration-tests-r1/worker.log",
+      "bytes": 1596,
+      "sha256": "33e12bfc8ed6f75a7d6212e999f593a1c42dcb4c4e8a162a75496591d1a0b836"
+    },
+    {
+      "artifact": "nonmodel-evidence/daft-integration-tests-r1/supervisor.json",
+      "bytes": 6112,
+      "sha256": "579f9f3e515bb49f9d3001605efb45dba9961215615fccdd86f146497a7fb0d8"
     }
   ],
   "raw_evidence_location": "Private local task-8 artifact directory; original files retained. Obtain from execution owner by artifact name and verify SHA256.",
@@ -344,6 +354,120 @@
     "code_sha256": {
       "code/src/serving/backends/vllm_engine.py": "3fe410e47899f182e0294718261fd2aefd275dbef4b01aeee40401964bf12686",
       "code/tests/serving/test_vllm_engine.py": "3f1005420ef6390bbfee6a8ad5afc76f3af3a6bf270b6a7eef0a2ebe8f739a6f"
+    }
+  },
+  "daft_integration_cpu": {
+    "author_commit": "fc5380a9c422c32c742b1477cbc5071295fe62bc",
+    "integration_parent": "d496f4c8",
+    "scope": "real Daft CPU process graph, actual LOTUS method/evaluator with explicit fixed responses and shared selector; no model or GPU",
+    "passed": 26,
+    "subtests_passed": 2,
+    "skipped": 0,
+    "failed": 0,
+    "wall_s": 62.56,
+    "supervised_wall_s": 63.758501375094056,
+    "observed_owned_count": 68,
+    "observed_owned_exit_confirmed": true,
+    "remaining_owned_pids": [],
+    "command": [
+      "<cpu-venv>/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "code/tests/baselines/text/test_daft_lotus_records.py",
+      "code/tests/experiments/test_lotus_records_movie.py"
+    ],
+    "environment": {
+      "PYTHONPATH": "code",
+      "HF_HUB_OFFLINE": "1",
+      "TRANSFORMERS_OFFLINE": "1",
+      "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+      "SEMBENCH_CHECKOUT": "<pinned-SemBench-checkout>",
+      "MPLCONFIGDIR": "<private-evidence>/matplotlib"
+    },
+    "source_sha256": {
+      "code/src/experiments/lotus_records_movie.py": "349a09da2c2ad3cc87f298f63137145b11d73a64267aaf4c344deb1a186cb001",
+      "code/tests/experiments/test_lotus_records_movie.py": "1981239a9dd58d3e44242868f89e5594d68183ec5953a3c70301f800e3446a22",
+      "code/src/baselines/text/frameworks/daft_lotus_records.py": "45919b8135e4c4c218b42cd505ee22ccf820a6ea4be2b15d4aae5624cc5ed6fa",
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "4fe3cf44fcc9e6ce6593a60876dff871cd83fbe1d93d229299076bd010b7c309"
+    }
+  },
+  "static_native_runner_fix_cpu": {
+    "production_commit": "e4c07188fd45c6969063dfca5c7c49a671acff65",
+    "contract_tests": 21,
+    "new_regressions": 8,
+    "skipped": 0,
+    "real_libraries": {
+      "Ray": "2.56.1",
+      "Daft": "0.7.21"
+    },
+    "real_graph_queries": 2,
+    "same_fixture_engine_uid": true,
+    "distinct_query_call_ids": true,
+    "fake_request_rows": 4,
+    "actual_model_calls": 0,
+    "gpu_work": false,
+    "original_parser_and_evaluator_used": true,
+    "fixture_substitutions": [
+      "model actor ready uses self-written CPU engine",
+      "model Ray actor num_gpus=0",
+      "model/driver interpreter preflight stubbed for same CPU interpreter"
+    ],
+    "raw_evidence": [
+      {
+        "artifact": "nonmodel-evidence/static_runner_cpu_validation.py",
+        "bytes": 12292,
+        "sha256": "231840d09d9f385c35b68d5d0c74ff06487e01d88c2aabc6d33744c44db46d95"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-native-runner-contracts-20261017-r1.json",
+        "bytes": 1005,
+        "sha256": "fa12bec61f35a5766518519bac4e0191fef8ad661df672948fa79f8e1274bad1"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-native-runner-contracts-20261017-r1.log",
+        "bytes": 4360,
+        "sha256": "1085fbc5cd6d58b5b20d0862203ddfab01b001b3b0be2bee22a9cbbcdde03165"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-runner-infer-cpu-20261017-r2/report.json",
+        "bytes": 1466,
+        "sha256": "1291add941d651ccdac5dd94977d8f3690db48cd1e65c9f59859423805899b5b"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-runner-infer-cpu-20261017-r2/worker.log",
+        "bytes": 77,
+        "sha256": "7a345592d67304c0f416bb8cf3d7dbdc5447510e3fda08df37fb79de11546dcc"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-runner-graph-cpu-20261017-r1/report.json",
+        "bytes": 24562,
+        "sha256": "cca1d32da6a49cfe250d944f8bfd24d6d9faeebf709e0289b7173f6e1a500da6"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-runner-graph-cpu-20261017-r1/worker.log",
+        "bytes": 623,
+        "sha256": "9f381742232cde7500fee9dfd4dce3d03a91fecb440167a6f971db187f4cf833"
+      },
+      {
+        "artifact": "nonmodel-evidence/static-runner-infer-cpu-20261017-r1/report.json",
+        "bytes": 4003,
+        "sha256": "0f2610b1c5e7f75fbe40213f9f406cf11053c9b3545a70b25cae444cbf8c2438"
+      }
+    ],
+    "summary_sha256": "7ea086c60f451b35048a368ba6ef3237bdc0b963ceeb8e6f7900e7b8b9a6f4f4",
+    "review": {
+      "axes": [
+        "Spec",
+        "Standards"
+      ],
+      "remaining_findings": 0,
+      "read_only": true
+    },
+    "failed_sandbox_attempt_retained": true,
+    "production_sources_sha256": {
+      "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
+      "code/tests/execution_provider/test_lotus_records_static.py": "bb6cc971a3e14d34cee8b16a221ab52b9934ec11a79091111895a3ee434713a5"
     }
   }
 }

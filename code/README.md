@@ -1,8 +1,11 @@
 # SemLoom Code
 
-[Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图与 SemLoom 静态参照，
+[Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
 直达本地模型接点和原 LOTUS／SemBench 解释评价；[命令](scripts/README.md#movie-q3-records-本地模型接点)与
-[实际非模型资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。真实 GPU／级联及 production Core 仍 pending。
+[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft GPU、级联及production Core仍pending。
+
+[IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
+本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
 
 [LOTUS 完整请求模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，
 [Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)保留原查询与评价器。

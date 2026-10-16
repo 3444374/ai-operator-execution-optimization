@@ -1,9 +1,13 @@
 # 实验与机制证据台账
 
+2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
+职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。
+
 2026-10-16：[Movie Q3 records 本地模型接点](diagnostics/lotus_records_local_model_20261016/README.md)。
 已审阅 main `52391e37` 上独立实现，独审修复后Python3.12的114项及213 subtests通过；原LOTUS方法差分、原SemBench评价、真实Ray CPU formatter图和Daft typed CSV分列。
-固定响应无推理，失败与进程监督保留；不支持真实vLLM／GPU、级联、production Core或性能结论。
-后续单卡真实资格准备仅增加单实例请求上限及消息／prompt token 来源，52项受影响CPU检查通过；真实模型结果仍待本轮绑定源码登记。
+首阶段为固定响应无推理，失败与进程监督保留；该阶段不支持真实vLLM／GPU、级联、production Core或性能结论。
+后续[Daft职责证据](diagnostics/lotus_records_local_model_20261016/daft_verification.json)为65项实库CPU及独立旧引擎替身30项；共享selector集成另有26项／2subtests零skip，日志与源码摘要见主报告verification.json，不合并为重复计数。
+后续单实例cap与消息／prompt token来源的52项CPU检查单列；实际06f4b687原生参照／Ray Data分别4／2请求，e4c07188静态双查询4请求，全部与原方法／token／usage／COUNT／原评价核同。首次static Native guard失败及null未知保留；修复21项合同与真实CPU图、补充控制器8项CPU及两轴审查均有独立来源。同一预算24→32永久预留、零自动重试，owned进程退出／GPU1MiB无compute／正常lease已核同。模型和模板内容身份、冻结cfg及两轮原件SHA见同题model_*.json；仅普通小切片，不扩Daft GPU、级联、Core或性能资格。
 
 2026-10-16：[Animals观测模式CPU回归](diagnostics/main_lotus_animals_20261015/README.md#observation-body-capture)。紧凑body留证与原SDK／Daft连续查询按新源码单列，旧模型与RSS证据保持原身份。
 

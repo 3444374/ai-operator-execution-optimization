@@ -123,6 +123,34 @@ class MovieRecordsTests(unittest.TestCase):
 
 
 class WorkerCleanupTests(unittest.TestCase):
+    def test_daft_selector_uses_lazy_native_graph_without_importing_ray(self):
+        import builtins
+        from src.experiments import lotus_records_movie as module
+
+        native_rows = iter(())
+        recorded = []
+        original_import = builtins.__import__
+
+        def guarded_import(name, *args, **kwargs):
+            if name == "ray" or name.startswith("ray."):
+                raise AssertionError("Daft selector imported Ray")
+            return original_import(name, *args, **kwargs)
+
+        def query(*args, **kwargs):
+            self.assertIs(args[4](), native_rows)
+            return {"status": "completed", "calls": {"known_prompt_tokens": 7}}
+
+        with patch("src.baselines.text.frameworks.daft_lotus_records.evaluate",
+                   return_value=native_rows) as evaluate, \
+             patch.object(module, "run_movie_query", side_effect=query), \
+             patch.object(module, "write_private_json", side_effect=lambda path, value: recorded.append(dict(value))), \
+             patch("builtins.__import__", side_effect=guarded_import):
+            module._model_worker({"backend": "daft-native-local-model", "query_id": "q"},
+                                 "source", "checkout", "method", "generation", "resources", "engine", Path("unused"))
+        evaluate.assert_called_once_with("source", "method", "engine", "generation", "resources", query_id="q")
+        self.assertEqual(recorded[-1]["status"], "completed")
+        self.assertFalse(recorded[-1]["independent_gpu_process_exit_check"])
+
     def worker(self, *, query_error=None, close_error=None, shutdown_error=None):
         from src.experiments import lotus_records_movie as module
         report = {"status": "completed", "calls": {"known_prompt_tokens": 7}}
