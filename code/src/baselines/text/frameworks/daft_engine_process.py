@@ -1,0 +1,315 @@
+"""A private finite-batch engine process owned by one Daft UDF instance.
+
+Only this transport is Daft-specific. Method preparation, generation options,
+engine execution and process-tree cleanup reuse their existing implementations.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import select
+import signal
+import subprocess
+import sys
+import threading
+import time
+import uuid
+from dataclasses import asdict
+
+from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
+
+
+MAX_MESSAGE_BYTES = 64 * 1024**2
+CODE_ROOT = Path(__file__).resolve().parents[4]
+
+
+def _encode(value):
+    data = json.dumps(value, ensure_ascii=False, allow_nan=False).encode("utf-8") + b"\n"
+    if len(data) > MAX_MESSAGE_BYTES:
+        raise ValueError("engine IPC message exceeds its byte limit")
+    return data
+
+
+def _publish(path, value):
+    from src.baselines.common.private_artifacts import write_private_json
+    from src.baselines.common.redact import redact_json_values
+
+    temporary = path.with_suffix(".tmp")
+    write_private_json(temporary, redact_json_values(value))
+    os.replace(temporary, path)
+
+
+class EngineProcess:
+    """No retry, model sharing, batching policy or GPU routing lives here."""
+
+    def __init__(self, engine, generation, control_dir, deadline, startup_timeout_s):
+        import psutil
+
+        self.control = Path(control_dir)
+        self.deadline = deadline
+        self.process = None
+        self.reader = None
+        self.pending = bytearray()
+        self.owned = set()
+        self.created = None
+        self.ready_report = None
+        self.engine_close = None
+        self.last_close_report = None
+        self.ipc_seconds = self.startup_seconds = 0.0
+        self._closed = False
+        self._broken = False
+        self._lock = threading.RLock()
+        self._reaper_stop = threading.Event()
+        self.report_path = self.control / ("engine-" + uuid.uuid4().hex + ".json")
+        self._check(deadline)
+        started = time.monotonic()
+        read_fd, write_fd = os.pipe()
+        try:
+            environment = dict(os.environ, PYTHONPATH=str(CODE_ROOT),
+                               HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
+            self.process = subprocess.Popen(
+                self._command(engine, write_fd),
+                stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                pass_fds=(write_fd,), start_new_session=True, env=environment, bufsize=0,
+            )
+            self.created = psutil.Process(self.process.pid).create_time()
+            self.owned.add((self.process.pid, self.created))
+            _publish(self.report_path, dict(status="starting", model_pid=self.process.pid,
+                                          process_created=self.created,
+                                          process_exit_confirmed=False, cleanup_errors=[]))
+            os.set_blocking(read_fd, False)
+            os.set_blocking(self.process.stdin.fileno(), False)
+            self.reader = os.fdopen(read_fd, "rb", buffering=0)
+            read_fd = None
+            self.ready_report = self._exchange(
+                dict(op="open", engine=asdict(engine), generation=asdict(generation)),
+                min(deadline, started + startup_timeout_s),
+            )
+            if self.ready_report.get("kind") != "ready":
+                raise RuntimeError("private engine initialization failed: " +
+                                   str(self.ready_report.get("error_type")))
+            self.startup_seconds = time.monotonic() - started
+            self._reaper = threading.Thread(target=self._reap_idle, daemon=True,
+                                            name="daft-private-engine-stop")
+            self._reaper.start()
+        except BaseException as exc:
+            self._broken = True
+            try:
+                self.close()
+            except BaseException as cleanup:
+                exc.add_note("private engine cleanup also failed: " + type(cleanup).__name__)
+            raise
+        finally:
+            os.close(write_fd)
+            if read_fd is not None:
+                os.close(read_fd)
+
+    @staticmethod
+    def _command(engine, result_fd):
+        return [engine.model_python, "-m", __name__, "--serve", str(result_fd)]
+
+    def _check(self, deadline, *, stopping=True):
+        if stopping and (self.control / "stop").exists():
+            raise InterruptedError("Daft records query cancelled")
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Daft records engine deadline expired")
+
+    def _exchange(self, value, deadline, *, stopping=True):
+        from src.experiments.lotus_records_supervisor import _observe
+
+        started = time.monotonic()
+        data = memoryview(_encode(value))
+        try:
+            while data:
+                self._check(deadline, stopping=stopping)
+                if select.select([], [self.process.stdin], [], 0.02)[1]:
+                    data = data[os.write(self.process.stdin.fileno(), data):]
+            while True:
+                if b"\n" in self.pending:
+                    line, _, rest = self.pending.partition(b"\n")
+                    self.pending = bytearray(rest)
+                    result = json.loads(line)
+                    if type(result) is not dict:
+                        raise ValueError("engine IPC response must be an object")
+                    return result
+                # Read an already-available result before acting on a stop so
+                # authoritative usage is retained even when publication stops.
+                if select.select([self.reader], [], [], 0.02)[0]:
+                    block = os.read(self.reader.fileno(), 65536)
+                    if not block:
+                        raise EOFError("private engine response pipe closed")
+                    self.pending.extend(block)
+                    if len(self.pending) > MAX_MESSAGE_BYTES:
+                        raise ValueError("engine IPC response exceeds its byte limit")
+                else:
+                    self._check(deadline, stopping=stopping)
+                _observe(self.owned, self.process.pid, self.created)
+                if b"\n" not in self.pending:
+                    self._check(deadline, stopping=stopping)
+        finally:
+            self.ipc_seconds += time.monotonic() - started
+
+    def run_prepared(self, rows):
+        with self._lock:
+            return self._run_prepared(rows)
+
+    def _reap_idle(self):
+        while not self._reaper_stop.wait(0.02):
+            if (self.control / "stop").exists() or time.monotonic() >= self.deadline:
+                with self._lock:
+                    self._broken = True
+                    self.close()
+                return
+
+    def _run_prepared(self, rows):
+        from src.serving.backends.vllm_engine import _prepared
+
+        identities, _ = _prepared(rows)
+        try:
+            if self._broken or self._closed:
+                raise RuntimeError("private engine cannot be reused after stop or close")
+            response = self._exchange(dict(op="run", rows=rows, deadline=self.deadline), self.deadline)
+            if response.get("kind") != "results" or type(response.get("rows")) is not list:
+                raise RuntimeError("private engine call failed: " + str(response.get("error_type")))
+            results = response["rows"]
+            if (len(results) != len(identities)
+                    or any(type(row) is not dict or any(row.get(key) != item[key] for key in IDENTITY_FIELDS)
+                           for row, item in zip(results, identities))):
+                raise ValueError("private engine changed call association")
+            return results
+        except Exception as exc:
+            self._broken = True
+            self.close()
+            return [dict(item, status="unknown", submission_confirmed=False,
+                         error_type=type(exc).__name__, prompt_tokens=None,
+                         completion_tokens=None, total_tokens=None,
+                         engine_uid=(self.ready_report or {}).get("engine_uid"))
+                    for item in identities]
+
+    def close(self, timeout=5.0):
+        with self._lock:
+            return self._close(timeout)
+
+    def _close(self, timeout):
+        from src.experiments.lotus_records_supervisor import _live, _observe, _signal, _wait
+
+        if self._closed:
+            return self.last_close_report
+        self._reaper_stop.set()
+        started = time.monotonic()
+        deadline = started + timeout
+        errors = []
+        if self.process is not None:
+            if self.created is not None:
+                try:
+                    _observe(self.owned, self.process.pid, self.created)
+                    if not self._broken and self.process.poll() is None:
+                        reply = self._exchange(dict(op="close"), min(deadline, started + timeout / 2),
+                                               stopping=False)
+                        if reply.get("kind") == "closed":
+                            self.engine_close = reply["report"]
+                            if not self.engine_close.get("engine_api_shutdown_confirmed"):
+                                errors.append("engine_api_shutdown_unconfirmed")
+                        else:
+                            errors.append("engine_close_response_invalid")
+                except Exception as exc:
+                    errors.append("engine_close: " + type(exc).__name__)
+                try:
+                    _wait(self.owned, self.process.pid, self.created,
+                          min(deadline, time.monotonic() + 0.2))
+                    if _live(self.owned):
+                        _signal(self.owned, self.process.pid, self.created, signal.SIGTERM)
+                        _wait(self.owned, self.process.pid, self.created,
+                              min(deadline, time.monotonic() + timeout / 3))
+                    if _live(self.owned):
+                        _signal(self.owned, self.process.pid, self.created, signal.SIGKILL)
+                        _wait(self.owned, self.process.pid, self.created, deadline)
+                except Exception as exc:
+                    errors.append("process_cleanup: " + type(exc).__name__)
+                    # Process-table access can be denied independently of
+                    # signalling our own child. Still terminate the direct
+                    # Popen child; keep tree cleanup unconfirmed in the report.
+                    if self.process.poll() is None:
+                        self.process.kill()
+            else:
+                # A process that could not be observed still needs its direct
+                # Popen handle terminated; never report its children as known.
+                errors.append("process_identity_unavailable")
+                self.process.kill()
+            try:
+                self.process.wait(timeout=max(0.001, deadline - time.monotonic()))
+            except subprocess.TimeoutExpired:
+                errors.append("engine_process_still_running")
+            for stream in (self.process.stdin, self.reader):
+                if stream is not None:
+                    stream.close()
+        live = _live(self.owned)
+        exited = self.process is None or self.process.poll() is not None
+        confirmed = exited and not live and self.created is not None
+        if any(error.startswith("process_cleanup:") for error in errors):
+            confirmed = False
+        self._closed = confirmed
+        if live:
+            errors.append("observed_engine_children_still_running")
+        self.last_close_report = dict(
+            status="closed" if confirmed and not errors else "unknown",
+            cleanup_scope="private_engine_and_observed_os_processes",
+            process_exit_confirmed=confirmed, gpu_exit_confirmed=None,
+            gpu_exit_reason="requires independent GPU qualification",
+            engine_api=self.engine_close, engine_ready=self.ready_report,
+            observed_processes=len(self.owned), live_observed_processes=len(live),
+            startup_seconds=self.startup_seconds, ipc_wait_seconds=self.ipc_seconds,
+            ipc_timing_scope="JSON encode, pipe transfer and engine response wait; includes model time",
+            close_seconds=time.monotonic() - started, cleanup_errors=errors,
+            worker_pid=os.getpid(), model_pid=None if self.process is None else self.process.pid,
+            process_created=self.created,
+            owned_processes=[list(item) for item in sorted(self.owned)],
+        )
+        try:
+            _publish(self.report_path, self.last_close_report)
+        except Exception as exc:
+            self.last_close_report["status"] = "unknown"
+            self.last_close_report["cleanup_errors"].append("cleanup_report_write: " + type(exc).__name__)
+        return self.last_close_report
+
+
+def serve(result_fd):
+    """Run in model_python; the driver/LOTUS environment is never imported."""
+    from src.serving.backends.vllm_engine import VllmEngine
+
+    engine = None
+    with os.fdopen(result_fd, "wb", buffering=0) as output:
+        def send(value):
+            output.write(_encode(value))
+        try:
+            for raw in iter(lambda: sys.stdin.buffer.readline(MAX_MESSAGE_BYTES + 1), b""):
+                if len(raw) > MAX_MESSAGE_BYTES or not raw.endswith(b"\n"):
+                    raise ValueError("engine IPC request exceeds its byte limit")
+                value = json.loads(raw)
+                if engine is None and value["op"] == "open":
+                    engine = VllmEngine(EngineSpec.from_dict(value["engine"]),
+                                        GenerationSpec.from_dict(value["generation"]))
+                    send(dict(kind="ready", **engine.ready()))
+                elif engine is not None and value["op"] == "run":
+                    send(dict(kind="results", rows=engine.run_prepared(
+                        value["rows"], deadline_monotonic=value["deadline"])))
+                elif engine is not None and value["op"] == "close":
+                    report = engine.close()
+                    send(dict(kind="closed", report=report))
+                    engine = None
+                    return
+                else:
+                    raise ValueError("unexpected engine IPC operation")
+        except Exception as exc:
+            send(dict(kind="error", error_type=type(exc).__name__))
+        finally:
+            if engine is not None:
+                engine.close()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3 or sys.argv[1] != "--serve":
+        raise SystemExit("private engine worker requires an inherited result descriptor")
+    serve(int(sys.argv[2]))
