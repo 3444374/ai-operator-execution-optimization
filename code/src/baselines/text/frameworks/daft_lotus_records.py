@@ -20,6 +20,9 @@ from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, i
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
+DEFAULT_PREPARED_BATCH_BYTES = 64 * 1024**2
+
+
 def _check(deadline, control=None):
     if control is not None and (Path(control) / "stop").exists():
         raise InterruptedError("Daft records query cancelled")
@@ -28,14 +31,15 @@ def _check(deadline, control=None):
 
 
 def _graph(source, method, engine, generation, resources, query_id, expected, deadline,
-           control, *, prepare_type=None, engine_type=None, model_gpus=1):
+           control, *, runner_threads=None, max_prepared_batch_bytes=DEFAULT_PREPARED_BATCH_BYTES,
+           prepare_type=None, engine_type=None, model_gpus=1):
     """The injectable kernels serve CPU library tests; public evaluate fixes both."""
     import daft
     from src.infrastructure.daft_runtime import configure_daft_runner
 
     if daft.__version__ != "0.7.21":
         raise RuntimeError("records native graph requires exactly Daft 0.7.21")
-    configure_daft_runner("native")
+    configure_daft_runner("native", num_threads=runner_threads)
     fields = {name: daft.DataType.string() for name in IDENTITY_FIELDS}
     for name in ("source_position", "call_index"):
         fields[name] = daft.DataType.int64()
@@ -63,29 +67,55 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
             rows = [dict(identity(query_id, row_id, position), reviewText=review)
                     for row_id, position, review in zip(row_ids.to_pylist(), positions.to_pylist(),
                                                       reviews.to_pylist(), strict=True)]
-            return daft.Series.from_pylist(self.work.prepare_rows(rows))
+            prepared = self.work.prepare_rows(rows)
+            _check(deadline, control)
+            return daft.Series.from_pylist(prepared)
 
     @daft.cls(cpus=1, gpus=model_gpus, use_process=True, max_concurrency=1,
               max_retries=0, on_error="raise")
     class Infer:
         def __init__(self):
-            from .daft_engine_process import EngineProcess
-
             _check(deadline, control)
-            self.kernel = (engine_type or EngineProcess)(
-                EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
-                control, deadline, resources.startup_timeout_s,
-            )
+            self.kernel = None
             self.completed = 0
 
         @daft.method.batch(return_dtype=result_dtype, batch_size=resources.model_batch_rows)
         def run(self, prepared):
-            rows = self.kernel.run_prepared(prepared.to_pylist())
+            inputs = prepared.to_pylist()
+            input_bytes = sum(len(row["messages_json"].encode("utf-8")) for row in inputs)
+            if len(inputs) > resources.model_batch_rows or input_bytes > max_prepared_batch_bytes:
+                raise BufferError("actual Daft inference batch exceeds its logical input allowance")
+            _check(deadline, control)
+            if self.kernel is None:
+                from .daft_engine_process import EngineProcess
+
+                self.kernel = (engine_type or EngineProcess)(
+                    EngineSpec.from_dict(engine_config), GenerationSpec.from_dict(generation_config),
+                    control, deadline, resources.startup_timeout_s,
+                )
+            rows = self.kernel.run_prepared(inputs)
+            for row, prepared_row in zip(rows, inputs, strict=True):
+                for name in ("prepare_worker_pid", "prepare_started_ns", "prepare_finished_ns"):
+                    row[name] = prepared_row[name]
+                row.update(infer_worker_pid=os.getpid(), native_infer_batch_rows=len(inputs),
+                           native_infer_message_bytes=input_bytes)
             self.completed += len(rows)
             if self.completed >= len(expected):
                 # Preserve completed rows and usage even if closing reports an
                 # error. The consumer inspects the separate cleanup report.
-                self.kernel.close()
+                try:
+                    self.kernel.close()
+                except BaseException as exc:
+                    from .daft_engine_process import _publish
+
+                    try:
+                        _publish(Path(control) / "engine-close-failure.json", dict(
+                            status="unknown", process_exit_confirmed=False,
+                            cleanup_errors=["engine_close: " + type(exc).__name__]))
+                    except BaseException:
+                        # The registered process report remains unconfirmed;
+                        # reporting I/O must not discard authoritative rows.
+                        pass
             return daft.Series.from_pylist([
                 dict(engine_result_json=json.dumps(row, ensure_ascii=False, allow_nan=False))
                 for row in rows
@@ -108,6 +138,8 @@ class _DaftRows:
     def __init__(self, frame, expected, deadline, cancelled, control):
         self.frame, self.deadline, self.cancelled = frame, deadline, cancelled
         self.expected = {row["call_id"]: row for row in expected}
+        if len(self.expected) != len(expected):
+            raise ValueError("source has duplicate call identities")
         self.received = set()
         self.control = Path(control)
         self.iterator = None
@@ -208,7 +240,7 @@ class _DaftRows:
         for path in self.control.glob("engine-*.json"):
             try:
                 report = json.loads(path.read_text())
-                if not report.get("process_exit_confirmed"):
+                if not report.get("process_exit_confirmed") and report.get("model_pid"):
                     # The class may already be idle or its Daft worker may have
                     # exited. Wait for its own reaper, then supervise only the
                     # registered private process with matching OS identity.
@@ -261,9 +293,19 @@ class _DaftRows:
 
 
 def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: GenerationSpec,
-             resources: RecordsResources, *, query_id: str, cancelled=None):
-    """Validate method/source/parameters before allocating any native model UDF."""
+             resources: RecordsResources, *, query_id: str, cancelled=None,
+             runner_threads=None, max_prepared_batch_bytes=DEFAULT_PREPARED_BATCH_BYTES):
+    """Validate before allocation; the caller supervises the whole query process.
+
+    Cancellation interrupts private engine waits. A synchronous native scan or
+    formatter must return before its cooperative check can run; a hard wall
+    deadline for those phases requires lotus_records_supervisor.supervise().
+    """
     resources = RecordsResources(**asdict(resources))
+    if runner_threads is not None and (type(runner_threads) is not int or runner_threads < 1):
+        raise ValueError("runner_threads must be a positive integer or None")
+    if type(max_prepared_batch_bytes) is not int or max_prepared_batch_bytes < 1:
+        raise ValueError("max_prepared_batch_bytes must be a positive integer")
     deadline = time.monotonic() + resources.query_timeout_s
     method = FilterMethod.from_dict(asdict(method))
     generation = GenerationSpec.from_dict(asdict(generation))
@@ -287,7 +329,9 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
     os.chmod(control, 0o700)
     try:
         frame = None if not expected else _graph(source, method, engine, generation, resources,
-                                                query_id, expected, deadline, control)
+                                                query_id, expected, deadline, control,
+                                                runner_threads=runner_threads,
+                                                max_prepared_batch_bytes=max_prepared_batch_bytes)
         return _DaftRows(frame, expected, deadline, cancelled, control)
     except BaseException:
         shutil.rmtree(control)

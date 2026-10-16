@@ -1,5 +1,7 @@
 """Real Daft process-mode wiring and private CPU engine lifecycle checks."""
 
+import csv
+import hashlib
 import importlib.util
 import json
 import os
@@ -13,11 +15,12 @@ import unittest
 from unittest.mock import patch
 
 from src.baselines.text.frameworks import daft_lotus_records as native
+from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_source
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.baselines.text.daft_engine_fixture import (
     CrashEngineProcess, FailCloseEngineProcess, FixedEngineProcess, StallEngineProcess,
-    StartupStallEngineProcess,
+    StartupStallEngineProcess, RaiseCloseEngineProcess,
 )
 from tests.experiments.test_lotus_records_movie import fixture_source
 
@@ -39,14 +42,16 @@ class DaftRecordsTests(unittest.TestCase):
                                           query_timeout_s=60, startup_timeout_s=20)
         self.query_id = "daft-cpu-q3"
 
-    def rows(self, kernel=FixedEngineProcess, *, cancelled=None, timeout=60):
+    def rows(self, kernel=FixedEngineProcess, *, cancelled=None, timeout=60,
+             max_prepared_batch_bytes=native.DEFAULT_PREPARED_BATCH_BYTES):
         deadline = time.monotonic() + timeout
         control = tempfile.mkdtemp(prefix="daft-records-control-")
         self.addCleanup(shutil.rmtree, control, ignore_errors=True)
         expected = self.source.expected(self.query_id)
         frame = native._graph(self.source, self.method, self.engine, self.generation, self.resources,
                               self.query_id, expected, deadline, control,
-                              engine_type=kernel, model_gpus=0)
+                              engine_type=kernel, model_gpus=0,
+                              max_prepared_batch_bytes=max_prepared_batch_bytes)
         return native._DaftRows(frame, expected, deadline, cancelled, control)
 
     def test_process_graph_real_formatter_identity_usage_and_single_owned_engine(self):
@@ -80,6 +85,32 @@ class DaftRecordsTests(unittest.TestCase):
         self.assertEqual(report["result"], {"positive_review_cnt": 1})
         self.assertEqual(report["quality"]["classification_audit"]["true_positive"], 1)
         self.assertEqual(report["quality"]["classification_audit"]["true_negative"], 2)
+
+    def test_rebatch_tail_duplicate_occurrences_and_csv_text_values(self):
+        texts = ["", "NULL", "null", "None", "NaN", "001", "line\nbreak", "same", "same"]
+        texts = (texts * 2)[:17]
+        path = Path(self.root.name) / "more.csv"
+        with path.open("w", newline="") as stream:
+            writer = csv.writer(stream)
+            writer.writerow(["reviewId", "id", "reviewText", "scoreSentiment"])
+            writer.writerows(["duplicate", "taken_3", text, "NEGATIVE"] for text in texts)
+        manifest = prepare_movie_source(path, Path(self.root.name) / "more-prepared", max_rows=17,
+                                        expected_csv_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+        self.source = MovieRecordSource.from_manifest(manifest)
+        self.resources = RecordsResources(prepare_batch_rows=5, model_batch_rows=2,
+                                          query_timeout_s=60, startup_timeout_s=20)
+        result = list(self.rows())
+        ordered = sorted(result, key=lambda row: row["source_position"])
+        from src.semantic_methods.lotus.engine import LotusFilterMethod
+
+        preparer = LotusFilterMethod(self.method)
+        reference = preparer.prepare_rows([dict(row, **item) for row, item in
+                                          zip(self.source.rows(), self.source.expected(self.query_id), strict=True)])
+        self.assertEqual([row["messages_json"] for row in ordered],
+                         [row["messages_json"] for row in reference])
+        self.assertEqual(len({row["call_id"] for row in ordered}), 17)
+        self.assertEqual({row["native_infer_batch_rows"] for row in ordered}, {2, 1})
+        self.assertTrue(all(row["native_infer_message_bytes"] > 0 for row in ordered))
 
     def test_validation_precedes_graph_allocation(self):
         with patch.object(native, "_graph") as graph, \
@@ -115,6 +146,22 @@ class DaftRecordsTests(unittest.TestCase):
         self.assertEqual(ledger.report()["usage"]["prompt_tokens"], 36)
         self.assertEqual(rows.last_close_report["status"], "unknown")
         self.assertTrue(rows.last_close_report["engine_reports"][0]["process_exit_confirmed"])
+
+    def test_cleanup_exception_does_not_drop_known_result_usage(self):
+        rows = self.rows(RaiseCloseEngineProcess)
+        ledger = CallLedger(self.source.expected(self.query_id), max_calls=3)
+        with self.assertRaisesRegex(RuntimeError, "cleanup"):
+            for row in rows:
+                ledger.record(row)
+        self.assertEqual(ledger.report()["usage"]["prompt_tokens"], 36)
+        self.assertIn("engine_close: PermissionError", rows.last_close_report["cleanup_errors"])
+
+    def test_actual_rebatch_bytes_rejected_before_model_allocation(self):
+        rows = self.rows(max_prepared_batch_bytes=1)
+        with self.assertRaises(Exception):
+            list(rows)
+        self.assertEqual(rows.last_close_report["engine_reports"], [])
+        self.assertEqual(list(rows.control.glob("engine-*.json")), [])
 
     def test_native_graph_cancel_stalled_model_preserves_cancel_and_os_exit(self):
         cancelled = threading.Event()
@@ -211,6 +258,23 @@ class PrivateEngineTests(unittest.TestCase):
         report = json.loads(next(Path(self.root.name).glob("engine-*.json")).read_text())
         self.assertTrue(report["process_exit_confirmed"])
         self.assertEqual(report["live_observed_processes"], 0)
+
+    def test_query_error_survives_independent_cleanup_exception(self):
+        client = self.start()
+        with patch.object(client, "_exchange", side_effect=EOFError("query error")), \
+             patch.object(client, "close", side_effect=PermissionError("cleanup error")):
+            result = client.run_prepared(self.prepared)
+        self.assertEqual(result[0]["error_type"], "EOFError")
+        self.assertEqual(result[0]["status"], "unknown")
+        client.close()
+
+    def test_close_observation_error_retains_retryable_process_handle(self):
+        client = self.start()
+        with patch.object(client, "_close", side_effect=PermissionError("observation")):
+            report = client.close()
+        self.assertEqual(report["status"], "unknown")
+        self.assertIn("cleanup_exception: PermissionError", report["cleanup_errors"])
+        self.assertTrue(client.close()["process_exit_confirmed"])
 
 
 if __name__ == "__main__":

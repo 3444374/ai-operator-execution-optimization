@@ -58,6 +58,8 @@ class EngineProcess:
         self.engine_close = None
         self.last_close_report = None
         self.ipc_seconds = self.startup_seconds = 0.0
+        self.ipc_request_bytes = self.ipc_response_bytes = 0
+        self.ipc_encode_seconds = self.ipc_decode_seconds = 0.0
         self._closed = False
         self._broken = False
         self._lock = threading.RLock()
@@ -121,6 +123,8 @@ class EngineProcess:
 
         started = time.monotonic()
         data = memoryview(_encode(value))
+        self.ipc_request_bytes += len(data)
+        self.ipc_encode_seconds += time.monotonic() - started
         try:
             while data:
                 self._check(deadline, stopping=stopping)
@@ -130,7 +134,10 @@ class EngineProcess:
                 if b"\n" in self.pending:
                     line, _, rest = self.pending.partition(b"\n")
                     self.pending = bytearray(rest)
+                    decode_started = time.monotonic()
                     result = json.loads(line)
+                    self.ipc_decode_seconds += time.monotonic() - decode_started
+                    self.ipc_response_bytes += len(line) + 1
                     if type(result) is not dict:
                         raise ValueError("engine IPC response must be an object")
                     return result
@@ -181,7 +188,10 @@ class EngineProcess:
             return results
         except Exception as exc:
             self._broken = True
-            self.close()
+            try:
+                self.close()
+            except BaseException as cleanup:
+                exc.add_note("private engine cleanup also failed: " + type(cleanup).__name__)
             return [dict(item, status="unknown", submission_confirmed=False,
                          error_type=type(exc).__name__, prompt_tokens=None,
                          completion_tokens=None, total_tokens=None,
@@ -190,7 +200,26 @@ class EngineProcess:
 
     def close(self, timeout=5.0):
         with self._lock:
-            return self._close(timeout)
+            try:
+                return self._close(timeout)
+            except Exception as exc:
+                # Observation itself may fail. Keep a retryable handle and
+                # a separate cleanup outcome instead of replacing query usage
+                # or the original request error with that exception.
+                self.last_close_report = dict(
+                    status="unknown", process_exit_confirmed=False, gpu_exit_confirmed=None,
+                    cleanup_scope="private_engine_and_observed_os_processes",
+                    cleanup_errors=["cleanup_exception: " + type(exc).__name__],
+                    model_pid=None if self.process is None else self.process.pid,
+                    process_created=self.created,
+                    owned_processes=[list(item) for item in sorted(self.owned)],
+                )
+                try:
+                    _publish(self.report_path, self.last_close_report)
+                except Exception as recording:
+                    self.last_close_report["cleanup_errors"].append(
+                        "cleanup_report_write: " + type(recording).__name__)
+                return self.last_close_report
 
     def _close(self, timeout):
         from src.experiments.lotus_records_supervisor import _live, _observe, _signal, _wait
@@ -261,6 +290,8 @@ class EngineProcess:
             engine_api=self.engine_close, engine_ready=self.ready_report,
             observed_processes=len(self.owned), live_observed_processes=len(live),
             startup_seconds=self.startup_seconds, ipc_wait_seconds=self.ipc_seconds,
+            ipc_request_bytes=self.ipc_request_bytes, ipc_response_bytes=self.ipc_response_bytes,
+            ipc_encode_seconds=self.ipc_encode_seconds, ipc_decode_seconds=self.ipc_decode_seconds,
             ipc_timing_scope="JSON encode, pipe transfer and engine response wait; includes model time",
             close_seconds=time.monotonic() - started, cleanup_errors=errors,
             worker_pid=os.getpid(), model_pid=None if self.process is None else self.process.pid,
