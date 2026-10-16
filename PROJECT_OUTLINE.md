@@ -392,7 +392,8 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 | 原生 Ray Data 普通 Filter 首闭环 | 独立 records 主链能否保留同一 SemBench 查询和原方法结果 | 直接与原生 LOTUS 核对，旧 adapter 仅补充参照；[方法差分与真实库资格](experiments/plans/数据组织.md#lotus-filter-data-execution)先于性能 |
 | 同范围原全局级联 | Q3 helper、样本、校准、阈值、回退与合并是否保留 | 在普通闭环上逐项核对原 LOTUS 动态算法，不按物理批次重跑校准 |
 | Ray Data／SemLoom 静态首两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 首切片可先行；最终对照必须补齐 Daft、Ray Data、IMLane，保留原生 LOTUS 及 SemLoom 静态／候选 |
-| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证，不等待完整 HTTP 矩阵 |
+| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU合同→文本同步GPU资格→有界异步供给→Animals同任务VLM→匹配完整查询；按实际源码逐项验收，普通Q3的[分层记录](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)独立归档，不等待完整HTTP矩阵 |
+| 后续：普通 Map／有限 Filter→Map | 第二个真实使用者能否复用方法与模型设施，生成列能否进入后继 | [扩展路线](experiments/plans/数据组织.md#lotus-operator-extension)与原级联接线可并行；当前 Filter／baseline 实现继续，不先扩所有算子 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |

@@ -7,6 +7,8 @@
 三成功单元已确认10次请求，原提示／模板／真实token／usage／parser／COUNT／原SemBench评价一致；首次static的null未知不置0。两轮204／37个owned身份退出，最终独立核对controller、GPU1MiB无compute及正常lease释放。已有四权重／七配置与官方revision匹配，不下载权重或改共享环境。
 [分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#普通-q3-的单卡真实模型资格)保存固定来源、原件SHA与失败；仅两个负例的软件／模型／生命周期资格，不扩为性能、完整质量或production Core结论。Daft GPU、IMLane模型方法／作者Ray、全局级联、图像与AsyncLLM仍pending。
 
+本分支随后同步已审纯文档main `6e3828b4` 的Daft布局／消费及有限算子链合同；不改变上述固定实测来源，代码尚未合入main。
+
 ## 2026-10-16：选择性整合 IMLane 多行记录桥
 
 从职责 `feat/imlane-records-echo@78f05783` 仅取新bridge、测试和资格目录；未合并旧baseline树。为移除对已清理验证树的依赖，将必要AuthorScope生命周期／StopBudget／namespace／SHM helper收口到独立模块，复用受信Linux出生标识和正常host lease，禁止stale接管。
@@ -33,6 +35,11 @@ Library附件仅安全材料化／静态审查，选择性吸收并重写必要�
 两轴独审发现的日志脱敏和空源schema均已修复，另补driver环境绑定与静态CPU预留；Python3.12的114项／213 subtests通过，实际LOTUS／原评价及部分Ray／Daft CPU图接线，进程监督确认已观测owned退出。
 真实vLLM／GPU与模型身份、级联、持续供给、图像、其他原生后端及production Core资格仍pending，未作main合并或性能结论。
 阶段集成同步父线程已审纯文档main `d73c4446`，最终Daft／Ray Data／IMLane两种宿主矩阵与旧request分支职责保持计划要求。
+
+## 2026-10-16：补齐 Daft 原生布局与后续算子复用路线
+
+完整读取五份 Daft 及一份后续算子扩展附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性消费、布局、有效配置与真实 worker 收尾；[算子扩展](experiments/plans/数据组织.md#lotus-operator-extension)以普通 Map／有限链检验复用，与原级联接线并行，映射当前实际文件，不整仓搬迁。原方法、全局结果复用和 IPC 归属直接引用既有合同。
+核对固定新集成分支与 Daft 0.7.21 源码；候选的替身检查不转为实库资格。本次只改文档，未导入或运行附件、改代码或启动模型。
 
 ## 2026-10-16：明确最终原生对照与 IMLane 记录级接入
 
