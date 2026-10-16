@@ -35,6 +35,10 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
 记录／媒体引用到准备、调用与结果的[目标入口](../../../../experiments/plans/系统架构.md#lotus-data-execution)尚未实现，旧请求路径继续作为参照。
 
+`sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
+后续文本级联也需补相应来源资格，records 扩展须保留原提交、补丁与独立校验身份；不能覆盖旧摘要后仍称原源码未改。
+当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；新记录路径的图追加和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)分别验证。
+
 ## 原版 Movie 查询
 
 [公开入口](../../../scripts/experiments/run_sembench_lotus_queries.py)使用

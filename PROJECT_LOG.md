@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-16：补齐 Filter records 接入的执行与验证边界
+
+在前次架构／计划基础上吸收第三份用户附件与独立源码审查的必要增量：明确本轮多数属于 baseline 接入／公共方法适配，保留独立 request 范围，补齐惰性图追加与最终消费 owner、
+worker 状态及 bytes／引用边界；实施顺序增加 native-records 原生控制，runner 分开元数据与内容资格并保留失败前缀记录。
+核明默认 text profile 不校验 Filter 源码，文本级联与 records 补丁须各自取得来源资格。
+仅补现有[架构](experiments/plans/系统架构.md#lotus-data-execution)、[计划](experiments/plans/数据组织.md#lotus-filter-data-execution)、[比较口径](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)与模块说明；未实施接口或运行模型。
+
 ## 2026-10-16：收敛 LOTUS 算法复用与 Filter 数据执行计划
 
 结合两份用户附件及固定 main／LOTUS／SemBench 源码，将[算法与执行分工](experiments/plans/系统架构.md#lotus-data-execution)、
