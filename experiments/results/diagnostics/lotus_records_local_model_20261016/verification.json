@@ -251,5 +251,23 @@
       "reason": "incorrect empty-LM-wrapper call-count expectation; corrected against fixed source",
       "file_sha256_available": false
     }
-  ]
+  ],
+  "integrated_document_main": "d73c44463e9fdb98e2ac1397295114568afabb1c",
+  "reviews": {
+    "standards": {
+      "snapshot": "b3f6cfaf0c4a176711dc30fbd06a6608509eb159",
+      "initial_p2": 1,
+      "remaining": 0,
+      "followup_passed": true,
+      "read_only": true
+    },
+    "spec": {
+      "snapshot": "b3f6cfaf0c4a176711dc30fbd06a6608509eb159",
+      "initial_p2": 1,
+      "remaining": 0,
+      "followup_passed": true,
+      "read_only": true
+    }
+  },
+  "final_code_matches_post_review_qualification": true
 }

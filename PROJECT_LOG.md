@@ -8,6 +8,12 @@ Library附件仅安全材料化／静态审查，选择性吸收并重写必要�
 [切片记录](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)保留全部失败与非模型范围：
 两轴独审发现的日志脱敏和空源schema均已修复，另补driver环境绑定与静态CPU预留；Python3.12的114项／213 subtests通过，实际LOTUS／原评价及部分Ray／Daft CPU图接线，进程监督确认已观测owned退出。
 真实vLLM／GPU与模型身份、级联、持续供给、图像、其他原生后端及production Core资格仍pending，未作main合并或性能结论。
+阶段集成同步父线程已审纯文档main `d73c4446`，最终Daft／Ray Data／IMLane两种宿主矩阵与旧request分支职责保持计划要求。
+
+## 2026-10-16：明确最终原生对照与 IMLane 记录级接入
+
+完整读取八份补充材料，收敛到[既有架构](experiments/plans/系统架构.md#model-engine-execution)与[Filter 计划](experiments/plans/数据组织.md#lotus-filter-data-execution)：最终必含 Daft／Ray Data／IMLane，首切片仍可先行；IMLane 分 CPython／作者 Ray，依次验证多行桥、替身和单卡模型，保留作者调度、输出所有权与独立生命周期。
+同步[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)及总纲，将 `integration/data-execution` 登记为新主链集成目标，现有 request 分支保留身份；只改文档，未建集成分支、导入或运行候选代码。
 
 ## 2026-10-16：收敛本地模型候选与 PZ 旧方案的可复用边界
 

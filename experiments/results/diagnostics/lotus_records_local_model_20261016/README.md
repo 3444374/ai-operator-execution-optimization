@@ -1,7 +1,8 @@
 # Movie Q3 records 到本地模型接点：非模型资格
 
 本切片在已审阅 main `52391e375b6d9699e5bd76bb6d37bdbd939ef23e` 上独立实现，
-由 `integration/data-execution` 集成。只支持普通 Movie Q3 的 Filter＋COUNT，
+集成时同步已审纯文档 main `d73c44463e9fdb98e2ac1397295114568afabb1c`，由 `integration/data-execution` 集成。
+最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；本切片只支持普通 Movie Q3 的 Filter＋COUNT，
 不是级联、图像、生产 Core 或性能结果。旧 request 接入、活动 baseline 和旧测试树没有修改。
 
 ## 实现与来源
@@ -47,6 +48,11 @@ Spec 独审指出空源原生参照丢失 DataFrame schema，现显式保留列�
 首次补测误以为原 Q3 跳过 LM 包装层，2 个 subtests 失败（工具输出 chunk `2fce28`，无独立日志），
 按固定源码改为保留一次空 batch 的包装调用／有效 kwargs，实际模型 call 和 usage 仍为 0。
 公开 graph／CLI 的 driver 解释器现与配置 prefix／executable 目录／base prefix 绑定，检查先于模型分配；静态模型 actor 显式预留 1 CPU／1 GPU。
+
+两位新独立 reviewer 分别完成 Standards／Spec 审查，并对修订提交
+`b3f6cfaf0c4a176711dc30fbd06a6608509eb159` 定向复核：各发现 1 项 P2，均已关闭，未发现残留。
+二者均核对了修后代码／日志／监督报告摘要；审查只读，未重跑测试或加载模型。
+同步 `d73c4446` 仅涉及已审文档；最终代码字节与修后资格记录保持一致。
 
 真实库检查明确区分两部分：
 
