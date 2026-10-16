@@ -21,6 +21,20 @@ HTTP 状态、重复响应头、压缩 body、错误和 usage 进入原 SDK，�
 取消与本地 iterator 关闭不证明远端模型停止；未确认的工作保留原 ownership，执行 owner 负责 drain。
 完整响应字节预算不等于进程 RSS 上限。接口和完整响应基础见[执行层说明](../../execution_provider/adapters/README.md)。
 
+<a id="filter-execution-boundary"></a>
+## 当前 Filter 边界与目标入口
+
+当前接点接收完整 uncached messages；`PreparedLotusCall`／`NativeCall` 承载完整 HTTP 请求，
+native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请求。固定 LOTUS 的
+[`SemFilterDataframe`](https://github.com/lotus-data/lotus/blob/b1a85fd7a66fabed8a1585d44d7597d592b4433f/lotus/sem_ops/sem_filter.py)
+在 LM 接点之前调用 `df2multimodal_info()`，图片展开仍在 driver；当前不能称为后端完整准备流水。
+固定 [SemBench Movie Q1–Q3](https://github.com/SemBench/SemBench/blob/c814e3807e72d4cf876b852b17e77f3cc94575c2/src/scenario/movie/runner/lotus_runner/lotus_runner.py)
+没有传 `cascade_args`，现有资格不表示已开启级联或全部 LOTUS 优化。
+
+`lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
+现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
+记录／媒体引用到准备、调用与结果的[目标入口](../../../../experiments/plans/系统架构.md#lotus-data-execution)尚未实现，旧请求路径继续作为参照。
+
 ## 原版 Movie 查询
 
 [公开入口](../../../scripts/experiments/run_sembench_lotus_queries.py)使用
