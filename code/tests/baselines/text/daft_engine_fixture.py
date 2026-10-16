@@ -30,6 +30,12 @@ class StartupStallEngineProcess(FixedEngineProcess):
     mode = "startup-stall"
 
 
+class RaiseCloseEngineProcess(FixedEngineProcess):
+    def close(self, timeout=5.0):
+        super().close(timeout)
+        raise PermissionError("injected cleanup observation failure")
+
+
 if __name__ == "__main__":
     from src.baselines.text.frameworks.daft_engine_process import serve
     from src.serving.backends import vllm_engine
