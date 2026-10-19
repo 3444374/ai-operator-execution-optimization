@@ -106,3 +106,17 @@ Standards 对新增与受影响旧路径共 48 项／9 子测试 PASS；Spec 对
 集成者选择本补丁后串行登记 adapters／backends／diagnostics README、`INFRA_STATUS.md`、证据台账和
 `PROJECT_LOG.md`。真实模型定向复测、原生方法进入时序及 GPU／后代资格仍待执行；
 本包没有完整查询性能、质量或 GPU 执行重叠收益结论。
+
+## 共享集成与固定来源
+
+选择性接入职责源码与证据，集成基点为 `53dae5f0`。原两个生产文件在82e与该基点逐字相同；
+选择后五个职责文件、常规回执列出的24个依赖与ec013835固定摘要全部一致。原163项、Ray1项及
+Core实库7项沿用各自原件，不改绑模型资格；根仅定向复核新增8项及既有actor／IPC关闭故障，
+共29项／7子测试通过，24份源码前后未变。外层监督器观察的owned进程退出，remaining／cleanup
+errors／signals均为空；API／GPU／未观察后代仍按原范围解释。
+
+首次受限执行因macOS sysctl进程枚举权限失败，未取得测试回执，worker退出为-15；原supervisor
+状态unknown、清理错误及空日志保留。后续在允许进程观测的本地CPU执行模式中完成上述29项，
+没有改监督器或安全配置。来源、原失败、定向回执与完整脱敏恢复映射见
+[integration_verification.json](integration_verification.json)。本次集成不访问服务器，不重包或改写
+冻结82e／8d35材料，新的cap1模型计划保持未分配／未执行。

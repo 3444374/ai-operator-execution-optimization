@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[Async r2取消／关闭诊断与修补](async_cancel_close_20261019/README.md)：取消与关闭的CPU反馈环；队列接管、原RPC和原生终态分列，历史失败保持，实际竞争层未定，新源模型资格待验。
+
 [IMLane普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原17项本机CPU、16项无child组合及旧7a冻结作者12次fixture分列；公开selector新增25入口／45owner／17旧路径CPU。共享关闭失败仍unknown，旧作者成功不转授最终源码；当前入口作者／模型／GPU资格待验。
 
 [IMLane通用级联阶段与公开入口](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；新27入口／21 owner／16 source CPU和90旧路径回归，冻结r3作者44fixture与当前入口分列。原保存失败保留，真实helper／模型／GPU另验，8d35普通链包冻结。

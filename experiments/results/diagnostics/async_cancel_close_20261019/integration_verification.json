@@ -1,0 +1,200 @@
+{
+  "schema": "semloom.async-r2.integration-cpu.v1",
+  "status": "cpu_passed_dual_review_passed",
+  "integration_base": "53dae5f07badd48a462b7d7112d8ca6646d59c2a",
+  "source_commit": "ec0138354ccec436ab6319ba0308fa5b697ced4b",
+  "evidence_commit": "ca4ee72cc7b69ff9707ade5170610f039741c964",
+  "source_cherry_pick": "046a5836",
+  "evidence_cherry_pick": "73bfadb7",
+  "source_binding": {
+    "five_files_identical_to_original": {
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py": "f2907126856c2105a88e358f587c0702cb6444f6e64fe4f0ed563424f30aea6a",
+      "code/src/serving/backends/async_engine_process.py": "4f5771ef62f2fe8041447dfa2473ae299f56a8ef0b08badcbfd3480c82d8cd53",
+      "code/tests/execution_provider/test_async_cancel_core_close.py": "1ab8872c5c351751d202a23addb8901ca6ccaa27efd50b9f5e49f395b8522575",
+      "code/tests/serving/async_cancel_order_fixture.py": "b91cf313e512b81ee739a11425e1bb72ba6e70cee785c169fb834d5a44aa9669",
+      "code/tests/serving/test_async_cancel_close_order.py": "db142e7d78785d5f84011c1854fb96c56f1dbc59ac60dac13ac0586b596fe9d9"
+    },
+    "qualified_dependency_count": 24,
+    "all_qualified_hashes_match_current": true,
+    "source_before": {
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py": "f2907126856c2105a88e358f587c0702cb6444f6e64fe4f0ed563424f30aea6a",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+      "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "code/src/serving/backends/async_engine_process.py": "4f5771ef62f2fe8041447dfa2473ae299f56a8ef0b08badcbfd3480c82d8cd53",
+      "code/src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+      "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+      "code/tests/execution_provider/test_async_cancel_core_close.py": "1ab8872c5c351751d202a23addb8901ca6ccaa27efd50b9f5e49f395b8522575",
+      "code/tests/execution_provider/test_lotus_records_actor_owner.py": "1b1abf53ba0b28e11d5f6701d4f03ef483ea9e10c0dab1466620532f58195467",
+      "code/tests/execution_provider/test_lotus_records_async_actor.py": "11f4901c2c7a0a309d9e3ab48d64c653e5be68a50970ee42dc75e4c35b06d5af",
+      "code/tests/execution_provider/test_lotus_records_async_core.py": "d07a21e9442ac2ee440ec1ee5b9e34efad4a46ac11b5da3458802178fc7a5350",
+      "code/tests/execution_provider/test_lotus_records_async_core_integration.py": "e23c5c8617afc11da014d02d9181cb960bcac919cc8c27d04e77a0c07239fa6f",
+      "code/tests/execution_provider/test_lotus_records_core.py": "3d3962797a4087f76aa6b999bbcb50e51418fc779b2050128f84c172b732ea66",
+      "code/tests/execution_provider/test_lotus_records_static.py": "041f5eb3004e1fe730396acb0043e56386e790e6f8fa32e2a31a7e030d94ad03",
+      "code/tests/experiments/test_async_recording_deadline.py": "260568671833f0d7fba4e29cab72ace159d500f0b12bbe18b4849d04c1977c7e",
+      "code/tests/experiments/test_lotus_records_async_entry.py": "a3944ab59e4efab1e6f834767b1c1b1e7e7ef69be10a2eaf8eb1653ac835f704",
+      "code/tests/scheduling/test_async_backend.py": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b",
+      "code/tests/serving/async_cancel_order_fixture.py": "b91cf313e512b81ee739a11425e1bb72ba6e70cee785c169fb834d5a44aa9669",
+      "code/tests/serving/async_engine_fixture.py": "35e92d1c56ffed6208c662bd861cb08f6f673dcf787a82d970e555bb491941e2",
+      "code/tests/serving/test_async_cancel_close_order.py": "db142e7d78785d5f84011c1854fb96c56f1dbc59ac60dac13ac0586b596fe9d9",
+      "code/tests/serving/test_async_engine_close_faults.py": "3b105cfda981a7e0cadc1b544e7a18ed7eebbfc105fa269ba727893f62af443a",
+      "code/tests/serving/test_async_engine_process.py": "8bcfd15d4291f26c6b31c16f32b87f8d60953b342bb8b1e760ea2b24974b63e4",
+      "code/tests/serving/test_vllm_async_engine.py": "688b5f300f86dd1602985dbb14cdd5e34c09983b25cdb78f6e24b768533935c6"
+    },
+    "source_after": {
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py": "f2907126856c2105a88e358f587c0702cb6444f6e64fe4f0ed563424f30aea6a",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+      "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "code/src/serving/backends/async_engine_process.py": "4f5771ef62f2fe8041447dfa2473ae299f56a8ef0b08badcbfd3480c82d8cd53",
+      "code/src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+      "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+      "code/tests/execution_provider/test_async_cancel_core_close.py": "1ab8872c5c351751d202a23addb8901ca6ccaa27efd50b9f5e49f395b8522575",
+      "code/tests/execution_provider/test_lotus_records_actor_owner.py": "1b1abf53ba0b28e11d5f6701d4f03ef483ea9e10c0dab1466620532f58195467",
+      "code/tests/execution_provider/test_lotus_records_async_actor.py": "11f4901c2c7a0a309d9e3ab48d64c653e5be68a50970ee42dc75e4c35b06d5af",
+      "code/tests/execution_provider/test_lotus_records_async_core.py": "d07a21e9442ac2ee440ec1ee5b9e34efad4a46ac11b5da3458802178fc7a5350",
+      "code/tests/execution_provider/test_lotus_records_async_core_integration.py": "e23c5c8617afc11da014d02d9181cb960bcac919cc8c27d04e77a0c07239fa6f",
+      "code/tests/execution_provider/test_lotus_records_core.py": "3d3962797a4087f76aa6b999bbcb50e51418fc779b2050128f84c172b732ea66",
+      "code/tests/execution_provider/test_lotus_records_static.py": "041f5eb3004e1fe730396acb0043e56386e790e6f8fa32e2a31a7e030d94ad03",
+      "code/tests/experiments/test_async_recording_deadline.py": "260568671833f0d7fba4e29cab72ace159d500f0b12bbe18b4849d04c1977c7e",
+      "code/tests/experiments/test_lotus_records_async_entry.py": "a3944ab59e4efab1e6f834767b1c1b1e7e7ef69be10a2eaf8eb1653ac835f704",
+      "code/tests/scheduling/test_async_backend.py": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b",
+      "code/tests/serving/async_cancel_order_fixture.py": "b91cf313e512b81ee739a11425e1bb72ba6e70cee785c169fb834d5a44aa9669",
+      "code/tests/serving/async_engine_fixture.py": "35e92d1c56ffed6208c662bd861cb08f6f673dcf787a82d970e555bb491941e2",
+      "code/tests/serving/test_async_cancel_close_order.py": "db142e7d78785d5f84011c1854fb96c56f1dbc59ac60dac13ac0586b596fe9d9",
+      "code/tests/serving/test_async_engine_close_faults.py": "3b105cfda981a7e0cadc1b544e7a18ed7eebbfc105fa269ba727893f62af443a",
+      "code/tests/serving/test_async_engine_process.py": "8bcfd15d4291f26c6b31c16f32b87f8d60953b342bb8b1e760ea2b24974b63e4",
+      "code/tests/serving/test_vllm_async_engine.py": "688b5f300f86dd1602985dbb14cdd5e34c09983b25cdb78f6e24b768533935c6"
+    }
+  },
+  "targeted_cpu": {
+    "tests": 29,
+    "subtests": 7,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_unchanged": true,
+    "scope": "eight new cancel/close tests plus old async actor and IPC close-fault contracts; CPU child only",
+    "worker_exit": 0,
+    "remaining_owned_pids": [],
+    "cleanup_errors": [],
+    "signals": [],
+    "observed_owned_count": 22,
+    "execution": "actual CPU child and IPC; Core real, Ray/Daft/model explicit fixture"
+  },
+  "earlier_restricted_driver": {
+    "status": "unknown",
+    "worker_exit": -15,
+    "test_receipt_obtained": false,
+    "reason": "sandbox denies macOS process enumeration sysctl",
+    "original_preserved": true,
+    "not_reclassified": true
+  },
+  "owner_verification_reused": {
+    "regular_tests": 163,
+    "subtests": 65,
+    "separate_library_skips": 7,
+    "real_ray_cpu": 1,
+    "real_core_library_methods": 7,
+    "not_added_to_root_test_count": true,
+    "sources_and_original_failures_preserved": true
+  },
+  "historical_r2": {
+    "source": "82e685b3233e6524732934bbf220fb5563e515f8",
+    "cancel_status": "failed / unknown / AbortNotConfirmed",
+    "prompt_tokens": 2402,
+    "completion_tokens": 1,
+    "held_tasks": 1,
+    "retained_inputs": 1,
+    "actual_winning_race": "unresolved",
+    "qualification_upgraded": false,
+    "old_budget_changed": false,
+    "late3_rerun": false
+  },
+  "execution": {
+    "server_actions": 0,
+    "real_model_calls": 0,
+    "gpu_actions": 0,
+    "external_lease_mutations": 0,
+    "security_settings_changed": false
+  },
+  "preservation": {
+    "archive": "integration_cpu_logs.json.gz",
+    "archive_sha256": "5a026d2a6a36f372696e41f08dc99e1924ac9bb3f5d277f94cc33a613e0a9836",
+    "uncompressed_sha256": "fda28830ee8f97aa239dfaf79f5172f847f33b0d64272a34551a074e5c56d90d",
+    "members": [
+      {
+        "member": "source-binding.json",
+        "kind": "json",
+        "original_bytes": 7701,
+        "original_sha256": "a8c8cf9954499693eb641517b4b28c3b15c96339897f2615764b3cba327914ba"
+      },
+      {
+        "member": "restricted-driver-failure.json",
+        "kind": "json",
+        "original_bytes": 956,
+        "original_sha256": "531ce29b88b453cf419d99cacbfc7877205f975105236f4ac6440e75fbb9ce1c"
+      },
+      {
+        "member": "targeted-cpu.json",
+        "kind": "json",
+        "original_bytes": 10230,
+        "original_sha256": "18fce3ffd878e614e1633016fc5ffe9a17faf3ba3a578adb7d9297a03fbf4b0c"
+      },
+      {
+        "member": "restricted/supervisor.json",
+        "kind": "json",
+        "original_bytes": 3055,
+        "original_sha256": "bdf14ea7e3bf2232cd61162e9402b09d8b6b784602e3494e67323e27761e35eb"
+      },
+      {
+        "member": "restricted/worker.log",
+        "kind": "text",
+        "original_bytes": 0,
+        "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "member": "observed/supervisor.json",
+        "kind": "json",
+        "original_bytes": 3323,
+        "original_sha256": "7abef02fd74dbea85257c491e561472754ab6d7d5bcbbf9a8584766591eead13"
+      },
+      {
+        "member": "observed/worker.log",
+        "kind": "text",
+        "original_bytes": 112,
+        "original_sha256": "611df24b139b93879d3f414c043069a9272a28a1f49f07cef26266395291e806"
+      }
+    ],
+    "redaction": "project redaction plus repository/task/home path aliases"
+  },
+  "reviews": [
+    {
+      "axis": "Spec",
+      "result": "PASS",
+      "remaining_blockers": 0,
+      "original_report": "final-spec.md",
+      "original_report_sha256": "f82c14f24447b46fefa1f422b9e5495aa1c1e27c146789355f27e9e64605a166",
+      "original_report_bytes": 2593,
+      "scope": "integrated production, tests, source identity, original and integration evidence, shared navigation"
+    },
+    {
+      "axis": "Standards",
+      "result": "PASS",
+      "remaining_blockers": 0,
+      "original_report": "final-standards.md",
+      "original_report_sha256": "06873aa726245aed8596cdfa851fe52378698eff48e08f4ed32971c84afa0d42",
+      "original_report_bytes": 2204,
+      "scope": "integrated production, tests, source identity, original and integration evidence, shared navigation"
+    }
+  ],
+  "pending": [
+    "new cancel-only helper independent review",
+    "new cap1 budget/unit by unique server owner",
+    "full TaskKey to native request ID correlation and native abort/shutdown timing",
+    "actual cancel/model/physical qualification",
+    "performance"
+  ]
+}

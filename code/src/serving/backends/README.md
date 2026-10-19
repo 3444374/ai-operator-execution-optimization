@@ -70,4 +70,7 @@ submit queued、child accepted、terminal、abort_requested 分开；unknown 保
 close 只确认 API、直接 child 和本地 I/O，后代／GPU 仍需外层 owner 独立核验。
 原组件 121 项 CPU 与后续关闭修复 36 项的来源从[组件报告](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md)核对；
 后续已由[显式 Async actor／Core／CLI](../../execution_provider/adapters/lotus_records_async_actor.py)消费，
-[组合 CPU 与关闭交接](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)另绑固定源码；同步默认不变，没有真实 Async 模型或性能结论。
+[组合 CPU 与关闭交接](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)另绑固定源码；同步默认不变。
+[取消／关闭交接修补](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md)让已接纳的控制先于 close，
+冻结关闭后拒绝新 abort；actor 接管仅确认父控制队列，不证明原取消 RPC 或原生 abort 成功。
+冻结82e模型 late3 成功、r2 cancel 失败与当前修补CPU分列；历史 unknown／用量／held 不升级，性能仍待验。

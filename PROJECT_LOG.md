@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：接纳 Async r2 取消与关闭交接修补
+
+选择职责ec013835两个生产文件与三专属测试、ca4ee72c固定证据；当前集成前两生产与82e逐字同，选择后五职责文件及24资格依赖均同原已验摘要。已接纳controls先close、冻结后abort false、actor同期限接管pending再close同engine；关闭接管仅父队列，不冒认迟到RPC或native成功。根定向29项／7子测试CPU通过，观察owned清理无剩余／错误／信号；首次受限sysctl失败原件保留，不重跑原163／Ray1／Core实库7或模型矩阵。原r2 unknown、2403tokens、held-ref1和旧四次预算不升级；真实竞争层未定，新cap1仅计划交唯一GPU owner，冻结82e／8d35包不变。[报告与原件](experiments/results/diagnostics/async_cancel_close_20261019/README.md)。
+
 ## 2026-10-19：接通 IMLane 通用级联公开 selector
 
 新增record-cascade-check/run和独立records schema，caller显式instruction／角色部署／生成／列并集，不采用Q3默认或评价。原run_cascade、作者桥和stage loop均不改；有限CSV source同值投影，common owner从普通链worker提取，正常lease只读、Q=2N+S永久unit一次claim、原calls字典／LM统计及逐stage GPU门保持。27入口／21 owner／16 source新CPU、70普通链／20旧Movie级联回归通过；独审复现关闭unknown后metadata失败漏已知快照，已先保存再校验，原RED、primary／usage／unknown保留。旧r3作者44fixture不重绑定，新入口作者／模型／GPU／性能另验；服务器8d35普通链包和82e Async包均未改，r2取消故障独立owner处理。[接口](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)与[固定证据](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。

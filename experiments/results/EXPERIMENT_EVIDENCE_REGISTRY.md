@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[Async r2取消／关闭诊断与CPU修补](diagnostics/async_cancel_close_20261019/README.md)。选择ec013835源码／ca4ee72c证据，controls前缀与actor同期限取消接管两层分别复现；原r2实际交错未知，unknown／2402＋1 tokens／held-ref1及旧四次额度保持。163常规／65子测试、Ray CPU1项及Core实库7项固定来源不重绑；当前24资格依赖逐字核同，定向29项／7子测试通过且观察owned清理无信号，首次沙箱进程枚举失败另保留。关闭接管仅parent队列，不冒认原RPC或native确认；新cap1建议未分配未执行，不重跑late3或借用旧预算。
+
 2026-10-19：[IMLane通用级联公开selector](diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。独立record-cascade-check/run不绑定Q3，直接原run_cascade／作者桥；27入口（67子用例）／21 owner／16 source新CPU及70普通链／20旧Movie级联回归通过。正常外lease／既有永久unit／逐阶段GPU门共用一份owner编排，Q与实际调用分列。关闭unknown后metadata失败的已知回执丢失RED已修；原primary／usage／unknown保持。旧r3作者44fixture不认证当前入口，8d35私包冻结；新入口作者／真实helper模型／GPU及性能另验。
 
 2026-10-19：[IMLane公开 ordinary chain 入口](diagnostics/imlane_chain_cpu_20261019/README.md#公开入口与固定来源)。显式selector复用原作者backend／有限链，25入口、45owner、17旧路径NoPopen CPU通过，浮点精度及lease同bytes反例已闭合；实际LOTUS和临时ledger、显式fixture作者／ABI／GPU分列。旧7a冻结作者CPU12次fixture／三scope通过，50观察出生身份和13作者ticks退出，旧成功不认证最终关闭修补／selector。当前入口作者执行、真实模型／GPU与性能另验，Async82e包保持冻结。

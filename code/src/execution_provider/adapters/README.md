@@ -149,6 +149,13 @@ return-gate RED and its narrow GREEN. API/direct-child/IPC closure does not conf
 descendants. The public runner grants a separate twenty-second cleanup window, including the
 owner's fifteen-second private teardown; the original synchronous ten/eleven-second windows stay.
 
+The [cancel/close repair](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md)
+lets close adopt pending full-key abort intentions within the same original deadline, then close the
+same engine. `abort_handoff.scope=parent_control_queue_only` records this adoption separately from
+the original cancel RPC. A late RPC returning false stays false; queued control does not confirm a
+native abort or terminal. Known usage, unknown Core credits and retained inputs remain owned.
+The historical r2 cancel failure is preserved; CPU reproductions do not identify its winning race.
+
 [`CoreCascadeBackend`](lotus_cascade_core.py) reuses production sessions for each original LOTUS
 helper/sample/fallback stage. Its provider aliases, bounded stage CSV, model startup and closure
 are explicit costs. The [cascade method contract](../../semantic_methods/lotus/cascade.README.md)

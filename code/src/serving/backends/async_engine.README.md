@@ -1,7 +1,7 @@
-# 本地异步模型组件（可选，尚未接线）
+# 本地异步模型组件（可选）
 
 本组件是 [本地模型实施路线](../../../../experiments/plans/数据组织.md#model-engine-roadmap) 的
-CPU 合同切片。同步 `VllmEngine`、baseline、actor、Core 和 CLI 默认均未改变。
+CPU 合同切片。显式 Async actor／Core／CLI 已接入；同步 `VllmEngine` 和 baseline 默认保持。
 当前交付不表示 records 或有限链已经跨阶段持续供给，也没有 GPU 或性能资格。
 条款映射、固定官方源码与验证记录见[组件报告](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md)。
 
@@ -18,7 +18,8 @@ CPU 合同切片。同步 `VllmEngine`、baseline、actor、Core 和 CLI 默认�
   `poll(max_events)` 按到达次序转交有限的 `TerminalEvent`，包含完整调用身份、结果及
   `engine_terminal_confirmed`。未消费的已知结果继续占结果槽；消费已知结果后才恢复结果容量。
 - `abort(request_id)` 仅返回控制命令是否已在父端排入；child 的 `accepted` 和 `abort_requested`
-  均不是实际生成完成证明。`drain(timeout)` 等待本组件已知的活动工作，不消费结果，也不把超时变成完成。
+  均不是实际生成完成证明。已接纳的控制按前缀先于 close 发送，关闭冻结后新 abort 返回 false。
+  `drain(timeout)` 等待本组件已知的活动工作，不消费结果，也不把超时变成完成。
 - `close(timeout)` 有界等待 API shutdown、直接 child 退出与 I/O 线程关闭，返回 scoped 报告。
   `gpu_exit_confirmed`、`descendants_exit_confirmed` 当前为 `None`；外层模型 owner 必须继续核验和
   清理模型后代与 GPU，不能只凭 scoped `status=closed` 报告整个查询/模型资源已结清。
@@ -40,6 +41,9 @@ data、control、terminal 使用独立 socket。父 I/O 持续读取并优先给
 task 并行；原生 abort 使用一个独立 worker 加有限队列，不能卡住 close/drain 的读取。
 结果队列最多 `result_slots`，abort 队列最多 `max_inflight`，各有一个 worker 当前项；
 内核 socket 缓冲由操作系统限制，frame 以长度前缀核对上限。
+串行 abort worker 的前一个原生调用若挂起，后一个控制可能尚未进入原生 abort；shutdown 可继续，
+但不能据此确认该请求已取消。[确定性 CPU 反例与修补边界](../../../../experiments/results/diagnostics/async_cancel_close_20261019/README.md)
+分别保存队列接管、原生调用和关闭的证据，不指定历史 r2 的实际竞争层。
 
 固定 vLLM 0.25.1 在发送底层 ABORT 前会合成 `finish_reason=abort` 的最终输出。这类结果和生成进入后
 的异常/期限保持 `unknown`，保留已有 usage、输入与结果预留并使 owner 不再接新输入。只有匹配的
@@ -49,12 +53,13 @@ task 并行；原生 abort 使用一个独立 worker 加有限队列，不能卡
 unknown，并保留 task/输入责任，防止原生 generate 的 abort 等待吞掉期限。入口与渲染后均检查
 实际截止时间。close 报告仍未退出的 `pending_request_tasks`，不会把挂起的 task 当成已清理。
 
-## 集成 owner 后续接点
+## 集成 owner 接点
 
 共享 `vllm_engine.py` 已由唯一 owner 在 `a4f47eab` 提取 `result_record`、`result_from_output`；
 本实现直接复用它们及 `EngineSpec`、`GenerationSpec`、身份检查、sampling/logprobs 转换，不复制 parser。
-后续由 owner 串行接入 actor 的生命周期和 Core backend：将派发交给 `submit`，将有限 `poll` 事件
+显式 Async owner 已接入 actor 的生命周期和 Core backend：将派发交给 `submit`，将有限 `poll` 事件
 关联到原任务，只在可信终态释放原责任；未知项进入既有失败/清理流程。baseline 的原生调度不共享 Core。
 
-真实 vLLM 环境下仍须核验 render/token IDs、异步迟到供给、真实 logprobs、abort 结果、模型后代和 GPU 退出；
-这些工作由统一 GPU 计划排期。cascade 全局校准与 Extract 关系屏障保持原方法合同。
+冻结82e的真实迟到供给 late3 成功与 r2 取消失败按原来源解释；新取消修补尚无模型资格，原 unknown、
+2402＋1 tokens、held/ref=1 保留。原生 abort／shutdown 时序、新源 token／模板／日志及后代／GPU范围
+由独立资格计划核验；不重启旧 late3＋cancel1 控制器。cascade 全局校准与 Extract 关系屏障保持原方法合同。
