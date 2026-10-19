@@ -23,6 +23,10 @@ from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTIT
 
 MAX_MESSAGE_BYTES = 64 * 1024**2
 CODE_ROOT = Path(__file__).resolve().parents[4]
+# The worker's existing engine.close() API allows ten seconds. Leave one more
+# second for its reply, then four seconds for bounded owned-process cleanup.
+DEFAULT_CLOSE_TIMEOUT_S = 15.0
+CLOSE_CLEANUP_RESERVE_S = 4.0
 
 
 def _encode(value):
@@ -198,7 +202,10 @@ class EngineProcess:
                          engine_uid=(self.ready_report or {}).get("engine_uid"))
                     for item in identities]
 
-    def close(self, timeout=5.0):
+    def close(self, timeout=DEFAULT_CLOSE_TIMEOUT_S):
+        from src.experiments.lotus_records_supervisor import _seconds
+
+        _seconds(timeout, "timeout")
         with self._lock:
             try:
                 return self._close(timeout)
@@ -229,14 +236,15 @@ class EngineProcess:
         self._reaper_stop.set()
         started = time.monotonic()
         deadline = started + timeout
+        cleanup_reserved = min(CLOSE_CLEANUP_RESERVE_S, timeout / 3)
+        api_deadline = deadline - cleanup_reserved
         errors = []
         if self.process is not None:
             if self.created is not None:
                 try:
                     _observe(self.owned, self.process.pid, self.created)
                     if not self._broken and self.process.poll() is None:
-                        reply = self._exchange(dict(op="close"), min(deadline, started + timeout / 2),
-                                               stopping=False)
+                        reply = self._exchange(dict(op="close"), api_deadline, stopping=False)
                         if reply.get("kind") == "closed":
                             self.engine_close = reply["report"]
                             if not self.engine_close.get("engine_api_shutdown_confirmed"):
@@ -247,11 +255,12 @@ class EngineProcess:
                     errors.append("engine_close: " + type(exc).__name__)
                 try:
                     _wait(self.owned, self.process.pid, self.created,
-                          min(deadline, time.monotonic() + 0.2))
+                          min(deadline, time.monotonic() + min(0.2, cleanup_reserved / 4)))
                     if _live(self.owned):
                         _signal(self.owned, self.process.pid, self.created, signal.SIGTERM)
                         _wait(self.owned, self.process.pid, self.created,
-                              min(deadline, time.monotonic() + timeout / 3))
+                              min(deadline, time.monotonic() +
+                                  max(0.0, deadline - time.monotonic()) / 2))
                     if _live(self.owned):
                         _signal(self.owned, self.process.pid, self.created, signal.SIGKILL)
                         _wait(self.owned, self.process.pid, self.created, deadline)
@@ -268,7 +277,7 @@ class EngineProcess:
                 errors.append("process_identity_unavailable")
                 self.process.kill()
             try:
-                self.process.wait(timeout=max(0.001, deadline - time.monotonic()))
+                self.process.wait(timeout=max(0.0, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 errors.append("engine_process_still_running")
             for stream in (self.process.stdin, self.reader):
@@ -294,6 +303,8 @@ class EngineProcess:
             ipc_encode_seconds=self.ipc_encode_seconds, ipc_decode_seconds=self.ipc_decode_seconds,
             ipc_timing_scope="JSON encode, pipe transfer and engine response wait; includes model time",
             close_seconds=time.monotonic() - started, cleanup_errors=errors,
+            close_budget_s=timeout, engine_api_rpc_budget_s=timeout - cleanup_reserved,
+            process_cleanup_reserved_s=cleanup_reserved,
             worker_pid=os.getpid(), model_pid=None if self.process is None else self.process.pid,
             process_created=self.created,
             owned_processes=[list(item) for item in sorted(self.owned)],

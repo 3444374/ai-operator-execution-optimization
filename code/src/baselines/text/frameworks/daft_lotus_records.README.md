@@ -71,6 +71,16 @@ separate from query errors and completed rows. OS cleanup uses the existing
 supervisor's process identity/group helpers. Reports confirm only observed OS
 processes; GPU exit and unobserved detached descendants remain unconfirmed.
 
+Private-process close uses a 15-second default total budget after acquiring its
+operation lock: up to 11 seconds for the existing ten-second engine API and its
+reply, with four seconds reserved for exit observation and TERM/KILL cleanup.
+An explicit shorter positive finite timeout proportionally reduces the API
+wait and cleanup reserve; an unconfirmed API remains `unknown`, even when OS
+exit is confirmed. The close wire frame is unchanged. Completed or failed rows
+retain their known usage independently of the cleanup result. The dedicated
+outer supervisor remains responsible for a hard wall deadline, including lock
+waits and process-table operations.
+
 A synchronous native scan, formatter or worker initialization can block before
 its next cooperative check. Therefore `query_timeout_s` alone is not a hard
 wall deadline for the whole graph. The caller must supervise the dedicated
