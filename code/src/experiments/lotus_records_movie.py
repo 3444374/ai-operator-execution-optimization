@@ -25,14 +25,85 @@ def _fixed_method(method):
 
 
 def _finish(iterator, primary):
-    close = getattr(iterator, "close", None)
-    if close is not None:
-        try:
+    try:
+        close = getattr(iterator, "close", None)
+        if close is not None:
             close()
+    except BaseException as error:
+        if primary is None:
+            raise
+        primary.add_note("records result close also failed: " + type(error).__name__)
+
+
+def merge_unconsumed_call_results(report, expected, close_report, *, primary=None):
+    """Merge terminal close receipts into accounting, without interpreting them.
+
+    Only IDs marked here as runner-created missing-call placeholders may later
+    receive a real terminal result. A backend's own unknown remains authoritative.
+    Bad receipts do not discard valid receipts on either side of them.
+    """
+    previous = CallLedger(expected, max_calls=max(1, len(expected)))
+    for row in report["calls"]["records"]:
+        previous.record(row)
+    rows = previous.report()["records"]
+    declared = {row["call_id"]: row for row in expected}
+    placeholder_ids = set(report.get("runner_unconfirmed_call_ids", []))
+    placeholders = {row["call_id"]: row for row in rows
+                    if row["call_id"] in placeholder_ids and row["status"] == "unknown"
+                    and row["submission_confirmed"] is False
+                    and row["prompt_tokens"] is None and row["completion_tokens"] is None}
+    ledger = CallLedger(expected, max_calls=max(1, len(expected)))
+    known = {}
+    for row in rows:
+        if row["call_id"] not in placeholders:
+            ledger.record(row)
+            known[row["call_id"]] = row
+    errors = []
+    receipts = [] if close_report is None else close_report.get("unconsumed_call_results", [])
+    if type(receipts) is not list:
+        errors.append(ValueError("unconsumed call results must be a list"))
+        receipts = []
+    for receipt in receipts:
+        try:
+            call_id = receipt.get("call_id") if type(receipt) is dict else None
+            if type(call_id) is not str or call_id not in declared:
+                raise ValueError("close receipt belongs to an undeclared call identity")
+            checked = CallLedger([declared[call_id]], max_calls=1)
+            checked.record(receipt)
+            row = checked.report()["records"][0]
+            if call_id in known:
+                if row != known[call_id]:
+                    raise ValueError("close receipt conflicts with an existing call result")
+                continue
+            ledger.record(row)
+            known[call_id] = row
+            placeholders.pop(call_id, None)
         except BaseException as error:
-            if primary is None:
-                raise
-            primary.add_note("records result close also failed: " + type(error).__name__)
+            errors.append(error)
+    for row in placeholders.values():
+        ledger.record(row)
+    missing = ledger.report()["missing_call_ids"]
+    failure = primary if primary is not None else (errors[0] if errors else None)
+    if failure is not None:
+        ledger.mark_unconfirmed(type(failure).__name__)
+        placeholder_ids = set(placeholders) | set(missing)
+        report["status"] = "failed"
+    else:
+        placeholder_ids = set(placeholders)
+    report["calls"] = ledger.report()
+    report["runner_unconfirmed_call_ids"] = [row["call_id"] for row in expected
+                                             if row["call_id"] in placeholder_ids]
+    for error in errors:
+        detail = dict(error_type=type(error).__name__, error=redact_text(str(error)))
+        recorded = report.setdefault("close_receipt_errors", [])
+        if detail not in recorded:
+            recorded.append(detail)
+        if failure is not None:
+            note = "records close receipt rejected: " + detail["error"]
+            if note not in getattr(failure, "__notes__", []):
+                failure.add_note(note)
+    if errors and primary is None:
+        raise errors[0]
 
 
 def run_movie_query(source, checkout, method, generation, execute, *, query_id):
@@ -96,9 +167,7 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
                           status="completed")
     except BaseException as error:
         primary = error
-        ledger.mark_unconfirmed(type(error).__name__)
         report.update(error_type=type(error).__name__, error=redact_text(str(error)))
-        raise
     finally:
         try:
             if iterator is not None:
@@ -107,15 +176,24 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
             primary = error
             report.update(status="failed", error_type=type(error).__name__,
                           error=redact_text(str(error)))
-            raise
-        finally:
-            report["calls"] = ledger.report()
-            report["lm"] = lm_report(lm)
-            report["elapsed_seconds"] = time.monotonic() - started
+        report["calls"] = ledger.report()
+        try:
             report["backend_close"] = getattr(iterator, "last_close_report", None)
-            if primary is not None:
-                report["status"] = "failed"
-                primary.query_report = report
+            merge_unconsumed_call_results(report, expected, report["backend_close"], primary=primary)
+        except BaseException as error:
+            if primary is None:
+                primary = error
+                report.update(error_type=type(error).__name__, error=redact_text(str(error)))
+            else:
+                primary.add_note("records close accounting also failed: " + type(error).__name__)
+            merge_unconsumed_call_results(report, expected, None, primary=primary)
+        report["lm"] = lm_report(lm)
+        report["elapsed_seconds"] = time.monotonic() - started
+        if primary is not None:
+            report["status"] = "failed"
+            primary.query_report = report
+    if primary is not None:
+        raise primary
     return report
 
 
@@ -271,6 +349,24 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                 failure = cleanup
             else:
                 failure.add_note("static owner close also failed: " + type(cleanup).__name__)
+        finally:
+            if (owner is not None and type(report.get("calls")) is dict
+                    and report["calls"].get("schema") == "semloom.lotus_call_ledger.v1"):
+                try:
+                    late_close = getattr(owner, "last_query_report", None)
+                    if late_close is None:
+                        late_close = report.get("owner_close", {}).get("last_query_report")
+                    if late_close is not None:
+                        report["backend_close"] = late_close
+                        merge_unconsumed_call_results(report, source.expected(config["query_id"]),
+                                                      late_close, primary=failure)
+                except BaseException as cleanup:
+                    report.update(status="failed", close_receipt_error_type=type(cleanup).__name__)
+                    if failure is None:
+                        failure = cleanup
+                        report.update(error_type=type(cleanup).__name__, error=redact_text(str(cleanup)))
+                    else:
+                        failure.add_note("owner close accounting also failed: " + type(cleanup).__name__)
         try:
             if ray is not None and ray.is_initialized():
                 ray.shutdown()
