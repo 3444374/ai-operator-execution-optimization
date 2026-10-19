@@ -1,0 +1,61 @@
+{
+  "schema": "semloom.native_phase_close_evidence.cpu.v1",
+  "imlane_responsibility_commit": "7a4524b754c098b69ef5c50d6e8b62919c9f469a",
+  "shared_fix_commits": [
+    "200330ce",
+    "eaa1c1d7c64d55b43a4a83f8d30b9cf74b67fbb3"
+  ],
+  "shared_source_sha256": "424979a1f6a54f4a5a05a86a65a3d83c6583ce986ec609f238cc87d0979982b8",
+  "new_test_sha256": "79aa6c627ad0f0b5251d07856336b4aa42b0fae94b5c04fb934ac1e055437505",
+  "checks": {
+    "new_close_tests": 5,
+    "old_native_contract_tests": 11,
+    "combined_passed": 16,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "imlane_nonchild_combination_passed": 16,
+    "model_calls": 0,
+    "server_actions": 0,
+    "gpu_actions": 0,
+    "actual_child_started_by_integrator": false
+  },
+  "reviews": {
+    "spec": "PASS",
+    "standards": "PASS"
+  },
+  "private_receipts": {
+    "root_red": {
+      "name": "red.json",
+      "sha256": "50b10b508a6b394d09230ecc32b034436cefb72760552d3c762e9bdc08391f4a"
+    },
+    "root_intermediate_failure": {
+      "name": "green-r3.json",
+      "sha256": "2471e70afd78068aa73b5f2d47ce85b6b3259af54ffcd066b6c74658292bd2b1"
+    },
+    "root_green": {
+      "name": "green-r4.json",
+      "sha256": "9f551fe9f8cc8c0a82c0a111ba92f62a9a7fdfc02509650c3c9b330669c485bb"
+    },
+    "spec": {
+      "name": "spec-close-fix-receipt.json",
+      "sha256": "2932f6fe952899dc0ee654dbcfc0f528809bda1632c13ebacda247394789e05d"
+    },
+    "standards": {
+      "name": "standards-close-fix-probe.json",
+      "sha256": "86b2d9e7f4dcd7208a624e2294fe90f16738e0ac1b076fe522170efc48b72dc5"
+    }
+  },
+  "scope": [
+    "known phase model and physical evidence survives close exception",
+    "unknown/primary failure and successor blocking retained",
+    "known calls and usage not duplicated",
+    "None/malformed receipts fail closed without skipping other cleanup"
+  ],
+  "pending": [
+    "new author scope qualification using final source",
+    "real model/GPU",
+    "public selector",
+    "throughput or performance"
+  ]
+}

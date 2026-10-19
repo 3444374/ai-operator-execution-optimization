@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：接纳 IMLane 普通方法关系链并保留失败关闭证据
+
+选择职责7a4524b7的十个所属文件，共享empty_prototype不重复接纳。Map／Extract复用单阶段链，非末端Extract沿已有完整EOF关系屏障；作者调度保持，各段新scope／实例及成本分列。原17项本机CPU保留原固定来源，新增组合16项NoPopen核验未启动child。双审发现公共NativeExtractRelationRows在阶段close抛错时漏报已知模型／物理证据；200330ce及eaa1c1d7保留报告而维持unknown，5新＋11旧合同16项通过，None／坏元数据／后续阶段清理反例闭合，原RED保留。作者CPU、真实模型／GPU及公共selector仍pending；不改固定82e的Async模型包。见[来源与验证](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)。
+
 ## 2026-10-19：接纳 IMLane 级联作者 CPU r3 回执
 
 职责 cfa65db2 的原报告／JSON保持逐字接纳，公共入口单独同步。原98.92秒保存API失败保留，仅修私有helper保存而1060源码不变；冻结r3两查询各22、共44次CPU fixture通过，六scope／六child正常关闭。独立77观察出生身份及28作者start_ticks退出，normal lease释放，作者／二进制／八旧账本不变。17本机CPU与r3作者实测分列；真实helper／模型／GPU阶段退出仍pending，不重跑旧成功同步单元。见[固定来源及失败原件](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。

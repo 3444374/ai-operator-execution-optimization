@@ -17,12 +17,13 @@ from integrations.imlane_records.model_process import assigned_environment
 from integrations.imlane_records.records_host import RecordsResults
 from src.baselines.common.private_artifacts import require_outside_git
 from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults, _source_binding
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence
+from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns, _parent_seeds
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 
 
-def configuration(chain, engine, resources, expected, *, control_dir, deadline, model_environment):
+def configuration(chain, engine, resources, expected, *, control_dir, deadline, model_environment,
+                  initial_parents=None, columns=None, allow_nulls=False):
     """Freeze caller values and preflight before constructing an author owner."""
     chain = LotusRecordChain.from_dict(chain.describe())
     engine, resources = EngineSpec.from_dict(asdict(engine)), RecordsResources(**asdict(resources))
@@ -30,6 +31,8 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
         raise ValueError("IMLane finite chain requires one worker, 1..16 batch rows and at most two pending blocks")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("IMLane finite chain requires one model deployment")
+    if any(stage.kind == "extract" for stage in chain.stages[:-1]):
+        raise ValueError("an IMLane segment must end at its Extract relation barrier")
     if (type(expected) not in (tuple, list) or any(type(row) is not RecordOccurrence for row in expected)
             or any(len({getattr(row, key) for row in expected}) != len(expected)
                    for key in ("row_id", "source_position"))):
@@ -42,6 +45,10 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     if type(deadline) not in (int, float) or not math.isfinite(deadline) or deadline <= time.monotonic():
         raise ValueError("finite chain needs an absolute finite work deadline")
     model_environment = assigned_environment(model_environment)
+    if type(allow_nulls) is not bool:
+        raise TypeError("allow_nulls must be a boolean")
+    parents = _parent_seeds([(row.row_id,row.source_position) for row in expected],initial_parents)
+    schema = _ordered_columns(expected,columns)
     engine.validate_driver_environment()
     control = Path(control_dir)
     require_outside_git(control)
@@ -53,7 +60,10 @@ def configuration(chain, engine, resources, expected, *, control_dir, deadline, 
     return dict(schema="imlane.chain.worker.v1", chain=chain.describe(), query_id=chain.query_id,
                 engine=asdict(engine), resources=asdict(resources), expected=[_source_binding(r) for r in expected],
                 deadline_monotonic=deadline, control_dir=str(control), driver_host=socket.gethostname(),
-                control_token=token, model_environment=dict(model_environment))
+                control_token=token, model_environment=dict(model_environment),
+                phase=dict(initial_parents=None if initial_parents is None else [
+                    [row.row_id,row.source_position,list(parents[(row.row_id,row.source_position)])] for row in expected],
+                    columns=schema, allow_nulls=allow_nulls))
 
 
 class ChainScope(verify.RecordScope):
@@ -76,9 +86,11 @@ class ChainResults:
     """Single-pass relation results; all stage calls remain in the shared ledger."""
 
     def __init__(self, records, client, *, chain, expected, resources, control_dir, deadline,
-                 close_owner, cleanup_scope=nullcontext, cancelled=None):
+                 close_owner, cleanup_scope=nullcontext, cancelled=None,
+                 initial_parents=None, columns=None, close_on_eof=False):
         self.chain = LotusRecordChain.from_dict(chain.describe())
-        self.state = ChainBatchResults(expected, self.chain)
+        self.state = ChainBatchResults(expected, self.chain,initial_parents=initial_parents,columns=columns)
+        self.close_on_eof, self._close_failure = close_on_eof, None
         self.control = Path(control_dir)
         self.cancelled = cancelled
         self.carrier = RecordsResults(records, client, query_id=self.chain.query_id,
@@ -107,6 +119,20 @@ class ChainResults:
     @property
     def unassociated_results(self):
         return self.state.unassociated_results
+
+    @property
+    def expected(self):
+        return self.state.expected
+
+    @property
+    def received(self):
+        return self.state.received
+
+    def verify_success(self, *, source_exhausted):
+        return self.state.verify_success(source_exhausted=source_exhausted)
+
+    def finalize_columns(self):
+        return self.state.finalize_columns()
 
     def __iter__(self):
         return self
@@ -142,6 +168,8 @@ class ChainResults:
                     self.state.verify_coverage()
                     self.state.finalize_columns()
                     self.completed = self._done = True
+                    if self.close_on_eof:
+                        self.close()
                     raise
                 self.state.accept(value["batch"])
             return self.state.pop()
@@ -164,7 +192,7 @@ class ChainResults:
             for pattern in ("chain-failure-*.json", "chain-audit-*.json"):
                 for path in sorted(self.control.glob(pattern)):
                     try:
-                        if path.stat().st_size > 64 * 1024**2:
+                        if path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024**2:
                             raise ValueError("chain audit exceeds the existing IPC byte allowance")
                         self.state.recover(json.loads(path.read_text()))
                     except BaseException as recovery:
@@ -179,7 +207,11 @@ class ChainResults:
                 error = RuntimeError("IMLane chain worker audit/cleanup remains unconfirmed")
             self.last_close_report = dict(self.last_close_report or {}, status="unknown",
                                           cleanup_errors=list(self.state.cleanup_errors))
+        self._close_failure = self._close_failure or error
+        error = self._close_failure
         if error is not None:
+            self.completed = False
+            self.last_close_report = dict(self.last_close_report or {},status="unknown")
             error.chain_calls = list(self.calls)
             error.chain_stage_stats = list(self.batch_stage_stats)
             raise error

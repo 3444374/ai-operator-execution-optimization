@@ -20,6 +20,8 @@
 
 ## 独立 IMLane 记录桥
 
+[普通 Map／Extract 与关系链](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)已选择接纳职责7a4524b7，复用公共有限链和完整Extract关系屏障，段间新作者scope／引擎；空结果显式传最终prototype。原17本机CPU与当前16项NoPopen组合分列。共享关闭聚合另修，5新＋11旧合同保留已知模型／物理证据且失败仍unknown，双独审通过；新作者实测、模型／GPU和公开selector待验。
+
 [通用级联作者 CPU r3](../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)已在冻结包取得两查询／44次fixture和独立资源审计，六scope／六child关闭、77观察出生身份退出，normal lease释放；原保存API失败与17本机CPU另列。真实helper模型／GPU阶段退出和后续源码仍另验。
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
@@ -911,8 +913,7 @@ K/frame budget/actor shape。
 
 [通用级联公共入口](scripts/README.md#movie-q3-原-helper-lm-全局级联)已接三种backend和独立schema，
 20项级联＋13项Async入口CPU检查分列；[IMLane作者阶段API](integrations/imlane_records/cascade.README.md)
-从22e82选择代码／局部报告，17项本机CPU、原失败和skip保留。作者CPython新包已交唯一执行会话，
-尚无该包作者实测回执，模型／GPU／公共IMLane selector与性能均pending。
+从22e82选择代码／局部报告，17项本机CPU、原失败和skip保留。后续冻结r3作者CPython两查询／44次fixture与独立退出审计已通过；真实helper模型／GPU／公共IMLane selector与性能仍pending。
 
 真实Movie级联task wrapper的metadata失败会覆盖primary/calls，补充独审已复现并最小修复，
 原2＋新2项LOTUS／SemBench CPU检查通过；入口33项与此4项保持独立来源。

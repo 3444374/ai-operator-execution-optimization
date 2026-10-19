@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane普通方法与关系链](diagnostics/imlane_chain_cpu_20261019/README.md)。选择7a4524b7的十个所属文件，原17项CPU不重绑；共享关闭报告修补固定eaa1c1d7，5新＋11旧NoPopen合同及16项IMLane组合通过。公开model／physical证据保留，unknown／后继阻断及usage口径保持；作者CPU、新模型／GPU、selector pending。
+
 2026-10-19：[空关系列类型的显式 prototype](diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)。原 LOTUS 空 Map 新列／覆盖列为 float64，而无 metadata 的旧装配为 object；精确 RED 保留。新增 opt-in 零行 DataFrame 元数据，7 新项包含在 50 项共享 CPU 回归中；默认／非空推断和 Extract 实际键保持，未自动迁移调用方或升级模型资格。
 
 2026-10-19：[IMLane通用级联阶段API](diagnostics/imlane_cascade_cpu_20261019/README.md)。22e82选择10代码／局部报告文件为4f1cde99，保留原全局方法和作者调度／输出所有权；17本机CPU及初始失败／skip分列。后续cfa65报告的冻结r3作者CPython两查询／44次fixture、六scope／六child关闭与独立77出生身份退出通过，原保存API失败保留；真实模型／GPU／公共selector不转授。
