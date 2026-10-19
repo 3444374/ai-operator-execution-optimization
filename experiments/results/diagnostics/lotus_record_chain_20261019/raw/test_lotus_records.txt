@@ -1,0 +1,20 @@
+test_id_is_stable_and_delimiters_do_not_alias (tests.semantic_methods.test_lotus_records.CallIdentityTests.test_id_is_stable_and_delimiters_do_not_alias) ... ok
+test_positions_and_call_ordinals_reject_bool_and_non_integer (tests.semantic_methods.test_lotus_records.CallIdentityTests.test_positions_and_call_ordinals_reject_bool_and_non_integer) ... ok
+test_capacity_and_duplicate_declarations_are_rejected (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_capacity_and_duplicate_declarations_are_rejected) ... ok
+test_ledger_copies_results_and_reports_do_not_depend_on_resource_close (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_ledger_copies_results_and_reports_do_not_depend_on_resource_close) ... ok
+test_out_of_order_results_use_declaration_order_and_keep_failure_usage (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_out_of_order_results_use_declaration_order_and_keep_failure_usage) ... ok
+test_rejects_duplicates_and_nonterminal_results (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_rejects_duplicates_and_nonterminal_results) ... ok
+test_rejects_invalid_usage_without_recording_it (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_rejects_invalid_usage_without_recording_it) ... ok
+test_rejects_missing_foreign_or_forged_full_identity (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_rejects_missing_foreign_or_forged_full_identity) ... ok
+test_unconfirmed_and_missing_usage_are_not_counted_as_zero_or_submitted (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_unconfirmed_and_missing_usage_are_not_counted_as_zero_or_submitted) ... ok
+test_unknown_submission_defaults_to_unconfirmed (tests.semantic_methods.test_lotus_records.CallLedgerTests.test_unknown_submission_defaults_to_unconfirmed) ... ok
+test_plain_config_roundtrips_through_worker_json (tests.semantic_methods.test_lotus_records.FilterMethodTests.test_plain_config_roundtrips_through_worker_json) ... ok
+test_rejects_unsupported_semantics_and_wrong_types (tests.semantic_methods.test_lotus_records.FilterMethodTests.test_rejects_unsupported_semantics_and_wrong_types) ... ok
+test_default_single_gpu_profile_is_vendor_independent (tests.semantic_methods.test_lotus_records.RecordsResourcesTests.test_default_single_gpu_profile_is_vendor_independent) ... ok
+test_rejects_non_integer_or_nonpositive_capacities (tests.semantic_methods.test_lotus_records.RecordsResourcesTests.test_rejects_non_integer_or_nonpositive_capacities) ... ok
+test_rejects_nonfinite_or_nonpositive_deadlines (tests.semantic_methods.test_lotus_records.RecordsResourcesTests.test_rejects_nonfinite_or_nonpositive_deadlines) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.001s
+
+OK

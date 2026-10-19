@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-19：[LOTUS 普通记录方法与有限链 CPU 检查](diagnostics/lotus_record_chain_20261019/README.md)。
+独立职责从 `c0be45dd` 推进，原 Map／Extract formatter／parser、发生项及真实派生列依赖，配合原生 Ray Data 融合图；
+公共生成接口提交 `64044682` 单独保留来源。固定响应、实际 CPU 库、私有模型进程替身和独立审查按同题记录分列；
+不扩为真实 GPU、其他后端、复杂查询、原全局级联或性能资格，main 尚未整合本切片。
+
 2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
 职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。
 

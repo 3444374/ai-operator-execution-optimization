@@ -4,6 +4,9 @@
 
 本包负责文本/图像 baseline 的共同合同、薄适配和证据落盘，不承载项目调度策略。
 
+[有限记录链](text/frameworks/ray_data_lotus_chain.py)由 Ray Data callable-class 原生图融合普通 Filter→Map→Extract，
+私有模型进程随该 actor 持有，最终结果端只核验与关系装配；[CPU 检查与未验证项](../../../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)单列，不替代其他后端或 GPU 对照。
+
 [Movie Q3 records](../semantic_methods/lotus/README.md#movie-q3-records-最小切片)提供原生 Ray Data 与
 [Daft Native process 图](text/frameworks/daft_lotus_records.README.md)，各自拥有准备、传输与模型执行接点。
 普通Filter共享原LOTUS提示、解释和SemBench评价；Ray Data已完成Qwen／单4090普通Q3小切片差分，Daft的实库CPU／固定响应资格与真实GPU待验范围分别登记。

@@ -1,0 +1,111 @@
+Initial real-Ray CPU failure summary
+Run identity: native-chain-initial-cpu-20261019T093329Z
+Scope: original LOTUS + Ray 2.56.1; zero GPU, fixed-response subprocess fixture.
+Source identity: shared dependency 640446822c430d21f08d1f9bde75e61198912aa3 plus the first uncommitted native-chain draft.
+Outcome: 1 unittest method, 1 error, no model/GPU run.
+Observed failure: a queued subsequent native batch raised RuntimeError("failed Ray chain actor cannot evaluate further inputs"), surfaced as RayTaskError(UserCodeException).
+Diagnosis from fixture/source inspection: the original CPU response fixture omitted finish_reason and engine_request_id required by engine_response. The first method error was masked when Ray eagerly scheduled another batch on the failed actor before consumption.
+Fix: provide complete CPU engine response fields; queued batches after a method failure repeat the same terminal error envelope without preparation or another model call.
+Follow-up: the complete corrected qualification is in test_ray_data_lotus_chain.txt. Expected error-injection traces in that passing log are caught by assertions and are not failed unittest results.
+The excerpt below retains the observed initial Ray exception, after credential redaction and local-path replacement.
+
+An exception was raised from a task of operator "MapBatches(CpuFixtureBatch)". Dataset execution will now abort. To ignore this exception and continue, set DataContext.max_errored_blocks.
+Traceback (most recent call last):
+  File "<local-path>", line 666, in process_completed_tasks
+    bytes_read = task.on_data_ready(
+                 ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 241, in on_data_ready
+    raise ex from None
+  File "<local-path>", line 231, in on_data_ready
+    ray.get(self._pending_block_ref)
+  File "<local-path>", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 110, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 2968, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 1050, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(UserCodeException): [36mray::MapWorker(MapBatches(CpuFixtureBatch)).submit()[39m (pid=19101, ip=127.0.0.1, actor_id=f728662f4fed7c800969dd8501000000, repr=MapWorker(MapBatches(CpuFixtureBatch)))
+           ^^^^^^^^^^^^^
+  File "<local-path>", line 100, in __call__
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<local-path>", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 401, in __get_result
+    raise self._exception
+  File "<local-path>", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/code/src/baselines/text/frameworks/ray_data_lotus_chain.py", line 135, in __call__
+    raise RuntimeError("failed Ray chain actor cannot evaluate further inputs")
+RuntimeError: failed Ray chain actor cannot evaluate further inputs
+
+The above exception was the direct cause of the following exception:
+
+[36mray::MapWorker(MapBatches(CpuFixtureBatch)).submit()[39m (pid=19101, ip=127.0.0.1, actor_id=f728662f4fed7c800969dd8501000000, repr=MapWorker(MapBatches(CpuFixtureBatch)))
+  File "<local-path>", line 679, in submit
+    yield from _map_task(
+  File "<local-path>", line 826, in _map_task
+    for block in block_iter:
+                 ^^^^^^^^^^
+  File "<local-path>", line 150, in __next__
+    return next(self._input)
+           ^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 498, in __next__
+    result = next(self._results_iter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 584, in __next__
+    res = self._fn(input_batch)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 457, in _wrapped_udf_map_fn
+    _try_wrap_udf_exception(e)
+  File "<local-path>", line 481, in _try_wrap_udf_exception
+    raise UserCodeException("UDF failed to process a data block.") from e
+ray.exceptions.UserCodeException: UDF failed to process a data block.
+2026-10-19 09:33:39,744	DEBUG streaming_executor.py:290 -- Shutting down executor for dataset dataset_1_0 (failed with [36mray::MapWorker(MapBatches(CpuFixtureBatch)).submit()[39m (pid=19101, ip=127.0.0.1, actor_id=f728662f4fed7c800969dd8501000000, repr=MapWorker(MapBatches(CpuFixtureBatch)))
+           ^^^^^^^^^^^^^
+  File "<local-path>", line 100, in __call__
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "<local-path>", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 401, in __get_result
+    raise self._exception
+  File "<local-path>", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/code/src/baselines/text/frameworks/ray_data_lotus_chain.py", line 135, in __call__
+    raise RuntimeError("failed Ray chain actor cannot evaluate further inputs")
+RuntimeError: failed Ray chain actor cannot evaluate further inputs
+
+The above exception was the direct cause of the following exception:
+
+[36mray::MapWorker(MapBatches(CpuFixtureBatch)).submit()[39m (pid=19101, ip=127.0.0.1, actor_id=f728662f4fed7c800969dd8501000000, repr=MapWorker(MapBatches(CpuFixtureBatch)))
+  File "<local-path>", line 679, in submit
+    yield from _map_task(
+  File "<local-path>", line 826, in _map_task
+    for block in block_iter:
+                 ^^^^^^^^^^
+  File "<local-path>", line 150, in __next__
+    return next(self._input)
+           ^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 498, in __next__
+    result = next(self._results_iter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 584, in __next__
+    res = self._fn(input_batch)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 457, in _wrapped_udf_map_fn
+    _try_wrap_udf_exception(e)
+  File "<local-path>", line 481, in _try_wrap_udf_exception
+    raise UserCodeException("UDF failed to process a data block.") from e
+ray.exceptions.UserCodeException: UDF failed to process a data block.)
+2026-10-19 09:33:39,744	DEBUG stats.py:960 -- Stats Actor located on cluster_id=ClusterID(971741e3382f43496642701620268a5413a7852291359c2cdad738da)
+2026-10-19 09:33:39,745	DEBUG stats.py:1217 -- Parent 1 (operator: FromItems) contributes 3 rows to input

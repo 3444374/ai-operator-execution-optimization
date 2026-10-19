@@ -1,5 +1,29 @@
 # LOTUS 方法与执行接点
 
+<a id="lotus-finite-record-chain"></a>
+## 普通 Map／Extract 与首个有限链
+
+[记录方法](record_chain.py)新增 `MapMethod`、`ExtractMethod`、开放名称的 `StageSpec` 与
+`RecordOccurrence`，并以 `LotusFilterMapExtract` 实现第一条普通文本链。
+原 formatter／parser 与 LM 统计继续由固定 LOTUS 拥有；Map 产生的新列成为 Extract 的真实输入，
+被 Filter 丢弃的行没有后继调用，同文发生项独立保留。
+当前选定默认普通方法，不扩 CoT、examples、自定义 parser、safe mode 或结果缓存；
+Map 支持 instruction／输出列／system prompt，Extract 支持输入列、字段描述与 extract_quotes。
+Extract 使用原 `json_object` 请求，不增强 schema，字段碰撞和 JSON 错误行为由原 parser 决定。
+
+[Ray Data 融合链](../../baselines/text/frameworks/ray_data_lotus_chain.py)在一个原生
+callable-class actor 内按各原生输入批准备、推理和解析，独占隔离模型子进程跨批复用；
+它不是官方 vLLM Processor，也不接 SemLoom Core 或 HTTP。
+模型评价数、原生数据批与引擎提交批分别记录。结果端只核验关联和账本，并在成功 EOF 后用
+`records_to_frame(rows, columns=stream.columns)` 做一次最终关系装配；
+`source_position` 恢复顺序，`index_updates` 复现原 Extract `.loc` 的重复标签广播。
+流中每项是独立发生项的解析结果；最终 DataFrame 才是按原索引规则装配后的关系。
+
+源列、派生列在 `values`，来源身份在外层字段与 `source_refs`，模型身份在独立调用记录；
+因此模型返回的 `row_id` 等数据键不能覆盖执行身份。关联／分组键、命名来源和父调用列表可以保留，
+但当前 runner 仅执行三步；分支、汇合、Join、Agg 及 Extract 后再消费重复标签结果仍待实际任务扩展。
+实施映射、固定来源、CPU 结果与未验证范围见[切片记录](../../../../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)。
+
 ## Movie Q3 records 最小切片
 
 本分支新增独立的[普通 Filter records 接口](records.py)、[worker 准备／原结果解释](engine.py)，

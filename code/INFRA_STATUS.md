@@ -1,5 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
+## 普通记录方法与有限链
+
+职责分支从 `c0be45dd` 新增 [Map／Extract 方法与三步链](src/semantic_methods/lotus/record_chain.py)，
+保留源／派生列、发生项、开放阶段名及原 LOTUS formatter／parser。
+原生 Ray Data 融合链在图内完成三阶段，结果端只核对账本、恢复顺序和原 Extract 索引写入；
+逐调用生成接口采用唯一引擎负责人提交 `64044682`，本职责不另改公共引擎或旧 Filter。
+实施要求、CPU 检查及剩余范围从[切片记录](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)核对。
+三步是当前执行形状，保留的多来源／关联信息不表示 Join、分支、子查询或全局聚合已经实现；GPU、新链其他后端和生产 Core 仍待验证。
+
 ## 独立 IMLane 记录桥
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。

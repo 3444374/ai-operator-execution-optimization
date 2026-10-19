@@ -1,0 +1,12 @@
+test_cache_guard_is_outside_any_operator_cache_call (tests.semantic_methods.test_lotus_engine.LotusEngineTests.test_cache_guard_is_outside_any_operator_cache_call) ... ok
+test_finite_usage_limit_raises_like_original_lm (tests.semantic_methods.test_lotus_engine.LotusEngineTests.test_finite_usage_limit_raises_like_original_lm) ... ok
+test_native_usage_and_parser_match_with_unparseable_output (tests.semantic_methods.test_lotus_engine.LotusEngineTests.test_native_usage_and_parser_match_with_unparseable_output) ... 2026-10-19 09:35:25,227 - INFO - 	 Failed to parse uncertain: defaulting to True
+2026-10-19 09:35:25,227 - INFO - 	 Failed to parse uncertain: defaulting to True
+ok
+test_unknown_usage_and_failed_text_are_rejected (tests.semantic_methods.test_lotus_engine.LotusEngineTests.test_unknown_usage_and_failed_text_are_rejected) ... ok
+test_worker_messages_match_native_formatter_with_empty_and_duplicate_text (tests.semantic_methods.test_lotus_engine.LotusEngineTests.test_worker_messages_match_native_formatter_with_empty_and_duplicate_text) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 4.104s
+
+OK

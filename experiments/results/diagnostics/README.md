@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[LOTUS 普通记录方法与有限链](lotus_record_chain_20261019/README.md)：原 Map／Extract 与三步依赖差分、Ray Data CPU 原生图和隔离响应进程；真实 GPU、其他新链后端和复杂任务仍待验。
+
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
 [Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md)：独立Ray Data／Daft／SemLoom静态切片，CPU分层资格与原生参照／Ray Data／静态参照的Qwen单4090小切片实测；原失败和同预算32/32保留，Daft GPU、级联与production Core待验。

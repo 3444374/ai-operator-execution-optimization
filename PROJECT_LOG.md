@@ -1,5 +1,14 @@
 # 项目日志
 
+## 2026-10-19：实现普通 Map／Extract 记录方法与首个有限链
+
+从 `integration/data-execution@c0be45dd` 建立独立职责 worktree 与无日期分支 `feat/lotus-finite-chain`。
+原 LOTUS formatter／parser、输出列及索引行为由新记录方法复用；普通三步链保留发生项、源列与 Map 新列到 Extract 的依赖。
+原生 Ray Data 在 callable-class actor 内融合执行，独占隔离模型子进程；结果端核验账本和最终关系，不逐算子收齐回 driver 重建图。
+公共逐调用 generation／JSON object 使用唯一引擎负责人提交 `64044682`，旧 Filter 和 runner 保持原职责。
+三步只是当前验收实例，公共阶段名／role、命名来源和关联列保留；SemBench Movie Q7／Q8 已按固定源码核实为后续候选，当前未实现复杂查询或通用 compiler。
+[实施对应与验证记录](experiments/results/diagnostics/lotus_record_chain_20261019/README.md)区分固定响应、实际 CPU 库与真实 GPU 资格；本轮不启动模型，完成独立审查后交 owner 整合，不合 main。
+
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界
 
 固定7d12d63c的389文件闭包，准备独立控制器／双查询child与原方法、输入及原生控制原件绑定；新16次账本只计划首单元永久4次，每引擎cap2、并发1、零重试，旧32/32不动。外层单元1200秒／清理15秒，无工程累计截止时间。

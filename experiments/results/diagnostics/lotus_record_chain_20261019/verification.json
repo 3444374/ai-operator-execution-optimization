@@ -1,0 +1,139 @@
+{
+  "schema": "semloom.lotus_record_chain_cpu_verification.v1",
+  "execution": "pinned libraries with deterministic CPU responses, no physical model",
+  "base": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+  "shared_generation_dependency": "640446822c430d21f08d1f9bde75e61198912aa3",
+  "suites": [
+    {
+      "suite": "tests.semantic_methods.test_lotus_record_chain",
+      "returncode": 0,
+      "tests": 15,
+      "command": "<cpu-python> -m unittest tests.semantic_methods.test_lotus_record_chain -v",
+      "elapsed_s": 6.0829,
+      "log": "raw/test_lotus_record_chain.txt",
+      "log_sha256": "f121077329bdcf145573c48679c9dcfb7d3b57275d918ced4c3a76499f1bf637"
+    },
+    {
+      "suite": "tests.serving.test_vllm_engine",
+      "returncode": 0,
+      "tests": 51,
+      "command": "<cpu-python> -m unittest tests.serving.test_vllm_engine -v",
+      "elapsed_s": 0.3307,
+      "log": "raw/test_vllm_engine.txt",
+      "log_sha256": "af521dc4e89d5715a789808576fc8ac4718efb9bd46bcb4b7a22178dfc9bafb1"
+    },
+    {
+      "suite": "tests.semantic_methods.test_lotus_records",
+      "returncode": 0,
+      "tests": 15,
+      "command": "<cpu-python> -m unittest tests.semantic_methods.test_lotus_records -v",
+      "elapsed_s": 0.0349,
+      "log": "raw/test_lotus_records.txt",
+      "log_sha256": "4d0d0d6e1811ffeece77bd9ab1e76f8fdddb690ec6c4d3faa37964364ecdd65d"
+    },
+    {
+      "suite": "tests.semantic_methods.test_lotus_engine",
+      "returncode": 0,
+      "tests": 5,
+      "command": "<cpu-python> -m unittest tests.semantic_methods.test_lotus_engine -v",
+      "elapsed_s": 4.8897,
+      "log": "raw/test_lotus_engine.txt",
+      "log_sha256": "0700573f26ac0cfaa9e0e120f6c28a35ff4330086be91f05685accfe67ab88bc"
+    },
+    {
+      "suite": "tests.baselines.text.test_ray_data_lotus_records",
+      "returncode": 0,
+      "tests": 7,
+      "command": "<cpu-python> -m unittest tests.baselines.text.test_ray_data_lotus_records -v",
+      "elapsed_s": 0.264,
+      "log": "raw/test_ray_data_lotus_records.txt",
+      "log_sha256": "b64f2badc0ff4d37bf5c87045f387dbb912ed7b521fc56da7875004e2fb5de48"
+    },
+    {
+      "suite": "tests.baselines.text.test_daft_lotus_records",
+      "returncode": 0,
+      "tests": 17,
+      "command": "<cpu-python> -m unittest tests.baselines.text.test_daft_lotus_records -v",
+      "elapsed_s": 61.0544,
+      "log": "raw/test_daft_lotus_records.txt",
+      "log_sha256": "18a2839db3468f15f89980ca00422d092900f115ec7d04cd7cc986bb63ba385d"
+    },
+    {
+      "suite": "tests.execution_provider.test_lotus_records_static",
+      "returncode": 0,
+      "tests": 14,
+      "command": "<cpu-python> -m unittest tests.execution_provider.test_lotus_records_static -v",
+      "elapsed_s": 0.2448,
+      "log": "raw/test_lotus_records_static.txt",
+      "log_sha256": "201ace1dbb9c2934ad60ee5ddce4018bef01e7ce218f4aaf713efa24ad6c35fc"
+    },
+    {
+      "suite": "tests.experiments.test_lotus_records_movie",
+      "returncode": 0,
+      "tests": 9,
+      "command": "<cpu-python> -m unittest tests.experiments.test_lotus_records_movie -v",
+      "elapsed_s": 5.5603,
+      "log": "raw/test_lotus_records_movie.txt",
+      "log_sha256": "fb311e2e786754295e6c801eb6c3460a8fae91ed2418877630f379d0a7784b0c"
+    },
+    {
+      "suite": "tests.baselines.text.test_ray_data_lotus_chain",
+      "returncode": 0,
+      "tests": 21,
+      "subtests": 12,
+      "skipped": 0,
+      "command": "<cpu-python> -m unittest tests.baselines.text.test_ray_data_lotus_chain -v",
+      "elapsed_s": 36.141,
+      "log": "raw/test_ray_data_lotus_chain.txt",
+      "log_sha256": "662c17a69d4a3167f6d219b405a65d13fdcbd1da7bc0774ab78d8c80526bcbc3",
+      "coverage": {
+        "protocol": 15,
+        "actual_private_cpu_transport": 2,
+        "actual_ray_cpu": 4
+      },
+      "last_metadata_change": {
+        "field": "model_instances -> engine_report_count",
+        "reason": "report file count is not an observed model instance count",
+        "targeted_rerun_tests": 15,
+        "targeted_rerun_status": "passed"
+      },
+      "log_normalization": "Redacted local paths and stripped trailing whitespace; test output otherwise preserved."
+    }
+  ],
+  "preliminary_failures": [
+    {
+      "kind": "test_runner_composition_and_sandbox",
+      "tests": 118,
+      "failures": 1,
+      "errors": 46,
+      "skipped": 6,
+      "reason": "Combining LOTUS and isolated model tests in one interpreter trips the intentional LOTUS import guard; sandboxed macOS sysctl blocks psutil process observation.",
+      "preserved_excerpt": [
+        "RuntimeError: LOTUS must not be imported in the local model process",
+        "PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)",
+        "Ran 118 tests in 5.447s",
+        "FAILED (failures=1, errors=46, skipped=6)"
+      ],
+      "evidence_scope": "Exact observed summary and representative errors; complete tool output was truncated.",
+      "resolution": "Run each test module in a fresh interpreter; allow CPU child-process observation for lifecycle checks."
+    },
+    {
+      "kind": "independent_review_test_bug",
+      "reason": "Native LM uses max_completion_tokens; the differential test incorrectly looked up max_tokens.",
+      "resolution": "Corrected the assertion and reran against the real typed generation dependency."
+    }
+  ],
+  "status": "passed",
+  "real_model_calls": 0,
+  "gpu_model_calls": 0,
+  "total_tests": 154,
+  "scope": "CPU deterministic correctness and lifecycle checks; no GPU or performance qualification",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "a48cebe0d4a76ccdbe1e96439ade0070941df72f3f3240eb39f5e4be10a4a642",
+    "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "1d3ef38e7eaaf6c339b6f3b682bd98d34afa57a876085edc5cefc40cd94d48a8",
+    "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+    "code/tests/semantic_methods/test_lotus_record_chain.py": "efcf82364a5eb0a02a18c512f3298ec1cd1d6735752cc6d773edebf6bbc5a808",
+    "code/tests/baselines/text/test_ray_data_lotus_chain.py": "24b11a9769a98890e383d95db3ad57e9b96198cffb13a9c5ef374df3abf00808"
+  },
+  "native_initial_failure_log": "raw/test_ray_data_lotus_chain_initial_failure.txt"
+}

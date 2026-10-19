@@ -1,0 +1,148 @@
+CPU correctness qualification only; zero real model/GPU calls.
+Ray Data 2.56.1 + LOTUS 1.2.4 + Arrow 24; explicit private response fixtures.
+Command: <cpu-python> -m unittest tests.baselines.text.test_ray_data_lotus_chain -v
+test_all_discarded_batch_still_delivers_filter_usage_and_empty_relation_schema (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_all_discarded_batch_still_delivers_filter_usage_and_empty_relation_schema) ... ok
+test_cleanup_failure_keeps_completed_calls (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_cleanup_failure_keeps_completed_calls) ... ok
+test_duplicate_source_labels_remain_distinct_occurrences_across_batches (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_duplicate_source_labels_remain_distinct_occurrences_across_batches) ... ok
+test_dynamic_extract_columns_follow_source_order_after_out_of_order_native_batches (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_dynamic_extract_columns_follow_source_order_after_out_of_order_native_batches) ... ok
+test_empty_declaration_still_validates_the_native_source_without_allocating_a_model (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_empty_declaration_still_validates_the_native_source_without_allocating_a_model) ... ok
+test_metadata_query_version_and_node_validation_precede_graph_allocation (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_metadata_query_version_and_node_validation_precede_graph_allocation) ... ok
+test_native_batches_preserve_dependency_occurrences_columns_and_model_reuse (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_native_batches_preserve_dependency_occurrences_columns_and_model_reuse) ... ok
+test_parser_failure_and_unknown_call_keep_usage_and_do_not_publish_partial_relation (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_parser_failure_and_unknown_call_keep_usage_and_do_not_publish_partial_relation) ... ok
+test_partial_association_failure_recovers_one_raw_snapshot_without_duplicate_evidence (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_partial_association_failure_recovers_one_raw_snapshot_without_duplicate_evidence) ... ok
+test_raw_snapshot_recovery_is_idempotent_preserves_duplicates_and_rejects_conflicts (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_raw_snapshot_recovery_is_idempotent_preserves_duplicates_and_rejects_conflicts) ... ok
+test_repeated_source_in_later_batch_is_rejected_before_another_model_evaluation (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_repeated_source_in_later_batch_is_rejected_before_another_model_evaluation) ... ok
+test_result_integrity_rejects_missing_dependent_call_without_running_a_parser (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_result_integrity_rejects_missing_dependent_call_without_running_a_parser) ... ok
+test_source_content_binding_rejects_same_identity_with_replaced_values_before_model (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_source_content_binding_rejects_same_identity_with_replaced_values_before_model) ... ok
+test_stage_model_role_is_checked_from_configuration (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_stage_model_role_is_checked_from_configuration) ... ok
+test_unassociated_raw_response_keeps_usage_without_becoming_a_successful_call (tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests.test_unassociated_raw_response_keeps_usage_without_becoming_a_successful_call) ... ok
+test_stage_generation_changes_without_rebuilding_owned_model_process (tests.baselines.text.test_ray_data_lotus_chain.PrivateProcessTests.test_stage_generation_changes_without_rebuilding_owned_model_process) ... ok
+test_transport_preserves_raw_valid_usage_beside_an_invalid_response_identity (tests.baselines.text.test_ray_data_lotus_chain.PrivateProcessTests.test_transport_preserves_raw_valid_usage_beside_an_invalid_response_identity) ... ok
+test_cancelled_native_actor_retains_declared_calls_and_reaps_private_process (tests.baselines.text.test_ray_data_lotus_chain.RealRayCpuTests.test_cancelled_native_actor_retains_declared_calls_and_reaps_private_process) ... 2026-10-19 09:41:58,497	INFO worker.py:2024 -- Started a local Ray instance.
+<local-path> PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.14/migration/
+  class CascadeArgs(BaseModel):
+<local-path> DeprecationWarning: `use_push_based_shuffle` is deprecated! Configure `shuffle_strategy` instead.
+  warnings.warn(
+<local-path> DeprecationWarning: `use_polars` is deprecated, please configure `use_polars_sort`  instead.
+  warnings.warn(
+<local-path> DeprecationWarning: `use_arrow_tensor_v2` is deprecated. Configure `arrow_fixed_shape_tensor_format` instead.
+  warnings.warn(
+2026-10-19 09:42:04,137	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_1_0. Full logs are in <local-path>
+2026-10-19 09:42:04,137	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_1_0: InputDataBuffer[Input] -> ActorPoolMapOperator[MapBatches(StalledBatch)]
+2026-10-19 09:42:04,150	INFO __init__.py:56 -- Progress will be logged because stdout is a non-interactive terminal.
+2026-10-19 09:42:04,162	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from ActorPoolMapOperator[MapBatches(StalledBatch)]. The job may hang forever unless the cluster scales up.
+2026-10-19 09:42:04,268	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_1_0 =======
+2026-10-19 09:42:04,269	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-19 09:42:04,269	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store (pending: 1 CPU)
+2026-10-19 09:42:04,273	INFO logging_progress.py:181 --
+2026-10-19 09:42:04,288	INFO logging_progress.py:231 -- MapBatches(StalledBatch): 0/1
+2026-10-19 09:42:04,288	INFO logging_progress.py:233 --   Tasks: 0; Actors: 1 (running=0, restarting=0, pending=1, active=0, idle=0, util=0.000, tasks_in_flight=0); Queued blocks: 3 (0.0B); Resources: 0.0 CPU, 0.0B object store; [all objects local]
+2026-10-19 09:42:04,288	INFO logging_progress.py:192 -- ============================================
+2026-10-19 09:42:08,990	INFO streaming_executor.py:327 -- ✔️  Dataset dataset_1_0 execution finished in 4.85 seconds
+<local-path> ResourceWarning: unclosed file <_io.BufferedWriter name=5>
+  self._kill_process_impl(
+ok
+test_empty_declaration_uses_a_cpu_source_validation_action (tests.baselines.text.test_ray_data_lotus_chain.RealRayCpuTests.test_empty_declaration_uses_a_cpu_source_validation_action) ... 2026-10-19 09:42:12,068	INFO worker.py:2024 -- Started a local Ray instance.
+2026-10-19 09:42:13,210	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_1_0. Full logs are in <local-path>
+2026-10-19 09:42:13,210	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_1_0: InputDataBuffer[Input] -> TaskPoolMapOperator[MapBatches(_empty_source_batch)]
+2026-10-19 09:42:13,222	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from TaskPoolMapOperator[MapBatches(_empty_source_batch)]. The job may hang forever unless the cluster scales up.
+2026-10-19 09:42:13,223	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_1_0 =======
+2026-10-19 09:42:13,223	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-19 09:42:13,223	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-19 09:42:13,223	INFO logging_progress.py:181 --
+2026-10-19 09:42:13,223	INFO logging_progress.py:231 -- MapBatches(_empty_source_batch): 0/1
+2026-10-19 09:42:13,223	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 1 (0.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-19 09:42:13,223	INFO logging_progress.py:192 -- ============================================
+2026-10-19 09:42:13,285	INFO streaming_executor.py:327 -- ✔️  Dataset dataset_1_0 execution finished in 0.07 seconds
+2026-10-19 09:42:13,295	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_3_0. Full logs are in <local-path>
+2026-10-19 09:42:13,296	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_3_0: InputDataBuffer[Input] -> TaskPoolMapOperator[MapBatches(_empty_source_batch)]
+2026-10-19 09:42:13,298	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from TaskPoolMapOperator[MapBatches(_empty_source_batch)]. The job may hang forever unless the cluster scales up.
+2026-10-19 09:42:13,299	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_3_0 =======
+2026-10-19 09:42:13,299	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-19 09:42:13,299	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store
+2026-10-19 09:42:13,299	INFO logging_progress.py:181 --
+2026-10-19 09:42:13,299	INFO logging_progress.py:231 -- MapBatches(_empty_source_batch): 0/1
+2026-10-19 09:42:13,299	INFO logging_progress.py:233 --   Tasks: 0 [backpressured:tasks(ResourceBudget)]; Actors: 0; Queued blocks: 3 (214.0B); Resources: 0.0 CPU, 0.0B object store
+2026-10-19 09:42:13,299	INFO logging_progress.py:192 -- ============================================
+2026-10-19 09:42:13,307	ERROR streaming_executor_state.py:701 -- An exception was raised from a task of operator "MapBatches(_empty_source_batch)". Dataset execution will now abort. To ignore this exception and continue, set DataContext.max_errored_blocks.
+Traceback (most recent call last):
+  File "<local-path>", line 666, in process_completed_tasks
+    bytes_read = task.on_data_ready(
+                 ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 241, in on_data_ready
+    raise ex from None
+  File "<local-path>", line 231, in on_data_ready
+    ray.get(self._pending_block_ref)
+  File "<local-path>", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 110, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 2968, in get
+    values, debugger_breakpoint = worker.get_objects(
+                                  ^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 1050, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(UserCodeException): [36mray::MapBatches(_empty_source_batch)()[39m (pid=23686, ip=127.0.0.1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<repo>/code/src/baselines/text/frameworks/ray_data_lotus_chain.py", line 77, in _empty_source_batch
+    raise ValueError("Ray graph contains occurrences absent from the empty source declaration")
+ValueError: Ray graph contains occurrences absent from the empty source declaration
+
+The above exception was the direct cause of the following exception:
+
+[36mray::MapBatches(_empty_source_batch)()[39m (pid=23686, ip=127.0.0.1)
+  File "<local-path>", line 826, in _map_task
+    for block in block_iter:
+                 ^^^^^^^^^^
+  File "<local-path>", line 150, in __next__
+    return next(self._input)
+           ^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 498, in __next__
+    result = next(self._results_iter)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 584, in __next__
+    res = self._fn(input_batch)
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "<local-path>", line 465, in _wrapped_udf_map_fn
+    _try_wrap_udf_exception(e)
+  File "<local-path>", line 481, in _try_wrap_udf_exception
+    raise UserCodeException("UDF failed to process a data block.") from e
+ray.exceptions.UserCodeException: UDF failed to process a data block.
+2026-10-19 09:42:13,312	INFO streaming_executor.py:327 -- ⚠️  Dataset dataset_3_0 execution failed
+2026-10-19 09:42:13,312	ERROR exceptions.py:63 -- Exception occurred in user code, with the abbreviated stack trace below. By default, the Ray Data internal stack trace is omitted from stdout, and only written to the Ray Data log files at `<local-path> To output the full stack trace to stdout, set `DataContext.log_internal_stack_trace_to_stdout` to True.
+ok
+test_nonobject_extract_retains_remote_attribute_error_and_successful_model_usage (tests.baselines.text.test_ray_data_lotus_chain.RealRayCpuTests.test_nonobject_extract_retains_remote_attribute_error_and_successful_model_usage) ... 2026-10-19 09:42:16,397	INFO worker.py:2024 -- Started a local Ray instance.
+2026-10-19 09:42:17,072	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_1_0. Full logs are in <local-path>
+2026-10-19 09:42:17,072	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_1_0: InputDataBuffer[Input] -> ActorPoolMapOperator[MapBatches(NonObjectBatch)]
+2026-10-19 09:42:17,091	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from ActorPoolMapOperator[MapBatches(NonObjectBatch)]. The job may hang forever unless the cluster scales up.
+2026-10-19 09:42:17,197	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_1_0 =======
+2026-10-19 09:42:17,197	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-19 09:42:17,197	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store (pending: 1 CPU)
+2026-10-19 09:42:17,197	INFO logging_progress.py:181 --
+2026-10-19 09:42:17,197	INFO logging_progress.py:231 -- MapBatches(NonObjectBatch): 0/1
+2026-10-19 09:42:17,197	INFO logging_progress.py:233 --   Tasks: 0; Actors: 1 (running=0, restarting=0, pending=1, active=0, idle=0, util=0.000, tasks_in_flight=0); Queued blocks: 3 (0.0B); Resources: 0.0 CPU, 0.0B object store; [all objects local]
+2026-10-19 09:42:17,197	INFO logging_progress.py:192 -- ============================================
+2026-10-19 09:42:22,094	INFO streaming_executor.py:327 -- ✔️  Dataset dataset_1_0 execution finished in 5.02 seconds
+ok
+test_original_lotus_chain_in_real_ray_batches_with_isolated_cpu_responses (tests.baselines.text.test_ray_data_lotus_chain.RealRayCpuTests.test_original_lotus_chain_in_real_ray_batches_with_isolated_cpu_responses) ... 2026-10-19 09:42:25,178	INFO worker.py:2024 -- Started a local Ray instance.
+2026-10-19 09:42:25,824	INFO streaming_executor.py:193 -- Starting execution of Dataset dataset_1_0. Full logs are in <local-path>
+2026-10-19 09:42:25,825	INFO streaming_executor.py:194 -- Execution plan of Dataset dataset_1_0: InputDataBuffer[Input] -> ActorPoolMapOperator[MapBatches(CpuFixtureBatch)]
+2026-10-19 09:42:25,845	WARNING resource_manager.py:766 -- Cluster resources are not enough to run any task from ActorPoolMapOperator[MapBatches(CpuFixtureBatch)]. The job may hang forever unless the cluster scales up.
+2026-10-19 09:42:25,948	INFO logging_progress.py:174 -- ======= Running Dataset: dataset_1_0 =======
+2026-10-19 09:42:25,948	INFO logging_progress.py:225 -- Total Progress: 0/?
+2026-10-19 09:42:25,948	INFO logging_progress.py:227 -- Active & requested resources: 0/0 CPU, 0.0B/0.0B object store (pending: 1 CPU)
+2026-10-19 09:42:25,948	INFO logging_progress.py:181 --
+2026-10-19 09:42:25,948	INFO logging_progress.py:231 -- MapBatches(CpuFixtureBatch): 0/1
+2026-10-19 09:42:25,948	INFO logging_progress.py:233 --   Tasks: 0; Actors: 1 (running=0, restarting=0, pending=1, active=0, idle=0, util=0.000, tasks_in_flight=0); Queued blocks: 3 (0.0B); Resources: 0.0 CPU, 0.0B object store; [all objects local]
+2026-10-19 09:42:25,948	INFO logging_progress.py:192 -- ============================================
+2026-10-19 09:42:30,327	INFO streaming_executor.py:327 -- ✔️  Dataset dataset_1_0 execution finished in 4.50 seconds
+ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 36.141s
+
+OK
+
+exit_code=0
