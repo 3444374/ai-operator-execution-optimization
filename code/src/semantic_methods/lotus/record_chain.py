@@ -15,7 +15,7 @@ import time
 
 from .engine import (
     _FilterFormatter, _input_instruction, bind_filter_method, engine_response, lm_report,
-    validate_filter_source, validate_generation,
+    validate_engine_protocol, validate_filter_source, validate_generation,
 )
 from .records import FilterMethod, _resolved_columns
 from .sdk import SOURCE_HASHES
@@ -290,6 +290,7 @@ class LotusRecordMethod:
         for result in results:
             try:
                 responses.append(engine_response(result, self.lm))
+                validate_engine_protocol(result)
             except ValueError as error:
                 invalid.append(error)
         for response in responses:

@@ -14,7 +14,9 @@ import json
 import math
 from types import FunctionType, SimpleNamespace
 
-from .engine import FILTER_SOURCE_HASHES, engine_response, lm_report, validate_filter_source
+from .engine import (
+    FILTER_SOURCE_HASHES, engine_response, lm_report, validate_engine_protocol, validate_filter_source,
+)
 from .records import MOVIE_Q3_INSTRUCTION
 from .sdk import LOTUS_COMMIT
 
@@ -222,6 +224,7 @@ def cascade_response(result, lm, *, logprobs):
     from litellm.types.utils import ModelResponse
 
     response = engine_response(result, lm)
+    validate_engine_protocol(result)
     if not logprobs:
         return response
     content = json.loads(result.get("logprobs_json", "null"))
@@ -358,10 +361,10 @@ class CascadeRun:
         for result in results:
             try:
                 response = engine_response(result, model)
+                responses.append(response)
+                validate_engine_protocol(result)
             except (ValueError, TypeError, KeyError) as exc:
                 failures.append(exc)
-            else:
-                responses.append(response)
         # Native LM accounts for the entire successful response batch before parsing.
         for response in responses:
             model._update_stats(response, is_cached=False)

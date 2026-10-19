@@ -180,7 +180,7 @@ def prepare_rows(rows, method):
 
 
 def engine_response(result, lm):
-    """Translate engine output to the original LM response type, without HTTP replay."""
+    """Build a native accounting response; semantic use also checks the protocol."""
     from litellm.types.utils import ModelResponse
 
     tokens = [result.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens")]
@@ -201,6 +201,12 @@ def engine_response(result, lm):
     )
 
 
+def validate_engine_protocol(result):
+    """A retained receipt is accounting evidence, not permission to parse a batch."""
+    if "engine_protocol_error" in result:
+        raise ValueError("engine batch protocol failed; retained receipts cannot be semantic answers")
+
+
 def interpret_results(results, lm, method):
     """Preserve native accounting-before-choice/parse behavior for successful calls.
 
@@ -213,10 +219,10 @@ def interpret_results(results, lm, method):
     for result in results:
         try:
             response = engine_response(result, lm)
+            responses.append(response)
+            validate_engine_protocol(result)
         except ValueError as error:
             invalid.append((result, error))
-        else:
-            responses.append(response)
     for response in responses:
         # Original LOTUS owns physical/virtual usage and finite usage limits.
         lm._update_stats(response, is_cached=False)
