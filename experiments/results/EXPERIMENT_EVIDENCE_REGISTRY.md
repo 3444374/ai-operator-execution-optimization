@@ -1,7 +1,7 @@
 # 实验与机制证据台账
 
 2026-10-19：[Movie Q3 原全局 helper 级联](../../code/src/semantic_methods/lotus/cascade.README.md)。
-原 LOTUS 控制流直接绑定 records 评价，CPU 原库方法 21 项、原 SemBench evaluator 2 项、真实 Ray／进程 6 项通过；
+原 LOTUS 控制流直接绑定 records 评价，CPU 原库方法 21 项、原 SemBench evaluator 2 项、真实 Ray／进程 7 项通过；
 分数、采样与阈值保持全局，重复抽样逐次记账，异常前缀 usage 和 unknown 保留。原始输出和失败位于仓库外，两个独立审查已完成。
 真实引擎 logprobs／GPU／多后端级联比较仍未验证，不赋予普通 Q3 历史模型结果新的资格。
 

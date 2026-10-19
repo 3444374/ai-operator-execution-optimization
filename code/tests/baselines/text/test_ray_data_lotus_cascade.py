@@ -90,6 +90,22 @@ class SelectionAndCleanupTests(unittest.TestCase):
             self.assertTrue(result["process_exit_confirmed"])
             self.assertIn("stop_request: PermissionError", result["errors"])
 
+    def test_repeated_cleanup_publishes_atomically_and_preserves_a_closed_stage(self):
+        from src.baselines.text.frameworks.lotus_cascade_process import StageEngineCleanup
+
+        with tempfile.TemporaryDirectory() as directory:
+            control = Path(directory)
+            (control / "engine-closed.json").write_text(json.dumps(dict(
+                status="closed", process_exit_confirmed=True, cleanup_errors=[],
+                model_pid=12345, process_created=1.0)))
+            cleanup = StageEngineCleanup(control)
+            first = cleanup.stop(grace_s=0)
+            second = cleanup.stop(grace_s=0)
+            self.assertEqual(first, second)
+            self.assertEqual(second["errors"], [])
+            self.assertTrue(second["process_exit_confirmed"])
+            self.assertEqual(json.loads((control / "driver-cleanup.json").read_text())["errors"], [])
+
 
 @unittest.skipUnless(os.environ.get("RUN_LOTUS_CASCADE_RAY_CPU") == "1", "explicit real Ray CPU qualification")
 class RealRayCascadeTests(unittest.TestCase):

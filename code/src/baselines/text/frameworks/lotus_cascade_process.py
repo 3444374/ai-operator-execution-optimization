@@ -1,9 +1,11 @@
 """Driver-owned stop and registered-process cleanup for one local Ray stage."""
 
 import json
+import os
 import signal
 import threading
 import time
+import uuid
 
 
 class StageEngineCleanup:
@@ -63,7 +65,9 @@ class StageEngineCleanup:
                 self.errors.extend(report.get("cleanup_errors", []))
             self.errors = list(dict.fromkeys(self.errors))
             from src.baselines.common.private_artifacts import write_private_json
-            write_private_json(self.control / "driver-cleanup.json", dict(reports=reports, errors=self.errors))
+            temporary = self.control / ("driver-cleanup-" + uuid.uuid4().hex + ".tmp")
+            write_private_json(temporary, dict(reports=reports, errors=self.errors))
+            os.replace(temporary, self.control / "driver-cleanup.json")
             return dict(reports=reports, errors=list(self.errors), process_exit_confirmed=(
                 (bool(reports) or not started) and all(r.get("process_exit_confirmed") is True for r in reports)))
         except BaseException as exc:

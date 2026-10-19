@@ -82,9 +82,10 @@ evaluator 另计，评价报错也保留已经完成的模型调用及 usage。�
 本机 Python 3.12.6、LOTUS 1.2.4、LiteLLM 1.95.0、OpenAI 2.50.0、NumPy 1.26.4、pandas 2.3.3、Arrow 24.0.0、Ray 2.56.1。
 显式 Darwin CPU profile 的只读能力检查通过；默认 GPU profile 在本机无匹配的失败也保留。未安装或改变已有依赖。
 
-本批原库方法 21 项、SemBench 查询 2 项、Ray／进程 6 项通过，均零模型请求。
+本批原库方法 21 项、SemBench 查询 2 项、Ray／进程 7 项通过，均零模型请求。
 两个独立审查分别复核方法等价性、资源及错误处理，发现项已修复。
-完整输出留仓库外；运行标识包括 `cascade-cpu-final`、`movie-evaluator-cpu`、`ray-process-cpu-review-fixes`。
+重复 close 的报告发布使用私有临时文件与原子替换，幂等回归及独立复核通过。
+完整输出留仓库外；运行标识包括 `cascade-cpu-final`、`movie-evaluator-cpu`、`ray-process-cpu-delivery-final`。
 初次 unittest 入口错误、受限进程表导致的 supervisor unknown、首个 Ray fixture 得到空复核而预期三阶段的失败均保留；之后的复验各有独立标识。
 
 **源码状态：** 原控制流及新 records／Ray 阶段实现完成，使用独立扩展身份。
