@@ -70,6 +70,18 @@ source 拥有 schema、任务语义、来源和发生项预检；后端消费扫
 `MovieRecordSource.scan_spec()` 每次先预检 Q3，再返回原五列 schema、`reviewText` 投影和 `id == taken_3`。
 通用列、旧 Q3、序列化 alias 和 Map→Filter 的 CPU 合同不扩展既有真实模型资格；冻结模型运行仍绑定其原源码。
 
+## 原 helper-LM 全局级联与可选 Async
+
+[全局级联合同](cascade.README.md)复用固定原 LOTUS accessor／阈值学习代码对象，
+显式 instruction、两角色列序和逐发生项身份；通用报告与 Movie Q3 COUNT／evaluator 分开。
+Ray Data、Daft Native 和 production Core 分别拥有原生执行，helper 全集后才校准／抽样／学阈值；
+物理 batch 不改变全局统计。真实 helper 模型、角色切换 GPU 退出和性能仍待专项资格。
+
+[可选 Async Core](../../execution_provider/adapters/lotus_records_async_actor.py)使用已有 Core／
+三通道私有模型桥，公开 selector 为 `semloom-local-model-core-async`；同步默认保持。
+[CPU 来源与已知 usage 关闭交接](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)
+不转授真实 AsyncLLM、后代／GPU 或全查询性能资格。
+
 ## 完整请求级接点
 
 本模块保留 LOTUS 1.2.4 的原始 `LM`、算子提示、缓存判断、SDK 响应解析和后处理，
@@ -111,7 +123,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
 
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。
-后续文本级联也需补相应来源资格，records 扩展须保留原提交、补丁与独立校验身份；不能覆盖旧摘要后仍称原源码未改。
+独立 records [级联 profile](cascade.README.md)已追加原 Filter／cascade utils 等来源校验；此处旧 request text profile 保持原范围。扩展保留原提交和独立校验身份，不覆盖旧摘要后冒称原源码未改。
 当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；旧内核／图段仅可选提取，新链的输入、执行和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)独立验证。
 `prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
 [第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，

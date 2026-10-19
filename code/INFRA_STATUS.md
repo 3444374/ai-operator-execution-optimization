@@ -4,16 +4,16 @@
 
 [独立一行 Map→Extract 模型覆盖](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)已在 8be 各执行一次两调用单元：Core／Ray 通过，Daft 语义与原 LOTUS 差分通过但 supervisor 发 SIGTERM，生命周期资格保留失败。私有控制器误判已用原回执更正；不转授原 MFE 或后续源码。
 
-[8be 非 Q3 有限 MFE 模型小轮](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)三后端已各执行一次，均因 Filter 丢弃全部行及空结果 index 类型差异未通过；Extract 实际未执行。原回执重放和 token 核对不支持已测 Filter 接线／截断问题，源 index 元数据物化待修复。
+[8be 非 Q3 有限 MFE 模型小轮](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)三后端已各执行一次，均因 Filter 丢弃全部行及空结果 index 类型差异未通过；Extract 实际未执行。原回执重放和 token 核对不支持已测 Filter 接线／截断问题，源 Index 最小物化接口已在下方分列修复；原冻结 MFE 不重跑或改判。
 
 ## 本轮 records 共享增量
 
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
 后续修复原 parser 额外空字段名在后继 schema 被误拒绝的问题；39 项 CPU／17 subtests 通过，2 native 用例仍 pending，见[兼容回归](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。
 [Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，2 额外 native 测试占位另列。原 MFE 不改写，真实新关系模型及 GPU 仍待验。
-[Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。当前未接 actor／Core／CLI，真实 Async 模型和性能待验。
-[Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 尚待独立接入。
-后续可覆盖私有进程关闭 RPC 的有界窗口，默认 10／11 秒不变；70 项 CPU／27 subtests 通过，实际 Async 采用和模型退出仍待验。
+[Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。后续[actor／Core／公开 selector](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接，130／40原合同与独立实际CPU scope分列；关闭 known usage RED 已由0e515修复，原unknown额度保留。另一个实际CPU闭环取得原parser／COUNT2／evaluator零误差、22／2／24合成usage及Core额度／refs0；17个observed身份退出，模型0。真实 Async 模型和性能待验。
+[Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 后续接纳，默认同步保持；新组合按各自固定来源解释。
+后续可覆盖私有进程关闭 RPC 的有界窗口，默认 10／11 秒不变；70 项 CPU／27 subtests 通过，实际 Async 采用已在CPU接线，模型退出仍待验。
 冻结8be的IMLane首模型单元在初始化返回ZMQError，第二query未启动，四次永久预算保留、actual仍null、原controller／unit的unknown保持；独立审计后已正常释放本owner lease，见[失败与结清分列](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。不是模型资格。基本接入／实际库／模型／扩展见[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)。
 
 ## 独立 IMLane 记录桥
@@ -44,7 +44,7 @@ Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2su
 详情和源码SHA从[同题CPU增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)核对，不借旧模型资格。
 新增Core单行adapter／selector复用真实SessionEngine与BoundedAsyncBackend；最终实际Ray／Daft／LOTUS／SemBench CPU组合四query、12固定响应核同，20个已观察进程退出。Core标记true、static仍false，unknown保留额度及引用；共享runner回收迟到usage，role／stage身份与有限logprobs合同另有定向检查，见[组合记录](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-core-cpu-20261019)。
 有限链职责52037286已选择整合原方法／Ray fused图与原CPU证据；Map生成列可被后继Filter消费。普通Ray／Daft／静态／Core已消费中性scan，185职责合同与换列换指令的实库8query／28合成响应通过；root79项组合零skip、40已观察进程退出。Q3规则仍归任务，其他路径不转授该声明。
-原全局级联与有限logprobs组合30项CPU检查通过，真实helper模型仍pending。共享有限批内核／纯结果核验已抽取，原Ray生命周期AST保持；Daft有限链13项含7实库用例（含预分配拒绝）、Core有限链23项真实Core及私有CPU进程检查通过。Core新链为本机单worker／pipe profile，不冒称沿用普通Filter的Ray actor图；两者模型资格、公共链CLI及跨批持续供给仍pending。精确来源从[有限链增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)定位。
+[原全局级联](src/semantic_methods/lotus/cascade.README.md)已去任务硬编码，通用 instruction／角色列序及 Ray／Daft／Core CPU 后端接纳；原全局控制与有限logprobs保持，真实helper模型仍pending。共享有限批内核／纯结果核验已抽取，原Ray生命周期AST保持；Daft有限链13项含7实库用例（含预分配拒绝）、Core有限链23项真实Core及私有CPU进程检查通过。Core新链为本机单worker／pipe profile，不冒称沿用普通Filter的Ray actor图；两者模型资格、公共链CLI及跨批持续供给仍pending。精确来源从[有限链增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)定位。
 owner只将字面True API与kill请求作为其关闭scope，OS／GPU仍独立观察；部分分配无句柄和静态unsettled保持unknown，91项CPU检查通过。
 冻结 `ebe3035f` 的[普通Core模型资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)已完成：394文件Git archive逐字核同，一个owner／Core／模型actor／引擎复用两query，四次真实调用506／16 tokens，原messages／token／LMstats／COUNT及原SemBench评价核同。Core额度／引用归零；API关闭与独立40个已观察owned身份＋控制器退出、GPU1MiB空compute、正常lease释放分列。新4／4永久claim，旧32和Daft16 SHA不变，成功Daft未重跑；后续公共源码、有限链／级联／IMLane模型及性能另验。
 后续 `a4f47eab` 仅提取同步／未来Async共用的 `result_record`／`result_from_output`，原采样、预算、关联和关闭保持。69项独立解释器CPU及64项固定旧源码差分通过、4个已观察owned退出；当前Async实现与持续供给尚未由此完成，详见[提取范围](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)。
@@ -898,3 +898,17 @@ K/frame budget/actor shape。
 - routing：单 endpoint 使用 round-robin；多 endpoint 实验前不启用复杂池路由；
 - vLLM 重复 prompt 对比：明确记录 prefix cache；本轮公平比较使用 disabled；
 - 任何策略晋级必须同时通过 SLO goodput，而不是只看平均吞吐或 MFU。
+
+
+本轮 Core 级联关闭窗口另修：沿已有 hook 传 IPC15／RPC响应16／Core cleanup20，
+19 项／9 subtests 合同通过，原 6e8 实库资格不冒绑新源码。
+监督器 opt-in 自然等待默认0且不放宽总deadline；可选进程诊断失败不再阻断出生身份匹配的逐PID清理，
+28 项／24 subtests本机CPU通过，原522的Daft实机结果与此[CPU修复](../experiments/results/diagnostics/lotus_records_local_model_20261016/supervisor_cleanup_cpu.json)分列。
+
+[通用级联公共入口](scripts/README.md#movie-q3-原-helper-lm-全局级联)已接三种backend和独立schema，
+20项级联＋13项Async入口CPU检查分列；[IMLane作者阶段API](integrations/imlane_records/cascade.README.md)
+从22e82选择代码／局部报告，17项本机CPU、原失败和skip保留。作者CPython新包已交唯一执行会话，
+尚无该包作者实测回执，模型／GPU／公共IMLane selector与性能均pending。
+
+真实Movie级联task wrapper的metadata失败会覆盖primary/calls，补充独审已复现并最小修复，
+原2＋新2项LOTUS／SemBench CPU检查通过；入口33项与此4项保持独立来源。

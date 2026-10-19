@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：收口 Async 原查询与通用级联 CPU 接点
+
+显式Async Core／CLI接纳并修复完整TaskKey的关闭knownusage补账，原取消／unknown额度不释放；实际CPU Movie闭环运行原parser／COUNT／evaluator，COUNT2、22／2／24合成usage与Core额度／refs0，17个observed身份退出。通用级联接纳原LOTUS全局控制、Ray／Daft／Core后端及独立cascade-check／cascade-run；IMLane22e82仅选择10代码／局部报告文件为4f1cde99，17本机CPU及作者实测pending分列。Core关窗15／16／20及项目supervisor可选诊断隔离分别取得19／9、28／24 CPU回归和独审，默认同步与原生调度保持。来源分列于[Async报告](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[级联合同](code/src/semantic_methods/lotus/cascade.README.md)及[监督器修复](experiments/results/diagnostics/lotus_records_local_model_20261016/supervisor_cleanup_cpu.json)；不重跑已完成模型单元或转授其资格。
+
 ## 2026-10-19：接纳原生 Extract 关系布局并保留空结果 Index
 
 选择性接纳 `aab43acb` 为 `2d02f2a7`，原生各段只在真实 EOF／覆盖／解析及关闭成功后广播完整关系；批处理／调度仍归 Ray／Daft，每段独立引擎及成本明示。13 合同和各 2 项实际 native CPU 用例通过，18／11 已观察 owned 退出；两轴独审和额外早停回执反例通过，GPU／新模型 pending。源 Index 新接口只使用调用方显式 metadata，51 项／43 subtests通过，2 额外独立 native 占位另列，原 RED 与 int→bool 反例保留；不改原 MFE。见[固定来源与限制](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)。

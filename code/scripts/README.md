@@ -69,6 +69,10 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py check
 
 另可选择 `semloom-local-model-static-reference`（明确未接production Core）、`daft-native-local-model` 或 `semloom-local-model-core`。
 Core arm在模型分配前要求准备／模型批均为1，并由实际SessionEngine标记生产Core连接。[冻结普通Core模型资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)在 `ebe3035f` 完成同引擎两query／四次调用；后续共享源码及新profile仍按独立CPU／模型范围解释，不重复该成功单元。
+新增显式 `semloom-local-model-core-async`，同样要求两种 batch 为 1，使用原 production Core 和有界本地 Async 私有进程。
+可选 `async_limits` 直接采用 [AsyncEngineLimits](../src/serving/backends/async_engine.README.md) 字段；缺省时按 Core 窗口生成，显式 `max_inflight` 必须等于 `resources.max_active_batches`，result slots 至少覆盖该窗口。
+输出记录实际有效限额。仅新 arm 用 Core.close(timeout=20)，涵盖私有 IPC15／RPC响应16；同步10／11保持。
+[CPU 组合与关闭交接来源](../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)不构成真实 AsyncLLM、GPU退出或性能资格。
 静态路径在Ray初始化后、Daft首次推断前显式选Native；复用已有Native，拒绝已有Ray或冲突配置。
 Daft 路径由原生 process UDF 和私有模型进程拥有执行，不 import／init Ray；[模块合同](../src/baselines/text/frameworks/daft_lotus_records.README.md)说明协作取消与 IPC 观测范围。
 本入口沿用 Daft 默认 runner_threads／64 MiB 实际准备批上限，不新增专属配置键；`max_active_batches` 属于 Ray 设置，不表示 Daft 提交窗口。
@@ -93,6 +97,57 @@ Ray 路径独占本地 Ray，Daft 路径只启动原生 runtime；均关闭重�
 纯软件差分使用 `fixture --source-manifest ... --sembench-checkout ... --responses ... --output-dir ...`，
 responses 为按 `row_id` 绑定的 `text`／`prompt_tokens`／`completion_tokens` 列表，必须显式标为人工固定响应；
 该入口将新 records 结果与未改原 LOTUS Q3 的 messages／逐行决策／COUNT／LM stats 对照，并调用原评价器，不运行推理。
+
+## Movie Q3 原 helper-LM 全局级联
+
+同一 records 入口新增 `cascade-check`／`cascade-run`，独立 schema
+`semloom.movie_records_cascade_run.v1`；普通 `check`／`run` 配置和默认保持。
+三个显式 backend 是 `ray-data-local-model-cascade`、`daft-native-local-model-cascade`、
+`semloom-local-model-core-cascade`。它们分别调用已接纳的原生阶段 backend；
+通用[方法合同](../src/semantic_methods/lotus/cascade.README.md)仍拥有全部 helper 校准、抽样、阈值和 fallback。
+此 Movie task 适配保留 Q3 指令／谓词、COUNT 与原 SemBench evaluator。
+
+```json
+{
+  "schema": "semloom.movie_records_cascade_run.v1",
+  "backend": "semloom-local-model-core-cascade",
+  "query_id": "movie-q3-helper-cascade",
+  "method": {"model_name": "openai/local-main"},
+  "helper_model_name": "openai/local-helper",
+  "engines": {
+    "main": {"model_path": "/path/to/main-model", "driver_python": "/path/to/driver/bin/python",
+      "model_python": "/path/to/model-env/bin/python", "max_model_calls": 16},
+    "helper": {"model_path": "/path/to/helper-model", "driver_python": "/path/to/driver/bin/python",
+      "model_python": "/path/to/model-env/bin/python", "max_model_calls": 16}
+  },
+  "generations": {
+    "main": {"max_tokens": 8, "temperature": 0, "top_p": 1, "seed": 0},
+    "helper": {"max_tokens": 8, "temperature": 0, "top_p": 1, "seed": 0, "logprobs": 10}
+  },
+  "cascade_args": {"filter_pos_cascade_threshold": 0.9, "filter_neg_cascade_threshold": 0.1},
+  "resources": {"prepare_batch_rows": 1, "model_batch_rows": 1, "max_active_batches": 2,
+    "startup_timeout_s": 120, "query_timeout_s": 1200},
+  "max_calls": 32
+}
+```
+
+示例只说明配置形状，路径需替换为已核部署；固定阈值是原方法的显式参数。
+main 不请求日志，helper 的 `logprobs` 为1–20的 top候选数，原LM仍发`logprobs=True`并保持显式top值。
+两角色的本地模型目录必须不同，tokenizer True／False必须各为一个token；
+每实例 cap 与全查询 cap 分别检查，学习模式按原抽样数量检查 `2N+S`，固定阈值模式按 `2N`。
+每逻辑阶段独立实例，main可能加载两次；加载、扫描、必要屏障与关闭计入查询成本。
+Core要求两种batch均1，关闭窗口为Core20／RPC响应16／IPC15；Daft不初始化Ray。
+
+```bash
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py cascade-check --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$CASCADE_CONFIG"
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py cascade-run --source-manifest "$SOURCE_MANIFEST" --sembench-checkout "$SEMBENCH_CHECKOUT" --config "$CASCADE_CONFIG" --output-dir "$NEW_PRIVATE_RUN" --execute-model
+```
+
+`cascade-check` 和不传 `--execute-model` 的 `cascade-run` 仅预检；执行沿同一外层有限监督，
+保存 preflight／query／supervisor。失败保留已知账目，未确认阶段关闭阻止后继，报告写入或元数据错误不作成功。
+[CPU入口验证](../../experiments/results/diagnostics/lotus_records_local_model_20261016/cascade_backends_cpu.json)
+与真实helper模型／GPU换模／性能资格分列。IMLane级联目前提供[作者阶段API](../integrations/imlane_records/cascade.README.md)，
+需要调用方提供既有host lease、作者参数与监督责任，尚无本命令的IMLane selector。
 
 ## LOTUS 原版 Movie 四臂
 

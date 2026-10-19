@@ -106,3 +106,43 @@ RUN_ASYNC_RECORDS_CPU_LIBRARIES=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code pyth
 未采集项：真实 AsyncLLM 结果／logprobs／模型质量、GPU 与全部后代物理退出、全查询 JCT／吞吐／RSS／KV 峰值。
 原因是本单元仅获配 CPU fixture，GPU 由专用会话排程。没有从测试耗时、准备并发或固定响应推导性能收益；
 后续资格还须按原方法、模型与完整查询预算核对公共入口和静态／原生参照。
+
+
+## Root 集成、公开入口与关闭回执
+
+职责包以 `70e93911` 原证据接纳；后续集成单列于 [root_integration_cpu.json](root_integration_cpu.json)。
+显式 `semloom-local-model-core-async` 现构造同一 `AsyncRecordsActorOwner` 并注入原 Core，
+普通同步默认保持。配置不传 `async_limits` 时由 owner 按 Core 窗口生成；显式配置必须匹配窗口，
+报告保存实际有效值。CLI 的 13 项 factory／配置检查与旧 Movie 查询回归分列于共享组合检查，
+没有把工厂替身当成真实 AsyncLLM 查询。
+
+独立五个实际 CPU scope 把真实 Core／Ray／Daft／LOTUS 准备和三通道 CPU child 接在一起，
+覆盖迟到供给、逆序完成、慢消费、取消／unknown、API 关闭失败和实际 owned actor 死亡；
+每 scope 15 个 observed owned 身份退出，共 75 个不重复身份。物理引擎为明确 CPU 固定响应。
+这些 scope 绑定原 `a66648d5`，不冒充后续补丁全矩阵重测。
+
+第六个实际 return-gate 反例发现：actor 已生成 known 11／1／12 usage，
+在 Ray 返回交付前 close，旧查询报告漏掉该回执。原普通 RED 保留；`0e515ba6` 让 actor
+携完整 `(session_id, sequence)` 返回有限回执，transport 只按已登记 expected identity／bytes
+校验补账，避免按 query_id 猜归属。六项纯反例与旧 Core／actor 共 56 项／10 subtests 通过；
+另核 keyed close 回执和 effective limits。相同实际 RED 用例修后 GREEN：known usage 原样入
+`last_query_report`，原 InterruptedError、query／overall unknown、held／ref 各 1 保持。
+15 个 observed owned 身份退出、外层无清理信号，不把已知 usage 当作 Core 终态或 GPU 退出。
+
+固定 `0e515ba6` 的无 Popen 构造探针另核四组有效默认／拒绝／模式／关窗：
+Core cleanup20、actor RPC15／响应16、IPC15；不构造引擎、socket 或 Ray runtime。
+源 SHA 前后核同，实际 GPU、后代退出和性能仍未验证。
+
+
+### 原 parser／COUNT／SemBench 的实际 CPU 闭环
+
+测试 `553e8971` 选择性接纳为 `25ff5169`，只增加 fixture 的默认 False 开关与一个新用例，
+旧六项用例方法 AST 保持，未重跑。生产源固定 `0e515ba6` 的 13 个文件；测试在运行后提交，
+其字节 SHA 与机器报告相同，不以运行时 HEAD 代替完整测试来源。
+
+真实 Core／Ray／Daft／LOTUS 准备及 Async actor／三通道 CPU child 后，
+`run_movie_query` 实际调用原 LOTUS parser、LM stats、COUNT 和固定 SemBench evaluator。
+两次人工固定 True 响应得到 COUNT2，ledger 与 LM physical／virtual 均为22／2／24 tokens，
+原评价误差0、2TP。Core额度及refs归零，API closed；外层17个 observed owned身份退出，无清理信号。
+[同一机器摘要](root_integration_cpu.json)保存四原件SHA、13生产源与测试SHA，
+模型调用0、GPU仍None；不把这个软件输入或固定token计数当模型质量、模板或性能资格。

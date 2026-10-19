@@ -1,0 +1,615 @@
+{
+  "schema": "semloom.async_records_root_integration_cpu.v1",
+  "status": "passed",
+  "original_actor_source": "a66648d53934eddad0bbe60ed865246068f68ee2",
+  "original_actor_evidence_commit": "70e93911b0036a2945fae09b49e68e63f7d52564",
+  "root_fix_source": "0e515ba6daa0473d665aa99f7154a738ed548ab8",
+  "explicit_backend": "semloom-local-model-core-async",
+  "root_fix_source_sha256": {
+    "src/execution_provider/adapters/lotus_records_async_actor.py": "6854f70a83fe219efa60fdf161b984d4b01daa98032f151bbcbee56f800f06ec",
+    "src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+    "src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+    "src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+    "src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+    "src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+    "src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+    "src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+    "src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+    "src/experiments/lotus_records_supervisor.py": "8276aca94274aa2467e300ee5f3b7be3ba8864460735548fbe3ddbaa70aef12a",
+    "tests/execution_provider/test_lotus_records_async_core_integration.py": "981d3bfe2120beab60534c4617a85634dc4cd18c2ed25dd2bed52ffa01aac48d"
+  },
+  "independent_actual_cpu_prior_five": {
+    "manifest_sha256": "a8b207bbd676ad1dfcb94e2dc53568778823cf68f54609a2d36308a5d4bb4b20",
+    "production_snapshot": "70e93911b0036a2945fae09b49e68e63f7d52564",
+    "cases": [
+      {
+        "case": "test_owned_actor_death_keeps_unknown_credit_and_known_prefix",
+        "status": "passed",
+        "directory": "cpu-test_owned_actor_death_keeps_unknown_credit_and_known_prefix-1792402918459495000",
+        "machine_report_sha256": "286081d6dec1b526dcd58083b12da7bde3f307db22330957e685153b9dc350ff",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "outer_cleanup_signals": [],
+        "worker_exit": 0,
+        "intentional_actor_kill": true
+      },
+      {
+        "case": "test_second_request_enters_while_first_is_held_and_completes_first",
+        "status": "passed",
+        "directory": "cpu-test_second_request_enters_while_first_is_held_and_completes_first-1792402967844404000",
+        "machine_report_sha256": "050375f1aa65a5028c1f830364d78b8292988b8ed935e6c057031bde68687f38",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "outer_cleanup_signals": [],
+        "worker_exit": 0,
+        "intentional_actor_kill": false
+      },
+      {
+        "case": "test_slow_consumer_cancelled_late_usage_stays_with_old_query",
+        "status": "passed",
+        "directory": "cpu-test_slow_consumer_cancelled_late_usage_stays_with_old_query-1792402998841880000",
+        "machine_report_sha256": "c9a6a2e58d6d54fdbd76843715d2d51660cfd3222a9901d7a451956ea96b4ab7",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "outer_cleanup_signals": [],
+        "worker_exit": 0,
+        "intentional_actor_kill": false
+      },
+      {
+        "case": "test_consumed_unknown_keeps_credit_and_partial_usage",
+        "status": "passed",
+        "directory": "cpu-test_consumed_unknown_keeps_credit_and_partial_usage-1792403022230812000",
+        "machine_report_sha256": "09951be3d119059acee755b6a67b5c3bcbce003f606621364a7a26403e601367",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "outer_cleanup_signals": [],
+        "worker_exit": 0,
+        "intentional_actor_kill": false
+      },
+      {
+        "case": "test_api_close_failure_preserves_known_late_usage",
+        "status": "passed",
+        "directory": "cpu-test_api_close_failure_preserves_known_late_usage-1792403044826011000",
+        "machine_report_sha256": "f2ecacee0f8f10e280cee5071f6132bccc5902a10fe1689e4fca02adf6132960",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "outer_cleanup_signals": [],
+        "worker_exit": 0,
+        "intentional_actor_kill": false
+      }
+    ],
+    "source_sha256": {
+      "src/execution_provider/adapters/lotus_records_async_actor.py": "70f86925764aac4952a1bde5e9ed72a3d4b4f246690ed66f17a8afa4987fcd22",
+      "src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+      "src/execution_provider/adapters/lotus_records_core.py": "4da87831d75addc8fa0e4affce4439d50d5c3574e53b6eb3cdfc3ca467d48f6a",
+      "src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+      "src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+      "src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+      "src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+      "src/experiments/lotus_records_supervisor.py": "8276aca94274aa2467e300ee5f3b7be3ba8864460735548fbe3ddbaa70aef12a",
+      "tests/execution_provider/test_lotus_records_async_core_integration.py": "4f17342db7727f6cb0c335bcf037bb028d30fb14dd863ca972981c7306a343c1"
+    },
+    "source_matches_fixed_snapshot": true,
+    "observed_owned_union_count": 75,
+    "observed_owned_exit_confirmed": true,
+    "scope": {
+      "real_components": [
+        "SessionEngine",
+        "BoundedAsyncBackend",
+        "Ray 2.56.1 actor/future/transport",
+        "Daft 0.7.21 Native scan",
+        "LOTUS preparation",
+        "production AsyncCoreModelActor methods",
+        "production AsyncEngineProcess three-channel IPC"
+      ],
+      "substitutions": [
+        "physical model engine is event-gated CPU fixture with synthetic token usage",
+        "driver interpreter qualification bypass for this explicit CPU fixture",
+        "Ray logical GPU allocation overridden from one to zero"
+      ],
+      "physical_model_calls": 0,
+      "logical_gpu_allocated": 0,
+      "ssh_actions": 0,
+      "physical_gpu_exit_checked": false,
+      "original_lotus_output_parser_qualified": false,
+      "count_or_sembench_evaluator_qualified": false,
+      "performance_claim": false
+    }
+  },
+  "handoff_red": {
+    "manifest_sha256": "10e6f4c37ecb069ab41e102498057849980f7e498ff95f35103960b6ece2eeaf",
+    "result": "Known actor usage existed but query unconsumed receipts were empty; ordinary test failure retained."
+  },
+  "handoff_green": {
+    "manifest_sha256": "beab7641cb17ff31630be3aae0958e0656665fc9699428e97c470ff89d30b650",
+    "fixed_source_commit": "0e515ba6daa0473d665aa99f7154a738ed548ab8",
+    "test_sha256": "981d3bfe2120beab60534c4617a85634dc4cd18c2ed25dd2bed52ffa01aac48d",
+    "raw_file_sha256": {
+      "cpu-test_owner_close_hands_known_actor_receipt_to_query_before_ray_return-1792404303493249000/close-handoff.json": "934cc67e0aa1bb220b09c98d974bc724fac83576144d37275d3ff0beffaefbf6",
+      "cpu-test_owner_close_hands_known_actor_receipt_to_query_before_ray_return-1792404303493249000/machine-report.json": "6ee5a7e6c380dc4b92600f07bf7ee5fd685b4b929e3ab514762d461244af6b2a",
+      "cpu-test_owner_close_hands_known_actor_receipt_to_query_before_ray_return-1792404303493249000/supervision/supervisor.json": "abb2050257294c7db48a843dfff83b7edd04274ae599cf7291afc478c28a16f3",
+      "cpu-test_owner_close_hands_known_actor_receipt_to_query_before_ray_return-1792404303493249000/supervision/worker.log": "b43bf1ed3c6f6a2c8139a9177d18aff2344f4b19c731fca3d79678c3366c64df"
+    },
+    "observation": {
+      "fixture_gate": "after production super.run_core bytes, before real Ray RPC return",
+      "identical_known_receipt_transferred": true,
+      "primary_query_error_type": "InterruptedError",
+      "query_execution": "interrupted; no success result delivered or restored",
+      "received_occurrences": 0,
+      "query_close": "unknown",
+      "core_close": {
+        "status": "CLOSED",
+        "uncertain_requests": 1,
+        "usage": {
+          "held_tasks": 1,
+          "input_bytes": 237,
+          "result_bytes": 2097152,
+          "active_requests": 1,
+          "active_work": 1
+        },
+        "error": null
+      },
+      "overall_close": "unknown",
+      "core_usage": {
+        "held_tasks": 1,
+        "input_bytes": 237,
+        "result_bytes": 2097152,
+        "active_requests": 1,
+        "active_work": 1
+      },
+      "retained_remote_inputs": 1,
+      "actor_api_shutdown_confirmed": true,
+      "gpu_exit_confirmed": null,
+      "cleanup_errors": [],
+      "known_usage": {
+        "status": "succeeded",
+        "prompt_tokens": 11,
+        "completion_tokens": 1,
+        "total_tokens": 12
+      },
+      "unconsumed_receipt_count": 1
+    },
+    "supervisor": {
+      "status": "passed",
+      "worker_exit": 0,
+      "observed_owned_count": 15,
+      "observed_owned_exit_confirmed": true,
+      "outer_cleanup_signals": [],
+      "remaining_owned_pids": []
+    },
+    "scope_limits": {
+      "real_components": [
+        "SemLoomRecordsCore",
+        "SessionEngine",
+        "BoundedAsyncBackend",
+        "Ray 2.56.1 actor and future",
+        "Daft 0.7.21 Native source",
+        "LOTUS preparation",
+        "production AsyncCoreModelActor logic",
+        "production AsyncEngineProcess three-channel child IPC"
+      ],
+      "fixture_substitutions": [
+        "event-gated CPU engine with synthetic usage",
+        "explicit CPU interpreter qualification substitution",
+        "Ray logical GPU allocation overridden from one to zero",
+        "fixture super.run_core lawful bytes held before real RPC return"
+      ],
+      "physical_model_calls": 0,
+      "gpu_allocated": 0,
+      "ssh_actions": 0,
+      "physical_gpu_exit_checked": false,
+      "original_output_parser_count_or_evaluator_qualified": false,
+      "performance_claim": false,
+      "other_old_cases_not_requalified_on_this_revision": true
+    },
+    "prior_five_not_rerun": true
+  },
+  "constructor_probe": {
+    "manifest_sha256": "55ef08954be2172f717cd9503dd25ed1fac056a79bfdd6b1e2ec46aab828b71a",
+    "fixed_commit": "0e515ba6daa0473d665aa99f7154a738ed548ab8",
+    "status": "passed",
+    "checks": [
+      {
+        "actual_limits": {
+          "command_slots": 2,
+          "control_frame_bytes": 65536,
+          "control_slots": 16,
+          "input_bytes": 4194304,
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "max_inflight": 2,
+          "result_bytes": 4194304,
+          "result_slots": 2
+        },
+        "case": "omitted_defaults",
+        "empty_owner_close": {
+          "async_limits": {
+            "command_slots": 2,
+            "control_frame_bytes": 65536,
+            "control_slots": 16,
+            "input_bytes": 4194304,
+            "item_input_bytes": 2097152,
+            "item_result_bytes": 2097152,
+            "max_inflight": 2,
+            "result_bytes": 4194304,
+            "result_slots": 2
+          },
+          "cleanup_errors": [],
+          "cleanup_scope": "core_transport_actor_and_engine_api",
+          "core_usage": null,
+          "gpu_exit_confirmed": true,
+          "implementation": "semloom_records_core",
+          "last_query_report": null,
+          "model_batch_mode": "independent_final_results",
+          "model_owner": {
+            "actor_kill_requests_confirmed": true,
+            "cleanup_errors": [],
+            "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
+            "engine_close_report": null,
+            "gpu_exit_confirmed": true,
+            "model_actor_handle_retained": false,
+            "model_ready": null,
+            "process_exit_confirmed": true,
+            "status": "closed",
+            "unconsumed_call_results": [],
+            "unconsumed_core_results": []
+          },
+          "native_engine_abort_supported": true,
+          "production_core_connected": false,
+          "retained_remote_inputs": 0,
+          "status": "closed",
+          "transport_closed": true,
+          "work_unit": "model_calls"
+        },
+        "execution_metadata": {
+          "async_limits": {
+            "command_slots": 2,
+            "control_frame_bytes": 65536,
+            "control_slots": 16,
+            "input_bytes": 4194304,
+            "item_input_bytes": 2097152,
+            "item_result_bytes": 2097152,
+            "max_inflight": 2,
+            "result_bytes": 4194304,
+            "result_slots": 2
+          },
+          "model_batch_mode": "independent_final_results",
+          "native_engine_abort_supported": true
+        },
+        "generation": {
+          "frequency_penalty": 0.0,
+          "logprobs": null,
+          "max_tokens": 8,
+          "presence_penalty": 0.0,
+          "repetition_penalty": 1.0,
+          "response_format": null,
+          "seed": null,
+          "stop": [
+            "\n"
+          ],
+          "temperature": 0.0,
+          "top_p": 1.0
+        },
+        "physical_gpu_process_exit_observed": false,
+        "requested_limits": null,
+        "scope": "zero allocation; raw GPU flag describes this empty lifetime only",
+        "status": "passed"
+      },
+      {
+        "actual_limits": {
+          "command_slots": 2,
+          "control_frame_bytes": 65536,
+          "control_slots": 16,
+          "input_bytes": 16777216,
+          "item_input_bytes": 2097152,
+          "item_result_bytes": 2097152,
+          "max_inflight": 2,
+          "result_bytes": 16777216,
+          "result_slots": 2
+        },
+        "case": "explicit_limits",
+        "empty_owner_close": {
+          "async_limits": {
+            "command_slots": 2,
+            "control_frame_bytes": 65536,
+            "control_slots": 16,
+            "input_bytes": 16777216,
+            "item_input_bytes": 2097152,
+            "item_result_bytes": 2097152,
+            "max_inflight": 2,
+            "result_bytes": 16777216,
+            "result_slots": 2
+          },
+          "cleanup_errors": [],
+          "cleanup_scope": "core_transport_actor_and_engine_api",
+          "core_usage": null,
+          "gpu_exit_confirmed": true,
+          "implementation": "semloom_records_core",
+          "last_query_report": null,
+          "model_batch_mode": "independent_final_results",
+          "model_owner": {
+            "actor_kill_requests_confirmed": true,
+            "cleanup_errors": [],
+            "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
+            "engine_close_report": null,
+            "gpu_exit_confirmed": true,
+            "model_actor_handle_retained": false,
+            "model_ready": null,
+            "process_exit_confirmed": true,
+            "status": "closed",
+            "unconsumed_call_results": [],
+            "unconsumed_core_results": []
+          },
+          "native_engine_abort_supported": true,
+          "production_core_connected": false,
+          "retained_remote_inputs": 0,
+          "status": "closed",
+          "transport_closed": true,
+          "work_unit": "model_calls"
+        },
+        "execution_metadata": {
+          "async_limits": {
+            "command_slots": 2,
+            "control_frame_bytes": 65536,
+            "control_slots": 16,
+            "input_bytes": 16777216,
+            "item_input_bytes": 2097152,
+            "item_result_bytes": 2097152,
+            "max_inflight": 2,
+            "result_bytes": 16777216,
+            "result_slots": 2
+          },
+          "model_batch_mode": "independent_final_results",
+          "native_engine_abort_supported": true
+        },
+        "generation": {
+          "frequency_penalty": 0.0,
+          "logprobs": null,
+          "max_tokens": 8,
+          "presence_penalty": 0.0,
+          "repetition_penalty": 1.0,
+          "response_format": null,
+          "seed": null,
+          "stop": [
+            "\n"
+          ],
+          "temperature": 0.0,
+          "top_p": 1.0
+        },
+        "physical_gpu_process_exit_observed": false,
+        "requested_limits": {
+          "command_slots": 2,
+          "max_inflight": 2,
+          "result_slots": 2
+        },
+        "scope": "zero allocation; raw GPU flag describes this empty lifetime only",
+        "status": "passed"
+      },
+      {
+        "case": "reject_explicit_mismatch",
+        "model_allocation": false,
+        "status": "passed"
+      },
+      {
+        "actual_rpc_timeout_s": 15,
+        "case": "core20_rpc15_ipc15",
+        "core_cleanup_deadline": 120,
+        "fake_ipc_close": {
+          "cleanup_errors": [],
+          "cleanup_scope": "async_engine_api_direct_child_and_ipc",
+          "descendants_exit_confirmed": null,
+          "engine_api_shutdown_confirmed": true,
+          "gpu_exit_confirmed": null,
+          "ipc_close": {
+            "cleanup_errors": [],
+            "engine_api_shutdown_confirmed": true,
+            "process_exit_confirmed": true,
+            "status": "closed"
+          },
+          "status": "closed",
+          "unconsumed_call_results": [],
+          "unconsumed_core_results": []
+        },
+        "fake_ray_close": {
+          "async_limits": {
+            "command_slots": 2,
+            "control_frame_bytes": 65536,
+            "control_slots": 16,
+            "input_bytes": 4194304,
+            "item_input_bytes": 2097152,
+            "item_result_bytes": 2097152,
+            "max_inflight": 2,
+            "result_bytes": 4194304,
+            "result_slots": 2
+          },
+          "cleanup_errors": [],
+          "cleanup_scope": "core_transport_actor_and_engine_api",
+          "core_usage": null,
+          "gpu_exit_confirmed": null,
+          "implementation": "semloom_records_core",
+          "last_query_report": null,
+          "model_batch_mode": "independent_final_results",
+          "model_owner": {
+            "actor_kill_requests_confirmed": true,
+            "cleanup_errors": [],
+            "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
+            "engine_close_report": {
+              "engine_api_shutdown_confirmed": true,
+              "status": "closed",
+              "unconsumed_call_results": []
+            },
+            "gpu_exit_confirmed": null,
+            "model_actor_handle_retained": true,
+            "model_ready": null,
+            "process_exit_confirmed": null,
+            "status": "closed",
+            "unconsumed_call_results": [],
+            "unconsumed_core_results": []
+          },
+          "native_engine_abort_supported": true,
+          "production_core_connected": false,
+          "retained_remote_inputs": 0,
+          "status": "closed",
+          "transport_closed": true,
+          "work_unit": "model_calls"
+        },
+        "ipc_timeout_s": 15,
+        "rpc_wait_deadline": 116,
+        "scope": "fake RPC and IPC sinks only; no actual shutdown or process/GPU exit observed",
+        "status": "passed"
+      }
+    ],
+    "source_sha256": {
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py": "6854f70a83fe219efa60fdf161b984d4b01daa98032f151bbcbee56f800f06ec",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+      "code/src/experiments/lotus_records_movie.py": "1dfa392a8b10544c748930219312c9d80e557262b8c0041d6cf4c1c2cdc8704b",
+      "code/src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+      "code/src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+      "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215"
+    },
+    "source_unchanged": true,
+    "popen_calls": 0,
+    "network_connect_calls": 0,
+    "model_engines_created": 0,
+    "ray_runtime_started": false
+  },
+  "pure_fix_checks": {
+    "new_transport_tests": 6,
+    "core_actor_regression_passed": 56,
+    "subtests": 10,
+    "evidence_scope": "Platform stdout chunks c42157/33d03d; no separate raw full log claimed",
+    "keyed_actor_close_targeted_passed": 1
+  },
+  "pending": [
+    "actual AsyncLLM and GPU model results/abort/descendant exit",
+    "full-query sustained supply and performance"
+  ],
+  "movie_query_cpu": {
+    "status": "passed",
+    "production_commit": "0e515ba6daa0473d665aa99f7154a738ed548ab8",
+    "test_commit": "553e8971b22012f3155d445d334140c57c4acb0e",
+    "selected_test_commit": "25ff5169",
+    "run_id": "cpu-test_movie_query_runs_original_parser_count_and_evaluator-1792404842188096000",
+    "source_binding": "13 production files match 0e515; the test was committed after this run as 553e8971 with the exact recorded test SHA. HEAD alone was not the entire test snapshot.",
+    "source_sha256": {
+      "src/execution_provider/adapters/lotus_records_async_actor.py": "6854f70a83fe219efa60fdf161b984d4b01daa98032f151bbcbee56f800f06ec",
+      "src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+      "src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+      "src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+      "src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+      "src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+      "src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c",
+      "src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+      "src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+      "src/experiments/lotus_records_supervisor.py": "8276aca94274aa2467e300ee5f3b7be3ba8864460735548fbe3ddbaa70aef12a",
+      "src/experiments/lotus_records_movie.py": "1dfa392a8b10544c748930219312c9d80e557262b8c0041d6cf4c1c2cdc8704b",
+      "src/semantic_methods/lotus/engine.py": "57bed381dbee4c2efdd6cbf4e287cd13fa7589e34352b75dedb1a0512d7353f0",
+      "src/baselines/text/sembench_movie.py": "d21f3933a83429b5b870abc352a268a3c3241a20e7d0bc405e34cfac275f823d",
+      "tests/execution_provider/test_lotus_records_async_core_integration.py": "e23c5c8617afc11da014d02d9181cb960bcac919cc8c27d04e77a0c07239fa6f"
+    },
+    "source_unchanged": true,
+    "raw_files": {
+      "machine-report.json": {
+        "bytes": 7535,
+        "sha256": "ee7f2643b7f5ce0e18ac6df4c220d72658ff63a57e70995896f405a40bf74ee9"
+      },
+      "movie-query.json": {
+        "bytes": 17188,
+        "sha256": "970565c738a4fa4425604cba391b70118d5609f7024e62e35eb32f5eeb238f65"
+      },
+      "supervision/supervisor.json": {
+        "bytes": 2546,
+        "sha256": "4b6d47c11763f4c662fb12ae5e43e33bc50e97317e9a2e0ed3e510eccdb9b875"
+      },
+      "supervision/worker.log": {
+        "bytes": 1031,
+        "sha256": "593b5be1a792264d252edf937e7a95ed81ca9ccd6e0d72a20879b995dc968b22"
+      }
+    },
+    "observations": {
+      "production_core_used": true,
+      "result": {
+        "positive_review_cnt": 2
+      },
+      "call_counts": {
+        "expected": 2,
+        "recorded": 2,
+        "missing": 0,
+        "succeeded": 2,
+        "failed": 0,
+        "unknown": 0,
+        "submission_confirmed": 2,
+        "submission_unconfirmed": 0
+      },
+      "usage": {
+        "prompt_tokens": 22,
+        "known_prompt_tokens": 22,
+        "unknown_prompt_tokens_calls": 0,
+        "completion_tokens": 2,
+        "known_completion_tokens": 2,
+        "unknown_completion_tokens_calls": 0,
+        "total_tokens": 24
+      },
+      "lotus_physical_usage": {
+        "prompt_tokens": 22,
+        "completion_tokens": 2,
+        "total_tokens": 24,
+        "total_cost": 0.0,
+        "cached_prompt_tokens": 0,
+        "cache_creation_tokens": 0
+      },
+      "lotus_virtual_usage": {
+        "prompt_tokens": 22,
+        "completion_tokens": 2,
+        "total_tokens": 24,
+        "total_cost": 0.0,
+        "cached_prompt_tokens": 0,
+        "cache_creation_tokens": 0
+      },
+      "quality": {
+        "original_metric": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+        "classification_audit": {
+          "true_positive": 2,
+          "false_positive": 0,
+          "true_negative": 0,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 2,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        }
+      },
+      "core_usage": {
+        "held_tasks": 0,
+        "input_bytes": 0,
+        "result_bytes": 0,
+        "active_requests": 0,
+        "active_work": 0
+      },
+      "retained_remote_inputs": 0,
+      "owner_status": "closed",
+      "transport_closed": true,
+      "gpu_exit_confirmed": null
+    },
+    "supervisor": {
+      "status": "passed",
+      "worker_exit": 0,
+      "observed_owned_count": 17,
+      "observed_owned_exit_confirmed": true,
+      "signals": [],
+      "cleanup_errors": []
+    },
+    "old_cases_rerun": false,
+    "actual_model_calls": 0,
+    "fixture_evaluations": 2,
+    "scope": "Real original LOTUS parser and stats, COUNT, original SemBench gold/evaluator; real Core/Ray/Daft/Async actor/IPC with an explicitly synthetic CPU model and zero logical GPU"
+  }
+}

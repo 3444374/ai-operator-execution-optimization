@@ -1,0 +1,116 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "command": [
+    "../nonmodel-venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "code/tests/semantic_methods/test_lotus_cascade.py",
+    "code/tests/semantic_methods/test_lotus_engine_protocol.py",
+    "code/tests/execution_provider/test_lotus_cascade_core.py",
+    "code/tests/experiments/test_lotus_cascade_movie.py",
+    "code/tests/experiments/test_lotus_records_async_entry.py",
+    "code/tests/experiments/test_lotus_records_movie.py"
+  ],
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_core.py": "fe0fc748b014ba728871f7fa5cd07d7434ac82202d6eb570780f54d974a9a8bb",
+    "code/src/semantic_methods/lotus/cascade.py": "f1e6b497740dbc585e9232f90e709c1e6638afb98b8ffdefee22d8bced63adbd",
+    "code/src/execution_provider/adapters/lotus_cascade_core.py": "a7132ffc48c5a5fb5df9f81b98e9b9b9c8bd4a3bcd445fcb619ce86b358db2cd",
+    "code/src/experiments/lotus_cascade_movie.py": "5343e2394ea8c9fb5ca53229bcb1196be6ada8d6c663a1713efa54a5851047fd",
+    "code/src/experiments/lotus_records_movie.py": "1dfa392a8b10544c748930219312c9d80e557262b8c0041d6cf4c1c2cdc8704b"
+  },
+  "source_unchanged": true,
+  "elapsed_s": 20.339301500003785,
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "server_actions": 0,
+  "log_sha256": "bf94e8af8e1b673ae0033376e127b7f0e17f5951ea30d5ddf17715caa807f210",
+  "log_bytes": 3854,
+  "scope": "pinned LOTUS differential + production Core contracts (fixture physical actors) + Movie/Async factory entry contracts; no native vendor graph action or real model",
+  "schema": "semloom.cascade_backends_root_cpu.v1",
+  "original_backend_commit": "6e8b1382f92dbefc7352b3f843aaa0ef44bb5426",
+  "selected_backend_commit": "df64e939",
+  "tests_passed": 92,
+  "subtests": 79,
+  "skips": 0,
+  "physical_backend_fixture_scope": "The root regression uses real LOTUS methods and Core contracts, explicit physical actor fixtures and Movie/Async entry factories. Original real Ray/Daft CPU graphs remain bound to the independent backend delivery.",
+  "core_close_followup": {
+    "status": "passed",
+    "exit_code": 0,
+    "source_sha256": {
+      "code/src/execution_provider/adapters/lotus_cascade_core.py": "a3a0514a1f7d6333a6167e47a26e0f32c333390b425e0a71fba8b4e9a0c5f5ef",
+      "code/tests/execution_provider/test_lotus_cascade_core.py": "1ac9fb0eacf0070e46c0c0be450ae0cbe4c8aaa7eb804596cf626b3d01774ddf"
+    },
+    "source_unchanged": true,
+    "log_sha256": "db1721e70c070302c96c9ce35d725c12bd3735a3796aad0861fccae758bc396d",
+    "log_bytes": 109,
+    "model_calls": 0,
+    "gpu_calls": 0,
+    "server_actions": 0,
+    "scope": "Production Core with explicit CPU actor API/process receipt fixtures; two NoPopen close-window regressions"
+  },
+  "core_close_followup_tests_passed": 19,
+  "core_close_followup_subtests": 9,
+  "core_close_red_log_sha256": "1c3522bb66a09f6ef05a9fd80cc4b893756bc85a6e9dcd78807ff52ccf8f81ab",
+  "model_qualification_pending": true,
+  "public_cli_followup_pending": false,
+  "public_cli": {
+    "original_commit": "791c356e30a58454104a60fdef18847b7d4907bd",
+    "selected_commit": "e56f3068",
+    "schema": "semloom.movie_records_cascade_run.v1",
+    "actions": [
+      "cascade-check",
+      "cascade-run"
+    ],
+    "backends": [
+      "ray-data-local-model-cascade",
+      "daft-native-local-model-cascade",
+      "semloom-local-model-core-cascade"
+    ],
+    "evidence_sha256": "805697137e1614301d6688009600ab99e083fb12c566897df58978bce39fffa2",
+    "tests": 33,
+    "source_sha256": {
+      "code/src/experiments/lotus_records_movie.py": "b1afaf1b6de7134f682fe671f8c2d1a651a83b600006cfe2dc43fbc54d8744c6",
+      "code/tests/experiments/test_lotus_records_cascade_entry.py": "654e984e1a891f895b604b63e1ac0a4436c6222c972227153c4dfe93789b1666",
+      "code/tests/experiments/test_lotus_records_async_entry.py": "a3944ab59e4efab1e6f834767b1c1b1e7e7ef69be10a2eaf8eb1653ac835f704"
+    },
+    "source_unchanged": true,
+    "popen_attempts": 0,
+    "scope": "20 cascade entry contracts plus 13 affected Async CLI contracts. Actual local LOTUS config/controller/parser/LM stats with WordLevel tokenizer; evaluator/model/backend/runtime owners are explicit fixtures. Only exact NumPy SVE lscpu probe stubs unavailable OS command. No Ray/Daft graph, IPC, model/GPU/server qualification.",
+    "red_evidence_sha256": "8f7c087587ec52db48e43582b1cb9fe8a24f86748f882b09d229c994c022f4ce"
+  },
+  "imlane_stage_api": {
+    "original_commit": "22e82b82e16595604bf97c049cbdf0e0b1033a25",
+    "selected_commit": "4f1cde99",
+    "public_report": "../imlane_cascade_cpu_20261019/README.md",
+    "selection": "10 code/module-doc/report files; root owns the four shared status/navigation updates",
+    "local_distinct_cpu_tests": 17,
+    "actual_author_cpu": "pending",
+    "models_and_gpu": "pending",
+    "public_imlane_cli": "pending"
+  },
+  "movie_metadata_followup": {
+    "original_commit": "3bd287fd52e6f532dbff52cdd27604f146a9e68a",
+    "selected_commit": "aebbbcd8",
+    "status": "passed",
+    "tests": 4,
+    "evidence_sha256": "88c1b0af3b89925df5aa9db358c307124b6b032d9cc34f57309365af43952113",
+    "source_sha256": {
+      "code/src/experiments/lotus_cascade_movie.py": "a2fe15ae2cc38e6d120e74ee67ea2526b24456377f42d6ec1fd7f578ec7a4703",
+      "code/tests/experiments/test_lotus_cascade_movie.py": "de4dc57084d0bcf559a19fcfe112b16840d2b04ce19172f1c0a04654469eea5e",
+      "code/src/experiments/lotus_records_movie.py": "b1afaf1b6de7134f682fe671f8c2d1a651a83b600006cfe2dc43fbc54d8744c6"
+    },
+    "source_unchanged": true,
+    "popen_attempts": 0,
+    "upstream_sha256": {
+      "src/scenario/movie/evaluation/evaluate.py": "10308033fcc4b298905d90536a882dbdba95577d60fff40c3d1501c106a38576",
+      "files/movie/query/gold_sql/Q3.sql": "753ec183e733fa1b7e11dfee9309bc82297ebc0a02ff15347ef898027f1665b5"
+    },
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "scope": "Original 2 plus new 2 actual wrapper/LOTUS CPU checks, original SemBench evaluator and gold SQL, declared software engine responses. SemBench commit and source/query clean verified by real read-only Git before the no-spawn window; identical directory checks cached only inside the window. Exact NumPy SVE lscpu and Matplotlib OS font discovery have unavailable-command fixtures. No graph, IPC, model, GPU, or server actions.",
+    "red_run_id": "records-cascade-wrapper-cpu-r1-red-1792406600620155000",
+    "os_probe_failure_retained": true,
+    "red_evidence_sha256": "c8468fea245136f0bf3e2cba9b2acb9c8c670a2fa8f0a774a46111b0c6480655"
+  }
+}

@@ -1,5 +1,13 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane通用级联阶段API](diagnostics/imlane_cascade_cpu_20261019/README.md)。22e82选择10代码／局部报告文件为4f1cde99，保留原全局方法和作者调度／输出所有权；17本机CPU及初始失败／skip分列，新作者CPython包已交唯一执行会话但未收到实测，模型／GPU／公共selector不转授。
+
+2026-10-19：[Async actor／Core／公开入口及关闭交接](diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)。原130／40合同、五个真实CPU传输scope、knownusage RED→GREEN与独立原parser／COUNT／evaluator CPU闭环按来源分列；最后两scope分别15／17 observed退出，unknown额度与已知usage分别保留，无真实AsyncLLM／GPU／性能结论。
+
+2026-10-19：[通用全局级联与Core关闭窗口](../../code/src/semantic_methods/lotus/cascade.README.md)、[root组合来源](diagnostics/lotus_records_local_model_20261016/cascade_backends_cpu.json)。保留原LOTUS全局算法与独立Ray／Daft／Core，原6e库资格、root92／79合同和Core关窗19／9分列；真实helper／GPU换模仍pending。
+
+2026-10-19：[项目监督器清理隔离CPU](diagnostics/lotus_records_local_model_20261016/supervisor_cleanup_cpu.json)。默认自然等待0、总deadline保持，元数据异常不阻断匹配PID清理；3普通RED保留、修后28／24零skip，两轴通过。原522 Daft实机成功不重新绑定到本修复。
+
 2026-10-19：[原生 Extract 分段关系](diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)：13 合同、Ray／Daft 各 2 项实际 native CPU 用例分列；18／11 observed-owned 退出。仅完整 EOF／覆盖／成功后广播，native 分批／调度保持；每非空段独立引擎，成本和 per-engine cap 明示，模型／GPU pending。
 
 2026-10-19：[空结果源 Index](diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)：显式保存 dtype／name／空切片类型，无 metadata 默认兼容；51 项／43 subtests CPU 通过，2 额外 native 占位另列，原 RED／宽松相等反例保留。没有生产调用方自动迁移，不升级原 MFE 或模型结果。

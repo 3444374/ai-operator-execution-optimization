@@ -69,4 +69,5 @@ generation, get_tokenizer)` 将已关联的单个 RequestOutput 转为同一结�
 submit queued、child accepted、terminal、abort_requested 分开；unknown 保留输入和结果预留。
 close 只确认 API、直接 child 和本地 I/O，后代／GPU 仍需外层 owner 独立核验。
 原组件 121 项 CPU 与后续关闭修复 36 项的来源从[组件报告](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md)核对；
-尚未接入 actor／Core／CLI，同步默认不变，没有真实 Async 模型或持续供给性能结论。
+后续已由[显式 Async actor／Core／CLI](../../execution_provider/adapters/lotus_records_async_actor.py)消费，
+[组合 CPU 与关闭交接](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)另绑固定源码；同步默认不变，没有真实 Async 模型或性能结论。

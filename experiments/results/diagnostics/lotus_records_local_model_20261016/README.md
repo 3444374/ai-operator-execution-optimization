@@ -444,14 +444,16 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 
 | 执行 owner | 基本 records／本地模型接点 | 实际库验证 | 真实模型资格 | 扩展覆盖 |
 |---|---|---|---|---|
-| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4的小范围普通Q3，两负例；本报告原件为准 | 有限链及显式 Extract 分段关系 CPU；新链模型与持续供给待验 |
-| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526修正：两query／4调用；首轮失败actual null保持 | 共享有限链及显式 Extract 分段关系 CPU；新链模型待验 |
-| SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f：同engine两query／4调用；不转授后续源码 | 显式Core Extract屏障 CPU通过；原同步批不等于Async持续供给 |
-| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，尚未取得模型资格 | 通用Filter及有限链fixture分列；作者Ray和完整模型链待验 |
+| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4普通Q3两负例；另有8be单行Map→Extract，原MFE失败保留 | 有限链及显式Extract分段CPU；非末端关系模型另验 |
+| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526普通Q3两query／4调用，首轮actual null保持；另有522单行Map→Extract | 共享有限链及显式Extract分段CPU；当前新源码不继承旧模型资格 |
+| SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f普通Filter同engine两query／4调用；另有8be单行Map→Extract，不转授新源 | 显式Core Extract屏障CPU通过；原同步批不等于Async供给 |
+| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，尚未取得模型资格 | 通用Filter／有限链fixture与级联17项本机CPU分列；级联作者实测、作者Ray及完整模型链待验 |
+| SemLoom Async Core（显式） | 同一生产Core／准备ObjectRef／线程actor／有界三通道child | 五个真实CPU传输scope、关闭交接及另一个原parser／COUNT／evaluator闭环分列，物理模型为CPU替身 | 真实AsyncLLM／GPU待验 | 同步默认保持，跨阶段持续供给及性能另验 |
+| 原全局级联（Ray／Daft／Core） | 原LOTUS全局控制、角色／阶段及call身份；公共三backend CLI | 原方法差分、各native阶段CPU和Core关窗／入口合同分列 | 真实helper日志／模型／GPU换模待验 | IMLane阶段API另列；没有公共IMLane selector |
 
 固定来源的普通 Filter 资格与新算子覆盖是不同验收项。当前支持的 Filter／Map／Extract
 继续复用原 LOTUS 提示、生成配置、parser 和 LM 统计；COUNT／SemBench解释仍由任务拥有。
-这张表不声明 Join／Agg／全局cascade／图像或整套SQL已完成，也不将 static 参照称为新策略。
+这张表不声明 Join／Agg／图像或整套SQL已完成；级联CPU与helper模型资格分别解释，也不将static参照称为新策略。
 e4c 修正资格属于独立 static 参照，不归入 Ray Data 或 production Core 的模型来源。
 
 [显式 Core Extract 屏障](../lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)
@@ -459,7 +461,8 @@ e4c 修正资格属于独立 static 参照，不归入 Ray Data 或 production C
 后续[Ray／Daft 显式分段布局](../lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)
 已取得新 CPU 图资格，每非空段独立引擎，成本与每实例上限单列；默认非末端 guard 保持。
 [独立 Async 组件](../local_async_engine_20261019/README.md#root-集成与关闭异常修复)
-已完成组件CPU与关闭故障修复，但 actor／Core／CLI 尚未接入，因此当前完整查询没有持续供给资格。
+组件后续已由[显式Async actor／Core／CLI](../async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)消费，
+关闭knownusage与原parser／COUNT／evaluator CPU闭环分列；真实AsyncLLM与全查询持续供给性能仍待验。
 
 IMLane冻结8be的两owner资格使用126个Git同字节文件、原C++ binary与Arrow16方法环境，
 与此前CPU来源分开。第一次实际运行在首query模型初始化返回ZMQError，外层观察22个owned身份退出，
@@ -477,3 +480,44 @@ IMLane CPython 的本次普通 Movie Q3 Filter 实际模型尝试保留为 `unkn
 原初始化诊断仅记录 `ZMQError` 类型，没有原错误 message/errno。独立 CPU 路径试验得到116字节路径失败（errno36）、81字节路径 bind 成功，支持路径长度解释；不能据此将 errno36 回填为历史模型错误。本轮只适用于上述冻结来源，作者 Ray、实际模型完成及后续 Extract/Async profile 仍分别待验，无性能结论。
 
 [公开摘要](imlane_model_initialization_attempt.json) 保留三种配置摘要、归档/索引/结清收据 SHA 与原件/脱敏导出双 SHA；公开摘要不包含连接、具体远端目录、环境内容、凭据、原始数据库或权重。
+
+
+## 通用级联与公开入口的 CPU 集成
+
+`6e8b1382` 选择性接纳为 `df64e939`：[方法合同与条款映射](../../../../code/src/semantic_methods/lotus/cascade.README.md)
+保留原 accessor／全局校准／抽样／阈值／fallback，通用 instruction、角色列序及报告 v2 不含 Q3 COUNT。
+Movie task 适配单独保留 COUNT／原 evaluator；Ray、Daft、Core 各自拥有物理执行。
+原后端交付的实际库 CPU 图及失败原件按其固定来源解释，不把 fixture 当真实 helper 模型。
+
+[Root 组合摘要](cascade_backends_cpu.json)单列 92 项／79 subtests：实际 LOTUS 方法差分、
+Core 协议与 Movie／Async 工厂回归。首次未设置 opt-in 的 24 passed／28 skip 只作准备运行，
+补齐本地环境旗标后零 skip；原始输出保留。独立复核又发现 Core 级联继承同步10秒关窗，
+使私有进程扣清理预算后仅给 API 6.667 秒。普通 RED 保留，`4003a10a` 复用现有15秒常量与 hook，
+Core cleanup20／RPC响应16／IPC15；19 项／9 subtests通过，独立无Popen探针核同。
+该补丁没有重跑旧成功 native 图或模型，也不重新绑定其资格。
+
+[可选 Async actor／Core／CLI](../async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)
+沿用同一生产 Core、原 prepared ObjectRef 与原结果账目，独立实际 CPU 回执补账反例已闭合。
+真实 AsyncLLM、helper模型、GPU阶段退出、IMLane新级联组合和性能均按专门固定来源继续验证。
+
+## Supervisor 诊断失败与清理隔离
+
+原 `52216739` 的[Daft 单独模型退出资格](daft_exit_followup.json)保持不变。
+Root 接纳同一项目 supervisor 补丁后，独立审查发现可选 cmdline／name 异常和 leader PID复用
+可能阻断其余匹配PID清理；三个普通 RED 原件保留。
+`7e5989a4` 将可选诊断与必要清理分开，逐 literal PID 的信号失败不跳过其他目标，
+复用leader仍报告错误，不对未观察成员发group signal；默认自然等待0、总deadline与半预留上限保持。
+[CPU 摘要](supervisor_cleanup_cpu.json)记录28项／24subtests零skip，受限进程环境首轮10skip另列，
+两轴复核通过。该root修复没有模型或服务器动作，不借原522的历史模型结果认证新源码。
+
+
+公开级联入口 `791c356e` 选择为 `e56f3068`，20项级联＋13项Async配置／factory／错误合同通过，
+普通九函数AST保持。真实 task wrapper 的补充独审发现 metadata getter 可覆盖原异常并丢账；
+普通RED保留，`3bd287fd` 选择为 `aebbbcd8` 后，两个字段独立读取、先绑定原report，
+success后的metadata失败也携完整calls失败。四项真实LOTUS／SemBench CPU检查通过，
+NoPopen窗外先核同一固定SemBench源码，窗内仅缓存该Git核验并模拟精确OS能力探测不可用；
+原算法／parser／evaluator不替换。它与此前33项、原6e库资格分别保存，不拼成模型资格。
+
+[IMLane阶段API](../imlane_cascade_cpu_20261019/README.md)的22e82十个代码／局部证据文件
+选择为4f1cde99，共享四个导航由root同步；六源与原17本机CPU／失败／skip摘要核同。
+作者CPython新包已交唯一执行会话，尚无级联实测回执，实际helper／GPU与公共IMLane selector仍pending。

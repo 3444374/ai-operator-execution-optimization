@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "source_sha256": {
+    "code/src/experiments/lotus_records_supervisor.py": "b45da3ef6b2c1991d0bc7ed4c0c82cd49c1b758094263548dc8470ec0d35d0f2",
+    "code/tests/experiments/test_lotus_records_supervisor.py": "aa4767bf67fedca1298563a05c634a5d221c0dc660407480d9429b54df5daff8"
+  },
+  "source_unchanged": true,
+  "log_sha256": "4d661b6ad81579381a3b5fb45a250b37f371df5f42e53fb36f3fa7d02310d21b",
+  "log_bytes": 95,
+  "elapsed_s": 2.2261694580010953,
+  "exit_code": 0,
+  "model_calls": 0,
+  "gpu_calls": 0,
+  "server_actions": 0,
+  "scope": "Project supervisor only; fixed 522 Daft model qualification is historical and not rebound to this CPU-only followup",
+  "schema": "semloom.records_supervisor_cleanup_cpu.v1",
+  "original_patch_source": "522167399e88782530a2a33eb04c3a952bd8d34a",
+  "selected_patch_commit": "54f62bc816ebd2be1d52ea102c2d207643fe022c",
+  "root_fix_commit": "7e5989a4b91297bfaaa900eac1656df6f3b3b068",
+  "tests_passed": 28,
+  "subtests": 24,
+  "skips": 0,
+  "red_log_sha256": "607b73e22b9072cb32a9a83035314ee65d6a16771d7e460528302958e333dcde",
+  "restricted_profile_log_sha256": "695c1c5841c324e765dfd0fb684244041031af5e9bb61cffd828d7bd3b5b8f99",
+  "restricted_profile_result": {
+    "passed": 18,
+    "skipped": 10,
+    "reason": "process inventory unavailable; separately completed in the permitted local CPU process profile"
+  },
+  "review_initial_sha256": "d6cefea1c7aa6405c0c6050dff13afe99a1ab778595f2e019e4b3edf7aba03fd",
+  "review_recheck_sha256": "efc758941dfcc8e7d4096600943e08748a23b9e0a31c916f184a3c0aa354a1cd",
+  "default_natural_exit_grace_s": 0,
+  "forced_cleanup_still_failure": true,
+  "optional_metadata_failure_does_not_gate_cleanup": true
+}

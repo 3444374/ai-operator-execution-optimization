@@ -1,5 +1,11 @@
 # Feasibility Results
 
+[IMLane通用级联阶段](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥，本机17项CPU；新作者CPython包／helper模型／GPU资格待验，无公共IMLane selector。
+
+[Async actor／Core／CLI](async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)：原合同、实际CPU组合及关闭known usage的RED→GREEN分列，unknown责任不释放，真实AsyncLLM／GPU／性能待验。
+
+[通用全局级联后端](../../../code/src/semantic_methods/lotus/cascade.README.md)：原LOTUS全局算法、Ray／Daft／Core CPU执行，新增Core关闭窗口修复与原实库来源分列；helper模型及IMLane新组合待验。
+
 [Daft 单独退出复验](lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)：共享监督器的显式有限等待与逐 PID 信号记录通过 CPU 检查；新两调用 Map→Extract 无信号退出，旧 Daft 失败保留。
 
 [一行 Map→Extract 模型覆盖](lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)使用独立用例和新预算；Core／Ray 通过，Daft 语义通过但 supervisor 生命周期失败，最终资源已结清。

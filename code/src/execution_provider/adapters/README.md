@@ -130,3 +130,24 @@ These are engineering decisions within the existing Core and transport interface
 [real CPU Ray tests](../../../tests/execution_provider/test_native_ray_integration.py)
 exercise the implementation. Supplier adapters, a complete LOTUS query, GPU benefits and PG
 integration on this composed source require their own qualification.
+
+## Optional local asynchronous records engine
+
+[`AsyncRecordsActorOwner`](lotus_records_async_actor.py) plugs into the same Core through
+`actor_owner=`. The explicit Movie selector is `semloom-local-model-core-async`; the synchronous
+default stays unchanged. Driver Python owns the threaded actor, model Python the bounded private
+engine process. Full Core task keys distinguish sessions; terminal receipts remain held until
+transport acknowledgement. Unknown work retains both responsibility and input references.
+Effective limits are reported, and `max_active_batches + 2` concurrency leaves control slots.
+
+Close exports bounded keyed receipts that the registered transport can add to query accounting.
+It does not manufacture a Core terminal or free unknown credit. The [fixed-source CPU evidence](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)
+separates actor contracts, actual Core/Ray/Daft/LOTUS preparation with a CPU child, the original
+return-gate RED and its narrow GREEN. API/direct-child/IPC closure does not confirm GPU or all
+descendants. The public runner grants a separate twenty-second cleanup window, including the
+owner's fifteen-second private teardown; the original synchronous ten/eleven-second windows stay.
+
+[`CoreCascadeBackend`](lotus_cascade_core.py) reuses production sessions for each original LOTUS
+helper/sample/fallback stage. Its provider aliases, bounded stage CSV, model startup and closure
+are explicit costs. The [cascade method contract](../../semantic_methods/lotus/cascade.README.md)
+owns global calibration and thresholds; this adapter owns no replacement controller.

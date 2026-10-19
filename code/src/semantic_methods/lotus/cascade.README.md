@@ -78,7 +78,7 @@ stop 写失败、坏报告或一个 PID 观察失败不能跳过其他登记进�
 [Movie Q3 适配](../../experiments/lotus_cascade_movie.py)保留原谓词、COUNT、classification audit 和
 SemBench evaluator；`positive_review_cnt` 与 provider 使用标记只在任务适配层发布。
 source 首次预检／读 occurrence 在计时前，后端扫描、准备、初始化、必要屏障、关闭、解析和 COUNT 计入查询，
-evaluator 另计。公共 CLI／结果入口及共享 status／证据台账由唯一集成 owner 串行更新。
+evaluator 另计。公共 Movie CLI 现提供独立 `cascade-check`／`cascade-run`，三种后端及配置见[脚本入口](../../../scripts/README.md#movie-q3-原-helper-lm-全局级联)；普通配置保持。
 
 ## 条款、代码与验证
 
@@ -108,6 +108,7 @@ synthetic evaluations，30 个已观察所属进程退出；相应旧 Core／act
 finish reason；仍需实际模型核对 tokenizer、一次模板、日志内容、两个显式角色及阶段间 GPU 退出。
 本轮没有启动服务器模型或 GPU，没有使用 HTTP gateway，也没有把失败降为普通 Filter。
 
-IMLane 尚缺级联身份和角色／阶段 wire、全局 driver 接线、helper logprobs 校验，以及固定角色 owner
-的串行新 scope 和关闭资格。其现有 v2 carrier／stage 字段可以复用，最小方法接点仍为上述
-`preflight`、`evaluate(CascadeStage)`、`check_lifecycle`；普通 Filter 或作者 CPU 检查不转授级联资格。
+IMLane 后续[作者级联阶段API](../../../integrations/imlane_records/cascade.README.md)已接纳通用身份／角色／阶段wire，
+复用既有v2桥与原方法接点；17项本机CPU检查与待执行的作者CPython包分列。
+每个非空阶段新scope／固定role，阶段内保留作者调度；公共IMLane selector、实际helper日志／模型、
+GPU阶段退出和多executor仍待验，普通Filter资格不转授。
