@@ -21,7 +21,7 @@ from src.planning.work import StageWork, WorkDescriptor
 from src.scheduling.core.models import EndpointSnapshot, TopologySnapshot
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import (
-    OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo,
+    OfferedTask, SessionLimits, SessionSpec, SessionTimeouts, State, TaskInfo, TaskKey,
 )
 from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
@@ -145,6 +145,7 @@ class _RecordTransport:
         self._next_prepare = 0
         self._refs = {}
         self._outcomes = {}
+        self._requests = {}
         self._lock = threading.Lock()
         self.backend = BoundedAsyncBackend(
             self._execute, max_tasks=maximum, notify=notify, isolate_failures=True,
@@ -154,6 +155,11 @@ class _RecordTransport:
     async def _execute(self, task, endpoint):
         _check(self.deadline)
         row = json.loads(task.task.payload)
+        expected = {key: row[key] for key in identity(
+            row["query_id"], row["row_id"], row["source_position"], row["call_index"],
+        )}
+        with self._lock:
+            self._requests[task.key] = expected, task.task.max_result_bytes
         actor = self.actors.prepare_actors[self._next_prepare % len(self.actors.prepare_actors)]
         self._next_prepare += 1
         # All potentially blocking Ray calls happen on the transport thread.
@@ -169,9 +175,6 @@ class _RecordTransport:
         if type(result) is not bytes or len(result) > task.task.max_result_bytes:
             raise ValueError("model completion exceeded its byte reservation")
         value = json.loads(result)
-        expected = {key: row[key] for key in identity(
-            row["query_id"], row["row_id"], row["source_position"], row["call_index"],
-        )}
         # Association is checked before a successful backend terminal can free input.
         audit = CallLedger([expected], 1)
         audit.record(value)
@@ -191,6 +194,42 @@ class _RecordTransport:
     def acknowledge(self, key):
         with self._lock:
             self._outcomes.pop(key, None)
+            self._requests.pop(key, None)
+
+    def recover_actor_receipts(self, receipts):
+        """Transfer only registered task receipts; this never ends Core borrowing."""
+        if type(receipts) is not list:
+            return ["actor_close_receipts: TypeError"]
+        errors = []
+        for receipt in receipts:
+            try:
+                pair = receipt["request_key"]
+                if (type(pair) not in (list, tuple) or len(pair) != 2
+                        or any(type(item) is not int or not 0 <= item < 1 << 64 for item in pair)):
+                    raise ValueError("actor close receipt requires a complete task key")
+                key = TaskKey(*pair)
+                with self._lock:
+                    request = self._requests.get(key)
+                # Already consumed/foreign sessions are not inferred from query_id.
+                if request is None:
+                    continue
+                expected, maximum = request
+                value = receipt["result"]
+                CallLedger([expected], 1).record(value)
+                try:
+                    encoded = _encode(value, maximum)
+                except ValueError:
+                    encoded = _encode(_capacity_failure(value), maximum)
+                with self._lock:
+                    if key not in self._requests:
+                        continue
+                    previous = self._outcomes.get(key)
+                    if previous is not None and json.loads(previous) != json.loads(encoded):
+                        raise ValueError("actor close receipt conflicts with an existing outcome")
+                    self._outcomes[key] = encoded
+            except BaseException as error:
+                errors.append("actor_close_receipt: " + type(error).__name__)
+        return errors
 
     def failure_receipts(self):
         with self._lock:
@@ -199,6 +238,8 @@ class _RecordTransport:
     def take_receipts(self, session_id):
         with self._lock:
             keys = tuple(key for key in self._outcomes if key.session_id == session_id)
+            for key in keys:
+                self._requests.pop(key, None)
             return tuple(self._outcomes.pop(key) for key in keys)
 
     def retained_refs(self):
@@ -365,7 +406,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
     def collect_receipts(self):
         for payload in self.owner.transport.take_receipts(self.session.session_id):
             row = json.loads(payload)
-            if row["call_id"] not in self.received:
+            if row["call_id"] not in self.received and row not in self.unconsumed_call_results:
                 self.unconsumed_call_results.append(row)
 
 
@@ -503,6 +544,9 @@ class SemLoomRecordsCore:
             self._actors.close_deadline = self._deadline
         actor_report = self._actors.close()
         errors.extend(actor_report["cleanup_errors"])
+        if self.transport is not None:
+            errors.extend(self.transport.recover_actor_receipts(
+                actor_report.get("unconsumed_core_results", [])))
         if self.core is not None:
             self.core.reap(self.capacity.step_actions)
         if self._active is not None:

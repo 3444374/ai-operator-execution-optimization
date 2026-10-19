@@ -282,18 +282,21 @@ class AsyncCoreModelActor:
                 report = dict(status="closed" if confirmed else "unknown",
                     engine_api_shutdown_confirmed=confirmed, gpu_exit_confirmed=None,
                     cleanup_errors=[] if confirmed else ["startup_cleanup_unconfirmed"],
-                    unconsumed_call_results=[])
+                    unconsumed_call_results=[], unconsumed_core_results=[])
             else:
                 ipc = engine.close(timeout=timeout)
                 with self._condition:
                     self._collect()
                     receipts = [dict(call.value) for call in self._held.values() if call.value is not None]
+                    keyed = [dict(request_key=list(key), result=dict(call.value))
+                             for key, call in self._held.items() if call.value is not None]
                 settled = ipc.get("status") == "closed"
                 report = dict(status="closed" if settled else "unknown",
                     cleanup_scope="async_engine_api_direct_child_and_ipc",
                     engine_api_shutdown_confirmed=settled,
                     gpu_exit_confirmed=None, descendants_exit_confirmed=None,
                     ipc_close=ipc, unconsumed_call_results=receipts,
+                    unconsumed_core_results=keyed,
                     cleanup_errors=[] if settled else ["async_ipc_cleanup_unconfirmed"])
             self.last_close_report = report
             return report
@@ -330,7 +333,8 @@ class AsyncRecordsActorOwner(_ActorOwner):
 
     def execution_metadata(self):
         return dict(model_batch_mode=self.model_batch_mode,
-                    native_engine_abort_supported=self.native_engine_abort_supported)
+                    native_engine_abort_supported=self.native_engine_abort_supported,
+                    async_limits=asdict(self.limits))
 
     def _model_actor_arguments(self):
         return (asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows,
@@ -357,4 +361,6 @@ class AsyncRecordsActorOwner(_ActorOwner):
         report = super().close()
         report["unconsumed_call_results"] = (report.get("engine_close_report") or {}).get(
             "unconsumed_call_results", [])
+        report["unconsumed_core_results"] = (report.get("engine_close_report") or {}).get(
+            "unconsumed_core_results", [])
         return report

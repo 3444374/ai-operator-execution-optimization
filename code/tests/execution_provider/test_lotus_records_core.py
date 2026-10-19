@@ -777,5 +777,82 @@ class CoreRecordsTests(unittest.TestCase):
                 core.SemLoomRecordsCore(FilterMethod("fixture"), self.spec, GenerationSpec(), resources)
 
 
+class ActorCloseReceiptTests(unittest.TestCase):
+    """Close receipts supplement billing without settling Core or Ray input refs."""
+
+    def setUp(self):
+        self.key = core.TaskKey(4, 0)
+        self.expected = identity("reused-query", "row-0", 0)
+        self.value = dict(self.expected, status="succeeded", text="True",
+                          prompt_tokens=11, completion_tokens=1, total_tokens=12,
+                          submission_confirmed=True)
+        self.transport = object.__new__(core._RecordTransport)
+        self.transport._requests = {self.key: (self.expected, 4096)}
+        self.transport._outcomes = {}
+        self.refs = (object(), object())
+        self.transport._refs = {self.key: self.refs}
+        self.transport._lock = threading.Lock()
+
+    def receipt(self, value=None, key=None):
+        selected = self.key if key is None else key
+        return dict(request_key=[selected.session_id, selected.sequence],
+                    result=self.value if value is None else value)
+
+    def test_known_receipt_transfers_once_and_keeps_input_responsibility(self):
+        self.assertEqual(self.transport.recover_actor_receipts([self.receipt()]), [])
+        self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), self.value)
+        self.assertIs(self.transport._refs[self.key], self.refs)
+        self.assertEqual(self.transport.take_receipts(99), ())
+        self.assertEqual(len(self.transport.take_receipts(4)), 1)
+        self.assertEqual(self.transport.take_receipts(4), ())
+        self.assertEqual(self.transport.recover_actor_receipts([self.receipt()]), [])
+        self.assertEqual(self.transport.failure_receipts(), ())
+        self.assertIs(self.transport._refs[self.key], self.refs)
+
+    def test_full_task_key_excludes_previous_session_with_same_query_and_call(self):
+        old = self.receipt(key=core.TaskKey(3, 0))
+        self.assertEqual(self.transport.recover_actor_receipts([old]), [])
+        self.assertEqual(self.transport.failure_receipts(), ())
+        self.assertIn(self.key, self.transport._requests)
+
+    def test_invalid_key_or_identity_does_not_hide_later_valid_usage(self):
+        malformed = [dict(request_key=pair, result=self.value)
+                     for pair in ([True, 0], [4], [-1, 0], [4, 1 << 64])]
+        foreign = self.receipt(dict(self.value, row_id="wrong-row"))
+        errors = self.transport.recover_actor_receipts(malformed + [foreign, self.receipt()])
+        self.assertEqual(len(errors), 5)
+        self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), self.value)
+
+    def test_idempotent_known_receipt_cannot_replace_conflicting_outcome(self):
+        self.assertEqual(self.transport.recover_actor_receipts([self.receipt(), self.receipt()]), [])
+        conflicting = dict(self.value, completion_tokens=2, total_tokens=13)
+        self.assertEqual(len(self.transport.recover_actor_receipts([self.receipt(conflicting)])), 1)
+        self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), self.value)
+
+    def test_actual_unknown_receipt_is_never_upgraded_by_close(self):
+        unknown = dict(self.value, status="unknown", text=None,
+                       completion_tokens=None, total_tokens=None)
+        self.transport._outcomes[self.key] = core._encode(unknown, 4096)
+        self.assertEqual(len(self.transport.recover_actor_receipts([self.receipt()])), 1)
+        self.assertEqual(json.loads(self.transport.failure_receipts()[0][1]), unknown)
+        self.transport.take_receipts(4)
+        self.assertEqual(self.transport.recover_actor_receipts([self.receipt()]), [])
+        self.assertEqual(self.transport.failure_receipts(), ())
+        self.assertIs(self.transport._refs[self.key], self.refs)
+
+    def test_oversized_receipt_retains_usage_in_reserved_failure_bytes(self):
+        maximum = len(core._encode(core._capacity_failure(self.value), 4096))
+        self.transport._requests[self.key] = self.expected, maximum
+        large = dict(self.value, text="x" * 8192)
+        self.assertEqual(self.transport.recover_actor_receipts([self.receipt(large)]), [])
+        encoded = self.transport.failure_receipts()[0][1]
+        actual = json.loads(encoded)
+        self.assertLessEqual(len(encoded), maximum)
+        self.assertEqual(actual["error_type"], "ResultCapacityExceeded")
+        self.assertEqual(actual["status"], "failed")
+        self.assertEqual(actual["total_tokens"], 12)
+        self.assertIs(self.transport._refs[self.key], self.refs)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -259,6 +259,9 @@ class AsyncActorTests(unittest.TestCase):
         self.assertEqual(report["status"], "closed")
         self.assertTrue(report["ipc_close"]["process_exit_confirmed"])
         self.assertEqual(sum(row["prompt_tokens"] for row in report["unconsumed_call_results"]), 22)
+        keyed = report["unconsumed_core_results"]
+        self.assertEqual({tuple(row["request_key"]) for row in keyed}, {(0, 0), (0, 1)})
+        self.assertEqual([row["result"] for row in keyed], report["unconsumed_call_results"])
         self.assertIsNone(report["gpu_exit_confirmed"])
         self.assertIsNone(report["descendants_exit_confirmed"])
 
@@ -303,6 +306,7 @@ class AsyncActorTests(unittest.TestCase):
         self.assertEqual(options["max_task_retries"], 0)
         self.assertEqual(len(owner._model_actor_arguments()), 4)
         self.assertTrue(owner.execution_metadata()["native_engine_abort_supported"])
+        self.assertEqual(owner.execution_metadata()["async_limits"], asdict(owner.limits))
 
 
 if __name__ == "__main__":
