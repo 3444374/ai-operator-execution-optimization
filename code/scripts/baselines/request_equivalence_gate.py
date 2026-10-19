@@ -17,7 +17,7 @@ send one unique prompt through each path and compare the vLLM prompt-token
 counter delta -- equal deltas rule out a hidden system prompt that the JSON
 builders might not surface.
 
-Evidence (redacted raw JSON, canonical diff, temperature probes, identity, exit
+Evidence (raw request JSON, canonical diff, temperature probes, identity, exit
 code) is written under ``experiments/results/diagnostics/``. This is a single-request gate,
 NOT a long experiment or a 3-arm performance run.
 """
@@ -29,7 +29,6 @@ import hashlib
 import json
 import subprocess
 import sys
-import time
 from pathlib import Path
 
 CODE_ROOT = next(
@@ -121,18 +120,6 @@ def _messages_match(canonical_body: dict, actual_body: dict) -> tuple[bool, str]
     if cm == am:
         return True, "messages identical (role+content)"
     return False, f"messages differ: canonical={cm!r} actual={am!r}"
-
-
-def _redact(body: dict) -> dict:
-    redacted = dict(body)
-    msgs = redacted.get("messages")
-    if isinstance(msgs, list):
-        redacted["messages"] = [
-            {**m, "content": f"<{len(str(m.get('content', '')))} chars>"}
-            if isinstance(m, dict) else m
-            for m in msgs
-        ]
-    return redacted
 
 
 def _endpoint_idle(metrics_url: str) -> bool:
@@ -306,7 +293,7 @@ def main(argv: list[str] | None = None) -> int:
             "service_config_sha256": service_config_hash,
             **duckdb_identity,
         },
-        "redacted_note": "raw_json redacts message content length only; full prompt is in args.prompt",
+        "redacted_note": "raw_json and normalized retain complete request bodies for equivalence checks",
     }
 
     output_dir.mkdir(parents=True, exist_ok=False)
