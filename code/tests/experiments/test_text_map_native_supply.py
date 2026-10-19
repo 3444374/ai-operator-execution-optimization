@@ -11,12 +11,12 @@ import threading
 import time
 import unittest
 
-from src.baselines.common.private_artifacts import write_private_json
+from src.baselines.common.private_artifacts import file_identity, write_private_json
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from src.experiments.postgresql.query_inputs import QueryInputs
 from src.experiments.postgresql.query_tables import install_input_table
-from src.experiments.postgresql.query_workloads import prepare,read_prepared,file_identity
+from src.experiments.postgresql.query_workloads import prepare,read_prepared
 from src.experiments.postgresql.query_supervisor import supervise
 from src.experiments.postgresql.text_map_candidates import CAPACITIES,native_candidate
 from src.experiments.postgresql.text_map_comparison import read_run

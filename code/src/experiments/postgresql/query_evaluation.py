@@ -1,9 +1,8 @@
 """Evaluate completed query recordings after reading their independent sources."""
 from collections import Counter
 import json
-import math
 
-from src.baselines.common.private_artifacts import content_digest
+from src.baselines.common.private_artifacts import content_digest, json_metric
 from src.baselines.text.sembench_movie import evaluate_original,classification_audit,MOVIE_FILTER_INSTRUCTION
 from src.execution_provider.wire import v3
 from src.observability.metrics.squad import squad_example_scores
@@ -38,17 +37,6 @@ def http_accounting(events,maximum):
     if active!=0:
         raise ValueError('HTTP responsibilities did not settle')
     return dict(peak_http=peak,final_http_active=active,started_requests=len(timeline)//2)
-
-
-def json_metric(value):
-    """Keep upstream infinite-error meaning while writing strict JSON."""
-    if isinstance(value,float) and not math.isfinite(value):
-        return 'Infinity' if value>0 else '-Infinity' if value<0 else 'NaN'
-    if isinstance(value,dict):
-        return {k:json_metric(v) for k,v in value.items()}
-    if isinstance(value,(list,tuple)):
-        return [json_metric(v) for v in value]
-    return value
 
 
 def ray_transport_accounting(events, requests):
