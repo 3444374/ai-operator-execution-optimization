@@ -54,9 +54,10 @@ class FixtureControl:
     def __init__(self, root):
         self.root = Path(root)
 
-    def configure(self, *, unknown_rows=(), close_error=False, hold_ray_return=False):
+    def configure(self, *, unknown_rows=(), close_error=False, hold_ray_return=False, all_positive=False):
         _fixture_json(self.root / 'async-fixture-plan.json', dict(
-            unknown_rows=list(unknown_rows), close_error=close_error, hold_ray_return=hold_ray_return))
+            unknown_rows=list(unknown_rows), close_error=close_error, hold_ray_return=hold_ray_return,
+            all_positive=all_positive))
 
     def entered(self):
         result = []
@@ -149,7 +150,8 @@ class ControlledEngine:
         unknown = identity['source_position'] in self.plan['unknown_rows']
         result = result_record(identity, engine_uid=self.uid, start=start, end=time.monotonic(),
             status='unknown' if unknown else 'succeeded', submitted=True)
-        result.update(text=None if unknown else ('Answer: True' if identity['source_position'] == 0 else 'Answer: False'),
+        positive = self.plan['all_positive'] or identity['source_position'] == 0
+        result.update(text=None if unknown else ('Answer: True' if positive else 'Answer: False'),
             prompt_tokens=11, completion_tokens=None if unknown else 1, total_tokens=None if unknown else 12,
             prompt_token_ids_json=json.dumps(list(range(11))), output_token_ids_json='null' if unknown else '[19]',
             logprobs_json='null', finish_reason='abort' if unknown else 'stop', engine_request_id=request_id,
@@ -172,7 +174,7 @@ class ControlledEngine:
 
 
 @contextmanager
-def cpu_runtime(*, count=2, unknown_rows=(), close_error=False, hold_ray_return=False):
+def cpu_runtime(*, count=2, unknown_rows=(), close_error=False, hold_ray_return=False, all_positive=False):
     """Fresh real local libraries/actors; only the physical model is synthetic."""
     import daft
     from daft.runners import _get_runner
@@ -226,12 +228,14 @@ def cpu_runtime(*, count=2, unknown_rows=(), close_error=False, hold_ray_return=
         with original.open('w', newline='') as stream:
             writer = csv.writer(stream)
             writer.writerow(['reviewId', 'id', 'reviewText', 'scoreSentiment'])
-            writer.writerows([['same', 'taken_3', 'review ' + str(i), 'POSITIVE' if i == 0 else 'NEGATIVE']
+            writer.writerows([['same', 'taken_3', 'review ' + str(i),
+                               'POSITIVE' if all_positive or i == 0 else 'NEGATIVE']
                               for i in range(count)])
         source = MovieRecordSource.from_manifest(prepare_movie_source(original, inputs / 'records',
             expected_csv_sha256=hashlib.sha256(original.read_bytes()).hexdigest(), max_rows=count))
         control = FixtureControl(inputs)
-        control.configure(unknown_rows=unknown_rows, close_error=close_error, hold_ray_return=hold_ray_return)
+        control.configure(unknown_rows=unknown_rows, close_error=close_error,
+                          hold_ray_return=hold_ray_return, all_positive=all_positive)
         method, generation = FilterMethod('openai/async-cpu-fixture'), GenerationSpec()
         spec = EngineSpec(str(inputs), sys.executable, sys.executable, max_model_calls=6)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
@@ -576,6 +580,66 @@ class AsyncCoreIntegrationTests(unittest.TestCase):
             # Known accounting must cross the close handoff even though a
             # missing transport terminal keeps the original Core credit held.
             self.assertEqual(owner.last_query_report['unconsumed_call_results'], [expected])
+
+    def test_movie_query_runs_original_parser_count_and_evaluator(self):
+        from src.baselines.text.sembench_movie import SEMBENCH_COMMIT
+        from src.experiments.lotus_records_movie import run_movie_query
+
+        checkout = os.environ['SEMBENCH_CHECKOUT']
+        with cpu_runtime(all_positive=True) as runtime:
+            owner, control = runtime.owner, runtime.control
+            query_id = 'async-original-movie-q3'
+            errors = []
+
+            def release_pair():
+                try:
+                    for row in control.wait_entered(2, timeout=20):
+                        control.release(row['call_id'])
+                except BaseException as error:
+                    errors.append(error)
+                    runtime.cancelled.set()
+
+            thread = threading.Thread(target=release_pair, name='cpu-fixture-movie-query', daemon=True)
+            runtime.threads.append(thread)
+            thread.start()
+            report = run_movie_query(runtime.source, checkout, owner.method, owner.generation,
+                lambda: owner.evaluate(runtime.source, query_id=query_id, cancelled=runtime.cancelled.is_set),
+                query_id=query_id)
+            self.assertEqual(errors, [])
+            self.assertEqual(report['status'], 'completed')
+            self.assertIs(report['production_core_used'], True)
+            self.assertEqual(report['result'], {'positive_review_cnt': 2})
+            self.assertEqual([row['decision'] for row in report['decisions']], [True, True])
+            self.assertEqual([row['raw_output'] for row in report['decisions']], ['Answer: True'] * 2)
+            self.assertEqual(report['calls']['counts']['succeeded'], 2)
+            self.assertEqual(report['calls']['counts']['unknown'], 0)
+            self.assertEqual({row['call_id'] for row in report['calls']['records']},
+                             {row['call_id'] for row in runtime.source.expected(query_id)})
+            self.assertEqual({name: report['calls']['usage'][name] for name in
+                              ('prompt_tokens', 'completion_tokens', 'total_tokens')},
+                             dict(prompt_tokens=22, completion_tokens=2, total_tokens=24))
+            self.assertEqual(report['method_source']['versions']['lotus-ai'], '1.2.4')
+            self.assertEqual(report['quality']['sembench_commit'], SEMBENCH_COMMIT)
+            self.assertEqual(report['quality']['original_metric']['absolute_error'], 0.0)
+            self.assertEqual(report['quality']['original_metric']['relative_error'], 0.0)
+            self.assertEqual(report['quality']['classification_audit'], dict(
+                true_positive=2, false_positive=0, true_negative=0, false_negative=0, invalid=0,
+                evaluated_rows=2, missing_rows=0, count_error_from_classifications=0))
+            for kind in ('physical_usage', 'virtual_usage'):
+                self.assertEqual({name: report['lm']['stats'][kind][name] for name in
+                                  ('prompt_tokens', 'completion_tokens', 'total_tokens')},
+                                 dict(prompt_tokens=22, completion_tokens=2, total_tokens=24))
+            self.assertTrue(all(value == 0 for value in asdict(owner.core.capacity.usage()).values()))
+            self.assertEqual(owner.transport.retained_refs(), 0)
+            close = owner.close(timeout=20)
+            self.assertEqual(close['status'], 'closed')
+            self.assertTrue(close['model_owner']['engine_close_report']['engine_api_shutdown_confirmed'])
+            self.assertTrue(close['transport_closed'])
+            self.assertEqual(close['retained_remote_inputs'], 0)
+            self.assertIsNone(close['gpu_exit_confirmed'])
+            self.save('movie-query', dict(query=report, owner_close=close, entered=control.entered(),
+                actual_model_calls=0, fixture_evaluations=2, physical_gpu_exit_checked=False,
+                quality_scope='two-row software fixture; original parser, COUNT and SemBench evaluator'))
 
 
 if __name__ == '__main__':
