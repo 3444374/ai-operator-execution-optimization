@@ -147,8 +147,10 @@ arrival replay 等执行前配置签名定义。同一配置的 warm-up/formal/r
 
 用当前 driver（输出 schema_version 2，含 `selection_metrics`）在同样 29 个
 `runs.csv`（283 行 / 70 配置组）上重跑 5 个固定 seed，对照 mean baseline 与
-ridge cost model 的预测层与排序/选择层（`code/scripts/analysis/compare_cost_estimators.py`，
+ridge cost model 的预测层与排序/选择层（已退役的[固定历史源码](https://github.com/3444374/ai-operator-execution-optimization/blob/4973465d0ea900b2b3864333cbfd883e026b33ca/code/scripts/analysis/compare_cost_estimators.py)，
 复用 `estimate()`，未改原有代码）：
+
+上方提交用于恢复历史源码。旧入口的默认 JSON 现位于[历史输入](e2e_cost_model.json)，复核数字需按当时输入清单定位；当前 driver 的筛选规则已演进。
 
 | 层 | 指标 | ridge | mean baseline | 结论 |
 |---|---|---:|---:|---|

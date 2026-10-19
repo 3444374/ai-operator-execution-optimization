@@ -3,9 +3,9 @@
 
 Implements the project cost-estimation baseline plan: compare the full estimator
 hierarchy on the same 283-row AI_COMPLETE profile, same grouped split, same candidate
-contexts, across prediction / ranking / decision layers. Supersedes
-compare_cost_estimators.py (mean-vs-ridge only). Reuses estimate_operator_cost loaders
-+ regression.py + estimators.py; modifies no existing code.
+contexts, across prediction / ranking / decision layers. The retired mean/ridge-only
+runner is available at Git commit 4973465d0ea900b2b3864333cbfd883e026b33ca.
+Reuses estimate_operator_cost loaders + regression.py + estimators.py.
 
 Estimators:
   CE0 mean (sanity) | CE1 analytical | CE2 lookup | CE3 ridge (existing) |
