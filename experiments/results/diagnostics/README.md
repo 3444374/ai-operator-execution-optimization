@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[Daft 单独退出复验](lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)：共享监督器的显式有限等待与逐 PID 信号记录通过 CPU 检查；新两调用 Map→Extract 无信号退出，旧 Daft 失败保留。
+
 [一行 Map→Extract 模型覆盖](lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)使用独立用例和新预算；Core／Ray 通过，Daft 语义通过但 supervisor 生命周期失败，最终资源已结清。
 
 [非 Q3 有限 MFE 模型失败与诊断](lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)：三后端的实际输出、零模型重放及空结果 index 问题分列；完整链与 Extract 模型资格未通过。

@@ -1,5 +1,7 @@
 # AI 算子执行 Infra 当前状态
 
+[Daft 外层有限退出观察](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)仅在固定 `52216739` 的独立 Map→Extract 小样通过：共享监督器可显式等待，逐 PID 记录清理目标，48 项 CPU 与两次实际模型调用通过；原 Daft 生命周期失败不改写，源码补丁另交集成。
+
 [独立一行 Map→Extract 模型覆盖](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)已在 8be 各执行一次两调用单元：Core／Ray 通过，Daft 语义与原 LOTUS 差分通过但 supervisor 发 SIGTERM，生命周期资格保留失败。私有控制器误判已用原回执更正；不转授原 MFE 或后续源码。
 
 [8be 非 Q3 有限 MFE 模型小轮](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)三后端已各执行一次，均因 Filter 丢弃全部行及空结果 index 类型差异未通过；Extract 实际未执行。原回执重放和 token 核对不支持已测 Filter 接线／截断问题，源 index 元数据物化待修复。

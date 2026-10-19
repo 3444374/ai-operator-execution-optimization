@@ -17,6 +17,10 @@
 Core 接收同配置的 `RecordsActorOwner`，传完整 TaskKey 到提交／取消／结果确认 hook；ack 在合法结果入账后，unknown 保留额度和引用。同步默认参数保持，owner 模式报告不能覆盖实际 Core／清理／GPU 真值，基类也遵守独立 cleanup 期限和同一关闭 ref。92 项 CPU／39 subtests 通过，最初新测试源范围设置错误和受限进程检查失败原件保留；两轴独审修复注入 owner 期限 P2。Async actor／CLI 正由各自 owner 接线，本次不作持续供给或模型结论。见[固定源码与验证](experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。
 后续增加私有进程关闭窗口 hook，默认 API10／等待11不变，70 项／27 subtests CPU 通过；实际 Async 使用及真实模型退出另验。
 
+## 2026-10-19：Daft 短暂辅助进程退出观察及单独模型复验
+
+固定 `52216739` 只改共享监督器，48 项精确源码 CPU 检查及短退出／真残留／超大等待请求通过。新两调用账本只跑 Daft Map→Extract：216 tokens、原 LOTUS 差分与退出通过，resource tracker 约 26 毫秒自然退出，无信号；旧 105 份证据及六账本 SHA 不变，源码补丁交集成，详见[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)。
+
 ## 2026-10-19：独立 Map→Extract 模型覆盖及 Daft 生命周期负结果
 
 新一行用例在同一 8be 源码按 Core／Ray／Daft 各执行一次两调用单元，原 LOTUS 差分与语义均匹配。Core／Ray 完整通过，Daft 外层 supervisor 发 SIGTERM 后才结清，保留生命周期失败；私有控制器漏判用三条真实回执离线回归修正，未重跑模型。原 MFE 和旧账本保持，46 项补验原件留私有归档，详见[同一主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)。
