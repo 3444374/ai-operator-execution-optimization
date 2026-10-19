@@ -16,7 +16,7 @@ import tempfile
 import threading
 import time
 
-from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
+from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
@@ -117,9 +117,13 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                     from .daft_engine_process import _publish
 
                     try:
-                        _publish(Path(control) / "engine-close-failure.json", dict(
+                        report = dict(
                             status="unknown", process_exit_confirmed=False,
-                            cleanup_errors=["engine_close: " + type(exc).__name__]))
+                            cleanup_errors=["engine_close: " + type(exc).__name__])
+                        failure = getattr(self.kernel, "last_result_failure", None)
+                        if failure is not None:
+                            report["result_failure"] = failure
+                        _publish(Path(control) / "engine-close-failure.json", report)
                     except BaseException:
                         # The registered process report remains unconfirmed;
                         # reporting I/O must not discard authoritative rows.
@@ -152,6 +156,7 @@ class _DaftRows:
         if len(self.expected) != len(expected):
             raise ValueError("source has duplicate call identities")
         self.received = set()
+        self._result_receipts = {}
         self.control = Path(control)
         self.iterator = None
         self._stop = threading.Event()
@@ -230,6 +235,41 @@ class _DaftRows:
         except BaseException as cleanup:
             error.add_note("Daft cleanup also failed: " + type(cleanup).__name__)
 
+    def _recover_result_receipts(self, report):
+        failure = report.get("result_failure")
+        if failure is None:
+            return []
+        if type(failure) is not dict or type(failure.get("verified_call_results")) is not list:
+            return ["result_receipt_recovery: ValueError"]
+        errors = []
+        ready_uid = (report.get("engine_ready") or {}).get("engine_uid")
+        for row in failure["verified_call_results"]:
+            try:
+                call_id = row.get("call_id") if type(row) is dict else None
+                expected = self.expected.get(call_id) if type(call_id) is str else None
+                if expected is None or any(row.get(key) != value for key, value in expected.items()):
+                    raise ValueError("engine receipt belongs to another query occurrence")
+                # Returned rows have Daft preparation/inference metadata which
+                # the engine's original receipt does not. Never re-deliver or
+                # replace an already received terminal, including an unknown.
+                if call_id in self.received:
+                    continue
+                if (sum(type(other) is dict and other.get("call_id") == call_id
+                        for other in failure["verified_call_results"]) != 1
+                        or type(row.get("engine_protocol_error")) is not str
+                        or not row["engine_protocol_error"].strip()
+                        or ready_uid is not None and row.get("engine_uid") != ready_uid):
+                    raise ValueError("engine receipt lacks its result-failure identity")
+                checked = CallLedger([expected], max_calls=1)
+                checked.record(row)
+                receipt = checked.report()["records"][0]
+                if call_id in self._result_receipts and self._result_receipts[call_id] != receipt:
+                    raise ValueError("engine receipt conflicts with an existing terminal")
+                self._result_receipts[call_id] = receipt
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                errors.append("result_receipt_recovery: " + type(exc).__name__)
+        return errors
+
     def close(self):
         self._done = True
         if self.last_close_report is not None and self.last_close_report["status"] == "closed":
@@ -267,6 +307,7 @@ class _DaftRows:
         if self._started and self.expected and not reports:
             errors.append("engine_process_cleanup_unconfirmed")
         for report in reports:
+            errors.extend(self._recover_result_receipts(report))
             errors.extend(report.get("cleanup_errors", []))
             if report.get("status") != "closed" or not report.get("process_exit_confirmed"):
                 errors.append("private_engine_process_exit_unconfirmed")
@@ -281,6 +322,11 @@ class _DaftRows:
             result_transport="compact complete engine rows as JSON within a native struct",
             cleanup_artifacts=None if not errors else str(self.control),
         )
+        if any(report.get("result_failure") is not None for report in reports) or self._result_receipts:
+            self.last_close_report["unconsumed_call_results"] = [
+                self._result_receipts[call_id] for call_id in self.expected
+                if call_id in self._result_receipts and call_id not in self.received
+            ]
         if not errors:
             shutil.rmtree(self.control)
         return self.last_close_report
