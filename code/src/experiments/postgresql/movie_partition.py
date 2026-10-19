@@ -4,7 +4,8 @@ import hashlib
 import heapq
 from pathlib import Path
 
-from .query_workloads import file_identity, prepare
+from src.baselines.common.private_artifacts import file_identity
+from .query_workloads import prepare
 
 
 def prepare_movie_partitions(source, previous, root, *, tuning_rows=512, evaluation_rows=1024, seed='m1-real-20260914'):

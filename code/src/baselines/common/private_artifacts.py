@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 
@@ -10,6 +11,26 @@ from pathlib import Path
 def content_digest(value: object) -> str:
     raw = json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def file_identity(path):
+    """Describe file bytes without loading the complete file into memory."""
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda:stream.read(1048576),b''):
+            digest.update(block)
+    return dict(sha256=digest.hexdigest(),bytes=Path(path).stat().st_size)
+
+
+def json_metric(value):
+    """Keep upstream infinite-error meaning while writing strict JSON."""
+    if isinstance(value,float) and not math.isfinite(value):
+        return 'Infinity' if value>0 else '-Infinity' if value<0 else 'NaN'
+    if isinstance(value,dict):
+        return {k:json_metric(v) for k,v in value.items()}
+    if isinstance(value,(list,tuple)):
+        return [json_metric(v) for v in value]
+    return value
 
 
 def require_outside_git(path: Path) -> None:

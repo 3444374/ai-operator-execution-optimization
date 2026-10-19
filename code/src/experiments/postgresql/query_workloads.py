@@ -5,11 +5,10 @@ read for table installation or post-query evaluation, never as a hidden source
 for a claimed PG-source execution.
 """
 import csv
-import hashlib
 import json
 from pathlib import Path
 
-from src.baselines.common.private_artifacts import new_private_directory, open_private_text, write_private_json, content_digest
+from src.baselines.common.private_artifacts import new_private_directory, open_private_text, write_private_json, content_digest, file_identity
 from src.baselines.text.squad_map import validate_manifest
 from .query_inputs import QueryInputs
 
@@ -17,14 +16,6 @@ from .query_inputs import QueryInputs
 SCHEMA = 'semloom.pg_query_inputs.v2'
 MAX_PREPARED_ROWS = 30000
 MAX_RAW_FILE_BYTES = 256*1048576
-
-
-def file_identity(path):
-    digest = hashlib.sha256()
-    with Path(path).open('rb') as stream:
-        for block in iter(lambda:stream.read(1048576),b''):
-            digest.update(block)
-    return dict(sha256=digest.hexdigest(),bytes=Path(path).stat().st_size)
 
 
 def prepare(root, kind, examples, provenance, *, max_rows, max_source_bytes=65536, max_input_bytes=65536):
