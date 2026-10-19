@@ -124,7 +124,7 @@ class FilterWorker:
                 observed = kernel.run_prepared(prepared)
                 raw = observed if type(observed) is list else [observed]
                 faulty = (type(observed) is not list or len(raw) != len(prepared)
-                          or any(type(row) is dict and row.get("engine_protocol_error") for row in raw)
+                          or any(type(row) is dict and "engine_protocol_error" in row for row in raw)
                           or [row.get("call_id") if type(row) is dict else None for row in raw]
                           != [item["call_id"] for item in identities])
                 unassociated, associated, verified = [], [], []

@@ -230,9 +230,13 @@ class EngineProcess:
                 raise RuntimeError("private engine cannot be reused after stop or close")
             response = self._exchange(dict(op="run", rows=rows, deadline=self.deadline), self.deadline)
             results = response.get("rows")
+            request_ids = [row["engine_request_id"] for row in results
+                           if type(row) is dict and type(row.get("engine_request_id")) is str
+                           and row["engine_request_id"]] if type(results) is list else []
             if (response.get("kind") != "results" or type(results) is not list or len(results) != len(identities)
+                    or len(request_ids) != len(set(request_ids))
                     or any(type(row) is not dict or any(row.get(key) != item[key] for key in IDENTITY_FIELDS)
-                           or row.get("engine_protocol_error") for row, item in zip(results, identities))):
+                           or "engine_protocol_error" in row for row, item in zip(results, identities))):
                 return self._result_failure(response, identities)
             return results
         except Exception as exc:
@@ -261,7 +265,7 @@ class EngineProcess:
             matches = [(index, row) for index, row in enumerate(raw)
                        if type(row) is dict and row.get("call_id") == item["call_id"]]
             request_id = matches[0][1].get("engine_request_id") if len(matches) == 1 else None
-            request_unique = (request_id is None or sum(type(row) is dict
+            request_unique = (not (type(request_id) is str and request_id) or sum(type(row) is dict
                               and row.get("engine_request_id") == request_id for row in raw) == 1)
             if len(matches) == 1 and request_unique and _verified_terminal(matches[0][1], item, engine_uid):
                 index, row = matches[0]

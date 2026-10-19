@@ -57,10 +57,25 @@ class ReceiptReconciliationTests(unittest.TestCase):
         self.assertFalse(client._broken)
         client.close.assert_not_called()
         self.assertFalse(client.report_path.exists())
+        for absent in (False, True):
+            with self.subTest(request_id_absent=absent):
+                raw = deepcopy(self.good)
+                for row in raw:
+                    row.update(status="unknown", text=None, submission_confirmed=False,
+                               error_type="NotSubmitted", engine_request_id=None,
+                               prompt_tokens=None, completion_tokens=None, total_tokens=None,
+                               prompt_token_ids_json="null", output_token_ids_json="null")
+                    if absent: del row["engine_request_id"]
+                client = fake_process(self.directory.name, dict(kind="results", rows=raw))
+                self.assertIs(client.run_prepared(self.rows), raw)
+                self.assertIsNone(client.last_result_failure)
+                client.close.assert_not_called()
 
     def test_cardinality_order_duplicates_and_foreign_rows_keep_only_unique_actual_receipts(self):
+        empty_markers = {"marker_none": None, "marker_empty": "", "marker_false": False, "marker_object": {}}
         for fault, usage, indexes in (("short", 3, []), ("extra", 9, [3]), ("reorder", 9, []),
-                                      ("duplicate", 6, [0, 3]), ("contradictory", 6, [1])):
+                                      ("duplicate", 6, [0, 3]), ("contradictory", 6, [1]),
+                                      *((name, 9, []) for name in empty_markers)):
             with self.subTest(fault=fault):
                 raw = deepcopy(self.good)
                 if fault == "short": raw = raw[:1]
@@ -68,6 +83,7 @@ class ReceiptReconciliationTests(unittest.TestCase):
                 if fault == "reorder": raw.reverse()
                 if fault == "duplicate": raw.append(deepcopy(raw[0]))
                 if fault == "contradictory": raw[1]["query_id"] = "different-query"
+                if fault in empty_markers: raw[0]["engine_protocol_error"] = empty_markers[fault]
                 response = dict(kind="results", rows=raw)
                 client = fake_process(self.directory.name, response)
                 actual = client.run_prepared(self.rows)
@@ -138,13 +154,19 @@ class ReceiptReconciliationTests(unittest.TestCase):
                     self.assertFalse(actual[0]["submission_confirmed"])
 
     def test_duplicate_native_request_identity_is_not_credited_twice(self):
-        raw = deepcopy(self.good)
-        raw[1]["engine_request_id"] = raw[0]["engine_request_id"]
-        raw.reverse()
-        client = fake_process(self.directory.name, dict(kind="results", rows=raw))
-        actual = client.run_prepared(self.rows)
-        self.assertEqual([row["status"] for row in actual], ["unknown", "unknown", "succeeded"])
-        self.assertEqual(client.last_result_failure["unassociated_result_indexes"], [1, 2])
+        for reverse in (False, True):
+            with self.subTest(reverse=reverse):
+                raw = deepcopy(self.good)
+                raw[1]["engine_request_id"] = raw[0]["engine_request_id"]
+                if reverse: raw.reverse()
+                client = fake_process(self.directory.name, dict(kind="results", rows=raw))
+                actual = client.run_prepared(self.rows)
+                self.assertEqual([row["status"] for row in actual], ["unknown", "unknown", "succeeded"])
+                self.assertEqual(actual[2]["prompt_tokens"], 3)
+                self.assertEqual(client.last_result_failure["unassociated_result_indexes"],
+                                 [1, 2] if reverse else [0, 1])
+                self.assertEqual(json.loads(client.last_result_failure["raw_response_json"])["rows"], raw)
+                self.assertTrue(all(row["engine_protocol_error"] for row in actual))
 
     def test_bad_reply_kind_or_rows_shape_retains_raw_without_attributing_it(self):
         for response in (dict(kind="error", rows=self.good), dict(kind="results", rows={"not": "a list"})):
@@ -205,24 +227,26 @@ class ReceiptReconciliationTests(unittest.TestCase):
 
     def test_imlane_common_marker_ends_model_dispatch_and_enters_existing_audit(self):
         from tests.integrations.test_imlane_filter import FilterTests, FixedEngine, source
-        fixture = FilterTests()
-        fixture.setUp()
-        self.addCleanup(fixture.doCleanups)
-        fixture.config["resources"]["model_batch_rows"] = 1
-        class Marked(FixedEngine):
-            def run_prepared(self, rows):
-                return [dict(row, engine_protocol_error=RESULT_PROTOCOL_ERROR) for row in super().run_prepared(rows)]
-        worker = fixture.worker(Marked)
-        iterator, _ = fixture.iterator(worker, source(), block_rows=3)
-        rows = []
-        with self.assertRaises(ValueError):
-            rows.extend(iterator)
-        self.assertEqual(len(worker.kernel.calls), 1)
-        self.assertEqual(rows[0]["status"], "succeeded")
-        self.assertEqual(rows[0]["prompt_tokens"], 5)
-        self.assertTrue(rows[0]["imlane_protocol_error"])
-        self.assertEqual([row["status"] for row in rows[1:]], ["failed", "failed"])
-        iterator.close()
+        for marker in (RESULT_PROTOCOL_ERROR, None, "", False, {}):
+            with self.subTest(marker=marker):
+                fixture = FilterTests()
+                fixture.setUp()
+                self.addCleanup(fixture.doCleanups)
+                fixture.config["resources"]["model_batch_rows"] = 1
+                class Marked(FixedEngine):
+                    def run_prepared(self, rows):
+                        return [dict(row, engine_protocol_error=marker) for row in super().run_prepared(rows)]
+                worker = fixture.worker(Marked)
+                iterator, _ = fixture.iterator(worker, source(), block_rows=3)
+                rows = []
+                with self.assertRaises(ValueError):
+                    rows.extend(iterator)
+                self.assertEqual(len(worker.kernel.calls), 1)
+                self.assertEqual(rows[0]["status"], "succeeded")
+                self.assertEqual(rows[0]["prompt_tokens"], 5)
+                self.assertTrue(rows[0]["imlane_protocol_error"])
+                self.assertEqual([row["status"] for row in rows[1:]], ["failed", "failed"])
+                iterator.close()
 
 
 class PrivateReceiptIPCTests(unittest.TestCase):
