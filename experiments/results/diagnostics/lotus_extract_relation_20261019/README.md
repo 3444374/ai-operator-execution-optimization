@@ -138,3 +138,23 @@ Extract→Map→Filter 和 unknown 前缀。正常路径每臂 12 笔合成评�
 空 Filter 差分；51 项 CPU／43 subtests 通过。两个额外独立 native 测试占位仍 pending／skip，
 与上述四项实际 native CPU 用例分列。初始缺少 API 的 RED、首版 51／41 及独审发现的 int→bool
 宽松相等反例均保留；修后拒绝 bool／float 转换。此处不升级原 MFE 或新增真实模型资格。
+
+## 空关系列类型的显式 prototype
+
+IMLane 独立 Map／Extract 链的 CPU 用例发现：原 LOTUS 1.2.4 对空表执行 `sem_map(..., suffix="derived0")`，
+以空输出列表赋值，新增列为 float64；覆盖已有文本列时也可能得到 float64。只有空 records、有序列名
+和源 Index 的旧装配生成 object，严格 `assert_frame_equal` 因此失败。原接口承诺的是 Index metadata，
+并未承诺从空记录推断列类型；精确原始 RED 保留，默认路径继续保持原行为。
+
+共享装配新增可选 `records_to_frame(..., empty_prototype=final_empty_frame)`。prototype 必须是零行
+pandas DataFrame，包含最终关系的唯一有序字符串列；显式 `columns` 必须与其完全同序。
+空输出复制其列 dtype、列 metadata 和 Index；若同时提供 `source_index`，仍以显式源 Index 的空切片为准。
+prototype 不修改调用方原件，也不转换非空结果的类型、补全缺键或过滤 Extract 实际输出键。
+无 prototype 的旧调用保持原 pandas 推断。不能拿源空表替代 Map 后的最终 schema，不能按列名硬编码
+float64；消费者需保留实际最终关系的零行原件或提供已核准的等价 metadata。
+
+[固定 CPU 摘要](empty_frame_verification.json)保留精确 dtype RED、缺少新接口的合同 RED 和 GREEN。
+7 项新测试包含在 50 项共享方法／Index／关系回归中，零 failure／error／skip；不重复相加。
+测试覆盖原 LOTUS 空 Map 新列与覆盖列、空 Filter 的源 extension dtype、列序不符／非零行／坏 schema
+拒绝、复制不改源、显式 Index 优先及非空额外空键。原 LOTUS formatter／parser、后端图和引擎均未改。
+此处是 sink metadata 消费接口，不会自动迁移 IMLane 调用方；新原生组合及真实模型仍按各自资格另验。

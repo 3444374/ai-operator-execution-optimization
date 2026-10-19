@@ -8,6 +8,8 @@
 
 ## 本轮 records 共享增量
 
+`records_to_frame` 新增显式[空关系 prototype](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)，复制调用方保留的最终零行列类型／元数据，不猜 Map dtype；7 项新测试包含在 50 项共享 CPU 回归中，原 LOTUS 空 Map／Filter 差分通过。默认及非空装配保持，IMLane 调用方接入另验；未新增模型资格。
+
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
 后续修复原 parser 额外空字段名在后继 schema 被误拒绝的问题；39 项 CPU／17 subtests 通过，2 native 用例仍 pending，见[兼容回归](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。
 [Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，2 额外 native 测试占位另列。原 MFE 不改写，真实新关系模型及 GPU 仍待验。

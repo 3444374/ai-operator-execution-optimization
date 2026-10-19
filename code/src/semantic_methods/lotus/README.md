@@ -52,6 +52,11 @@ Ray／Daft 各段仍由 native graph 执行，完整 EOF／覆盖／成功后才
 成本与每实例调用上限分列。默认非末端 guard 保留，不增加通用 DAG。
 最终 `records_to_frame(records, columns=..., source_index=source_frame.index)` 可保留原 Index 的
 dtype／name 和空切片类型；消费者需保存原 metadata，无参数时保持旧推断行为。
+空结果的列 dtype 另由可选 `empty_prototype=final_empty_frame` 提供：它必须是最终关系的零行
+DataFrame，有序列须与显式 `columns` 完全相同；装配复制其列类型及元数据，显式 `source_index`
+仍优先。非空记录不据此转换类型或筛除实际 Extract 键，无 prototype 时保留旧推断。
+原 LOTUS 的空 Map 新列及覆盖列均可为 float64，不能只凭列名或源 schema 补猜；
+调用方应保留最终空关系原件，见[差分与限制](../../../../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)。
 
 旧配置缺少 `resolved_input_columns` 时仍读为 `None`，caller 绑定默认 Q3 后固定为
 `("reviewText",)`；旧 Q3 消息和 call IDs 保持。`dataclasses.asdict()` 的新输出会新增该字段

@@ -1,0 +1,76 @@
+{
+  "schema": "semloom.lotus_empty_frame_prototype_cpu.v1",
+  "source_parent": "82e685b3233e6524732934bbf220fb5563e515f8",
+  "source_commit": "f977c9792ad730a8bdf05cbc9ef5637fab110add",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "4d3fef8b84b4d4d7581546199ee968950883cc1334e3f76243cff173cf461b40",
+    "code/tests/semantic_methods/test_lotus_record_frame_index.py": "ab4efa8f73c3876938a4d78bbced62190ef7e7f9877065bbb0679be62dfc7834"
+  },
+  "api": "records_to_frame(records, *, columns=None, source_index=None, empty_prototype=None)",
+  "cause": "No occurrences remain from which pandas can infer the original column dtypes. LOTUS empty sem_map assigns an empty output list, yielding float64 for the tested new or overwritten output column; the legacy record constructor infers object.",
+  "contract": {
+    "prototype": "Optional zero-row pandas DataFrame of the final relation, with unique ordered string columns and a single Index.",
+    "columns": "Explicit columns must exactly match prototype order for an empty result.",
+    "index": "Explicit source_index takes precedence; otherwise preserve the prototype Index.",
+    "nonempty": "Keep existing record-value inference and actual Extract keys; never cast from the prototype.",
+    "defaults": "Unchanged. Without a prototype, no column dtype parity is promised for an empty result.",
+    "ownership": "Caller retains verified final metadata; the helper copies it and does not execute methods, infer a Map dtype or migrate native callers."
+  },
+  "upstream": {
+    "lotus_version": "1.2.4",
+    "commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "sem_map_sha256": "bfa7465c0cb2c0440e9c0cfb9ea3f394afa60b93c593472c2cab55994a456b16",
+    "pandas": "2.3.3",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "python": "3.12.6"
+  },
+  "validation": {
+    "new_tests": 7,
+    "shared_suite_tests_including_new": 50,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "source_bytes_unchanged_during_runs": true,
+    "test_snapshot": "At run time HEAD was source_parent with the two source/test files modified. Their exact hashes above were subsequently committed unchanged as source_commit.",
+    "regressions": [
+      "original LOTUS empty Map new and overwritten columns",
+      "original empty Filter extension source dtype",
+      "schema and column-order validation",
+      "prototype copied without input mutation",
+      "explicit Index precedence",
+      "nonempty values and extra empty Extract key preserved"
+    ],
+    "original_red": "Retained as the legacy missing-metadata symptom; existing no-prototype behavior remains compatible.",
+    "contract_red": "Retained before adding the new keyword parameter.",
+    "provider_boundary": "Original LOTUS formatting/accounting with fixed CPU inputs and a failing litellm.completion guard; no model execution.",
+    "initial_import_note": "The first standalone reproduction attempted a public LiteLLM cost-map fetch and fell back locally; subsequent test runs force the bundled cost map."
+  },
+  "evidence": {
+    "private_directory": "task-8/nonmodel-evidence/empty-frame-schema-r1",
+    "sha256": {
+      "reproduce-red.json": "aa1560e537523fc7c056223ebb805bd8167ae1fb834dba8fa553fb3ad7134a8c",
+      "contract-red.json": "a7e3bbaf048a892bf802e60668f7f804879dacdb204440867698bae06fbfda26",
+      "contract-red.log.txt": "1e6f4839e39cda2f35be2020ecf581f8dd2ebdf319af767a9a392fc8a5d82393",
+      "contract-green.json": "ac659b011c742c69967ff86da75ab82d8359ae2906b4bfaa3aba4c9e846aba14",
+      "contract-green.log.txt": "54337fd4b0b4d5771e49441c27ed3c9feebd948c9b269da999b7c9371a013ab4",
+      "shared-regression-green.json": "b203e78d22ab7bc486b0ac48c4708d1b24855cc908e4f0b5d8487320e74738e0",
+      "shared-regression-green.log.txt": "26574b0527f72de9de99d382ee3b26eeadf5485fcbe5482fe6dae18be03dae6f",
+      "standards-pass-r1.json": "45f94fada13ddcafab36d26306434fa7c96eee90e21d9c691d8437826fc0f43a",
+      "spec-review.json": "79372417441a33659ac0126d62996e8e646ee70b0f4ed890f0dbf2ed8e695728"
+    }
+  },
+  "reviews": {
+    "Standards": "PASS",
+    "Spec": "PASS",
+    "remaining_findings": 0
+  },
+  "limitations": [
+    "IMLane consumer must explicitly supply final empty metadata and rerun its own assembly regression.",
+    "No default implicit dtype inference is added.",
+    "No native graph, model or GPU qualification is transferred."
+  ],
+  "model_calls": 0,
+  "gpu_actions": 0,
+  "server_actions": 0
+}

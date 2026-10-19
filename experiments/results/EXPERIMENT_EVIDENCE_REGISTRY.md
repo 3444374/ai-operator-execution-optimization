@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[空关系列类型的显式 prototype](diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)。原 LOTUS 空 Map 新列／覆盖列为 float64，而无 metadata 的旧装配为 object；精确 RED 保留。新增 opt-in 零行 DataFrame 元数据，7 新项包含在 50 项共享 CPU 回归中；默认／非空推断和 Extract 实际键保持，未自动迁移调用方或升级模型资格。
+
 2026-10-19：[IMLane通用级联阶段API](diagnostics/imlane_cascade_cpu_20261019/README.md)。22e82选择10代码／局部报告文件为4f1cde99，保留原全局方法和作者调度／输出所有权；17本机CPU及初始失败／skip分列，新作者CPython包已交唯一执行会话但未收到实测，模型／GPU／公共selector不转授。
 
 2026-10-19：[Async actor／Core／公开入口及关闭交接](diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)。原130／40合同、五个真实CPU传输scope、knownusage RED→GREEN与独立原parser／COUNT／evaluator CPU闭环按来源分列；最后两scope分别15／17 observed退出，unknown额度与已知usage分别保留，无真实AsyncLLM／GPU／性能结论。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：为最终空关系保留显式列类型
+
+IMLane 独立链发现空 Map 的严格 pandas dtype 差异。原 LOTUS 空 Map 新列及覆盖已有列可为 float64，只有 records／columns／Index 不能恢复该类型。共享 `records_to_frame` 新增 `empty_prototype`，只复制最终零行 schema／元数据；显式源 Index 优先，默认与非空推断保持，不复制 dtype 推断或算子循环。精确原始 RED 与合同 RED 保留，7 新测试包含在 50 项共享 CPU 回归中，原 LOTUS Map／Filter 差分通过。调用方须显式传最终 metadata，IMLane 接线与模型资格另验；本轮模型／GPU／服务器操作均为零。[合同与固定证据](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)。
+
 ## 2026-10-19：收口 Async 原查询与通用级联 CPU 接点
 
 显式Async Core／CLI接纳并修复完整TaskKey的关闭knownusage补账，原取消／unknown额度不释放；实际CPU Movie闭环运行原parser／COUNT／evaluator，COUNT2、22／2／24合成usage与Core额度／refs0，17个observed身份退出。通用级联接纳原LOTUS全局控制、Ray／Daft／Core后端及独立cascade-check／cascade-run；IMLane22e82仅选择10代码／局部报告文件为4f1cde99，17本机CPU及作者实测pending分列。Core关窗15／16／20及项目supervisor可选诊断隔离分别取得19／9、28／24 CPU回归和独审，默认同步与原生调度保持。来源分列于[Async报告](experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)、[级联合同](code/src/semantic_methods/lotus/cascade.README.md)及[监督器修复](experiments/results/diagnostics/lotus_records_local_model_20261016/supervisor_cleanup_cpu.json)；不重跑已完成模型单元或转授其资格。
