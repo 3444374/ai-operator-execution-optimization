@@ -128,6 +128,26 @@
         "oversized successful response lost known usage"
       ],
       "reproduced_with_original_source": true
+    },
+    "standards_followup": {
+      "source_commit": "66778824",
+      "status": "passed_no_new_code_findings",
+      "passed": 104,
+      "subtests_passed": 32,
+      "source_sha_matches": 5,
+      "log_sha_matches": 2,
+      "remaining_evidence_action": "explicitly include the two ignored raw logs in the final evidence-only commit"
+    },
+    "spec_followup": {
+      "source_commit": "66778824",
+      "status": "passed_no_new_spec_findings",
+      "passed": 26,
+      "subtests_passed": 6,
+      "additional_targeted_counterexamples": 4,
+      "closed_findings": [
+        "EOF cancellation and deadline each prevent dispatch",
+        "bounded overflow receipts preserve known usage; confirmed failures settle; unknown retains capacity"
+      ]
     }
   },
   "remaining": [
