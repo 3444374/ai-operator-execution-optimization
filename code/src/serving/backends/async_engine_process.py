@@ -28,6 +28,14 @@ _OPEN_FRAME_BYTES = 64 * 1024
 _CODE_ROOT = Path(__file__).resolve().parents[3]
 
 
+def _close_sockets(sockets, errors):
+    for sock in sockets:
+        try:
+            sock.close()
+        except Exception as error:
+            errors.append("socket_close: " + type(error).__name__)
+
+
 def _frame(value, maximum):
     data = bytearray()
     for piece in json.JSONEncoder(ensure_ascii=False, allow_nan=False,
@@ -126,31 +134,33 @@ class AsyncEngineProcess:
         self._query_id = None
         self.process = None
         self._thread = None
-        pairs = [socket.socketpair() for _ in range(3)]
-        self._data, self._control, self._results = [pair[0] for pair in pairs]
-        children = [pair[1] for pair in pairs]
-        for sock in (self._data, self._control, self._results):
-            sock.setblocking(False)
+        self._data = self._control = self._results = None
+        self._sockets = []
+        children, setup_errors = [], []
         try:
-            opening = _frame(dict(op="open", owner_uid=self._owner_uid, engine=asdict(self.spec),
-                generation=asdict(self.generation), limits=asdict(self.limits)),
-                min(self.limits.control_frame_bytes, _OPEN_FRAME_BYTES))
-            self._controls.append(opening)
-            self.process = subprocess.Popen(self._command(self.spec, [s.fileno() for s in children]),
-                pass_fds=tuple(s.fileno() for s in children), start_new_session=True,
-                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                env=dict(os.environ, PYTHONPATH=str(_CODE_ROOT), HF_HUB_OFFLINE="1",
-                         TRANSFORMERS_OFFLINE="1"), bufsize=0)
-            self._thread = threading.Thread(target=self._io, name="semloom-async-engine-ipc", daemon=True)
-            self._thread.start()
-        except BaseException:
-            self.close(timeout=1)
-            raise
-        finally:
-            for sock in children:
-                sock.close()
-        deadline = time.monotonic() + startup_timeout_s
-        try:
+            try:
+                for name in ("_data", "_control", "_results"):
+                    parent, child = socket.socketpair()
+                    self._sockets.extend((parent, child))
+                    children.append(child)
+                    setattr(self, name, parent)
+                    parent.setblocking(False)
+                opening = _frame(dict(op="open", owner_uid=self._owner_uid, engine=asdict(self.spec),
+                    generation=asdict(self.generation), limits=asdict(self.limits)),
+                    min(self.limits.control_frame_bytes, _OPEN_FRAME_BYTES))
+                self._controls.append(opening)
+                self.process = subprocess.Popen(self._command(self.spec, [s.fileno() for s in children]),
+                    pass_fds=tuple(s.fileno() for s in children), start_new_session=True,
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    env=dict(os.environ, PYTHONPATH=str(_CODE_ROOT), HF_HUB_OFFLINE="1",
+                             TRANSFORMERS_OFFLINE="1"), bufsize=0)
+                self._thread = threading.Thread(target=self._io, name="semloom-async-engine-ipc", daemon=True)
+                self._thread.start()
+            finally:
+                _close_sockets(children, setup_errors)
+            if setup_errors:
+                raise RuntimeError("async engine child socket cleanup failed")
+            deadline = time.monotonic() + startup_timeout_s
             with self._condition:
                 while self.ready_report is None and self._broken is None:
                     remaining = deadline - time.monotonic()
@@ -159,8 +169,21 @@ class AsyncEngineProcess:
                     self._condition.wait(min(0.05, remaining))
                 if self._broken is not None:
                     raise RuntimeError("async engine startup failed: " + self._broken)
-        except BaseException:
-            self.close(timeout=1)
+        except BaseException as startup_error:
+            cleanup_deadline = time.monotonic() + 1
+            try:
+                self.close(timeout=1)
+            except BaseException as cleanup_error:
+                errors = ["startup_cleanup: " + type(cleanup_error).__name__]
+                self._finish_io(cleanup_deadline, errors)
+                self.last_close_report = dict(status="unknown", process_exit_confirmed=False,
+                    gpu_exit_confirmed=None, descendants_exit_confirmed=None, io_thread_closed=False,
+                    cleanup_scope="async_engine_api_and_direct_child", cleanup_errors=errors)
+            self.last_close_report["cleanup_errors"].extend(setup_errors)
+            # The caller can inspect the scoped receipt and retry this same owned
+            # child if cleanup was unconfirmed, without losing the startup cause.
+            startup_error.async_close_report = self.last_close_report
+            startup_error.async_engine_process = self
             raise
 
     @staticmethod
@@ -421,41 +444,65 @@ class AsyncEngineProcess:
     def close(self, timeout=15):
         common._number(timeout, "close timeout", low=0, inclusive_low=False)
         deadline = time.monotonic() + timeout
-        with self._condition:
-            self._closing = True
-            while self.engine_close_report is None and self.process is not None and self.process.poll() is None:
-                remaining = deadline - time.monotonic()
-                if remaining <= min(1, timeout / 3):
-                    break
-                self._condition.wait(min(0.05, remaining))
-        if self.process is not None:
-            try:
-                self.process.wait(timeout=max(0, deadline - time.monotonic()) / 2)
-            except subprocess.TimeoutExpired:
-                self.process.terminate()
+        errors = []
+        try:
+            with self._condition:
+                self._closing = True
+                while self.engine_close_report is None and self.process is not None and self.process.poll() is None:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= min(1, timeout / 3):
+                        break
+                    self._condition.wait(min(0.05, remaining))
+            if self.process is not None:
                 try:
                     self.process.wait(timeout=max(0, deadline - time.monotonic()) / 2)
                 except subprocess.TimeoutExpired:
-                    self.process.kill()
-                    self.process.wait(timeout=max(0.01, deadline - time.monotonic()))
-        self._io_done.wait(max(0, deadline - time.monotonic()))
-        self._stop.set()
-        for sock in (self._data, self._control, self._results):
-            sock.close()
-        if self._thread is not None:
-            self._thread.join(max(0, deadline - time.monotonic()))
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=max(0, deadline - time.monotonic()) / 2)
+                    except subprocess.TimeoutExpired:
+                        self.process.kill()
+                        self.process.wait(timeout=max(0, deadline - time.monotonic()))
+        except Exception as error:
+            errors.append("direct_child_cleanup: " + type(error).__name__)
+        finally:
+            try:
+                if self._thread is not None:
+                    self._io_done.wait(max(0, deadline - time.monotonic()))
+            except Exception as error:
+                errors.append("io_drain: " + type(error).__name__)
+            self._finish_io(deadline, errors)
         with self._condition:
             self._uncertain("ClosedWithoutConfirmedTerminal")
             usage = self._usage()
-            exited = self.process is None or self.process.poll() is not None
+            exited = self.process is None
+            try:
+                if self.process is not None:
+                    exited = self.process.poll() is not None
+            except Exception as error:
+                errors.append("direct_child_poll: " + type(error).__name__)
             api = (self.engine_close_report or {}).get("engine_api_shutdown_confirmed") is True
-            thread_closed = self._thread is None or not self._thread.is_alive()
+            thread_closed = self._thread is None
+            try:
+                if self._thread is not None:
+                    thread_closed = not self._thread.is_alive()
+            except Exception as error:
+                errors.append("io_thread_status: " + type(error).__name__)
             self.last_close_report = dict(status="closed" if exited and api and thread_closed
-                and not usage["active_requests"] else "unknown", cleanup_scope="async_engine_api_and_direct_child",
+                and not usage["active_requests"] and not errors else "unknown", cleanup_scope="async_engine_api_and_direct_child",
                 process_exit_confirmed=exited, gpu_exit_confirmed=None,
                 descendants_exit_confirmed=None, engine_api=self.engine_close_report,
-                io_thread_closed=thread_closed, **usage)
+                io_thread_closed=thread_closed, cleanup_errors=errors, **usage)
             return self.last_close_report
+
+    def _finish_io(self, deadline, errors):
+        self._stop.set()
+        _close_sockets(self._sockets, errors)
+        if self._thread is not None:
+            try:
+                self._thread.join(max(0, deadline - time.monotonic()))
+            except Exception as error:
+                errors.append("io_thread_join: " + type(error).__name__)
 
 
 async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngine):
