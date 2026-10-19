@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import json
+import threading
 import time
 from types import SimpleNamespace
 import unittest
@@ -139,6 +140,57 @@ class AsyncCoreCompositionTests(unittest.TestCase):
                 closed = owner.close(timeout=3)
             self.assertEqual(closed["status"], "closed")
             self.assertTrue(closed["transport_closed"])
+
+    def test_next_core_session_waits_for_prior_async_ack_without_resubmitting(self):
+        rows = self.rows(["fast"])
+        ack_started, release_ack, next_started = (threading.Event() for _ in range(3))
+        original_ack = AsyncCoreModelActor.acknowledge_core
+        original_run = AsyncCoreModelActor.run_core
+
+        def delayed_ack(actor, key):
+            if key == (0, 0):
+                ack_started.set()
+                if not release_ack.wait(3):
+                    raise TimeoutError("test did not release the owned acknowledgement")
+            return original_ack(actor, key)
+
+        def observe_next(actor, prepared, deadline, maximum, key):
+            if key[0] == 1:
+                next_started.set()
+            return original_run(actor, prepared, deadline, maximum, key)
+
+        with ThreadedRuntime(rows) as runtime, \
+                patch.object(AsyncCoreModelActor, "acknowledge_core", delayed_ack), \
+                patch.object(AsyncCoreModelActor, "run_core", observe_next), \
+                ThreadPoolExecutor(max_workers=1) as pool:
+            owner = self.owner()
+            try:
+                first = list(owner.evaluate(Source(rows), query_id="repeat-query"))
+                self.assertTrue(ack_started.wait(3))
+                actor = runtime.async_actors[0].instance
+                self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
+                self.assertEqual(actor.snapshot()["held_requests"], 1)
+
+                def release_after_next_arrives():
+                    try:
+                        self.assertTrue(next_started.wait(3))
+                        time.sleep(0.03)
+                        self.assertEqual(actor.engine._sequence, 1)
+                        self.assertEqual(actor.snapshot()["held_requests"], 1)
+                    finally:
+                        release_ack.set()
+
+                releasing = pool.submit(release_after_next_arrives)
+                second = list(owner.evaluate(Source(rows), query_id="repeat-query"))
+                releasing.result(3)
+                self.assertEqual(first[0]["call_id"], second[0]["call_id"])
+                self.assertEqual(second[0]["status"], "succeeded")
+                self.assertEqual(actor.engine._sequence, 2)
+                self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
+            finally:
+                release_ack.set()
+                closed = owner.close(timeout=3)
+            self.assertEqual(closed["status"], "closed")
 
 
 if __name__ == "__main__":
