@@ -3,7 +3,7 @@
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
 main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
-维护日期：2026-10-16。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
+维护日期：2026-10-19。系统名称为 **SemLoom**，DB-AIEL 仅表示架构层；术语见 [CONTEXT](CONTEXT.md)。
 本文维护方向、研究内容与执行顺序；实现事实归[代码状态](code/INFRA_STATUS.md)，
 证据身份归[台账](experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)，完整数字、失败与重复归原报告。
 
@@ -21,9 +21,9 @@ PostgreSQL 是其中一种接入。各前端保留自身语义与生命周期，
 
 LOTUS 主线保留 SemBench 任务评价与 LOTUS 原算法及优化；下一单元限定[普通／级联 Filter 的记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)。
 records→结果独立建设；旧 request 冻结接入范围作参照和选择性复用，不作为新主链的接口或重构前提。
-SemLoom 以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；
+LOTUS 目标配置以 Daft 扫描／普通关系处理＋Ray Core／Actor 为底座，自管准备、供给与回收；Core 的中立接口不要求所有路径采用该配置。
 Ray Data／Daft／IMLane 各自原生执行，不经过 SemLoom Core。职责及当前请求接点与目标入口的区别见[架构](experiments/plans/系统架构.md#lotus-data-execution)。
-实际模型实例纳入执行 worker／actor 是明确的后续目标：[第二层接点](experiments/plans/系统架构.md#model-engine-execution)沿 records 合同接受受支持模型输入并调用真实推理 API。
+实际模型实例纳入执行 worker／actor 的[第二层接点](experiments/plans/系统架构.md#model-engine-execution)沿 records 合同接受受支持模型输入并调用真实推理 API；分支实施与 main 接纳分开解释。
 先以文本小单元取得资格，再保持 Animals 原任务验证 VLM；不等待全部 HTTP 后端／图像矩阵，HTTP 流水仍作阶段实现与参照。
 
 研究按真实路径测量、已有原生批执行与有界流水、数据驻留／复用和多卡负载、拓扑执行组、必要跨卡传输推进；
@@ -195,6 +195,8 @@ HSE（Heterogeneous Staged Execution，异构分阶段执行）已有 encoded／
 已有 batch／有界流水是执行底座；表示、驻留、复用和后继消费的净增量仍需匹配对照。
 
 ## 3. 系统与实验边界
+
+下图仅描述数据库接入配置；LOTUS 等路径由各自工作负载与方法提供语义，不以 SQL 输入或同一数据读取设施为前提。
 
 ```text
 PostgreSQL SQL `ai_semantic.map(...)`
@@ -387,19 +389,23 @@ Project all-at-t0 single-short 诊断已补齐统一 T0–T4 计时：T0 profile
 
 ## 8. 当前执行顺序
 
+本表安排目标工作；功能分支已完成的接口和各自资格从[固定实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对，不重复列为新建任务。
+
 | 顺序与对象 | 要回答的问题 | 参照与当前范围 |
 |---|---|---|
 | 原生 Ray Data 普通 Filter 首闭环 | 独立 records 主链能否保留同一 SemBench 查询和原方法结果 | 直接与原生 LOTUS 核对，旧 adapter 仅补充参照；[方法差分与真实库资格](experiments/plans/数据组织.md#lotus-filter-data-execution)先于性能 |
 | 同范围原全局级联 | Q3 helper、样本、校准、阈值、回退与合并是否保留 | 在普通闭环上逐项核对原 LOTUS 动态算法，不按物理批次重跑校准 |
 | Ray Data／SemLoom 静态首两臂 | Daft＋Ray Core／Actor 能否独立完成同任务，是否仍有可归属损耗 | 首切片可先行；最终对照必须补齐 Daft、Ray Data、IMLane，保留原生 LOTUS 及 SemLoom 静态／候选 |
-| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [具体文件与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)：CPU 合同→文本同步 GPU 资格→有界异步供给→Animals 同任务 VLM→匹配完整查询；均待实现／验证，不等待完整 HTTP 矩阵 |
-| 后续：普通 Map／有限 Filter→Map | 第二个真实使用者能否复用方法与模型设施，生成列能否进入后继 | [扩展路线](experiments/plans/数据组织.md#lotus-operator-extension)与原级联接线可并行；当前 Filter／baseline 实现继续，不先扩所有算子 |
+| 并行：模型执行纳入数据链 | 常驻引擎能否在同一方法合同下消费准备输入并正确恢复结果 | [实施与验证路线](experiments/plans/数据组织.md#model-engine-roadmap)分别解释已完成接口、固定来源模型资格和剩余范围，不等待完整 HTTP 矩阵 |
+| 并行：普通方法／有限链复用 | 换任务或组合 Map→Filter 能否复用方法、模型与原生接线 | [扩展路线](experiments/plans/数据组织.md#lotus-operator-extension)与原级联接线并行；已支持节点按实际组合核验，不为每条链复制执行器 |
 | 真实完整路径测量 | 时间花在准备、搬运、执行还是结果消费；原生生命周期需要什么 | [数据组织](experiments/plans/数据组织.md#single-gpu-image-critical-path)与[计时规范](experiments/plans/reference/对照规范.md#resident-query-timing)；冷算子和常驻查询分列 |
 | 已有原生批执行与有界流水 | 合理 batch、CPU/GPU callable 池和背压下，还剩哪些可归属损耗 | 原生 Ray Data、Direct 及已有高效静态／HSE；不重新实现这些能力作为创新 |
 | 表示、驻留／复用与多卡负载 | 是否减少准备、实际复制或重复计算，是否改善整批完成 | 保留原生热缓存与生命周期；表示选择和渐进准备尚未实现，多卡净收益尚未验证 |
 | 拓扑执行组 | 只有实际放置／消费信息可得时，分组是否值得 | 先验证信息与必要动作，不用 unknown locality 推导收益 |
 | 必要跨卡传输 | 本地复用和负载安排仍不足时，传输是否在关键路径 | 使用已有传输设施；CUDA／NCCL 不在重写范围 |
 | 后续共享与训练 | 何时存在多查询竞争或训练供给需求 | 各自定义任务与质量，不能由推理软件检查推定训练或公平性收益 |
+
+图像复用、多卡与训练按各自任务独立验证，不作为所有现有文本路径或 CPU 接口检查的前置项。
 
 PG 接入随实际路径核对同步语义、关联／顺序、快照／权限、取消与资源责任；
 独立核心和外部 LOTUS／PZ 工作负载保持原身份，不等待无关 Filter 第二路径，也不自动取得 PG 资格。
