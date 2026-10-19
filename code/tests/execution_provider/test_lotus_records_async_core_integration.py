@@ -212,13 +212,14 @@ def cpu_runtime(*, count=2, unknown_rows=(), close_error=False):
             max_active_batches=2, query_timeout_s=90, startup_timeout_s=60)
         limits = AsyncEngineLimits(max_inflight=2, result_slots=2,
             input_bytes=4 * 1024**2, result_bytes=4 * 1024**2, command_slots=2, control_slots=4)
-        runtime = SimpleNamespace(source=source, control=control, owner=None, closed=None,
+        runtime = SimpleNamespace(source=source, control=control, owner=None, actor_owner=None, closed=None,
                                   cancelled=threading.Event(), threads=[])
         try:
             ray.init(address='local', num_cpus=3, num_gpus=0, include_dashboard=False,
                 object_store_memory=80 * 1024**2, _temp_dir=ray_temp, _node_ip_address='127.0.0.1')
             with patch.object(EngineSpec, 'validate_driver_environment', return_value={'scope': 'CPU fixture'}):
                 actors = CpuActorOwner(method, spec, generation, resources, limits=limits)
+                runtime.actor_owner = actors
                 runtime.owner = SemLoomRecordsCore(method, spec, generation, resources, actor_owner=actors)
                 yield runtime
         finally:
@@ -433,6 +434,73 @@ class AsyncCoreIntegrationTests(unittest.TestCase):
             self.assertIsNone(close['gpu_exit_confirmed'])
             self.save('close-error', dict(known=known, late=late, close=close,
                 actual_model_calls=0, fixture_evaluations=2, query_success_restored=False))
+
+    def test_owned_actor_death_keeps_unknown_credit_and_known_prefix(self):
+        import ray
+        from src.semantic_methods.lotus.records import CallLedger
+
+        with cpu_runtime() as runtime:
+            owner, control = runtime.owner, runtime.control
+            query_id = 'async-owned-actor-death'
+            stream = owner.evaluate(runtime.source, query_id=query_id, cancelled=runtime.cancelled.is_set)
+            errors = self.release_second(runtime)
+            known = next(stream)
+            self.assertEqual(errors, [])
+            self.assertEqual((known['source_position'], known['status'], known['total_tokens']),
+                             (1, 'succeeded', 12))
+            entered = control.entered()
+            held = next(row for row in entered if row['source_position'] == 0)
+            self.assertEqual(len(entered), 2)
+            self.assertFalse(control.finished(held['call_id']))
+            before = asdict(owner.core.capacity.usage())
+            self.assertEqual(before['active_requests'], 1)
+            self.assertEqual(before['held_tasks'], 1)
+            self.assertEqual(owner.transport.retained_refs(), 1)
+
+            # This exact handle belongs to this fixture. The failure travels
+            # through the real Ray future; no terminal or ActorDiedError is injected.
+            ray.kill(runtime.actor_owner.model_actor, no_restart=True)
+            with self.assertRaises(RuntimeError) as failure:
+                next(stream)
+            self.assertIn('MODEL_UNAVAILABLE', str(failure.exception))
+            after = asdict(owner.core.capacity.usage())
+            self.assertEqual(after, before, 'actor death cannot confirm the remote terminal')
+            self.assertEqual(owner.transport.retained_refs(), 1)
+            self.assertFalse(control.finished(held['call_id']))
+            with self.assertRaises(RuntimeError):
+                owner.evaluate(runtime.source, query_id='cannot-replace-dead-actor-query')
+            self.assertEqual(control.entered(), entered, 'rejected query must not send new work')
+
+            ledger = CallLedger(runtime.source.expected(query_id), 2)
+            ledger.record(known)
+            # The missing receipt has no authoritative engine usage. This is
+            # an independent experiment-ledger placeholder, not an engine result.
+            ledger.mark_unconfirmed('OwnedRayActorDeathUnconfirmed')
+            calls = ledger.report()
+            self.assertEqual(calls['counts']['succeeded'], 1)
+            self.assertEqual(calls['counts']['unknown'], 1)
+            self.assertEqual(calls['usage']['known_prompt_tokens'], 11)
+            self.assertEqual(calls['usage']['known_completion_tokens'], 1)
+            self.assertIsNone(calls['usage']['total_tokens'])
+            missing = next(row for row in calls['records'] if row['source_position'] == 0)
+            self.assertFalse(missing['submission_confirmed'])
+            self.assertIsNone(missing['prompt_tokens'])
+            self.assertIsNone(missing['completion_tokens'])
+            close = owner.close(timeout=5)
+            self.assertEqual(close['status'], 'unknown')
+            self.assertEqual(close['core_usage'], before)
+            self.assertEqual(close['retained_remote_inputs'], 1)
+            self.assertIsNone(close['gpu_exit_confirmed'])
+            self.assertNotEqual((close['model_owner'].get('engine_close_report') or {}).get(
+                'engine_api_shutdown_confirmed'), True)
+            self.assertEqual(known['total_tokens'], 12)
+            self.save('actor-death', dict(known=known, held_identity=held, calls=calls,
+                primary_error_type=type(failure.exception).__name__, primary_error=str(failure.exception),
+                usage_before=before, usage_after=after, close=close, entered=entered,
+                actual_model_calls=0, fixture_evaluations=2, query_success_restored=False,
+                actor_kill_scope='exact owned zero-GPU model actor; no restart',
+                unknown_placeholder_source='experiment ledger; missing engine receipt',
+                physical_gpu_exit_checked=False))
 
 
 if __name__ == '__main__':
