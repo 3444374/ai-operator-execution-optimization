@@ -1,0 +1,36 @@
+CPU source audit only; no HTTP, model, Ray or installs.
+cwd <local-path>
+versions {"lotus-ai": "1.2.4", "litellm": "1.95.0", "openai": "2.50.0", "pandas": "2.3.3"}
+env_overrides {"LITELLM_LOCAL_MODEL_COST_MAP": "True", "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "code"}
+SOURCE_SHA256 <local-path> 0f58eda86d645b85b8659591d61366a86809a4d189dbec6c491fe5b4628c163a
+SOURCE_SHA256 <local-path> 8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956
+SOURCE_SHA256 <local-path> 059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3
+SOURCE_SHA256 code/src/semantic_methods/lotus/record_chain.py cfa0b830908fba94c583c791648ced3d226cb05333db2dce38f0e0cceb56d2da
+SOURCE_SHA256 code/src/baselines/text/frameworks/lotus_chain_results.py 740e8b96ff924f59d8fa60a62e281760ee70b7df305ebe7c484673df124e1b36
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 1 global duplicate-label broadcasts preserve occurrences {"index": [7, 9, 7], "field": ["last", "base1", "last"], "source_refs": [{"reviews": {"row_id": "r0"}}, {"reviews": {"row_id": "r1"}}, {"reviews": {"row_id": "r2"}}]}
+PASS 2 per-physical-batch completion is insufficient {"batch_local": ["first", "base1", "last"], "global": ["last", "base1", "last"]}
+PASS 3 dynamic key order and undeclared/missing keys {"columns": ["text", "field", "z", "row_id", "a", "b"], "missing_a_at_label7": [null, null], "stringified_z": ["1", "1"], "stringified_b": ["True", "True"]}
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 4 native successor Filter consumes final broadcast values {"kept_index": [7, 7], "calls": 3, "extract_usage": {"virtual_usage": {"prompt_tokens": 33, "completion_tokens": 9, "total_tokens": 42, "total_cost": 0.0, "cached_prompt_tokens": 0, "cache_creation_tokens": 0}, "physical_usage": {"prompt_tokens": 33, "completion_tokens": 9, "total_tokens": 42, "total_cost": 0.0, "cached_prompt_tokens": 0, "cache_creation_tokens": 0}, "cache_hits": 0, "operator_cache_hits": 0}, "filter_usage": {"virtual_usage": {"prompt_tokens": 33, "completion_tokens": 9, "total_tokens": 42, "total_cost": 0.0, "cached_prompt_tokens": 0, "cache_creation_tokens": 0}, "physical_usage": {"prompt_tokens": 33, "completion_tokens": 9, "total_tokens": 42, "total_cost": 0.0, "cached_prompt_tokens": 0, "cache_creation_tokens": 0}, "cache_hits": 0, "operator_cache_hits": 0}}
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 5 native successor Map consumes final broadcast values {"mapped": ["mapped-last", "mapped-base1", "mapped-last"], "calls": 3}
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 6 sparse successor input and nullable conversion need explicit contract {"object_doc": "[X]: «None»\n", "nullable_doc": "[X]: «<NA>»\n", "current_text_guard": "ordinary record methods require present text input columns", "dtypes": {"text": "string", "x": "string"}}
+PASS 7 pandas numeric null is nonfinite JSON during reconstruction {"dtypes": {"text": "object", "n": "float64"}, "row_repr": "{'text': 'y', 'n': nan}", "rejected": true}
+PASS 8 pd.NA is outside current finite JSON representation {"rejected": true, "must_not_silently_stringify": true}
+PASS 9 empty relation retains ordered source schema, not declared Extract fields {"columns": ["text", "field"], "native_dtypes": ["object", "object"], "record_frame_dtypes": ["object", "object"], "evaluations": 0}
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 10 native parser failure precedes any relation return, usage retained {"error": "AttributeError", "known_total_tokens": 28}
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+PASS 11 current unknown path keeps complete evaluations and known usage {"statuses": ["succeeded", "succeeded", "unknown"], "known_total_tokens": 28, "parents": [[], [], []]}
+AUDIT_CASES 11
+CONTRACT: retain original occurrence identities/source_refs; carry relation schema and cross-row value-writer call references. A child reading field for r0 depends on r2 Extract, not only r0 Extract.
+CONTRACT: validate whole Extract coverage/success before relation release; apply parsed updates in source_position order across physical batches. No model retry or additional evaluation during relation assembly.
+PLAN: data-organization lines 118-119 permits staged correctness control, but forbids a fixed per-operator driver collect design. This dependency-specific relation completion is an explicit staged exception, with costs reported.

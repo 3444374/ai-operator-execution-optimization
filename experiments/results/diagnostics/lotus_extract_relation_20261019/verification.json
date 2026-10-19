@@ -1,0 +1,122 @@
+{
+  "schema": "semloom.lotus_extract_relation_cpu_preparation.v1",
+  "base": "d2915206c945e3c5db658a6533f3e6fed9b8cc6a",
+  "branch": "feat/lotus-extract-relations",
+  "scope": "Pure Extract relation assembly and staged CPU successor control; native wiring and shared method/owner changes pending",
+  "execution": "Pinned LOTUS accessors, existing ChainBatchResults, deterministic response fixtures; no native runtime or physical model",
+  "production_files_added": [
+    "code/src/semantic_methods/lotus/record_relation.py"
+  ],
+  "existing_files_modified": [],
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_relation.py": "bcfabd1cb35d6ab1a4acfa3a5f559bdafe9fa6a209216fc858490cd708a963ad",
+    "code/tests/semantic_methods/test_lotus_record_relation.py": "b6cdcbcbecadfc5275f14c1d7ff6fcc546a81e1137762bb9372ea6db0bf81123"
+  },
+  "shared_source_sha256_unchanged": {
+    "code/src/semantic_methods/lotus/record_chain.py": "cfa0b830908fba94c583c791648ced3d226cb05333db2dce38f0e0cceb56d2da",
+    "code/src/baselines/text/frameworks/lotus_chain_results.py": "740e8b96ff924f59d8fa60a62e281760ee70b7df305ebe7c484673df124e1b36",
+    "code/src/baselines/text/frameworks/lotus_chain_batch.py": "ffbd7ce1b78c5ee62b3bb8e50a88298311a9648219de25e27642134c912ca2d3",
+    "code/src/semantic_methods/lotus/engine.py": "f347294d4d1cbc40f47d1f2868cd8098a8a52807438cb2bdf7335b0d2fbb79d8",
+    "code/src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de"
+  },
+  "pinned_versions": {
+    "python": "3.12.6",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "pandas": "2.3.3"
+  },
+  "pinned_lotus_source_sha256": {
+    "sem_ops/sem_extract.py": "0f58eda86d645b85b8659591d61366a86809a4d189dbec6c491fe5b4628c163a",
+    "sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+    "templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3"
+  },
+  "preflight": {
+    "status": "ok",
+    "profile": "explicit macOS CPU profile; GPU not required",
+    "groups": [
+      "core",
+      "semantic-benchmarks"
+    ],
+    "log": "preflight.json",
+    "log_sha256": "ed2e405353cb2ca178fdac4ee5f2feddce3447b7c6359dfb896f9d276afe4cc6",
+    "original_sha256": "2793fd0ee151220a02bfacbc4e77ad5ccfbe20a390a189fe20d3b029cc65e3c7",
+    "new_installs": 0
+  },
+  "source_audit": {
+    "checks": 11,
+    "status": "passed",
+    "log": "raw/source_audit.txt",
+    "log_sha256": "2b97842bc0c8f495bde89ac14f4c3f0d0b13078caced41349a07587a1387bb62",
+    "original_sha256": "f21fcae6fae48c2567cad0f8a008ea94fb8dc75f5d16705c62584b4b002f9225",
+    "scope": "Original LOTUS/pandas source probes; native in this log means original accessor, not a native backend/model qualification"
+  },
+  "suite": {
+    "name": "tests.semantic_methods.test_lotus_record_relation",
+    "tests": 11,
+    "subtests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "returncode": 0,
+    "elapsed_s": 4.89,
+    "command": "<cpu-python> -m unittest tests.semantic_methods.test_lotus_record_relation -v",
+    "log": "raw/test_lotus_record_relation_r2.txt",
+    "log_sha256": "685bbf3428c94ccb3653ef8bc833cc660979f23c04dd0864d2990b062d5eebc0",
+    "original_sha256": "b1ff7ecff37923bfbcab6768b14f263e919df74391cba1449e7605966c0148a9",
+    "earlier_run": {
+      "tests": 10,
+      "status": "passed",
+      "log": "raw/test_lotus_record_relation_r1.txt",
+      "log_sha256": "927b547d0736bc1fcff576264e5c29976de8377bf1b022257e46c1a846849204",
+      "original_sha256": "f2e5d98a550cf114ed737344431041b92853d8deb30649e2aa03e78edaccdb8f",
+      "reason_for_increment": "Add existing source-column collision and missing-key retention differential"
+    }
+  },
+  "completion_contract": {
+    "caller_owned": [
+      "successful source EOF",
+      "ChainBatchResults complete coverage and per-stage success",
+      "owner model lifetime and closure"
+    ],
+    "module_checks": [
+      "explicit EOF gate",
+      "terminal Extract identity and occurrence correspondence",
+      "actual schema includes parsed data keys",
+      "no failed/unknown/foreign call snapshots"
+    ],
+    "proof_limit": "source_exhausted=True and a matching partial list cannot independently prove whole-source coverage; callers must verify with existing accounting first"
+  },
+  "pending_shared_interfaces": [
+    "same query parent-call seed for downstream methods",
+    "explicit sparse None/nullable formatter policy",
+    "native relation-completion wire/barrier",
+    "model lifetime until every prefix and successor consumer finishes",
+    "shared Infra/README/evidence-registry registration by the unique integration owner"
+  ],
+  "nonterminal_extract_guard_changed": false,
+  "real_model_calls": 0,
+  "gpu_model_calls": 0,
+  "ray_runtime_started": false,
+  "independent_test_review": "No blocking correctness/standards/scope finding; actual source-column collision differential reviewed",
+  "reviews": {
+    "standards": "No hard-rule or code blocker; caller coverage precondition, pure relation scope and owner file boundary verified. Report verification links finalized.",
+    "spec": "No blocker; independent 11 CPU tests passed, nine subtests, no Ray/model/HTTP.",
+    "spec_log": "raw/test_lotus_record_relation_spec.txt",
+    "spec_log_sha256": "3137855dfeac25f6358bd4469f31b42f0f40ed09c5a49095f82fe7773c581630",
+    "spec_original_sha256": "3137855dfeac25f6358bd4469f31b42f0f40ed09c5a49095f82fe7773c581630"
+  },
+  "log_normalization": "redact_text where available, then local-path redaction and trailing-whitespace stripping; original SHA retained",
+  "status": "CPU preparation verified; shared owner integration pending",
+  "checks": {
+    "local_document_paths_checked": 6,
+    "missing_document_paths": [],
+    "existing_source_files_unchanged": true,
+    "diff_check": "passed",
+    "secret_scan": {
+      "files": 9,
+      "violations": 0
+    },
+    "local_absolute_paths_in_public_evidence": 0
+  }
+}
