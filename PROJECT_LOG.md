@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：补齐 IMLane 级联作者 CPU 回执并保留保存失败
+
+原作者首轮在私有保存 API 失败，generic 三 scope 已退出而 Q3 未启；原件保持。仅修 helper 的独占快照／最终保存，三个实际 writer 回归及双独审通过，公开1060源码保持相同。冻结r3单次补验两查询／44次fixture通过，六作者scope和六CPU子进程关闭；独立77观察出生身份与28作者start_ticks退出，lease已释放，源码／二进制／八旧账本未变。真实模型／GPU请求为0；不转授后续源码、模型或性能资格。见[现有报告及原件摘要](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+
 ## 2026-10-19：增加 IMLane 原 LOTUS 全局级联接点
 
 职责分支从通用6e8b1382建立，新增stage／role值桥；原全局校准、采样、阈值学习、fallback及合并保持。作者DBEnd／Coordinator／Lane及CPython负责物理执行，不增加线程池、调度器或作者补丁。17个不同本机CPU测试通过；双审修复作者异常关闭可被重试覆盖、late stderr失败漏检及跨stage query错配。首次沙箱失败、异常断言修正和三项optin skip分列保留，作者CPU、真实模型和GPU独立验收。见[源码与运行证据](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。

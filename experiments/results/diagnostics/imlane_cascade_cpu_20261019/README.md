@@ -30,8 +30,24 @@ Lane 生命周期、C++ 桥或旧 HTTP 配置。此处是工程资格，不提�
 复用已核的 Arrow 16.1 方法环境与 v2 二进制；原作者 checkout 的 HEAD、tracked status／diff、
 12 项源码和 3 项二进制前后必须相同，不增加作者补丁。
 
-实现及冻结 CPU 包已获协议／资源两项独立审阅接受，r2 包已交唯一服务器会话排队。
-尚未收到作者 CPU 实测回执，真实模型和阶段间 GPU 退出始终 pending。
-普通 Filter 的短 IPC 模型复验独立排队，不由本轮级联资格替代。
+原 r2 包的首轮作者运行在 98.92 秒失败：私有 helper 向真实 `write_private_json` 传入不支持的
+`replace=True`，generic 的三个 scope 已退出，Q3 未启动且最终报告未生成。失败目录及归档原件保持。
+修补仅将保存改为独占的逐查询快照和单独最终文件，三个实际保存 API 回归通过，未改共享 writer
+或生产源码。协议／资源两项独立审阅接受 r3 包；其 1060 个公开源码与 r2 逐字节相同。
+
+`imlane-cascade-author-cpu-20261019-r3-output-r2` 单次补验通过，监督耗时 171.03 秒，未自动重试。
+两条十行查询各执行 helper_score 10／threshold_sample 5／fallback 7，共 44 次 CPU fixture 评价；
+原 SDK 决策、stats、LM usage、逐调用 messages SHA、角色／查询／Arrow 16.1 关联均一致。
+抽样索引均为 `[4, 9, 4, 9, 6]`，保留重复来源；每查询三个独立 engine 正常关闭。
+两个查询快照及最终报告成功保存。
+
+独立审计确认 77 个已观察 PID／出生时间实例和 28 个作者 PID／start_ticks 身份退出，六份作者
+scope 与模型子进程关闭回执通过。正常 lease 已释放；无强制清理、cleanup error 或残留 SHM，
+GPU 为 1 MiB 且无计算进程。作者 HEAD／status／diff、12 项源码、3 项二进制及八份旧账本未变。
+两次活跃采样最大观察 RSS 1,812,480,000 字节、SHM 134,234,912 字节，采样进程使用 CPU 0–7；
+这些数值不代表完整运行峰值或 cgroup 硬限制。证据包 64 个常规文件已逐成员核验。
+
+作者 CPU 资格只绑定该 r3 来源；真实 helper、阶段间真实模型／GPU 退出、作者 Ray 和性能继续
+pending。普通 Filter 的成功短 IPC 模型单元另有来源，不转授本级联或后续集成提交。
 
 来源摘要、私有原件定位和实际运行边界见 [qualification.json](qualification.json)。
