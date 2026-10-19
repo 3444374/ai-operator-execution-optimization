@@ -161,6 +161,7 @@ class CoreRecordsLibrariesTests(unittest.TestCase):
                                 reports[kind].append(value)
                                 save(query_id + ".json", value)
                                 self.assertEqual(value["status"], "completed")
+                                self.assertEqual(value["production_core_used"], kind == "core")
                                 self.assertEqual(value["result"], {"positive_review_cnt": 1})
                                 self.assertEqual(value["calls"]["usage"]["total_tokens"], 12)
                                 audit = value["quality"]["classification_audit"]
@@ -209,7 +210,7 @@ class CoreRecordsLibrariesTests(unittest.TestCase):
                     requested_and_substituted_model_allocations=allocations,
                     production_core_connected=close_reports["core"]["production_core_connected"],
                     shared_runner_production_core_used=reports["core"][0]["production_core_used"],
-                    core_identity_scope="Actual SessionEngine/BoundedAsyncBackend and Core close report; shared runner labeling is integrated separately",
+                    core_identity_scope="Actual SessionEngine/BoundedAsyncBackend, iterator/owner metadata and shared runner labeling",
                     core_usage=close_reports["core"]["core_usage"],
                     transport_closed=close_reports["core"]["transport_closed"],
                     native_gpu_exit_qualified=False,
