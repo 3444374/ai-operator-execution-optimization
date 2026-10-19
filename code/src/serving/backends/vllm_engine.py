@@ -17,9 +17,11 @@ import threading
 import time
 import uuid
 from dataclasses import asdict, dataclass
+from collections.abc import Sequence
 from pathlib import Path
 
 VLLM_VERSION = "0.25.1"
+MAX_LOGPROBS = 20
 IDENTITY_FIELDS = (
     "query_id", "model_role", "algorithm_stage", "row_id", "source_position",
     "call_index", "call_id",
@@ -80,7 +82,9 @@ class GenerationSpec:
         _number(self.repetition_penalty, "repetition_penalty", low=0.0,
                 inclusive_low=False)
         if self.logprobs is not None:
-            raise ValueError("this ordinary-filter slice supports logprobs=None only")
+            _integer(self.logprobs, "logprobs")
+            if self.logprobs > MAX_LOGPROBS:
+                raise ValueError(f"logprobs exceeds the local engine limit of {MAX_LOGPROBS}")
         if self.response_format is not None and (
             type(self.response_format) is not dict
             or set(self.response_format) != {"type"}
@@ -232,6 +236,56 @@ def _token_ids(value: object, name: str) -> list[int] | None:
     return list(value)
 
 
+def _chat_logprobs(token_ids: list[int] | None, values: object, count: int,
+                   get_tokenizer) -> dict:
+    """Map genuine v0.25.1 output using its OpenAI chat conversion and order.
+
+    Unlike the server's missing-value sentinel branch, incomplete requested
+    probabilities fail validation. A real -inf is clamped by the official rule.
+    """
+    if (token_ids is None or not isinstance(values, Sequence)
+            or isinstance(values, (str, bytes)) or len(values) != len(token_ids)):
+        raise ValueError("requested logprobs must match every generated token ID")
+    tokenizer = None
+
+    def entry(token_id, value):
+        nonlocal tokenizer
+        _integer(token_id, "logprob token ID")
+        probability, decoded = value.logprob, value.decoded_token
+        if (type(probability) not in (int, float) or probability != probability
+                or probability > 0):
+            raise ValueError("raw token logprob must be nonpositive and not NaN")
+        if decoded is not None and not isinstance(decoded, str):
+            raise ValueError("decoded logprob token must be text or None")
+        token = decoded
+        if token is None:
+            try:
+                if tokenizer is None:
+                    tokenizer = get_tokenizer()
+                token = tokenizer.decode([token_id])
+            except Exception as exc:
+                raise ValueError("requested logprob token cannot be decoded") from exc
+        if not isinstance(token, str):
+            raise ValueError("decoded logprob token must be text")
+        return dict(token=token, logprob=max(probability, -9999.0),
+                    bytes=None if decoded is None else list(decoded.encode("utf-8", errors="replace")))
+
+    content = []
+    for token_id, step in zip(token_ids, values, strict=True):
+        if (not isinstance(step, dict) or token_id not in step
+                or len(step) > count + 1):
+            raise ValueError("requested logprobs require the actual sampled token and bounded candidates")
+        # Validate even candidates outside the server's first-K projection.
+        candidates = {key: entry(key, value) for key, value in step.items()}
+        chosen = dict(candidates[token_id])
+        chosen["top_logprobs"] = [
+            dict(item, bytes=list(item["token"].encode("utf-8", errors="replace")))
+            for item in list(candidates.values())[:count]
+        ]
+        content.append(chosen)
+    return dict(content=content)
+
+
 def _prepared(rows: list[dict]) -> tuple[list[dict], list[list[dict]]]:
     if not isinstance(rows, list):
         raise ValueError("prepared rows must be a finite list")
@@ -324,6 +378,7 @@ class VllmEngine:
             chat_template=engine.chat_template, tensor_parallel_size=1,
             pipeline_parallel_size=1, distributed_executor_backend="uni",
             trust_remote_code=False, generation_config="vllm",
+            max_logprobs=MAX_LOGPROBS, logprobs_mode="raw_logprobs",
         )
 
     def _new_sampling(self, values: dict):
@@ -342,6 +397,7 @@ class VllmEngine:
             "closed": self._closed, "batch_mode": "finite_synchronous_chat",
             "max_model_calls": self._max_model_calls,
             "reserved_model_calls": self._reserved_model_calls,
+            "max_logprobs": MAX_LOGPROBS, "logprobs_mode": "raw_logprobs",
         }
 
     def _result(self, identity: dict, start: float, end: float, *, status: str,
@@ -443,6 +499,11 @@ class VllmEngine:
                             or choice.index != 0 or result["finish_reason"] not in {"stop", "length"}
                             or not isinstance(getattr(choice, "text", None), str)):
                         raise ValueError("completion is not a valid finished single-choice result")
+                    if effective_generation.logprobs is not None:
+                        result["logprobs_json"] = json.dumps(_chat_logprobs(
+                            token_ids, getattr(choice, "logprobs", None),
+                            effective_generation.logprobs, self._llm.get_tokenizer,
+                        ), ensure_ascii=False, allow_nan=False)
                     result.update(status="succeeded", text=choice.text)
                 except (AttributeError, TypeError, ValueError) as exc:
                     result["error_type"] = type(exc).__name__

@@ -12,7 +12,7 @@ import tempfile
 import types
 import unittest
 from contextlib import ExitStack
-from dataclasses import asdict, replace
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -54,6 +54,25 @@ def output(request_id="request-0", **changes):
     return value
 
 
+@dataclass
+class FakeLogprob:
+    """The three fields of vLLM 0.25.1's genuine Logprob dataclass."""
+
+    logprob: float
+    rank: int | None = None
+    decoded_token: str | None = None
+
+
+def probability_output(request_id="request-0", token_ids=(5, 6), values=None):
+    value = output(request_id)
+    value.outputs[0].token_ids = token_ids
+    value.outputs[0].logprobs = values if values is not None else [
+        {5: FakeLogprob(-0.2, 1, "True"), 8: FakeLogprob(-1.8, 2, "False")},
+        {6: FakeLogprob(-0.3, 1, "\n")},
+    ]
+    return value
+
+
 class FakeCore:
     def __init__(self):
         self.calls = []
@@ -72,6 +91,14 @@ class FakeLLM:
         self.calls = []
         self.outputs = [output()]
         self.error = None
+        self.decoded = {5: "True", 6: "\n", 8: "False"}
+        self.decode_calls = []
+
+    def get_tokenizer(self):
+        def decode(token_ids):
+            self.decode_calls.append(token_ids)
+            return self.decoded[token_ids[0]]
+        return types.SimpleNamespace(decode=decode)
 
     def chat(self, messages, **kwargs):
         self.calls.append((messages, kwargs))
@@ -143,9 +170,12 @@ class KernelTests(unittest.TestCase):
             tensor_parallel_size=1, pipeline_parallel_size=1,
             distributed_executor_backend="uni", trust_remote_code=False,
             generation_config="vllm", model=str(self.model_dir), tokenizer=str(self.model_dir),
+            max_logprobs=20, logprobs_mode="raw_logprobs",
         ).items():
             self.assertEqual(allocation[name], expected)
         self.assertEqual(engine.ready()["batch_mode"], "finite_synchronous_chat")
+        self.assertEqual(engine.ready()["max_logprobs"], 20)
+        self.assertEqual(engine.ready()["logprobs_mode"], "raw_logprobs")
         json.dumps(engine.ready())
 
     def test_json_object_constructor_materializes_fixed_vllm_constraint_before_allocation(self):
@@ -209,7 +239,7 @@ class KernelTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(TypeError):
                 engine.run_prepared([prepared()], generation=value)
         for name, value in (("max_tokens", True), ("temperature", float("nan")),
-                            ("frequency_penalty", 3), ("logprobs", 0),
+                            ("frequency_penalty", 3), ("logprobs", True), ("logprobs", 21),
                             ("response_format", {"type": "json_schema"})):
             generation = GenerationSpec()
             object.__setattr__(generation, name, value)
@@ -287,6 +317,247 @@ class KernelTests(unittest.TestCase):
         self.assertEqual(json.loads(result["prompt_token_ids_json"]), [1, 2, 3])
         self.assertEqual(result["prompt_tokens"], len(json.loads(result["prompt_token_ids_json"])))
 
+    def test_logprobs_override_preserves_raw_values_and_fresh_sampling(self):
+        engine = self.build()
+        results = []
+        for generation in (GenerationSpec(logprobs=10), GenerationSpec(logprobs=0), None):
+            value = probability_output()
+            if generation is not None and generation.logprobs == 0:
+                value.outputs[0].logprobs[0].pop(8)
+            self.fake_llm.outputs = [value]
+            results.append(engine.run_prepared([prepared()], generation=generation)[0])
+        self.assertEqual([item[1]["sampling_params"].logprobs for item in self.fake_llm.calls],
+                         [10, 0, None])
+        self.assertEqual(len({id(item[1]["sampling_params"]) for item in self.fake_llm.calls}), 3)
+        content = json.loads(results[0]["logprobs_json"])["content"]
+        self.assertEqual([item["token"] for item in content], ["True", "\n"])
+        self.assertEqual(content[0], dict(token="True", logprob=-0.2, bytes=[84, 114, 117, 101],
+                                         top_logprobs=[
+                                             dict(token="True", logprob=-0.2, bytes=[84, 114, 117, 101]),
+                                             dict(token="False", logprob=-1.8, bytes=[70, 97, 108, 115, 101]),
+                                         ]))
+        self.assertTrue(all(not item["top_logprobs"] for item in
+                            json.loads(results[1]["logprobs_json"])["content"]))
+        self.assertEqual(results[2]["logprobs_json"], "null")
+        self.assertIsNone(engine.generation.logprobs)
+        self.assertIsNone(engine._sampling.logprobs)
+        self.assertEqual(self.fake_llm.decode_calls, [])
+        for result in results:
+            self.assertEqual(result["status"], "succeeded")
+            self.assertEqual((result["prompt_tokens"], result["completion_tokens"], result["total_tokens"]),
+                             (3, 2, 5))
+            self.assertEqual(json.loads(result["output_token_ids_json"]), [5, 6])
+
+    def test_logprobs_follow_official_insertion_order_and_first_k_projection(self):
+        engine = self.build()
+        values = [{5: FakeLogprob(-3.0, 4, "Maybe"),
+                   8: FakeLogprob(-0.6, 1, "False"), 9: FakeLogprob(-1.3, 2, "True")}]
+        self.fake_llm.outputs = [probability_output(token_ids=(5,), values=values)]
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
+        content = json.loads(result["logprobs_json"])["content"][0]
+        self.assertEqual(content["token"], "Maybe")
+        self.assertEqual([item["token"] for item in content["top_logprobs"]], ["Maybe", "False"])
+        self.assertEqual(content["logprob"], -3.0)
+
+    def test_logprob_decoding_preserves_special_empty_and_exact_text_with_official_bytes(self):
+        engine = self.build()
+        values = [{5: FakeLogprob(-0.2, 1, None), 8: FakeLogprob(-2.0, 2, " False")},
+                  {6: FakeLogprob(-0.3, 1, ""), 9: FakeLogprob(-2.0, 2, "é")}]
+        self.fake_llm.outputs = [probability_output(values=values)]
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
+        content = json.loads(result["logprobs_json"])["content"]
+        self.assertEqual(content[0]["token"], "True")
+        self.assertIsNone(content[0]["bytes"])
+        self.assertEqual(content[0]["top_logprobs"][0]["bytes"], [84, 114, 117, 101])
+        self.assertEqual(content[0]["top_logprobs"][1]["token"], " False")
+        self.assertEqual(content[1]["token"], "")
+        self.assertEqual(content[1]["bytes"], [])
+        self.assertEqual(content[1]["top_logprobs"][1]["bytes"], [195, 169])
+        self.assertEqual(self.fake_llm.decode_calls, [[5]])
+
+    def test_actual_extreme_logprobs_use_official_finite_wire_clamp(self):
+        engine = self.build()
+        values = [{5: FakeLogprob(float("-inf"), 2, "True"),
+                   8: FakeLogprob(-10000.0, 1, "False")}]
+        self.fake_llm.outputs = [probability_output(token_ids=(5,), values=values)]
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
+        content = json.loads(result["logprobs_json"])["content"][0]
+        self.assertEqual(content["logprob"], -9999.0)
+        self.assertEqual([item["logprob"] for item in content["top_logprobs"]], [-9999.0] * 2)
+        json.dumps(result, allow_nan=False)
+
+    def test_missing_malformed_or_unassociated_logprobs_fail_with_known_usage_and_no_refund(self):
+        cases = [None, [], [None, {}], [{}, {}],
+                 [{8: FakeLogprob(-0.2, 1, "False")}, {6: FakeLogprob(-0.3, 1, "\n")}],
+                 [{5: FakeLogprob(-0.2, 1, "True"), True: FakeLogprob(-1, 2, "other")},
+                  {6: FakeLogprob(-0.3, 1, "\n")}]]
+        for probability in (float("nan"), float("inf"), True, "-0.2", 0.1):
+            cases.append([{5: FakeLogprob(probability, 1, "True")},
+                          {6: FakeLogprob(-0.3, 1, "\n")}])
+        cases.append([{5: FakeLogprob(-0.2, 1, 123)}, {6: FakeLogprob(-0.3, 1, "\n")}])
+        cases.append([{5: FakeLogprob(-0.2, 1, "True")}, {6: object()}])
+        self.spec = replace(self.spec, max_model_calls=1)
+        for values in cases:
+            with self.subTest(values=values):
+                self.fake_llm = FakeLLM()
+                value = probability_output()
+                value.outputs[0].logprobs = values
+                self.fake_llm.outputs = [value]
+                engine = self.build()
+                result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=10))[0]
+                self.assertEqual(result["status"], "failed")
+                self.assertIsNone(result["text"])
+                self.assertEqual(result["logprobs_json"], "null")
+                self.assertEqual(result["total_tokens"], 5)
+                self.assertEqual(json.loads(result["output_token_ids_json"]), [5, 6])
+                self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+                with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+                    engine.run_prepared([prepared()])
+                self.assertEqual(len(self.fake_llm.calls), 1)
+
+    def test_logprobs_require_output_ids_and_decode_failure_preserves_usage(self):
+        engine = self.build()
+        value = probability_output()
+        value.outputs[0].token_ids = None
+        self.fake_llm.outputs = [value]
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=1))[0]
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["completion_tokens"])
+        self.assertEqual(result["prompt_tokens"], 3)
+        value.outputs[0].token_ids = (5, 6)
+        value.outputs[0].logprobs = [{5: FakeLogprob(-0.2)}, {6: FakeLogprob(-0.3, 1, "\n")}]
+        self.fake_llm.decoded.clear()
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=1))[0]
+        self.assertEqual(result["status"], "failed")
+        self.assertEqual(result["total_tokens"], 5)
+
+    def test_requested_empty_completion_and_per_row_failure_preserve_actual_token_counts(self):
+        engine = self.build()
+        value = probability_output("request-0", token_ids=(), values=[])
+        value.outputs[0].text = ""
+        bad = probability_output("request-1")
+        bad.outputs[0].logprobs = None
+        self.fake_llm.outputs = [value, bad]
+        results = engine.run_prepared([prepared(0), prepared(1)], generation=GenerationSpec(logprobs=10))
+        self.assertEqual([item["status"] for item in results], ["succeeded", "failed"])
+        self.assertEqual(results[0]["logprobs_json"], '{"content": []}')
+        self.assertEqual(results[0]["text"], "")
+        self.assertEqual([item["total_tokens"] for item in results], [3, 5])
+        self.assertIsNone(results[1]["text"])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 2)
+
+    def test_logprob_zero_and_small_top_k_reject_unrequested_candidate_counts(self):
+        engine = self.build()
+        for count in (0, 1):
+            with self.subTest(count=count):
+                values = [{5: FakeLogprob(-0.2, 1, "True"),
+                           8: FakeLogprob(-2.0, 2, "False"),
+                           9: FakeLogprob(-4.0, 3, "other")}]
+                self.fake_llm.outputs = [probability_output(token_ids=(5,), values=values)]
+                result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=count))[0]
+                self.assertEqual(result["status"], "failed")
+                self.assertIsNone(result["text"])
+                self.assertEqual(result["total_tokens"], 4)
+
+    def test_logprob_unknown_and_deadline_keep_reservation_and_known_completion_data(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        self.fake_llm.error = RuntimeError("fake logprob chat possibly accepted")
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=10))[0]
+        self.assertEqual(result["status"], "unknown")
+        self.assertIsNone(result["total_tokens"])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+        self.fake_llm.error = None
+        engine = self.build()
+        self.fake_llm.outputs = [probability_output()]
+        with patch.object(kernel.time, "monotonic", side_effect=[2.0, 7.0]):
+            result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=10),
+                                         deadline_monotonic=5.0)[0]
+        self.assertEqual(result["status"], "failed")
+        self.assertIsNone(result["text"])
+        self.assertIs(result["deadline_expired"], True)
+        self.assertEqual(result["total_tokens"], 5)
+        self.assertEqual(len(json.loads(result["logprobs_json"])["content"]), 2)
+        self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+
+    @unittest.skipUnless(importlib.util.find_spec("lotus"),
+                         "original LOTUS logprob consumer needs the pinned driver environment")
+    def test_original_lotus_logprob_consumer_in_separate_python(self):
+        """Real LOTUS/LiteLLM objects consume fake-vLLM bytes in another process."""
+        import math
+
+        engine = self.build()
+        self.fake_llm.outputs = [
+            probability_output("request-0", token_ids=(4, 5, 6), values=[
+                {4: FakeLogprob(-0.4, 1, "Answer:")},
+                {5: FakeLogprob(math.log(0.8), 1, "True"),
+                 8: FakeLogprob(math.log(0.2), 2, "False")},
+                {6: FakeLogprob(math.log(0.05), 3, "\n"),
+                 5: FakeLogprob(math.log(0.095), 2, "True"),
+                 8: FakeLogprob(math.log(0.855), 1, "False")},
+            ]),
+            probability_output("request-1", token_ids=(5,), values=[
+                {5: FakeLogprob(-0.2, 1, "True")},
+            ]),
+            probability_output("request-2", token_ids=(5,), values=[
+                {5: FakeLogprob(-0.2, 1, " true")},
+            ]),
+        ]
+        results = engine.run_prepared([prepared(index) for index in range(3)],
+                                     generation=GenerationSpec(logprobs=10))
+        self.assertTrue(all(item["status"] == "succeeded" for item in results))
+        source = """
+import hashlib, importlib.metadata, json, sys
+from pathlib import Path
+from unittest.mock import patch
+import lotus
+from lotus.models import LM
+from lotus.sem_ops.cascade_utils import calibrate_llm_logprobs
+from lotus.types import CascadeArgs
+from litellm.types.utils import ChatCompletionTokenLogprob, ModelResponse
+assert importlib.metadata.version('lotus-ai') == '1.2.4'
+package = Path(lotus.__file__).parent
+assert hashlib.sha256((package/'models/lm.py').read_bytes()).hexdigest() == \
+    '83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3'
+assert hashlib.sha256((package/'sem_ops/cascade_utils.py').read_bytes()).hexdigest() == \
+    '14fc1140939567559abde71976c1f3d21906864d720aa324f983f9dc8cf3b594'
+lotus.settings.configure(enable_cache=False)
+results = json.load(sys.stdin)
+responses = [ModelResponse(id=item['engine_request_id'], model='openai/qwen2.5-7b',
+    choices=[dict(index=0, finish_reason=item['finish_reason'],
+                  message=dict(role='assistant',content=item['text']),
+                  logprobs=json.loads(item['logprobs_json']))],
+    usage={key:item[key] for key in ('prompt_tokens','completion_tokens','total_tokens')})
+    for item in results]
+lm = LM('openai/qwen2.5-7b', max_tokens=8)
+messages = [[dict(role='user', content='fixture')]] * len(results)
+with patch.object(lm, '_process_uncached_messages', return_value=responses) as seam:
+    result = lm(messages, logprobs=True, show_progress_bar=False)
+    assert seam.call_args.args[1]['logprobs'] is True
+    assert seam.call_args.args[1]['top_logprobs'] == 10
+assert isinstance(result.logprobs[0][0], ChatCompletionTokenLogprob)
+formatted = lm.format_logprobs_for_filter_cascade(result.logprobs)
+assert abs(formatted.positive_probs[0]-0.8) < 1e-12
+assert formatted.positive_probs[1:] == [1, 0]
+assert formatted.tokens == [['Answer:','True','\\n'],['True'],[' true']]
+assert abs(formatted.confidences[0][1]-0.8) < 1e-12
+assert list(calibrate_llm_logprobs(formatted.positive_probs, CascadeArgs())) == [0.5,1.0,0.0]
+with patch.object(lm, '_process_uncached_messages', return_value=responses) as seam:
+    assert lm(messages, logprobs=False, show_progress_bar=False).logprobs is None
+    assert seam.call_args.args[1]['logprobs'] is False
+    assert 'top_logprobs' not in seam.call_args.args[1]
+assert lm.stats.physical_usage.total_tokens == 2 * sum(item['total_tokens'] for item in results)
+assert 'vllm' not in sys.modules
+print('original LOTUS typed content, top10, exact-token fallback, calibration and usage passed')
+"""
+        result = subprocess.run([sys.executable, "-c", source],
+                                input=json.dumps(results, ensure_ascii=False, allow_nan=False),
+                                capture_output=True, text=True, timeout=30,
+                                env=dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
+                                         LITELLM_LOCAL_MODEL_COST_MAP="True"))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(any(name == "lotus" or name.startswith("lotus.") for name in sys.modules))
+
     def test_public_driver_preflight_rejects_other_interpreter_before_sampling(self):
         with patch.object(EngineSpec, "validate_local", return_value={
             "model": self.model_identity, "driver": self.driver_identity,
@@ -310,6 +581,7 @@ class KernelTests(unittest.TestCase):
 
     def test_mutated_invalid_generation_is_rechecked_before_allocation(self):
         for name, value in (("presence_penalty", 3.0),
+                            ("logprobs", True), ("logprobs", -1), ("logprobs", 21),
                             ("response_format", {"type": "json_object", "strict": True})):
             generation = GenerationSpec()
             object.__setattr__(generation, name, value)
@@ -641,6 +913,15 @@ class SpecificationTests(unittest.TestCase):
         self.assertNotIn("response_format", plain)
         json.dumps(plain, allow_nan=False)
 
+    def test_logprob_counts_roundtrip_without_model_import(self):
+        with patch.dict(sys.modules, {"vllm": None, "vllm.sampling_params": None}):
+            for count in (None, 0, 10, 20):
+                with self.subTest(count=count):
+                    generation = GenerationSpec(logprobs=count)
+                    restored = GenerationSpec.from_dict(json.loads(json.dumps(asdict(generation))))
+                    self.assertEqual(restored, generation)
+                    self.assertIs(generation.kwargs()["logprobs"], count)
+
     def test_response_format_and_kwargs_do_not_share_caller_mappings(self):
         original = {"type": "json_object"}
         generation = GenerationSpec(response_format=original)
@@ -672,7 +953,9 @@ class SpecificationTests(unittest.TestCase):
             ("repetition_penalty", 0), ("repetition_penalty", float("inf")),
             ("repetition_penalty", True), ("seed", True), ("seed", -1),
             ("stop", "\n"), ("stop", [""]), ("stop", [1]),
-            ("logprobs", 0), ("logprobs", True),
+            ("logprobs", -1), ("logprobs", True), ("logprobs", False),
+            ("logprobs", 21), ("logprobs", 1.0), ("logprobs", "10"),
+            ("logprobs", float("nan")), ("logprobs", float("inf")),
         ):
             with self.subTest(name=name, value=value), self.assertRaises(ValueError):
                 GenerationSpec(**{name: value})
