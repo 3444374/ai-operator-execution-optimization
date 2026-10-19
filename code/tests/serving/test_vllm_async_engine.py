@@ -6,6 +6,7 @@ from dataclasses import asdict
 import json
 import sys
 import threading
+import time
 import types
 import unittest
 from unittest.mock import patch
@@ -22,7 +23,7 @@ def prepared(index=0, text="review", query="query"):
 
 class FakeRuntime:
     def __init__(self, *, hold=(), abort_finish="abort", corrupt_prompt=False, shutdown_gate=None,
-                 shutdown_error=False):
+                 shutdown_error=False, cancellation_gate=None, raise_after_final=False):
         runtime = self
         self.stack = ExitStack()
         self.rendered, self.started, self.samplings = [], [], []
@@ -69,7 +70,12 @@ class FakeRuntime:
                     raise AssertionError("generate must receive exactly-once rendered token input")
                 runtime.started.append((request_id, prompt, sampling))
                 if request_id in runtime.gates:
-                    await runtime.gates[request_id].wait()
+                    try:
+                        await runtime.gates[request_id].wait()
+                    except asyncio.CancelledError:
+                        if cancellation_gate is not None:
+                            await cancellation_gate.wait()
+                        raise
                 finish = abort_finish if request_id in self.aborted else "stop"
                 probabilities = None
                 if sampling.kwargs.get("logprobs") is not None:
@@ -79,6 +85,8 @@ class FakeRuntime:
                     prompt_token_ids=[999] if corrupt_prompt else prompt["prompt_token_ids"],
                     outputs=[types.SimpleNamespace(index=0, text="yes", token_ids=[5, 6],
                               finish_reason=finish, logprobs=probabilities)])
+                if raise_after_final:
+                    raise RuntimeError("fixture stream cleanup failed after final output")
 
             async def abort(self, request_id):
                 self.aborted.add(request_id)
@@ -203,6 +211,61 @@ class AsyncEngineTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result["status"], "unknown")
             self.assertTrue(result["deadline_expired"])
             self.assertEqual(runtime.engine.ready()["reserved_model_calls"], 1)
+            self.assertGreater(runtime.engine._input_bytes, 0)
+            await runtime.engine.close()
+
+    async def test_deadline_returns_unknown_while_native_cancellation_cleanup_is_stalled(self):
+        cancellation = asyncio.Event()
+        with FakeRuntime(hold=("a",), cancellation_gate=cancellation) as runtime:
+            task = asyncio.create_task(runtime.engine.generate_prepared(prepared(), request_id="a",
+                deadline_monotonic=asyncio.get_running_loop().time() + 0.02))
+            try:
+                result = await asyncio.wait_for(asyncio.shield(task), 0.5)
+                self.assertEqual(result["status"], "unknown")
+                self.assertTrue(result["deadline_expired"])
+                owned = runtime.engine._requests["a"]["task"]
+                self.assertFalse(owned.done())
+                self.assertGreater(runtime.engine._input_bytes, 0)
+                with self.assertRaisesRegex(RuntimeError, "unhealthy"):
+                    await self.generate(runtime.engine, 1, "b")
+            finally:
+                cancellation.set()
+                await task
+                await runtime.engine.close()
+
+    async def test_expired_request_never_renders_or_spends_model_budget(self):
+        with FakeRuntime() as runtime:
+            result = await runtime.engine.generate_prepared(prepared(), request_id="a",
+                deadline_monotonic=asyncio.get_running_loop().time() - 1)
+            self.assertEqual(result["status"], "failed")
+            self.assertTrue(result["engine_terminal_confirmed"])
+            self.assertFalse(result["submission_confirmed"])
+            self.assertEqual(runtime.rendered, [])
+            self.assertEqual(runtime.engine.ready()["reserved_model_calls"], 0)
+            await runtime.engine.close()
+
+    async def test_deadline_crossed_during_render_does_not_start_model(self):
+        with FakeRuntime() as runtime:
+            original = runtime.client.renderer.render_chat_async
+
+            async def blocking_render(*args):
+                time.sleep(0.03)
+                return await original(*args)
+
+            with patch.object(runtime.client.renderer, "render_chat_async", side_effect=blocking_render):
+                result = await runtime.engine.generate_prepared(prepared(), request_id="a",
+                    deadline_monotonic=asyncio.get_running_loop().time() + 0.01)
+            self.assertEqual(result["status"], "failed")
+            self.assertTrue(result["deadline_expired"])
+            self.assertEqual(runtime.started, [])
+            self.assertEqual(runtime.engine.ready()["reserved_model_calls"], 0)
+            await runtime.engine.close()
+
+    async def test_stream_cleanup_error_keeps_already_observed_final_usage(self):
+        with FakeRuntime(raise_after_final=True) as runtime:
+            result = await self.generate(runtime.engine)
+            self.assertEqual(result["status"], "unknown")
+            self.assertEqual((result["prompt_tokens"], result["completion_tokens"]), (3, 2))
             self.assertGreater(runtime.engine._input_bytes, 0)
             await runtime.engine.close()
 

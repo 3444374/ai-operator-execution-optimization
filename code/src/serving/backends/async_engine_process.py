@@ -202,16 +202,26 @@ class AsyncEngineProcess:
         example = result_record(identity, engine_uid="x" * 32, start=1e20, end=1e20,
                                 status="unknown", submitted=False, error_type="ResultCapacityExceeded")
         example.update(prompt_tokens=(1 << 64) - 1, completion_tokens=(1 << 64) - 1,
-                       total_tokens=(1 << 65) - 2)
+            total_tokens=(1 << 65) - 2, engine_request_id="x" * 256,
+            engine_terminal_confirmed=False, finish_reason="length",
+            model_start_monotonic=1.7976931348623157e308,
+            model_end_monotonic=1.7976931348623157e308,
+            model_elapsed_s=1.7976931348623157e308)
         _frame(dict(op="terminal", request_id="x" * 64, confirmed=False,
                     result=_compact_result(example)), self.limits.item_result_bytes)
         with self._condition:
+            if self._io_done.is_set() or self.process is None or self.process.poll() is not None:
+                # The reader still drains any already-written terminal prefix.
+                # Reject new work without overwriting those pending receipts.
+                self._broken = self._broken or "ChildUnavailable"
             if self._broken is not None or self._closing:
                 return SubmitResult("rejected", reason="owner unavailable")
             if time.monotonic() >= deadline_monotonic:
                 return SubmitResult("rejected", reason="deadline expired before acceptance")
             if self._slots and self._query_id != identity["query_id"]:
                 return SubmitResult("rejected", reason="previous query still owns inputs or results")
+            if self._sequence >= (1 << 63):
+                return SubmitResult("rejected", reason="request identity sequence exhausted")
             used = self._usage()
             if (used["active_requests"] >= self.limits.max_inflight
                     or len(self._slots) >= self.limits.result_slots
@@ -399,6 +409,8 @@ class AsyncEngineProcess:
                     self._uncertain(type(error).__name__)
         finally:
             with self._condition:
+                if not self._closing:
+                    self._broken = self._broken or "ChildTransportClosed"
                 if any(slot.terminal is None for slot in self._slots.values()):
                     self._uncertain("ChildOutcomeUnknown")
                 if self.ready_report is None:
@@ -458,6 +470,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
     tasks = []
     owned = {}
     waiter = None
+    failure = None
     try:
         opening, _ = await _read_frame(control, _OPEN_FRAME_BYTES)
         if opening.get("op") != "open":
@@ -472,6 +485,7 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         abort_queue = asyncio.Queue(maxsize=limits.max_inflight)
         early_aborts = set()
         closing = asyncio.Event()
+        failure = loop.create_future()
         next_sequence = 0
 
         async def writer(sock, queue):
@@ -544,6 +558,13 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                 owned[key] = slot
                 await reply(dict(op="accepted", request_id=key))
                 slot["task"] = asyncio.create_task(run(key, slot, value))
+                slot["task"].add_done_callback(observe_request)
+
+        def observe_request(task):
+            if not task.cancelled():
+                error = task.exception()
+                if error is not None and not failure.done():
+                    failure.set_result(error)
 
         async def control_commands():
             while not closing.is_set():
@@ -581,8 +602,10 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
                  asyncio.create_task(input_commands()), asyncio.create_task(control_commands()),
                  asyncio.create_task(abort_requests())]
         waiter = asyncio.create_task(closing.wait())
-        done, _ = await asyncio.wait([*tasks, waiter], return_when=asyncio.FIRST_COMPLETED)
+        done, _ = await asyncio.wait([*tasks, waiter, failure], return_when=asyncio.FIRST_COMPLETED)
         for task in done:
+            if task is failure:
+                raise task.result()
             if task is not waiter:
                 task.result()
         closing.set()
@@ -613,6 +636,8 @@ async def serve(data_fd, control_fd, result_fd, *, engine_factory=VllmAsyncEngin
         pending = [slot["task"] for slot in owned.values() if slot["task"] is not None]
         if waiter is not None:
             pending.append(waiter)
+        if failure is not None:
+            failure.cancel()
         for task in pending:
             task.cancel()
         await asyncio.gather(*pending, return_exceptions=True)

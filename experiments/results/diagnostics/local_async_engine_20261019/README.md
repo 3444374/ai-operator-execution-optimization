@@ -57,8 +57,27 @@ native wrapper 测试使用明确替换的 vLLM/renderer 对象和真实共享�
 | 首次 native wrapper | 8 passed/1 failed；shutdown 超时被错误地永久标记失败，chunk `916675`；已修复为保留同一 future，实际异常仍不作成功 |
 | 首次组合回归 | 88 passed/144 subtests，9.44s；chunk `716642`；覆盖两个新组件与同步/共享转换旧路径 |
 | abort 读取独立、FD 失败清理补充 | 新专属集 21 passed，4.57s；chunk `172f3c`；还需最终冻结记录 |
+| 扩大旧进程回归（sandbox） | 104 passed/177 subtests、13 failed；旧同步 psutil 枚举被 macOS sysctl sandbox 拒绝，见[失败日志](raw/cpu_20261019T065230Z.txt)与[来源](verification_20261019T065230Z.json) |
+| 同源码在允许只读进程枚举的 CPU 环境重跑 | 114 passed/188 subtests，21.99s；见[日志](raw/cpu_20261019T065326Z.txt)与[来源](verification_20261019T065326Z.json)，不覆盖随后审阅修复 |
+| 独审修复后专属集 | 29 passed/2 subtests，7.60s；chunk `5c8cf8`；最终冻结组合回归随后追加 |
 
 早期运行仅工具记录可定位，全量 pytest 输出未采集；不补写或冒充原日志。最终源文件摘要、命令、退出状态及脱敏日志在本目录保存。
+
+## 独立审阅与修复
+
+Standards 与 Spec 两位独立 reviewer 固定审查 `a4f47eab..777a0bdb`，读取规则、计划和固定官方源码，
+只运行 CPU fixture。原始发现保留，不以首轮测试通过代替独审：
+
+- 两者复现空闲 child EOF 后继续 queued 的缺陷。提交时检查 child/I/O 可用性，EOF 标记 owner unavailable；
+  不覆盖仍待读取的已知回执。新增空闲死亡/最后已知终态后死亡双用例。
+- Spec 复现合法大身份使小回执预检低估，生成 task 异常未被主循环监督。预留覆盖共享回执的最大时间戳、
+  256-byte 引擎 ID、usage 与确认字段；身份不能放入回执时接受前拒绝，序号有固定上界；
+  生成 task 失败由单个有限 fault future 传给 worker 生命周期，不能默默 pending。
+- Spec 复现原生取消分支等待 abort 使 deadline 挂起；生成使用已预留请求内的独立 task，deadline 通知
+  与清理解耦，未知 task 保留归属。Standards 另复现已过期/渲染后过期仍调用模型；入口与生成前明确检查期限。
+  新用例覆盖原生取消清理挂起、过期零模型额度、边界身份、大结果、意外 task 错误和已知最终 usage 后流清理异常。
+
+首次修复后专属检查已通过；最终冻结 SHA 和原 reviewer 复核结论随后追加。
 
 ## 集成接口与剩余项
 

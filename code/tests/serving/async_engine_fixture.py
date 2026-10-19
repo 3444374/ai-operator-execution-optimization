@@ -45,6 +45,8 @@ class FixtureEngine:
             engine_terminal_confirmed=not unknown)
         if text == "wrong-call":
             result["call_id"] = "not-the-accepted-call"
+        if text == "bad-shape":
+            result["fixture_nonserializable"] = object()
         self.gates.pop(request_id, None)
         return result
 
