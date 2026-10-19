@@ -686,7 +686,7 @@ PostgreSQL 内置语义算子的验证结果。
 | 单作业场景编排 | `experiments/run_ai_operator_scenarios.py`；按固定种子保存次序、成功记录和失败事件，恢复时重新核对配置与既有记录 |
 | 共享服务多 Job | `experiments/run_shared_vllm_experiment.py`；配置与运行步骤见[AutoDL 手册](../../deploy/autodl/README.md)，模块职责见[共享服务说明](../src/experiments/shared_vllm/README.md) |
 | 官方 baseline 与 SQuAD 能力检查 | `baselines/run_official_baseline.py`、`baselines/squad_capability_gate.py`、`baselines/squad_database_e2e_runner.py`；系统职责见[baseline 说明](../src/baselines/README.md)，每次结果见[可行性记录](../../experiments/results/diagnostics/README.md) |
-| 工作量准备与代价分析 | `data/import_ai_complete_workload.py`、`analysis/estimate_operator_cost.py`；输入筛选、模型与机器身份以目标计划和结果报告为准 |
+| 工作量准备与代价分析 | `data/import_ai_complete_workload.py`、`analysis/estimate_operator_cost.py`、`analysis/compare_cost_estimators_full.py`、`analysis/compare_cost_estimators_contextloo.py`；输入筛选、模型与机器身份以目标计划和结果报告为准 |
 | 状态变化实验 | `data/prepare_phase_change_workload.py`、`experiments/run_phase_change.py`、`analysis/audit_phase_change.py`；只从[目标手册](../../deploy/autodl/phase_change_state_aware_RUNBOOK.md)选择步骤，历史实现见[SAOR 说明](../src/experiments/saor/README.md) |
 
 增量导入 ShareGPT/BurstGPT 时，`--source-row-offset` 在全部筛选后才生效；追加前应以相同
