@@ -1,4 +1,4 @@
-"""Unsupported native relation plans fail before runtime or model allocation."""
+"""Default nonterminal guard and invalid explicit plans fail before allocation."""
 
 from unittest import TestCase
 from unittest.mock import Mock, patch
@@ -20,8 +20,10 @@ class NativeRelationGuardTests(TestCase):
                 StageSpec("map", MapMethod("fixture", "Summarize {field}", "summary"), GenerationSpec()),
             )
             engine = EngineSpec("/tmp/unused-model", "/tmp/unused-model-python", "/tmp/unused-driver-python")
-            # Even a terminal-only plan with the explicit profile must not silently
-            # enter a native adapter that has no relation completion boundary.
+            with self.assertRaisesRegex(ValueError, "Extract"):
+                LotusRecordChain(stages, query_id="q")
+            # An explicit profile is supported, but its query identity must still
+            # be checked before touching the source, runtime or a model owner.
             for selected in (stages[:1], stages):
                 with self.subTest(stages=len(selected)):
                     chain = LotusRecordChain(selected, query_id="q", relation_barriers=True)
@@ -30,8 +32,8 @@ class NativeRelationGuardTests(TestCase):
                             patch.object(native, "_graph") as graph, \
                             patch.object(native.tempfile, "mkdtemp") as directory, \
                             patch("subprocess.Popen") as process:
-                        with self.assertRaisesRegex(ValueError, "explicit Core profile"):
-                            native.evaluate(source, chain, engine, RecordsResources(), expected=(), query_id="q")
+                        with self.assertRaisesRegex(ValueError, "same query"):
+                            native.evaluate(source, chain, engine, RecordsResources(), expected=(), query_id="foreign")
                         for action in (source, validate, graph, directory, process):
                             action.assert_not_called()
 

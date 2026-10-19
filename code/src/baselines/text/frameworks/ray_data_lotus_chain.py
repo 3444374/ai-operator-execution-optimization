@@ -22,7 +22,7 @@ import time
 import uuid
 
 from src.semantic_methods.lotus.record_chain import (
-    LotusRecordChain, RecordOccurrence, stage_identity,
+    LotusRecordChain, RecordOccurrence, stage_identity, _ordered_columns,
 )
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
@@ -67,8 +67,9 @@ class _RayChainRows(ChainBatchResults):
     def _execution_error(self, remote_error_type):
         return RayChainExecutionError(remote_error_type)
 
-    def __init__(self, result, expected, chain, deadline, cancelled, control):
-        super().__init__(expected, chain)
+    def __init__(self, result, expected, chain, deadline, cancelled, control, *,
+                 initial_parents=None, columns=None):
+        super().__init__(expected, chain, initial_parents=initial_parents, columns=columns)
         self.result = result
         self.deadline, self.cancelled, self.control = deadline, cancelled, Path(control)
         self._iterator = None
@@ -256,7 +257,7 @@ def _stop_registered_engine(report):
 
 
 def _graph(dataset, chain, engine, resources, expected, control, deadline, control_token,
-           *, batch_type=None, model_gpus=1):
+           *, batch_type=None, model_gpus=1, initial_parents=None, columns=None, allow_nulls=False):
     """CPU library tests inject fixtures; public evaluation fixes the real kernel."""
     import ray.data
 
@@ -270,7 +271,8 @@ def _graph(dataset, chain, engine, resources, expected, control, deadline, contr
         fn_constructor_kwargs=dict(chain=chain.describe(), engine=asdict(engine),
             expected=[_source_binding(record) for record in expected], control=str(control),
             deadline=deadline, startup_timeout_s=resources.startup_timeout_s,
-            driver_host=socket.gethostname(), control_token=control_token),
+            driver_host=socket.gethostname(), control_token=control_token,
+            initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls),
         num_cpus=1, num_gpus=model_gpus, max_concurrency=1, max_restarts=0, max_task_retries=0,
         runtime_env={"py_executable": shlex.quote(engine.driver_python), "env_vars": {
             "PYTHONPATH": str(CODE_ROOT), "LITELLM_LOCAL_MODEL_COST_MAP": "True",
@@ -278,7 +280,7 @@ def _graph(dataset, chain, engine, resources, expected, control, deadline, contr
 
 
 def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
-             expected, query_id, control_dir=None, cancelled=None):
+             expected, query_id, control_dir=None, cancelled=None, columns=None):
     """Build one native graph, then consume it once with identity-only collection.
 
     ``expected`` contains source occurrence metadata, never prepared prompts.
@@ -288,6 +290,10 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     Assemble the final relation after successful EOF (``stream.completed``).
     Remote method exceptions use RayChainExecutionError.remote_error_type;
     succeeded model calls remain succeeded even when their parser fails.
+    Explicit relation_barriers plans consume a complete native graph at each
+    Extract boundary, assemble the original whole relation, and build the next
+    native graph. Each nonempty segment has an independent model lifetime;
+    EngineSpec.max_model_calls is per engine, not a query-wide counter.
     This fused layout requires cpu_workers=1 and uses model_batch_rows as Ray's
     input batch size; prepare_batch_rows has no separate preparation stage.
     The returned iterator is single-pass: a second iteration is empty EOF.
@@ -301,8 +307,6 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     deadline = time.monotonic() + resources.query_timeout_s
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
-    if chain.relation_barriers:
-        raise ValueError("Extract relation barriers require the explicit Core profile")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("this fused Ray chain requires one model deployment across all stages")
     if chain.query_id != query_id:
@@ -311,6 +315,8 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     for name in ("row_id", "source_position"):
         if len({getattr(record, name) for record in expected}) != len(expected):
             raise ValueError("streaming chain requires globally unique " + name)
+    if chain.relation_barriers or columns is not None:
+        columns = _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
     if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
@@ -332,9 +338,32 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
         token = uuid.uuid4().hex
         (control / "owner").write_text(token)
         _check(deadline, control)
+        if chain.relation_barriers:
+            from .lotus_chain_native_relation import NativeExtractRelationRows
+
+            def open_phase(index, segment, records, *, initial_parents, columns, allow_nulls):
+                phase_control = control / ("phase-" + str(index))
+                phase_control.mkdir(mode=0o700)
+                phase_token = uuid.uuid4().hex
+                (phase_control / "owner").write_text(phase_token)
+                if index == 0:
+                    source = dataset
+                elif records:
+                    source = ray.data.from_items([record_row(record) for record in records])
+                else:
+                    import pyarrow as pa
+                    source = ray.data.from_arrow(pa.table({"record_json": pa.array([], type=pa.string())}))
+                graph = _graph(source, segment, engine, resources, records, phase_control,
+                    deadline, phase_token, initial_parents=initial_parents,
+                    columns=columns, allow_nulls=allow_nulls)
+                return _RayChainRows(graph, records, segment, deadline, cancelled, phase_control,
+                    initial_parents=initial_parents, columns=columns)
+
+            return NativeExtractRelationRows(chain, expected, open_phase, control, deadline,
+                cancelled, scheduler_owner="Ray Data " + RAY_VERSION, columns=columns)
         result = _graph(
-            dataset, chain, engine, resources, expected, control, deadline, token)
-        return _RayChainRows(result, expected, chain, deadline, cancelled, control)
+            dataset, chain, engine, resources, expected, control, deadline, token, columns=columns)
+        return _RayChainRows(result, expected, chain, deadline, cancelled, control, columns=columns)
     except BaseException:
         shutil.rmtree(control)
         raise

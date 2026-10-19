@@ -17,7 +17,7 @@ import threading
 import time
 import uuid
 
-from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence
+from src.semantic_methods.lotus.record_chain import LotusRecordChain, RecordOccurrence, _ordered_columns
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 from .daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
@@ -58,7 +58,8 @@ def _native_runner(runner_threads):
 
 
 def _graph(frame, chain, engine, resources, expected, control, deadline, control_token,
-           *, runner_threads=None, batch_type=None, model_gpus=1):
+           *, runner_threads=None, batch_type=None, model_gpus=1,
+           initial_parents=None, columns=None, allow_nulls=False):
     """Only CPU qualification may substitute a kernel or GPU resource request."""
     import daft
 
@@ -86,7 +87,8 @@ def _graph(frame, chain, engine, resources, expected, control, deadline, control
         def __init__(self):
             self.kernel = (batch_type or FusedChainBatch)(
                 chain_config, engine_config, bindings, control_path, deadline,
-                startup_timeout_s, driver_host, control_token)
+                startup_timeout_s, driver_host, control_token,
+                initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls)
 
         @daft.method.batch(return_dtype=daft.DataType.string(), batch_size=resources.model_batch_rows)
         def run(self, records):
@@ -108,8 +110,9 @@ class _DaftChainRows(ChainBatchResults):
     def _execution_error(self, remote_error_type):
         return DaftChainExecutionError(remote_error_type)
 
-    def __init__(self, frame, expected, chain, deadline, cancelled, control):
-        super().__init__(expected, chain)
+    def __init__(self, frame, expected, chain, deadline, cancelled, control, *,
+                 initial_parents=None, columns=None):
+        super().__init__(expected, chain, initial_parents=initial_parents, columns=columns)
         self.frame, self.deadline, self.cancelled = frame, deadline, cancelled
         self.control = Path(control)
         self._iterator = None
@@ -271,14 +274,16 @@ def _stop_registered_engine(report):
 
 
 def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
-             expected, query_id, control_dir=None, cancelled=None, runner_threads=None):
+             expected, query_id, control_dir=None, cancelled=None, runner_threads=None, columns=None):
     """Execute once, under an outer query-process supervisor for a hard deadline.
 
     The lazy input must contain exactly one string record_json column; each row
     encodes RecordOccurrence.describe(). Final relation assembly follows verified
     EOF. Source values, worker prompts and per-stage call results stay distinct.
-    Only one local model deployment and terminal Extract are supported. This
-    adapter does not provide Join, branches or global aggregation.
+    Only one local deployment is supported. Explicit relation_barriers plans
+    complete the whole Extract relation between native graphs; each nonempty
+    segment initializes a separate model. EngineSpec.max_model_calls is per
+    engine. This adapter does not provide Join, branches or global aggregation.
     """
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
@@ -288,8 +293,6 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
     deadline = time.monotonic() + resources.query_timeout_s
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
-    if chain.relation_barriers:
-        raise ValueError("Extract relation barriers require the explicit Core profile")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("the fused Daft chain requires one model deployment across all stages")
     if chain.query_id != query_id:
@@ -298,6 +301,8 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
     for name in ("row_id", "source_position"):
         if len({getattr(record, name) for record in expected}) != len(expected):
             raise ValueError("streaming chain requires globally unique " + name)
+    if chain.relation_barriers or columns is not None:
+        columns = _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
     if any(stage.generation.max_tokens > engine.max_model_len for stage in chain.stages):
         raise ValueError("chain max_tokens exceeds max_model_len")
     engine.validate_driver_environment()
@@ -318,9 +323,32 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
         token = uuid.uuid4().hex
         (control / "owner").write_text(token)
         _check(deadline, control)
+        if chain.relation_barriers:
+            from .lotus_chain_native_relation import NativeExtractRelationRows
+
+            def open_phase(index, segment, records, *, initial_parents, columns, allow_nulls):
+                phase_control = control / ("phase-" + str(index))
+                phase_control.mkdir(mode=0o700)
+                phase_token = uuid.uuid4().hex
+                (phase_control / "owner").write_text(phase_token)
+                if index == 0:
+                    source = frame
+                elif records:
+                    source = daft.from_pylist([record_row(record) for record in records])
+                else:
+                    import pyarrow as pa
+                    source = daft.from_arrow(pa.table({"record_json": pa.array([], type=pa.string())}))
+                graph = _graph(source, segment, engine, resources, records, phase_control,
+                    deadline, phase_token, runner_threads=runner_threads,
+                    initial_parents=initial_parents, columns=columns, allow_nulls=allow_nulls)
+                return _DaftChainRows(graph, records, segment, deadline, cancelled, phase_control,
+                    initial_parents=initial_parents, columns=columns)
+
+            return NativeExtractRelationRows(chain, expected, open_phase, control, deadline,
+                cancelled, scheduler_owner="Daft Native " + DAFT_VERSION, columns=columns)
         graph = _graph(frame, chain, engine, resources, expected, control, deadline, token,
-                       runner_threads=runner_threads)
-        return _DaftChainRows(graph, expected, chain, deadline, cancelled, control)
+                       runner_threads=runner_threads, columns=columns)
+        return _DaftChainRows(graph, expected, chain, deadline, cancelled, control, columns=columns)
     except BaseException:
         shutil.rmtree(control)
         raise
