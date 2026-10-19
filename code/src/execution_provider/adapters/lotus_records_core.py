@@ -1,4 +1,4 @@
-"""Ordinary Movie records through the existing incremental production Core.
+"""LOTUS text Filter records through the existing incremental production Core.
 
 Only raw, bounded record bytes enter Core. Ray submission and waiting run in
 the existing asynchronous transport; prepared ObjectRefs go to the model actor.
@@ -27,7 +27,7 @@ from src.scheduling.core.session_policy import SessionPolicies
 from src.scheduling.endpoint_routing.policies import RoundRobinEndpointRouter
 from src.scheduling.runtime.async_backend import BoundedAsyncBackend, ConfirmedTaskFailure
 from src.scheduling.submission_control.admission import StaticAdmissionController
-from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
@@ -78,9 +78,9 @@ def _encode(value, maximum):
 
 def _check(deadline, cancelled=None):
     if cancelled is not None and cancelled():
-        raise InterruptedError("Movie Q3 Core records cancelled")
+        raise InterruptedError("LOTUS Core records cancelled")
     if time.monotonic() >= deadline:
-        raise TimeoutError("Movie Q3 Core records deadline expired")
+        raise TimeoutError("LOTUS Core records deadline expired")
 
 
 def _capacity_failure(value):
@@ -208,7 +208,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
         self.expected = {row["call_id"]: row for row in expected}
         self.query_id, self.deadline, self.cancelled = query_id, deadline, cancelled
         self.session = owner.core.open(SessionSpec(
-            query_id, "movie-q3-filter", "lotus-records-local-model-v1", work_unit="model_calls",
+            query_id, "lotus-records-filter", "lotus-records-local-model-v1", work_unit="model_calls",
         ))
         self.received, self.offered = set(), set()
         self.sequence = 0
@@ -248,9 +248,10 @@ class _CoreRows(Iterator[dict[str, Any]]):
                 call_id = occurrence["call_id"]
                 if occurrence != self.expected.get(call_id) or call_id in self.offered:
                     raise ValueError("Core source returned an undeclared or duplicate occurrence")
-                if type(raw["reviewText"]) is not str:
-                    raise ValueError("Core records reviewText must be text")
-                payload = _encode(dict(occurrence, reviewText=raw["reviewText"]),
+                if any(type(value) is not str for name, value in raw.items()
+                       if name not in ("row_id", "source_position")):
+                    raise ValueError("Core records payload columns must be text")
+                payload = _encode(dict(raw, **occurrence),
                                   self.owner.capacity.item_input_bytes)
                 work = WorkDescriptor((StageWork("model", 1, "model_calls"),),
                                       "model", "request-count-not-token-cost-v1")
@@ -406,10 +407,16 @@ class SemLoomRecordsCore:
             self._active.close()
         deadline = time.monotonic() + self.resources.query_timeout_s
         self._deadline = deadline
-        from src.semantic_methods.lotus.engine import validate_filter_source, validate_generation
+        from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
         source.preflight(self.method)
+        scan = source.scan_spec(self.method)
+        if not isinstance(scan, RecordScan):
+            raise TypeError("source.scan_spec(method) must return RecordScan")
+        scan.describe()
         validate_generation(self.method, self.generation)
-        validate_filter_source()
+        self._actors.method = bind_filter_method(self.method)
+        if not set(self._actors.method.resolved_input_columns).issubset(scan.payload_columns):
+            raise ValueError("record scan omits Filter input columns")
         self.engine.validate_driver_environment()
         identity(query_id, "preflight", 0)
         expected = source.expected(query_id)
@@ -417,7 +424,7 @@ class SemLoomRecordsCore:
         for occurrence in expected:
             _check_result_capacity(occurrence, self.capacity.item_result_bytes)
         # Core's fixed-size session identity is checked before actors are allocated.
-        spec = SessionSpec(query_id, "movie-q3-filter", "lotus-records-local-model-v1")
+        spec = SessionSpec(query_id, "lotus-records-filter", "lotus-records-local-model-v1")
         _check(deadline, cancelled)
         import daft
         import ray
@@ -433,11 +440,14 @@ class SemLoomRecordsCore:
             configure_daft_runner("native")
         if get_or_create_runner().name != "native":
             raise RuntimeError("Core records requires Daft 0.7.21 Native")
+        types = {"string": daft.DataType.string(), "int64": daft.DataType.int64()}
         frame = daft.read_csv(str(source.csv_path), infer_schema=False, schema={
-            "row_id": daft.DataType.string(), "source_position": daft.DataType.int64(),
-            "reviewId": daft.DataType.string(), "id": daft.DataType.string(),
-            "reviewText": daft.DataType.string(),
-        }).filter(daft.col("id") == "taken_3").select("row_id", "source_position", "reviewText")
+            name: types[dtype] for name, dtype in scan.csv_schema
+        })
+        if scan.predicate is not None:
+            column, value = scan.predicate
+            frame = frame.filter(daft.col(column) == value)
+        frame = frame.select("row_id", "source_position", *scan.payload_columns)
         try:
             if expected:
                 self._actors.start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),

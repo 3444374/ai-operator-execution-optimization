@@ -60,6 +60,7 @@ class CpuLibrariesTests(unittest.TestCase):
         import ray.data
         from src.baselines.text.frameworks.ray_data_lotus_records import PrepareBatch, _add_identity, _runtime_env
         from src.experiments.lotus_records_movie import run_movie_query
+        from src.semantic_methods.lotus.engine import bind_filter_method
         from src.semantic_methods.lotus.records import FilterMethod
         from src.serving.backends.vllm_engine import GenerationSpec
         from tests.experiments.test_lotus_records_movie import fixture_source
@@ -69,7 +70,7 @@ class CpuLibrariesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="lr-input-") as inputs, \
              tempfile.TemporaryDirectory(prefix="lr-ray-", dir="/tmp") as runtime:
             source = fixture_source(Path(inputs))
-            method = FilterMethod("openai/local-fixture")
+            method = bind_filter_method(FilterMethod("openai/local-fixture"))
             try:
                 ray.init(address="local", num_cpus=4, num_gpus=0, include_dashboard=False,
                          object_store_memory=80 * 1024**2, _temp_dir=runtime,

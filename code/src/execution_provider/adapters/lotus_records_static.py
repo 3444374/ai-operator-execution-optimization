@@ -1,4 +1,4 @@
-"""Finite Movie Q3 static reference; this path does not use production Core.
+"""Finite LOTUS text Filter reference; this path does not use production Core.
 
 Daft Native scans raw records. Ray Core preparation actors return ObjectRefs
 directly to a single model actor. The driver receives only compact terminal rows.
@@ -14,7 +14,7 @@ from typing import Any, Callable, Iterator
 from src.execution_provider.adapters.lotus_records_actor_owner import (
     RecordsActorOwner, _ModelActor, _PrepareActor, _check, _runtime_env,
 )
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 
@@ -53,10 +53,9 @@ class _StaticRows(Iterator[dict[str, Any]]):
                 except StopIteration:
                     self.source_eof = True
                     break
-                rows.append(dict(
-                    identity(self.query_id, row["row_id"], int(row["source_position"])),
-                    reviewText=row["reviewText"],
-                ))
+                rows.append(dict(row, **identity(
+                    self.query_id, row["row_id"], int(row["source_position"]),
+                )))
             _check(self.deadline, self.cancelled)
             if not rows:
                 break
@@ -201,7 +200,6 @@ class SemLoomRecordsStaticReference:
         return self._actor_owner.wait_ready(ref, deadline, cancelled)
 
     def _start(self, deadline: float, cancelled: Callable[[], bool] | None) -> None:
-        self._actor_owner.method = self.method
         self._actor_owner.engine = self.engine
         self._actor_owner.generation = self.generation
         self._actor_owner.resources = self.resources
@@ -216,11 +214,17 @@ class SemLoomRecordsStaticReference:
         if self._active is not None and not self._active.finished:
             raise RuntimeError("static reference already owns an active query")
         deadline = time.monotonic() + self.resources.query_timeout_s
-        from src.semantic_methods.lotus.engine import validate_filter_source, validate_generation
+        from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
 
         source.preflight(self.method)
+        scan = source.scan_spec(self.method)
+        if not isinstance(scan, RecordScan):
+            raise TypeError("source.scan_spec(method) must return RecordScan")
+        scan.describe()
         validate_generation(self.method, self.generation)
-        validate_filter_source()
+        self._actor_owner.method = bind_filter_method(self.method)
+        if not set(self._actor_owner.method.resolved_input_columns).issubset(scan.payload_columns):
+            raise ValueError("record scan omits Filter input columns")
         self.engine.validate_driver_environment()
         expected = source.expected(query_id)
         _check(deadline, cancelled)
@@ -241,16 +245,14 @@ class SemLoomRecordsStaticReference:
             configure_daft_runner("native")
         if get_or_create_runner().name != "native":
             raise RuntimeError("static reference requires Daft 0.7.21 Native")
+        types = {"string": daft.DataType.string(), "int64": daft.DataType.int64()}
         frame = daft.read_csv(str(source.csv_path), infer_schema=False, schema={
-            "row_id": daft.DataType.string(),
-            "source_position": daft.DataType.int64(),
-            "reviewId": daft.DataType.string(),
-            "id": daft.DataType.string(),
-            "reviewText": daft.DataType.string(),
+            name: types[dtype] for name, dtype in scan.csv_schema
         })
-        frame = frame.filter(daft.col("id") == "taken_3").select(
-            "row_id", "source_position", "reviewText"
-        )
+        if scan.predicate is not None:
+            column, value = scan.predicate
+            frame = frame.filter(daft.col(column) == value)
+        frame = frame.select("row_id", "source_position", *scan.payload_columns)
         if expected:
             startup_deadline = min(deadline, time.monotonic() + self.resources.startup_timeout_s)
             try:

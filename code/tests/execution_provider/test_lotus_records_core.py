@@ -25,7 +25,7 @@ from src.infrastructure import daft_runtime
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import State
 from src.semantic_methods.lotus import engine as lotus_engine
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends import vllm_engine
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -42,6 +42,11 @@ class Source:
     def expected(self, query_id):
         return [identity(query_id, row["row_id"], row["source_position"])
                 for row in self.raw if row["id"] == "taken_3"]
+
+    def scan_spec(self, method):
+        return RecordScan((('row_id', 'string'), ('source_position', 'int64'),
+                           ('reviewId', 'string'), ('id', 'string'), ('reviewText', 'string')),
+                          ('reviewText',), ('id', 'taken_3'))
 
 
 class Runtime:
@@ -117,6 +122,7 @@ class Runtime:
 
         class Formatter:
             def __init__(self, method):
+                assert method.resolved_input_columns == ("reviewText",)
                 runtime.events.append(("formatter",))
 
             def prepare_rows(self, rows):
@@ -207,6 +213,13 @@ class Runtime:
         os.environ.pop("DAFT_RUNNER", None)
         self.stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         self.stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
+
+        def fixture_binding(method):
+            # These graph tests substitute the formatter; real binding has its own library checks.
+            lotus_engine.validate_filter_source()
+            return replace(method, resolved_input_columns=("reviewText",))
+
+        self.stack.enter_context(patch.object(lotus_engine, "bind_filter_method", side_effect=fixture_binding))
         self.stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
         self.stack.enter_context(patch.object(vllm_engine, "VllmEngine", Engine))
 

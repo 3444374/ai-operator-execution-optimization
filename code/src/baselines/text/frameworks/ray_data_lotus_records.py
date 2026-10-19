@@ -1,4 +1,4 @@
-"""Movie Q3 records on the caller-owned Ray Data 2.56.1 graph.
+"""LOTUS text Filter records on the caller-owned Ray Data 2.56.1 graph.
 
 The native graph owns batching and actor scheduling. Only primitive method and
 engine configuration crosses its workers; there is no HTTP replay or Core flow.
@@ -14,13 +14,12 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Callable, Iterator
 
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
 
 _CODE_ROOT = Path(__file__).resolve().parents[4]
 _CLOSE_COLUMN = "__engine_close_report_json"
-_COLUMNS = ["row_id", "source_position", "reviewText"]
 
 
 def _runtime_env(python: str) -> dict[str, Any]:
@@ -32,13 +31,13 @@ def _runtime_env(python: str) -> dict[str, Any]:
 
 def _check_deadline(deadline: float) -> None:
     if time.monotonic() >= deadline:
-        raise TimeoutError("Movie Q3 records query deadline expired")
+        raise TimeoutError("LOTUS records query deadline expired")
 
 
 def _add_identity(row: dict[str, Any], *, query_id: str) -> dict[str, Any]:
     return {
+        **row,
         **identity(query_id, row["row_id"], int(row["source_position"])),
-        "reviewText": row["reviewText"],
     }
 
 
@@ -157,7 +156,7 @@ class _RayRows(Iterator[dict[str, Any]]):
         if self._failure is not None:
             raise self._failure
         if self.cancelled is not None and self.cancelled():
-            raise InterruptedError("Movie Q3 records query cancelled")
+            raise InterruptedError("LOTUS records query cancelled")
         _check_deadline(self.deadline)
 
     def _watch(self) -> None:
@@ -305,16 +304,22 @@ def evaluate(
     method = FilterMethod.from_dict(asdict(method))
     generation = GenerationSpec.from_dict(asdict(generation))
     engine = EngineSpec.from_dict(asdict(engine))
-    from src.semantic_methods.lotus.engine import validate_filter_source, validate_generation
+    from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
 
     source.preflight(method)
+    scan = source.scan_spec(method)
+    if not isinstance(scan, RecordScan):
+        raise TypeError("source.scan_spec(method) must return RecordScan")
+    scan.describe()
     validate_generation(method, generation)
-    validate_filter_source()
+    method = bind_filter_method(method)
+    if not set(method.resolved_input_columns).issubset(scan.payload_columns):
+        raise ValueError("record scan omits Filter input columns")
     engine.validate_driver_environment()
     expected = source.expected(query_id)
     _check_deadline(deadline)
     if cancelled is not None and cancelled():
-        raise InterruptedError("Movie Q3 records query cancelled before graph allocation")
+        raise InterruptedError("LOTUS records query cancelled before graph allocation")
     if not expected:
         return _RayRows(None, expected, deadline, cancelled)
 
@@ -326,15 +331,17 @@ def evaluate(
     if ray.__version__ != "2.56.1" or not ray.is_initialized():
         raise RuntimeError("records native graph requires caller-owned Ray 2.56.1")
     _check_deadline(deadline)
+    types = {"string": pa.string(), "int64": pa.int64()}
     dataset = ray.data.read_csv(
         str(source.csv_path), ray_remote_args={"max_retries": 0},
         convert_options=csv.ConvertOptions(column_types={
-            "row_id": pa.string(), "source_position": pa.int64(),
-            "reviewId": pa.string(), "id": pa.string(), "reviewText": pa.string(),
+            name: types[dtype] for name, dtype in scan.csv_schema
         }, strings_can_be_null=False, null_values=[]),
     )
-    dataset = dataset.filter(lambda row: row["id"] == "taken_3", max_retries=0)
-    dataset = dataset.select_columns(_COLUMNS)
+    if scan.predicate is not None:
+        column, value = scan.predicate
+        dataset = dataset.filter(lambda row: row[column] == value, max_retries=0)
+    dataset = dataset.select_columns(["row_id", "source_position", *scan.payload_columns])
     dataset = dataset.map(_add_identity, fn_kwargs={"query_id": query_id}, max_retries=0)
     dataset = dataset.map_batches(
         PrepareBatch,

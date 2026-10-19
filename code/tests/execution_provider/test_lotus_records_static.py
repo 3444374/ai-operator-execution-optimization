@@ -7,6 +7,7 @@ import sys
 import time
 import unittest
 from contextlib import ExitStack
+from dataclasses import replace
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
@@ -19,7 +20,7 @@ if str(CODE_ROOT) not in sys.path:
 from src.execution_provider.adapters import lotus_records_static as static
 from src.infrastructure import daft_runtime
 from src.semantic_methods.lotus import engine as lotus_engine
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends import vllm_engine
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -36,6 +37,11 @@ class Source:
     def expected(self, query_id):
         return [identity(query_id, row["row_id"], row["source_position"])
                 for row in self.raw if row["id"] == "taken_3"]
+
+    def scan_spec(self, method):
+        return RecordScan((('row_id', 'string'), ('source_position', 'int64'),
+                           ('reviewId', 'string'), ('id', 'string'), ('reviewText', 'string')),
+                          ('reviewText',), ('id', 'taken_3'))
 
     def rows(self):
         raise AssertionError("static reference must use the native Daft scanner")
@@ -100,6 +106,7 @@ class StaticRecordsTests(unittest.TestCase):
 
         class Formatter:
             def __init__(self, method):
+                assert method.resolved_input_columns == ("reviewText",)
                 self.calls = 0
                 formatters.append(self)
 
@@ -210,6 +217,13 @@ class StaticRecordsTests(unittest.TestCase):
         os.environ.pop("DAFT_RUNNER", None)
         stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
+
+        def fixture_binding(method):
+            # These graph tests substitute the formatter; real binding has its own library checks.
+            lotus_engine.validate_filter_source()
+            return replace(method, resolved_input_columns=("reviewText",))
+
+        stack.enter_context(patch.object(lotus_engine, "bind_filter_method", side_effect=fixture_binding))
         stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
         stack.enter_context(patch.object(vllm_engine, "VllmEngine", Engine))
         return stack, events, engines, formatters

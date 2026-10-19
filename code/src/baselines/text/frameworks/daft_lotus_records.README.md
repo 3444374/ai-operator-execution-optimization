@@ -1,11 +1,24 @@
-# Daft Native Movie Q3 records
+# Daft Native LOTUS text Filter records
 
 `daft_lotus_records.evaluate()` builds one lazy Daft 0.7.21 graph: typed CSV,
-`id == taken_3`, projection, a process-based LOTUS preparation class, a separate
+an optional source-declared equality, projection, a process-based LOTUS preparation class, a separate
 process-based inference class, and one final compact result iterator. Each
 occurrence remains an independent model request. Duplicate text and review IDs
 are preserved. It uses no Ray runtime, SemLoom pool, HTTP request replay or
 custom submission queue.
+
+The source owns task binding through `preflight(method)` and returns a validated
+`RecordScan` from `scan_spec(method)`. Its `csv_schema` fixes string/int64 types,
+`payload_columns` selects text inputs, and `predicate` is one equality or `None`.
+The backend passes those selected columns in a native struct batch to the
+original LOTUS formatter. Column names and instructions belong to the source
+and method. `MovieRecordSource` retains its Q3 binding; the backend also accepts
+other ordinary text Filter sources. The example below uses the Movie wrapper,
+whose query/evaluator contract remains Q3.
+
+The driver binds the original LOTUS input-column order before worker allocation.
+Workers validate the instruction's reference set and retain that bound order;
+they do not recalculate its order from a process-local Python hash seed.
 
 The preparation class uses the existing `LotusFilterMethod`; the private model
 interpreter constructs the existing `VllmEngine`. The driver retains the
@@ -34,7 +47,7 @@ process cleanup. The shared CLI selector is left to the integration owner.
 ## Effective settings
 
 `RecordsResources.cpu_workers` controls preparation actor processes;
-`gpu_workers` remains one for this ordinary Q3 profile. The preparation and
+`gpu_workers` remains one for this ordinary single-model profile. The preparation and
 model batch sizes remain independent. Each model class requests one CPU and
 one GPU from Daft. `max_active_batches` is not applied: native buffering belongs
 to Daft. No `results_buffer_size` or unsupported `memory_bytes` setting is used
@@ -110,6 +123,14 @@ They cover actual process-mode placement, repeated queries, a 17-row split/tail
 case, empty/null-looking/number-looking strings, association, bytes before
 allocation, cancellation, startup failure, crash and cleanup failures. See
 [Daft evidence](../../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/daft_verification.json).
+
+The opt-in [generic CPU composition check](../../../../tests/baselines/text/test_lotus_records_generic_libraries.py)
+uses two other text columns and an instruction shared across Ray Data, Daft,
+the static reference and Core. It checks typed equality and no-predicate scans,
+original LOTUS messages/parser/accounting, occurrence identity and existing
+cleanup responsibilities with explicit fixed responses and synthetic usage.
+Its worker seed deliberately produces a different original parser order from
+the driver, so the check also exercises the serialized column-order binding.
 
 Actual vLLM/model interpreter compatibility, single-GPU placement and physical
 exit, throughput, overlap, fused layout and cascade selection remain pending.

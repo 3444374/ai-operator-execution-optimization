@@ -31,9 +31,9 @@ def _runtime_env(python: str) -> dict[str, Any]:
 def _check(deadline: float, cancelled: Callable[[], bool] | None = None) -> None:
     # Keep the existing actors' exception semantics for the static caller.
     if cancelled is not None and cancelled():
-        raise InterruptedError("Movie Q3 static reference cancelled")
+        raise InterruptedError("LOTUS records actors cancelled")
     if time.monotonic() >= deadline:
-        raise TimeoutError("Movie Q3 static reference deadline expired")
+        raise TimeoutError("LOTUS records actors deadline expired")
 
 
 def _deadline(value: float) -> None:
@@ -155,11 +155,11 @@ class RecordsActorOwner:
         if self.model_actor is not None:
             return self.model_ready
         _check(deadline, cancelled)
-        from src.semantic_methods.lotus.engine import validate_filter_source, validate_generation
+        from src.semantic_methods.lotus.engine import bind_filter_method, validate_generation
         import ray
 
         validate_generation(self.method, self.generation)
-        validate_filter_source()
+        self.method = bind_filter_method(self.method)
         self.engine.validate_driver_environment()
         if ray.__version__ != "2.56.1" or not ray.is_initialized():
             raise RuntimeError("records actors require caller-owned Ray 2.56.1")

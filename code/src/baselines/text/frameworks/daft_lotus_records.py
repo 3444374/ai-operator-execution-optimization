@@ -16,7 +16,7 @@ import tempfile
 import threading
 import time
 
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
 
@@ -32,11 +32,20 @@ def _check(deadline, control=None):
 
 def _graph(source, method, engine, generation, resources, query_id, expected, deadline,
            control, *, runner_threads=None, max_prepared_batch_bytes=DEFAULT_PREPARED_BATCH_BYTES,
-           prepare_type=None, engine_type=None, model_gpus=1):
+           prepare_type=None, engine_type=None, model_gpus=1, scan=None):
     """The injectable kernels serve CPU library tests; public evaluate fixes both."""
     import daft
+    from daft.functions import to_struct
     from src.infrastructure.daft_runtime import configure_daft_runner
+    from src.semantic_methods.lotus.engine import bind_filter_method
 
+    scan = source.scan_spec(method) if scan is None else scan
+    if not isinstance(scan, RecordScan):
+        raise TypeError("source.scan_spec(method) must return RecordScan")
+    scan.describe()
+    method = bind_filter_method(method)
+    if not set(method.resolved_input_columns).issubset(scan.payload_columns):
+        raise ValueError("record scan omits Filter input columns")
     if daft.__version__ != "0.7.21":
         raise RuntimeError("records native graph requires exactly Daft 0.7.21")
     configure_daft_runner("native", num_threads=runner_threads)
@@ -62,11 +71,10 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
             self.work = (prepare_type or LotusFilterMethod)(FilterMethod.from_dict(method_config))
 
         @daft.method.batch(return_dtype=prepared_dtype, batch_size=resources.prepare_batch_rows)
-        def run(self, row_ids, positions, reviews):
+        def run(self, records):
             _check(deadline, control)
-            rows = [dict(identity(query_id, row_id, position), reviewText=review)
-                    for row_id, position, review in zip(row_ids.to_pylist(), positions.to_pylist(),
-                                                      reviews.to_pylist(), strict=True)]
+            rows = [dict(row, **identity(query_id, row["row_id"], row["source_position"]))
+                    for row in records.to_pylist()]
             prepared = self.work.prepare_rows(rows)
             _check(deadline, control)
             return daft.Series.from_pylist(prepared)
@@ -121,15 +129,18 @@ def _graph(source, method, engine, generation, resources, query_id, expected, de
                 for row in rows
             ])
 
+    types = {"string": daft.DataType.string(), "int64": daft.DataType.int64()}
     frame = daft.read_csv(str(source.csv_path), schema={
-        "row_id": daft.DataType.string(), "source_position": daft.DataType.int64(),
-        "reviewId": daft.DataType.string(), "id": daft.DataType.string(),
-        "reviewText": daft.DataType.string(),
+        name: types[dtype] for name, dtype in scan.csv_schema
     })
-    frame = frame.where(daft.col("id") == "taken_3").select("row_id", "source_position", "reviewText")
+    if scan.predicate is not None:
+        column, value = scan.predicate
+        frame = frame.where(daft.col(column) == value)
+    columns = ["row_id", "source_position", *scan.payload_columns]
+    frame = frame.select(*columns)
     prepare, infer = Prepare(), Infer()
     frame = frame.with_column("_prepared", prepare.run(
-        daft.col("row_id"), daft.col("source_position"), daft.col("reviewText"))).select("_prepared")
+        to_struct(*(daft.col(column) for column in columns)))).select("_prepared")
     frame = frame.with_column("_result", infer.run(daft.col("_prepared")))
     return frame.select(daft.col("_result").get("engine_result_json").alias("engine_result_json"))
 
@@ -311,12 +322,18 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
     generation = GenerationSpec.from_dict(asdict(generation))
     engine = EngineSpec.from_dict(asdict(engine))
     from src.semantic_methods.lotus.engine import (
-        make_lm, validate_filter_source, validate_generation, validate_lm,
+        bind_filter_method, make_lm, validate_generation, validate_lm,
     )
 
     source.preflight(method)
+    scan = source.scan_spec(method)
+    if not isinstance(scan, RecordScan):
+        raise TypeError("source.scan_spec(method) must return RecordScan")
+    scan.describe()
     validate_generation(method, generation)
-    validate_filter_source()
+    method = bind_filter_method(method)
+    if not set(method.resolved_input_columns).issubset(scan.payload_columns):
+        raise ValueError("record scan omits Filter input columns")
     validate_lm(make_lm(method, generation), method, generation)
     if generation.max_tokens > engine.max_model_len:
         raise ValueError("max_tokens exceeds max_model_len")
@@ -331,7 +348,8 @@ def evaluate(source, method: FilterMethod, engine: EngineSpec, generation: Gener
         frame = None if not expected else _graph(source, method, engine, generation, resources,
                                                 query_id, expected, deadline, control,
                                                 runner_threads=runner_threads,
-                                                max_prepared_batch_bytes=max_prepared_batch_bytes)
+                                                max_prepared_batch_bytes=max_prepared_batch_bytes,
+                                                scan=scan)
         return _DaftRows(frame, expected, deadline, cancelled, control)
     except BaseException:
         shutil.rmtree(control)

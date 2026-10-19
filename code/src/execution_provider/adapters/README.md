@@ -1,9 +1,22 @@
 # Native task execution
 
-The independent [Movie records static reference](lotus_records_static.py) uses Daft plus
+The independent [LOTUS text Filter records reference](lotus_records_static.py) uses Daft plus
 Ray actors and is a `diagnostic_reference`, with no production Core connection.
 Its shared method API, CPU checks and pending model qualification are documented in the
 [slice record](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md).
+
+The static reference and [records Core adapter](lotus_records_core.py) consume the
+source's neutral `RecordScan`: typed CSV schema, text payload projection and one
+optional equality. The source owns `preflight(method)` and task binding; the
+shared original LOTUS formatter owns instruction column references. Neither
+backend embeds Movie column names or predicates. Core still accepts one raw row
+per task through its existing session and asynchronous transport; the reference
+retains its existing bounded static window. Their occurrence, usage, unknown
+work and closure responsibilities are unchanged.
+The driver binds the original LOTUS column order into the method value before
+allocating preparation actors. Workers preserve that order and validate the
+instruction's referenced-column set. Sources still receive the public method
+for task preflight; continuous queries do not mutate that source binding.
 
 The [records actor owner](lotus_records_actor_owner.py) provides shared preparation/model
 allocation, readiness and retryable closure. It owns no query scheduler or Core session.

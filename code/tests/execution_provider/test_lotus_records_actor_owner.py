@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
+from dataclasses import replace
 from pathlib import Path
 import subprocess
 import sys
@@ -75,6 +76,7 @@ class FakeRuntime:
 
         class Formatter:
             def __init__(self, method):
+                assert method.resolved_input_columns == ("reviewText",)
                 runtime.formatters.append(self)
 
             def prepare_rows(self, rows):
@@ -119,6 +121,13 @@ class FakeRuntime:
         self.stack = ExitStack()
         self.stack.enter_context(patch.dict(sys.modules, {"ray": self.ray}))
         self.stack.enter_context(patch.object(lotus_engine, "validate_filter_source", return_value={}))
+
+        def fixture_binding(method):
+            # These graph tests substitute the formatter; real binding has its own library checks.
+            lotus_engine.validate_filter_source()
+            return replace(method, resolved_input_columns=("reviewText",))
+
+        self.stack.enter_context(patch.object(lotus_engine, "bind_filter_method", side_effect=fixture_binding))
         self.stack.enter_context(patch.object(lotus_engine, "LotusFilterMethod", Formatter))
         self.stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         self.stack.enter_context(patch.object(vllm_engine, "VllmEngine", Engine))

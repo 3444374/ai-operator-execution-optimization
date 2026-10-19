@@ -101,9 +101,9 @@ class DaftRecordsTests(unittest.TestCase):
                                           query_timeout_s=60, startup_timeout_s=20)
         result = list(self.rows())
         ordered = sorted(result, key=lambda row: row["source_position"])
-        from src.semantic_methods.lotus.engine import LotusFilterMethod
+        from src.semantic_methods.lotus.engine import LotusFilterMethod, bind_filter_method
 
-        preparer = LotusFilterMethod(self.method)
+        preparer = LotusFilterMethod(bind_filter_method(self.method))
         reference = preparer.prepare_rows([dict(row, **item) for row, item in
                                           zip(self.source.rows(), self.source.expected(self.query_id), strict=True)])
         self.assertEqual([row["messages_json"] for row in ordered],
