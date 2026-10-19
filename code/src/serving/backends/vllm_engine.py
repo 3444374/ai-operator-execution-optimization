@@ -503,7 +503,7 @@ class VllmEngine:
                         result["logprobs_json"] = json.dumps(_chat_logprobs(
                             token_ids, getattr(choice, "logprobs", None),
                             effective_generation.logprobs, self._llm.get_tokenizer,
-                        ), ensure_ascii=False, allow_nan=False)
+                        )["content"], ensure_ascii=False, allow_nan=False)
                     result.update(status="succeeded", text=choice.text)
                 except (AttributeError, TypeError, ValueError) as exc:
                     result["error_type"] = type(exc).__name__

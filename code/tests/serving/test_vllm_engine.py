@@ -329,7 +329,9 @@ class KernelTests(unittest.TestCase):
         self.assertEqual([item[1]["sampling_params"].logprobs for item in self.fake_llm.calls],
                          [10, 0, None])
         self.assertEqual(len({id(item[1]["sampling_params"]) for item in self.fake_llm.calls}), 3)
-        content = json.loads(results[0]["logprobs_json"])["content"]
+        content = json.loads(results[0]["logprobs_json"])
+        self.assertIs(type(content), list)
+        self.assertEqual(len(content), len(json.loads(results[0]["output_token_ids_json"])))
         self.assertEqual([item["token"] for item in content], ["True", "\n"])
         self.assertEqual(content[0], dict(token="True", logprob=-0.2, bytes=[84, 114, 117, 101],
                                          top_logprobs=[
@@ -337,7 +339,7 @@ class KernelTests(unittest.TestCase):
                                              dict(token="False", logprob=-1.8, bytes=[70, 97, 108, 115, 101]),
                                          ]))
         self.assertTrue(all(not item["top_logprobs"] for item in
-                            json.loads(results[1]["logprobs_json"])["content"]))
+                            json.loads(results[1]["logprobs_json"])))
         self.assertEqual(results[2]["logprobs_json"], "null")
         self.assertIsNone(engine.generation.logprobs)
         self.assertIsNone(engine._sampling.logprobs)
@@ -354,7 +356,7 @@ class KernelTests(unittest.TestCase):
                    8: FakeLogprob(-0.6, 1, "False"), 9: FakeLogprob(-1.3, 2, "True")}]
         self.fake_llm.outputs = [probability_output(token_ids=(5,), values=values)]
         result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
-        content = json.loads(result["logprobs_json"])["content"][0]
+        content = json.loads(result["logprobs_json"])[0]
         self.assertEqual(content["token"], "Maybe")
         self.assertEqual([item["token"] for item in content["top_logprobs"]], ["Maybe", "False"])
         self.assertEqual(content["logprob"], -3.0)
@@ -365,7 +367,7 @@ class KernelTests(unittest.TestCase):
                   {6: FakeLogprob(-0.3, 1, ""), 9: FakeLogprob(-2.0, 2, "é")}]
         self.fake_llm.outputs = [probability_output(values=values)]
         result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
-        content = json.loads(result["logprobs_json"])["content"]
+        content = json.loads(result["logprobs_json"])
         self.assertEqual(content[0]["token"], "True")
         self.assertIsNone(content[0]["bytes"])
         self.assertEqual(content[0]["top_logprobs"][0]["bytes"], [84, 114, 117, 101])
@@ -381,7 +383,7 @@ class KernelTests(unittest.TestCase):
                    8: FakeLogprob(-10000.0, 1, "False")}]
         self.fake_llm.outputs = [probability_output(token_ids=(5,), values=values)]
         result = engine.run_prepared([prepared()], generation=GenerationSpec(logprobs=2))[0]
-        content = json.loads(result["logprobs_json"])["content"][0]
+        content = json.loads(result["logprobs_json"])[0]
         self.assertEqual(content["logprob"], -9999.0)
         self.assertEqual([item["logprob"] for item in content["top_logprobs"]], [-9999.0] * 2)
         json.dumps(result, allow_nan=False)
@@ -440,7 +442,7 @@ class KernelTests(unittest.TestCase):
         self.fake_llm.outputs = [value, bad]
         results = engine.run_prepared([prepared(0), prepared(1)], generation=GenerationSpec(logprobs=10))
         self.assertEqual([item["status"] for item in results], ["succeeded", "failed"])
-        self.assertEqual(results[0]["logprobs_json"], '{"content": []}')
+        self.assertEqual(results[0]["logprobs_json"], '[]')
         self.assertEqual(results[0]["text"], "")
         self.assertEqual([item["total_tokens"] for item in results], [3, 5])
         self.assertIsNone(results[1]["text"])
@@ -477,7 +479,7 @@ class KernelTests(unittest.TestCase):
         self.assertIsNone(result["text"])
         self.assertIs(result["deadline_expired"], True)
         self.assertEqual(result["total_tokens"], 5)
-        self.assertEqual(len(json.loads(result["logprobs_json"])["content"]), 2)
+        self.assertEqual(len(json.loads(result["logprobs_json"])), 2)
         self.assertEqual(engine.ready()["reserved_model_calls"], 1)
 
     @unittest.skipUnless(importlib.util.find_spec("lotus"),
@@ -523,10 +525,13 @@ assert hashlib.sha256((package/'sem_ops/cascade_utils.py').read_bytes()).hexdige
     '14fc1140939567559abde71976c1f3d21906864d720aa324f983f9dc8cf3b594'
 lotus.settings.configure(enable_cache=False)
 results = json.load(sys.stdin)
+assert all(type(json.loads(item['logprobs_json'])) is list for item in results)
+assert all(len(json.loads(item['logprobs_json'])) == len(json.loads(item['output_token_ids_json']))
+           for item in results)
 responses = [ModelResponse(id=item['engine_request_id'], model='openai/qwen2.5-7b',
     choices=[dict(index=0, finish_reason=item['finish_reason'],
                   message=dict(role='assistant',content=item['text']),
-                  logprobs=json.loads(item['logprobs_json']))],
+                  logprobs=dict(content=json.loads(item['logprobs_json'])))],
     usage={key:item[key] for key in ('prompt_tokens','completion_tokens','total_tokens')})
     for item in results]
 lm = LM('openai/qwen2.5-7b', max_tokens=8)
