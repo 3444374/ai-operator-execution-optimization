@@ -32,9 +32,11 @@ JSON 模式不增加严格 schema、字段校验或结果补写。默认换行 s
 及[原始概率计算](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/sample/sampler.py)
 定义此处返回的是温度、惩罚等处理前的 log probability。
 
-未请求时 `logprobs_json` 仍为 `"null"`；请求时是 OpenAI 兼容对象
-`{"content": [{"token": ..., "logprob": ..., "bytes": ..., "top_logprobs": [...]}]}`，
-与生成 token IDs 逐位置对齐。`0` 保留真实 sampled token 概率而返回空 top 列表。
+未请求时 `logprobs_json` 仍为 `"null"`；请求时其值是 OpenAI `content` 数组的 JSON：
+`[{"token": ..., "logprob": ..., "bytes": ..., "top_logprobs": [...]}]`，
+与生成 token IDs 逐位置对齐。方法/LM 接点构造 `ModelResponse` 时再包装
+`logprobs={"content": content_array}`；原生 token ID 到 `Logprob` 的字典不能直接交给 parser。
+`0` 保留真实 sampled token 概率而返回空 top 列表。
 转换遵循固定版本的
 [chat 输出映射](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/serving.py#L1000-L1081)
 和[token 解码](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/generate/base/serving.py#L231-L248)：
