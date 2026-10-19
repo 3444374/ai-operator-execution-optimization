@@ -1,7 +1,7 @@
 # 实验与机制证据台账
 
 2026-10-19：[Movie Q3 records Core 接入](diagnostics/lotus_records_core_20261019/README.md)。
-从c0be45dd独立接入既有production Core／异步传输，23项新CPU fixture与旧静态／Core／native等101项及32subtests通过、零skip。
+从c0be45dd独立接入既有production Core／异步传输，两轴审查复现超限usage与EOF取消缺口后修复；26项新CPU fixture与旧静态／Core／native等104项及32subtests通过、零skip。
 Ray／Daft／LOTUS／模型为明确替身，实际模型与GPU均0；首个系统Python缺pyarrow失败保留。
 公共runner、真实库／原评价组合及GPU未验，不继承静态或其他路径资格，不支持性能结论。
 

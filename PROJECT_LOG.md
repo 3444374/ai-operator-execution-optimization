@@ -5,7 +5,8 @@
 从integration/data-execution的c0be45dd建独立职责分支，先对照架构／数据组织／增量实施条款建立源码、缺口与验收映射。
 新增adapter复用SessionEngine、既有容量／策略／异步传输与模型actor owner；不调用静态调度，不修改公共records／引擎／runner或其他后端。
 单行准备／模型批有显式检查，成功lease解码后释放；异常／取消／期限／unknown保留实际责任和已知调用收据。
-23项专属CPU fixture与旧路径等101项／32subtests通过；系统Python缺pyarrow的初始导入失败保留，未安装依赖或执行服务器GPU。
+两轴独审指出超限usage、EOF取消和日志获取缺项，已补有界失败收据、派发前重查与公开日志；修后26项专属CPU fixture与旧路径等104项／32subtests通过。
+系统Python缺pyarrow的初始导入失败保留，未安装依赖或执行服务器GPU。
 [切片报告](experiments/results/diagnostics/lotus_records_core_20261019/README.md)明确公共集成、真实库／原评价组合、真实模型和性能均待验；独立两轴审查随后记录，不合main或删除旧路径。
 
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界

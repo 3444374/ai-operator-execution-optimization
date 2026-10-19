@@ -36,8 +36,10 @@ records→本地模型→原 LOTUS 解释的 Core adapter。只验证接入和�
 它复用 `SessionEngine`、`SessionPolicies`、既有 admission／endpoint router 和
 `BoundedAsyncBackend`，没有新调度器或 HTTP gateway。`_ActorOwner` 只选择性复用静态参照的
 actor 内核、资源分配和关闭，不调用其 `evaluate()` 或 `_StaticRows`；旧静态文件保持原样。
-模型 worker 在返回前编码并检查终态 bytes 上限。坏身份、响应超限与执行结果 unknown
-不被改写成已确认成功；Core 保留其占用与输入引用，并拒绝下一查询。
+模型 worker 在返回前编码并检查终态 bytes 上限。结果预留在分配模型前须能容纳完整 call 身份与最宽有限 token 计数的失败收据；
+完整结果超限时只返回有界失败收据，保留已知 usage、确认状态与原 call 身份，省略结果正文等大字段。
+已确认的超限完成使查询失败并回收计算；unknown 即使超限仍保留 Core 占用与输入引用，不允许下一查询。
+坏身份也不会被改写成已确认成功。
 
 成功结果经 Core Delivery／lease 交给 adapter，解码为独立对象后在 `finally` 中 release。
 失败 tick 的紧凑调用收据另行保留，防止 Core 丢弃未交付结果时丢掉已知 usage；
@@ -53,11 +55,15 @@ actor 内核、资源分配和关闭，不调用其 `evaluate()` 或 `_StaticRow
 | `core-fixture-r1` | 已有隔离 CPU 环境，20 项新 adapter 用例通过；工具输出 `a43adc` |
 | `core-fixture-r2` | 补逆序完成／跨线程拒绝／早停迟到收据后，23 项通过；工具输出 `bf1755` |
 | `fixture-regression-r1` | 新 adapter、旧静态、Core、异步 backend、旧 native task 共 101 项及 32 subtests 通过，零 skip；0.70 秒仅是测试墙钟 |
+| `fixture-regression-r2` | 修复两轴审查发现的超限 usage 和 EOF 取消，26 项专属与旧路径共 104 项／32 subtests 全通过、零 skip；0.61 秒仅是测试墙钟 |
 
 上述使用真实 production Core 与已有异步传输；Ray／Daft／LOTUS／模型均为明确 CPU fixture。
 没有安装依赖，使用已有独立 Python 3.12.6 环境。实际 Ray／Daft 图、原 LOTUS 方法及原 SemBench
 评价器在新 adapter 组合上的资格仍 pending；不继承旧静态或原生路径的模型结果。
 本任务实际模型调用、GPU 分配、服务器命令均为 0。
+两轮完整回归的脱敏原始 stdout 已公开保留于 [r1](raw/fixture-regression-r1.log) 与
+[r2](raw/fixture-regression-r2.log)，可从仓库同目录取得并按 verification SHA 核验。
+初始导入失败及前两轮单独 fixture 只在上述对话工具输出中捕获，未创建独立日志文件；该部分没有可下载原件，不虚构日志 SHA。
 
 ## 接口、清理与交接
 
@@ -73,6 +79,14 @@ actor 内核、资源分配和关闭，不调用其 `evaluate()` 或 `_StaticRow
 `ray.kill`、model API shutdown 或 transport 线程退出都不构成 GPU 退出证明。
 unknown 保留 owner 句柄与 Core 账本，进程／GPU 实际退出仍由外层监督独立核实。
 
-两轴独立审查待完成。公共 selector／报告接线、真实库／原方法组合和真实模型资格交集成 owner
+## 独立审查
+
+两位只读 reviewer 分别从 Standards 与 Spec 审阅 `c0be45dd...378c7da7`，均核对实际计划和源码。
+Standards 发现结果超限后的已知 usage 丢失及日志获取说明缺项；Spec 另独立复现 EOF 观察到取消后仍派发一次，
+并以 8192 字符响应／1024 bytes 预留复现超限 usage 丢失。原通过测试没有覆盖这两个执行反例。
+现增加模型前失败收据容量检查、worker 内有界收据、失败／unknown 分别结算，以及 EOF 后派发前取消／期限复查；
+补充 3 项反例并公开两轮脱敏回归日志。修订提交的独立定向复核待记录。
+
+公共 selector／报告接线、真实库／原方法组合和真实模型资格交集成 owner
 选择性整合与排程；本分支没有修改公共 `records.py`、`vllm_engine.py` 或 `lotus_records_movie.py`。
 级联、`AsyncLLM`、HSE、多查询、图像、多卡与性能评价均不在本切片。

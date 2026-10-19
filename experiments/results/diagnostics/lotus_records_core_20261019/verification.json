@@ -1,43 +1,99 @@
 {
-  "schema": "semloom.records_core_cpu.v1",
+  "schema": "semloom.records_core_cpu.v2",
   "baseline": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
-  "started_unix": 1792373378.9999008,
-  "run_id": "fixture-regression-r1",
-  "command": [
-    "python",
-    "-m",
-    "pytest",
-    "-q",
-    "code/tests/execution_provider/test_lotus_records_core.py",
-    "code/tests/execution_provider/test_lotus_records_static.py",
-    "code/tests/scheduling/test_async_backend.py",
-    "code/tests/scheduling/test_incremental_session.py",
-    "code/tests/execution_provider/test_native_tasks.py"
+  "final_run_id": "fixture-regression-r2",
+  "runs": [
+    {
+      "schema": "semloom.records_core_cpu.v1",
+      "baseline": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+      "started_unix": 1792373378.9999008,
+      "run_id": "fixture-regression-r1",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "code/tests/execution_provider/test_lotus_records_core.py",
+        "code/tests/execution_provider/test_lotus_records_static.py",
+        "code/tests/scheduling/test_async_backend.py",
+        "code/tests/scheduling/test_incremental_session.py",
+        "code/tests/execution_provider/test_native_tasks.py"
+      ],
+      "exit_code": 0,
+      "python": "3.12.6",
+      "log": {
+        "path": "raw/fixture-regression-r1.log",
+        "bytes": 168,
+        "sha256": "95069da6800f9156f0adc438b2390426b02c27ad2d9ad50e9b4d0ccb3c768400"
+      },
+      "source_sha256": {
+        "code/src/execution_provider/adapters/lotus_records_core.py": "6b0c08358864fea027065fb6caafc8736951f008d7feb4ec24bd960d8edda9a3",
+        "code/tests/execution_provider/test_lotus_records_core.py": "708c739c8c1fb7ea297428ad978566075ce1f3aacc891ecc0b1aaf44e17f21ab",
+        "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
+        "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+        "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c"
+      },
+      "scope": {
+        "core": "real SessionEngine and BoundedAsyncBackend",
+        "ray": "CPU fixture",
+        "daft": "CPU fixture",
+        "lotus": "CPU fixture",
+        "model": "CPU fixture",
+        "inference_calls": 0,
+        "gpu_allocations": 0
+      },
+      "passed": 101,
+      "subtests_passed": 32,
+      "skipped": 0,
+      "test_wall_seconds": 0.7,
+      "source_commit": "378c7da7"
+    },
+    {
+      "schema": "semloom.records_core_cpu.v1",
+      "baseline": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+      "started_unix": 1792373880.0567648,
+      "run_id": "fixture-regression-r2",
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "code/tests/execution_provider/test_lotus_records_core.py",
+        "code/tests/execution_provider/test_lotus_records_static.py",
+        "code/tests/scheduling/test_async_backend.py",
+        "code/tests/scheduling/test_incremental_session.py",
+        "code/tests/execution_provider/test_native_tasks.py"
+      ],
+      "exit_code": 0,
+      "python": "3.12.6",
+      "log": {
+        "path": "raw/fixture-regression-r2.log",
+        "bytes": 168,
+        "sha256": "c606087bc91f7c846fd0252170faf016fafc7205597f054740326bd19f92c3a8"
+      },
+      "source_sha256": {
+        "code/src/execution_provider/adapters/lotus_records_core.py": "074813a973ed888d42814a5ca1e03434dd1d9458d2b66d6faf5dc549c86af615",
+        "code/tests/execution_provider/test_lotus_records_core.py": "0ee271283cc4773389091eb29b1baac887acc1a9061baf8bc4f5aaaff306dfdc",
+        "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
+        "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+        "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c"
+      },
+      "scope": {
+        "core": "real SessionEngine and BoundedAsyncBackend",
+        "ray": "CPU fixture",
+        "daft": "CPU fixture",
+        "lotus": "CPU fixture",
+        "model": "CPU fixture",
+        "inference_calls": 0,
+        "gpu_allocations": 0
+      },
+      "passed": 104,
+      "subtests_passed": 32,
+      "skipped": 0
+    }
   ],
-  "exit_code": 0,
-  "python": "3.12.6",
-  "log": {
-    "private_artifact": "fixture-regression-r1.log",
-    "bytes": 168,
-    "sha256": "95069da6800f9156f0adc438b2390426b02c27ad2d9ad50e9b4d0ccb3c768400"
-  },
-  "source_sha256": {
-    "code/src/execution_provider/adapters/lotus_records_core.py": "6b0c08358864fea027065fb6caafc8736951f008d7feb4ec24bd960d8edda9a3",
-    "code/tests/execution_provider/test_lotus_records_core.py": "708c739c8c1fb7ea297428ad978566075ce1f3aacc891ecc0b1aaf44e17f21ab",
-    "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
-    "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
-    "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c"
-  },
-  "scope": {
-    "core": "real SessionEngine and BoundedAsyncBackend",
-    "ray": "CPU fixture",
-    "daft": "CPU fixture",
-    "lotus": "CPU fixture",
-    "model": "CPU fixture",
-    "inference_calls": 0,
-    "gpu_allocations": 0
-  },
-  "earlier_runs": [
+  "evidence_access": "Public relative log paths resolve from this report directory. The first system-Python import failure and two initial standalone fixture runs were captured only by the recorded conversation tool outputs; standalone raw files were not created and are unavailable.",
+  "initial_runs": [
     {
       "run_id": "system-python-import-r1",
       "exit_code": 1,
@@ -57,8 +113,27 @@
       "tool_output": "bf1755"
     }
   ],
-  "passed": 101,
-  "subtests_passed": 32,
-  "skipped": 0,
-  "test_wall_seconds": 0.7
+  "review": {
+    "standards_initial": {
+      "source_commit": "378c7da7",
+      "findings": [
+        "bounded result overflow lost known usage",
+        "private log retrieval unspecified"
+      ]
+    },
+    "spec_initial": {
+      "source_commit": "378c7da7",
+      "findings": [
+        "EOF cancellation observed but one dispatch still occurred",
+        "oversized successful response lost known usage"
+      ],
+      "reproduced_with_original_source": true
+    }
+  },
+  "remaining": [
+    "shared runner integration owned by integration owner",
+    "real Ray/Daft/LOTUS/SemBench composition qualification",
+    "GPU/model/physical-exit qualification",
+    "no performance claim"
+  ]
 }

@@ -416,15 +416,51 @@ class CoreRecordsTests(unittest.TestCase):
         self.assertEqual(len(runtime.engines[0].calls), 1)
         self.assertEqual(report["core_usage"]["active_requests"], 1)
 
-    def test_oversized_result_is_stopped_in_model_worker_before_driver_buffer(self):
+    def test_too_small_result_reservation_is_rejected_before_model_allocation(self):
         with Runtime(self.rows) as runtime:
             owner = self.owner(max_active_batches=1)
             owner.capacity = replace(owner.capacity, item_result_bytes=16)
-            with self.assertRaisesRegex(RuntimeError, "execution failed"):
+            with self.assertRaisesRegex(ValueError, "reserved item capacity"):
                 list(owner.evaluate(Source(self.rows), query_id="q"))
             report = owner.close()
+        self.assertEqual(runtime.engines, [])
+        self.assertFalse(report["production_core_connected"])
+
+    def test_oversized_result_preserves_known_usage_in_bounded_failure_receipt(self):
+        def large(value):
+            value["text"] = "x" * 8192
+            return value
+        with Runtime(self.rows, result_change=large) as runtime:
+            owner = self.owner(max_active_batches=1)
+            owner.capacity = replace(owner.capacity, item_result_bytes=1024)
+            received = []
+            with self.assertRaisesRegex(RuntimeError, "execution failed"):
+                received.extend(owner.evaluate(Source(self.rows), query_id="q"))
+            report = owner.close()
         self.assertEqual(len(runtime.engines[0].calls), 1)
-        self.assertEqual(report["core_usage"]["result_bytes"], 16)
+        self.assertEqual(received[0]["prompt_tokens"], 11)
+        self.assertEqual(received[0]["completion_tokens"], 1)
+        self.assertEqual(received[0]["total_tokens"], 12)
+        self.assertEqual(received[0]["status"], "failed")
+        self.assertEqual(received[0]["error_type"], "ResultCapacityExceeded")
+        self.assertTrue(received[0]["submission_confirmed"])
+        self.assertNotIn("x" * 1024, json.dumps(received[0]))
+        self.assertEqual(report["core_usage"]["held_tasks"], 0)
+
+    def test_oversized_unknown_keeps_both_known_usage_and_unknown_reservations(self):
+        def unknown(value):
+            value.update(status="unknown", text="x" * 8192)
+            return value
+        with Runtime(self.rows, result_change=unknown):
+            owner = self.owner(max_active_batches=1)
+            owner.capacity = replace(owner.capacity, item_result_bytes=1024)
+            received = []
+            with self.assertRaisesRegex(RuntimeError, "execution failed"):
+                received.extend(owner.evaluate(Source(self.rows), query_id="q"))
+            report = owner.close()
+        self.assertEqual(received[0]["status"], "unknown")
+        self.assertEqual(received[0]["prompt_tokens"], 11)
+        self.assertEqual(report["core_usage"]["active_requests"], 1)
 
     def test_bad_suffix_does_not_erase_already_delivered_prefix(self):
         with Runtime(self.rows):
@@ -529,6 +565,23 @@ class CoreRecordsTests(unittest.TestCase):
                     future.result()
             self.assertEqual(runtime.events, [])
             owner.close()
+
+    def test_cancellation_observed_at_source_eof_prevents_dispatch(self):
+        with Runtime(self.rows[:1]) as runtime:
+            owner = self.owner(max_active_batches=2)
+            cancelled = threading.Event()
+            stream = owner.evaluate(Source(self.rows[:1]), query_id="q", cancelled=cancelled.is_set)
+
+            def source():
+                yield self.rows[0]
+                cancelled.set()
+
+            stream.source_rows = source()
+            with self.assertRaises(InterruptedError):
+                next(stream)
+            report = owner.close()
+        self.assertEqual(runtime.engines[0].calls, [])
+        self.assertEqual(report["core_usage"]["held_tasks"], 0)
 
     def test_iterator_rejects_foreign_thread_before_pulling_records(self):
         with Runtime(self.rows) as runtime:

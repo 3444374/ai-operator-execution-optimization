@@ -85,13 +85,43 @@ def _check(deadline, cancelled=None):
         raise TimeoutError("Movie Q3 Core records deadline expired")
 
 
+def _capacity_failure(value):
+    """Keep identity and known usage when a full result cannot fit its reservation."""
+    occurrence = identity(value["query_id"], value["row_id"],
+                          value["source_position"], value["call_index"])
+    return dict(
+        occurrence, status="unknown" if value["status"] == "unknown" else "failed",
+        text=None, prompt_tokens=value.get("prompt_tokens"),
+        completion_tokens=value.get("completion_tokens"), total_tokens=value.get("total_tokens"),
+        submission_confirmed=value.get("submission_confirmed", value["status"] == "succeeded"),
+        error_type="ResultCapacityExceeded", result_fields_omitted=True,
+    )
+
+
+def _check_result_capacity(occurrence, maximum):
+    # Real token counts are lengths of finite Python sequences. Reserve their
+    # widest supported representation before allowing this call to be sent.
+    value = dict(occurrence, status="unknown", prompt_tokens=(1 << 64) - 1,
+                 completion_tokens=(1 << 64) - 1, total_tokens=(1 << 65) - 2)
+    _encode(_capacity_failure(value), maximum)
+
+
 class _CoreModelActor(_ModelActor):
     def run_core(self, rows, deadline, maximum):
         result = self.run(rows, deadline)
         if type(result) is not list or len(result) != 1:
             raise RuntimeError("single-row model completion is unconfirmed")
-        # The driver and Core receive only this bounded byte envelope.
-        return _encode(result[0], maximum)
+        value = result[0]
+        occurrence = identity(rows[0]["query_id"], rows[0]["row_id"],
+                              rows[0]["source_position"], rows[0]["call_index"])
+        audit = CallLedger([occurrence], 1)
+        audit.record(value)
+        # The driver and Core receive only bounded bytes. The small failure
+        # representation was checked before dispatch and retains known billing.
+        try:
+            return _encode(value, maximum)
+        except ValueError:
+            return _encode(_capacity_failure(value), maximum)
 
 
 class _ActorOwner(SemLoomRecordsStaticReference):
@@ -279,6 +309,7 @@ class _CoreRows(Iterator[dict[str, Any]]):
                     raise self._failure
                 _check(self.deadline, self.cancelled)
                 self._fill()
+                _check(self.deadline, self.cancelled)
                 progress = self.session.advance(1)
                 self._observe()
                 if progress.state in (State.FAILED, State.CANCELLED):
@@ -358,7 +389,7 @@ class SemLoomRecordsCore:
         self.resources = RecordsResources(**asdict(resources))
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
-        self.capacity = capacity or CoreRecordsCapacity()
+        self.capacity = CoreRecordsCapacity() if capacity is None else capacity
         if type(self.capacity) is not CoreRecordsCapacity:
             raise TypeError("Core records capacity must be CoreRecordsCapacity")
         self._thread = threading.get_ident()
@@ -393,6 +424,8 @@ class SemLoomRecordsCore:
         identity(query_id, "preflight", 0)
         expected = source.expected(query_id)
         CallLedger(expected, max(1, len(expected)))
+        for occurrence in expected:
+            _check_result_capacity(occurrence, self.capacity.item_result_bytes)
         # Core's fixed-size session identity is checked before actors are allocated.
         spec = SessionSpec(query_id, "movie-q3-filter", "lotus-records-local-model-v1")
         _check(deadline, cancelled)
