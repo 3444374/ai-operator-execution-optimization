@@ -118,6 +118,9 @@ class RecordsActorOwner:
         self._start_failed = False
         self.last_close_report = None
 
+    def _model_actor_type(self) -> type[_ModelActor]:
+        return _ModelActor
+
     def wait_ready(
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
@@ -153,7 +156,7 @@ class RecordsActorOwner:
         self.ray = ray
         try:
             prepare = ray.remote(_PrepareActor)
-            model = ray.remote(_ModelActor)
+            model = ray.remote(self._model_actor_type())
             for _ in range(self.resources.cpu_workers):
                 self.prepare_actors.append(prepare.options(
                     num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,

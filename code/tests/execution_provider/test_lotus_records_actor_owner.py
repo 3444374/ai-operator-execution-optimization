@@ -186,6 +186,29 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             self.assertEqual(allocations[-1][2]["num_gpus"], 1)
             owner.close()
 
+    def test_model_actor_factory_selects_trusted_override_and_dynamic_default(self):
+        class TrustedActor(actors._ModelActor):
+            pass
+
+        class TrustedOwner(actors.RecordsActorOwner):
+            def _model_actor_type(self):
+                return TrustedActor
+
+        with FakeRuntime():
+            default = self.owner()
+            deadline = time.monotonic() + 3
+            default.start(deadline)
+            self.assertIs(type(default.model_actor.value), actors._ModelActor)
+            specialized = TrustedOwner(default.method, default.engine, default.generation, default.resources)
+            specialized.start(deadline)
+            self.assertIs(type(specialized.model_actor.value), TrustedActor)
+            with patch.object(actors, "_ModelActor", TrustedActor):
+                patched_default = self.owner()
+                patched_default.start(deadline)
+                self.assertIs(type(patched_default.model_actor.value), TrustedActor)
+            for owner in [default, specialized, patched_default]:
+                owner.close()
+
     def test_all_preflight_failures_precede_actor_allocation(self):
         for failure in ["method", "driver", "generation", "ray-version", "ray-uninitialized"]:
             with self.subTest(failure=failure), FakeRuntime() as runtime:
