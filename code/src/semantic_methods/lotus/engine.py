@@ -4,7 +4,7 @@ The execution backends receive records and return engine results. This module
 does not create a model, send HTTP, run a vendor graph, or own its scheduling.
 """
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from importlib.metadata import distribution, version
 import hashlib
 import json
@@ -49,7 +49,7 @@ def make_lm(method, generation):
     if generation.seed is not None:
         options["seed"] = generation.seed
     validate_generation(method, generation)
-    _filter_instruction(method)
+    _filter_instruction(method, require_bound=False)
     return LM(method.model_name, temperature=generation.temperature,
               max_tokens=generation.max_tokens, **options)
 
@@ -82,16 +82,39 @@ def validate_lm(lm, method, generation):
         raise ValueError("LOTUS effective generation options differ from the local engine")
 
 
-def _filter_instruction(method):
+def _input_instruction(instruction, resolved_input_columns, *, require_bound=True):
     import lotus
 
+    parsed = lotus.nl_expression.parse_cols(instruction)
+    if not parsed:
+        raise ValueError("ordinary record instruction must reference an input column")
+    if resolved_input_columns is None:
+        if require_bound:
+            raise ValueError("unbound input columns; bind the method in the caller before worker preparation")
+        columns = parsed
+    else:
+        if set(parsed) != set(resolved_input_columns):
+            raise ValueError("resolved_input_columns differ from the original instruction references")
+        columns = list(resolved_input_columns)
+    return columns, lotus.nl_expression.nle2str(instruction, columns)
+
+
+def _filter_instruction(method, *, require_bound=True):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
     method.describe()
-    columns = lotus.nl_expression.parse_cols(method.instruction)
-    if not columns:
-        raise ValueError("ordinary Filter instruction must reference an input column")
-    return columns, lotus.nl_expression.nle2str(method.instruction, columns)
+    return _input_instruction(method.instruction, method.resolved_input_columns, require_bound=require_bound)
+
+
+def bind_filter_method(method):
+    """Freeze the caller's original LOTUS column order before serialization.
+
+    A previously bound method retains that order after validating its reference
+    set. Worker preparation requires this value and never binds an unbound method.
+    """
+    validate_filter_source()
+    columns, _ = _filter_instruction(method, require_bound=False)
+    return replace(method, resolved_input_columns=tuple(columns))
 
 
 class _FilterFormatter:
@@ -100,8 +123,8 @@ class _FilterFormatter:
     def __init__(self, method, model):
         from lotus.templates import task_instructions
 
-        self.method, self.model = method, model
-        self.columns, self.instruction = _filter_instruction(method)
+        self.method, self.model = FilterMethod.from_dict(method.describe()), model
+        self.columns, self.instruction = _filter_instruction(self.method)
         self.instructions = task_instructions
 
     def messages(self, rows, *, index=None):
@@ -132,6 +155,7 @@ class LotusFilterMethod(_FilterFormatter):
             raise TypeError("an explicit ordinary Filter method is required")
         if lotus.settings.serialization_format != SerializationFormat.DEFAULT:
             raise ValueError("records Filter requires DEFAULT serialization")
+        _filter_instruction(method)
         # The formatter uses LM's model-name methods. Construction creates no
         # model weights, provider client, request executor, or network connection.
         super().__init__(method, LM(method.model_name, max_tokens=8))

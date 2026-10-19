@@ -32,7 +32,8 @@ def validate_movie_method(method):
         raise ValueError("Movie source requires the plain FilterMethod")
     method.describe()
     if (method.instruction != MOVIE_Q3_INSTRUCTION or method.default is not True
-            or method.output_tokens != ("True", "False") or method.system_prompt is not None):
+            or method.output_tokens != ("True", "False") or method.system_prompt is not None
+            or method.resolved_input_columns not in (None, ("reviewText",))):
         raise ValueError("original Movie Q3 requires its instruction, output tokens, default parser policy and system prompt")
 
 

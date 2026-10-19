@@ -149,7 +149,7 @@ class LotusRecordChainTests(unittest.TestCase):
         actual_infer = FixtureInfer()
         actual_chain = LotusFilterMapExtract(stages(), query_id="q")
         actual = actual_chain.run_batch(records(), actual_infer)
-        native_methods = [LotusRecordMethod(s) for s in stages()]
+        native_methods = [LotusRecordMethod(s.bind()) for s in stages()]
         native_calls = []
         for method in native_methods:
             def respond(data, options, *_args, method=method):
@@ -222,7 +222,7 @@ class LotusRecordChainTests(unittest.TestCase):
             self.assertNotIn(REVIEW, json.dumps(message, ensure_ascii=False))
         self.assertIn(NEGATIVE_SUMMARY, json.dumps(batches[1][0][1], ensure_ascii=False))
 
-        native_methods = [LotusRecordMethod(stage) for stage in selected]
+        native_methods = [LotusRecordMethod(stage.bind()) for stage in selected]
         native_batches = []
         for method in native_methods:
             def respond(data, options, *_args, method=method):

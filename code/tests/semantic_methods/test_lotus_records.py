@@ -37,6 +37,22 @@ class FilterMethodTests(unittest.TestCase):
         self.assertEqual(FilterMethod.from_dict(json.loads(json.dumps(method.describe()))), method)
         self.assertNotEqual(method.instruction, MOVIE_Q3_INSTRUCTION)
 
+    def test_old_configs_are_readable_and_bound_column_values_are_owned_json_data(self):
+        old = dict(model_name="fixture", instruction=MOVIE_Q3_INSTRUCTION, default=True,
+                   output_tokens=["True", "False"], system_prompt=None)
+        self.assertIsNone(FilterMethod.from_dict(old).resolved_input_columns)
+        self.assertIsNone(asdict(FilterMethod("fixture"))["resolved_input_columns"])
+        columns = ["paragraph", "topic"]
+        method = FilterMethod("fixture", "Use {paragraph} and {topic}", resolved_input_columns=columns)
+        columns.reverse()
+        self.assertEqual(method.resolved_input_columns, ("paragraph", "topic"))
+        self.assertEqual(FilterMethod.from_dict(json.loads(json.dumps(method.describe()))), method)
+
+    def test_resolved_columns_reject_non_sequences_empty_names_and_duplicates(self):
+        for value in ("paragraph", [], [""], [None], [True], ["paragraph", "paragraph"]):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "resolved_input_columns"):
+                FilterMethod("fixture", resolved_input_columns=value)
+
 
 class RecordScanTests(unittest.TestCase):
     def scan(self, **changes):

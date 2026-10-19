@@ -34,6 +34,24 @@ system prompt、原 predicate 与 CSV schema；方法层继续拒绝 JSON 模式
 raw records 保留调用方的完整身份，默认 Q3 call IDs 字节不变。Map 生成的文本列可交同一 Filter 方法消费；
 模型、原 parser／usage 与每阶段 generation 仍分别拥有身份。
 
+固定 LOTUS 1.2.4 的 `parse_cols()` 返回 `list(set(...))`，不同进程的列序可能不同。
+caller 必须先调用 `engine.bind_filter_method(method)`，将原解析顺序冻结到同一
+`FilterMethod.resolved_input_columns` 字段；后端在分配资源前绑定并序列化，worker 只核引用集合
+和输入文本列，按收到的顺序调用原 formatter。已绑定方法再次绑定保持原顺序，不按 worker
+本地 hash 顺序重排，也不依赖统一 `PYTHONHASHSEED`。同一方法的跨后端比对应共享 caller 绑定后的值。
+
+`MapMethod` 使用同一可选列序字段，`StageSpec.bind()` 按 caller 原解析顺序绑定 Filter／Map；
+Extract 保留自身显式 `input_columns` 顺序。普通 `LotusRecordChain(stages, query_id=...)` 构造
+会在 caller 自动绑定，再由 `describe()` 生成 wire 值；worker 使用 `LotusRecordChain.from_dict()`
+严格接收，缺失绑定或引用集合不符即失败，不在接收端补绑定。
+直接构造 worker 的 `LotusFilterMethod`／`LotusRecordMethod` 同样要求已绑定值。
+`make_lm()` 只创建 accounting/config 对象，允许尚未绑定的 caller 配置并检查原引用，不负责准备消息。
+
+旧配置缺少 `resolved_input_columns` 时仍读为 `None`，caller 绑定默认 Q3 后固定为
+`("reviewText",)`；旧 Q3 消息和 call IDs 保持。`dataclasses.asdict()` 的新输出会新增该字段
+（未绑定为 `None`），属于增加可选字段的配置兼容，不承诺新配置 JSON 与历史归档的字节 SHA 相同。
+旧冻结运行不修改；未绑定的旧 wire 需要经过 caller 绑定后才可交给新 worker。
+
 source 保留 `csv_path`、`preflight(method)`、`expected(query_id)`，并通过
 `scan_spec(method) -> RecordScan` 声明不可变的原生扫描值：
 

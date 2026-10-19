@@ -142,7 +142,7 @@ class MovieRecordSourceTests(unittest.TestCase):
         source = MovieRecordSource.from_manifest(self.prepare())
         for changes in (dict(instruction="Accept {paragraph}"),
                         dict(instruction="Other {reviewText}"), dict(default=False),
-                        dict(system_prompt="Custom")):
+                        dict(system_prompt="Custom"), dict(resolved_input_columns=("paragraph",))):
             method = FilterMethod("fixture", **changes)
             for action in (source.preflight, source.scan_spec):
                 with self.subTest(changes=changes, action=action.__name__), self.assertRaisesRegex(ValueError, "Movie Q3"):

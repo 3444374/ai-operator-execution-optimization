@@ -6,15 +6,18 @@ owns their physical batching, model instance and lifetime.
 """
 
 from copy import deepcopy
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 import hashlib
 from importlib.metadata import distribution
 import json
 import os
 import time
 
-from .engine import _FilterFormatter, engine_response, lm_report, validate_filter_source, validate_generation
-from .records import FilterMethod
+from .engine import (
+    _FilterFormatter, _input_instruction, bind_filter_method, engine_response, lm_report,
+    validate_filter_source, validate_generation,
+)
+from .records import FilterMethod, _resolved_columns
 from .sdk import SOURCE_HASHES
 from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS
 
@@ -50,12 +53,14 @@ class MapMethod:
     instruction: str
     output_column: str = "summary"
     system_prompt: str | None = None
+    resolved_input_columns: tuple[str, ...] | None = None
 
     def __post_init__(self):
         for name in ("model_name", "instruction", "output_column"):
             _name(getattr(self, name), "Map " + name)
         if self.system_prompt is not None and type(self.system_prompt) is not str:
             raise ValueError("Map system_prompt must be a string or None")
+        object.__setattr__(self, "resolved_input_columns", _resolved_columns(self.resolved_input_columns))
 
 
 @dataclass(frozen=True)
@@ -177,6 +182,20 @@ class StageSpec:
                     method=asdict(self.method), generation=asdict(self.generation),
                     model_role=self.model_role)
 
+    def bind(self):
+        """Resolve caller-owned Filter/Map order; Extract already declares order."""
+        self.__post_init__()
+        validate_chain_source()
+        if type(self.method) is FilterMethod:
+            method = bind_filter_method(self.method)
+        elif type(self.method) is MapMethod:
+            columns, _ = _input_instruction(self.method.instruction,
+                                            self.method.resolved_input_columns, require_bound=False)
+            method = replace(self.method, resolved_input_columns=tuple(columns))
+        else:
+            method = self.method
+        return replace(self, method=method)
+
     @classmethod
     def from_dict(cls, value):
         kinds = {kind.__name__: kind for kind in (FilterMethod, MapMethod, ExtractMethod)}
@@ -204,6 +223,9 @@ class LotusRecordMethod:
             raise ValueError("record methods require caching disabled and DEFAULT serialization")
         self.stage = StageSpec.from_dict(stage.describe())
         self.method = self.stage.method
+        if type(self.method) in (FilterMethod, MapMethod):
+            self.columns, self.instruction = _input_instruction(
+                self.method.instruction, self.method.resolved_input_columns)
         generation = self.stage.generation
         options = dict(max_tokens=generation.max_tokens, temperature=generation.temperature,
                        top_p=generation.top_p, stop=list(generation.stop),
@@ -222,9 +244,6 @@ class LotusRecordMethod:
         elif type(self.method) is ExtractMethod:
             self.columns = list(self.method.input_columns)
             self.instruction = None
-        else:
-            self.columns = lotus.nl_expression.parse_cols(self.method.instruction)
-            self.instruction = lotus.nl_expression.nle2str(self.method.instruction, self.columns)
         if not self.columns:
             raise ValueError("a record method must reference an input column")
 
@@ -293,7 +312,7 @@ class LotusRecordChain:
     at final relation assembly. Nonterminal label updates need a separate contract.
     """
 
-    def __init__(self, stages, *, query_id):
+    def __init__(self, stages, *, query_id, _require_bound=False):
         _name(query_id, "query_id")
         if type(stages) is not tuple or not stages or any(type(s) is not StageSpec for s in stages):
             raise ValueError("a finite nonempty tuple of StageSpec is required")
@@ -301,6 +320,10 @@ class LotusRecordChain:
             raise ValueError("each operator occurrence needs a distinct stage_id")
         if any(s.kind == "extract" for s in stages[:-1]):
             raise ValueError("Extract must be terminal before final index-label assignment")
+        if type(_require_bound) is not bool:
+            raise TypeError("_require_bound must be a boolean")
+        if not _require_bound:
+            stages = tuple(stage.bind() for stage in stages)
         self.query_id = query_id
         self.methods = tuple(LotusRecordMethod(s) for s in stages)
         self.stages = tuple(m.stage for m in self.methods)
@@ -310,7 +333,9 @@ class LotusRecordChain:
 
     @classmethod
     def from_dict(cls, value):
-        return cls(tuple(StageSpec.from_dict(s) for s in value["stages"]), query_id=value["query_id"])
+        """Receive caller-bound wire values; never resolve order in a worker."""
+        return cls(tuple(StageSpec.from_dict(s) for s in value["stages"]),
+                   query_id=value["query_id"], _require_bound=True)
 
     def run_batch(self, records, infer):
         if type(records) is not list or any(type(r) is not RecordOccurrence for r in records):
@@ -407,14 +432,14 @@ class LotusRecordChain:
 class LotusFilterMapExtract(LotusRecordChain):
     """Compatibility constructor for the first three-method acceptance example."""
 
-    def __init__(self, stages, *, query_id):
+    def __init__(self, stages, *, query_id, _require_bound=False):
         if (type(stages) is not tuple or len(stages) != 3
                 or any(type(s) is not StageSpec for s in stages)
                 or [s.kind for s in stages] != ["filter", "map", "extract"]):
             raise ValueError("this example requires Filter -> Map -> Extract")
         if stages[1].method.output_column not in stages[2].method.input_columns:
             raise ValueError("Extract must consume the new Map output column")
-        super().__init__(stages, query_id=query_id)
+        super().__init__(stages, query_id=query_id, _require_bound=_require_bound)
 
 
 def records_to_frame(records, *, columns=None):

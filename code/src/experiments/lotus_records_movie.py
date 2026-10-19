@@ -204,7 +204,7 @@ def fixed_response_qualification(source, checkout, method, generation, responses
     import pandas as pd
     from src.baselines.text.frameworks.lotus_pg import observe_filter_rows
     from src.semantic_methods.lotus.engine import (
-        LotusFilterMethod, engine_response, lm_report, make_lm, validate_filter_source,
+        LotusFilterMethod, bind_filter_method, engine_response, lm_report, make_lm, validate_filter_source,
     )
 
     _fixed_method(method)
@@ -229,7 +229,7 @@ def fixed_response_qualification(source, checkout, method, generation, responses
                         total_tokens=value["prompt_tokens"] + value["completion_tokens"],
                         usage_source="configured software fixture; no inference"))
     source_rows = {row["row_id"]: row for row in source.rows()}
-    preparer = LotusFilterMethod(method)
+    preparer = LotusFilterMethod(bind_filter_method(method))
     prepared = preparer.prepare_rows([dict(source_rows[row["row_id"]], **row) for row in expected])
     report = run_movie_query(source, checkout, method, generation, lambda: iter(raw), query_id=query_id)
 

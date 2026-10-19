@@ -105,7 +105,8 @@ class GenericFilterTests(unittest.TestCase):
         import lotus
         import pandas as pd
         from src.semantic_methods.lotus.engine import (
-            LotusFilterMethod, engine_response, interpret_results, make_lm, validate_filter_source,
+            LotusFilterMethod, bind_filter_method, engine_response, interpret_results, make_lm,
+            validate_filter_source,
         )
 
         self.assertEqual(self.source.preflight(self.method)["status"], "passed")
@@ -115,7 +116,7 @@ class GenericFilterTests(unittest.TestCase):
         upstream = validate_filter_source()
         self.assertEqual(upstream["versions"]["lotus-ai"], "1.2.4")
         rows = self.source.prepared_input("generic-q")
-        formatter = LotusFilterMethod(self.method)
+        formatter = LotusFilterMethod(bind_filter_method(self.method))
         prepared = formatter.prepare_rows(rows)
         self.assertEqual(formatter.columns, lotus.nl_expression.parse_cols(self.method.instruction))
         self.assertEqual([row["call_id"] for row in prepared],
@@ -144,13 +145,13 @@ class GenericFilterTests(unittest.TestCase):
         self.assertEqual([row["call_id"] for row in interpreted], [row["call_id"] for row in rows])
 
     def test_source_preflight_and_referenced_text_values_are_required(self):
-        from src.semantic_methods.lotus.engine import LotusFilterMethod
+        from src.semantic_methods.lotus.engine import LotusFilterMethod, bind_filter_method
 
         with patch("lotus.models.LM") as constructor:
             with self.assertRaisesRegex(ValueError, "task binding"):
                 self.source.scan_spec(FilterMethod("fixture", "Other {paragraph}"))
             constructor.assert_not_called()
-        formatter = LotusFilterMethod(self.method)
+        formatter = LotusFilterMethod(bind_filter_method(self.method))
         rows = self.source.prepared_input("q")
         for value in (None, 1, False):
             with self.subTest(value=value), self.assertRaisesRegex(TypeError, "text input"):
@@ -164,9 +165,11 @@ class GenericFilterTests(unittest.TestCase):
             self.source.scan_spec(self.method)
 
     def test_failed_call_keeps_its_identity_and_usage_without_parser_fallback(self):
-        from src.semantic_methods.lotus.engine import LotusFilterMethod, interpret_results, make_lm
+        from src.semantic_methods.lotus.engine import (
+            LotusFilterMethod, bind_filter_method, interpret_results, make_lm,
+        )
 
-        prepared = LotusFilterMethod(self.method).prepare_rows(self.source.prepared_input("q"))
+        prepared = LotusFilterMethod(bind_filter_method(self.method)).prepare_rows(self.source.prepared_input("q"))
         results = self.results(prepared)
         results[1].update(status="unknown", text=None, error_type="FixtureUnknown")
         ledger = CallLedger(self.source.expected("q"), max_calls=2)

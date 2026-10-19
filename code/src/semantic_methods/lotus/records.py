@@ -15,6 +15,16 @@ _IDENTITY_FIELDS = (
 )
 
 
+def _resolved_columns(value):
+    if value is None:
+        return None
+    if (type(value) not in (list, tuple) or not value
+            or any(type(name) is not str or not name.strip() for name in value)
+            or len(set(value)) != len(value)):
+        raise ValueError("resolved_input_columns must be a nonempty ordered set of column names")
+    return tuple(value)
+
+
 @dataclass(frozen=True)
 class FilterMethod:
     model_name: str
@@ -22,6 +32,7 @@ class FilterMethod:
     default: bool = True
     output_tokens: tuple[str, str] = ("True", "False")
     system_prompt: str | None = None
+    resolved_input_columns: tuple[str, ...] | None = None
 
     def __post_init__(self):
         if type(self.model_name) is not str or not self.model_name.strip():
@@ -34,6 +45,7 @@ class FilterMethod:
             raise ValueError("ordinary text Filter requires the original True/False output tokens")
         if self.system_prompt is not None and type(self.system_prompt) is not str:
             raise ValueError("Filter system_prompt must be a string or None")
+        object.__setattr__(self, "resolved_input_columns", _resolved_columns(self.resolved_input_columns))
 
     def describe(self):
         self.__post_init__()

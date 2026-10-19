@@ -36,8 +36,8 @@ class LotusEngineTests(unittest.TestCase):
         import pandas as pd
         from lotus.templates import task_instructions
         import lotus
-        from src.semantic_methods.lotus.engine import LotusFilterMethod
-        method = LotusFilterMethod(self.method)
+        from src.semantic_methods.lotus.engine import LotusFilterMethod, bind_filter_method
+        method = LotusFilterMethod(bind_filter_method(self.method))
         texts = ["same", "", "same"]
         rows = [dict(identity("q", "row-" + str(i), i), reviewText=text)
                 for i, text in enumerate(texts)]
