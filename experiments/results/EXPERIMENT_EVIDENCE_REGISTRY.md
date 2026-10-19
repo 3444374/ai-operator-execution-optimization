@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[Daft 单独退出复验](diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)。固定 `52216739`，48 项 CPU 与新两调用 Map→Extract 样本通过，197／19 tokens、原 LOTUS 差分及无信号退出；resource tracker 约 26 毫秒自然退出。25 个外层身份、GPU／共享内存／正常 lease 独立核清，旧 105 份证据及六账本 SHA 保持；34 项原件留私有归档。
+
 2026-10-19：[独立一行 Map→Extract 模型覆盖](diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)。新 6 次账本各后端 2 次，三条语义／原 LOTUS 差分均通过；Core／Ray 资格通过，Daft supervisor 发 SIGTERM，生命周期未通过，私有控制器误判在派生审计中纠正。原 MFE 不改判，原件保留。
 
 2026-10-19：[非 Q3 有限 MFE 模型与定点重放](diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)。三后端各一次，Filter 均丢弃两行，Extract 未执行，完整链未通过。原输出与 token 重放排除已测接线／截断问题；另定位空结果 index 类型差异。账目与物理退出已结清，原始负结果保留。

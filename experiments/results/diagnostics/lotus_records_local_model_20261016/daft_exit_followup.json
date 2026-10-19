@@ -1,0 +1,187 @@
+{
+  "schema": "semloom.daft_exit_followup.summary.v1",
+  "status": "passed",
+  "date": "2026-10-19",
+  "scope": "one-row-map-extract-coverage-v1",
+  "backend": "Daft Native 0.7.21",
+  "source": {
+    "baseline_commit": "8be539cf5cf66f0050732f1804bfccaaa90f11f7",
+    "fixed_commit": "522167399e88782530a2a33eb04c3a952bd8d34a",
+    "changed_runtime_source_paths": [
+      "code/src/experiments/lotus_records_supervisor.py"
+    ],
+    "source_files_verified": 405,
+    "qualification_fingerprint_files": 394,
+    "qualification_fingerprint_sha256": "9bc8e6956c74d0e1807fbe562f4509746e2bfe4558961f0d559ffdb9205e2ece",
+    "config_sha256": "131814102956f21b04792efab799c23c38044211f57e231f44662a4275637110",
+    "source_patch_sha256": "a4ab22ce41359a6e0f1e446e856e1652213901d977c484ab0f9b0afdc8fa2392",
+    "source_bundle_sha256": "921568c3ea89a22eaa1738a0745dd84d80800c330dd463d67a3159728fa799c4",
+    "source_patch_publication": "local integration handoff; report branch contains no source edit"
+  },
+  "configuration": {
+    "model": "Qwen2.5-7B-Instruct",
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "vllm_version": "0.25.1",
+    "lotus_version": "1.2.4",
+    "resources": {
+      "cpu_workers": 1,
+      "gpu_workers": 1,
+      "prepare_batch_rows": 1,
+      "model_batch_rows": 1,
+      "max_active_batches": 1,
+      "query_timeout_s": 600,
+      "startup_timeout_s": 300
+    },
+    "same_engine_input_and_generation_as_previous_map_extract": true,
+    "engine_max_model_calls": 2,
+    "model_downloads": 0,
+    "model_retries": 0,
+    "extra_warmup_calls": 0,
+    "map_generation_max_tokens": 24,
+    "extract_generation_max_tokens": 64,
+    "map_seed": 11,
+    "extract_seed": 23,
+    "sampling_temperature": 0.0,
+    "sampling_top_p": 1.0
+  },
+  "supervision": {
+    "total_wall_limit_s": 660,
+    "cleanup_reservation_s": 15,
+    "natural_exit_requested_s": 1.0,
+    "opt_in": true,
+    "default_natural_exit_grace_s": 0,
+    "natural_wait_uses_existing_cleanup_reservation": true,
+    "natural_wait_may_use_at_most_half_cleanup_reservation": true,
+    "total_deadline_extended": false,
+    "forced_cleanup_still_fails": true,
+    "unknown_observation_still_unknown": true,
+    "signal_audit_fields": [
+      "pid",
+      "create_time",
+      "redacted command",
+      "cmdline_sha256",
+      "signal",
+      "requested times",
+      "outcome"
+    ],
+    "signal_target_scope": "literal observed birth-matched PIDs, with exact unreaped Popen fallback recorded"
+  },
+  "cpu": {
+    "fixed_source_tests": [
+      {
+        "test": "test_lotus_records_supervisor.py",
+        "count": 25,
+        "status": "passed",
+        "skipped": 0
+      },
+      {
+        "test": "test_daft_engine_process_close.py",
+        "count": 9,
+        "status": "passed",
+        "skipped": 0
+      },
+      {
+        "test": "test_engine_process_receipts.py",
+        "count": 14,
+        "status": "passed",
+        "skipped": 0
+      }
+    ],
+    "fixed_source_total_tests": 48,
+    "model_calls": 0,
+    "gpu_use": false,
+    "short_exit_before_fix": "failed with SIGTERM",
+    "short_exit_after_fix": "passed without signals",
+    "persistent_residue_after_fix": "failed with SIGTERM; all observed processes exited",
+    "overlarge_request_test": {
+      "requested_s": 999,
+      "clamped_wait_s": 0.1,
+      "status": "passed",
+      "persistent_residue": "failed"
+    },
+    "fixture_scope": "self-authored short CPU processes; independent from model quality"
+  },
+  "model_result": {
+    "actual_model_calls": 2,
+    "stage_calls": {
+      "map": 1,
+      "extract": 1
+    },
+    "usage": {
+      "prompt_tokens": 197,
+      "completion_tokens": 19,
+      "total_tokens": 216
+    },
+    "engine_lifetimes": 1,
+    "final_engine_counter": 2,
+    "coverage_passed": true,
+    "expected_quality_passed": true,
+    "original_lotus_messages_parser_usage_equal": true,
+    "final_original_lotus_frame_equal": true,
+    "replay_model_calls": 0,
+    "core_model_reruns": 0,
+    "ray_model_reruns": 0
+  },
+  "exit_result": {
+    "supervisor_status": "passed",
+    "driver_exit_code": 0,
+    "signals": [],
+    "signal_events_count": 0,
+    "engine_close_status": "closed",
+    "engine_api_shutdown_confirmed": true,
+    "private_engine_observed_processes": 16,
+    "private_engine_live_observed": 0,
+    "outer_observed_processes": 25,
+    "outer_remaining_owned": 0,
+    "controller_exit_confirmed": true,
+    "natural_exit_process_role": "Python multiprocessing.resource_tracker",
+    "natural_wait_elapsed_s": 0.02509961510077119,
+    "observed_driver_to_tracker_exit_s": 0.026484147179871798,
+    "observed_close_receipt_to_driver_exit_s": 1.7507417048327625,
+    "timing_observations_monotonic": {
+      "successful_eof_close_receipt": 3551532.69285213,
+      "native_close_return_receipt": 3551532.693287012,
+      "driver_exit_first_observation": 3551534.444028717,
+      "natural_wait_started": 3551534.446416353,
+      "helper_exit_first_observation": 3551534.470512864,
+      "natural_wait_ended": 3551534.471515968
+    },
+    "timing_scope": "driver receipt observations and first OS non-live observations; not exact kernel or engine shutdown timestamps",
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "shared_memory_entries": 0,
+    "normal_lease": "released-owned-only",
+    "independent_physical_exit_confirmed": true
+  },
+  "budget": {
+    "id": "daft-map-extract-exit-20261019-v1",
+    "limit": 2,
+    "permanently_reserved": 2,
+    "claimed": 2,
+    "actual_model_calls": 2,
+    "historical_ledger_count": 6,
+    "historical_ledgers_unchanged": true,
+    "new_ledger_sha256": "ddc020b2965a8aba934de642a4d550fbd3e9f8f8aac18f1a258eed2aa59b7b5c"
+  },
+  "preserved_history": {
+    "original_evidence_files_hash_checked": 105,
+    "changed_original_evidence_files": 0,
+    "original_mfe_failures_unchanged": true,
+    "previous_daft_lifecycle_failure_unchanged": true,
+    "previous_signal_target": "not recorded; new sample cannot identify the old target"
+  },
+  "evidence": {
+    "private_archive_sha256": "6bac017828122d2b29fc2e7cc7a0472fc104175475acd6ff6b4852a8305ed6be",
+    "private_archive_bytes": 70742,
+    "members": 34,
+    "all_member_hashes_verified": true,
+    "raw_inputs_prompts_outputs_and_logs_in_git": false,
+    "retrieval": "request the private archive with this SHA-256 from the run owner"
+  },
+  "limits": [
+    "one fixed source and one-row Map/Extract sample only",
+    "no full MFE, Filter-quality, Extract-successor, Async or IMLane qualification",
+    "no performance or persistent-leak conclusion",
+    "source integration and enabling this optional wait in other callers require their own checks"
+  ]
+}

@@ -1,5 +1,7 @@
 # 项目大纲
 
+[Daft 有限退出观察复验](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)在 `52216739` 的独立两调用样本通过，短暂 resource tracker 自然退出且无信号；原 Daft 失败与 MFE 负结果仍保留，其他方法与性能另验。
+
 [独立 Map→Extract 覆盖](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)补齐终端 Extract 的实际模型调用：Core／Ray 小轮通过，Daft 退出资格仍有负结果。它使用独立命名和预算，原 MFE 失败及源 index 物化问题继续保留。
 
 固定 8be 的[非 Q3 有限 MFE 模型检查](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)保留三后端相同负结果及零模型诊断：完整链与 Extract 模型资格均未通过，不能转授 CPU 的组合能力声明。

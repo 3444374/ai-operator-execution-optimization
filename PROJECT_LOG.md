@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：Daft 短暂辅助进程退出观察及单独模型复验
+
+固定 `52216739` 只改共享监督器，48 项精确源码 CPU 检查及短退出／真残留／超大等待请求通过。新两调用账本只跑 Daft Map→Extract：216 tokens、原 LOTUS 差分与退出通过，resource tracker 约 26 毫秒自然退出，无信号；旧 105 份证据及六账本 SHA 不变，源码补丁交集成，详见[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)。
+
 ## 2026-10-19：独立 Map→Extract 模型覆盖及 Daft 生命周期负结果
 
 新一行用例在同一 8be 源码按 Core／Ray／Daft 各执行一次两调用单元，原 LOTUS 差分与语义均匹配。Core／Ray 完整通过，Daft 外层 supervisor 发 SIGTERM 后才结清，保留生命周期失败；私有控制器漏判用三条真实回执离线回归修正，未重跑模型。原 MFE 和旧账本保持，46 项补验原件留私有归档，详见[同一主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)。

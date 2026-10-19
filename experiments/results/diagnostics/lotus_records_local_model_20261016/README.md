@@ -9,6 +9,19 @@
 2026-10-19 的 Daft 关闭修正单元已在冻结 `f526fbf1` 完成两查询／四次真实调用，见[独立结果](daft_model_close_correction.json)；此前失败、未知计数和永久预留保留。
 当前普通 Filter 的 Ray Data／Daft／静态参照／Core 已消费中性扫描与 caller 绑定方法，换列换指令的资格为 CPU；不继承冻结 Daft 模型来源。
 
+<a id="daft-exit-followup-20261019"></a>
+## Daft driver 退出后的有限自然退出观察
+
+原一行 Daft 样本的 `lifecycle_failed` 保留。新源码 `52216739` 从原 `8be539cf` 只修改共享 OS 监督器并增加 CPU 回归，不改 Daft 原生图或私有模型关闭实现。监督器增加逐 PID／创建时间／脱敏命令／信号／请求时间／结果记录，包含精确 Popen child 的兜底清理；退出时间均标明是首次观察值。自然退出等待默认仍为零，调用者须显式开启；本次设置 1 秒，计入原有 15 秒清理预留且最多占其一半，660 秒总时限不延长。需要强制清理仍失败，观察不完整仍为 unknown。
+
+先用本机短进程复现：旧即时检查对短暂存活 child 发 SIGTERM；修后在有限时间内自然退出且无信号，持续残留 child 仍判失败并清理。精确新源码的监督／私有引擎关闭／收据测试分别 25／9／14 项通过，零跳过、零模型调用；另核对请求 999 秒时也只分得 0.1 秒自然等待，不延长原总时限。`90fe3399` 是共享 actor 的模型关闭 RPC 超时调整，不属于这条 Daft 原生监督路径。
+
+新建永久两调用账本，只执行 Daft 的同一行 Map→Extract；模型、输入及生成参数沿用前一用例，Core／Ray 未重跑。实际 Map 1 次、Extract 1 次，197／19 tokens；身份与父链、覆盖、质量、原 LOTUS messages／parser／usage／最终 frame 全通过，私有引擎最终 counter 2、API 关闭确认。外层 driver 返回 0，监督器无信号、无清理错误；唯一退出后仍存活的已观察进程是 Python `multiprocessing.resource_tracker`，在观察到 driver 退出约 0.0265 秒后自然退出，实际自然观察用时约 0.0251 秒。
+
+模型关闭回执先于 driver 退出观察约 1.7507 秒；该值是 driver 收据与 OS 轮询的时间差，不是精确 engine 关闭或内核退出时间。私有引擎 16 个、外层 25 个已观察身份均退出，独立 GPU 回到 1 MiB／空 compute、共享内存为空，控制器退出及正常 lease 释放另验。六份旧账本保持，旧两轮 105 份证据逐 SHA 未变；原 Daft 样本没有记录具体信号目标，不能据新样本追认其目标或改写旧失败。
+
+结果与配置摘要见 [daft_exit_followup.json](daft_exit_followup.json)。34 项完整证据留在仓库外私有归档；本分支只发布配置签名、计数、失败原因和结论，源码补丁另交集成者。该单次样本只补齐固定源码的一行 Daft Map→Extract 退出资格，不外推完整 MFE、Filter 质量、Extract 后继、Async／IMLane 或性能。
+
 <a id="finite-mfe-model-20261019"></a>
 ## 非 Q3 的 Map→Filter→Extract 模型小轮与失败诊断
 
