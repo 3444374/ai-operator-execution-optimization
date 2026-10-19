@@ -16,8 +16,8 @@
     "inference_calls": 0,
     "real_gpu_qualification": "pending owner scheduling"
   },
-  "output_path": "raw/cpu_20261019T065230Z.txt",
-  "output_sha256": "22088259d92ce4d68478e28e3a9e7041fe1e642bbb85a8c9fb39a59fabd03e76",
+  "output_path": "raw/cpu_20261019T065230Z.txt.gz",
+  "output_sha256": "6540b4d28a32bd31d8a29d90201a1d05cc6d395c96cabda255adb081e22fc91c",
   "source_sha256": {
     "code/src/serving/backends/vllm_async_engine.py": "19367d630561e2f51d27e942c8c253126c652e95b4511aefc96b8bda1158dff3",
     "code/src/serving/backends/async_engine_process.py": "dcd212ab40c17a2c627cff0bd71e85c38395d82cea594c213dccfe96f3ad032d",
@@ -70,5 +70,8 @@
     "rss_gpu_memory": "not measured in contract tests",
     "throughput": "not a performance experiment"
   },
-  "output_summary": "13 failed, 104 passed, 177 subtests passed in 14.44s"
+  "output_summary": "13 failed, 104 passed, 177 subtests passed in 14.44s",
+  "output_compression": "gzip; exact byte preservation",
+  "uncompressed_output_sha256": "22088259d92ce4d68478e28e3a9e7041fe1e642bbb85a8c9fb39a59fabd03e76",
+  "uncompressed_output_bytes": 29394
 }

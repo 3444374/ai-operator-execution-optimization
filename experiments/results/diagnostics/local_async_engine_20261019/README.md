@@ -57,7 +57,7 @@ native wrapper 测试使用明确替换的 vLLM/renderer 对象和真实共享�
 | 首次 native wrapper | 8 passed/1 failed；shutdown 超时被错误地永久标记失败，chunk `916675`；已修复为保留同一 future，实际异常仍不作成功 |
 | 首次组合回归 | 88 passed/144 subtests，9.44s；chunk `716642`；覆盖两个新组件与同步/共享转换旧路径 |
 | abort 读取独立、FD 失败清理补充 | 新专属集 21 passed，4.57s；chunk `172f3c` |
-| 扩大旧进程回归（sandbox） | 104 passed/177 subtests、13 failed；旧同步 psutil 枚举被 macOS sysctl sandbox 拒绝，见[失败日志](raw/cpu_20261019T065230Z.txt)与[来源](verification_20261019T065230Z.json) |
+| 扩大旧进程回归（sandbox） | 104 passed/177 subtests、13 failed；旧同步 psutil 枚举被 macOS sysctl sandbox 拒绝，见[失败日志](raw/cpu_20261019T065230Z.txt.gz)与[来源](verification_20261019T065230Z.json) |
 | 同源码在允许只读进程枚举的 CPU 环境重跑 | 114 passed/188 subtests，21.99s；见[日志](raw/cpu_20261019T065326Z.txt)与[来源](verification_20261019T065326Z.json)，不覆盖随后审阅修复 |
 | 独审修复后专属集 | 29 passed/2 subtests，7.60s；chunk `5c8cf8` |
 | 冻结修复 `3499916f` 的组合回归 | **121 passed/190 subtests，21.86s**；[日志](raw/cpu_20261019T070124Z.txt)与[来源/逐文件摘要](verification_20261019T070124Z.json)；运行前后源码摘要一致 |
@@ -91,3 +91,6 @@ Standards 与 Spec 两位独立 reviewer 固定审查 `a4f47eab..777a0bdb`，读
 pending：真实 vLLM0.25.1 版本/依赖资格、单 GPU render/token IDs 与 logprobs、迟到供给、真实 abort 后状态、模型后代/GPU退出；
 actor/Core 生命周期接线；相同方法和生命周期下的完整查询对照。GPU 由 owner 统一排期。
 组件通过不等于跨阶段流水，cascade 全局校准或 Extract 关系屏障未移除；不声明性能收益。
+
+失败 pytest 日志带有原生尾空格，公开副本采用无损 gzip 保留原字节；来源记录同时给出压缩/解压摘要与字节数。
+可用 `gzip -dc raw/cpu_20261019T065230Z.txt.gz` 恢复阅读。原未压缩副本仍可从提交 `0f79bbce` 追溯。
