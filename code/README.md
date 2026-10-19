@@ -2,7 +2,7 @@
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
 直达本地模型接点和原 LOTUS／SemBench 解释评价；[命令](scripts/README.md#movie-q3-records-本地模型接点)与
-[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮两条终态后因关闭超时失败，未完成查询评价。Core已有真实CPU组合接线，其模型／GPU资格仍pending。
+[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮关闭失败保留，冻结修正源码另完成两查询4次调用。四个普通后端已通过换列换指令的通用CPU检查，Core／有限链／级联的新模型资格仍pending。
 
 [共享本地引擎](src/serving/backends/README.md)提供逐调用生成配置及有限token logprobs；[records actor owner](src/execution_provider/adapters/README.md)
 只共享准备／模型的启动与关闭，静态参照继续拥有原查询调度。新增接口和启动失败修复按各自 CPU 来源核验。

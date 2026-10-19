@@ -1,0 +1,751 @@
+{
+  "archive_integrity": {
+    "all_tar_and_extracted_member_bytes_match": true,
+    "archive_bytes": 943843,
+    "archive_sha256": "6868bd9be1b72d2085e94e2fea8438c4362e6187a26c9939494141adb30e5ee9",
+    "index_sha256": "5ff4352031e383fb7ac08e65a7954744551881c2a9bd680fed9c0ed7c298797d",
+    "indexed_files": 40,
+    "indexed_sizes_and_hashes_verified": true,
+    "model_weights_or_shared_environment_included": false,
+    "prior_fixed_phase_index_overwritten": false,
+    "prior_fixed_phase_index_sha256": "9542ff65b912ecca1c63869026ae6c0c414b68cef65c030eeb038f996c37e0b3",
+    "raw_ledgers_included": false,
+    "regular_archive_members": 41,
+    "runtime_environment_contents_included": false
+  },
+  "budgets": {
+    "existing16": {
+      "allocated_after": 8,
+      "allocated_before": 4,
+      "budget_id": "records-daft-model-20261016",
+      "continuation": "Explicit manual continuation adds a distinct four-call unit; old four remain permanently allocated.",
+      "cumulative_actual_calls_failed_plus_corrected": null,
+      "cumulative_actual_calls_reason": "First failed final engine counter is unknown; reservations are not actual calls.",
+      "deadline_utc": null,
+      "file_sha256_after": "9912f39964a2d1e49ef0d770434a62c7dd0c68173a33c785a0797c51b06c59e2",
+      "file_sha256_before": "ed15ffec74ddb9c9635d05ded9114fdcdc0aaa4733430327bdc28f09e2387521",
+      "ledger_created_or_reset": false,
+      "limit": 16,
+      "original_unit_reclaimed": false,
+      "permanent_units": [
+        {
+          "claimed": 1,
+          "first_attempt": 1,
+          "requests": 4,
+          "unit_id": "daft-double-query"
+        },
+        {
+          "claimed": 1,
+          "first_attempt": 5,
+          "requests": 4,
+          "unit_id": "daft-close-corrected-double-query"
+        }
+      ],
+      "prior_reservation_refunded": false,
+      "unused_automatically_consumed": false,
+      "unused_capacity": 8
+    },
+    "separate_old32": {
+      "scope": "Read-only SHA checks, no new claim/reservation/refund/reset.",
+      "sha256_after": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+      "sha256_before": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+      "unchanged": true
+    }
+  },
+  "conclusion": {
+    "actual_model_calls": 4,
+    "automatic_retries": 0,
+    "backend": "daft-native-local-model",
+    "engine_lifetimes": 2,
+    "extra_warmup_calls": 0,
+    "production_core_used": false,
+    "queries_completed": 2,
+    "scheduler_owner": "Daft Native",
+    "scope": "Two consecutive queries repeat the same two eligible occurrences; bounded close-correction qualification only.",
+    "status": "completed",
+    "unknown_engine_counter_count": 0,
+    "upstream_accessor_used_in_records": false
+  },
+  "configuration": {
+    "cleanup_grace_s": 15,
+    "daft_runner_threads": 2,
+    "driver_model_environments_separate": true,
+    "engine_max_model_calls_per_lifetime": 2,
+    "expected_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "generation": {
+      "frequency_penalty": 0.0,
+      "logprobs": null,
+      "max_tokens": 8,
+      "presence_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "seed": 0,
+      "stop": [
+        "\n"
+      ],
+      "temperature": 0.0,
+      "top_p": 1.0
+    },
+    "hash_scope": "Runtime freeze includes the original raw input-config SHA; raw input and canonical runtime hashes name different objects.",
+    "input_config_raw_sha256": "1fb14271bdfb04f5d7a9707f27b9a53e8a5dbc0951d6aba0972df45395c422eb",
+    "method": {
+      "default": true,
+      "instruction": "Determine if the following review is clearly positive. Review: {reviewText}",
+      "model_name": "openai/qwen2.5-7b",
+      "output_tokens": [
+        "True",
+        "False"
+      ],
+      "system_prompt": null
+    },
+    "method_source": {
+      "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+      "profile": "lotus-ordinary-filter-records-v1",
+      "source_hashes": {
+        "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d",
+        "models/lm.py": "83e843ee8b381757525130ff09b0134fa77d3688a4321a9170e88ce79030e0e3",
+        "nl_expression.py": "c8864fd77fb0c1afa20453c8227c3ebbd6e124ebe84e083ce393cea9bcc0499e",
+        "pricing.py": "bd983188db2c81db95519f68668ac62891fc5970e7b41458be08c29e5279585e",
+        "sem_ops/postprocessors.py": "8f5c33600c849ad9806fcec752ee3d14646cebd5ec441637ff0b271ae6a98956",
+        "sem_ops/sem_filter.py": "ae20bcb11b8750a9283a988ad2233d2f9a8b755f57a65c47b37029b1e70be7c7",
+        "settings.py": "1724d0820190e6585fa3504946734eb5964b7b1d8ea727540ac49815f186bf6e",
+        "templates/task_instructions.py": "059909938902f3fa44ae1fc9666ce91452266f1e4e8d57c5c81134c24e51a8a3"
+      },
+      "versions": {
+        "litellm": "1.95.0",
+        "lotus-ai": "1.2.4",
+        "openai": "2.50.0"
+      }
+    },
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "runtime_config_canonical_sha256": "0cf842422afc637cf692be03996dd92a8782a7982ec392ba677283cfd851c7d1",
+    "unit_timeout_s": 1200
+  },
+  "contradictions": [],
+  "evidence_kind": "Real-model unit executed by integration owner; verified archived source, results, terminal usage and independent exit observations.",
+  "first_failed_run_preserved": {
+    "actual_model_calls": null,
+    "completed_count_result": null,
+    "control_equal": null,
+    "engine_lifetimes": 1,
+    "failure_type": "RuntimeError",
+    "known_terminal_successes": 2,
+    "known_usage": {
+      "completion_tokens": 8,
+      "known_completion_tokens": 8,
+      "known_prompt_tokens": 253,
+      "known_total_tokens": 261,
+      "prompt_tokens": 253,
+      "total_tokens": 261,
+      "unknown_completion_tokens_calls": 0,
+      "unknown_prompt_tokens_calls": 0,
+      "unknown_total_tokens_calls": 0
+    },
+    "old_query_call_ids_replayed": false,
+    "original_metric": null,
+    "permanent_reservation": 4,
+    "queries_started": 1,
+    "refunded": false,
+    "scope": "Close failed and final engine counter was unavailable. Two received successes do not retroactively yield completed COUNT/evaluation; original failed bytes remain separate.",
+    "second_query_started": false,
+    "source_commit": "7d12d63cc12acce27713b4c8cf9666c92b9c4e0a",
+    "status": "failed",
+    "unit_id": "daft-double-query",
+    "unknown_engine_counter_count": 1
+  },
+  "input": {
+    "eligible_occurrences": 2,
+    "eligible_source_positions": [
+      1,
+      14
+    ],
+    "manifest_sha256": "096182f750c1767e67b3afc63173a082c38b17704a5948a787ee44c712aeb8cf",
+    "predicate": {
+      "column": "id",
+      "operator": "eq",
+      "value": "taken_3"
+    },
+    "prefix_rows": 15,
+    "preflight_status": "passed",
+    "records_sha256": "e45c0b3f1b2b0c78d027057a6f98fa42b6c6588b6e0998b2bd2bdc5b24fcefa5",
+    "references_sha256": "2f3b8482a388c24f087485bcaa3952b0662843636e747d4d471bea477ff86195",
+    "review_text_omitted": true,
+    "role": "sembench_movie_subset",
+    "row_ids": [
+      "movie-row-1",
+      "movie-row-14"
+    ],
+    "scope": "Original CSV digest and first-15-row projection qualified; labels separate until post-query evaluation. Repeated queries use the same two rows.",
+    "source_csv_sha256": "ad5def7df4ece425c741c82d73687b8cb4a61952e1580c0427879cbef3033aaf",
+    "task": "movie-q3"
+  },
+  "key_evidence_files": [
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 9966,
+      "file": "PRIVATE-ARCHIVE-INDEX.json",
+      "role": "archive_index",
+      "sha256": "5ff4352031e383fb7ac08e65a7954744551881c2a9bd680fed9c0ed7c298797d"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 18146,
+      "file": "artifacts/controller-report.json",
+      "role": "controller_report",
+      "sha256": "14eebb79a761679507a182fef621df146cb0535ae4693cd31f43124118016400"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 54586,
+      "file": "artifacts/frozen-config.json",
+      "role": "runtime_frozen_config",
+      "sha256": "49a365922a254be454031c4b2741768121ad2911adb4e4fbd0511b059fe9699f"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 48870,
+      "file": "artifacts/units/daft-close-corrected-double-query/unit_report.json",
+      "role": "unit_report",
+      "sha256": "50b788b6a6beb93ddb2f68505cce285743ce0a61c5bb3466098f2764d40aac7f"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 5267,
+      "file": "artifacts/supervision/daft-close-corrected-double-query/supervisor.json",
+      "role": "supervisor",
+      "sha256": "a2827aeaae7c226e9c46bef0ff8a55e3b523993a042929b89730b6325850f478"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 436,
+      "file": "artifacts/budget-after-reservation.json",
+      "role": "reservation",
+      "sha256": "3ab52f5c044bc4a0dc203102eef5e0e3e23e211b7efacacbfebc735f1461d821"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 709,
+      "file": "EXISTING16-BUDGET-SNAPSHOT.json",
+      "role": "read_only_budget_snapshot",
+      "sha256": "834880b66b82aa40be088e0804da4c774701f6ec7b8c7a222f028238454411bd"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 22757,
+      "file": "ARCHIVE-EXIT-GATES.json",
+      "role": "archive_exit_gates",
+      "sha256": "3b2eb6851ca9a15e4c8cc15bb9241b9424cddf93c3b6a33fc36febcfc735bfb9"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 1096,
+      "file": "SOURCE-IDENTITY.json",
+      "role": "source_identity",
+      "sha256": "9789e8cc32f810b2df86c1e4bd1f02b427f07e5aa22362f01c1780fb95848d7e"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 2750,
+      "file": "artifacts/snapshots/controller-final.json",
+      "role": "controller_final_inventory",
+      "sha256": "cf855722ba66774a93c9b3bee9386743f18abb23e5020f5535ff12ea92974785"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 2773,
+      "file": "artifacts/snapshots/unit-after.json",
+      "role": "unit_after_inventory",
+      "sha256": "004e75ce1cff92f828c23181f414db519a8081b48648e116f084e61835b27b4d"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 18637,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-first-q3-qualified.json",
+      "role": "qualified_query",
+      "sha256": "4bbf393275fbfb3168f8939064d1600f2a6b54949e31b8f865a36303920dfca0"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 6397,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-first-q3-physical-plan.txt",
+      "role": "physical_plan",
+      "sha256": "86ea908c4915cf81ee81baba278c359f579fd2442026c13a9364fecfaac45caf"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 3192,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-first-q3-after.json",
+      "role": "independent_query_after",
+      "sha256": "162d04cbc4620f95e90e93b9136039b3c603e0cdff641d9eba6fb7833f941744"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 18435,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-second-q3-qualified.json",
+      "role": "qualified_query",
+      "sha256": "241665f91ad5882a208f5abd096b5fc6f1fa44791cd0b8fc3c74dc58a0d63d45"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 6394,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-second-q3-physical-plan.txt",
+      "role": "physical_plan",
+      "sha256": "767c3d30d87d7c73b047fde22c189bfee897515b40b03ee7bff12bf5fda72a50"
+    },
+    {
+      "bundle": "corrected-run-archive",
+      "bytes": 3193,
+      "file": "artifacts/units/daft-close-corrected-double-query/daft-close-corrected-second-q3-after.json",
+      "role": "independent_query_after",
+      "sha256": "5a47d713d6777f5a3a72ed848ad5e4487d860025579e0c009ed71a3c60e970b6"
+    },
+    {
+      "bundle": "first-failed-run-evidence",
+      "bytes": 53381,
+      "file": "frozen-config.json",
+      "role": "failed_frozen_config",
+      "sha256": "94931959b3616fa268896a4de51979763603aa31ca8f8c6af92525fcf3093929"
+    },
+    {
+      "bundle": "first-failed-run-evidence",
+      "bytes": 11591,
+      "file": "controller-report.json",
+      "role": "failed_controller_report",
+      "sha256": "f601fa8c4722eeadd5c3e81a181598a481f25668c27ee882554a6a0886887afb"
+    },
+    {
+      "bundle": "first-failed-run-evidence",
+      "bytes": 34867,
+      "file": "units/daft-double-query/unit_report.json",
+      "role": "failed_unit_report",
+      "sha256": "1470006247655e7379d14ef09e2e32934f921596f466038ffa5d69ec9337e413"
+    },
+    {
+      "bundle": "fixed-source-binding",
+      "bytes": 47688,
+      "file": "source-binding.json",
+      "role": "source_binding",
+      "sha256": "985d1bb67dc70a022baaeb2c4755c794a73d574322aebdc28457d551d7938895"
+    },
+    {
+      "bundle": "fixed-source-binding",
+      "bytes": 46027,
+      "file": "source-map.json",
+      "role": "source_map",
+      "sha256": "95b63c1241455305f90313730d2e375e56e1415554bb185dcc6c78dd966e5fc8"
+    },
+    {
+      "bundle": "fixed-source-binding",
+      "bytes": 854048,
+      "file": "source-daft-close-corrected-f526fbf1.tar.gz",
+      "role": "source_archive",
+      "sha256": "fb1e6f2c9ba93119ee50776cd23c7bf7c65949d59c3262bf1584d2a662a1401f"
+    },
+    {
+      "bundle": "fixed-source-binding",
+      "bytes": 9839,
+      "file": "daft-close-corrected-lifetime-proof.json",
+      "role": "lifetime_proof",
+      "sha256": "f7fb18e870c46dc49569e88676b1a7d634f8502850478d3d06c0b26917a73691"
+    },
+    {
+      "bundle": "local-frozen-harness",
+      "bytes": 18281,
+      "file": "qualification_daft_close_correction.py",
+      "role": "correction_controller",
+      "sha256": "bdceeadb088975aa802bf5c304e17e9edeba6d243a0ed8bf44565a3d1dad1aed"
+    },
+    {
+      "bundle": "local-frozen-harness",
+      "bytes": 6480,
+      "file": "qualification_daft_close_child.py",
+      "role": "correction_child",
+      "sha256": "ee5dd6e5b07da4bc6debe51942af265f1b4aa560287b240f09fc01d573b7d71d"
+    },
+    {
+      "bundle": "local-frozen-harness",
+      "bytes": 54493,
+      "file": "qualification-daft-close-correction.config.json",
+      "role": "input_config",
+      "sha256": "1fb14271bdfb04f5d7a9707f27b9a53e8a5dbc0951d6aba0972df45395c422eb"
+    }
+  ],
+  "lifecycle": {
+    "archive_controller_absent_before_and_after": true,
+    "archive_normal_lease_absent_before_and_after": true,
+    "controller_resource_exit_confirmed": true,
+    "controller_status": "completed",
+    "cross_query_model_instance_reuse": false,
+    "engine_api": "Each distinct lifetime acknowledged shutdown once with final reserved_model_calls=2.",
+    "independent_gpu": {
+      "checks": "Per-query after, unit-after/controller-final, and archive before/after checks report idle GPU with empty compute inventory.",
+      "compute_inventory_complete": true,
+      "compute_process_count": 0,
+      "foreign_work_count": 0,
+      "gpu_count": 1,
+      "hardware": "NVIDIA GeForce RTX 4090",
+      "inventory_error_count": 0,
+      "process_inventory_complete": true,
+      "total_mib": 24564,
+      "used_mib": 1
+    },
+    "normal_lease_release": "released-owned-only",
+    "outer_supervisor": {
+      "cleanup_errors": [],
+      "gpu_exit_confirmed": null,
+      "observed_owned_count": 59,
+      "observed_owned_exit_confirmed": true,
+      "physical_gpu_exit_checked": false,
+      "remaining_owned_count": 0,
+      "status": "passed",
+      "unobserved_descendants_confirmed": false,
+      "worker_exit": 0
+    },
+    "scope": "API acknowledgement, observed OS exit, and independent GPU inventory remain distinct. Iterator/supervisor physical-GPU flags remain null; unobserved descendants are not globally proven absent."
+  },
+  "limitations": [
+    "Two repeated negative occurrences only; no full workload, positive-case coverage or performance conclusion.",
+    "Two separate engine lifetimes, with no cross-query model reuse.",
+    "Daft Native owns execution; production SemLoom Core is not used.",
+    "Model cost has no assigned API dollar price; cost remains null.",
+    "Plan inspected before iterator consumption; explained plan is not asserted to be the runtime execution object.",
+    "max_active_batches is not applied as a Daft Native buffering bound.",
+    "Observed owned OS identities are confirmed exited; unobserved descendants are not globally proven absent.",
+    "The first failed final engine counter remains unknown, not zero."
+  ],
+  "new_unit_usage": {
+    "completion_tokens": 16,
+    "known_completion_tokens": 16,
+    "known_prompt_tokens": 506,
+    "known_total_tokens": 522,
+    "prompt_tokens": 506,
+    "total_tokens": 522,
+    "unknown_completion_tokens_calls": 0,
+    "unknown_prompt_tokens_calls": 0,
+    "unknown_total_tokens_calls": 0
+  },
+  "queries": [
+    {
+      "calls": [
+        {
+          "algorithm_stage": "filter",
+          "call_index": 0,
+          "completion_tokens": 4,
+          "finish_reason": "stop",
+          "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+          "model_role": "main",
+          "prompt_tokens": 140,
+          "query_id": "daft-close-corrected-first-q3",
+          "row_id": "movie-row-1",
+          "source_position": 1,
+          "status": "succeeded",
+          "submission_confirmed": true,
+          "total_tokens": 144
+        },
+        {
+          "algorithm_stage": "filter",
+          "call_index": 0,
+          "completion_tokens": 4,
+          "finish_reason": "stop",
+          "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+          "model_role": "main",
+          "prompt_tokens": 113,
+          "query_id": "daft-close-corrected-first-q3",
+          "row_id": "movie-row-14",
+          "source_position": 14,
+          "status": "succeeded",
+          "submission_confirmed": true,
+          "total_tokens": 117
+        }
+      ],
+      "control_equal": true,
+      "count_result": {
+        "positive_review_cnt": 0
+      },
+      "lifecycle": {
+        "api_attempts": 1,
+        "api_error_type": null,
+        "api_rpc_budget_s": 11.0,
+        "api_shutdown_confirmed": true,
+        "api_status": "closed",
+        "cleanup_errors": [],
+        "close_budget_s": 15.0,
+        "engine_iterator_gpu_exit_confirmed": null,
+        "final_reserved_model_calls": 2,
+        "independent_gpu_exit_confirmed": true,
+        "iterator_status": "closed",
+        "live_observed_engine_os_processes": 0,
+        "observed_engine_os_exit_confirmed": true,
+        "observed_engine_os_processes": 16,
+        "os_cleanup_reserved_s": 4.0,
+        "per_engine_model_call_cap": 2
+      },
+      "original_lm_stats": {
+        "cache_hits": 0,
+        "cost_available": false,
+        "cost_reason": "local engine compute is not assigned an API dollar price",
+        "cost_usd": null,
+        "operator_cache_hits": 0,
+        "physical_usage_tokens": {
+          "completion_tokens": 8,
+          "prompt_tokens": 253,
+          "total_tokens": 261
+        },
+        "virtual_usage_tokens": {
+          "completion_tokens": 8,
+          "prompt_tokens": 253,
+          "total_tokens": 261
+        }
+      },
+      "physical_plan_gate": {
+        "consumption_actions_before_gate": 0,
+        "execution_config_sha256": "e24796db1f59ab35c8ab252091fe62e30dc1c7fd999e5b2191c2f2108037c980",
+        "explained_plan_is_execution_object": false,
+        "max_concurrency": 1,
+        "max_retries": 0,
+        "model_gpus": 1,
+        "physical_infer_nodes": 1,
+        "physical_prepare_nodes": 1,
+        "plan_sha256": "86ea908c4915cf81ee81baba278c359f579fd2442026c13a9364fecfaac45caf",
+        "planning_config_sha256": "ae1ade33a4a04a4a43ff2df9182b7165bd525513bdde676b27d252c505633f92"
+      },
+      "quality": {
+        "classification_audit": {
+          "count_error_from_classifications": 0,
+          "evaluated_rows": 2,
+          "false_negative": 0,
+          "false_positive": 0,
+          "invalid": 0,
+          "missing_rows": 0,
+          "true_negative": 2,
+          "true_positive": 0
+        },
+        "original_metric": {
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0,
+          "relative_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "query_id": "daft-close-corrected-first-q3",
+      "status": "completed",
+      "terminal_counts": {
+        "expected": 2,
+        "failed": 0,
+        "missing": 0,
+        "recorded": 2,
+        "submission_confirmed": 2,
+        "submission_unconfirmed": 0,
+        "succeeded": 2,
+        "unknown": 0
+      },
+      "usage": {
+        "completion_tokens": 8,
+        "known_completion_tokens": 8,
+        "known_prompt_tokens": 253,
+        "prompt_tokens": 253,
+        "total_tokens": 261,
+        "unknown_completion_tokens_calls": 0,
+        "unknown_prompt_tokens_calls": 0
+      }
+    },
+    {
+      "calls": [
+        {
+          "algorithm_stage": "filter",
+          "call_index": 0,
+          "completion_tokens": 4,
+          "finish_reason": "stop",
+          "messages_sha256": "5d4f7e46052599165027dea5321e679e613e2af3ac014e0ab3da73ae537339b0",
+          "model_role": "main",
+          "prompt_tokens": 140,
+          "query_id": "daft-close-corrected-second-q3",
+          "row_id": "movie-row-1",
+          "source_position": 1,
+          "status": "succeeded",
+          "submission_confirmed": true,
+          "total_tokens": 144
+        },
+        {
+          "algorithm_stage": "filter",
+          "call_index": 0,
+          "completion_tokens": 4,
+          "finish_reason": "stop",
+          "messages_sha256": "c676690cd2863b40dea215315d4acdd996e972cf22728ed0353e36cf3290a54a",
+          "model_role": "main",
+          "prompt_tokens": 113,
+          "query_id": "daft-close-corrected-second-q3",
+          "row_id": "movie-row-14",
+          "source_position": 14,
+          "status": "succeeded",
+          "submission_confirmed": true,
+          "total_tokens": 117
+        }
+      ],
+      "control_equal": true,
+      "count_result": {
+        "positive_review_cnt": 0
+      },
+      "lifecycle": {
+        "api_attempts": 1,
+        "api_error_type": null,
+        "api_rpc_budget_s": 11.0,
+        "api_shutdown_confirmed": true,
+        "api_status": "closed",
+        "cleanup_errors": [],
+        "close_budget_s": 15.0,
+        "engine_iterator_gpu_exit_confirmed": null,
+        "final_reserved_model_calls": 2,
+        "independent_gpu_exit_confirmed": true,
+        "iterator_status": "closed",
+        "live_observed_engine_os_processes": 0,
+        "observed_engine_os_exit_confirmed": true,
+        "observed_engine_os_processes": 13,
+        "os_cleanup_reserved_s": 4.0,
+        "per_engine_model_call_cap": 2
+      },
+      "original_lm_stats": {
+        "cache_hits": 0,
+        "cost_available": false,
+        "cost_reason": "local engine compute is not assigned an API dollar price",
+        "cost_usd": null,
+        "operator_cache_hits": 0,
+        "physical_usage_tokens": {
+          "completion_tokens": 8,
+          "prompt_tokens": 253,
+          "total_tokens": 261
+        },
+        "virtual_usage_tokens": {
+          "completion_tokens": 8,
+          "prompt_tokens": 253,
+          "total_tokens": 261
+        }
+      },
+      "physical_plan_gate": {
+        "consumption_actions_before_gate": 0,
+        "execution_config_sha256": "e24796db1f59ab35c8ab252091fe62e30dc1c7fd999e5b2191c2f2108037c980",
+        "explained_plan_is_execution_object": false,
+        "max_concurrency": 1,
+        "max_retries": 0,
+        "model_gpus": 1,
+        "physical_infer_nodes": 1,
+        "physical_prepare_nodes": 1,
+        "plan_sha256": "767c3d30d87d7c73b047fde22c189bfee897515b40b03ee7bff12bf5fda72a50",
+        "planning_config_sha256": "ae1ade33a4a04a4a43ff2df9182b7165bd525513bdde676b27d252c505633f92"
+      },
+      "quality": {
+        "classification_audit": {
+          "count_error_from_classifications": 0,
+          "evaluated_rows": 2,
+          "false_negative": 0,
+          "false_positive": 0,
+          "invalid": 0,
+          "missing_rows": 0,
+          "true_negative": 2,
+          "true_positive": 0
+        },
+        "original_metric": {
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0,
+          "relative_error": 0.0
+        },
+        "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+      },
+      "query_id": "daft-close-corrected-second-q3",
+      "status": "completed",
+      "terminal_counts": {
+        "expected": 2,
+        "failed": 0,
+        "missing": 0,
+        "recorded": 2,
+        "submission_confirmed": 2,
+        "submission_unconfirmed": 0,
+        "succeeded": 2,
+        "unknown": 0
+      },
+      "usage": {
+        "completion_tokens": 8,
+        "known_completion_tokens": 8,
+        "known_prompt_tokens": 253,
+        "prompt_tokens": 253,
+        "total_tokens": 261,
+        "unknown_completion_tokens_calls": 0,
+        "unknown_prompt_tokens_calls": 0
+      }
+    }
+  ],
+  "schema": "semloom.daft_close_correction_model_qualification.v1",
+  "scope_reconciliations": [
+    "engine_ready.closed=false/reserved=0 is a startup snapshot; engine_api.closed=true/reserved=2 is final shutdown.",
+    "Iterator/supervisor GPU flags are null because their scope is API/OS; independent snapshots provide GPU evidence.",
+    "Source-map raw/canonical and config raw/runtime hashes refer to different byte representations."
+  ],
+  "semantics": {
+    "count": {
+      "adapter": "code/src/experiments/lotus_records_movie.py::run_movie_query",
+      "decisions_each_query": [
+        false,
+        false
+      ],
+      "model_calls_are_not_output_rows": true,
+      "result_each_query": {
+        "positive_review_cnt": 0
+      }
+    },
+    "evaluator": {
+      "adapter": "code/src/baselines/text/sembench_movie.py::evaluate_original",
+      "classification_audit_role": "Supplementary to original SemBench Q3 COUNT metrics.",
+      "gold_sql": "files/movie/query/gold_sql/Q3.sql",
+      "label_relation": "Labeled Reviews registered in DuckDB after query completion.",
+      "original_callable": "src/scenario/movie/evaluation/evaluate.py::MovieEvaluator._evaluate_q3",
+      "quality_scope": "Only two negative eligible occurrences; no positive-example or full-dataset coverage.",
+      "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2"
+    },
+    "formatter": "Original LOTUS method formatter; actual message hashes match the fixed native LOTUS control.",
+    "native_control": {
+      "comparison_fields": [
+        "actual message SHA256",
+        "prompt token IDs",
+        "output token IDs",
+        "generated text",
+        "parsed decision",
+        "prompt/completion/total token usage",
+        "finish reason"
+      ],
+      "config_canonical_sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+      "control_equal_each_query": true,
+      "old_reports_rewritten": false,
+      "original_unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d",
+      "report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd"
+    },
+    "parser": {
+      "adapter": "code/src/semantic_methods/lotus/engine.py::interpret_results",
+      "default": true,
+      "lm_stats": "Original LM._update_stats(response, is_cached=False) and LM._get_top_choice on terminal successes before filter_postprocess.",
+      "original_callable": "lotus.sem_ops.postprocessors.filter_postprocess",
+      "output_tokens": [
+        "True",
+        "False"
+      ]
+    }
+  },
+  "source": {
+    "all_source_file_bytes_matched": true,
+    "base_commit": "7d12d63cc12acce27713b4c8cf9666c92b9c4e0a",
+    "changed_production_file_sha256": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528",
+    "changed_production_paths": [
+      "code/src/baselines/text/frameworks/daft_engine_process.py"
+    ],
+    "git_checkout_verified": false,
+    "lifetime_proof_sha256": "f7fb18e870c46dc49569e88676b1a7d634f8502850478d3d06c0b26917a73691",
+    "predecessor_lifetime_proof_sha256": "4ee23562db92ffa349b074f09c493c957c81bae9a19f9b68a6510549df513b9b",
+    "proof_scope": "Source/configuration lifetime bound supplemented by the archived real-model run; proof alone is not qualification.",
+    "repository_commit": "f526fbf149873bd437da51b480e36f8892093fbd",
+    "safe_directory_entries": 56,
+    "same_path_closure_as_first_run": true,
+    "source_archive_sha256": "fb1e6f2c9ba93119ee50776cd23c7bf7c65949d59c3262bf1584d2a662a1401f",
+    "source_map_canonical_sha256": "cc51c015c84b4db39f366980695bd38863b9b88cd427c9e0dba39b6c27cb20f9",
+    "source_map_file_sha256": "95b63c1241455305f90313730d2e375e56e1415554bb185dcc6c78dd966e5fc8",
+    "source_mode": "git_archive",
+    "source_regular_files": 389
+  }
+}

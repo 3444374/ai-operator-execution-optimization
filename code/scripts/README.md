@@ -85,7 +85,7 @@ Ray 路径独占本地 Ray，Daft 路径只启动原生 runtime；均关闭重�
 `engine.max_model_calls` 可选设置单实例应用请求数上限；整批超过剩余额度在 chat 前拒绝，失败／unknown 保守计费，ready／close 报告累计数。
 多 unit／新实例的全轮预算仍由资格 runner 的持久账本先行分配，不能靠该内存上限覆盖重建实例。
 调用方仍须按既有授权、normal shared lease、固定GPU mask／模型身份与独立GPU物理退出核查安排运行。
-本轮原生参照／Ray Data／静态参照的已确认10条Qwen单卡请求、首次失败、同账本32/32及独立退出见[分层资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#普通-q3-的单卡真实模型资格)；Daft真实模型仍pending。
+本轮原生参照／Ray Data／静态参照的已确认10条Qwen单卡请求、首次失败、同账本32/32及独立退出见[分层资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#普通-q3-的单卡真实模型资格)。[冻结Daft修正资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/daft_model_close_correction.json)另有两查询4次调用，首轮关闭失败与永久额度保留；不认证新通用源码。
 监督器仅确认已观测身份匹配的 owned 进程，未观测 detached 后代与 GPU 退出不作确认；直接库调用者也须提供等价外层监督。
 本轮未执行该模型命令，实际范围及下一步门槛见[资格记录](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
 

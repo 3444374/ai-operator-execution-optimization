@@ -15,18 +15,20 @@ Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daf
 Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2subtests通过分开登记；实际Daft／LOTUS／原evaluator固定响应，零模型／GPU，完整usage与清理错误分离。
 [实现、分层资格与失败原件](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
 包含修复后 Python 3.12 的 114 项／213 subtests、真实 LOTUS 和部分 Ray／Daft CPU 接线。
-原生参照／Ray Data／SemLoom静态参照已完成Qwen2.5-7B／vLLM0.25.1／单4090普通Q3小切片：已确认4＋2＋4条请求，提示／真实token／usage／COUNT／原评价一致，静态同engine连续查询隔离通过。首次Native guard失败保留null与未知账本；修后static e4c07188、原生及Ray 06f4b687分别绑定387文件字节闭包。两轮owned进程与GPU1MiB／无compute退出、正常lease均核同；同一预算32/32永久预留，零自动重试。Daft GPU、级联、图像、持续供给与完整矩阵仍pending。
+原生参照／Ray Data／SemLoom静态参照已完成Qwen2.5-7B／vLLM0.25.1／单4090普通Q3小切片：已确认4＋2＋4条请求，提示／真实token／usage／COUNT／原评价一致，静态同engine连续查询隔离通过。首次Native guard失败保留null与未知账本；修后static e4c07188、原生及Ray 06f4b687分别绑定387文件字节闭包。两轮owned进程与GPU1MiB／无compute退出、正常lease均核同；同一预算32/32永久预留，零自动重试。后续Daft资格在下方独立登记，级联、图像、持续供给与完整矩阵仍pending。
 这不是 main 已接纳或旧 `integration/baselines` 的新资格；旧请求实现及测试保持原样。
 
 后续真实资格准备新增可选单实例请求上限、规范 messages 摘要及实际 prompt token IDs；
 52项受影响CPU检查／74subtests通过，默认保持兼容。static显式Native选择另有21项合同／真实CPU双查询图；真实结果从上述独立报告核对，不继承CPU资格。
 固定7d12d63c的Daft双查询入口与新16次预算的[历史准备](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-双查询模型资格准备尚未运行)保留。服务器恢复后首单元永久预留并claim4次：第一query两条成功终态、已知253／8 tokens，EOF关闭超时导致查询失败，第二query未启动；引擎最终计数仍null。33个外层owned身份退出、GPU1MiB无compute、normal lease释放，旧32/32账本不变，见[失败原件摘要](../experiments/results/diagnostics/lotus_records_local_model_20261016/daft_model_first_run.json)。
-关闭修复把默认锁后预算调整为15秒（RPC11／清理4），API缺字面True仍unknown，已确认API后不重发关闭RPC；CPU反例、原回归与双独审通过。新源码尚无模型资格，原失败与4次预留不重放、不退款。
+关闭修复把默认锁后预算调整为15秒（RPC11／清理4），API缺字面True仍unknown，已确认API后不重发关闭RPC；CPU反例、原回归与双独审通过。冻结f526只改原389路径的一生产文件，两查询／4次真实调用、506／16 tokens、原COUNT与评价通过，59个已观察owned身份退出、独立GPU空闲／lease释放，见[修正资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/daft_model_close_correction.json)。原失败与4次预留不重放、不退款；同16账本现8／16，旧32 SHA不变。
 本轮共享引擎增加逐调用generation／JSON object，普通Filter拒绝JSON；static仅提取actor owner，并修复构造失败误报closed。
 新合成来源的51项内核与44项方法／owner／旧路径合同零skip通过；提取来源的真实CPU图另列，两轴审查通过。
 详情和源码SHA从[同题CPU增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)核对，不借旧模型资格。
 新增Core单行adapter／selector复用真实SessionEngine与BoundedAsyncBackend；最终实际Ray／Daft／LOTUS／SemBench CPU组合四query、12固定响应核同，20个已观察进程退出。Core标记true、static仍false，unknown保留额度及引用；共享runner回收迟到usage，role／stage身份与有限logprobs合同另有定向检查，见[组合记录](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-core-cpu-20261019)。
-有限链职责52037286已选择整合原方法／Ray fused图与原CPU证据；Map生成列可被后继Filter消费。新Core／有限链真实模型、全局级联GPU及单Filter公共后端去Q3绑定分别验证，不能相互替代。
+有限链职责52037286已选择整合原方法／Ray fused图与原CPU证据；Map生成列可被后继Filter消费。普通Ray／Daft／静态／Core已消费中性scan，185职责合同与换列换指令的实库8query／28合成响应通过；root79项组合零skip、40已观察进程退出。Q3规则仍归任务，其他路径不转授该声明。
+原全局级联与有限logprobs组合30项CPU检查通过，真实helper模型仍pending。Core／Daft／IMLane有限链按同stage循环与共享批内核分工推进，未完成项不冒称已有执行资格。
+owner只将字面True API与kill请求作为其关闭scope，OS／GPU仍独立观察；部分分配无句柄和静态unsettled保持unknown，91项CPU检查通过。新Core／有限链／级联模型与性能分别验证，不能继承冻结Daft结果。
 
 ## main 与集成分支的阅读范围
 

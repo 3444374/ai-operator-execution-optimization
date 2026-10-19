@@ -5,10 +5,10 @@
 本分支新增独立的[普通 Filter records 接口](records.py)、[worker 准备／原结果解释](engine.py)，
 以及[查询入口](../../../scripts/README.md#movie-q3-records-本地模型接点)。
 Ray Data 原生图、[Daft Native 记录图](../../baselines/text/frameworks/daft_lotus_records.README.md)与 Daft＋Ray Core 的 SemLoom 静态参照共享原 LOTUS 方法，后者尚未接生产 Core。
-Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身份、未知／失败及已知usage；真实 Daft CPU 接线与共享 selector 已验证，GPU／真实 vLLM 仍待验。
+Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身份、未知／失败及已知usage；冻结f526的两查询／4次真实vLLM调用另有独立资格，新通用源码仍按CPU范围解释。
 新链消费共同离线投影、建立发生项身份并核验过的无标签 `records.csv`，worker 准备 messages，模型 worker 负责一次模板；不经过下方旧完整请求执行器或 HTTP replay。
 固定 LOTUS／SemBench 的真实 Python 3.12 差分和部分 Ray／Daft CPU 接线见[资格记录](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
-原生参照、Ray Data与静态参照的Qwen／单4090小切片已分别验证；static两查询同engine、隔离call IDs，原提示／token／usage／parser／COUNT与原评价一致。首次Native runner失败保留，静态修后来源单列。Daft GPU、原全局级联、图像、持续供给及production Core仍pending；旧request资格保持独立。
+原生参照、Ray Data与静态参照的Qwen／单4090小切片已分别验证；static两查询同engine、隔离call IDs，原提示／token／usage／parser／COUNT与原评价一致。首次Native runner及Daft关闭失败保留，修正来源单列。普通Ray／Daft／静态／Core共用中性scan的CPU复用已验证；新Core／有限链／级联模型、图像与持续供给仍pending，旧request资格保持独立。
 
 `LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 为通用普通文本配置，
 默认参数兼容 Q3。Movie source／runner 独立严格绑定 Q3 instruction、default、True/False tokens、

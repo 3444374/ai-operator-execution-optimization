@@ -967,5 +967,235 @@
       "Shared token-logprobs and EngineProcess close fixes are included, but their model execution remains pending.",
       "Shared CLI is not connected to the cascade callable yet; Daft/IMLane/Core cascade stages remain pending."
     ]
+  },
+  "daft_model_close_correction_20261019": {
+    "source_commit": "f526fbf149873bd437da51b480e36f8892093fbd",
+    "summary": "daft_model_close_correction.json",
+    "summary_sha256": "5ca6a11e8d18fb918fb37316fb994fb3edd4b8663f390029c1f77bf27d5cb0c8",
+    "actual_model_calls": 4,
+    "engine_lifetimes": 2,
+    "queries_completed": 2,
+    "known_usage": {
+      "completion_tokens": 16,
+      "known_completion_tokens": 16,
+      "known_prompt_tokens": 506,
+      "known_total_tokens": 522,
+      "prompt_tokens": 506,
+      "total_tokens": 522,
+      "unknown_completion_tokens_calls": 0,
+      "unknown_prompt_tokens_calls": 0,
+      "unknown_total_tokens_calls": 0
+    },
+    "raw_archive_sha256": "6868bd9be1b72d2085e94e2fea8438c4362e6187a26c9939494141adb30e5ee9",
+    "raw_archive_members": 41,
+    "raw_archive_bytes": 943843,
+    "source_paths": 389,
+    "source_changes_from_failed_unit": 1,
+    "observed_owned_exit_confirmed": true,
+    "observed_owned_processes": 59,
+    "independent_gpu_idle_mib": 1,
+    "normal_lease_released": true,
+    "permanent_budget_allocated": 8,
+    "permanent_budget_limit": 16,
+    "old32_sha256_unchanged": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+    "failed_first_unit_actual_model_calls": null,
+    "frozen_source_only": true,
+    "current_generic_source_model_qualification": null
+  },
+  "generic_filter_integration_cpu_20261019": {
+    "integration_commit": "5c6d7a3bf45aa9dd38f1219e7e3810876b32e704",
+    "author_commits": [
+      "91bb6c243a81e3b86f0b103228429e618bd31767",
+      "19383a87ac919b932998d824569443d52e21bff4",
+      "a9c36a3c726b525e5aebebabd1b33a0541cf064d"
+    ],
+    "canonical_method": "FilterMethod; TextFilterMethod is a compatibility alias",
+    "backend_paths": [
+      "ray_data_lotus_records",
+      "daft_lotus_records",
+      "lotus_records_static",
+      "lotus_records_core"
+    ],
+    "task_contract": "Movie source/runner retain strict Q3 instruction, predicate, columns, COUNT and original evaluator",
+    "caller_column_order": "Original parse_cols order resolved once, frozen across worker hash seeds; no sorting or fixed global seed",
+    "component_contract_checks_passed": 185,
+    "component_skipped": 0,
+    "actual_library_generic_queries": 8,
+    "synthetic_model_responses": 28,
+    "generic_source_gpu_qualification": null,
+    "component_source_sha256": {
+      "code/src/baselines/text/frameworks/daft_lotus_records.README.md": "4ebd46490d409749a4cb5b015f449916f2062e8057c94f2969460391eff4abf7",
+      "code/src/baselines/text/frameworks/daft_lotus_records.py": "83b26dfa5c5144494010d0582355c8fb3a82e46281f62d0cbcf90b1624e5aa66",
+      "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "03572c1b7b82956e48054779edb33b329e9717d8cdd6b3f6073d5eea6acdb7fa",
+      "code/src/execution_provider/adapters/README.md": "17df9f07a2208e479c94e9c941f2c55da3952e312963c3b6172a1020494840ce",
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "2ec558b0bce048735d156b8a25eb8fae263c90e40384be3ce639c62c4f50cbaa",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "ab6101fc7c87d4bf464641b2cd047d0e562288aff03a5a3b6bc13b5f6e4e6af4",
+      "code/src/execution_provider/adapters/lotus_records_static.py": "86efcf4fa34b9b54a0d9ae9bd1999b06b5c8c98d5df65bc9bde42e1198dc7412",
+      "code/tests/baselines/text/generic_prepare_fixture.py": "92fd58145e271acebc70d3b9f5db160afe82a7e938903885e4acb87c817b0043",
+      "code/tests/baselines/text/generic_records_fixture.py": "197d8bf81f296d53212ee5ae4a41260de19f89b1a359d62dcf3379bf2a5e25f4",
+      "code/tests/baselines/text/test_daft_lotus_records.py": "f06b9b9b599184ccdbfeffff18f32f6fea6fb414141a2174e8206db32a13f4f3",
+      "code/tests/baselines/text/test_lotus_records_generic_libraries.py": "2761ec007428bfcefbb43da18690d12d7c5dc48d82398590e3f395d9e1593fad",
+      "code/tests/baselines/text/test_lotus_records_scan_contract.py": "9b91016fae6fe53f0195fdd464007a1c19950fd4a36cdbd0be64a563c1bd7ac9",
+      "code/tests/baselines/text/test_ray_data_lotus_records.py": "0fae6ab2b6cc337f219d334f8eab88eb6963a21a0b871b369ef45566e305dad9",
+      "code/tests/execution_provider/test_lotus_records_actor_owner.py": "29d4e7eb29a8111b389ab8d61118eddc24ffe4e5eb5938a097a05df95387444d",
+      "code/tests/execution_provider/test_lotus_records_core.py": "2df45b0cec092e3f62f7a90f6e931888f61c82e6b9eb1b4d7778e9437d35336c",
+      "code/tests/execution_provider/test_lotus_records_static.py": "a368b889b82fa19ccec7373e4b1af64ecf6d7be4a8bc775ef268286edfeb66b5",
+      "code/tests/experiments/test_lotus_records_libraries.py": "9177a46e23d0cfa0e52af79417951cfbdfc409bbfadfc992c9dfdfb24f7d07a4"
+    },
+    "component_dependency_source_sha256": {
+      "code/src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+      "code/src/semantic_methods/lotus/engine.py": "f347294d4d1cbc40f47d1f2868cd8098a8a52807438cb2bdf7335b0d2fbb79d8",
+      "code/src/semantic_methods/lotus/record_chain.py": "cfa0b830908fba94c583c791648ced3d226cb05333db2dce38f0e0cceb56d2da",
+      "code/src/baselines/text/movie_records.py": "1169a2069d58f291568d9a7546611c696d070d83415bdeb50b4e15f2ea684029",
+      "code/src/experiments/lotus_records_movie.py": "fd096c9120608c38de15b7d2dbb7a28f311ac4150f8c7758aece23ff1e860700"
+    },
+    "root_changed_file_sha256": {
+      "code/src/baselines/text/frameworks/daft_lotus_records.README.md": "791db2fc1ad876b9ce1e3ce05f387a96c82c3291725f4c28bec12d6a365100ac",
+      "code/src/baselines/text/frameworks/daft_lotus_records.py": "83b26dfa5c5144494010d0582355c8fb3a82e46281f62d0cbcf90b1624e5aa66",
+      "code/src/baselines/text/frameworks/ray_data_lotus_records.py": "03572c1b7b82956e48054779edb33b329e9717d8cdd6b3f6073d5eea6acdb7fa",
+      "code/src/baselines/text/movie_records.py": "1169a2069d58f291568d9a7546611c696d070d83415bdeb50b4e15f2ea684029",
+      "code/src/execution_provider/adapters/README.md": "e3496b691b088c44b0298e3a9997465c5ab3f7aa957aecc456689034102e6ea9",
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "2ec558b0bce048735d156b8a25eb8fae263c90e40384be3ce639c62c4f50cbaa",
+      "code/src/execution_provider/adapters/lotus_records_core.py": "ab6101fc7c87d4bf464641b2cd047d0e562288aff03a5a3b6bc13b5f6e4e6af4",
+      "code/src/execution_provider/adapters/lotus_records_static.py": "86efcf4fa34b9b54a0d9ae9bd1999b06b5c8c98d5df65bc9bde42e1198dc7412",
+      "code/src/experiments/lotus_records_movie.py": "4e9ad5ec84b42160c17b1571015b4afdc4bef1103300027b3349a7b859cfb55d",
+      "code/src/semantic_methods/lotus/README.md": "ac057ccf225a4361211f67af9fdb77288b964feddfbee733d18721636a62e3b3",
+      "code/src/semantic_methods/lotus/engine.py": "f347294d4d1cbc40f47d1f2868cd8098a8a52807438cb2bdf7335b0d2fbb79d8",
+      "code/src/semantic_methods/lotus/record_chain.py": "cfa0b830908fba94c583c791648ced3d226cb05333db2dce38f0e0cceb56d2da",
+      "code/src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+      "code/tests/baselines/text/generic_prepare_fixture.py": "92fd58145e271acebc70d3b9f5db160afe82a7e938903885e4acb87c817b0043",
+      "code/tests/baselines/text/generic_records_fixture.py": "197d8bf81f296d53212ee5ae4a41260de19f89b1a359d62dcf3379bf2a5e25f4",
+      "code/tests/baselines/text/test_daft_lotus_records.py": "f06b9b9b599184ccdbfeffff18f32f6fea6fb414141a2174e8206db32a13f4f3",
+      "code/tests/baselines/text/test_lotus_records_generic_libraries.py": "2761ec007428bfcefbb43da18690d12d7c5dc48d82398590e3f395d9e1593fad",
+      "code/tests/baselines/text/test_lotus_records_scan_contract.py": "9b91016fae6fe53f0195fdd464007a1c19950fd4a36cdbd0be64a563c1bd7ac9",
+      "code/tests/baselines/text/test_movie_records.py": "a7f0a81d244658c41d2c3f4a90206c86bcc93f8fbf0bee3bacdf49f63bea085d",
+      "code/tests/baselines/text/test_ray_data_lotus_records.py": "0fae6ab2b6cc337f219d334f8eab88eb6963a21a0b871b369ef45566e305dad9",
+      "code/tests/execution_provider/test_lotus_records_actor_owner.py": "29d4e7eb29a8111b389ab8d61118eddc24ffe4e5eb5938a097a05df95387444d",
+      "code/tests/execution_provider/test_lotus_records_core.py": "2df45b0cec092e3f62f7a90f6e931888f61c82e6b9eb1b4d7778e9437d35336c",
+      "code/tests/execution_provider/test_lotus_records_static.py": "a368b889b82fa19ccec7373e4b1af64ecf6d7be4a8bc775ef268286edfeb66b5",
+      "code/tests/experiments/test_lotus_records_libraries.py": "9177a46e23d0cfa0e52af79417951cfbdfc409bbfadfc992c9dfdfb24f7d07a4",
+      "code/tests/experiments/test_lotus_records_movie.py": "41eba7477985915d501a80102f12701d4355f76eb988faf8d1fbcf4560106fd3",
+      "code/tests/semantic_methods/test_lotus_column_binding.py": "67445761eeb555ae7b97483744e53e121fb7d72c206d2e3b81ca74bc6d261fc7",
+      "code/tests/semantic_methods/test_lotus_engine.py": "e4af76836a81d8465d5de801495885bf45c72cc72d2f04817cbced73d42525d8",
+      "code/tests/semantic_methods/test_lotus_generic_filter.py": "bbde88e42f587864588c3ee6cd3396791d4a950a94bd96612be698a7804a4b0d",
+      "code/tests/semantic_methods/test_lotus_record_chain.py": "f3114de1abca3cca4d1dd673f0f5ce81f9099a28978ce6f0ac3bcd1fd746566f",
+      "code/tests/semantic_methods/test_lotus_records.py": "8897b8b749d90327c306b1e720debda5759eaa9c72a11b6191635baad745a984"
+    },
+    "component_delivery_sha256": "aba8cda88069a127bcda77a70047d274d3b5e795499285d9e56874beb7f45f38",
+    "component_manifest_sha256": "e2e41635b710c33205a2ff7fadf437e29a7dd9a32468cb4fbc6fbd6ece9a3deb",
+    "root_joint_checks_passed": 79,
+    "root_joint_skipped": 0,
+    "root_joint_modules": [
+      "tests.semantic_methods.test_lotus_generic_filter",
+      "tests.semantic_methods.test_lotus_column_binding",
+      "tests.semantic_methods.test_lotus_record_chain",
+      "tests.experiments.test_lotus_records_movie",
+      "tests.semantic_methods.test_lotus_cascade",
+      "tests.experiments.test_lotus_cascade_movie"
+    ],
+    "root_observed_owned_processes": 40,
+    "root_observed_owned_exit_confirmed": true,
+    "root_raw_evidence": {
+      "supervision/supervisor.json": {
+        "sha256": "fed955430c6631550a5b737ada3244e5e50ca754dad042538a8a4b05f62cfc59",
+        "bytes": 4507
+      },
+      "supervision/worker.log": {
+        "sha256": "2af79498bebcf1221ed67352e1a6e26267f35bc07cac9b2e86ffa543aa0418c1",
+        "bytes": 54628
+      },
+      "verification.json": {
+        "sha256": "267fdb96a4c1be1be474af060d38d7841e4c502f34790f3b03a7989428ce6c5a",
+        "bytes": 9615
+      }
+    },
+    "prior_root_launch_failure": {
+      "path": "nonmodel-evidence/generic-root-integrated-r1/supervision/supervisor.json",
+      "sha256": "71658edbed0fac1cf3b16c29a57ec9decaaa9f08624aa46e0546e8551159a815",
+      "prior_exact_identity_absent": true,
+      "cause": "sandbox sysctl process enumeration denied before test output; child reaped with SIGTERM"
+    },
+    "scope": "Actual LOTUS/caller binding and original evaluator plus explicit CPU model fixtures; original Q3 and another input/instruction with/without predicate verified on real four-backend graphs.",
+    "limits": [
+      "IMLane and helper cascade remain separate profiles.",
+      "Fused finite-chain Map-generated-column checks retain their own sources.",
+      "Model/GPU/performance qualification does not transfer from frozen f526.",
+      "Core logical bytes are capacity accounting, not a physical RSS/GPU bound."
+    ]
+  },
+  "actor_owner_close_scope_20261019": {
+    "integration_commit": "ebe3035f",
+    "initial_scope_fix_commit": "21ca3feb",
+    "checks_passed": 91,
+    "skipped": 0,
+    "actual_model_calls": 0,
+    "gpu_calls": 0,
+    "source_sha256": {
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "aeca568be75cf97fdb5fa60e0bd738a9401d2ab6d439bdf972f898a0458364d7",
+      "code/src/execution_provider/adapters/lotus_records_static.py": "cbf4e00bd8a2b65ea5f0c9844a2dcb64d6e87048d3539fbd76350ffa02393ff8",
+      "code/src/execution_provider/adapters/README.md": "e6c293bb2a056c50ea02aa8a64bf6e455b8d278ca150ee045e4ff37a7d5ea9fa",
+      "code/tests/execution_provider/test_lotus_records_actor_owner.py": "adbad2054fad77dc1fe2f7a36fd12dd8365fcf117303e5b63274c1a53b090a9f",
+      "code/tests/execution_provider/test_lotus_records_static.py": "041f5eb3004e1fe730396acb0043e56386e790e6f8fa32e2a31a7e030d94ad03",
+      "code/tests/execution_provider/test_lotus_records_core.py": "4dae69c4d495783187d826e0b68af7ebf8e36bc46cd1308e306cb3a21647cbc9"
+    },
+    "evidence": {
+      "red.json": {
+        "sha256": "06c264f548848cd6e5e172a500fef30ee035769bd978aa3da6e95a6086773d1f",
+        "bytes": 154
+      },
+      "red.log": {
+        "sha256": "8443c6b01970ec23e2b76df4632921d4dfebcdccf3025013dad9d1c8f687183c",
+        "bytes": 21978
+      },
+      "green.log": {
+        "sha256": "c2f0859615cb2d07a70f135d7036529d16f1521c2476239de91233b0513e835d",
+        "bytes": 13715
+      },
+      "green.json": {
+        "sha256": "3be45fff2a766fa688ad8ec4ca9eba78f90b0bd964ff6687cec1b4402f259785",
+        "bytes": 154
+      },
+      "green-r2.log": {
+        "sha256": "6674314bd1a5d1545b2e328f452745ccc8d3b5b2fc9006f80c12158a7dc8f2d5",
+        "bytes": 19582
+      },
+      "green-r3.log": {
+        "sha256": "f1fdb4e70cc7f5f0e5bfa5f42a92aec06ea84dc270df974c101e2046bcfecac2",
+        "bytes": 18390
+      },
+      "green-r4.log": {
+        "sha256": "fc8fdd27686aafaa1e0f7775f635966373906dc4171d14789de2df698d7dbe07",
+        "bytes": 18622
+      },
+      "verification-r3.json": {
+        "sha256": "f8cc5cc25c52c771da2d5f7597d8aead13ea9426ea1c90d05c679c51bf48ee05",
+        "bytes": 2217
+      },
+      "verification-r2.json": {
+        "sha256": "4c3da8446a2d4136117b359c71510994c9cb18c622b80f3ea80ac01c6b54a558",
+        "bytes": 1546
+      }
+    },
+    "verification_sha256": "17e617e727e112a7fd4d154961ab387aa94d19b68f9ebe2f0305152ece4148e1",
+    "close_scope": "Literal True engine API acknowledgement plus successful actor kill requests; no OS/GPU claim for allocated or uncertain ownership.",
+    "partial_allocation_without_handle": "status/process/GPU unknown and no restart",
+    "close_window": "10s API plus 11s Ray wait, independent of startup limit; explicit Core cleanup deadline and outer hard wall still apply",
+    "static_unsettled": "retained unknown, even if API owner scope closed",
+    "reviews": {
+      "Spec": "PASS ebe3035f",
+      "Standards": "PASS ebe3035f; partial-allocation P2 fixed"
+    },
+    "failures_preserved": [
+      "RED 10 assertion failures and one absent-field error before source fix",
+      "First green exposed static unsettled propagation assertion; guard added",
+      "Intermediate full suite had 20 skips without SemBench env; final 91 zero skip"
+    ]
+  },
+  "reviewed_main_sync_20261019": {
+    "main_commit": "d3648bf54c423f8688832b27a28e558716858777",
+    "integration_merge": "71199963",
+    "method": "normal merge preserving both PROJECT_LOG additions",
+    "gpu_frozen_source_unchanged": true,
+    "historical_raw_evidence_unchanged": true
   }
 }

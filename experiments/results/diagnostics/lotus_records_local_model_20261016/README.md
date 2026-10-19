@@ -6,6 +6,8 @@
 2026-10-19 同步纯文档 main `9b74f00db35ffa532ca74ecf9fae65ae38015ef1` 的原生查询与计时边界；不改变历史模型资格来源。
 最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；首阶段支持普通 Movie Q3 的 Filter＋COUNT。
 后续 Core CPU、有限链和共享引擎增量在下方分别记录，尚无这些新来源的模型或性能资格。旧 request 接入、活动 baseline 和旧测试树没有修改。
+2026-10-19 的 Daft 关闭修正单元已在冻结 `f526fbf1` 完成两查询／四次真实调用，见[独立结果](daft_model_close_correction.json)；此前失败、未知计数和永久预留保留。
+当前普通 Filter 的 Ray Data／Daft／静态参照／Core 已消费中性扫描与 caller 绑定方法，换列换指令的资格为 CPU；不继承冻结 Daft 模型来源。
 
 ## 实现与来源
 
@@ -180,7 +182,18 @@ IMLane本轮仅形成[方法与usage交接](../../../../code/integrations/imlane
 已启动进程须取得字面值 True 的 API 确认才可 closed；API已确认后的 OS 清理重试不再重复 RPC。
 旧行为和四项确认反例先复现，新增5项／原17项及后续16项定向CPU检查按各自来源保留，不能相加作唯一测试数。
 GPU保持unknown，硬墙钟仍由外层supervisor负责；`verification.json.daft_close_repair_cpu_20261019` 登记新源。
-用于下一次资格的 `f526fbf1` 从原7d12只改变私有引擎这一个生产文件，389路径闭包其余字节不变；尚未启动新模型单元。
+用于修正资格的 `f526fbf1` 从原7d12只改变私有引擎这一个生产文件，389路径闭包其余字节不变；后续运行单列如下。
+
+## Daft 关闭修正的真实模型资格
+
+新单元 `daft-close-corrected-double-query` 执行两个不同 query ID，各处理原15行前缀中的两条命中记录。
+两次独立引擎寿命各有2次成功调用、253／8 tokens，总计4次调用、506／16／522 tokens；COUNT均0，原SemBench误差均0、补充审计各TN2。
+实际消息、prompt／output token IDs、文本、usage、finish reason、原parser均与固定原生LOTUS控制核同；两个负例不代表完整质量或性能。
+API每寿命关闭一次，所属进程退出与独立GPU1MiB／无compute分别核查；外层共59个已观察owned身份退出，正常lease释放。
+41个归档成员943,843字节已下载、逐成员大小与SHA核同，归档SHA为 `6868bd9be1b72d2085e94e2fea8438c4362e6187a26c9939494141adb30e5ee9`。
+同一16次账本保留原4次永久预留，再新增不同单元4次，现8／16；旧32／32 SHA不变，无退款、自动重试或额外暖身。
+原失败的最终实际计数仍null，不能与本单元4次相加推算全轮调用数。
+精确源码、模型／配置／原件SHA和范围见[结果JSON](daft_model_close_correction.json)。本资格不覆盖新通用方法、Core、有限链或级联。
 
 ## 共享引擎与 actor owner：CPU 增量
 
@@ -236,7 +249,7 @@ Core 标记为 true、静态为 false，两个 Core session 独立、每臂复�
 零skip、零模型／GPU，67个已观察进程退出。首次启动器使用短测试模块名导致4项worker导入失败，
 改用可导入的完整模块名后在新目录通过；生产源码未改变，失败原件仍在。
 本次组合源码与原件SHA见 `verification.json.finite_chain_integration_cpu_20261019`。
-单 Filter 公共后端仍在迁移其旧 Q3 绑定，本段接纳不表示所有后端已解除任务约束；任务切换须分别验收。
+本段形成时单Filter公共后端尚在迁移旧Q3绑定；后续四后端的独立验收见下节，不向其他路径转授资格。
 新链真实模型、Daft／IMLane／Core 有限链、跨阶段 AsyncLLM 仍待验证。
 
 ## 原全局级联的独立 CPU 接纳
@@ -248,3 +261,17 @@ Core 标记为 true、静态为 false，两个 Core session 独立、每臂复�
 零skip、零模型／GPU，25个已观察owned身份退出。新查询直接使用中立json_metric，未复制原函数。
 当前仅Q3文本helper profile；各角色阶段按序创建／关闭，main可能加载两次，完整初始化／切换成本保留。
 共享CLI接线、真实helper模型／GPU、Daft／IMLane／Core级联、其他任务及性能仍待验证，详见 `verification.json.global_cascade_integration_cpu_20261019`。
+
+## 普通 Filter 的任务边界与四后端复用
+
+`FilterMethod` 是唯一普通文本方法，旧 `TextFilterMethod` 为同对象别名。原 `parse_cols` 的 caller 列序在分配前冻结，worker验证实际列集合并保留该序，避免不同Python hash seed改变原提示。
+任务拥有 `RecordScan` 的typed schema、payload列与可选等值筛选；Movie source／runner继续严格校验原Q3指令、列、谓词、COUNT与原评价。
+Ray Data、Daft Native、SemLoom静态参照、production Core四个普通路径均已去掉Q3业务字段假设，包括Core `_fill()` 的输入编码。
+185项职责合同零skip；实库四后端各两query、28条明确合成响应，换列换指令、有／无谓词、不同worker列序均与原LOTUS消息／判定／COUNT／LM统计一致；旧Q3图另有回归。
+集成固定 `5c6d7a3b` 的79项方法／绑定／链／Movie／级联组合检查零skip通过，40个已观察进程退出。
+首次根线程启动受沙箱进程枚举限制、未产生测试输出，child退出已独立核对；原件保留。三项旧Core未绑定错误在最终完整Movie27中关闭。
+来源、各次失败和精确SHA见 `verification.json.generic_filter_integration_cpu_20261019`。所有新推理响应均为CPU替身，IMLane与helper级联不包含在本通用迁移声明中。
+有限链共享原stage循环；Extract仍只允许末端，重复业务index及业务列名与调用身份分开。逻辑bytes额度不表示物理RSS或显存上限。
+
+后续模型准备还修正owner的关闭范围：字面True API与成功kill请求只确认请求／API范围，OS与GPU仍待独立观察。
+部分分配失败无model句柄仍unknown，静态未确认工作继续保留；最终91项CPU零skip通过，不将旧模型结果重新绑定新owner源码。

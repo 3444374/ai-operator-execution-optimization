@@ -1,5 +1,11 @@
 # 实验与机制证据台账
 
+2026-10-19：[Daft关闭修正真实模型](diagnostics/lotus_records_local_model_20261016/daft_model_close_correction.json)。冻结f526的一文件修复，两查询4次调用／两独立引擎，506／16 tokens、COUNT0／原评价核同，59已观察owned退出和独立GPU空闲／正常lease释放。首轮actual null不改、原4加新4永久占用现8／16，旧32 SHA不变；只认证固定小样源码。
+
+2026-10-19：[普通Filter四后端复用](diagnostics/lotus_records_local_model_20261016/README.md#普通-filter-的任务边界与四后端复用)。单一方法／caller列序、中性scan与任务Q3约束分开，185职责合同及实库8query／28合成响应、root79项组合零skip通过；40已观察进程退出。IMLane／helper profile、新模型与性能不转授。
+
+2026-10-19：[原全局级联CPU组合](diagnostics/lotus_records_local_model_20261016/README.md#原全局级联的独立-cpu-接纳)。原控制代码对象、21方法＋2原评价＋7原生／进程检查与有限logprobs／严格关闭组合通过，25已观察进程退出，零模型／GPU。
+
 2026-10-19：[有限链整合CPU检查](diagnostics/lotus_records_local_model_20261016/README.md#有限链独立接纳)。
 职责52037286的原方法／新Ray fused图整合共享generation、有限logprobs与关闭修复后，18方法＋24原生／传输检查零skip通过，含5实际Ray CPU图；67个已观察进程退出。FME与Map生成列Filter共用阶段循环；首轮测试模块名导入失败保留。模型／GPU及公共单Filter去Q3绑定不由此认证。
 

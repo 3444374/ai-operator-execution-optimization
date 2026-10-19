@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：完成冻结 Daft 修正资格并接纳普通 Filter 复用
+
+冻结f526的一文件关闭修复通过两query／4次真实调用、506／16 tokens、原提示／token／parser／COUNT与原SemBench评价；59个已观察owned退出，独立GPU1MiB无compute、正常lease释放。41成员私有归档逐SHA核同；新16账本原4加新4现8／16，旧32 SHA不变，原失败actual null不补造。
+普通Ray／Daft／静态／Core消费同一FilterMethod、caller绑定列序和中性RecordScan，Q3校验留在任务；185职责合同与四实库8query／28合成响应通过，根线程79项组合零skip／40已观察进程退出，原沙箱失败保留。两轴审查分别绑定固定5c6d7a3b与后续owner范围修复，不借冻结模型资格。
+main清理PR43–47已正常同步至d3648bf5，保留双方日志，不重写或强推历史；records新功能仍留职责／集成分支。精确源码、原件与限制见[分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
+
 ## 2026-10-19：分清 records owner 的关闭范围
 
 真实Core模型资格准备发现，owner曾将GPU独立观察未知误当API关闭失败。现在字面True API确认和actor kill请求成功只关闭声明的请求／API范围，OS与GPU仍保留unknown；启动上限不再截短10秒API／11秒Ray等待。
