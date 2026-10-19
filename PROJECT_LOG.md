@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-19：清理历史脚本私有死代码与重复 CSV 写出
+
+删除请求等价脚本未调用的 `_redact`／`time` 和 SAOR 摘要未调用的 `_decode_json_value`；SAOR 继续复用现有共享校验函数。
+SQuAD 三臂统一使用同文件已有 CSV writer，四种输入的原内联代码与 helper 输出字节及错误一致；请求等价报告保留原字段，并修正文案为实际保存完整请求。
+30 项 SQuAD 和 38 项 SAOR 本地 fixture 检查通过，另核对请求等价成功／不匹配退出码及三个 CLI help。
+SAOR 初跑的旧 README“四阶段”断言失败已保留原输出，改查当前手册链接；运行环境隔离和五臂校准检查保持。
+三分支逐文件行数、删除依据和前后输出在任务外部审计产物中保存；旧请求路径、版本协议及历史原始证据保留。本次模型／GPU 请求均为零。
+
 ## 2026-10-16：补齐 Daft 原生布局与后续算子复用路线
 
 完整读取五份 Daft 及一份后续算子扩展附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性消费、布局、有效配置与真实 worker 收尾；[算子扩展](experiments/plans/数据组织.md#lotus-operator-extension)以普通 Map／有限链检验复用，与原级联接线并行，映射当前实际文件，不整仓搬迁。原方法、全局结果复用和 IPC 归属直接引用既有合同。

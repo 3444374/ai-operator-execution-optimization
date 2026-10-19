@@ -283,15 +283,6 @@ def _positive(value: object, name: str) -> float:
     return parsed
 
 
-def _decode_json_value(value: object, run_id: str, field: str) -> object:
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError as error:
-            raise ValueError(f"{run_id} {field} is not valid JSON") from error
-    return value
-
-
 def _native_queue_empty(value: object, run_id: str) -> None:
     validate_native_final_queue(value, run_id)
 
