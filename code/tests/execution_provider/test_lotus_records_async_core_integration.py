@@ -54,9 +54,9 @@ class FixtureControl:
     def __init__(self, root):
         self.root = Path(root)
 
-    def configure(self, *, unknown_rows=(), close_error=False):
+    def configure(self, *, unknown_rows=(), close_error=False, hold_ray_return=False):
         _fixture_json(self.root / 'async-fixture-plan.json', dict(
-            unknown_rows=list(unknown_rows), close_error=close_error))
+            unknown_rows=list(unknown_rows), close_error=close_error, hold_ray_return=hold_ray_return))
 
     def entered(self):
         result = []
@@ -83,6 +83,17 @@ class FixtureControl:
 
     def finished(self, call_id):
         return (self.root / ('finished-' + _fixture_key(call_id) + '.json')).is_file()
+
+    def wait_handoff(self, call_id, *, timeout=20):
+        path = self.root / ('handoff-' + _fixture_key(call_id) + '.json')
+        until = time.monotonic() + timeout
+        while time.monotonic() < until:
+            if path.is_file():
+                if path.is_symlink() or path.stat().st_size > 16384:
+                    raise ValueError('invalid CPU handoff event')
+                return json.loads(path.read_bytes())
+            time.sleep(0.002)
+        raise TimeoutError('CPU actor result did not reach its Ray return gate')
 
 
 class ControlledProcess(AsyncEngineProcess):
@@ -161,7 +172,7 @@ class ControlledEngine:
 
 
 @contextmanager
-def cpu_runtime(*, count=2, unknown_rows=(), close_error=False):
+def cpu_runtime(*, count=2, unknown_rows=(), close_error=False, hold_ray_return=False):
     """Fresh real local libraries/actors; only the physical model is synthetic."""
     import daft
     from daft.runners import _get_runner
@@ -180,6 +191,21 @@ def cpu_runtime(*, count=2, unknown_rows=(), close_error=False):
             class CpuModelActor(production_actor):
                 def _process_type(self):
                     return ControlledProcess
+
+                def run_core(self, rows, deadline, maximum, request_key):
+                    value = super().run_core(rows, deadline, maximum, request_key)
+                    root = Path(self.spec.model_path)
+                    plan = json.loads((root / 'async-fixture-plan.json').read_bytes())
+                    if plan['hold_ray_return']:
+                        receipt = json.loads(value)
+                        key = _fixture_key(receipt['call_id'])
+                        _fixture_json(root / ('handoff-' + key + '.json'), dict(
+                            request_key=list(request_key), receipt=receipt))
+                        while not (root / ('release-handoff-' + key)).exists():
+                            if time.monotonic() >= deadline:
+                                raise TimeoutError('CPU actor Ray return gate deadline expired')
+                            time.sleep(0.002)
+                    return value
 
             return CpuModelActor
 
@@ -205,7 +231,7 @@ def cpu_runtime(*, count=2, unknown_rows=(), close_error=False):
         source = MovieRecordSource.from_manifest(prepare_movie_source(original, inputs / 'records',
             expected_csv_sha256=hashlib.sha256(original.read_bytes()).hexdigest(), max_rows=count))
         control = FixtureControl(inputs)
-        control.configure(unknown_rows=unknown_rows, close_error=close_error)
+        control.configure(unknown_rows=unknown_rows, close_error=close_error, hold_ray_return=hold_ray_return)
         method, generation = FilterMethod('openai/async-cpu-fixture'), GenerationSpec()
         spec = EngineSpec(str(inputs), sys.executable, sys.executable, max_model_calls=6)
         resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1,
@@ -228,6 +254,10 @@ def cpu_runtime(*, count=2, unknown_rows=(), close_error=False):
             for row in control.entered():
                 if not (inputs / ('release-' + _fixture_key(row['call_id']))).exists():
                     control.release(row['call_id'])
+                if hold_ray_return:
+                    with os.fdopen(os.open(inputs / ('release-handoff-' + _fixture_key(row['call_id'])),
+                                          os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), 'wb'):
+                        pass
             for thread in runtime.threads:
                 thread.join(timeout=2)
                 if thread.is_alive():
@@ -501,6 +531,51 @@ class AsyncCoreIntegrationTests(unittest.TestCase):
                 actor_kill_scope='exact owned zero-GPU model actor; no restart',
                 unknown_placeholder_source='experiment ledger; missing engine receipt',
                 physical_gpu_exit_checked=False))
+
+    def test_owner_close_hands_known_actor_receipt_to_query_before_ray_return(self):
+        with cpu_runtime(count=1, hold_ray_return=True) as runtime:
+            owner, control = runtime.owner, runtime.control
+            stream = owner.evaluate(runtime.source, query_id='async-close-handoff',
+                                    cancelled=runtime.cancelled.is_set)
+            errors, handoffs = [], []
+
+            def cancel_at_handoff():
+                try:
+                    entered = control.wait_entered(1, timeout=20)[0]
+                    control.release(entered['call_id'])
+                    handoffs.append(control.wait_handoff(entered['call_id']))
+                except BaseException as error:
+                    errors.append(error)
+                finally:
+                    runtime.cancelled.set()
+
+            thread = threading.Thread(target=cancel_at_handoff, name='cpu-fixture-handoff', daemon=True)
+            runtime.threads.append(thread)
+            thread.start()
+            with self.assertRaises(InterruptedError) as primary:
+                next(stream)
+            thread.join(timeout=2)
+            self.assertEqual(errors, [])
+            self.assertEqual(len(handoffs), 1)
+            expected = handoffs[0]['receipt']
+            self.assertEqual((expected['status'], expected['prompt_tokens'], expected['completion_tokens']),
+                             ('succeeded', 11, 1))
+            self.assertEqual(owner.last_query_report['received_occurrences'], 0)
+            close = owner.close(timeout=20)
+            raw = close['model_owner']['unconsumed_call_results']
+            self.assertEqual(raw, [expected])
+            self.assertIs(close['model_owner']['engine_close_report']['engine_api_shutdown_confirmed'], True)
+            self.assertEqual(close['status'], 'unknown')
+            self.assertEqual(close['core_usage']['held_tasks'], 1)
+            self.assertEqual(close['retained_remote_inputs'], 1)
+            self.assertIsNone(close['gpu_exit_confirmed'])
+            self.save('close-handoff', dict(handoff=handoffs[0], owner_close=close,
+                query_close=owner.last_query_report, primary_error_type=type(primary.exception).__name__,
+                actual_model_calls=0, fixture_evaluations=1, physical_gpu_exit_checked=False,
+                fixture_gate='after production super.run_core bytes, before real Ray RPC return'))
+            # Known accounting must cross the close handoff even though a
+            # missing transport terminal keeps the original Core credit held.
+            self.assertEqual(owner.last_query_report['unconsumed_call_results'], [expected])
 
 
 if __name__ == '__main__':
