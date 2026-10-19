@@ -8,10 +8,7 @@ results. The private model interpreter remains separate from LOTUS.
 
 from __future__ import annotations
 
-from collections import deque
-from copy import deepcopy
 from dataclasses import asdict
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -31,6 +28,12 @@ from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
 
 
+from .lotus_chain_batch import FusedChainBatch
+from .lotus_chain_results import (
+    ChainBatchResults, _json, _metadata, _source_binding, record_row,
+)
+
+
 RAY_VERSION = "2.56.1"
 CODE_ROOT = Path(__file__).resolve().parents[4]
 
@@ -41,26 +44,6 @@ class RayChainExecutionError(RuntimeError):
     def __init__(self, remote_error_type):
         self.remote_error_type = remote_error_type
         super().__init__("Ray LOTUS chain failed: " + remote_error_type)
-
-
-def _json(value):
-    return json.dumps(value, ensure_ascii=False, allow_nan=False)
-
-
-def record_row(record):
-    """Encode source values, without constructing prompts or model requests."""
-    return {"record_json": _json(record.describe())}
-
-
-def _metadata(record):
-    return {key: deepcopy(getattr(record, key))
-            for key in ("row_id", "source_position", "source_index", "source_refs")}
-
-
-def _source_binding(record):
-    canonical = json.dumps(json.loads(_json(record.describe())), ensure_ascii=False,
-                           sort_keys=True, separators=(",", ":"), allow_nan=False)
-    return dict(_metadata(record), record_sha256=hashlib.sha256(canonical.encode("utf-8")).hexdigest())
 
 
 def _check(deadline, control):
@@ -78,161 +61,21 @@ def _empty_source_batch(batch):
     return pa.Table.from_pylist([], schema=pa.schema([("batch_json", pa.string())]))
 
 
-class FusedChainBatch:
-    """One native actor, with worker-local methods and one private model process."""
+class _RayChainRows(ChainBatchResults):
+    _backend_name = "Ray"
 
-    _engine_type = None
+    def _execution_error(self, remote_error_type):
+        return RayChainExecutionError(remote_error_type)
 
-    def __init__(self, chain, engine, expected, control, deadline, startup_timeout_s,
-                 driver_host, control_token):
-        from .daft_engine_process import _publish
-
-        if socket.gethostname() != driver_host:
-            raise RuntimeError("Ray LOTUS chain supports a single local host only")
-        self.control = Path(control)
-        if (self.control / "owner").read_text() != control_token:
-            raise RuntimeError("Ray LOTUS chain requires a shared local control directory")
-        _check(deadline, self.control)
-        self.chain = LotusRecordChain.from_dict(chain)
-        if len({stage.method.model_name for stage in self.chain.stages}) != 1:
-            raise ValueError("this fused Ray chain requires one model deployment across all stages")
-        self.engine_spec = EngineSpec.from_dict(engine)
-        if any(stage.generation.max_tokens > self.engine_spec.max_model_len for stage in self.chain.stages):
-            raise ValueError("chain max_tokens exceeds max_model_len")
-        self.expected = {row["row_id"]: row for row in expected}
-        self.received = set()
-        self.deadline, self.startup_timeout_s = deadline, startup_timeout_s
-        self.engine = None
-        self.failed = False
-        self.worker_report = self.control / ("chain-worker-" + uuid.uuid4().hex + ".json")
-        _publish(self.worker_report, dict(engine_allocation_started=False, worker_pid=os.getpid()))
-
-    def _infer(self, prepared, *, generation):
-        from .daft_engine_process import _publish
-        from .lotus_chain_engine_process import ChainEngineProcess
-
-        _check(self.deadline, self.control)
-        prior = {call["row_id"]: call["call_id"] for call in self._audit_calls}
-        declared = [dict({key: row[key] for key in IDENTITY_FIELDS}, status="unknown",
-                         parent_call_ids=[] if row["row_id"] not in prior else [prior[row["row_id"]]],
-                         submission_confirmed=False, error_type="NativeTaskUnconfirmed",
-                         prompt_tokens=None, completion_tokens=None, total_tokens=None)
-                    for row in prepared]
-        self._audit_calls.extend(declared)
-        self._raw_stage_id = prepared[0]["algorithm_stage"]
-        audit = dict(batch_id=self._batch_id, raw_stage_id=self._raw_stage_id, calls=self._audit_calls)
-        _publish(self._audit_path, audit)
-        if self.engine is None:
-            _publish(self.worker_report, dict(engine_allocation_started=True, worker_pid=os.getpid()))
-            self.engine = (self._engine_type or ChainEngineProcess)(
-                self.engine_spec, generation, self.control, self.deadline,
-                self.startup_timeout_s)
-        results = self.engine.run_prepared(prepared, generation=generation)
-        for declaration in declared:
-            matches = [row for row in results if type(row) is dict and all(
-                row.get(key) == declaration[key] for key in IDENTITY_FIELDS)]
-            if len(matches) == 1:
-                parents = declaration["parent_call_ids"]
-                declaration.clear()
-                declaration.update(deepcopy(matches[0]), parent_call_ids=parents)
-        raw = [row for row in results if type(row) is not dict or sum(
-            type(other) is dict and all(other.get(key) == row.get(key) for key in IDENTITY_FIELDS)
-            for other in results) != 1 or not any(
-                all(row.get(key) == item[key] for key in IDENTITY_FIELDS) for item in declared)]
-        try:
-            _publish(self._audit_path, dict(audit, raw_results=raw))
-        except BaseException as exc:
-            self._audit_errors.append("call_ledger_write: " + type(exc).__name__)
-        return results
-
-    def __call__(self, batch):
-        import pyarrow as pa
-        from .daft_engine_process import _publish
-
-        if self.failed:
-            # Ray may already have queued another batch before the consumer
-            # sees the first error. Preserve that error without another call.
-            return pa.Table.from_pylist([{"batch_json": self._failure_json}])
-        self._audit_calls, self._audit_errors = [], []
-        self._batch_id, self._raw_stage_id = uuid.uuid4().hex, None
-        self._audit_path = self.control / ("chain-audit-" + self._batch_id + ".json")
-        records = []
-        envelope = dict(inputs=[],
-                        batch_id=self._batch_id, raw_stage_id=None,
-                        records=[], calls=[], stage_stats={}, columns=[], raw_results=[], error_type=None,
-                        native_input_rows=0, worker_pid=os.getpid(), cleanup_errors=[])
-        try:
-            _check(self.deadline, self.control)
-            batch_ids = set()
-            for row in batch.to_pylist():
-                if set(row) != {"record_json"} or type(row["record_json"]) is not str:
-                    raise ValueError("Ray chain input requires one record_json string column")
-                record = RecordOccurrence.from_dict(json.loads(row["record_json"]))
-                if (self.expected.get(record.row_id) != _source_binding(record)
-                        or record.row_id in self.received or record.row_id in batch_ids):
-                    raise ValueError("Ray chain input changed or duplicated an occurrence")
-                batch_ids.add(record.row_id)
-                records.append(record)
-            self.received.update(batch_ids)
-            envelope.update(inputs=[_source_binding(record) for record in records], native_input_rows=len(records))
-            result = self.chain.run_batch(records, self._infer)
-            envelope.update(records=[record.describe() for record in result["records"]],
-                            calls=result["calls"], stage_stats=result["stage_stats"],
-                            columns=result["columns"])
-            _check(self.deadline, self.control)
-        except BaseException as exc:
-            self.failed = True
-            # The method attaches calls before parsing, including known usage
-            # when a later parse or dependent generation fails.
-            envelope.update(calls=getattr(exc, "chain_calls", envelope["calls"]),
-                            stage_stats=getattr(exc, "chain_stage_stats", envelope["stage_stats"]),
-                            raw_results=getattr(exc, "chain_raw_results", []),
-                            records=[], error_type=type(exc).__name__)
-            envelope["raw_stage_id"] = self._raw_stage_id
-            try:
-                _publish(self.control / ("chain-failure-" + self._batch_id + ".json"), envelope)
-            except BaseException as recording:
-                envelope["cleanup_errors"].append("failure_ledger_write: " + type(recording).__name__)
-        finally:
-            envelope["cleanup_errors"].extend(self._audit_errors)
-            if self.engine is not None and (self.failed or len(self.received) == len(self.expected)):
-                try:
-                    envelope["engine_close"] = self.engine.close()
-                except BaseException as exc:
-                    envelope["cleanup_errors"].append("engine_close: " + type(exc).__name__)
-                    try:
-                        _publish(self.control / "engine-close-failure.json", dict(
-                            status="unknown", process_exit_confirmed=False,
-                            cleanup_errors=envelope["cleanup_errors"]))
-                    except BaseException:
-                        pass
-        # Even a wholly discarded batch returns its preceding model-call ledger.
-        encoded = _json(envelope)
-        if self.failed:
-            self._failure_json = encoded
-        return pa.Table.from_pylist([{"batch_json": encoded}])
-
-
-class _RayChainRows:
     def __init__(self, result, expected, chain, deadline, cancelled, control):
-        self.result, self.chain = result, chain
-        self.expected = {record.row_id: _metadata(record) for record in expected}
-        self.bindings = {record.row_id: _source_binding(record) for record in expected}
+        super().__init__(expected, chain)
+        self.result = result
         self.deadline, self.cancelled, self.control = deadline, cancelled, Path(control)
-        self.received = set()
-        self.calls, self.batch_stage_stats, self.unassociated_results = [], [], []
-        self.raw_result_batches, self._raw_priorities, self._received_batches = {}, {}, set()
-        self.columns = list(dict.fromkeys(
-            [key for record in sorted(expected, key=lambda row: row.source_position) for key in record.values]
-            + [stage.method.output_column for stage in chain.stages if stage.kind == "map"]))
-        self._base_columns, self._derived_columns = list(self.columns), {}
-        self._call_records, self._pending = {}, deque()
         self._iterator = None
         self._done = self._started = self._executor_closed = False
         self.completed = False
         self._stop = threading.Event()
         self._watchdog = self._failure = None
-        self._cleanup_errors = []
         self.last_close_report = None
 
     def __iter__(self):
@@ -261,95 +104,6 @@ class _RayChainRows:
                         exc.add_note("Ray shutdown: " + type(cleanup).__name__)
                 return
 
-    def _record_calls(self, calls, *, recovering=False):
-        stages = {stage.stage_id: stage for stage in self.chain.stages}
-        for call in calls:
-            expected = self.expected.get(call.get("row_id"))
-            if (expected is None or any(key not in call for key in IDENTITY_FIELDS)
-                    or call["source_position"] != expected["source_position"]
-                    or call["query_id"] != self.chain.query_id
-                    or call["algorithm_stage"] not in stages
-                    or call.get("status") not in {"succeeded", "failed", "unknown"}):
-                raise ValueError("Ray chain returned an undeclared or invalid model call")
-            canonical = stage_identity(
-                self.chain.query_id, RecordOccurrence.from_dict({**expected, "values": {}}),
-                call["algorithm_stage"], model_role=stages[call["algorithm_stage"]].model_role)
-            if any(call[name] != canonical[name] for name in IDENTITY_FIELDS):
-                raise ValueError("Ray chain changed a model evaluation identity")
-            if call["call_id"] in self._call_records:
-                if recovering:
-                    from src.baselines.common.redact import redact_json_values
-
-                    previous = self._call_records[call["call_id"]]
-                    if call.get("error_type") == "NativeTaskUnconfirmed":
-                        continue
-                    if previous.get("error_type") == "NativeTaskUnconfirmed":
-                        previous.update(call)
-                        continue
-                    comparable = redact_json_values(previous)
-                    for key in ("status", "text", "submission_confirmed", "prompt_tokens",
-                                "completion_tokens", "total_tokens", "engine_uid", "engine_request_id",
-                                "finish_reason", "parent_call_ids"):
-                        if comparable.get(key) is not None and call.get(key) is not None and comparable[key] != call[key]:
-                            raise ValueError("conflicting recovered model response for " + call["call_id"])
-                    continue
-                raise ValueError("Ray chain duplicated a model evaluation")
-            self._call_records[call["call_id"]] = call
-            self.calls.append(call)
-
-    def _accept(self, envelope):
-        batch_id = envelope["batch_id"]
-        if type(batch_id) is not str or not batch_id or batch_id in self._received_batches:
-            raise ValueError("Ray graph returned a missing or duplicate native batch identity")
-        inputs = envelope["inputs"]
-        batch_ids = set()
-        for item in inputs:
-            row_id = item["row_id"]
-            if (self.bindings.get(row_id) != item or row_id in self.received or row_id in batch_ids):
-                raise ValueError("Ray graph changed or duplicated an input occurrence")
-            batch_ids.add(row_id)
-        self.received.update(batch_ids)
-        self._received_batches.add(batch_id)
-        if any(call.get("row_id") not in batch_ids for call in envelope["calls"]):
-            raise ValueError("Ray chain call belongs to a different native batch")
-        self._record_calls(envelope["calls"])
-        self._cleanup_errors.extend(envelope.get("cleanup_errors", []))
-        self.batch_stage_stats.append(envelope["stage_stats"])
-        self._recover_raw(envelope, priority=2)
-        for column in envelope["columns"]:
-            if column not in self.columns:
-                self.columns.append(column)
-        if envelope.get("error_type"):
-            error = RayChainExecutionError(envelope["error_type"])
-            error.chain_calls = list(self.calls)
-            error.chain_stage_stats = list(self.batch_stage_stats)
-            raise error
-        rows = [RecordOccurrence.from_dict(row) for row in envelope["records"]]
-        final_ids = [record.row_id for record in rows]
-        previous = {}
-        expected_stage = batch_ids
-        for stage in self.chain.stages:
-            stage_calls = [call for call in envelope["calls"]
-                           if call["algorithm_stage"] == stage.stage_id]
-            if (len(stage_calls) != len(expected_stage)
-                    or {call["row_id"] for call in stage_calls} != expected_stage
-                    or any(call["status"] != "succeeded" for call in stage_calls)):
-                raise ValueError("Ray chain omitted or repeated a dependent stage evaluation")
-            for call in stage_calls:
-                if call.get("parent_call_ids") != previous.get(call["row_id"], []):
-                    raise ValueError("Ray chain changed a parent evaluation association")
-            previous = {call["row_id"]: [call["call_id"]] for call in stage_calls}
-            if stage.kind == "filter":
-                if any(type(call.get("decision")) is not bool for call in stage_calls):
-                    raise ValueError("Ray chain lacks Filter parser decisions")
-                expected_stage = {call["row_id"] for call in stage_calls if call["decision"]}
-        if len(set(final_ids)) != len(final_ids) or set(final_ids) != expected_stage:
-            raise ValueError("Ray chain final rows differ from terminal stage occurrences")
-        for record in rows:
-            if record.row_id not in batch_ids or _metadata(record) != self.expected[record.row_id]:
-                raise ValueError("Ray chain changed a final occurrence identity")
-            self._derived_columns[record.source_position] = [key for key in record.values if key not in self._base_columns]
-        self._pending.extend(rows)
 
     def __next__(self):
         if self._done:
@@ -399,29 +153,6 @@ class _RayChainRows:
         error.chain_stage_stats = list(self.batch_stage_stats)
         error.chain_raw_results = [row for batch in self.raw_result_batches.values() for row in batch]
 
-    def _recover_raw(self, record, *, priority):
-        if not record.get("raw_results"):
-            return
-        key = (record["batch_id"], record["raw_stage_id"])
-        previous_priority = self._raw_priorities.get(key, 0)
-        if priority == previous_priority:
-            from src.baselines.common.redact import redact_json_values
-
-            if redact_json_values(self.raw_result_batches[key]) != redact_json_values(record["raw_results"]):
-                raise ValueError("conflicting recovered raw response snapshot")
-        if priority > previous_priority:
-            self.raw_result_batches[key] = record["raw_results"]
-            self._raw_priorities[key] = priority
-        self.unassociated_results = []
-        for batch in self.raw_result_batches.values():
-            for row in batch:
-                matches = [] if type(row) is not dict else [call for call in self.calls if all(
-                    row.get(name) == call[name] for name in IDENTITY_FIELDS)]
-                duplicates = 0 if type(row) is not dict else sum(
-                    type(other) is dict and all(other.get(name) == row.get(name) for name in IDENTITY_FIELDS)
-                    for other in batch)
-                if len(matches) != 1 or duplicates != 1:
-                    self.unassociated_results.append(row)
 
     def close(self):
         self._done = True

@@ -22,7 +22,9 @@ if str(CODE_ROOT) not in sys.path:
     sys.path.insert(0, str(CODE_ROOT))
 
 from src.baselines.text.frameworks import ray_data_lotus_chain as native
+from src.baselines.text.frameworks import lotus_chain_batch as shared_batch
 from src.baselines.text.frameworks import lotus_chain_engine_process as transport
+from src.baselines.text.frameworks.lotus_chain_results import ChainBatchResults, ChainExecutionError
 from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
@@ -197,6 +199,7 @@ class NativeChainTests(unittest.TestCase):
         stack.enter_context(patch.dict(sys.modules, {"ray": ray, "ray.data": ray.data,
                                                     "pyarrow": SimpleNamespace(Table=Table)}))
         stack.enter_context(patch.object(native, "LotusRecordChain", FixtureChain))
+        stack.enter_context(patch.object(shared_batch, "LotusRecordChain", FixtureChain))
         stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(transport, "ChainEngineProcess", Kernel))
         return stack, Dataset([native.record_row(record) for record in self.inputs]), events, engines
@@ -204,6 +207,102 @@ class NativeChainTests(unittest.TestCase):
     def evaluate(self, dataset, **kwargs):
         return native.evaluate(dataset, self.chain, self.spec, self.resources,
             expected=self.inputs, query_id=self.chain.query_id, control_dir=self.root.name, **kwargs)
+
+    def kernel(self):
+        control = Path(self.root.name) / "shared-kernel"
+        control.mkdir()
+        (control / "owner").write_text("fixture")
+        return native.FusedChainBatch(self.chain.describe(), self.spec.__dict__,
+            [native._source_binding(record) for record in self.inputs], control,
+            time.monotonic() + 5, 3, native.socket.gethostname(), "fixture")
+
+    def test_shared_kernel_plain_rows_and_pure_results_preserve_the_ray_envelope(self):
+        stack, _, _, engines = self.runtime()
+        with stack:
+            kernel = self.kernel()
+            envelope = kernel.run_rows([native.record_row(record) for record in self.inputs])
+            results = ChainBatchResults(self.inputs, self.chain)
+            results.accept(envelope)
+            results.verify_coverage()
+            results.finalize_columns()
+            rows = [results.pop() for _ in range(len(results.pending))]
+        self.assertIs(native.FusedChainBatch, shared_batch.FusedChainBatch)
+        self.assertEqual([row.row_id for row in rows], ["r17", "r19"])
+        self.assertEqual(len(results.calls), 7)
+        self.assertEqual(sum(call["total_tokens"] for call in results.calls), 91)
+        self.assertEqual(len(engines), 1)
+        self.assertNotIn("_iterator", results.__dict__)
+        self.assertNotIn("result", results.__dict__)
+
+    def test_shared_kernel_close_before_start_and_finite_timeout_validation(self):
+        stack, _, _, engines = self.runtime()
+        with stack:
+            kernel = self.kernel()
+            report = kernel.close()
+            self.assertEqual(report["status"], "closed")
+            self.assertTrue(report["gpu_exit_confirmed"])
+            for value in (True, 0, -1, float("inf"), float("nan")):
+                with self.subTest(timeout=value), self.assertRaises(ValueError):
+                    kernel.close(value)
+        self.assertEqual(engines, [])
+
+    def test_shared_results_error_and_recovery_preserve_known_prefix_once(self):
+        stack, _, _, _ = self.runtime()
+        with stack:
+            envelope = self.kernel().run_rows([native.record_row(record) for record in self.inputs])
+        envelope.update(error_type="FixtureParserError", records=[])
+        results = ChainBatchResults(self.inputs, self.chain)
+        with self.assertRaises(ChainExecutionError) as caught:
+            results.accept(envelope)
+        self.assertEqual(caught.exception.remote_error_type, "FixtureParserError")
+        self.assertEqual(len(caught.exception.chain_calls), 7)
+        results.recover(envelope)
+        results.recover(envelope)
+        self.assertEqual(len(results.calls), 7)
+        self.assertEqual(sum(call["total_tokens"] for call in results.calls), 91)
+        self.assertFalse(results.pending)
+
+    def test_shared_kernel_failed_constructor_retains_unknown_owner_without_retry(self):
+        stack, _, _, _ = self.runtime()
+        attempts = []
+
+        class BrokenProcess:
+            def __init__(self, *args):
+                attempts.append(args)
+                raise RuntimeError("fixture allocation failed")
+
+        with stack:
+            kernel = self.kernel()
+            kernel._engine_type = BrokenProcess
+            first = kernel.run_rows([native.record_row(record) for record in self.inputs])
+            self.assertEqual(first["error_type"], "RuntimeError")
+            self.assertEqual(kernel.run_rows([]), first)
+            for _ in range(2):
+                report = kernel.close()
+                self.assertEqual(report["status"], "unknown")
+                self.assertFalse(report["engine_api_shutdown_confirmed"])
+                self.assertIsNone(report["gpu_exit_confirmed"])
+        self.assertEqual(len(attempts), 1)
+
+    def test_shared_kernel_close_retries_the_same_private_owner(self):
+        stack, _, _, _ = self.runtime()
+
+        class ClosingProcess:
+            def __init__(self):
+                self.attempts = []
+
+            def close(self, timeout):
+                self.attempts.append(timeout)
+                return dict(status="unknown" if len(self.attempts) == 1 else "closed",
+                            gpu_exit_confirmed=None)
+
+        with stack:
+            kernel = self.kernel()
+            process = kernel.engine = ClosingProcess()
+            self.assertEqual(kernel.close(2)["status"], "unknown")
+            self.assertEqual(kernel.close(3)["status"], "closed")
+            self.assertIs(kernel.engine, process)
+        self.assertEqual(process.attempts, [2, 3])
 
     def test_native_batches_preserve_dependency_occurrences_columns_and_model_reuse(self):
         stack, dataset, events, engines = self.runtime()
