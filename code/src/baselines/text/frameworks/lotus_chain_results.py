@@ -76,6 +76,11 @@ class ChainBatchResults:
     def pending(self):
         return self._pending
 
+    @property
+    def cleanup_errors(self):
+        """Return an immutable snapshot for the execution owner's close report."""
+        return tuple(self._cleanup_errors)
+
     def pop(self):
         return self._pending.popleft()
 
