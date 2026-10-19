@@ -30,9 +30,7 @@ from src.scheduling.submission_control.admission import StaticAdmissionControlle
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
-from .lotus_records_static import (
-    SemLoomRecordsStaticReference, _ModelActor, _PrepareActor, _runtime_env,
-)
+from .lotus_records_actor_owner import RecordsActorOwner, _ModelActor
 
 
 @dataclass(frozen=True)
@@ -124,34 +122,18 @@ class _CoreModelActor(_ModelActor):
             return _encode(_capacity_failure(value), maximum)
 
 
-class _ActorOwner(SemLoomRecordsStaticReference):
+class _ActorOwner(RecordsActorOwner):
     """Reuse only actor allocation and shutdown, with a bounded result method."""
 
     close_deadline = None
 
-    def _wait_ready(self, ref, deadline, cancelled):
+    def _model_actor_type(self):
+        return _CoreModelActor
+
+    def wait_ready(self, ref, deadline, cancelled=None):
         if self.close_deadline is not None:
             deadline = min(deadline, self.close_deadline)
-        return super()._wait_ready(ref, deadline, cancelled)
-
-    def _start(self, deadline, cancelled):
-        if self._model_actor is not None:
-            return
-        import ray
-        self.ray = ray
-        prepare, model = ray.remote(_PrepareActor), ray.remote(_CoreModelActor)
-        for _ in range(self.resources.cpu_workers):
-            self._prepare_actors.append(prepare.options(
-                num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-                runtime_env=_runtime_env(self.engine.driver_python),
-            ).remote(asdict(self.method)))
-        self._model_actor = model.options(
-            num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-            runtime_env=_runtime_env(self.engine.model_python),
-        ).remote(asdict(self.engine), asdict(self.generation), 1)
-        self._model_ready = self._wait_ready(
-            self._model_actor.ready.remote(deadline), deadline, cancelled,
-        )
+        return super().wait_ready(ref, deadline, cancelled)
 
 
 class _RecordTransport:
@@ -171,13 +153,13 @@ class _RecordTransport:
     async def _execute(self, task, endpoint):
         _check(self.deadline)
         row = json.loads(task.task.payload)
-        actor = self.actors._prepare_actors[self._next_prepare % len(self.actors._prepare_actors)]
+        actor = self.actors.prepare_actors[self._next_prepare % len(self.actors.prepare_actors)]
         self._next_prepare += 1
         # All potentially blocking Ray calls happen on the transport thread.
         prepared = actor.prepare.remote([row], self.deadline)
         with self._lock:
             self._refs[task.key] = (prepared,)
-        result_ref = self.actors._model_actor.run_core.remote(
+        result_ref = self.actors.model_actor.run_core.remote(
             prepared, self.deadline, task.task.max_result_bytes,
         )
         with self._lock:
@@ -450,8 +432,8 @@ class SemLoomRecordsCore:
         }).filter(daft.col("id") == "taken_3").select("row_id", "source_position", "reviewText")
         try:
             if expected:
-                self._actors._start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),
-                                    cancelled)
+                self._actors.start(min(deadline, time.monotonic() + self.resources.startup_timeout_s),
+                                   cancelled)
             else:
                 self._actors.ray = ray
             if self.core is None:

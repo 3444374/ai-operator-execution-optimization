@@ -20,6 +20,7 @@ if str(CODE_ROOT) not in sys.path:
 
 from src.execution_provider.adapters import lotus_records_core as core
 from src.execution_provider.adapters import lotus_records_static as static
+from src.execution_provider.adapters.lotus_records_actor_owner import RecordsActorOwner
 from src.infrastructure import daft_runtime
 from src.scheduling.core.session import SessionEngine
 from src.scheduling.core.session_contract import State
@@ -295,6 +296,35 @@ class CoreRecordsTests(unittest.TestCase):
         self.assertEqual(len(runtime.engines[0].calls), 10)
         self.assertNotEqual(first_id, second_id)
         self.assertTrue({v["call_id"] for v in first}.isdisjoint(v["call_id"] for v in second))
+
+    def test_shared_owner_keeps_constructor_failure_unconfirmed(self):
+        with Runtime(self.rows) as runtime, patch.object(
+            vllm_engine, "VllmEngine", side_effect=RuntimeError("constructor failed after allocation"),
+        ) as constructor:
+            owner = self.owner()
+            self.assertIsInstance(owner._actors, RecordsActorOwner)
+            self.assertNotIsInstance(owner._actors, static.SemLoomRecordsStaticReference)
+            with self.assertRaisesRegex(RuntimeError, "constructor failed after allocation"):
+                owner.evaluate(Source(self.rows), query_id="q")
+            report = owner.close(timeout=1)
+            self.assertEqual(report["status"], "unknown")
+            self.assertFalse(report["model_owner"]["engine_close_report"]["engine_api_shutdown_confirmed"])
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertIsNotNone(owner._actors.model_actor)
+            self.assertFalse(any(event == ("kill", "_CoreModelActor") for event in runtime.events))
+            self.assertEqual(constructor.call_count, 1)
+
+    def test_shared_owner_wait_keeps_the_core_cleanup_deadline_clamp(self):
+        owner = self.owner()
+        ref = object()
+        with patch.object(RecordsActorOwner, "wait_ready", return_value={}) as wait:
+            owner._actors.close_deadline = 100.0
+            owner._actors.wait_ready(ref, 200.0)
+            wait.assert_called_once_with(ref, 100.0, None)
+            wait.reset_mock()
+            owner._actors.wait_ready(ref, 50.0)
+            wait.assert_called_once_with(ref, 50.0, None)
+        owner.close()
 
     def test_slow_consumer_limits_source_pull_and_core_reservations(self):
         with Runtime(self.rows) as runtime:
