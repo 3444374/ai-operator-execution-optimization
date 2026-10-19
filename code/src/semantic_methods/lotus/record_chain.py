@@ -57,7 +57,7 @@ def _parent_seeds(keys, initial_parents):
 
 def _ordered_columns(records, columns):
     if columns is not None and (type(columns) not in (list, tuple)
-            or any(type(name) is not str or not name for name in columns)
+            or any(type(name) is not str for name in columns)
             or len(set(columns)) != len(columns)):
         raise ValueError("columns must be a finite ordered sequence of unique names")
     return list(dict.fromkeys(list(columns or ()) + [key for record in records for key in record.values]))

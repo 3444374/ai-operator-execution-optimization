@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[Extract 空字段名兼容](diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。保留原 parser 额外空键，修复后继 schema 误拒绝；独立普通 RED 回归转绿。39 项／17 subtests CPU 通过，2 native 明确 pending／skip；无 native 图、模型或 GPU。
+
 2026-10-19：[Core actor 集成接点](diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。显式同配置 owner、完整 session／sequence 提交／取消／receipt ack、独立 cleanup 窗口；默认同步保持。92 项／39 subtests CPU 通过，首次 fixture 设置错误及受限进程检查 PermissionError 保留；未新增 Async actor／CLI 或模型资格。
 
 2026-10-19：[Core Extract 关系屏障](diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)。共享129、Core组合55（含共享8及helper11）、native门2项分列；同query／worker／私有CPU pipe跨关系完成，3已观察owned退出，wire额度不是全查询RSS。原默认guard与Ray／Daft拒绝门保持；零模型／GPU。

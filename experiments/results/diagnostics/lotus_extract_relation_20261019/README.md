@@ -94,3 +94,12 @@ transport 输入／结果全部归零，关闭前段 session，再应用本模�
 pipe 延续；外层监督确认 3 个已观察 owned 出生身份退出，remaining／cleanup 均为空。
 首轮 fixture 指令误命中、过渡运行及旧默认集合引用修正均保留原件。模型／GPU 调用均为零，
 这项 CPU 接线不继承任何冻结普通 Filter 模型资格；新 profile 的真实模型与各 native 屏障仍待验证。
+
+## 原 parser 的空字段名兼容
+
+原 LOTUS Extract parser 会保留额外的空字符串键。完整关系已经保留该列，但后继 accountant 的
+有序 schema 检查误拒绝它，即使指令只读取正常字段。共享检查现在允许空字符串列名，仍要求
+有限、有序、唯一的字符串列；原 parser、输入列解析及字段值不改变。
+独立职责 `4a67df81` 的普通失败回归因此转绿，而非改为 expected failure。
+[验证摘要](empty_key_verification.json)记录 39 项 CPU／17 subtests 通过；两个 native 接线用例
+仍显式 pending／skip。此处是原方法／关系／Core 模型替身验证，没有运行 native 图或真实模型。

@@ -1,0 +1,21 @@
+{
+  "source_base": "e46a00e8",
+  "independent_test_source": "4a67df817d8056ba67f0c305b866165390a1d504",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "59d6bdda48b0f3c2a916519fd2dd15e2826b47c0952e41ebaa00f2c3acde6d0c",
+    "code/tests/baselines/text/test_native_extract_successors_independent.py": "2903ee671d16d6a040ede871b0be01329d672ef0bd71b858fff4d1697f50624a",
+    "code/tests/baselines/text/native_extract_successor_fixture.py": "07825644f92587f032c3e7edc7c276374d155a8eac714c0e9f683df33212b3c5"
+  },
+  "cpu_tests": {
+    "passed": 39,
+    "subtests_passed": 17,
+    "failed": 0,
+    "skipped": 2,
+    "skip_scope": "fixed Ray/Daft native Extract-successor wiring pending",
+    "redacted_raw_log_sha256": "8172c9e4dab7e41928b853e36a8e9aa5f639f5c15719e915b2dd76c080a2a1e3"
+  },
+  "parser_modified": false,
+  "native_graphs_run": 0,
+  "model_calls": 0,
+  "server_operations": 0
+}
