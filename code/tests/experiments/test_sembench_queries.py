@@ -8,14 +8,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from src.baselines.common.private_artifacts import content_digest
+from src.baselines.common.private_artifacts import content_digest, file_identity
 from src.baselines.text.sembench_movie import verify_checkout, SEMBENCH_COMMIT
 from src.baselines.text.frameworks.prepared_map import NativeGraphOptions
 from src.execution_provider.adapters.model_config import FixedModelConfig
 from src.execution_provider.semantic_map import SemanticMapPlan
 from src.experiments.postgresql.sembench_queries import MovieDataset, MovieQuery, LOTUS_MOVIE_ARMS
 from src.experiments.postgresql.sembench_query_cli import load_config, _env_path, arm_options
-from src.experiments.postgresql.query_workloads import prepare, file_identity
+from src.experiments.postgresql.query_workloads import prepare
 from src.experiments.postgresql.supplier_adapter_query import run_supplier_query
 
 

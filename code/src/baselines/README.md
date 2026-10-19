@@ -26,6 +26,8 @@
 查询与评价分别记录时间和进程内存，配置与说明见[容量单元入口](../../scripts/README.md#单-map-容量单元)。
 
 `common/private_artifacts.py` 原样保存仓库外私有文件，公开摘要只含计数与哈希；
+该模块也拥有分块文件身份 `file_identity` 与保留非有限评价含义的 `json_metric`。
+两者只依赖标准库；旧 `postgresql.query_workloads`／`query_evaluation` 直接重导出同一函数，供尚未迁移的外部复现使用。
 `text/sharegpt_inputs.py` 选择首个 human 原文，`text/map_inputs.py` 核对文本往返和完整消息上下文。
 ShareGPT 数据选择与任务提示分别指定；接口见[脚本说明](../../scripts/README.md#squad-pg-map-数据准备与离线评价)。
 

@@ -12,7 +12,7 @@ import re
 import sys
 import time
 
-from src.baselines.common.private_artifacts import content_digest, new_private_directory, write_private_json
+from src.baselines.common.private_artifacts import content_digest, file_identity, new_private_directory, write_private_json
 from src.baselines.common.redact import redact_text
 from src.execution_provider.adapters.model_config import load_fixed_model_config
 from src.execution_provider.adapters.ray_map_transport import RayMapConfig
@@ -20,7 +20,7 @@ from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from .query_config import QueryConfig
 from .query_supervisor import supervise
-from .query_workloads import file_identity, load_manifest, read_prepared
+from .query_workloads import load_manifest, read_prepared
 from .text_map_comparison import SCHEMA as COMPARISON_SCHEMA, ROLES, comparison_roles, checked_json, configuration_identity, read_run, summarize
 
 SCHEMA = 'semloom.text_map_campaign.v1'

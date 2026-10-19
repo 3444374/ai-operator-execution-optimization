@@ -10,13 +10,13 @@ from pathlib import Path
 import signal
 import sys
 
-from src.baselines.common.private_artifacts import new_private_directory,write_private_json
+from src.baselines.common.private_artifacts import file_identity,new_private_directory,write_private_json
 from src.baselines.text.sembench_movie import verify_checkout,SEMBENCH_COMMIT
 from src.experiments.attempt_ledger import AttemptBudget
 from src.experiments.cell_budget import CellBudgetLedger
 from .query_config import QueryConfig
 from .query_inputs import QueryInputs
-from .query_workloads import prepare,movie_csv_examples,squad_examples,file_identity,load_manifest,read_prepared
+from .query_workloads import prepare,movie_csv_examples,squad_examples,load_manifest,read_prepared
 
 
 def parser():

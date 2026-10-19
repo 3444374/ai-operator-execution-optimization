@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：公共文件身份与评价 JSON 归回 artifact 工具
+
+`file_identity`／`json_metric` 的唯一实现移到既有 `baselines/common/private_artifacts.py`；旧 PG 模块直接重导出同一函数，保留外部复现与旧 PZ 导入。
+Movie、查询入口、分区及阶段编排改从所属模块导入；未改活跃 records／模型执行接口。文件分块摘要、字节数和 Infinity／NaN 含义保持，私有 JSON writer 仍拒绝未转换非有限值。
+原 29 项及新增黄金输出、跨块文件、兼容对象身份和无 PG／执行库导入检查共 33 项通过；本轮未运行数据库、服务或模型。
+
 ## 2026-10-19：接回 records 生产 Core、保留日志并记录 Daft 模型失败
 
 选择性整合职责 Core adapter并接共享actor owner／显式selector，保留真实SessionEngine、BoundedAsyncBackend、lease-release与unknown占用。

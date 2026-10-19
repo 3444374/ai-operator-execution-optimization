@@ -1,5 +1,8 @@
 # PostgreSQL resource measurement tools
 
+文件身份和非有限评价 JSON 由 [`baselines/common/private_artifacts.py`](../../baselines/common/private_artifacts.py) 的 `file_identity`／`json_metric` 维护。
+旧 `query_workloads`／`query_evaluation` 保留直接重导出，未复制实现；新调用方直接使用所属模块。
+
 ## Original LOTUS text queries
 
 `sembench_query_cli.py` is the public four-arm Movie Q1/Q2/Q3 entry. Despite this historical

@@ -10,7 +10,7 @@ import importlib.metadata
 import json
 from pathlib import Path
 
-from src.baselines.common.private_artifacts import write_private_json
+from src.baselines.common.private_artifacts import file_identity, json_metric, write_private_json
 from src.baselines.text.sembench_movie import (
     SEMBENCH_COMMIT,
     classification_audit,
@@ -19,7 +19,7 @@ from src.baselines.text.sembench_movie import (
     verify_checkout,
 )
 from .query_inputs import QueryInputs
-from .query_workloads import file_identity, load_manifest, movie_csv_examples, read_prepared
+from .query_workloads import load_manifest, movie_csv_examples, read_prepared
 
 
 MOVIE_MANIFEST_DIGEST = "e753baa59f487203ad3148653d15726311c992dc742ae97d6d7825ab5acca4e2"
@@ -274,7 +274,6 @@ class MovieQueryResult:
 
     def quality(self):
         import pandas as pd
-        from .query_evaluation import json_metric
 
         labels = self.query.dataset.references(self.rows)
         labeled = pd.DataFrame(
