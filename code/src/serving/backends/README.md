@@ -23,8 +23,32 @@ JSON 模式不增加严格 schema、字段校验或结果补写。默认换行 s
 `max_model_len` 校验输出上限；实际提示长度仍由 vLLM 原模板及输入验证处理，不截断提示。
 有效采样参数在预留 `max_model_calls` 之前构造；每行在 chat 前预留一次，失败或 unknown 不退。
 空批及已过期调用不预留额度。逐调用覆盖不改变身份、真实 usage/token IDs、失败/取消或清理合同。
-logprobs 继续只允许 `None`；本接口不增加 cascade、重试或跨引擎总预算。
+
+`GenerationSpec.logprobs` 仅接受 `None` 或严格整数 `0..20`，拒绝 bool、负数和超限配置，
+并直接传入 `SamplingParams.logprobs`。LOTUS helper 的 `logprobs=True, top_logprobs=10`
+须由方法接点转换为整数 `10`。模型内核显式固定 vLLM 原默认的 `max_logprobs=20`、
+`logprobs_mode="raw_logprobs"`，在分配模型前拒绝超限，不扩大到全词表。
+[固定模型配置](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/config/model.py)
+及[原始概率计算](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/v1/sample/sampler.py)
+定义此处返回的是温度、惩罚等处理前的 log probability。
+
+未请求时 `logprobs_json` 仍为 `"null"`；请求时是 OpenAI 兼容对象
+`{"content": [{"token": ..., "logprob": ..., "bytes": ..., "top_logprobs": [...]}]}`，
+与生成 token IDs 逐位置对齐。`0` 保留真实 sampled token 概率而返回空 top 列表。
+转换遵循固定版本的
+[chat 输出映射](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/openai/chat_completion/serving.py#L1000-L1081)
+和[token 解码](https://github.com/vllm-project/vllm/blob/v0.25.1/vllm/entrypoints/generate/base/serving.py#L231-L248)：
+优先保留 `decoded_token`，缺失文本才调用同一 tokenizer 的 `decode([token_id])`；不改大小写、
+空白或特殊 token，不从最终文本重新分词。top 列表按原字典顺序取前 K 项，不重新排序；
+真实 `-inf` 或低于 `-9999` 的值按官方 wire 规则限为 `-9999`，其余值不变。
+sampled token 的 bytes 在原 `decoded_token=None` 时保持 `null`；top bytes 来自实际返回文本。
+
+请求日志时缺失、错长度、缺 sampled token ID、非法候选或 NaN/正无穷会使该行失败，
+保留已知 token IDs/usage 和已预留额度；不走官方缺失值默认 sentinel 分支来补写概率。
+该接口提供原始响应数据；LOTUS 原类型、概率归一化、校准器和全局 cascade 控制仍由方法接点拥有。
+本接口不增加 cascade、重试或跨引擎总预算。
 
 CPU 合同见 [`test_vllm_engine.py`](../../../tests/serving/test_vllm_engine.py)：采样/模型均为明确替身，
-覆盖参数前检、连续不同配置、JSON 转换、对象隔离、预算及旧结果/清理行为。CPU 检查不构成
-真实模型或 JSON 生成质量资格，已有模型运行仍绑定各自固定源码。
+覆盖参数前检、连续不同配置、JSON 转换、概率输出、对象隔离、预算及旧结果/清理行为。
+原 LOTUS/LiteLLM 概率消费合同在独立 Python 子进程中读取明确 fake vLLM 结果，避免把 LOTUS
+导入内核测试进程。CPU 检查不构成真实模型或生成质量资格，已有模型运行仍绑定各自固定源码。
