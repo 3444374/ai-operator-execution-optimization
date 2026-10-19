@@ -11,7 +11,8 @@ from unittest.mock import patch
 from src.semantic_methods.lotus.records import CallLedger, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 from tests.baselines.text.daft_engine_close_fixture import (
-    DelayedCloseEngineProcess, FailedCloseEngineProcess, HungCloseEngineProcess,
+    AcknowledgedIdleEngineProcess, BrokenExitedEngineProcess, DelayedCloseEngineProcess,
+    ExitedEngineProcess, FailedCloseEngineProcess, HungCloseEngineProcess, TruthyCloseEngineProcess,
 )
 
 
@@ -119,6 +120,62 @@ class PrivateEngineCloseTests(unittest.TestCase):
                     client.close(timeout=value)
             close.assert_not_called()
         self.assertIsNone(client.process.poll())
+
+    def exited_without_api_confirmation(self, kernel, *, broken):
+        client = self.start(kernel)
+        result = client.run_prepared(self.prepared)
+        client.process.wait(timeout=3)
+        client._broken = broken
+        started = time.monotonic()
+        with patch.object(client, "_exchange") as exchange:
+            report = client.close()
+            self.evidence("broken-exited" if broken else "naturally-exited",
+                          client, report, time.monotonic() - started)
+            self.assertEqual(report["status"], "unknown")
+            self.assertTrue(report["process_exit_confirmed"])
+            self.assertIsNone(report["engine_api"])
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertIn("engine_api_shutdown_unconfirmed", report["cleanup_errors"])
+            self.assertEqual(client.close(), report)
+            exchange.assert_not_called()
+        self.assertEqual(result[0]["total_tokens"], 9)
+        if broken:
+            self.assertEqual(result[0]["status"], "failed")
+            self.assertEqual(result[0]["error_type"], "FixtureInferenceError")
+
+    def test_naturally_exited_ready_process_without_api_confirmation_is_unknown(self):
+        self.exited_without_api_confirmation(ExitedEngineProcess, broken=False)
+
+    def test_broken_exited_process_without_api_confirmation_is_unknown(self):
+        self.exited_without_api_confirmation(BrokenExitedEngineProcess, broken=True)
+
+    def test_truthy_non_boolean_api_confirmation_remains_unknown(self):
+        client = self.start(TruthyCloseEngineProcess)
+        started = time.monotonic()
+        report = client.close()
+        self.evidence("nonboolean-api-confirmation", client, report, time.monotonic() - started)
+        self.assertEqual(report["status"], "unknown")
+        self.assertTrue(report["process_exit_confirmed"])
+        self.assertEqual(report["engine_api"]["engine_api_shutdown_confirmed"], 1)
+        self.assertIn("engine_api_shutdown_unconfirmed", report["cleanup_errors"])
+        self.assertEqual(client.close(), report)
+
+    def test_confirmed_api_is_not_called_again_when_os_cleanup_is_retried(self):
+        client = self.start(AcknowledgedIdleEngineProcess)
+        with patch("src.experiments.lotus_records_supervisor._signal"):
+            first = client.close(timeout=0.5)
+        self.assertEqual(first["status"], "unknown")
+        self.assertTrue(first["engine_api"]["engine_api_shutdown_confirmed"])
+        self.assertFalse(first["process_exit_confirmed"])
+        started = time.monotonic()
+        with patch.object(client, "_exchange") as exchange:
+            report = client.close(timeout=1)
+            self.evidence("api-confirmed-os-cleanup-retry", client, report,
+                          time.monotonic() - started)
+            self.assertEqual(report["status"], "closed")
+            self.assertTrue(report["process_exit_confirmed"])
+            self.assertEqual(client.close(), report)
+            exchange.assert_not_called()
 
 
 if __name__ == "__main__":

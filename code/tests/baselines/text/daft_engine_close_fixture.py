@@ -3,6 +3,7 @@
 import os
 import signal
 import sys
+import threading
 import time
 
 from src.baselines.text.frameworks.daft_engine_process import EngineProcess
@@ -23,6 +24,22 @@ class FailedCloseEngineProcess(DelayedCloseEngineProcess):
     mode = "failed-close"
 
 
+class ExitedEngineProcess(DelayedCloseEngineProcess):
+    mode = "exit-after-run"
+
+
+class BrokenExitedEngineProcess(DelayedCloseEngineProcess):
+    mode = "exit-after-failed-run"
+
+
+class TruthyCloseEngineProcess(DelayedCloseEngineProcess):
+    mode = "truthy-close"
+
+
+class AcknowledgedIdleEngineProcess(DelayedCloseEngineProcess):
+    mode = "acknowledged-idle"
+
+
 if __name__ == "__main__":
     from src.baselines.text.frameworks.daft_engine_process import serve
     from src.serving.backends import vllm_engine
@@ -37,9 +54,15 @@ if __name__ == "__main__":
             return dict(engine_uid=self.engine_uid, pid=os.getpid(), fixture=True)
 
         def run_prepared(self, rows, **_):
-            return [dict(row, status="failed" if mode == "failed-close" else "succeeded",
-                         text=None if mode == "failed-close" else "True",
-                         error_type="FixtureInferenceError" if mode == "failed-close" else None,
+            failed = mode in ("failed-close", "exit-after-failed-run")
+            if mode in ("exit-after-run", "exit-after-failed-run"):
+                def exit_without_shutdown():
+                    time.sleep(0.15)
+                    os._exit(0)
+                threading.Thread(target=exit_without_shutdown, daemon=True).start()
+            return [dict(row, status="failed" if failed else "succeeded",
+                         text=None if failed else "True",
+                         error_type="FixtureInferenceError" if failed else None,
                          prompt_tokens=7, completion_tokens=2, total_tokens=9,
                          engine_uid=self.engine_uid, submission_confirmed=True)
                     for row in rows]
@@ -53,9 +76,11 @@ if __name__ == "__main__":
                 time.sleep(30)
             failed = mode == "failed-close"
             return dict(status="unknown" if failed else "closed",
-                        engine_api_shutdown_confirmed=not failed,
+                        engine_api_shutdown_confirmed=1 if mode == "truthy-close" else not failed,
                         close_delay_s=time.monotonic() - started,
                         error_type="FixtureCloseError" if failed else None)
 
     vllm_engine.VllmEngine = FixedEngine
     serve(int(sys.argv[1]))
+    if mode == "acknowledged-idle":
+        time.sleep(30)

@@ -239,15 +239,18 @@ class EngineProcess:
         cleanup_reserved = min(CLOSE_CLEANUP_RESERVE_S, timeout / 3)
         api_deadline = deadline - cleanup_reserved
         errors = []
+        api_confirmed = (type(self.engine_close) is dict and
+                         self.engine_close.get("engine_api_shutdown_confirmed") is True)
         if self.process is not None:
             if self.created is not None:
                 try:
                     _observe(self.owned, self.process.pid, self.created)
-                    if not self._broken and self.process.poll() is None:
+                    if not self._broken and not api_confirmed and self.process.poll() is None:
                         reply = self._exchange(dict(op="close"), api_deadline, stopping=False)
                         if reply.get("kind") == "closed":
                             self.engine_close = reply["report"]
-                            if not self.engine_close.get("engine_api_shutdown_confirmed"):
+                            api_confirmed = self.engine_close.get("engine_api_shutdown_confirmed") is True
+                            if not api_confirmed:
                                 errors.append("engine_api_shutdown_unconfirmed")
                         else:
                             errors.append("engine_close_response_invalid")
@@ -291,6 +294,9 @@ class EngineProcess:
         self._closed = confirmed
         if live:
             errors.append("observed_engine_children_still_running")
+        if (self.process is not None and not api_confirmed
+                and "engine_api_shutdown_unconfirmed" not in errors):
+            errors.append("engine_api_shutdown_unconfirmed")
         self.last_close_report = dict(
             status="closed" if confirmed and not errors else "unknown",
             cleanup_scope="private_engine_and_observed_os_processes",
