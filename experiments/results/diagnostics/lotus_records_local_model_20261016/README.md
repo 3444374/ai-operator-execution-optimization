@@ -447,7 +447,7 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 | Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4普通Q3两负例；另有8be单行Map→Extract，原MFE失败保留 | 有限链及显式Extract分段CPU；非末端关系模型另验 |
 | Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526普通Q3两query／4调用，首轮actual null保持；另有522单行Map→Extract | 共享有限链及显式Extract分段CPU；当前新源码不继承旧模型资格 |
 | SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f普通Filter同engine两query／4调用；另有8be单行Map→Extract，不转授新源 | 显式Core Extract屏障CPU通过；原同步批不等于Async供给 |
-| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，尚未取得模型资格 | 通用Filter／有限链fixture与级联17项本机CPU分列；级联作者实测、作者Ray及完整模型链待验 |
+| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，该8be单元未取得模型资格 | 通用Filter／有限链fixture、级联17项本机CPU及r3作者两查询44次fixture分列；作者Ray及级联真实模型仍待验 |
 | SemLoom Async Core（显式） | 同一生产Core／准备ObjectRef／线程actor／有界三通道child | 五个真实CPU传输scope、关闭交接及另一个原parser／COUNT／evaluator闭环分列，物理模型为CPU替身 | 真实AsyncLLM／GPU待验 | 同步默认保持，跨阶段持续供给及性能另验 |
 | 原全局级联（Ray／Daft／Core） | 原LOTUS全局控制、角色／阶段及call身份；公共三backend CLI | 原方法差分、各native阶段CPU和Core关窗／入口合同分列 | 真实helper日志／模型／GPU换模待验 | IMLane阶段API另列；没有公共IMLane selector |
 
@@ -498,7 +498,7 @@ Core cleanup20／RPC响应16／IPC15；19 项／9 subtests通过，独立无Pope
 
 [可选 Async actor／Core／CLI](../async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)
 沿用同一生产 Core、原 prepared ObjectRef 与原结果账目，独立实际 CPU 回执补账反例已闭合。
-真实 AsyncLLM、helper模型、GPU阶段退出、IMLane新级联组合和性能均按专门固定来源继续验证。
+真实 AsyncLLM、helper模型、GPU阶段退出、IMLane级联模型和性能均按专门固定来源继续验证。
 
 ## Supervisor 诊断失败与清理隔离
 
@@ -520,4 +520,7 @@ NoPopen窗外先核同一固定SemBench源码，窗内仅缓存该Git核验并�
 
 [IMLane阶段API](../imlane_cascade_cpu_20261019/README.md)的22e82十个代码／局部证据文件
 选择为4f1cde99，共享四个导航由root同步；六源与原17本机CPU／失败／skip摘要核同。
-作者CPython新包已交唯一执行会话，尚无级联实测回执，实际helper／GPU与公共IMLane selector仍pending。
+后续职责cfa65的原报告／JSON记录冻结r3作者CPython两查询各22、共44次fixture通过，
+六scope／六child关闭与独立77观察出生身份／28作者start_ticks退出、normal lease释放核同；
+原98.92秒保存API失败保留，修私有helper后1060源码、作者／二进制／八旧账本不变。
+此资格仅绑定该r3来源，实际helper／GPU与公共IMLane selector仍pending，不重绑到当前后续源码。

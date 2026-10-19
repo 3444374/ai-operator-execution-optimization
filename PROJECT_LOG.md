@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：接纳 IMLane 级联作者 CPU r3 回执
+
+职责 cfa65db2 的原报告／JSON保持逐字接纳，公共入口单独同步。原98.92秒保存API失败保留，仅修私有helper保存而1060源码不变；冻结r3两查询各22、共44次CPU fixture通过，六scope／六child正常关闭。独立77观察出生身份及28作者start_ticks退出，normal lease释放，作者／二进制／八旧账本不变。17本机CPU与r3作者实测分列；真实helper／模型／GPU阶段退出仍pending，不重跑旧成功同步单元。见[固定来源及失败原件](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+
 ## 2026-10-19：为最终空关系保留显式列类型
 
 IMLane 独立链发现空 Map 的严格 pandas dtype 差异。原 LOTUS 空 Map 新列及覆盖已有列可为 float64，只有 records／columns／Index 不能恢复该类型。共享 `records_to_frame` 新增 `empty_prototype`，只复制最终零行 schema／元数据；显式源 Index 优先，默认与非空推断保持，不复制 dtype 推断或算子循环。精确原始 RED 与合同 RED 保留，7 新测试包含在 50 项共享 CPU 回归中，原 LOTUS Map／Filter 差分通过。调用方须显式传最终 metadata，IMLane 接线与模型资格另验；本轮模型／GPU／服务器操作均为零。[合同与固定证据](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空关系列类型的显式-prototype)。

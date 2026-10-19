@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[IMLane通用级联阶段](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥，本机17项CPU；新作者CPython包／helper模型／GPU资格待验，无公共IMLane selector。
+[IMLane通用级联阶段](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；17项本机CPU与冻结r3作者CPython两查询／44次fixture分列，六scope／六child关闭及77出生身份退出审计通过，原保存失败保留；helper模型／GPU资格待验，无公共IMLane selector。
 
 [Async actor／Core／CLI](async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)：原合同、实际CPU组合及关闭known usage的RED→GREEN分列，unknown责任不释放，真实AsyncLLM／GPU／性能待验。
 

@@ -90,8 +90,10 @@
     }
   },
   "author_cpu": {
-    "status": "pending",
-    "frozen_bundle": {
+    "status": "passed",
+    "scope": "Frozen r3 package only; original LOTUS differential over two synthetic ten-row author CPython queries; no real models",
+    "source_projection": "All 1060 public source files identical to the original frozen r2; no production patch for the save failure",
+    "original_bundle": {
       "schema": "imlane.cascade.cpu.bundle.v1",
       "archive": "imlane-cascade-author-cpu-source-r2.tgz",
       "archive_bytes": 2468550,
@@ -101,14 +103,102 @@
       "helper_sha256": "84cf7f387d210262491cbeada075a67b96f3f3f9b98a89939d52894468e1a2be",
       "config_sha256": "0ad41f2d754bb99828524ad8dea74fc5bd260c48f23b328a9ef56e934032899e"
     },
-    "fixture_call_cap": 50,
-    "dispatch_status": "Frozen r2 package handed to the unique server session; execution not confirmed"
+    "preserved_failed_attempt": {
+      "run_id": "imlane-cascade-author-cpu-20261019-r1",
+      "status": "failed",
+      "elapsed_s": 98.92047875,
+      "reason": "Unsupported replace=True argument to the actual exclusive write_private_json API; generic scopes exited, Q3 not started, final report unavailable",
+      "archive_sha256": "475874f337f6ac8115de7a39b7107da47600ed4d787e60776a7e0ab64a6d4a19",
+      "original_unchanged": true
+    },
+    "save_api_repair": {
+      "helper_sha256": "4f64ad18091846b09fe0dd44297f6ffd7197edafff79f878c2f78dedfa2c3f23",
+      "actual_writer_regressions": 3,
+      "passed": 3,
+      "strategy": "Exclusive report-cases-N snapshots plus a separately named final report; no overwrite or writer change"
+    },
+    "frozen_bundle": {
+      "archive": "imlane-cascade-author-cpu-source-r3.tgz",
+      "archive_sha256": "b560338a634b29c14ca5d6ccce425c8c993adeed0c5860a44c20dd24284c1635",
+      "archive_bytes": 2470209,
+      "source_files": 1060,
+      "source_manifest_sha256": "fda6af9941330e80e790899e3a76c73123f4eae0b289f08790eb9e70af0e7a2c",
+      "helper_sha256": "4f64ad18091846b09fe0dd44297f6ffd7197edafff79f878c2f78dedfa2c3f23",
+      "config_sha256": "73b870a4c181739e32c6ef9e34d7f2fabb19cea51a167ce94d966d6ac1f231ee",
+      "config_executed_without_changes": true
+    },
+    "run": {
+      "run_id": "imlane-cascade-author-cpu-20261019-r3-output-r2",
+      "status": "passed",
+      "elapsed_s": 171.0293751778081,
+      "worker_exit": 0,
+      "total_timeout_s": 300,
+      "cleanup_reserved_s": 30,
+      "fixture_call_cap": 50,
+      "fixture_calls": 44,
+      "cases": [
+        {
+          "query_id": "author-cascade-generic",
+          "fixture_calls": 22
+        },
+        {
+          "query_id": "author-cascade-q3",
+          "fixture_calls": 22
+        }
+      ],
+      "signals": [],
+      "cleanup_errors": [],
+      "remaining_owned_pids": [],
+      "observed_owned_exit_confirmed": true
+    },
+    "resource_audit": {
+      "status": "passed",
+      "observed_epoch_identities_absent": 77,
+      "author_tick_identities_absent": 28,
+      "author_scopes_closed": 6,
+      "normal_lease_released": true,
+      "gpu_used_mib": 1,
+      "gpu_compute_processes": [],
+      "shared_memory_empty": true,
+      "author_sources_unchanged": 12,
+      "author_binaries_unchanged": 3,
+      "ledger_files_unchanged": 8,
+      "rpc_entries": 0,
+      "rpc_active_kernel_sockets": 0,
+      "forced_process_cleanup": false,
+      "forced_shm_cleanup": false,
+      "cleanup_errors": []
+    },
+    "periodic_observations": {
+      "live_samples": 2,
+      "max_observed_rss_bytes": 1812480000,
+      "max_observed_shm_bytes": 134234912,
+      "all_observed_active_affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "scope": "Periodic observations of the currently attached process tree; these values are not full-run peaks or cgroup hard limits."
+    },
+    "raw_evidence": {
+      "archive_sha256": "b5b73b3bb0be085330265437dc4641f67f27f0edaee67fe675316055b4a85010",
+      "archive_bytes": 2596117,
+      "regular_files": 64,
+      "final_report_sha256": "37dc0eda0686a4f40370f4e664f527a5717923837a0f97e7e95e12cca9609bb7",
+      "supervisor_sha256": "3792a33a223ca0a4709fc5d79f7bf843cf5a1723181cbc22313f51a13a5a0775",
+      "independent_audit_sha256": "79fa4160497559a343b55104527a30f4b705a6830698029343c3248daa02d3f0",
+      "member_manifest_sha256": "9b9af150465aa9cea10f0667ba0f5529ed5874ba29dc889feab9459e94b088b8"
+    }
   },
   "real_model_requests": 0,
   "gpu_requests": 0,
   "ray_runtime_initializations": 0,
   "remaining_scope": [
-    "author CPython stage execution and independent resource audit",
     "real helper logprobs and model inference",
     "independent GPU exits between stages",
     "author Ray backend and multiple executors",
@@ -118,6 +208,6 @@
   "independent_reviews": {
     "protocol": "accepted; implementation, local receipts and frozen r2 CPU package",
     "resources": "accepted; sticky cleanup failure, monitoring gates, local receipts and frozen r2 CPU package",
-    "scope": "static review and recorded local CPU evidence; no author runtime or model qualification"
+    "scope": "Static implementation/save API/package review plus recorded local CPU and author CPython receipts; no real model qualification"
   }
 }

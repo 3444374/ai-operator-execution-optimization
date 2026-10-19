@@ -109,6 +109,7 @@ finish reason；仍需实际模型核对 tokenizer、一次模板、日志内容
 本轮没有启动服务器模型或 GPU，没有使用 HTTP gateway，也没有把失败降为普通 Filter。
 
 IMLane 后续[作者级联阶段API](../../../integrations/imlane_records/cascade.README.md)已接纳通用身份／角色／阶段wire，
-复用既有v2桥与原方法接点；17项本机CPU检查与待执行的作者CPython包分列。
+复用既有v2桥与原方法接点；17项本机CPU与冻结r3作者CPython两查询／44次fixture分别通过，
+六scope／六child正常关闭与77个观察出生身份退出另有独立审计，原保存失败保留。
 每个非空阶段新scope／固定role，阶段内保留作者调度；公共IMLane selector、实际helper日志／模型、
 GPU阶段退出和多executor仍待验，普通Filter资格不转授。
