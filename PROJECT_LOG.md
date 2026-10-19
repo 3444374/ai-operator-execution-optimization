@@ -3,7 +3,7 @@
 ## 2026-10-19：分清 records owner 的关闭范围
 
 真实Core模型资格准备发现，owner曾将GPU独立观察未知误当API关闭失败。现在字面True API确认和actor kill请求成功只关闭声明的请求／API范围，OS与GPU仍保留unknown；启动上限不再截短10秒API／11秒Ray等待。
-静态查询仍保留未确认工作的unknown与复用禁止。反例、首次漏启Movie环境导致的skip及其后90项零skip检查分别保留；没有模型或GPU执行，不向新source转授旧资格。
+静态查询仍保留未确认工作的unknown与复用禁止。独审再补分配失败无model句柄时的unknown，不能因空句柄声称OS／GPU退出；最终91项零skip通过。反例、中间失败及首次漏启Movie环境导致的skip分别保留；没有模型或GPU执行，不向新source转授旧资格。
 
 ## 2026-10-19：退役早期 mean／ridge 成本比较入口
 

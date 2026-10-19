@@ -302,6 +302,35 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
                 owner.start(deadline)
 
+    def test_partial_allocation_without_model_handle_never_claims_an_empty_exit(self):
+        with FakeRuntime() as runtime:
+            owner = self.owner()
+            original_remote = runtime.ray.remote
+
+            class MissingModelHandle:
+                def options(self, **kwargs):
+                    return self
+
+                def remote(self, *args):
+                    raise RuntimeError("allocation returned no model handle")
+
+            def allocate(cls):
+                return MissingModelHandle() if cls is actors._ModelActor else original_remote(cls)
+
+            with patch.object(runtime.ray, "remote", side_effect=allocate):
+                with self.assertRaisesRegex(RuntimeError, "no model handle"):
+                    owner.start(time.monotonic() + 3)
+            self.assertTrue(owner.prepare_actors)
+            self.assertIsNone(owner.model_actor)
+            report = owner.close()
+            self.assertEqual(report["status"], "unknown")
+            self.assertIsNone(report["process_exit_confirmed"])
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertIn("model_actor_startup_unconfirmed", report["cleanup_errors"])
+            self.assertTrue(report["actor_kill_requests_confirmed"])
+            with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
+                owner.start(time.monotonic() + 3)
+
     def test_never_started_model_actor_keeps_empty_close_behavior(self):
         actor = actors._ModelActor(dict(model_path="/tmp/model", model_python="/tmp/model-python",
                                         driver_python="/tmp/driver-python"), {}, 1)

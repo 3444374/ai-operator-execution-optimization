@@ -221,7 +221,9 @@ class RecordsActorOwner:
                 self._killed.add(id(actor))
             except BaseException as exc:
                 errors.append("actor_kill_request: " + type(exc).__name__)
-        empty = self.model_actor is None
+        empty = self.model_actor is None and not self._start_failed
+        if self.model_actor is None and self._start_failed:
+            errors.append("model_actor_startup_unconfirmed")
         # An actor reply and ray.kill acknowledge requests, not physical exit.
         gpu_exit = True if empty else None
         owned_actors = list(self.prepare_actors)
@@ -237,7 +239,7 @@ class RecordsActorOwner:
             "model_ready": self.model_ready,
             "engine_close_report": self._model_close_report,
             "gpu_exit_confirmed": gpu_exit,
-            "process_exit_confirmed": True if empty else None,
+            "process_exit_confirmed": True if empty and not self.prepare_actors else None,
             "actor_kill_requests_confirmed": actors_requested,
             "model_actor_handle_retained": self.model_actor is not None,
             "cleanup_errors": errors,
