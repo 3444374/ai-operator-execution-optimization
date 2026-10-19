@@ -1,7 +1,7 @@
 """Finite ordinary Movie Q3 records execution and original SemBench evaluation."""
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import sys
@@ -21,6 +21,8 @@ from src.semantic_methods.lotus.records import CallLedger, FilterMethod, Records
 BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model",
             "semloom-local-model-core", "semloom-local-model-core-async")
 _ASYNC_BACKEND = "semloom-local-model-core-async"
+CASCADE_BACKENDS = ("ray-data-local-model-cascade", "daft-native-local-model-cascade",
+                    "semloom-local-model-core-cascade")
 
 
 def _fixed_method(method):
@@ -326,6 +328,204 @@ def model_preflight(source, checkout, method, generation, engine):
                 method_source=method_source, engine_environment=environment)
 
 
+def read_cascade_config(path):
+    """An explicit global helper-LM profile, separate from ordinary Filter runs."""
+    from lotus.types import CascadeArgs
+    from src.semantic_methods.lotus.cascade import cascade_identity
+    from src.semantic_methods.lotus.engine import validate_generation
+    from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
+
+    value = json.loads(Path(path).read_text())
+    required = {"schema", "backend", "query_id", "method", "helper_model_name", "engines",
+                "generations", "cascade_args", "resources", "max_calls"}
+    if (type(value) is not dict or set(value) != required
+            or value["schema"] != "semloom.movie_records_cascade_run.v1"
+            or value["backend"] not in CASCADE_BACKENDS):
+        raise ValueError("unsupported Movie helper-cascade configuration")
+    method = FilterMethod.from_dict(value["method"])
+    _fixed_method(method)
+    helper = FilterMethod(value["helper_model_name"])
+    helper.describe()
+    for name in ("engines", "generations"):
+        if type(value[name]) is not dict or set(value[name]) != {"main", "helper"}:
+            raise ValueError(name + " must declare exactly main and helper")
+    generations = {role: GenerationSpec.from_dict(raw) for role, raw in value["generations"].items()}
+    if (generations["main"].logprobs is not None or generations["helper"].logprobs is None
+            or not 1 <= generations["helper"].logprobs <= 20):
+        raise ValueError("main logprobs must be None and helper top logprobs must be 1..20")
+    for role, binding in (("main", method), ("helper", helper)):
+        validate_generation(binding, replace(generations[role], logprobs=None))
+    raw_args = value["cascade_args"]
+    if type(raw_args) is not dict or set(raw_args) - set(CascadeArgs.model_fields):
+        raise ValueError("cascade_args must contain only original CascadeArgs fields")
+    args = CascadeArgs.model_validate_json(json.dumps(raw_args), strict=True)
+    if type(value["max_calls"]) is not int or value["max_calls"] < 1:
+        raise ValueError("max_calls must be a positive integer")
+    cascade_identity(value["query_id"], "preflight", 0, 0, model_role="helper", stage="helper_score")
+    resources = RecordsResources(**value["resources"])
+    if value["backend"] == "semloom-local-model-core-cascade" and (
+            resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
+        raise ValueError("cascade Core requires prepare_batch_rows=model_batch_rows=1")
+    engines = {role: EngineSpec.from_dict(raw) for role, raw in value["engines"].items()}
+    if any(spec.max_model_calls is None for spec in engines.values()):
+        raise ValueError("both cascade engines require an explicit max_model_calls lifetime cap")
+    if Path(engines["main"].model_path).resolve() == Path(engines["helper"].model_path).resolve():
+        raise ValueError("cascade requires distinct explicit main and helper model paths")
+    for role in engines:
+        if generations[role].max_tokens > engines[role].max_model_len:
+            raise ValueError("cascade max_tokens exceeds max_model_len")
+    return value, method, generations, resources, engines, args
+
+
+def _cascade_lms(config, method, generations, engines):
+    from tokenizers import Tokenizer
+    from src.semantic_methods.lotus.engine import make_lm
+
+    models = {}
+    for role, binding in (("main", method), ("helper", FilterMethod(config["helper_model_name"]))):
+        generation, engine = generations[role], engines[role]
+        lm = make_lm(binding, replace(generation, logprobs=None))
+        lm.tokenizer = Tokenizer.from_file(str(Path(engine.tokenizer_path or engine.model_path) / "tokenizer.json"))
+        for label in ("True", "False"):
+            ids = lm.tokenizer.encode(label, add_special_tokens=False).ids
+            if len(ids) != 1 or lm.encode_text(label) != ids:
+                raise ValueError("original LM and deployed tokenizer label IDs differ")
+        if role == "helper":
+            lm.kwargs["top_logprobs"] = generation.logprobs
+        models[role] = lm
+    return models
+
+
+def cascade_model_preflight(config, source, checkout, method, generations, engines, cascade_args):
+    """Validate original cascade semantics and both local deployments; allocate no model."""
+    import lotus
+    import pandas as pd
+    from src.semantic_methods.lotus.cascade import validate_cascade, validate_cascade_source
+
+    _fixed_method(method)
+    inputs = source.preflight(method)
+    verify_checkout(checkout)
+    environment = {role: spec.validate_driver_environment() for role, spec in engines.items()}
+    models = _cascade_lms(config, method, generations, engines)
+    frame = pd.DataFrame([dict(row_id=row["row_id"], source_position=row["source_position"],
+                               reviewText=row["reviewText"])
+                          for row in source.rows() if row["id"] == "taken_3"],
+                         columns=["row_id", "source_position", "reviewText"])
+    with lotus.settings.context(enable_cache=False):
+        args, upper, effective = validate_cascade(frame, models["main"], models["helper"], cascade_args,
+            instruction=method.instruction, max_rows=max(1, inputs["rows"]), max_calls=config["max_calls"])
+    n = len(frame)
+    sample = int(n * args.sampling_percentage) if args.filter_pos_cascade_threshold is None else 0
+    stage_limits = dict(helper=n, main=max(n, sample))
+    if any(engines[role].max_model_calls < cap for role, cap in stage_limits.items()):
+        raise ValueError("engine lifetime cap cannot cover every possible cascade stage")
+    return dict(status="preflight_only", inference_calls=0, source=inputs,
+                method_source=validate_cascade_source(), engine_environment=environment,
+                method=method.describe(), helper_model_name=config["helper_model_name"],
+                cascade_args=args.model_dump(mode="json"),
+                generations={role: asdict(profile) for role, profile in generations.items()},
+                effective_generation=effective, max_calls=config["max_calls"], max_possible_calls=upper,
+                max_stage_calls=stage_limits, engine_lifetime_caps={role: spec.max_model_calls
+                    for role, spec in engines.items()}, budget_scope="query max_calls and separate per-stage engine lifetimes")
+
+
+def _cascade_backend(config, source, engines, resources):
+    if config["backend"] == "ray-data-local-model-cascade":
+        from src.baselines.text.frameworks.ray_data_lotus_cascade import RayCascadeBackend as Backend
+    elif config["backend"] == "daft-native-local-model-cascade":
+        from src.baselines.text.frameworks.daft_lotus_cascade import DaftCascadeBackend as Backend
+    elif config["backend"] == "semloom-local-model-core-cascade":
+        from src.execution_provider.adapters.lotus_cascade_core import CoreCascadeBackend as Backend
+    else:
+        raise ValueError("unsupported cascade backend")
+    return Backend(source, engines=engines, resources=resources)
+
+
+def _cascade_model_worker(config, source, checkout, method, generations, resources, engines, cascade_args, root):
+    import lotus
+    from .lotus_cascade_movie import run_movie_cascade_query
+
+    ray = backend = failure = None
+    report = dict(status="failed", query_id=config["query_id"])
+    started = time.monotonic()
+    try:
+        # Repeat the public gates in a directly invoked worker, before runtime allocation.
+        cascade_model_preflight(config, source, checkout, method, generations, engines, cascade_args)
+        models = _cascade_lms(config, method, generations, engines)
+        if config["backend"] != "daft-native-local-model-cascade":
+            import ray
+            ray.init(address="local", num_cpus=resources.cpu_workers + resources.gpu_workers + 1,
+                     num_gpus=1, include_dashboard=False,
+                     runtime_env={"env_vars": {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
+                         "LITELLM_LOCAL_MODEL_COST_MAP": "True", "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
+        runtime_seconds = time.monotonic() - started
+        backend = _cascade_backend(config, source, engines, resources)
+        with lotus.settings.context(enable_cache=False):
+            report = run_movie_cascade_query(source, checkout, models["main"], models["helper"],
+                cascade_args, backend, query_id=config["query_id"], max_calls=config["max_calls"])
+        report["runtime_setup_seconds"] = runtime_seconds
+    except BaseException as error:
+        failure = error
+        report = getattr(error, "query_report", report)
+        report.update(status="failed", error_type=type(error).__name__, error=redact_text(str(error)))
+    finally:
+        try:
+            close = getattr(backend, "close", None)
+            if close is not None:
+                report["owner_close"] = close()
+                if report["owner_close"] is not None and (
+                        report["owner_close"].get("status") != "closed"
+                        or report["owner_close"].get("cleanup_errors")):
+                    raise RuntimeError("cascade owner cleanup remains unconfirmed")
+            reports = getattr(backend, "close_reports", [])
+            report["backend_close"] = reports
+            if any(row.get("stage_process_exit_confirmed") is not True for row in reports):
+                raise RuntimeError("cascade stage cleanup remains unconfirmed")
+        except BaseException as cleanup:
+            report.update(status="failed", close_error_type=type(cleanup).__name__)
+            if failure is None:
+                failure = cleanup
+            else:
+                failure.add_note("cascade owner close also failed: " + type(cleanup).__name__)
+        finally:
+            try:
+                report["backend_close"] = getattr(backend, "close_reports", report.get("backend_close", []))
+                report["production_core_used"] = report.get("production_core_used") is True or (
+                    getattr(backend, "production_core_connected", False) is True)
+            except BaseException as cleanup:
+                report.update(status="failed", close_metadata_error_type=type(cleanup).__name__)
+                if failure is None:
+                    failure = cleanup
+                else:
+                    failure.add_note("cascade close metadata also failed: " + type(cleanup).__name__)
+        try:
+            if ray is not None and ray.is_initialized():
+                ray.shutdown()
+        except BaseException as cleanup:
+            report.update(status="failed", ray_close_error_type=type(cleanup).__name__)
+            if failure is None:
+                failure = cleanup
+            else:
+                failure.add_note("Ray close also failed: " + type(cleanup).__name__)
+        report.update(backend=config["backend"], execution_kind="original global helper-LM cascade",
+            method=method.describe(), helper_model_name=config["helper_model_name"],
+            cascade_args=cascade_args.model_dump(mode="json"),
+            generations={role: asdict(profile) for role, profile in generations.items()},
+            engine_lifetime_caps={role: spec.max_model_calls for role, spec in engines.items()},
+            max_calls=config["max_calls"], performance_claim=False, independent_gpu_process_exit_check=False)
+        try:
+            write_private_json(root / "query.json", report)
+        except BaseException as recording:
+            report.update(status="failed", report_error_type=type(recording).__name__)
+            if failure is None:
+                failure = recording
+            else:
+                failure.add_note("cascade query report also failed: " + type(recording).__name__)
+    if failure is not None:
+        failure.query_report = report
+        raise failure
+
+
 def _model_worker(config, source, checkout, method, generation, resources, engine, root):
     ray = None
     owner = None
@@ -462,14 +662,14 @@ def main(argv=None):
     prepare.add_argument("--max-rows", type=int, required=True)
     prepare.add_argument("--role", choices=("software_fixture", "sembench_movie_subset"), required=True)
     prepare.add_argument("--output-dir", required=True)
-    for name in ("check", "run", "fixture"):
+    for name in ("check", "run", "fixture", "cascade-check", "cascade-run"):
         command = commands.add_parser(name)
         command.add_argument("--source-manifest", required=True)
         command.add_argument("--sembench-checkout", required=True)
         command.add_argument("--config", required=name != "fixture")
-        if name != "check":
+        if name not in ("check", "cascade-check"):
             command.add_argument("--output-dir", required=True)
-        if name == "run":
+        if name in ("run", "cascade-run"):
             command.add_argument("--execute-model", action="store_true")
             command.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
         if name == "fixture":
@@ -500,6 +700,27 @@ def main(argv=None):
             raise
         write_private_json(root / "query.json", report)
         print(json.dumps(dict(status=report["status"], inference_calls=0, result=report["result"])))
+        return 0
+    if args.action in ("cascade-check", "cascade-run"):
+        config, method, generations, resources, engines, cascade_args = read_cascade_config(args.config)
+        preflight = cascade_model_preflight(config, source, args.sembench_checkout, method,
+                                           generations, engines, cascade_args)
+        if args.action == "cascade-check" or not args.execute_model:
+            print(json.dumps(preflight, ensure_ascii=False))
+            return 0
+        root = Path(args.output_dir).resolve()
+        if args.worker:
+            _cascade_model_worker(config, source, args.sembench_checkout, method, generations,
+                                  resources, engines, cascade_args, root)
+        else:
+            from .lotus_records_supervisor import supervise
+            new_private_directory(root)
+            write_private_json(root / "preflight.json", preflight)
+            command = [sys.executable, str(Path(__file__).parents[2] / "scripts/experiments/run_lotus_records_movie.py"),
+                "cascade-run", "--source-manifest", str(source.manifest_path),
+                "--sembench-checkout", str(Path(args.sembench_checkout).resolve()),
+                "--config", str(Path(args.config).resolve()), "--output-dir", str(root), "--execute-model", "--worker"]
+            supervise(command, root, timeout_s=resources.startup_timeout_s + resources.query_timeout_s + 30)
         return 0
     config, method, generation, resources, engine = read_config(args.config)
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
