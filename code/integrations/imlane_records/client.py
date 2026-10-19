@@ -144,15 +144,16 @@ class RecordsBridge:
             raise RuntimeError("records supervisor did not confirm bridge termination")
         self._closed = True
 
-    def close(self):
+    def close(self, *, deadline=None):
         if self._closed:
             return
         if self._terminal:
             self.abort()
             return
         try:
-            self.request("close")
-            if self.process.wait(timeout=self.timeout_s) != 0:
+            self.request("close", deadline=deadline)
+            timeout = self.timeout_s if deadline is None else max(0, min(self.timeout_s, deadline - time.monotonic()))
+            if self.process.wait(timeout=timeout) != 0:
                 raise RuntimeError("records bridge exit was unsuccessful")
         except BaseException as error:
             self._terminal = True

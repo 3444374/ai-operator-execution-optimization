@@ -18,6 +18,7 @@ CODE = OWNED.parents[1]
 sys.path.insert(0, str(CODE))
 from integrations.imlane_records import owner as tools
 from integrations.imlane_records.client import RecordsBridge, RecordsRejected
+from integrations.imlane_records.resource_limits import check_resources, owner_limits
 from src.baselines.common.private_artifacts import require_outside_git, write_private_json
 from src.baselines.common.redact import redact_text
 from src.infrastructure.runner_lease import (
@@ -32,6 +33,7 @@ class RecordScope(tools.AuthorScope):
     def sample(self):
         import psutil
         try:
+            limits = owner_limits(getattr(self.args, "owner_resource_limits", None))
             while not self.stop_sampler.wait(.1):
                 self.snapshot()
                 rss = 0
@@ -45,9 +47,11 @@ class RecordScope(tools.AuthorScope):
                 shm = sum(self.helper.resources(self.namespace).values())
                 self.report["rss_peak_bytes"] = max(self.report.get("rss_peak_bytes", 0), rss)
                 self.report["shm_peak_bytes"] = max(self.report.get("shm_peak_bytes", 0), shm)
-                if rss > 8 * 1024**3 or shm > 2 * 1024**3:
+                try:
+                    check_resources(rss, shm, limits)
+                except RuntimeError:
                     self.report["resource_allowance_exceeded"] = True
-                    raise RuntimeError("records resource allowance exceeded")
+                    raise
         except BaseException as error:
             self.report.setdefault("sampler_errors", []).append(redact_text(type(error).__name__ + ": " + str(error)))
             self.args.stop_budget.stopped.set()

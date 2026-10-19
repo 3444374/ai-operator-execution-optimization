@@ -199,7 +199,9 @@ class AuthorScope:
                         type=type(error).__name__,error=redact_text(str(error)))
 
 
-    def stop_root(self, process, writer, *, owner=False):
+    def stop_root(self, process, writer, *, owner=False, timeout_s=8):
+        if type(timeout_s) not in (int, float) or not 0 < timeout_s < float("inf"):
+            raise ValueError("owned root stop requires finite positive seconds")
         forced=False
         if process.poll() is None:
             ticks=self.roots[process.pid]
@@ -207,7 +209,7 @@ class AuthorScope:
                 try:process.stdin.write('\n');process.stdin.flush()
                 except (BrokenPipeError,OSError):pass
             else:self.signal_identity((process.pid,ticks),signal.SIGTERM)
-            try:process.wait(timeout=8)
+            try:process.wait(timeout=timeout_s)
             except subprocess.TimeoutExpired:
                 forced=True;self.snapshot(include_orphans=True)
                 for identity in self.survivors():self.signal_identity(identity,signal.SIGKILL)

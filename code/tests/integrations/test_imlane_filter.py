@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from integrations.imlane_records.filter_host import FilterResults
 from integrations.imlane_records.filter_workload import Occurrences, PROTOCOL, input_record
-from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources, identity
+from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources, RecordScan, identity
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, _prepared
 
 
@@ -41,7 +41,8 @@ class FixedEngine:
 
     def close(self):
         self.closes += 1
-        return dict(status="closed", process_exit_confirmed=True, cleanup_errors=[], gpu_exit_confirmed=None)
+        return dict(status="closed", process_exit_confirmed=True, cleanup_errors=[], gpu_exit_confirmed=None,
+                    engine_api=dict(status="closed", engine_api_shutdown_confirmed=True))
 
 
 class PartialEngine(FixedEngine):
@@ -88,7 +89,7 @@ class LocalAuthor:
     def end(self, **_):
         pass
 
-    def close(self):
+    def close(self, **_):
         self.closes += 1
 
     def abort(self):
@@ -100,7 +101,9 @@ class FilterTests(unittest.TestCase):
     def setUp(self):
         self.root = tempfile.TemporaryDirectory(prefix="imlane-filter-cpu-")
         self.addCleanup(self.root.cleanup)
-        self.config = dict(method=asdict(FilterMethod("openai/local-fixture")),
+        self.config = dict(method=asdict(FilterMethod("openai/local-fixture", resolved_input_columns=("reviewText",))),
+                           scan=RecordScan((("row_id", "string"), ("source_position", "int64"),
+                                            ("reviewText", "string")), ("reviewText",)).describe(),
                            engine=asdict(EngineSpec(model_path=self.root.name, model_python=sys.executable,
                                                    driver_python=sys.executable, max_model_calls=8)),
                            generation=asdict(GenerationSpec()), resources=asdict(RecordsResources()),
@@ -113,7 +116,7 @@ class FilterTests(unittest.TestCase):
 
     def iterator(self, worker, rows, **kwargs):
         client = LocalAuthor(worker)
-        iterator = FilterResults(rows, client, query_id="q", max_calls=8, control_dir=self.root.name,
+        iterator = FilterResults(rows, client, query_id="q", max_calls=8, columns=tuple(self.config["scan"]["payload_columns"]), control_dir=self.root.name,
                                  deadline=time.monotonic() + 20,
                                  close_owner=lambda: {"resources_confirmed": True}, **kwargs)
         self.addCleanup(iterator.close)
@@ -121,7 +124,7 @@ class FilterTests(unittest.TestCase):
 
     def test_reversible_identity_preserves_repeated_source_and_never_transmits_labels(self):
         records = source()
-        mapping = Occurrences("q", max_calls=3)
+        mapping = Occurrences("q", columns=("reviewText",), max_calls=3)
         encoded = mapping.encode(records)
         self.assertEqual([row["row_id"] for row in encoded], [0, 1, 2])
         self.assertEqual([input_record(row)["call_id"] for row in encoded], [row["call_id"] for row in records])
@@ -131,7 +134,7 @@ class FilterTests(unittest.TestCase):
         self.assertNotEqual(encoded[0]["call_id"], encoded[1]["call_id"])
 
     def test_rejected_suffix_does_not_register_unsubmitted_prefix(self):
-        mapping = Occurrences("q", max_calls=3)
+        mapping = Occurrences("q", columns=("reviewText",), max_calls=3)
         bad = source()
         bad[-1]["call_id"] = "wrong"
         with self.assertRaises(ValueError):
@@ -189,7 +192,7 @@ class FilterTests(unittest.TestCase):
     def test_output_reorder_missing_duplicate_and_cross_query_are_rejected(self):
         for fault in ("reorder", "missing", "duplicate", "query"):
             with self.subTest(fault=fault):
-                mapping = Occurrences("q", max_calls=8)
+                mapping = Occurrences("q", columns=("reviewText",), max_calls=8)
                 encoded = mapping.encode(source())
                 client = LocalAuthor(self.worker())
                 client.submit("b", encoded)
@@ -213,7 +216,7 @@ class FilterTests(unittest.TestCase):
                     return dict(status="unknown", process_exit_confirmed=False, cleanup_errors=["fixture"])
                 return super().close()
         worker = self.worker(RetryClose)
-        encoded = Occurrences("q", max_calls=8).encode(source(count=1))
+        encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source(count=1))
         worker.run(encoded)
         self.assertEqual(worker.close()["status"], "unknown")
         self.assertFalse(worker.closed)
@@ -224,7 +227,7 @@ class FilterTests(unittest.TestCase):
     def test_cancel_before_model_preserves_definite_non_submission_and_closes_without_process(self):
         worker = self.worker()
         Path(self.root.name, "stop").touch()
-        encoded = Occurrences("q", max_calls=8).encode(source())
+        encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
         results = [row for row, _ in worker.run(encoded)]
         self.assertEqual({row["status"] for row in results}, {"failed"})
         self.assertEqual({row["submission_confirmed"] for row in results}, {False})
@@ -236,7 +239,7 @@ class FilterTests(unittest.TestCase):
             def __init__(self, *_):
                 raise RuntimeError("fixture constructor lost a possible child handle")
         worker = self.worker(FailedConstructor)
-        encoded = Occurrences("q", max_calls=8).encode(source())
+        encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
         worker.run(encoded)
         report = worker.close()
         self.assertFalse(report["no_model_process_started"])
@@ -268,7 +271,7 @@ class FilterTests(unittest.TestCase):
             def run_prepared(self, rows):
                 raise EOFError("fixture failed after possible acceptance")
         worker = self.worker(Unknown)
-        encoded = Occurrences("q", max_calls=8).encode(source())
+        encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
         results = [row for row, _ in worker.run(encoded)]
         self.assertEqual({row["status"] for row in results}, {"unknown"})
         self.assertEqual({row["submission_confirmed"] for row in results}, {False})
@@ -287,7 +290,7 @@ class FilterTests(unittest.TestCase):
                         values[0]["prompt_token_ids_json" if missing == "prompt" else "output_token_ids_json"] = "null"
                         return values
                 worker = self.worker(PartialTokens)
-                encoded = Occurrences("q", max_calls=8).encode(source())
+                encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
                 values = [row for row, _ in worker.run(encoded)]
                 self.assertEqual(values[0]["status"], "failed")
                 known = "completion" if missing == "prompt" else "prompt"
@@ -312,7 +315,7 @@ class FilterTests(unittest.TestCase):
                         values[1][key] = value
                         return values
                 worker = self.worker(MalformedEngine)
-                encoded = Occurrences("q", max_calls=8).encode(source())
+                encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
                 rows = [row for row, _ in worker.run(encoded)]
                 self.assertEqual([row["status"] for row in rows], ["succeeded", "unknown", "succeeded"])
                 self.assertEqual(sum(row["prompt_tokens"] or 0 for row in rows), 10)
@@ -328,7 +331,7 @@ class FilterTests(unittest.TestCase):
                     raise ValueError("fixture invalid preparation suffix")
                 return super().prepare_rows(rows)
         worker = self.worker(prepare=BrokenSuffix)
-        encoded = Occurrences("q", max_calls=8).encode(source())
+        encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
         rows = [row for row, _ in worker.run(encoded)]
         self.assertEqual([row["status"] for row in rows], ["succeeded", "failed", "failed"])
         self.assertEqual(rows[0]["prompt_tokens"], 5)
@@ -348,7 +351,7 @@ class FilterTests(unittest.TestCase):
                             if fault == "evidence": values[0].pop("prepare_worker_pid")
                         return values
                 worker = self.worker(prepare=Malformed)
-                encoded = Occurrences("q", max_calls=8).encode(source())
+                encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source())
                 rows = [row for row, _ in worker.run(encoded)]
                 self.assertEqual([row["status"] for row in rows], ["succeeded", "failed", "failed"])
                 self.assertEqual(rows[0]["prompt_tokens"], 5)
@@ -371,7 +374,7 @@ class FilterTests(unittest.TestCase):
              patch.object(filter_udf._slot, "finished", set()), patch.object(filter_udf, "FilterWorker", Worker), \
              patch.object(alias, "FilterWorker", Worker), patch.dict(os.environ, {"IMLANE_FILTER_CONFIG": str(config_path)}):
             config_path.write_text(json.dumps(self.config))
-            encoded = Occurrences("q", max_calls=8).encode(source(count=1))
+            encoded = Occurrences("q", columns=("reviewText",), max_calls=8).encode(source(count=1))
             filter_udf.infer_records(pa.Table.from_pylist(encoded, schema=INPUT))
             first = alias._slot.worker
             close = dict(call_id="close-q", row_id=0, query_id="q", stage_id="filter", record_json='{"operation":"close"}')
@@ -381,7 +384,7 @@ class FilterTests(unittest.TestCase):
             second_control.mkdir()
             self.config.update(query_id="q2", control_dir=str(second_control))
             config_path.write_text(json.dumps(self.config))
-            encoded = Occurrences("q2", max_calls=8).encode(source("q2", count=1))
+            encoded = Occurrences("q2", columns=("reviewText",), max_calls=8).encode(source("q2", count=1))
             value = alias.infer_records(pa.Table.from_pylist(encoded, schema=INPUT)).to_pylist()[0]
             self.assertEqual(json.loads(value["outcome_json"])["query_id"], "q2")
             self.assertIsNot(first, filter_udf._slot.worker)

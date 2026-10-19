@@ -5,6 +5,56 @@
 v2 已接原方法、source、调用账本与 CPU 子进程，并通过[作者 CPython 无模型资格](../../../experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md)；真实模型／GPU 和作者 Ray 仍待验，不接 Ray Data 或 SemLoom 模型池。
 无模型 v1 桥从 `78f05783` 选择性接入，没有恢复旧 IMLane／Sema HTTP 执行树。
 
+## 当前 Filter 合同与有限链接点
+
+作者无模型报告固定在 `0190e8cd`，由 `9f1a817f` 交付；下述兼容修订和有限链只具有新的
+本机 CPU／替身检查，不能重绑定为原作者资格，也没有真实模型、GPU 或作者有限链运行资格。
+原 C++ v2 桥字节保持；新 Python 方法和关闭路径需要在新的源码归档和 owner 下核验。
+
+- Filter caller 先调用 [`bind_source(source, method)`](filter_workload.py)，执行 source preflight，
+  取得中性 `RecordScan` 并冻结原 LOTUS 列序。worker 严格接收已绑定配置和 scan，拒绝缺列；
+  Movie Q3 的 instruction／predicate／schema 继续由 Movie task 与其 runner 绑定。
+  传输对象改为 `identity_json` 和 `payload_json` 两个字符串，payload 只含 scan 声明的文本列，
+  不再要求 `reviewText`。raw Filter 的 payload 拒绝身份字段；有限链的业务同名列留在嵌套 values 中。
+- [`RecordsResults`](records_host.py) 只复用 v2 有界提交／收集和关闭控制；作者继续拥有任务调度，
+  pending 仍最多两块，没有新增模型池、线程池或 stage 执行器。
+- [`chain_host.configuration`](chain_host.py) 在 owner 分配前校验单模型部署、有限预算、原方法 wire、
+  source occurrence 与期限。caller 的 `LotusRecordChain` 自动绑定，worker 的 `from_dict` 严格接收。
+  [`ChainWorker`](chain_udf.py) 只调用共同 `lotus_chain_batch.FusedChainBatch.run_rows()`；唯一 stage loop
+  仍是 `LotusRecordChain.run_batch`，模型子进程复用 `ChainEngineProcess` 的逐调用 generation。
+  `ChainResults` 把完整批 envelope 交给共同 `ChainBatchResults`，分别保留模型调用账本与最终关系。
+  FME、MF、Map→Map→Filter、Filter→Filter→Map 共享此路径；Extract 仅末端，拒多部署、Join、分支和全局聚合。
+- 一个 IMLane 物理 block 使用一条 transport occurrence，`batch_json` 字符串携带 1..16 个
+  `RecordOccurrence`；整批只执行一次，不为每个输入重复运行 stage loop 或重复记账。
+  `row_id/source_position` 是 source occurrence 身份，业务 index 可重复；业务 `row_id/call_id`
+  保留在 `values` 中。原字节上限仍独立生效；logical JSON／Arrow bytes 不代表 RSS 或显存。
+- Filter 和链共用解释器固定角色槽。alias 不能再建角色，模型构造互斥且失败不自动重试；
+  同一查询块间复用一个 engine，两个查询使用独立 owner／engine／取消目录。
+
+shared EngineProcess 的关闭预算仍为 API reply 11 秒与进程清理 4 秒。carrier 单独保留 20 秒，
+不以 query deadline 截短；StopBudget 在这段 cleanup 内只登记信号，不提前抛错中断关闭。
+Filter／chain 作者 root 的等待同样为 20 秒；历史 echo 默认 8 秒不变。
+已启动模型必须同时确认 nested `engine_api`、实际子进程退出和空 cleanup errors，不能只凭 exit 标 closed。
+GPU 始终单独核验；故障或无法核验仍保留 unknown 与 owner 责任，已有 usage／audit 不因关闭失败清空。
+active model cancellation、未观察到的后代和实际 GPU 退出不能从 CPU 替身推导。
+
+方法环境保留作者 Python3.12／Arrow16.1 ABI，driver 与模型解释器各自独立。
+[`preflight_method`](method_environment.py) 在 owner 启动前核对两解释器 ABI 及固定 Filter／链源；
+`ChainScope` 必须显式提供方法解释器，不回落到缺少方法依赖的作者解释器。
+模型 child 使用共享 EngineProcess 的新 CODE `PYTHONPATH`，清除作者 `LD_LIBRARY_PATH`、
+`PYTHONHOME` 和 `VIRTUAL_ENV`，显式使用 `model_python`；不向模型环境注入方法副本的 Arrow16 site。
+本机 fresh CPU child 检查只验证这条装配机制，固定目标 vLLM0.25.1／无 LOTUS 可见性仍需当前 runtime preflight。
+
+新 local-model 资格配置必须显式给出 `owner_resource_limits`，例如本轮独占单元的
+`{"cpu_cores":8,"rss_bytes":34359738368,"shm_bytes":2147483648}`；RSS 是整个已观察 owned 家族之和。
+root 的外层 child 需先受其选定的最多 8 CPU affinity 约束，入口只读核验并拒绝更宽范围；
+采样超 RSS／SHM 限额停止 owned scope。历史 echo 未提供该字段时仍用原 8 GiB RSS／2 GiB SHM，
+不修改共享 cgroup。host RAM inventory 不能替代本单元额度或容器限制。
+
+首个真实模型单元待 root：原 Movie 前 15 行／2 eligible，两查询各 `max_model_calls=2`，
+总永久预算 4，失败／unknown 不退、不自动重跑、不暖身；实际模型全部由 root 调度。
+每次 owner 关闭后独立检查 GPU，再允许下一个查询；原 `0190` CPU 归档和旧模型账本保持原身份。
+
 ## 接入方式
 
 [适配头文件](record_dbend_adapter.hpp)提供 `Session.begin_query`、`submit`、`ready_blocks`、

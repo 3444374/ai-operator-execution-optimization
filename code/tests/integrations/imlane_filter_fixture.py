@@ -26,7 +26,10 @@ if __name__ == "__main__":
             if "lotus" in sys.modules or "vllm" in sys.modules:
                 raise AssertionError("fixture child imported a method or real model runtime")
             return dict(engine_uid="imlane-cpu-" + str(os.getpid()), pid=os.getpid(), fixture=True,
-                        real_model_requests=0, lotus_imported=False)
+                        real_model_requests=0, lotus_imported=False, python=sys.executable, prefix=sys.prefix,
+                        pythonpath=os.environ.get("PYTHONPATH"),
+                        author_abi_environment={name: os.environ.get(name) for name in
+                                                ("LD_LIBRARY_PATH", "PYTHONHOME", "VIRTUAL_ENV")})
 
         def run_prepared(self, rows, **_):
             if mode == "stall":

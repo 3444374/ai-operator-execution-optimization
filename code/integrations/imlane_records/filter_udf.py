@@ -12,14 +12,15 @@ from pathlib import Path
 import sys
 import threading
 import time
-import types
 import uuid
 
 import pyarrow as pa
 
 from integrations.imlane_records.echo_udf import INPUT, OUTPUT
 from integrations.imlane_records.filter_workload import PROTOCOL, input_record, validate_terminal
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
+from integrations.imlane_records.model_lifecycle import close_owned_model, model_closed
+from integrations.imlane_records.method_owner import owned_worker, slot as _slot
+from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, RecordScan
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS, _prepared
 
 
@@ -31,7 +32,11 @@ class FilterWorker:
         self.engine = EngineSpec.from_dict(config["engine"])
         self.generation = GenerationSpec.from_dict(config["generation"])
         self.resources = RecordsResources(**config["resources"])
+        self.scan = RecordScan.from_dict(config["scan"])
         validate_generation(self.method, self.generation)
+        if (self.method.resolved_input_columns is None
+                or not set(self.method.resolved_input_columns).issubset(self.scan.payload_columns)):
+            raise ValueError("IMLane worker requires caller-bound columns covered by the source scan")
         self.query_id = config["query_id"]
         self.deadline = config["deadline_monotonic"]
         self.control = Path(config["control_dir"])
@@ -44,6 +49,7 @@ class FilterWorker:
         self.prepare = (prepare_type or LotusFilterMethod)(self.method)
         self.engine_type = engine_type
         self.kernel = None
+        self._ownership_lock = threading.RLock()
         self.kernel_initialization_attempted = False
         self.calls = set()
         self.closed = self.broken = False
@@ -59,20 +65,24 @@ class FilterWorker:
             raise TimeoutError("IMLane Filter query deadline expired")
 
     def _kernel(self):
-        if self.kernel is None:
-            self.kernel_initialization_attempted = True
-            if self.engine_type is None:
-                from integrations.imlane_records.model_process import IMLaneEngineProcess
-                self.kernel = IMLaneEngineProcess(
-                    self.engine, self.generation, self.control, self.deadline, self.resources.startup_timeout_s,
-                    model_environment=self.model_environment)
-            else:
-                self.kernel = self.engine_type(
-                    self.engine, self.generation, self.control, self.deadline, self.resources.startup_timeout_s)
-        return self.kernel
+        with self._ownership_lock:
+            self._check()
+            if self.kernel is None:
+                if self.kernel_initialization_attempted:
+                    raise RuntimeError("IMLane model initialization cannot be retried")
+                self.kernel_initialization_attempted = True
+                if self.engine_type is None:
+                    from integrations.imlane_records.model_process import IMLaneEngineProcess
+                    self.kernel = IMLaneEngineProcess(
+                        self.engine, self.generation, self.control, self.deadline, self.resources.startup_timeout_s,
+                        model_environment=self.model_environment)
+                else:
+                    self.kernel = self.engine_type(
+                        self.engine, self.generation, self.control, self.deadline, self.resources.startup_timeout_s)
+            return self.kernel
 
     def run(self, sources):
-        items_all = [input_record(row) for row in sources]
+        items_all = [input_record(row, columns=self.scan.payload_columns) for row in sources]
         results = []
         for offset in range(0, len(sources), self.resources.model_batch_rows):
             group = items_all[offset:offset + self.resources.model_batch_rows]
@@ -153,30 +163,16 @@ class FilterWorker:
                     engine_uid=(getattr(self.kernel, "ready_report", None) or {}).get("engine_uid"))
 
     def close(self):
+        with self._ownership_lock:
+            return self._close()
+
+    def _close(self):
         if self.closed:
             return self.close_report
-        if self.kernel is None:
-            started = self.kernel_initialization_attempted
-            report = dict(status="unknown" if started else "closed", process_exit_confirmed=not started,
-                          gpu_exit_confirmed=None, no_model_process_started=not started,
-                          cleanup_errors=["model_initialization_handle_unavailable"] if started else [])
-        else:
-            try:
-                report = self.kernel.close()
-            except Exception as error:
-                report = dict(status="unknown", process_exit_confirmed=False, gpu_exit_confirmed=None,
-                              cleanup_errors=["model_close: " + type(error).__name__])
-            reaper = getattr(self.kernel, "_reaper", None)
-            if reaper is not None and reaper is not threading.current_thread():
-                reaper.join(1)
-                report = dict(report, owned_reaper_stopped=not reaper.is_alive())
-                if reaper.is_alive():
-                    report.update(status="unknown", cleanup_errors=[*report.get("cleanup_errors", []),
-                                                                      "model_reaper_still_running"])
+        report = close_owned_model(self.kernel, attempted=self.kernel_initialization_attempted)
         self.close_report = report
         # Failed close remains retryable and keeps its engine handle.
-        self.closed = (report.get("status") == "closed" and report.get("process_exit_confirmed") is True
-                       and not report.get("cleanup_errors"))
+        self.closed = model_closed(report)
         if not self.closed:
             self.broken = True
         return report
@@ -188,7 +184,7 @@ class FilterWorker:
             payload = dict(kind="filter", engine_result=result)
             error_type = None if ok else result["error_type"]
         else:
-            ok = close.get("status") == "closed" and close.get("process_exit_confirmed") is True
+            ok = model_closed(close)
             known, payload = True, dict(kind="close", close_report=close)
             error_type = None if ok else "ModelCloseUnconfirmed"
         payload.update(_occurrence_id=source["call_id"], _position=source["row_id"])
@@ -198,13 +194,6 @@ class FilterWorker:
                     worker=dict(worker_pid=os.getpid(), worker_uid=self.uid,
                                 model_role="main", python=sys.executable, arrow=pa.__version__,
                                 engine_uid=(getattr(self.kernel, "ready_report", None) or {}).get("engine_uid")))
-
-
-# Author aliases can import the same file under different module names. The
-# ownership slot belongs to the interpreter, not to those aliases.
-_slot = sys.modules.setdefault("integrations.imlane_records._filter_owner", types.ModuleType("_filter_owner"))
-if not hasattr(_slot, "worker"):
-    _slot.worker, _slot.fingerprint, _slot.finished = None, None, set()
 
 
 def infer_records(table):
@@ -217,18 +206,9 @@ def infer_records(table):
     if any((row["query_id"], row["stage_id"]) != (rows[0]["query_id"], "filter") for row in rows):
         raise ValueError("Filter table crosses query or stage")
     config = json.loads(Path(os.environ["IMLANE_FILTER_CONFIG"]).read_text())
-    signature = hashlib.sha256(json.dumps({key: config[key] for key in (
-        "method", "engine", "generation", "resources", "model_environment")}, sort_keys=True).encode()).hexdigest()
-    if _slot.fingerprint is not None and signature != _slot.fingerprint:
-        raise ValueError("Filter interpreter cannot change method, model role or engine configuration")
-    if (_slot.worker is not None and _slot.worker.broken and config["query_id"] != _slot.worker.query_id):
-        raise ValueError("Failed Filter interpreter cannot be reused for a later query")
-    if _slot.worker is None or (_slot.worker.closed and config["query_id"] != _slot.worker.query_id):
-        if config["query_id"] in _slot.finished or len(_slot.finished) >= 64:
-            raise ValueError("Filter query repeats or exceeds interpreter query allowance")
-        _slot.worker = FilterWorker(config)
-        _slot.fingerprint = signature
-    work = _slot.worker
+    signature = hashlib.sha256(json.dumps(dict(kind="filter", **{key: config[key] for key in (
+        "method", "engine", "generation", "resources", "model_environment", "scan")}), sort_keys=True).encode()).hexdigest()
+    work = owned_worker(config, signature, FilterWorker)
     if config["query_id"] != work.query_id or any(row["query_id"] != work.query_id for row in rows):
         raise ValueError("Filter input does not belong to this interpreter query")
     operations = [json.loads(row["record_json"]) for row in rows]
