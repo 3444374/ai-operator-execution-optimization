@@ -2,7 +2,7 @@
 
 [IMLane普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原17项本机CPU、16项无child组合及旧7a冻结作者12次fixture分列；公开selector新增25入口／45owner／17旧路径CPU。共享关闭失败仍unknown，旧作者成功不转授最终源码；当前入口作者／模型／GPU资格待验。
 
-[IMLane通用级联阶段](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；17项本机CPU与冻结r3作者CPython两查询／44次fixture分列，六scope／六child关闭及77出生身份退出审计通过，原保存失败保留；helper模型／GPU资格待验，无公共IMLane selector。
+[IMLane通用级联阶段与公开入口](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；新27入口／21 owner／16 source CPU和90旧路径回归，冻结r3作者44fixture与当前入口分列。原保存失败保留，真实helper／模型／GPU另验，8d35普通链包冻结。
 
 [Async actor／Core／CLI](async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)：原合同、实际CPU组合及关闭known usage的RED→GREEN分列，unknown责任不释放，真实AsyncLLM／GPU／性能待验。
 

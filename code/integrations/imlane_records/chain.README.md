@@ -68,7 +68,8 @@ GPU 退出由 slot owner 独立检查，CPU close 不提供 GPU 证明。待执�
 [`lotus_records_chain.py`](../../src/experiments/lotus_records_chain.py)。当前只接受显式
 `imlane-author-local-model-chain`，普通 Filter、Map、Extract 都使用同一有限链和作者 backend；
 非末端 Extract 继续沿上述完整关系屏障。此入口接受非Q3文本列，不为通用关系附加 Movie COUNT
-或 SemBench 评价；Movie Q3 和全局级联保留各自命令，IMLane 级联 selector 仍未接入。
+或 SemBench 评价；Movie Q3 保留原命令，通用IMLane级联另见
+[record-cascade入口](cascade.README.md#公开通用记录入口)，不复用本普通链schema。
 
 ```sh
 PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py chain-check \

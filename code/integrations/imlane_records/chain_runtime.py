@@ -88,7 +88,7 @@ def check_external_lease(value):
     return dict(sha256=value["lease_sha256"], ownership="external owner", released_by_worker=False)
 
 
-def preflight_owner(value, engine):
+def preflight_owner(value, engine, *, chain=True, cascade=False):
     check_external_lease(value)
     if read_json(value["preflight_report"]).get("status") != "ok":
         raise ValueError("a successful current runtime preflight report is required")
@@ -96,7 +96,10 @@ def preflight_owner(value, engine):
     if not hasattr(os, "sched_getaffinity") or len(os.sched_getaffinity(0)) > limits["cpu_cores"]:
         raise ValueError("the owner must launch this child inside its declared CPU allowance")
     build = validate_author_build(value["author_root"], value["bridge_binary"])
-    abi = preflight_method(value["method_python"], value["author_root"], Path(__file__).parents[2], chain=True)
+    options = dict(chain=chain)
+    if cascade:
+        options["cascade"] = True
+    abi = preflight_method(value["method_python"], value["author_root"], Path(__file__).parents[2], **options)
     return dict(author=build, method_abi=abi, engine_environment=engine.validate_driver_environment(),
                 external_lease=check_external_lease(value), owner_resource_limits=limits)
 

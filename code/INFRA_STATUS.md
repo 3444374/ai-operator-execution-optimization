@@ -21,7 +21,9 @@
 ## 独立 IMLane 记录桥
 
 [普通 Map／Extract 与关系链](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)已选择接纳职责7a4524b7，复用公共有限链和完整Extract关系屏障，段间新作者scope／引擎；空结果显式传最终prototype。原17本机CPU、16项NoPopen组合及旧冻结7a作者CPU12次fixture／三个scope分列。共享关闭聚合修补保留已知模型／物理证据且失败仍unknown，旧作者成功不重绑定后续源码。
-[公开 ordinary chain 入口](integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)新增 `chain-check`／`chain-run` 和显式IMLane selector；普通Filter／Map／Extract及有限组合共用原作者backend，外部正常lease、永久unit和逐已闭scope GPU门由owner合同约束。25入口／45owner／17旧路径CPU分列通过，浮点精度与lease双读RED保留并修复。该通用关系不附加Q3评价；最终入口作者执行、真实模型／GPU和性能仍另验，IMLane级联selector尚无。
+[公开 ordinary chain 入口](integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)新增 `chain-check`／`chain-run` 和显式IMLane selector；普通Filter／Map／Extract及有限组合共用原作者backend，外部正常lease、永久unit和逐已闭scope GPU门由owner合同约束。25入口／45owner／17旧路径CPU分列通过，浮点精度与lease双读RED保留并修复。该通用关系不附加Q3评价；最终入口作者执行、真实模型／GPU和性能仍另验；通用级联入口在下项独立登记。
+
+[IMLane通用级联公开入口](integrations/imlane_records/cascade.README.md#公开通用记录入口)新增 `record-cascade-check/run`，显式caller指令、角色列序及原生成配置，不绑定Q3。原 `run_cascade` 和作者桥保持；新有限CSV source及共同owner编排只组织已有接点，Q=2N+S永久unit与实际调用分列。27入口／21 owner／16 source新CPU及70普通链／20旧Movie级联回归通过，关闭unknown与metadata同时失败的实际RED已修且保留；不升级未知。原r3作者44fixture不转授当前入口；8d35普通链私包冻结，真实helper／模型／GPU和性能另验。
 
 [通用级联作者 CPU r3](../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)已在冻结包取得两查询／44次fixture和独立资源审计，六scope／六child关闭、77观察出生身份退出，normal lease释放；原保存API失败与17本机CPU另列。真实helper模型／GPU阶段退出和后续源码仍另验。
 
@@ -914,7 +916,7 @@ K/frame budget/actor shape。
 
 [通用级联公共入口](scripts/README.md#movie-q3-原-helper-lm-全局级联)已接三种backend和独立schema，
 20项级联＋13项Async入口CPU检查分列；[IMLane作者阶段API](integrations/imlane_records/cascade.README.md)
-从22e82选择代码／局部报告，17项本机CPU、原失败和skip保留。后续冻结r3作者CPython两查询／44次fixture与独立退出审计已通过；真实helper模型／GPU／公共IMLane selector与性能仍pending。
+从22e82选择代码／局部报告，17项本机CPU、原失败和skip保留。冻结r3作者CPython两查询／44次fixture与独立退出审计已通过；后续通用记录selector见上方独立条目，真实helper模型／GPU与性能仍pending。
 
 真实Movie级联task wrapper的metadata失败会覆盖primary/calls，补充独审已复现并最小修复，
 原2＋新2项LOTUS／SemBench CPU检查通过；入口33项与此4项保持独立来源。

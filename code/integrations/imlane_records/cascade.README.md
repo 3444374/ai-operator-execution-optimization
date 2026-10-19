@@ -29,7 +29,7 @@ caller 将同一 source 的 `preflight(method)`、`scan_spec(method)`、`expecte
 有限 `csv_path` 交给 `IMLaneCascadeBackend`；scan 必须覆盖 main/helper 指令的列并集。
 通过 `engines={"main": EngineSpec(...), "helper": EngineSpec(...)}` 显式指定两个不同部署目录，
 并提供既有 `RecordsResources`、单GPU环境和外层监督责任。backend 直接作为原 `run_cascade` 的
-`evaluate` 参数，不增加另一条查询算法或公共 selector。
+`evaluate` 参数，不增加另一条查询算法；公开 selector 只按下节装配现有接点。
 
 `author_args` 复用现有 owner 的 `output`、`author_root`、`method_python`、`bridge_binary`、
 `artifact_root`、`scopes`、`stop_budget` 和可选 `owner_resource_limits`；output 是仓库外已创建的私有
@@ -52,3 +52,51 @@ caller 将同一 source 的 `preflight(method)`、`scan_spec(method)`、`expecte
 
 固定运行、失败原件摘要和当前作者 CPU 进度见
 [资格报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+
+## 公开通用记录入口
+
+共享脚本新增独立 `record-cascade-check`／`record-cascade-run`，实现为
+[`lotus_records_cascade.py`](../../src/experiments/lotus_records_cascade.py)。只接受
+`imlane-author-local-model-cascade`，不约束业务表、Q3谓词或COUNT；旧Movie
+`cascade-check/run` 的schema、后端和原评价保持不变。
+
+```sh
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py record-cascade-check \
+  --config /private/cascade.json --source-json /private/relation.json --owner-config /private/owner.json
+PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py record-cascade-run \
+  --config /private/cascade.json --source-json /private/relation.json --owner-config /private/owner.json \
+  --output-dir /private/new-cascade --execute-model
+```
+
+config精确字段为 `schema="semloom.records_cascade_run.v1"`、`backend`、`query_id`、
+`method`、`helper_model_name`、`engines`、`generations`、`cascade_args`、`resources`、
+`max_calls`、`source_sha256`、`owner_sha256`。`method.instruction` 必须由caller显式提供，
+不采用Q3默认；main/helper生成配置与部署按角色分别声明，目录必须不同。
+main不请求logprobs，helper显式top候选1..20，标签保持原True／False；原CascadeArgs、采样、
+校准、阈值学习和fallback全部由同一个 `run_cascade` 执行。拒绝未实现的参数，不代造helper日志。
+
+source与owner复用[普通链的有限JSON／Index／最终空原型合同](chain.README.md#公开-ordinary-chain-入口)，
+每文件至多8MiB。两个角色的原列序独立冻结；driver只向原控制器投影身份及角色列并集，
+[`MaterializedCascadeSource`](../../src/baselines/text/cascade_records_source.py)将同值一次写为
+0600的 `cascade-source.csv`，由既有原生作者阶段扫描。未引用的源列、业务同名字段、原Index及
+source refs保留在原发生项；按最终决策的完整身份关联返回幸存关系，不使用评价标签。
+CSV至多16MiB、4096行，position为非负int64；每个ID／列名／文本字段至多128Ki Unicode字符。
+超限或更低的进程CSV读取限额明确拒绝，不截断输入或修改全局reader设置；这些是逻辑文件限额，
+不声称为完整查询RSS／GPU硬上限。
+
+原方法给出 `Q=2N+S`，学习模式 `S=int(N×sampling_percentage)`，固定阈值模式S=0。
+单query `max_calls` 至多12288；helper/main每阶段实例cap各至多4096，须覆盖N／max(N,S)。
+调用方既有CellBudgetLedger unit须覆盖max(1,Q)，原方法实际调用另计；失败或未用额度不退款、
+不自动重试。每个非空阶段仍新作者scope／固定角色模型，main可能加载两次。
+
+[`imlane_owned_query.py`](../../src/experiments/imlane_owned_query.py)从原普通链worker提取共同的
+正常外部lease／StopBudget／永久unit／最后回执编排，两入口传各自预检和执行回调，不传假链
+或复制阶段循环。既有 `AuthorRunGuard` 在原控制器的生命周期检查处验证已关闭scope的作者资源
+和独立GPU状态，未确认就阻断下一角色；模型API、物理退出、监测错误和unknown仍分列。
+未传 `--execute-model` 只预检，不建backend／CSV／作者／模型、不claim或写查询输出；
+真实预检仍有只读ABI／固定Filter与cascade源码检查。执行沿既有有限supervisor，最终查询保存
+原calls字典、LM统计、阶段关闭及物理／预算回执。业务结果保持原float64／uint64精度和空关系元数据。
+
+新增入口资格见[固定来源及CPU回归](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。
+旧r3作者44次CPU fixture仅绑定其原包；当前selector的作者、实际helper／模型／GPU和性能另验。
+服务器正在使用的 `8d35ddea` 普通链包保持冻结，不随本入口重打包或重新认证。

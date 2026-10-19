@@ -146,8 +146,17 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py casca
 `cascade-check` 和不传 `--execute-model` 的 `cascade-run` 仅预检；执行沿同一外层有限监督，
 保存 preflight／query／supervisor。失败保留已知账目，未确认阶段关闭阻止后继，报告写入或元数据错误不作成功。
 [CPU入口验证](../../experiments/results/diagnostics/lotus_records_local_model_20261016/cascade_backends_cpu.json)
-与真实helper模型／GPU换模／性能资格分列。IMLane级联目前提供[作者阶段API](../integrations/imlane_records/cascade.README.md)，
-需要调用方提供既有host lease、作者参数与监督责任，尚无本命令的IMLane selector。
+与真实helper模型／GPU换模／性能资格分列。IMLane使用下方独立通用记录入口，不加入本Movie配置。
+
+## IMLane 通用记录级联
+
+`run_lotus_records_movie.py record-cascade-check/record-cascade-run` 显式选择
+`imlane-author-local-model-cascade`，接受caller指令和main/helper不同文本列，不要求Q3或评价标签。
+参数为 `--config --source-json --owner-config`，run另需新 `--output-dir`；省略
+`--execute-model` 只预检。执行复用原全局级联、IMLane作者桥、有限supervisor和正常外部lease／
+永久unit／逐阶段GPU门，详见[精确schema和边界](../integrations/imlane_records/cascade.README.md#公开通用记录入口)。
+新入口CPU资格、旧r3作者44次fixture及真实helper／GPU待验项[分来源登记](../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)；
+服务器的8d35普通链包保持冻结。
 
 ## LOTUS 原版 Movie 四臂
 

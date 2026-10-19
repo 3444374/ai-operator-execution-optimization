@@ -81,6 +81,8 @@ source 拥有 schema、任务语义、来源和发生项预检；后端消费扫
 显式 instruction、两角色列序和逐发生项身份；通用报告与 Movie Q3 COUNT／evaluator 分开。
 Ray Data、Daft Native 和 production Core 分别拥有原生执行，helper 全集后才校准／抽样／学阈值；
 物理 batch 不改变全局统计。真实 helper 模型、角色切换 GPU 退出和性能仍待专项资格。
+IMLane [record-cascade入口](../../../integrations/imlane_records/cascade.README.md#公开通用记录入口)
+直接复用同一全局方法与原作者桥，当前入口CPU和旧r3作者44次fixture分别绑定，未转授模型资格。
 
 [可选 Async Core](../../execution_provider/adapters/lotus_records_async_actor.py)使用已有 Core／
 三通道私有模型桥，公开 selector 为 `semloom-local-model-core-async`；同步默认保持。

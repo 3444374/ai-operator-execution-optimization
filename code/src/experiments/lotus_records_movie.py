@@ -658,10 +658,15 @@ def main(argv=None):
     if arguments and arguments[0] in ("chain-check", "chain-run"):
         from .lotus_records_chain import main as chain_main
         return chain_main(arguments)
+    if arguments and arguments[0] in ("record-cascade-check", "record-cascade-run"):
+        from .lotus_records_cascade import main as record_cascade_main
+        return record_cascade_main(arguments)
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
     commands.add_parser("chain-check", help="check an ordinary record chain and its explicit IMLane owner")
     commands.add_parser("chain-run", help="run an ordinary chain through the native IMLane author backend")
+    commands.add_parser("record-cascade-check", help="check a generic IMLane helper cascade and its owner")
+    commands.add_parser("record-cascade-run", help="run a generic helper cascade through the IMLane author backend")
     prepare = commands.add_parser("prepare")
     prepare.add_argument("--input-csv", required=True)
     prepare.add_argument("--input-sha256", required=True)

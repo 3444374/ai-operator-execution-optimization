@@ -2,7 +2,7 @@
 
 [Extract 后继](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)已完成 Core 同 worker 和 Ray／Daft 显式原生分段的 CPU 接线；默认末端 guard 保持，每段初始化成本明示。
 [可选 Async actor／Core／CLI](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接纳，并修复关闭时已知 usage 交接；真实 AsyncLLM／GPU／性能仍待验证。
-[原 helper-LM 全局级联](src/semantic_methods/lotus/cascade.README.md)已有通用方法及 Ray／Daft／Core CPU 后端，真实 helper 模型与 IMLane 新组合分列待验。
+[原 helper-LM 全局级联](src/semantic_methods/lotus/cascade.README.md)已有通用方法及 Ray／Daft／Core CPU 后端，IMLane另有[通用记录selector](integrations/imlane_records/cascade.README.md#公开通用记录入口)复用原方法和作者桥；当前入口与旧r3作者CPU分列，真实helper模型／GPU待验。
 基本接入、实际库、模型和扩展的状态按[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)分别解释。
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，

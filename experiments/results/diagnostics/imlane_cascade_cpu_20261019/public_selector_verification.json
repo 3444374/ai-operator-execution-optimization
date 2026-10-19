@@ -1,0 +1,318 @@
+{
+  "schema": "semloom.imlane-cascade.public-selector-cpu.v1",
+  "base_commit": "8d35ddea0dacd8a4be95920c166e398764be9910",
+  "status": "cpu_passed_dual_review_passed",
+  "source_sha256": {
+    "code/src/experiments/lotus_records_cascade.py": "cfffa8ca387dfee7ea6b6f742aeaaada55bb10f1d96ac7c53f35f449ecd342d1",
+    "code/src/experiments/imlane_owned_query.py": "a7aa8caef852a47f90cb13b0a10d7229eda386916a98fc8469a075290eabc834",
+    "code/src/experiments/lotus_records_chain.py": "6d0b724c67936f1240c730314398a5ded392391cb1da6714fb0b405acc04020a",
+    "code/src/experiments/lotus_records_movie.py": "6baee5f5046f13518a1de5f3310e1e64178daadaa89ed9a126e215f25d7c0ec7",
+    "code/integrations/imlane_records/chain_runtime.py": "606d2c9f49485e39ef3c712d52b5b2c4f370872ccc10fcf3a0a52e3f531a3261",
+    "code/integrations/imlane_records/method_environment.py": "a36b2d45dda47b921152c6d563f303d7abd7385cd7f42be7bf8988439344fd17",
+    "code/src/baselines/text/cascade_records_source.py": "77072732deedcf173fc38c94c02113322273df448eca3e76575f8d4e81f9a2df",
+    "code/tests/experiments/test_imlane_cascade_entry.py": "be702963fe9480ff5c27b40fdb073e4572c3b8027b791cb9be00680cc6f40870",
+    "code/tests/experiments/test_imlane_owned_cascade.py": "fa7bace8e9fef0905061ba2d2f4a87aab2bd55f5b5f7081adb8c847aad8af065",
+    "code/tests/baselines/text/test_cascade_records_source.py": "9e03517697237c3ac05b2c400bcfdb2b4821e5159f587e5f55dafd132fe0e631"
+  },
+  "new_tests": {
+    "passed": 64,
+    "groups": {
+      "entry": {
+        "tests": 27,
+        "subtests": 67
+      },
+      "owner": 21,
+      "source": 16
+    },
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "final_receipt": "final-new-contracts-eof-1792414633173294000.json",
+    "subtests": 92,
+    "previous_receipt": "final-new-contracts-1792414070580239000.json"
+  },
+  "legacy_checks": [
+    {
+      "scope": "ordinary-chain public entry and owner",
+      "tests": 70,
+      "receipt": "owned-cascade-combined-1792413603762802000.json",
+      "subset": {
+        "old_owner": 45,
+        "old_chain_cli": 25
+      },
+      "source_note": "70 legacy tests are the old-owner and old-chain-cli subset before the one-byte EOF cleanup; owner AST is identical as recorded in owner-eof-normalization.json, and chain/runtime/ABI hashes remain exact. The 21 new-cascade tests in this earlier receipt are not rebound to the later close repair."
+    },
+    {
+      "scope": "Movie cascade public entry",
+      "tests": 20,
+      "receipt": "legacy-cascade-1792413511745588000.json"
+    }
+  ],
+  "help_checks": {
+    "passed": 3,
+    "receipt": "help-checks.json"
+  },
+  "qualification_scopes": {
+    "real": [
+      "pinned LOTUS1.2.4 global method and SDK reference",
+      "shared native prepare/parser and existing cascade kernel",
+      "strict private JSON/CSV materializer and same-value hashing",
+      "temporary persistent CellBudgetLedger"
+    ],
+    "fixtures": [
+      "author scheduling and model replies",
+      "ABI and driver-environment probes",
+      "GPU/resource observations"
+    ]
+  },
+  "execution": {
+    "real_model_calls": 0,
+    "author_processes": 0,
+    "network_actions": 0,
+    "server_actions": 0,
+    "gpu_actions": 0
+  },
+  "actual_red": {
+    "receipt": "close-metadata-1792413673459050000.json",
+    "sha256": "a7a66e044e2dbaac167b6ecc5f12f6b11928daeb2bc90b07bae461d6591e45f3",
+    "issue": "unknown close return list lost when validation and metadata getter both fail",
+    "fix": "save complete owner_close snapshot before validation",
+    "unknown_upgraded": false,
+    "primary_and_calls_preserved": true
+  },
+  "other_failed_checks": [
+    "first public-test scaffold assumed ordinary counts field",
+    "first owner fixture omitted cascade profile keyword"
+  ],
+  "source_history": {
+    "earlier_owner_combined": "91 tests at earlier public selector source; not rebound to the final close repair",
+    "final_64": "exact final new-entry, owner and source contracts rechecked after the one-byte EOF cleanup; previous 64 receipt preserved and not summed",
+    "old_r3_author": "44 fixture evaluations only on original frozen author source; no transfer",
+    "owner_eof_cleanup": {
+      "schema": "semloom.source-eof-normalization.v1",
+      "path": "code/src/experiments/imlane_owned_query.py",
+      "old_sha256": "0e11ac33c64d7e06a740c9d967da8dcbe727dc949478299f6e796aec8c94a9fb",
+      "new_sha256": "a7aa8caef852a47f90cb13b0a10d7229eda386916a98fc8469a075290eabc834",
+      "removed_bytes": 1,
+      "semantic_ast_unchanged": true,
+      "reason": "cached diff check reports a new blank line at EOF"
+    }
+  },
+  "frozen_materials": {
+    "chain_8d35_archive_sha256": "caa54dc4a65bf35e88cefb581c506f10dc5918441e86ff3345d9d296a48e4b61",
+    "chain_8d35_manifest_sha256": "4ad9bc70126791a0ba502ccc057a078513ffc2f17c169ec0adfd267eb9bc5f42",
+    "async_82e_bundle_sha256": "46806439eab3213c6370cf7ab05a977647a46403b9b344f12e3b08575c0a1909",
+    "all_unchanged": true
+  },
+  "preservation": {
+    "archive": "public_selector_cpu_logs.json.gz",
+    "archive_sha256": "dc8b68f678769b6fdf1631f7babde478528379b2d94570670d56bc8a42a17b0a",
+    "uncompressed_sha256": "21da8cd6aa9680a6d05639849e63c22273f137f291208f58555f25d431a6e678",
+    "format": "gzip JSON mapping original basenames to complete redacted receipt JSON/text logs and two CPU probe scripts; scripts retained for inspection, not automatically executed",
+    "redaction": "project redaction plus repository/task/home path aliases",
+    "original_receipts": [
+      {
+        "member": "abi-compatibility-standards.json",
+        "kind": "json",
+        "original_bytes": 683,
+        "original_sha256": "eff56917796b0aaa45c7a57f66472e130435433831be6f6e7c7977a3dbfad341"
+      },
+      {
+        "member": "close-metadata-1792413673459050000.json",
+        "kind": "json",
+        "original_bytes": 2028,
+        "original_sha256": "a7a66e044e2dbaac167b6ecc5f12f6b11928daeb2bc90b07bae461d6591e45f3"
+      },
+      {
+        "member": "close-metadata-1792413762469067000.json",
+        "kind": "json",
+        "original_bytes": 2616,
+        "original_sha256": "9014cca038c4d0bb6101e93b380e1e68e5f4d5f7a1adfd17e7e109b4371ed247"
+      },
+      {
+        "member": "close-metadata-1792413762522163000.json",
+        "kind": "json",
+        "original_bytes": 2349,
+        "original_sha256": "ded4143ed7617cd1b66c1fd870b58cab3b7a06ba9ef18a5ce51257a825ecc221"
+      },
+      {
+        "member": "cpu-r1-1792413578137371000.json",
+        "kind": "json",
+        "original_bytes": 3502,
+        "original_sha256": "227c4441502fc965722e0b6819e59082651b935834165cf0b607c1b49d7624b9"
+      },
+      {
+        "member": "cpu-r2-1792413662704130000.json",
+        "kind": "json",
+        "original_bytes": 3523,
+        "original_sha256": "62820517478e332544fd78732f3fa30639f25da8295da1907dbee1be7927e1d3"
+      },
+      {
+        "member": "cpu-r2-1792413789920144000.json",
+        "kind": "json",
+        "original_bytes": 3523,
+        "original_sha256": "a3fa6cda2340b6b3d2c839f786e2b8c62c3ad4dac86fb5abf59955a65c8cacc8"
+      },
+      {
+        "member": "delivery-update.json",
+        "kind": "json",
+        "original_bytes": 1839,
+        "original_sha256": "41b0681085530bb066da4cc95bb7f614dbc815736d6d33795ceb32422d0bb907"
+      },
+      {
+        "member": "delivery.json",
+        "kind": "json",
+        "original_bytes": 4306,
+        "original_sha256": "9facf8c590110651081606b7bd95a27eacd9e893394130d51e86039999320f12"
+      },
+      {
+        "member": "final-new-contracts-1792414070580239000.json",
+        "kind": "json",
+        "original_bytes": 16525,
+        "original_sha256": "2ee355d0175aac04ca5a80169d48e0aab61d2d8e56f1505124ae145ed0f2abb3"
+      },
+      {
+        "member": "help-checks.json",
+        "kind": "json",
+        "original_bytes": 1940,
+        "original_sha256": "3c8499ea871e80fd19e03cb9f5bf7973482401849392f9b0571beeb7a7fc5c85"
+      },
+      {
+        "member": "legacy-cascade-1792413511745588000.json",
+        "kind": "json",
+        "original_bytes": 5287,
+        "original_sha256": "b0c98a16c2aa344c470511acaac33a31fd8dcf091d91b6e9c588c7022a26830f"
+      },
+      {
+        "member": "owned-cascade-combined-1792413603762802000.json",
+        "kind": "json",
+        "original_bytes": 32080,
+        "original_sha256": "e765ac9a139bcc03852c194e60a1811eccc4e884cf7c6f7776a590d20e0c7b2c"
+      },
+      {
+        "member": "owned-cascade-cpu-r1-1792413507465431000.json",
+        "kind": "json",
+        "original_bytes": 6866,
+        "original_sha256": "85b037500a8dc5cd17b1dae657bc928b298e7d2c61f44938dc84d57dc2b23df3"
+      },
+      {
+        "member": "owned-chain-compat-1792413352402456000.json",
+        "kind": "json",
+        "original_bytes": 15395,
+        "original_sha256": "cf571a18c3fafd18b3fcc8118b71fb450db16b87475b4fa17da7eee074d7ebe9"
+      },
+      {
+        "member": "production-static-standards.json",
+        "kind": "json",
+        "original_bytes": 1988,
+        "original_sha256": "b5c6f096c1257661e8b1fd4808a8c737f27c198d73098797365a55c61fe028c9"
+      },
+      {
+        "member": "source-api-r1.json",
+        "kind": "json",
+        "original_bytes": 2689,
+        "original_sha256": "eb1c8ff4b2801028e55530f97bc89bc8bced1365443f9fec7b1e36d11fdd9e27"
+      },
+      {
+        "member": "source-cpu-r1.json",
+        "kind": "json",
+        "original_bytes": 4075,
+        "original_sha256": "90a64b01847e6c82e218fdb2e1c7ee06b30bf281677e996ac0459f55bab70465"
+      },
+      {
+        "member": "source-cpu-r2.json",
+        "kind": "json",
+        "original_bytes": 4197,
+        "original_sha256": "f6f1ab0256860b502f418df84f11afe8c8eee03f6b21691c079f49bd4c84fb98"
+      },
+      {
+        "member": "source-cpu-r3.json",
+        "kind": "json",
+        "original_bytes": 2810,
+        "original_sha256": "e3d0ebff296f0ad7c0a48f3863ae49522421b615947acaa83a091ce439cfc3fc"
+      },
+      {
+        "member": "source-final-1792413769546248000.json",
+        "kind": "json",
+        "original_bytes": 4467,
+        "original_sha256": "eb30f0c2f140c9ed8594f675af463818ddeafdf317b0d5db986bf7a37e930e9c"
+      },
+      {
+        "member": "spec-production-static.json",
+        "kind": "json",
+        "original_bytes": 2186,
+        "original_sha256": "00f668cf56a58b0d6f303ef599b27c451dd396a7e11905c25309c759c4b4a94b"
+      },
+      {
+        "member": "cpu-r1-1792413578137371000.log",
+        "kind": "text",
+        "original_bytes": 14854,
+        "original_sha256": "45ce64166c02687a046bb442f69df1a380d48ab1fb87b79145247c37494587a3"
+      },
+      {
+        "member": "cpu-r2-1792413662704130000.log",
+        "kind": "text",
+        "original_bytes": 14525,
+        "original_sha256": "0629ed3fa1e89f1e98d4e4ea2bef51a63d62802b5d82c3ec1a480fff43cfd854"
+      },
+      {
+        "member": "cpu-r2-1792413789920144000.log",
+        "kind": "text",
+        "original_bytes": 15024,
+        "original_sha256": "448c2af199bea21a8db06bdd19ec0d8226916c492f418d4d3843082c90ec1ed0"
+      },
+      {
+        "member": "run_cpu.py",
+        "kind": "text",
+        "original_bytes": 3241,
+        "original_sha256": "cd0a8e867e7aec39464a40c9b8c5a568c27dd1d42c1d2db3c2bc94446502465d"
+      },
+      {
+        "member": "close_metadata_probe.py",
+        "kind": "text",
+        "original_bytes": 5040,
+        "original_sha256": "916e37aa681ed6918e4ed0793b09251cd39e9122498619adc414ab38c4e6a61b"
+      },
+      {
+        "member": "owner-eof-normalization.json",
+        "kind": "json",
+        "original_bytes": 399,
+        "original_sha256": "f6d3a7b1e8f9410d2bab99668fbc10e7488b3e84887cf106964076498790fed4"
+      },
+      {
+        "member": "final-new-contracts-eof-1792414633173294000.json",
+        "kind": "json",
+        "original_bytes": 26220,
+        "original_sha256": "de58dc6eb2f3306521fd911603102e290299f20c2d35ef7daa2973861b6e6bb3"
+      }
+    ],
+    "previous_archive_sha256": "6a1f7c493dcf63a6b290cafdac586a7714f221bbf4dd36de7e406e9229daf754",
+    "member_count": 29
+  },
+  "reviews": [
+    {
+      "axis": "Spec",
+      "result": "PASS",
+      "remaining_blockers": 0,
+      "original_report": "final-spec.md",
+      "original_report_sha256": "c7510c345988423dd794aedfa3278c7e04fe02501997469fccc3036f62286492",
+      "original_report_bytes": 4045,
+      "scope": "fixed production and CPU evidence, documentation, source-pointer correction and one-byte EOF normalization"
+    },
+    {
+      "axis": "Standards",
+      "result": "PASS",
+      "remaining_blockers": 0,
+      "original_report": "final-standards.md",
+      "original_report_sha256": "15b2ba8e7a9f8e8c6e212115dd737b9db7b3885ca72b410e4aaf61335368e9fd",
+      "original_report_bytes": 7103,
+      "scope": "fixed production and CPU evidence, documentation, source-pointer correction and one-byte EOF normalization"
+    }
+  ],
+  "remaining": [
+    "final-source author execution",
+    "real helper logprobs/tokenizer/template and model stages",
+    "physical model/GPU cleanup",
+    "performance"
+  ]
+}

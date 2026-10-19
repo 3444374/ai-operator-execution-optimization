@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：接通 IMLane 通用级联公开 selector
+
+新增record-cascade-check/run和独立records schema，caller显式instruction／角色部署／生成／列并集，不采用Q3默认或评价。原run_cascade、作者桥和stage loop均不改；有限CSV source同值投影，common owner从普通链worker提取，正常lease只读、Q=2N+S永久unit一次claim、原calls字典／LM统计及逐stage GPU门保持。27入口／21 owner／16 source新CPU、70普通链／20旧Movie级联回归通过；独审复现关闭unknown后metadata失败漏已知快照，已先保存再校验，原RED、primary／usage／unknown保留。旧r3作者44fixture不重绑定，新入口作者／模型／GPU／性能另验；服务器8d35普通链包和82e Async包均未改，r2取消故障独立owner处理。[接口](code/integrations/imlane_records/cascade.README.md#公开通用记录入口)与[固定证据](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md#通用级联公开入口)。
+
 ## 2026-10-19：接通 IMLane 普通关系链公开入口
 
 共享脚本新增chain-check／chain-run和显式IMLane selector，直接调用原作者backend／有限链与Extract完整关系屏障，不复制阶段循环或调度。通用source／最终空prototype／单query部署限界、正常外部lease同bytes及祖先身份、既有永久unit一次claim与逐关闭scope GPU门均显式；未启用执行只preflight。结果JSON保留float64／uint64原值，knownusage／原错误和清理／预算回执分列，失败不重试／退款。25入口、45owner、17旧路径NoPopen CPU通过；精度与lease双读普通RED保留并修正。另定位旧7a作者CPU12fixture／三scope实际成功，严格保留旧源码绑定，4fc共享关闭修补及最终公开入口不借用其资格。当前入口作者实测／模型／GPU／性能仍pending，固定82e Async包不变。[合同](code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)与[证据](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#公开入口与固定来源)。

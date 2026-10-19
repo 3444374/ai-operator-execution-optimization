@@ -4,7 +4,7 @@
 原本地17项、旧7a作者CPU12次fixture与新公开selector的CPU合同分列。`chain-check`／`chain-run`
 使用现有作者backend；最终源码作者scope、真实模型与GPU资格分别待验。
 
-[通用全局级联接点](cascade.README.md)消费原 `CascadeStage`，固定角色／阶段／查询并保留逐发生项结果；本机 CPU、作者 CPython、模型及 GPU 资格见[分列报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+[通用全局级联接点](cascade.README.md)消费原 `CascadeStage`，另有独立 `record-cascade-check/run` 公共入口，按原全局方法与作者调度执行，保留逐发生项结果；本机CPU、旧r3作者CPython、当前入口作者／模型及GPU资格见[分列报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
 
 本目录保留无模型 v1 记录桥，并新增[普通 Filter v2 的 CPU 接线](#普通-filter-v2cpu-资格作者实机待验)。作者 DBEnd（数据库调用入口）、Coordinator（协调进程）、Lane
 （共享内存交换通道）和 CPython executor（Python 执行进程）继续拥有执行与调度。

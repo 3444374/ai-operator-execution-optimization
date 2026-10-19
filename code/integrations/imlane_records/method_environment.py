@@ -27,7 +27,9 @@ def validate_author_build(author_root, bridge_binary):
     return dict(author_commit=owner.AUTHOR, bridge_binary_sha256=built["binary_sha256"])
 
 
-def preflight_method(method_python, author_root, code_root, *, chain=False):
+def preflight_method(method_python, author_root, code_root, *, chain=False, cascade=False):
+    if chain and cascade:
+        raise ValueError("choose one finite method source profile")
     method_python, author_root = Path(method_python), Path(author_root)
     probe = ("import json,sys,pyarrow; print(json.dumps(dict(base=sys.base_prefix,"
              "version=list(sys.version_info[:2]),arrow=pyarrow.__version__)))")
@@ -37,10 +39,13 @@ def preflight_method(method_python, author_root, code_root, *, chain=False):
     if (any(item["arrow"] != "16.1.0" or item["version"] != [3, 12] for item in probes)
             or Path(probes[0]["base"]).resolve() != Path(probes[1]["base"]).resolve()):
         raise ValueError("the isolated method copy must retain the author's Python and Arrow ABI")
-    module, function = (("record_chain", "validate_chain_source") if chain else
-                        ("engine", "validate_filter_source"))
-    command = ("import sys;sys.path.insert(0,sys.argv[1]);from src.semantic_methods.lotus."
-               + module + " import " + function + ";" + function + "()")
-    subprocess.run([str(method_python), "-I", "-B", "-c", command, str(code_root)],
-                   check=True, capture_output=True, timeout=15)
+    validators = [("record_chain", "validate_chain_source") if chain else
+                  ("engine", "validate_filter_source")]
+    if cascade:
+        validators.append(("cascade", "validate_cascade_source"))
+    for module, function in validators:
+        command = ("import sys;sys.path.insert(0,sys.argv[1]);from src.semantic_methods.lotus."
+                   + module + " import " + function + ";" + function + "()")
+        subprocess.run([str(method_python), "-I", "-B", "-c", command, str(code_root)],
+                       check=True, capture_output=True, timeout=15)
     return probes

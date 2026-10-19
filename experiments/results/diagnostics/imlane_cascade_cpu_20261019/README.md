@@ -51,3 +51,42 @@ GPU 为 1 MiB 且无计算进程。作者 HEAD／status／diff、12 项源码、
 pending。普通 Filter 的成功短 IPC 模型单元另有来源，不转授本级联或后续集成提交。
 
 来源摘要、私有原件定位和实际运行边界见 [qualification.json](qualification.json)。
+
+## 通用级联公开入口
+
+独立 `record-cascade-check/run` 显式选择 `imlane-author-local-model-cascade`，
+[精确schema与调用合同](../../../../code/integrations/imlane_records/cascade.README.md#公开通用记录入口)
+要求caller提供instruction、两个角色部署／生成配置、有限源JSON及正常owner上下文。
+不约束Q3或调用Movie evaluator。原 `run_cascade`、阈值学习／抽样／校准代码对象、
+IMLane backend／作者C++／v2桥和模型引擎均未修改；旧Movie级联命令保持原身份。
+
+新source只将main/helper原列序的并集及发生项身份同值写入有限CSV；作者原生扫描、准备和
+执行，driver仍由原全局方法决定逻辑阶段。完整决策按原发生项关联返回幸存关系，保留Index、
+未投影业务列、精确float64／uint64及最终空prototype。来源字段不替换身份，重复抽样独立记call。
+
+正常外部lease、StopBudget、永久unit与最终回执编排从普通链worker提取为单一共享函数，
+两条入口只传语义预检／执行回调，不传假链或另设scheduler。原方法给出Q=2N+S，
+每query有限上界和每stage实例cap分列；已预留unit一次claim覆盖max(1,Q)，少用／失败不退款。
+在原生命周期检查处复用GPU门，前阶段API／作者资源／GPU未结清则阻断后继；unknown不升级。
+无execute仅预检，不落CSV或建backend／作者／模型，不claim预算。
+
+最终64项新CPU合同固定当前源码：27入口／67子用例、21 owner和16 source，零fail／error／skip。
+实际LOTUS1.2.4与原SDK全局差分、公共prepare／parser／全局方法、真实临时CellBudgetLedger、
+私有JSON／CSV及哈希是真实实现；作者执行、模型响应、ABI／GPU观察均为显式fixture。
+全局NoPopen／NoSocket及离线限制阻断真实子进程与网络；本轮没有服务器或模型／GPU动作。
+
+另70项旧普通链／owner回归及20项旧Movie级联CPU通过。早先91项组合绑定新入口较早源码，
+不把它改绑为后续关闭修补；最终64项重验已覆盖当前新入口／owner。旧普通链方法和Movie原14函数
+及共享owner提取的AST兼容另有独立检查，不用模型矩阵重复资格。
+暂存检查仅移除共享owner末尾一个多余换行，AST相同；旧70保留原字节来源，最终64在清理后
+重验，合计92个子用例通过，重复运行不累加测试数。
+
+独审普通RED保留：backend.close返回含unknown的阶段列表，校验先抛错；此后metadata getter
+也抛错时，已知API／物理回执漏出report。修补只提前保存完整owner_close快照再验证，
+新交叉回归保持原primary／calls同对象／knownusage和unknown，后继仍被阻断。测试首次误用
+ordinary账本counts字段、cascade profile fixture缺字段和早期WIP运行亦保留，不记为生产失败。
+
+最终源／测试SHA、分组回执、原RED、完整脱敏日志恢复映射及独立审阅见
+[public_selector_verification.json](public_selector_verification.json)。CSV／DTO／字段及额度限额
+是逻辑入口边界，不证明完整查询RSS硬限额或吞吐。旧r3作者44fixture、当前入口CPU和未来真实
+helper／模型／GPU／性能保持各自来源；服务器正在使用的8d35普通链源码包不变、不重打包。
