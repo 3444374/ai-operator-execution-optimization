@@ -784,7 +784,12 @@
     "reviews": {
       "spec": "PASS on 1a959084 source before added marker assertion",
       "standards": "PASS on 1a959084 source before added marker assertion",
-      "joint_report_review": "pending integration documentation review"
+      "joint_report_review": "PASS",
+      "joint_report_reviewed_commit": "bcffa417",
+      "axes": [
+        "Spec",
+        "Standards"
+      ]
     },
     "limitations": [
       "Actual local model/GPU/Core qualification remains pending.",
@@ -904,5 +909,18 @@
         "bytes": 6038
       }
     }
+  },
+  "main_tools_import_20261019": {
+    "main_commit": "b8b5f3d11576e4c06953e38732fdd3d010807a85",
+    "scope": "Move active records json_metric import to existing neutral owner; old PG modules directly re-export identical function objects",
+    "tests_passed": 30,
+    "skipped": 0,
+    "model_calls": 0,
+    "gpu_calls": 0,
+    "source_sha256": {
+      "code/src/baselines/common/private_artifacts.py": "fd25cb4ef8b97c20f7dd13a0272328f9589680da7fd72a0a4d91061a24767632",
+      "code/src/experiments/lotus_records_movie.py": "59c51436de506cc822ff9d37671459d70ab965e8401323e7133426cc87d18153"
+    },
+    "summary_sha256": "1e1a80891658ab8a96cc2c33ab6e9715eac6a858f3ff08e5895ec1f8a10f1379"
   }
 }

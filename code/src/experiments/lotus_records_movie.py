@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 import time
 
-from src.baselines.common.private_artifacts import new_private_directory, write_private_json
+from src.baselines.common.private_artifacts import json_metric, new_private_directory, write_private_json
 from src.baselines.common.redact import redact_text
 from src.baselines.text.movie_records import MovieRecordSource, RECORD_COLUMNS, prepare_movie_source
 from src.baselines.text.sembench_movie import (
@@ -118,8 +118,6 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
     from src.semantic_methods.lotus.engine import (
         interpret_results, lm_report, make_lm, validate_filter_source, validate_lm,
     )
-    from .postgresql.query_evaluation import json_metric
-
     _fixed_method(method)
     inputs = source.preflight(method)
     upstream = verify_checkout(checkout)

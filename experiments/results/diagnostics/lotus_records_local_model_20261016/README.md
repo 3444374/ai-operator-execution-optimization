@@ -224,6 +224,8 @@ Core 标记为 true、静态为 false，两个 Core session 独立、每臂复�
 模型 kernel、GPU 分配及解释器预检为显式替身，token IDs／每查询12 tokens 为合成值，不能外推真实模型。
 首个补充启动器漏建报告子目录的失败及退出报告保留，修启动器后在新目录通过；生产源码未因该失败改动。
 来源、原件 SHA 与逐项范围见 `verification.json.core_logprobs_integration_cpu_20261019`；新 Core／引擎 GPU 资格仍待验证。
+安全节点同步 main `b8b5f3d1` 的纯工具职责后，records 查询直接从中立 `private_artifacts` 导入 `json_metric`；
+旧 PG 导入仍重导出同一函数对象。30项工具／查询 CPU 回归通过，未改变 evaluator、序列化值或历史模型来源。
 
 ## 有限链独立接纳
 

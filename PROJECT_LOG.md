@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-19：同步 main 公共工具并切换活跃 records import
+
+正常合并main b8b5f3d1，将file_identity／json_metric单实现的中立归属带入集成分支；records查询改为直接导入现有private_artifacts，旧PG仍重导出同一函数对象。
+30项纯工具与records查询回归零skip通过，未动selector／清理、原evaluator或冻结GPU闭包；前一阶段bcffa417的文档／原件已获Spec和Standards通过。
+
 ## 2026-10-19：公共文件身份与评价 JSON 归回 artifact 工具
 
 `file_identity`／`json_metric` 的唯一实现移到既有 `baselines/common/private_artifacts.py`；旧 PG 模块直接重导出同一函数，保留外部复现与旧 PZ 导入。
