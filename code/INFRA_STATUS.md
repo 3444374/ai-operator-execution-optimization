@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+[独立一行 Map→Extract 模型覆盖](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)已在 8be 各执行一次两调用单元：Core／Ray 通过，Daft 语义与原 LOTUS 差分通过但 supervisor 发 SIGTERM，生命周期资格保留失败。私有控制器误判已用原回执更正；不转授原 MFE 或后续源码。
+
+[8be 非 Q3 有限 MFE 模型小轮](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)三后端已各执行一次，均因 Filter 丢弃全部行及空结果 index 类型差异未通过；Extract 实际未执行。原回执重放和 token 核对不支持已测 Filter 接线／截断问题，源 index 元数据物化待修复。
+
 ## 本轮 records 共享增量
 
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。

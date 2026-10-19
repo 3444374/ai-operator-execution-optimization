@@ -9,6 +9,38 @@
 2026-10-19 的 Daft 关闭修正单元已在冻结 `f526fbf1` 完成两查询／四次真实调用，见[独立结果](daft_model_close_correction.json)；此前失败、未知计数和永久预留保留。
 当前普通 Filter 的 Ray Data／Daft／静态参照／Core 已消费中性扫描与 caller 绑定方法，换列换指令的资格为 CPU；不继承冻结 Daft 模型来源。
 
+<a id="finite-mfe-model-20261019"></a>
+## 非 Q3 的 Map→Filter→Extract 模型小轮与失败诊断
+
+2026-10-19 在 `8be539cf5cf66f0050732f1804bfccaaa90f11f7` 的 394 项文件指纹上，按 Core→Ray→Daft 各执行一次单 GPU 模型小轮；输入、提示和标签没有为结果改写。每条独立永久上限 6 次，共 18 次，无 warmup 或模型重跑。此处是非 Q3 有限链，不能替代上文普通 Filter 的结果。
+
+| 后端 | Map / Filter / Extract 实际调用 | 输入 / 输出 tokens | 完整单元耗时 | 资格 |
+|---|---:|---:|---:|---|
+| Core 私有 pipe | 2 / 2 / 0 | 360 / 18 | 81.9454 s | failed |
+| Ray Data 2.56.1 | 2 / 2 / 0 | 360 / 18 | 81.6806 s | failed |
+| Daft Native 0.7.21 | 2 / 2 / 0 | 360 / 18 | 67.4457 s | failed |
+
+Map 的质量检查均通过，但 Filter 对正、负两行均判为 false，因此 Extract 没有实际执行。原 LOTUS 的零模型重放复现相同决策；12 份提示摘要、同一 tokenizer/chat template 重建的完整 prompt token IDs、实际输出解码均匹配。Filter 只生成 4 tokens，低于上限 8，且以 EOS 正常停止。现有证据支持该固定提示下的模型语义误判，未发现 Filter 接线或生成截断问题。
+
+另有独立的结果物化缺陷：`record_chain.py:records_to_frame` 从空记录重建 object index，原 LOTUS 空结果保留 int64 index。三路径重放均在最终 `assert_frame_equal` 报此差异，去除 index 后列、dtype 和数据相同。应把源 index 元数据传到空结果物化，补 `test_lotus_record_chain.py` 的空整数／字符串 index 差分，不能全局强设 int64。原失败不改写；完整 MFE 与 Extract 模型资格均未通过。
+
+实际共 12 次调用、1134 tokens，单元各一个引擎，身份／父链／终态、token 与最终 counter 已核同。Core 结束后仅继续原账本中未 claim 的 Ray／Daft；没有预算重建或退款。最终已观察进程均退出，独立 GPU 1 MiB／空 compute、空共享内存及正常 lease 释放分列，旧账本 SHA 不变。完整耗时包含加载和关闭，不支持性能排名；美元成本未指定。配置、计数和诊断结论见 [mfe_model_qualification.json](mfe_model_qualification.json)，不含原始输入、提示或逐调用输出。63 项私有原件只保留归档 SHA、成员数和获取方式，未整包进入 Git。
+
+<a id="map-extract-coverage-20261019"></a>
+## 独立一行 Map→Extract 的模型覆盖补验
+
+原 MFE 失败后另建 `one-row-map-extract-coverage-v1`，仍使用 8be 源码。一行带前缀的文本先由 Map 去掉前缀，再由末端 Extract 读取唯一 `rewrite` 列提取 `item/color`；不含语义 Filter，因此每个后端都必须实际执行这两个方法。两项 CPU 合成输出分别语义正确和故意不同，覆盖检查均通过而质量判定不同；模型检查继续分别核对身份／父链、列隔离、完整终态、原 LOTUS 差分、最终 counter 和退出。独立账本总 6 次、每后端 2 次，三单元各 claim 一次，无模型重跑，不复用或退款原 18 次账本。
+
+| 后端 | 实际 Map / Extract | 输入 / 输出 tokens | 完整单元耗时 | 独立审计结论 |
+|---|---:|---:|---:|---|
+| Core 私有 pipe | 1 / 1 | 197 / 19 | 54.1263 s | passed |
+| Ray Data 2.56.1 | 1 / 1 | 197 / 19 | 94.0191 s | passed |
+| Daft Native 0.7.21 | 1 / 1 | 197 / 19 | 72.2567 s | lifecycle_failed |
+
+三条 Map 与 Extract 的语义质量检查均通过，原 LOTUS messages／parser／usage／最终 frame 均匹配；实际共 6 次调用、648 tokens，各一个引擎、最终 counter 2。Daft 私有引擎 API 与进程已正常关闭，但外层 supervisor 在 driver 正常退出的瞬间发现仍存活的已观察子进程并发送 SIGTERM，所以生命周期资格未通过。该 supervisor 当场检查存活并立即发信号，没有先等待自然退出；此证据不能单独证明持续泄漏，也没有记录具体被发信号者，后续应从 `daft_lotus_chain.py:_DaftChainRows.close` 和 `lotus_records_supervisor.py:supervise` 做 CPU 定点复现。
+
+本次私有控制器误漏 supervisor 失败判定，原报告的 `completed` 保留。独立汇总读取实际 supervisor 失败、SIGTERM 和错误后更正为上表，未把 Daft 升为通过；控制器判定已在本地用三条真实回执完成先失败后通过的回归，无新增模型。最终全部已观察身份退出，GPU 1 MiB／空 compute、空共享内存与正常 lease 释放已另验，原四账本加原 MFE 账本 SHA 均不变。用例配置、聚合计数和更正来源见 [map_extract_model_coverage.json](map_extract_model_coverage.json)，不含原始输入、提示或逐调用输出；46 项原件留私有归档。该结果只支持各自实际方法与退出状态，原 MFE、Extract 后继、Async 和性能结论均不转授。
+
 ## 实现与来源
 
 | 层次 | 本轮文件与采用行为 |

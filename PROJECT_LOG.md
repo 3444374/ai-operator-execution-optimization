@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-19：独立 Map→Extract 模型覆盖及 Daft 生命周期负结果
+
+新一行用例在同一 8be 源码按 Core／Ray／Daft 各执行一次两调用单元，原 LOTUS 差分与语义均匹配。Core／Ray 完整通过，Daft 外层 supervisor 发 SIGTERM 后才结清，保留生命周期失败；私有控制器漏判用三条真实回执离线回归修正，未重跑模型。原 MFE 和旧账本保持，46 项补验原件留私有归档，详见[同一主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)。
+
+## 2026-10-19：完成有限 MFE 模型小轮并交接定点诊断
+
+固定 8be 和原提示，在 Core／Ray／Daft 各执行一次后保留失败；原输出重放和同一 tokenizer 的 token 核对排除已测 Filter 接线／截断问题，空结果 index 类型差异单独交集成修复。调用账目和物理退出分列确认，旧账本不变，无模型重跑；63 项原件留私有归档，仅发布紧凑回执。来源和不支持的判断见[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)。
+
 ## 2026-10-19：接纳 Core 关系屏障与独立 Async 组件
 
 选择性接纳bf55关系值、c35共享合同、d560 Core接线及Ray／Daft分配前拒绝门；默认末端Extract规则保持。共享129、Core组合55、native门2项分列，原错误／knownusage与最终消费者寿命保留，逻辑bytes不封顶完整关系/RSS。两轴独审通过，模型仍pending。
