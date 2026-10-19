@@ -156,6 +156,9 @@ class RecordsActorOwner:
         return dict(model_batch_mode="finite_synchronous_single_row",
                     native_engine_abort_supported=False)
 
+    def _model_close_timeout_s(self) -> float:
+        return 10.0
+
     def wait_ready(
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
@@ -219,11 +222,13 @@ class RecordsActorOwner:
             self._model_close_report or {}
         ).get("engine_api_shutdown_confirmed") is not True:
             try:
+                timeout = self._model_close_timeout_s()
+                _deadline(timeout)
                 if self._model_close_ref is None:
-                    self._model_close_ref = self.model_actor.close.remote(10.0)
-                # API shutdown has its own ten-second window. Startup limits
-                # cannot truncate it; allow one second for the Ray round trip.
-                deadline = time.monotonic() + 11.0
+                    self._model_close_ref = self.model_actor.close.remote(timeout)
+                # The default API window stays ten seconds; a private process
+                # owner can include its bounded IPC teardown in the same RPC.
+                deadline = time.monotonic() + timeout + 1.0
                 report = self.wait_ready(self._model_close_ref, deadline)
                 self._model_close_ref = None
                 if type(report) is not dict:

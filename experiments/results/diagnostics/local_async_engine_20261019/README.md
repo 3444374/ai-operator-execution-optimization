@@ -130,3 +130,8 @@ actor owner／普通 Core／static／有限链 Core 共 92 项 CPU、39 subtests
 受限本机执行中私有进程检查返回 PermissionError；原日志保留，获准以正常本机权限运行同套无模型检查后通过。
 Standards 指出的注入 owner 关闭期限 P2 已补共享 clamp 及同一 ref 重试回归，两轴定向复核通过。
 本增量没有运行服务器或模型；新增 Async actor、Core 实际持续供给、公开 selector 与 GPU／性能资格仍分别待验。
+
+后续[私有进程关闭窗口接点](close_window_verification.json)允许受信 owner 通过
+`_model_close_timeout_s()` 把有界 IPC 清理纳入模型关闭 RPC；默认仍为 10 秒 API／11 秒等待，
+显式 Core cleanup 期限和同一关闭 ref 保持。70 项／27 subtests 的 owner／Core／static CPU
+检查通过；新增 15 秒覆盖测试只验证接口，尚未证明 Async actor 已采用或真实模型可在该窗口退出。

@@ -266,6 +266,21 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             self.assertEqual(sum(event[0] == "submit" and event[1].endswith(".close")
                                  for event in runtime.events), 1)
 
+    def test_private_process_owner_has_a_bounded_teardown_window(self):
+        class ProcessOwner(actors.RecordsActorOwner):
+            def _model_close_timeout_s(self):
+                return 15.0
+
+        with FakeRuntime() as runtime:
+            original = self.owner()
+            owner = ProcessOwner(original.method, original.engine, original.generation, original.resources)
+            owner.start(time.monotonic() + 3)
+            self.assertEqual(owner.close()["status"], "closed")
+            calls = [event for event in runtime.events if event[0] == "submit"
+                     and event[1].endswith(".close")]
+            self.assertEqual([event[2] for event in calls], [(15.0,)])
+            self.assertIsNone(owner.last_close_report["gpu_exit_confirmed"])
+
     def test_all_preflight_failures_precede_actor_allocation(self):
         for failure in ["method", "driver", "generation", "ray-version", "ray-uninitialized"]:
             with self.subTest(failure=failure), FakeRuntime() as runtime:

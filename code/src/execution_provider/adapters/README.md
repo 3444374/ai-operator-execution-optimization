@@ -28,6 +28,9 @@ and successful actor kill requests close only `ray_actor_kill_requests_and_engin
 process/GPU exit remain unknown until separately observed. API shutdown has ten seconds,
 with eleven seconds for its Ray response, independently of startup limits. A static query's
 unsettled work remains unknown even when this owner scope closes.
+Trusted private-process owners may override `_model_close_timeout_s` to include
+bounded IPC teardown; the response wait adds one second and Core's explicit
+cleanup deadline still caps it. The default ten/eleven-second windows are unchanged.
 The static reference uses this owner without changing its query/window scheduler. Its historical
 model qualification and the new owner's CPU checks retain separate fixed sources in the slice record.
 

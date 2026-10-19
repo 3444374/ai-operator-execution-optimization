@@ -1,0 +1,18 @@
+{
+  "base": "393ab64248098dda039b82989b71f8b5bff3f434",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+    "code/tests/execution_provider/test_lotus_records_actor_owner.py": "1b1abf53ba0b28e11d5f6701d4f03ef483ea9e10c0dab1466620532f58195467"
+  },
+  "scope": "trusted private-process owner close-window hook; default 10/11 seconds unchanged",
+  "cpu_tests": {
+    "passed": 70,
+    "subtests_passed": 27,
+    "skipped": 0,
+    "failed": 0,
+    "redacted_raw_log_sha256": "5d504406ce456b6929c172061f66644251d5c17bffa7e860443890287097161c"
+  },
+  "async_actor_adopted": false,
+  "model_calls": 0,
+  "server_operations": 0
+}

@@ -7,6 +7,7 @@
 ## 2026-10-19：开放 Core actor 的显式接线边界
 
 Core 接收同配置的 `RecordsActorOwner`，传完整 TaskKey 到提交／取消／结果确认 hook；ack 在合法结果入账后，unknown 保留额度和引用。同步默认参数保持，owner 模式报告不能覆盖实际 Core／清理／GPU 真值，基类也遵守独立 cleanup 期限和同一关闭 ref。92 项 CPU／39 subtests 通过，最初新测试源范围设置错误和受限进程检查失败原件保留；两轴独审修复注入 owner 期限 P2。Async actor／CLI 正由各自 owner 接线，本次不作持续供给或模型结论。见[固定源码与验证](experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。
+后续增加私有进程关闭窗口 hook，默认 API10／等待11不变，70 项／27 subtests CPU 通过；实际 Async 使用及真实模型退出另验。
 
 ## 2026-10-19：接纳 Core 关系屏障与独立 Async 组件
 
