@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-19：用 Map→Filter 验收同一套记录方法的组合
+
+首个 FME 切片提交 `62001fb9` 后，直接复用探针复现了固定 Q3 输入、三阶段构造器及 Ray 结果核验的顺序假设。
+仅在新链职责模块放宽这些共用限制：普通文本 Filter 显式引用列、有限线性 builder 复用原阶段循环，旧 Q3 合同不变；不增加 Map→Filter 专用执行器。
+Map 生成的摘要进入后继 Filter，终态模型评价与最终幸存关系分开；原生单次消费和所有后继完成后关闭的合同单独验收。
+固定 LOTUS 1.2.4 实有 LazyFrame；其内容缓存与 LM 缓存分别表征，不升级依赖，也不将该缓存暗接新原生路径。
+增量审查与测试原件见[同题记录](experiments/results/diagnostics/lotus_record_chain_20261019/README.md#composition-reuse)。
+
 ## 2026-10-19：实现普通 Map／Extract 记录方法与首个有限链
 
 从 `integration/data-execution@c0be45dd` 建立独立职责 worktree 与无日期分支 `feat/lotus-finite-chain`。

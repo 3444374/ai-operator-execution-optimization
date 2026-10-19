@@ -1,7 +1,7 @@
 # LOTUS 普通记录方法与有限链 CPU 检查
 
 本切片从 `integration/data-execution@c0be45dd` 的独立职责分支 `feat/lotus-finite-chain` 推进。
-它实现选定普通文本 Filter→Map→Extract；三步是首个验收形状，不是 SemLoom 的查询能力上限。
+它实现选定普通文本 Filter→Map→Extract，并以 Map→Filter 验收同一套方法和原生接线的复用；三步是首个验收形状。
 本轮固定响应 CPU 检查通过，实际库和真实 GPU 资格分开记录。没有启动模型、HTTP serving 或 GPU 单元。
 
 ## 计划条款与实施对应
@@ -35,7 +35,7 @@
 
 `StageSpec.stage_id`／`model_role` 是开放名称，评价序号与记录发生项分开；
 `source_refs` 保留命名来源，`values` 保留分组／关联列，调用结果的 `parent_call_ids` 是列表。
-当前 runner 只执行上述三步；这些字段不表示分支、汇合、子查询或全局聚合已经实现。
+当前共用 runner 组合已支持的有限线性节点，两种组合分别验收；这些字段不表示分支、汇合、子查询或全局聚合已经实现。
 本切片的 Extract 位于末端；若后继要消费重复标签装配后的列，必须先实现真实依赖，不能当成独立逐行流水。
 
 ## 已核对的原行为和来源
@@ -53,6 +53,48 @@
 工程分工沿[架构 §8.8](../../../plans/系统架构.md#pgml-engineering-reference)：新增语义和关系处理，复用模型调用／清理，
 不安装 pgml、不复制公司材料；本轮没有重新访问公司源码。
 
+<a id="composition-reuse"></a>
+## Map→Filter 复用性增量
+
+首个 FME 交付为 `62001fb9`，以下增量从该提交继续。直接组合探针发现三项真实共用限制，
+所以本轮包含接口修正，不能报告为“仅加测试”。
+
+| 复现的限制 | 最小共用修正 | 验收 |
+|---|---|---|
+| 旧 `FilterMethod` 只接受 Q3／`reviewText` 指令 | 新链内 `TextFilterMethod` 接受显式列引用，仍使用原 Filter formatter／parser；旧合同不动 | Map 摘要的实际内容决定 Filter，原评论不在 Filter messages 内 |
+| 构造器只接受三步，列初始化假定第二步 Map | `LotusRecordChain` 组合已知节点，原三步类只保留示例校验；原执行循环不复制 | 两种组合的 `run_batch` 是同一个方法；JSON 往返保留节点参数与身份 |
+| Ray 结果核验假定首阶段 Filter、末阶段保行 | 同一接线按 `StageSpec.kind` 核验每阶段输入与关系选择 | 终态 Filter 的 false 评价仍入账，最终关系只包含 true 发生项 |
+
+Map→Filter 的三条输入均先 Map，再 Filter，为 `3+3=6` 次独立评价，最终两条发生项；
+重复原文本仍独立，不以输出内容去重。原 accessor 差分逐阶段核对提示、参数、LM 统计与最终 DataFrame。
+语义增量独立复查 18 项通过，完整[脱敏输出](raw/test_lotus_record_chain_composition.txt)另存；
+首提交的 15 项记录保留原身份，不与重跑重复相加。
+Extract 仍限制在末端，因为原重复标签 `.loc` 更新在关系装配时生效；没有实现其后的跨标签依赖。
+
+原生返回值采用单次消费 iterator。首次完成后再次迭代为 EOF，不新建模型工作；
+重复读取已消费记录或 DataFrame 不触发执行。重新 `evaluate` 使用新 query ID，表示新的查询及模型评价。
+内部 Ray Dataset 不作为可重复 action 的公共接口，不承诺隐式模型结果缓存。
+调用方若提前停止消费，须调用 `stream.close()`；只有成功 EOF、完整覆盖与清理确认后才标记查询完成。
+模型实例必须保持到当前原生批的全部后继完成；不能因为首阶段评价数已达到输入数就关闭。
+
+固定 LOTUS 1.2.4 实际导出 `LazyFrame`，其 `sem_map`／`sem_filter` AST 节点调用原 pandas accessor，
+`LazyFrameRun.execute` 顺序走节点并使用内容缓存。独立表征使用显式 `InMemoryCache`：
+关闭 LM 缓存时，同一内容缓存重复 execute 不增加响应调用；新内容缓存重新运行两个阶段。
+该结果只适用于这里固定的源码与测试条件，不把 LOTUS 的关系缓存暗接到新原生路径，也没有升级依赖。
+源码摘要另列于[增量验证 JSON](composition_verification.json)。
+
+本轮原生检查 24 项全部通过，无失败、错误或跳过：17 项协议、2 项真实私有 CPU 传输、5 项真实 Ray CPU。
+新增真实图直接验收 Map→Filter 的生成列消费；原 FME、取消／unknown／退出和空源核验继续通过。
+重复消费与关闭顺序的新增事件测试分别确认无额外模型工作、引擎在末阶段完成后关闭；这两项生命周期实现没有改变。
+增量两轴独立审查及方法专项复审无代码阻断，报告登记项已补齐；新增测试不与首轮重跑相加。
+
+报告元数据的 `layout` 从首切片 `fused_filter_map_extract` 改为 `fused_record_methods`，
+新增 `stage_kinds` 逐项记录实际组成，以适配共用接线。首切片日志与摘要保留旧来源，
+关系、调用身份、错误和清理语义不因此变化。
+
+当前 Ray 融合布局在每个原生批内同步逐阶段完成；下一阶段等待当前阶段的有限提交返回。
+这证明有限依赖和原生逐批推进，没有证明跨阶段重叠、AsyncLLM 持续供给或 GPU 吞吐改善。
+
 ## 后续复杂任务候选
 
 已只读核实 SemBench `c814e3807e72d4cf876b852b17e77f3cc94575c2` 的
@@ -66,7 +108,7 @@
 
 公共生成接口依赖为 `640446822c430d21f08d1f9bde75e61198912aa3`，其 parent 为本切片基线；
 以 fast-forward 保留原提交，职责实现不修改该依赖的三个文件。
-不使用类型补丁的[正式 CPU 验证](verification.json)按独立解释器运行，原 LOTUS 三步方法差分 15 项，
+首 FME 提交不使用类型补丁的[正式 CPU 验证](verification.json)按独立解释器运行，原 LOTUS 三步方法差分 15 项，
 共享引擎及受影响旧 records／Filter／Ray／Daft／静态／Movie 路径 118 项，合计 133 项通过。
 原生 Ray 专属 21 项另列：15 项协议检查、2 项真实私有 CPU 传输、4 项真实 Ray CPU 用例。
 后者覆盖原 LOTUS 的完整三步链、合法非 object JSON 的原解析错误及已知 usage、

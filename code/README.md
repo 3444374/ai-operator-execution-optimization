@@ -1,6 +1,6 @@
 # SemLoom Code
 
-[普通记录方法与有限链](src/semantic_methods/lotus/README.md#lotus-finite-record-chain)在独立职责分支新增 Map／Extract、原生 Ray Data 融合图及最终索引装配；
+[普通记录方法与有限链](src/semantic_methods/lotus/README.md#lotus-finite-record-chain)在独立职责分支提供共用节点／线性 builder、原生 Ray Data 融合图及最终索引装配，验收 Filter→Map→Extract 与 Map→Filter；
 [CPU 检查](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)不表示其他后端、复杂查询或真实 GPU 已取得新链资格。
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，

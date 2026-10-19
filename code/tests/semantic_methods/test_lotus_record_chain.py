@@ -7,8 +7,8 @@ import json
 import unittest
 
 from src.semantic_methods.lotus.record_chain import (
-    ExtractMethod, LotusFilterMapExtract, LotusRecordMethod, MapMethod,
-    RecordOccurrence, StageSpec, records_to_frame, stage_identity, validate_chain_source,
+    ExtractMethod, LotusFilterMapExtract, LotusRecordChain, LotusRecordMethod, MapMethod,
+    RecordOccurrence, StageSpec, TextFilterMethod, records_to_frame, stage_identity, validate_chain_source,
 )
 from src.semantic_methods.lotus.records import FilterMethod
 from src.serving.backends.vllm_engine import GenerationSpec
@@ -17,6 +17,7 @@ from src.serving.backends.vllm_engine import GenerationSpec
 LIBRARIES = all(importlib.util.find_spec(name) is not None for name in ("lotus", "litellm", "pandas"))
 REVIEW = "摄影很美，节奏紧凑，是一部值得推荐的电影。"
 SUMMARY = "肯定摄影与节奏，整体积极。"
+NEGATIVE_SUMMARY = "拖沓，整体消极。"
 
 
 def stages():
@@ -161,6 +162,114 @@ class LotusRecordChainTests(unittest.TestCase):
                          [None, None, {"type": "json_object"}])
         self.assertEqual(chain.describe(), before)
         self.assertEqual(LotusFilterMapExtract.from_dict(before).describe(), before)
+
+    def test_map_then_filter_composes_the_same_runner_and_filters_generated_text(self):
+        import lotus
+        import pandas as pd
+        from src.semantic_methods.lotus.engine import engine_response
+
+        selected = (
+            stages()[1],
+            StageSpec("summary-filter", TextFilterMethod("openai/local-fixture",
+                      "只保留积极的摘要：{summary}", default=False), GenerationSpec()),
+        )
+        actual_chain = LotusRecordChain(selected, query_id="map-filter")
+        batches = []
+
+        def texts(kind, messages):
+            documents = [json.dumps(message, ensure_ascii=False) for message in messages]
+            if kind == "map":
+                return [SUMMARY if REVIEW in doc else NEGATIVE_SUMMARY for doc in documents]
+            return ["True" if SUMMARY in doc else "False" for doc in documents]
+
+        def infer(prepared, *, generation):
+            stage = next(stage for stage in selected if stage.stage_id == prepared[0]["algorithm_stage"])
+            messages = [json.loads(row["messages_json"]) for row in prepared]
+            batches.append((messages, asdict(generation)))
+            return [engine_result(row, text) for row, text in zip(prepared, texts(stage.kind, messages), strict=True)]
+
+        actual = actual_chain.run_batch(records(), infer)
+        self.assertEqual([record.row_id for record in actual["records"]], ["r17", "r19"])
+        self.assertEqual([len(messages) for messages, _ in batches], [3, 3])
+        self.assertEqual(len(actual["calls"]), 6)
+        self.assertEqual(len({call["call_id"] for call in actual["calls"]}), 6)
+        self.assertEqual([call["decision"] for call in actual["calls"][3:]], [True, False, True])
+        self.assertTrue(all(call["parent_call_ids"] == [actual["calls"][i]["call_id"]]
+                            for i, call in enumerate(actual["calls"][3:])))
+        for message in batches[1][0]:
+            self.assertNotIn(REVIEW, json.dumps(message, ensure_ascii=False))
+        self.assertIn(NEGATIVE_SUMMARY, json.dumps(batches[1][0][1], ensure_ascii=False))
+
+        native_methods = [LotusRecordMethod(stage) for stage in selected]
+        native_batches = []
+        for method in native_methods:
+            def respond(data, options, *_args, method=method):
+                messages = [message for message, _ in data]
+                native_batches.append((messages, deepcopy(options)))
+                return [engine_response(engine_result({"call_id": str(i)}, text), method.lm)
+                        for i, text in enumerate(texts(method.stage.kind, messages))]
+            method.lm._process_uncached_messages = respond
+        frame = pd.DataFrame([record.values for record in records()], index=[17, 18, 19])
+        with lotus.settings.context(lm=native_methods[0].lm):
+            frame = frame.sem_map(selected[0].method.instruction, suffix="summary")
+        with lotus.settings.context(lm=native_methods[1].lm):
+            frame = frame.sem_filter(selected[1].method.instruction, default=False)
+        pd.testing.assert_frame_equal(records_to_frame(actual["records"]), frame)
+        for (messages, options), (native_messages, native_options), method, native in zip(
+            batches, native_batches, actual_chain.methods, native_methods, strict=True
+        ):
+            self.assertEqual(messages, native_messages)
+            self.assertEqual(options["max_tokens"], native_options["max_completion_tokens"])
+            self.assertEqual(asdict(method.lm.stats), asdict(native.lm.stats))
+        self.assertIs(LotusFilterMapExtract.run_batch, LotusRecordChain.run_batch)
+        self.assertEqual(LotusRecordChain.from_dict(
+            json.loads(json.dumps(actual_chain.describe()))).describe(), actual_chain.describe())
+
+    def test_composition_keeps_q3_contract_and_rejects_nonterminal_extract(self):
+        with self.assertRaisesRegex(ValueError, "plain Movie Q3"):
+            FilterMethod("openai/local-fixture", instruction="只保留积极的摘要：{summary}")
+        with self.assertRaisesRegex(ValueError, "Extract must be terminal"):
+            LotusRecordChain((stages()[2], stages()[0]), query_id="q")
+        with self.assertRaisesRegex(ValueError, "nonempty tuple"):
+            LotusRecordChain((), query_id="q")
+        with self.assertRaisesRegex(ValueError, "distinct stage_id"):
+            LotusRecordChain((stages()[1], stages()[1]), query_id="q")
+
+    def test_pinned_lazyframe_content_cache_is_separate_from_disabled_lm_cache(self):
+        import lotus
+        import pandas as pd
+        from lotus.cache import InMemoryCache
+        from lotus.models import LM
+        from src.semantic_methods.lotus.engine import engine_response
+
+        lm = LM("openai/local-fixture")
+        submitted = []
+
+        def respond(data, _options, *_args):
+            submitted.append(len(data))
+            result = []
+            for i, (messages, _) in enumerate(data):
+                document = json.dumps(messages, ensure_ascii=False)
+                text = ("True" if SUMMARY in document else "False") if (
+                    SUMMARY in document or NEGATIVE_SUMMARY in document
+                ) else (SUMMARY if REVIEW in document else NEGATIVE_SUMMARY)
+                result.append(engine_response(engine_result({"call_id": str(i)}, text), lm))
+            return result
+
+        lm._process_uncached_messages = respond
+        relation = (lotus.LazyFrame().sem_map("概括 {reviewText}", suffix="summary")
+                    .sem_filter("只保留积极的摘要：{summary}"))
+        frame = pd.DataFrame([record.values for record in records()], index=[17, 18, 19])
+        cache = InMemoryCache(max_size=100)
+        with lotus.settings.context(lm=lm, enable_cache=False):
+            run = relation.run(frame, cache=cache)
+            first = run.execute()
+            pd.testing.assert_frame_equal(first, run.execute())
+            pd.testing.assert_frame_equal(first, relation.execute(frame, cache=cache))
+            self.assertEqual(submitted, [3, 3])
+            self.assertEqual(run.cache_stats, {"hits": 3, "misses": 3})
+            pd.testing.assert_frame_equal(first, relation.execute(frame, cache=InMemoryCache(max_size=100)))
+            self.assertEqual(submitted, [3, 3, 3, 3])
 
     def test_map_preserves_whitespace_and_extract_allows_keys_and_stringifies_values(self):
         infer = FixtureInfer({

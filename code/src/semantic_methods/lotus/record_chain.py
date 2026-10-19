@@ -1,4 +1,4 @@
-"""Ordinary LOTUS record methods and the explicit Filter -> Map -> Extract slice.
+"""Ordinary LOTUS record methods composed into finite worker-local sequences.
 
 Record membership, data columns and model evaluations have separate identities.
 This module prepares and interprets finite worker-local batches; the backend
@@ -39,6 +39,30 @@ def validate_chain_source():
             raise ValueError("records chain source differs at lotus/" + relative)
     return dict(evidence, profile="lotus-ordinary-record-methods-v1",
                 source_hashes={**evidence["source_hashes"], **CHAIN_SOURCE_HASHES})
+
+
+@dataclass(frozen=True)
+class TextFilterMethod:
+    """Ordinary text Filter with explicit input references in its instruction.
+
+    The existing FilterMethod remains the separate fixed Movie Q3 contract.
+    """
+
+    model_name: str
+    instruction: str
+    default: bool = True
+    output_tokens: tuple[str, str] = ("True", "False")
+    system_prompt: str | None = None
+
+    def __post_init__(self):
+        for name in ("model_name", "instruction"):
+            _name(getattr(self, name), "Filter " + name)
+        if type(self.default) is not bool:
+            raise ValueError("Filter default must be a boolean")
+        if type(self.output_tokens) is not tuple or self.output_tokens != ("True", "False"):
+            raise ValueError("ordinary text Filter requires the original True/False output tokens")
+        if self.system_prompt is not None and type(self.system_prompt) is not str:
+            raise ValueError("Filter system_prompt must be a string or None")
 
 
 @dataclass(frozen=True)
@@ -141,14 +165,14 @@ def stage_identity(query_id, record, stage_id, *, model_role="main", call_index=
 @dataclass(frozen=True)
 class StageSpec:
     stage_id: str
-    method: FilterMethod | MapMethod | ExtractMethod
+    method: FilterMethod | TextFilterMethod | MapMethod | ExtractMethod
     generation: GenerationSpec
     model_role: str = "main"
 
     def __post_init__(self):
         _name(self.stage_id, "stage_id")
         _name(self.model_role, "model_role")
-        if type(self.method) not in (FilterMethod, MapMethod, ExtractMethod):
+        if type(self.method) not in (FilterMethod, TextFilterMethod, MapMethod, ExtractMethod):
             raise TypeError("an explicit ordinary record method is required")
         self.method.__post_init__()
         if type(self.generation) is not GenerationSpec:
@@ -161,6 +185,12 @@ class StageSpec:
         if self.generation.repetition_penalty != 1:
             raise ValueError("this ordinary LOTUS profile does not support repetition overrides")
 
+    @property
+    def kind(self):
+        if type(self.method) in (FilterMethod, TextFilterMethod):
+            return "filter"
+        return "map" if type(self.method) is MapMethod else "extract"
+
     def describe(self):
         return dict(stage_id=self.stage_id, method_type=type(self.method).__name__,
                     method=asdict(self.method), generation=asdict(self.generation),
@@ -168,9 +198,11 @@ class StageSpec:
 
     @classmethod
     def from_dict(cls, value):
-        kinds = {kind.__name__: kind for kind in (FilterMethod, MapMethod, ExtractMethod)}
+        kinds = {kind.__name__: kind for kind in (FilterMethod, TextFilterMethod, MapMethod, ExtractMethod)}
         options = deepcopy(value)
         kind = kinds[options.pop("method_type")]
+        if kind is TextFilterMethod and "output_tokens" in options["method"]:
+            options["method"]["output_tokens"] = tuple(options["method"]["output_tokens"])
         options["method"] = (FilterMethod.from_dict(options["method"]) if kind is FilterMethod
                              else kind(**options["method"]))
         options["generation"] = GenerationSpec.from_dict(options["generation"])
@@ -230,7 +262,7 @@ class LotusRecordMethod:
         docs = self.instructions.df2multimodal_info(frame, self.columns)
         result = []
         for record, doc in zip(records, docs, strict=True):
-            if type(self.method) is FilterMethod:
+            if self.stage.kind == "filter":
                 messages = self.instructions.filter_formatter(
                     self.lm, doc, self.instruction, system_prompt=self.method.system_prompt,
                     output_tokens=self.method.output_tokens)
@@ -262,7 +294,7 @@ class LotusRecordMethod:
         if invalid:
             raise RuntimeError("record method has failed, unknown, or invalid engine calls") from invalid[0]
         texts = [self.lm._get_top_choice(response) for response in responses]
-        if type(self.method) is FilterMethod:
+        if self.stage.kind == "filter":
             return filter_postprocess(texts, self.lm, self.method.default,
                                       output_tokens=self.method.output_tokens)
         if type(self.method) is MapMethod:
@@ -270,18 +302,21 @@ class LotusRecordMethod:
         return extract_postprocess(texts, self.lm, False)
 
 
-class LotusFilterMapExtract:
-    """The implemented three-method shape, without a general query compiler."""
+class LotusRecordChain:
+    """Compose supported record methods without introducing a query compiler.
+
+    Extract is terminal because its original index-label assignment is applied
+    at final relation assembly. Nonterminal label updates need a separate contract.
+    """
 
     def __init__(self, stages, *, query_id):
         _name(query_id, "query_id")
-        if (type(stages) is not tuple or len(stages) != 3
-                or [type(s.method) for s in stages] != [FilterMethod, MapMethod, ExtractMethod]):
-            raise ValueError("this runner implements Filter -> Map -> Extract")
+        if type(stages) is not tuple or not stages or any(type(s) is not StageSpec for s in stages):
+            raise ValueError("a finite nonempty tuple of StageSpec is required")
         if len({s.stage_id for s in stages}) != len(stages):
             raise ValueError("each operator occurrence needs a distinct stage_id")
-        if stages[1].method.output_column not in stages[2].method.input_columns:
-            raise ValueError("Extract must consume the new Map output column")
+        if any(s.kind == "extract" for s in stages[:-1]):
+            raise ValueError("Extract must be terminal before final index-label assignment")
         self.query_id = query_id
         self.methods = tuple(LotusRecordMethod(s) for s in stages)
         self.stages = tuple(m.stage for m in self.methods)
@@ -303,9 +338,9 @@ class LotusFilterMapExtract:
             raise ValueError("assemble final index updates before reusing a relation")
         current = [RecordOccurrence.from_dict(r.describe()) for r in records]
         columns = list(dict.fromkeys(k for record in current for k in record.values))
-        map_column = self.stages[1].method.output_column
-        if map_column not in columns:
-            columns.append(map_column)
+        for stage in self.stages:
+            if stage.kind == "map" and stage.method.output_column not in columns:
+                columns.append(stage.method.output_column)
         calls, stats, parents, raw_results, prepared = [], {}, {}, [], []
         previous_parents = {}
         try:
@@ -342,7 +377,7 @@ class LotusFilterMapExtract:
                     calls.append(result)
                 parsed = method.interpret_results(ordered)
                 stats[stage.stage_id] = dict(lm_report(method.lm), scope="worker_method_lifetime")
-                if type(stage.method) is FilterMethod:
+                if stage.kind == "filter":
                     for call, decision in zip(calls[-len(ordered):], parsed.outputs, strict=True):
                         call["decision"] = decision
                     current = [record for record, keep in zip(current, parsed.outputs, strict=True) if keep]
@@ -383,6 +418,19 @@ class LotusFilterMapExtract:
             error.chain_input_ids = keys
             error.chain_raw_results = raw_results
             raise
+
+
+class LotusFilterMapExtract(LotusRecordChain):
+    """Compatibility constructor for the first three-method acceptance example."""
+
+    def __init__(self, stages, *, query_id):
+        if (type(stages) is not tuple or len(stages) != 3
+                or any(type(s) is not StageSpec for s in stages)
+                or [s.kind for s in stages] != ["filter", "map", "extract"]):
+            raise ValueError("this example requires Filter -> Map -> Extract")
+        if stages[1].method.output_column not in stages[2].method.input_columns:
+            raise ValueError("Extract must consume the new Map output column")
+        super().__init__(stages, query_id=query_id)
 
 
 def records_to_frame(records, *, columns=None):

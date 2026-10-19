@@ -25,7 +25,7 @@ import time
 import uuid
 
 from src.semantic_methods.lotus.record_chain import (
-    LotusFilterMapExtract, RecordOccurrence, stage_identity,
+    LotusRecordChain, RecordOccurrence, stage_identity,
 )
 from src.semantic_methods.lotus.records import RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec, IDENTITY_FIELDS
@@ -93,7 +93,7 @@ class FusedChainBatch:
         if (self.control / "owner").read_text() != control_token:
             raise RuntimeError("Ray LOTUS chain requires a shared local control directory")
         _check(deadline, self.control)
-        self.chain = LotusFilterMapExtract.from_dict(chain)
+        self.chain = LotusRecordChain.from_dict(chain)
         if len({stage.method.model_name for stage in self.chain.stages}) != 1:
             raise ValueError("this fused Ray chain requires one model deployment across all stages")
         self.engine_spec = EngineSpec.from_dict(engine)
@@ -206,7 +206,7 @@ class FusedChainBatch:
                             cleanup_errors=envelope["cleanup_errors"]))
                     except BaseException:
                         pass
-        # Even a wholly discarded batch returns its Filter call ledger.
+        # Even a wholly discarded batch returns its preceding model-call ledger.
         encoded = _json(envelope)
         if self.failed:
             self._failure_json = encoded
@@ -224,7 +224,7 @@ class _RayChainRows:
         self.raw_result_batches, self._raw_priorities, self._received_batches = {}, {}, set()
         self.columns = list(dict.fromkeys(
             [key for record in sorted(expected, key=lambda row: row.source_position) for key in record.values]
-            + [chain.stages[1].method.output_column]))
+            + [stage.method.output_column for stage in chain.stages if stage.kind == "map"]))
         self._base_columns, self._derived_columns = list(self.columns), {}
         self._call_records, self._pending = {}, deque()
         self._iterator = None
@@ -326,11 +326,6 @@ class _RayChainRows:
             raise error
         rows = [RecordOccurrence.from_dict(row) for row in envelope["records"]]
         final_ids = [record.row_id for record in rows]
-        final_stage = self.chain.stages[-1].stage_id
-        expected_final = {call["row_id"] for call in envelope["calls"]
-                          if call["algorithm_stage"] == final_stage and call["status"] == "succeeded"}
-        if len(set(final_ids)) != len(final_ids) or set(final_ids) != expected_final:
-            raise ValueError("Ray chain final rows differ from terminal stage occurrences")
         previous = {}
         expected_stage = batch_ids
         for stage in self.chain.stages:
@@ -344,10 +339,12 @@ class _RayChainRows:
                 if call.get("parent_call_ids") != previous.get(call["row_id"], []):
                     raise ValueError("Ray chain changed a parent evaluation association")
             previous = {call["row_id"]: [call["call_id"]] for call in stage_calls}
-            if stage is self.chain.stages[0]:
+            if stage.kind == "filter":
                 if any(type(call.get("decision")) is not bool for call in stage_calls):
-                    raise ValueError("Ray chain lacks terminal Filter parser decisions")
+                    raise ValueError("Ray chain lacks Filter parser decisions")
                 expected_stage = {call["row_id"] for call in stage_calls if call["decision"]}
+        if len(set(final_ids)) != len(final_ids) or set(final_ids) != expected_stage:
+            raise ValueError("Ray chain final rows differ from terminal stage occurrences")
         for record in rows:
             if record.row_id not in batch_ids or _metadata(record) != self.expected[record.row_id]:
                 raise ValueError("Ray chain changed a final occurrence identity")
@@ -499,7 +496,8 @@ class _RayChainRows:
             application_call_upper_bound=len(self.expected) * len(self.chain.stages),
             received_native_batch_envelopes=len(self._received_batches),
             source_binding="canonical JSON SHA256 per occurrence",
-            layout="fused_filter_map_extract", engine_report_count=len(reports),
+            layout="fused_record_methods", stage_kinds=[stage.kind for stage in self.chain.stages],
+            engine_report_count=len(reports),
             native_batch_owner="Ray Data map_batches", stage_stats_scope="worker cumulative snapshots",
             prepare_batch_rows_applied=False, cpu_workers_applied=False,
             unused_configuration_reason="fused single actor prepares its native model batch",
@@ -561,13 +559,17 @@ def evaluate(dataset, chain, engine: EngineSpec, resources: RecordsResources, *,
     succeeded model calls remain succeeded even when their parser fails.
     This fused layout requires cpu_workers=1 and uses model_batch_rows as Ray's
     input batch size; prepare_batch_rows has no separate preparation stage.
+    The returned iterator is single-pass: a second iteration is empty EOF.
+    Re-reading collected records does not run models; use a new evaluate call
+    with a distinct query_id for independent work. Actions on the private native Dataset
+    are unsupported, and this path does not use LOTUS LazyFrame content caching.
     """
     resources = RecordsResources(**asdict(resources))
     if resources.cpu_workers != 1:
         raise ValueError("the fused Ray chain supports cpu_workers=1 only")
     deadline = time.monotonic() + resources.query_timeout_s
     engine = EngineSpec.from_dict(asdict(engine))
-    chain = LotusFilterMapExtract.from_dict(chain.describe())
+    chain = LotusRecordChain.from_dict(chain.describe())
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("this fused Ray chain requires one model deployment across all stages")
     if chain.query_id != query_id:

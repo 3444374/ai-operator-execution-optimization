@@ -1,0 +1,116 @@
+{
+  "schema": "semloom.lotus_record_chain_composition_cpu_verification.v1",
+  "base": "62001fb94c8f000489a8a4d8236c381e0ec284a5",
+  "scope": "Shared finite sequence composition and pinned CPU lifecycle/cache checks; no physical model or GPU performance",
+  "actual_reuse_probe_failures": [
+    {
+      "target": "FilterMethod(instruction referencing summary)",
+      "error_type": "ValueError",
+      "message": "only the plain Movie Q3 reviewText instruction is supported"
+    },
+    {
+      "target": "LotusFilterMapExtract(two StageSpec nodes)",
+      "error_type": "ValueError",
+      "message": "this runner implements Filter -> Map -> Extract"
+    }
+  ],
+  "shared_changes": [
+    "TextFilterMethod reuses ordinary LOTUS Filter formatter/parser with explicit column references",
+    "LotusRecordChain reuses the original run_batch; LotusFilterMapExtract is a compatibility constructor",
+    "Ray stage wiring and sink use supported stage kinds rather than fixed positions"
+  ],
+  "unsupported": [
+    "nonterminal Extract index-label dependencies",
+    "branches/merges/subqueries",
+    "Join/Agg/TopK",
+    "cross-stage AsyncLLM streaming",
+    "new-chain GPU qualification"
+  ],
+  "pinned_lotus_version": "1.2.4",
+  "lazyframe_source_sha256": {
+    "ast/lazyframe.py": "a342d56903655434f4274b8cd3284cd0d666b13c0cd700a9d8c94a6aaa4dff25",
+    "ast/run.py": "a0d95b4312548f4f72fb6d2af5513ed0b6830ab4e0e5b83590a891f43bc300ec",
+    "ast/nodes.py": "a4b5da9f2b38fd087dd5135cbade34adc84d08255764146e091df73fef09295d",
+    "cache.py": "6341c5e3fc42fdde1359ec9b0a2dcbc3e2902fad53be228c289d8cb2920a477d"
+  },
+  "suites": [
+    {
+      "suite": "tests.semantic_methods.test_lotus_record_chain",
+      "tests": 18,
+      "returncode": 0,
+      "skipped": 0,
+      "command": "<cpu-python> -B -m unittest discover -s code/tests/semantic_methods -p test_lotus_record_chain.py -v",
+      "log": "raw/test_lotus_record_chain_composition.txt",
+      "log_sha256": "38a38aa2c53d639195c66e22d214b2627c0af18c7aee1163aee0e7639337ff9e",
+      "source_log_sha256": "5cb6c8677b77a679cea040879d216cc051d7a02618cae8154113dc758b1e8f78",
+      "log_normalization": "Redacted local absolute paths and stripped trailing whitespace; warnings and test output preserved.",
+      "coverage": [
+        "FME retained",
+        "Map->Filter original-accessor differential using actual generated summaries",
+        "one shared stage loop and serialized method contract",
+        "fixed Q3 contract and terminal Extract guards",
+        "actual pinned LazyFrame content-cache reuse/new-cache reexecution with LM cache disabled"
+      ],
+      "environment_overrides": {
+        "PYTHONPATH": "code",
+        "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+        "HF_HUB_OFFLINE": "1",
+        "TRANSFORMERS_OFFLINE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "capture": "Merged stdout/stderr, text=True, timeout_s=60; original redact_text then public local-path normalization."
+    },
+    {
+      "suite": "tests.baselines.text.test_ray_data_lotus_chain",
+      "tests": 24,
+      "subtests": 12,
+      "returncode": 0,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 48.654,
+      "command": "<cpu-python> -m unittest tests.baselines.text.test_ray_data_lotus_chain -v",
+      "log": "raw/test_ray_data_lotus_chain_composition.txt",
+      "log_sha256": "e24f61f2f91ea9d0413f47acb0a590de5b7cffc787ab24ced1a6392bafb3ea2f",
+      "source_log_sha256": "5e8a44ebceae6da4ee9eae332a897078c3a8f9a6c3fe4f2e25fb88032a177629",
+      "log_normalization": "Initial redact_text/local-path processing, then public path and trailing-whitespace normalization; full test output preserved.",
+      "coverage": {
+        "protocol": 17,
+        "actual_private_cpu_transport": 2,
+        "actual_ray_cpu": 5
+      },
+      "added_acceptance": [
+        "Map->Filter shares the same native graph and model process; six model evaluations, two final occurrences",
+        "Single-pass iterator and materialized reads do not repeat model work; a new query performs independent work",
+        "All source Filter evaluations complete before Map/Extract, and engine closes after the final dependent stage"
+      ]
+    }
+  ],
+  "real_model_calls": 0,
+  "gpu_model_calls": 0,
+  "independent_semantic_review": "No blocking findings; 18 tests passed without type patches, Ray, HTTP or models.",
+  "status": "passed",
+  "report_metadata_changes": {
+    "layout": {
+      "old": "fused_filter_map_extract",
+      "new": "fused_record_methods",
+      "reason": "One shared native layout supports finite method compositions; stage_kinds now records the actual sequence."
+    },
+    "added_field": "stage_kinds"
+  },
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "80bf62407304c1e985e4afabeb3eb77865c9c022709b7a7b17df90eb927e9975",
+    "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "11718e2c5f0f91b3de65c5a2f63532570df79ae2c750139a7a37fe72e0d9fff3",
+    "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+    "code/tests/semantic_methods/test_lotus_record_chain.py": "18aec615205675fc56df3e41140986c70e124976d38b16af5bf42eaac224c8b3",
+    "code/tests/baselines/text/test_ray_data_lotus_chain.py": "c24d7f62f7154fa7fd36c92d1b96aac422da1b88deb13ddfa9d01915ee809db0"
+  },
+  "independent_standards_review": "No implementation blocker; evidence link and report-metadata change documentation requested and added.",
+  "independent_spec_review": "No blocking findings; shared stage loop/native wiring, real generated-column Filter, identity and result/ledger separation verified. Semantic differential 18 passed independently.",
+  "independent_native_review": "No standards/correctness/minimality blocker; additional pure-memory checks of three supported sequence shapes passed.",
+  "local_document_links": {
+    "files": 9,
+    "checked": 612,
+    "missing": []
+  }
+}

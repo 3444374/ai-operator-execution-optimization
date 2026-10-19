@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[LOTUS 普通记录方法与有限链](lotus_record_chain_20261019/README.md)：原 Map／Extract 与三步依赖差分、Ray Data CPU 原生图和隔离响应进程；真实 GPU、其他新链后端和复杂任务仍待验。
+[LOTUS 普通记录方法与有限链](lotus_record_chain_20261019/README.md)：共用节点与线性组合、三步链及 Map→Filter 差分、Ray Data CPU 原生图和隔离响应进程；真实 GPU、其他新链后端和复杂任务仍待验。
 
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 

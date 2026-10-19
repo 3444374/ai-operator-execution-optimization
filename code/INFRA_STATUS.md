@@ -2,12 +2,15 @@
 
 ## 普通记录方法与有限链
 
-职责分支从 `c0be45dd` 新增 [Map／Extract 方法与三步链](src/semantic_methods/lotus/record_chain.py)，
+职责分支从 `c0be45dd` 新增 [普通记录方法与有限组合](src/semantic_methods/lotus/record_chain.py)，
 保留源／派生列、发生项、开放阶段名及原 LOTUS formatter／parser。
-原生 Ray Data 融合链在图内完成三阶段，结果端只核对账本、恢复顺序和原 Extract 索引写入；
+Filter→Map→Extract 首切片 `62001fb9` 后，复用验收确认 Q3 指令与三阶段顺序的限制；
+新增可指定列的普通 Filter 和有限线性 builder，Map→Filter 共用原循环与 Ray 接线，没有专用执行器。
+原生 Ray Data 融合链在图内完成方法阶段，结果端只核对账本、恢复顺序和原 Extract 索引写入；
 逐调用生成接口采用唯一引擎负责人提交 `64044682`，本职责不另改公共引擎或旧 Filter。
 实施要求、CPU 检查及剩余范围从[切片记录](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)核对。
-三步是当前执行形状，保留的多来源／关联信息不表示 Join、分支、子查询或全局聚合已经实现；GPU、新链其他后端和生产 Core 仍待验证。
+已验收两种组合；终态评价账本和幸存关系分开，单次消费与末阶段关闭策略见记录。
+Extract 仍限末端；多来源／关联信息不表示 Join、分支、子查询或全局聚合已经实现；GPU、新链其他后端和生产 Core 仍待验证。
 
 ## 独立 IMLane 记录桥
 

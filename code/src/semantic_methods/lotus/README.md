@@ -1,15 +1,19 @@
 # LOTUS 方法与执行接点
 
 <a id="lotus-finite-record-chain"></a>
-## 普通 Map／Extract 与首个有限链
+## 普通记录方法与有限组合
 
-[记录方法](record_chain.py)新增 `MapMethod`、`ExtractMethod`、开放名称的 `StageSpec` 与
-`RecordOccurrence`，并以 `LotusFilterMapExtract` 实现第一条普通文本链。
+[记录方法](record_chain.py)提供 `TextFilterMethod`、`MapMethod`、`ExtractMethod`、开放名称的 `StageSpec` 与
+`RecordOccurrence`。`LotusRecordChain` 按指定顺序组合这些已支持节点，
+`LotusFilterMapExtract` 只保留首个三步示例的构造校验，二者共用执行循环。
 原 formatter／parser 与 LM 统计继续由固定 LOTUS 拥有；Map 产生的新列成为 Extract 的真实输入，
 被 Filter 丢弃的行没有后继调用，同文发生项独立保留。
 当前选定默认普通方法，不扩 CoT、examples、自定义 parser、safe mode 或结果缓存；
 Map 支持 instruction／输出列／system prompt，Extract 支持输入列、字段描述与 extract_quotes。
 Extract 使用原 `json_object` 请求，不增强 schema，字段碰撞和 JSON 错误行为由原 parser 决定。
+`TextFilterMethod` 的 instruction 显式引用输入列，例如 Map 输出 `summary` 后接
+`TextFilterMethod(model_name, "只保留积极的摘要：{summary}")`；旧 `FilterMethod` 的 Movie Q3 合同不变。
+直接组合 Map→Filter 已与原 accessor 核对提示、统计和最终关系；不增加专用执行器。
 
 [Ray Data 融合链](../../baselines/text/frameworks/ray_data_lotus_chain.py)在一个原生
 callable-class actor 内按各原生输入批准备、推理和解析，独占隔离模型子进程跨批复用；
@@ -18,10 +22,15 @@ callable-class actor 内按各原生输入批准备、推理和解析，独占�
 `records_to_frame(rows, columns=stream.columns)` 做一次最终关系装配；
 `source_position` 恢复顺序，`index_updates` 复现原 Extract `.loc` 的重复标签广播。
 流中每项是独立发生项的解析结果；最终 DataFrame 才是按原索引规则装配后的关系。
+模型调用账本同时保留终态 Filter 的 true／false 评价，最终关系只流出幸存发生项。
+返回流是单次消费 iterator：完成后再次迭代得到 EOF，不重跑模型。需要复用结果时保留已经消费的记录或
+最终 DataFrame；重新 `evaluate` 必须使用新 query ID，属于新的模型工作。内部惰性 Dataset 不作为可重复 action 的公共接口。
+提前停止消费时，调用方执行 `stream.close()` 完成所属资源清理。
 
 源列、派生列在 `values`，来源身份在外层字段与 `source_refs`，模型身份在独立调用记录；
 因此模型返回的 `row_id` 等数据键不能覆盖执行身份。关联／分组键、命名来源和父调用列表可以保留，
-但当前 runner 仅执行三步；分支、汇合、Join、Agg 及 Extract 后再消费重复标签结果仍待实际任务扩展。
+已验收 Filter→Map→Extract 和 Map→Filter，支持的有限线性组合共用同一套节点及 Ray 接线。
+Extract 当前必须位于末端；分支、汇合、Join、Agg 及 Extract 后再消费重复标签结果仍待实际任务扩展。
 实施映射、固定来源、CPU 结果与未验证范围见[切片记录](../../../../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)。
 
 ## Movie Q3 records 最小切片

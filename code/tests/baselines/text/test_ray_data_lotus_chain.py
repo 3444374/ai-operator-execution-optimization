@@ -29,6 +29,7 @@ from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTIT
 
 
 SUMMARY = "肯定摄影与节奏，整体积极。"
+NEGATIVE_SUMMARY = "整体消极，不推荐。"
 REVIEW = "摄影很美，节奏紧凑，是一部值得推荐的电影。"
 
 
@@ -61,11 +62,12 @@ class FixtureChain:
         self.query_id, self.failure = query_id, failure
         self.different_model, self.model_role = different_model, model_role
         self.stages = tuple(SimpleNamespace(
-            stage_id=stage, model_role=model_role,
+            stage_id=stage, model_role=model_role, kind=kind,
             method=SimpleNamespace(output_column="summary",
                 model_name="other" if different_model and tokens == 37 else "fixture"),
             generation=GenerationSpec(max_tokens=tokens, stop=()))
-            for stage, tokens in (("keep-reviews", 8), ("summarize-reviews", 37), ("extract-aspects", 55)))
+            for stage, tokens, kind in (("keep-reviews", 8, "filter"), ("summarize-reviews", 37, "map"),
+                                        ("extract-aspects", 55, "extract")))
 
     def describe(self):
         return dict(query_id=self.query_id, failure=self.failure,
@@ -135,8 +137,11 @@ class NativeChainTests(unittest.TestCase):
                 self.control = Path(control)
                 self.calls, self.closed = [], 0
                 engines.append(self)
+                events.append(("engine_open",))
 
             def run_prepared(self, rows, *, generation):
+                owner.assertEqual(self.closed, 0, "a dependent stage reached an already closed model")
+                events.append(("engine_run", rows[0]["algorithm_stage"], len(rows)))
                 self.calls.append((rows, generation))
                 outputs = []
                 for row in rows:
@@ -160,6 +165,7 @@ class NativeChainTests(unittest.TestCase):
 
             def close(self):
                 self.closed += 1
+                events.append(("engine_close",))
                 report = dict(status="unknown" if close_failure else "closed", fixture=True,
                     process_exit_confirmed=True, gpu_exit_confirmed=None,
                     cleanup_errors=["fixture_close_error"] if close_failure else [])
@@ -190,14 +196,14 @@ class NativeChainTests(unittest.TestCase):
         stack = ExitStack()
         stack.enter_context(patch.dict(sys.modules, {"ray": ray, "ray.data": ray.data,
                                                     "pyarrow": SimpleNamespace(Table=Table)}))
-        stack.enter_context(patch.object(native, "LotusFilterMapExtract", FixtureChain))
+        stack.enter_context(patch.object(native, "LotusRecordChain", FixtureChain))
         stack.enter_context(patch.object(EngineSpec, "validate_driver_environment", return_value={}))
         stack.enter_context(patch.object(transport, "ChainEngineProcess", Kernel))
         return stack, Dataset([native.record_row(record) for record in self.inputs]), events, engines
 
     def evaluate(self, dataset, **kwargs):
         return native.evaluate(dataset, self.chain, self.spec, self.resources,
-            expected=self.inputs, query_id="q", control_dir=self.root.name, **kwargs)
+            expected=self.inputs, query_id=self.chain.query_id, control_dir=self.root.name, **kwargs)
 
     def test_native_batches_preserve_dependency_occurrences_columns_and_model_reuse(self):
         stack, dataset, events, engines = self.runtime()
@@ -237,6 +243,42 @@ class NativeChainTests(unittest.TestCase):
         self.assertEqual(len(engines[0].calls), 1)
         self.assertEqual(stream.columns, ["reviewText", "group_key", "summary"])
         self.assertEqual(stream.last_close_report["received_occurrences"], 1)
+
+    def test_single_pass_iterator_and_materialized_reads_do_not_repeat_model_work(self):
+        stack, dataset, events, engines = self.runtime()
+        with stack:
+            stream = self.evaluate(dataset)
+            self.assertIs(iter(stream), stream)
+            materialized = list(stream)
+            first_records = [row.describe() for row in materialized]
+            first_calls = [dict(call) for call in stream.calls]
+            first_events = list(events)
+            self.assertEqual(list(stream), [])
+            self.assertEqual([row.describe() for row in tuple(materialized)], first_records)
+            self.assertEqual((stream.calls, events), (first_calls, first_events))
+            self.assertEqual(len(engines), 1)
+            self.assertEqual(engines[0].closed, 1)
+            self.chain = FixtureChain(query_id="independent-query")
+            another = self.evaluate(dataset)
+            self.assertEqual([row.row_id for row in another], [row.row_id for row in materialized])
+            self.assertEqual(len(engines), 2)
+            self.assertTrue({call["call_id"] for call in first_calls}.isdisjoint(
+                call["call_id"] for call in another.calls))
+
+    def test_all_source_filter_results_do_not_close_engine_before_dependent_stages_finish(self):
+        self.inputs = [RecordOccurrence(row.row_id, row.source_position, row.source_index,
+                                       {**row.values, "reviewText": REVIEW}) for row in self.inputs]
+        self.resources = RecordsResources(model_batch_rows=len(self.inputs))
+        stack, dataset, events, engines = self.runtime()
+        with stack:
+            stream = self.evaluate(dataset)
+            self.assertEqual(len(list(stream)), len(self.inputs))
+        lifecycle = [event for event in events if event[0].startswith("engine_")]
+        self.assertEqual(lifecycle, [("engine_open",), ("engine_run", "keep-reviews", 3),
+            ("engine_run", "summarize-reviews", 3), ("engine_run", "extract-aspects", 3),
+            ("engine_close",)])
+        self.assertEqual(engines[0].closed, 1)
+        self.assertEqual(len(stream.calls), 9)
 
     def test_duplicate_source_labels_remain_distinct_occurrences_across_batches(self):
         self.inputs = [RecordOccurrence(row.row_id, row.source_position, "same-index", row.values,
@@ -493,14 +535,14 @@ class RealRayCpuTests(unittest.TestCase):
         ray.init(num_cpus=2, num_gpus=0, include_dashboard=False, log_to_driver=False)
         self.addCleanup(ray.shutdown)
 
-    def stream(self, batch_type=CpuFixtureBatch, *, cancelled=None, inputs=None, expected=None):
+    def stream(self, batch_type=CpuFixtureBatch, *, cancelled=None, inputs=None, expected=None, chain=None):
         import ray
         from src.semantic_methods.lotus.record_chain import (
             ExtractMethod, LotusFilterMapExtract, MapMethod, StageSpec,
         )
         from src.semantic_methods.lotus.records import FilterMethod
 
-        chain = LotusFilterMapExtract((
+        chain = chain or LotusFilterMapExtract((
             StageSpec("filter-op", FilterMethod("openai/local-fixture"), GenerationSpec()),
             StageSpec("summary-op", MapMethod("openai/local-fixture", "Summarize {reviewText}."),
                       GenerationSpec(max_tokens=37, stop=())),
@@ -543,6 +585,32 @@ class RealRayCpuTests(unittest.TestCase):
         self.assertTrue(all(not row["lotus_imported"] for row in stream.calls))
         self.assertEqual({row["max_tokens"] for row in stream.calls}, {8, 37, 55})
         self.assertEqual(stream.last_close_report["status"], "closed")
+
+    def test_map_filter_uses_generated_summary_in_the_same_native_graph(self):
+        from src.semantic_methods.lotus.record_chain import (
+            LotusRecordChain, MapMethod, StageSpec, TextFilterMethod, records_to_frame,
+        )
+
+        chain = LotusRecordChain((
+            StageSpec("summary-op", MapMethod("openai/local-fixture", "Summarize {reviewText}."),
+                      GenerationSpec(max_tokens=37, stop=())),
+            StageSpec("filter-summary-op", TextFilterMethod("openai/local-fixture", "Is {summary} positive?"),
+                      GenerationSpec()),
+        ), query_id="real-ray-map-filter")
+        stream = self.stream(chain=chain)
+        output = list(stream)
+        frame = records_to_frame(output, columns=stream.columns)
+        self.assertEqual(sorted(row.row_id for row in output), ["r17", "r19"])
+        self.assertEqual(frame.index.tolist(), [17, 19])
+        self.assertEqual(frame["summary"].tolist(), [SUMMARY, SUMMARY])
+        self.assertEqual(len(stream.calls), 6)
+        self.assertEqual(stream.last_close_report["application_call_upper_bound"], 6)
+        self.assertEqual(stream.last_close_report["stage_kinds"], ["map", "filter"])
+        self.assertEqual(len({call["engine_uid"] for call in stream.calls}), 1)
+        decisions = [call["decision"] for call in stream.calls if call["algorithm_stage"] == "filter-summary-op"]
+        self.assertEqual(sorted(decisions), [False, True, True])
+        self.assertTrue(all(call["response_format"] is None for call in stream.calls))
+        self.assertTrue(stream.completed)
 
     def test_nonobject_extract_retains_remote_attribute_error_and_successful_model_usage(self):
         stream = self.stream(NonObjectBatch)
@@ -617,9 +685,15 @@ def _fixture_serve(result_fd, mode):
                 if mode.startswith("chain"):
                     if row["algorithm_stage"] == "filter-op":
                         text = "False" if "情节拖沓" in json.dumps(prompt, ensure_ascii=False) else "True"
+                    elif row["algorithm_stage"] == "filter-summary-op":
+                        content = json.dumps(prompt, ensure_ascii=False)
+                        assert SUMMARY in content or NEGATIVE_SUMMARY in content
+                        assert REVIEW not in content and "情节拖沓" not in content
+                        text = "True" if SUMMARY in content else "False"
                     elif row["algorithm_stage"] == "summary-op":
-                        assert REVIEW in json.dumps(prompt, ensure_ascii=False)
-                        text = SUMMARY
+                        content = json.dumps(prompt, ensure_ascii=False)
+                        assert REVIEW in content or "情节拖沓" in content
+                        text = NEGATIVE_SUMMARY if "情节拖沓" in content else SUMMARY
                     else:
                         assert SUMMARY in json.dumps(prompt, ensure_ascii=False)
                         assert REVIEW not in json.dumps(prompt, ensure_ascii=False)
