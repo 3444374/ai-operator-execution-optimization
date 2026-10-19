@@ -26,6 +26,7 @@ import tempfile
 import time
 
 from src.baselines.common.private_artifacts import file_identity, open_private_text
+from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
 from src.baselines.text.frameworks.lotus_cascade_process import StageEngineCleanup
 from src.semantic_methods.lotus.cascade import (
     CascadeStage, IDENTITY_FIELDS, _StageCalls, cascade_identity, local_generation,
@@ -172,6 +173,9 @@ class _StageActorOwner(_ActorOwner):
         super().__init__(*args, **kwargs)
         self.stage, self.bindings, self.control = stage, bindings, control
 
+    def _model_close_timeout_s(self):
+        return DEFAULT_CLOSE_TIMEOUT_S
+
     def _model_actor_type(self):
         stage = replace(self.stage, records=())
         bindings, control = deepcopy(self.bindings), str(self.control)
@@ -310,7 +314,7 @@ class _CoreStageRows:
 def _close_stage_owner(owner, cleanup, started):
     """Always try independent registered-process cleanup; preserve the original error."""
     try:
-        report = owner.close(timeout=15.0)
+        report = owner.close(timeout=DEFAULT_CLOSE_TIMEOUT_S + 5)
     except BaseException as error:
         errors = ["owner_close: " + type(error).__name__]
         active = getattr(owner, "_active", None)

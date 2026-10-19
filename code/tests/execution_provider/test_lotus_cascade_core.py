@@ -165,6 +165,24 @@ class CoreCascadeTests(unittest.TestCase):
                                  helper=stage([]).effective_kwargs)
         return backend
 
+    def test_private_process_gets_full_close_window_through_existing_actor_owner(self):
+        from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
+
+        with core_runtime(self.raw) as (runtime, engines):
+            rows = self.backend()(stage(self.raw))
+            list(rows)
+            with patch.object(engines[0], "close", wraps=engines[0].close) as close:
+                rows.close()
+            close.assert_called_once_with(timeout=DEFAULT_CLOSE_TIMEOUT_S)
+
+    def test_core_cleanup_window_includes_private_rpc_and_teardown(self):
+        from src.baselines.text.frameworks.daft_engine_process import DEFAULT_CLOSE_TIMEOUT_S
+
+        owner = SimpleNamespace(close=Mock(return_value={}), _actors=None)
+        cleanup = SimpleNamespace(stop=Mock(return_value={}))
+        cascade_core._close_stage_owner(owner, cleanup, time.monotonic())
+        owner.close.assert_called_once_with(timeout=DEFAULT_CLOSE_TIMEOUT_S + 5)
+
     def test_stage_source_round_trip_preserves_repeated_draws_and_empty_text(self):
         raw = [dict(self.raw[0], body=""), dict(self.raw[0], body="")]
         value = stage(raw, name="threshold_sample")
