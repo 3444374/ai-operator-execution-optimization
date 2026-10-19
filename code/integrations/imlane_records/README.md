@@ -1,7 +1,8 @@
 # IMLane 多行记录桥
 
 [普通 Map／Extract 与关系链接点](chain.README.md)复用公共方法和完整 Extract EOF 边界；
-本地 17 个不同 CPU 测试通过，新作者 scope、真实模型与 GPU 分别待验。
+原本地17项、旧7a作者CPU12次fixture与新公开selector的CPU合同分列。`chain-check`／`chain-run`
+使用现有作者backend；最终源码作者scope、真实模型与GPU资格分别待验。
 
 [通用全局级联接点](cascade.README.md)消费原 `CascadeStage`，固定角色／阶段／查询并保留逐发生项结果；本机 CPU、作者 CPython、模型及 GPU 资格见[分列报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
 
@@ -12,8 +13,10 @@
 
 ## 当前 Filter 合同与有限链接点
 
-作者无模型报告固定在 `0190e8cd`，由 `9f1a817f` 交付；下述兼容修订和有限链只具有新的
-本机 CPU／替身检查，不能重绑定为原作者资格，也没有真实模型、GPU 或作者有限链运行资格。
+原Filter作者无模型报告固定在 `0190e8cd`，由 `9f1a817f` 交付；下述兼容修订的本机CPU不能
+重绑定为原作者资格。普通链另有旧冻结 `7a4524b7` 的ME／EF作者CPU记录，详见
+[分来源报告](../../../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#旧冻结作者-cpu-回执补记)；
+不认证后续共享关闭修补、公开selector或真实模型／GPU。
 原 C++ v2 桥字节保持；新 Python 方法和关闭路径需要在新的源码归档和 owner 下核验。
 `7cd08b3a` 有68项完整CPU检查；后续 `174ee853` 的两项丢账反例与63项 NoPopen 子集通过。
 完整72项曾因自动审批服务容量错误未执行；恢复后在固定174完成72／72、零skip和15个已观察owned退出。

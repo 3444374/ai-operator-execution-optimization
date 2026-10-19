@@ -1,6 +1,6 @@
 # Feasibility Results
 
-[IMLane普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原17项本机CPU与16项无child组合核验分列；共享关闭异常报告保留known证据，状态仍unknown。作者CPU、新模型／GPU及公开selector待验。
+[IMLane普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原17项本机CPU、16项无child组合及旧7a冻结作者12次fixture分列；公开selector新增25入口／45owner／17旧路径CPU。共享关闭失败仍unknown，旧作者成功不转授最终源码；当前入口作者／模型／GPU资格待验。
 
 [IMLane通用级联阶段](imlane_cascade_cpu_20261019/README.md)：原全局方法、作者固定角色scope与v2桥；17项本机CPU与冻结r3作者CPython两查询／44次fixture分列，六scope／六child关闭及77出生身份退出审计通过，原保存失败保留；helper模型／GPU资格待验，无公共IMLane selector。
 

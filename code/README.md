@@ -18,6 +18,7 @@
 复用同一批内核及结果核验；Daft 使用原生 process 图，Core 使用有界接纳／单本机 worker／私有 pipe，分别完成13／23项CPU检查，真实模型另验。
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
+[普通关系链公开入口](integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)提供显式IMLane `chain-check`／`chain-run`，共用原有限链／完整Extract关系屏障与作者调度；旧7a作者CPU12次fixture和新入口CPU资格分列，最终源码的作者／模型／GPU资格另验。
 当前集成新增通用Filter和共享有限链接线，仍由作者调度；固定旧来源的普通Filter作者CPU报告单列。
 审批恢复后固定174的完整72项CPU回归通过；后续共享传输／Daft回执修复完成116项组合及17项实库故障检查，保留已知usage、原错误与unknown，新wire作者／模型资格仍pending，详见[分层复验](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。
 本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。

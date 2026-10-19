@@ -61,3 +61,49 @@ source、作者 HEAD／status／diff／源码／二进制、现有账本和独�
 公开字段反例通过。最初公开报告缺失RED及中间坏报告反例保留，修补未认证作者环境或GPU。
 精确源／测试和独审摘要见 [close_report_verification.json](close_report_verification.json)。
 冻结的作者CPU包需由唯一执行owner重新绑定最终共享源码，不能沿用旧包哈希认证本修补。
+
+## 旧冻结作者 CPU 回执补记
+
+后续只读核验定位到 `imlane-chain-author-cpu-20261019-r1` 的实际成功回执，修正上方
+“尚未执行”的阶段状态；旧准备阻断原件保留。该单元固定职责源码 `7a4524b7`，只执行一次，
+99.924秒，ME／EF各6、共12次CPU fixture，分别3／2个输出；三个作者scope／模型fixture实例
+正常关闭。独立50个观察出生身份及13个作者Linux start ticks均退出，SHM／RPC结清，
+正常lease释放，GPU1MiB且compute空；作者源／二进制与八旧账本保持。模型推理次数为0。
+
+原包SHA `3c71f3aeaffcc6ce2a6be1ea73f11c0b4c4762cfa9b832dffcaadf1d6efb5c1f`，
+1077源码／1083普通成员及55个证据成员逐项核同。
+[紧凑来源回执](author_cpu_old_source.json)保留原report／独立witness／归档SHA，原件由唯一
+服务器owner保管。它与级联r3的44次fixture是不同查询／来源，不合并计数。
+
+旧包已含 `f977c979` 空prototype，但共享关系controller仍为 `17604899…`；最终4fc为
+`424979a1…`，唯一生产差异是关闭失败报告修补，另有文档和新增合同测试。
+因此旧作者成功只认证旧包；4fc及后续公开selector需要新源码绑定。精确差异已生成只读交接，
+不修改旧配置或冻结Async82e模型包。
+
+## 公开入口与固定来源
+
+新增 [chain-check／chain-run](../../../../code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)
+显式选择 `imlane-author-local-model-chain`，使用已有IMLaneChainBackend和完整Extract关系屏障，
+单阶段Filter／Map／Extract与有限组合共用原LOTUS loop。通用source不要求Q3列，不附加COUNT
+或SemBench质量指标；旧Movie和级联命令保持各自身份。该入口尚无真实作者／模型／GPU资格。
+
+25项入口CPU核验实际使用固定LOTUS1.2.4、公共方法／批内核和内存FixtureBackend，严格差分
+Map／Extract／ME／EF消息及关系，重复Index／grouped parents、空prototype、knownusage、
+primary／metadata错误和取消均覆盖。CLI层ABI／owner明确替身；不启动作者或模型child。
+45项owner合同使用真实临时CellBudgetLedger、JSON／哈希和lease解析，作者／ABI／GPU为替身，
+验证现有unit一次claim、不退款、失败后收尾和逐已闭scope GPU门。另17项既有lease／IMLane兼容
+CPU通过，旧真实CPU child用例未重跑。三组零fail／error／skip；定向复跑不累加。
+
+原普通RED保留：DataFrame默认to_json截断float64业务值；外部lease先hash再重新读取会接受
+另一版本。入口现以原标量构建split JSON，float64及uint64经JSON往返精确保持；lease在同一份
+有界raw bytes上计算SHA并复用原schema解码。两项回归转绿。初始测试scaffold失败与中间WIP
+运行也保留，不能当最终固定源码结果。
+
+启用执行只复用现有有限supervisor、原作者owner和caller既有正常lease；单query／deployment／
+executor／GPU，pending≤2，显式最终空prototype及永久unit上界。新入口不恢复stale lease，
+不创建／重置预算或自动重试；known API／usage和独立物理／GPU证据分列。最终查询JSON写失败
+也保持失败和原错误，不能冒称结果已保存。
+
+最终源SHA、完整脱敏CPU记录恢复入口、原失败SHA与两轴审阅见
+[public_selector_verification.json](public_selector_verification.json)。这是当前本机合同资格；
+新源码作者环境、实际模型／GPU和性能由唯一执行owner另行冻结核验，既有成功单元不重跑。

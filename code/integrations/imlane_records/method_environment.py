@@ -5,6 +5,28 @@ from pathlib import Path
 import subprocess
 
 
+def validate_author_build(author_root, bridge_binary):
+    """Check the existing patched author and this bridge without starting them."""
+    from integrations.imlane_records import owner
+
+    author, binary = Path(author_root), Path(bridge_binary)
+    build = json.loads((author / "artifacts/build-patched/build-identity.json").read_text())
+    if build.get("upstream_commit") != owner.AUTHOR or build.get("mode") != "patched":
+        raise ValueError("the checked author build identity differs")
+    expected = dict(build["original_sha256"], **build["patched_sha256"])
+    if (any(owner.digest(author / "source" / path) != sha for path, sha in expected.items())
+            or any(owner.digest(author / "prefix-patched" / path) != sha
+                   for path, sha in build["binaries_sha256"].items())):
+        raise ValueError("the author's checked source or binaries changed")
+    built = json.loads(binary.with_suffix(".build.json").read_text())
+    source = Path(__file__).parent
+    if (built.get("upstream_commit") != owner.AUTHOR or built.get("binary_sha256") != owner.digest(binary)
+            or built.get("sources_sha256") != {path.name: owner.digest(path) for path in (
+                source / "imlane_records.cpp", source / "record_dbend_adapter.hpp")}):
+        raise ValueError("the bridge binary is not bound to these reviewed v2 source bytes")
+    return dict(author_commit=owner.AUTHOR, bridge_binary_sha256=built["binary_sha256"])
+
+
 def preflight_method(method_python, author_root, code_root, *, chain=False):
     method_python, author_root = Path(method_python), Path(author_root)
     probe = ("import json,sys,pyarrow; print(json.dumps(dict(base=sys.base_prefix,"

@@ -24,10 +24,10 @@ from integrations.imlane_records import owner, verify
 from integrations.imlane_records.client import RecordsBridge
 from integrations.imlane_records.filter_host import FilterResults
 from integrations.imlane_records.filter_workload import PROTOCOL, bind_source
-from integrations.imlane_records.method_environment import preflight_method
+from integrations.imlane_records.method_environment import preflight_method, validate_author_build
 from integrations.imlane_records.model_lifecycle import MODEL_CLOSE_GRACE_S
 from integrations.imlane_records.model_process import assigned_environment
-from integrations.imlane_records.resource_limits import owner_limits
+from integrations.imlane_records.resource_limits import owner_limits, gpu_snapshot, gpu_exited
 from src.baselines.common.private_artifacts import require_outside_git, write_private_json
 from src.baselines.common.redact import redact_json_values, redact_text
 from src.baselines.text.movie_records import MovieRecordSource
@@ -77,19 +77,7 @@ def configuration(value):
     method_python, author = Path(value["method_python"]), Path(value["author_root"])
     preflight_method(method_python, author, CODE)
     binary = Path(value["bridge_binary"])
-    author_build = json.loads((author / "artifacts/build-patched/build-identity.json").read_text())
-    if author_build.get("upstream_commit") != owner.AUTHOR or author_build.get("mode") != "patched":
-        raise ValueError("the checked author build identity differs")
-    expected = dict(author_build["original_sha256"], **author_build["patched_sha256"])
-    if (any(owner.digest(author / "source" / path) != sha for path, sha in expected.items())
-            or any(owner.digest(author / "prefix-patched" / path) != sha
-                   for path, sha in author_build["binaries_sha256"].items())):
-        raise ValueError("the author's checked source or binaries changed")
-    built = json.loads(binary.with_suffix(".build.json").read_text())
-    if (built.get("upstream_commit") != owner.AUTHOR or built.get("binary_sha256") != owner.digest(binary)
-            or built.get("sources_sha256") != {p.name: owner.digest(p) for p in (
-                OWNED / "imlane_records.cpp", OWNED / "record_dbend_adapter.hpp")}):
-        raise ValueError("the bridge binary is not bound to these reviewed v2 source bytes")
+    validate_author_build(author, binary)
     if value["mode"] == "local-model":
         if "owner_resource_limits" not in value:
             raise ValueError("local-model qualification requires an explicit owner resource allowance")
@@ -101,26 +89,6 @@ def configuration(value):
     elif value.get("model_environment"):
         raise ValueError("no-model qualification must keep its GPU mask empty")
     return method, engine, generation, resources, source
-
-
-def gpu_snapshot(device):
-    def query(kind, fields):
-        result = subprocess.run(["nvidia-smi", "-i", device, "--query-" + kind + "=" + fields,
-                                 "--format=csv,noheader,nounits"], check=True,
-                                capture_output=True, text=True, timeout=5)
-        return [[field.strip() for field in line.split(",")] for line in result.stdout.splitlines() if line.strip()]
-    devices = query("gpu", "uuid,memory.used")
-    if len(devices) != 1 or len(devices[0]) != 2:
-        raise ValueError("the assigned GPU must resolve to exactly one physical device")
-    processes = query("compute-apps", "pid,gpu_uuid,used_memory")
-    if any(len(row) != 3 or row[1] != devices[0][0] for row in processes):
-        raise ValueError("GPU compute process observation is incomplete")
-    return dict(uuid=devices[0][0], memory_mib=int(devices[0][1]), compute_processes=processes)
-
-
-def gpu_exited(before, after):
-    return (after["uuid"] == before["uuid"] and not after["compute_processes"]
-            and after["memory_mib"] <= before["memory_mib"] + 1)
 
 
 def settle_lease(lease, scopes, report):

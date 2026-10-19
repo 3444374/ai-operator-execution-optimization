@@ -1,0 +1,167 @@
+{
+  "schema": "semloom.imlane-chain.public-selector-cpu.v1",
+  "base_commit": "4fc53086a88c0b6bf431b841408af70e100b52e4",
+  "status": "cpu_passed_dual_review_passed",
+  "source_sha256": {
+    "code/src/experiments/lotus_records_chain.py": "e6dbc1961224baa2a1066d10abc9349e83882ae599d8f4e6b2af7c4abdc5f5f1",
+    "code/src/experiments/lotus_records_movie.py": "90493572d9749dba7f6cb152dd7824b1b3943094e0d4e71636132f53ca5f0a13",
+    "code/src/infrastructure/runner_lease.py": "e356031732845f5ab37593271426a32c57c81b341e814e0bb69c772b50abb584",
+    "code/integrations/imlane_records/chain_runtime.py": "46e1c7c4d2a9fc5b91598b9d517803c6fa78987d19c25d34a6031ae78c1b51a1",
+    "code/integrations/imlane_records/method_environment.py": "c22df4ae748a0300607fe2988fd920a3821cfd4a9752d09854b42e4ed225811c",
+    "code/integrations/imlane_records/resource_limits.py": "652d67481ce9da0079e9f15c6db72735be4b1b30a29e0e763d05eec4ce574edc",
+    "code/integrations/imlane_records/verify_filter.py": "c51cd3e83955a1818c34060102af955bf6eb3a468e2416f0adb6b80d7db7a927",
+    "code/tests/experiments/test_lotus_records_chain_cli.py": "aaf2bbcb3b0efc56d5f9830dff18be54284f52c311f246a4f7015da9808a8b81",
+    "code/tests/integrations/test_imlane_chain_runtime.py": "6dbe4cb4855820ec1fe4cb1770e88ce4f5e826c04740cf5432228a6c978fbc22",
+    "code/integrations/imlane_records/chain_backend.py": "38f1c93f4e89f9c1539373104f60232c7bd60178a0c61d23d4d279ce73b2025e",
+    "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "424979a1f6a54f4a5a05a86a65a3d83c6583ce986ec609f238cc87d0979982b8",
+    "code/src/semantic_methods/lotus/record_chain.py": "4d3fef8b84b4d4d7581546199ee968950883cc1334e3f76243cff173cf461b40"
+  },
+  "checks": [
+    {
+      "scope": "public CLI and original LOTUS/fixture backend",
+      "passed": 25,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "receipt": "cpu-r4-1792412055885871000.json"
+    },
+    {
+      "scope": "owner contract with real temporary CellBudgetLedger; author/ABI/GPU fixtures",
+      "passed": 45,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "receipt": "owner-cpu-final-1792412021407067000.json"
+    },
+    {
+      "scope": "existing lease and IMLane compatibility; pre-existing real child test excluded",
+      "passed": 17,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "receipt": "existing-compatibility-1792412083789416000.json"
+    }
+  ],
+  "real_components": [
+    "LOTUS1.2.4 formatter/parser/accessor reference",
+    "shared finite chain and Extract relation controller",
+    "strict finite JSON and exact result values",
+    "temporary persistent CellBudgetLedger claim/no-refund",
+    "lease snapshot hashing and original schema decoder"
+  ],
+  "fixtures": [
+    "author execution and model replies",
+    "ABI/runtime preflight",
+    "GPU/device/resource observers"
+  ],
+  "author_processes": 0,
+  "real_model_calls": 0,
+  "server_actions": 0,
+  "gpu_actions": 0,
+  "remaining": [
+    "new final-source author execution",
+    "real model and GPU lifecycle",
+    "performance",
+    "IMLane cascade public selector"
+  ],
+  "historical_reds": [
+    "first public-test scaffold assumptions",
+    "default pandas to_json float64 precision",
+    "lease hash/parse double-read",
+    "first owner-fixture expectation drift"
+  ],
+  "preservation": {
+    "archive": "public_selector_cpu_logs.json.gz",
+    "archive_sha256": "bd44a8df5d9b1c4244bc0088aa906905d842b89df72954edf05a124b0d87e0ad",
+    "uncompressed_sha256": "85d298017085716f005e237e65f7f8aa0efc8d39ea4e789be5a2ae8bdf12e15a",
+    "format": "gzip-compressed complete redacted receipt mapping; keys are original receipt basenames",
+    "redaction": "project redact_json_values then local repository/task/home path aliases",
+    "original_receipts": [
+      {
+        "member": "cpu-r1-1792411559409492000.json",
+        "original_sha256": "2284e5d835f47d736a409aba3281cbcd1086ac86e08061c41e2a7483bb3a1134",
+        "original_bytes": 17661
+      },
+      {
+        "member": "cpu-r2-1792411642329677000.json",
+        "original_sha256": "8358d670d515989444847969d90f2623a8fc1ca1cbf0e6ede4f3307b3af3863c",
+        "original_bytes": 16210
+      },
+      {
+        "member": "cpu-r3-1792411737805301000.json",
+        "original_sha256": "4988e03529722b3d3ef34a65b5950350a0512d64f9b386143b7101c24d5bda92",
+        "original_bytes": 17269
+      },
+      {
+        "member": "cpu-precision-red-1792411908739659000.json",
+        "original_sha256": "396bc3058a7a36d7c04b715fd4ac46464e01b5c31bf8d6b0b560c493a798a8b8",
+        "original_bytes": 2601
+      },
+      {
+        "member": "cpu-r4-1792412055885871000.json",
+        "original_sha256": "ff1485c8d06875b23a1b9e5859b7cd0611f233d6860b0ffa0e804f1a39138776",
+        "original_bytes": 19424
+      },
+      {
+        "member": "owner-cpu-r1-1792411788216123000.json",
+        "original_sha256": "48478db51a8aa3ca4e361c43ee9130be44de7755d2d5da9ad831aac98586d49c",
+        "original_bytes": 13038
+      },
+      {
+        "member": "owner-cpu-r2-1792411848118679000.json",
+        "original_sha256": "7992dd044927371f3bcc53b5e1c2fa5f4e61840ab65f2dcfcf8be2c8cc2ebfef",
+        "original_bytes": 10668
+      },
+      {
+        "member": "owner-cpu-final-1792412021407067000.json",
+        "original_sha256": "31805a9437876c2977c4e9655bdbffe2ec2b3b7e771d27007639454daea4406d",
+        "original_bytes": 10702
+      },
+      {
+        "member": "result-precision-red.json",
+        "original_sha256": "ee22cbd6186214992785deb3f8a29d18189ece22263fa1f0dfb4a75532696a7d",
+        "original_bytes": 556
+      },
+      {
+        "member": "existing-compatibility-1792412083789416000.json",
+        "original_sha256": "4c0ec71ee1759054338f08c4bc5e36b00be9887a9c6acd951c41b4b150c0ee32",
+        "original_bytes": 4927
+      },
+      {
+        "member": "help-checks.json",
+        "original_sha256": "079d70ea8e3d0e6474c572a40c1363d3f07f9f3925abee6e00a87329141ae08c",
+        "original_bytes": 1615
+      }
+    ]
+  },
+  "reviews": [
+    {
+      "axis": "Spec",
+      "status": "passed",
+      "unresolved_findings": 0,
+      "report": "final-spec.md",
+      "original_report_sha256": "f5abbd8367a3fc7e071147a0763042579544db760cf8d646a8c026eb93ac430d",
+      "scope": "fixed production/source/CPU receipts and final 11-receipt documentation; 17 independent NoPopen probes"
+    },
+    {
+      "axis": "Standards",
+      "status": "passed",
+      "unresolved_findings": 0,
+      "report": "final-standards.md",
+      "original_report_sha256": "ec1b419df373af7db2d13d92897fd71792bf7600d8490ce0a9f115bf45ac84fd",
+      "scope": "fixed production/source/CPU receipts and documentation; 5 pure lease probes; supplemental help metadata checked by root and Spec"
+    }
+  ],
+  "help_checks": {
+    "passed": 3,
+    "scope": "existing root help and both new subcommand help, global NoPopen",
+    "receipt": "help-checks.json"
+  },
+  "publication_checks": {
+    "secret_scan_files": 23,
+    "python_ast_files": 9,
+    "violations": 0,
+    "markdown_check": "independent Standards: 943 local file links and 314 anchors; Spec supplemental links and final evidence checked",
+    "diff_check": "passed"
+  }
+}

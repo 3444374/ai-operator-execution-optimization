@@ -1,0 +1,107 @@
+{
+  "schema": "semloom.imlane-chain.old-source-author-receipt.v1",
+  "status": "executed_once_passed_old_source_only",
+  "attempt_id": "imlane-chain-author-cpu-20261019-r1",
+  "source_commit": "7a4524b754c098b69ef5c50d6e8b62919c9f469a",
+  "source_archive_sha256": "3c71f3aeaffcc6ce2a6be1ea73f11c0b4c4762cfa9b832dffcaadf1d6efb5c1f",
+  "source_manifest_sha256": "9f4e27b3c3312a0f804ba0cbd9dc9fdb8dea44d87604e070b21d75065d008cb0",
+  "source_files": 1077,
+  "bundle_regular_members": 1083,
+  "evidence_regular_members_verified": 55,
+  "execution_count": 1,
+  "retries": 0,
+  "elapsed_s": 99.92386017227545,
+  "fixture_calls": 12,
+  "real_model_calls": 0,
+  "cases": [
+    {
+      "query_id": "author-ordinary-me",
+      "terminal_calls": 6,
+      "outputs": 3,
+      "relation_phases": 1,
+      "close_status": "closed"
+    },
+    {
+      "query_id": "author-ordinary-ef",
+      "terminal_calls": 6,
+      "outputs": 2,
+      "relation_phases": 2,
+      "close_status": "closed"
+    }
+  ],
+  "resources": {
+    "status": "passed",
+    "observed_epoch_identities_absent": 50,
+    "author_tick_identities_absent": 13,
+    "author_scopes_closed": 3,
+    "engine_instances_closed": 3,
+    "normal_lease_released": true,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": [],
+    "shared_memory_empty": true,
+    "rpc_entries": 0,
+    "rpc_active_kernel_sockets": 0,
+    "author_sources_unchanged": 12,
+    "author_binaries_unchanged": 3,
+    "author_head_status_diff_unchanged": true,
+    "bridge_unchanged": true,
+    "old_ledgers_unchanged": 8,
+    "forced_process_cleanup": false,
+    "forced_shared_memory_cleanup": false,
+    "cleanup_errors": []
+  },
+  "source_binding": {
+    "old_controller_sha256": "176048992471d0a2ef7886b8b7caca8c51abf205e6535138b70e04ed7a96241e",
+    "final_4fc_controller_sha256": "424979a1f6a54f4a5a05a86a65a3d83c6583ce986ec609f238cc87d0979982b8",
+    "empty_prototype_sha256": "4d3fef8b84b4d4d7581546199ee968950883cc1334e3f76243cff173cf461b40",
+    "empty_prototype_unchanged": true
+  },
+  "receipts": {
+    "receipt": {
+      "basename": "delivery-summary.json",
+      "sha256": "fc2bd30f392127d856d046cf461951f6c7e88fee484cb178c98955493955fdaf",
+      "bytes": 6000
+    },
+    "final_report": {
+      "basename": "report.json",
+      "sha256": "32b80ac4bb8ab2f68e3912347c88a5f376b3af3aa322f3f1348053066f00f9f9",
+      "bytes": 123639
+    },
+    "independent_witness": {
+      "basename": "INDEPENDENT-FINAL-WITNESS.json",
+      "sha256": "5221fce743f357503e5f02054458c2dbcf57ea97054dad2f5738917b9a982408",
+      "bytes": 32753
+    },
+    "supervisor": {
+      "basename": "supervisor.json",
+      "sha256": "0d2ed6e6d12b71b5078be78fc8a178de318731bf3f3f4f7237aefc4e81b4d096",
+      "bytes": 4876
+    },
+    "evidence_archive": {
+      "basename": "chain-author-cpu-r1-evidence.tar.gz",
+      "sha256": "8fb9b86472d2f05ca126ea8e7f68dd59f0fda1d7cdab9f66ae6bbb07325bafc2",
+      "bytes": 2589471
+    },
+    "member_manifest": {
+      "basename": "archive-member-sha256.json",
+      "sha256": "1b259309738f01668a3ffc74ba10ef3c0fc52c57f458c053e6983fcfb96c36c8",
+      "bytes": 9992
+    },
+    "historical_preparation_block": {
+      "basename": "PREPARATION-RESULT.md",
+      "sha256": "0d9dcde59cb9c4211e3adac479e2e9b2754fbb739c9eac7bddd561dd9be23555",
+      "bytes": 2032
+    },
+    "superseding_execution_result": {
+      "basename": "HANDOFF-RESULT.md",
+      "sha256": "89d87622ef62896e15b5774a1c1e05ac0b89bbdee1d3eb6bd5069e5f77a3dc08",
+      "bytes": 4877
+    }
+  },
+  "no_qualification_transfer_to": [
+    "final4fc shared-close repair",
+    "public selector",
+    "real model/GPU"
+  ],
+  "audit_kind": "read-only source/archive/receipt inspection by integration owner; no rerun"
+}

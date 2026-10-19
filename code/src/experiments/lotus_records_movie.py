@@ -1,4 +1,4 @@
-"""Finite ordinary Movie Q3 records execution and original SemBench evaluation."""
+"""Movie Q3 evaluation and explicit finite ordinary-record chain entry points."""
 
 import argparse
 from dataclasses import asdict, replace
@@ -654,8 +654,14 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
 
 
 def main(argv=None):
+    arguments = sys.argv[1:] if argv is None else list(argv)
+    if arguments and arguments[0] in ("chain-check", "chain-run"):
+        from .lotus_records_chain import main as chain_main
+        return chain_main(arguments)
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
+    commands.add_parser("chain-check", help="check an ordinary record chain and its explicit IMLane owner")
+    commands.add_parser("chain-run", help="run an ordinary chain through the native IMLane author backend")
     prepare = commands.add_parser("prepare")
     prepare.add_argument("--input-csv", required=True)
     prepare.add_argument("--input-sha256", required=True)

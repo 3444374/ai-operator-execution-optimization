@@ -35,6 +35,7 @@
 | 主题 | 入口 |
 |---|---|
 | IMLane 独立多行记录桥 | [模块与参数](code/integrations/imlane_records/README.md)、[无模型资格及集成边界](experiments/results/diagnostics/imlane_records_echo_20261016/README.md) |
+| IMLane 普通关系链 CLI | [chain-check／chain-run与owner合同](code/integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)、[分来源CPU证据](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#公开入口与固定来源) |
 | Movie Q3 records 本地模型接点 | [接口](code/src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)、[命令](code/scripts/README.md#movie-q3-records-本地模型接点)、[CPU与单卡分层资格](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md) |
 | 可选 vLLM 部署资源 | [命令](code/scripts/README.md#可选-vllm-部署资源分配)、[来源与单卡资格](experiments/results/diagnostics/main_service_auto_20261015/README.md) |
 | LOTUS 原版 Movie／Animals 四臂 | [模块/API](code/src/semantic_methods/lotus/README.md)、[Movie入口](code/scripts/README.md#lotus-原版-movie-四臂)、[Animals入口](code/scripts/README.md#animals-原版图文-q1)、[Animals闭包](experiments/results/diagnostics/main_lotus_animals_20261015/README.md)、[固定main实际模型](experiments/results/diagnostics/main_queries_20261015/README.md) |

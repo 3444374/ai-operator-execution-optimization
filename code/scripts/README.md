@@ -33,7 +33,7 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 ## IMLane 独立多行记录桥
 
 `PYTHONPATH=code python code/integrations/imlane_records/verify.py --help` 可独立读取无模型echo验证器的固定作者prefix／workload／资源参数，实际启动需依照[模块合同](../integrations/imlane_records/README.md)与正常共享lease。
-[原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)保持原来源。后续普通Filter入口为 `code/integrations/imlane_records/verify_filter.py`，接原Movie runner／parser／evaluator，并接受仓外方法解释器与模型配置；有限链使用同目录 `chain_host.py` API，当前不提供共享链CLI selector。
+[原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)保持原来源。普通Filter资格入口 `code/integrations/imlane_records/verify_filter.py` 接原Movie runner／parser／evaluator。共享 `run_lotus_records_movie.py` 另增 `chain-check`／`chain-run`，显式 `imlane-author-local-model-chain` 接普通Filter／Map／Extract与有限组合，包括完整Extract关系后继；[参数与正常owner合同](../integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)。省略 `--execute-model` 只preflight；实际运行复用作者backend／有限supervisor及调用方既有lease、资源和永久unit。通用关系不附加Q3评价，新入口作者／模型资格另验。
 固定0190作者CPU结果保持原来源；审批恢复后固定174完整72项CPU通过，后续共享故障回执组合116项及Daft实库17项通过，详见[分层复验](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。新wire作者与IMLane模型资格仍pending。真实模型入口还须由外层持久预算、正常lease、owner资源上限和独立GPU退出检查包裹，不因单引擎cap存在而允许重复运行。
 
 ## Movie Q3 records 本地模型接点

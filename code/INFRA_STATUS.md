@@ -20,7 +20,8 @@
 
 ## 独立 IMLane 记录桥
 
-[普通 Map／Extract 与关系链](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)已选择接纳职责7a4524b7，复用公共有限链和完整Extract关系屏障，段间新作者scope／引擎；空结果显式传最终prototype。原17本机CPU与当前16项NoPopen组合分列。共享关闭聚合另修，5新＋11旧合同保留已知模型／物理证据且失败仍unknown，双独审通过；新作者实测、模型／GPU和公开selector待验。
+[普通 Map／Extract 与关系链](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)已选择接纳职责7a4524b7，复用公共有限链和完整Extract关系屏障，段间新作者scope／引擎；空结果显式传最终prototype。原17本机CPU、16项NoPopen组合及旧冻结7a作者CPU12次fixture／三个scope分列。共享关闭聚合修补保留已知模型／物理证据且失败仍unknown，旧作者成功不重绑定后续源码。
+[公开 ordinary chain 入口](integrations/imlane_records/chain.README.md#公开-ordinary-chain-入口)新增 `chain-check`／`chain-run` 和显式IMLane selector；普通Filter／Map／Extract及有限组合共用原作者backend，外部正常lease、永久unit和逐已闭scope GPU门由owner合同约束。25入口／45owner／17旧路径CPU分列通过，浮点精度与lease双读RED保留并修复。该通用关系不附加Q3评价；最终入口作者执行、真实模型／GPU和性能仍另验，IMLane级联selector尚无。
 
 [通用级联作者 CPU r3](../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)已在冻结包取得两查询／44次fixture和独立资源审计，六scope／六child关闭、77观察出生身份退出，normal lease释放；原保存API失败与17本机CPU另列。真实helper模型／GPU阶段退出和后续源码仍另验。
 
