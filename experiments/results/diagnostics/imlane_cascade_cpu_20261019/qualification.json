@@ -1,0 +1,123 @@
+{
+  "schema": "imlane.cascade.cpu.qualification.v1",
+  "source_base": "6e8b1382f92dbefc7352b3f843aaa0ef44bb5426",
+  "responsibility_branch": "feat/imlane-cascade-records",
+  "source_sha256": {
+    "code/integrations/imlane_records/cascade_host.py": "4f6ab1dca6af7459cec4c2cf88ad9565c1e574c9823902f2f7bf7f7e2295164e",
+    "code/integrations/imlane_records/cascade_udf.py": "7e7e09b924155048043825d5729645311c0955978b17486c6cb4f35ee9531364",
+    "code/integrations/imlane_records/cascade_workload.py": "6546ccef74bb8574a29ad55f819b7ca9a6e6469519a914892b8140d0acfa5ec5",
+    "code/tests/integrations/imlane_cascade_fixture.py": "0fc3a70a8671081d71e6b7e0edc8a79243109402ead869fa2e324112edde9058",
+    "code/tests/integrations/imlane_cascade_fixture_udf.py": "55c06cf8800f7db4570d62bc0ea1281c0cd26d98b20d5267cc9e71f623ca6c0b",
+    "code/tests/integrations/test_imlane_cascade.py": "45fffb09a5f4a5dd99d8eada227e067508a01784de386d206c346db5846a85aa"
+  },
+  "production_shared_or_native_changes": false,
+  "local": {
+    "distinct_tests_passed": 17,
+    "new_cascade_tests": 11,
+    "ordinary_filter_regressions": 3,
+    "original_cascade_regressions": 3,
+    "runs": [
+      {
+        "run_id": "imlane-cascade-cpu-20261019-r1",
+        "scope": "sandbox process-observation failure; tests not established",
+        "status": "unknown",
+        "worker_exit": -15,
+        "supervisor_sha256": "b3a9785fbd6f10e06355d41c66699cf444aa39fadbe338564f1bf67851d1d1ba",
+        "worker_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "observed_owned_births": 1,
+        "observed_owned_exit_confirmed": false,
+        "signals": [
+          "SIGTERM"
+        ],
+        "remaining_owned_pids": [],
+        "cleanup_errors": [
+          "PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)",
+          "PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)",
+          "PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)"
+        ]
+      },
+      {
+        "run_id": "imlane-cascade-cpu-20261019-r2",
+        "scope": "8 tests; 7 passed, 1 expected-error assertion failed",
+        "status": "failed",
+        "worker_exit": 1,
+        "supervisor_sha256": "641f89b24b80f20e16ec3e613e127f487eae7ab926d143ab619f3bdf65321dcb",
+        "worker_log_sha256": "eb58d8cd536f2ec7366f1906ab081a9ff86acf134f8087d88fce479cc8e30e9c",
+        "observed_owned_births": 13,
+        "observed_owned_exit_confirmed": true,
+        "signals": [],
+        "remaining_owned_pids": [],
+        "cleanup_errors": []
+      },
+      {
+        "run_id": "imlane-cascade-cpu-20261019-r3",
+        "scope": "5 targeted revised-contract regressions passed",
+        "status": "passed",
+        "worker_exit": 0,
+        "supervisor_sha256": "61ced270b0a248331e08d44e29c839976bff3f090520a751fcc7f58b459cf924",
+        "worker_log_sha256": "b01abc53a7b273863e23e471ccd18e9ddd6a0f4c66f1b1fdab7c474c8778bcaf",
+        "observed_owned_births": 8,
+        "observed_owned_exit_confirmed": true,
+        "signals": [],
+        "remaining_owned_pids": [],
+        "cleanup_errors": []
+      },
+      {
+        "run_id": "imlane-cascade-cpu-20261019-r4",
+        "scope": "17 tests requested; 14 passed, 3 optional reference tests skipped",
+        "status": "passed",
+        "worker_exit": 0,
+        "supervisor_sha256": "92dbb57f83051f95148d066564368fea4a6d6b835f02500e18aa467948616eda",
+        "worker_log_sha256": "98c77d3b0b446961a94f8d804f2cfeb66bd064f3a9a309f7203aa9a3916e3e40",
+        "observed_owned_births": 16,
+        "observed_owned_exit_confirmed": true,
+        "signals": [],
+        "remaining_owned_pids": [],
+        "cleanup_errors": []
+      }
+    ],
+    "initial_failed_root_resolution": {
+      "original_birth_absent": true,
+      "observation": "absent",
+      "evidence_sha256": "a67367d8ea9cdb883acafd6755f38a8bf8b29b106715c183ad05e62a332fa3b2"
+    },
+    "optional_reference_supplement": {
+      "tests": 3,
+      "passed": 3,
+      "skipped": 0,
+      "log_sha256": "9b9a375d7adba1e0aa475cf0e0fa59713a03ebdaddc7cd242cb7a34ce3fb8b83",
+      "enabled_environment": "RUN_LOTUS_CASCADE_CPU=1"
+    }
+  },
+  "author_cpu": {
+    "status": "pending",
+    "frozen_bundle": {
+      "schema": "imlane.cascade.cpu.bundle.v1",
+      "archive": "imlane-cascade-author-cpu-source-r2.tgz",
+      "archive_bytes": 2468550,
+      "archive_sha256": "f9ffda54ccc52e6d8a7afa82c24cb1ab835d607b65c8b2cd3b332caf2c5a5e9f",
+      "source_files": 1060,
+      "source_manifest_sha256": "fda6af9941330e80e790899e3a76c73123f4eae0b289f08790eb9e70af0e7a2c",
+      "helper_sha256": "84cf7f387d210262491cbeada075a67b96f3f3f9b98a89939d52894468e1a2be",
+      "config_sha256": "0ad41f2d754bb99828524ad8dea74fc5bd260c48f23b328a9ef56e934032899e"
+    },
+    "fixture_call_cap": 50,
+    "dispatch_status": "Frozen r2 package handed to the unique server session; execution not confirmed"
+  },
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "ray_runtime_initializations": 0,
+  "remaining_scope": [
+    "author CPython stage execution and independent resource audit",
+    "real helper logprobs and model inference",
+    "independent GPU exits between stages",
+    "author Ray backend and multiple executors",
+    "public backend selector integration and performance"
+  ],
+  "private_raw_locator": "Task owner holds run IDs and SHA-256 manifests outside Git; raw failures retained",
+  "independent_reviews": {
+    "protocol": "accepted; implementation, local receipts and frozen r2 CPU package",
+    "resources": "accepted; sticky cleanup failure, monitoring gates, local receipts and frozen r2 CPU package",
+    "scope": "static review and recorded local CPU evidence; no author runtime or model qualification"
+  }
+}

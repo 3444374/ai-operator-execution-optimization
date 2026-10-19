@@ -1,5 +1,7 @@
 # IMLane 多行记录桥
 
+[通用全局级联接点](cascade.README.md)消费原 `CascadeStage`，固定角色／阶段／查询并保留逐发生项结果；本机 CPU、作者 CPython、模型及 GPU 资格见[分列报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+
 本目录保留无模型 v1 记录桥，并新增[普通 Filter v2 的 CPU 接线](#普通-filter-v2cpu-资格作者实机待验)。作者 DBEnd（数据库调用入口）、Coordinator（协调进程）、Lane
 （共享内存交换通道）和 CPython executor（Python 执行进程）继续拥有执行与调度。
 冻结 `0190e8cd` 的 v2 原方法、source、调用账本与 CPU 子进程通过[作者 CPython 无模型资格](../../../experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md)；当前兼容／有限链修订的来源与待验项在下节分列。真实模型／GPU 和作者 Ray 仍待验，不接 Ray Data 或 SemLoom 模型池。
