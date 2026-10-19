@@ -122,12 +122,11 @@ experiments/results/motivation/pg18_4_fake/system_profile.md
 experiments/results/motivation/pg18_4_fake/system_profile.csv
 ```
 
-## 报告生成
+## 早期报告复算
 
-```bash
-python code/scripts/benchmarks/analyze_results.py \
-  --results-dir experiments/results/diagnostics
-```
+早期组件／fake CPU 汇总脚本已退役，复算使用
+[固定历史实现](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts/benchmarks/analyze_results.py)
+及同一提交的源码；原始 CSV 与结果说明继续保留。
 
 ## Trigger Surface Validation Files
 

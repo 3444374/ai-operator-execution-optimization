@@ -53,50 +53,11 @@ experiments/results/motivation/
 
 `pg18_4_fake/` 下的结果只能作为 PG18.4 本地同构预演和历史信号；不能把 PG18.4 本地预演写成 PostgreSQL 18.3 内部平台结论。
 
-## 运行命令
+## 历史复算
 
-```bash
-python code/scripts/benchmarks/fake_embed_pipeline.py \
-  --upstream 8 32 \
-  --downstream 8 32 \
-  --total-rows 65536 \
-  --embedding-dim 128 \
-  --repeats 3 \
-  --output experiments/results/motivation/fake_cpu/fake_embed_pipeline.csv
-```
-
-```bash
-python code/scripts/benchmarks/workload_matrix.py \
-  --scenarios embed_rag classify_filter offline_llm \
-  --upstream 8 32 \
-  --downstream 8 32 \
-  --total-rows 65536 \
-  --embedding-dim 128 \
-  --text-tokens 32 \
-  --repeats 3 \
-  --output experiments/results/motivation/fake_cpu/workload_matrix.csv
-```
-
-```bash
-python code/scripts/benchmarks/granularity.py \
-  --upstream 8 32 \
-  --downstream 8 32 \
-  --total-rows 65536 \
-  --payload-bytes-per-row 512 \
-  --compute-us-per-row 0.25 \
-  --repeats 3 \
-  --output experiments/results/motivation/fake_cpu/granularity.csv
-```
-
-```bash
-python code/scripts/benchmarks/backpressure.py \
-  --total-requests 512 \
-  --producer-rate 2000 8000 \
-  --replicas 2 4 \
-  --queue-limit 0 8 32 \
-  --repeats 3 \
-  --output experiments/results/motivation/fake_cpu/backpressure.csv
-```
+早期 CPU 模拟与专用汇总入口已退役，完整命令与实现见
+[固定历史版本](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts/benchmarks)。
+复算时使用同一提交的源码。`fake_cpu/` 的四份 CSV、原分析和现有绘图读取继续保留。
 
 ## 说明
 

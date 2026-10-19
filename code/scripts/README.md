@@ -668,7 +668,7 @@ exact reference，不产生第二物理路径。接口和使用条件见
 |---|---|
 | SAOR 机制与原生系统检查 | `analysis/audit_saor_*.py`、`analysis/summarize_saor_*.py`、`experiments/run_saor_*.py`；当前状态及各检查的作用见[SAOR 模块](../src/experiments/saor/README.md)和[实验状态](../../experiments/plans/archive/进度汇总_20261001.md) |
 | 图像与多 Job 画像 | `experiments/run_image_*.py`、`profiling/profile_clip_*.py`、`analysis/summarize_image_*.py`；身份与可比性见[baseline 说明](../src/baselines/README.md)和[图像结果](../../experiments/results/README.md) |
-| 开题实验汇总 | `analysis/summarize_opening_*.py`、`baselines/opening_database_e2e_matrix.py`；按[开题材料](../../docs/archive/opening/README.md)和对应结果报告读取，不从汇总脚本推断新结论 |
+| 已退役开题流程 | 专用矩阵与汇总器从[固定历史源码](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts)恢复；结果仍按[开题材料](../../docs/archive/opening/README.md)和对应报告读取 |
 
 这些脚本的早期机器命令与当时的完成状态保存在 Git 版本 `d32366de` 的本文件中。
 新的运行参数从目标计划、运行手册和脚本接口重新核对。
