@@ -1,0 +1,321 @@
+{
+  "schema": "semloom.imlane_chain_model.summary.v1",
+  "attempt_id": "imlane-chain-model-4fc53086-20261019-r1",
+  "status": "passed",
+  "source": {
+    "commit": "4fc53086a88c0b6bf431b841408af70e100b52e4",
+    "files": 1078,
+    "manifest_sha256": "ac21feda26ccad43b814c9a00b8457205214bfe3fcb80c0b2ddd2ab6f460ae08",
+    "config_sha256": "2f23fb2e3b26b52a48c8ffa436395380f34ca0c215e1c7d345831a50289a9601",
+    "helper_sha256": "941132bcdbb8a4a1660321a4a55754d5748221720c42cbd6fb2a79450ea2d2ae",
+    "runtime_bundle_sha256": "a1cfbdbdfe616803a298fcd3600684d06e5794c66f16acad0a781ffd0983f71e",
+    "previous_cpu_commit": "7a4524b754c098b69ef5c50d6e8b62919c9f469a",
+    "previous_cpu_rerun": false,
+    "subsequent_public_selector_commit": "8d35ddea",
+    "source_scope": "fixed code and deploy/runtime Git projection"
+  },
+  "execution": {
+    "api": "IMLaneChainBackend.evaluate",
+    "public_selector_covered": false,
+    "postgresql_covered": false,
+    "scheduler_owner": "upstream IMLane DBEnd/Coordinator/Lane/CPython executor",
+    "author_scheduler_modified": false,
+    "native_cpp_or_bridge_modified": false,
+    "synthetic_queries": 2,
+    "input_rows_per_query": 2,
+    "initial_index_values": [
+      17,
+      17
+    ],
+    "initial_index_dtype": "int64",
+    "initial_index_name": "document-label",
+    "sdk_terminal_replay_additional_model_calls": 0
+  },
+  "model": {
+    "name": "Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "vllm": "0.25.1",
+    "torch": "2.11.0",
+    "transformers": "5.14.1",
+    "lotus": "1.2.4",
+    "method_pyarrow": "16.1.0",
+    "gpu": "one RTX 4090",
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 4,
+    "max_num_batched_tokens": 2048,
+    "gpu_memory_utilization": 0.8,
+    "engine_seed": 0,
+    "model_downloads": 0
+  },
+  "generation": {
+    "map-0": {
+      "max_tokens": 64,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": null,
+      "stop": [],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": null
+    },
+    "extract-1": {
+      "max_tokens": 64,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": null,
+      "stop": [],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "extract-0": {
+      "max_tokens": 64,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": null,
+      "stop": [],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": {
+        "type": "json_object"
+      }
+    },
+    "filter-1": {
+      "max_tokens": 8,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": null,
+      "stop": [
+        "\n"
+      ],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": null
+    }
+  },
+  "resources": {
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "rss_sample_limit_bytes": 34359738368,
+    "shm_sample_limit_bytes": 2147483648,
+    "total_wall_limit_s": 600,
+    "interrupt_at_s": 570,
+    "cleanup_allowance_s": 30,
+    "cpu_workers": 1,
+    "prepare_batch_rows": 2,
+    "model_batch_rows": 1,
+    "max_active_batches": 2,
+    "query_timeout_s": 240,
+    "startup_timeout_s": 180
+  },
+  "runtime": {
+    "started_utc": "2026-10-19T12:42:58.277108+00:00",
+    "finished_utc": "2026-10-19T12:47:31.463077+00:00",
+    "elapsed_s": 273.18596839904785,
+    "samples": 1,
+    "performance_comparison": false
+  },
+  "calls": {
+    "actual": 8,
+    "statuses": {
+      "succeeded": 8
+    },
+    "usage": {
+      "prompt_tokens": 738,
+      "completion_tokens": 126,
+      "total_tokens": 864
+    },
+    "unknown_usage_fields": {
+      "prompt_tokens": [],
+      "completion_tokens": [],
+      "total_tokens": []
+    },
+    "extra_warmup": 0,
+    "automatic_retries": 0
+  },
+  "cases": [
+    {
+      "query_id": "author-ordinary-me",
+      "terminal_calls": 4,
+      "calls_by_stage": {
+        "map-0": 2,
+        "extract-1": 2
+      },
+      "statuses": {
+        "succeeded": 4
+      },
+      "output_records": 2,
+      "columns": [
+        "title",
+        "body",
+        "row_id",
+        "call_id",
+        "derived0",
+        "field"
+      ],
+      "source_indices": [
+        17,
+        17
+      ],
+      "occurrence_ids_preserved": true,
+      "grouped_parents_confirmed": null,
+      "original_sdk_actual_terminal_replay_executed": true,
+      "relation_phases": 1,
+      "usage": {
+        "prompt_tokens": 382,
+        "completion_tokens": 102,
+        "total_tokens": 484
+      }
+    },
+    {
+      "query_id": "author-ordinary-ef",
+      "terminal_calls": 4,
+      "calls_by_stage": {
+        "extract-0": 2,
+        "filter-1": 2
+      },
+      "statuses": {
+        "succeeded": 4
+      },
+      "output_records": 0,
+      "columns": [
+        "title",
+        "body",
+        "row_id",
+        "call_id",
+        "field"
+      ],
+      "source_indices": [],
+      "occurrence_ids_preserved": true,
+      "grouped_parents_confirmed": true,
+      "original_sdk_actual_terminal_replay_executed": true,
+      "relation_phases": 2,
+      "usage": {
+        "prompt_tokens": 356,
+        "completion_tokens": 24,
+        "total_tokens": 380
+      }
+    }
+  ],
+  "engines": [
+    {
+      "max_calls": 4,
+      "reserved_calls": 4,
+      "api_shutdown_confirmed": true,
+      "process_exit_confirmed": true
+    },
+    {
+      "max_calls": 2,
+      "reserved_calls": 2,
+      "api_shutdown_confirmed": true,
+      "process_exit_confirmed": true
+    },
+    {
+      "max_calls": 2,
+      "reserved_calls": 2,
+      "api_shutdown_confirmed": true,
+      "process_exit_confirmed": true
+    }
+  ],
+  "budget": {
+    "id": "imlane-ordinary-me-ef-model-20261019",
+    "limit": 8,
+    "allocated": 8,
+    "unit_count": 1,
+    "claim_count": 1,
+    "remaining": 0,
+    "unit_id": "author-me-ef-distinct-query-owners",
+    "refunds": 0,
+    "transfers": 0,
+    "historical_ledger_files_unchanged": 9
+  },
+  "verification": {
+    "new_close_report_tests_passed": 5,
+    "original_sdk_actual_terminal_replay": true,
+    "grouped_parent_ids": true,
+    "empty_final_relation_dtype_and_columns_match_sdk": true,
+    "independent_functional_errors": [],
+    "independent_resource_errors": [],
+    "source_files_unchanged": 1078,
+    "author_source_files_unchanged": 12,
+    "author_binaries_unchanged": 3,
+    "author_head_status_diff_unchanged": true,
+    "prior_success_and_failure_files_unchanged": 118,
+    "original_disabled_model_config_unchanged": true,
+    "final_independent_reviews": [
+      "spec PASS",
+      "resource PASS"
+    ]
+  },
+  "resources_after": {
+    "observed_birth_identities_absent": 247,
+    "author_tick_identities_absent": 88,
+    "author_scopes_closed": 3,
+    "phase_gpu_exit_checks_passed": 3,
+    "query_gpu_exit_checks_passed": 2,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "shared_memory_entries": 0,
+    "rpc_active_kernel_sockets": 0,
+    "inactive_rpc_entries_retained": 9,
+    "normal_owned_lease_released": true,
+    "supervisor_signals": 0,
+    "supervisor_cleanup_errors": 0,
+    "sampled_peaks": {
+      "rss_bytes": 8922361856,
+      "shm_bytes": 134258688
+    },
+    "sample_is_full_peak_or_hard_limit": false,
+    "unobserved_descendants_confirmed": false
+  },
+  "evidence": {
+    "source_kind": "original experiment and independent read-only audit",
+    "complete_archive": {
+      "archive": "imlane-chain-model-4fc-r1-complete-evidence.tar.gz",
+      "archive_sha256": "5ad35a706fbcda0fe71b7dd000d00e005964f3f524ba2c25bb7bb877e77b1fc6",
+      "archive_bytes": 8618517,
+      "member_count": 1236
+    },
+    "server_archive": {
+      "sha256": "b742307d1a1e15658a354b3b433ce7e9ef9ce077ff8d56754d8f9d885f6f4ad7",
+      "bytes": 234730,
+      "members": 76
+    },
+    "original_members": {
+      "report.json": "c4a3f473da211bd6e4b6df9276f40863b9c25db0097ce34741f7c2a625197d34",
+      "INDEPENDENT-FINAL-WITNESS.json": "c87cdef5b8ab37c7a3146809eb3573b24510b39d5a2c91522a9bc963d1831cb8",
+      "MEMBER-INDEX.json": "04676dc63555fec7f885df2a463ae350c309e7daf000812182e8923741c97b57"
+    },
+    "review_sha256": {
+      "spec-terminal-review.json": "698a4af8ca7130cd152257bac07c64312f4204d4cc2b798e718fe2ab91f6de9b",
+      "resource-terminal-review.json": "ae15cf3e7958c0e2bcc3fb41b50e31554ef2db8c989c628497a12684f4382f6f"
+    },
+    "retrieval": "Provide the attempt ID and archive SHA256 to the experiment maintainer; request the original archive and its complete member index.",
+    "private_runtime_configuration_published": false,
+    "full_archive_committed": false
+  },
+  "limitations": [
+    "fixed API source only; the subsequent public selector is separate",
+    "synthetic two-row cases; no semantic quality or performance qualification",
+    "author Ray, multiple executors and PostgreSQL integration are not covered"
+  ]
+}

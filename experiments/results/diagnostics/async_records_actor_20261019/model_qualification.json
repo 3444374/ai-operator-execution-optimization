@@ -1,0 +1,261 @@
+{
+  "schema": "semloom.async_core_model.summary.v1",
+  "attempt_id": "async-core-82e685b3-20261019-r2",
+  "status": "late-passed-cancel-failed",
+  "source": {
+    "commit": "82e685b3233e6524732934bbf220fb5563e515f8",
+    "files": 411,
+    "config_sha256": "9fe7a3fbe9eacd42bf6518b6f4a9537655611f9c061f919f4ea9f077f2add898",
+    "helper_sha256": "84c9fcd75b366cde8e30bb6d941eed227f5d5b600e820d132a5694c340529b23",
+    "bundle_sha256": "6a447c74720d30fdc8a7eb57950041befac5c035b6a6a86032ed0375f60d80d0",
+    "tokenizer_call_template_generation_and_production_source_unchanged": true
+  },
+  "preparation": {
+    "first_attempt": "async-core-82e685b3-20261019-r1",
+    "first_status": "failed-before-model",
+    "failure": "TypeError: Object of type BatchEncoding is not JSON serializable",
+    "failure_location": "model_preflight.py:56",
+    "model_calls": 0,
+    "model_engines": 0,
+    "new_ledger_created": false,
+    "original_failure_preserved": true,
+    "helper_change": "Extract and validate the original flat nonnegative input_ids list before length and JSON hashing.",
+    "actual_transformers_object_regressions_passed": 20,
+    "preflight_engine_constructed": false,
+    "preflight_cuda_initialized": false
+  },
+  "runtime": {
+    "started_utc": "2026-10-19T12:11:49.475463+00:00",
+    "finished_utc": "2026-10-19T12:14:50.843634+00:00",
+    "elapsed_s": 181.3681709766388,
+    "controller_exit_code": 1,
+    "performance_comparison": false
+  },
+  "execution": {
+    "entry": "reviewed public Async selector configuration and production _model_worker through a private qualification harness",
+    "public_selector_factory_used": true,
+    "top_level_cli_process_executed": false,
+    "public_cli_model_covered": false,
+    "postgresql_covered": false
+  },
+  "model": {
+    "name": "Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "vllm": "0.25.1",
+    "transformers": "5.14.1",
+    "gpu": "one RTX 4090",
+    "dtype": "bfloat16",
+    "max_model_len": 4096,
+    "max_num_seqs": 2,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.8
+  },
+  "generation": {
+    "max_tokens": 8,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 0,
+    "stop": [
+      "\n"
+    ],
+    "presence_penalty": 0.0,
+    "frequency_penalty": 0.0,
+    "repetition_penalty": 1.0,
+    "logprobs": null,
+    "response_format": null
+  },
+  "async_limits": {
+    "max_inflight": 2,
+    "input_bytes": 4194304,
+    "item_input_bytes": 2097152,
+    "result_slots": 2,
+    "result_bytes": 4194304,
+    "item_result_bytes": 2097152,
+    "command_slots": 2,
+    "control_slots": 16,
+    "control_frame_bytes": 65536
+  },
+  "resources": {
+    "cpu_workers": 1,
+    "gpu_workers": 1,
+    "prepare_batch_rows": 1,
+    "model_batch_rows": 1,
+    "max_active_batches": 2,
+    "query_timeout_s": 360,
+    "startup_timeout_s": 300
+  },
+  "budget": {
+    "id": "async-core-82e685b3-20261019-r1",
+    "limit": 4,
+    "allocated": 4,
+    "units": {
+      "late": 3,
+      "cancel": 1
+    },
+    "both_claimed_once": true,
+    "actual_model_request_boundaries": 4,
+    "remaining": 0,
+    "automatic_retries": 0,
+    "additional_budget": 0,
+    "refunds": 0,
+    "transfers": 0
+  },
+  "late": {
+    "status": "passed",
+    "calls": 3,
+    "call_statuses": {
+      "succeeded": 3
+    },
+    "usage": {
+      "prompt_tokens": 2990,
+      "known_prompt_tokens": 2990,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 12,
+      "known_completion_tokens": 12,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 3002
+    },
+    "native_unfinished_interval_proof": {
+      "proven": true,
+      "first_native_unfinished_interval": [
+        3560527.663863319,
+        3560527.992719025
+      ],
+      "late_source_monotonic": 3560527.979740818,
+      "late_native_admitted_monotonic": 3560527.990576876,
+      "witness": "original vLLM 0.25.1 add_request await and generate finished boundaries",
+      "gpu_hardware_overlap_proven": false,
+      "performance_claim": false
+    },
+    "resource_sample_peaks": {
+      "rss_bytes": 9905926144,
+      "shm_bytes": 28672
+    }
+  },
+  "cancel": {
+    "status": "failed",
+    "calls": 1,
+    "call_statuses": {
+      "unknown": 1
+    },
+    "primary_error": "InterruptedError",
+    "failure": "matching native abort intent is missing",
+    "native_abort_intent_events": 0,
+    "observation_errors": [],
+    "native_abort_output_is_physical_terminal_confirmation": false,
+    "native_api_shutdown_literal": true,
+    "actor_engine_close_literal": false,
+    "actor_status": "unknown",
+    "known_usage": {
+      "prompt_tokens": 2402,
+      "known_prompt_tokens": 2402,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 1,
+      "known_completion_tokens": 1,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 2403
+    },
+    "held_tasks_after_close": 1,
+    "input_bytes_after_close": 13238,
+    "result_bytes_after_close": 2097152,
+    "active_requests_after_close": 1,
+    "active_work_after_close": 1,
+    "retained_refs_after_close": 1,
+    "timeline": {
+      "native_admitted": [
+        {
+          "event": "native_admitted",
+          "monotonic": 3560606.436124941
+        }
+      ],
+      "cancel_intent": [
+        {
+          "event": "cancel_intent",
+          "monotonic": 3560606.446159877
+        }
+      ],
+      "native_abort_output": [
+        {
+          "event": "native_terminal",
+          "monotonic": 3560606.671203282,
+          "finish_reason": "abort",
+          "prompt_tokens": 2402,
+          "completion_tokens": 1
+        }
+      ],
+      "production_unknown": [
+        {
+          "event": "production_terminal",
+          "monotonic": 3560606.672420586,
+          "status": "unknown",
+          "confirmed": false,
+          "prompt_tokens": 2402,
+          "completion_tokens": 1,
+          "total_tokens": 2403,
+          "finish_reason": "abort"
+        }
+      ],
+      "core_before_close": [
+        {
+          "event": "core_before_close",
+          "monotonic": 3560606.447829909
+        }
+      ],
+      "core_after_close": [
+        {
+          "event": "core_after_close",
+          "monotonic": 3560612.128657098,
+          "status": "unknown"
+        }
+      ]
+    },
+    "root_cause": "unresolved; existing evidence does not identify the exact cancel/close path",
+    "evidence_scope": "The required event is emitted by WitnessEngine.abort; direct native shutdown is outside that hook.",
+    "physical_exit_does_not_promote_logical_unknown": true
+  },
+  "resources_after": {
+    "status": "passed",
+    "observed_birth_identities_absent": 73,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "shared_memory_entries": 0,
+    "rpc_active_kernel_sockets": 0,
+    "inactive_rpc_entries_retained": 6,
+    "normal_owned_lease_released": true,
+    "forced_cleanup_signals": 0,
+    "supervisor_cleanup_errors": 0,
+    "historical_ledger_files_unchanged": 8,
+    "author_source_files_unchanged": 12,
+    "author_binaries_unchanged": 3,
+    "author_head_status_diff_unchanged": true,
+    "resource_sampling_is_hard_limit": false,
+    "unobserved_descendants_confirmed": false
+  },
+  "evidence": {
+    "source_kind": "original experiment and independent read-only audit",
+    "complete_archive": {
+      "archive": "async-core-82e685b3-r2-complete-evidence.tar.gz",
+      "archive_sha256": "e7a9f8b291852b28d1a3435cab4cfe6dc5c7cbb3d880766974d92aab5651e5d8",
+      "archive_bytes": 10658407,
+      "member_count": 126
+    },
+    "original_first_archive_sha256": "4e9f97c2f3c9d9fa187b1c090898c677ce00eb277b435c0836f721daccb5b7d1",
+    "server_archive_sha256": "88dade8a3de7d9206b18b6184ad4e429787c738a6d75baf435149c20a3f0e598",
+    "server_archive_bytes": 1089213,
+    "server_archive_members": 67,
+    "original_members": {
+      "evidence/INDEPENDENT-FINAL-WITNESS.json": "fd88f1bdf11e091dff30b409970e79ca46025b51089c44fe5bc4f63139ea48c4",
+      "cancel-observations.json": "0a39ce74072b8e91a44db486e8951a26c7ba6d55de887bfd21de89b8f57f7548",
+      "cancel-evidence-review.json": "be73a9d1269b9c5648dbfb7b31f17e1cf3048fb20cb53efff830fe44367ce7e9"
+    },
+    "retrieval": "Provide the attempt ID and archive SHA256 to the experiment maintainer; request the original archive and its complete member index.",
+    "private_runtime_configuration_published": false,
+    "full_archive_committed": false
+  },
+  "limitations": [
+    "native frontend admission timing only; GPU hardware execution overlap is not proven",
+    "cancel qualification failed; an abort output or physical cleanup does not supply the missing explicit witness",
+    "no performance, whole-workload, cross-stage or PostgreSQL qualification",
+    "passed late and IMLane model units must not be repeated for cancel diagnosis"
+  ]
+}

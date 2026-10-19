@@ -9,6 +9,10 @@
 2026-10-19 的 Daft 关闭修正单元已在冻结 `f526fbf1` 完成两查询／四次真实调用，见[独立结果](daft_model_close_correction.json)；此前失败、未知计数和永久预留保留。
 当前普通 Filter 的 Ray Data／Daft／静态参照／Core 已消费中性扫描与 caller 绑定方法，换列换指令的资格为 CPU；不继承冻结 Daft 模型来源。
 
+后续[IMLane固定4fc查询API模型](../imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)与
+[Async固定82e迟到供给／取消模型](../async_records_actor_20261019/README.md#model-late-cancel-20261019)
+各自分列；旧初始化失败保留，后续公开selector不继承API模型资格。
+
 <a id="daft-exit-followup-20261019"></a>
 ## Daft driver 退出后的有限自然退出观察
 
@@ -447,8 +451,8 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 | Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4普通Q3两负例；另有8be单行Map→Extract，原MFE失败保留 | 有限链及显式Extract分段CPU；非末端关系模型另验 |
 | Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526普通Q3两query／4调用，首轮actual null保持；另有522单行Map→Extract | 共享有限链及显式Extract分段CPU；当前新源码不继承旧模型资格 |
 | SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f普通Filter同engine两query／4调用；另有8be单行Map→Extract，不转授新源 | 显式Core Extract屏障CPU通过；原同步批不等于Async供给 |
-| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，该8be单元未取得模型资格 | 通用Filter／有限链fixture、级联17项本机CPU及r3作者两查询44次fixture分列；作者Ray及级联真实模型仍待验 |
-| SemLoom Async Core（显式） | 同一生产Core／准备ObjectRef／线程actor／有界三通道child | 五个真实CPU传输scope、关闭交接及另一个原parser／COUNT／evaluator闭环分列，物理模型为CPU替身 | 真实AsyncLLM／GPU待验 | 同步默认保持，跨阶段持续供给及性能另验 |
+| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 旧7a作者CPU保持原来源；后续公开selector目前仅本机CPU | [4fc查询API](../imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)的ME／EF通过；[旧8be初始化unknown](#imlane-model-initialization-attempt-20261019)不改写 | 公开selector作者执行、作者Ray及级联模型另验；r3级联CPU保持原来源 |
+| SemLoom Async Core（显式） | 生产Core／准备ObjectRef／线程actor／有界三通道child | 原CPU传输与parser／COUNT／evaluator按来源分列 | [82e模型](../async_records_actor_20261019/README.md#model-late-cancel-20261019)late通过、cancel缺少abort意图记录而失败；独立物理退出通过，unknown责任保留 | 同步默认保持，公开CLI模型、跨阶段持续供给及性能另验 |
 | 原全局级联（Ray／Daft／Core） | 原LOTUS全局控制、角色／阶段及call身份；公共三backend CLI | 原方法差分、各native阶段CPU和Core关窗／入口合同分列 | 真实helper日志／模型／GPU换模待验 | IMLane阶段API另列；没有公共IMLane selector |
 
 固定来源的普通 Filter 资格与新算子覆盖是不同验收项。当前支持的 Filter／Map／Extract

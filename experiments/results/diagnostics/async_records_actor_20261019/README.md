@@ -1,4 +1,7 @@
-# Production Core 的异步本地模型 actor 接线：CPU 合同资格
+# Production Core 的异步本地模型 actor：CPU 接线与固定模型结果
+
+后续固定 `82e685b3` 的真实模型结果见[迟到供给与取消检查](#model-late-cancel-20261019)：
+late通过，cancel因缺少对应原生abort意图记录保留失败；不把物理退出改作请求终态确认。
 
 本包将已有生产 `SessionEngine` 接到已有有界异步私有模型进程，交付可注入的
 `AsyncRecordsActorOwner`。最终源码固定为 `a66648d53934eddad0bbe60ed865246068f68ee2`，
@@ -146,3 +149,39 @@ Core cleanup20、actor RPC15／响应16、IPC15；不构造引擎、socket 或 R
 原评价误差0、2TP。Core额度及refs归零，API closed；外层17个 observed owned身份退出，无清理信号。
 [同一机器摘要](root_integration_cpu.json)保存四原件SHA、13生产源与测试SHA，
 模型调用0、GPU仍None；不把这个软件输入或固定token计数当模型质量、模板或性能资格。
+
+<a id="model-late-cancel-20261019"></a>
+## 固定源码的迟到供给与取消模型检查
+
+`async-core-82e685b3-20261019-r1` 在模型创建前因helper无法JSON序列化真实
+`BatchEncoding`失败：模型调用0、新账本未创建。原失败保留；helper仅取原`input_ids`平面
+非负整数列表做长度／摘要，tokenizer调用、模板、生成配置及411项生产源码不变。
+20项真实Transformers对象回归和双独审通过后，执行新的r2运行，不重跑已成功的其他模型单元。
+
+`async-core-82e685b3-20261019-r2` 于2026-10-19 12:11:49.475463–12:14:50.843634 UTC运行，
+耗时181.368171秒、控制器退出1。Qwen2.5-7B-Instruct／vLLM0.25.1／单4090，
+两个独立永久unit为late 3次、cancel 1次；同一总额4已全部领取，无退款、转移或自动重试。
+r2由私有资格脚本读取公开Async selector配置并调用生产`_model_worker`工厂路径；没有执行顶层CLI进程，命令行入口的模型覆盖另验。
+
+| 单元 | 实际请求及终态 | 已知输入／输出 tokens | 判定 |
+|---|---|---:|---|
+| late | 3条succeeded | 2990／12 | passed |
+| cancel | 1条unknown，原查询InterruptedError | 2402／1 | failed |
+
+late的第三条输入及原生接纳发生在第一请求的原生未完成区间内；对应原`AsyncLLM.add_request`
+已返回和`generate`最终输出记录，只证明前端接纳时序，不证明GPU硬件重叠或性能收益。
+cancel已原生接纳并记录取消意图，随后收到`finish_reason=abort`与production unknown；
+缺少所要求的`native_abort_requested`，原失败`matching native abort intent is missing`保留。
+该观察事件只由`WitnessEngine.abort`记录，直接shutdown不经过该观察点；现有证据无法确定
+实际经过哪条cancel／close路径，不能据此断言原生abort从未发生或取消资格通过。
+
+known usage全部进入原query账本；close后Core仍持有一个任务、一个输入引用及对应容量。
+原生模型API关闭字面true、actor engine关闭字面false分列，逻辑unknown不因物理退出改变。
+独立确认73个已观察出生身份退出、GPU1MiB且无计算进程、共享内存空、RPC活跃连接0；
+六个非活动目录项保留，自有正常lease释放，监督器无清理信号或错误。八旧账本与作者源码／二进制保持。
+
+配置签名、必要原始时序、调用／usage及原件校验值见[紧凑回执](model_qualification.json)。
+完整126成员／10,658,407字节原件含r1失败，留在仓库外，SHA256为
+`e7a9f8b291852b28d1a3435cab4cfe6dc5c7cbb3d880766974d92aab5651e5d8`；
+向实验维护者提供运行ID和该摘要可获取原归档及完整成员索引。取消后续只读诊断按独立修复处理，
+不重复late或IMLane已通过单元；跨阶段持续供给、完整工作负载、PostgreSQL和性能仍未覆盖。

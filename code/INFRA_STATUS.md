@@ -1,5 +1,9 @@
 # AI 算子执行 Infra 当前状态
 
+[IMLane固定查询API模型检查](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md#fixed-api-model-20261019)已在`4fc53086`完成有限Map→Extract与Extract→Filter，保留原作者调度、段间独立实例及SDK差分；后续`8d35ddea`公开selector的作者执行仍待验，旧7a作者CPU不改来源。
+
+[Async固定模型检查](../experiments/results/diagnostics/async_records_actor_20261019/README.md#model-late-cancel-20261019)在`82e685b3`取得原生未完成区间内的迟到接纳证据；取消因缺少对应abort意图观察保留失败，known usage、Core unknown责任与独立物理退出分列。性能及取消修正另验。
+
 [Daft 外层有限退出观察](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)仅在固定 `52216739` 的独立 Map→Extract 小样通过：共享监督器可显式等待，逐 PID 记录清理目标，48 项 CPU 与两次实际模型调用通过；原 Daft 生命周期失败不改写，源码补丁另交集成。
 
 [独立一行 Map→Extract 模型覆盖](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)已在 8be 各执行一次两调用单元：Core／Ray 通过，Daft 语义与原 LOTUS 差分通过但 supervisor 发 SIGTERM，生命周期资格保留失败。私有控制器误判已用原回执更正；不转授原 MFE 或后续源码。
@@ -13,9 +17,9 @@
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
 后续修复原 parser 额外空字段名在后继 schema 被误拒绝的问题；39 项 CPU／17 subtests 通过，2 native 用例仍 pending，见[兼容回归](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。
 [Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，2 额外 native 测试占位另列。原 MFE 不改写，真实新关系模型及 GPU 仍待验。
-[Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。后续[actor／Core／公开 selector](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接，130／40原合同与独立实际CPU scope分列；关闭 known usage RED 已由0e515修复，原unknown额度保留。另一个实际CPU闭环取得原parser／COUNT2／evaluator零误差、22／2／24合成usage及Core额度／refs0；17个observed身份退出，模型0。真实 Async 模型和性能待验。
+[Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选121项CPU与关闭修复36项分列；未知保留句柄／预留，close只确认API／直接child／I/O。后续[actor／Core／公开selector](../experiments/results/diagnostics/async_records_actor_20261019/README.md#root-集成公开入口与关闭回执)已接，130／40原检查与独立实际CPU scope分列；关闭known usage RED由0e515修复，原unknown额度保留。另一个实际CPU对照取得原parser／COUNT2／evaluator零误差、22／2／24合成usage及Core额度／refs0，17个已观察身份退出、模型0；固定82e模型结果另列于上方，不转授公开CLI或性能。
 [Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 后续接纳，默认同步保持；新组合按各自固定来源解释。
-后续可覆盖私有进程关闭 RPC 的有界窗口，默认 10／11 秒不变；70 项 CPU／27 subtests 通过，实际 Async 采用已在CPU接线，模型退出仍待验。
+私有进程关闭RPC支持可选有界窗口，默认10／11秒不变；70项CPU／27 subtests通过，实际Async采用已在CPU接线。固定82e的独立模型退出见上方结果，后续源码及顶层CLI模型执行另验。
 冻结8be的IMLane首模型单元在初始化返回ZMQError，第二query未启动，四次永久预算保留、actual仍null、原controller／unit的unknown保持；独立审计后已正常释放本owner lease，见[失败与结清分列](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。不是模型资格。基本接入／实际库／模型／扩展见[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)。
 
 ## 独立 IMLane 记录桥

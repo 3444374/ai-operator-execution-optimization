@@ -1,4 +1,7 @@
-# IMLane 普通 Map／Extract 及关系链 CPU 验证
+# IMLane 普通 Map／Extract、关系链与固定 API 模型验证
+
+当前固定 `4fc53086` 的查询 API 已完成下方[有限模型检查](#fixed-api-model-20261019)；
+后续 `8d35ddea` 的公开 selector 仍只有本机 CPU 检查，两者按各自来源解释。
 
 职责分支 `feat/imlane-records-chain` 固定基点 `aebbbcd8`，选择性接纳共享
 `empty_prototype` 提交 `f977c979`。新增
@@ -107,3 +110,38 @@ executor／GPU，pending≤2，显式最终空prototype及永久unit上界。新
 最终源SHA、完整脱敏CPU记录恢复入口、原失败SHA与两轴审阅见
 [public_selector_verification.json](public_selector_verification.json)。这是当前本机合同资格；
 新源码作者环境、实际模型／GPU和性能由唯一执行owner另行冻结核验，既有成功单元不重跑。
+
+<a id="fixed-api-model-20261019"></a>
+## 固定查询 API 的单次模型检查
+
+原始实验 `imlane-chain-model-4fc53086-20261019-r1` 使用 `4fc53086` 的1078项公开源码投影，
+直接调用 `IMLaneChainBackend.evaluate`；原作者 DBEnd／Coordinator／Lane／CPython executor
+拥有调度和传输，v2桥与作者源码／二进制未改。此前 `7a4524b7` 的作者CPU成功保持原来源。
+新增五项关闭报告测试先在既有driver通过；模型11文件、模板和采样参数核同后才建立新账本。
+
+| 两行合成查询 | 实际调用 | 模型实例及上限 | 最终行数 |
+|---|---:|---|---:|
+| Map→Extract | Map 2、Extract 2 | 一个实例，4次 | 2 |
+| Extract→Filter | Extract 2、Filter 2 | 两个实例，各2次 | 0 |
+
+8次均成功，原始usage为738输入／126输出、共864 tokens。两个查询都把实际终态回放给原
+LOTUS开发包（SDK），没有新增模型调用；消息、最终关系、重复命名Int64索引、字段顺序及
+Extract后继的分组父调用核同。Filter返回空关系，其字段及dtype与原SDK一致；这不代表语义质量通过。
+Qwen2.5-7B-Instruct／vLLM0.25.1／单4090，生成与批配置、精确来源和计数见
+[紧凑回执](model_qualification.json)。运行起止为2026-10-19 12:42:58.277108–12:47:31.463077 UTC，
+273.185968秒包括准备、加载和退出；只有一次样本，不能作性能比较。
+
+三个实例的API关闭字面值均为true，三次分段及两次查询GPU退出检查通过。独立只读复核确认
+247个已观察出生身份、88个作者start_ticks身份退出，GPU为1MiB且计算进程为空；共享内存为空，
+RPC活跃连接0，9个非活动目录项保留。三个作者资源组正常退出，原helper释放自有正常lease，
+没有清理信号或错误。九个旧账本、118份旧证据、作者12源码／3二进制及HEAD/status/diff保持。
+100ms采样的常驻内存及共享内存最大值为8,922,361,856／134,258,688字节；不表示完整瞬时峰值或硬上限。
+
+独立永久账本总额8、唯一unit只领取一次，实际按4／2／2完成；无暖身、退款、转移或自动重试。
+已成功的旧CPU和模型单元未重跑。原disabled配置与准备失败原件保留，两份终态独审通过。
+完整原件8,618,517字节／1236成员留在仓库外，SHA256为
+`5ad35a706fbcda0fe71b7dd000d00e005964f3f524ba2c25bb7bb877e77b1fc6`；
+向实验维护者提供运行ID和该摘要可获取原归档及完整成员索引，关键原件SHA见紧凑回执。
+
+本次只认证上述查询API。公开selector的实际作者执行、作者Ray、多executor、PostgreSQL接入、
+语义质量和性能仍另验；不把4fc模型结果转授后续公开入口或级联。
