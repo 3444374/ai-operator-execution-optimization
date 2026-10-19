@@ -1,0 +1,173 @@
+{
+  "status": "proposed_only_not_allocated_or_executed",
+  "purpose": "One directed real-model observation of cancellation-to-abort handoff under immediate close; not a rerun of successful late supply or performance measurement.",
+  "production_source": {
+    "base": "82e685b3233e6524732934bbf220fb5563e515f8",
+    "candidate_patch": "ec0138354ccec436ab6319ba0308fa5b697ced4b",
+    "expected_changed_production_files": [
+      "code/src/serving/backends/async_engine_process.py",
+      "code/src/execution_provider/adapters/lotus_records_async_actor.py"
+    ],
+    "requires_final_integrator_selected_commit_and_new_complete_source_manifest": true,
+    "do_not_rebind_r2": true
+  },
+  "execution_owner": "Dedicated GPU owner only; this task performs no server/model execution.",
+  "unit": {
+    "name": "cancel-close-handoff",
+    "proposed_new_permanent_call_cap": 1,
+    "new_budget_and_unit_required": true,
+    "old_four_calls_remain_spent": true,
+    "automatic_retries": 0,
+    "extra_warmup_calls": 0,
+    "late_unit_repeated": false,
+    "physical_gpu_count": 1
+  },
+  "reuse": {
+    "r2_enabled_config_sha256": "9fe7a3fbe9eacd42bf6518b6f4a9537655611f9c061f919f4ea9f077f2add898",
+    "cancel_prepared_value_sha256": "f1efaf3538d25768cc3e0b99f8f2c4693ec5fb27c65ba1e30812268cfcb5ed44",
+    "cancel_prompt_tokens_observed_in_r2": 2402,
+    "generation": {
+      "max_tokens": 8,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": 0,
+      "stop": [
+        "\n"
+      ],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": null
+    },
+    "generation_canonical_sha256": "06a4c4c64b0659179de131474efeb25d96dacf1f02b8e07312114f44b656a827",
+    "async_limits": {
+      "max_inflight": 2,
+      "input_bytes": 4194304,
+      "item_input_bytes": 2097152,
+      "result_slots": 2,
+      "result_bytes": 4194304,
+      "item_result_bytes": 2097152,
+      "command_slots": 2,
+      "control_slots": 16,
+      "control_frame_bytes": 65536
+    },
+    "resources": {
+      "prepare_batch_rows": 1,
+      "model_batch_rows": 1,
+      "max_active_batches": 2
+    },
+    "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "chat_template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "unit_timeout_s": 300,
+    "cleanup_s": 30,
+    "keep_driver_model_environment_separation": true,
+    "do_not_modify_sampling_renderer_messages_or_add_model_holds": true
+  },
+  "preflight": [
+    "Freeze and independently review a new cancel-only helper/config: the old validator/controller assumes late3+cancel1 and must not be invoked unchanged.",
+    "Bind model/tokenizer/template/generation, source archive and each relevant native method source hash; use the exact saved cancel message.",
+    "Check all nine ledgers listed at r2 and any later GPU-owner ledger bindings, create a fresh permanent cap1 unit, and retain original r1/r2 results.",
+    "No model calls during local observer tests; observer failures are failures, not silent absence of evidence.",
+    "Claim fresh owned lease only through the existing GPU-owner process and verify idle resources."
+  ],
+  "event_chain": [
+    {
+      "stage": "driver/Core",
+      "events": [
+        "query_cancel_intent",
+        "core_cancel_callback_entered",
+        "ray_abort_rpc_dispatched"
+      ],
+      "identity": [
+        "run_id",
+        "session_id",
+        "sequence",
+        "request_id",
+        "engine_uid"
+      ]
+    },
+    {
+      "stage": "actor",
+      "events": [
+        "actor_abort_entered",
+        "actor_abort_returned",
+        "actor_close_entered",
+        "actor_close_abort_handoff"
+      ],
+      "values": [
+        "requested boolean",
+        "adopted keys",
+        "queued keys",
+        "unqueued keys",
+        "remaining deadline"
+      ],
+      "note": "Close adoption is cleanup-owned abort, not proof that a late original cancel RPC was accepted."
+    },
+    {
+      "stage": "IPC",
+      "events": [
+        "abort_enqueue_or_reject",
+        "abort_frame_fully_sent",
+        "close_frame_fully_sent",
+        "child_abort_received",
+        "child_abort_worker_started"
+      ],
+      "note": "Keep distinct timestamps; enqueue is not send or worker/native entry."
+    },
+    {
+      "stage": "original native methods",
+      "events": [
+        "native_abort_entered",
+        "native_abort_returned_or_raised",
+        "native_shutdown_entered",
+        "native_shutdown_returned_or_raised",
+        "native_finished_output"
+      ],
+      "note": "Wrap actual bound AsyncLLM.abort/shutdown while preserving arguments, original await/thread behavior and exceptions. Keep old adapter-entry observation separately named; it is not a native call witness."
+    },
+    {
+      "stage": "receipts",
+      "events": [
+        "production_terminal",
+        "query_primary_error",
+        "core_before_close",
+        "core_after_close",
+        "independent_physical_exit"
+      ],
+      "note": "Observed OS/GPU exit never changes logical unknown or releases its recorded credits retrospectively."
+    }
+  ],
+  "observation_limits": {
+    "only_one_request": true,
+    "bounded_event_count": true,
+    "no_prompt_or_token_content_logging": true,
+    "use_identity_and_digests": true,
+    "redact_before_disk": true,
+    "no_extra_sleep_or_delay_in_model_path": true,
+    "record_monotonic_and_entry_return_errors": true
+  },
+  "acceptance": [
+    "Trigger cancellation only after original native admission and before any observed matching final output. If the window is missed, stop and retain the spent attempt; do not retry.",
+    "Require a matching original native abort entry and its relation to shutdown, not just adapter-entry, finish_reason=abort, API shutdown or physical exit.",
+    "Report direct Core-RPC cancellation and close-owned adoption separately. A late RPC returning requested=False must remain false even if cleanup later invokes abort.",
+    "The queue handoff may pass while the result remains unknown/AbortNotConfirmed. Preserve InterruptedError, all actual usage, full TaskKey, held credit/input refs and original narrow API/GPU fields.",
+    "If an abort worker never starts or a native abort never returns, retain that explicit gap and stop without retry; do not fix the outcome by skipping a check.",
+    "Verify all observed owned birth identities and GPU/SHM/RPC state with the existing supervisor/resource owner, retain artifacts, and do not touch old successful units."
+  ],
+  "stop_conditions": [
+    "first observer, source, identity, budget or resource error",
+    "one issued model call",
+    "native request finished before cancellation trigger",
+    "query/cleanup deadline",
+    "unconfirmed owned resource cleanup",
+    "matching request naturally finishes before native abort entry: record the propagation window as inconclusive, retain the spent attempt, and do not retry"
+  ],
+  "not_claimed": [
+    "actual r2 winning interleaving",
+    "retroactive r2 cancellation qualification",
+    "native physical request terminal confirmation from abort return",
+    "quality/performance/overlap/GPU utilization benefit"
+  ]
+}

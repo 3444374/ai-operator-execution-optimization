@@ -1,0 +1,139 @@
+{
+  "source_commit": "ec0138354ccec436ab6319ba0308fa5b697ced4b",
+  "initial_batch": {
+    "metadata": "real_core_libraries_20261019T124843Z.json",
+    "result": "1 passed; 6 subsequent cases rejected before setup because Daft runner must use a fresh driver",
+    "passed_node": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_api_close_failure_preserves_known_late_usage",
+    "kept_unchanged": true,
+    "not_a_production_failure": true
+  },
+  "corrected_runs": [
+    {
+      "metadata": "real_core_fresh_1_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_consumed_unknown_keeps_credit_and_partial_usage",
+      "summary": "1 passed, 1 warning in 23.08s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "1/supervisor.json",
+        "original_bytes": 2708,
+        "original_sha256": "ee7eb67d37b6c3db31b0aaa51d32cdc152b8316393ab2ce172e73227f72dc63b",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    },
+    {
+      "metadata": "real_core_fresh_2_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_movie_query_runs_original_parser_count_and_evaluator",
+      "summary": "1 passed, 2 warnings in 22.54s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "2/supervisor.json",
+        "original_bytes": 2793,
+        "original_sha256": "09ceda4b83ffaca65d7e72b1074918768e03cd3c6f1db30c41dc374c9f63d8e9",
+        "observed_owned_count": 16,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    },
+    {
+      "metadata": "real_core_fresh_3_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_owned_actor_death_keeps_unknown_credit_and_known_prefix",
+      "summary": "1 passed, 1 warning in 21.91s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "3/supervisor.json",
+        "original_bytes": 2721,
+        "original_sha256": "4310fd36047f3ea3278e9140c2134c118f0af12ab0763322119e3f3c1365fc37",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    },
+    {
+      "metadata": "real_core_fresh_4_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_owner_close_hands_known_actor_receipt_to_query_before_ray_return",
+      "summary": "1 passed, 1 warning in 21.77s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "4/supervisor.json",
+        "original_bytes": 2733,
+        "original_sha256": "b7103d159e1f0c9dbd83813b6e526883b3ab48ef8d6334c5af4d01890244149f",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    },
+    {
+      "metadata": "real_core_fresh_5_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_second_request_enters_while_first_is_held_and_completes_first",
+      "summary": "1 passed, 1 warning in 22.47s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "5/supervisor.json",
+        "original_bytes": 2727,
+        "original_sha256": "dd6c540cbde826719ac81ecead809d32242ab9941597feb178d9682df4e9601f",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    },
+    {
+      "metadata": "real_core_fresh_6_20261019T125147Z.json",
+      "node_id": "code/tests/execution_provider/test_lotus_records_async_core_integration.py::AsyncCoreIntegrationTests::test_slow_consumer_cancelled_late_usage_stays_with_old_query",
+      "summary": "1 passed, 1 warning in 21.68s",
+      "supervisor": {
+        "original_run_id": "async-cancel-real-cases-20261019T125147Z",
+        "member": "6/supervisor.json",
+        "original_bytes": 2718,
+        "original_sha256": "ab4ac52e76e34659ae751abdce0786e071c59b3aab99994c392dfe2299755621",
+        "observed_owned_count": 15,
+        "observed_owned_exit_confirmed": true,
+        "signal_count": 0,
+        "signal_event_count": 0,
+        "remaining_owned_count": 0,
+        "cleanup_error_count": 0,
+        "scope": "observed_owned_processes",
+        "unobserved_descendants_confirmed": false,
+        "gpu_exit_confirmed": null
+      }
+    }
+  ],
+  "methods_passed": 7,
+  "qualified_scope": "Actual production Core + Ray2.56.1/Daft0.7.21/LOTUS1.2.4 + CPU engine + original SemBench evaluator; each successful method had a fresh driver. Only the six corrected methods have the listed external supervisor witnesses.",
+  "model_calls": 0,
+  "server_access": false,
+  "logical_ray_gpus": 0,
+  "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+  "no_model_or_gpu_qualification": true
+}

@@ -1,0 +1,9 @@
+{
+  "status": "corrected before any child launch",
+  "tool_output_chunk": "d65851",
+  "error": "node-id parser assertion",
+  "reason": "Whitespace regex included newline; use one FAILED summary line per node.",
+  "pytest_executions": 0,
+  "model_calls": 0,
+  "server_access": false
+}
