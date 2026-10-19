@@ -3,8 +3,8 @@
 从最新已发布 `integration/data-execution@d2915206c945e3c5db658a6533f3e6fed9b8cc6a`
 建立独立职责分支 `feat/lotus-extract-relations`。本轮只新增关系值模块、专属测试与本报告；
 主集成确认共享内核、现有方法／结果账目、原生接线与末端 guard 继续由其拥有。
-首轮报告是后继接线的 CPU 准备证据；当前显式 Core profile 的后续接线见末节。
-Ray Data／Daft 原生图仍不支持非末端 Extract。
+首轮报告是后继接线的 CPU 准备证据，当时 Ray Data／Daft 仍拒绝非末端 Extract。
+当前接线分别见下方 Core profile 与 [Ray／Daft 显式原生关系布局](#raydaft-显式原生关系布局)；历史数字保留。
 
 ## 实施条款与职责
 
@@ -70,7 +70,8 @@ OpenAI SDK 2.50.0、pandas 2.3.3；沿用已有 Python 3.12.6 隔离 CPU 环境�
 主集成以 `a903e51c` 接纳共享合同、`3fcb7a88` 接纳 Core 接线，`4566939a`
 为 Ray／Daft 增加资源分配前的拒绝门。上述首轮待项是历史状态；当前
 [`LotusRecordChain(relation_barriers=True)`](../../../../code/src/semantic_methods/lotus/record_chain.py)
-仅由 [Core owner](../../../../code/src/execution_provider/adapters/lotus_record_chain_core.py) 消费。
+先由 [Core owner](../../../../code/src/execution_provider/adapters/lotus_record_chain_core.py) 消费，
+后续新增的原生分段布局见下节；原拒绝门保留为当时来源的历史检查。
 默认末端 Extract 规则保持，直接 `run_batch` 仍拒绝非末端 Extract，不增加通用 DAG。
 
 Core 收齐整个前缀，在真实源 EOF、成功覆盖及解析核验后，等待 delivery lease、Core 额度、
@@ -103,3 +104,37 @@ pipe 延续；外层监督确认 3 个已观察 owned 出生身份退出，remai
 独立职责 `4a67df81` 的普通失败回归因此转绿，而非改为 expected failure。
 [验证摘要](empty_key_verification.json)记录 39 项 CPU／17 subtests 通过；两个 native 接线用例
 仍显式 pending／skip。此处是原方法／关系／Core 模型替身验证，没有运行 native 图或真实模型。
+
+## Ray／Daft 显式原生关系布局
+
+职责 `aab43acb` 选择性接纳为 `2d02f2a7`；[固定验证](native_verification.json)绑定七个职责文件、
+复用源和全部原始证据摘要。显式 `relation_barriers=True` 现在可由 Ray／Daft 消费。
+默认非末端 Extract 构造仍拒绝，段内继续执行原 native graph 与共享 `FusedChainBatch.run_rows → LotusRecordChain.run_batch`。
+小型[关系 owner](../../../../code/src/baselines/text/frameworks/lotus_chain_native_relation.py)
+只在真实 native EOF、完整覆盖／解析成功及原关闭范围结清后，应用完整关系广播并打开下一段。
+跨批重复标签、nullable、新列和同标签父调用保留；unknown、失败、取消及缺失 EOF 不放行后继。
+
+本布局每个非空段建立独立模型寿命，未声称跨段实例复用；逐段 elapsed 包含初始化／执行／关闭，
+关系物化时间另列。`EngineSpec.max_model_calls` 仍是每实例上限，查询应用上界为输入行数乘阶段数。
+调用／raw／阶段统计保留，累计 worker 快照不能当作可相加的 token 总数。
+驱动端完整源、必要 Extract 关系和审计历史不受每项 wire credit 封顶，不声明 RSS 上界。
+Ray／Daft 继续拥有分批、backpressure、worker 调度和公开生命周期；上游源码与原 LOTUS 策略未改。
+
+13 项纯合同／guard 通过；实际 Ray 2.56.1、Daft 0.7.21 各两项实际 native CPU 用例分别验证完整
+Extract→Map→Filter 和 unknown 前缀。正常路径每臂 12 笔合成评价／两个独立引擎；unknown 只开前缀。
+监督分别确认 18／11 个已观察 owned 身份退出，GPU 字段保持 None；没有模型或服务器操作。
+初轮受限进程检查、fixture 在惰性执行前撤销及 Daft runner 配置过晚的失败原件保留。
+两轴独审通过；额外早停反例核实合法晚到回执可在 close 时增加，不能误报为重复调用。
+
+## 空结果的源 Index 元数据
+
+保存输出的 CPU 诊断确认原 MFE 的 False 是模型真实输出；独立缺陷是空 records 无法恢复原 Index。
+`records_to_frame(..., source_index=source_frame.index)` 现在保留显式源 Index：空结果使用其空切片，
+非空结果保留 dtype／name 并校验标签类型和值。整数、字符串和重复标签均覆盖，不全局强设 int64。
+无 metadata 时保留旧推断行为；现有生产源码没有调用该函数的消费者，后续任务／资格调用方须
+保存原关系 Index 再传入，不能从幸存行补推原 dtype／name。没有改写已冻结 GPU 回放或结果。
+
+[独立回归](index_verification.json)包含 12 项新测试方法、原 all-discarded 调用方修改及原 LOTUS
+空 Filter 差分；51 项 CPU／43 subtests 通过。两个额外独立 native 测试占位仍 pending／skip，
+与上述四项实际 native CPU 用例分列。初始缺少 API 的 RED、首版 51／41 及独审发现的 int→bool
+宽松相等反例均保留；修后拒绝 bool／float 转换。此处不升级原 MFE 或新增真实模型资格。

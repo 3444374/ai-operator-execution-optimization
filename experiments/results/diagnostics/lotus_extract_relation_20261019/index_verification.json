@@ -1,0 +1,26 @@
+{
+  "scope": "explicit pandas source Index at final record relation assembly",
+  "source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "e0ee00644ef6f65da3681186516e5c76c02a89554187be2618c9af63f36107bb",
+    "code/tests/semantic_methods/test_lotus_record_chain.py": "7681cdc46453389d121e2b15a3179cce73233359b7acfdfea2b1ad4c06c3e9a4",
+    "code/tests/semantic_methods/test_lotus_record_frame_index.py": "535f22b3aa8a7f1d87978d93aee391cf0e8eb6ebdd95ef7e977e905b67196a08"
+  },
+  "independent_test_commit": "ecbcb15d4d79f770a90044f9cd5538fd5eb7e925",
+  "cpu_tests": {
+    "passed": 51,
+    "subtests_passed": 43,
+    "skipped": 2,
+    "skip_scope": "two additional independent native placeholders; separate native backend graphs already checked",
+    "failed": 0,
+    "raw_log_sha256": "a665acdf9483391f5a5909fb3af85c5fb1148ca7efea7bbe90f9d3debf748c2d"
+  },
+  "retained_failure_evidence": {
+    "baseline_red_log_sha256": "f2d922e2823591510ac91adb313e7a9014b1c88259465428e0ba9fc39a14419b",
+    "first_green_51_41_log_sha256": "72a1da63eca6376388dcae1245d1cc5a65f83850bb7f3d772eb458e9add550c2",
+    "review_finding": "Python value equality accepted int 1 cast to bool True; fixed type and value checks, added bool and float rejection subcases"
+  },
+  "production_callers_automatically_migrated": false,
+  "model_calls": 0,
+  "native_graphs_run_in_this_index_check": 0,
+  "server_operations": 0
+}

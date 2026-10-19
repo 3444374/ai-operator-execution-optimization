@@ -1,0 +1,476 @@
+{
+  "commit": "aab43acb6659a50e9231a259d0fa64136d5e4ce1",
+  "base": "b447fc37b7a705c64dbd7bf6b19d7b3677663d3f",
+  "dependency": {
+    "original_commit": "393ab64248098dda039b82989b71f8b5bff3f434",
+    "local_cherry_pick": "0560b1ce",
+    "scope": "Original parser empty-string output keys may remain ordered relation columns; root authored dependency. Take only the native delivery commit when integrating into a root that already contains it.",
+    "documentation_conflicts": "incoming root-owned text retained; no documentation changes in native delivery commit"
+  },
+  "source_sha256": {
+    "code/src/baselines/text/frameworks/daft_lotus_chain.py": "bb6bef0f6d91f31c3b7dbf6412b2518d33369dc8d21a750efd0e282e5a5297d9",
+    "code/src/baselines/text/frameworks/lotus_chain_native_relation.py": "176048992471d0a2ef7886b8b7caca8c51abf205e6535138b70e04ed7a96241e",
+    "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "5af3b076298450010bc0bcff6935731424047945cd8d91318ab3f91f66cbfe46",
+    "code/tests/baselines/text/native_relation_cpu_fixture.py": "017f1d45e3e36a667fcfcd15a361c2a03239c6a1b2c4c6cfa2afafcdd06d18c9",
+    "code/tests/baselines/text/test_chain_relation_native_guards.py": "9b4683c9252f79aae806d2e284ca1d48147384f8b464702b17dc9ebc0f78f805",
+    "code/tests/baselines/text/test_native_extract_relation_contract.py": "8f89fa4017358b46ca529a69fd0069c7227b7c1a91e720065f9f30f68884b719",
+    "code/tests/baselines/text/test_native_extract_relation_libraries.py": "5847ab4d6f1b6633f659eef0d4259e0a0a3b6c7fa47e34d6d82844e1a7983e82"
+  },
+  "reused_source_sha256": {
+    "code/src/semantic_methods/lotus/record_chain.py": "59d6bdda48b0f3c2a916519fd2dd15e2826b47c0952e41ebaa00f2c3acde6d0c",
+    "code/src/semantic_methods/lotus/record_relation.py": "bcfabd1cb35d6ab1a4acfa3a5f559bdafe9fa6a209216fc858490cd708a963ad",
+    "code/src/semantic_methods/lotus/engine.py": "57bed381dbee4c2efdd6cbf4e287cd13fa7589e34352b75dedb1a0512d7353f0",
+    "code/src/baselines/text/frameworks/lotus_chain_batch.py": "3988d876a8011b7c741f540d2f67a88da724aafc9d756a69853f47ac9a80f310",
+    "code/src/baselines/text/frameworks/lotus_chain_results.py": "d55defeb780072123056023bc60969b1af3f95c6057806805a4973fb64908084",
+    "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+    "code/src/baselines/text/frameworks/daft_engine_process.py": "d0593a850cd72966f4d05e1f3e8a5b2ee26b72522d300f013ec8aedca0b0e1d8",
+    "code/tests/execution_provider/test_lotus_record_chain_core_relations.py": "9b6a3b2f578b550879704823c880c02f75faead1af01b31f70fb068b158862ad"
+  },
+  "source_manifest_sha256": "5a82b624b53ac68ddf95873925b64ad32a22d8b1df1d6e31aa75876096cdfb9b",
+  "default_native_method_ast_unchanged": [
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "_execution_error",
+      "normalized_ast_sha256": "cc9af51601d3b8d47d8f29d6dae9cf839881fc3ceea77add0df0c22ac13480bb"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "__iter__",
+      "normalized_ast_sha256": "1317b80cc879e83b337b9c0e3d864d991b31f34bbf9a2304c83478c37d189bae"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "_check",
+      "normalized_ast_sha256": "0d0114edfbafd7f3be60f6bb96c505142d522f7711f58049645892be6ef2b8c5"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "_watch",
+      "normalized_ast_sha256": "3b20edba93508f3f57f69bc100282ae823bda5852215260cc003fa043f68307a"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "__next__",
+      "normalized_ast_sha256": "eabc449f92973623c9c30f76688fc85e7d755bda73a3f8ea8c5738c9a55fac4f"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "_finish_error",
+      "normalized_ast_sha256": "ea6ec644a2cdb91eb573946e81f14871269c54e04b638acf3c1fc7b26c75ba86"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/ray_data_lotus_chain.py",
+      "class": "_RayChainRows",
+      "method": "close",
+      "normalized_ast_sha256": "0be787a2330ae3c5e80aec144a5863fc59f89adec2e438bae2151241ddd40877"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "_execution_error",
+      "normalized_ast_sha256": "6871d9d6d13052f8648c9ceb7bb2fdcbaddcfaca04fe9dbe9107f20fd9ced00a"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "__iter__",
+      "normalized_ast_sha256": "1317b80cc879e83b337b9c0e3d864d991b31f34bbf9a2304c83478c37d189bae"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "_check",
+      "normalized_ast_sha256": "ec7911415586a267b5994719bc4a480eb8647bc9ab2024d5da31179b1455b7ea"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "_watch",
+      "normalized_ast_sha256": "4949be19da6cf06bf4938824d5a9723c53e77e141f3ab1a3a41cd8e542b940c9"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "__next__",
+      "normalized_ast_sha256": "5464452493f644a173ee283b48ceec216cd020367eff8614e43b5596689825fe"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "_finish_error",
+      "normalized_ast_sha256": "ac1046a7915d6facb87507eb3a28ff275635fda2ab349e78ebcfe4a280dea393"
+    },
+    {
+      "file": "code/src/baselines/text/frameworks/daft_lotus_chain.py",
+      "class": "_DaftChainRows",
+      "method": "close",
+      "normalized_ast_sha256": "0637036e9c745d71dac2101df8b2ae3e4b7f17dc7944eaeb9ef11f7a1202d536"
+    }
+  ],
+  "contracts": {
+    "tests_run": 13,
+    "status": "passed",
+    "skip_count": 0,
+    "new_relation_boundary_tests": 11,
+    "updated_obsolete_native_guard_tests": 2,
+    "report": "contracts-final-r3.json",
+    "model_calls": 0,
+    "vendor_graphs": 0
+  },
+  "actual_cpu_libraries": [
+    {
+      "backend": "ray",
+      "tests_run": 2,
+      "status": "passed",
+      "skips": 0,
+      "cases": [
+        {
+          "case": "complete",
+          "call_receipts": 12,
+          "statuses": {
+            "succeeded": 12,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 48,
+          "engine_uids": 2,
+          "query_completed": true,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "phase_history": [
+            {
+              "phase_stage_ids": [
+                "e0"
+              ],
+              "source_exhausted": true,
+              "verified_success": true,
+              "input_occurrences": 4,
+              "received_occurrences": 4,
+              "elapsed_s": 5.28829604099883,
+              "native_close_status": "closed",
+              "relation_completion_elapsed_s": 0.00018404200091026723,
+              "output_occurrences": 4,
+              "barrier": "complete_extract_relation"
+            },
+            {
+              "phase_stage_ids": [
+                "m1",
+                "f2"
+              ],
+              "source_exhausted": true,
+              "verified_success": true,
+              "input_occurrences": 4,
+              "received_occurrences": 4,
+              "elapsed_s": 4.904471500005457,
+              "native_close_status": "closed"
+            }
+          ]
+        },
+        {
+          "case": "unknown",
+          "call_receipts": 4,
+          "statuses": {
+            "succeeded": 3,
+            "failed": 0,
+            "unknown": 1
+          },
+          "known_total_tokens": 12,
+          "engine_uids": 1,
+          "query_completed": false,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "phase_history": []
+        }
+      ],
+      "observed_owned_count": 18,
+      "observed_owned_exit_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "backend": "daft",
+      "tests_run": 2,
+      "status": "passed",
+      "skips": 0,
+      "cases": [
+        {
+          "case": "complete",
+          "call_receipts": 12,
+          "statuses": {
+            "succeeded": 12,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 48,
+          "engine_uids": 2,
+          "query_completed": true,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "phase_history": [
+            {
+              "phase_stage_ids": [
+                "e0"
+              ],
+              "source_exhausted": true,
+              "verified_success": true,
+              "input_occurrences": 4,
+              "received_occurrences": 4,
+              "elapsed_s": 5.847429167006339,
+              "native_close_status": "closed",
+              "relation_completion_elapsed_s": 0.00022970900317886844,
+              "output_occurrences": 4,
+              "barrier": "complete_extract_relation"
+            },
+            {
+              "phase_stage_ids": [
+                "m1",
+                "f2"
+              ],
+              "source_exhausted": true,
+              "verified_success": true,
+              "input_occurrences": 4,
+              "received_occurrences": 4,
+              "elapsed_s": 5.304344750002201,
+              "native_close_status": "closed"
+            }
+          ]
+        },
+        {
+          "case": "unknown",
+          "call_receipts": 4,
+          "statuses": {
+            "succeeded": 3,
+            "failed": 0,
+            "unknown": 1
+          },
+          "known_total_tokens": 12,
+          "engine_uids": 1,
+          "query_completed": false,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "phase_history": []
+        }
+      ],
+      "observed_owned_count": 11,
+      "observed_owned_exit_confirmed": true,
+      "cleanup_errors": []
+    }
+  ],
+  "semantics": {
+    "stage_loop": "Only LotusRecordChain.run_batch, called by the shared FusedChainBatch",
+    "barrier": "Actual native source EOF and closed native owner plus ChainBatchResults.verify_success before complete_extract_relation; prefix rows are not exposed as query output",
+    "source_namespace": "Occurrence/call identity remains separate from business values row_id/call_id; duplicate business indexes remain legal",
+    "successor_inputs": "Completed relation records, ordered columns and exact group parent_call_ids; allow_nulls=True only after relation assembly",
+    "usage": "Unique per-call terminal receipts remain separate from final relation; worker cumulative LM stats snapshots are not added together",
+    "native_ownership": "Ray Data or Daft Native still own batches and worker scheduling; no Core or SemLoom admission policy is injected",
+    "lifetime": "Each nonempty native segment starts an independent model lifetime. No cross-segment reuse is claimed.",
+    "caps": "EngineSpec.max_model_calls remains per engine lifetime; whole-query application_call_upper_bound is len(expected)*len(global stages), with no automatic retry",
+    "memory": "Driver retains finite expected/source data, a complete Extract relation, phase calls/raw and native buffers. No RSS, object-store or GPU-memory bound is claimed",
+    "cost": "Each phase elapsed_s includes its own startup/execution/close; relation_completion_elapsed_s is recorded separately. These CPU values are not performance measurements."
+  },
+  "failures_preserved": [
+    {
+      "artifact": "contract-supervised-r1",
+      "status": "unknown",
+      "reason": "macOS sandbox sysctl denied process enumeration before the tests; worker -15; exact owned identity later confirmed absent; not counted as a successful CPU run"
+    },
+    {
+      "artifact": "ray-libraries-r1",
+      "status": "failed",
+      "reason": "CPU fixture patch ended at lazy evaluate return; the plan reverted to the ordinary kernel and requested one logical GPU in a runtime explicitly created with zero GPUs. Actor remained pending, no model or physical GPU allocation occurred. Exact owned worker TERM plus outer supervisor cleanup retained.",
+      "observed_owned_count": 12,
+      "observed_owned_exit_confirmed": true
+    },
+    {
+      "artifact": "daft-libraries-r1",
+      "status": "failed",
+      "reason": "Fixture created a frame before selecting native threads, so the existing preallocation guard rejected it. No model calls.",
+      "observed_owned_count": 1,
+      "observed_owned_exit_confirmed": true
+    }
+  ],
+  "remaining_scope": [
+    "This delivery has no model/SSH/server/GPU execution or performance qualification. CPU private-engine process exit does not prove physical GPU or unobserved descendant exit.",
+    "No Join, branching, global aggregation, multi-deployment chain, Async or new model scheduling framework.",
+    "Default nonterminal Extract construction guard remains. Only explicit relation_barriers plans use this materialized native layout.",
+    "External tests-only files native_extract_successor_fixture.py and test_native_extract_successors_independent.py were not modified."
+  ],
+  "evidence_index": {
+    "contract-supervised-final-r3/supervisor.json": {
+      "bytes": 1355,
+      "sha256": "bfc60af3e066248a79b18fe5c2a9bfeb638606f0fb41af859326d41280f98829"
+    },
+    "contract-supervised-final-r3/worker.log": {
+      "bytes": 22770,
+      "sha256": "151a231e98850512f5e4ddbd15b7f58269b8171f554770605a15b460cb75a142"
+    },
+    "contract-supervised-r1/supervisor.json": {
+      "bytes": 1871,
+      "sha256": "80dbd49b2680d46e915a9b5f3a7ab0175116dcee312a588a6e5f7335031bd377"
+    },
+    "contract-supervised-r1/worker.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "contract-supervised-r2/supervisor.json": {
+      "bytes": 1349,
+      "sha256": "30f51329ad6f41136f41801833b7fd9ff149e8eb56fcdadbd5c3ee26c719740f"
+    },
+    "contract-supervised-r2/worker.log": {
+      "bytes": 19510,
+      "sha256": "54d40392ea7a8dc02162978db1db1011f11d4cc710f49cbd21c15e60866d8c12"
+    },
+    "contracts-final-r3.json": {
+      "bytes": 1484,
+      "sha256": "c59d82bce439f574b69a2e3c598fc7829852f8322523e84102efe4c45fa003fa"
+    },
+    "contracts-r2.json": {
+      "bytes": 1222,
+      "sha256": "26767f8c43c8e57fbae09c42bba78d76d2e8a7e6ac5d95d35eb32526e07f3147"
+    },
+    "daft-libraries-r1/daft-complete.json": {
+      "bytes": 1714,
+      "sha256": "3daeb5dd3fb14630a24e3b497400c19c9a5d3e59cd36e08ab739bef2b3aeda62"
+    },
+    "daft-libraries-r1/daft-unknown.json": {
+      "bytes": 1714,
+      "sha256": "0a9bb32a3acbd877e33a39ca8c1e887cce0ebca7cf4380c6bf14db3f73013eb4"
+    },
+    "daft-libraries-r1/supervision/supervisor.json": {
+      "bytes": 1430,
+      "sha256": "a997cf97d8954c84e0c722913b28f92499318faf3c01adda1c8e4d062c829748"
+    },
+    "daft-libraries-r1/supervision/worker.log": {
+      "bytes": 3523,
+      "sha256": "fe2a410036b6711714ce9a276c4a3c4cc58a21bbb3187207b397a72a56524c3f"
+    },
+    "daft-libraries-r1/tests.json": {
+      "bytes": 4707,
+      "sha256": "a861d35c9c97a5381b4fdc51a76c6ad4250dd08ceb1f022c32ded65aa3cc89bf"
+    },
+    "daft-libraries-r2/daft-complete.json": {
+      "bytes": 32954,
+      "sha256": "d826bec35aae723107a63c09110fe4216f6bb9545204e8d0e9ba515b3ccc34b9"
+    },
+    "daft-libraries-r2/daft-unknown.json": {
+      "bytes": 12327,
+      "sha256": "661cff89400a8062e948955371935bfc312288354ff1eba02d023245082d2bbe"
+    },
+    "daft-libraries-r2/supervision/supervisor.json": {
+      "bytes": 2076,
+      "sha256": "824e55d025e7d76ca69bd1a00f1804a57e8593de7a7d0760d0851d5f1a960f49"
+    },
+    "daft-libraries-r2/supervision/worker.log": {
+      "bytes": 1414,
+      "sha256": "08259029f51600b1364c6b4325a69d91032d8517173bd8d76306ccb94fd44ddf"
+    },
+    "daft-libraries-r2/tests.json": {
+      "bytes": 2006,
+      "sha256": "db7e42118a79c1ee1fbf1a1da68b552ce75d05b376d9471e05a415ac8352770a"
+    },
+    "guard-supervised-r1/supervisor.json": {
+      "bytes": 1344,
+      "sha256": "190cc61137db2cc2755aa7960d32eb6e80a6713128ccd2d0076ffa6c238b95c5"
+    },
+    "guard-supervised-r1/worker.log": {
+      "bytes": 450,
+      "sha256": "73d682d451138ca5fc065dc6320286b7e1382a17c2ec269552a100128b308577"
+    },
+    "guards-r1.json": {
+      "bytes": 1341,
+      "sha256": "a2a2a8f35e6122faa2d80d34f3053448e3de2ec218e1ccaaef5fc384fad529ae"
+    },
+    "ray-libraries-r1/ray-complete.json": {
+      "bytes": 3063,
+      "sha256": "2d60735ae44bd478d6b8fd39fa4c80707bf084f40f5bd6589e8a0b0f45b498a8"
+    },
+    "ray-libraries-r1/supervision/supervisor.json": {
+      "bytes": 2243,
+      "sha256": "53b5e2e4f2eaeab3202e8e41bc231f134e6913cecd8003a16182389cb85bfd13"
+    },
+    "ray-libraries-r1/supervision/worker.log": {
+      "bytes": 20693,
+      "sha256": "207c553d31b64a1d9582df8ee9eb73b1bfd521dda29f2e7903770f7ccdeb5d2a"
+    },
+    "ray-libraries-r2/ray-complete.json": {
+      "bytes": 33008,
+      "sha256": "39ec431bb02cfe651582bf98de1b1c8c173bbecfc44663e66d25c2b9a0f7d448"
+    },
+    "ray-libraries-r2/ray-unknown.json": {
+      "bytes": 12379,
+      "sha256": "40a698c840693f1cf821e5a18eff71deec4e75d45cde49b1b76f8bf46f8f62e4"
+    },
+    "ray-libraries-r2/supervision/supervisor.json": {
+      "bytes": 2578,
+      "sha256": "a57e656acbc20c63a19c1f4327b79bba687eb7bf5a500abb7991bb8ceb9e7a30"
+    },
+    "ray-libraries-r2/supervision/worker.log": {
+      "bytes": 6165,
+      "sha256": "cf0b5f53448bf435aae471ec707dea64b92a56a45d7c17de87002d1478907f60"
+    },
+    "ray-libraries-r2/tests.json": {
+      "bytes": 2005,
+      "sha256": "d1213868ea871d4799c31b5fa8c83eb841acd72a7f49a1f0c92156e8dfee541c"
+    },
+    "ray-r1-owned-fixture-stop.json": {
+      "bytes": 277,
+      "sha256": "6bf757b02f383271527fdd9bae4135b33be299b610e9edc67ec9798e6a3c3a35"
+    },
+    "run_contracts_final_r3.py": {
+      "bytes": 2703,
+      "sha256": "c0269f19fd1ed1f1a8ecccf184be32579757245a7d5ce2648d1c93c3fb747a07"
+    },
+    "run_contracts_r1.py": {
+      "bytes": 2451,
+      "sha256": "396b54a2121b59a6e2b03a206f85687b741b8227e0de82aa968573393e068e39"
+    },
+    "run_contracts_r2.py": {
+      "bytes": 2451,
+      "sha256": "9db755f6e1967bf5c81362254c84fe946fe69bf6f04a430bc262c35d252da284"
+    },
+    "run_guards_r1.py": {
+      "bytes": 2488,
+      "sha256": "7aad5df0cea886ee073ffe0381f0223a5bf38fdcbf44cc85f2e67e751ee181c7"
+    },
+    "run_libraries_r1.py": {
+      "bytes": 2927,
+      "sha256": "6c9247a883cecacb5d4dd5a796b0f61056819da6d9fe3e7d6288ff4423a4c2d5"
+    },
+    "run_libraries_r2.py": {
+      "bytes": 2927,
+      "sha256": "ce465bfab3d19980c00d76294b653be4f2786439694f251f72ec134e1e9f0b7a"
+    }
+  },
+  "integration_commit": "2d02f2a7",
+  "original_delivery_sha256": "5a3f0104a8a328f1941fffe5d88f80eaf220447ecd00831753cba5eabee98d85",
+  "model_calls": 0,
+  "server_operations": 0,
+  "local_native_source_audit": {
+    "versions": {
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "lotus-ai": "1.2.4"
+    },
+    "record_python_files_checked": {
+      "ray": 2474,
+      "daft": 249,
+      "lotus-ai": 69
+    },
+    "mismatch_count": 0,
+    "source_audit_sha256": "2bd07c8e2336d076540398845ada87db7a05e4dbe47b3247ece307a7e1fcf9c3",
+    "scope": "existing local CPU environment; no runtime imports, vendor source edits, server or IMLane author qualification"
+  },
+  "supplemental_evidence": [
+    {
+      "run_id": "native-extract-relations-spec-early-stop-20261019-r3",
+      "bytes": 1835,
+      "sha256": "73562058b2abb5c2c0a1e93c2adbd70d21d469967afc0d383186561ee187e44e",
+      "scope": "Two in-process native-owner early-stop fixtures; valid late receipts retained through close. No actual vendor graph, model or GPU. Separate from the original 13 contracts and four actual-library cases."
+    }
+  ]
+}

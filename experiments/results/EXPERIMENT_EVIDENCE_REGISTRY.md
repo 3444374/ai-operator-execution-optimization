@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-19：[原生 Extract 分段关系](diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)：13 合同、Ray／Daft 各 2 项实际 native CPU 用例分列；18／11 observed-owned 退出。仅完整 EOF／覆盖／成功后广播，native 分批／调度保持；每非空段独立引擎，成本和 per-engine cap 明示，模型／GPU pending。
+
+2026-10-19：[空结果源 Index](diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)：显式保存 dtype／name／空切片类型，无 metadata 默认兼容；51 项／43 subtests CPU 通过，2 额外 native 占位另列，原 RED／宽松相等反例保留。没有生产调用方自动迁移，不升级原 MFE 或模型结果。
+
 2026-10-19：[IMLane 首模型尝试与独立物理结清](diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。冻结8be／126文件，首query一failed一unknown、第二query未启动；actual／API／总usage仍null，4／4一次永久claim不退。独立23本轮＋135前驱出生身份absent、SHM0及当次GPU1MiB空compute后owned-only正常释放lease；不改写原unknown或模型API。90归档成员／源SHA／原件与脱敏导出双SHA核同，路径CPU试验不回填历史errno。
 
 2026-10-19：[Extract 空字段名兼容](diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。保留原 parser 额外空键，修复后继 schema 误拒绝；独立普通 RED 回归转绿。39 项／17 subtests CPU 通过，2 native 明确 pending／skip；无 native 图、模型或 GPU。

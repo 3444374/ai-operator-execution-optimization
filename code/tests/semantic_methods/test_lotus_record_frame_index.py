@@ -134,6 +134,8 @@ class FrameIndexTests(unittest.TestCase):
         for labels, metadata in (
             (["1", "14"], pd.Index([1, 14], dtype="int64")),
             ([1, 14], pd.Index(["1", "14"], dtype="string")),
+            ([1], pd.Index([True], dtype=bool)),
+            ([1], pd.Index([1.0], dtype="float64")),
         ):
             with self.subTest(labels=labels):
                 records = occurrences(source_frame(pd.Index(labels)))

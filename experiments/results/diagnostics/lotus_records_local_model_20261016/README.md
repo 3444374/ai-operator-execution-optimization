@@ -399,8 +399,8 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 
 | 执行 owner | 基本 records／本地模型接点 | 实际库验证 | 真实模型资格 | 扩展覆盖 |
 |---|---|---|---|---|
-| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4的小范围普通Q3，两负例；本报告原件为准 | 已知有限链 CPU；新链模型、Extract关系屏障与持续供给待验 |
-| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526修正：两query／4调用；首轮失败actual null保持 | 共享有限链 CPU；新链模型／关系屏障待验 |
+| Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4的小范围普通Q3，两负例；本报告原件为准 | 有限链及显式 Extract 分段关系 CPU；新链模型与持续供给待验 |
+| Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526修正：两query／4调用；首轮失败actual null保持 | 共享有限链及显式 Extract 分段关系 CPU；新链模型待验 |
 | SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f：同engine两query／4调用；不转授后续源码 | 显式Core Extract屏障 CPU通过；原同步批不等于Async持续供给 |
 | IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，尚未取得模型资格 | 通用Filter及有限链fixture分列；作者Ray和完整模型链待验 |
 
@@ -410,7 +410,9 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 e4c 修正资格属于独立 static 参照，不归入 Ray Data 或 production Core 的模型来源。
 
 [显式 Core Extract 屏障](../lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)
-完成共享父调用／nullable／schema和同模型寿命的CPU接线；Ray／Daft入口先拒绝该profile。
+完成共享父调用／nullable／schema和同模型寿命的CPU接线；
+后续[Ray／Daft 显式分段布局](../lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)
+已取得新 CPU 图资格，每非空段独立引擎，成本与每实例上限单列；默认非末端 guard 保持。
 [独立 Async 组件](../local_async_engine_20261019/README.md#root-集成与关闭异常修复)
 已完成组件CPU与关闭故障修复，但 actor／Core／CLI 尚未接入，因此当前完整查询没有持续供给资格。
 

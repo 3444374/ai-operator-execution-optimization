@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, field, replace
 import hashlib
 from importlib.metadata import distribution
 import json
+from numbers import Integral
 import os
 import time
 
@@ -496,19 +497,33 @@ class LotusFilterMapExtract(LotusRecordChain):
         super().__init__(stages, query_id=query_id, _require_bound=_require_bound)
 
 
-def records_to_frame(records, *, columns=None):
+def records_to_frame(records, *, columns=None, source_index=None):
     """One final relation assembly, with original Extract label assignment.
 
 The union of Extract's actual keys defines added columns, as in its accessor;
 no declared-schema filtering or missing-key completion is applied to parsing.
+Pass the original pandas Index to retain its dtype/name when filtering removes
+all occurrences. Surviving records cannot recover that metadata by themselves.
 """
     import pandas as pd
 
     records = sorted(records, key=lambda record: record.source_position)
     columns = (list(dict.fromkeys(k for record in records for k in record.values))
                if columns is None else list(columns))
+    labels = [record.source_index for record in records]
+    if source_index is None:
+        index = labels
+    else:
+        if not isinstance(source_index, pd.Index) or isinstance(source_index, pd.MultiIndex):
+            raise TypeError("source_index must be a single pandas Index")
+        index = (pd.Index(labels, dtype=source_index.dtype, name=source_index.name)
+                 if records else source_index[:0])
+        for label, value in zip(labels, index.tolist(), strict=True):
+            if ((type(label) is int and (isinstance(value, bool) or not isinstance(value, Integral)))
+                    or (type(label) is str and type(value) is not str) or value != label):
+                raise ValueError("source_index dtype changed occurrence labels")
     frame = pd.DataFrame([{k: r.values.get(k) for k in columns} for r in records],
-                         index=[r.source_index for r in records], columns=columns)
+                         index=index, columns=columns)
     for record in records:
         for key, value in record.index_updates.items():
             if key not in frame.columns:

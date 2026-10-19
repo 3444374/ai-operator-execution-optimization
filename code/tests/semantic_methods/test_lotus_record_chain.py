@@ -330,14 +330,19 @@ class LotusRecordChainTests(unittest.TestCase):
                 self.assertEqual(sum(c["prompt_tokens"] for c in caught.exception.chain_calls), 77)
 
     def test_all_discarded_rows_produce_no_map_or_extract_work(self):
+        import pandas as pd
+
+        source_index = pd.Index([record.source_index for record in records()])
         infer = FixtureInfer()
         infer.responses["positive-filter"] = ["False"] * 3
         result = LotusFilterMapExtract(stages(), query_id="q").run_batch(records(), infer)
         self.assertEqual(result["records"], [])
         self.assertEqual(len(result["calls"]), 3)
         self.assertEqual(len(infer.batches), 1)
-        self.assertEqual(list(records_to_frame([], columns=result["columns"]).columns),
+        frame = records_to_frame([], columns=result["columns"], source_index=source_index)
+        self.assertEqual(list(frame.columns),
                          ["reviewText", "reviewId", "group_key", "summary"])
+        pd.testing.assert_index_equal(frame.index, source_index[:0])
 
     def test_unknown_map_result_stops_extract_and_preserves_prior_calls(self):
         original = FixtureInfer()

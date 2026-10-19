@@ -47,6 +47,12 @@ Extract 保留自身显式 `input_columns` 顺序。普通 `LotusRecordChain(sta
 直接构造 worker 的 `LotusFilterMethod`／`LotusRecordMethod` 同样要求已绑定值。
 `make_lm()` 只创建 accounting/config 对象，允许尚未绑定的 caller 配置并检查原引用，不负责准备消息。
 
+显式 Extract 关系屏障有[Core 同 worker 与原生分段布局](../../../../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)：
+Ray／Daft 各段仍由 native graph 执行，完整 EOF／覆盖／成功后才关系广播；每个非空段独立引擎，
+成本与每实例调用上限分列。默认非末端 guard 保留，不增加通用 DAG。
+最终 `records_to_frame(records, columns=..., source_index=source_frame.index)` 可保留原 Index 的
+dtype／name 和空切片类型；消费者需保存原 metadata，无参数时保持旧推断行为。
+
 旧配置缺少 `resolved_input_columns` 时仍读为 `None`，caller 绑定默认 Q3 后固定为
 `("reviewText",)`；旧 Q3 消息和 call IDs 保持。`dataclasses.asdict()` 的新输出会新增该字段
 （未绑定为 `None`），属于增加可选字段的配置兼容，不承诺新配置 JSON 与历史归档的字节 SHA 相同。

@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：接纳原生 Extract 关系布局并保留空结果 Index
+
+选择性接纳 `aab43acb` 为 `2d02f2a7`，原生各段只在真实 EOF／覆盖／解析及关闭成功后广播完整关系；批处理／调度仍归 Ray／Daft，每段独立引擎及成本明示。13 合同和各 2 项实际 native CPU 用例通过，18／11 已观察 owned 退出；两轴独审和额外早停回执反例通过，GPU／新模型 pending。源 Index 新接口只使用调用方显式 metadata，51 项／43 subtests通过，2 额外独立 native 占位另列，原 RED 与 int→bool 反例保留；不改原 MFE。见[固定来源与限制](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)。
+
 ## 2026-10-19：归档 IMLane 模型失败并分列独立结清
 
 公开8be首模型失败的脱敏派生摘要：首query一failed一unknown、第二query未启，actual／API／总usage仍null，新4／4永久claim不退；原controller／unit unknown不改写。独立23＋135已观察出生身份absent、SHM0、当次GPU1MiB无compute，随后owned-only正常释放lease；该观察不证明模型API或未观察后代。90归档成员和126源文件核同，原件／导出双SHA保留。独立路径CPU试验支持长度解释，不把errno36回填历史。两轴只读复核通过，本次只发布既有证据，不访问服务器或重跑模型。另窄修数据组织的旧集成来源状态句。见[结果与精确范围](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。

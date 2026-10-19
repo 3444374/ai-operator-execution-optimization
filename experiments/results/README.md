@@ -8,7 +8,7 @@
 
 | 内容 | 报告入口 |
 |---|---|
-| records 基础与扩展分层 | [固定来源状态](diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)、[IMLane失败／独立结清](diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)、[Core Extract 屏障](diagnostics/lotus_extract_relation_20261019/README.md)、[独立 Async 组件](diagnostics/local_async_engine_20261019/README.md) |
+| records 基础与扩展分层 | [固定来源状态](diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)、[IMLane失败／独立结清](diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)、[Core／native Extract 与 Index](diagnostics/lotus_extract_relation_20261019/README.md)、[独立 Async 组件](diagnostics/local_async_engine_20261019/README.md) |
 | LOTUS原生CLIP建索引与检索 | [六路径历史与最终融合资格](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#final-integrated-qualification)、[PNG共享适配](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/lotus_native_image_retrieval_20261014/README.md#png-candidate) |
 | 单GPU文件CLIP冷算子 | [静态／HSE／原生Ray Data复验与257图数值补测](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/diagnostics/image_clip_file_operator_20261014/README.md) |
 | 原生Daft／Ray／IMLane接入 | [三方法软件检查与LOTUS六路径单／双GPU模型](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/experiments/results/postgresql/native_executor_baselines_20261012/README.md) |

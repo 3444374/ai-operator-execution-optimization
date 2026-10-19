@@ -6,6 +6,8 @@
 
 [Movie Q3 records](../semantic_methods/lotus/README.md#movie-q3-records-最小切片)提供原生 Ray Data 与
 [Daft Native process 图](text/frameworks/daft_lotus_records.README.md)，各自拥有准备、传输与模型执行接点。
+有限链的[显式 Extract 关系布局](../../../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)
+复用原生分批／调度与同一方法内核，仅在完整关系边界物化；每段独立引擎的初始化和传输成本如实计入。
 普通Filter共享原LOTUS提示、解释和SemBench评价；Ray Data已完成Qwen／单4090普通Q3小切片差分，Daft的实库CPU／固定响应资格与真实GPU待验范围分别登记。
 
 `text/sembench_movie.py`固定上游Movie Q1/Q2/Q3与原始评价器，另做逐行真假审计。

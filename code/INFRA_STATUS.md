@@ -4,6 +4,7 @@
 
 [显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
 后续修复原 parser 额外空字段名在后继 schema 被误拒绝的问题；39 项 CPU／17 subtests 通过，2 native 用例仍 pending，见[兼容回归](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。
+[Ray／Daft 显式关系布局](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)已接纳：13 合同与各 2 项实际 native CPU 用例通过，EOF／覆盖／成功后推进，native 保有分批／调度，每段独立引擎，18／11 已观察 owned 退出。新增[源 Index 物化接口](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)保空切片／dtype／name，51 项／43 subtests CPU 通过；调用方须显式保留原 Index，2 额外 native 测试占位另列。原 MFE 不改写，真实新关系模型及 GPU 仍待验。
 [Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。当前未接 actor／Core／CLI，真实 Async 模型和性能待验。
 [Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 尚待独立接入。
 后续可覆盖私有进程关闭 RPC 的有界窗口，默认 10／11 秒不变；70 项 CPU／27 subtests 通过，实际 Async 采用和模型退出仍待验。
