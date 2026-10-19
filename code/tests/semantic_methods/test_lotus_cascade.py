@@ -97,14 +97,15 @@ class CascadeDifferentialTests(unittest.TestCase):
         return CascadeArgs(sampling_percentage=0.5, cascade_IS_random_seed=5,
                            cascade_num_calibration_quantiles=5, **options)
 
-    def run_records(self, args=None, fixture=None, **options):
+    def run_records(self, args=None, fixture=None, *, instruction=MOVIE_Q3_INSTRUCTION, **options):
         main, helper = models()
         fixture = fixture or RecordsFixture()
         report = run_cascade(self.frame, main, helper, args or self.args(), fixture,
-                             query_id="query", max_rows=20, max_calls=30, **options)
+                             instruction=instruction, query_id="query", max_rows=20, max_calls=30, **options)
         return report, fixture, main, helper
 
-    def reference(self, args, *, omit_pair=False, model_kwargs=None, default=True, system_prompt=None):
+    def reference(self, args, *, instruction=MOVIE_Q3_INSTRUCTION, omit_pair=False,
+                  model_kwargs=None, default=True, system_prompt=None):
         import lotus
 
         module = import_module("lotus.sem_ops.sem_filter")
@@ -115,6 +116,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         # sample positions are recorded by the original sampling function.
         sampled = []
         original_sample = module.importance_sampling
+        association_column = import_module("lotus.nl_expression").parse_cols(instruction)[0]
 
         def sample(scores, settings):
             indices, weights = original_sample(scores, settings)
@@ -137,7 +139,7 @@ class CascadeDifferentialTests(unittest.TestCase):
                     for messages, _ in data:
                         text = json.dumps(messages)
                         candidates = [i for i in range(len(self.frame))
-                                      if self.frame.iloc[i]["reviewText"] in text]
+                                      if self.frame.iloc[i][association_column] in text]
                         positions.append(candidates[0])
                 if len(data) != len(positions):
                     raise AssertionError("reference fixture failed to associate native calls")
@@ -162,7 +164,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         with lotus.settings.context(lm=main, helper_lm=helper, enable_cache=False):
             with patch.object(module, "importance_sampling", sample):
                 result, stats = self.frame.reset_index(drop=True).sem_filter(
-                    MOVIE_Q3_INSTRUCTION, cascade_args=args, return_all=True,
+                    instruction, cascade_args=args, return_all=True,
                     return_raw_outputs=True, return_explanations=True, return_stats=True,
                     default=default, system_prompt=system_prompt,
                     **(model_kwargs or {}),
@@ -177,7 +179,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         native, stats, calls, sampled, main, helper = self.reference(args)
         report, fixture, actual_main, actual_helper = self.run_records(args)
         self.assertEqual([row["decision"] for row in report["decisions"]], native["_filter"].tolist())
-        self.assertEqual(report["positive_review_cnt"], sum(native["_filter"]))
+        self.assertNotIn("positive_review_cnt", report)
         self.assertEqual([row["raw_output"] for row in report["decisions"]], native["raw_output_filter"].tolist())
         self.assertEqual([row["explanation"] for row in report["decisions"]], native["explanation_filter"].tolist())
         self.assertEqual(report["stats"], {key: value.model_dump(mode="json") if hasattr(value, "model_dump") else value
@@ -194,12 +196,83 @@ class CascadeDifferentialTests(unittest.TestCase):
         self.assertTrue(all(stage.effective_kwargs["top_logprobs"] == 10
                             for stage in fixture.stages if stage.model_role == "helper"))
 
+    def test_generic_multicolumn_main_and_distinct_helper_match_native(self):
+        self.frame = self.frame.drop(columns="reviewText").assign(
+            title=["title " + str(i) + ";" for i in range(10)],
+            content=["body " + str(i) + ";" for i in range(10)],
+            synopsis=["summary " + str(i) + ";" for i in range(10)],
+        )
+        instruction = "Do {title} and {content} support the claim?"
+        args = self.args(helper_filter_instruction="Does {synopsis} support the claim?")
+        native, stats, calls, sampled, main, helper = self.reference(args, instruction=instruction)
+        actual, fixture, actual_main, actual_helper = self.run_records(args, instruction=instruction)
+        self.assertEqual(fixture.prepared, calls)
+        self.assertEqual([row["decision"] for row in actual["decisions"]], native["_filter"].tolist())
+        self.assertEqual(actual["stats"], {key: value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+                                           for key, value in stats.items()})
+        self.assertEqual(lm_report(actual_main), lm_report(main))
+        self.assertEqual(lm_report(actual_helper), lm_report(helper))
+        self.assertEqual(next(event["indices"] for event in actual["calls"]["events"]
+                              if event["event"] == "sample_selected"), sampled)
+        self.assertEqual(actual["instruction"], instruction)
+        for stage in fixture.stages:
+            expected = ("synopsis",) if stage.model_role == "helper" else tuple(
+                import_module("lotus.nl_expression").parse_cols(instruction))
+            self.assertEqual(stage.input_columns, expected)
+            self.assertEqual(set(stage.records[0]) - set(cascade_identity(
+                "q", "r", 0, 0, model_role=stage.model_role, stage=stage.name)), set(expected))
+
+    def test_generic_source_preflight_receives_separate_bound_methods(self):
+        self.frame = self.frame.rename(columns={"reviewText": "content"}).assign(
+            synopsis=["s" + str(i) for i in range(10)])
+        instruction = "Accept {content}?"
+        args = self.args(helper_filter_instruction="Accept {synopsis}?")
+        class BoundFixture(RecordsFixture):
+            def preflight(inner, main_lm, helper_lm, effective, *, max_possible_calls, method, helper_method):
+                self.assertEqual(method.instruction, instruction)
+                self.assertEqual(method.resolved_input_columns, ("content",))
+                self.assertEqual(helper_method.instruction, args.helper_filter_instruction)
+                self.assertEqual(helper_method.resolved_input_columns, ("synopsis",))
+                self.assertEqual(max_possible_calls, 25)
+        self.run_records(args, BoundFixture(), instruction=instruction)
+
+    def test_worker_uses_frozen_column_order_and_rejects_extra_payload(self):
+        from dataclasses import replace
+        from lotus.templates import task_instructions
+
+        self.frame = self.frame.rename(columns={"reviewText": "body"}).assign(
+            title=["title " + str(i) for i in range(10)])
+        instruction = "Check {body} against {title}."
+        _, fixture, _, _ = self.run_records(instruction=instruction)
+        stage = fixture.stages[0]
+        reversed_stage = replace(stage, input_columns=tuple(reversed(stage.input_columns)))
+        preparer = CascadePreparer(reversed_stage)
+        rows = list(stage.records[:2])
+        docs = task_instructions.df2multimodal_info(self.frame.iloc[:2], list(reversed_stage.input_columns))
+        expected = [task_instructions.filter_formatter(
+            preparer.lm, doc, stage.instruction, system_prompt=stage.system_prompt,
+            output_tokens=stage.output_tokens) for doc in docs]
+        self.assertEqual([json.loads(row["messages_json"]) for row in preparer.prepare_rows(rows)], expected)
+        with self.assertRaisesRegex(ValueError, "text projection"):
+            preparer.prepare_rows([dict(rows[0], oracle="must not enter model")])
+
+    def test_generic_column_validation_happens_before_backend(self):
+        self.frame = self.frame.rename(columns={"reviewText": "text"})
+        backend = RecordsFixture()
+        for instruction in ("No fields", "Check {row_id}.", "Check {missing}."):
+            with self.subTest(instruction=instruction), self.assertRaises(ValueError):
+                self.run_records(fixture=backend, instruction=instruction)
+        self.frame["extra"] = "not declared"
+        with self.assertRaisesRegex(ValueError, "referenced text columns"):
+            self.run_records(fixture=backend, instruction="Check {text}.")
+        self.assertEqual(backend.stages, [])
+
     def test_physical_batch_sizes_do_not_change_global_calibration_or_thresholds(self):
         reference, _, _, _ = self.run_records(fixture=RecordsFixture(batch_size=1))
         for size in (2, 4, 25):
             with self.subTest(batch_size=size):
                 actual, _, _, _ = self.run_records(fixture=RecordsFixture(batch_size=size))
-                for key in ("decisions", "stats", "calls", "positive_review_cnt"):
+                for key in ("decisions", "stats", "calls"):
                     self.assertEqual(actual[key], reference[key])
 
     def test_fixed_thresholds_and_equal_threshold_priority_match_native(self):
@@ -236,7 +309,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         self.frame = self.frame.iloc[:0]
         report, fixture, _, _ = self.run_records()
         self.assertTrue(report["empty_input_extension"])
-        self.assertEqual(report["positive_review_cnt"], 0)
+        self.assertEqual(report["decisions"], [])
         self.assertEqual(report["calls"]["records"], [])
         self.assertEqual(fixture.stages, [])
 
@@ -254,7 +327,7 @@ class CascadeDifferentialTests(unittest.TestCase):
                 closed.append(True)
         with self.assertRaisesRegex(RuntimeError, "actor lost") as caught:
             run_cascade(self.frame, main, helper, self.args(), partial,
-                        query_id="failure", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="failure", max_rows=20, max_calls=30)
         report = caught.exception.query_report
         self.assertEqual(len(report["calls"]["records"]), 10)
         self.assertEqual(report["calls"]["usage"]["known_prompt_tokens"], 22)
@@ -262,6 +335,32 @@ class CascadeDifferentialTests(unittest.TestCase):
         self.assertEqual(sum(row["status"] == "unknown" for row in report["calls"]["records"]), 8)
         self.assertEqual(len(report["calls"]["stages"]), 1)
         self.assertEqual(closed, [True])
+
+    def test_cleanup_recovers_unconsumed_known_receipts_before_marking_unknown(self):
+        for close_failure in (False, True):
+            class Rows:
+                def __init__(inner, stage):
+                    inner.stage, inner.first = stage, True
+                    inner.last_close_report = None
+                def __iter__(inner):
+                    return inner
+                def __next__(inner):
+                    if inner.first:
+                        inner.first = False
+                        return terminal(inner.stage.records[0], inner.stage.model_role)
+                    raise RuntimeError("native graph failed")
+                def close(inner):
+                    inner.last_close_report = dict(unconsumed_call_results=[
+                        terminal(inner.stage.records[1], inner.stage.model_role)])
+                    if close_failure:
+                        raise RuntimeError("engine exit unknown")
+                    return inner.last_close_report
+            with self.subTest(close_failure=close_failure), self.assertRaisesRegex(RuntimeError, "native graph failed") as caught:
+                self.run_records(fixture=Rows)
+            calls = caught.exception.query_report["calls"]
+            self.assertEqual(calls["usage"]["known_prompt_tokens"], 27)
+            self.assertEqual(calls["usage"]["unknown_prompt_tokens_calls"], 8)
+            self.assertEqual([row["status"] for row in calls["records"][:2]], ["succeeded", "succeeded"])
 
     def test_missing_helper_logprobs_fails_without_main_fallback(self):
         def missing(stage):
@@ -277,11 +376,11 @@ class CascadeDifferentialTests(unittest.TestCase):
         backend = RecordsFixture()
         with self.assertRaisesRegex(ValueError, "max_calls"):
             run_cascade(self.frame, main, helper, self.args(), backend,
-                        query_id="q", max_rows=20, max_calls=10)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=10)
         self.frame = self.frame.iloc[:1]
         with self.assertRaisesRegex(ValueError, "at least one"):
             run_cascade(self.frame, main, helper, self.args(), backend,
-                        query_id="q", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=30)
         self.assertEqual(backend.stages, [])
 
     def test_unsupported_reasoning_examples_columns_cache_and_tokenizer_fail_early(self):
@@ -294,15 +393,15 @@ class CascadeDifferentialTests(unittest.TestCase):
                         dict(helper_examples=self.frame)):
             with self.subTest(options=list(options)), self.assertRaises(ValueError):
                 run_cascade(self.frame, main, helper, self.args(), backend,
-                            query_id="q", max_rows=20, max_calls=30, **options)
+                            instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=30, **options)
         with lotus.settings.context(enable_cache=True), self.assertRaisesRegex(ValueError, "caches"):
             run_cascade(self.frame, main, helper, self.args(), backend,
-                        query_id="q", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=30)
         original = helper.encode_text
         helper.encode_text = lambda token: [1, 2]
         with self.assertRaisesRegex(ValueError, "single-token"):
             run_cascade(self.frame, main, helper, self.args(), backend,
-                        query_id="q", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=30)
         helper.encode_text = original
         self.assertEqual(backend.stages, [])
 
@@ -313,7 +412,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         self.run_records()
         self.assertEqual(original, (module.sem_filter, module.learn_filter_cascade_thresholds,
                                    module.SemFilterDataframe.__call__, module.task_instructions.df2multimodal_info))
-        self.assertEqual(validate_cascade_source()["profile"], "lotus-helper-cascade-records-v1")
+        self.assertEqual(validate_cascade_source()["profile"], "lotus-helper-cascade-records-v2")
 
     def test_generation_override_merge_and_explicit_top_logprobs_match_native(self):
         self.frame["reviewText"] = ["unique review " + str(i) + ";" for i in range(10)]
@@ -337,7 +436,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         helper.kwargs["helper_examples"] = self.frame.assign(Answer=True)
         with self.assertRaises(ValueError):
             run_cascade(self.frame, main, helper, self.args(), backend,
-                        query_id="q", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="q", max_rows=20, max_calls=30)
         self.assertEqual(backend.stages, [])
 
     def test_worker_rejects_serialization_or_cache_changes(self):
@@ -437,7 +536,7 @@ class CascadeDifferentialTests(unittest.TestCase):
         actual_main.virtual_usage_limit = UsageLimit(prompt_tokens_limit=20)
         with self.assertRaises(Exception) as caught:
             run_cascade(self.frame, actual_main, actual_helper, self.args(), RecordsFixture(),
-                        query_id="limit", max_rows=20, max_calls=30)
+                        instruction=MOVIE_Q3_INSTRUCTION, query_id="limit", max_rows=20, max_calls=30)
         error = caught.exception
         self.assertEqual(type(error).__name__, "LotusUsageLimitException")
         samples = [row for row in error.query_report["calls"]["records"] if row["algorithm_stage"] == "threshold_sample"]

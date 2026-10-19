@@ -15,20 +15,20 @@ import tempfile
 import time
 
 from src.semantic_methods.lotus.cascade import (
-    CascadePreparer, CascadeStage, IDENTITY_FIELDS, local_generation,
+    CascadePreparer, CascadeStage, IDENTITY_FIELDS, _StageCalls, local_generation,
 )
-from src.semantic_methods.lotus.records import FilterMethod, RecordsResources
+from src.semantic_methods.lotus.records import FilterMethod, RecordScan, RecordsResources
 from src.serving.backends.vllm_engine import EngineSpec
 
 from .ray_data_lotus_records import _RayRows, _CLOSE_COLUMN, _check_deadline, _runtime_env, _table
 from .lotus_cascade_process import StageEngineCleanup
 
 
-def _selected(row, *, selected):
+def _selected(row, *, selected, input_columns):
     """A repeated sample creates separate logical calls before any native batching."""
     calls = selected.get((row["row_id"], int(row["source_position"])), ())
     for call in calls:
-        if row["reviewText"] != call["reviewText"]:
+        if any(row[name] != call[name] or type(row[name]) is not str for name in input_columns):
             raise ValueError("cascade source text differs from its checked occurrence")
         yield dict(call)
 
@@ -100,7 +100,7 @@ class InferCascade:
         return _table(rows)
 
 
-def _stage_graph(source, stage, resources, deadline, *, prepare_python,
+def _stage_graph(source, stage, resources, deadline, *, scan, prepare_python,
                  infer_class, infer_kwargs, infer_python, num_gpus):
     """Shared graph construction; CPU qualification supplies a named model fixture."""
     import pyarrow as pa
@@ -110,20 +110,28 @@ def _stage_graph(source, stage, resources, deadline, *, prepare_python,
 
     if ray.__version__ != "2.56.1" or not ray.is_initialized():
         raise RuntimeError("cascade records graph requires caller-owned Ray 2.56.1")
+    if (not isinstance(scan, RecordScan)
+            or not set(stage.input_columns) <= set(scan.payload_columns)):
+        raise ValueError("cascade scan does not cover this stage's input columns")
+    scan.describe()
     _check_deadline(deadline)
     selected = {}
     for row in stage.records:
         selected.setdefault((row["row_id"], row["source_position"]), []).append(dict(row))
+    types = {"string": pa.string(), "int64": pa.int64()}
     dataset = ray.data.read_csv(
         str(source.csv_path), ray_remote_args={"max_retries": 0},
         convert_options=csv.ConvertOptions(column_types={
-            "row_id": pa.string(), "source_position": pa.int64(),
-            "reviewId": pa.string(), "id": pa.string(), "reviewText": pa.string(),
+            name: types[dtype] for name, dtype in scan.csv_schema
         }, strings_can_be_null=False, null_values=[]),
     )
-    dataset = dataset.filter(lambda row: row["id"] == "taken_3", max_retries=0)
-    dataset = dataset.select_columns(["row_id", "source_position", "reviewText"])
-    dataset = dataset.flat_map(_selected, fn_kwargs={"selected": selected}, max_retries=0)
+    if scan.predicate is not None:
+        column, value = scan.predicate
+        dataset = dataset.filter(lambda row: row[column] == value, max_retries=0)
+    dataset = dataset.select_columns(["row_id", "source_position", *scan.payload_columns])
+    dataset = dataset.flat_map(_selected, fn_kwargs={
+        "selected": selected, "input_columns": stage.input_columns,
+    }, max_retries=0)
     # Do not serialize the entire source into every formatter instance.
     method = asdict(replace(stage, records=()))
     dataset = dataset.map_batches(
@@ -145,9 +153,43 @@ def _stage_graph(source, stage, resources, deadline, *, prepare_python,
 
 
 class _CascadeRayRows(_RayRows):
-    def __init__(self, *args, control, **kwargs):
+    def __init__(self, *args, control, stage=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.engine_cleanup = StageEngineCleanup(control)
+        self.stage, self._result_receipts = stage, {}
+
+    def _recover_result_receipts(self, report):
+        failure = report.get("result_failure")
+        if failure is None:
+            return []
+        if (self.stage is None or type(failure) is not dict
+                or type(failure.get("verified_call_results")) is not list):
+            return ["result_receipt_recovery: ValueError"]
+        errors = []
+        ready_uid = (report.get("engine_ready") or {}).get("engine_uid")
+        for row in failure["verified_call_results"]:
+            try:
+                call_id = row.get("call_id") if type(row) is dict else None
+                expected = self.expected.get(call_id) if type(call_id) is str else None
+                if expected is None or any(row.get(key) != value for key, value in expected.items()):
+                    raise ValueError("engine receipt belongs to another cascade occurrence")
+                if call_id in self.received:
+                    continue
+                if (sum(type(other) is dict and other.get("call_id") == call_id
+                        for other in failure["verified_call_results"]) != 1
+                        or type(row.get("engine_protocol_error")) is not str
+                        or not row["engine_protocol_error"].strip()
+                        or type(ready_uid) is not str or not ready_uid or row.get("engine_uid") != ready_uid):
+                    raise ValueError("engine receipt lacks its cascade result-failure identity")
+                audit = _StageCalls(replace(self.stage, records=(expected,)))
+                audit.record(row)
+                receipt = audit.ordered()[0]
+                if call_id in self._result_receipts and self._result_receipts[call_id] != receipt:
+                    raise ValueError("engine receipt conflicts with an existing terminal")
+                self._result_receipts[call_id] = receipt
+            except (ValueError, TypeError, KeyError, AttributeError) as error:
+                errors.append("result_receipt_recovery: " + type(error).__name__)
+        return errors
 
     def _watch(self):
         cleanup_done = False
@@ -179,14 +221,25 @@ class _CascadeRayRows(_RayRows):
         cleanup = self.engine_cleanup.stop(started=self._started)
         initializing = self._started and self.iterator is None and getattr(
             self.result, "_current_executor", None) is None
-        report = super().close()
+        error = None
+        try:
+            report = super().close()
+        except BaseException as primary:
+            error = primary
+            report = dict(status="unknown", cleanup_errors=["graph_close: " + type(primary).__name__])
         report["registered_engine_cleanup"] = cleanup
         report["cleanup_errors"].extend(cleanup["errors"])
         report["process_exit_confirmed"] = cleanup["process_exit_confirmed"]
         if initializing:
             report["executor_shutdown_confirmed"] = False
             report["cleanup_errors"].append("graph_executor_initialization_unconfirmed")
+        for engine in [*cleanup["reports"], report.get("engine_close_report") or {}]:
+            report["cleanup_errors"].extend(self._recover_result_receipts(engine))
+        report["unconsumed_call_results"] = [self._result_receipts[call_id] for call_id in self.expected
+            if call_id in self._result_receipts and call_id not in self.received]
         self.last_close_report = report
+        if error is not None:
+            raise error
         return report
 
 
@@ -204,9 +257,15 @@ class _StageRows:
         return next(self.rows)
 
     def close(self):
-        report = self.rows.close()
+        error = None
+        try:
+            report = self.rows.close()
+        except BaseException as primary:
+            error = primary
+            report = getattr(self.rows, "last_close_report", None) or dict(
+                status="unknown", cleanup_errors=["stage_close: " + type(primary).__name__])
         engine = report.get("engine_close_report") or {}
-        settled = (report.get("iterator_closed") and report.get("executor_shutdown_confirmed")
+        settled = (error is None and report.get("iterator_closed") and report.get("executor_shutdown_confirmed")
                    and report.get("watchdog_stopped") and not report.get("cleanup_errors")
                    and engine.get("process_exit_confirmed") is True
                    and engine.get("engine_api_shutdown_confirmed") is True
@@ -221,6 +280,8 @@ class _StageRows:
             self.reports[-1] = deepcopy(self.last_close_report)
         else:
             self.reports.append(deepcopy(self.last_close_report))
+        if error is not None:
+            raise error
         if not settled:
             raise RuntimeError("cascade stage engine/process cleanup is unconfirmed")
         return self.last_close_report
@@ -240,11 +301,21 @@ class RayCascadeBackend:
         self.deadline = time.monotonic() + resources.query_timeout_s
         self.close_reports = []
         self._checked = False
+        self._methods, self._instructions, self._effective = {}, {}, {}
 
-    def preflight(self, main_lm, helper_lm, effective, *, max_possible_calls):
+    def preflight(self, main_lm, helper_lm, effective, *, max_possible_calls, method, helper_method):
+        from lotus.nl_expression import nle2str
         from tokenizers import Tokenizer
 
-        source_info = self.source.preflight(FilterMethod(main_lm.model))
+        if (type(max_possible_calls) is not int or max_possible_calls < 0
+                or not isinstance(method, FilterMethod) or not isinstance(helper_method, FilterMethod)
+                or not method.resolved_input_columns or not helper_method.resolved_input_columns):
+            raise ValueError("cascade requires a finite call bound and bound FilterMethod configurations")
+        self.source.preflight(method)
+        self.scan = self.source.scan_spec(method)
+        required = set(method.resolved_input_columns) | set(helper_method.resolved_input_columns)
+        if not isinstance(self.scan, RecordScan) or not required <= set(self.scan.payload_columns):
+            raise ValueError("cascade scan must cover main and helper referenced text columns")
         import ray
         self.check_lifecycle()
         if self._checked:
@@ -256,8 +327,9 @@ class RayCascadeBackend:
             raise ValueError("first cascade process supervision requires one local Ray node")
         for role, lm in (("main", main_lm), ("helper", helper_lm)):
             spec = self.engines[role]
-            if spec.max_model_calls is not None and spec.max_model_calls < source_info["eligible_rows"]:
-                raise ValueError("each model deployment must cover any complete logical stage")
+            binding = FilterMethod.from_dict((method if role == "main" else helper_method).describe())
+            if binding.model_name != lm.model or not binding.resolved_input_columns:
+                raise ValueError("cascade method must bind its model and input columns")
             spec.validate_driver_environment()
             # The same local tokenizer files must back original LM label checks
             # and the actual engine; a model-name tokenizer guess is insufficient.
@@ -268,9 +340,14 @@ class RayCascadeBackend:
                 if len(expected) != 1 or lm.encode_text(token) != expected:
                     raise ValueError("original LM and deployed tokenizer label IDs differ")
             dummy = CascadeStage("helper_score" if role == "helper" else "fallback",
-                                 role, lm.model, "", True, None, ("True", "False"),
-                                 effective[role], ())
-            local_generation(dummy)
+                                 role, lm.model, binding.instruction, binding.default,
+                                 binding.system_prompt, binding.output_tokens,
+                                 effective[role], (), binding.resolved_input_columns)
+            if local_generation(dummy).max_tokens > spec.max_model_len:
+                raise ValueError("cascade max_tokens exceeds max_model_len")
+            self._methods[role] = binding
+            self._instructions[role] = nle2str(binding.instruction, list(binding.resolved_input_columns))
+        self._effective = deepcopy(effective)
         self._checked = True
 
     def check_lifecycle(self):
@@ -284,6 +361,13 @@ class RayCascadeBackend:
         if self.close_reports and not self.close_reports[-1]["stage_process_exit_confirmed"]:
             raise RuntimeError("previous cascade stage still owns an unconfirmed model process")
         self.check_lifecycle()
+        binding = self._methods[stage.model_role]
+        if (stage.model_name != binding.model_name or stage.instruction != self._instructions[stage.model_role]
+                or tuple(stage.input_columns) != binding.resolved_input_columns
+                or stage.default != binding.default or stage.system_prompt != binding.system_prompt
+                or stage.output_tokens != binding.output_tokens
+                or stage.effective_kwargs != self._effective[stage.model_role]):
+            raise ValueError("cascade stage differs from its preflight method binding")
         spec = self.engines[stage.model_role]
         generation = local_generation(stage)
         calls = [{key: row[key] for key in IDENTITY_FIELDS} for row in stage.records]
@@ -300,7 +384,8 @@ class RayCascadeBackend:
         spec = replace(spec, max_model_calls=len(calls))
         control = Path(tempfile.mkdtemp(prefix="lotus-cascade-stage-"))
         graph = _stage_graph(
-            self.source, stage, self.resources, self.deadline, prepare_python=spec.driver_python,
+            self.source, stage, self.resources, self.deadline, scan=self.scan,
+            prepare_python=spec.driver_python,
             infer_class=InferCascade, infer_kwargs={
                 "engine": asdict(spec), "generation": asdict(generation),
                 "expected_count": len(calls), "deadline": self.deadline,
@@ -308,5 +393,6 @@ class RayCascadeBackend:
                 "control": str(control),
             }, infer_python=spec.driver_python, num_gpus=1,
         )
-        return _StageRows(_CascadeRayRows(graph, calls, self.deadline, self.cancelled, control=control),
+        return _StageRows(_CascadeRayRows(graph, calls, self.deadline, self.cancelled,
+                                         control=control, stage=stage),
                           stage, self.close_reports)
