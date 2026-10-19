@@ -1,0 +1,159 @@
+{
+  "schema": "semloom.imlane_cpython_model_attempt_public.v1",
+  "outcome": "unknown",
+  "actual_model_qualified": false,
+  "scope": "ordinary Movie Q3 Filter; IMLane CPython author path; frozen source only",
+  "source": {
+    "repository_commit": "8be539cf5cf66f0050732f1804bfccaaa90f11f7",
+    "regular_files": 126,
+    "source_archive_sha256": "6d69046f47c2bf5284397565ecc444b3cdaf0e4dff302d8aee8c6ba526ce3930",
+    "source_map_sha256": "5d800f0f047cef8509cc7db1b4662e7fe6fffcf065e6f5ebb10910d71126f0d2",
+    "later_profiles_covered": false
+  },
+  "config_identity": {
+    "input_raw_sha256": "8280c2b06d3fe922db2c0d7e82068911741969e5b6d700b3382d65cb7b466f57",
+    "input_canonical_sha256": "7478b9614a4b8e9d6dc28a57fd77e4a552f6483c32932b366bd81feff9ee4f04",
+    "runtime_canonical_sha256": "80e80e693de77b2df0bc6cdaea9ca3e530551071d7b025ec98d5ac3c7af803a8"
+  },
+  "model_unit": {
+    "original_controller_status": "unknown",
+    "original_unit_status": "unknown",
+    "model_allocation_attempted": true,
+    "actual_model_calls": null,
+    "final_engine_counter": null,
+    "engine_lifetimes": null,
+    "configured_query_owners": 2,
+    "attempted_query_owners": 1,
+    "second_query_started": false,
+    "first_query_status": "failed",
+    "primary_error_type": "ValueError",
+    "primary_error": "records execution omitted declared calls",
+    "expected_eligible_positions": [
+      1,
+      14
+    ],
+    "input_prefix_rows": 15,
+    "calls": [
+      {
+        "source_position": 1,
+        "status": "failed",
+        "submission_confirmed": false
+      },
+      {
+        "source_position": 14,
+        "status": "unknown",
+        "submission_confirmed": false
+      }
+    ],
+    "call_ledger_counts": {
+      "expected": 2,
+      "recorded": 2,
+      "missing": 0,
+      "succeeded": 0,
+      "failed": 1,
+      "unknown": 1,
+      "submission_confirmed": 0,
+      "submission_unconfirmed": 2
+    },
+    "usage": {
+      "prompt_tokens": null,
+      "known_prompt_tokens": 0,
+      "unknown_prompt_tokens_calls": 2,
+      "completion_tokens": null,
+      "known_completion_tokens": 0,
+      "unknown_completion_tokens_calls": 2,
+      "total_tokens": null,
+      "known_total_tokens": 0,
+      "unknown_total_tokens_calls": 2
+    },
+    "engine_api_shutdown_confirmed": null,
+    "automatic_model_retries": 0,
+    "extra_application_warmup_calls": 0
+  },
+  "budget": {
+    "limit": 4,
+    "permanently_reserved": 4,
+    "claim_count": 1,
+    "configured_per_engine_cap": 2,
+    "refunds": 0,
+    "ledger_sha256": "1125f45cbcdf71a7d5e5410fc3de07e475a6e2dc43369ce3d442796b1b4fac90",
+    "older_ledgers_unchanged_at_physical_observations": true
+  },
+  "semantic_comparison": {
+    "reference_control_report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+    "native_control_comparison_completed": false,
+    "messages_token_ids_usage_finish_reason_parser_count_evaluator_lmstats_match": null
+  },
+  "independent_physical_evidence": {
+    "current_owned_births": 23,
+    "predecessor_births": 135,
+    "all_observed_births_literal_absent": true,
+    "namespace_shm_objects": 0,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "foreign_work_clear": true,
+    "unobserved_descendants_confirmed": false,
+    "proves_engine_api_shutdown": false,
+    "upgrades_original_model_outcome": false
+  },
+  "lease_reconciliation": {
+    "status": "physical_reconciled_owned_lease_released",
+    "owned_only_release_confirmed": true,
+    "original_automatic_unknown_preserved": true,
+    "reconciliation_report_sha256": "a02f913ccf2d37976b471f9c6b6f2899a34697cde5c8c2b988594e5480102ca4",
+    "model_commands": 0,
+    "budget_mutations": 0
+  },
+  "diagnostic": {
+    "historical_initialization_error_type": "ZMQError",
+    "historical_error_message_available": false,
+    "historical_errno": null,
+    "independent_cpu_path_probe": {
+      "long_path_bytes": 116,
+      "long_status": "failed",
+      "long_error_type": "ZMQError",
+      "long_errno": 36,
+      "short_path_bytes": 81,
+      "short_status": "bound",
+      "model_commands": 0,
+      "gpu_requests": 0
+    },
+    "interpretation": "The CPU probe supports a path-length explanation; the original type-only diagnostic does not prove its message or errno."
+  },
+  "evidence": {
+    "private_archive_sha256": "a25b7424a4483ee3dd8b905b4b9e20d98a2c6bc5184e0480727d3dcfab56b933",
+    "private_archive_bytes": 343244,
+    "regular_files": 90,
+    "private_index_sha256": "137d7af186cd7d8b9f3945ec0b92c5c8408cafbd769749850d6db34a01bd88fa",
+    "metadata_sha256": "6902b6ff81e7b831c96f941174eb26338892b0138111c072741bfecc7ca3fb6e",
+    "original_and_exported_bytes": {
+      "controller_report": {
+        "original_byte_sha256": "7050f89cd4bf09ed76a0e6f3d46ba7074498c6450987021d51e3f74983f23008",
+        "exported_byte_sha256": "7050f89cd4bf09ed76a0e6f3d46ba7074498c6450987021d51e3f74983f23008",
+        "redacted": false
+      },
+      "unit_report": {
+        "original_byte_sha256": "de8609c3b474ac87083c2a85f46d477b051e4dcd4b4f841975b67e0532335ba7",
+        "exported_byte_sha256": "de8609c3b474ac87083c2a85f46d477b051e4dcd4b4f841975b67e0532335ba7",
+        "redacted": false
+      },
+      "runtime_config": {
+        "original_byte_sha256": "742fc8b2f9ec2e7b3e535b929adb95e304e3c789d62c8d145f666286a23c56fb",
+        "exported_byte_sha256": "dac1a63c16ebc69e2c641e6d51c955b0efc78dc35c262a44a3c9d319e48757f4",
+        "redacted": true
+      },
+      "cpu_probe": {
+        "original_byte_sha256": "d2a8a2a4c0b5d5c6230209431e40766dcf51d2007cfa20334942d500d882af92",
+        "exported_byte_sha256": "d2a8a2a4c0b5d5c6230209431e40766dcf51d2007cfa20334942d500d882af92",
+        "redacted": false
+      }
+    },
+    "environment_credentials_raw_database_weights_dependencies_published": false
+  },
+  "remaining_qualification": {
+    "cpython_real_model_completion": "pending",
+    "author_ray": "pending",
+    "later_extract_async_profiles": "outside this attempt",
+    "performance_claim": false
+  }
+}

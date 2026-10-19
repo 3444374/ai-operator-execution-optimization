@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane 首模型尝试与独立物理结清](diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。冻结8be／126文件，首query一failed一unknown、第二query未启动；actual／API／总usage仍null，4／4一次永久claim不退。独立23本轮＋135前驱出生身份absent、SHM0及当次GPU1MiB空compute后owned-only正常释放lease；不改写原unknown或模型API。90归档成员／源SHA／原件与脱敏导出双SHA核同，路径CPU试验不回填历史errno。
+
 2026-10-19：[Extract 空字段名兼容](diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。保留原 parser 额外空键，修复后继 schema 误拒绝；独立普通 RED 回归转绿。39 项／17 subtests CPU 通过，2 native 明确 pending／skip；无 native 图、模型或 GPU。
 
 2026-10-19：[Core actor 集成接点](diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。显式同配置 owner、完整 session／sequence 提交／取消／receipt ack、独立 cleanup 窗口；默认同步保持。92 项／39 subtests CPU 通过，首次 fixture 设置错误及受限进程检查 PermissionError 保留；未新增 Async actor／CLI 或模型资格。

@@ -2,7 +2,7 @@
 
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
-[Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展四层及固定源码核对；Ray／Daft／普通Core已有小切片资格，当前IMLane初始化失败保留unknown，有限链、级联与持续供给另验。
+[Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展四层及固定源码核对；Ray／Daft／普通Core已有小切片资格，当前IMLane[初始化失败及独立结清](lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)保留unknown，有限链、级联与持续供给另验。
 
 [main原生CLIP最小闭包](main_lotus_clip_20261015/README.md)：完整RM／index／search与显式单卡资源，分列8834 CPU／SDK、来源d2条件模型与失败、main570四路径八臂40行严格单卡实机；未扩展HSE／多卡资格。
 

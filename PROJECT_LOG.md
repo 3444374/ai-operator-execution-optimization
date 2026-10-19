@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：归档 IMLane 模型失败并分列独立结清
+
+公开8be首模型失败的脱敏派生摘要：首query一failed一unknown、第二query未启，actual／API／总usage仍null，新4／4永久claim不退；原controller／unit unknown不改写。独立23＋135已观察出生身份absent、SHM0、当次GPU1MiB无compute，随后owned-only正常释放lease；该观察不证明模型API或未观察后代。90归档成员和126源文件核同，原件／导出双SHA保留。独立路径CPU试验支持长度解释，不把errno36回填历史。两轴只读复核通过，本次只发布既有证据，不访问服务器或重跑模型。另窄修数据组织的旧集成来源状态句。见[结果与精确范围](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。
+
 ## 2026-10-19：保留 Extract 的额外空字段名
 
 选择性接纳独立合同测试 `4a67df81`，后继 schema 允许原 LOTUS parser 已保留的空字符串列名，仍核类型／顺序／唯一性。39 项 CPU／17 subtests 通过，普通 RED 转绿，2 native 接线用例仍 pending；不改变 parser 或源输入规则。见[固定证据](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。

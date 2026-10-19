@@ -402,7 +402,7 @@ Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确
 | Ray Data | 原生批／actor／本地私有引擎→原 LOTUS parser／SemBench；独立于旧请求执行树 | Ray 2.56.1 实际 CPU 图 | 固定06f4的小范围普通Q3，两负例；本报告原件为准 | 已知有限链 CPU；新链模型、Extract关系屏障与持续供给待验 |
 | Daft Native | 原生 process 图／本地私有引擎→同方法解析评价 | Daft 0.7.21 实际 CPU 图 | 固定f526修正：两query／4调用；首轮失败actual null保持 | 共享有限链 CPU；新链模型／关系屏障待验 |
 | SemLoom production Core | 真实 SessionEngine／BoundedAsyncBackend／lease-release；static参照身份独立 | 普通Filter实际Ray actor组合；新有限链为单worker／pipe，分别核验 | 固定ebe3035f：同engine两query／4调用；不转授后续源码 | 显式Core Extract屏障 CPU通过；原同步批不等于Async持续供给 |
-| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，尚未取得模型资格 | 通用Filter及有限链fixture分列；作者Ray和完整模型链待验 |
+| IMLane | 原作者CPython carrier／v2记录桥／独立方法和模型解释器 | 0190／9f1固定CPU作者资格保留；新wire不整体继承 | 冻结8be首次初始化ZMQError，第二query未启动；新4永久claim，actual null，[原unknown与独立结清](#imlane-model-initialization-attempt-20261019)分列，尚未取得模型资格 | 通用Filter及有限链fixture分列；作者Ray和完整模型链待验 |
 
 固定来源的普通 Filter 资格与新算子覆盖是不同验收项。当前支持的 Filter／Map／Extract
 继续复用原 LOTUS 提示、生成配置、parser 和 LM 统计；COUNT／SemBench解释仍由任务拥有。
@@ -417,5 +417,16 @@ e4c 修正资格属于独立 static 参照，不归入 Ray Data 或 production C
 IMLane冻结8be的两owner资格使用126个Git同字节文件、原C++ binary与Arrow16方法环境，
 与此前CPU来源分开。第一次实际运行在首query模型初始化返回ZMQError，外层观察22个owned身份退出，
 作者namespace/SHM与unit GPU报告已清理；API handle和最终counter不可得，故actual保持null、
-4次预算不退、原controller保留host lease，不能据eligible行数或ready错误补造0。
-独立最终资源审计、归档及后续原因验证另行追加，不把当前单元称作模型通过。
+4次预算不退、原controller报告保留host lease，不能据eligible行数或ready错误补造0。
+其后独立物理结清见下节；原自动报告不改写，不把当前单元称作模型通过。
+
+<a id="imlane-model-initialization-attempt-20261019"></a>
+## IMLane 首模型尝试与独立物理结清
+
+IMLane CPython 的本次普通 Movie Q3 Filter 实际模型尝试保留为 `unknown`。冻结来源为 `8be539cf` 的126文件源包；计划两个独立查询 owner、每个两条 eligible 记录，实际只尝试首个查询。首查询一条 failed、一条 unknown，均未确认提交；第二查询未启动。实际模型调用数、最终 API counter 和总 usage 均未知。新永久预算一次 claim 4/4，无模型重试、暖身、退款；本轮未完成原 LOTUS parser/COUNT/SemBench evaluator 与原 native control 的结果差分。
+
+归档前后及单独人工结清前的独立检查确认本次23个、前驱135个已观测 PID 出生身份均为 literal absent，指定 namespace SHM 为0，GPU使用1MiB且 compute 列表为空，foreign 工作门通过。归档时保留原 owned lease；随后单独的 owned-only 人工结清已确认释放。该物理结清不改写原 controller/unit 的 unknown，不确认模型 API shutdown，不证明未观测后代退出，也不退款或补造调用计数。
+
+原初始化诊断仅记录 `ZMQError` 类型，没有原错误 message/errno。独立 CPU 路径试验得到116字节路径失败（errno36）、81字节路径 bind 成功，支持路径长度解释；不能据此将 errno36 回填为历史模型错误。本轮只适用于上述冻结来源，作者 Ray、实际模型完成及后续 Extract/Async profile 仍分别待验，无性能结论。
+
+[公开摘要](imlane_model_initialization_attempt.json) 保留三种配置摘要、归档/索引/结清收据 SHA 与原件/脱敏导出双 SHA；公开摘要不包含连接、具体远端目录、环境内容、凭据、原始数据库或权重。

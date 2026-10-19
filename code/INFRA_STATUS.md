@@ -7,7 +7,7 @@
 [Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。当前未接 actor／Core／CLI，真实 Async 模型和性能待验。
 [Core actor 接点](../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)新增显式 owner 注入、完整 TaskKey 提交／取消／结果确认及模式报告；同步默认保持，92 项 CPU／39 subtests 通过。取消请求不释放未知责任，Async actor／公开 selector 尚待独立接入。
 后续可覆盖私有进程关闭 RPC 的有界窗口，默认 10／11 秒不变；70 项 CPU／27 subtests 通过，实际 Async 采用和模型退出仍待验。
-冻结8be的IMLane首模型单元在初始化返回ZMQError，第二query未启动，四次永久预算保留、actual仍null、原lease held-unresolved；不是模型资格。基本接入／实际库／模型／扩展见[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)。
+冻结8be的IMLane首模型单元在初始化返回ZMQError，第二query未启动，四次永久预算保留、actual仍null、原controller／unit的unknown保持；独立审计后已正常释放本owner lease，见[失败与结清分列](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)。不是模型资格。基本接入／实际库／模型／扩展见[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)。
 
 ## 独立 IMLane 记录桥
 
