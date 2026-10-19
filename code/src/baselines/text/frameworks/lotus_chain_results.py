@@ -9,7 +9,7 @@ from copy import deepcopy
 import hashlib
 import json
 
-from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity
+from src.semantic_methods.lotus.record_chain import RecordOccurrence, stage_identity, _ordered_columns, _parent_seeds
 from src.serving.backends.vllm_engine import IDENTITY_FIELDS
 
 
@@ -41,19 +41,27 @@ def _source_binding(record):
 class ChainBatchResults:
     """Validate compact batch results without owning their physical execution."""
 
-    def __init__(self, expected, chain):
+    def __init__(self, expected, chain, *, initial_parents=None, columns=None):
+        if type(expected) not in (list, tuple) or any(type(record) is not RecordOccurrence for record in expected):
+            raise TypeError("expected must be a finite sequence of RecordOccurrence")
         self.chain = chain
         self.expected = {record.row_id: _metadata(record) for record in expected}
+        if len(self.expected) != len(expected):
+            raise ValueError("expected contains duplicate occurrence IDs")
         self.bindings = {record.row_id: _source_binding(record) for record in expected}
+        self.initial_parents = _parent_seeds(
+            [(record.row_id, record.source_position) for record in expected], initial_parents)
+        self._has_parent_seeds = initial_parents is not None
         self.received = set()
         self.calls, self.batch_stage_stats, self.unassociated_results = [], [], []
         self.raw_result_batches, self._raw_priorities, self._received_batches = {}, {}, set()
         self.columns = list(dict.fromkeys(
-            [key for record in sorted(expected, key=lambda row: row.source_position) for key in record.values]
+            _ordered_columns(sorted(expected, key=lambda row: row.source_position), columns)
             + [stage.method.output_column for stage in chain.stages if stage.kind == "map"]))
         self._base_columns, self._derived_columns = list(self.columns), {}
         self._call_records, self._pending = {}, deque()
         self._cleanup_errors = []
+        self._failure_errors = []
 
 
     _backend_name = "LOTUS"
@@ -67,10 +75,17 @@ class ChainBatchResults:
 
     def recover(self, envelope):
         """Merge an owner-read audit/failure snapshot without repeating calls."""
-        self._record_calls(envelope["calls"], recovering=True)
-        if "stage_stats" in envelope and envelope["stage_stats"] not in self.batch_stage_stats:
-            self.batch_stage_stats.append(envelope["stage_stats"])
-        self._recover_raw(envelope, priority=2 if "error_type" in envelope else 1)
+        try:
+            if envelope.get("error_type"):
+                self._failure_errors.append("recovered semantic failure")
+            self._cleanup_errors.extend(envelope.get("cleanup_errors", []))
+            self._record_calls(envelope["calls"], recovering=True)
+            if "stage_stats" in envelope and envelope["stage_stats"] not in self.batch_stage_stats:
+                self.batch_stage_stats.append(envelope["stage_stats"])
+            self._recover_raw(envelope, priority=2 if "error_type" in envelope else 1)
+        except BaseException as error:
+            self._failure_errors.append(type(error).__name__)
+            raise
 
     @property
     def pending(self):
@@ -87,6 +102,16 @@ class ChainBatchResults:
     def verify_coverage(self):
         if self.received != set(self.expected):
             raise ValueError(f"{self._backend_name} graph omitted expected input occurrences")
+
+    def verify_success(self, *, source_exhausted):
+        """Gate relation completion on explicit EOF and an untainted complete ledger."""
+        if source_exhausted is not True:
+            raise ValueError("relation completion requires explicit successful source exhaustion")
+        self.verify_coverage()
+        if (self._failure_errors or self._cleanup_errors or self.unassociated_results
+                or any(call.get("status") != "succeeded" or "engine_protocol_error" in call
+                       for call in self.calls)):
+            raise ValueError("relation completion has failed, unknown, protocol or cleanup evidence")
 
     def finalize_columns(self):
         self.columns = list(dict.fromkeys(self._base_columns + [
@@ -109,6 +134,13 @@ class ChainBatchResults:
                 call["algorithm_stage"], model_role=stages[call["algorithm_stage"]].model_role)
             if any(call[name] != canonical[name] for name in IDENTITY_FIELDS):
                 raise ValueError(f"{self._backend_name} chain changed a model evaluation identity")
+            if (call["algorithm_stage"] == self.chain.stages[0].stage_id
+                    and (self._has_parent_seeds or "parent_call_ids" in call)
+                    and call.get("parent_call_ids") != list(
+                        self.initial_parents[(call["row_id"], call["source_position"])])):
+                raise ValueError(f"{self._backend_name} chain changed its initial parent association")
+            if call["status"] != "succeeded" or "engine_protocol_error" in call:
+                self._failure_errors.append("non-successful or protocol-marked call")
             if call["call_id"] in self._call_records:
                 if recovering:
                     from src.baselines.common.redact import redact_json_values
@@ -131,6 +163,14 @@ class ChainBatchResults:
             self.calls.append(call)
 
     def _accept(self, envelope):
+        # Legacy Ray consumers call _accept directly; failures must remain sticky there too.
+        try:
+            self._accept_envelope(envelope)
+        except BaseException as error:
+            self._failure_errors.append(type(error).__name__)
+            raise
+
+    def _accept_envelope(self, envelope):
         batch_id = envelope["batch_id"]
         if type(batch_id) is not str or not batch_id or batch_id in self._received_batches:
             raise ValueError(f"{self._backend_name} graph returned a missing or duplicate native batch identity")
@@ -159,7 +199,8 @@ class ChainBatchResults:
             raise error
         rows = [RecordOccurrence.from_dict(row) for row in envelope["records"]]
         final_ids = [record.row_id for record in rows]
-        previous = {}
+        previous = {row_id: list(self.initial_parents[(row_id, self.expected[row_id]["source_position"])])
+                    for row_id in batch_ids}
         expected_stage = batch_ids
         for stage in self.chain.stages:
             stage_calls = [call for call in envelope["calls"]

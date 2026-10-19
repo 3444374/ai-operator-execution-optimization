@@ -127,12 +127,15 @@ class _FilterFormatter:
         self.columns, self.instruction = _filter_instruction(self.method)
         self.instructions = task_instructions
 
-    def messages(self, rows, *, index=None):
+    def messages(self, rows, *, index=None, allow_nulls=False):
         import pandas as pd
 
+        if type(allow_nulls) is not bool:
+            raise TypeError("allow_nulls must be a boolean")
         if not rows:
             return []
-        if any(type(row.get(name)) is not str for row in rows for name in self.columns):
+        if any(name not in row or not (type(row[name]) is str or allow_nulls and row[name] is None)
+               for row in rows for name in self.columns):
             raise TypeError("Filter records require present text input columns")
         frame = pd.DataFrame({name: [row[name] for row in rows] for name in self.columns}, index=index)
         docs = self.instructions.df2multimodal_info(frame, self.columns)

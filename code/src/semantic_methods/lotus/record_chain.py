@@ -37,6 +37,32 @@ def _name(value, label):
         raise ValueError(label + " must be a nonempty string")
 
 
+def _parent_seeds(keys, initial_parents):
+    """Validate a finite occurrence-to-parent value contract shared by workers and collectors."""
+    keys = set(keys)
+    if initial_parents is None:
+        return {key: () for key in keys}
+    if type(initial_parents) is not dict or set(initial_parents) != keys:
+        raise ValueError("initial_parents must exactly cover input occurrence keys")
+    for key, parents in initial_parents.items():
+        if (type(key) is not tuple or len(key) != 2 or type(key[0]) is not str
+                or type(key[1]) is not int or type(parents) is not tuple):
+            raise ValueError("initial_parents requires occurrence tuples and unique parent tuples")
+        for call_id in parents:
+            _name(call_id, "parent call_id")
+        if len(set(parents)) != len(parents):
+            raise ValueError("parent call_ids must be unique")
+    return deepcopy(initial_parents)
+
+
+def _ordered_columns(records, columns):
+    if columns is not None and (type(columns) not in (list, tuple)
+            or any(type(name) is not str or not name for name in columns)
+            or len(set(columns)) != len(columns)):
+        raise ValueError("columns must be a finite ordered sequence of unique names")
+    return list(dict.fromkeys(list(columns or ()) + [key for record in records for key in record.values]))
+
+
 def validate_chain_source():
     evidence = validate_filter_source()
     root = distribution("lotus-ai").locate_file("lotus")
@@ -247,22 +273,26 @@ class LotusRecordMethod:
         if not self.columns:
             raise ValueError("a record method must reference an input column")
 
-    def prepare_rows(self, records, *, query_id):
+    def prepare_rows(self, records, *, query_id, allow_nulls=False):
         import lotus
         import pandas as pd
         from lotus.types import SerializationFormat
 
         if lotus.settings.enable_cache or lotus.settings.serialization_format != SerializationFormat.DEFAULT:
             raise ValueError("record methods require caching disabled and DEFAULT serialization")
+        if type(allow_nulls) is not bool:
+            raise TypeError("allow_nulls must be a boolean")
         for record in records:
-            if any(type(record.values.get(name)) is not str for name in self.columns):
+            if any(name not in record.values or not (type(record.values[name]) is str
+                   or allow_nulls and record.values[name] is None) for name in self.columns):
                 raise ValueError("ordinary record methods require present text input columns")
         if not records:
             return []
         started = time.monotonic_ns()
         if self.stage.kind == "filter":
             messages = self._filter_formatter.messages(
-                [record.values for record in records], index=[record.source_index for record in records])
+                [record.values for record in records], index=[record.source_index for record in records],
+                allow_nulls=allow_nulls)
         else:
             frame = pd.DataFrame([record.values for record in records],
                                  index=[record.source_index for record in records])
@@ -309,36 +339,57 @@ class LotusRecordMethod:
 class LotusRecordChain:
     """Compose supported record methods without introducing a query compiler.
 
-    Extract is terminal because its original index-label assignment is applied
-    at final relation assembly. Nonterminal label updates need a separate contract.
+    Executable segments end at Extract. A relation-barrier plan must be split,
+    and its owner must complete index-label assignment before the next segment.
     """
 
-    def __init__(self, stages, *, query_id, _require_bound=False):
+    def __init__(self, stages, *, query_id, relation_barriers=False, _require_bound=False):
         _name(query_id, "query_id")
         if type(stages) is not tuple or not stages or any(type(s) is not StageSpec for s in stages):
             raise ValueError("a finite nonempty tuple of StageSpec is required")
         if len({s.stage_id for s in stages}) != len(stages):
             raise ValueError("each operator occurrence needs a distinct stage_id")
-        if any(s.kind == "extract" for s in stages[:-1]):
+        if type(relation_barriers) is not bool:
+            raise TypeError("relation_barriers must be a boolean")
+        if not relation_barriers and any(s.kind == "extract" for s in stages[:-1]):
             raise ValueError("Extract must be terminal before final index-label assignment")
         if type(_require_bound) is not bool:
             raise TypeError("_require_bound must be a boolean")
         if not _require_bound:
             stages = tuple(stage.bind() for stage in stages)
         self.query_id = query_id
+        self.relation_barriers = relation_barriers
         self.methods = tuple(LotusRecordMethod(s) for s in stages)
         self.stages = tuple(m.stage for m in self.methods)
 
     def describe(self):
-        return dict(stages=[s.describe() for s in self.stages], query_id=self.query_id)
+        return dict(stages=[s.describe() for s in self.stages], query_id=self.query_id,
+                    **({"relation_barriers": True} if self.relation_barriers else {}))
 
     @classmethod
     def from_dict(cls, value):
         """Receive caller-bound wire values; never resolve order in a worker."""
         return cls(tuple(StageSpec.from_dict(s) for s in value["stages"]),
-                   query_id=value["query_id"], _require_bound=True)
+                   query_id=value["query_id"], _require_bound=True,
+                   **({"relation_barriers": value["relation_barriers"]} if "relation_barriers" in value else {}))
 
-    def run_batch(self, records, infer):
+    def relation_segments(self):
+        """Return batch-local segments; the owner alone completes relations between them."""
+        if not self.relation_barriers:
+            return (self,)
+        segments, start = [], 0
+        for position, stage in enumerate(self.stages):
+            if stage.kind == "extract" or position == len(self.stages) - 1:
+                segments.append(LotusRecordChain(self.stages[start:position + 1], query_id=self.query_id,
+                                                  _require_bound=True))
+                start = position + 1
+        return tuple(segments)
+
+    def run_batch(self, records, infer, *, initial_parents=None, columns=None, allow_nulls=False):
+        if any(stage.kind == "extract" for stage in self.stages[:-1]):
+            raise ValueError("complete Extract's relation barrier before running the next segment")
+        if type(allow_nulls) is not bool:
+            raise TypeError("allow_nulls must be a boolean")
         if type(records) is not list or any(type(r) is not RecordOccurrence for r in records):
             raise TypeError("chain input must be a finite list of RecordOccurrence")
         keys = [(r.row_id, r.source_position) for r in records]
@@ -347,18 +398,19 @@ class LotusRecordChain:
         if any(r.index_updates for r in records):
             raise ValueError("assemble final index updates before reusing a relation")
         current = [RecordOccurrence.from_dict(r.describe()) for r in records]
-        columns = list(dict.fromkeys(k for record in current for k in record.values))
+        parents = _parent_seeds(keys, initial_parents)
+        columns = _ordered_columns(current, columns)
         for stage in self.stages:
             if stage.kind == "map" and stage.method.output_column not in columns:
                 columns.append(stage.method.output_column)
-        calls, stats, parents, raw_results, prepared = [], {}, {}, [], []
-        previous_parents = {}
+        calls, stats, raw_results, prepared = [], {}, [], []
+        previous_parents = dict(parents)
         try:
             for method in self.methods:
                 stage = method.stage
                 prepared, raw_results = [], []
                 previous_parents = dict(parents)
-                prepared = method.prepare_rows(current, query_id=self.query_id)
+                prepared = method.prepare_rows(current, query_id=self.query_id, allow_nulls=allow_nulls)
                 if not prepared:
                     continue
                 results = infer(prepared, generation=stage.generation)
@@ -427,6 +479,7 @@ class LotusRecordChain:
             }
             error.chain_input_ids = keys
             error.chain_raw_results = raw_results
+            error.chain_columns = list(columns)
             raise
 
 
