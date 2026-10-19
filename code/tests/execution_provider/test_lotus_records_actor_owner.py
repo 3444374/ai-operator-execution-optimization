@@ -37,7 +37,7 @@ class Ref:
 
 
 class FakeRuntime:
-    def __init__(self, *, close_reports=None, ready_error=None):
+    def __init__(self, *, close_reports=None, ready_error=None, constructor_error=None):
         self.events = []
         self.engines = []
         self.formatters = []
@@ -84,6 +84,8 @@ class FakeRuntime:
             def __init__(self, engine, generation):
                 self.runs, self.closes = [], 0
                 runtime.engines.append(self)
+                if constructor_error is not None:
+                    raise constructor_error
 
             def ready(self):
                 if ready_error is not None:
@@ -265,6 +267,41 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             self.assertTrue(report["model_actor_handle_retained"])
             self.assertIsNone(report["gpu_exit_confirmed"])
             self.assertEqual(runtime.engines[0].closes, 1)
+
+    def test_constructor_failure_stays_unknown_without_reconstruction_or_model_kill(self):
+        with FakeRuntime(constructor_error=RuntimeError("allocated then failed")) as runtime:
+            owner = self.owner()
+            deadline = time.monotonic() + 3
+            with self.assertRaisesRegex(RuntimeError, "allocated then failed"):
+                owner.start(deadline)
+            actor = owner.model_actor.value
+            self.assertTrue(actor._engine_start_attempted)
+            self.assertTrue(actor._engine_start_failed)
+            self.assertIsNone(actor.engine)
+            with self.assertRaisesRegex(RuntimeError, "startup is unconfirmed"):
+                actor.ready(deadline)
+            self.assertEqual(len(runtime.engines), 1)
+            for _ in range(2):
+                report = owner.close()
+                self.assertEqual(report["status"], "unknown")
+                self.assertFalse(report["engine_close_report"]["engine_api_shutdown_confirmed"])
+                self.assertIsNone(report["gpu_exit_confirmed"])
+                self.assertTrue(report["model_actor_handle_retained"])
+                self.assertFalse(report["actor_kill_requests_confirmed"])
+            self.assertFalse(any(event[0] == "kill" and event[1] is owner.model_actor
+                                 for event in runtime.events))
+            with self.assertRaisesRegex(RuntimeError, "unconfirmed"):
+                owner.start(deadline)
+
+    def test_never_started_model_actor_keeps_empty_close_behavior(self):
+        actor = actors._ModelActor(dict(model_path="/tmp/model", model_python="/tmp/model-python",
+                                        driver_python="/tmp/driver-python"), {}, 1)
+        with self.assertRaises(TimeoutError):
+            actor.ready(time.monotonic() - 1)
+        self.assertFalse(actor._engine_start_attempted)
+        self.assertFalse(actor._engine_start_failed)
+        self.assertEqual(actor.close(1), dict(status="closed", engine_api_shutdown_confirmed=True,
+                                             gpu_exit_confirmed=True))
 
     def test_unconfirmed_engine_close_can_retry_without_claiming_gpu_exit(self):
         reports = [dict(engine_api_shutdown_confirmed=False, gpu_exit_confirmed=None),

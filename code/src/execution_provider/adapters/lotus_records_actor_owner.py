@@ -60,13 +60,22 @@ class _ModelActor:
         self.generation = GenerationSpec.from_dict(generation)
         self.model_batch_rows = model_batch_rows
         self.engine = None
+        self._engine_start_attempted = False
+        self._engine_start_failed = False
 
     def ready(self, deadline: float) -> dict[str, Any]:
         from src.serving.backends.vllm_engine import VllmEngine
 
         _check(deadline)
         if self.engine is None:
-            self.engine = VllmEngine(self.engine_spec, self.generation)
+            if self._engine_start_attempted:
+                raise RuntimeError("model startup is unconfirmed; owner must stop")
+            self._engine_start_attempted = True
+            try:
+                self.engine = VllmEngine(self.engine_spec, self.generation)
+            except BaseException:
+                self._engine_start_failed = True
+                raise
         _check(deadline)
         return self.engine.ready()
 
@@ -86,6 +95,8 @@ class _ModelActor:
 
     def close(self, timeout: float) -> dict[str, Any]:
         if self.engine is None:
+            if self._engine_start_attempted:
+                return dict(status="unknown", engine_api_shutdown_confirmed=False, gpu_exit_confirmed=None)
             return dict(status="closed", engine_api_shutdown_confirmed=True, gpu_exit_confirmed=True)
         return self.engine.close(timeout=timeout)
 
