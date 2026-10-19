@@ -1,0 +1,118 @@
+{
+  "schema": "imlane.filter.cpu.qualification.v1",
+  "date": "2026-10-19",
+  "branch": "feat/imlane-local-filter",
+  "base_commit": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "author_runtime_started": false,
+  "author_cpp_compiled": false,
+  "public_cli_changed": false,
+  "shared_engine_changed": false,
+  "author_scheduling_changed": false,
+  "python": "3.12.6",
+  "versions": {
+    "pyarrow": "24.0.0",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "psutil": "7.2.2"
+  },
+  "preflight": {
+    "status": "ok",
+    "groups": [
+      "core",
+      "text",
+      "semantic-benchmarks"
+    ],
+    "profile": "explicit Darwin CPU fixture; automatic profile mismatch retained"
+  },
+  "tests": {
+    "unique_related_tests": 104,
+    "method_owner_process": 65,
+    "engine_fresh_process": 39,
+    "skipped": 0,
+    "final_module_recheck": 22,
+    "logs": {
+      "method-r7-final.log": {
+        "sha256": "235df61ce1ff078dfa153c30af46b047ea6587f2b40f3e80665ea051374e425a",
+        "bytes": 14258
+      },
+      "engine-r4.log": {
+        "sha256": "b37d9176e504a7b222e62c8a577aa098c957cb143a9acfe88fdca3ad161fa8f2",
+        "bytes": 6928
+      },
+      "filter-r6-final.log": {
+        "sha256": "e8f8305631d65cceabeb1a77d91d5724b3c4ce1e9830eaec52474790520e6ed4",
+        "bytes": 5683
+      }
+    }
+  },
+  "reviews": {
+    "protocol": {
+      "accepted": true,
+      "worker_sha256": "e9b021133e2c056c05350f485badda800b755b8ad9828e2d029e99455f20eb96",
+      "tests_sha256": "176f2477e8d9cb304889ed2f83b21e23bee6c97e54f59738f37b16aa4f81257f",
+      "additional_read_only_fixtures": 5
+    },
+    "resources": {
+      "accepted": true,
+      "worker_sha256": "e9b021133e2c056c05350f485badda800b755b8ad9828e2d029e99455f20eb96",
+      "verifier_sha256": "7147edf6207d76ae3e0ec21a89957d6431b547c58f206c6e7726c7ff713450c2"
+    },
+    "remaining_source_blockers": []
+  },
+  "model_lifetime": "one new private engine per query owner; no cross-query reuse qualification",
+  "sources_sha256": {
+    "code/integrations/imlane_records/filter_workload.py": "a64fd2e3b89dedd49b4e13108a1a628f93dc8d6824d7c7fa126f447edc849faa",
+    "code/integrations/imlane_records/build.py": "5f066686fc6d85489a5be0ec2aa4e27cf7d62722b6fc41cd23a57b96f4e08607",
+    "code/integrations/imlane_records/model_process.py": "fefd5938d542393359b2dadd3888d0045b7627ea5ec584bf22d19de4dd92fc80",
+    "code/integrations/imlane_records/filter_host.py": "5e03eafe6804f888418ec33f752e78c25cd743648fe8397123d1e24e75e1302d",
+    "code/integrations/imlane_records/client.py": "4b1525eafeba4d9868197530952dc53e7f8b9dc664e04611c6bae6c9e2e27a43",
+    "code/integrations/imlane_records/verify_filter.py": "7147edf6207d76ae3e0ec21a89957d6431b547c58f206c6e7726c7ff713450c2",
+    "code/integrations/imlane_records/echo_udf.py": "d605e9d8e5253c17ac08eda52dbd2bfb4dcada4157197b8ad6f5a90d58cf14d7",
+    "code/integrations/imlane_records/owner.py": "c87e5d846ddcc63a59a9e6fb8ac6daaf601e09d142095f10d08d1742c7f45879",
+    "code/integrations/imlane_records/filter_udf.py": "e9b021133e2c056c05350f485badda800b755b8ad9828e2d029e99455f20eb96",
+    "code/integrations/imlane_records/records_checks.cpp": "2e5f3813ae94909d8e7e75d2407e85c4d2d2dea83e70fc8f40a2148328c041a9",
+    "code/integrations/imlane_records/verify.py": "2be60225f8a27eb0f0acf609c687264db4bb22eb09e594e8a296164b227a09cd",
+    "code/integrations/imlane_records/imlane_records.cpp": "e0102edcb883e3159510362fecb80967d112bbd782473e97c003bb655dcfe8be",
+    "code/integrations/imlane_records/record_dbend_adapter.hpp": "f606760a61845ea7b98f69bfd41a413279e8b9eef349511e3d6f7f4c83ad9e16",
+    "code/tests/integrations/imlane_filter_fixture.py": "23b560f07c65822df8f499686103a4f22c73a7dd5f06b2ef595c7b42379a7086",
+    "code/tests/integrations/imlane_filter_fixture_udf.py": "0cd80650a86db331a5573614b28793159ed8a77db82ad2c7f4bd800d36acb29f",
+    "code/tests/integrations/test_imlane_filter.py": "176f2477e8d9cb304889ed2f83b21e23bee6c97e54f59738f37b16aa4f81257f",
+    "code/tests/integrations/test_imlane_records.py": "bf5f1aff88a434e043696d1adc2369a05919aa56c1eeceead408ffb87b2a7f21"
+  },
+  "code_closure": {
+    "files": 997,
+    "manifest_sha256": "d3d320dcda1d41a91720f5c6caf46e0475616509dfa67c88b55ef97b623a52ec"
+  },
+  "pending": [
+    "author Arrow16 C++ build and v2 checks",
+    "isolated Arrow16 method environment",
+    "author CPython no-model round trip",
+    "owner-scheduled two-query local model and independent GPU exit",
+    "author Ray GPU/environment/model owner"
+  ],
+  "connection": {
+    "status": "blocked_not_denied",
+    "reason": "pre-authorized existing ControlMaster socket absent",
+    "returncode": 255,
+    "remote_action_uncertain": false
+  },
+  "failures": {
+    "retained": [
+      "automatic CPU profile mismatch",
+      "r1 fixture fields and sandbox process observation",
+      "r2 fixture response field",
+      "r3 LOTUS/engine same-interpreter guard"
+    ],
+    "early_source_status": "unsealed; not rebound to final source hashes"
+  },
+  "archive": {
+    "name": "imlane-filter-cpu-20261019-evidence.tgz",
+    "sha256": "b04b607fe331fcd4b603629cc060723ade97cfc88bc4007f51f7a1655ec08c28",
+    "bytes": 62176,
+    "members": 19
+  }
+}

@@ -26,6 +26,9 @@ from src.infrastructure.runner_lease import (
 
 
 class RecordScope(tools.AuthorScope):
+    def workload_environment(self):
+        return {}
+
     def sample(self):
         import psutil
         try:
@@ -53,7 +56,8 @@ class RecordScope(tools.AuthorScope):
     def __enter__(self):
         self.args.stop_budget.check()
         author = self.args.author_root
-        python, prefix = author / "venv/bin/python", author / "prefix-patched"
+        python = getattr(self.args, "method_python", None) or author / "venv/bin/python"
+        prefix = author / "prefix-patched"
         info = json.loads(subprocess.check_output([str(python), "-B", "-c",
             "import sys,sysconfig,pyarrow,json;print(json.dumps(dict(site=sysconfig.get_path('purelib'),lib=pyarrow.get_library_dirs()[0],base=sys.base_prefix)))"], text=True, timeout=15))
         cpp = Path(subprocess.check_output(["g++", "-print-file-name=libstdc++.so.6"], text=True).strip()).resolve()
@@ -65,6 +69,7 @@ class RecordScope(tools.AuthorScope):
             LD_LIBRARY_PATH=os.pathsep.join([str(cpp.parent), str(prefix / "lib"), info["lib"],
                 str(author / "source/third_party/fmt/dist/lib"), str(author / "source/third_party/boost/dist/lib"), info["base"] + "/lib"]),
             TMPDIR=str(temporary), IMLANE_NAMESPACE=self.namespace, IMLANE_GATEWAY_HOST="127.0.0.1")
+        self.env.update(self.workload_environment())
         self.env.pop("RAY_ADDRESS", None)
         self.env.pop("PYTHONHOME", None)
         self.sampler = threading.Thread(target=self.sample, daemon=True)

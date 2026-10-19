@@ -45,14 +45,18 @@ void frame(Json value) {
 }
 int main(int argc, char** argv) {
     try {
-        require(argc == 4, "usage: imlane_records PORT UDF_PATH FUNCTION");
+        require(argc == 4 || argc == 5, "usage: imlane_records PORT UDF_PATH FUNCTION [imlane.records.v2]");
+        const bool terminals_v2 = argc == 5;
+        require(!terminals_v2 || std::string(argv[4]) == "imlane.records.v2", "unknown records protocol");
         size_t used = 0;
         auto port = std::stoul(argv[1], &used);
         require(used == std::string(argv[1]).size() && port > 0 && port <= 65535, "invalid records port");
         auto context = std::make_shared<dbend::DBEndContext>();
         check(context->Setup("127.0.0.1", static_cast<int>(port)));
         check(context->RegisterFunction(argv[2], argv[3], "imlane_records"));
-        Session session(context, "imlane_records");
+        Limits limits;
+        if (terminals_v2) ++limits.max_query_rows; // One explicit worker-close record, outside the model budget.
+        Session session(context, "imlane_records", limits, terminals_v2);
         Table retained;
         Json retained_rows;
         size_t retained_checks = 0;
@@ -66,8 +70,10 @@ int main(int argc, char** argv) {
                 throw;
             }
         };
-        frame({{"event", "ready"}, {"protocol", "imlane.records.v1"},
-            {"native_task_threads", context->GetSettings().n_executors}, {"real_model_requests", 0}});
+        Json startup = {{"event", "ready"}, {"protocol", terminals_v2 ? "imlane.records.v2" : "imlane.records.v1"},
+            {"native_task_threads", context->GetSettings().n_executors}};
+        if (!terminals_v2) startup["real_model_requests"] = 0;
+        frame(startup);
         std::string line;
         while (read_line(line)) {
             try {
