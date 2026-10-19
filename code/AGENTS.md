@@ -26,6 +26,9 @@ data source/materializer
 - 新增或重构的公共策略使用中性 `work_units`/descriptor；迁移期间保留现有 token 字段兼容层。文本
   token、图像 frame/pixel/prepare cost 在模态 adapter 中换算；模态不支持的 locality/length 能力
   必须显式声明，不静默退化。
+- 公共 scheduler 按 adapter 声明的能力选择策略，不按输入模态分支；serving 执行既定请求，batch
+  成员与准入由组织及调度负责。scripts 解析配置并调用 src，可复用实现放回 src；experiments
+  编排既有实现，生产策略放回所属模块。模态 adapter 不另实现公共 credit、routing、flush 策略。
 - 新 backend 保留遵循同一协议的旧 backend 作为对照或回退。生产 runner 不反向 import profiling 脚本。
 - PostgreSQL 语义层与外部物理 backend 分开：数据库 plan/task/result 协议定义默认语义，scheduler
   不重定义 prompt、output parser 或关系行为；LOTUS parity 只由可选 compatibility adapter 验证。

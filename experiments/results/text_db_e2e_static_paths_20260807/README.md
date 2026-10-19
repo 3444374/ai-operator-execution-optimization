@@ -134,4 +134,4 @@ direct 仍必须作为默认性能参照；项目后续 state-aware 方法只有
 - `raw/audit.json`、`raw/headline_summary.json`：门禁与开题 headline。
 - `raw/*manifest.meta.json`、`raw/workload_summary.json`：manifest 和 workload 分布。
 - 服务器全量 raw：`/root/autodl-tmp/experiment-artifacts/opening_database_e2e_text_20260807/`；按项目政策不进入 Git。
-- 汇总命令：`python code/scripts/analysis/summarize_opening_database_e2e.py --matrix-root <artifact-root> --output <artifact-root>/aggregate`。
+- 历史汇总器已退役，先恢复[固定源码](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts/analysis/summarize_opening_database_e2e.py)及同提交源码，再运行：`python code/scripts/analysis/summarize_opening_database_e2e.py --matrix-root <artifact-root> --output <artifact-root>/aggregate`。

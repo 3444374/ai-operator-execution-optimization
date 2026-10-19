@@ -37,7 +37,9 @@ workload、不注入 work credit、跨 Job 路由、fair queue 或负载均衡�
 - 边界：no-writeback。此实验隔离 serving-side 多 Job 干扰；sink 已由统一
   database-E2E 护栏验证，不在这里重复。
 
-运行入口：
+历史运行入口如下。专用汇总器已退役；复算使用
+[固定版本](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85)
+的完整源码，原始结果和来源记录保持原样。
 
 ```bash
 PYTHONPATH=code python code/scripts/baselines/run_text_native_multijob.py \

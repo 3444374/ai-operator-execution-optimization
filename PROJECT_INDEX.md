@@ -140,7 +140,7 @@
 | `reference/experiment_report_honesty_checklist.md` | [报告核对](experiments/plans/reference/报告核对.md) |
 | `reference/sink_writeback_coordination.md` | [写回协调方案](docs/archive/engineering/designs/写回协调方案.md) |
 | `reference/strategy_design_implementation_reference.md` | [策略工程映射](docs/archive/engineering/designs/策略工程映射.md) |
-| `motivation/integration.md` | [早期接入方案_20260710](experiments/plans/archive/早期接入方案_20260710.md) |
+| `motivation/integration.md` | [早期接入方案_20260710](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/experiments/plans/archive/早期接入方案_20260710.md)；现行方案见[数据库接入](experiments/plans/数据库接入.md) |
 | `motivation/image_host_data_path_bottleneck.md` | [图像链路诊断](experiments/plans/archive/图像链路诊断.md) |
 | `postgresql_call_binding_design.md` | [数据库接入](experiments/plans/数据库接入.md#calls) |
 | `postgresql_query_job_design.md` | [数据库接入](experiments/plans/数据库接入.md#query-job) |

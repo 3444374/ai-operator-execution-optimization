@@ -341,12 +341,9 @@ PostgreSQL（数据源 + 写回 sink；pgvector 存向量）
 `df -hT / /root/autodl-tmp` 核对实际挂载与空间，不只根据目录名判断所在磁盘。
 只更改 PostgreSQL 存储路径不改变 host、port、database 或用户，因此连接串保持不变。
 
-开题统一 database-E2E 文本三臂使用
-`opening_database_e2e_p0.example.json`。它只负责 SQuAD 均匀控制组和 ShareGPT
-controlled-skew 的冻结合同；复制到仓库外 artifact/config 目录后由 runtime env 展开。
-运行前仍须完成 `deploy/runtime/README.md` 的环境 preflight，并先用
-`export-postgres-manifest --partition-policy equal_rows --partition-seed 20260807`
-生成两份 immutable manifest。不要在模板中写入真实连接串或服务器地址。
+已结束的开题三路径矩阵、校准和补跑模板已退役。复算使用
+[固定历史版本](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85)，
+原始结果和失败记录继续保留。当前入口从 [脚本说明](../../code/scripts/README.md)核对。
 
 `opening_project_short_all_at_t0_diagnostic.example.json` 是独立的项目性能诊断，
 不属于开题 baseline。它复用冻结 short manifest、K128/W65536、8×32 actor shape、
@@ -375,28 +372,6 @@ Daft/Ray Data 原生 eager 数据复用；系统内 short impact 可作反事实
 则让 Daft Native/Ray、Ray Data 分别运行四个 single-full 控制与四个官方独立应用并发；
 不向原生框架注入项目 credit。两个模板均固定 1+3、不扫 offset/K/W；短于60秒的 cell
 只用于计算相对自身 single 的 slowdown，不进入框架容量排名。
-
-若该矩阵的项目臂未达到同协议 bounded direct 的 95% feeding 门，只能保留为
-failed-feeding 诊断。使用 `opening_project_feeding_calibration.example.json` 在每个
-workload 的同一 immutable manifest 上固定服务、token budget、active work 与 8×32=256
-actor slots，单变量扫描 per-endpoint K 32/64/128/256（含既有正式合同 K256）；三次重复
-按 97% 已测项目峰值与 95% direct feeding 双门选择最小点。若四档均失败，才固定最佳 K
-后单独扫描 active work。
-
-某个 measured cell 若因传输/基础设施异常失败，不删除原目录，也不重跑整轮覆盖证据。
-使用 `opening_project_feeding_repair.example.json` 在全新输出目录只补同 K 的一个重复；
-生成选择合同时用 `--repair-root <new-root>`。审计器要求每组恰好三个**成功**重复，原 failed
-record 仍写入 `failed_incidents_preserved`；多补成功重复会因计数不等 fail-closed，避免挑点。
-冻结选择后必须用新 experiment ID/输出目录整体替换重跑原三臂矩阵；这属于纠正无效
-formal，不是新增开题 baseline。
-
-两份选择文件都通过后，使用 `opening_database_e2e_refeed.example.json` 启动替换正式
-矩阵。模板要求每个 workload 显式提供校准 JSON 和其中选中的 K；runner 会核对三次
-重复、0.95/0.97 门槛、manifest SHA、token budget、active work、actor shape 与 K，任一
-不一致即在创建输出目录前失败。direct/DuckDB 仍固定每 endpoint 32，不随 project K 改变。
-矩阵主进程必须使用 `${VENV_ROOT}/text-baselines/bin/python`，不能使用 base Python；
-DuckDB `ai` community extension 的冻结合同是 DuckDB 1.5.4 + extension 0.4.14，若由
-base 环境的 DuckDB 1.5.5 执行 preflight/arm，会在正式 cell 前因扩展二进制不匹配而失败。
 
 ### 全新实例从零准备
 

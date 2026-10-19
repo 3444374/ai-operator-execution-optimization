@@ -61,7 +61,7 @@ development rehearsal root；禁止直接启动 formal。
 
 - 实验脚本：`code/scripts/benchmarks/`、`code/scripts/`
 - 连接验证结果：`experiments/results/diagnostics/`
-- 集成计划：`experiments/plans/archive/早期接入方案_20260710.md`
+- 集成计划：[数据库接入](../experiments/plans/数据库接入.md)
 
 ## 注意
 
