@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[IMLane 原 LOTUS 全局级联](imlane_cascade_cpu_20261019/README.md)：通用阶段值桥、非Q3多列／独立helper指令与Q3回归；本机CPU和作者实测分别登记，模型及GPU待验。
+
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
 [Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展四层及固定源码核对；Ray／Daft／普通Core已有小切片资格，当前IMLane初始化失败保留unknown，有限链、级联与持续供给另验。

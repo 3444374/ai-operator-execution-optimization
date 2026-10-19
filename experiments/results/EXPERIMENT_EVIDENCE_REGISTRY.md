@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane 通用级联 CPU 接线](diagnostics/imlane_cascade_cpu_20261019/README.md)。新增11项、普通Filter3项与原LOTUS差分3项共17个不同CPU测试通过；错误／skip保留，作者CPU实测、真实模型和GPU分别登记。
+
 2026-10-19：[Extract 空字段名兼容](diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。保留原 parser 额外空键，修复后继 schema 误拒绝；独立普通 RED 回归转绿。39 项／17 subtests CPU 通过，2 native 明确 pending／skip；无 native 图、模型或 GPU。
 
 2026-10-19：[Core actor 集成接点](diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。显式同配置 owner、完整 session／sequence 提交／取消／receipt ack、独立 cleanup 窗口；默认同步保持。92 项／39 subtests CPU 通过，首次 fixture 设置错误及受限进程检查 PermissionError 保留；未新增 Async actor／CLI 或模型资格。

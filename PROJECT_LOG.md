@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：增加 IMLane 原 LOTUS 全局级联接点
+
+职责分支从通用6e8b1382建立，新增stage／role值桥；原全局校准、采样、阈值学习、fallback及合并保持。作者DBEnd／Coordinator／Lane及CPython负责物理执行，不增加线程池、调度器或作者补丁。17个不同本机CPU测试通过；双审修复作者异常关闭可被重试覆盖、late stderr失败漏检及跨stage query错配。首次沙箱失败、异常断言修正和三项optin skip分列保留，作者CPU、真实模型和GPU独立验收。见[源码与运行证据](experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
+
 ## 2026-10-19：保留 Extract 的额外空字段名
 
 选择性接纳独立合同测试 `4a67df81`，后继 schema 允许原 LOTUS parser 已保留的空字符串列名，仍核类型／顺序／唯一性。39 项 CPU／17 subtests 通过，普通 RED 转绿，2 native 接线用例仍 pending；不改变 parser 或源输入规则。见[固定证据](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#原-parser-的空字段名兼容)。

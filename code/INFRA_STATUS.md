@@ -11,6 +11,8 @@
 
 ## 独立 IMLane 记录桥
 
+[通用 LOTUS 全局级联](../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)新增独立 stage／role 值桥，保留原全局校准、采样、阈值学习与合并；17 个不同本机 CPU 测试通过，作者 CPython 实机、模型与 GPU 资格分列。
+
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
 当前主线新增独立owner helper，复用精确PID出生标识、namespace／SHM核验与禁止stale恢复的host lease；22项本机CPU检查通过。
 原echo作者实测不重新绑定为新helper实测；作者Ray、当前wire／模型生命周期及作者实机重跑按各自来源验证，见[历史报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)与下方后续记录。
