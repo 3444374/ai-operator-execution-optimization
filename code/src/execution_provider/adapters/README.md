@@ -54,7 +54,9 @@ Cancellation does not free active work or unknown input references. Owner mode
 metadata cannot override actual Core, cleanup or GPU observations. Both the
 default and injected owners honor Core's cleanup deadline and retain the same
 pending close request on timeout. These are [CPU-checked integration hooks](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks);
-the default remains synchronous, and Async actor/CLI integration is still pending.
+the default remains synchronous. The optional Async actor and CLI now consume these hooks;
+their [separate CPU integration evidence](../../../../experiments/results/diagnostics/async_records_actor_20261019/README.md)
+keeps component, query and cleanup qualifications bound to their tested sources.
 
 The separate [finite-chain Core adapter](lotus_record_chain_core.py) admits raw bounded
 fused batches through the same production Core and one asynchronous slot. A local host
