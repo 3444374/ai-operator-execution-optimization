@@ -54,6 +54,7 @@ class AsyncCoreModelActor:
         self._start_attempted = self._start_failed = self._closing = self._unhealthy = False
         self._held, self._tickets, self._early_cancels = {}, {}, set()
         self._session = -1
+        self._cancel_session = -1
         self.last_close_report = None
 
     def _process_type(self):
@@ -165,7 +166,10 @@ class AsyncCoreModelActor:
         with self._condition:
             slots = min(self.limits.max_inflight, self.limits.result_slots,
                         self.limits.result_bytes // self.limits.item_result_bytes)
-            while len(self._held) >= slots:
+            # The Core releases a known terminal before its asynchronous ack
+            # necessarily reaches this threaded actor. A following session can
+            # already be valid; keep its finite handoff waiting for that ack.
+            while len(self._held) >= slots or (key[0] > self._session and self._held):
                 if self._closing or self._unhealthy or time.monotonic() >= deadline:
                     return self._bounded(self._receipt(occurrence, "failed", "CapacityUnavailable",
                         expired=time.monotonic() >= deadline), maximum)
@@ -177,9 +181,8 @@ class AsyncCoreModelActor:
             if key[0] < self._session:
                 return self._bounded(self._receipt(occurrence, "failed", "StaleCoreSession"), maximum)
             if key[0] > self._session:
-                if self._held:
-                    return self._bounded(self._receipt(occurrence, "failed", "PreviousSessionNotSettled"), maximum)
                 self._session = key[0]
+                self._cancel_session = max(self._cancel_session, key[0])
                 self._early_cancels = {item for item in self._early_cancels if item[0] >= key[0]}
             call = self._held[key] = _Call(occurrence, aborted=key in self._early_cancels)
             self._early_cancels.discard(key)
@@ -238,11 +241,18 @@ class AsyncCoreModelActor:
                 call.aborted = True
                 requested = call.ticket is None or self.engine.abort(call.ticket)
                 call.abort_queued = call.ticket is not None and requested
-            elif len(self._early_cancels) < self.limits.max_inflight:
-                self._early_cancels.add(key)
-                requested = True
             else:
-                requested = False
+                # Cancels can overtake the next session's first prepared call.
+                # Track that epoch separately so a late old cancel cannot fill
+                # its bounded early-intent set or block an already owned call.
+                if key[0] < self._cancel_session:
+                    return dict(requested=False, engine_terminal_confirmed=False)
+                if key[0] > self._cancel_session:
+                    self._cancel_session = key[0]
+                    self._early_cancels.clear()
+                requested = key in self._early_cancels or len(self._early_cancels) < self.limits.max_inflight
+                if requested:
+                    self._early_cancels.add(key)
             return dict(requested=requested, engine_terminal_confirmed=False)
 
     def acknowledge_core(self, request_key):

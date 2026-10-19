@@ -112,6 +112,7 @@ class AsyncActorTests(unittest.TestCase):
         actor = self.actor()
         self.assertTrue(actor.abort_core((0, 0))["requested"])
         self.assertTrue(actor.abort_core((0, 1))["requested"])
+        self.assertTrue(actor.abort_core((0, 0))["requested"])
         self.assertFalse(actor.abort_core((0, 2))["requested"])
         result = json.loads(actor.run_core([prepared()], time.monotonic() + 3, 4096, (0, 0)))
         self.assertEqual(result["error_type"], "CancelledBeforeSubmission")
@@ -154,6 +155,24 @@ class AsyncActorTests(unittest.TestCase):
             self.assertEqual(result["call_id"], old["call_id"])
             self.assertNotEqual(result["engine_request_id"], old["engine_request_id"])
             self.assertTrue(actor.acknowledge_core((1, 0)))
+
+    def test_next_early_cancel_reclaims_old_epoch_capacity_before_first_prepared_call(self):
+        actor = self.actor()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            self.submit(pool, actor, 0).result(3)
+            self.submit(pool, actor, 1).result(3)
+        actor.acknowledge_core((0, 0))
+        actor.acknowledge_core((0, 1))
+        self.assertTrue(actor.abort_core((0, 0))["requested"])
+        self.assertTrue(actor.abort_core((0, 1))["requested"])
+        self.assertEqual(actor.snapshot()["early_cancellations"], 2)
+        self.assertTrue(actor.abort_core((1, 0))["requested"])
+        self.assertFalse(actor.abort_core((0, 0))["requested"])
+        self.assertEqual(actor.snapshot()["early_cancellations"], 1)
+        result = json.loads(actor.run_core([prepared()], time.monotonic() + 3, 4096, (1, 0)))
+        self.assertEqual(result["error_type"], "CancelledBeforeSubmission")
+        self.assertEqual(actor.engine._sequence, 2)
+        self.assertTrue(actor.acknowledge_core((1, 0)))
 
     def test_unknown_keeps_both_ipc_and_actor_reservations_after_ack(self):
         actor = self.actor()
