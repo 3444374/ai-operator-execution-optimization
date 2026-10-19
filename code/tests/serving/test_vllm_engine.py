@@ -98,6 +98,9 @@ class KernelTests(unittest.TestCase):
         self.fake_module.__version__ = "0.25.1"
         self.fake_module.LLM = self.allocate
         self.fake_module.SamplingParams = self.sample
+        self.fake_sampling_module = types.ModuleType("vllm.sampling_params")
+        self.fake_sampling_module.StructuredOutputsParams = self.structured
+        self.sampling_error = self.structured_error = None
 
     def allocate(self, **kwargs):
         self.events.append(("allocate", kwargs))
@@ -105,6 +108,14 @@ class KernelTests(unittest.TestCase):
 
     def sample(self, **kwargs):
         self.events.append(("sample", kwargs))
+        if self.sampling_error is not None:
+            raise self.sampling_error
+        return types.SimpleNamespace(**kwargs)
+
+    def structured(self, **kwargs):
+        self.events.append(("structured", kwargs))
+        if self.structured_error is not None:
+            raise self.structured_error
         return types.SimpleNamespace(**kwargs)
 
     def environment(self):
@@ -112,14 +123,16 @@ class KernelTests(unittest.TestCase):
         stack.enter_context(patch.object(
             kernel, "_probe_python", side_effect=[self.model_identity, self.driver_identity],
         ))
-        stack.enter_context(patch.dict(sys.modules, {"vllm": self.fake_module}))
+        stack.enter_context(patch.dict(sys.modules, {
+            "vllm": self.fake_module, "vllm.sampling_params": self.fake_sampling_module,
+        }))
         stack.enter_context(patch.object(kernel.importlib.metadata, "version", return_value="0.25.1"))
         stack.enter_context(patch.dict(os.environ))
         return stack
 
-    def build(self):
+    def build(self, generation=None):
         with self.environment():
-            return VllmEngine(self.spec, GenerationSpec())
+            return VllmEngine(self.spec, GenerationSpec() if generation is None else generation)
 
     def test_sampling_validation_precedes_allocation_and_forces_local_defaults(self):
         engine = self.build()
@@ -134,6 +147,135 @@ class KernelTests(unittest.TestCase):
             self.assertEqual(allocation[name], expected)
         self.assertEqual(engine.ready()["batch_mode"], "finite_synchronous_chat")
         json.dumps(engine.ready())
+
+    def test_json_object_constructor_materializes_fixed_vllm_constraint_before_allocation(self):
+        generation = GenerationSpec(response_format={"type": "json_object"}, stop=())
+        engine = self.build(generation)
+        self.assertEqual([event[0] for event in self.events], ["structured", "sample", "allocate"])
+        self.assertEqual(self.events[0][1], {"json_object": True})
+        self.assertIs(engine._sampling.structured_outputs.json_object, True)
+        self.assertNotIn("response_format", self.events[1][1])
+        self.assertEqual(engine.ready()["generation"], asdict(generation))
+
+    def test_structured_constructor_failure_allocates_nothing(self):
+        self.structured_error = ValueError("fake structured-output validation error")
+        with self.environment(), self.assertRaises(ValueError):
+            VllmEngine(self.spec, GenerationSpec(response_format={"type": "json_object"}))
+        self.assertEqual([event[0] for event in self.events], ["structured"])
+
+    def test_each_call_uses_fresh_sampling_and_default_generation_is_unchanged(self):
+        default = GenerationSpec(max_tokens=16, temperature=0.5, stop=("END",))
+        engine = self.build(default)
+        original_sampling = dict(vars(engine._sampling))
+        override = GenerationSpec(max_tokens=64, response_format={"type": "json_object"}, stop=())
+        snapshots = [asdict(item) for item in (default, override)]
+        for generation in (None, override, None):
+            engine.run_prepared([prepared()], generation=generation)
+        samples = [call[1]["sampling_params"] for call in self.fake_llm.calls]
+        self.assertEqual(len({id(value) for value in [engine._sampling, *samples]}), 4)
+        self.assertEqual([value.max_tokens for value in samples], [16, 64, 16])
+        self.assertEqual([value.temperature for value in samples], [0.5, 0.0, 0.5])
+        self.assertEqual([value.stop for value in samples], [["END"], [], ["END"]])
+        self.assertFalse(hasattr(samples[0], "structured_outputs"))
+        self.assertIs(samples[1].structured_outputs.json_object, True)
+        self.assertFalse(hasattr(samples[2], "structured_outputs"))
+        self.assertIs(engine.generation, default)
+        self.assertEqual(vars(engine._sampling), original_sampling)
+        self.assertEqual([asdict(item) for item in (default, override)], snapshots)
+        self.assertEqual(sum(event[0] == "allocate" for event in self.events), 1)
+
+    def test_sampling_mutation_cannot_reach_defaults_or_other_calls(self):
+        default = GenerationSpec(response_format={"type": "json_object"})
+        engine = self.build(default)
+        response_format = default.response_format
+        engine.run_prepared([prepared()])
+        first = self.fake_llm.calls[-1][1]["sampling_params"]
+        first.stop.append("changed")
+        first.structured_outputs.json_object = False
+        engine.run_prepared([prepared()])
+        second = self.fake_llm.calls[-1][1]["sampling_params"]
+        self.assertEqual(second.stop, ["\n"])
+        self.assertIs(second.structured_outputs.json_object, True)
+        self.assertIsNot(first.structured_outputs, second.structured_outputs)
+        self.assertEqual(engine._sampling.stop, ["\n"])
+        self.assertIs(engine._sampling.structured_outputs.json_object, True)
+        self.assertIs(default.response_format, response_format)
+        self.assertEqual(default.response_format, {"type": "json_object"})
+
+    def test_override_revalidates_type_parameters_and_context_before_budget(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        for value in ({}, True, "generation"):
+            with self.subTest(value=value), self.assertRaises(TypeError):
+                engine.run_prepared([prepared()], generation=value)
+        for name, value in (("max_tokens", True), ("temperature", float("nan")),
+                            ("frequency_penalty", 3), ("logprobs", 0),
+                            ("response_format", {"type": "json_schema"})):
+            generation = GenerationSpec()
+            object.__setattr__(generation, name, value)
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                engine.run_prepared([prepared()], generation=generation)
+        object.__setattr__(self.spec, "max_model_len", 8192)
+        with self.assertRaisesRegex(ValueError, "max_model_len"):
+            engine.run_prepared([prepared()], generation=GenerationSpec(max_tokens=4097))
+        self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+        self.assertEqual(self.fake_llm.calls, [])
+        self.assertEqual([event[0] for event in self.events], ["sample", "allocate"])
+
+    def test_mutated_default_generation_is_rechecked_before_budget(self):
+        generation = GenerationSpec(response_format={"type": "json_object"})
+        engine = self.build(generation)
+        generation.response_format["strict"] = True
+        with self.assertRaisesRegex(ValueError, "response_format"):
+            engine.run_prepared([prepared()])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+        self.assertEqual(self.fake_llm.calls, [])
+
+    def test_sampling_or_structured_override_failure_never_reserves_calls(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        override = GenerationSpec(response_format={"type": "json_object"})
+        for attribute in ("sampling_error", "structured_error"):
+            setattr(self, attribute, ValueError("fake per-call parameter rejection"))
+            with self.subTest(attribute=attribute), self.assertRaises(ValueError):
+                engine.run_prepared([prepared()], generation=override)
+            setattr(self, attribute, None)
+            self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+            self.assertEqual(self.fake_llm.calls, [])
+        engine.run_prepared([prepared()])
+        self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+
+    def test_override_unknown_keeps_budget_and_does_not_change_default(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        original = asdict(engine.generation)
+        self.fake_llm.error = RuntimeError("fake possible acceptance")
+        result = engine.run_prepared([prepared()], generation=GenerationSpec(
+            response_format={"type": "json_object"}, max_tokens=32, stop=(),
+        ))[0]
+        self.assertEqual(result["status"], "unknown")
+        self.assertIsNone(result["total_tokens"])
+        self.assertIs(result["chat_invoked"], True)
+        self.assertEqual(engine.ready()["reserved_model_calls"], 1)
+        self.assertEqual(asdict(engine.generation), original)
+        with self.assertRaisesRegex(RuntimeError, "max_model_calls"):
+            engine.run_prepared([prepared(1)])
+        self.assertEqual(len(self.fake_llm.calls), 1)
+
+    def test_empty_expired_and_busy_override_calls_do_not_reserve_budget(self):
+        self.spec = replace(self.spec, max_model_calls=1)
+        engine = self.build()
+        generation = GenerationSpec(response_format={"type": "json_object"})
+        self.assertEqual(engine.run_prepared([], generation=generation), [])
+        with patch.object(kernel.time, "monotonic", return_value=5.0):
+            result = engine.run_prepared([prepared()], generation=generation,
+                                         deadline_monotonic=4.0)[0]
+        self.assertIs(result["deadline_expired"], True)
+        self.assertIs(result["submission_confirmed"], False)
+        with engine._lock, self.assertRaisesRegex(RuntimeError, "already running"):
+            engine.run_prepared([prepared()], generation=generation)
+        self.assertEqual(engine.ready()["reserved_model_calls"], 0)
+        self.assertEqual(self.fake_llm.calls, [])
 
     def test_results_bind_actual_messages_and_prompt_token_ids(self):
         engine = self.build()
@@ -167,11 +309,13 @@ class KernelTests(unittest.TestCase):
         self.assertEqual([item[0] for item in self.events], ["sample"])
 
     def test_mutated_invalid_generation_is_rechecked_before_allocation(self):
-        generation = GenerationSpec()
-        object.__setattr__(generation, "presence_penalty", 3.0)
-        with self.environment(), self.assertRaises(ValueError):
-            VllmEngine(self.spec, generation)
-        self.assertEqual(self.events, [])
+        for name, value in (("presence_penalty", 3.0),
+                            ("response_format", {"type": "json_object", "strict": True})):
+            generation = GenerationSpec()
+            object.__setattr__(generation, name, value)
+            with self.subTest(name=name), self.environment(), self.assertRaises(ValueError):
+                VllmEngine(self.spec, generation)
+            self.assertEqual(self.events, [])
 
     def test_mutated_invalid_call_limit_is_rechecked_before_probe_or_allocation(self):
         for value in (True, 0, float("nan")):
@@ -483,6 +627,39 @@ class SpecificationTests(unittest.TestCase):
         generation = GenerationSpec.from_dict(json.loads(json.dumps(asdict(GenerationSpec()))))
         self.assertEqual(generation, GenerationSpec())
         self.assertEqual(generation.kwargs()["n"], 1)
+        expected = asdict(GenerationSpec())
+        expected.pop("response_format")
+        self.assertEqual(generation.kwargs(), dict(expected, stop=["\n"], n=1))
+
+    def test_json_object_roundtrip_and_kwargs_need_no_model_import(self):
+        with patch.dict(sys.modules, {"vllm": None, "vllm.sampling_params": None}):
+            generation = GenerationSpec.from_dict(dict(response_format={"type": "json_object"}))
+            plain = generation.kwargs()
+            restored = GenerationSpec.from_dict(json.loads(json.dumps(asdict(generation))))
+        self.assertEqual(restored, generation)
+        self.assertEqual(plain["structured_outputs"], {"json_object": True})
+        self.assertNotIn("response_format", plain)
+        json.dumps(plain, allow_nan=False)
+
+    def test_response_format_and_kwargs_do_not_share_caller_mappings(self):
+        original = {"type": "json_object"}
+        generation = GenerationSpec(response_format=original)
+        original["type"] = "json_schema"
+        plain = generation.kwargs()
+        plain["structured_outputs"]["json_object"] = False
+        plain["stop"].append("changed")
+        self.assertEqual(generation.response_format, {"type": "json_object"})
+        self.assertEqual(generation.kwargs()["structured_outputs"], {"json_object": True})
+        self.assertEqual(generation.stop, ("\n",))
+
+    def test_unsupported_response_formats_are_rejected(self):
+        for value in (True, False, 1, "json_object", [], {}, {"type": None},
+                      {"type": True}, {"type": "text"}, {"type": "json_schema"},
+                      {"type": "json_object", "strict": True},
+                      {"type": "json_object", "json_schema": {}},
+                      {"type": "json_object", "extra": None}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "response_format"):
+                GenerationSpec(response_format=value)
 
     def test_invalid_generation_values_are_rejected(self):
         for name, value in (
@@ -566,7 +743,10 @@ class SpecificationTests(unittest.TestCase):
     def test_normal_package_import_without_lotus_or_vllm_import(self):
         result = subprocess.run([
             sys.executable, "-c", "import sys; from src.serving.backends.vllm_engine import "
-            "EngineSpec; assert 'lotus' not in sys.modules; assert 'vllm' not in sys.modules",
+            "EngineSpec, GenerationSpec; "
+            "assert GenerationSpec(response_format={'type':'json_object'}).kwargs()"
+            "['structured_outputs'] == {'json_object':True}; "
+            "assert 'lotus' not in sys.modules; assert 'vllm' not in sys.modules",
         ], cwd=CODE_ROOT, capture_output=True, text=True, timeout=15)
         self.assertEqual(result.returncode, 0, result.stderr)
 

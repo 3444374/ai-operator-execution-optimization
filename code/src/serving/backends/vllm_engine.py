@@ -57,8 +57,15 @@ class GenerationSpec:
     frequency_penalty: float = 0.0
     repetition_penalty: float = 1.0
     logprobs: int | None = None
+    response_format: dict[str, str] | None = None
 
     def __post_init__(self) -> None:
+        self._validate()
+        object.__setattr__(self, "stop", tuple(self.stop))
+        if self.response_format is not None:
+            object.__setattr__(self, "response_format", dict(self.response_format))
+
+    def _validate(self) -> None:
         _integer(self.max_tokens, "max_tokens", minimum=1)
         _number(self.temperature, "temperature", low=0.0, high=2.0)
         _number(self.top_p, "top_p", low=0.0, high=1.0, inclusive_low=False)
@@ -68,13 +75,19 @@ class GenerationSpec:
             not isinstance(item, str) or not item for item in self.stop
         ):
             raise ValueError("stop must be a sequence of nonempty strings")
-        object.__setattr__(self, "stop", tuple(self.stop))
         _number(self.presence_penalty, "presence_penalty", low=-2.0, high=2.0)
         _number(self.frequency_penalty, "frequency_penalty", low=-2.0, high=2.0)
         _number(self.repetition_penalty, "repetition_penalty", low=0.0,
                 inclusive_low=False)
         if self.logprobs is not None:
             raise ValueError("this ordinary-filter slice supports logprobs=None only")
+        if self.response_format is not None and (
+            type(self.response_format) is not dict
+            or set(self.response_format) != {"type"}
+            or type(self.response_format["type"]) is not str
+            or self.response_format["type"] != "json_object"
+        ):
+            raise ValueError("response_format supports only None or {'type': 'json_object'}")
 
     @classmethod
     def from_dict(cls, value: dict) -> GenerationSpec:
@@ -83,8 +96,14 @@ class GenerationSpec:
         return cls(**value)
 
     def kwargs(self) -> dict:
-        self.__post_init__()
-        return {**asdict(self), "stop": list(self.stop), "n": 1}
+        """Return plain sampling options; the model boundary materializes structured outputs."""
+        self._validate()
+        values = asdict(self)
+        response_format = values.pop("response_format")
+        values.update(stop=list(self.stop), n=1)
+        if response_format is not None:
+            values["structured_outputs"] = {"json_object": True}
+        return values
 
 
 _PROBE = """
@@ -276,7 +295,11 @@ class VllmEngine:
         if (getattr(vllm, "__version__", None) != VLLM_VERSION
                 or importlib.metadata.version("vllm") != VLLM_VERSION):
             raise RuntimeError(f"local kernel requires exactly vllm=={VLLM_VERSION}")
-        self._sampling = vllm.SamplingParams(**generation_kwargs)
+        from vllm.sampling_params import StructuredOutputsParams
+
+        self._sampling_type = vllm.SamplingParams
+        self._structured_outputs_type = StructuredOutputsParams
+        self._sampling = self._new_sampling(generation_kwargs)
         if engine.chat_template is not None:
             from vllm.entrypoints.chat_utils import load_chat_template
 
@@ -287,6 +310,7 @@ class VllmEngine:
         self._closed = False
         self._close_attempt = 0
         self._shutdown_failed = False
+        self._max_model_len = engine.max_model_len
         self._max_model_calls = engine.max_model_calls
         self._reserved_model_calls = 0
         self._lock = threading.Lock()
@@ -301,6 +325,14 @@ class VllmEngine:
             pipeline_parallel_size=1, distributed_executor_backend="uni",
             trust_remote_code=False, generation_config="vllm",
         )
+
+    def _new_sampling(self, values: dict):
+        options = dict(values)
+        if "structured_outputs" in options:
+            options["structured_outputs"] = self._structured_outputs_type(
+                **options["structured_outputs"],
+            )
+        return self._sampling_type(**options)
 
     def ready(self) -> dict:
         return {
@@ -326,11 +358,18 @@ class VllmEngine:
         }
 
     def run_prepared(self, rows: list[dict], *,
+                     generation: GenerationSpec | None = None,
                      deadline_monotonic: float | None = None) -> list[dict]:
         """Apply the chat template once in vLLM; in-flight stopping belongs to the supervisor."""
         if deadline_monotonic is not None:
             _number(deadline_monotonic, "deadline_monotonic", low=0.0,
                     inclusive_low=False)
+        effective_generation = self.generation if generation is None else generation
+        if not isinstance(effective_generation, GenerationSpec):
+            raise TypeError("generation must be a GenerationSpec or None")
+        generation_kwargs = effective_generation.kwargs()
+        if effective_generation.max_tokens > self._max_model_len:
+            raise ValueError("max_tokens exceeds max_model_len")
         identities, conversations = _prepared(rows)
         if self._closed:
             raise RuntimeError("model engine is closed")
@@ -339,6 +378,7 @@ class VllmEngine:
         if not self._lock.acquire(blocking=False):
             raise RuntimeError("model engine is already running or closing")
         try:
+            sampling = self._new_sampling(generation_kwargs)
             start = time.monotonic()
             if deadline_monotonic is not None and start >= deadline_monotonic:
                 results = [self._result(item, start, start, status="failed", submitted=False,
@@ -355,7 +395,7 @@ class VllmEngine:
             self._reserved_model_calls += len(rows)
             try:
                 outputs = self._llm.chat(
-                    conversations, sampling_params=self._sampling, use_tqdm=False,
+                    conversations, sampling_params=sampling, use_tqdm=False,
                 )
             except Exception as exc:
                 end = time.monotonic()
