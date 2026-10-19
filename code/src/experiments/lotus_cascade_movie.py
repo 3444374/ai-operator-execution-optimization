@@ -9,6 +9,24 @@ from src.semantic_methods.lotus.cascade import run_cascade
 from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION
 
 
+def _backend_metadata(evaluate, report, *, primary=None):
+    failure = primary
+    for attribute, field, default in (("close_reports", "backend_close", None),
+                                      ("production_core_connected", "production_core_used", False)):
+        try:
+            value = getattr(evaluate, attribute, default)
+            report[field] = value is True if field == "production_core_used" else value
+        except BaseException as error:
+            report[field + "_metadata_error_type"] = type(error).__name__
+            if failure is None:
+                failure = error
+            else:
+                failure.add_note("cascade backend metadata " + field + " also failed: " + type(error).__name__)
+    if failure is not None:
+        failure.query_report = report
+    return failure
+
+
 def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, evaluate, *,
                             query_id, max_calls):
     """Preserve Movie predicate, COUNT and original evaluator; no physical executor here."""
@@ -21,6 +39,7 @@ def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, 
     ], columns=["row_id", "source_position", "reviewText"])
     started = time.monotonic()
     report = {}
+    metadata_read = False
     try:
         report = run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate,
                              instruction=MOVIE_Q3_INSTRUCTION, query_id=query_id,
@@ -30,9 +49,11 @@ def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, 
         report.update(query_seconds=time.monotonic() - started, source=inputs,
             query_timing_scope="method preflight, backend stages, original control, parsing and COUNT",
             evaluation_in_query_seconds=False,
-            source_preflight_and_initial_occurrence_read_in_query_seconds=False,
-            backend_close=getattr(evaluate, "close_reports", None),
-            production_core_used=getattr(evaluate, "production_core_connected", False) is True)
+            source_preflight_and_initial_occurrence_read_in_query_seconds=False)
+        metadata_read = True
+        metadata_error = _backend_metadata(evaluate, report)
+        if metadata_error is not None:
+            raise metadata_error
         evaluated_at = time.monotonic()
         labels = source.labeled_frame()
         quality = evaluate_original(upstream, 3, result, labels)
@@ -47,10 +68,10 @@ def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, 
         report = getattr(error, "query_report", report)
         report.update(status="failed", query_id=query_id, source=inputs,
                       error_type=type(error).__name__, error=redact_text(str(error)),
-                      elapsed_seconds=time.monotonic() - started,
-                      backend_close=getattr(evaluate, "close_reports", None),
-                      production_core_used=getattr(evaluate, "production_core_connected", False) is True)
+                      elapsed_seconds=time.monotonic() - started)
         error.query_report = report
+        if not metadata_read:
+            _backend_metadata(evaluate, report, primary=error)
         raise
     report["elapsed_seconds"] = time.monotonic() - started
     return report

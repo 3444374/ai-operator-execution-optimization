@@ -14,6 +14,33 @@ from src.baselines.text.movie_records import MovieRecordSource, prepare_movie_so
 from src.experiments.lotus_cascade_movie import run_movie_cascade_query
 
 
+class _MetadataFailureBackend:
+    def __init__(self, execute, *, primary=None):
+        self.execute = execute
+        self.primary = primary
+        self.close_error = OSError("fixture close metadata failure")
+        self.core_error = RuntimeError("fixture Core metadata failure")
+        self.metadata_reads = []
+
+    def __call__(self, stage):
+        rows = self.execute(stage)
+        if self.primary is None:
+            yield from rows
+        else:
+            yield rows[0]
+            raise self.primary
+
+    @property
+    def close_reports(self):
+        self.metadata_reads.append("close_reports")
+        raise self.close_error
+
+    @property
+    def production_core_connected(self):
+        self.metadata_reads.append("production_core_connected")
+        raise self.core_error
+
+
 @unittest.skipUnless(os.environ.get("RUN_LOTUS_CASCADE_CPU") == "1" and os.environ.get("SEMBENCH_CHECKOUT"),
                      "pinned LOTUS CPU environment and SemBench checkout required")
 class MovieCascadeTests(unittest.TestCase):
@@ -62,9 +89,10 @@ class MovieCascadeTests(unittest.TestCase):
                              dict(token="True", logprob=math.log(0.8)),
                              dict(token="False", logprob=math.log(0.2))])])) for row in stage.records]
 
-    def run_query(self):
+    def run_query(self, evaluate=None):
         return run_movie_cascade_query(self.source, os.environ["SEMBENCH_CHECKOUT"],
-            self.main, self.helper, self.args, self.execute, query_id="q", max_calls=6)
+            self.main, self.helper, self.args, self.execute if evaluate is None else evaluate,
+            query_id="q", max_calls=6)
 
     def test_q3_predicate_count_and_original_evaluator(self):
         report = self.run_query()
@@ -86,6 +114,43 @@ class MovieCascadeTests(unittest.TestCase):
         self.assertEqual(report["positive_review_cnt"], 3)
         self.assertEqual(len(report["calls"]["records"]), 3)
         self.assertEqual(report["calls"]["usage"]["total_tokens"], 39)
+
+    def test_backend_metadata_errors_preserve_primary_partial_calls_and_known_usage(self):
+        primary = ValueError("fixture stage failure after a known result")
+        backend = _MetadataFailureBackend(self.execute, primary=primary)
+        with self.assertRaises(ValueError) as caught:
+            self.run_query(backend)
+        self.assertIs(caught.exception, primary)
+        report = primary.query_report
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual([row["status"] for row in report["calls"]["records"]],
+                         ["succeeded", "unknown", "unknown"])
+        self.assertEqual(report["calls"]["usage"]["known_prompt_tokens"], 12)
+        self.assertEqual(report["calls"]["usage"]["known_completion_tokens"], 1)
+        self.assertIsNone(report["calls"]["usage"]["total_tokens"])
+        self.assertEqual(report["backend_close_metadata_error_type"], "OSError")
+        self.assertEqual(report["production_core_used_metadata_error_type"], "RuntimeError")
+        self.assertEqual(backend.metadata_reads, ["close_reports", "production_core_connected"])
+        self.assertEqual(len(primary.__notes__), 2)
+        self.assertNotIn("backend_close", report)
+        self.assertNotIn("production_core_used", report)
+
+    def test_successful_cascade_metadata_error_carries_completed_calls_and_usage(self):
+        backend = _MetadataFailureBackend(self.execute)
+        with self.assertRaises(OSError) as caught:
+            self.run_query(backend)
+        self.assertIs(caught.exception, backend.close_error)
+        report = caught.exception.query_report
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["positive_review_cnt"], 3)
+        self.assertEqual(len(report["calls"]["records"]), 3)
+        self.assertEqual(report["calls"]["usage"]["total_tokens"], 39)
+        self.assertEqual(report["backend_close_metadata_error_type"], "OSError")
+        self.assertEqual(report["production_core_used_metadata_error_type"], "RuntimeError")
+        self.assertEqual(backend.metadata_reads, ["close_reports", "production_core_connected"])
+        self.assertEqual(len(backend.close_error.__notes__), 1)
+        self.assertNotIn("backend_close", report)
+        self.assertNotIn("production_core_used", report)
 
 
 if __name__ == "__main__":
