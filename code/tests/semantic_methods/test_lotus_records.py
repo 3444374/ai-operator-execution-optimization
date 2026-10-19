@@ -56,6 +56,31 @@ class RecordsResourcesTests(unittest.TestCase):
 
 
 class CallIdentityTests(unittest.TestCase):
+    def test_default_filter_id_is_byte_compatible(self):
+        default = identity("query", "row", 0)
+        self.assertEqual(default["call_id"], 'lotus-filter-v1:["query","row",0,0]')
+        self.assertEqual(default, identity("query", "row", 0, model_role="main",
+                                           algorithm_stage="filter"))
+
+    def test_roles_stages_and_repeated_samples_have_distinct_ids(self):
+        calls = [identity("q", "row", 0)]
+        for role, stage in (("helper", "helper_score"), ("main", "threshold_sample"),
+                            ("main", "fallback"), ("helper", "fallback")):
+            calls.append(identity("q", "row", 0, model_role=role, algorithm_stage=stage))
+        calls.append(identity("q", "row", 0, 1, model_role="main",
+                              algorithm_stage="threshold_sample"))
+        self.assertEqual(len({call["call_id"] for call in calls}), len(calls))
+        for call in calls[1:]:
+            self.assertEqual(json.loads(call["call_id"].split(":", 1)[1]),
+                             ["q", "row", 0, call["call_index"], call["model_role"],
+                              call["algorithm_stage"]])
+
+    def test_roles_and_stages_reject_missing_or_nonstring_values(self):
+        for name in ("model_role", "algorithm_stage"):
+            for value in (None, True, 1, "", " \t"):
+                with self.subTest(name=name, value=value), self.assertRaises(ValueError):
+                    identity("q", "row", 0, **{name: value})
+
     def test_id_is_stable_and_delimiters_do_not_alias(self):
         self.assertEqual(identity("query", "row", 0), identity("query", "row", 0))
         ids = [identity("a:b", "c", 0), identity("a", "b:c", 0),
@@ -83,6 +108,44 @@ class CallLedgerTests(unittest.TestCase):
     def result(self, index, **options):
         return dict(self.expected[index], status="succeeded", prompt_tokens=10,
                     completion_tokens=2, **options)
+
+    def test_declared_cascade_calls_keep_independent_usage_and_unknowns(self):
+        calls = [identity("q", "row", 0, model_role="helper", algorithm_stage="helper_score"),
+                 identity("q", "row", 0, model_role="main", algorithm_stage="threshold_sample"),
+                 identity("q", "row", 0, 1, model_role="main", algorithm_stage="threshold_sample"),
+                 identity("q", "row", 0, model_role="main", algorithm_stage="fallback")]
+        ledger = CallLedger(calls, max_calls=4)
+        ledger.record(dict(calls[2], status="succeeded", prompt_tokens=13, completion_tokens=2))
+        ledger.record(dict(calls[0], status="succeeded", prompt_tokens=7, completion_tokens=1))
+        ledger.record(dict(calls[1], status="failed", submission_confirmed=True,
+                           prompt_tokens=11, completion_tokens=2))
+        ledger.mark_unconfirmed("fallback_cancelled")
+        report = ledger.report()
+        self.assertEqual([row["call_id"] for row in report["records"]],
+                         [row["call_id"] for row in calls])
+        self.assertEqual(report["counts"]["submission_confirmed"], 3)
+        self.assertEqual(report["counts"]["unknown"], 1)
+        self.assertEqual(report["usage"]["known_prompt_tokens"], 31)
+        self.assertIsNone(report["usage"]["prompt_tokens"])
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            ledger.record(dict(calls[2], status="succeeded"))
+
+    def test_legitimate_other_role_or_stage_still_cannot_enter_plain_filter_ledger(self):
+        for options in (dict(model_role="helper", algorithm_stage="helper_score"),
+                        dict(model_role="main", algorithm_stage="fallback")):
+            foreign = identity("q", "movie-row-0", 0, **options)
+            with self.subTest(options=options), self.assertRaisesRegex(ValueError, "undeclared"):
+                self.ledger.record(dict(foreign, status="succeeded", prompt_tokens=5,
+                                        completion_tokens=1))
+        self.assertEqual(self.ledger.report()["counts"]["recorded"], 0)
+
+    def test_extended_identity_cannot_forge_a_declared_role_or_stage(self):
+        expected = identity("q", "row", 0, model_role="helper", algorithm_stage="helper_score")
+        ledger = CallLedger([expected], max_calls=1)
+        for field, value in (("model_role", "main"), ("algorithm_stage", "fallback")):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "identity"):
+                ledger.record(dict(expected, status="succeeded", **{field: value}))
+        self.assertEqual(ledger.report()["counts"]["recorded"], 0)
 
     def test_out_of_order_results_use_declaration_order_and_keep_failure_usage(self):
         self.ledger.record(self.result(2))

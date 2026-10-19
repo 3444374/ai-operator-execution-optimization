@@ -88,18 +88,29 @@ class RecordsResources:
         return asdict(self)
 
 
-def identity(query_id, row_id, source_position, call_index=0):
-    """The occurrence and the call ordinal both participate in the stable ID."""
+def identity(query_id, row_id, source_position, call_index=0, *,
+             model_role="main", algorithm_stage="filter"):
+    """Bind a method's role/stage and occurrence to one independent call.
+
+    The default ordinary Filter keeps its original four-part ID. Nondefault
+    role/stage calls append both values, so they cannot alias that namespace.
+    Methods declare stages and call ordinals; this function does not schedule them.
+    """
     if any(type(value) is not str or not value.strip() for value in (query_id, row_id)):
         raise ValueError("query_id and row_id must be nonempty strings")
     if any(type(value) is not int or value < 0 for value in (source_position, call_index)):
         raise ValueError("source_position and call_index must be nonnegative integers")
+    if any(type(value) is not str or not value.strip() for value in (model_role, algorithm_stage)):
+        raise ValueError("model_role and algorithm_stage must be nonempty strings")
+    parts = [query_id, row_id, source_position, call_index]
+    if model_role != "main" or algorithm_stage != "filter":
+        parts.extend((model_role, algorithm_stage))
     call_id = "lotus-filter-v1:" + json.dumps(
-        [query_id, row_id, source_position, call_index],
+        parts,
         ensure_ascii=False, separators=(",", ":"),
     )
     return dict(
-        query_id=query_id, model_role="main", algorithm_stage="filter", row_id=row_id,
+        query_id=query_id, model_role=model_role, algorithm_stage=algorithm_stage, row_id=row_id,
         source_position=source_position, call_index=call_index, call_id=call_id,
     )
 
@@ -109,9 +120,10 @@ def _checked_identity(value):
         raise ValueError("call result lacks complete identity")
     expected = identity(
         value["query_id"], value["row_id"], value["source_position"], value["call_index"],
+        model_role=value["model_role"], algorithm_stage=value["algorithm_stage"],
     )
     if any(value[key] != expected[key] for key in _IDENTITY_FIELDS):
-        raise ValueError("call result identity differs from the plain Filter contract")
+        raise ValueError("call result identity differs from its LOTUS call contract")
     return expected
 
 
