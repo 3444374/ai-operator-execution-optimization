@@ -58,6 +58,8 @@ def validate_generation(method, generation):
         raise TypeError("an explicit ordinary Filter method is required")
     if generation.repetition_penalty != 1 or generation.logprobs is not None:
         raise ValueError("ordinary Filter does not support repetition overrides or helper logprobs")
+    if getattr(generation, "response_format", None) is not None:
+        raise ValueError("ordinary Filter does not support response_format overrides")
 
 
 def validate_lm(lm, method, generation):

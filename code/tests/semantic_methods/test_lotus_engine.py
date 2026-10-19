@@ -4,6 +4,8 @@ import importlib.util
 import json
 import unittest
 from dataclasses import asdict
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from src.semantic_methods.lotus.records import FilterMethod, identity
 
@@ -91,6 +93,16 @@ class LotusEngineTests(unittest.TestCase):
         lm = make_lm(self.method, self.generation)
         with lotus.settings.context(enable_cache=True), self.assertRaisesRegex(ValueError, "caching disabled"):
             validate_lm(lm, self.method, self.generation)
+
+    def test_ordinary_filter_rejects_structured_output_before_lm_construction(self):
+        from src.semantic_methods.lotus.engine import make_lm
+
+        generation = SimpleNamespace(**dict(asdict(self.generation),
+                                            response_format={"type": "json_object"}))
+        with patch("lotus.models.LM") as constructor:
+            with self.assertRaisesRegex(ValueError, "response_format"):
+                make_lm(self.method, generation)
+        constructor.assert_not_called()
 
 
 if __name__ == "__main__":
