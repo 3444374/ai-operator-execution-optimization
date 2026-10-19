@@ -9,7 +9,9 @@ import time
 
 from src.baselines.common.private_artifacts import json_metric, new_private_directory, write_private_json
 from src.baselines.common.redact import redact_text
-from src.baselines.text.movie_records import MovieRecordSource, RECORD_COLUMNS, prepare_movie_source
+from src.baselines.text.movie_records import (
+    MovieRecordSource, RECORD_COLUMNS, prepare_movie_source, validate_movie_method,
+)
 from src.baselines.text.sembench_movie import (
     classification_audit, evaluate_original, run_original_lotus_query, verify_checkout,
 )
@@ -21,8 +23,7 @@ BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daf
 
 
 def _fixed_method(method):
-    if type(method) is not FilterMethod or method.default is not True or method.system_prompt is not None:
-        raise ValueError("original Movie Q3 requires its default parser policy and system prompt")
+    validate_movie_method(method)
 
 
 def _finish(iterator, primary):

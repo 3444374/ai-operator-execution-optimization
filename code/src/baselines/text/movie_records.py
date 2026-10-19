@@ -10,7 +10,7 @@ import threading
 from src.baselines.common.private_artifacts import (
     new_private_directory, open_private_text, write_private_json,
 )
-from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION, identity
+from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION, RecordScan, identity
 
 
 SCHEMA = "semloom.movie_records.v1"
@@ -24,6 +24,16 @@ MAX_CSV_BYTES = 16 * 1024 * 1024
 MAX_REVIEW_BYTES = 1024 * 1024
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 _CSV_LOCK = threading.RLock()
+
+
+def validate_movie_method(method):
+    """Bind the original Q3 instruction and parser policy at the task boundary."""
+    if type(method) is not FilterMethod:
+        raise ValueError("Movie source requires the plain FilterMethod")
+    method.describe()
+    if (method.instruction != MOVIE_Q3_INSTRUCTION or method.default is not True
+            or method.output_tokens != ("True", "False") or method.system_prompt is not None):
+        raise ValueError("original Movie Q3 requires its instruction, output tokens, default parser policy and system prompt")
 
 
 def _bounded_file(path, limit=MAX_CSV_BYTES):
@@ -263,9 +273,7 @@ class MovieRecordSource:
         return self._artifact(manifest["records"], "records.csv")
 
     def preflight(self, method):
-        if type(method) is not FilterMethod:
-            raise ValueError("Movie source requires the plain FilterMethod")
-        method.describe()
+        validate_movie_method(method)
         manifest, records, _ = self._load()
         return dict(
             schema="semloom.movie_records_preflight.v1", status="passed",
@@ -279,6 +287,14 @@ class MovieRecordSource:
                                 review_utf8_bytes=MAX_REVIEW_BYTES,
                                 manifest_bytes=MAX_MANIFEST_BYTES),
             limit_scope="logical input limits; not RSS or GPU memory hard limits",
+        )
+
+    def scan_spec(self, method):
+        self.preflight(method)
+        return RecordScan(
+            csv_schema=tuple((name, "int64" if name == "source_position" else "string")
+                             for name in RECORD_COLUMNS),
+            payload_columns=("reviewText",), predicate=(PREDICATE["column"], PREDICATE["value"]),
         )
 
     def expected(self, query_id):

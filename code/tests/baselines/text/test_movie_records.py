@@ -13,7 +13,7 @@ from src.baselines.text.movie_records import (
     MAX_CSV_BYTES, MAX_MANIFEST_BYTES, MAX_REVIEW_BYTES, MAX_ROWS,
     MovieRecordSource, MOVIE_CSV_DIGEST, prepare_movie_source,
 )
-from src.semantic_methods.lotus.records import FilterMethod, identity
+from src.semantic_methods.lotus.records import FilterMethod, MOVIE_Q3_INSTRUCTION, RecordScan, identity
 
 
 class MovieRecordSourceTests(unittest.TestCase):
@@ -137,6 +137,33 @@ class MovieRecordSourceTests(unittest.TestCase):
         object.__setattr__(method, "instruction", "Changed {reviewText}")
         with self.assertRaisesRegex(ValueError, "instruction"):
             source.preflight(method)
+
+    def test_generic_filter_policy_is_still_rejected_by_the_movie_task_binding(self):
+        source = MovieRecordSource.from_manifest(self.prepare())
+        for changes in (dict(instruction="Accept {paragraph}"),
+                        dict(instruction="Other {reviewText}"), dict(default=False),
+                        dict(system_prompt="Custom")):
+            method = FilterMethod("fixture", **changes)
+            for action in (source.preflight, source.scan_spec):
+                with self.subTest(changes=changes, action=action.__name__), self.assertRaisesRegex(ValueError, "Movie Q3"):
+                    action(method)
+        method = FilterMethod("fixture")
+        object.__setattr__(method, "output_tokens", ("Yes", "No"))
+        with self.assertRaises(ValueError):
+            source.preflight(method)
+
+    def test_movie_scan_spec_keeps_the_original_schema_projection_and_equality(self):
+        source = MovieRecordSource.from_manifest(self.prepare())
+        spec = source.scan_spec(FilterMethod("fixture"))
+        self.assertIs(type(spec), RecordScan)
+        self.assertEqual(dict(spec.csv_schema), dict(row_id="string", source_position="int64",
+                                                   reviewId="string", id="string", reviewText="string"))
+        self.assertEqual(spec.payload_columns, ("reviewText",))
+        self.assertEqual(spec.predicate, ("id", "taken_3"))
+        self.assertEqual(source.preflight(FilterMethod("fixture"))["method"]["instruction"], MOVIE_Q3_INSTRUCTION)
+        source.csv_path.write_bytes(source.csv_path.read_bytes() + b"\n")
+        with self.assertRaisesRegex(ValueError, "SHA256"):
+            source.scan_spec(FilterMethod("fixture"))
 
     def test_records_and_labels_sha_are_rechecked_after_source_construction(self):
         manifest_path = self.prepare()

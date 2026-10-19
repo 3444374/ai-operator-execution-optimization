@@ -5,7 +5,7 @@ import json
 import unittest
 
 from src.semantic_methods.lotus.records import (
-    CallLedger, FilterMethod, MOVIE_Q3_INSTRUCTION, RecordsResources, identity,
+    CallLedger, FilterMethod, MOVIE_Q3_INSTRUCTION, RecordScan, RecordsResources, identity,
 )
 
 
@@ -19,7 +19,8 @@ class FilterMethodTests(unittest.TestCase):
 
     def test_rejects_unsupported_semantics_and_wrong_types(self):
         cases = (
-            dict(model_name=""), dict(model_name=True), dict(instruction="other {reviewText}"),
+            dict(model_name=""), dict(model_name=True), dict(instruction=""),
+            dict(instruction="  "), dict(instruction=None), dict(instruction=True),
             dict(default=1), dict(output_tokens=["True", "False"]),
             dict(output_tokens=("False", "True")), dict(system_prompt=True),
         )
@@ -30,6 +31,71 @@ class FilterMethodTests(unittest.TestCase):
                         {"model_name": "fixture", "output_tokens": "True"}):
             with self.subTest(options=options), self.assertRaises(ValueError):
                 FilterMethod.from_dict(options)
+
+    def test_one_filter_value_type_preserves_generic_instruction_and_policy(self):
+        method = FilterMethod("fixture-model", "Accept {paragraph}", default=False, system_prompt="Custom")
+        self.assertEqual(FilterMethod.from_dict(json.loads(json.dumps(method.describe()))), method)
+        self.assertNotEqual(method.instruction, MOVIE_Q3_INSTRUCTION)
+
+
+class RecordScanTests(unittest.TestCase):
+    def scan(self, **changes):
+        return RecordScan(**dict(dict(csv_schema=(("row_id", "string"),
+                                                  ("source_position", "int64"),
+                                                  ("category", "string"), ("paragraph", "string")),
+                                     payload_columns=("paragraph",), predicate=("category", "selected")),
+                                **changes))
+
+    def test_scan_roundtrip_and_caller_lists_do_not_alias(self):
+        schema = [["row_id", "string"], ["source_position", "int64"], ["paragraph", "string"]]
+        columns, predicate = ["paragraph"], ["source_position", 7]
+        spec = self.scan(csv_schema=schema, payload_columns=columns, predicate=predicate)
+        schema[-1][0] = "changed"
+        columns.append("changed")
+        predicate[1] = 8
+        self.assertEqual(spec.payload_columns, ("paragraph",))
+        self.assertEqual(spec.csv_schema[-1], ("paragraph", "string"))
+        self.assertEqual(spec.predicate, ("source_position", 7))
+        self.assertEqual(RecordScan.from_dict(json.loads(json.dumps(spec.describe()))), spec)
+        self.assertIsNone(self.scan(predicate=None).predicate)
+
+    def test_schema_requires_unique_typed_occurrence_columns(self):
+        for schema in (None, [], {}, [("paragraph", "string")],
+                       [("row_id", "int64"), ("source_position", "int64")],
+                       [("row_id", "string"), ("source_position", "string")],
+                       [("row_id", "string"), ("source_position", "int64"), ("row_id", "string")],
+                       [("row_id", "string"), ("source_position", "int64"), ("paragraph", "float64")],
+                       [("row_id", "string"), ("source_position", "int64"), ("paragraph", True)]):
+            with self.subTest(schema=schema), self.assertRaises(ValueError):
+                self.scan(csv_schema=schema)
+
+    def test_payload_is_nonempty_unique_text_projection_without_identity_collisions(self):
+        for columns in (None, [], "paragraph", ("missing",), (True,),
+                        ("paragraph", "paragraph"), ("source_position",), ("row_id",)):
+            with self.subTest(columns=columns), self.assertRaises(ValueError):
+                self.scan(payload_columns=columns)
+        for name in ("query_id", "call_id", "call_index", "model_role", "algorithm_stage"):
+            schema = self.scan().csv_schema + ((name, "string"),)
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "non-identity"):
+                self.scan(csv_schema=schema, payload_columns=(name,))
+
+    def test_equality_is_one_type_matched_scalar_and_has_no_operator_language(self):
+        for value in ({"column": "category", "operator": "eq", "value": "selected"},
+                      ("category", "eq", "selected"), ("missing", "x"), ("category", 1),
+                      ("source_position", "1"), ("source_position", True),
+                      ("source_position", 1.0), ("source_position", 2 ** 63),
+                      ("source_position", -(2 ** 63) - 1), ("category", None)):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                self.scan(predicate=value)
+
+    def test_describe_revalidates_mutated_values_and_bad_serialized_options_fail(self):
+        spec = self.scan()
+        object.__setattr__(spec, "predicate", ("source_position", False))
+        with self.assertRaises(ValueError):
+            spec.describe()
+        for value in ([], {"csv_schema": []}, dict(self.scan().describe(), sql="select")):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RecordScan.from_dict(value)
 
 
 class RecordsResourcesTests(unittest.TestCase):

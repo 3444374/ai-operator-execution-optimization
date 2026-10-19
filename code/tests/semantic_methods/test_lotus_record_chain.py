@@ -62,6 +62,28 @@ class FixtureInfer:
 
 
 class IdentityTests(unittest.TestCase):
+    def test_filter_alias_has_one_type_and_legacy_serialization_has_one_canonical_form(self):
+        self.assertIs(TextFilterMethod, FilterMethod)
+        stage = StageSpec("summary-filter", TextFilterMethod("fixture", "Accept {summary}"), GenerationSpec())
+        value = json.loads(json.dumps(stage.describe()))
+        self.assertEqual(value["method_type"], "FilterMethod")
+        legacy = deepcopy(value)
+        legacy["method_type"] = "TextFilterMethod"
+        restored = StageSpec.from_dict(legacy)
+        self.assertIs(type(restored.method), FilterMethod)
+        self.assertEqual(restored.describe(), stage.describe())
+        self.assertEqual(StageSpec.from_dict(value).describe(), restored.describe())
+        self.assertEqual(legacy["method_type"], "TextFilterMethod")
+        self.assertEqual(StageSpec.from_dict(json.loads(json.dumps(restored.describe()))).describe(),
+                         stage.describe())
+
+    def test_ordinary_filter_stage_keeps_helper_and_json_generation_out(self):
+        for generation in (GenerationSpec(logprobs=0), GenerationSpec(logprobs=10),
+                           GenerationSpec(response_format={"type": "json_object"}),
+                           GenerationSpec(repetition_penalty=1.2)):
+            with self.subTest(generation=generation), self.assertRaises(ValueError):
+                StageSpec("filter", FilterMethod("fixture", "Accept {paragraph}"), generation)
+
     def test_stage_and_evaluation_are_separate_from_record_membership(self):
         record = records()[0]
         identities = [stage_identity("q", record, stage, call_index=call_index)
@@ -225,9 +247,9 @@ class LotusRecordChainTests(unittest.TestCase):
         self.assertEqual(LotusRecordChain.from_dict(
             json.loads(json.dumps(actual_chain.describe()))).describe(), actual_chain.describe())
 
-    def test_composition_keeps_q3_contract_and_rejects_nonterminal_extract(self):
-        with self.assertRaisesRegex(ValueError, "plain Movie Q3"):
-            FilterMethod("openai/local-fixture", instruction="只保留积极的摘要：{summary}")
+    def test_composition_uses_the_canonical_filter_and_rejects_nonterminal_extract(self):
+        generic = FilterMethod("openai/local-fixture", instruction="只保留积极的摘要：{summary}")
+        self.assertEqual(StageSpec("summary-filter", generic, GenerationSpec()).kind, "filter")
         with self.assertRaisesRegex(ValueError, "Extract must be terminal"):
             LotusRecordChain((stages()[2], stages()[0]), query_id="q")
         with self.assertRaisesRegex(ValueError, "nonempty tuple"):

@@ -104,6 +104,20 @@ class LotusEngineTests(unittest.TestCase):
                 make_lm(self.method, generation)
         constructor.assert_not_called()
 
+    def test_generic_filter_rejects_no_reference_and_helper_generation_before_lm_construction(self):
+        from src.semantic_methods.lotus.engine import make_lm
+        from src.serving.backends.vllm_engine import GenerationSpec
+
+        for method, generation in (
+            (FilterMethod("fixture", "There are no input references"), GenerationSpec()),
+            (FilterMethod("fixture", "Accept {paragraph}"), GenerationSpec(logprobs=0)),
+            (FilterMethod("fixture", "Accept {paragraph}"), GenerationSpec(logprobs=10)),
+        ):
+            with self.subTest(method=method, generation=generation), patch("lotus.models.LM") as constructor:
+                with self.assertRaises(ValueError):
+                    make_lm(method, generation)
+                constructor.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

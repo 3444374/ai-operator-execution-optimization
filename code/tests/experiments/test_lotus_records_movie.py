@@ -21,6 +21,21 @@ LIBRARIES = all(importlib.util.find_spec(name) is not None for name in ("lotus",
 CHECKOUT = os.environ.get("SEMBENCH_CHECKOUT")
 
 
+class MovieMethodBindingTests(unittest.TestCase):
+    def test_runner_accepts_only_the_original_q3_policy(self):
+        from src.experiments.lotus_records_movie import _fixed_method
+
+        _fixed_method(FilterMethod("fixture"))
+        for changes in (dict(instruction="Other {reviewText}"), dict(instruction="Accept {paragraph}"),
+                        dict(default=False), dict(system_prompt="Custom")):
+            with self.subTest(changes=changes), self.assertRaisesRegex(ValueError, "Movie Q3"):
+                _fixed_method(FilterMethod("fixture", **changes))
+        changed = FilterMethod("fixture")
+        object.__setattr__(changed, "output_tokens", ("Yes", "No"))
+        with self.assertRaises(ValueError):
+            _fixed_method(changed)
+
+
 def fixture_source(directory):
     original = directory / "Reviews.csv"
     with original.open("w", newline="") as stream:

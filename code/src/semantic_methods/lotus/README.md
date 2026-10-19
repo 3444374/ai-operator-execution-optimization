@@ -10,8 +10,9 @@ Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身�
 固定 LOTUS／SemBench 的真实 Python 3.12 差分和部分 Ray／Daft CPU 接线见[资格记录](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
 原生参照、Ray Data与静态参照的Qwen／单4090小切片已分别验证；static两查询同engine、隔离call IDs，原提示／token／usage／parser／COUNT与原评价一致。首次Native runner失败保留，静态修后来源单列。Daft GPU、原全局级联、图像、持续供给及production Core仍pending；旧request资格保持独立。
 
-`LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 固定普通 Q3，
-方法层拒绝 JSON 模式及当前不支持的 logprobs／repetition override。
+`LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 为通用普通文本配置，
+默认参数兼容 Q3。Movie source／runner 独立严格绑定 Q3 instruction、default、True/False tokens、
+system prompt、原 predicate 与 CSV schema；方法层继续拒绝 JSON 模式及 helper logprobs／repetition override。
 [共享引擎](../../serving/backends/README.md)另支持逐调用完整 `GenerationSpec` 与 `json_object`，供后续 Extract 选择；
 默认参数不变，每次调用独立构造采样参数。这项接口只有 CPU 合同资格，不继承上方固定源码的模型结果。
 模型 terminal rows 必须保留全部 call 身份、状态及真实 usage，不能以最终 COUNT 重建工作量。
@@ -22,6 +23,28 @@ Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身�
 本地引擎结果另保留规范消息 SHA256 与实际 prompt／output token IDs，供一次模板及 usage 核验。
 可选 `EngineSpec.max_model_calls` 限制单个引擎 lifetime 的应用请求数，按行在 chat 前预留，失败／unknown 不退；默认 `None` 保持原行为。
 它不是跨实例总预算；资格 runner 仍须先持久预留每个 unit 的上限，并证明一次性 owner／无重启／无重复消费。
+
+## 普通文本方法与 source 扫描合同
+
+[`FilterMethod`](records.py) 是唯一普通文本 Filter 配置；非空 instruction 可引用不同文本列。
+[`record_chain.TextFilterMethod`](record_chain.py) 直接 alias 同一类型，旧 serialized
+`method_type="TextFilterMethod"` 仍可读取，重新输出统一为 `"FilterMethod"`，不维护第二套方法协议。
+普通标签仍限 True/False；原 LOTUS `parse_cols()` 检查实际引用且拒绝无列 instruction，准备时逐列验文本。
+单 Filter 与记录链 Filter 共用原 `df2multimodal_info()`／`filter_formatter()` 准备逻辑，
+raw records 保留调用方的完整身份，默认 Q3 call IDs 字节不变。Map 生成的文本列可交同一 Filter 方法消费；
+模型、原 parser／usage 与每阶段 generation 仍分别拥有身份。
+
+source 保留 `csv_path`、`preflight(method)`、`expected(query_id)`，并通过
+`scan_spec(method) -> RecordScan` 声明不可变的原生扫描值：
+
+- `csv_schema`：有序 `(列名, "string" | "int64")`，必须包含 `row_id:string` 与 `source_position:int64`；
+- `payload_columns`：唯一的文本投影列，不得覆盖任何 call identity 字段；
+- `predicate`：可选 `(列名, 值)`，仅表示单个等值条件，值严格匹配列类型。
+
+配置支持 `describe()`／`from_dict()` 的 JSON 往返，不承载通用 SQL 或执行图。
+source 拥有 schema、任务语义、来源和发生项预检；后端消费扫描值并使用自身的 scan/filter/select。
+`MovieRecordSource.scan_spec()` 每次先预检 Q3，再返回原五列 schema、`reviewText` 投影和 `id == taken_3`。
+通用列、旧 Q3、序列化 alias 和 Map→Filter 的 CPU 合同不扩展既有真实模型资格；冻结模型运行仍绑定其原源码。
 
 ## 完整请求级接点
 

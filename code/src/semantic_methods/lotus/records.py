@@ -1,4 +1,4 @@
-"""Plain Movie Filter configuration, identities and independent call accounting."""
+"""Ordinary text Filter configuration, scan values and independent call accounting."""
 
 from copy import deepcopy
 from dataclasses import asdict, dataclass
@@ -26,12 +26,12 @@ class FilterMethod:
     def __post_init__(self):
         if type(self.model_name) is not str or not self.model_name.strip():
             raise ValueError("Filter model_name must be a nonempty string")
-        if self.instruction != MOVIE_Q3_INSTRUCTION:
-            raise ValueError("only the plain Movie Q3 reviewText instruction is supported")
+        if type(self.instruction) is not str or not self.instruction.strip():
+            raise ValueError("Filter instruction must be a nonempty string")
         if type(self.default) is not bool:
             raise ValueError("Filter default must be a boolean")
         if type(self.output_tokens) is not tuple or self.output_tokens != ("True", "False"):
-            raise ValueError("plain Movie Q3 requires the original True/False output tokens")
+            raise ValueError("ordinary text Filter requires the original True/False output tokens")
         if self.system_prompt is not None and type(self.system_prompt) is not str:
             raise ValueError("Filter system_prompt must be a string or None")
 
@@ -55,6 +55,67 @@ class FilterMethod:
 
 
 @dataclass(frozen=True)
+class RecordScan:
+    """CSV column values, text projection and an optional single equality.
+
+    Sources own task binding and input preflight. Backends translate these
+    immutable values into their native scan/filter/select APIs.
+    """
+
+    csv_schema: tuple[tuple[str, str], ...]
+    payload_columns: tuple[str, ...]
+    predicate: tuple[str, str | int] | None = None
+
+    def __post_init__(self):
+        if type(self.csv_schema) not in (list, tuple) or not self.csv_schema:
+            raise ValueError("record scan requires an ordered CSV schema")
+        columns = []
+        for item in self.csv_schema:
+            if (type(item) not in (list, tuple) or len(item) != 2
+                    or type(item[0]) is not str or not item[0].strip()
+                    or type(item[1]) is not str or item[1] not in ("string", "int64")):
+                raise ValueError("record scan columns require a name and string/int64 type")
+            columns.append(tuple(item))
+        schema = dict(columns)
+        if len(schema) != len(columns):
+            raise ValueError("record scan CSV columns must be unique")
+        if schema.get("row_id") != "string" or schema.get("source_position") != "int64":
+            raise ValueError("record scan requires row_id:string and source_position:int64")
+        if (type(self.payload_columns) not in (list, tuple) or not self.payload_columns
+                or any(type(name) is not str or name not in schema
+                       or schema[name] != "string" or name in _IDENTITY_FIELDS
+                       for name in self.payload_columns)
+                or len(set(self.payload_columns)) != len(self.payload_columns)):
+            raise ValueError("record scan payload must name unique non-identity text columns")
+        predicate = self.predicate
+        if predicate is not None:
+            if (type(predicate) not in (list, tuple) or len(predicate) != 2
+                    or type(predicate[0]) is not str or predicate[0] not in schema):
+                raise ValueError("record scan predicate must name one CSV equality column and value")
+            expected = str if schema[predicate[0]] == "string" else int
+            if (type(predicate[1]) is not expected
+                    or expected is int and not -(2 ** 63) <= predicate[1] < 2 ** 63):
+                raise ValueError("record scan equality value must match its CSV column type")
+            predicate = tuple(predicate)
+        object.__setattr__(self, "csv_schema", tuple(columns))
+        object.__setattr__(self, "payload_columns", tuple(self.payload_columns))
+        object.__setattr__(self, "predicate", predicate)
+
+    def describe(self):
+        self.__post_init__()
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, value):
+        if type(value) is not dict:
+            raise ValueError("record scan configuration must be a dictionary")
+        try:
+            return cls(**value)
+        except TypeError as error:
+            raise ValueError("unsupported record scan configuration") from error
+
+
+@dataclass(frozen=True)
 class RecordsResources:
     cpu_workers: int = 1
     gpu_workers: int = 1
@@ -73,7 +134,7 @@ class RecordsResources:
             if type(value) is not int or value < 1:
                 raise ValueError("records capacity must be a positive integer: " + name)
         if self.gpu_workers != 1:
-            raise ValueError("plain Movie Q3 currently requires one GPU worker and TP1")
+            raise ValueError("records currently require one GPU worker and TP1")
         for name in ("query_timeout_s", "startup_timeout_s"):
             value = getattr(self, name)
             try:

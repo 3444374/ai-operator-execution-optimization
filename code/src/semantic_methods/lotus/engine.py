@@ -1,4 +1,4 @@
-"""Ordinary Movie Filter formatting and native LOTUS result interpretation.
+"""Ordinary text Filter formatting and native LOTUS result interpretation.
 
 The execution backends receive records and return engine results. This module
 does not create a model, send HTTP, run a vendor graph, or own its scheduling.
@@ -49,6 +49,7 @@ def make_lm(method, generation):
     if generation.seed is not None:
         options["seed"] = generation.seed
     validate_generation(method, generation)
+    _filter_instruction(method)
     return LM(method.model_name, temperature=generation.temperature,
               max_tokens=generation.max_tokens, **options)
 
@@ -56,6 +57,7 @@ def make_lm(method, generation):
 def validate_generation(method, generation):
     if type(method) is not FilterMethod:
         raise TypeError("an explicit ordinary Filter method is required")
+    method.describe()
     if generation.repetition_penalty != 1 or generation.logprobs is not None:
         raise ValueError("ordinary Filter does not support repetition overrides or helper logprobs")
     if getattr(generation, "response_format", None) is not None:
@@ -80,14 +82,50 @@ def validate_lm(lm, method, generation):
         raise ValueError("LOTUS effective generation options differ from the local engine")
 
 
-class LotusFilterMethod:
-    """One worker-local formatter; no driver LM is serialized to a worker."""
+def _filter_instruction(method):
+    import lotus
+
+    if type(method) is not FilterMethod:
+        raise TypeError("an explicit ordinary Filter method is required")
+    method.describe()
+    columns = lotus.nl_expression.parse_cols(method.instruction)
+    if not columns:
+        raise ValueError("ordinary Filter instruction must reference an input column")
+    return columns, lotus.nl_expression.nle2str(method.instruction, columns)
+
+
+class _FilterFormatter:
+    """One original Filter preparation path for single calls and record stages."""
+
+    def __init__(self, method, model):
+        from lotus.templates import task_instructions
+
+        self.method, self.model = method, model
+        self.columns, self.instruction = _filter_instruction(method)
+        self.instructions = task_instructions
+
+    def messages(self, rows, *, index=None):
+        import pandas as pd
+
+        if not rows:
+            return []
+        if any(type(row.get(name)) is not str for row in rows for name in self.columns):
+            raise TypeError("Filter records require present text input columns")
+        frame = pd.DataFrame({name: [row[name] for row in rows] for name in self.columns}, index=index)
+        docs = self.instructions.df2multimodal_info(frame, self.columns)
+        return [self.instructions.filter_formatter(
+            self.model, doc, self.instruction, system_prompt=self.method.system_prompt,
+            output_tokens=self.method.output_tokens,
+        ) for doc in docs]
+
+
+class LotusFilterMethod(_FilterFormatter):
+    """One worker-local formatter; supplied call identities remain unchanged."""
 
     def __init__(self, method):
         validate_filter_source()
         import lotus
         from lotus.models import LM
-        from lotus.templates import task_instructions
         from lotus.types import SerializationFormat
 
         if type(method) is not FilterMethod:
@@ -96,37 +134,17 @@ class LotusFilterMethod:
             raise ValueError("records Filter requires DEFAULT serialization")
         # The formatter uses LM's model-name methods. Construction creates no
         # model weights, provider client, request executor, or network connection.
-        self.model = LM(method.model_name, max_tokens=8)
-        self.method = method
-        self.columns = lotus.nl_expression.parse_cols(method.instruction)
-        if self.columns != ["reviewText"]:
-            raise ValueError("ordinary Movie Q3 must reference only reviewText")
-        self.instruction = lotus.nl_expression.nle2str(method.instruction, self.columns)
-        self.instructions = task_instructions
+        super().__init__(method, LM(method.model_name, max_tokens=8))
 
     def prepare_rows(self, rows):
-        import pandas as pd
-
         started = time.monotonic_ns()
-        if not rows:
-            return []
-        for row in rows:
-            if type(row.get("reviewText")) is not str:
-                raise TypeError("Movie records require an unchanged text review")
-        frame = pd.DataFrame({"reviewText": [row["reviewText"] for row in rows]})
-        # This is the original dtype-aware preparation. A plain string column
-        # is text; no column-name heuristic reinterprets it as an image.
-        docs = self.instructions.df2multimodal_info(frame, self.columns)
+        messages = self.messages(rows)
         result = []
-        for row, doc in zip(rows, docs, strict=True):
-            messages = self.instructions.filter_formatter(
-                self.model, doc, self.instruction, system_prompt=self.method.system_prompt,
-                output_tokens=self.method.output_tokens,
-            )
+        for row, message in zip(rows, messages, strict=True):
             identity_keys = ("query_id", "model_role", "algorithm_stage", "row_id",
                              "source_position", "call_index", "call_id")
             value = {name: row[name] for name in identity_keys}
-            value.update(messages_json=json.dumps(messages, ensure_ascii=False, allow_nan=False),
+            value.update(messages_json=json.dumps(message, ensure_ascii=False, allow_nan=False),
                          prepare_worker_pid=os.getpid(), prepare_started_ns=started,
                          prepare_finished_ns=time.monotonic_ns())
             result.append(value)

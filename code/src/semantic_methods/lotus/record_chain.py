@@ -13,10 +13,13 @@ import json
 import os
 import time
 
-from .engine import engine_response, lm_report, validate_filter_source
+from .engine import _FilterFormatter, engine_response, lm_report, validate_filter_source, validate_generation
 from .records import FilterMethod
 from .sdk import SOURCE_HASHES
 from src.serving.backends.vllm_engine import GenerationSpec, IDENTITY_FIELDS
+
+# The old import and serialized tag remain readable; Filter has one value type.
+TextFilterMethod = FilterMethod
 
 
 CHAIN_SOURCE_HASHES = {
@@ -39,30 +42,6 @@ def validate_chain_source():
             raise ValueError("records chain source differs at lotus/" + relative)
     return dict(evidence, profile="lotus-ordinary-record-methods-v1",
                 source_hashes={**evidence["source_hashes"], **CHAIN_SOURCE_HASHES})
-
-
-@dataclass(frozen=True)
-class TextFilterMethod:
-    """Ordinary text Filter with explicit input references in its instruction.
-
-    The existing FilterMethod remains the separate fixed Movie Q3 contract.
-    """
-
-    model_name: str
-    instruction: str
-    default: bool = True
-    output_tokens: tuple[str, str] = ("True", "False")
-    system_prompt: str | None = None
-
-    def __post_init__(self):
-        for name in ("model_name", "instruction"):
-            _name(getattr(self, name), "Filter " + name)
-        if type(self.default) is not bool:
-            raise ValueError("Filter default must be a boolean")
-        if type(self.output_tokens) is not tuple or self.output_tokens != ("True", "False"):
-            raise ValueError("ordinary text Filter requires the original True/False output tokens")
-        if self.system_prompt is not None and type(self.system_prompt) is not str:
-            raise ValueError("Filter system_prompt must be a string or None")
 
 
 @dataclass(frozen=True)
@@ -165,19 +144,21 @@ def stage_identity(query_id, record, stage_id, *, model_role="main", call_index=
 @dataclass(frozen=True)
 class StageSpec:
     stage_id: str
-    method: FilterMethod | TextFilterMethod | MapMethod | ExtractMethod
+    method: FilterMethod | MapMethod | ExtractMethod
     generation: GenerationSpec
     model_role: str = "main"
 
     def __post_init__(self):
         _name(self.stage_id, "stage_id")
         _name(self.model_role, "model_role")
-        if type(self.method) not in (FilterMethod, TextFilterMethod, MapMethod, ExtractMethod):
+        if type(self.method) not in (FilterMethod, MapMethod, ExtractMethod):
             raise TypeError("an explicit ordinary record method is required")
         self.method.__post_init__()
         if type(self.generation) is not GenerationSpec:
             raise TypeError("generation must use GenerationSpec")
         self.generation.__post_init__()
+        if type(self.method) is FilterMethod:
+            validate_generation(self.method, self.generation)
         response_format = getattr(self.generation, "response_format", None)
         expected = {"type": "json_object"} if type(self.method) is ExtractMethod else None
         if response_format != expected:
@@ -187,7 +168,7 @@ class StageSpec:
 
     @property
     def kind(self):
-        if type(self.method) in (FilterMethod, TextFilterMethod):
+        if type(self.method) is FilterMethod:
             return "filter"
         return "map" if type(self.method) is MapMethod else "extract"
 
@@ -198,11 +179,10 @@ class StageSpec:
 
     @classmethod
     def from_dict(cls, value):
-        kinds = {kind.__name__: kind for kind in (FilterMethod, TextFilterMethod, MapMethod, ExtractMethod)}
+        kinds = {kind.__name__: kind for kind in (FilterMethod, MapMethod, ExtractMethod)}
+        kinds["TextFilterMethod"] = FilterMethod
         options = deepcopy(value)
         kind = kinds[options.pop("method_type")]
-        if kind is TextFilterMethod and "output_tokens" in options["method"]:
-            options["method"]["output_tokens"] = tuple(options["method"]["output_tokens"])
         options["method"] = (FilterMethod.from_dict(options["method"]) if kind is FilterMethod
                              else kind(**options["method"]))
         options["generation"] = GenerationSpec.from_dict(options["generation"])
@@ -235,7 +215,11 @@ class LotusRecordMethod:
             options.update(logprobs=True, top_logprobs=generation.logprobs)
         self.lm = LM(self.method.model_name, **options)
         self.instructions = task_instructions
-        if type(self.method) is ExtractMethod:
+        if type(self.method) is FilterMethod:
+            self._filter_formatter = _FilterFormatter(self.method, self.lm)
+            self.columns = self._filter_formatter.columns
+            self.instruction = self._filter_formatter.instruction
+        elif type(self.method) is ExtractMethod:
             self.columns = list(self.method.input_columns)
             self.instruction = None
         else:
@@ -257,24 +241,24 @@ class LotusRecordMethod:
         if not records:
             return []
         started = time.monotonic_ns()
-        frame = pd.DataFrame([record.values for record in records],
-                             index=[record.source_index for record in records])
-        docs = self.instructions.df2multimodal_info(frame, self.columns)
-        result = []
-        for record, doc in zip(records, docs, strict=True):
-            if self.stage.kind == "filter":
-                messages = self.instructions.filter_formatter(
-                    self.lm, doc, self.instruction, system_prompt=self.method.system_prompt,
-                    output_tokens=self.method.output_tokens)
-            elif type(self.method) is MapMethod:
-                messages = self.instructions.map_formatter(
-                    self.lm, doc, self.instruction, system_prompt=self.method.system_prompt)
+        if self.stage.kind == "filter":
+            messages = self._filter_formatter.messages(
+                [record.values for record in records], index=[record.source_index for record in records])
+        else:
+            frame = pd.DataFrame([record.values for record in records],
+                                 index=[record.source_index for record in records])
+            docs = self.instructions.df2multimodal_info(frame, self.columns)
+            if type(self.method) is MapMethod:
+                messages = [self.instructions.map_formatter(
+                    self.lm, doc, self.instruction, system_prompt=self.method.system_prompt) for doc in docs]
             else:
-                messages = self.instructions.extract_formatter(
-                    self.lm, doc, self.method.output_columns, self.method.extract_quotes)
+                messages = [self.instructions.extract_formatter(
+                    self.lm, doc, self.method.output_columns, self.method.extract_quotes) for doc in docs]
+        result = []
+        for record, message in zip(records, messages, strict=True):
             result.append(dict(
                 stage_identity(query_id, record, self.stage.stage_id, model_role=self.stage.model_role),
-                messages_json=json.dumps(messages, ensure_ascii=False, allow_nan=False),
+                messages_json=json.dumps(message, ensure_ascii=False, allow_nan=False),
                 prepare_worker_pid=os.getpid(), prepare_started_ns=started,
                 prepare_finished_ns=time.monotonic_ns(),
             ))
