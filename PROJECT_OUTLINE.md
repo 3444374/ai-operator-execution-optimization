@@ -84,11 +84,9 @@ physical path。当前 deterministic fixture 不提供真实可比较成本。
 
 迁移前待执行的 SAOR 系统对照在运行前确定为五臂 PostgreSQL-source→validated-completion operator-E2E（Daft Native、Daft Native/Ray、Ray Data
 native graph、project frozen-static、SAOR；共同 vLLM FCFS）。原生臂保留 framework-owned
-执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC
-另建 S-LoRA 同栈 FCFS/VTC 服务机制组，当前兼容性未验证、formal 未授权，不与五臂系统表混排。
-另有独立的四臂跨层 capability，计划比较 Daft Ray + native FCFS/DRR-on-vLLM reproduction/
-VTC-on-vLLM reproduction 与 SAOR + native FCFS；当前 frozen installed-source、Job identity 和
-custom-FCFS parity 均 blocked，不是可运行实验，也不改变“不修改 vLLM”的主方法边界。
+执行，不注入项目控制；五臂均 `writeback=none`，不把 PostgreSQL sink 混入调度排名。FIFO/DRR/VTC-style/strict-priority 只保留历史项目内消融身份。官方 VTC 的 S-LoRA 同栈组与四臂跨层尝试已退役，源码与配置从
+[固定提交](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe)恢复。
+官方 S-LoRA 的运行兼容性，以及跨层所需 Job identity／custom-FCFS 资格均未完成，没有运行真实模型比较。
 共同外部到达使用 typed Job release；request arrival replay 不再被误写成 native baseline 的必需能力。
 本轮 MFU denominator 已写入配置和证据指纹，但统一 FLOP numerator 不可用，故 MFU 不发布数值。
 五臂 eager SAOR 的旧 profiler 冲突已在本地修复：只有旧 single-head bounded-priority 继续强制

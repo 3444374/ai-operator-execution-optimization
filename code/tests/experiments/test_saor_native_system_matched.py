@@ -1,4 +1,4 @@
-"""Fail-closed contract tests for the SAOR five-arm and official VTC groups."""
+"""Fail-closed contract tests for the SAOR five-arm group."""
 
 from __future__ import annotations
 
@@ -66,11 +66,6 @@ from src.experiments.saor.native_system_summary import (
 )
 from src.experiments.saor.native_system_validator import (
     validate_uniform_cell_identity,
-)
-from src.experiments.saor.official_vtc_capability import (
-    OFFICIAL_VTC_ARM_IDS,
-    build_serving_mechanism_report,
-    load_official_vtc_capability,
 )
 from scripts.experiments.run_saor_native_system_matched import parse_args
 from scripts.analysis import run_saor_native_system_preflight as system_preflight_cli
@@ -250,41 +245,6 @@ class MatchedSystemContractTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "typed job0/job1 releases|job_release_schedule drifts"):
                 load_matched_system_config(fixture.path)
 
-    def test_official_vtc_group_cannot_report_without_fcfs_control(self) -> None:
-        with VtcFixture() as fixture:
-            raw = fixture.read()
-            raw["arms"] = [raw["arms"][1]]
-            fixture.write(raw)
-            with self.assertRaisesRegex(ValueError, "requires exactly FCFS and VTC"):
-                load_official_vtc_capability(fixture.path)
-
-    def test_official_vtc_evidence_never_enters_db_e2e_ranking(self) -> None:
-        with VtcFixture() as fixture:
-            config = load_official_vtc_capability(fixture.path)
-            evidence = official_vtc_evidence(config)
-            evidence[0]["comparison_scope"] = "database_e2e"
-            with self.assertRaisesRegex(ValueError, "cannot enter DB-E2E"):
-                build_serving_mechanism_report(config, evidence)
-
-    def test_official_vtc_commit_owner_and_workload_sha_drift_fail(self) -> None:
-        with VtcFixture() as fixture:
-            config = load_official_vtc_capability(fixture.path)
-            for field, value in (
-                ("artifact_commit", "0" * 40),
-                (
-                    "scheduler_owner",
-                    "project_daft_ray_submission_then_vllm_fcfs",
-                ),
-                ("manifest_sha256", "0" * 64),
-            ):
-                with self.subTest(field=field):
-                    evidence = official_vtc_evidence(config)
-                    if field == "scheduler_owner":
-                        evidence[1][field] = value
-                    else:
-                        evidence[0][field] = value
-                    with self.assertRaisesRegex(ValueError, "evidence drift"):
-                        build_serving_mechanism_report(config, evidence)
 
     def test_gpu_peak_or_precision_drift_fails_and_is_fingerprinted(self) -> None:
         for field, value in (
@@ -1162,22 +1122,6 @@ class MatchedSystemContractTest(unittest.TestCase):
         self.assertEqual(fields["ended_epoch_s"], 118.0)
 
 
-def official_vtc_evidence(config) -> list[dict[str, object]]:
-    return [{
-        "arm_id": arm.arm_id,
-        "status": "passed",
-        "artifact_commit": config.artifact_commit,
-        "scheduler_owner": arm.scheduler_owner,
-        "manifest_sha256": config.manifest_sha256,
-        "job_manifest_sha256": list(config.job_manifest_sha256),
-        "job_release_times_s": list(config.job_release_times_s),
-        "job_mapping": config.job_mapping,
-        "model_contract": dict(config.model_contract),
-        "output_contract": dict(config.output_contract),
-        "comparison_scope": "serving_mechanism_only",
-    } for arm in config.arms]
-
-
 def successful_native_provenance() -> dict[str, dict[str, object]]:
     """Return frozen native provenance matching the synthetic executors."""
 
@@ -1423,26 +1367,6 @@ def exact_source_audit(identity: dict[str, object]) -> dict[str, object]:
             for field, filename in VLLM_DISTRIBUTION_HASH_FIELDS.items()
         },
     }
-
-
-class VtcFixture:
-    def __enter__(self):
-        repository = Path(__file__).resolve().parents[3]
-        self.temp = tempfile.TemporaryDirectory()
-        self.path = Path(self.temp.name) / "vtc.json"
-        self.path.write_text((
-            repository / "deploy/autodl/saor_official_vtc_capability.example.json"
-        ).read_text(encoding="utf-8"), encoding="utf-8")
-        return self
-
-    def read(self):
-        return json.loads(self.path.read_text(encoding="utf-8"))
-
-    def write(self, value):
-        self.path.write_text(json.dumps(value), encoding="utf-8")
-
-    def __exit__(self, *_args):
-        self.temp.cleanup()
 
 
 class Fixture:
