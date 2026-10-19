@@ -1,0 +1,72 @@
+CPU relation correctness qualification only; no Ray/model/GPU/HTTP calls.
+Pinned LOTUS 1.2.4 original accessors + existing ChainBatchResults; deterministic response fixtures.
+Command: <cpu-python> -m unittest tests.semantic_methods.test_lotus_record_relation -v
+test_empty_relation_requires_eof_and_preserves_explicit_source_schema_only (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_empty_relation_requires_eof_and_preserves_explicit_source_schema_only) ... <local-path> PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.14/migration/
+  class CascadeArgs(BaseModel):
+ok
+test_existing_suffix_consumes_broadcast_values_but_does_not_seed_prefix_parents (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_existing_suffix_consumes_broadcast_values_but_does_not_seed_prefix_parents) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_failed_unknown_and_foreign_call_snapshots_cannot_become_a_completed_relation (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_failed_unknown_and_foreign_call_snapshots_cannot_become_a_completed_relation) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_label_dependencies_include_all_extract_writers_and_snapshots_are_isolated (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_label_dependencies_include_all_extract_writers_and_snapshots_are_isolated) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_matching_rows_without_successful_source_eof_are_rejected_with_call_snapshot (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_matching_rows_without_successful_source_eof_are_rejected_with_call_snapshot) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_missing_native_batch_is_rejected_by_shared_coverage_before_assembly (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_missing_native_batch_is_rejected_by_shared_coverage_before_assembly) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_parser_failure_and_unknown_extract_stop_at_shared_success_boundary_with_usage (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_parser_failure_and_unknown_extract_stop_at_shared_success_boundary_with_usage) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_reverse_batch_delivery_matches_original_extract_and_preserves_occurrences (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_reverse_batch_delivery_matches_original_extract_and_preserves_occurrences) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_sparse_none_still_hits_existing_prepare_guard_without_losing_prefix_usage (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_sparse_none_still_hits_existing_prepare_guard_without_losing_prefix_usage) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_terminal_occurrence_identity_and_actual_schema_are_required (tests.semantic_methods.test_lotus_record_relation.ExtractRelationTests.test_terminal_occurrence_identity_and_actual_schema_are_required) ... <local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path> UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 4.904s
+
+OK
+
+exit_code=0
