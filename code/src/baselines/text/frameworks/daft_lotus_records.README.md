@@ -99,6 +99,18 @@ retain their known usage independently of the cleanup result. The dedicated
 outer supervisor remains responsible for a hard wall deadline, including lock
 waits and process-table operations.
 
+Malformed result batches retain uniquely associated actual terminals and partial
+usage. Missing, duplicate or contradictory calls remain unknown; the original
+IPC reply stays in `result_failure.raw_response_json`. The reserved
+`engine_protocol_error` field prevents semantic success, including when its value
+is empty. Duplicate nonempty native request IDs also enter this failure path.
+The Daft close report exposes only original-query receipts that the iterator has
+not delivered, through `unconsumed_call_results`; it never upgrades a delivered
+unknown or compares a delivered row against engine-only preparation metadata.
+If EOF cleanup fails before interpretation, the query ledger retains known
+usage while unexecuted LOTUS statistics remain unchanged. See the source-bound
+[CPU fault checks](../../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019).
+
 A synchronous native scan, formatter or worker initialization can block before
 its next cooperative check. Therefore `query_timeout_s` alone is not a hard
 wall deadline for the whole graph. The caller must supervise the dedicated

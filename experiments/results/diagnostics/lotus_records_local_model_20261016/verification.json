@@ -1924,5 +1924,397 @@
         "bytes": 675
       }
     ]
+  },
+  "imlane_full_cpu_recheck_20261019": {
+    "status": "passed after approval service recovery; historical initial blocked result unchanged",
+    "source_commit": "174ee85349044610ebc06b7537f3b1d6cfc21fb9",
+    "tests": 72,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "observed_owned_exited": 15,
+    "cleanup_errors": [],
+    "scope": "Fixed174 baseline; real LOTUS/SemBench and self-written CPU child/pipe; author/model are fixtures. Does not certify later common source.",
+    "model_requests": 0,
+    "gpu_requests": 0,
+    "author_runtime_started": false,
+    "raw_evidence": [
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/IMLANE-BASELINE-CPU-HANDOFF.r2.json",
+        "sha256": "74f5b3c8f51447e870e35d06192951dc63d68bd12ec9df76bc6ae612bf81638b",
+        "bytes": 13808
+      },
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/fixed-source.json",
+        "sha256": "aada7cc0ed76b32c932de31edf424ec9a40c3aef1b61b44d8edf190604dd503c",
+        "bytes": 129665
+      },
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/test-results.json",
+        "sha256": "7b5ee2a8465958db11f631abf1b5860858e9bd94cc69959112e604366bc50008",
+        "bytes": 16958
+      },
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/machine-report.json",
+        "sha256": "62e18ad3a8edfbc81857ea9998b62cc1098f304036275507a97ad52d29948c16",
+        "bytes": 4180
+      },
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/supervision/supervisor.json",
+        "sha256": "8d99d2fa77807396ab545085646012a52e3b3ff75b722baf4136c92250da6079",
+        "bytes": 2348
+      },
+      {
+        "relative_artifact_path": "private-imlane-baseline-cpu-174ee853-1792388487961816000/supervision/worker.log",
+        "sha256": "b0a9a2726fd8d3005c9438a92de99e80254ae7e4737fa2010afa2fafbbdd232d",
+        "bytes": 26069
+      }
+    ],
+    "resolves_historical_entry": "imlane_generic_chain_cpu_20261019.receipt_repair.required_process_regression"
+  },
+  "engine_result_receipts_cpu_20261019": {
+    "status": "passed; Spec/Standards no remaining findings; CPU scope only",
+    "source_commit": "84c71605b1fe54a90af9dad5eb139026e646a7d9",
+    "author_commits": [
+      "270a6fdecd5cca7058f02269197a85e74a26c31d",
+      "826ad2179523ec939ab344d047bb38290063c53b",
+      "cce7e0e3db5fa3344aeef4fcc41f0fbcd3e6941a"
+    ],
+    "integration_commits": [
+      "0b81ba67",
+      "4ce20658",
+      "4183cccf",
+      "84c71605"
+    ],
+    "source_sha256": {
+      "code/src/semantic_methods/lotus/engine.py": "cb06eb6d45fb4333bd6326ec56a483de78791cc46d18ffd523b5ce2773c2bb12",
+      "code/src/semantic_methods/lotus/record_chain.py": "7f01f8fb330c8c4965832a923502a6ef3ef2a7dabb781da177897af44ee00020",
+      "code/src/semantic_methods/lotus/cascade.py": "10004159cb2ef7d6d1cfa0813ede4392fbdce6f5d31e324c82dad9af497558c4",
+      "code/tests/semantic_methods/test_lotus_engine_protocol.py": "eb249fb3f4b94b09cdf90ba4d9b776dfd8fd984c772befd8fba61e8bb97a28a2",
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "d0593a850cd72966f4d05e1f3e8a5b2ee26b72522d300f013ec8aedca0b0e1d8",
+      "code/integrations/imlane_records/filter_udf.py": "665d1cd53e917afe639c087ac1125326c30eb4d9cd6bb80afd281094aee8fc0c",
+      "code/tests/baselines/text/engine_receipt_fixture.py": "505f7d1ac3a484778a47b99f554941787f23384e0ebeef2a61db91e3734a76c2",
+      "code/tests/baselines/text/test_engine_process_receipts.py": "968c97068d0ecaf9626ba6e2f956f7f4ce5f5e5752cf497ff2fba5976da81b66",
+      "code/src/baselines/text/frameworks/daft_lotus_records.py": "e2ec0f40bfb0bf85f65cdcb19498e9421e82a7288f185345cc3a7907521eab02",
+      "code/tests/baselines/text/test_daft_result_receipts.py": "c35f69db9c576c3e6de9c501e21667e03bba4b06d00ea844e5a51c359db1d2e4"
+    },
+    "contract": {
+      "retained": "unique complete original-call terminals, actual raw IPC JSON and partial known usage",
+      "unknown": "missing/ambiguous/conflicting calls; delivered actual unknown never upgraded",
+      "protocol_guard": "reserved marker key presence; duplicate nonempty native request IDs trigger the same failure normalization",
+      "semantic_accounting": "valid native responses accounted once before marker rejection at parse/stage/calibration boundary",
+      "early_iterator_failure": "query ledger retains receipts; LM stats not fabricated when interpretation was not reached",
+      "cleanup": "same original query, unreceived receipts only; primary error retained; API/OS/GPU separate; no retry/reconstruction"
+    },
+    "semantic_regression": {
+      "tests": 87,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "real_lotus": true,
+      "model": "synthetic CPU responses",
+      "ray_or_daft_runtime_started": false
+    },
+    "daft_component": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "composition": {
+        "new_pure_contracts": 7,
+        "new_native_daft_private_cpu_transport": 7,
+        "unchanged_daft_regressions": 3
+      },
+      "observed_owned_exited": 55,
+      "cleanup_errors": [],
+      "real_daft": "0.7.21",
+      "model": "private CPU response process, no vLLM/weights",
+      "runner_failure": {
+        "primary_error": "PermissionError",
+        "succeeded": 2,
+        "unknown": 1,
+        "known_prompt_tokens": 10,
+        "known_completion_tokens": 4,
+        "total_tokens": null,
+        "query_lm_prompt_tokens": 0,
+        "query_lm_completion_tokens": 0
+      },
+      "separate_post_run_interpretation_diagnostic": {
+        "prompt_tokens": 10,
+        "completion_tokens": 4,
+        "parser_calls": 0,
+        "new_inference_calls": 0,
+        "part_of_failed_query": false
+      }
+    },
+    "root_supervised": {
+      "tests": 116,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "composition": {
+        "new_common": 14,
+        "old_close": 9,
+        "old_ipc": 7,
+        "daft_pure_contracts": 7,
+        "imlane_full": 72,
+        "semantic_protocol": 7
+      },
+      "source_manifest_entries": 1024,
+      "source_unchanged_during_run": true,
+      "observed_owned_exited": 35,
+      "remaining_owned_pids": [],
+      "cleanup_errors": [],
+      "signals": [],
+      "output_redacted_before_write": true,
+      "output_complete": true
+    },
+    "preserved_failures": [
+      "initial semantic RED: 12 subtest failures and 2 parser/calibration errors before guard",
+      "two independent-review P2 boundaries: falsey marker and natural-order duplicate native ID; closed4183",
+      "Daft r1 new fixture assumed batch_size=3 filled; native4-row relation legally produced2+1; only new fixture changed to3 eligible rows; empirical3-row batch is not a fill guarantee"
+    ],
+    "historical_component_limits": "Older101 approved tool tests had no source map or whole-run production supervisor; final12 pure source bound. They do not replace root116 or final Daft17 evidence.",
+    "reviews": {
+      "Spec": {
+        "reviewer": "/root/review_spec",
+        "status": "PASS",
+        "remaining_findings": 0
+      },
+      "Standards": {
+        "reviewer": "/root/review_standards",
+        "status": "PASS",
+        "remaining_findings": 0
+      }
+    },
+    "model_requests": 0,
+    "gpu_requests": 0,
+    "author_runtime_started": false,
+    "physical_gpu_exit_checked": false,
+    "gpu_exit_confirmed": null,
+    "counts_are_independent_samples": false,
+    "raw_evidence": [
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-protocol-semantics-red-r1/result.json",
+        "sha256": "1e821587317acd83e90fa809b999035f9432222f3d309a1c6eccee7a666019fd",
+        "bytes": 388
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-protocol-semantics-regression-r1/result.json",
+        "sha256": "f1e40bddd11098f2e9c9d46b901e50871d574f5c7b55fe843eb04573d70892e6",
+        "bytes": 1014
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-protocol-semantics-regression-r1/worker.log",
+        "sha256": "cf4dc691363926365015c5c8a454a62ddf571bf62326b806a04cb48076bbe345",
+        "bytes": 53781
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-protocol-semantics-regression-r1/dual-review-receipt.json",
+        "sha256": "c1a6415e85c9a4bc67d1c3eb5636bcf2ba4fbe474add12556ab0d2eafa4edfca",
+        "bytes": 1259
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-receipts-20261019-r1/delivery.json",
+        "sha256": "b3b891a6e282b1c7bf43c2d9b62e32cfbf1a411886ac293c1f08b6c7818d01c5",
+        "bytes": 4054
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-receipts-20261019-r1/marker-delivery.json",
+        "sha256": "f2d6d1cc246f311309d76bcb596b416fd5780e1b6772b8fa13ec3c024a412fd8",
+        "bytes": 1926
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-receipts-20261019-r1/root-dual-review.json",
+        "sha256": "2fc7281d14d6c3b81d031aec13b862a5c638a79615d38091d7c2b7c44a5a67f7",
+        "bytes": 1656
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/daft-result-receipts-r1/delivery.json",
+        "sha256": "431adad62ba683a4c6a5f389c6c5b53756a8f204edba31d325e29dbea1729468",
+        "bytes": 14430
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/source.json",
+        "sha256": "367e3f8887f6dc5d6d3ce5d12adbb3b1f7a995774918600343a3c8032dbd9fff",
+        "bytes": 127919
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/tests.json",
+        "sha256": "cc5c505609fe5bf8877226337e4254ef45a5b4ba9d15963e66a5c8df1e752210",
+        "bytes": 424
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/machine-report.json",
+        "sha256": "959894f8ae6dc9c0663178ba5cc9f5b0dce6540bcebc9d17556c047263a7da86",
+        "bytes": 5261
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/supervision/supervisor.json",
+        "sha256": "e5d2e64aafc32212bfbdd086669155c86384f484ea66a2cfd85026c67ef59bd6",
+        "bytes": 3989
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/supervision/worker.log",
+        "sha256": "1767fba562beed0e00fc0507ead0164d793dde22f8137e2f5668df07756688ab",
+        "bytes": 40586
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-receipts-integrated-supervised-1792389754875941000/dual-review.json",
+        "sha256": "3fcab596964d3f9ecd42fe3cbe4621e67c623924d0577b9d8313e84183986114",
+        "bytes": 2002
+      }
+    ],
+    "previous_verification_sha256": "f9c12325ee8490d04f8ce3e9d588785b716456998f5ac1930825314d6f504c54",
+    "previous_entries_preserved": true
+  },
+  "core_model_frozen_status_20261019": {
+    "status": "completed; frozen ebe four-call unit only",
+    "source_commit": "ebe3035fa1d105bdc14ceaf745aafbc613c1e6c6",
+    "source_files": 394,
+    "archive_sha256": "470ca99cbbdb2214d308c8fbdb72e457c900a66ad77cc34e798695559e2eacbe",
+    "config_raw_sha256": "a45efda16f0a916b4fae9f641c34e74a040b1440894e3750c67957a5e60044ed",
+    "config_canonical_sha256": "c0b456b211f83abe5c08ab0fe7b4186b0dd7d1348165e34c84ebbc2814571561",
+    "independent_budget_limit": 4,
+    "planned_unit": "core-shared-engine-double-query",
+    "planned_owner_lifetimes": 1,
+    "planned_queries": 2,
+    "planned_permanent_reservation": 4,
+    "local_action_intents": {
+      "upload": true,
+      "launch": true
+    },
+    "remote_actions": 2,
+    "model_requests": 4,
+    "server_state_verified_this_stage": true,
+    "blocker": null,
+    "does_not_qualify_latest_common_code": true,
+    "old_daft_success_replayed": false,
+    "raw_evidence": [
+      {
+        "relative_artifact_path": "nonmodel-evidence/core-frozen-local-recheck-20261019-r1.json",
+        "sha256": "9e3ba7c1eb73ae72b05bc7f5fe9aef4431112b56123c9e19b53fa2555f3802e4",
+        "bytes": 2154
+      },
+      {
+        "relative_artifact_path": "resume-ssh-channel-missing-r1.json",
+        "sha256": "45f2903e9a11a21192d38867fbdbd57314052e5b7140dd589774797781e0127d",
+        "bytes": 691
+      },
+      {
+        "relative_artifact_path": "private-core-model-inspection/MODEL-QUALIFICATION-AUDIT-r1.json",
+        "sha256": "db64a406e6abdeba703f2dea8852dedadae1c2454f6ff0aae00422cf2d7ed453",
+        "bytes": 12551
+      },
+      {
+        "relative_artifact_path": "private-core-model-inspection/MODEL-QUALIFICATION-PUBLIC-AUDIT-r2.json",
+        "sha256": "1f1ed3a95022220e9a632dec9f621dee023feec8162c9a4e572bef13987c7695",
+        "bytes": 7300
+      },
+      {
+        "relative_artifact_path": "private-core-model-inspection/derive-public-initial-failure.json",
+        "sha256": "e71d51e7bcf190c125c9f513a1e220cfd84940dc53cd3ad46dc3945ed20e1c7d",
+        "bytes": 467
+      }
+    ],
+    "public_result": "core_model_qualification.json",
+    "public_result_sha256": "ed7f18a86b5c6a21de830ddd044a7c3488a3a98f094006c081d9f80a125c3f41",
+    "runtime_config_canonical_sha256": "dc9718966e1ca58da27c88a62c358b89a6b859c8331d3b5a08891e03880b68c0",
+    "all37_member_sha256_verified": true,
+    "final_cleanup_confirmed": true,
+    "new_ledger_initialized": true,
+    "new_ledger_reserved_calls": 4,
+    "new_ledger_claimed_calls": 4,
+    "old_server_budget_writes": 0,
+    "local_derivation_failure": "derive-public-initial-failure.json; schema assumption fixed without rerunning model",
+    "remote_action_count_scope": "2 is upload and launch only; read-only checks, inspection and archive counted separately in private records"
+  },
+  "main_docs_sync_pr48_20261019": {
+    "main_commit": "8dd884ca",
+    "merge_commit": "2f33012e034b0492d0df8e5745d7fe7a4c7998f1",
+    "production_code_changed": false,
+    "frozen_model_sources_changed": false
+  },
+  "shared_result_conversion_cpu_20261019": {
+    "status": "passed",
+    "source_commit": "a4f47eab",
+    "author_commit": "37e3b4fa3adfb318b0032a36d05ccfe66ca36d37",
+    "base_commit": "84c71605b1fe54a90af9dad5eb139026e646a7d9",
+    "source_sha256": {
+      "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+      "code/tests/serving/test_vllm_result_conversion.py": "411a4f3411bcd2cdc24359f2e9a32dd9a682ca44f19f23fa9a6bc46cbc9014b9"
+    },
+    "interfaces": {
+      "result_record": "result_record(identity, *, engine_uid, start, end, status, submitted, error_type=None)",
+      "result_from_output": "result_from_output(identity, output, *, engine_uid, start, end, generation, get_tokenizer)",
+      "compatibility": "_result retains its signature and forwards to result_record; run_prepared shares result_from_output; no sampling extraction needed"
+    },
+    "validation": {
+      "total_tests": 69,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "pinned_differential_comparisons": 64,
+      "new_pure_tests": 7,
+      "supervisor_status": "passed",
+      "observed_owned_count": 4,
+      "observed_owned_exit_confirmed": true,
+      "cleanup_errors": [],
+      "remaining_owned_pids": [],
+      "physical_gpu_exit_checked": false,
+      "output_redacted_before_disk": true
+    },
+    "pinned_differential_comparisons": 64,
+    "new_pure_tests": 7,
+    "model_requests": 0,
+    "gpu_requests": 0,
+    "ssh_actions": 0,
+    "two_axis_review": {
+      "standards": "PASS, zero findings",
+      "spec": "PASS, zero findings"
+    },
+    "scope": "CPU fixtures and pinned original LOTUS type/parser logprob consumption only; no actual vLLM/model/GPU allocation or quality claim; frozen ebe/Core model qualification is not inherited",
+    "raw_evidence": [
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/delivery.json",
+        "sha256": "f389f6398ff54e2b680401b08c27de811951caed99e7061ff6695817c5c88921",
+        "bytes": 3618
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/pure-r1.json",
+        "sha256": "d9769f1bcbb752cb42cb249934e7b15472726d86c4abfddf802e62574b90ee82",
+        "bytes": 2129
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/pinned-differential-r1.json",
+        "sha256": "ff2bea1aee7840b437a5b90b092eacc633a1e5ce0e0aed69a187b0ace013385b",
+        "bytes": 3298
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/kernel-regression-approved-r1.json",
+        "sha256": "02b815f2c3a5c551a14ff426efdc976f0bfd720a796368f02294b126fc302322",
+        "bytes": 2296
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/static-r1.json",
+        "sha256": "abc8cbe47085a46358e9b1f3d773c8a12785afc3eda2675715931a8c398ab77b",
+        "bytes": 1555
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/kernel-regression-supervised-r1/supervisor.json",
+        "sha256": "3d64fae6fd73c2e12fb317cdfa93483945fc644c3f6b3253295c6c8b7ab14ccd",
+        "bytes": 1551
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/kernel-regression-supervised-r1/worker.log",
+        "sha256": "8959370e5ee6fcb33248b3efb8a4dedd5db986610540cb7d0d1e1fcabd1c87d6",
+        "bytes": 12726
+      },
+      {
+        "relative_artifact_path": "nonmodel-evidence/engine-result-conversion-20261019-r1/root-dual-review.json",
+        "sha256": "7936f17e77434c7375494e13103d495d943212376acc4f96e9fb135ab17af77b",
+        "bytes": 1111
+      }
+    ]
   }
 }

@@ -2,19 +2,19 @@
 
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
 直达本地模型接点和原 LOTUS／SemBench 解释评价；[命令](scripts/README.md#movie-q3-records-本地模型接点)与
-[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮关闭失败保留，冻结修正源码另完成两查询4次调用。四个普通后端已通过换列换指令的通用CPU检查，Core／有限链／级联的新模型资格仍pending。
+[CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮关闭失败保留，冻结修正源码另完成两查询4次调用。四个普通后端已通过换列换指令的通用CPU检查；冻结 `ebe3035f` 的普通Core另完成同引擎两查询／四次调用，后续源码与有限链／级联模型资格分别验证。
 
 [共享本地引擎](src/serving/backends/README.md)提供逐调用生成配置及有限token logprobs；[records actor owner](src/execution_provider/adapters/README.md)
-只共享准备／模型的启动与关闭，静态参照继续拥有原查询调度。新增接口和启动失败修复按各自 CPU 来源核验。
+只共享准备／模型的启动与关闭，静态参照继续拥有原查询调度。新增接口和启动失败修复按各自 CPU 来源核验。同步内核现复用纯 `result_record`／`result_from_output`，69项CPU及64项固定旧源码差分通过，供后续独立Async组件消费；该提取不改变采样或生命周期。
 
-显式 `semloom-local-model-core` 接入原生产 Core，要求单行准备／模型批；四次 static／Core CPU查询的原方法、usage和评价核同，身份及额度归还有独立检查。
+显式 `semloom-local-model-core` 接入原生产 Core，要求单行准备／模型批；四次 static／Core CPU查询的原方法、usage和评价核同，身份及额度归还有独立检查。[冻结Core模型资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)为一个owner／引擎、两独立query、四次真实调用，共506／16 tokens；40个已观察owned身份及控制器退出，独立GPU空闲、正常lease释放。后续共享修复不继承该固定来源。
 [有限链](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)共用同一阶段循环执行 Filter→Map→Extract 和 Map→Filter；各新来源的模型资格分开验证。单Filter后端的旧Q3业务绑定另在本轮迁移，不能以链检查替代。
 后续 [Daft 有限链](src/baselines/text/frameworks/daft_lotus_chain.py)与 [Core 有限链](src/execution_provider/adapters/lotus_record_chain_core.py)
 复用同一批内核及结果核验；Daft 使用原生 process 图，Core 使用有界接纳／单本机 worker／私有 pipe，分别完成13／23项CPU检查，真实模型另验。
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
 当前集成新增通用Filter和共享有限链接线，仍由作者调度；固定旧来源的普通Filter作者CPU报告单列。
-新丢账修复经双审与63项 NoPopen 检查，9项进程依赖及新wire作者／模型资格仍pending，详见[分层接纳](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。
+审批恢复后固定174的完整72项CPU回归通过；后续共享传输／Daft回执修复完成116项组合及17项实库故障检查，保留已知usage、原错误与unknown，新wire作者／模型资格仍pending，详见[分层复验](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。
 本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
 
 [LOTUS 完整请求模块](src/semantic_methods/lotus/README.md)提供原 SDK／Daft／Ray Data／SemLoom 四臂，

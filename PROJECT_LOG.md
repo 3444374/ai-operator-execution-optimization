@@ -1,5 +1,17 @@
 # 项目日志
 
+## 2026-10-19：完成冻结普通 Core 模型资格并提取共享结果转换
+
+用户恢复strict SSH复用后，先核资源／旧PID与账本，再仅一次上传和启动冻结ebe／394文件闭包。同owner／生产Core／模型actor／engine连续两独立query，共4次真实调用506／16 tokens，原messages／token／parser／LMstats／COUNT与原SemBench评价核同；Core额度与引用归零。40个已观察owned身份及控制器退出、独立GPU1MiB无compute／正常owned lease释放，API范围与物理观察分列。新4／4永久claim，旧32及Daft16 SHA不变、成功Daft未重跑；37成员归档逐hash核同，两个重复负例不外推质量或性能。
+后续a4f47eab仅提取result_record／result_from_output，同步共用并保留原采样／预算／生命周期；69项CPU及64项旧84源码逐字段差分、4个已观察owned退出通过，双独审无发现，不借冻结Core模型资格。精确来源与剩余范围见[Core结果](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)及[纯转换证据](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)。
+
+## 2026-10-19：保留共享引擎故障回执并补齐 CPU 进程复验
+
+审批恢复后固定174完整72项零skip通过、15个已观察owned退出；此前容量阻断和63项NoPopen原件保留。
+共享传输保留唯一有效终态／部分usage与raw回复，reserved marker禁止继续语义；两独审再修空marker漏检和自然顺序重复原生request ID。Daft close回收同query未消费回执，actual unknown不升级，原主错误不被清理错误覆盖。
+最终root84c组合116项零skip、35个已观察owned退出；独立Daft17项零skip、55个已观察owned退出。早停query的ledger已知10／4而LMstats0，独立解释诊断分列，未补造统计；所有新增验证模型／GPU／作者runtime均0。
+正常同步main PR48文档8dd；Core冻结四调用包保持ebe来源，strict mux一度失效后的重登及实际结果在上节续记，旧失败原件保留。精确来源、失败原件与边界见[分层复验](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。
+
 ## 2026-10-19：本地接纳 IMLane 通用方法与共享有限链，保留待验项
 
 选择性导入原522、兼容7cd和丢账修复174，复用原作者carrier／单角色owner与共同批内核，没有复制stage loop或恢复旧HTTP树。固定0190作者CPython报告保持原来源，不能资格当前wire／关闭／链。

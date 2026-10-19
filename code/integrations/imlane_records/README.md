@@ -11,7 +11,8 @@
 本机 CPU／替身检查，不能重绑定为原作者资格，也没有真实模型、GPU 或作者有限链运行资格。
 原 C++ v2 桥字节保持；新 Python 方法和关闭路径需要在新的源码归档和 owner 下核验。
 `7cd08b3a` 有68项完整CPU检查；后续 `174ee853` 的两项丢账反例与63项 NoPopen 子集通过。
-当前完整72项因自动审批服务容量错误未执行，9项子进程依赖复测仍pending，其中2项直接覆盖本次Filter修复。
+完整72项曾因自动审批服务容量错误未执行；恢复后在固定174完成72／72、零skip和15个已观察owned退出。
+后续共享传输修复以marker字段存在停止继续提交，保留唯一有效终态／部分usage和实际raw回复；最新组合116项零skip、35个已观察owned退出，见[分层复验](../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。
 新 wire 的作者实库／模型资格尚未启动，不能以旧68项或原作者归档补齐。
 
 - Filter caller 先调用 [`bind_source(source, method)`](filter_workload.py)，执行 source preflight，

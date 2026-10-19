@@ -2,7 +2,7 @@
 
 The independent [LOTUS text Filter records reference](lotus_records_static.py) uses Daft plus
 Ray actors and is a `diagnostic_reference`, with no production Core connection.
-Its shared method API, CPU checks and pending model qualification are documented in the
+Its shared method API, CPU checks and historical fixed-source model qualification are documented in the
 [slice record](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md).
 
 The static reference and [records Core adapter](lotus_records_core.py) consume the
@@ -37,7 +37,11 @@ owner directly; the consumer releases Core leases after decoding bounded termina
 work retains its Core credit and references. This first profile requires both batch sizes to be one.
 The explicit Movie selector is `semloom-local-model-core`; its production marker comes from the
 actual Core owner/iterator. Real Ray/Daft/LOTUS/SemBench CPU composition has been checked with
-a synthetic model kernel, while real model/GPU qualification remains pending in the slice record.
+a synthetic model kernel. The separate [frozen ordinary Core qualification](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)
+binds `ebe3035f`: one owner/engine, two independent query sessions and four actual model calls.
+Core credits and retained references return to zero; API closure, observed OS exits and the
+independent GPU observation remain separate evidence. Later sources and finite chains do not
+inherit that qualification.
 
 The separate [finite-chain Core adapter](lotus_record_chain_core.py) admits raw bounded
 fused batches through the same production Core and one asynchronous slot. A local host

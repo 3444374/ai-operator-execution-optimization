@@ -1,6 +1,12 @@
 # 实验与机制证据台账
 
-2026-10-19：[IMLane通用Filter／共享有限链本地接纳](diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。原0190作者CPU不重绑定；7cd68项与174修复63项NoPopen分列。唯一回执usage保留／unknown不升级的P1已闭，但完整72项因审核容量未执行、9项子进程依赖和新wire作者／模型资格pending；上游共享传输整批unknown边界保留。
+2026-10-19：[冻结普通Core模型资格](diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)。`ebe3035f`／394文件Git archive闭包，同owner／Core／actor／engine连续两独立query，共4次实际调用、506／16 tokens，原messages／token／parser／LMstats／COUNT及原评价核同。40个已观察owned身份及控制器退出、Core额度与引用归零，独立GPU1MiB空compute／正常lease释放；新4／4永久claim，旧32及Daft16 SHA不变，成功Daft未重跑。37成员归档核同；两个重复负例仅作该固定小切片资格，不外推质量、后续源码或性能。
+
+2026-10-19：[共享纯结果转换CPU](diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)。`a4f47eab`提取result_record／result_from_output供同步及后续Async共用，69项CPU零skip及64项旧84源码逐字段差分通过，4个已观察owned退出、两轴审查无发现。采样／预算／生命周期保持，无模型／SSH，不构成Async持续供给或新源码GPU资格。
+
+2026-10-19：[共享引擎故障回执与CPU复验](diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。审批恢复后固定174完整72项通过；新common／IM marker、原方法guard和Daft晚到回执组合116项零skip、35个已观察owned退出，另17项Daft实库／故障检查零skip、55个已观察owned退出。独立账本保留known usage，未执行的LMstats不补造；失败原件、旧0190作者来源及新wire／模型pending分列，不累加为独立样本数。
+
+2026-10-19：[IMLane通用Filter／共享有限链本地接纳](diagnostics/lotus_records_local_model_20261016/README.md#imlane-通用-filter与共享有限链的本地接纳)。原0190作者CPU不重绑定；7cd68项与174修复63项NoPopen是此前来源，审批阻断原件保留，后续完整复验见上项。新wire作者／模型资格仍pending。
 
 2026-10-19：[共享批内核与 Daft／Core 有限链](diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)。共享22合同及2私有传输／5实际Ray图通过；Daft13项含7实库用例（含预分配拒绝）、Core23项真实Core及私有CPU进程协议通过，分别保留失败和来源。新Core为本机worker／pipe profile，模型、链CLI及持续供给仍pending，不继承冻结Daft模型资格。
 

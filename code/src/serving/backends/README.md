@@ -54,3 +54,12 @@ CPU 合同见 [`test_vllm_engine.py`](../../../tests/serving/test_vllm_engine.py
 覆盖参数前检、连续不同配置、JSON 转换、概率输出、对象隔离、预算及旧结果/清理行为。
 原 LOTUS/LiteLLM 概率消费合同在独立 Python 子进程中读取明确 fake vLLM 结果，避免把 LOTUS
 导入内核测试进程。CPU 检查不构成真实模型或生成质量资格，已有模型运行仍绑定各自固定源码。
+
+`result_record(identity, *, engine_uid, start, end, status, submitted, error_type=None)`
+建立原终态信封；`result_from_output(identity, output, *, engine_uid, start, end,
+generation, get_tokenizer)` 将已关联的单个 RequestOutput 转为同一结果，保留验证失败前
+已知的真实 token IDs／usage。同步内核共用这两个纯函数，`_result` 保留原签名薄转发。
+调用方继续拥有批关联、容量、期限、取消与进程关闭；转换函数不将 abort 确认为物理终态。
+原采样工厂保持未改。[新增测试](../../../tests/serving/test_vllm_result_conversion.py)、
+69项CPU及64项固定旧源码逐字段差分的[来源与范围](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)
+单列，供后续独立Async组件复用；没有运行新的模型或继承冻结Core模型资格。

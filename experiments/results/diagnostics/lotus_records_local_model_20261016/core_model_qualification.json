@@ -1,0 +1,394 @@
+{
+  "schema": "semloom.records_core_model_qualification.v1",
+  "status": "completed",
+  "scope": "Frozen ordinary Movie Q3 Core records profile; not a qualification for later shared receipt/result conversion or finite chains.",
+  "source": {
+    "source_mode": "git_archive",
+    "git_checkout_verified": false,
+    "declared_repository_commit": "ebe3035fa1d105bdc14ceaf745aafbc613c1e6c6",
+    "matched_files": 394,
+    "source_archive_sha256": "99c1deb86f6c435673cfaf586e0278d46a5845c05475e279cdd930abe50cbfe4",
+    "lifetime_proof_sha256": "2c6a32b1daa604b59874900791cfb121630200350da5cb71b300f26b5c463263"
+  },
+  "source_is_current_branch": false,
+  "configuration_identity": {
+    "input_file_raw_sha256": "a45efda16f0a916b4fae9f641c34e74a040b1440894e3750c67957a5e60044ed",
+    "input_file_canonical_sha256": "c0b456b211f83abe5c08ab0fe7b4186b0dd7d1348165e34c84ebbc2814571561",
+    "runtime_canonical_sha256": "dc9718966e1ca58da27c88a62c358b89a6b859c8331d3b5a08891e03880b68c0",
+    "runtime_file_raw_sha256": "8a971b01c172698829f235ebbbc1be838bef38bdf47b029c9a4ebc671fe2fba2"
+  },
+  "model": {
+    "name": "Qwen2.5-7B-Instruct",
+    "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "identity_record": "model_identity.json",
+    "identity_record_sha256": "68a1e2bb798c1dbe0f9341b1324fea68aaa13717a98b10d0bda915718ca9f5f9",
+    "driver_model_prefixes_separate": true,
+    "vllm": "0.25.1",
+    "model_python": "3.12.3",
+    "model_config": {
+      "dtype": "bfloat16",
+      "max_model_len": 4096,
+      "max_num_seqs": 4,
+      "max_num_batched_tokens": 2048,
+      "gpu_memory_utilization": 0.8,
+      "seed": 0,
+      "chat_template": null,
+      "max_model_calls": 4
+    },
+    "generation": {
+      "max_tokens": 8,
+      "temperature": 0.0,
+      "top_p": 1.0,
+      "seed": 0,
+      "stop": [
+        "\n"
+      ],
+      "presence_penalty": 0.0,
+      "frequency_penalty": 0.0,
+      "repetition_penalty": 1.0,
+      "logprobs": null,
+      "response_format": null
+    },
+    "batch_mode": "finite_synchronous_chat"
+  },
+  "method": {
+    "lotus_version": "1.2.4",
+    "lotus_commit": "b1a85fd7a66fabed8a1585d44d7597d592b4433f",
+    "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+    "query": 3,
+    "prepare_batch_rows": 1,
+    "model_batch_rows": 1,
+    "max_active_batches": 1,
+    "work_unit": "model_calls",
+    "execution": "SessionEngine/BoundedAsyncBackend and shared Ray preparation/model actors, prepared ObjectRef handoff"
+  },
+  "reference": {
+    "original_native_control_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+    "original_native_config_canonical_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
+    "original_query_helpers_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d",
+    "extra_native_control_model_calls": 0,
+    "effective_method_generation_model_equal": true,
+    "source_byte_identity_equal": false,
+    "tokenization_witness": {
+      "actual_engine_prompt_token_ids_equal_native_control": true,
+      "actual_engine_output_token_ids_equal_native_control": true,
+      "template_sha256": "cd8e9439f0570856fd70470bf8889ebd8b5d1107207f67a5efb46e342330527f",
+      "template_scope": "fixed native tokenizer/template audit plus all four actual token-ID comparisons; no second template application"
+    },
+    "comparison": "messages digest, complete prompt/output IDs, text/decision/finish/usage, COUNT, original SemBench metrics and LM stats; not whole-report JSON identity",
+    "classification_audit_scope": "Core and engine-direct reports; the original native accessor report has original_metric without this added audit",
+    "original_native_engine_cap": 8,
+    "new_engine_cap": 4,
+    "original_prepare_batch_rows": 2
+  },
+  "unit": {
+    "unit_id": "core-shared-engine-double-query",
+    "actual_model_calls": 4,
+    "known_reserved_model_calls": 4,
+    "unknown_engine_counter_count": 0,
+    "unknown_call_results": 0,
+    "engine_lifetimes": 1,
+    "model_owners_allocated": 1,
+    "extra_application_warmup_calls": 0,
+    "automatic_retries": 0,
+    "production_core_connected": true,
+    "core_reuse": {
+      "confirmed": true,
+      "same_owner": true,
+      "same_core": true,
+      "same_model_actor": true,
+      "same_engine_uid": "51d396f09aa24a96860a9960b84542c2",
+      "distinct_query_call_ids": true,
+      "distinct_query_session_ids": true
+    },
+    "usage": {
+      "prompt_tokens": 506,
+      "known_prompt_tokens": 506,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 16,
+      "known_completion_tokens": 16,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 522,
+      "known_total_tokens": 522,
+      "unknown_total_tokens_calls": 0
+    },
+    "queries": [
+      {
+        "query_id": "core-first-q3",
+        "status": "completed",
+        "production_core_used": true,
+        "counts": {
+          "expected": 2,
+          "recorded": 2,
+          "missing": 0,
+          "succeeded": 2,
+          "failed": 0,
+          "unknown": 0,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0
+        },
+        "usage": {
+          "prompt_tokens": 253,
+          "known_prompt_tokens": 253,
+          "unknown_prompt_tokens_calls": 0,
+          "completion_tokens": 8,
+          "known_completion_tokens": 8,
+          "unknown_completion_tokens_calls": 0,
+          "total_tokens": 261
+        },
+        "result": {
+          "positive_review_cnt": 0
+        },
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "true_negative": 2,
+            "false_negative": 0,
+            "invalid": 0,
+            "evaluated_rows": 2,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          }
+        },
+        "lm": {
+          "stats": {
+            "virtual_usage": {
+              "prompt_tokens": 253,
+              "completion_tokens": 8,
+              "total_tokens": 261,
+              "total_cost": 0.0,
+              "cached_prompt_tokens": 0,
+              "cache_creation_tokens": 0
+            },
+            "physical_usage": {
+              "prompt_tokens": 253,
+              "completion_tokens": 8,
+              "total_tokens": 261,
+              "total_cost": 0.0,
+              "cached_prompt_tokens": 0,
+              "cache_creation_tokens": 0
+            },
+            "cache_hits": 0,
+            "operator_cache_hits": 0
+          },
+          "cost_available": false,
+          "cost_reason": "local engine compute is not assigned an API dollar price"
+        },
+        "control_equal": true,
+        "core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "retained_remote_inputs": 0,
+        "session_id": 0
+      },
+      {
+        "query_id": "core-second-q3",
+        "status": "completed",
+        "production_core_used": true,
+        "counts": {
+          "expected": 2,
+          "recorded": 2,
+          "missing": 0,
+          "succeeded": 2,
+          "failed": 0,
+          "unknown": 0,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0
+        },
+        "usage": {
+          "prompt_tokens": 253,
+          "known_prompt_tokens": 253,
+          "unknown_prompt_tokens_calls": 0,
+          "completion_tokens": 8,
+          "known_completion_tokens": 8,
+          "unknown_completion_tokens_calls": 0,
+          "total_tokens": 261
+        },
+        "result": {
+          "positive_review_cnt": 0
+        },
+        "quality": {
+          "original_metric": {
+            "relative_error": 0.0,
+            "absolute_error": 0.0,
+            "mean_absolute_percentage_error": 0.0
+          },
+          "sembench_commit": "c814e3807e72d4cf876b852b17e77f3cc94575c2",
+          "classification_audit": {
+            "true_positive": 0,
+            "false_positive": 0,
+            "true_negative": 2,
+            "false_negative": 0,
+            "invalid": 0,
+            "evaluated_rows": 2,
+            "missing_rows": 0,
+            "count_error_from_classifications": 0
+          }
+        },
+        "lm": {
+          "stats": {
+            "virtual_usage": {
+              "prompt_tokens": 253,
+              "completion_tokens": 8,
+              "total_tokens": 261,
+              "total_cost": 0.0,
+              "cached_prompt_tokens": 0,
+              "cache_creation_tokens": 0
+            },
+            "physical_usage": {
+              "prompt_tokens": 253,
+              "completion_tokens": 8,
+              "total_tokens": 261,
+              "total_cost": 0.0,
+              "cached_prompt_tokens": 0,
+              "cache_creation_tokens": 0
+            },
+            "cache_hits": 0,
+            "operator_cache_hits": 0
+          },
+          "cost_available": false,
+          "cost_reason": "local engine compute is not assigned an API dollar price"
+        },
+        "control_equal": true,
+        "core_usage": {
+          "held_tasks": 0,
+          "input_bytes": 0,
+          "result_bytes": 0,
+          "active_requests": 0,
+          "active_work": 0
+        },
+        "retained_remote_inputs": 0,
+        "session_id": 1
+      }
+    ]
+  },
+  "budget": {
+    "budget_id": "records-core-model-20261019",
+    "limit": 4,
+    "allocated_requests": 4,
+    "deadline_utc": null,
+    "units": [
+      {
+        "unit_id": "core-shared-engine-double-query",
+        "first_attempt": 1,
+        "requests": 4,
+        "claimed": 1
+      }
+    ],
+    "file_sha256": "66204da8623cfb2957cb0c2ddfb51547d6024d9beac33e27b1bdcc1817ba5d89",
+    "observation": "immutable read-only SQLite snapshot; file SHA stable",
+    "old32_sha256": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
+    "old_daft16_sha256": "9912f39964a2d1e49ef0d770434a62c7dd0c68173a33c785a0797c51b06c59e2",
+    "historical_ledgers_unchanged": true,
+    "failed_daft_counter_repaired": false,
+    "successful_daft_replayed": false,
+    "refunded_or_reset": false
+  },
+  "cleanup": {
+    "owner_status": "closed",
+    "owner_scope": "core_transport_actor_and_engine_api",
+    "transport_closed": true,
+    "retained_remote_inputs": 0,
+    "core_usage": {
+      "held_tasks": 0,
+      "input_bytes": 0,
+      "result_bytes": 0,
+      "active_requests": 0,
+      "active_work": 0
+    },
+    "engine_api_shutdown_confirmed": true,
+    "actor_kill_requests_confirmed": true,
+    "owner_process_exit_confirmed": null,
+    "owner_gpu_exit_confirmed": null,
+    "outer_observed_owned_count": 40,
+    "outer_observed_owned_exited": 40,
+    "controller_exit_independently_observed": true,
+    "archive_identity_states": "all40 observed identities and controller absent before/after archive",
+    "unobserved_descendants_confirmed": false,
+    "independent_gpu_memory_used_mib": 1,
+    "independent_gpu_compute_apps": 0,
+    "normal_lease": "released-owned-only; absent before/after archive",
+    "cleanup_errors": [],
+    "supervisor_status": "passed",
+    "supervisor_elapsed_s": 75.27885834407061,
+    "timing_scope": "single qualification wall clock, not a performance comparison"
+  },
+  "private_archive": {
+    "run_id": "archive-core-1792390657159639000",
+    "sha256": "470ca99cbbdb2214d308c8fbdb72e457c900a66ad77cc34e798695559e2eacbe",
+    "bytes": 969770,
+    "regular_files": 37,
+    "all_member_sha256_verified": true,
+    "environment_contents_included": false,
+    "raw_sqlite_ledger_included": false,
+    "remote_mutations_during_archive": 0,
+    "raw_evidence": {
+      "artifacts/units/core-shared-engine-double-query/core-first-q3-qualified.json": {
+        "bytes": 14629,
+        "sha256": "6a845d5c999c1fe97566e7653550d75101fc9a5dd13391e2d41a936bd67b8aaf"
+      },
+      "artifacts/units/core-shared-engine-double-query/core-second-q3-final.json": {
+        "bytes": 18327,
+        "sha256": "54bdb7da3a3e70362417d4932c5a9335bfb2b3c288b2da8f13cb75e646585055"
+      },
+      "CORE4-BUDGET-SNAPSHOT.json": {
+        "bytes": 628,
+        "sha256": "25a454f720b0acee0d8286f293d4bb581c01a752a2da5f08aeb259ea42fbb046"
+      },
+      "ARCHIVE-EXIT-GATES.json": {
+        "bytes": 18487,
+        "sha256": "1a3a691a79b42367d137ec35e2bc25bd854cc08437a9ba9c6290a4845afaaeea"
+      },
+      "SOURCE-IDENTITY.json": {
+        "bytes": 2011,
+        "sha256": "a0beceb93998326d3bb515fa06ee0f9fb76892e7bdc2be8cd37e78959fb113b4"
+      },
+      "BUNDLE-SEAL.json": {
+        "bytes": 981,
+        "sha256": "f5f5615eecd028e33636b1985005db5e172a4a28e205ad26c02c32a8b2a38c29"
+      },
+      "preflight/environment.json": {
+        "bytes": 5450,
+        "sha256": "8e01da50c85b841bc9963f26d5554a971e546349fef2ce864d0977079086ec8f"
+      },
+      "artifacts/controller-report.json": {
+        "bytes": 13995,
+        "sha256": "bcb4728c3b602bf29c7975b2578de399e9c1b7ac61a98ed60875f1060172b40c"
+      },
+      "artifacts/frozen-config.json": {
+        "bytes": 53178,
+        "sha256": "8a971b01c172698829f235ebbbc1be838bef38bdf47b029c9a4ebc671fe2fba2"
+      },
+      "artifacts/units/core-shared-engine-double-query/unit_report.json": {
+        "bytes": 50151,
+        "sha256": "51c5f442f7d30d9b0c2b73869c353dae946ba8b2066056906945a5f60e9e348c"
+      },
+      "artifacts/supervision/core-shared-engine-double-query/supervisor.json": {
+        "bytes": 4004,
+        "sha256": "e1111fe00930ce8b4c1f599e236b0ef3a572236567d7c9f2faab0ef54e4035b1"
+      },
+      "artifacts/supervision/core-shared-engine-double-query/worker.log": {
+        "bytes": 13432,
+        "sha256": "73a37a788f4ece5164f0354d699bb3da874e96cc5238d0ca5c4e7178f9f22ee6"
+      }
+    }
+  },
+  "boundaries": [
+    "two repeated queries on the same two negative occurrences, not four independent quality examples",
+    "one synchronous local-model profile; no AsyncLLM continuous supply",
+    "later shared results/receipts, finite chains, helper cascade, IMLane and image need separate qualifications",
+    "API/actor requests do not prove OS/GPU exit; archive gates provide independent observations",
+    "all prior failures and permanent budget reservations retained"
+  ]
+}

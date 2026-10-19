@@ -34,7 +34,7 @@ auto解析出多卡、CPUworker不为1、非默认stage深度或HSEscoped均在�
 
 `PYTHONPATH=code python code/integrations/imlane_records/verify.py --help` 可独立读取无模型echo验证器的固定作者prefix／workload／资源参数，实际启动需依照[模块合同](../integrations/imlane_records/README.md)与正常共享lease。
 [原10scope与集成CPU记录](../../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)保持原来源。后续普通Filter入口为 `code/integrations/imlane_records/verify_filter.py`，接原Movie runner／parser／evaluator，并接受仓外方法解释器与模型配置；有限链使用同目录 `chain_host.py` API，当前不提供共享链CLI selector。
-固定0190作者CPU结果与当前通用接线／63项NoPopen修复分开；当前9项进程依赖、新wire作者与模型资格仍pending。真实模型入口还须由外层持久预算、正常lease、owner资源上限和独立GPU退出检查包裹，不因单引擎cap存在而允许重复运行。
+固定0190作者CPU结果保持原来源；审批恢复后固定174完整72项CPU通过，后续共享故障回执组合116项及Daft实库17项通过，详见[分层复验](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#engine-result-receipts-cpu-20261019)。新wire作者与IMLane模型资格仍pending。真实模型入口还须由外层持久预算、正常lease、owner资源上限和独立GPU退出检查包裹，不因单引擎cap存在而允许重复运行。
 
 ## Movie Q3 records 本地模型接点
 
@@ -68,7 +68,7 @@ PYTHONPATH=code python code/scripts/experiments/run_lotus_records_movie.py check
 ```
 
 另可选择 `semloom-local-model-static-reference`（明确未接production Core）、`daft-native-local-model` 或 `semloom-local-model-core`。
-Core arm在模型分配前要求准备／模型批均为1，并由实际SessionEngine标记生产Core连接；其CPU组合资格与真实模型待验范围分列。
+Core arm在模型分配前要求准备／模型批均为1，并由实际SessionEngine标记生产Core连接。[冻结普通Core模型资格](../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)在 `ebe3035f` 完成同引擎两query／四次调用；后续共享源码及新profile仍按独立CPU／模型范围解释，不重复该成功单元。
 静态路径在Ray初始化后、Daft首次推断前显式选Native；复用已有Native，拒绝已有Ray或冲突配置。
 Daft 路径由原生 process UDF 和私有模型进程拥有执行，不 import／init Ray；[模块合同](../src/baselines/text/frameworks/daft_lotus_records.README.md)说明协作取消与 IPC 观测范围。
 本入口沿用 Daft 默认 runner_threads／64 MiB 实际准备批上限，不新增专属配置键；`max_active_batches` 属于 Ray 设置，不表示 Daft 提交窗口。

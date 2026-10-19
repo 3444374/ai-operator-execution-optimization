@@ -5,7 +5,7 @@
 后续再同步已审纯文档main `6e3828b4a05d16962efb1166bb872a7fd97ae627` 的Daft布局／消费与有限算子链合同；下述实机仍按各自固定源码解释。
 2026-10-19 同步纯文档 main `9b74f00db35ffa532ca74ecf9fae65ae38015ef1` 的原生查询与计时边界；不改变历史模型资格来源。
 最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；首阶段支持普通 Movie Q3 的 Filter＋COUNT。
-后续 Core CPU、有限链和共享引擎增量在下方分别记录，尚无这些新来源的模型或性能资格。旧 request 接入、活动 baseline 和旧测试树没有修改。
+后续 Core CPU、有限链和共享引擎增量在下方分别记录；冻结 `ebe3035f` 的普通Core已独立完成四次真实调用，后续源码和新profile不继承该模型资格。旧 request 接入、活动 baseline 和旧测试树没有修改。
 2026-10-19 的 Daft 关闭修正单元已在冻结 `f526fbf1` 完成两查询／四次真实调用，见[独立结果](daft_model_close_correction.json)；此前失败、未知计数和永久预留保留。
 当前普通 Filter 的 Ray Data／Daft／静态参照／Core 已消费中性扫描与 caller 绑定方法，换列换指令的资格为 CPU；不继承冻结 Daft 模型来源。
 
@@ -92,7 +92,7 @@ source 是共同离线投影的无标签 `records.csv`；driver 的 `preflight()
 IMLane 新桥可复用这些值合同和方法核对，必须由作者 DBEnd／session 拥有调度；本报告的 LOTUS 模型切片未覆盖它，[独立无模型echo与集成检查](../imlane_records_echo_20261016/README.md)另列。
 
 当前仍为 pending：首发早于末准备及峰值留存观察、原全局 helper-LM 级联的模型资格、AsyncLLM 持续供给、图像、
-Daft 原生 process UDF 的完整模型／GPU资格、IMLane 模型方法与作者 Ray，以及新 Core 与有限链的模型资格。
+IMLane模型方法与作者Ray、有限链，以及后续共享源码的模型资格。Daft关闭修正和普通Core的固定小样资格在后文独立登记。
 单次同步 `LLM.chat` 跨批排空，不能称为跨批持续供给。下方单卡资格只覆盖实际执行的普通 Q3 小切片。
 
 source 目前限制 4,096 行、CSV 16 MiB、单 review UTF-8 1 MiB；这些是有限输入资格，不是 RSS／GPU 显存硬上限。
@@ -315,9 +315,81 @@ FME／MF／MMF／FFM 共用同一路径；Extract限末端、单部署，query�
 | `174ee853` | 两项P1反例与63项NoPopen子集通过，Popen／child／作者／模型均0；仅测试内模拟NumPy SVE探针不支持和失败wire用例的Git元数据前检。三次guard碰到只读探针的失败原件保留 |
 
 当前worker／host收到的唯一完整关联终态保持已知usage；矛盾身份仅留raw，缺项unknown，host停止补块并排空已接纳块后抛原错。
-close receipts归原query，已有unknown不升级，不重发。共享EngineProcess上游条数／关联检查整批转unknown的既有边界未改，不能把此局部修复写成完整链路故障资格。
-完整72项因自动审批服务容量错误明确未执行、未重试；9个依赖子进程的用例仍待复测，其中2个直接覆盖Filter修复。
+close receipts归原query，已有unknown不升级，不重发。固定174仍保留上游共享EngineProcess异常时整批unknown的边界；本节形成时不能据此声称完整链路故障资格。
+完整72项最初因自动审批服务容量错误明确未执行；恢复后固定174完成72／72、零skip，15个已观察owned退出，源字节前后不变。原阻断记录不覆盖；后续common／Daft修复与最新组合在下节单列。
 新wire作者CPU、真实模型／GPU、作者Ray、共享链CLI及性能仍pending。精确源码、失败与排除用例见 `verification.json.imlane_generic_chain_cpu_20261019`。
 
 后续模型准备还修正owner的关闭范围：字面True API与成功kill请求只确认请求／API范围，OS与GPU仍待独立观察。
 部分分配失败无model句柄仍unknown，静态未确认工作继续保留；最终91项CPU零skip通过，不将旧模型结果重新绑定新owner源码。
+
+<a id="engine-result-receipts-cpu-20261019"></a>
+## 共享私有引擎的故障回执与 CPU 复验
+
+共享私有进程原先在条数／顺序／关联异常时把整批改为unknown，导致独立调用的已知usage丢失。
+职责 `270a6fde`／`826ad217` 现保留唯一、完整关联的实际终态及部分usage；缺项、重复或矛盾项仍unknown。
+`last_result_failure`及关闭报告保留实际IPC行的raw JSON、已核回执和未关联下标，写盘／清理失败不替换这些回执。
+每项携保留字段 `engine_protocol_error`；其字段存在即失败，空值也不能继续提交或解析，自然顺序重复的非空原生request ID同样触发故障。
+健康回复对象、同步批接口、15秒关闭预算与原生调度保持；故障后的API未确认、OS退出和GPU未知分别报告。
+
+语义提交 `0b81ba67` 让普通Filter、共用链方法和级联先对可表示的已知成功响应更新原LOTUS统计，随后在parser／后继方法／校准前失败。
+Daft职责 `cce7e0e3` 的close只回收同query且尚未交付的有效回执，复用现有账本校验；已收到的unknown不升级，已收到的prepare／infer元数据不被引擎原始行覆盖。
+若iterator或EOF清理先失败，runner尚未进入解释，独立账本仍保留known usage，LMstats保持实际值；没有补跑parser或制造统计。
+
+| 固定来源／运行 | CPU结果与实际范围 |
+|---|---|
+| `174ee853` 完整复验 | 72项零skip；原LOTUS／SemBench、明确作者／模型替身及实际私有CPU子进程；15个已观察owned退出。仅资格该固定baseline |
+| `0b81ba67` 方法回归 | 87项零skip，含7个新增故障用例；真实固定LOTUS方法／统计，推理为合成响应，未启动Ray／Daft runtime |
+| Daft最终 `cce7e0e3`＋共享修订 | 17项零skip：7纯合同、7实际Daft0.7.21／私有CPU传输和3旧回归；55个已观察owned退出。完整runner保留consumer的PermissionError，账本succeeded2／unknown1、已知10／4 tokens、总量null、query LMstats0；独立事后原interpret诊断累计10／4且parser0，不计入该query，也不发请求 |
+| root组合 `84c71605` | 116项零skip，含common14、旧close9／IPC7、Daft7纯合同、IMLane完整72、语义7；生产supervisor确认35个已观察owned退出，remaining／cleanup errors／signals均空，输出完整且落盘前脱敏 |
+
+这些运行分列，不相加为独立样本；模型／GPU请求及作者runtime启动均为0，GPU退出未实测。
+root组合固定1024项code文件摘要，测试前后字节不变；精确源码和原件SHA见 `verification.json.engine_result_receipts_cpu_20261019`。
+语义首次RED、两轴独审指出的两项边界、Daft首次把batch_size上界误当填满保证的fixture失败，以及中间通过原件全部保留。
+Daft原四行关系筛选可合法形成2＋1批；修后仅测试使用三个eligible输入，观测一个三行批，生产没有强制攒批或更改buffering。
+此前101项工具执行与最终12项pure按各自source边界记录，不替代上表最终监督资格。
+
+main PR48的 `8dd884ca` 已正常同步，仅更新数据组织文档。新Core四调用只绑定冻结 `ebe3035f`／394文件，
+与此次common修复分开；用户恢复strict SSH mux后，先完成只读资源／旧账本核验，再执行一次上传和一次启动，结果见下节。
+已成功Daft单元未重放，旧32／16账本SHA不变；新wire作者、后续源码模型、级联helper与性能仍按各自资格推进。
+
+<a id="core-model-qualification-20261019"></a>
+## 冻结普通 Core 的双查询模型资格
+
+[公开派生结果](core_model_qualification.json)绑定 `ebe3035fa1d105bdc14ceaf745aafbc613c1e6c6` 的394个常规文件，
+通过Git archive逐字核同；服务器未建立或验证Git checkout。该闭包先于上节common修复及下节纯结果提取，不能认证当前分支全部源码。
+既有单4090、Qwen2.5-7B-Instruct固定revision和vLLM0.25.1不变；LOTUS1.2.4／Ray2.56.1／Daft0.7.21的driver与模型Python prefix隔离。
+准备／模型批及active上限均为1，generation为max8／temperature0／top_p1／seed0／换行stop，无logprobs或JSON模式；同步引擎批不是AsyncLLM持续供给。
+
+| 核验项 | 实际结果 |
+|---|---|
+| 查询与实例 | 同一owner／生产Core／Ray模型actor／engine，两个独立session和query，各2条发生项；共4次实际调用、0额外应用warmup／自动重试／unknown |
+| 原方法对照 | Movie Q3原15行前缀中的两个eligible负例，原source position为1、14；有效messages摘要、完整prompt／output token IDs、原文本／parser判定／finish／usage、COUNT、原SemBench metrics与LMstats核同；原生参照未新增模型调用 |
+| 结果与usage | 两query各COUNT0、TN2、原评价误差0，各253 prompt／8 completion tokens；合计506／16／522。重复相同两负例不算四个独立质量样本 |
+| Core生命周期 | 每query后held／input／result／requests／work及保留输入引用归零，第二query重新分配session与call IDs；逻辑额度不是RSS或显存硬上限 |
+| API与独立退出 | owner仅确认Core transport／engine API及actor kill请求，owner的OS／GPU字段仍null；外层观察的40个owned出生身份及控制器，在归档前后均absent。独立GPU为1MiB、无compute，正常owned lease已释放；未观察到的后代不在认证范围 |
+| 永久预算 | 新 `records-core-model-20261019` 4／4永久预留、单unit claim一次，实际4；旧32和Daft16文件SHA核同，Daft旧actual null未补写，成功单元未重跑，无退款／重置 |
+
+配置文件原字节SHA为 `a45efda16f0a916b4fae9f641c34e74a040b1440894e3750c67957a5e60044ed`，
+输入canonical为 `c0b456b211f83abe5c08ab0fe7b4186b0dd7d1348165e34c84ebbc2814571561`；
+控制器加入输入身份后的runtime canonical为 `dc9718966e1ca58da27c88a62c358b89a6b859c8331d3b5a08891e03880b68c0`，三者分别保存。
+比较的是上述有效值；新schema增加默认null字段，原native accessor报告也没有新增classification audit，因此不声称整份JSON字节相等。
+
+私有归档969770字节／37个常规成员（36件索引原件及索引本身），SHA为
+`470ca99cbbdb2214d308c8fbdb72e457c900a66ad77cc34e798695559e2eacbe`；全部成员与内层394源码摘要核同，未装入环境内容或原SQLite账本。
+原件独审87项交叉检查、公开派生独审63项检查通过，均为来源核验项而非模型调用或测试样本数。
+原派生脚本首次把lease字符串当对象的本地错误已保留，修后仅重新派生报告，没有重跑模型。
+75.28秒是单次资格监督墙钟，不能作性能比较。有限链、helper级联、IMLane、图像及后续Async profile仍分别待验。
+
+<a id="shared-result-conversion-cpu-20261019"></a>
+## 同步与后续 Async 共用的纯结果转换
+
+作者 `37e3b4fa` 在root以 `a4f47eab` 接纳，仅修改[vllm_engine.py](../../../../code/src/serving/backends/vllm_engine.py)
+及新增[专属测试](../../../../code/tests/serving/test_vllm_result_conversion.py)。
+`result_record`建立原终态信封，`result_from_output`转换已关联的单RequestOutput，保留校验错误前的token IDs／usage；同步 `run_prepared`共用，`_result`原签名薄转发。
+abort的真实finish／已知tokens仍保留并按原规则失败；未来Async外层负责unknown及取消容量，不把本地abort结果当GPU完成确认。
+采样、预算、batch关联、初始化、deadline和close保持，未新增重试、调度或Async生命周期。
+
+7项新pure golden及原内核／原LOTUS独立解释器组合共69项CPU零skip；64项固定旧 `84c71605` 源码逐字段差分通过。
+生产supervisor确认4个已观察owned退出、remaining／cleanup errors为空，模型／GPU／SSH动作0。
+Standards／Spec只读独审均无发现，源码和6份原件SHA核同；精确摘要见 `verification.json.shared_result_conversion_cpu_20261019`。
+此提取不继承前节冻结Core模型资格，独立Async组件及其新进程桥还须验证多在途、abort、迟到结果、容量和关闭。
