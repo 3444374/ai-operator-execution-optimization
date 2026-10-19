@@ -1,5 +1,6 @@
 """Bound one dedicated records CLI and its observed owned processes, without a model import."""
 
+import hashlib
 import math
 import os
 from pathlib import Path
@@ -141,26 +142,59 @@ def _signal(owned, pgid, created, value):
         group_valid = leader.create_time() == created
     except psutil.NoSuchProcess:
         group_valid = True
-    grouped = []
-    for process in live:
-        try:
-            if group_valid and pgid != os.getpgrp() and os.getpgid(process.pid) == pgid:
-                grouped.append(process.pid)
-            else:
-                process.send_signal(value)
-        except (psutil.NoSuchProcess, ProcessLookupError):
-            pass
-    if grouped:
-        try:
-            os.killpg(pgid, value)
-        except ProcessLookupError:
-            pass
+    events = []
     if not group_valid:
-        raise RuntimeError("process group was reused; only matched observed processes were signalled")
+        raise RuntimeError("process group was reused; no unverified group was signalled")
+    for process in live:
+        event = dict(pid=process.pid, create_time=process.create_time(),
+                     signal=signal.Signals(value).name,
+                     requested_monotonic=time.monotonic(), requested_epoch_s=time.time())
+        try:
+            command = process.cmdline()
+            event.update(command=redact_argument_list(command), name=process.name(),
+                         cmdline_sha256=hashlib.sha256(" ".join(command).encode()).hexdigest())
+            # Signal only a literal, birth-matched observed identity. A group
+            # signal could also reach members absent from this audit snapshot.
+            process.send_signal(value)
+            event["outcome"] = "sent"
+        except (psutil.NoSuchProcess, ProcessLookupError):
+            event["outcome"] = "exited_before_signal"
+        except BaseException as error:
+            event.update(outcome="unconfirmed", error=redact_text(type(error).__name__ + ": " + str(error)))
+            events.append(event)
+            error.signal_events = events
+            raise
+        events.append(event)
+    return events
 
 
-def _wait(owned, pgid, created, deadline, output=None):
-    while _live(owned) and time.monotonic() < deadline:
+def _exit_wait_identity(process):
+    identity = dict(pid=process.pid, create_time=process.create_time())
+    try:
+        command = process.cmdline()
+        identity.update(command=redact_argument_list(command), name=process.name(),
+            cmdline_sha256=hashlib.sha256(" ".join(command).encode()).hexdigest())
+    except (psutil.NoSuchProcess, ProcessLookupError):
+        identity["command_unavailable"] = "exited before wait metadata capture"
+    return identity
+
+
+def _wait(owned, pgid, created, deadline, output=None, *, exit_events=None,
+          phase=None, watch=()):
+    watched = set(watch)
+    recorded = set()
+    while True:
+        live = _live(owned)
+        identities = {(process.pid, process.create_time()) for process in live}
+        watched.update(identities)
+        if exit_events is not None:
+            for pid, born in sorted(watched - identities - recorded):
+                exit_events.append(dict(pid=pid, create_time=born, phase=phase,
+                    observed_monotonic=time.monotonic(), observed_epoch_s=time.time(),
+                    time_scope="first observed not alive in this wait"))
+                recorded.add((pid, born))
+        if not live or time.monotonic() >= deadline:
+            break
         if output is not None:
             output.pump(deadline)
         _observe(owned, pgid, created)
@@ -168,7 +202,7 @@ def _wait(owned, pgid, created, deadline, output=None):
 
 
 def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
-              grace_s: float = 5) -> dict:
+              grace_s: float = 5, natural_exit_grace_s: float = 0) -> dict:
     """Run a worker within one wall budget, reserving a bounded cleanup window.
 
     The report confirms only observed OS process exits. It cannot establish GPU
@@ -176,6 +210,9 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
     """
     _seconds(timeout_s, "timeout_s")
     _seconds(grace_s, "grace_s")
+    if (type(natural_exit_grace_s) not in (int, float)
+            or not math.isfinite(natural_exit_grace_s) or natural_exit_grace_s < 0):
+        raise ValueError("natural_exit_grace_s must be finite and nonnegative; bool is not accepted")
     if (type(command) is not list or not command or not command[0]
             or any(type(value) is not str or "\0" in value for value in command)):
         raise ValueError("command must be a nonempty argument list, without NUL bytes")
@@ -197,7 +234,9 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
         overall_deadline_monotonic=deadline, worker_deadline_monotonic=worker_deadline,
         physical_gpu_exit_checked=False, gpu_exit_confirmed=None,
         process_exit_scope="observed_owned_processes", unobserved_descendants_confirmed=False,
-        signals=[], cleanup_errors=[], remaining_owned_pids=[], worker_exit=None,
+        signals=[], signal_events=[], exit_observations=[], natural_exit_wait=None,
+        natural_exit_grace_requested_s=natural_exit_grace_s,
+        cleanup_errors=[], remaining_owned_pids=[], worker_exit=None,
         output_capture=None,
     )
 
@@ -228,6 +267,9 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                     if time.monotonic() >= worker_deadline:
                         raise TimeoutError("records worker exceeded its overall work window")
                     if process.poll() is not None:
+                        report.update(worker_exit_observed_monotonic=time.monotonic(),
+                                      worker_exit_observed_epoch_s=time.time(),
+                                      worker_exit_observation_scope="worker-loop poll")
                         if process.returncode:
                             raise RuntimeError("records worker failed; see private worker.log")
                         break
@@ -241,6 +283,27 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                         if created is None:
                             raise RuntimeError("spawned worker creation identity is unavailable")
                         cleanup_attempt(lambda: _observe(owned, process.pid, created))
+                        # Opt-in natural teardown uses at most half of the
+                        # already-reserved cleanup window; total deadlines stay
+                        # unchanged and forced cleanup still means failure.
+                        if failure is None and process.poll() == 0 and natural_exit_grace_s:
+                            before = cleanup_attempt(lambda: _live(owned), default=None)
+                            if before is not None:
+                                watch = {(p.pid, p.create_time()) for p in before}
+                                start = time.monotonic()
+                                until = min(cleanup_deadline, start + min(
+                                    natural_exit_grace_s, reserved / 2))
+                                report["natural_exit_wait"] = dict(
+                                    started_monotonic=start, started_epoch_s=time.time(),
+                                    deadline_monotonic=until, initial_live=[
+                                        _exit_wait_identity(p) for p in before])
+                                cleanup_attempt(lambda: _wait(owned, process.pid, created, until, output,
+                                    exit_events=report["exit_observations"], phase="natural_exit", watch=watch))
+                                after = cleanup_attempt(lambda: _live(owned), default=None)
+                                report["natural_exit_wait"].update(
+                                    ended_monotonic=time.monotonic(), ended_epoch_s=time.time(),
+                                    remaining=None if after is None else [dict(
+                                        pid=p.pid, create_time=p.create_time()) for p in after])
                         if cleanup_attempt(lambda: _live(owned), default=True):
                             if failure is None:
                                 failure = RuntimeError("records worker left live owned processes")
@@ -251,20 +314,44 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                                 if not cleanup_attempt(lambda: _live(owned), default=True):
                                     break
                                 report["signals"].append(signal.Signals(value).name)
-                                cleanup_attempt(lambda: _signal(owned, process.pid, created, value))
-                                cleanup_attempt(lambda: _wait(owned, process.pid, created, until, output))
+                                def send():
+                                    try:
+                                        events = _signal(owned, process.pid, created, value)
+                                    except BaseException as error:
+                                        report["signal_events"].extend(getattr(error, "signal_events", []))
+                                        raise
+                                    report["signal_events"].extend(events or [])
+                                cleanup_attempt(send)
+                                watch = {(event["pid"], event["create_time"]) for event in
+                                         report["signal_events"] if event["signal"] == signal.Signals(value).name}
+                                cleanup_attempt(lambda: _wait(owned, process.pid, created, until, output,
+                                    exit_events=report["exit_observations"], phase=signal.Signals(value).name,
+                                    watch=watch))
                         cleanup_attempt(lambda: _observe(owned, process.pid, created))
                     except BaseException as error:
                         report["cleanup_errors"].append(error_record(error))
                     finally:
                         # Reap the exact Popen child even when observation itself failed.
                         if process.poll() is None:
+                            event = dict(pid=process.pid, create_time=created, signal="SIGKILL",
+                                command=redact_argument_list(command),
+                                cmdline_sha256=hashlib.sha256(" ".join(command).encode()).hexdigest(),
+                                identity_scope="unreaped Popen child", requested_monotonic=time.monotonic(),
+                                requested_epoch_s=time.time(), outcome="unconfirmed")
+                            report["signals"].append("SIGKILL")
                             try:
                                 process.kill()
+                                event["outcome"] = "sent"
                                 process.wait(timeout=max(0.0, deadline - time.monotonic()))
                             except BaseException as error:
                                 report["cleanup_errors"].append(error_record(error))
+                            finally:
+                                report["signal_events"].append(event)
                         report["worker_exit"] = process.poll()
+                        if report["worker_exit"] is not None and "worker_exit_observed_monotonic" not in report:
+                            report.update(worker_exit_observed_monotonic=time.monotonic(),
+                                worker_exit_observed_epoch_s=time.time(),
+                                worker_exit_observation_scope="poll after cleanup")
                 if output is not None:
                     cleanup_attempt(lambda: output.pump(deadline))
                     cleanup_attempt(output.finish)

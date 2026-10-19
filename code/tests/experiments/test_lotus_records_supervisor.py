@@ -98,6 +98,59 @@ os._exit(0)
         self.assertIn("SIGTERM", report["signals"])
 
     @needs_inventory
+    def test_short_child_has_explicit_bounded_natural_exit_without_signals(self):
+        release = self.root / "release"
+        child = ("from pathlib import Path;import time;"
+                 "p=Path(" + repr(str(release)) + ");"
+                 "exec('while not p.exists():time.sleep(.005)');time.sleep(.2)")
+        source = ("import os,subprocess,sys;from pathlib import Path;"
+                  "subprocess.Popen([sys.executable,'-c'," + repr(child) + "]);"
+                  "Path(" + repr(str(release)) + ").touch();os._exit(0)")
+        report = self.run_worker(source, timeout_s=3, grace_s=.8, natural_exit_grace_s=.4)
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["signals"], [])
+        self.assertEqual(report["signal_events"], [])
+        wait = report["natural_exit_wait"]
+        self.assertTrue(wait["initial_live"])
+        self.assertEqual(wait["remaining"], [])
+        self.assertLessEqual(wait["deadline_monotonic"] - wait["started_monotonic"], .401)
+        exits = [event for event in report["exit_observations"] if event["phase"] == "natural_exit"]
+        self.assertTrue(exits)
+        self.assertLessEqual(report["worker_exit_observed_monotonic"], exits[-1]["observed_monotonic"])
+
+    @needs_inventory
+    def test_residue_still_fails_and_signal_targets_have_birth_and_redacted_command(self):
+        source = """import os,subprocess,sys
+child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)',
+                        'auth_token=fixture-signal-secret'])
+print(child.pid,flush=True)
+os._exit(0)
+"""
+        with self.assertRaisesRegex(RuntimeError, "left live owned processes") as caught:
+            self.run_worker(source, timeout_s=3, grace_s=.6, natural_exit_grace_s=.2)
+        report = caught.exception.report
+        child_pid = int((self.root / "worker.log").read_text().strip())
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["worker_exit"], 0)
+        self.assertEqual(report["remaining_owned_pids"], [])
+        targets = [row for row in report["signal_events"] if row["pid"] == child_pid]
+        self.assertTrue(targets)
+        self.assertGreater(targets[0]["create_time"], 0)
+        self.assertEqual(targets[0]["outcome"], "sent")
+        self.assertIn("auth_token=***", targets[0]["command"])
+        self.assertNotIn("fixture-signal-secret", (self.root / "supervisor.json").read_text())
+        self.assertGreaterEqual(targets[0]["requested_monotonic"], report["natural_exit_wait"]["ended_monotonic"])
+        self.assertTrue(any(row["pid"] == child_pid and row["phase"] == "SIGTERM"
+                            for row in report["exit_observations"]))
+
+    def test_invalid_natural_exit_window_never_spawns(self):
+        for value in (True, False, -1, float("nan"), float("inf"), "1"):
+            with self.subTest(value=value), patch.object(supervisor.subprocess, "Popen") as spawn:
+                with self.assertRaises(ValueError):
+                    self.run_worker("pass", natural_exit_grace_s=value)
+                spawn.assert_not_called()
+
+    @needs_inventory
     def test_term_ignoring_worker_is_killed_within_single_total_budget(self):
         source = """import signal,time
 signal.signal(signal.SIGTERM,signal.SIG_IGN)
@@ -181,6 +234,22 @@ time.sleep(30)
         self.assertIsNotNone(report["worker_exit"])
         self.assertTrue(report["output_capture"]["pipe_closed"])
         self.assertEqual(report, self.read_report())
+
+    def test_unreaped_driver_fallback_kill_is_audited_when_observation_fails(self):
+        with patch.object(supervisor, "_observe", side_effect=OSError("observer failure")), patch.object(
+            supervisor, "_live", side_effect=OSError("inventory failure"),
+        ):
+            with self.assertRaises(OSError) as caught:
+                self.run_worker("import time;time.sleep(30)", timeout_s=1, grace_s=.1)
+        report = caught.exception.report
+        self.assertEqual(report["status"], "unknown")
+        self.assertEqual(report["worker_exit"], -signal.SIGKILL)
+        event = report["signal_events"][-1]
+        self.assertEqual(event["pid"], report["owned_pid"])
+        self.assertEqual(event["create_time"], report["owned_create_time"])
+        self.assertEqual(event["identity_scope"], "unreaped Popen child")
+        self.assertEqual(event["command"], report["command"])
+        self.assertEqual(event["outcome"], "sent")
 
     @needs_inventory
     def test_report_write_error_is_attached_without_replacing_worker_failure(self):
@@ -299,6 +368,12 @@ class FakeProcessTests(SupervisorFixture, unittest.TestCase):
             def send_signal(self, value):
                 group_signal(self.pid, value)
 
+            def cmdline(self):
+                return ["fixture-python", "--worker", str(self.pid)]
+
+            def name(self):
+                return "fixture-python"
+
         class Popen:
             pid = leader_pid
 
@@ -316,12 +391,12 @@ class FakeProcessTests(SupervisorFixture, unittest.TestCase):
                 return self.returncode
 
         def group_signal(pgid, value):
-            self.assertEqual(pgid, leader_pid)
+            self.assertIn(pgid, (leader_pid, child_pid))
             state["signals"].append(value)
             if value == signal.SIGKILL or not ignore_term:
-                if state["leader_alive"]:
+                if pgid == leader_pid and state["leader_alive"]:
                     state["returncode"] = -value
-                state.update(leader_alive=False, child_alive=False)
+                state["leader_alive" if pgid == leader_pid else "child_alive"] = False
 
         def spawn(*args, **kwargs):
             self.assertEqual(kwargs["stdout"], subprocess.PIPE)
