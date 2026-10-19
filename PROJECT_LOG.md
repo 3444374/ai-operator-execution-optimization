@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-19：独立接入普通 Movie Q3 records 到 production Core
+
+从integration/data-execution的c0be45dd建独立职责分支，先对照架构／数据组织／增量实施条款建立源码、缺口与验收映射。
+新增adapter复用SessionEngine、既有容量／策略／异步传输与模型actor owner；不调用静态调度，不修改公共records／引擎／runner或其他后端。
+单行准备／模型批有显式检查，成功lease解码后释放；异常／取消／期限／unknown保留实际责任和已知调用收据。
+23项专属CPU fixture与旧路径等101项／32subtests通过；系统Python缺pyarrow的初始导入失败保留，未安装依赖或执行服务器GPU。
+[切片报告](experiments/results/diagnostics/lotus_records_core_20261019/README.md)明确公共集成、真实库／原评价组合、真实模型和性能均待验；独立两轴审查随后记录，不合main或删除旧路径。
+
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界
 
 固定7d12d63c的389文件闭包，准备独立控制器／双查询child与原方法、输入及原生控制原件绑定；新16次账本只计划首单元永久4次，每引擎cap2、并发1、零重试，旧32/32不动。外层单元1200秒／清理15秒，无工程累计截止时间。

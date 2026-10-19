@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[Movie Q3 records Core 接入](lotus_records_core_20261019/README.md)：真实Core／异步传输的CPU fixture、与静态同生命周期对照及异常清理；真实库、原评价器组合和GPU分别待验。
+
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
 [Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md)：独立Ray Data／Daft／SemLoom静态切片，CPU分层资格与原生参照／Ray Data／静态参照的Qwen单4090小切片实测；原失败和同预算32/32保留，Daft GPU、级联与production Core待验。

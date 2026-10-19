@@ -1,5 +1,11 @@
 # Native task execution
 
+The independent [Movie records Core adapter](lotus_records_core.py) puts bounded raw
+records through the existing `SessionEngine` and asynchronous transport, while Ray actors
+prepare and run the local model. Its first slice explicitly requires one-row preparation
+and model batches. [CPU fixture qualification and pending integration](../../../../experiments/results/diagnostics/lotus_records_core_20261019/README.md)
+are separate from real-library, LOTUS evaluator and GPU qualification; no performance claim is made.
+
 The independent [Movie records static reference](lotus_records_static.py) uses Daft plus
 Ray actors and is a `diagnostic_reference`, with no production Core connection.
 Its shared method API, CPU checks and pending model qualification are documented in the

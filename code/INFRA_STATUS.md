@@ -1,5 +1,14 @@
 # AI 算子执行 Infra 当前状态
 
+## 独立 records Core 接入
+
+基于 `c0be45dd` 新增 [Core adapter](src/execution_provider/adapters/lotus_records_core.py)，实际复用
+production `SessionEngine`／容量／lease-release 与已有异步传输；有限原始记录进入Core，准备引用直达模型actor。
+首版显式限定单行准备／模型批、单GPU和顺序查询；既有静态参照保持独立身份及原实现。
+23项专属CPU fixture与旧路径等101项／32subtests通过；未知工作保留占用、失败前缀usage及迟到结果归属有检查。
+[条款映射与证据](../experiments/results/diagnostics/lotus_records_core_20261019/README.md)分列真实Core与其他替身，
+公共runner接线、实际Ray／Daft／LOTUS组合、GPU与性能仍pending；没有服务器模型操作或main合并。
+
 ## 独立 IMLane 记录桥
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。

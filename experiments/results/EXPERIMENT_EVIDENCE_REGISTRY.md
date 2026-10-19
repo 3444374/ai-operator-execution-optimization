@@ -1,5 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-19：[Movie Q3 records Core 接入](diagnostics/lotus_records_core_20261019/README.md)。
+从c0be45dd独立接入既有production Core／异步传输，23项新CPU fixture与旧静态／Core／native等101项及32subtests通过、零skip。
+Ray／Daft／LOTUS／模型为明确替身，实际模型与GPU均0；首个系统Python缺pyarrow失败保留。
+公共runner、真实库／原评价组合及GPU未验，不继承静态或其他路径资格，不支持性能结论。
+
 2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
 职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。
 

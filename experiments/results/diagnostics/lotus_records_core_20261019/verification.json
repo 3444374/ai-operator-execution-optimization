@@ -1,0 +1,64 @@
+{
+  "schema": "semloom.records_core_cpu.v1",
+  "baseline": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+  "started_unix": 1792373378.9999008,
+  "run_id": "fixture-regression-r1",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "-q",
+    "code/tests/execution_provider/test_lotus_records_core.py",
+    "code/tests/execution_provider/test_lotus_records_static.py",
+    "code/tests/scheduling/test_async_backend.py",
+    "code/tests/scheduling/test_incremental_session.py",
+    "code/tests/execution_provider/test_native_tasks.py"
+  ],
+  "exit_code": 0,
+  "python": "3.12.6",
+  "log": {
+    "private_artifact": "fixture-regression-r1.log",
+    "bytes": 168,
+    "sha256": "95069da6800f9156f0adc438b2390426b02c27ad2d9ad50e9b4d0ccb3c768400"
+  },
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_core.py": "6b0c08358864fea027065fb6caafc8736951f008d7feb4ec24bd960d8edda9a3",
+    "code/tests/execution_provider/test_lotus_records_core.py": "708c739c8c1fb7ea297428ad978566075ce1f3aacc891ecc0b1aaf44e17f21ab",
+    "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
+    "code/src/scheduling/core/session.py": "af24b3317903ac11f760ed2797668035a97f5e5ef8466c9f4b74482ec46a848c",
+    "code/src/scheduling/runtime/async_backend.py": "a3657d3876e9d3d0a6a935fb63857578feeff19d298fd460a2451d2a1a00259c"
+  },
+  "scope": {
+    "core": "real SessionEngine and BoundedAsyncBackend",
+    "ray": "CPU fixture",
+    "daft": "CPU fixture",
+    "lotus": "CPU fixture",
+    "model": "CPU fixture",
+    "inference_calls": 0,
+    "gpu_allocations": 0
+  },
+  "earlier_runs": [
+    {
+      "run_id": "system-python-import-r1",
+      "exit_code": 1,
+      "reason": "system Python has no pyarrow; no tests executed",
+      "tool_output": "5711d3"
+    },
+    {
+      "run_id": "core-fixture-r1",
+      "tests": 20,
+      "passed": 20,
+      "tool_output": "a43adc"
+    },
+    {
+      "run_id": "core-fixture-r2",
+      "tests": 23,
+      "passed": 23,
+      "tool_output": "bf1755"
+    }
+  ],
+  "passed": 101,
+  "subtests_passed": 32,
+  "skipped": 0,
+  "test_wall_seconds": 0.7
+}
