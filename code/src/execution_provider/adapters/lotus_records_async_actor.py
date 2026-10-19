@@ -323,6 +323,11 @@ class AsyncRecordsActorOwner(_ActorOwner):
     def _model_actor_type(self):
         return AsyncCoreModelActor
 
+    def _model_close_timeout_s(self):
+        # Child API shutdown owns ten seconds, followed by bounded task/IPC
+        # teardown. Match the private process owner's complete close window.
+        return 15.0
+
     def execution_metadata(self):
         return dict(model_batch_mode=self.model_batch_mode,
                     native_engine_abort_supported=self.native_engine_abort_supported)
