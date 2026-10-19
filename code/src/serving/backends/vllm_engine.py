@@ -330,6 +330,57 @@ def _prepared(rows: list[dict]) -> tuple[list[dict], list[list[dict]]]:
     return identities, conversations
 
 
+def result_record(identity: dict, *, engine_uid: str, start: float, end: float,
+                  status: str, submitted: bool, error_type: str | None = None) -> dict:
+    """Build the existing terminal envelope without inferring output or usage."""
+    return {
+        **identity, "status": status, "text": None,
+        "prompt_token_ids_json": "null", "output_token_ids_json": "null",
+        "logprobs_json": "null", "prompt_tokens": None, "completion_tokens": None,
+        "total_tokens": None, "finish_reason": None, "engine_request_id": None,
+        "engine_uid": engine_uid, "model_start_monotonic": start,
+        "model_end_monotonic": end, "model_elapsed_s": max(0.0, end - start),
+        "submission_confirmed": submitted, "deadline_expired": False,
+        "error_type": error_type,
+    }
+
+
+def result_from_output(identity: dict, output, *, engine_uid: str, start: float,
+                       end: float, generation: GenerationSpec, get_tokenizer) -> dict:
+    """Convert one associated RequestOutput, retaining evidence before validation errors."""
+    result = result_record(identity, engine_uid=engine_uid, start=start, end=end,
+                           status="failed", submitted=True)
+    result["engine_request_id"] = output.request_id
+    try:
+        prompt_ids = _token_ids(getattr(output, "prompt_token_ids", None),
+                                "prompt_token_ids")
+        result["prompt_token_ids_json"] = json.dumps(prompt_ids)
+        result["prompt_tokens"] = None if prompt_ids is None else len(prompt_ids)
+        choices = getattr(output, "outputs", None)
+        if not isinstance(choices, (list, tuple)) or len(choices) != 1:
+            raise ValueError("expected one completion choice")
+        choice = choices[0]
+        token_ids = _token_ids(getattr(choice, "token_ids", None), "token_ids")
+        result["output_token_ids_json"] = json.dumps(token_ids)
+        result["completion_tokens"] = None if token_ids is None else len(token_ids)
+        if result["prompt_tokens"] is not None and token_ids is not None:
+            result["total_tokens"] = result["prompt_tokens"] + len(token_ids)
+        result["finish_reason"] = getattr(choice, "finish_reason", None)
+        if (output.finished is not True or type(getattr(choice, "index", None)) is not int
+                or choice.index != 0 or result["finish_reason"] not in {"stop", "length"}
+                or not isinstance(getattr(choice, "text", None), str)):
+            raise ValueError("completion is not a valid finished single-choice result")
+        if generation.logprobs is not None:
+            result["logprobs_json"] = json.dumps(_chat_logprobs(
+                token_ids, getattr(choice, "logprobs", None),
+                generation.logprobs, get_tokenizer,
+            )["content"], ensure_ascii=False, allow_nan=False)
+        result.update(status="succeeded", text=choice.text)
+    except (AttributeError, TypeError, ValueError) as exc:
+        result["error_type"] = type(exc).__name__
+    return result
+
+
 class VllmEngine:
     """One isolated model instance; each chat call is a finite synchronous batch."""
 
@@ -402,16 +453,8 @@ class VllmEngine:
 
     def _result(self, identity: dict, start: float, end: float, *, status: str,
                 submitted: bool, error_type: str | None = None) -> dict:
-        return {
-            **identity, "status": status, "text": None,
-            "prompt_token_ids_json": "null", "output_token_ids_json": "null",
-            "logprobs_json": "null", "prompt_tokens": None, "completion_tokens": None,
-            "total_tokens": None, "finish_reason": None, "engine_request_id": None,
-            "engine_uid": self.engine_uid, "model_start_monotonic": start,
-            "model_end_monotonic": end, "model_elapsed_s": max(0.0, end - start),
-            "submission_confirmed": submitted, "deadline_expired": False,
-            "error_type": error_type,
-        }
+        return result_record(identity, engine_uid=self.engine_uid, start=start, end=end,
+                             status=status, submitted=submitted, error_type=error_type)
 
     def run_prepared(self, rows: list[dict], *,
                      generation: GenerationSpec | None = None,
@@ -478,36 +521,10 @@ class VllmEngine:
                 return results
             results = []
             for identity, output in zip(identities, outputs, strict=True):
-                result = self._result(identity, start, end, status="failed", submitted=True)
-                result["engine_request_id"] = output.request_id
-                try:
-                    prompt_ids = _token_ids(getattr(output, "prompt_token_ids", None),
-                                            "prompt_token_ids")
-                    result["prompt_token_ids_json"] = json.dumps(prompt_ids)
-                    result["prompt_tokens"] = None if prompt_ids is None else len(prompt_ids)
-                    choices = getattr(output, "outputs", None)
-                    if not isinstance(choices, (list, tuple)) or len(choices) != 1:
-                        raise ValueError("expected one completion choice")
-                    choice = choices[0]
-                    token_ids = _token_ids(getattr(choice, "token_ids", None), "token_ids")
-                    result["output_token_ids_json"] = json.dumps(token_ids)
-                    result["completion_tokens"] = None if token_ids is None else len(token_ids)
-                    if result["prompt_tokens"] is not None and token_ids is not None:
-                        result["total_tokens"] = result["prompt_tokens"] + len(token_ids)
-                    result["finish_reason"] = getattr(choice, "finish_reason", None)
-                    if (output.finished is not True or type(getattr(choice, "index", None)) is not int
-                            or choice.index != 0 or result["finish_reason"] not in {"stop", "length"}
-                            or not isinstance(getattr(choice, "text", None), str)):
-                        raise ValueError("completion is not a valid finished single-choice result")
-                    if effective_generation.logprobs is not None:
-                        result["logprobs_json"] = json.dumps(_chat_logprobs(
-                            token_ids, getattr(choice, "logprobs", None),
-                            effective_generation.logprobs, self._llm.get_tokenizer,
-                        )["content"], ensure_ascii=False, allow_nan=False)
-                    result.update(status="succeeded", text=choice.text)
-                except (AttributeError, TypeError, ValueError) as exc:
-                    result["error_type"] = type(exc).__name__
-                results.append(result)
+                results.append(result_from_output(
+                    identity, output, engine_uid=self.engine_uid, start=start, end=end,
+                    generation=effective_generation, get_tokenizer=lambda: self._llm.get_tokenizer(),
+                ))
             if deadline_monotonic is not None and end >= deadline_monotonic:
                 for result in results:
                     result.update(status="failed", text=None, deadline_expired=True,
