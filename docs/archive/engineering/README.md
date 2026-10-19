@@ -55,10 +55,10 @@
 | [2026-08-23-opening-report-cost-estimation-enhancement-plan.md](plans/2026-08-23-opening-report-cost-estimation-enhancement-plan.md) | [开题归档](../opening/README.md) |
 | [2026-08-23-opening-report-minimal-figure-corrections.md](plans/2026-08-23-opening-report-minimal-figure-corrections.md) | [开题归档](../opening/README.md) |
 
-## 保留原路径的记录
+## 已完成的结构迁移
 
-[代码结构迁移计划](../../../code/ARCHITECTURE_REFACTOR_PLAN.md)被历史 source manifest 以原路径和摘要记录，
-因此继续留在 `code/`；当前结构看[代码说明](../../../code/README.md)。
+[代码结构迁移记录](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/ARCHITECTURE_REFACTOR_PLAN.md)
+从固定提交恢复，历史 source manifest 的原路径和摘要保留。当前结构看[代码说明](../../../code/README.md)。
 
 当前研究方向看[项目总纲](../../../PROJECT_OUTLINE.md)，实验结果看[证据台账](../../../experiments/results/EXPERIMENT_EVIDENCE_REGISTRY.md)。
 

@@ -266,10 +266,10 @@ stores structured PostgreSQL/Ray/endpoint clean-state checks plus lossless K/W o
 offline summary cannot alter the sealed negative formal decision. This infrastructure is locally
 tested but has not been run on the powered-off GPU server.
 
-全项目代码分层、文本/图像模态边界与已完成的迁移记录见
-[`ARCHITECTURE_REFACTOR_PLAN.md`](ARCHITECTURE_REFACTOR_PLAN.md)。`src/` 的职责分层、
-文本/图像模态隔离、baseline 分层、旧兼容入口清理，以及 metrics、model backend、
-shared-vLLM 三个大文件的语义拆分，以及 scripts/tests 镜像整理已合入 `main`。
+代码职责与依赖方向见[实现规则](AGENTS.md)和下方目录，主要依赖由
+[架构测试](tests/architecture/test_architecture_boundaries.py)检查。
+2026-08-03 已完成的路径迁移过程见
+[固定提交记录](https://github.com/3444374/ai-operator-execution-optimization/blob/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/ARCHITECTURE_REFACTOR_PLAN.md)。
 
 本目录存放可以迁移到正式课题工程的代码。一次性 benchmark 仍放在 `code/scripts/benchmarks/` 或 `code/scripts/benchmarks/`。
 
@@ -989,12 +989,10 @@ Chat Completions workload 与结果契约。vLLM Bench 是下游上限，不属�
 算子；bounded HTTP 是强因果对照，不冒充已有产品；OceanBase 缺少 AI Function
 能力时记为 capability failure，不阻塞 bounded HTTP 与官方 runtime 主矩阵。
 
-开题前的两个文本证据缺口使用 `scripts/baselines/opening_database_e2e_matrix.py`。
-它只运行 direct static sharded、DuckDB AI static sharded 和 project fixed static
-三臂，统一 PostgreSQL source、immutable manifest、双 endpoint、数据库 sink、质量与
-资源口径，并按确定性随机顺序执行 1 warmup + 3 formal；当时的实验条件记录在
-`../experiments/plans/archive/开题三路径对照_20260807.md`。该 runner 不作为新增
-通用 baseline 框架，也不允许加入 adaptive arm 或参数扫描。
+已结束的开题三路径矩阵及专用汇总器已退役，复算使用
+[固定历史源码](https://github.com/3444374/ai-operator-execution-optimization/tree/b8b5f3d11576e4c06953e38732fdd3d010807a85/code/scripts)。
+当时的实验条件见[开题三路径记录](../experiments/plans/archive/开题三路径对照_20260807.md)，
+原始结果及失败记录继续保留。当前可运行入口见 [scripts/README.md](scripts/README.md)。
 
 `src/baselines/text/orchestration/native_matrix.py` 在运行前记录并固定每臂校准指纹后，
 复用 core gate 执行原生文本框架的 1 warmup + N 交错 formal；它不复制
