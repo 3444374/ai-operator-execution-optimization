@@ -375,6 +375,9 @@ PostgreSQL image source
 - Project bounded-ready FIFO/DRR/VTC-style/strict-priority/guarded-debt matched controls 与
   single-head→bounded-ready FIFO observation bridge 已接入 readiness、runner、无损 ledger 和
   双轮汇总；这些是 Project 实现的算法 controls，不是 Daft/Ray/vLLM 原生 baseline。
+- 未运行的官方 S-LoRA FCFS/VTC 与四臂跨层原型已退役；源码和模板见
+  [固定提交](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe)。
+  安装源码审计与 native readiness 保留；这两组原型没有真实模型比较资格。
 - 新增 `BoundedStageWorkController` 纯策略候选：仅在离线校准的离散 work-credit
   集合内单步升降，观测 stale、stage 缺失或 calibration signature 不一致时回退
   workload-specific frozen-static。尚未接入 runner，也没有性能收益 claim。

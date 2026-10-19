@@ -27,15 +27,16 @@ For the current multi-Job comparison:
 - `native_system_matched.py` owns authorization and cell orchestration;
   `native_system_summary.py` revalidates sealed evidence and produces only the
   five-arm system, per-Job, and resource tables.
-- `official_vtc_capability.py` is a separate, non-running official S-LoRA
-  FCFS/VTC capability contract. It never enters the five-arm ranking.
-- `cross_layer_scheduler_capability.py` defines the separate four-arm SAOR
-  versus DRR/VTC-on-vLLM complete-system capability and evidence boundary.
-- `in_engine_scheduler_logic.py` is the dependency-free FCFS/DRR/VTC semantic
-  oracle; `vllm_0251_source_audit.py` hashes the actual frozen install and can
-  pass only against frozen expected distribution/source SHA values, while
-  `vllm_scheduler_plugin.py` exposes a custom-FCFS parity class and deliberately
-  blocked DRR/VTC reproduction class paths.
+- `vllm_0251_source_audit.py` checks the installed distribution and source hashes
+  for native readiness. Its three source-identity tests remain in
+  `test_vllm_0251_source_audit.py`.
+
+The unexecuted official S-LoRA FCFS/VTC and four-arm cross-layer prototypes,
+including their plugin and pure policy oracle, have been retired. Their complete
+sources and templates remain at the
+[fixed historical commit](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe).
+Runtime compatibility, Job identity transport, and custom-FCFS qualification
+were incomplete; they provide no model comparison or performance qualification.
 
 Historical Project FIFO/DRR/VTC-style/strict-priority modules and evidence stay
 available for internal attribution, but they are not native system baselines and
