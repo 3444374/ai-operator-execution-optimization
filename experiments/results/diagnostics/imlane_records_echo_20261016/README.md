@@ -1,5 +1,7 @@
 # IMLane 多行记录与资源责任检查
 
+后续新 helper／v2 桥及普通 Filter 的[作者 CPython 无模型实测](../imlane_filter_author_cpu_20261019/README.md)另存；本文原 10scope 的来源与归档保持，不回填新结果。
+
 本轮完成独立无模型记录桥：实际作者 DBEnd → Coordinator → Lane → 一个 CPython executor →
 多行 Arrow 输出。研究对象为 AI 语义算子的数据执行；这里是独立 DBEnd 记录桥，
 为新增数据执行主链提供接入依据，不提供模型、SQL、质量、吞吐或 GPU 资格。

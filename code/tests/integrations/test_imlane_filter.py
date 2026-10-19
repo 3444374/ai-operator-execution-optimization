@@ -256,6 +256,13 @@ class FilterTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 IMLaneEngineProcess(model_environment={"CUDA_VISIBLE_DEVICES": "0"})
 
+    def test_cpu_fixture_uses_explicit_interpreter_in_an_embedded_author_worker(self):
+        from tests.integrations.imlane_filter_fixture import FixedEngineProcess
+        engine = EngineSpec(**dict(self.config["engine"], model_python="/explicit/cpu/bin/python"))
+        fixture = FixedEngineProcess.__new__(FixedEngineProcess)
+        with patch.object(sys, "executable", "/embedding/author-executor"):
+            self.assertEqual(fixture._command(engine, 7)[0], engine.model_python)
+
     def test_unknown_after_possible_acceptance_keeps_digest_and_never_invents_usage(self):
         class Unknown(FixedEngine):
             def run_prepared(self, rows):

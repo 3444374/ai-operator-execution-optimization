@@ -1,0 +1,321 @@
+{
+  "schema": "imlane.filter.author.cpu.qualification.v1",
+  "date": "2026-10-19",
+  "passed": true,
+  "runtime": "author CPython",
+  "source_commit": "0190e8cd67a0cfdfeda7f2c8731e80c6dca99633",
+  "source_archive_sha256": "59df0c8b35ff68168560f5c5daa1ba99c8d7e8afdcebe363a7f93ba449b9489f",
+  "source_files": 1008,
+  "fixture_overlay_sha256": "c9fdb90d39665549b45c977aed3835f0cdf4c2128352322f31d35f1560ab60f3",
+  "author_commit": "072f8257db80569e42c9f5727d839587df529652",
+  "author_scheduling_changed": false,
+  "public_cli_changed": false,
+  "shared_engine_changed": false,
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "ray_runtime_started": false,
+  "versions": {
+    "python": "3.12.3",
+    "author_arrow": "16.1.0",
+    "driver_arrow": "24.0.0",
+    "lotus-ai": "1.2.4",
+    "litellm": "1.95.0",
+    "openai": "2.50.0",
+    "imxx": "0.0.1",
+    "ray_shutdown_dependency": "2.56.1"
+  },
+  "cpp": {
+    "negative_output_cases": 9,
+    "future_exception_consumed_once": true,
+    "owned_output_survived_mutation": true,
+    "v2_known_failure_usage_delivered": true,
+    "binaries": {
+      "records_checks": "a5a0c93212d09db4ad78bcb9aa091dc8db34e98a78c4640317add42803f0f563",
+      "imlane_records": "47965041d045f4bda14e5a32047267890ad3782e69eab3457545bed13a3229d3"
+    }
+  },
+  "echo": {
+    "qualification_scopes": 7,
+    "healthy_normal_exit_scopes": 1,
+    "fault_owner_stopped_scopes": 6,
+    "healthy_physical_blocks": 4,
+    "healthy_rows": 7,
+    "max_pending": 2,
+    "worker_instances": 1,
+    "native_retained_output_checks": 3,
+    "query_isolation": true,
+    "input_rejection_cases": 10,
+    "repeated": false
+  },
+  "filter": {
+    "qualification_scopes": 2,
+    "model_lifetime": "one CPU fixture engine per query owner",
+    "prepare_batch_rows": 1,
+    "model_batch_rows": 1,
+    "max_pending": 2,
+    "queries": [
+      {
+        "status": "completed",
+        "result": {
+          "positive_review_cnt": 0
+        },
+        "counts": {
+          "expected": 2,
+          "recorded": 2,
+          "missing": 0,
+          "succeeded": 2,
+          "failed": 0,
+          "unknown": 0,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0
+        },
+        "usage": {
+          "prompt_tokens": 10,
+          "known_prompt_tokens": 10,
+          "unknown_prompt_tokens_calls": 0,
+          "completion_tokens": 4,
+          "known_completion_tokens": 4,
+          "unknown_completion_tokens_calls": 0,
+          "total_tokens": 14
+        },
+        "original_evaluator_errors": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "classification": {
+          "true_positive": 0,
+          "false_positive": 0,
+          "true_negative": 2,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 2,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "engine_calls_at_close": 2
+      },
+      {
+        "status": "completed",
+        "result": {
+          "positive_review_cnt": 0
+        },
+        "counts": {
+          "expected": 2,
+          "recorded": 2,
+          "missing": 0,
+          "succeeded": 2,
+          "failed": 0,
+          "unknown": 0,
+          "submission_confirmed": 2,
+          "submission_unconfirmed": 0
+        },
+        "usage": {
+          "prompt_tokens": 10,
+          "known_prompt_tokens": 10,
+          "unknown_prompt_tokens_calls": 0,
+          "completion_tokens": 4,
+          "known_completion_tokens": 4,
+          "unknown_completion_tokens_calls": 0,
+          "total_tokens": 14
+        },
+        "original_evaluator_errors": {
+          "relative_error": 0.0,
+          "absolute_error": 0.0,
+          "mean_absolute_percentage_error": 0.0
+        },
+        "classification": {
+          "true_positive": 0,
+          "false_positive": 0,
+          "true_negative": 2,
+          "false_negative": 0,
+          "invalid": 0,
+          "evaluated_rows": 2,
+          "missing_rows": 0,
+          "count_error_from_classifications": 0
+        },
+        "engine_calls_at_close": 2
+      }
+    ],
+    "distinct_engine_uid": true,
+    "normal_cleanup": true
+  },
+  "mixed": {
+    "qualification_scopes": 1,
+    "counts": {
+      "expected": 4,
+      "recorded": 4,
+      "missing": 0,
+      "succeeded": 3,
+      "failed": 1,
+      "unknown": 0,
+      "submission_confirmed": 4,
+      "submission_unconfirmed": 0
+    },
+    "usage": {
+      "prompt_tokens": 20,
+      "known_prompt_tokens": 20,
+      "unknown_prompt_tokens_calls": 0,
+      "completion_tokens": 8,
+      "known_completion_tokens": 8,
+      "unknown_completion_tokens_calls": 0,
+      "total_tokens": 28
+    },
+    "same_source_distinct_call_index": [
+      0,
+      1
+    ],
+    "expected_error_type": "FixtureFinishedError",
+    "all_terminals_recorded_before_consumer_failure": true,
+    "original_consumer_failure_verified": true,
+    "normal_cleanup": true
+  },
+  "final_resources": {
+    "namespaces": 12,
+    "observed_pid_birth_identities": 43,
+    "active_owned": 0,
+    "unknown": 0,
+    "exited_process_metadata": 0,
+    "namespace_shm_objects": 0,
+    "host_lease_exists": false,
+    "gpu_memory_mib": 1,
+    "gpu_compute_processes": 0
+  },
+  "resource_limits": {
+    "cpus": 8,
+    "author_executors_per_scope": 1,
+    "rss_stop_threshold_bytes": 8589934592,
+    "shm_stop_threshold_bytes": 2147483648,
+    "sampling_is_not_a_hard_memory_limit": true
+  },
+  "method_copy": {
+    "bytes": 5648764639,
+    "network_downloads": 0,
+    "shared_environment_modified": false,
+    "physical_copy_sha256_and_inode_checked": true,
+    "ray_needed_for_cpython_shutdown": true,
+    "ray_initialized": false,
+    "package_files": 34082
+  },
+  "failures_retained": [
+    {
+      "phase": "source upload",
+      "cause": "file count used as mapping; finished validation before runtime"
+    },
+    {
+      "phase": "method copy r1",
+      "cause": "redacted log path used for action; replaced with installed-distribution lookup",
+      "lease_released": true
+    },
+    {
+      "phase": "author Filter r1",
+      "cause": "missing public imxx bootstrap package",
+      "known_cpu_fixture_terminals": 0,
+      "resources_confirmed": true,
+      "normal_exit": false
+    },
+    {
+      "phase": "author Filter r2",
+      "cause": "missing Ray import for unconditional author CPython shutdown",
+      "known_cpu_fixture_terminals": 2,
+      "known_usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 4
+      },
+      "resources_confirmed": true,
+      "normal_exit": false
+    }
+  ],
+  "cpu_fixture_budget": {
+    "successful_scopes_reserved_calls": 8,
+    "failed_prior_scope_known_terminals": 2,
+    "total_author_cpu_fixture_terminals": 10,
+    "reservation_records_retained": true,
+    "retry_real_model_requests": false
+  },
+  "artifacts": {
+    "echo-run/report.json": {
+      "archived_sha256": "067d935de3a8b18cb1be5b6b7e7b461d86768f3ba9d0a13f0c616835a50ae6b3",
+      "remote_source_sha256": "067d935de3a8b18cb1be5b6b7e7b461d86768f3ba9d0a13f0c616835a50ae6b3"
+    },
+    "filter-run-r3/report.json": {
+      "archived_sha256": "eebb3efb0a2450bdc8f8e255fb81ed9af231156b55b864a5d500eb9159721502",
+      "remote_source_sha256": "eebb3efb0a2450bdc8f8e255fb81ed9af231156b55b864a5d500eb9159721502"
+    },
+    "mixed-run-r3/report.json": {
+      "archived_sha256": "dcf3a5961ae3f9d73bc6d25b6c841609d90ba78d3034442b14d871d09f3194aa",
+      "remote_source_sha256": "dcf3a5961ae3f9d73bc6d25b6c841609d90ba78d3034442b14d871d09f3194aa"
+    },
+    "independent-postscan.json": {
+      "archived_sha256": "5fc065e4e959500a0f15656f9b2615fad77e435006d15ef2b792c159c6b1a00c",
+      "remote_source_sha256": "5fc065e4e959500a0f15656f9b2615fad77e435006d15ef2b792c159c6b1a00c"
+    },
+    "method-runtime-v4-report.json": {
+      "archived_sha256": "fbcee5fd9e583ae56ae3ef7f80a24ee7b0226c4c94916364f4d69e803dc2d073",
+      "remote_source_sha256": "fbcee5fd9e583ae56ae3ef7f80a24ee7b0226c4c94916364f4d69e803dc2d073"
+    },
+    "method-copy-receipt-r4.json": {
+      "archived_sha256": "ae758cb17841d238f78160b7c1c24eb6f1c98eb08135470f574713b15dbfcd2f",
+      "remote_source_sha256": "ae758cb17841d238f78160b7c1c24eb6f1c98eb08135470f574713b15dbfcd2f"
+    },
+    "bin/imlane_records.build.json": {
+      "archived_sha256": "7109ed95af1c9554e674f59b5325d182585035cc0d23ce675ff226e78c20f7d6",
+      "remote_source_sha256": "7109ed95af1c9554e674f59b5325d182585035cc0d23ce675ff226e78c20f7d6"
+    },
+    "bin/records_checks.build.json": {
+      "archived_sha256": "98a2ca1770f13762211e0cc1a412a2ce3137f77b234a9fda2734b7a2de96e271",
+      "remote_source_sha256": "98a2ca1770f13762211e0cc1a412a2ce3137f77b234a9fda2734b7a2de96e271"
+    }
+  },
+  "source_files_sha256": {
+    "code/integrations/imlane_records/build.py": "5f066686fc6d85489a5be0ec2aa4e27cf7d62722b6fc41cd23a57b96f4e08607",
+    "code/integrations/imlane_records/client.py": "4b1525eafeba4d9868197530952dc53e7f8b9dc664e04611c6bae6c9e2e27a43",
+    "code/integrations/imlane_records/echo_udf.py": "d605e9d8e5253c17ac08eda52dbd2bfb4dcada4157197b8ad6f5a90d58cf14d7",
+    "code/integrations/imlane_records/filter_host.py": "5e03eafe6804f888418ec33f752e78c25cd743648fe8397123d1e24e75e1302d",
+    "code/integrations/imlane_records/filter_udf.py": "e9b021133e2c056c05350f485badda800b755b8ad9828e2d029e99455f20eb96",
+    "code/integrations/imlane_records/filter_workload.py": "a64fd2e3b89dedd49b4e13108a1a628f93dc8d6824d7c7fa126f447edc849faa",
+    "code/integrations/imlane_records/imlane_records.cpp": "e0102edcb883e3159510362fecb80967d112bbd782473e97c003bb655dcfe8be",
+    "code/integrations/imlane_records/model_process.py": "fefd5938d542393359b2dadd3888d0045b7627ea5ec584bf22d19de4dd92fc80",
+    "code/integrations/imlane_records/owner.py": "c87e5d846ddcc63a59a9e6fb8ac6daaf601e09d142095f10d08d1742c7f45879",
+    "code/integrations/imlane_records/record_dbend_adapter.hpp": "f606760a61845ea7b98f69bfd41a413279e8b9eef349511e3d6f7f4c83ad9e16",
+    "code/integrations/imlane_records/records_checks.cpp": "2e5f3813ae94909d8e7e75d2407e85c4d2d2dea83e70fc8f40a2148328c041a9",
+    "code/integrations/imlane_records/verify.py": "2be60225f8a27eb0f0acf609c687264db4bb22eb09e594e8a296164b227a09cd",
+    "code/integrations/imlane_records/verify_filter.py": "7147edf6207d76ae3e0ec21a89957d6431b547c58f206c6e7726c7ff713450c2"
+  },
+  "fixture_sources_sha256": {
+    "code/tests/integrations/imlane_filter_fixture.py": "135cdc3edad580ac23d297ca5c2c502ad50be8e42388fe4246a91fe706611132",
+    "code/tests/integrations/test_imlane_filter.py": "afeb185c00d946767016a69ae74599c11d7ceebf3e7195d4d4b614fb5320e515"
+  },
+  "review": {
+    "protocol": {
+      "accepted": true,
+      "archive_hash_and_all_members_verified": true,
+      "source_archive_overlay_binaries_verified": true,
+      "scope": "actual author CPython/no-model; no real model claim"
+    },
+    "resources": {
+      "accepted": true,
+      "final_filter_scopes_normal_exit": true,
+      "fault_scopes_classified_separately": true,
+      "postscan_verified": true
+    },
+    "remaining_blockers": []
+  },
+  "archive": {
+    "name": "imlane-author-cpu-20261019-evidence.tgz",
+    "sha256": "67ea2908ca1cf46547a095dc20c7abb12fcee416a4e161676c3075aefb071c95",
+    "bytes": 7786451,
+    "members": 146,
+    "archived_file_hashes_verified": 145,
+    "dependency_copies_excluded": true,
+    "raw_failures_retained_on_host": true
+  },
+  "pending": [
+    "owner-integrated current Filter contract and shared close protocol",
+    "real local model two-query and independent GPU lifecycle",
+    "author Ray explicit GPU/environment/model-owner assembly",
+    "author-v2 partial unknown usage and active model failure/cancellation",
+    "cross-query same-engine reuse and multiple-executor throughput"
+  ],
+  "branch": "feat/imlane-local-filter"
+}

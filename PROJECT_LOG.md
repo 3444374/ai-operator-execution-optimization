@@ -1,5 +1,10 @@
 # 项目日志
 
+## 2026-10-19：完成 IMLane 作者 CPython 无模型资格
+
+按集成owner的Daft后CPU窗口，新编译执行C++9输出反例／v2已知usage检查，完成新helper的7echo、两独立普通Q3查询及四行部分失败scope；原parser／COUNT／SemBench evaluator、发生项身份和正常关闭通过。固定CPU响应的最终两query各COUNT0、usage10/4，mixed3成功1失败先入账20/8；不是模型质量或GPU资格。
+独立方法副本保持Python3.12／Arrow16.1，逐文件SHA/inode核对；补齐作者公开imxx与CPython关闭所需Ray基础依赖，未启动Ray、下载软件或改共享环境。两次作者依赖失败及准备失败保留，未弱化正常退出门；六echo故障的监督清理也与正常退出分列。末次12namespace／43PID出生身份无残留、SHM空、lease释放、GPU1MiB空compute；证据封存并交回窗口，模型和作者Ray待owner另验。README一致性补丁按实测调整，完整[报告与原件摘要](experiments/results/diagnostics/imlane_filter_author_cpu_20261019/README.md)单列。
+
 ## 2026-10-19：实现 IMLane 普通 Filter 接线与 CPU 资格
 
 职责分支 `feat/imlane-local-filter` 从集成c0be45dd建立，按计划与交接复用原Filter方法／engine／parser／账本／评价，新增可逆身份、显式v2逐项终态与私有模型进程接线；默认echo合同、公共CLI与作者调度保留。每query独立owner／engine，跨query模型复用不在本次资格。

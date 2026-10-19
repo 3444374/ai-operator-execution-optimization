@@ -1,7 +1,10 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane 作者 CPython 无模型资格](diagnostics/imlane_filter_author_cpu_20261019/README.md)。
+新C++实际检查与7echo、两独立Q3 owner、四行部分失败scope通过；正常关闭与故障监督清理分列，12namespace／43PID出生身份末次无残留、lease释放。固定CPU响应／usage只验证传输、原方法和资源责任；真实模型、GPU生命周期及作者Ray未验证，失败原件与固定源SHA保留。
+
 2026-10-19：[IMLane 普通 Filter CPU 接线](diagnostics/imlane_filter_cpu_20261019/README.md)。
-职责分支从c0be45dd独立实现显式v2逐项终态、原方法与可逆身份、私有模型子进程及Lane关闭接线；104项CPU（65方法／owner／进程＋39独立engine）通过，Spec／资源两独审接受。合成CSV／固定响应只验证原方法及原评价，不代表模型质量或作者ABI；指定既有SSH socket缺失，C++／作者CPython／Arrow16方法副本／GPU与作者Ray仍pending，真实模型请求0。每查询独立owner／engine，未改公共CLI、shared engine或作者调度。
+职责分支从c0be45dd独立实现显式v2逐项终态、原方法与可逆身份、私有模型子进程及Lane关闭接线；104项CPU（65方法／owner／进程＋39独立engine）通过，Spec／资源两独审接受。该提交时既有通道缺失的快照保留，作者后续实测另见上条；合成CSV／固定响应不代表模型质量或作者ABI。每查询独立owner／engine，未改公共CLI、shared engine或作者调度。
 
 2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
 职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。

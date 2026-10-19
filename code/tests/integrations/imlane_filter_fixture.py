@@ -8,7 +8,7 @@ from src.baselines.text.frameworks.daft_engine_process import EngineProcess
 
 class FixedEngineProcess(EngineProcess):
     def _command(self, engine, result_fd):
-        return [sys.executable, "-m", __name__, str(result_fd),
+        return [engine.model_python, "-m", __name__, str(result_fd),
                 os.environ.get("IMLANE_FILTER_FIXTURE", "normal")]
 
 

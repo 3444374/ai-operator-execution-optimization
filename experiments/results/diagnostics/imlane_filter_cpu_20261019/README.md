@@ -1,5 +1,8 @@
 # IMLane 普通 Filter 的 CPU 接线资格
 
+本页保留 `0190e8cd` 提交时的本机 CPU 快照与当时通道阻塞；后续指定通道恢复后的
+[作者 C++／CPython 无模型实测](../imlane_filter_author_cpu_20261019/README.md)单列，不改变本页原件身份。真实模型和作者 Ray 仍待验。
+
 职责分支 `feat/imlane-local-filter` 从 `integration/data-execution@c0be45dd1278163a9e1e612694ff9752cfb433e0`
 独立建立。实现与验收映射见[模块 README](../../../../code/integrations/imlane_records/README.md#普通-filter-v2cpu-资格作者实机待验)，
 依据为[Filter 计划](../../../plans/数据组织.md#lotus-filter-data-execution)及

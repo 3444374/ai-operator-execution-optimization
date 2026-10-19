@@ -1,6 +1,8 @@
 # Feasibility Results
 
-[IMLane 普通 Filter CPU 接线](imlane_filter_cpu_20261019/README.md)：原方法、可逆身份、v2逐项终态与模型进程责任的104项CPU检查；作者C++／CPython实机及GPU因既有通道缺失待验。
+[IMLane 作者 CPython 无模型资格](imlane_filter_author_cpu_20261019/README.md)：新C++、独立Arrow16方法副本、7echo、两个普通Q3 owner与四行部分失败实测；12namespace／43PID出生身份末次无残留，失败原件保留。真实模型／GPU与作者Ray待验。
+
+[IMLane 普通 Filter CPU 接线](imlane_filter_cpu_20261019/README.md)：原方法、可逆身份、v2逐项终态与模型进程责任的104项CPU快照；后续作者实机单列于上条，不回填旧来源。
 
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
