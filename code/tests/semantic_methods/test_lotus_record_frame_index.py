@@ -145,6 +145,63 @@ class FrameIndexTests(unittest.TestCase):
                 self.assertEqual(records, saved)
 
 
+class EmptyFramePrototypeTests(unittest.TestCase):
+    def test_empty_prototype_preserves_complete_schema_without_mutation(self):
+        prototype = pd.DataFrame({
+            "body": pd.Series([], dtype="string"),
+            "amount": pd.Series([], dtype="Int64"),
+            "kind": pd.Series(pd.Categorical([], categories=["b", "a"], ordered=True)),
+            "derived0": pd.Series([], dtype="float64"),
+        }, index=pd.Index([], dtype="int32", name="source-label"))
+        prototype.columns.name = "business-fields"
+        before = prototype.copy(deep=True)
+        actual = records_to_frame([], empty_prototype=prototype)
+        pd.testing.assert_frame_equal(actual, before)
+        self.assertIsNot(actual, prototype)
+        actual["derived0"] = actual["derived0"].astype(object)
+        pd.testing.assert_frame_equal(prototype, before)
+
+    def test_explicit_source_index_overrides_only_prototype_index(self):
+        prototype = pd.DataFrame({"derived0": pd.Series([], dtype="float64")})
+        source_index = pd.Index([17, 18, 17], dtype="uint64", name="input-label")
+        actual = records_to_frame([], columns=["derived0"], source_index=source_index,
+                                  empty_prototype=prototype)
+        expected = prototype.copy(deep=True)
+        expected.index = source_index[:0]
+        pd.testing.assert_frame_equal(actual, expected)
+        pd.testing.assert_index_equal(prototype.index, pd.RangeIndex(0))
+
+    def test_prototype_requires_an_empty_frame_with_unique_string_columns(self):
+        for value, error in (
+            ({"body": "object"}, TypeError),
+            (pd.DataFrame({"body": ["not-empty"]}), ValueError),
+            (pd.DataFrame(columns=["body", "body"]), ValueError),
+            (pd.DataFrame(columns=[1]), ValueError),
+            (pd.DataFrame(index=pd.MultiIndex.from_tuples([], names=["a", "b"])), TypeError),
+        ):
+            with self.subTest(value_type=type(value).__name__), self.assertRaises(error):
+                records_to_frame([], empty_prototype=value)
+
+    def test_explicit_empty_columns_must_match_the_prototype_in_order(self):
+        prototype = pd.DataFrame(columns=["body", "derived0"])
+        for columns in (["body"], ["derived0", "body"], ["body", "derived0", "other"]):
+            with self.subTest(columns=columns), self.assertRaisesRegex(ValueError, "columns"):
+                records_to_frame([], columns=columns, empty_prototype=prototype)
+
+    def test_nonempty_records_keep_inference_and_actual_extract_keys(self):
+        records = [RecordOccurrence("row-0", 0, 17,
+                                    {"body": "text", "derived0": "generated", "": "extra"})]
+        prototype = pd.DataFrame({"body": pd.Series([], dtype="string"),
+                                  "derived0": pd.Series([], dtype="float64")})
+        before = prototype.copy(deep=True)
+        actual = records_to_frame(records, empty_prototype=prototype)
+        expected = records_to_frame(records)
+        pd.testing.assert_frame_equal(actual, expected)
+        self.assertEqual(actual.loc[17, "derived0"], "generated")
+        self.assertEqual(actual.loc[17, ""], "extra")
+        pd.testing.assert_frame_equal(prototype, before)
+
+
 class OriginalLotusFilterIndexTests(unittest.TestCase):
     def setUp(self):
         import lotus
@@ -215,6 +272,42 @@ class OriginalLotusFilterIndexTests(unittest.TestCase):
         self.assertEqual(native_calls, [])
         self.assertEqual(chain_calls, [])
         self.assertEqual(result["calls"], [])
+
+    def test_empty_map_prototype_matches_original_new_and_overwritten_columns(self):
+        import lotus
+
+        for output_column in ("derived0", "reviewText"):
+            with self.subTest(output_column=output_column):
+                source = source_frame(pd.Index([], dtype="int32", name="empty-map"))
+                before = source.copy(deep=True)
+                method = LotusRecordMethod(StageSpec("map", MapMethod(MODEL, "Summarize {reviewText}"),
+                    GenerationSpec(max_tokens=64, stop=())).bind())
+                seen = []
+
+                def empty(data, *_args, **_kwargs):
+                    seen.extend(data)
+                    self.assertEqual(data, [])
+                    return []
+
+                method.lm._process_uncached_messages = empty
+                with lotus.settings.context(lm=method.lm):
+                    expected = source.sem_map("Summarize {reviewText}", suffix=output_column)
+                actual = records_to_frame([], columns=expected.columns, source_index=source.index,
+                                          empty_prototype=expected)
+                pd.testing.assert_frame_equal(actual, expected)
+                self.assertEqual(str(actual[output_column].dtype), "float64")
+                self.assertEqual(seen, [])
+                pd.testing.assert_frame_equal(source, before)
+
+    def test_empty_filter_prototype_preserves_source_extension_column_dtype(self):
+        source = source_frame(pd.Index([], dtype="int32", name="empty-filter"))
+        source["reviewText"] = source["reviewText"].astype("string")
+        source["business-count"] = pd.Series([], dtype="Int64", index=source.index)
+        expected, seen = self.original_filter(source, [])
+        actual = records_to_frame([], columns=expected.columns, source_index=source.index,
+                                  empty_prototype=expected)
+        pd.testing.assert_frame_equal(actual, expected)
+        self.assertEqual(seen, [])
 
     def test_all_false_fme_never_calls_map_or_extract_and_preserves_inputs(self):
         source = source_frame(pd.Index([1, 14, 1], dtype="int64", name="fme-label"))
