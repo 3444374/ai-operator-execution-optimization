@@ -186,30 +186,32 @@ class RecordsActorOwner:
             raise
 
     def close(self) -> dict[str, Any]:
-        """Retry API closure; actor kill requests never prove physical GPU exit."""
+        """Close the API/request scope; OS and GPU exit need independent observation."""
 
         self._closing = True
         errors = []
-        if self.model_actor is not None and not (
+        if self.model_actor is not None and (
             self._model_close_report or {}
-        ).get("engine_api_shutdown_confirmed"):
+        ).get("engine_api_shutdown_confirmed") is not True:
             try:
                 if self._model_close_ref is None:
                     self._model_close_ref = self.model_actor.close.remote(10.0)
-                deadline = time.monotonic() + min(10.0, self.resources.startup_timeout_s)
+                # API shutdown has its own ten-second window. Startup limits
+                # cannot truncate it; allow one second for the Ray round trip.
+                deadline = time.monotonic() + 11.0
                 report = self.wait_ready(self._model_close_ref, deadline)
                 self._model_close_ref = None
                 if type(report) is not dict:
                     raise ValueError("model close must return a compact report")
                 self._model_close_report = report
-                if not report.get("engine_api_shutdown_confirmed"):
+                if report.get("engine_api_shutdown_confirmed") is not True:
                     errors.append("model_engine_shutdown_unconfirmed")
             except BaseException as exc:
                 if not isinstance(exc, TimeoutError):
                     self._model_close_ref = None
                 errors.append("model_close: " + type(exc).__name__)
         actors = list(self.prepare_actors)
-        if (self._model_close_report or {}).get("engine_api_shutdown_confirmed"):
+        if (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True:
             actors.append(self.model_actor)
         for actor in actors:
             if id(actor) in self._killed:
@@ -220,20 +222,22 @@ class RecordsActorOwner:
             except BaseException as exc:
                 errors.append("actor_kill_request: " + type(exc).__name__)
         empty = self.model_actor is None
-        gpu_exit = True if empty else (self._model_close_report or {}).get("gpu_exit_confirmed")
+        # An actor reply and ray.kill acknowledge requests, not physical exit.
+        gpu_exit = True if empty else None
         owned_actors = list(self.prepare_actors)
         if self.model_actor is not None:
             owned_actors.append(self.model_actor)
         actors_requested = all(id(actor) in self._killed for actor in owned_actors)
-        settled = not errors and actors_requested and (empty or bool(
-            (self._model_close_report or {}).get("engine_api_shutdown_confirmed")
-        )) and gpu_exit is True
+        settled = not errors and actors_requested and (empty or (
+            (self._model_close_report or {}).get("engine_api_shutdown_confirmed") is True
+        ))
         self.last_close_report = {
             "status": "closed" if settled else "unknown",
-            "cleanup_scope": "ray_actor_and_engine_api",
+            "cleanup_scope": "ray_actor_kill_requests_and_engine_api",
             "model_ready": self.model_ready,
             "engine_close_report": self._model_close_report,
             "gpu_exit_confirmed": gpu_exit,
+            "process_exit_confirmed": True if empty else None,
             "actor_kill_requests_confirmed": actors_requested,
             "model_actor_handle_retained": self.model_actor is not None,
             "cleanup_errors": errors,

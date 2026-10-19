@@ -255,7 +255,7 @@ class StaticRecordsTests(unittest.TestCase):
         self.assertTrue(all(event[2][0].tag == "_PrepareActor.prepare" for event in submitted))
         self.assertEqual(stream.last_close_report["status"], "closed")
         self.assertFalse(report["production_core_connected"])
-        self.assertEqual(report["status"], "unknown")
+        self.assertEqual(report["status"], "closed")
         self.assertIsNone(report["gpu_exit_confirmed"])
         actors = [event for event in events if event[0] == "actor"]
         self.assertEqual(actors[-1][2]["num_gpus"], 1)
@@ -372,7 +372,7 @@ class StaticRecordsTests(unittest.TestCase):
         self.assertEqual(set(report), {
             "implementation", "production_core_connected", "status", "cleanup_scope", "model_ready",
             "engine_close_report", "gpu_exit_confirmed", "actor_kill_requests_confirmed",
-            "model_actor_handle_retained", "last_query_report", "cleanup_errors",
+            "model_actor_handle_retained", "last_query_report", "cleanup_errors", "process_exit_confirmed",
         })
 
     def test_actor_closure_does_not_overwrite_static_query_report(self):
@@ -399,7 +399,7 @@ class StaticRecordsTests(unittest.TestCase):
         self.assertEqual(engines[0].close_calls, 2)
         self.assertTrue(second["engine_close_report"]["engine_api_shutdown_confirmed"])
         self.assertTrue(any(event[:2] == ("kill", "_ModelActor") for event in events))
-        self.assertEqual(second["status"], "unknown")
+        self.assertEqual(second["status"], "closed")
 
     def test_early_close_preserves_pending_ownership_and_blocks_reuse(self):
         stack, events, _, _ = self._runtime()

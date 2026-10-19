@@ -325,9 +325,42 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             self.assertTrue(second["engine_close_report"]["engine_api_shutdown_confirmed"])
             self.assertTrue(second["actor_kill_requests_confirmed"])
             self.assertIsNone(second["gpu_exit_confirmed"])
-            self.assertEqual(second["status"], "unknown")
+            self.assertIsNone(second["process_exit_confirmed"])
+            self.assertEqual(second["status"], "closed")
             owner.close()
             self.assertEqual(runtime.engines[0].closes, 2)
+
+    def test_confirmed_api_and_kill_requests_close_only_the_declared_scope(self):
+        with FakeRuntime() as runtime:
+            owner = self.owner(startup_timeout_s=0.1)
+            owner.start(time.monotonic() + 3)
+            wait = owner.wait_ready
+            with patch.object(owner, "wait_ready", wraps=wait) as waiting:
+                started = time.monotonic()
+                report = owner.close()
+            self.assertEqual(report["status"], "closed")
+            self.assertEqual(report["cleanup_scope"], "ray_actor_kill_requests_and_engine_api")
+            self.assertIsNone(report["gpu_exit_confirmed"])
+            self.assertIsNone(report["process_exit_confirmed"])
+            self.assertTrue(report["actor_kill_requests_confirmed"])
+            self.assertGreaterEqual(waiting.call_args.args[1] - started, 10.5)
+            close_calls = [event for event in runtime.events
+                           if event[:2] == ("submit", "_ModelActor.close")]
+            self.assertEqual(close_calls[0][2], (10.0,))
+
+    def test_truthy_api_values_never_confirm_shutdown_or_permit_model_kill(self):
+        for value in (1, "true", [], None):
+            with self.subTest(value=value), FakeRuntime(close_reports=[dict(
+                engine_api_shutdown_confirmed=value, gpu_exit_confirmed=True,
+            )]) as runtime:
+                owner = self.owner()
+                owner.start(time.monotonic() + 3)
+                report = owner.close()
+                self.assertEqual(report["status"], "unknown")
+                self.assertIn("model_engine_shutdown_unconfirmed", report["cleanup_errors"])
+                self.assertIsNone(report["gpu_exit_confirmed"])
+                self.assertFalse(any(event[0] == "kill" and event[1] is owner.model_actor
+                                     for event in runtime.events))
 
     def test_timed_out_close_waits_on_the_same_ref_on_retry(self):
         with FakeRuntime() as runtime:

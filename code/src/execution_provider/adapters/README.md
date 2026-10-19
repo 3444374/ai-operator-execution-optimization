@@ -23,7 +23,11 @@ allocation, readiness and retryable closure. It owns no query scheduler or Core 
 `start`, `wait_ready`, `prepare_actors` and `model_actor` let callers pass prepared ObjectRefs
 directly to the model; trusted subclasses can specialize `_model_actor_type`.
 An attempted model construction that raises remains unknown and cannot be retried as a new
-construction. Unknown closure retains the model handle; actor kill never proves GPU exit.
+construction. Unknown API closure retains the model handle. A literal API acknowledgement
+and successful actor kill requests close only `ray_actor_kill_requests_and_engine_api`;
+process/GPU exit remain unknown until separately observed. API shutdown has ten seconds,
+with eleven seconds for its Ray response, independently of startup limits. A static query's
+unsettled work remains unknown even when this owner scope closes.
 The static reference uses this owner without changing its query/window scheduler. Its historical
 model qualification and the new owner's CPU checks retain separate fixed sources in the slice record.
 

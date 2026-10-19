@@ -287,7 +287,8 @@ class SemLoomRecordsStaticReference:
             "implementation": "semloom_records_static_reference",
             "production_core_connected": False,
             **actor_report,
-            "status": "closed" if actor_report["status"] == "closed" and not errors else "unknown",
+            "status": "closed" if actor_report["status"] == "closed"
+            and not self._unsettled and not errors else "unknown",
             "last_query_report": self.last_query_report,
             "cleanup_errors": errors,
         }

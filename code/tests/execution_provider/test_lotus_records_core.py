@@ -274,7 +274,7 @@ class CoreRecordsTests(unittest.TestCase):
         self.assertEqual(stream.last_close_report["status"], "closed")
         self.assertEqual(owner.core.capacity.usage().held_tasks, 0)
         self.assertTrue(report["production_core_connected"])
-        self.assertEqual(report["status"], "unknown")
+        self.assertEqual(report["status"], "closed")
         self.assertIsNone(report["gpu_exit_confirmed"])
         self.assertTrue(report["transport_closed"])
         self.assertFalse(any(e[0] == "driver_get" and e[1].endswith(".prepare") for e in runtime.events))
@@ -597,7 +597,7 @@ class CoreRecordsTests(unittest.TestCase):
             second = owner.close(timeout=1)
         self.assertEqual(runtime.engines[0].closes, 2)
         self.assertTrue(second["model_owner"]["engine_close_report"]["engine_api_shutdown_confirmed"])
-        self.assertEqual(second["status"], "unknown")
+        self.assertEqual(second["status"], "closed")
         self.assertIsNone(second["gpu_exit_confirmed"])
 
     def test_source_close_failure_remains_visible_and_does_not_leak_leases(self):
