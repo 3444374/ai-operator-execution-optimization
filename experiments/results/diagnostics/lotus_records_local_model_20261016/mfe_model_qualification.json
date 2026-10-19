@@ -1,0 +1,275 @@
+{
+  "schema": "semloom.finite_mfe_model_diagnosis.v1",
+  "source_commit": "8be539cf5cf66f0050732f1804bfccaaa90f11f7",
+  "source_fingerprint_sha256": "959c5d797252ebd1f378345afac14c4737533aa2410518160df6c10e42ffa36a",
+  "packet_sha256": "f1228a1ae861d3738c263b809c7bc1c9ba26bdaf5cf850caf22c012b699a7d3e",
+  "model": "Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "gpu": "one RTX 4090",
+  "vllm": "0.25.1",
+  "driver_versions": {
+    "lotus": "1.2.4",
+    "ray": "2.56.1",
+    "daft": "0.7.21"
+  },
+  "profile": "two-occurrence-non-q3-map-filter-extract-v1",
+  "permanent_cap": 18,
+  "per_backend_cap": 6,
+  "actual_model_calls": 12,
+  "usage": {
+    "prompt_tokens": 1080,
+    "completion_tokens": 54,
+    "total_tokens": 1134
+  },
+  "warmup_calls": 0,
+  "model_retries": 0,
+  "all_units_claimed_once": true,
+  "engine_lifetimes_per_backend": 1,
+  "complete_chain_qualified": false,
+  "performance_claim": false,
+  "backend_results": [
+    {
+      "backend": "core",
+      "status": "failed",
+      "packet_status": "failed",
+      "actual_model_calls": 4,
+      "final_engine_counter": 4,
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 360,
+        "completion_tokens": 18,
+        "total_tokens": 378
+      },
+      "stage_totals": {
+        "map-first": {
+          "calls": 2,
+          "prompt_tokens": 172,
+          "completion_tokens": 10,
+          "total_tokens": 182,
+          "model_elapsed_s": 0.7245307629927993
+        },
+        "filter-generated": {
+          "calls": 2,
+          "prompt_tokens": 188,
+          "completion_tokens": 8,
+          "total_tokens": 196,
+          "model_elapsed_s": 0.14170535374432802
+        }
+      },
+      "unit_elapsed_s": 81.94544093497097,
+      "associations": {
+        "stage_calls": {
+          "map-first": 2,
+          "filter-generated": 2
+        },
+        "kept_ids": [],
+        "total_evaluations": 4,
+        "association_checks_passed": true,
+        "expected_quality_passed": false,
+        "quality_errors": [
+          "Filter expected only occ-0"
+        ]
+      },
+      "original_lotus_replay": null,
+      "error_type": "AssertionError",
+      "error": "DataFrame.index are different\n\nAttribute \"inferred_type\" are different\n[left]:  empty\n[right]: integer",
+      "result_sha256": "bd18a4c1bdff3df80b0d4f8ac68c398aa2b9f8904c640a462acc906a24036fbf",
+      "inner_observed_owned": 120,
+      "outer_observed_owned": 130
+    },
+    {
+      "backend": "ray",
+      "status": "failed",
+      "packet_status": "failed",
+      "actual_model_calls": 4,
+      "final_engine_counter": 4,
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 360,
+        "completion_tokens": 18,
+        "total_tokens": 378
+      },
+      "stage_totals": {
+        "map-first": {
+          "calls": 2,
+          "prompt_tokens": 172,
+          "completion_tokens": 10,
+          "total_tokens": 182,
+          "model_elapsed_s": 0.6513877576217055
+        },
+        "filter-generated": {
+          "calls": 2,
+          "prompt_tokens": 188,
+          "completion_tokens": 8,
+          "total_tokens": 196,
+          "model_elapsed_s": 0.14914306486025453
+        }
+      },
+      "unit_elapsed_s": 81.68063510209322,
+      "associations": {
+        "stage_calls": {
+          "map-first": 2,
+          "filter-generated": 2
+        },
+        "kept_ids": [],
+        "total_evaluations": 4,
+        "association_checks_passed": true,
+        "expected_quality_passed": false,
+        "quality_errors": [
+          "Filter expected only occ-0"
+        ]
+      },
+      "original_lotus_replay": null,
+      "error_type": "AssertionError",
+      "error": "DataFrame.index are different\n\nAttribute \"inferred_type\" are different\n[left]:  empty\n[right]: integer",
+      "result_sha256": "9e46b51a2fb6f98b96de0eef09da7aa41ad7acc57c8050604051e6349cc69210",
+      "inner_observed_owned": 32,
+      "outer_observed_owned": 31
+    },
+    {
+      "backend": "daft",
+      "status": "failed",
+      "packet_status": "failed",
+      "actual_model_calls": 4,
+      "final_engine_counter": 4,
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 360,
+        "completion_tokens": 18,
+        "total_tokens": 378
+      },
+      "stage_totals": {
+        "map-first": {
+          "calls": 2,
+          "prompt_tokens": 172,
+          "completion_tokens": 10,
+          "total_tokens": 182,
+          "model_elapsed_s": 0.7197816409170628
+        },
+        "filter-generated": {
+          "calls": 2,
+          "prompt_tokens": 188,
+          "completion_tokens": 8,
+          "total_tokens": 196,
+          "model_elapsed_s": 0.1476769815199077
+        }
+      },
+      "unit_elapsed_s": 67.4457344817929,
+      "associations": {
+        "stage_calls": {
+          "map-first": 2,
+          "filter-generated": 2
+        },
+        "kept_ids": [],
+        "total_evaluations": 4,
+        "association_checks_passed": true,
+        "expected_quality_passed": false,
+        "quality_errors": [
+          "Filter expected only occ-0"
+        ]
+      },
+      "original_lotus_replay": null,
+      "error_type": "AssertionError",
+      "error": "DataFrame.index are different\n\nAttribute \"inferred_type\" are different\n[left]:  empty\n[right]: integer",
+      "result_sha256": "a0eba3731bcc02d85f3e031e30adcd513bfe9dcb03bfffa23fa874498ae45256",
+      "inner_observed_owned": 23,
+      "outer_observed_owned": 26
+    }
+  ],
+  "saved_output_replay": {
+    "backends": 3,
+    "model_calls": 0,
+    "all_original_messages_hashes_matched": true,
+    "parser_decisions": "false for both rows on each backend",
+    "frames": {
+      "left": {
+        "columns": [
+          "paragraph",
+          "row_id",
+          "call_id",
+          "rewrite"
+        ],
+        "dtypes": {
+          "paragraph": "object",
+          "row_id": "object",
+          "call_id": "object",
+          "rewrite": "object"
+        },
+        "index_type": "Index",
+        "index_dtype": "object",
+        "index_inferred_type": "empty",
+        "rows": 0
+      },
+      "right": {
+        "columns": [
+          "paragraph",
+          "row_id",
+          "call_id",
+          "rewrite"
+        ],
+        "dtypes": {
+          "paragraph": "object",
+          "row_id": "object",
+          "call_id": "object",
+          "rewrite": "object"
+        },
+        "index_type": "Index",
+        "index_dtype": "int64",
+        "index_inferred_type": "integer",
+        "rows": 0
+      },
+      "without_index_equal": true
+    }
+  },
+  "tokenizer_replay": {
+    "model_calls": 0,
+    "weights_loaded": false,
+    "rows": 12,
+    "all_prompt_token_ids_equal": true,
+    "all_generated_text_equal": true,
+    "all_ended_with_eos": true,
+    "eos_token_id": 151645,
+    "first_probe_error": "The diagnostic initially treated BatchEncoding as a token list; corrected by reading input_ids; original false-mismatch probe preserved privately."
+  },
+  "frame_bug": {
+    "file": "code/src/semantic_methods/lotus/record_chain.py",
+    "function": "records_to_frame",
+    "test": "code/tests/semantic_methods/test_lotus_record_chain.py:test_all_discarded_rows_produce_no_map_or_extract_work",
+    "cause": "Empty records reconstruct object index instead of preserving the source int64 index; columns/dtypes/data equal after resetting index.",
+    "proposed_repair": "Carry source index metadata into empty materialization; cover integer and string source labels without hard-coding int64."
+  },
+  "final_resources": {
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "foreign_work": 0,
+    "shm_entries": 0,
+    "normal_lease_absent": true,
+    "all_observed_owned_exit_confirmed": true,
+    "unobserved_descendants_not_proven": true,
+    "historical_ledgers_unchanged": true
+  },
+  "private_archive": {
+    "sha256": "67e944eb91ac450db4af1d5f9d874e7559a353d7f517d3ac9330cf8968366672",
+    "members": 63,
+    "bytes": 67589,
+    "retrieval": "Private qualification owner retains the archive and member index; original raw artifacts remain outside Git."
+  },
+  "publication_scope": {
+    "configuration": true,
+    "counts": true,
+    "failure_reasons": true,
+    "verification_conclusions": true,
+    "raw_inputs": false,
+    "raw_prompts": false,
+    "raw_outputs": false,
+    "complete_logs": false,
+    "credentials": false,
+    "original_receipts": "Retained in private archive; only hashes and aggregate checks published."
+  }
+}

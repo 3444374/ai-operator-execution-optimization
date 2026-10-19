@@ -11,6 +11,10 @@
 2026-10-19：[Core actor 集成接点](diagnostics/local_async_engine_20261019/README.md#core-actor-hooks)。显式同配置 owner、完整 session／sequence 提交／取消／receipt ack、独立 cleanup 窗口；默认同步保持。92 项／39 subtests CPU 通过，首次 fixture 设置错误及受限进程检查 PermissionError 保留；未新增 Async actor／CLI 或模型资格。
 后续关闭窗口接口 70 项／27 subtests 分列，默认 10／11 秒保持，私有进程可声明有界 teardown 时间；不转授实际 Async 或模型资格。
 
+2026-10-19：[独立一行 Map→Extract 模型覆盖](diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)。新 6 次账本各后端 2 次，三条语义／原 LOTUS 差分均通过；Core／Ray 资格通过，Daft supervisor 发 SIGTERM，生命周期未通过，私有控制器误判在派生审计中纠正。原 MFE 不改判，原件保留。
+
+2026-10-19：[非 Q3 有限 MFE 模型与定点重放](diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)。三后端各一次，Filter 均丢弃两行，Extract 未执行，完整链未通过。原输出与 token 重放排除已测接线／截断问题；另定位空结果 index 类型差异。账目与物理退出已结清，原始负结果保留。
+
 2026-10-19：[Core Extract 关系屏障](diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)。共享129、Core组合55（含共享8及helper11）、native门2项分列；同query／worker／私有CPU pipe跨关系完成，3已观察owned退出，wire额度不是全查询RSS。原默认guard与Ray／Daft拒绝门保持；零模型／GPU。
 
 2026-10-19：[独立Async组件与关闭故障修复](diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)。原121／190与修复后36项不同范围，不重复相加；17个已观察owned退出，unknown保留预留／句柄，后代／GPU仍None，未接actor／Core／CLI。

@@ -1,0 +1,420 @@
+{
+  "schema": "semloom.map_extract_model_coverage.v1",
+  "profile": "one-row-map-extract-coverage-v1",
+  "source_commit": "8be539cf5cf66f0050732f1804bfccaaa90f11f7",
+  "model": "Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "gpu": "one RTX 4090",
+  "driver_versions": {
+    "lotus": "1.2.4",
+    "ray": "2.56.1",
+    "daft": "0.7.21"
+  },
+  "per_unit_cap": 2,
+  "permanent_reserved_calls": 6,
+  "actual_model_calls": 6,
+  "warmup_calls": 0,
+  "model_retries": 0,
+  "original_mfe_replacement": false,
+  "mfe_qualified": false,
+  "performance_claim": false,
+  "method_path": "one Map then one unconditional terminal Extract; no Filter",
+  "coverage_checks": "occurrence and parent IDs, two unique calls, original messages/parser/usage/frame, single final engine counter2, token IDs, production close and independent OS/GPU/SHM/lease",
+  "unit_results": [
+    {
+      "backend": "core",
+      "status": "completed",
+      "raw_controller_unit_status": "completed",
+      "packet_status": "passed",
+      "actual_model_calls": 2,
+      "permanent_cap": 2,
+      "final_engine_counter": 2,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 197,
+        "completion_tokens": 19,
+        "total_tokens": 216
+      },
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "unit_elapsed_s": 54.1262585176155,
+      "associations": {
+        "coverage_passed": true,
+        "total_evaluations": 2,
+        "stage_calls": {
+          "copy-item": 1,
+          "extract-item": 1
+        },
+        "expected_quality_passed": true,
+        "quality_errors": [],
+        "unconditional_extract": true,
+        "filter_used": false,
+        "scope": "one-row-map-extract-coverage-v1"
+      },
+      "original_lotus_replay": {
+        "stages": [
+          {
+            "stage_id": "copy-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 24,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 11,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": null
+            }
+          },
+          {
+            "stage_id": "extract-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 64,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 23,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": {
+                "type": "json_object"
+              }
+            }
+          }
+        ],
+        "final_original_lotus_frame_equal": true,
+        "actual_model_evaluations_during_replay": 0
+      },
+      "supervisor_status": "passed",
+      "supervisor_signals": [],
+      "supervisor_error": null,
+      "execution_error": null,
+      "backend_metadata": {
+        "logical_gpus": 1,
+        "fixture_injection_applied": false,
+        "production_core_connected": true,
+        "scheduler_owner": "SemLoom SessionEngine",
+        "native_batch_owner": "Core source iterator and fused task",
+        "physical_transport": "bounded_async_host_fused_worker_private_pipe",
+        "ray_used_by_adapter": false,
+        "daft_used_by_adapter": false
+      },
+      "source_result_sha256": "355ee4a272677efc23252da7928272e4955fb5fa048ee7dc1b93050888b4f856"
+    },
+    {
+      "backend": "ray",
+      "status": "completed",
+      "raw_controller_unit_status": "completed",
+      "packet_status": "passed",
+      "actual_model_calls": 2,
+      "permanent_cap": 2,
+      "final_engine_counter": 2,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 197,
+        "completion_tokens": 19,
+        "total_tokens": 216
+      },
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "unit_elapsed_s": 94.01905289525166,
+      "associations": {
+        "coverage_passed": true,
+        "total_evaluations": 2,
+        "stage_calls": {
+          "copy-item": 1,
+          "extract-item": 1
+        },
+        "expected_quality_passed": true,
+        "quality_errors": [],
+        "unconditional_extract": true,
+        "filter_used": false,
+        "scope": "one-row-map-extract-coverage-v1"
+      },
+      "original_lotus_replay": {
+        "stages": [
+          {
+            "stage_id": "copy-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 24,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 11,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": null
+            }
+          },
+          {
+            "stage_id": "extract-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 64,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 23,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": {
+                "type": "json_object"
+              }
+            }
+          }
+        ],
+        "final_original_lotus_frame_equal": true,
+        "actual_model_evaluations_during_replay": 0
+      },
+      "supervisor_status": "passed",
+      "supervisor_signals": [],
+      "supervisor_error": null,
+      "execution_error": null,
+      "backend_metadata": {
+        "logical_gpus": 1,
+        "fixture_injection_applied": false,
+        "scheduler_owner": "Ray Data 2.56.1",
+        "native_batch_owner": "Ray Data map_batches"
+      },
+      "source_result_sha256": "7764f933427a7070db736a1e500ea7dcba9f5b95ba9f22edf7d7a42cb16e5534"
+    },
+    {
+      "backend": "daft",
+      "status": "lifecycle_failed",
+      "raw_controller_unit_status": "completed",
+      "packet_status": "passed",
+      "actual_model_calls": 2,
+      "permanent_cap": 2,
+      "final_engine_counter": 2,
+      "engine_lifetimes": 1,
+      "usage": {
+        "prompt_tokens": 197,
+        "completion_tokens": 19,
+        "total_tokens": 216
+      },
+      "accounting_confirmed": true,
+      "resource_exit_confirmed": true,
+      "unit_elapsed_s": 72.25669545214623,
+      "associations": {
+        "coverage_passed": true,
+        "total_evaluations": 2,
+        "stage_calls": {
+          "copy-item": 1,
+          "extract-item": 1
+        },
+        "expected_quality_passed": true,
+        "quality_errors": [],
+        "unconditional_extract": true,
+        "filter_used": false,
+        "scope": "one-row-map-extract-coverage-v1"
+      },
+      "original_lotus_replay": {
+        "stages": [
+          {
+            "stage_id": "copy-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 24,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 11,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": null
+            }
+          },
+          {
+            "stage_id": "extract-item",
+            "original_messages_equal": true,
+            "original_parser_and_usage_equal": true,
+            "calls": 1,
+            "configured_generation": {
+              "max_tokens": 64,
+              "temperature": 0.0,
+              "top_p": 1.0,
+              "seed": 23,
+              "stop": [],
+              "presence_penalty": 0.0,
+              "frequency_penalty": 0.0,
+              "repetition_penalty": 1.0,
+              "logprobs": null,
+              "response_format": {
+                "type": "json_object"
+              }
+            }
+          }
+        ],
+        "final_original_lotus_frame_equal": true,
+        "actual_model_evaluations_during_replay": 0
+      },
+      "supervisor_status": "failed",
+      "supervisor_signals": [
+        "SIGTERM"
+      ],
+      "supervisor_error": "RuntimeError: records worker left live owned processes",
+      "execution_error": {
+        "error_type": "RuntimeError",
+        "error": "records worker left live owned processes"
+      },
+      "backend_metadata": {
+        "logical_gpus": 1,
+        "fixture_injection_applied": false,
+        "scheduler_owner": "Daft Native 0.7.21",
+        "native_batch_owner": "Daft class batch UDF"
+      },
+      "source_result_sha256": "1db2a6fb7bebd0fb93dc6f8bba5e973bf7dede339b445ce16dbd5713d548f3d5"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 591,
+    "completion_tokens": 57,
+    "total_tokens": 648
+  },
+  "raw_controller_status": "completed",
+  "controller_status": "completed_with_lifecycle_failure",
+  "controller_started_epoch_s": 1792401000.8443756,
+  "controller_ended_epoch_s": 1792401222.5133617,
+  "private_archive": {
+    "sha256": "2548840a268f915bc8893fefab205ef83431377d967eebd7dbe820363f9703f9",
+    "bytes": 29021,
+    "members": 46,
+    "retrieval": "Private GPU qualification owner retains exact scripts, receipts, logs, new ledger and member index outside Git."
+  },
+  "final_resources": {
+    "resource_exit_confirmed": true,
+    "gpu_used_mib": 1,
+    "gpu_compute_processes": 0,
+    "shm_entries": 0,
+    "normal_lease_released": true,
+    "older_five_ledgers_unchanged": true
+  },
+  "final_budget_header": [
+    [
+      "semloom.cell_budget.task_completion.v2",
+      "map-extract-cover-20261019",
+      6,
+      6,
+      null
+    ]
+  ],
+  "final_budget_units": [
+    [
+      "me-core",
+      1,
+      2,
+      1
+    ],
+    [
+      "me-ray",
+      3,
+      2,
+      1
+    ],
+    [
+      "me-daft",
+      5,
+      2,
+      1
+    ]
+  ],
+  "independent_audit_correction": "Executed private controller omitted supervisor failure in its success predicate. Original controller completed status retained; derived status requires supervisor passed, no signals/errors, worker0 and observed exits. Core/Ray pass; Daft remains lifecycle_failed after supervisor SIGTERM despite complete semantic/token receipts and final idle state. Guard corrected and tested offline on all three saved units; no model rerun.",
+  "workload_configuration": {
+    "profile": "one-row-map-extract-coverage-v1",
+    "record_count": 1,
+    "input_columns": [
+      "paragraph",
+      "row_id",
+      "call_id"
+    ],
+    "source_index_type": "integer",
+    "method_sequence": [
+      "Map",
+      "Extract"
+    ],
+    "semantic_filter": false,
+    "extract_input_columns": [
+      "rewrite"
+    ],
+    "extract_output_columns": [
+      "item",
+      "color"
+    ],
+    "generation_profiles": [
+      {
+        "stage_id": "copy-item",
+        "method_type": "MapMethod",
+        "model_role": "writer",
+        "generation": {
+          "max_tokens": 24,
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "seed": 11,
+          "stop": [],
+          "presence_penalty": 0.0,
+          "frequency_penalty": 0.0,
+          "repetition_penalty": 1.0,
+          "logprobs": null,
+          "response_format": null
+        }
+      },
+      {
+        "stage_id": "extract-item",
+        "method_type": "ExtractMethod",
+        "model_role": "main",
+        "generation": {
+          "max_tokens": 64,
+          "temperature": 0.0,
+          "top_p": 1.0,
+          "seed": 23,
+          "stop": [],
+          "presence_penalty": 0.0,
+          "frequency_penalty": 0.0,
+          "repetition_penalty": 1.0,
+          "logprobs": null,
+          "response_format": {
+            "type": "json_object"
+          }
+        }
+      }
+    ],
+    "input_content": "private",
+    "prompt_content": "private",
+    "actual_output_content": "private"
+  },
+  "publication_scope": {
+    "configuration": true,
+    "counts": true,
+    "failure_reasons": true,
+    "verification_conclusions": true,
+    "raw_inputs": false,
+    "raw_prompts": false,
+    "raw_outputs": false,
+    "complete_logs": false,
+    "credentials": false,
+    "original_receipts": "Retained in private archive; only hashes and aggregate checks published."
+  }
+}

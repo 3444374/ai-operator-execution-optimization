@@ -1,5 +1,9 @@
 # Feasibility Results
 
+[一行 Map→Extract 模型覆盖](lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)使用独立用例和新预算；Core／Ray 通过，Daft 语义通过但 supervisor 生命周期失败，最终资源已结清。
+
+[非 Q3 有限 MFE 模型失败与诊断](lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)：三后端的实际输出、零模型重放及空结果 index 问题分列；完整链与 Extract 模型资格未通过。
+
 [IMLane 独立多行记录桥](imlane_records_echo_20261016/README.md)分列原作者无模型10scope与新依赖收口CPU资格；真实模型和作者Ray待验。
 
 [Movie Q3 records 本地模型接点](lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)：按基本接入／实际库／模型／扩展四层及固定源码核对；Ray／Daft／普通Core已有小切片资格，当前IMLane[初始化失败及独立结清](lotus_records_local_model_20261016/README.md#imlane-model-initialization-attempt-20261019)保留unknown，有限链、级联与持续供给另验。

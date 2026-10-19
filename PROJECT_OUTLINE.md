@@ -1,5 +1,9 @@
 # 项目大纲
 
+[独立 Map→Extract 覆盖](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)补齐终端 Extract 的实际模型调用：Core／Ray 小轮通过，Daft 退出资格仍有负结果。它使用独立命名和预算，原 MFE 失败及源 index 物化问题继续保留。
+
+固定 8be 的[非 Q3 有限 MFE 模型检查](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#finite-mfe-model-20261019)保留三后端相同负结果及零模型诊断：完整链与 Extract 模型资格均未通过，不能转授 CPU 的组合能力声明。
+
 图像能力按固定实现 `bdae61bb` 与[能力表](code/INFRA_STATUS.md#current-image-status)核对；其他旧记录保留原 [`9c59dc9b` 来源](https://github.com/3444374/ai-operator-execution-optimization/blob/9c59dc9be1422fca2ef75a4b4f4d41a65eb1100e/code/INFRA_STATUS.md)。
 main新接纳的[CLIP必要工程闭包](experiments/results/diagnostics/main_lotus_clip_20261015/README.md)单列8834 CPU及main570严格单卡40行实机资格；其他分支接口与旧模型资格不因文档出现在main而成为main已验证能力。
 
