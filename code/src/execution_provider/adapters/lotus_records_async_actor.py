@@ -36,13 +36,14 @@ class _Call:
     confirmed: bool = False
     delivered: bool = False
     aborted: bool = False
+    abort_queued: bool = False
 
 
 class AsyncCoreModelActor:
     """Bounded threaded actor. Only the private child imports the model runtime."""
 
     def __init__(self, engine, generation, model_batch_rows, limits):
-        if model_batch_rows != 1:
+        if type(model_batch_rows) is not int or model_batch_rows != 1:
             raise ValueError("Async Core model actor requires model_batch_rows=1")
         self.spec = EngineSpec.from_dict(engine)
         self.generation = GenerationSpec.from_dict(generation)
@@ -95,6 +96,7 @@ class AsyncCoreModelActor:
     def snapshot(self):
         with self._condition:
             return dict(held_requests=len(self._held),
+                reserved_result_bytes=len(self._held) * self.limits.item_result_bytes,
                 delivered_results=sum(item.delivered for item in self._held.values()),
                 unknown_requests=sum(item.value is not None and not item.confirmed
                                      for item in self._held.values()),
@@ -120,7 +122,8 @@ class AsyncCoreModelActor:
 
     def _collect(self):
         # Called under the actor condition; one reader transfers each IPC event.
-        for event in self.engine.poll(self.limits.result_slots):
+        events = self.engine.poll(self.limits.result_slots)
+        for event in events:
             key = self._tickets.get(event.request_id)
             if key is None:
                 self._unhealthy = True
@@ -134,7 +137,22 @@ class AsyncCoreModelActor:
             call.value, call.confirmed = value, event.engine_terminal_confirmed
             if not event.engine_terminal_confirmed:
                 self._unhealthy = True
-        self._condition.notify_all()
+        if events:
+            self._condition.notify_all()
+
+    def _submit(self, key, call, row, deadline):
+        try:
+            submitted = self.engine.submit(row, deadline_monotonic=deadline)
+        except (TypeError, ValueError) as error:
+            call.value = self._receipt(call.identity, "failed", type(error).__name__)
+            call.confirmed = True
+        else:
+            if submitted.status == "queued":
+                call.ticket = submitted.request_id
+                self._tickets[call.ticket] = key
+            elif submitted.status != "backpressure":
+                call.value = self._receipt(call.identity, "failed", "AsyncInputNotAccepted")
+                call.confirmed = True
 
     def run_core(self, rows, deadline, maximum, request_key):
         _deadline(deadline)
@@ -145,7 +163,9 @@ class AsyncCoreModelActor:
         occurrence = {name: identities[0][name] for name in IDENTITY_FIELDS}
         _check_result_capacity(occurrence, maximum)
         with self._condition:
-            while len(self._held) >= self.limits.max_inflight:
+            slots = min(self.limits.max_inflight, self.limits.result_slots,
+                        self.limits.result_bytes // self.limits.item_result_bytes)
+            while len(self._held) >= slots:
                 if self._closing or self._unhealthy or time.monotonic() >= deadline:
                     return self._bounded(self._receipt(occurrence, "failed", "CapacityUnavailable",
                         expired=time.monotonic() >= deadline), maximum)
@@ -169,21 +189,21 @@ class AsyncCoreModelActor:
                     "DeadlineExceeded" if expired else "CancelledBeforeSubmission", expired=expired)
                 call.confirmed = True
             else:
-                try:
-                    submitted = self.engine.submit(rows[0], deadline_monotonic=deadline)
-                except (TypeError, ValueError) as error:
-                    call.value = self._receipt(occurrence, "failed", type(error).__name__)
-                    call.confirmed = True
-                else:
-                    if submitted.status == "queued":
-                        call.ticket = submitted.request_id
-                        self._tickets[call.ticket] = key
-                    else:
-                        call.value = self._receipt(occurrence, "failed", "AsyncInputNotAccepted")
-                        call.confirmed = True
+                self._submit(key, call, rows[0], deadline)
         while True:
             with self._condition:
                 self._collect()
+                expired = time.monotonic() >= deadline
+                if call.value is None and call.ticket is None:
+                    if call.aborted or expired or self._closing or self._unhealthy:
+                        call.value = self._receipt(occurrence, "failed",
+                            "DeadlineExceeded" if expired else "CancelledBeforeSubmission", expired=expired)
+                        call.confirmed = True
+                    else:
+                        # NOT_ACCEPTED carries no model ownership. Retry only
+                        # this finite handoff after a capacity change; never
+                        # submit an accepted call a second time.
+                        self._submit(key, call, rows[0], deadline)
                 if call.value is not None:
                     # Keep this bounded receipt until the Core transport has
                     # actually received it, including failure/unknown usage.
@@ -191,13 +211,20 @@ class AsyncCoreModelActor:
                     call.delivered = True
                     self._condition.notify_all()
                     return encoded
-                if time.monotonic() >= deadline and not call.aborted:
+                if expired:
                     call.aborted = True
-                    self.engine.abort(call.ticket)
+                if call.aborted and not call.abort_queued:
+                    call.abort_queued = self.engine.abort(call.ticket)
                 # The Core controller owns the query deadline and invokes close.
                 # Keep reading until an actual receipt or child-death unknown;
                 # timing out this waiter alone would lose a late known usage.
-            self.engine.wait(0.01)
+                broken = self.engine.snapshot()["broken"] is not None
+                if broken:
+                    # IPC.wait deliberately returns immediately on broken.
+                    # Other requests can still deliver known late receipts.
+                    self._condition.wait(0.01)
+            if not broken:
+                self.engine.wait(0.01)
 
     def abort_core(self, request_key):
         key = _request_key(request_key)
@@ -210,6 +237,7 @@ class AsyncCoreModelActor:
                     return dict(requested=False, engine_terminal_confirmed=False)
                 call.aborted = True
                 requested = call.ticket is None or self.engine.abort(call.ticket)
+                call.abort_queued = call.ticket is not None and requested
             elif len(self._early_cancels) < self.limits.max_inflight:
                 self._early_cancels.add(key)
                 requested = True
@@ -274,9 +302,9 @@ class AsyncRecordsActorOwner(_ActorOwner):
         if resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1:
             raise ValueError("Async Core requires prepare_batch_rows=model_batch_rows=1")
         maximum = resources.max_active_batches
-        self.limits = limits or AsyncEngineLimits(max_inflight=maximum, result_slots=maximum,
+        self.limits = AsyncEngineLimits(max_inflight=maximum, result_slots=maximum,
             command_slots=maximum, input_bytes=maximum * 2 * 1024**2,
-            result_bytes=maximum * 2 * 1024**2, control_slots=max(16, maximum * 2))
+            result_bytes=maximum * 2 * 1024**2, control_slots=max(16, maximum * 2)) if limits is None else limits
         if type(self.limits) is not AsyncEngineLimits or self.limits.max_inflight != maximum:
             raise ValueError("Async actor input capacity must match the Core request limit")
         if self.limits.result_slots < maximum:
