@@ -1,5 +1,9 @@
 # SemLoom Code
 
+[Extract 后继 Core profile](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)已完成共享／Core CPU 接线；默认末端规则保持，Ray／Daft 在分配前拒绝该 profile。
+[独立 Async 组件](src/serving/backends/async_engine.README.md)与关闭故障修复也已接纳；actor／Core／CLI 持续供给及这两项的真实模型资格仍待验证。
+基本接入、实际库、模型和扩展的状态按[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)分别解释。
+
 [Movie Q3 records 切片](src/semantic_methods/lotus/README.md#movie-q3-records-最小切片)新增独立 Ray Data 原生图、[Daft Native process 图](src/baselines/text/frameworks/daft_lotus_records.README.md)与 SemLoom 静态参照，
 直达本地模型接点和原 LOTUS／SemBench 解释评价；[命令](scripts/README.md#movie-q3-records-本地模型接点)与
 [CPU与单卡真实资格](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)分开记录。原生参照／Ray Data／静态参照已确认10条请求；Daft首轮关闭失败保留，冻结修正源码另完成两查询4次调用。四个普通后端已通过换列换指令的通用CPU检查；冻结 `ebe3035f` 的普通Core另完成同引擎两查询／四次调用，后续源码与有限链／级联模型资格分别验证。

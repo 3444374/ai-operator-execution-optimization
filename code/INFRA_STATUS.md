@@ -1,5 +1,11 @@
 # AI 算子执行 Infra 当前状态
 
+## 本轮 records 共享增量
+
+[显式 Core Extract 屏障](../experiments/results/diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)保留完整关系、父调用／None／空 schema，沿同一 worker／模型进程续段；55 项组合 CPU 与分列共享 129 项、native 前置门 2 项通过。Core OfferedTask 是一批原始记录，work 是阶段调用上界，逻辑 wire 额度不封顶驱动端完整关系或全查询 RSS。
+[Async 组件](../experiments/results/diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)原候选 121 项 CPU 与关闭修复 36 项分列；未知保留句柄／预留，close 只确认 API／直接 child／I/O。当前未接 actor／Core／CLI，真实 Async 模型和性能待验。
+冻结8be的IMLane首模型单元在初始化返回ZMQError，第二query未启动，四次永久预算保留、actual仍null、原lease held-unresolved；不是模型资格。基本接入／实际库／模型／扩展见[固定来源表](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-four-layer-status-20261019)。
+
 ## 独立 IMLane 记录桥
 
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。

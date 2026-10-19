@@ -1,0 +1,60 @@
+{
+  "schema": "semloom.local_async_component_integration_cpu.v1",
+  "component_author_head": "7d575ef0abc644a1717eafcbd107f7b77275ad6d",
+  "fix_author_commit": "f8cceff96f61ec8331e5d36f6095dfea4a051da1",
+  "integration_commits": [
+    "6792213d",
+    "7df2eaf2",
+    "ee598ac0",
+    "cd977302",
+    "bc92f7ce"
+  ],
+  "source_sha256": {
+    "code/src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+    "code/tests/serving/test_async_engine_close_faults.py": "3b105cfda981a7e0cadc1b544e7a18ed7eebbfc105fa269ba727893f62af443a"
+  },
+  "prior_peer_verification": "verification_20261019T070124Z.json",
+  "prior_peer_cpu": {
+    "tests": 121,
+    "subtests": 190,
+    "scope": "before root close fault fix; not rerun as a full suite"
+  },
+  "close_fix_cpu": {
+    "tests": 36,
+    "new_fault_tests": 7,
+    "old_real_ipc_tests": 16,
+    "old_async_kernel_fake_tests": 13,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "outer_supervisor": "production supervise",
+    "observed_owned_processes": 17,
+    "observed_owned_exit_confirmed": true,
+    "cleanup_errors": [],
+    "remaining_owned_pids": [],
+    "physical_gpu_exit_checked": false,
+    "source_and_staged_match_test_run": true,
+    "static": "AST unchanged outside constructor/close/local I/O helpers; required secret scanner and staged diff-check passed"
+  },
+  "fixes": [
+    "final wait/terminate/kill/poll exceptions record unknown direct-child cleanup outcome and do not skip local I/O finalization",
+    "local socket close and thread join faults are retained as cleanup_errors; child handle and existing known/unknown slots remain available",
+    "socketpair/setblocking ownership is registered under protected constructor scope and every created FD is closed on failure",
+    "original startup exception is re-raised with async_close_report and async_engine_process attributes so caller can inspect and retry the same cleanup owner"
+  ],
+  "prior_failure": "targeted-r1 had 6 fixture errors because the new manually built owner omitted limits; corrected only new test setup, production unchanged, full36 passed after correction",
+  "model_requests": 0,
+  "gpu_requests": 0,
+  "actor_core_cli_wired": false,
+  "real_vllm_qualified": false,
+  "physical_gpu_exit_confirmed": null,
+  "unobserved_descendants_confirmed": false,
+  "private_delivery_sha256": "0119bda80317b18df041d7b69eff6ecc3c56c8f6a40399dcd101bc1e257427c5",
+  "private_evidence_sha256": {
+    "targeted-r1.json": "84e3600117538f5ec95e25c9f8f130e2a0cf60956eed787330fadde551027103",
+    "regression-approved-r1.json": "a705f4fbe69fcc6f4aaf38959d8df56d9e8acb6c068e17ad3afdc0151b365d8c",
+    "regression-supervised-r1/worker.log": "1275cbf1ee15e072d29ba0463272ff58469db183777dacd5513e3a2c900d986a",
+    "regression-supervised-r1/supervisor.json": "a701ea27ff9387d07fb2cf7f7ec2179d650593c663fe56d10d3dc1e9493df615",
+    "static-r1.json": "3230d66f99bc46473d41c184091de821dc1ca1d8e70995a398b1a2132339d7ef"
+  }
+}

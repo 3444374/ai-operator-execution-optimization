@@ -3,7 +3,8 @@
 从最新已发布 `integration/data-execution@d2915206c945e3c5db658a6533f3e6fed9b8cc6a`
 建立独立职责分支 `feat/lotus-extract-relations`。本轮只新增关系值模块、专属测试与本报告；
 主集成确认共享内核、现有方法／结果账目、原生接线与末端 guard 继续由其拥有。
-本报告是后继接线的 CPU 准备证据，不表示原生查询已支持非末端 Extract。
+首轮报告是后继接线的 CPU 准备证据；当前显式 Core profile 的后续接线见末节。
+Ray Data／Daft 原生图仍不支持非末端 Extract。
 
 ## 实施条款与职责
 
@@ -63,3 +64,33 @@ OpenAI SDK 2.50.0、pandas 2.3.3；沿用已有 Python 3.12.6 隔离 CPU 环境�
 - 公共 README、Infra 和台账登记由主集成与共享接线一起完成，本职责不抢改其维护文件。
 
 现有非末端 Extract guard 保持。真实模型／GPU 由主集成统一排程，本轮调用为零。
+
+## 后续共享合同与显式 Core 接线
+
+主集成以 `a903e51c` 接纳共享合同、`3fcb7a88` 接纳 Core 接线，`4566939a`
+为 Ray／Daft 增加资源分配前的拒绝门。上述首轮待项是历史状态；当前
+[`LotusRecordChain(relation_barriers=True)`](../../../../code/src/semantic_methods/lotus/record_chain.py)
+仅由 [Core owner](../../../../code/src/execution_provider/adapters/lotus_record_chain_core.py) 消费。
+默认末端 Extract 规则保持，直接 `run_batch` 仍拒绝非末端 Extract，不增加通用 DAG。
+
+Core 收齐整个前缀，在真实源 EOF、成功覆盖及解析核验后，等待 delivery lease、Core 额度、
+transport 输入／结果全部归零，关闭前段 session，再应用本模块的原 `.loc` 广播。
+下一段使用新 session，沿用同一 query、worker 和私有 EngineProcess；全局 stage ID 保持唯一。
+后继消费显式有序 schema、同标签 Extract 父调用组及实际 `None`；只在派生关系阶段允许存在的
+字符串／None，不填值、字符串化或放宽 Movie 源规则。空关系的 schema 继续保留。
+
+原共享方法循环与 formatter／parser 继续执行；前缀结果不会提前发布给最终消费者。
+调用、raw、LM 统计和失败审计按阶段保留并去重，最后消费者 EOF／错误／显式 close 才回收模型，
+前缀 expected 数量不触发提前关闭。未知调用保持原 Core 责任，物理清理成功不会把它改为成功。
+
+一个 OfferedTask 是当前段的一批有限原始记录 bytes；work 上界为该批行数乘当前段算子数，
+不等于同时运行的 GPU 请求数。当前仅一个在途 Core 任务、一个同步 fused worker，尚无 AsyncLLM
+跨批持续供给。每任务逻辑输入／结果额度为 2／8 MiB；驱动端仍保留完整 expected 源值、源迭代器、
+一批 pending 输入、必要的完整 Extract 关系和调用／raw／统计历史，因此这些额度不封顶全查询 RSS。
+
+[派生验证摘要](core_verification.json)分列共享 129 项、Core 组合 55 项及 native 前置门 2 项；
+组合套件含共享 8 项及 helper 11 项，不能重复相加。Core 新增 13 项核原 LOTUS 关系／提示、
+跨批重复索引、nullable／空 schema、父调用、unknown／早停、源 close 原错误和同 PID 私有 CPU
+pipe 延续；外层监督确认 3 个已观察 owned 出生身份退出，remaining／cleanup 均为空。
+首轮 fixture 指令误命中、过渡运行及旧默认集合引用修正均保留原件。模型／GPU 调用均为零，
+这项 CPU 接线不继承任何冻结普通 Filter 模型资格；新 profile 的真实模型与各 native 屏障仍待验证。

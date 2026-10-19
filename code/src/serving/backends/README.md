@@ -63,3 +63,10 @@ generation, get_tokenizer)` 将已关联的单个 RequestOutput 转为同一结�
 原采样工厂保持未改。[新增测试](../../../tests/serving/test_vllm_result_conversion.py)、
 69项CPU及64项固定旧源码逐字段差分的[来源与范围](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)
 单列，供后续独立Async组件复用；没有运行新的模型或继承冻结Core模型资格。
+
+可选的 [`VllmAsyncEngine`／`AsyncEngineProcess`](async_engine.README.md) 已作为独立组件接纳，
+复用上述结果转换，提供一次模板、有界多在途及独立控制／数据／结果通道。
+submit queued、child accepted、terminal、abort_requested 分开；unknown 保留输入和结果预留。
+close 只确认 API、直接 child 和本地 I/O，后代／GPU 仍需外层 owner 独立核验。
+原组件 121 项 CPU 与后续关闭修复 36 项的来源从[组件报告](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md)核对；
+尚未接入 actor／Core／CLI，同步默认不变，没有真实 Async 模型或持续供给性能结论。

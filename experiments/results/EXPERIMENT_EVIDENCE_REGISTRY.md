@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-19：[Core Extract 关系屏障](diagnostics/lotus_extract_relation_20261019/README.md#后续共享合同与显式-core-接线)。共享129、Core组合55（含共享8及helper11）、native门2项分列；同query／worker／私有CPU pipe跨关系完成，3已观察owned退出，wire额度不是全查询RSS。原默认guard与Ray／Daft拒绝门保持；零模型／GPU。
+
+2026-10-19：[独立Async组件与关闭故障修复](diagnostics/local_async_engine_20261019/README.md#root-集成与关闭异常修复)。原121／190与修复后36项不同范围，不重复相加；17个已观察owned退出，unknown保留预留／句柄，后代／GPU仍None，未接actor／Core／CLI。
+
 2026-10-19：[冻结普通Core模型资格](diagnostics/lotus_records_local_model_20261016/README.md#core-model-qualification-20261019)。`ebe3035f`／394文件Git archive闭包，同owner／Core／actor／engine连续两独立query，共4次实际调用、506／16 tokens，原messages／token／parser／LMstats／COUNT及原评价核同。40个已观察owned身份及控制器退出、Core额度与引用归零，独立GPU1MiB空compute／正常lease释放；新4／4永久claim，旧32及Daft16 SHA不变，成功Daft未重跑。37成员归档核同；两个重复负例仅作该固定小切片资格，不外推质量、后续源码或性能。
 
 2026-10-19：[共享纯结果转换CPU](diagnostics/lotus_records_local_model_20261016/README.md#shared-result-conversion-cpu-20261019)。`a4f47eab`提取result_record／result_from_output供同步及后续Async共用，69项CPU零skip及64项旧84源码逐字段差分通过，4个已观察owned退出、两轴审查无发现。采样／预算／生命周期保持，无模型／SSH，不构成Async持续供给或新源码GPU资格。

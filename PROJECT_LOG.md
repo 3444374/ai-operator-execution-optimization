@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：接纳 Core 关系屏障与独立 Async 组件
+
+选择性接纳bf55关系值、c35共享合同、d560 Core接线及Ray／Daft分配前拒绝门；默认末端Extract规则保持。共享129、Core组合55、native门2项分列，原错误／knownusage与最终消费者寿命保留，逻辑bytes不封顶完整关系/RSS。两轴独审通过，模型仍pending。
+接纳Async四个新文件提交及f8c关闭异常修复，原121与修复36项来源分开；17个已观察owned退出、双独审关闭P2，同步默认/Core/CLI不改。[关系报告](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)和[组件报告](experiments/results/diagnostics/local_async_engine_20261019/README.md)保留精确边界。
+冻结8be的IMLane首次实际单元初始化ZMQError；第二query未启动，4次永久claim不退、actual null、原lease按unknown保留。两个启动前本地准备误判均已确证无controller/模型动作后修正，原件保留；当前不借旧CPython CPU结果或其他成功模型资格。
+
 ## 2026-10-19：完成冻结普通 Core 模型资格并提取共享结果转换
 
 用户恢复strict SSH复用后，先核资源／旧PID与账本，再仅一次上传和启动冻结ebe／394文件闭包。同owner／生产Core／模型actor／engine连续两独立query，共4次真实调用506／16 tokens，原messages／token／parser／LMstats／COUNT与原SemBench评价核同；Core额度与引用归零。40个已观察owned身份及控制器退出、独立GPU1MiB无compute／正常owned lease释放，API范围与物理观察分列。新4／4永久claim，旧32及Daft16 SHA不变、成功Daft未重跑；37成员归档逐hash核同，两个重复负例不外推质量或性能。

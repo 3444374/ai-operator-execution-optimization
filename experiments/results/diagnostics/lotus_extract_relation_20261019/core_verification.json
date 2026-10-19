@@ -1,0 +1,136 @@
+{
+  "schema": "semloom.extract_relation_core_cpu.v1",
+  "integration_commits": [
+    "8196c026b6c51ff2f7f207180381a2c4dc87f81c",
+    "a903e51c",
+    "3fcb7a88",
+    "4566939a"
+  ],
+  "author_commits": [
+    "bf55e1bf7a5c253ecdc6bd62615579f1c3c7b95f",
+    "c35d396cc6cf081800dde6e78ba59ea3126f8e4d",
+    "d560da736f5253307921e11795cab4f10e8521a3"
+  ],
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_record_chain_core.py": "4ad6d89d550477633fd4243029f158fc4d7bb8ccf00ca3bcf9fad18ce5d6bea1",
+    "code/tests/execution_provider/test_lotus_record_chain_core_relations.py": "9b6a3b2f578b550879704823c880c02f75faead1af01b31f70fb068b158862ad",
+    "code/src/semantic_methods/lotus/engine.py": "57bed381dbee4c2efdd6cbf4e287cd13fa7589e34352b75dedb1a0512d7353f0",
+    "code/src/semantic_methods/lotus/record_chain.py": "70f853a9559be3397d87a97adfa30c7cb59069f7b2e99fd79b06741e435122bb",
+    "code/src/baselines/text/frameworks/lotus_chain_results.py": "d55defeb780072123056023bc60969b1af3f95c6057806805a4973fb64908084",
+    "code/src/baselines/text/frameworks/lotus_chain_batch.py": "3988d876a8011b7c741f540d2f67a88da724aafc9d756a69853f47ac9a80f310",
+    "code/tests/baselines/text/test_chain_relation_barriers.py": "163aeff733534bff06a384e978c73eb024658e905e811678c6bbae0bc202f031"
+  },
+  "core_cpu": {
+    "report": "cpu-suite-r3.json",
+    "sha256": "960f838d27e923c736c1d40cff3e4e3168ffb15d0982b40b8d23ae7b733a63e3",
+    "tests_run": 55,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "composition": {
+      "new_core_relation": 13,
+      "unchanged_core": 23,
+      "relation_helper": 11,
+      "shared_phase_contract": 8
+    },
+    "versions": {
+      "lotus-ai": "1.2.4",
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "pyarrow": "24.0.0",
+      "pandas": "2.3.3"
+    },
+    "python": "3.12.6 (v3.12.6:a4a2d2b0d85, Sep  6 2024, 16:08:03) [Clang 13.0.0 (clang-1300.0.29.30)]"
+  },
+  "shared_cpu": {
+    "final_tests": 129,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "new_tests": 8,
+    "original_methods": "real pinned LOTUS formatter/parser/stats; explicit CPU model substitute",
+    "outer_supervisor": "production supervise",
+    "observed_owned_exit_confirmed": true,
+    "observed_owned_count": 2,
+    "cleanup_errors": [],
+    "remaining_owned_pids": [],
+    "physical_gpu_exit_checked": false
+  },
+  "native_preallocation_guards": {
+    "schema": "semloom.cpu_guard_verification.v1",
+    "tests": 2,
+    "subtests": 4,
+    "status": "passed",
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "model_commands": 0,
+    "scope": "explicit relation profile rejected by Ray/Daft before source/runtime/temp/child actions",
+    "elapsed_s": 4.881,
+    "environment_note": "LOTUS import attempted LiteLLM cost map network lookup then used local backup; no model action"
+  },
+  "supervisor": {
+    "status": "passed",
+    "elapsed_s": 25.75450895799804,
+    "worker_exit": 0,
+    "observed_owned_exit_confirmed": true,
+    "remaining_owned_pids": [],
+    "cleanup_errors": [],
+    "gpu_exit_confirmed": null,
+    "unobserved_descendants_confirmed": false,
+    "observed_owned_count": 3
+  },
+  "core_contract": {
+    "explicit": "LotusRecordChain(relation_barriers=True) consumed by Core only",
+    "default_terminal_guard_preserved": true,
+    "original_stage_loop": "LotusRecordChain.run_batch inside FusedChainBatch; contiguous segments only",
+    "phase_transition": "source EOF + sticky success/coverage + columns + zero Core reservations/leases/transport inputs and outcomes; retire session; complete_extract_relation; next guarded segment on worker thread",
+    "same_query_owner_transport_worker_engine": true,
+    "phase_sessions": "one new session per segment; no simultaneous sessions",
+    "prefix_results_published": false,
+    "initial_parents": "complete same-label Extract group, preserved in successful calls, audit/failure prefixes and first-stage collector checks",
+    "nulls": "present str/None accepted only for derived relation phases; missing input columns still fail",
+    "old_audit_routing": "phase_stage_ids select retained historical accountants, no reinference/rebilling",
+    "model_close": "deferred beyond intermediate expected counts/EOF, final consumer EOF/error/explicit close uses same bounded model cleanup owner",
+    "source_close_error": "original exception preserved before any successor",
+    "core_task": "one raw record_json input batch",
+    "work_unit": "stage_call_upper_bound",
+    "estimated_work": "len(actual input batch) * number of stages in its current segment",
+    "limits": {
+      "held_tasks": 1,
+      "active_requests": 1,
+      "offer_tasks": 1,
+      "async_slots": 1,
+      "item_input_bytes": 2097152,
+      "item_result_bytes": 8388608,
+      "metadata_bytes": 2048,
+      "active_work": "model_batch_rows * stage_count; per-segment sessions do not exceed full-query engine capacity"
+    },
+    "driver_retention": "full source expected values, source iterator, at most one pending raw batch, complete current Extract relation, decoded results and all call/stats/raw history; worker/SDK/IPC/audit copies separate",
+    "whole_query_rss_bounded": false,
+    "physical_gpu_memory_bounded": false
+  },
+  "retained_prior_evidence": {
+    "r1": "54 tests, five failed assertions across three new test methods/subtests: CPU response selector matched keep-broadcast phrase in the test instruction; strict expected survivor IDs detected the faulty fixture. No production failure was hidden. Raw source and trace preserved.",
+    "r2": "54/54 PASS after changing only the new fixture Filter instruction; expected output remained occ-0 and occ-2.",
+    "r3": "55/55 PASS after restoring original default profile live accounting container references and adding their compatibility test. Exact source hashes checked again after commit; no byte changes."
+  },
+  "prior_shared_failure": "First129 run: one old Daft private _record_calls audit-prefix fixture had no parent annotation; new seeded check rejected before forged callID. Compatibility narrowed for default unannotated audit prefixes, explicit seeds remain strict and full _accept checks initial empty parents. No old test edits.",
+  "model_requests": 0,
+  "gpu_requests": 0,
+  "claims": {
+    "core_relation_barrier_cpu": true,
+    "ray_daft_relation_barriers": false,
+    "async_llm_continuous_supply": false,
+    "real_model_qualified": false,
+    "performance": false
+  },
+  "notes": [
+    "55 includes 8 shared tests and 11 relation-helper tests; overlapping suites are not added as independent cases.",
+    "Raw CPU/supervisor evidence remains outside Git; this is a derived public summary with source and receipt hashes."
+  ],
+  "private_receipt_sha256": {
+    "core": "17d5f67e4e387ec73f7c2fc7f4b892c6911431fbd4330b060283e2659a7774f3",
+    "shared": "1400d295303dd965367bc7240f47cc10903b5677509627647440b0638231b270"
+  }
+}

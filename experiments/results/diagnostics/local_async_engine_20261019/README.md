@@ -1,6 +1,7 @@
 # 本地异步模型组件：CPU 合同与有界进程桥
 
 状态：新增组件的 CPU 验证，尚未接入 actor/Core/CLI，尚无真实 vLLM/GPU 或性能资格。
+root 后续选择性整合及关闭异常修复见末节；原始候选证据按其固定字节保留。
 原始任务基线 `integration/data-execution@d2915206`；唯一共享引擎 owner 后续交付
 `a4f47eab19ce4ff1b33f82b2cd1def2c47106e67`，本职责分支以 fast-forward 消费该依赖。
 本工作包只新增组件、专属测试及本报告；`a4f47eab` 以前的集成差异不属于本包实现。
@@ -94,3 +95,23 @@ actor/Core 生命周期接线；相同方法和生命周期下的完整查询对
 
 失败 pytest 日志带有原生尾空格，公开副本采用无损 gzip 保留原字节；来源记录同时给出压缩/解压摘要与字节数。
 可用 `gzip -dc raw/cpu_20261019T065230Z.txt.gz` 恢复阅读。原未压缩副本仍可从提交 `0f79bbce` 追溯。
+
+## root 集成与关闭异常修复
+
+原四个职责提交选择性整合为 `6792213d`、`7df2eaf2`、`ee598ac0`、`cd977302`。
+root Spec 独审发现 kill 后第二次 wait 超时会跳过本地 I/O 收尾及 unknown 报告；
+`bc92f7ce` 接纳职责修复 `f8cceff9`，没有改同步、方法、Core、actor 或 CLI。
+
+构造器在保护区内登记每对 FD，部分 socketpair／setblocking 失败仍显式收尾。
+close 的 wait／TERM／KILL／poll 失败会保留诊断并在 finally 尝试关闭 FD／有界 join；
+未确认 child 退出仍 unknown，保留同一 owner 句柄和未知预留。
+构造失败重新抛原启动异常，附 `async_close_report` 与 `async_engine_process`，不以清理次错覆盖主错。
+GPU／后代字段仍 None，重试仅可用于该同一 owner 的清理，不重新提交模型调用。
+
+[派生集成摘要](integration_verification.json)绑定修复两份源码和私有原件摘要。
+7 项新增故障、原 16 项实际 CPU IPC 和 13 项 Async 内核替身共 36 项通过、0 skip；
+生产 supervisor 确认 17 个已观察 owned 身份退出，remaining／cleanup 为空。
+首轮新 fixture 漏 limits 的失败保留，修正仅在新测试；没有以此扩大生产范围。
+原候选 121／190 与修复后 36 的范围不同，不相加为独立样本数；本轮未重跑原完整 121 套件。
+两位独立 reviewer 复核关闭原 P2，Standards／Spec 均无剩余阻断。
+actor／Core 持续供给接线、真实 vLLM／GPU、跨阶段流水与性能继续 pending。
