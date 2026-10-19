@@ -1,5 +1,10 @@
 # Daft Native LOTUS text Filter records
 
+The independent [finite-chain adapter](daft_lotus_chain.py) uses the shared fused
+LOTUS batch kernel in one native process class. Its FME/MF/MMF/FFM, error and
+cleanup CPU qualification is recorded in the [slice report](../../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量).
+The single-Filter lifecycle and frozen model results below retain their own source.
+
 `daft_lotus_records.evaluate()` builds one lazy Daft 0.7.21 graph: typed CSV,
 an optional source-declared equality, projection, a process-based LOTUS preparation class, a separate
 process-based inference class, and one final compact result iterator. Each

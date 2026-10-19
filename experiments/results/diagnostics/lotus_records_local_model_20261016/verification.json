@@ -1205,5 +1205,470 @@
     "method": "normal merge preserving both PROJECT_LOG additions",
     "gpu_frozen_source_unchanged": true,
     "historical_raw_evidence_unchanged": true
+  },
+  "finite_chain_backends_cpu_20261019": {
+    "scope": "shared finite batch kernel/results, Ray extraction, Daft Native and separate local-worker Core finite chain; CPU only",
+    "source_base": "5c6d7a3bf45aa9dd38f1219e7e3810876b32e704",
+    "author_commits": [
+      "6c584426611ba8dffcdbc93191e2c6371dba8bba",
+      "73a34b71b3471e50143352c7eca2885adc66f2a3",
+      "515179f87f703b42041487313042ad680397711e"
+    ],
+    "integration_commits": [
+      "89fe7f31",
+      "25034447",
+      "f5d837ec",
+      "88e2c360e003f5e54dfdd813ef384030b6e34ef3"
+    ],
+    "reviews": {
+      "shared_extraction": "Spec PASS / Standards PASS",
+      "daft": "Spec PASS / Standards PASS",
+      "core": "Spec PASS / Standards PASS",
+      "cleanup_errors_snapshot": "Spec PASS / Standards PASS"
+    },
+    "only_stage_loop": "LotusRecordChain.run_batch; one call site in shared FusedChainBatch._run_batch",
+    "source_sha256": {
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528",
+      "code/src/baselines/text/frameworks/daft_lotus_chain.py": "0119ceb4f637904d23270ddcd370915fe522ef02e34f19b82d645532c400cfce",
+      "code/src/baselines/text/frameworks/lotus_chain_batch.py": "ffbd7ce1b78c5ee62b3bb8e50a88298311a9648219de25e27642134c912ca2d3",
+      "code/src/baselines/text/frameworks/lotus_chain_engine_process.py": "3f6ce73a331641f46e06d9c3293be8cdad4218863549757fb391c0e310770285",
+      "code/src/baselines/text/frameworks/lotus_chain_results.py": "b9078d6961fba8299a2e58f1ad8e85a75b62bc52f49915e2a405c9f4c0953507",
+      "code/src/baselines/text/frameworks/ray_data_lotus_chain.py": "f3cb41c9b9f1f7d51132dae71ecbad13eb716a4afe90bfe47c84b30a6a789be0",
+      "code/src/execution_provider/adapters/lotus_record_chain_core.py": "cbd3acb932de87b426327338a83c5ca9882dd4e53c0500282c41c30f661a69e2",
+      "code/src/infrastructure/daft_runtime.py": "f245747488d799fbea43dbdc09d2a1446ed2b27c2f01e47e524a2142b0700c69",
+      "code/src/semantic_methods/lotus/engine.py": "f347294d4d1cbc40f47d1f2868cd8098a8a52807438cb2bdf7335b0d2fbb79d8",
+      "code/src/semantic_methods/lotus/record_chain.py": "cfa0b830908fba94c583c791648ced3d226cb05333db2dce38f0e0cceb56d2da",
+      "code/src/semantic_methods/lotus/records.py": "dce21713ec0e3fcafc6f430f7c2675642cc95709a93a873727846677f60a40de",
+      "code/src/serving/backends/vllm_engine.py": "483983185bb15f2c434969d1366180a5c599fc75fdcbde11a4136c100e41c3b4",
+      "code/tests/baselines/text/daft_chain_fixture.py": "ab89e2675ce6be3edb2bc48b27141546d4114f8133e2e4a9dd76b4b54bc34e8c",
+      "code/tests/baselines/text/test_daft_lotus_chain.py": "c05d798c6a8c6d6a1dfaeba8d10c39d2a722ebfd1882a0050e8f25829623c078",
+      "code/tests/baselines/text/test_ray_data_lotus_chain.py": "4622a57e61a05e66b364a7121ee9e0e4ec3dd8e44b8d20b198cb7d5163ee88f2",
+      "code/tests/execution_provider/test_lotus_record_chain_core.py": "edaddfad939291690899ec864d530c52386a84313887c551013c397e2e6b95d0"
+    },
+    "qualified_source_delta": {
+      "code/src/baselines/text/frameworks/lotus_chain_results.py": {
+        "qualified_sha256": "740e8b96ff924f59d8fa60a62e281760ee70b7df305ebe7c484673df124e1b36",
+        "integrated_sha256": "b9078d6961fba8299a2e58f1ad8e85a75b62bc52f49915e2a405c9f4c0953507"
+      },
+      "explanation": "Only a reviewed readonly tuple cleanup_errors property added to the shared collector; acceptance/lifecycle AST unchanged. Original qualified source hashes remain in raw manifest."
+    },
+    "shared": {
+      "contracts": {
+        "tests_run": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "ray_method_asts_unchanged": [
+          "__iter__",
+          "_check",
+          "_watch",
+          "__next__",
+          "_finish_error",
+          "close"
+        ],
+        "log_sha256": "9b34b48398959547aea5aa8a911fbc076140d37c3d4eb1353aa087cc64a121fe",
+        "actual_model_calls": 0,
+        "logical_gpus": 0
+      },
+      "private_ipc_tests": 2,
+      "real_ray_tests": 5,
+      "real_ray": "2.56.1",
+      "run_id": "records-chain-extraction-libraries-r2",
+      "observed_owned_exited": 72,
+      "failed_predecessor_retained": "records-chain-extraction-libraries-r1",
+      "source_precision": {
+        "shared_r2_snapshot_delta": "One terminal blank line removed to satisfy git diff --check; fixed commit + one LF hashes exactly to original r2. Full AST equal, no semantic rewrite.",
+        "daft_final_snapshot_matches_commit": true
+      }
+    },
+    "daft": {
+      "profile": {
+        "scheduler": "Daft Native 0.7.21",
+        "native_gpu_request": 1,
+        "cpu_qualification_substitution": 0,
+        "use_process": true,
+        "max_concurrency": 1,
+        "max_retries": 0,
+        "native_batch": "Class batch returns one complete envelope on first row; None padding is removed by native filter. Every input remains covered exactly once.",
+        "model_batch_rows": 2,
+        "prepare_batch_rows_applied": false,
+        "max_active_batches_applied": false,
+        "runner": "Reuse actual Native runner; reject foreign runner and unapplied external thread change.",
+        "close": "Independent DEFAULT_CLOSE_TIMEOUT_S budget plus finite report observation; owned registered PID cleanup never proves GPU exit."
+      },
+      "tests": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "software_contracts": 6,
+        "actual_library_cases": 7
+      },
+      "run_id": "records-chain-daft-libraries-r3",
+      "observed_owned_exited": 29,
+      "shapes": [
+        {
+          "shape": "FME",
+          "final_relation_rows": 2,
+          "source_indices": [
+            9,
+            9
+          ],
+          "call_count": 7,
+          "known_prompt_tokens": 21,
+          "known_completion_tokens": 7,
+          "known_total_tokens": 28,
+          "false_terminal_calls": 1,
+          "distinct_engine_uids": 1,
+          "native_batch_envelopes": 2,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "original_messages_generation_stats_equal": true
+        },
+        {
+          "shape": "MF",
+          "final_relation_rows": 2,
+          "source_indices": [
+            9,
+            9
+          ],
+          "call_count": 6,
+          "known_prompt_tokens": 18,
+          "known_completion_tokens": 6,
+          "known_total_tokens": 24,
+          "false_terminal_calls": 1,
+          "distinct_engine_uids": 1,
+          "native_batch_envelopes": 2,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "original_messages_generation_stats_equal": true
+        },
+        {
+          "shape": "MMF",
+          "final_relation_rows": 2,
+          "source_indices": [
+            9,
+            9
+          ],
+          "call_count": 9,
+          "known_prompt_tokens": 27,
+          "known_completion_tokens": 9,
+          "known_total_tokens": 36,
+          "false_terminal_calls": 1,
+          "distinct_engine_uids": 1,
+          "native_batch_envelopes": 2,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "original_messages_generation_stats_equal": true
+        },
+        {
+          "shape": "FFM",
+          "final_relation_rows": 2,
+          "source_indices": [
+            9,
+            9
+          ],
+          "call_count": 7,
+          "known_prompt_tokens": 21,
+          "known_completion_tokens": 7,
+          "known_total_tokens": 28,
+          "false_terminal_calls": 1,
+          "distinct_engine_uids": 1,
+          "native_batch_envelopes": 2,
+          "close_status": "closed",
+          "gpu_exit_confirmed": null,
+          "original_messages_generation_stats_equal": true
+        }
+      ],
+      "lifecycle": [
+        {
+          "case": "daft-cancel",
+          "counts": {
+            "succeeded": 2,
+            "failed": 0,
+            "unknown": 2
+          },
+          "known_total_tokens": 8,
+          "unknown_usage_calls": 2,
+          "close_status": "unknown",
+          "process_exit_confirmed": [
+            true
+          ],
+          "gpu_exit_confirmed": null
+        },
+        {
+          "case": "daft-parser-error",
+          "counts": {
+            "succeeded": 4,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 16,
+          "unknown_usage_calls": 0,
+          "close_status": "closed",
+          "process_exit_confirmed": [
+            true
+          ],
+          "gpu_exit_confirmed": null
+        },
+        {
+          "case": "daft-unknown",
+          "counts": {
+            "succeeded": 2,
+            "failed": 0,
+            "unknown": 2
+          },
+          "known_total_tokens": 8,
+          "unknown_usage_calls": 2,
+          "close_status": "closed",
+          "process_exit_confirmed": [
+            true
+          ],
+          "gpu_exit_confirmed": null
+        },
+        {
+          "case": "daft-close-unknown",
+          "counts": {
+            "succeeded": 7,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 28,
+          "unknown_usage_calls": 0,
+          "close_status": "unknown",
+          "process_exit_confirmed": [
+            true
+          ],
+          "gpu_exit_confirmed": null
+        },
+        {
+          "case": "daft-empty",
+          "counts": {
+            "succeeded": 0,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 0,
+          "unknown_usage_calls": 0,
+          "close_status": "closed",
+          "process_exit_confirmed": [],
+          "gpu_exit_confirmed": true
+        },
+        {
+          "case": "daft-false",
+          "counts": {
+            "succeeded": 1,
+            "failed": 0,
+            "unknown": 0
+          },
+          "known_total_tokens": 4,
+          "unknown_usage_calls": 0,
+          "close_status": "closed",
+          "process_exit_confirmed": [
+            true
+          ],
+          "gpu_exit_confirmed": null
+        }
+      ],
+      "failed_predecessor_retained": "records-chain-daft-libraries-r1"
+    },
+    "core": {
+      "profile": {
+        "byte_boundary": "logical wire input/result bytes exclude worker Python copies, diagnostic audit files and consumer relation/ledger; not RSS or GPU hard limits",
+        "core_work_unit": "stage_call_upper_bound",
+        "cpu_workers": 1,
+        "cross_query_model_reuse": false,
+        "daft_used_by_adapter": false,
+        "max_active_batches": 1,
+        "model_batch_rows": "fused input-batch upper bound, tested 2",
+        "overlapped_cross_batch_supply": false,
+        "per_batch_upper_bound": "rows * configured stages",
+        "prepare_batch_rows_applied": false,
+        "ray_used_by_adapter": false,
+        "source_boundary": "expected source declarations finitely materialized for metadata/value binding; source iterator pulled by one fused batch"
+      },
+      "physical_path": [
+        "caller-owned RecordOccurrence iterator and finite expected occurrence/value declaration",
+        "bounded raw batch JSON admission in SessionEngine",
+        "BoundedAsyncBackend single slot and one host fused worker",
+        "shared FusedChainBatch.run_rows -> sole LotusRecordChain.run_batch -> original LOTUS formatter/parser",
+        "private ChainEngineProcess pipe to local model process",
+        "consumer decodes bounded envelope then releases lease; relation and call ledger remain separate"
+      ],
+      "api": {
+        "capacity": "CoreChainCapacity",
+        "close": "owner.close(*, timeout=None)",
+        "iterator": "owner.evaluate(records, chain, *, expected, query_id, cancelled=None)",
+        "lifetime": "one finite query per owner; fresh owner/query ID for independent repeat work",
+        "owner": "SemLoomRecordChainCore(engine, resources, *, capacity=None, control_dir=None)"
+      },
+      "lifecycle": {
+        "api_os_gpu": "API acknowledgement and observed owned OS exit are distinct from GPU inventory; adapter physical GPU flag remains null",
+        "cleanup": "one retained daemon cleanup future for the same owner; bounded waiting, no new model; consume an already closed future without repeated close",
+        "known_terminal": "decode before exactly-once lease release; confirmed task failure stays query failure",
+        "unknown": "retain Core task/source bytes and original private owner; no fake release or query recovery"
+      },
+      "tests": [
+        {
+          "suite": "new_core_chain",
+          "tests": 23,
+          "file": "private-core-chain-cpu-20261019-frozen/result.json",
+          "sha256": "f39a034c8a69dfc4e592b856873afad3012898e0dea8a3ff75eb908082526647"
+        },
+        {
+          "suite": "existing_core",
+          "tests": 30,
+          "file": "private-core-chain-cpu-20261019-checks/existing-core/result.json",
+          "sha256": "8e200811de90c909fe38845a7e766de47902519184e028b078aa761e3cd5be1f"
+        },
+        {
+          "suite": "shared_native_fixture",
+          "tests": 22,
+          "file": "private-core-chain-cpu-20261019-checks/shared-native-fixture/result.json",
+          "sha256": "18503df1b3ab539600b7dfd5e56362363860ddd49b3be4ce074f06cff8760449"
+        },
+        {
+          "suite": "original_lotus_chain_offline",
+          "tests": 20,
+          "file": "private-core-chain-cpu-20261019-checks/original-chain-offline/result.json",
+          "sha256": "2e84538bdf94e8b449686bdfd9ed1f90ce2629211e74a58ea527bee833eb14bc"
+        }
+      ],
+      "coverage": [
+        "FME/MF/MMF/FFM",
+        "Extract-terminal guard",
+        "empty/all-false",
+        "duplicate indexes",
+        "business row_id/call_id",
+        "stage parent identity and per-call generation",
+        "slow consumer and lease release",
+        "parser/decode errors and retained prefix",
+        "None usage and unconfirmed association",
+        "source/result capacity errors",
+        "cancel/deadline with late known terminal versus unknown successor",
+        "worker startup fence",
+        "bounded private close and same-owner continuation",
+        "cleanup RuntimeError/TimeoutError never override parser error"
+      ],
+      "real_components": [
+        "SessionEngine",
+        "BoundedAsyncBackend",
+        "original LOTUS formatting/parser/accounting",
+        "shared method kernel/result validator",
+        "production ChainEngineProcess pipe and observed OS-exit case"
+      ],
+      "fixtures": [
+        "model inference responses",
+        "model environment probe",
+        "OS/hardware reports in remaining fixture cases"
+      ],
+      "execution_notes": [
+        "Default sandbox blocks psutil child/process inventory. Real private pipe/OS-exit checks used approved local process-observation permission; no SSH/model/GPU.",
+        "Initial model fixtures omitted engine_request_id and incorrectly used actual environment validation; failures are preserved. Production validation was never relaxed.",
+        "The first semantic regression omitted PYTHONPATH. A subsequent run omitted the local-cost-map flag: public pricing metadata DNS failed and LiteLLM fell back locally. Final original-chain-offline explicitly uses local cost map plus offline flags; no model endpoint was called."
+      ]
+    },
+    "raw_evidence": [
+      {
+        "file": "nonmodel-evidence/records-chain-native-delivery-r1.json",
+        "bytes": 25007,
+        "sha256": "7a670ee5b5bf56902345e1ef02985904fa3d433827817392361c13778bdc7c90"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-extraction-source-proof-r1.json",
+        "bytes": 2427,
+        "sha256": "6061b649d926142b492a98b82b2cd68266b495c14b6f6de59076c319e40b3db3"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-extraction-contracts-r2.log",
+        "bytes": 4963,
+        "sha256": "9b34b48398959547aea5aa8a911fbc076140d37c3d4eb1353aa087cc64a121fe"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-extraction-libraries-r2/supervisor.json",
+        "bytes": 7147,
+        "sha256": "a06a79e631e5e479edb4feee1f778911a750ab1bcc889bcfb5ec1d376d3e2db4"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-extraction-libraries-r2/worker.log",
+        "bytes": 23392,
+        "sha256": "250a3ff4bf15cd6ba9d5185b9934f1c41de8b8acfbb824606547e7981fb60226"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-daft-libraries-r3/sources.json",
+        "bytes": 636,
+        "sha256": "54c8bc7fd7bc03fd5db696a163d6cdea5119a2f3771882415ead3225f2899b06"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-daft-libraries-r3/supervisor.json",
+        "bytes": 3310,
+        "sha256": "80e6ebc73209435404db5fbb894a7c24695ec96ec5b3a508fbee7400bd93a485"
+      },
+      {
+        "file": "nonmodel-evidence/records-chain-daft-libraries-r3/worker.log",
+        "bytes": 6548,
+        "sha256": "f2b6ac697cc28521c0e4f7bcaeaad6539ca0f54b3856d14e91206788e4d0f36f"
+      },
+      {
+        "file": "private-core-chain-cpu-20261019-frozen/CORE-CHAIN-HANDOFF.json",
+        "bytes": 7105,
+        "sha256": "be5270c4b87ed14187b8f0aa8d3582f98aaa282998de19f1276ad7482cfabccd"
+      },
+      {
+        "file": "private-core-chain-cpu-20261019-frozen/result.json",
+        "bytes": 712,
+        "sha256": "f39a034c8a69dfc4e592b856873afad3012898e0dea8a3ff75eb908082526647"
+      },
+      {
+        "file": "private-core-chain-cpu-20261019-frozen/stderr.txt",
+        "bytes": 4089,
+        "sha256": "604db38bcccaec04a8f0a437977f3d52ae55e08fd7be6811ce10c0a2160283d1"
+      },
+      {
+        "file": "nonmodel-evidence/finite-chain-root-combination-r1/result.json",
+        "sha256": "47e2436fc0cc6b147d61d4ce3d294d5956aca422b315fc68c328df7021dd3483",
+        "bytes": 11183
+      },
+      {
+        "file": "nonmodel-evidence/finite-chain-root-combination-r1/worker.log",
+        "sha256": "11c53ba74c239dda3a0e18e788891b6b3934040c86ecf664f5265d29fdb06ae1",
+        "bytes": 46912
+      }
+    ],
+    "real_model_requests": 0,
+    "gpu_requests": 0,
+    "physical_gpu_qualification": false,
+    "old_model_sources_and_ledgers_unchanged": true,
+    "limits": [
+      "Extract remains terminal; one model deployment; no Join, branch or global aggregation.",
+      "Core profile has no Ray or Daft and no cross-query reuse; its work is a rows-times-stages upper bound, not executing token work.",
+      "Source expected occurrence metadata/value declaration is finite and materialized, actual Core source iterator pulled one bounded fused batch at a time.",
+      "Logical wire bytes exclude Python copies, audit files and consumer relation/ledger; no RSS/GPU memory guarantee.",
+      "Real model/GPU, shared chain CLI, complete SemBench tasks and continuous cross-batch supply remain pending.",
+      "Separate suites and repeated runs are not added into a unique sample count."
+    ],
+    "root_joint_contracts": {
+      "tests": 70,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_s": 22.500404207999964,
+      "source_commit": "88e2c360e003f5e54dfdd813ef384030b6e34ef3",
+      "real_model_requests": 0,
+      "gpu_requests": 0,
+      "scope": "Root joint fixture Core/Daft/Ray collector and original LOTUS methods. No native runtime or model process executed; component real-process/library evidence remains separately source-bound.",
+      "explicitly_excluded_os_process_tests": [
+        "tests.execution_provider.test_lotus_record_chain_core.CoreChainTests.test_real_private_process_wire_and_observed_exit_with_only_model_kernel_substituted"
+      ],
+      "command_modules": [
+        "tests.baselines.text.test_ray_data_lotus_chain.NativeChainTests",
+        "tests.baselines.text.test_daft_lotus_chain.DaftChainConsumerTests",
+        "tests.baselines.text.test_daft_lotus_chain.DaftRunnerTests",
+        "tests.execution_provider.test_lotus_record_chain_core.CapacityTests",
+        "tests.execution_provider.test_lotus_record_chain_core.CoreChainTests",
+        "tests.semantic_methods.test_lotus_record_chain"
+      ],
+      "log_sha256": "11c53ba74c239dda3a0e18e788891b6b3934040c86ecf664f5265d29fdb06ae1"
+    }
   }
 }

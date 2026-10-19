@@ -252,6 +252,28 @@ Core 标记为 true、静态为 false，两个 Core session 独立、每臂复�
 本段形成时单Filter公共后端尚在迁移旧Q3绑定；后续四后端的独立验收见下节，不向其他路径转授资格。
 新链真实模型、Daft／IMLane／Core 有限链、跨阶段 AsyncLLM 仍待验证。
 
+### 共享批内核及 Daft／Core 有限链 CPU 增量
+
+后续选择接纳 `6c584426` 的 [FusedChainBatch](../../../../code/src/baselines/text/frameworks/lotus_chain_batch.py)
+与 [ChainBatchResults](../../../../code/src/baselines/text/frameworks/lotus_chain_results.py)。前者只调用唯一的
+`LotusRecordChain.run_batch()`，后者只验证结果、身份、来源及账本，不拥有执行或关闭调度。
+Ray 原入口和错误类型保留，六个消费／关闭方法 AST 不变。22项共享合同、2项真实私有 CPU 传输及5项实际 Ray 图通过；
+首次同 driver 重复初始化 Ray 的失败保留，改为各图独立 driver 后，72个已观察 owned 身份均退出。
+该实库运行与提交的批模块仅末尾一处空行不同，原 SHA 可由提交字节加一个 LF 复原，完整 AST 相同。
+后续只读 `cleanup_errors` 快照另有独立审查，不改接纳或关闭状态。
+
+| 新路径 | 实际执行与边界 | 本轮资格 |
+|---|---|---|
+| [Daft 有限链](../../../../code/src/baselines/text/frameworks/daft_lotus_chain.py)，职责 `73a34b71` | 原生 process class 拥有分批／缓冲；每批由共享内核运行，首行携完整 envelope、其余 null 由原生 filter 去除；不使用 Ray。模型输入批上限生效，prepare_batch_rows／max_active_batches 不作为该布局的调度参数 | 13项零skip，包括7个实库用例（含预分配拒绝）；FME／MF／MMF／FFM 分别7／6／9／7次合成评价，各为两个原生批、一个引擎、两条最终发生项；原提示、生成、解析、统计及关系核同，29个已观察 owned 退出 |
+| [Core 有限链](../../../../code/src/execution_provider/adapters/lotus_record_chain_core.py)，职责 `515179f8` | 原 SessionEngine 接纳有界 raw batch bytes，BoundedAsyncBackend 单槽交本机共享 worker，再经私有模型进程 pipe；此 profile 不使用 Ray／Daft，与上方普通 Filter 的 actor profile 分开 | 23项零skip，真实 Core／异步 backend／LOTUS；其中私有进程协议及 OS 退出真实，模型和解释器探针为替身。单 owner 单 query，cpu_workers／max_active_batches 均为1，work 是 rows×stages 上界 |
+
+两个新路径均覆盖生成列传递、业务 row_id／call_id 与内部身份分离、重复业务索引、空源／全false、失败已知usage、取消、unknown与清理。
+根线程在当前组合上另跑70项协议／Core fixture／原LOTUS方法检查，零skip通过；该次明确不运行原生runtime或模型子进程，实库与OS证据仍按上表来源分列。
+Core unknown 保留额度及输入；一次保留的清理 future 只等待同一 owner，不重建模型。调用方仍须提供独立硬墙钟监督。
+逻辑输入／结果 bytes 不包括 worker 副本、审计文件与消费端关系／账本，不能作为 RSS 或 GPU 上限。
+Extract 仍限末端，跨 query 复用、跨 batch 持续供给、链 CLI／完整 SemBench 任务及全部新链模型资格仍pending。
+精确来源、保留失败及原件摘要见 `verification.json.finite_chain_backends_cpu_20261019`，不把分列回归累加成独立样本数。
+
 ## 原全局级联的独立 CPU 接纳
 
 选择接纳职责 `8ac06508`／`259c4173` 的原控制流 records seam、Ray阶段及查询函数，

@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：接纳共享批内核与 Daft／Core 有限链 CPU 切片
+
+共享FusedChainBatch仅调用唯一原方法阶段循环，ChainBatchResults只核验关系／身份／账本；Ray消费与关闭AST保持。22合同及2私有CPU传输／5实际Ray图通过；首个重复Ray初始化失败保留，按图独立driver后72已观察owned退出。
+Daft原生process有限链13项含7实库用例（含预分配拒绝）通过，FME／MF／MMF／FFM原方法和关系核同，29已观察owned退出；Core新链23项真实SessionEngine／BoundedAsyncBackend及私有CPU pipe检查通过。Core为单query／单本机worker profile，unknown保留额度及输入，不冒称普通Filter的actor布局。
+逻辑bytes与RSS／GPU分开，Extract限末端；模型、公共链CLI、跨query复用与持续供给仍pending。职责与原件摘要见[分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)，不把各分列回归重复相加。
+
 ## 2026-10-19：完成冻结 Daft 修正资格并接纳普通 Filter 复用
 
 冻结f526的一文件关闭修复通过两query／4次真实调用、506／16 tokens、原提示／token／parser／COUNT与原SemBench评价；59个已观察owned退出，独立GPU1MiB无compute、正常lease释放。41成员私有归档逐SHA核同；新16账本原4加新4现8／16，旧32 SHA不变，原失败actual null不补造。

@@ -39,6 +39,16 @@ The explicit Movie selector is `semloom-local-model-core`; its production marker
 actual Core owner/iterator. Real Ray/Daft/LOTUS/SemBench CPU composition has been checked with
 a synthetic model kernel, while real model/GPU qualification remains pending in the slice record.
 
+The separate [finite-chain Core adapter](lotus_record_chain_core.py) admits raw bounded
+fused batches through the same production Core and one asynchronous slot. A local host
+worker invokes the shared LOTUS batch kernel and owns its isolated model-process pipe;
+this profile uses no Ray or Daft. One owner supports one query, one active batch and one
+CPU worker. Core work is a conservative stage-call upper bound. Unknown work retains
+credit/input; bounded close keeps one cleanup future for that same owner. Logical wire
+bytes exclude Python copies, audit files and retained consumer relations. Its 23 CPU
+checks include a real private process/OS exit, with model/environment fixtures; real
+model/GPU, a chain CLI and cross-query reuse remain pending in the slice record.
+
 This module accepts prepared single-model request bytes through the existing Core.
 It does not interpret prompts, change generation parameters, or replace a supplier's parser.
 The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;

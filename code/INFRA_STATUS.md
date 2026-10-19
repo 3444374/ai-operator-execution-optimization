@@ -27,7 +27,7 @@ Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2su
 详情和源码SHA从[同题CPU增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)核对，不借旧模型资格。
 新增Core单行adapter／selector复用真实SessionEngine与BoundedAsyncBackend；最终实际Ray／Daft／LOTUS／SemBench CPU组合四query、12固定响应核同，20个已观察进程退出。Core标记true、static仍false，unknown保留额度及引用；共享runner回收迟到usage，role／stage身份与有限logprobs合同另有定向检查，见[组合记录](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#records-core-cpu-20261019)。
 有限链职责52037286已选择整合原方法／Ray fused图与原CPU证据；Map生成列可被后继Filter消费。普通Ray／Daft／静态／Core已消费中性scan，185职责合同与换列换指令的实库8query／28合成响应通过；root79项组合零skip、40已观察进程退出。Q3规则仍归任务，其他路径不转授该声明。
-原全局级联与有限logprobs组合30项CPU检查通过，真实helper模型仍pending。Core／Daft／IMLane有限链按同stage循环与共享批内核分工推进，未完成项不冒称已有执行资格。
+原全局级联与有限logprobs组合30项CPU检查通过，真实helper模型仍pending。共享有限批内核／纯结果核验已抽取，原Ray生命周期AST保持；Daft有限链13项含7实库用例（含预分配拒绝）、Core有限链23项真实Core及私有CPU进程检查通过。Core新链为本机单worker／pipe profile，不冒称沿用普通Filter的Ray actor图；两者模型资格、公共链CLI及跨批持续供给仍pending。精确来源从[有限链增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享批内核及-daftcore-有限链-cpu-增量)定位。
 owner只将字面True API与kill请求作为其关闭scope，OS／GPU仍独立观察；部分分配无句柄和静态unsettled保持unknown，91项CPU检查通过。新Core／有限链／级联模型与性能分别验证，不能继承冻结Daft结果。
 
 ## main 与集成分支的阅读范围

@@ -9,6 +9,8 @@
 
 显式 `semloom-local-model-core` 接入原生产 Core，要求单行准备／模型批；四次 static／Core CPU查询的原方法、usage和评价核同，身份及额度归还有独立检查。
 [有限链](../experiments/results/diagnostics/lotus_record_chain_20261019/README.md)共用同一阶段循环执行 Filter→Map→Extract 和 Map→Filter；各新来源的模型资格分开验证。单Filter后端的旧Q3业务绑定另在本轮迁移，不能以链检查替代。
+后续 [Daft 有限链](src/baselines/text/frameworks/daft_lotus_chain.py)与 [Core 有限链](src/execution_provider/adapters/lotus_record_chain_core.py)
+复用同一批内核及结果核验；Daft 使用原生 process 图，Core 使用有界接纳／单本机 worker／私有 pipe，分别完成13／23项CPU检查，真实模型另验。
 
 [IMLane 多行记录桥](integrations/imlane_records/README.md)是独立 DBEnd 接入；作者 CPython 的10scope无模型echo保持原资格，主线只提取必要owner helper，未恢复旧HTTP执行树。
 本机修后22项CPU／Arrow与PID／SHM替身检查不替代新增helper的作者实机重跑，也不提供模型方法、usage或GPU资格，见[分层证据](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)。
