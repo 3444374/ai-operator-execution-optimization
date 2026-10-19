@@ -1,0 +1,18 @@
+{
+  "run_id": "actor_close_overtakes_cancel_red_20261019T123402Z",
+  "source_base": "82e685b3233e6524732934bbf220fb5563e515f8",
+  "production_changes": "Only parent IO control priority prototype; actor unchanged from base.",
+  "model_calls": 0,
+  "server_access": false,
+  "exit_code": 1,
+  "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python -m pytest -q -p no:cacheprovider code/tests/serving/test_async_cancel_close_order.py::CancelCloseOrderTests::test_close_hands_off_active_abort_when_cancel_rpc_enters_after_closing",
+  "source_sha256": {
+    "code/src/serving/backends/async_engine_process.py": "4a33dcfb41500fc2b238a6ea46a412279338432b71e63f4af962f1f8f992daec",
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py": "6854f70a83fe219efa60fdf161b984d4b01daa98032f151bbcbee56f800f06ec",
+    "code/tests/serving/test_async_cancel_close_order.py": "5f1e2ed41b8d287a1f0645ea6639071e28830602f7e11b234b356245e4495576",
+    "code/tests/serving/async_cancel_order_fixture.py": "b91cf313e512b81ee739a11425e1bb72ba6e70cee785c169fb834d5a44aa9669"
+  },
+  "output_path": "raw/actor_close_overtakes_cancel_red_20261019T123402Z.txt.gz",
+  "output_sha256": "80c8877eb850661e15cb28f712b0ebc32ebca672e56184f64b2816dc01333283",
+  "raw_output_sha256": "84efc42342ae2176a86a3dc364efdbb41e9c9a08f6041d9b88da773843cee378"
+}

@@ -1,0 +1,92 @@
+{
+  "run_id": "async-core-82e685b3-20261019-r2",
+  "evidence_scope": "Read-only local copy of completed server evidence; no new server observations or model execution.",
+  "source_commit": "82e685b3233e6524732934bbf220fb5563e515f8",
+  "source_projection": "complete code/src plus runtime check assets/profiles and records public command",
+  "source_files_checked": 411,
+  "all_source_files_match_git_and_saved_manifest": true,
+  "source_archive_sha256": "459791a1a6e2614670a7faf4b9ec1c91e8f2e79d5e17ae044eb4bb3626842cb4",
+  "files": {
+    "HANDOFF-RESULT.md": {
+      "bytes": 4015,
+      "sha256": "37787e58a4bb50afa8cfe9f6f64a3de75aa061a48eb48dded9f6a7db988e7fe5"
+    },
+    "cancel-observations.json": {
+      "bytes": 3433,
+      "sha256": "0a39ce74072b8e91a44db486e8951a26c7ba6d55de887bfd21de89b8f57f7548"
+    },
+    "cancel-evidence-review.json": {
+      "bytes": 15598,
+      "sha256": "be73a9d1269b9c5648dbfb7b31f17e1cf3048fb20cb53efff830fe44367ce7e9"
+    },
+    "runtime/source-identity.json": {
+      "bytes": 49944,
+      "sha256": "acb40962411736a7239f8797c4c8d4f6261588212f2dd63012ebaa8b429b93ba"
+    },
+    "runtime/async_witness_engine.py": {
+      "bytes": 6774,
+      "sha256": "ba83c30612f31ca5487180f12813393322c42a7756f732ceeebbe069ce43d7b2"
+    },
+    "runtime/async_contract.py": {
+      "bytes": 7355,
+      "sha256": "120fa72dcb049974ed3cf229a60b951b11fb993696618081b3b97c6f73d46428"
+    },
+    "evidence/artifacts/units/cancel/events.jsonl": {
+      "bytes": 2860,
+      "sha256": "a6bdea53687150d357db546047d4e3aebc0c08a90f42de619dc9ec29ff66ba5c"
+    },
+    "evidence/artifacts/units/cancel/query.json": {
+      "bytes": 115141,
+      "sha256": "be8219584710f90a8925ec7b1bcd75d61422af6040744e9228548c56daaca7a5"
+    },
+    "evidence/artifacts/units/cancel/unit_report.json": {
+      "bytes": 5339,
+      "sha256": "7e654990a13d54025757d7ff1b106192195069edf5f1c8a19ab323ec0c2b0a70"
+    },
+    "evidence/artifacts/controller-report.json": {
+      "bytes": 12885,
+      "sha256": "a32640c9acf127f7171b318b81c54536a390b7e7244998799e13901f622b7545"
+    },
+    "independent-terminal-and-archive.json": {
+      "bytes": 28493,
+      "sha256": "4984912610ad3a2af1cab7561513bfd16fb68746c30fa8466ec824adcea81268"
+    },
+    "current-ledger-bindings.json": {
+      "bytes": 1812,
+      "sha256": "722aa63a28e040590d5a145c6420d27ea9a2276a326041a7e16dda97d433c834"
+    }
+  },
+  "observed": {
+    "native_abort_intent_events": 0,
+    "native_admitted_requests": 1,
+    "query_primary_error": {
+      "status": "failed",
+      "error_type": "InterruptedError",
+      "error": "LOTUS Core records cancelled"
+    },
+    "call_status": "unknown",
+    "known_prompt_tokens": 2402,
+    "known_completion_tokens": 1,
+    "native_api_shutdown_literal": true,
+    "actor_engine_close_literal": false,
+    "core_before_close": {
+      "held_tasks": 1,
+      "input_bytes": 13238,
+      "result_bytes": 2097152,
+      "active_requests": 1,
+      "active_work": 1
+    },
+    "core_after_close": {
+      "held_tasks": 1,
+      "input_bytes": 13238,
+      "result_bytes": 2097152,
+      "active_requests": 1,
+      "active_work": 1
+    },
+    "retained_refs_after": 1
+  },
+  "actual_interleaving": "unresolved: no actor cancel dispatch/entry/return or IPC/worker/native-abort/shutdown event chain",
+  "historical_result_preserved": "failed-missing-native-abort-intent",
+  "new_server_access": false,
+  "new_model_calls": 0
+}

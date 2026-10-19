@@ -1,0 +1,50 @@
+{
+  "source_commit": "ec0138354ccec436ab6319ba0308fa5b697ced4b",
+  "base_commit": "82e685b3233e6524732934bbf220fb5563e515f8",
+  "provenance": "Independent collaboration reviewer reports transcribed with Markdown formatting normalized; not pytest stdout.",
+  "reviews": [
+    {
+      "reviewer": "async_review_standards",
+      "result": "PASS (CPU repair scope)",
+      "tests": {
+        "new_cpu": 8,
+        "combined_cpu": 48,
+        "subtests": 9,
+        "combined_elapsed_s": 16.85
+      },
+      "report": "Standards PASS（CPU 修复范围）。固定审查：82e685b3233e6524732934bbf220fb5563e515f8..ec0138354ccec436ab6319ba0308fa5b697ced4b，未发现新增问题。父端按FIFO发送已排队控制，关闭冻结后拒绝新abort；actor在同一关闭期限内交接pending取消，再将剩余时间交给原engine。handoff明确限定父队列接管，不冒称native完成；超时、异常及原生abort挂起仍保留usage、unknown和清理句柄。新增8 passed；新增项与既有进程、关闭故障、actor、Core回归组合48 passed、9 subtests passed，16.85s。固定范围git diff --check通过。未改文件、未访问服务器或运行模型/GPU。真实r2的竞争层仍未确定，本结论不替代其后续资格验证。"
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "result": "PASS",
+      "tests": {
+        "new_and_existing_actor_core": 25,
+        "elapsed_s": 9.784
+      },
+      "report": "Spec PASS：ec0138354ccec436ab6319ba0308fa5b697ced4b，基于82e685b3；未发现P1/P2。已接受的控制先于close发送；关闭后拒绝新abort接纳。actor close接管有界，重试与engine teardown共用原期限；交接异常仍继续关闭同一实例。abort_handoff明确仅确认父控制队列交接，不确认native terminal；unknown、usage、Core held/ref及GPU未确认状态均保留。独立运行8项新回归＋17项旧actor/Core测试，25项通过（9.784s）。这不确定原r2的实际交错，也不证明子abort worker已逐请求调用native abort；该边界有明确特征测试，未被shutdown冒充。未改文件，未访问服务器、模型或GPU。"
+    }
+  ],
+  "initial_evidence_audit": {
+    "reviewer": "async_wiring_contract_audit",
+    "source_at_review": "82e685b3 with parent-order-only prototype",
+    "results": [
+      "Original parent _io replay independently reproduced 3/3 RED; control-priority-only prototype 1/1 GREEN in 2.222s.",
+      "Raw r2 cannot identify the winning stage; only nine events and no actor/IPC/worker/native-abort/shutdown chain.",
+      "Closing-after-abort false acceptance and child serial abort-worker blocking must remain distinct from FIFO send repair."
+    ],
+    "source_writes": 0,
+    "server_access": false,
+    "model_calls": 0
+  },
+  "limits": [
+    "Real r2 winning interleaving unresolved",
+    "Unknown result and historical failure preserved",
+    "No real model, GPU or full-query performance qualification"
+  ],
+  "documentation_review": {
+    "reviewer": "async_wiring_contract_audit",
+    "result": "PASS",
+    "source_commit": "ec0138354ccec436ab6319ba0308fa5b697ced4b",
+    "report": "报告PASS，无必要纠正。原r2失败、2403 tokens、unknown及held/ref=1均保留，未推定实际竞争层。CPU/实库资格范围准确，首轮守卫拒绝与后续逐项通过分别留证。close adoption未冒认原RPC成功；cap1仅为建议，未分配或执行。独核15份gzip、152个Git源码摘要、411项原源码及12件r2原件，均一致。未重跑测试或修改文件。"
+  }
+}
