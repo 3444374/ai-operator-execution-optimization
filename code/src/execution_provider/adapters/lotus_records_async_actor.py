@@ -269,6 +269,7 @@ class AsyncCoreModelActor:
 
     def close(self, timeout):
         _deadline(timeout)
+        deadline = time.monotonic() + timeout
         if not self._close_lock.acquire(blocking=False):
             return dict(status="unknown", engine_api_shutdown_confirmed=False,
                         gpu_exit_confirmed=None, cleanup_errors=["close_already_pending"])
@@ -277,6 +278,38 @@ class AsyncCoreModelActor:
                 self._closing = True
                 self._condition.notify_all()
                 engine = self.engine
+                handoff_errors = []
+                pending = [(key, call) for key, call in self._held.items() if call.value is None]
+                adopted = [list(key) for key, call in pending if not call.aborted]
+                for key, call in pending:
+                    call.aborted = True
+                    if call.ticket is None:
+                        call.value = self._receipt(call.identity, "failed", "CancelledBeforeSubmission")
+                        call.confirmed = True
+                # A Core cancel RPC can enter after close. Adopt its still
+                # owned work here, and hand off bounded abort controls before
+                # native shutdown. The normal run_core readers keep collecting
+                # receipts while control capacity is temporarily unavailable.
+                while engine is not None:
+                    waiting = False
+                    for key, call in pending:
+                        if call.value is None and call.ticket is not None and not call.abort_queued:
+                            try:
+                                call.abort_queued = engine.abort(call.ticket)
+                            except Exception as error:
+                                handoff_errors.append(type(error).__name__)
+                                break
+                            waiting = waiting or not call.abort_queued
+                    if handoff_errors or not waiting or time.monotonic() >= deadline:
+                        break
+                    self._condition.wait(min(0.01, max(0, deadline - time.monotonic())))
+                handoff = dict(scope="parent_control_queue_only",
+                    adopted_request_keys=adopted,
+                    queued_request_keys=[list(key) for key, call in pending if call.abort_queued],
+                    unqueued_request_keys=[list(key) for key, call in pending
+                        if call.value is None and call.ticket is not None and not call.abort_queued],
+                    errors=handoff_errors,
+                    engine_terminal_confirmed=False)
             if engine is None:
                 confirmed = not self._start_attempted
                 report = dict(status="closed" if confirmed else "unknown",
@@ -284,7 +317,7 @@ class AsyncCoreModelActor:
                     cleanup_errors=[] if confirmed else ["startup_cleanup_unconfirmed"],
                     unconsumed_call_results=[], unconsumed_core_results=[])
             else:
-                ipc = engine.close(timeout=timeout)
+                ipc = engine.close(timeout=max(0.001, deadline - time.monotonic()))
                 with self._condition:
                     self._collect()
                     receipts = [dict(call.value) for call in self._held.values() if call.value is not None]
@@ -298,6 +331,10 @@ class AsyncCoreModelActor:
                     ipc_close=ipc, unconsumed_call_results=receipts,
                     unconsumed_core_results=keyed,
                     cleanup_errors=[] if settled else ["async_ipc_cleanup_unconfirmed"])
+            report["abort_handoff"] = handoff
+            if handoff_errors:
+                report.update(status="unknown", engine_api_shutdown_confirmed=False)
+                report["cleanup_errors"].extend("abort_handoff: " + error for error in handoff_errors)
             self.last_close_report = report
             return report
         finally:

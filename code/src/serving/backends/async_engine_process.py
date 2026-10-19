@@ -266,6 +266,8 @@ class AsyncEngineProcess:
 
     def abort(self, request_id):
         with self._condition:
+            if self._closing:
+                return False
             slot = self._slots.get(request_id)
             if slot is None or slot.terminal is not None:
                 return False
@@ -380,12 +382,14 @@ class AsyncEngineProcess:
             while not self._stop.is_set():
                 with self._condition:
                     if outgoing[self._control] is None:
-                        if self._closing and not self._close_sent:
+                        # An accepted cancel must cross the control channel
+                        # before close makes the child stop reading it.
+                        if self._controls:
+                            outgoing[self._control] = memoryview(self._controls.popleft())
+                        elif self._closing and not self._close_sent:
                             self._close_sent = True
                             outgoing[self._control] = memoryview(_frame(dict(op="close"),
                                 self.limits.control_frame_bytes))
-                        elif self._controls:
-                            outgoing[self._control] = memoryview(self._controls.popleft())
                         elif self._drain_requested:
                             self._drain_requested = False
                             outgoing[self._control] = memoryview(_frame(dict(op="drain"),
