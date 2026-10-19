@@ -37,7 +37,7 @@ main 底稿上的 40 项统计/原 metrics 回归及实际 CSV→JSON 入口通�
 [当前模块](src/semantic_methods/lotus/README.md)已提供完整 uncached batch 的原 SDK／Daft／Ray Data／SemLoom 接点，
 以及[原版 Movie Q1/Q2/Q3 入口](scripts/README.md#lotus-原版-movie-四臂)。
 当前是[完整请求级接点](src/semantic_methods/lotus/README.md#filter-execution-boundary)；普通 Movie 未传级联配置，图片准备仍先于后端。
-普通／级联 Filter 的记录级准备到结果入口属于[下一单元计划](../experiments/plans/数据组织.md#lotus-filter-data-execution)，尚未实现或取得新模型资格。
+记录级准备／本地引擎尚未纳入 main；功能分支已有实现及各自资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)核对，不将其转授 main。
 原方法与 SDK 保留提示、解析、LIMIT／COUNT与评价；共享 Daft runner、完整 HTTP、每查询独立预算及持久trace归档构成必要闭包。
 [本批资格](../experiments/results/diagnostics/main_lotus_text_20261015/README.md)区分固定源码的实际库／CPU与原数据预检；
 [同一main实际模型检查](../experiments/results/diagnostics/main_queries_20261015/README.md)固定`464de926`，覆盖原Q1/Q2/Q3与Animals；模型质量不足及单次计时边界保留。PZ、IMLane和图像检索仍按各自固定来源解释。

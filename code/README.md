@@ -10,6 +10,8 @@
 [原生CLIP检索](scripts/README.md#原生-lotus-clip-查询)已带必要查询／身份／静态生命周期闭包；显式单卡资源入口的8834 CPU检查、main570四路径40行实机及d2历史条件见[接纳记录](../experiments/results/diagnostics/main_lotus_clip_20261015/README.md)。HSE资源auto、多卡和PZ分别待验。
 
 
+本页的已接纳实现以 main 为准；records、有限链与新 Core／IMLane 接点的独立分支及资格从[实施来源](../experiments/plans/数据组织.md#model-engine-roadmap)定位。
+
 ## Core 与完整响应基础
 
 main 在原执行层上接纳了[完整响应与 native task API](src/execution_provider/adapters/README.md)。
@@ -674,7 +676,7 @@ The lifecycle module joins complete-row replay seeds, immutable submission
 events, backend service timestamps, and explicitly sourced token counts into
 exactly-once request trace rows.
 
-The formal framework remains:
+The historical PostgreSQL-source profiler configuration used:
 
 ```text
 PostgreSQL -> Daft -> Arrow payload boundary -> Ray task/actor -> endpoint
@@ -883,7 +885,7 @@ Note: `sharegpt_burstgpt` (formerly 1024 rows, now 2048) is a legacy workload re
 
 ## PostgreSQL AI 算子链路画像
 
-当前新增入口：
+既有画像入口：
 
 ```text
 code/scripts/profiling/postgres_ai_operator_profile.py
@@ -902,7 +904,7 @@ PostgreSQL documents/job table
   -> writeback document_embeddings / document_completions
 ```
 
-当前本机已通过 Docker 运行 PostgreSQL 18.4 + pgvector 0.8.2 同构预演实例，
+以下为当时 Docker PostgreSQL 18.4 + pgvector 0.8.2 同构预演环境的历史记录，不能据此推定当前本机仍在运行：
 数据库、扩展和向量查询已经验证；WSL `.venv` 已安装 Ray、PyArrow、NumPy
 和 psycopg，并完成 256 行 PostgreSQL -> Arrow -> Ray actor -> fake embedding
 -> PostgreSQL 写回冒烟运行。CSV 位于
@@ -918,7 +920,7 @@ PostgreSQL documents/job table
   --output experiments/results/diagnostics/postgres_ai_operator_profile_dry_run.csv
 ```
 
-连接当前本地同构 PostgreSQL 实例：
+历史本地同构 PostgreSQL 连接示例（当前配置按[运行手册](../deploy/runtime/README.md)核验）：
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_operator" \

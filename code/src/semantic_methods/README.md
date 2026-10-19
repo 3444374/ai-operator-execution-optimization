@@ -1,5 +1,7 @@
 # Semantic method continuations
 
+This page describes the Core continuation path below. [LOTUS adapters](lotus/README.md) have their own entry; vendor-native LOTUS backends need not pass through this driver or Core.
+
 The first PG consumer is now the opt-in image provider. `ImageEmbeddingMethod` emits one semantic
 embedding request; the Ray backend separately owns its CPU prepare and GPU model stages.
 `ImageGateway` uses this driver for row association, bounded state and final-result retention through
@@ -48,7 +50,7 @@ accepted tasks using `WorkWindowOrganizer`; its current backend expands each gro
 single-member requests. Parallel stage fan-out, calibration over sampled rows, cross-row joins, a
 single physical request with multiple member results, and PG bridging beyond the single image call need their own bounded integration.
 
-For future LOTUS reuse, keep scoring, calibration artifacts, threshold decisions, and parsers in a
+For future LOTUS reuse in this Core continuation path, keep scoring, calibration artifacts, threshold decisions, and parsers in a
 versioned method adapter. Translate model calls to `Request`; retain SemLoom's existing admission,
 routing, transport, and resource ownership. A DataFrame accessor or global LM client is not a drop-in
 method. Pin the upstream revision, retain required license/NOTICE and modification notices, and test

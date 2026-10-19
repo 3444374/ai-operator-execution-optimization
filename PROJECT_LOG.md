@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：统一工作负载边界与分支实施文档
+
+核对 main 与功能分支固定源码，修正“尚未实现”的范围、旧 profiler 架构及历史本机环境表述；分支实现与资格集中从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)定位，不复制变化状态表。
+Q3 业务规则归工作负载，方法、模型与原生执行按既有职责复用；[有限链路线](experiments/plans/数据组织.md#lotus-operator-extension)用少量变更例子说明扩展，不新增普遍晋升门槛。Daft／Ray 是对应配置，Core 保持中立合同；图像复用与多卡独立验证。
+历史实验报告与结果不改写；本次只审查和修订文档，未运行附件、模型、GPU 或服务器任务。
+
 ## 2026-10-16：补齐 Daft 原生布局与后续算子复用路线
 
 完整读取五份 Daft 及一份后续算子扩展附件，在[既有架构](experiments/plans/系统架构.md#model-engine-execution)、[实施路线](experiments/plans/数据组织.md#daft-local-layouts)和[对照规范](experiments/plans/reference/对照规范.md#lotus-algorithm-execution)收敛惰性消费、布局、有效配置与真实 worker 收尾；[算子扩展](experiments/plans/数据组织.md#lotus-operator-extension)以普通 Map／有限链检验复用，与原级联接线并行，映射当前实际文件，不整仓搬迁。原方法、全局结果复用和 IPC 归属直接引用既有合同。
