@@ -1,5 +1,11 @@
 # 项目日志
 
+## 2026-10-19：接纳原全局级联的 CPU 组合检查
+
+选择性整合职责8ac06508／259c4173的原LOTUS控制流、records接点、Ray阶段及查询函数；未复制阈值学习算法，各物理batch共享原全局决策。
+组合有限logprobs和严格关闭协议后，21项原方法、2项原评价、7项原生／进程检查通过且零skip，25个已观察owned身份退出；模型／GPU调用为0。
+查询直接使用中立json_metric；CLI、实际helper模型、其他后端与性能仍pending，原件和源码SHA见[分层报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#原全局级联的独立-cpu-接纳)。
+
 ## 2026-10-19：退役开题专用流程与早期 CPU 模拟
 
 按引用、配置和动态加载检查，退役 12 个历史脚本、5 个专用测试、4 份专用模板与 2 份已完成方案，共 23 文件／6,949 物理行。

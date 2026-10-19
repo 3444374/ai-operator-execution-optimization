@@ -90,6 +90,8 @@ evaluator 另计，评价报错也保留已经完成的模型调用及 usage。�
 
 **源码状态：** 原控制流及新 records／Ray 阶段实现完成，使用独立扩展身份。
 **真实库状态：** 原 LOTUS／SemBench evaluator／Ray Data 的 CPU 固定响应验证通过，不能据此主张推理或性能收益。
-**真实模型状态：pending。** 当前基点的公共 `GenerationSpec` 拒绝 logprobs，真实 helper 引擎执行会在 preflight 明确报错。
-需集成 owner 的公共真实 logprobs 实现，并核对生成 token／top candidates、tokenizer、一次模板、usage、finish reason、不同模型角色及阶段间 GPU 退出后，再取得模型资格。
+**真实模型状态：pending。** 原职责基点的公共 `GenerationSpec` 拒绝 logprobs，不能执行真实 helper。
+集成线现已提供逐token content数组及严格关闭确认；21项原方法、2项原评价及7项原生／进程CPU检查在组合源码重新通过，
+25个已观察owned进程退出、零模型／GPU。来源和原件SHA见[集成记录](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/verification.json)的 `global_cascade_integration_cpu_20261019`。
+仍需核对实际生成 token／top candidates、tokenizer、一次模板、usage、finish reason、不同模型角色及阶段间 GPU 退出后，才取得模型资格。
 GPU 按 owner 的 Daft 排期串行安排；本批没有启动服务器模型、HTTP gateway 或 GPU 请求，也没有将失败降为普通 Filter。

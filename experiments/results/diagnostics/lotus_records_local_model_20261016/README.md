@@ -238,3 +238,13 @@ Core 标记为 true、静态为 false，两个 Core session 独立、每臂复�
 本次组合源码与原件SHA见 `verification.json.finite_chain_integration_cpu_20261019`。
 单 Filter 公共后端仍在迁移其旧 Q3 绑定，本段接纳不表示所有后端已解除任务约束；任务切换须分别验收。
 新链真实模型、Daft／IMLane／Core 有限链、跨阶段 AsyncLLM 仍待验证。
+
+## 原全局级联的独立 CPU 接纳
+
+选择接纳职责 `8ac06508`／`259c4173` 的原控制流 records seam、Ray阶段及查询函数，
+见[方法合同](../../../../code/src/semantic_methods/lotus/cascade.README.md)。原 LOTUS accessor／阈值学习代码对象在独立globals执行，
+全体 helper评分、全局分位数、原重要性采样、main样本、阈值和回退合并均保留；不按物理batch重学。
+集成有限token logprobs及严格关闭后，21项原方法＋2项原SemBench评价＋7项原生Ray／进程CPU检查通过，
+零skip、零模型／GPU，25个已观察owned身份退出。新查询直接使用中立json_metric，未复制原函数。
+当前仅Q3文本helper profile；各角色阶段按序创建／关闭，main可能加载两次，完整初始化／切换成本保留。
+共享CLI接线、真实helper模型／GPU、Daft／IMLane／Core级联、其他任务及性能仍待验证，详见 `verification.json.global_cascade_integration_cpu_20261019`。

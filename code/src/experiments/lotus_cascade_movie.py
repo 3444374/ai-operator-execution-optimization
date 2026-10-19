@@ -2,6 +2,7 @@
 
 import time
 
+from src.baselines.common.private_artifacts import json_metric
 from src.baselines.common.redact import redact_text
 from src.baselines.text.sembench_movie import classification_audit, evaluate_original, verify_checkout
 from src.semantic_methods.lotus.cascade import run_cascade
@@ -12,8 +13,6 @@ def run_movie_cascade_query(source, checkout, main_lm, helper_lm, cascade_args, 
                             query_id, max_calls):
     """Preserve Movie predicate, COUNT and original evaluator; no physical executor here."""
     import pandas as pd
-    from .postgresql.query_evaluation import json_metric
-
     inputs = source.preflight(FilterMethod(main_lm.model))
     upstream = verify_checkout(checkout)
     frame = pd.DataFrame([

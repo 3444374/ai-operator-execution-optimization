@@ -922,5 +922,50 @@
       "code/src/experiments/lotus_records_movie.py": "59c51436de506cc822ff9d37671459d70ab965e8401323e7133426cc87d18153"
     },
     "summary_sha256": "1e1a80891658ab8a96cc2c33ab6e9715eac6a858f3ff08e5895ec1f8a10f1379"
+  },
+  "global_cascade_integration_cpu_20261019": {
+    "author_head": "259c4173813bd0f06e4e1b822779b62f937a99e6",
+    "integration_commit": "bb703ceb",
+    "source_sha256": {
+      "code/src/semantic_methods/lotus/cascade.py": "3d82298c6e13f100c7a7f7af5ce9b5737a24549b46b91eecaa8ff40af4cf24f8",
+      "code/src/baselines/text/frameworks/ray_data_lotus_cascade.py": "9526f990eab7af971ebcc40f45c0354c582cb7d164088d9bd395586c9cec0dba",
+      "code/src/baselines/text/frameworks/lotus_cascade_process.py": "99d4ccc8c8d2ffd60b4f4b144cd08708e3e05803dc8d58550f3604c3c4baaeed",
+      "code/src/experiments/lotus_cascade_movie.py": "5bafa48bb092f56c2b503f573b71e6cce871ba5e7deabddc5ff8cce844932e08",
+      "code/src/serving/backends/vllm_engine.py": "483983185bb15f2c434969d1366180a5c599fc75fdcbde11a4136c100e41c3b4",
+      "code/src/baselines/text/frameworks/daft_engine_process.py": "433e9d9b1ce9a141745c101e3e6d8f787ee327cad73e0328092f210f89c68528"
+    },
+    "checks_passed": 30,
+    "skipped": 0,
+    "original_method_checks": 21,
+    "original_queried_evaluator_checks": 2,
+    "native_and_process_checks": 7,
+    "actual_model_calls": 0,
+    "gpu_calls": 0,
+    "observed_owned_processes": 25,
+    "observed_owned_exit_confirmed": true,
+    "elapsed_s": 24.828541958999267,
+    "control": "Original LOTUS accessor and threshold learner code objects with isolated records globals",
+    "global_calibration_and_sampling": true,
+    "per_batch_threshold_relearning": false,
+    "scope": "Original LOTUS/SemBench and native Ray CPU/process tests, deterministic synthetic inference",
+    "raw_evidence": {
+      "source.json": {
+        "sha256": "06396545896c43edc379cd133b210ff26b4049365b348daf2671ef6ebb0fa624",
+        "bytes": 1089
+      },
+      "supervision/supervisor.json": {
+        "sha256": "80ded2f6639c2e00c07702f20c35bf66c3e920fbf87de2d7cd40c638dbcda837",
+        "bytes": 3253
+      },
+      "supervision/worker.log": {
+        "sha256": "1dce6f601083868f7486c80f10a676e585192c60812e2d91a2ad46554a1d20bd",
+        "bytes": 38403
+      }
+    },
+    "limitations": [
+      "Q3 text helper cascade only; canonical generic ordinary Filter migration does not generalize this separate profile.",
+      "Shared token-logprobs and EngineProcess close fixes are included, but their model execution remains pending.",
+      "Shared CLI is not connected to the cascade callable yet; Daft/IMLane/Core cascade stages remain pending."
+    ]
   }
 }
