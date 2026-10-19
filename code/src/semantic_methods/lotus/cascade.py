@@ -17,7 +17,7 @@ from types import FunctionType, SimpleNamespace
 from .engine import (
     FILTER_SOURCE_HASHES, engine_response, lm_report, validate_engine_protocol, validate_filter_source,
 )
-from .records import MOVIE_Q3_INSTRUCTION
+from .records import FilterMethod
 from .sdk import LOTUS_COMMIT
 
 
@@ -37,7 +37,7 @@ def validate_cascade_source():
     for relative, expected in CASCADE_SOURCE_HASHES.items():
         if hashlib.sha256((root / relative).read_bytes()).hexdigest() != expected:
             raise ValueError("records cascade source differs at lotus/" + relative)
-    return dict(profile="lotus-helper-cascade-records-v1", lotus_commit=LOTUS_COMMIT,
+    return dict(profile="lotus-helper-cascade-records-v2", lotus_commit=LOTUS_COMMIT,
                 source_hashes=dict(CASCADE_SOURCE_HASHES),
                 control="original accessor and learner code objects; private records globals")
 
@@ -69,6 +69,7 @@ class CascadeStage:
     output_tokens: tuple[str, str]
     effective_kwargs: dict
     records: tuple[dict, ...]
+    input_columns: tuple[str, ...] = ()
 
     @property
     def logprobs(self):
@@ -130,12 +131,21 @@ def _bind(function, replacements):
 def _references(frame, columns):
     # The original controller only needs these records and their positional order.
     # Actual dtype-aware preparation is owned by the selected backend worker.
-    if columns != ["reviewText"]:
-        raise ValueError("this text cascade supports only the reviewText input column")
-    return frame[["row_id", "source_position", "reviewText"]].to_dict("records")
+    return frame[["row_id", "source_position", *columns]].to_dict("records")
 
 
-def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, max_rows, max_calls,
+def _method_columns(instruction):
+    import lotus
+
+    if type(instruction) is not str or not instruction.strip():
+        raise ValueError("cascade instruction must be a nonempty string")
+    columns = tuple(lotus.nl_expression.parse_cols(instruction))
+    if not columns or any(name in IDENTITY_FIELDS for name in columns):
+        raise ValueError("cascade instruction must reference non-identity text input columns")
+    return columns
+
+
+def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, instruction, max_rows, max_calls,
                      model_kwargs=None, strategy=None, examples=None, helper_examples=None):
     """Check the supported method, source and policies before creating a backend owner."""
     import lotus
@@ -153,16 +163,16 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, max_rows, max_c
         if lm.rate_limit is not None or lm.tpm_limit is not None:
             raise ValueError("records cascade does not implement rate or TPM limiting")
     if strategy is not None or examples is not None or helper_examples is not None:
-        raise ValueError("first Movie cascade profile does not support reasoning or examples")
+        raise ValueError("text cascade does not support reasoning or examples")
     if not isinstance(cascade_args, CascadeArgs) or cascade_args.proxy_model != ProxyModel.HELPER_LM:
         raise ValueError("an original helper-LM CascadeArgs object is required")
     # Revalidate mutable Pydantic instances before execution.
     args = CascadeArgs(**cascade_args.model_dump())
     if args.map_instruction is not None or args.map_examples is not None or args.join_cascade_strategy is not None:
-        raise ValueError("Movie Filter does not support join/map cascade options")
-    instruction = args.helper_filter_instruction or MOVIE_Q3_INSTRUCTION
-    if lotus.nl_expression.parse_cols(instruction) != ["reviewText"]:
-        raise ValueError("helper instruction must reference only the reviewText column")
+        raise ValueError("Filter does not support join/map cascade options")
+    main_columns = _method_columns(instruction)
+    helper_columns = _method_columns(args.helper_filter_instruction or instruction)
+    columns = tuple(dict.fromkeys((*main_columns, *helper_columns)))
     for name in ("recall_target", "precision_target", "failure_probability", "sampling_percentage",
                  "cascade_IS_weight"):
         value = getattr(args, name)
@@ -186,18 +196,19 @@ def validate_cascade(frame, main_lm, helper_lm, cascade_args, *, max_rows, max_c
         if type(value) is not int or value < 1:
             raise ValueError(name + " must be a positive integer")
     if (not isinstance(frame, pd.DataFrame) or not frame.columns.is_unique
-            or set(frame.columns) != {"row_id", "source_position", "reviewText"}):
-        raise ValueError("cascade input must contain only occurrence IDs, position and reviewText")
+            or set(frame.columns) != {"row_id", "source_position", *columns}):
+        raise ValueError("cascade input must contain occurrence IDs, position and referenced text columns only")
     if len(frame) > max_rows:
         raise ValueError("cascade input exceeds max_rows")
-    rows = _references(frame, ["reviewText"])
+    rows = _references(frame, columns)
     seen = set()
     for row in rows:
         checked = cascade_identity("preflight", row["row_id"], row["source_position"], 0,
                                    model_role="helper", stage="helper_score")
-        if checked["call_id"] in seen or type(row["reviewText"]) is not str:
+        if checked["call_id"] in seen or any(type(row[name]) is not str for name in columns):
             raise ValueError("cascade input contains duplicate occurrences or non-text values")
-        row["reviewText"].encode("utf-8")
+        for name in columns:
+            row[name].encode("utf-8")
         seen.add(checked["call_id"])
     sample_size = (int(len(rows) * args.sampling_percentage)
                    if args.filter_pos_cascade_threshold is None else 0)
@@ -322,16 +333,22 @@ class CascadeRun:
         name = "helper_score" if role == "helper" else self.active_stage or "fallback"
         if logprobs != (role == "helper"):
             raise ValueError("original cascade stage logprobs policy changed")
+        columns = (tuple(name for name in docs[0] if name not in ("row_id", "source_position"))
+                   if docs else self.role_columns[role])
+        if (columns != self.role_columns[role]
+                or any(tuple(doc) != ("row_id", "source_position", *columns) for doc in docs)):
+            raise ValueError("original cascade document column order differs from the bound method")
         records = []
         for doc in docs:
             call = cascade_identity(self.query_id, doc["row_id"], doc["source_position"],
                                     self._ordinal, model_role=role, stage=name)
             self._ordinal += 1
-            records.append(dict(call, reviewText=doc["reviewText"]))
+            records.append(dict(call, **{name: doc[name] for name in columns}))
         if self._ordinal > self.max_calls:
             raise ValueError("cascade max_calls exceeded before stage allocation")
         stage = CascadeStage(name, role, model.model, instruction, default, system_prompt,
-                             tuple(output_tokens), deepcopy(self.effective[role]), tuple(records))
+                             tuple(output_tokens), deepcopy(self.effective[role]), tuple(records),
+                             columns)
         journal = _StageCalls(stage)
         self.stages.append(journal)
         self.events.append(dict(event="stage_declared", stage=name, calls=len(records)))
@@ -341,21 +358,43 @@ class CascadeRun:
             iterator = iter(self.evaluate(stage))
             for result in iterator:
                 journal.record(result)
-            if len(journal.results) != len(records):
-                raise ValueError("cascade stage omitted declared evaluations")
         except BaseException as exc:
             error = exc
-            journal.unconfirmed(exc)
-            raise
         finally:
             close = getattr(iterator, "close", None)
+            close_report = None
             if close is not None:
                 try:
-                    close()
+                    close_report = close()
                 except BaseException as exc:
                     if error is None:
-                        raise
-                    error.add_note("cascade stage iterator close failed: " + type(exc).__name__)
+                        error = exc
+                    else:
+                        error.add_note("cascade stage iterator close failed: " + type(exc).__name__)
+            # Native graph failure can strand authoritative engine receipts before
+            # iteration. Recover them after shutdown, before marking missing work.
+            close_report = close_report or getattr(iterator, "last_close_report", None)
+            if isinstance(close_report, dict):
+                receipts = close_report.get("unconsumed_call_results", ())
+                if type(receipts) not in (tuple, list):
+                    if error is None:
+                        error = ValueError("cascade cleanup receipts must be a sequence")
+                    else:
+                        error.add_note("cascade cleanup receipts were malformed")
+                    receipts = ()
+                for result in receipts:
+                    try:
+                        journal.record(result)
+                    except BaseException as exc:
+                        if error is None:
+                            error = exc
+                        else:
+                            error.add_note("cascade receipt recovery failed: " + type(exc).__name__)
+        if error is None and len(journal.results) != len(records):
+            error = ValueError("cascade stage omitted declared evaluations")
+        if error is not None:
+            journal.unconfirmed(error)
+            raise error
         results = journal.ordered()
         responses, failures = [], []
         for result in results:
@@ -400,28 +439,36 @@ class CascadeRun:
                                  expected=len(j.expected), recorded=len(j.results)) for j in self.stages])
 
 
-def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, query_id,
+def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, instruction, query_id,
                 max_rows, max_calls, default=True, system_prompt=None, model_kwargs=None,
                 strategy=None, examples=None, helper_examples=None):
-    """Run ordinary Movie Q3 Filter+COUNT with the original global helper controller.
+    """Run a text Filter with the original global helper controller.
 
     Input uses a position-based index internally and retains occurrence IDs. Empty
-    input returns zero without model allocation (the original percentile raises).
+    input returns no decisions without model allocation (the original percentile raises).
     No labels, expanded messages, physical pool or scheduler enter this interface.
     """
     import lotus
 
     args, upper, effective = validate_cascade(
-        frame, main_lm, helper_lm, cascade_args, max_rows=max_rows, max_calls=max_calls,
+        frame, main_lm, helper_lm, cascade_args, instruction=instruction,
+        max_rows=max_rows, max_calls=max_calls,
         model_kwargs=model_kwargs, strategy=strategy, examples=examples, helper_examples=helper_examples,
     )
     if type(default) is not bool or (system_prompt is not None and type(system_prompt) is not str):
         raise ValueError("invalid cascade parser or system prompt policy")
     run = CascadeRun(evaluate, query_id=query_id, max_calls=max_calls)
     run.main_lm, run.helper_lm, run.effective = main_lm, helper_lm, effective
+    run.role_columns = {"main": _method_columns(instruction),
+                        "helper": _method_columns(args.helper_filter_instruction or instruction)}
     preflight = getattr(evaluate, "preflight", None)
     if preflight is not None:
-        preflight(main_lm, helper_lm, effective, max_possible_calls=upper)
+        preflight(main_lm, helper_lm, effective, max_possible_calls=upper,
+                  method=FilterMethod(main_lm.model, instruction=instruction, default=default,
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["main"]),
+                  helper_method=FilterMethod(helper_lm.model,
+                      instruction=args.helper_filter_instruction or instruction, default=default,
+                      system_prompt=system_prompt, resolved_input_columns=run.role_columns["helper"]))
     module = import_module("lotus.sem_ops.sem_filter")
     learner = _bind(module.learn_filter_cascade_thresholds, {"sem_filter": run.dispatch})
 
@@ -467,7 +514,7 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, query_id,
                 result, stats = normalized.assign(_filter=[]), {}
             else:
                 result, stats = controller(
-                    SimpleNamespace(_obj=normalized), MOVIE_Q3_INSTRUCTION,
+                    SimpleNamespace(_obj=normalized), instruction,
                     return_all=True, return_raw_outputs=True, return_explanations=True,
                     return_stats=True, default=default, system_prompt=system_prompt,
                     cascade_args=args, **(model_kwargs or {}),
@@ -476,8 +523,8 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, query_id,
         if check is not None:
             check()
         decisions = result.get("_filter", []).tolist() if len(result) else []
-        report = dict(schema="semloom.lotus_helper_cascade.v1", status="completed",
-                    query_id=query_id, positive_review_cnt=sum(decisions),
+        report = dict(schema="semloom.lotus_helper_cascade.v2", status="completed",
+                    query_id=query_id, instruction=instruction,
                     decisions=[dict(row_id=row["row_id"], source_position=row["source_position"],
                                     decision=bool(decisions[i]),
                                     raw_output=result.iloc[i].get("raw_output_filter", ""),
@@ -487,7 +534,7 @@ def run_cascade(frame, main_lm, helper_lm, cascade_args, evaluate, *, query_id,
                            for key, value in stats.items()},
                     calls=run.report(), lm=dict(main=lm_report(main_lm), helper=lm_report(helper_lm)),
                     max_possible_calls=upper, empty_input_extension=normalized.empty,
-                    positional_index_normalized=True, production_core_used=False,
+                    positional_index_normalized=True,
                     method_source=validate_cascade_source())
         if check is not None:
             check()
@@ -513,6 +560,11 @@ class CascadePreparer:
             raise ValueError("cascade worker requires DEFAULT serialization and disabled result cache")
 
         self.stage = stage
+        if (type(stage.input_columns) not in (tuple, list) or not stage.input_columns
+                or any(type(name) is not str or not name.strip() or name in IDENTITY_FIELDS
+                       for name in stage.input_columns)
+                or len(set(stage.input_columns)) != len(stage.input_columns)):
+            raise ValueError("cascade worker requires explicitly resolved text input columns")
         self.lm = LM(stage.model_name, cache=InMemoryCache(max_size=1))
 
     def prepare_rows(self, rows):
@@ -521,8 +573,12 @@ class CascadePreparer:
 
         if not rows:
             return []
+        expected = set(IDENTITY_FIELDS) | set(self.stage.input_columns)
+        if any(set(row) != expected or any(type(row[name]) is not str for name in self.stage.input_columns)
+               for row in rows):
+            raise ValueError("cascade worker inputs differ from the stage's text projection")
         frame = pd.DataFrame(rows)
-        docs = task_instructions.df2multimodal_info(frame, ["reviewText"])
+        docs = task_instructions.df2multimodal_info(frame, list(self.stage.input_columns))
         return [dict({key: row[key] for key in IDENTITY_FIELDS}, messages_json=json.dumps(
             task_instructions.filter_formatter(
                 self.lm, doc, self.stage.instruction, system_prompt=self.stage.system_prompt,

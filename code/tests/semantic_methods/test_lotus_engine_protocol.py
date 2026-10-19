@@ -135,6 +135,7 @@ class ProtocolFailureTests(unittest.TestCase):
                 run.main_lm, run.helper_lm = main, helper
                 run.effective = {"main": _effective(main, {}, False),
                                  "helper": _effective(helper, {}, True)}
+                run.role_columns = {"main": ("reviewText",), "helper": ("reviewText",)}
                 run.active_stage = None if name == "helper_score" else name
                 helper_stage = name == "helper_score"
                 with patch("lotus.sem_ops.postprocessors.filter_postprocess") as parser:
@@ -167,7 +168,7 @@ class ProtocolFailureTests(unittest.TestCase):
         with patch("lotus.sem_ops.cascade_utils.calibrate_llm_logprobs") as calibrate:
             with self.assertRaises(RuntimeError) as failure:
                 run_cascade(frame, main, helper, CascadeArgs(sampling_percentage=0.5), evaluate,
-                            query_id="cascade", max_rows=2, max_calls=5)
+                            instruction=MOVIE_Q3_INSTRUCTION, query_id="cascade", max_rows=2, max_calls=5)
         calibrate.assert_not_called()
         self.assertEqual(stages, ["helper_score"])
         report = failure.exception.query_report

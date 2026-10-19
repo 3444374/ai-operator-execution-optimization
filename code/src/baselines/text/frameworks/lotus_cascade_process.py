@@ -1,4 +1,4 @@
-"""Driver-owned stop and registered-process cleanup for one local Ray stage."""
+"""Driver-owned stop and registered-process cleanup for one local cascade stage."""
 
 import json
 import os
@@ -29,13 +29,36 @@ class StageEngineCleanup:
     def _read(self):
         reports = []
         for path in self.control.glob("engine-*.json"):
-            if path.stat().st_size > 8 * 1024**2:
-                raise ValueError("cascade private engine report is oversized")
-            value = json.loads(path.read_text())
-            if type(value) is not dict:
-                raise ValueError("cascade private engine report must be an object")
-            key = (value.get("model_pid"), value.get("process_created"))
-            reports.append(value if value.get("process_exit_confirmed") else self._driver_reports.get(key, value))
+            try:
+                if path.stat().st_size > 8 * 1024**2:
+                    raise ValueError("cascade private engine report is oversized")
+                value = json.loads(path.read_text())
+                if type(value) is not dict:
+                    raise ValueError("cascade private engine report must be an object")
+                if (type(value.get("cleanup_errors", [])) is not list
+                        or any(type(error) is not str for error in value.get("cleanup_errors", []))):
+                    raise ValueError("cascade private engine cleanup errors must be strings")
+                key = (value.get("model_pid"), value.get("process_created"))
+                cached = self._driver_reports.get(key)
+                if not value.get("process_exit_confirmed") and cached is not None:
+                    # New actor receipts can arrive after the driver observed OS
+                    # exit. Preserve that data; reuse only the process proof, and
+                    # only when no newly registered process lies outside its scope.
+                    value = dict(value, cleanup_errors=list(dict.fromkeys([
+                        *value.get("cleanup_errors", []), *cached.get("cleanup_errors", []),
+                    ])))
+                    latest_owned = {tuple(item) for item in value.get("owned_processes", [key])}
+                    known_owned = {tuple(item) for item in cached.get("owned_processes", [key])}
+                    if cached.get("process_exit_confirmed") is True and latest_owned <= known_owned:
+                        for name in ("process_exit_confirmed", "live_observed_processes", "gpu_exit_confirmed",
+                                     "process_exit_scope", "unobserved_descendants_confirmed", "owned_processes"):
+                            if name in cached:
+                                value[name] = cached[name]
+                reports.append(value)
+            except Exception as error:
+                # A corrupt report cannot hide another registered live process.
+                reports.append(dict(status="unknown", process_exit_confirmed=False,
+                    report_file=path.name, cleanup_errors=["engine_report_read: " + type(error).__name__]))
         return reports
 
     def stop(self, *, grace_s=5.5, started=True):
@@ -55,9 +78,14 @@ class StageEngineCleanup:
                 reports = self._read()
             for index, report in enumerate(reports):
                 if not report.get("process_exit_confirmed"):
-                    reports[index] = self._stop_registered(report)
-                    key = (report.get("model_pid"), report.get("process_created"))
-                    self._driver_reports[key] = reports[index]
+                    try:
+                        reports[index] = self._stop_registered(report)
+                        key = (report.get("model_pid"), report.get("process_created"))
+                        self._driver_reports[key] = reports[index]
+                    except BaseException as error:
+                        reports[index] = dict(report, status="unknown", process_exit_confirmed=False,
+                            cleanup_errors=[*report.get("cleanup_errors", []),
+                                            "registered_engine_cleanup: " + type(error).__name__])
             self.reports = reports
             if started and not reports:
                 self.errors.append("stage_model_process_registration_unconfirmed")
@@ -113,6 +141,7 @@ class StageEngineCleanup:
         remaining = _live(owned)
         return dict(report, status="unknown", process_exit_confirmed=not remaining,
                     live_observed_processes=len(remaining), gpu_exit_confirmed=None,
+                    owned_processes=[list(item) for item in sorted(owned)],
                     process_exit_scope="observed_registered_processes",
                     unobserved_descendants_confirmed=False,
                     cleanup_errors=list(dict.fromkeys(errors)))
