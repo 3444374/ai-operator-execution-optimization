@@ -19,7 +19,8 @@ from src.semantic_methods.lotus.records import CallLedger, FilterMethod, Records
 
 
 BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model",
-            "semloom-local-model-core")
+            "semloom-local-model-core", "semloom-local-model-core-async")
+_ASYNC_BACKEND = "semloom-local-model-core-async"
 
 
 def _fixed_method(method):
@@ -267,22 +268,35 @@ def fixed_response_qualification(source, checkout, method, generation, responses
     return report
 
 
+def _async_limits(config):
+    from src.serving.backends.vllm_async_engine import AsyncEngineLimits
+
+    value = config.get("async_limits", {})
+    if type(value) is not dict:
+        raise ValueError("async_limits must be an object")
+    return AsyncEngineLimits(**value)
+
+
 def read_config(path):
     from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
     value = json.loads(Path(path).read_text())
-    allowed = {"schema", "backend", "query_id", "method", "generation", "engine", "resources"}
+    allowed = {"schema", "backend", "query_id", "method", "generation", "engine", "resources", "async_limits"}
     if (type(value) is not dict or set(value) - allowed
             or value.get("schema") != "semloom.movie_records_run.v1"
             or value.get("backend") not in BACKENDS):
         raise ValueError("unsupported ordinary Movie records configuration")
+    if "async_limits" in value and value["backend"] != _ASYNC_BACKEND:
+        raise ValueError("async_limits requires the explicit async Core backend")
     method = FilterMethod.from_dict(value["method"])
     _fixed_method(method)
     generation = GenerationSpec.from_dict(value.get("generation", {}))
     resources = RecordsResources(**value.get("resources", {}))
-    if value["backend"] == "semloom-local-model-core" and (
+    if value["backend"] in ("semloom-local-model-core", _ASYNC_BACKEND) and (
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
+    if value["backend"] == _ASYNC_BACKEND:
+        _async_limits(value)
     engine = EngineSpec.from_dict(value["engine"])
     query_id = value["query_id"]
     # Validate query identity even for empty source relations.
@@ -310,10 +324,14 @@ def model_preflight(source, checkout, method, generation, engine):
 def _model_worker(config, source, checkout, method, generation, resources, engine, root):
     ray = None
     owner = None
+    async_owner = async_limits = None
+    is_async = config["backend"] == _ASYNC_BACKEND
     failure = None
     report = {}
     runtime_started = time.monotonic()
     try:
+        if is_async:
+            async_limits = _async_limits(config)
         if config["backend"] != "daft-native-local-model":
             import ray
 
@@ -324,13 +342,19 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                                                  "VLLM_WORKER_MULTIPROC_METHOD": "spawn"}})
         runtime_seconds = time.monotonic() - runtime_started
         def execute():
-            nonlocal owner
+            nonlocal owner, async_owner
             if config["backend"] == "daft-native-local-model":
                 from src.baselines.text.frameworks.daft_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
             if config["backend"] == "ray-data-local-model":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
+            if is_async:
+                from src.execution_provider.adapters.lotus_records_async_actor import AsyncRecordsActorOwner
+                from src.execution_provider.adapters.lotus_records_core import SemLoomRecordsCore
+                async_owner = AsyncRecordsActorOwner(method, engine, generation, resources, limits=async_limits)
+                owner = SemLoomRecordsCore(method, engine, generation, resources, actor_owner=async_owner)
+                return owner.evaluate(source, query_id=config["query_id"])
             if config["backend"] == "semloom-local-model-core":
                 from src.execution_provider.adapters.lotus_records_core import SemLoomRecordsCore
                 owner = SemLoomRecordsCore(method, engine, generation, resources)
@@ -348,9 +372,14 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
     finally:
         try:
             if owner is not None:
-                report["owner_close"] = owner.close()
-                if report["owner_close"].get("cleanup_errors"):
-                    raise RuntimeError("static owner cleanup remains unconfirmed")
+                report["owner_close"] = owner.close(timeout=20) if is_async else owner.close()
+                if (report["owner_close"].get("cleanup_errors")
+                        or is_async and report["owner_close"].get("status") != "closed"):
+                    raise RuntimeError(("async Core" if is_async else "static") + " owner cleanup remains unconfirmed")
+            elif async_owner is not None:
+                report["owner_close"] = async_owner.close()
+                if report["owner_close"].get("status") != "closed" or report["owner_close"].get("cleanup_errors"):
+                    raise RuntimeError("async actor owner cleanup remains unconfirmed")
         except BaseException as cleanup:
             report.update(status="failed", close_error_type=type(cleanup).__name__)
             if failure is None:
@@ -378,6 +407,23 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                     report.update(error_type=type(cleanup).__name__, error=redact_text(str(cleanup)))
                 else:
                     failure.add_note("owner close accounting also failed: " + type(cleanup).__name__)
+        if is_async:
+            report.update(backend=config["backend"], execution_kind="optional async local-model qualification",
+                          performance_claim=False, generation=asdict(generation))
+            if async_limits is not None:
+                report["requested_async_limits"] = asdict(async_limits)
+            try:
+                if async_owner is not None:
+                    metadata = async_owner.execution_metadata()
+                    if type(metadata) is not dict:
+                        raise TypeError("async execution metadata must be an object")
+                    report["execution_metadata"] = json.loads(json.dumps(metadata, allow_nan=False))
+            except BaseException as cleanup:
+                report.update(status="failed", execution_metadata_error_type=type(cleanup).__name__)
+                if failure is None:
+                    failure = cleanup
+                else:
+                    failure.add_note("async execution metadata also failed: " + type(cleanup).__name__)
         try:
             if ray is not None and ray.is_initialized():
                 ray.shutdown()
@@ -450,6 +496,8 @@ def main(argv=None):
         return 0
     config, method, generation, resources, engine = read_config(args.config)
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
+    if config["backend"] == _ASYNC_BACKEND:
+        preflight["requested_async_limits"] = asdict(_async_limits(config))
     if args.action == "check" or not args.execute_model:
         print(json.dumps(preflight, ensure_ascii=False))
         return 0
