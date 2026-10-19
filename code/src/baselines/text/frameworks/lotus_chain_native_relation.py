@@ -153,16 +153,29 @@ class NativeExtractRelationRows:
         if self._phase_build_unconfirmed:
             errors.append("native_phase_construction_unconfirmed")
         for index, phase in enumerate(self._phases):
+            report = None
             try:
                 report = phase.close()
-                reports.append(report)
-                engine_reports.extend(report.get("engine_reports", []))
-                if report.get("status") != "closed":
-                    errors.append("phase_" + str(index) + "_cleanup_unconfirmed")
-                errors.extend("phase_" + str(index) + ": " + item
-                              for item in report.get("cleanup_errors", []))
             except BaseException as error:
                 errors.append("phase_" + str(index) + "_close: " + type(error).__name__)
+                try:
+                    retained = phase.last_close_report
+                    if isinstance(retained, dict):
+                        report = dict(retained, status="unknown", close_error_type=type(error).__name__)
+                except BaseException as report_error:
+                    errors.append("phase_" + str(index) + "_close_report: " + type(report_error).__name__)
+            if report is not None:
+                try:
+                    if not isinstance(report, dict):
+                        raise TypeError("native phase close report must be a dictionary")
+                    reports.append(report)
+                    engine_reports.extend(report.get("engine_reports", []))
+                    if report.get("status") != "closed":
+                        errors.append("phase_" + str(index) + "_cleanup_unconfirmed")
+                    errors.extend("phase_" + str(index) + ": " + item
+                                  for item in report.get("cleanup_errors", []))
+                except BaseException as report_error:
+                    errors.append("phase_" + str(index) + "_close_report: " + type(report_error).__name__)
         closed = not errors
         if closed:
             try:
