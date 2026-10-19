@@ -148,6 +148,7 @@ class _RecordTransport:
         self._lock = threading.Lock()
         self.backend = BoundedAsyncBackend(
             self._execute, max_tasks=maximum, notify=notify, isolate_failures=True,
+            cancel_pending=actors.cancel_core,
         )
 
     async def _execute(self, task, endpoint):
@@ -159,8 +160,8 @@ class _RecordTransport:
         prepared = actor.prepare.remote([row], self.deadline)
         with self._lock:
             self._refs[task.key] = (prepared,)
-        result_ref = self.actors.model_actor.run_core.remote(
-            prepared, self.deadline, task.task.max_result_bytes,
+        result_ref = self.actors.submit_core(
+            prepared, self.deadline, task.task.max_result_bytes, task.key,
         )
         with self._lock:
             self._refs[task.key] = (prepared, result_ref)
@@ -178,6 +179,9 @@ class _RecordTransport:
             self._outcomes[task.key] = result
             if value["status"] != "unknown":
                 self._refs.pop(task.key, None)
+        # Transfer the compact receipt before an async actor may discard its
+        # copy. Unknown work still retains its input refs and Core reservations.
+        self.actors.acknowledge_core(task.key)
         if value["status"] == "unknown":
             raise RuntimeError("local model work has no confirmed terminal")
         if value["status"] == "failed":
@@ -369,7 +373,8 @@ class SemLoomRecordsCore:
     """One single-control-thread Core, one local model owner, consecutive queries."""
 
     def __init__(self, method: FilterMethod, engine: EngineSpec, generation: GenerationSpec,
-                 resources: RecordsResources, *, capacity: CoreRecordsCapacity | None = None):
+                 resources: RecordsResources, *, capacity: CoreRecordsCapacity | None = None,
+                 actor_owner: RecordsActorOwner | None = None):
         self.method = FilterMethod.from_dict(asdict(method))
         self.engine = EngineSpec.from_dict(asdict(engine))
         self.generation = GenerationSpec.from_dict(asdict(generation))
@@ -379,8 +384,15 @@ class SemLoomRecordsCore:
         self.capacity = CoreRecordsCapacity() if capacity is None else capacity
         if type(self.capacity) is not CoreRecordsCapacity:
             raise TypeError("Core records capacity must be CoreRecordsCapacity")
+        if actor_owner is not None:
+            if not isinstance(actor_owner, RecordsActorOwner):
+                raise TypeError("actor_owner must be RecordsActorOwner")
+            for name in ("method", "engine", "generation", "resources"):
+                if getattr(actor_owner, name) != getattr(self, name):
+                    raise ValueError("actor_owner " + name + " differs from the Core configuration")
         self._thread = threading.get_ident()
-        self._actors = _ActorOwner(self.method, self.engine, self.generation, self.resources)
+        self._actors = (actor_owner if actor_owner is not None else
+                        _ActorOwner(self.method, self.engine, self.generation, self.resources))
         self.core = self.transport = self._active = None
         self._closing = False
         self._deadline = None
@@ -502,16 +514,16 @@ class SemLoomRecordsCore:
         if self.transport is not None:
             transport_closed = self.transport.backend.close(timeout=0.05)
         usage = None if self.core is None else asdict(self.core.capacity.usage())
-        self.last_close_report = dict(
-            implementation="semloom_records_core", production_core_connected=self.production_core_connected,
-            status="closed" if actor_report["status"] == "closed" and transport_closed
+        self.last_close_report = {
+            **self._actors.execution_metadata(),
+            "implementation": "semloom_records_core", "production_core_connected": self.production_core_connected,
+            "status": "closed" if actor_report["status"] == "closed" and transport_closed
             and (usage is None or not usage["held_tasks"]) and not errors else "unknown",
-            cleanup_scope="core_transport_actor_and_engine_api",
-            model_owner=actor_report, gpu_exit_confirmed=actor_report["gpu_exit_confirmed"],
-            core_usage=usage, transport_closed=transport_closed,
-            retained_remote_inputs=0 if self.transport is None else self.transport.retained_refs(),
-            last_query_report=self.last_query_report, cleanup_errors=errors,
-            work_unit="model_calls", model_batch_mode="finite_synchronous_single_row",
-            native_engine_abort_supported=False,
-        )
+            "cleanup_scope": "core_transport_actor_and_engine_api",
+            "model_owner": actor_report, "gpu_exit_confirmed": actor_report["gpu_exit_confirmed"],
+            "core_usage": usage, "transport_closed": transport_closed,
+            "retained_remote_inputs": 0 if self.transport is None else self.transport.retained_refs(),
+            "last_query_report": self.last_query_report, "cleanup_errors": errors,
+            "work_unit": "model_calls",
+        }
         return self.last_close_report

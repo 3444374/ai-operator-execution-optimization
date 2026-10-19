@@ -1,0 +1,39 @@
+{
+  "source_base": "b447fc37b7a705c64dbd7bf6b19d7b3677663d3f",
+  "scope": "shared Core actor injection/hooks; default synchronous",
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "c1a895276597e78e3c5d786f24555d4bec6e06428c627fbf9de3ee53bd82d64f",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "4da87831d75addc8fa0e4affce4439d50d5c3574e53b6eb3cdfc3ca467d48f6a",
+    "code/tests/execution_provider/test_lotus_records_actor_owner.py": "d0a069ee362f346693630ff32aa82616edb7e0c67311aa287846f6d62207e1ad",
+    "code/tests/execution_provider/test_lotus_records_core.py": "882de9e9614ed6b43f62e5045f1ed097f52e4f30bb30b83f9e5bbb0469fd4f75"
+  },
+  "cpu_tests": {
+    "passed": 92,
+    "subtests_passed": 39,
+    "skipped": 0,
+    "failed": 0,
+    "platform_output_chunk": "c67445",
+    "separate_raw_success_log_available": false
+  },
+  "retained_failures": [
+    {
+      "scope": "new test Source expected a subset but runtime fixture reads its full rows",
+      "counts": "51 passed, 24 subtests passed, 1 failed",
+      "platform_output_chunks": [
+        "1ca5f9",
+        "e921e7"
+      ],
+      "production_change_required": false
+    },
+    {
+      "scope": "restricted local private CPU process PermissionError",
+      "counts": "90 passed, 39 subtests passed, 1 failed",
+      "redacted_log_sha256": "b5444ede26e9669fd8d0b1c156016e3cb9d476b62b9d063bdc16d1b99e4ddb6c",
+      "normal_local_permission_run_passed": true
+    }
+  ],
+  "model_calls": 0,
+  "server_operations": 0,
+  "async_actor_integrated": false,
+  "async_cli_integrated": false
+}

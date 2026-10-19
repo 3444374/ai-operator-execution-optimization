@@ -127,14 +127,40 @@ class RecordsActorOwner:
         self._killed: set[int] = set()
         self._closing = False
         self._start_failed = False
+        self.close_deadline = None
         self.last_close_report = None
 
     def _model_actor_type(self) -> type[_ModelActor]:
         return _ModelActor
 
+    def _model_actor_options(self) -> dict[str, Any]:
+        return dict(
+            num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0,
+            max_concurrency=1, runtime_env=_runtime_env(self.engine.model_python),
+        )
+
+    def _model_actor_arguments(self) -> tuple[Any, ...]:
+        return asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows
+
+    def submit_core(self, prepared: Any, deadline: float, maximum: int, key: Any) -> Any:
+        """Submit without fetching prepared data; the default kernel is synchronous."""
+        return self.model_actor.run_core.remote(prepared, deadline, maximum)
+
+    def cancel_core(self, key: Any) -> None:
+        """A synchronous call has no native abort acknowledgement."""
+
+    def acknowledge_core(self, key: Any) -> None:
+        """A synchronous actor does not retain a second result receipt."""
+
+    def execution_metadata(self) -> dict[str, Any]:
+        return dict(model_batch_mode="finite_synchronous_single_row",
+                    native_engine_abort_supported=False)
+
     def wait_ready(
         self, ref: Any, deadline: float, cancelled: Callable[[], bool] | None = None,
     ) -> Any:
+        if self.close_deadline is not None:
+            deadline = min(deadline, self.close_deadline)
         _deadline(deadline)
         while True:
             _check(deadline, cancelled)
@@ -173,10 +199,9 @@ class RecordsActorOwner:
                     num_cpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
                     runtime_env=_runtime_env(self.engine.driver_python),
                 ).remote(asdict(self.method)))
-            self.model_actor = model.options(
-                num_cpus=1, num_gpus=1, max_restarts=0, max_task_retries=0, max_concurrency=1,
-                runtime_env=_runtime_env(self.engine.model_python),
-            ).remote(asdict(self.engine), asdict(self.generation), self.resources.model_batch_rows)
+            self.model_actor = model.options(**self._model_actor_options()).remote(
+                *self._model_actor_arguments(),
+            )
             self.model_ready = self.wait_ready(
                 self.model_actor.ready.remote(deadline), deadline, cancelled,
             )

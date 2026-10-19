@@ -687,6 +687,89 @@ class CoreRecordsTests(unittest.TestCase):
         self.assertEqual(results[0]["query_id"], "new")
         self.assertEqual(owner.transport.failure_receipts(), ())
 
+    def test_injected_owner_uses_real_core_and_cannot_override_connection_facts(self):
+        class Owner(core._ActorOwner):
+            def __init__(self, *args):
+                super().__init__(*args)
+                self.acknowledged = []
+
+            def acknowledge_core(self, key):
+                self.acknowledged.append(key)
+
+            def execution_metadata(self):
+                return dict(super().execution_metadata(), model_batch_mode="fixture_process",
+                            effective_limits={"max_active_requests": 2},
+                            production_core_connected=False, gpu_exit_confirmed=True)
+
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        actors = Owner(FilterMethod("fixture"), self.spec, GenerationSpec(), resources)
+        with Runtime(self.rows):
+            owner = core.SemLoomRecordsCore(actors.method, self.spec, actors.generation,
+                                           resources, actor_owner=actors)
+            self.assertIs(owner._actors, actors)
+            self.assertEqual(len(list(owner.evaluate(Source(self.rows), query_id="injected"))), 5)
+            report = owner.close()
+        self.assertTrue(report["production_core_connected"])
+        self.assertIsNone(report["gpu_exit_confirmed"])
+        self.assertEqual(report["model_batch_mode"], "fixture_process")
+        self.assertEqual(report["effective_limits"], {"max_active_requests": 2})
+        self.assertEqual(len(actors.acknowledged), 5)
+        self.assertTrue(all(key.session_id == owner._active.session.session_id
+                            for key in actors.acknowledged))
+
+    def test_injected_owner_configuration_is_checked_before_allocation(self):
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1)
+        with self.assertRaisesRegex(TypeError, "RecordsActorOwner"):
+            core.SemLoomRecordsCore(FilterMethod("fixture"), self.spec, GenerationSpec(),
+                                   resources, actor_owner=object())
+        for field, value in (("method", FilterMethod("other")),
+                             ("engine", replace(self.spec, model_path="/tmp/other-model")),
+                             ("generation", GenerationSpec(max_tokens=1)),
+                             ("resources", replace(resources, max_active_batches=1))):
+            with self.subTest(field=field):
+                actors = core._ActorOwner(FilterMethod("fixture"), self.spec, GenerationSpec(), resources)
+                setattr(actors, field, value)
+                with self.assertRaisesRegex(ValueError, "actor_owner " + field):
+                    core.SemLoomRecordsCore(FilterMethod("fixture"), self.spec, GenerationSpec(),
+                                           resources, actor_owner=actors)
+                self.assertIsNone(actors.model_actor)
+
+    def test_cancel_hook_keeps_full_session_key_and_does_not_release_active_work(self):
+        class Owner(core._ActorOwner):
+            submitted, cancelled = [], []
+            notified = threading.Event()
+
+            def submit_core(self, prepared, deadline, maximum, key):
+                self.submitted.append(key)
+                return super().submit_core(prepared, deadline, maximum, key)
+
+            def cancel_core(self, key):
+                self.cancelled.append(key)
+                self.notified.set()
+
+        gate = threading.Event()
+        resources = RecordsResources(prepare_batch_rows=1, model_batch_rows=1, max_active_batches=1)
+        actors = Owner(FilterMethod("fixture"), self.spec, GenerationSpec(), resources)
+        with Runtime(self.rows, block=gate):
+            owner = core.SemLoomRecordsCore(actors.method, self.spec, actors.generation,
+                                           resources, actor_owner=actors)
+            first = owner.evaluate(Source(self.rows), query_id="same-query")
+            first._fill()
+            first.session.advance(1)
+            first.close()
+            self.assertTrue(actors.notified.wait(2))
+            self.assertEqual(actors.cancelled[0].session_id, first.session.session_id)
+            self.assertEqual(actors.cancelled[0].sequence, 0)
+            self.assertEqual(owner.core.capacity.usage().active_requests, 1)
+            gate.set()
+            self.drain(owner)
+            second = owner.evaluate(Source(self.rows), query_id="same-query")
+            self.assertNotEqual(first.session.session_id, second.session.session_id)
+            list(second)
+            self.assertEqual(actors.submitted[-1].session_id, second.session.session_id)
+            self.assertNotEqual(actors.cancelled[0], actors.submitted[-1])
+            self.assertEqual(owner.close()["status"], "closed")
+
     def test_non_single_row_configuration_is_explicitly_rejected(self):
         for field in ("prepare_batch_rows", "model_batch_rows"):
             resources = RecordsResources(**{field: 2})

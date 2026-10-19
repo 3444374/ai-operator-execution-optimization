@@ -43,6 +43,16 @@ Core credits and retained references return to zero; API closure, observed OS ex
 independent GPU observation remain separate evidence. Later sources and finite chains do not
 inherit that qualification.
 
+Core also accepts an explicit, configuration-matched `RecordsActorOwner` through
+`actor_owner=`. Trusted owners can specialize model options/arguments and the
+`submit_core`, `cancel_core`, `acknowledge_core` hooks. Core passes the complete
+session/sequence key; receipt acknowledgement follows validation and storage.
+Cancellation does not free active work or unknown input references. Owner mode
+metadata cannot override actual Core, cleanup or GPU observations. Both the
+default and injected owners honor Core's cleanup deadline and retain the same
+pending close request on timeout. These are [CPU-checked integration hooks](../../../../experiments/results/diagnostics/local_async_engine_20261019/README.md#core-actor-hooks);
+the default remains synchronous, and Async actor/CLI integration is still pending.
+
 The separate [finite-chain Core adapter](lotus_record_chain_core.py) admits raw bounded
 fused batches through the same production Core and one asynchronous slot. A local host
 worker invokes the shared LOTUS batch kernel and owns its isolated model-process pipe;

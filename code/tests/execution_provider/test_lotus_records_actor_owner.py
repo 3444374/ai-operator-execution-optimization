@@ -220,6 +220,52 @@ _ModelActor(dict(model_path='/tmp/model',model_python='/tmp/model-python',driver
             for owner in [default, specialized, patched_default]:
                 owner.close()
 
+    def test_trusted_owner_changes_only_model_host_and_keeps_default_preparation(self):
+        class ProcessActor(actors._ModelActor):
+            def __init__(self, engine, generation, model_batch_rows, marker):
+                super().__init__(engine, generation, model_batch_rows)
+                self.marker = marker
+
+        class ProcessOwner(actors.RecordsActorOwner):
+            def _model_actor_type(self):
+                return ProcessActor
+
+            def _model_actor_arguments(self):
+                return (*super()._model_actor_arguments(), "isolated-child")
+
+            def _model_actor_options(self):
+                return dict(super()._model_actor_options(), max_concurrency=4,
+                            runtime_env=actors._runtime_env(self.engine.driver_python))
+
+        with FakeRuntime() as runtime:
+            original = self.owner()
+            owner = ProcessOwner(original.method, original.engine, original.generation, original.resources)
+            owner.start(time.monotonic() + 3)
+            allocations = [event for event in runtime.events if event[0] == "actor"]
+            self.assertEqual(allocations[-1][2]["max_concurrency"], 4)
+            self.assertEqual(allocations[-1][2]["runtime_env"], allocations[0][2]["runtime_env"])
+            self.assertEqual(allocations[-1][2]["num_gpus"], 1)
+            self.assertEqual(allocations[0][2]["max_concurrency"], 1)
+            self.assertEqual(owner.model_actor.value.marker, "isolated-child")
+            owner.close()
+
+    def test_injected_base_owner_honors_cleanup_deadline_and_keeps_the_same_close_ref(self):
+        with FakeRuntime() as runtime:
+            owner = self.owner()
+            owner.start(time.monotonic() + 3)
+            owner.close_deadline = time.monotonic() - 1
+            report = owner.close()
+            pending = owner._model_close_ref
+            self.assertEqual(report["status"], "unknown")
+            self.assertIsNotNone(pending)
+            self.assertFalse(any(event[0] == "get" and event[1].endswith(".close")
+                                 for event in runtime.events))
+            owner.close_deadline = time.monotonic() + 3
+            self.assertEqual(owner.close()["status"], "closed")
+            self.assertTrue(pending.resolved)
+            self.assertEqual(sum(event[0] == "submit" and event[1].endswith(".close")
+                                 for event in runtime.events), 1)
+
     def test_all_preflight_failures_precede_actor_allocation(self):
         for failure in ["method", "driver", "generation", "ray-version", "ray-uninitialized"]:
             with self.subTest(failure=failure), FakeRuntime() as runtime:

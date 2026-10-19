@@ -115,3 +115,18 @@ GPU／后代字段仍 None，重试仅可用于该同一 owner 的清理，不�
 原候选 121／190 与修复后 36 的范围不同，不相加为独立样本数；本轮未重跑原完整 121 套件。
 两位独立 reviewer 复核关闭原 P2，Standards／Spec 均无剩余阻断。
 actor／Core 持续供给接线、真实 vLLM／GPU、跨阶段流水与性能继续 pending。
+
+<a id="core-actor-hooks"></a>
+## 现有 Core 的显式 actor 接点
+
+共享接点在 `b447fc37` 上增量实现；[验证摘要](core_actor_hooks_verification.json)绑定两生产模块和两份测试的字节。
+`SemLoomRecordsCore(..., actor_owner=...)` 要求真实 `RecordsActorOwner` 实例且四组配置一致，默认仍构造原同步 owner。
+模型 options／arguments、submit／cancel／ack 是受信 owner 的小接口，Core 的 session、并发 transport、lease／release 与查询循环不复制。
+submit／cancel 传完整 session／sequence，合法回执先入 `_outcomes` 再 ack；unknown 保留输入引用及 Core 额度，取消不产生可信终态。
+owner 模式元数据不能覆盖实际 Core 连接、清理状态或 GPU 观察；基类也遵守显式 cleanup 期限，超时保留同一关闭 RPC。
+
+actor owner／普通 Core／static／有限链 Core 共 92 项 CPU、39 subtests 通过，零 skip；实际私有 CPU pipe 仍是模型替身。
+首次新测试错误地让 expected 只含一行而 fixture 读取全源，两次失败已保留，修正仅改测试源范围。
+受限本机执行中私有进程检查返回 PermissionError；原日志保留，获准以正常本机权限运行同套无模型检查后通过。
+Standards 指出的注入 owner 关闭期限 P2 已补共享 clamp 及同一 ref 重试回归，两轴定向复核通过。
+本增量没有运行服务器或模型；新增 Async actor、Core 实际持续供给、公开 selector 与 GPU／性能资格仍分别待验。
