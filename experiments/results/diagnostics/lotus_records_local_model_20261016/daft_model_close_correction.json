@@ -367,6 +367,13 @@
       "file": "qualification-daft-close-correction.config.json",
       "role": "input_config",
       "sha256": "1fb14271bdfb04f5d7a9707f27b9a53e8a5dbc0951d6aba0972df45395c422eb"
+    },
+    {
+      "bundle": "first-native-run-evidence",
+      "file": "artifacts/frozen-config.json",
+      "role": "native_control_frozen_config",
+      "sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+      "bytes": 52645
     }
   ],
   "lifecycle": {
@@ -711,11 +718,13 @@
         "prompt/completion/total token usage",
         "finish reason"
       ],
-      "config_canonical_sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+      "config_canonical_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
       "control_equal_each_query": true,
       "old_reports_rewritten": false,
       "original_unit_script_sha256": "a3673cf863a59d35518605785c94b7f9fc984f5fb60067dfc31adb797cf54c0d",
-      "report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd"
+      "report_sha256": "886f93500e5118f8b08f035efb9c3b46241b94d30caf735114669fbf383865fd",
+      "config_raw_sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+      "config_hash_scope": "Raw SHA hashes frozen-config.json bytes; canonical SHA excludes its config_sha256 field and matches the original native unit."
     },
     "parser": {
       "adapter": "code/src/semantic_methods/lotus/engine.py::interpret_results",

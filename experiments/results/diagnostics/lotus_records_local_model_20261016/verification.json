@@ -971,7 +971,7 @@
   "daft_model_close_correction_20261019": {
     "source_commit": "f526fbf149873bd437da51b480e36f8892093fbd",
     "summary": "daft_model_close_correction.json",
-    "summary_sha256": "5ca6a11e8d18fb918fb37316fb994fb3edd4b8663f390029c1f77bf27d5cb0c8",
+    "summary_sha256": "1fc0366ce936f57f8fa06ad7a15ad9397f93c221e2fc3d54fdce6d1199fb0acc",
     "actual_model_calls": 4,
     "engine_lifetimes": 2,
     "queries_completed": 2,
@@ -1000,7 +1000,15 @@
     "old32_sha256_unchanged": "8e654680c40f90509128d346a9dd45e6f56ca23dc17a37b553eef7089c2a54d6",
     "failed_first_unit_actual_model_calls": null,
     "frozen_source_only": true,
-    "current_generic_source_model_qualification": null
+    "current_generic_source_model_qualification": null,
+    "native_control_hash_label_correction": {
+      "original_published_summary_sha256": "5ca6a11e8d18fb918fb37316fb994fb3edd4b8663f390029c1f77bf27d5cb0c8",
+      "raw_config_sha256": "ed7c6e167d10aba9abd67fee1c2276ba21f12ed17f8c88f14829741e85c4746b",
+      "canonical_config_sha256": "592c9725d7da024be0b4581b51e22f36486f560dedb5167ba921adc7de2e3864",
+      "original_config_and_unit_agree": true,
+      "model_results_changed": false
+    },
+    "observed_process_scope": "59 outer supervisor identities; per-engine inner observations remain separate in summary lifecycle."
   },
   "generic_filter_integration_cpu_20261019": {
     "integration_commit": "5c6d7a3bf45aa9dd38f1219e7e3810876b32e704",
