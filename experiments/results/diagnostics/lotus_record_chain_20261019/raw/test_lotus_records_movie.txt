@@ -1,0 +1,14 @@
+test_empty_and_no_eligible_sources_match_native_zero_call_query (tests.experiments.test_lotus_records_movie.MovieRecordsTests.test_empty_and_no_eligible_sources_match_native_zero_call_query) ... ok
+test_full_query_matches_original_messages_decisions_stats_and_evaluator (tests.experiments.test_lotus_records_movie.MovieRecordsTests.test_full_query_matches_original_messages_decisions_stats_and_evaluator) ... ok
+test_invalid_source_does_not_allocate_backend (tests.experiments.test_lotus_records_movie.MovieRecordsTests.test_invalid_source_does_not_allocate_backend) ... ok
+test_native_differential_failure_retains_completed_call_ledger (tests.experiments.test_lotus_records_movie.MovieRecordsTests.test_native_differential_failure_retains_completed_call_ledger) ... ok
+test_partial_failure_retains_known_usage_and_marks_missing_unconfirmed (tests.experiments.test_lotus_records_movie.MovieRecordsTests.test_partial_failure_retains_known_usage_and_marks_missing_unconfirmed) ... ok
+test_cleanup_cannot_overwrite_primary_query_failure (tests.experiments.test_lotus_records_movie.WorkerCleanupTests.test_cleanup_cannot_overwrite_primary_query_failure) ... ok
+test_cleanup_failure_changes_success_to_failure (tests.experiments.test_lotus_records_movie.WorkerCleanupTests.test_cleanup_failure_changes_success_to_failure) ... ok
+test_daft_selector_uses_lazy_native_graph_without_importing_ray (tests.experiments.test_lotus_records_movie.WorkerCleanupTests.test_daft_selector_uses_lazy_native_graph_without_importing_ray) ... ok
+test_ray_shutdown_failure_is_recorded (tests.experiments.test_lotus_records_movie.WorkerCleanupTests.test_ray_shutdown_failure_is_recorded) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 4.723s
+
+OK

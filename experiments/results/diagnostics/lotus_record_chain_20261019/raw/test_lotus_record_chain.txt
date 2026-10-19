@@ -1,0 +1,24 @@
+test_stage_and_evaluation_are_separate_from_record_membership (tests.semantic_methods.test_lotus_record_chain.IdentityTests.test_stage_and_evaluation_are_separate_from_record_membership) ... ok
+test_values_and_named_source_references_are_owned_snapshots (tests.semantic_methods.test_lotus_record_chain.IdentityTests.test_values_and_named_source_references_are_owned_snapshots) ... ok
+test_all_discarded_rows_produce_no_map_or_extract_work (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_all_discarded_rows_produce_no_map_or_extract_work) ... ok
+test_cache_and_serialization_policy_are_rechecked_before_calls (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_cache_and_serialization_policy_are_rechecked_before_calls) ... ok
+test_duplicate_labels_keep_occurrences_and_original_final_broadcast (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_duplicate_labels_keep_occurrences_and_original_final_broadcast) ... ok
+test_each_call_has_its_own_generation_and_format (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_each_call_has_its_own_generation_and_format) ... ok
+test_extract_dependency_is_checked_before_inference (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_extract_dependency_is_checked_before_inference) ... ok
+test_invalid_json_keeps_original_parser_fallback (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_invalid_json_keeps_original_parser_fallback) ... 2026-10-19 09:35:19,718 - INFO - 	 Failed to parse: not-json
+2026-10-19 09:35:19,718 - INFO - 	 Failed to parse: ```json
+{"aspect":"x"}
+```
+ok
+test_map_preserves_whitespace_and_extract_allows_keys_and_stringifies_values (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_map_preserves_whitespace_and_extract_allows_keys_and_stringifies_values) ... ok
+test_missing_result_retains_known_usage_and_unknown_missing_identity (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_missing_result_retains_known_usage_and_unknown_missing_identity) ... ok
+test_non_object_json_raises_original_error_and_retains_all_call_usage (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_non_object_json_raises_original_error_and_retains_all_call_usage) ... ok
+test_original_accessors_match_messages_parameters_stats_and_final_values (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_original_accessors_match_messages_parameters_stats_and_final_values) ... ok
+test_three_rows_keep_occurrences_and_consume_new_map_column (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_three_rows_keep_occurrences_and_consume_new_map_column) ... ok
+test_transport_error_keeps_declared_evaluations_unconfirmed (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_transport_error_keeps_declared_evaluations_unconfirmed) ... ok
+test_unknown_map_result_stops_extract_and_preserves_prior_calls (tests.semantic_methods.test_lotus_record_chain.LotusRecordChainTests.test_unknown_map_result_stops_extract_and_preserves_prior_calls) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 4.778s
+
+OK

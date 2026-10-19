@@ -1,0 +1,12 @@
+test_bad_source_and_unsupported_generation_fail_before_graph (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_bad_source_and_unsupported_generation_fail_before_graph) ... ok
+test_cleanup_attempts_both_actions_and_retries_without_hiding_primary (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_cleanup_attempts_both_actions_and_retries_without_hiding_primary) ... ok
+test_deadline_interrupts_blocked_vendor_consumption_without_reset (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_deadline_interrupts_blocked_vendor_consumption_without_reset) ... ok
+test_duplicate_and_missing_results_fail_with_full_identity (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_duplicate_and_missing_results_fail_with_full_identity) ... ok
+test_engine_close_error_does_not_discard_completed_batch_usage (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_engine_close_error_does_not_discard_completed_batch_usage) ... ok
+test_native_csv_graph_keeps_occurrences_and_reuses_worker_models (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_native_csv_graph_keeps_occurrences_and_reuses_worker_models) ... ok
+test_stop_does_not_discard_already_returned_batch_usage (tests.baselines.text.test_ray_data_lotus_records.NativeRecordsTests.test_stop_does_not_discard_already_returned_batch_usage) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.049s
+
+OK

@@ -1,0 +1,162 @@
+test_actual_method_and_original_evaluator (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_actual_method_and_original_evaluator) ... 2026-10-19 09:35:30,592 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:30,593 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:30,593 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:30,593 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:30,612 - INFO - UdfOperator::execute;
+2026-10-19 09:35:34,496 - INFO - UdfOperator::execute;
+2026-10-19 09:35:34,502 - INFO - UdfOperator::execute;
+2026-10-19 09:35:34,506 - INFO - UdfOperator::execute;
+2026-10-19 09:35:35,206 - INFO - UdfOperator::execute;
+2026-10-19 09:35:35,207 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:35,207 - INFO - UdfOperator::execute;
+2026-10-19 09:35:35,221 - INFO - UdfOperator::execute;
+2026-10-19 09:35:35,221 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:35,296 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:35,296 - INFO - UdfOperator::execute;
+2026-10-19 09:35:35,296 - INFO - ProjectOperator::execute;
+ok
+test_actual_rebatch_bytes_rejected_before_model_allocation (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_actual_rebatch_bytes_rejected_before_model_allocation) ... 2026-10-19 09:35:36,869 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:36,869 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:36,869 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:36,869 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:36,870 - INFO - UdfOperator::execute;
+2026-10-19 09:35:40,514 - INFO - UdfOperator::execute;
+2026-10-19 09:35:40,515 - INFO - UdfOperator::execute;
+2026-10-19 09:35:40,522 - INFO - UdfOperator::execute;
+2026-10-19 09:35:41,524 - ERROR - Error when running pipeline node UDF run
+2026-10-19 09:35:41,525 - WARNING - Unable to finalize node: 0 because RuntimeStatsManager was already finished: channel closed
+ok
+test_cancel_before_allocation (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_cancel_before_allocation) ... ok
+test_cleanup_exception_does_not_drop_known_result_usage (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_cleanup_exception_does_not_drop_known_result_usage) ... 2026-10-19 09:35:41,540 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:41,540 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:41,540 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:41,540 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:41,540 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,074 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,074 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,082 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,791 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,791 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:45,791 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,804 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,804 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:45,874 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:45,874 - INFO - UdfOperator::execute;
+2026-10-19 09:35:45,874 - INFO - ProjectOperator::execute;
+ok
+test_failed_cleanup_keeps_all_known_usage (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_failed_cleanup_keeps_all_known_usage) ... 2026-10-19 09:35:46,693 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:46,693 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:46,693 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:46,693 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:46,693 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,210 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,210 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,219 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,826 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,826 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:50,826 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,839 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,839 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:50,913 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:50,913 - INFO - UdfOperator::execute;
+2026-10-19 09:35:50,913 - INFO - ProjectOperator::execute;
+ok
+test_native_graph_cancel_stalled_model_preserves_cancel_and_os_exit (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_native_graph_cancel_stalled_model_preserves_cancel_and_os_exit) ... 2026-10-19 09:35:51,740 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:51,740 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:51,740 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:51,740 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:51,741 - INFO - UdfOperator::execute;
+2026-10-19 09:35:55,362 - INFO - UdfOperator::execute;
+2026-10-19 09:35:55,362 - INFO - UdfOperator::execute;
+2026-10-19 09:35:55,370 - INFO - UdfOperator::execute;
+2026-10-19 09:35:56,125 - INFO - UdfOperator::execute;
+2026-10-19 09:35:56,125 - INFO - ProjectOperator::execute;
+2026-10-19 09:35:56,125 - INFO - UdfOperator::execute;
+2026-10-19 09:35:56,936 - ERROR - Error when running pipeline node UDF run
+ok
+test_native_iterator_early_close_and_repeat_query_use_distinct_engines (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_native_iterator_early_close_and_repeat_query_use_distinct_engines) ... 2026-10-19 09:35:56,945 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:35:56,945 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:56,945 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:56,945 - INFO - IntermediateOp::execute;
+2026-10-19 09:35:56,946 - INFO - UdfOperator::execute;
+2026-10-19 09:36:00,526 - INFO - UdfOperator::execute;
+2026-10-19 09:36:00,526 - INFO - UdfOperator::execute;
+2026-10-19 09:36:00,534 - INFO - UdfOperator::execute;
+2026-10-19 09:36:01,379 - INFO - UdfOperator::execute;
+2026-10-19 09:36:01,379 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:01,379 - INFO - UdfOperator::execute;
+2026-10-19 09:36:02,132 - ERROR - Error when running pipeline node UDF run
+2026-10-19 09:36:07,668 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:36:07,668 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:07,668 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:07,669 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:07,669 - INFO - UdfOperator::execute;
+2026-10-19 09:36:11,476 - INFO - UdfOperator::execute;
+2026-10-19 09:36:11,476 - INFO - UdfOperator::execute;
+2026-10-19 09:36:11,483 - INFO - UdfOperator::execute;
+2026-10-19 09:36:12,172 - INFO - UdfOperator::execute;
+2026-10-19 09:36:12,172 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:12,172 - INFO - UdfOperator::execute;
+2026-10-19 09:36:12,184 - INFO - UdfOperator::execute;
+2026-10-19 09:36:12,184 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:12,250 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:12,250 - INFO - UdfOperator::execute;
+2026-10-19 09:36:12,251 - INFO - ProjectOperator::execute;
+ok
+test_process_graph_real_formatter_identity_usage_and_single_owned_engine (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_process_graph_real_formatter_identity_usage_and_single_owned_engine) ... 2026-10-19 09:36:13,075 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:36:13,075 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:13,075 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:13,075 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:13,076 - INFO - UdfOperator::execute;
+2026-10-19 09:36:16,539 - INFO - UdfOperator::execute;
+2026-10-19 09:36:16,540 - INFO - UdfOperator::execute;
+2026-10-19 09:36:16,547 - INFO - UdfOperator::execute;
+2026-10-19 09:36:17,207 - INFO - UdfOperator::execute;
+2026-10-19 09:36:17,207 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:17,207 - INFO - UdfOperator::execute;
+2026-10-19 09:36:17,219 - INFO - UdfOperator::execute;
+2026-10-19 09:36:17,219 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:17,287 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:17,287 - INFO - UdfOperator::execute;
+2026-10-19 09:36:17,287 - INFO - ProjectOperator::execute;
+ok
+test_rebatch_tail_duplicate_occurrences_and_csv_text_values (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_rebatch_tail_duplicate_occurrences_and_csv_text_values) ... 2026-10-19 09:36:18,061 - INFO - ScanTaskSource::get_data;
+2026-10-19 09:36:18,061 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:18,061 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:18,061 - INFO - IntermediateOp::execute;
+2026-10-19 09:36:18,062 - INFO - UdfOperator::execute;
+2026-10-19 09:36:21,636 - INFO - UdfOperator::execute;
+2026-10-19 09:36:21,636 - INFO - UdfOperator::execute;
+2026-10-19 09:36:21,642 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,345 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,345 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,356 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,356 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,356 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,377 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,377 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,387 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,387 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,397 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,397 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,407 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,407 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,417 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,417 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,437 - INFO - UdfOperator::execute;
+2026-10-19 09:36:22,437 - INFO - ProjectOperator::execute;
+2026-10-19 09:36:22,500 - INFO - ProjectOperator::execute;
+ok
+test_validation_precedes_graph_allocation (tests.baselines.text.test_daft_lotus_records.DaftRecordsTests.test_validation_precedes_graph_allocation) ... ok
+test_close_observation_error_retains_retryable_process_handle (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_close_observation_error_retains_retryable_process_handle) ... ok
+test_crashed_engine_returns_unknown_without_retry (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_crashed_engine_returns_unknown_without_retry) ... ok
+test_idle_engine_reaps_after_stop (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_idle_engine_reaps_after_stop) ... ok
+test_private_process_reuses_engine_and_closes_idempotently (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_private_process_reuses_engine_and_closes_idempotently) ... ok
+test_query_error_survives_independent_cleanup_exception (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_query_error_survives_independent_cleanup_exception) ... ok
+test_stalled_call_cancel_is_unknown_and_child_exits (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_stalled_call_cancel_is_unknown_and_child_exits) ... ok
+test_startup_deadline_preserves_process_cleanup_report (tests.baselines.text.test_daft_lotus_records.PrivateEngineTests.test_startup_deadline_preserves_process_cleanup_report) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 60.024s
+
+OK

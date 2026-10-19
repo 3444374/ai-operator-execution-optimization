@@ -1,0 +1,121 @@
+test_stage_and_evaluation_are_separate_from_record_membership (test_lotus_record_chain.IdentityTests.test_stage_and_evaluation_are_separate_from_record_membership) ... ok
+test_values_and_named_source_references_are_owned_snapshots (test_lotus_record_chain.IdentityTests.test_values_and_named_source_references_are_owned_snapshots) ... ok
+test_all_discarded_rows_produce_no_map_or_extract_work (test_lotus_record_chain.LotusRecordChainTests.test_all_discarded_rows_produce_no_map_or_extract_work) ... <local-path>:163: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.14/migration/
+  class CascadeArgs(BaseModel):
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_cache_and_serialization_policy_are_rechecked_before_calls (test_lotus_record_chain.LotusRecordChainTests.test_cache_and_serialization_policy_are_rechecked_before_calls) ... ok
+test_composition_keeps_q3_contract_and_rejects_nonterminal_extract (test_lotus_record_chain.LotusRecordChainTests.test_composition_keeps_q3_contract_and_rejects_nonterminal_extract) ... ok
+test_duplicate_labels_keep_occurrences_and_original_final_broadcast (test_lotus_record_chain.LotusRecordChainTests.test_duplicate_labels_keep_occurrences_and_original_final_broadcast) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_each_call_has_its_own_generation_and_format (test_lotus_record_chain.LotusRecordChainTests.test_each_call_has_its_own_generation_and_format) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_extract_dependency_is_checked_before_inference (test_lotus_record_chain.LotusRecordChainTests.test_extract_dependency_is_checked_before_inference) ... ok
+test_invalid_json_keeps_original_parser_fallback (test_lotus_record_chain.LotusRecordChainTests.test_invalid_json_keeps_original_parser_fallback) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+2026-10-19 09:54:54,406 - INFO - 	 Failed to parse: not-json
+2026-10-19 09:54:54,407 - INFO - 	 Failed to parse: ```json
+{"aspect":"x"}
+```
+ok
+test_map_preserves_whitespace_and_extract_allows_keys_and_stringifies_values (test_lotus_record_chain.LotusRecordChainTests.test_map_preserves_whitespace_and_extract_allows_keys_and_stringifies_values) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_map_then_filter_composes_the_same_runner_and_filters_generated_text (test_lotus_record_chain.LotusRecordChainTests.test_map_then_filter_composes_the_same_runner_and_filters_generated_text) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_missing_result_retains_known_usage_and_unknown_missing_identity (test_lotus_record_chain.LotusRecordChainTests.test_missing_result_retains_known_usage_and_unknown_missing_identity) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_non_object_json_raises_original_error_and_retains_all_call_usage (test_lotus_record_chain.LotusRecordChainTests.test_non_object_json_raises_original_error_and_retains_all_call_usage) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_original_accessors_match_messages_parameters_stats_and_final_values (test_lotus_record_chain.LotusRecordChainTests.test_original_accessors_match_messages_parameters_stats_and_final_values) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_pinned_lazyframe_content_cache_is_separate_from_disabled_lm_cache (test_lotus_record_chain.LotusRecordChainTests.test_pinned_lazyframe_content_cache_is_separate_from_disabled_lm_cache) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_three_rows_keep_occurrences_and_consume_new_map_column (test_lotus_record_chain.LotusRecordChainTests.test_three_rows_keep_occurrences_and_consume_new_map_column) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_transport_error_keeps_declared_evaluations_unconfirmed (test_lotus_record_chain.LotusRecordChainTests.test_transport_error_keeps_declared_evaluations_unconfirmed) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+test_unknown_map_result_stops_extract_and_preserves_prior_calls (test_lotus_record_chain.LotusRecordChainTests.test_unknown_map_result_stops_extract_and_preserves_prior_calls) ... <local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+<local-path>:520: UserWarning: No pricing information available for model openai/local-fixture.
+  warnings.warn(f"No pricing information available for model {self.model}. ")
+ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.569s
+
+OK
