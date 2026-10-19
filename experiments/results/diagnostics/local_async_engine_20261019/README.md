@@ -48,7 +48,7 @@ native wrapper 测试使用明确替换的 vLLM/renderer 对象和真实共享�
 限额在专属测试中为 2 在途/2 结果、每结果 4096 bytes、总结果预留 8192 bytes；另有 4096 input bytes 用例。
 出现失败保留本次身份与原因，修复后使用新运行；不会将测试耗时解释成模型性能。
 
-已完成的运行（最终日志与独审随后追加）：
+已完成的运行：
 
 | 运行 | 结果及解释 |
 |---|---|
@@ -56,10 +56,11 @@ native wrapper 测试使用明确替换的 vLLM/renderer 对象和真实共享�
 | 依赖消费后 IPC | 10 passed，2.65s；chunk `f8556d`，仅组件验证 |
 | 首次 native wrapper | 8 passed/1 failed；shutdown 超时被错误地永久标记失败，chunk `916675`；已修复为保留同一 future，实际异常仍不作成功 |
 | 首次组合回归 | 88 passed/144 subtests，9.44s；chunk `716642`；覆盖两个新组件与同步/共享转换旧路径 |
-| abort 读取独立、FD 失败清理补充 | 新专属集 21 passed，4.57s；chunk `172f3c`；还需最终冻结记录 |
+| abort 读取独立、FD 失败清理补充 | 新专属集 21 passed，4.57s；chunk `172f3c` |
 | 扩大旧进程回归（sandbox） | 104 passed/177 subtests、13 failed；旧同步 psutil 枚举被 macOS sysctl sandbox 拒绝，见[失败日志](raw/cpu_20261019T065230Z.txt)与[来源](verification_20261019T065230Z.json) |
 | 同源码在允许只读进程枚举的 CPU 环境重跑 | 114 passed/188 subtests，21.99s；见[日志](raw/cpu_20261019T065326Z.txt)与[来源](verification_20261019T065326Z.json)，不覆盖随后审阅修复 |
-| 独审修复后专属集 | 29 passed/2 subtests，7.60s；chunk `5c8cf8`；最终冻结组合回归随后追加 |
+| 独审修复后专属集 | 29 passed/2 subtests，7.60s；chunk `5c8cf8` |
+| 冻结修复 `3499916f` 的组合回归 | **121 passed/190 subtests，21.86s**；[日志](raw/cpu_20261019T070124Z.txt)与[来源/逐文件摘要](verification_20261019T070124Z.json)；运行前后源码摘要一致 |
 
 早期运行仅工具记录可定位，全量 pytest 输出未采集；不补写或冒充原日志。最终源文件摘要、命令、退出状态及脱敏日志在本目录保存。
 
@@ -77,7 +78,9 @@ Standards 与 Spec 两位独立 reviewer 固定审查 `a4f47eab..777a0bdb`，读
   与清理解耦，未知 task 保留归属。Standards 另复现已过期/渲染后过期仍调用模型；入口与生成前明确检查期限。
   新用例覆盖原生取消清理挂起、过期零模型额度、边界身份、大结果、意外 task 错误和已知最终 usage 后流清理异常。
 
-首次修复后专属检查已通过；最终冻结 SHA 和原 reviewer 复核结论随后追加。
+两位原 reviewer 对固定 `3499916f99827bf2a0bb74e493389311396ca980` 的修复和最终上下文均复核通过。
+各自独立重跑 29 项专属测试、2 个子测试（Standards 6.85s，Spec 6.58s），还分别复现边界身份拒绝、
+取消清理挂起和 close 有界未知报告。已保存[审阅结论](reviews.json)，不冒称原始完整调试日志。
 
 ## 集成接口与剩余项
 

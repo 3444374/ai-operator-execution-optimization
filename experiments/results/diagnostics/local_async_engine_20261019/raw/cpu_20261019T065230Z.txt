@@ -1,0 +1,501 @@
+....................................................................................... [ 76%]
+................F.FFF [ 94%]
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+_ PrivateReceiptIPCTests.test_real_healthy_pipe_has_original_api_close_and_no_result_failure _
+
+self = <tests.baselines.text.test_engine_process_receipts.PrivateReceiptIPCTests testMethod=test_real_healthy_pipe_has_original_api_close_and_no_result_failure>
+
+    def test_real_healthy_pipe_has_original_api_close_and_no_result_failure(self):
+>       client = self.start("healthy")
+                 ^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_engine_process_receipts.py:283: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_engine_process_receipts.py:260: in start
+    client = cls(self.engine, GenerationSpec(), self.directory.name, time.monotonic() + 30, 5)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateReceiptIPCTests.test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim (mode='short') _
+
+self = <tests.baselines.text.test_engine_process_receipts.PrivateReceiptIPCTests testMethod=test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim>
+
+    def test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim(self):
+        for mode, usage in (("short", 3), ("duplicate", 6), ("reorder", 9)):
+            with self.subTest(mode=mode):
+>               client = self.start(mode)
+                         ^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_engine_process_receipts.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_engine_process_receipts.py:260: in start
+    client = cls(self.engine, GenerationSpec(), self.directory.name, time.monotonic() + 30, 5)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateReceiptIPCTests.test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim (mode='duplicate') _
+
+self = <tests.baselines.text.test_engine_process_receipts.PrivateReceiptIPCTests testMethod=test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim>
+
+    def test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim(self):
+        for mode, usage in (("short", 3), ("duplicate", 6), ("reorder", 9)):
+            with self.subTest(mode=mode):
+>               client = self.start(mode)
+                         ^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_engine_process_receipts.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_engine_process_receipts.py:260: in start
+    client = cls(self.engine, GenerationSpec(), self.directory.name, time.monotonic() + 30, 5)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateReceiptIPCTests.test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim (mode='reorder') _
+
+self = <tests.baselines.text.test_engine_process_receipts.PrivateReceiptIPCTests testMethod=test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim>
+
+    def test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim(self):
+        for mode, usage in (("short", 3), ("duplicate", 6), ("reorder", 9)):
+            with self.subTest(mode=mode):
+>               client = self.start(mode)
+                         ^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_engine_process_receipts.py:267: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_engine_process_receipts.py:260: in start
+    client = cls(self.engine, GenerationSpec(), self.directory.name, time.monotonic() + 30, 5)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_broken_exited_process_without_api_confirmation_is_unknown _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_broken_exited_process_without_api_confirmation_is_unknown>
+
+    def test_broken_exited_process_without_api_confirmation_is_unknown(self):
+>       self.exited_without_api_confirmation(BrokenExitedEngineProcess, broken=True)
+
+code/tests/baselines/text/test_daft_engine_process_close.py:150: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:125: in exited_without_api_confirmation
+    client = self.start(kernel)
+             ^^^^^^^^^^^^^^^^^^
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_close_rejects_unbounded_or_invalid_timeout_before_cleanup _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_close_rejects_unbounded_or_invalid_timeout_before_cleanup>
+
+    def test_close_rejects_unbounded_or_invalid_timeout_before_cleanup(self):
+>       client = self.start(FailedCloseEngineProcess)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_confirmed_api_is_not_called_again_when_os_cleanup_is_retried _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_confirmed_api_is_not_called_again_when_os_cleanup_is_retried>
+
+    def test_confirmed_api_is_not_called_again_when_os_cleanup_is_retried(self):
+>       client = self.start(AcknowledgedIdleEngineProcess)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_default_close_waits_for_api_longer_than_previous_rpc_budget _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_default_close_waits_for_api_longer_than_previous_rpc_budget>
+
+    def test_default_close_waits_for_api_longer_than_previous_rpc_budget(self):
+>       client = self.start()
+                 ^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_explicit_short_close_remains_bounded_and_unknown _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_explicit_short_close_remains_bounded_and_unknown>
+
+    def test_explicit_short_close_remains_bounded_and_unknown(self):
+>       client = self.start()
+                 ^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_failed_shutdown_preserves_failed_result_error_and_known_usage _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_failed_shutdown_preserves_failed_result_error_and_known_usage>
+
+    def test_failed_shutdown_preserves_failed_result_error_and_known_usage(self):
+>       client = self.start(FailedCloseEngineProcess)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:97: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+__ PrivateEngineCloseTests.test_hung_api_is_killed_within_total_close_budget ___
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_hung_api_is_killed_within_total_close_budget>
+
+    def test_hung_api_is_killed_within_total_close_budget(self):
+>       client = self.start(HungCloseEngineProcess)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_naturally_exited_ready_process_without_api_confirmation_is_unknown _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_naturally_exited_ready_process_without_api_confirmation_is_unknown>
+
+    def test_naturally_exited_ready_process_without_api_confirmation_is_unknown(self):
+>       self.exited_without_api_confirmation(ExitedEngineProcess, broken=False)
+
+code/tests/baselines/text/test_daft_engine_process_close.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:125: in exited_without_api_confirmation
+    client = self.start(kernel)
+             ^^^^^^^^^^^^^^^^^^
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+_ PrivateEngineCloseTests.test_truthy_non_boolean_api_confirmation_remains_unknown _
+
+self = <tests.baselines.text.test_daft_engine_process_close.PrivateEngineCloseTests testMethod=test_truthy_non_boolean_api_confirmation_remains_unknown>
+
+    def test_truthy_non_boolean_api_confirmation_remains_unknown(self):
+>       client = self.start(TruthyCloseEngineProcess)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+code/tests/baselines/text/test_daft_engine_process_close.py:153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+code/tests/baselines/text/test_daft_engine_process_close.py:31: in start
+    client = kernel(self.engine, self.generation, self.directory.name,
+code/src/baselines/text/frameworks/daft_engine_process.py:137: in __init__
+    self.ready_report = self._exchange(
+code/src/baselines/text/frameworks/daft_engine_process.py:205: in _exchange
+    _observe(self.owned, self.process.pid, self.created)
+code/src/experiments/lotus_records_supervisor.py:115: in _observe
+    children = process.children(recursive=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:978: in children
+    ppid_map = _ppid_map()
+               ^^^^^^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:256: in _ppid_map
+    for pid in pids():
+               ^^^^^^
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/__init__.py:1485: in pids
+    ret = sorted(_psplatform.pids())
+                 ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def pids():
+>       ls = cext.pids()
+             ^^^^^^^^^^^
+E       PermissionError: [Errno 1] Operation not permitted (originated from sysctl() malloc 1/3)
+
+../../../2026-10-16/task-8/nonmodel-venv/lib/python3.12/site-packages/psutil/_psosx.py:320: PermissionError
+=========================== short test summary info ============================
+FAILED code/tests/baselines/text/test_engine_process_receipts.py::PrivateReceiptIPCTests::test_real_healthy_pipe_has_original_api_close_and_no_result_failure
+SUBFAILED(mode='short') code/tests/baselines/text/test_engine_process_receipts.py::PrivateReceiptIPCTests::test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim
+SUBFAILED(mode='duplicate') code/tests/baselines/text/test_engine_process_receipts.py::PrivateReceiptIPCTests::test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim
+SUBFAILED(mode='reorder') code/tests/baselines/text/test_engine_process_receipts.py::PrivateReceiptIPCTests::test_real_pipe_preserves_original_json_known_usage_and_os_exit_without_api_claim
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_broken_exited_process_without_api_confirmation_is_unknown
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_close_rejects_unbounded_or_invalid_timeout_before_cleanup
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_confirmed_api_is_not_called_again_when_os_cleanup_is_retried
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_default_close_waits_for_api_longer_than_previous_rpc_budget
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_explicit_short_close_remains_bounded_and_unknown
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_failed_shutdown_preserves_failed_result_error_and_known_usage
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_hung_api_is_killed_within_total_close_budget
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_naturally_exited_ready_process_without_api_confirmation_is_unknown
+FAILED code/tests/baselines/text/test_daft_engine_process_close.py::PrivateEngineCloseTests::test_truthy_non_boolean_api_confirmation_remains_unknown
+13 failed, 104 passed, 177 subtests passed in 14.44s
