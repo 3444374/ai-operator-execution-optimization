@@ -271,7 +271,9 @@ def fixed_response_qualification(source, checkout, method, generation, responses
 def _async_limits(config):
     from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 
-    value = config.get("async_limits", {})
+    if "async_limits" not in config:
+        return None  # Let the actor owner bind defaults to the Core request limit.
+    value = config["async_limits"]
     if type(value) is not dict:
         raise ValueError("async_limits must be an object")
     return AsyncEngineLimits(**value)
@@ -296,7 +298,10 @@ def read_config(path):
             resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
         raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     if value["backend"] == _ASYNC_BACKEND:
-        _async_limits(value)
+        limits = _async_limits(value)
+        if limits is not None and (limits.max_inflight != resources.max_active_batches
+                                   or limits.result_slots < resources.max_active_batches):
+            raise ValueError("async_limits must cover and match the Core request limit")
     engine = EngineSpec.from_dict(value["engine"])
     query_id = value["query_id"]
     # Validate query identity even for empty source relations.
@@ -412,6 +417,8 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                           performance_claim=False, generation=asdict(generation))
             if async_limits is not None:
                 report["requested_async_limits"] = asdict(async_limits)
+            elif "async_limits" not in config:
+                report["requested_async_limits"] = None
             try:
                 if async_owner is not None:
                     metadata = async_owner.execution_metadata()
@@ -497,7 +504,8 @@ def main(argv=None):
     config, method, generation, resources, engine = read_config(args.config)
     preflight = model_preflight(source, args.sembench_checkout, method, generation, engine)
     if config["backend"] == _ASYNC_BACKEND:
-        preflight["requested_async_limits"] = asdict(_async_limits(config))
+        limits = _async_limits(config)
+        preflight["requested_async_limits"] = None if limits is None else asdict(limits)
     if args.action == "check" or not args.execute_model:
         print(json.dumps(preflight, ensure_ascii=False))
         return 0

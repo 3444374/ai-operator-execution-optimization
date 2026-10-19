@@ -57,12 +57,13 @@ class AsyncConfigurationTests(unittest.TestCase):
         self.assertEqual(resources.max_active_batches, 2)
         self.assertEqual(engine.max_model_calls, 2)
         self.assertEqual(runner._async_limits(config), AsyncEngineLimits(max_inflight=2))
-        self.assertEqual(runner._async_limits(self.read(configuration())[0]), AsyncEngineLimits())
+        self.assertIsNone(runner._async_limits(self.read(configuration())[0]))
 
     def test_invalid_limits_fail_before_engine_profile_construction(self):
         bad = [None, [], True, dict(max_inflight=True), dict(max_inflight=0),
                dict(result_slots=-1), dict(input_bytes=float("inf")), dict(item_result_bytes=1),
-               dict(input_bytes=1), dict(control_frame_bytes=1), dict(extra=1)]
+               dict(input_bytes=1), dict(control_frame_bytes=1), dict(extra=1), {},
+               dict(max_inflight=8), dict(max_inflight=2, result_slots=1)]
         for limits in bad:
             with self.subTest(limits=limits), patch.object(EngineSpec, "from_dict") as engine:
                 with self.assertRaises((ValueError, TypeError)):
@@ -106,7 +107,7 @@ class AsyncConfigurationTests(unittest.TestCase):
             worker.assert_not_called()
             directory.assert_not_called()
             report = json.loads(output.getvalue())
-            self.assertEqual(report["requested_async_limits"], asdict(AsyncEngineLimits()))
+            self.assertIsNone(report["requested_async_limits"])
             self.assertNotIn("execution_metadata", report)
 
     def test_outer_supervisor_command_and_timeout_are_unchanged(self):
@@ -199,6 +200,17 @@ class AsyncWorkerTests(unittest.TestCase):
             self.actor_constructor.assert_not_called()
             self.core_constructor.assert_not_called()
             self.assertFalse(self.recorded[-1]["production_core_used"])
+
+    def test_omitted_limits_preserve_actual_actor_core_bound_defaults(self):
+        with self.wiring():
+            self.config.pop("async_limits")
+            def query(*args, **kwargs):
+                args[4]()
+                return dict(status="completed")
+            self.run_worker(query)
+            self.actor_constructor.assert_called_once_with(self.method, self.engine, self.generation,
+                self.resources, limits=None)
+            self.assertIsNone(self.recorded[-1]["requested_async_limits"])
 
     def test_unknown_scoped_close_with_empty_errors_cannot_complete_query(self):
         with self.wiring(close_report=dict(status="unknown", cleanup_errors=[], gpu_exit_confirmed=None)):
