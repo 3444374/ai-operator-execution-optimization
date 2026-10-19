@@ -137,34 +137,32 @@ def _observe(owned, pgid, created):
 
 def _signal(owned, pgid, created, value):
     live = _live(owned)
+    errors, events = [], []
     try:
-        leader = psutil.Process(pgid)
-        group_valid = leader.create_time() == created
+        if psutil.Process(pgid).create_time() != created:
+            errors.append(RuntimeError("process group was reused; only matched observed processes were signalled"))
     except psutil.NoSuchProcess:
-        group_valid = True
-    events = []
-    if not group_valid:
-        raise RuntimeError("process group was reused; no unverified group was signalled")
+        pass
+    except BaseException as error:
+        errors.append(error)
     for process in live:
-        event = dict(pid=process.pid, create_time=process.create_time(),
-                     signal=signal.Signals(value).name,
+        event = dict(pid=process.pid, create_time=None, signal=signal.Signals(value).name,
                      requested_monotonic=time.monotonic(), requested_epoch_s=time.time())
         try:
-            command = process.cmdline()
-            event.update(command=redact_argument_list(command), name=process.name(),
-                         cmdline_sha256=hashlib.sha256(" ".join(command).encode()).hexdigest())
-            # Signal only a literal, birth-matched observed identity. A group
-            # signal could also reach members absent from this audit snapshot.
+            event.update(_exit_wait_identity(process))
+            # Optional diagnostics never gate a literal birth-matched signal.
+            # No group signal can reach members absent from the owned snapshot.
             process.send_signal(value)
             event["outcome"] = "sent"
         except (psutil.NoSuchProcess, ProcessLookupError):
             event["outcome"] = "exited_before_signal"
         except BaseException as error:
             event.update(outcome="unconfirmed", error=redact_text(type(error).__name__ + ": " + str(error)))
-            events.append(event)
-            error.signal_events = events
-            raise
+            errors.append(error)
         events.append(event)
+    if errors:
+        errors[0].signal_events = events
+        raise errors[0]
     return events
 
 
@@ -176,6 +174,8 @@ def _exit_wait_identity(process):
             cmdline_sha256=hashlib.sha256(" ".join(command).encode()).hexdigest())
     except (psutil.NoSuchProcess, ProcessLookupError):
         identity["command_unavailable"] = "exited before wait metadata capture"
+    except Exception as error:
+        identity["metadata_error"] = redact_text(type(error).__name__ + ": " + str(error))
     return identity
 
 
@@ -323,7 +323,8 @@ def supervise(command: list[str], output_dir: Path, *, timeout_s: float,
                                     report["signal_events"].extend(events or [])
                                 cleanup_attempt(send)
                                 watch = {(event["pid"], event["create_time"]) for event in
-                                         report["signal_events"] if event["signal"] == signal.Signals(value).name}
+                                         report["signal_events"] if event["signal"] == signal.Signals(value).name
+                                         and type(event["create_time"]) in (int, float)}
                                 cleanup_attempt(lambda: _wait(owned, process.pid, created, until, output,
                                     exit_events=report["exit_observations"], phase=signal.Signals(value).name,
                                     watch=watch))

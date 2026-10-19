@@ -469,6 +469,58 @@ class FakeProcessTests(SupervisorFixture, unittest.TestCase):
         self.assertEqual(caught.exception.report["remaining_owned_pids"], [])
 
 
+    def test_signal_metadata_errors_do_not_block_any_birth_matched_target(self):
+        from contextlib import ExitStack
+
+        with ExitStack() as stack:
+            state = self.fake_processes(stack, child=True)
+            process_type = supervisor.psutil.Process.side_effect
+            stack.enter_context(patch.object(process_type, "cmdline", side_effect=psutil.AccessDenied(400001)))
+            events = supervisor._signal({(400001, 1.0), (400002, 2.0)}, 400001, 1.0, signal.SIGTERM)
+        self.assertFalse(state["leader_alive"])
+        self.assertFalse(state["child_alive"])
+        self.assertEqual(len(events), 2)
+        self.assertTrue(all(event["outcome"] == "sent" for event in events))
+        self.assertTrue(all("metadata_error" in event for event in events))
+
+    def test_natural_wait_metadata_error_cannot_skip_term_and_kill(self):
+        from contextlib import ExitStack
+
+        with ExitStack() as stack:
+            state = self.fake_processes(stack, leader_exited=True, child=True, ignore_term=True)
+            process_type = supervisor.psutil.Process.side_effect
+            stack.enter_context(patch.object(process_type, "name", side_effect=OSError("metadata unavailable")))
+            with self.assertRaisesRegex(RuntimeError, "left live owned processes") as caught:
+                self.run_worker("fake-only", timeout_s=1, grace_s=.1, natural_exit_grace_s=.01)
+        report = caught.exception.report
+        self.assertEqual(report["signals"], ["SIGTERM", "SIGKILL"])
+        self.assertFalse(state["child_alive"])
+        self.assertEqual(report["remaining_owned_pids"], [])
+        self.assertEqual(report["cleanup_errors"], [])
+        self.assertTrue(report["observed_owned_exit_confirmed"])
+        self.assertIn("metadata_error", report["natural_exit_wait"]["initial_live"][0])
+
+    def test_reused_leader_does_not_block_matched_child_signal(self):
+        from contextlib import ExitStack
+
+        with ExitStack() as stack:
+            state = self.fake_processes(stack, leader_exited=True, child=True)
+            process_type = supervisor.psutil.Process.side_effect
+
+            def reused(pid):
+                process = process_type(pid)
+                if pid == 400001:
+                    process.info["create_time"] = 99.0
+                return process
+
+            stack.enter_context(patch.object(supervisor.psutil, "Process", side_effect=reused))
+            with self.assertRaisesRegex(RuntimeError, "reused") as caught:
+                supervisor._signal({(400002, 2.0)}, 400001, 1.0, signal.SIGTERM)
+        self.assertFalse(state["child_alive"])
+        self.assertEqual(caught.exception.signal_events[0]["pid"], 400002)
+        self.assertEqual(caught.exception.signal_events[0]["outcome"], "sent")
+
+
 class OutputCaptureTests(SupervisorFixture, unittest.TestCase):
     def pipe(self):
         read_fd, write_fd = os.pipe()
