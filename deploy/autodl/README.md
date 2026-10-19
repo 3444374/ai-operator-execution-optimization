@@ -84,25 +84,12 @@ set, row-counted, content-digested, and required to pass exactly-once validation
 before a cell can be ranked. No `document_completions` write/readback time enters
 JCT or `all_runs.csv`.
 
-`saor_official_vtc_capability.example.json` is a separate, non-executing
-capability contract for the official `Ying1123/VTC-artifact` S-LoRA stack. It
-requires same-stack FCFS and VTC arms and can publish only a serving-mechanism
-table, never this database-E2E ranking. Current 4090/model/runtime compatibility
-is unverified, so it is fail-closed (`blocked_unverified_runtime`, server not
-run, formal not authorized); a project reproduction cannot replace or be named
-as the official artifact.
-Its schema maps each database Job to one VTC client and freezes the same two
-prompt-manifest SHAs, `[0,5]` releases, 256-token raw-output contract, and the
-explicitly unverified Qwen2.5-7B compatibility status.
-
-`saor_cross_layer_scheduler_capability.example.json` is a second, independent
-non-running capability contract. It freezes four headline identities: Daft Ray
-with native FCFS, the same Daft Ray path with DRR-on-vLLM reproduction, the same
-path with VTC-on-vLLM reproduction, and SAOR with native FCFS. The plugin module SHA,
-forbidden Project controls on service-layer arms, identity chain, custom-FCFS
-parity checks, common metrics, and claim boundary are validated locally. The
-current file remains `blocked`: installed vLLM 0.25.1 source, Daft per-request
-Job identity transport, and native/custom FCFS parity have not been proved.
+The unexecuted official S-LoRA FCFS/VTC and four-arm cross-layer templates and
+prototypes have been retired. Restore the complete
+[historical source](https://github.com/3444374/ai-operator-execution-optimization/tree/928a339334a4075fb2cf96a2dddc4727dec984fe)
+for inspection. S-LoRA runtime compatibility, per-request Job identity transport,
+and custom-FCFS qualification were unverified; no model comparison was run.
+The installed vLLM source audit and native readiness continue to be maintained.
 
 After authorization succeeds, the runner creates one fresh `matrix_instance_id`
 and writes it into the contract snapshot, matrix index, and every cell. The
