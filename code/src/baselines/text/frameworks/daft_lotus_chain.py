@@ -288,6 +288,8 @@ def evaluate(frame, chain, engine: EngineSpec, resources: RecordsResources, *,
     deadline = time.monotonic() + resources.query_timeout_s
     engine = EngineSpec.from_dict(asdict(engine))
     chain = LotusRecordChain.from_dict(chain.describe())
+    if chain.relation_barriers:
+        raise ValueError("Extract relation barriers require the explicit Core profile")
     if len({stage.method.model_name for stage in chain.stages}) != 1:
         raise ValueError("the fused Daft chain requires one model deployment across all stages")
     if chain.query_id != query_id:
