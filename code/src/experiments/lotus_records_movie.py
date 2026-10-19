@@ -16,7 +16,8 @@ from src.baselines.text.sembench_movie import (
 from src.semantic_methods.lotus.records import CallLedger, FilterMethod, RecordsResources
 
 
-BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model")
+BACKENDS = ("ray-data-local-model", "semloom-local-model-static-reference", "daft-native-local-model",
+            "semloom-local-model-core")
 
 
 def _fixed_method(method):
@@ -139,6 +140,7 @@ def run_movie_query(source, checkout, method, generation, execute, *, query_id):
         with lotus.settings.context(lm=lm, enable_cache=False):
             validate_lm(lm, method, generation)
             iterator = iter(execute())
+            report["production_core_used"] = getattr(iterator, "production_core_connected", False) is True
             raw = []
             for value in iterator:
                 ledger.record(value)
@@ -279,6 +281,9 @@ def read_config(path):
     _fixed_method(method)
     generation = GenerationSpec.from_dict(value.get("generation", {}))
     resources = RecordsResources(**value.get("resources", {}))
+    if value["backend"] == "semloom-local-model-core" and (
+            resources.prepare_batch_rows != 1 or resources.model_batch_rows != 1):
+        raise ValueError("Core records currently requires prepare_batch_rows=model_batch_rows=1")
     engine = EngineSpec.from_dict(value["engine"])
     query_id = value["query_id"]
     # Validate query identity even for empty source relations.
@@ -327,6 +332,10 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             if config["backend"] == "ray-data-local-model":
                 from src.baselines.text.frameworks.ray_data_lotus_records import evaluate
                 return evaluate(source, method, engine, generation, resources, query_id=config["query_id"])
+            if config["backend"] == "semloom-local-model-core":
+                from src.execution_provider.adapters.lotus_records_core import SemLoomRecordsCore
+                owner = SemLoomRecordsCore(method, engine, generation, resources)
+                return owner.evaluate(source, query_id=config["query_id"])
             from src.execution_provider.adapters.lotus_records_static import SemLoomRecordsStaticReference
             owner = SemLoomRecordsStaticReference(method, engine, generation, resources)
             return owner.evaluate(source, query_id=config["query_id"])
@@ -350,9 +359,12 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
             else:
                 failure.add_note("static owner close also failed: " + type(cleanup).__name__)
         finally:
-            if (owner is not None and type(report.get("calls")) is dict
-                    and report["calls"].get("schema") == "semloom.lotus_call_ledger.v1"):
-                try:
+            report.setdefault("production_core_used", False)
+            try:
+                report["production_core_used"] = report["production_core_used"] is True or (
+                    getattr(owner, "production_core_connected", False) is True)
+                if (owner is not None and type(report.get("calls")) is dict
+                        and report["calls"].get("schema") == "semloom.lotus_call_ledger.v1"):
                     late_close = getattr(owner, "last_query_report", None)
                     if late_close is None:
                         late_close = report.get("owner_close", {}).get("last_query_report")
@@ -360,13 +372,13 @@ def _model_worker(config, source, checkout, method, generation, resources, engin
                         report["backend_close"] = late_close
                         merge_unconsumed_call_results(report, source.expected(config["query_id"]),
                                                       late_close, primary=failure)
-                except BaseException as cleanup:
-                    report.update(status="failed", close_receipt_error_type=type(cleanup).__name__)
-                    if failure is None:
-                        failure = cleanup
-                        report.update(error_type=type(cleanup).__name__, error=redact_text(str(cleanup)))
-                    else:
-                        failure.add_note("owner close accounting also failed: " + type(cleanup).__name__)
+            except BaseException as cleanup:
+                report.update(status="failed", close_receipt_error_type=type(cleanup).__name__)
+                if failure is None:
+                    failure = cleanup
+                    report.update(error_type=type(cleanup).__name__, error=redact_text(str(cleanup)))
+                else:
+                    failure.add_note("owner close accounting also failed: " + type(cleanup).__name__)
         try:
             if ray is not None and ray.is_initialized():
                 ray.shutdown()

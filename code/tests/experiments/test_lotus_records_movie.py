@@ -1,9 +1,11 @@
 """Original Movie query/evaluator qualification using explicit fixed responses."""
 
 import csv
+from contextlib import contextmanager
 from copy import deepcopy
 import hashlib
 import importlib.util
+import json
 import os
 from types import SimpleNamespace
 from pathlib import Path
@@ -92,6 +94,7 @@ class MovieRecordsTests(unittest.TestCase):
         self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
         self.assertEqual(report["calls"]["usage"]["prompt_tokens"], 35)
         self.assertTrue(report["native_reference"]["lm_stats_equal"])
+        self.assertFalse(report["production_core_used"])
         self.assertEqual(report["quality"]["classification_audit"]["false_positive"], 0)
         self.assertEqual(report["quality"]["classification_audit"]["false_negative"], 0)
 
@@ -294,6 +297,135 @@ class MovieRecordsTests(unittest.TestCase):
         self.assertEqual(report["calls"]["counts"]["unknown"], 1)
         self.assertTrue(any("owner close accounting" in note for note in primary.__notes__))
 
+    @contextmanager
+    def core_runtime(self, source):
+        from src.semantic_methods.lotus import engine as lotus_engine
+        from tests.execution_provider.test_lotus_records_core import Runtime
+        formatter, validator = lotus_engine.LotusFilterMethod, lotus_engine.validate_filter_source
+        with Runtime(source.rows()) as runtime, \
+             patch.object(lotus_engine, "LotusFilterMethod", formatter), \
+             patch.object(lotus_engine, "validate_filter_source", validator):
+            yield runtime
+
+    def core_owner(self):
+        from src.execution_provider.adapters.lotus_records_core import SemLoomRecordsCore
+        from src.semantic_methods.lotus.records import RecordsResources
+        from src.serving.backends.vllm_engine import EngineSpec
+        return SemLoomRecordsCore(self.method, EngineSpec("/tmp/fixture-model", "/tmp/model-python",
+            "/tmp/driver-python"), self.generation,
+            RecordsResources(prepare_batch_rows=1, model_batch_rows=1))
+
+    def test_direct_core_query_reads_actual_connection_metadata(self):
+        from src.experiments.lotus_records_movie import run_movie_query
+        from src.scheduling.core.session import SessionEngine
+        with self.core_runtime(self.source):
+            owner = self.core_owner()
+            try:
+                report = run_movie_query(self.source, CHECKOUT, self.method, self.generation,
+                    lambda: owner.evaluate(self.source, query_id="direct-core"), query_id="direct-core")
+                self.assertIsInstance(owner.core, SessionEngine)
+                self.assertTrue(report["production_core_used"])
+                self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
+            finally:
+                owner.close()
+
+    def test_empty_core_query_uses_real_core_without_model_allocation(self):
+        from src.experiments.lotus_records_movie import run_movie_query
+        directory = Path(self.temporary.name) / "empty-core"
+        directory.mkdir()
+        original = directory / "Reviews.csv"
+        original.write_text("reviewId,id,reviewText,scoreSentiment\n")
+        manifest = prepare_movie_source(original, directory / "prepared",
+            expected_csv_sha256=hashlib.sha256(original.read_bytes()).hexdigest(), max_rows=1)
+        source = MovieRecordSource.from_manifest(manifest)
+        with self.core_runtime(source) as runtime:
+            owner = self.core_owner()
+            try:
+                report = run_movie_query(source, CHECKOUT, self.method, self.generation,
+                    lambda: owner.evaluate(source, query_id="empty-core"), query_id="empty-core")
+                self.assertTrue(report["production_core_used"])
+                self.assertEqual(report["calls"]["counts"]["expected"], 0)
+                self.assertEqual(runtime.engines, [])
+                self.assertEqual(report["result"], {"positive_review_cnt": 0})
+            finally:
+                owner.close()
+
+    def test_core_selector_persists_actual_connection_after_owner_close(self):
+        from src.experiments import lotus_records_movie as module
+        from src.scheduling.core.session import SessionEngine
+        with self.core_runtime(self.source) as runtime, tempfile.TemporaryDirectory() as directory:
+            owner = self.core_owner()
+            try:
+                with patch.object(runtime.ray, "init", create=True) as initialize, \
+                     patch.object(runtime.ray, "shutdown", create=True) as shutdown, \
+                     patch("src.execution_provider.adapters.lotus_records_core.SemLoomRecordsCore",
+                           return_value=owner) as constructor:
+                    module._model_worker({"backend": "semloom-local-model-core", "query_id": "cli-core"},
+                        self.source, CHECKOUT, self.method, self.generation, owner.resources, owner.engine,
+                        Path(directory))
+                initialize.assert_called_once()
+                shutdown.assert_called_once()
+                constructor.assert_called_once_with(self.method, owner.engine, self.generation, owner.resources)
+                self.assertIsInstance(owner.core, SessionEngine)
+                report = json.loads((Path(directory) / "query.json").read_text())
+                self.assertEqual(report["backend"], "semloom-local-model-core")
+                self.assertTrue(report["production_core_used"])
+                self.assertTrue(report["owner_close"]["production_core_connected"])
+                self.assertEqual(report["calls"]["counts"]["succeeded"], 3)
+            finally:
+                owner.close()
+
+    def test_core_selector_source_failure_never_allocates_owner_or_claims_connection(self):
+        from src.experiments import lotus_records_movie as module
+        from src.semantic_methods.lotus.records import RecordsResources
+        runtime = SimpleNamespace(init=Mock(), is_initialized=Mock(return_value=True), shutdown=Mock())
+        with tempfile.TemporaryDirectory() as directory, patch.dict("sys.modules", {"ray": runtime}), \
+             patch.object(self.source, "preflight", side_effect=ValueError("bad source before Core")), \
+             patch("src.execution_provider.adapters.lotus_records_core.SemLoomRecordsCore") as constructor:
+            with self.assertRaisesRegex(ValueError, "bad source before Core") as failure:
+                module._model_worker({"backend": "semloom-local-model-core", "query_id": "bad-core"},
+                    self.source, CHECKOUT, self.method, self.generation,
+                    RecordsResources(prepare_batch_rows=1, model_batch_rows=1), None, Path(directory))
+            report = json.loads((Path(directory) / "query.json").read_text())
+        constructor.assert_not_called()
+        self.assertFalse(report["production_core_used"])
+        self.assertFalse(failure.exception.query_report["production_core_used"])
+
+    def test_owner_metadata_recovers_actual_connection_when_iterator_factory_and_close_fail(self):
+        from src.experiments import lotus_records_movie as module
+        from src.scheduling.core.session import SessionEngine
+        primary = RuntimeError("factory failed after Core connected")
+        with self.core_runtime(self.source) as runtime, tempfile.TemporaryDirectory() as directory:
+            owner = self.core_owner()
+            evaluate, close = owner.evaluate, owner.close
+            def fail_factory(source, *, query_id):
+                evaluate(source, query_id=query_id)
+                raise primary
+            def fail_close():
+                close()
+                raise OSError("owner close failed after Core cleanup")
+            try:
+                with patch.object(runtime.ray, "init", create=True), \
+                     patch.object(runtime.ray, "shutdown", create=True), \
+                     patch.object(owner, "evaluate", side_effect=fail_factory), \
+                     patch.object(owner, "close", side_effect=fail_close), \
+                     patch("src.execution_provider.adapters.lotus_records_core.SemLoomRecordsCore",
+                           return_value=owner):
+                    with self.assertRaises(RuntimeError) as failure:
+                        module._model_worker({"backend": "semloom-local-model-core", "query_id": "late-core"},
+                            self.source, CHECKOUT, self.method, self.generation, owner.resources, owner.engine,
+                            Path(directory))
+                self.assertIs(failure.exception, primary)
+                self.assertIsInstance(owner.core, SessionEngine)
+                report = json.loads((Path(directory) / "query.json").read_text())
+                self.assertTrue(report["production_core_used"])
+                self.assertEqual(report["close_error_type"], "OSError")
+                self.assertEqual(report["status"], "failed")
+                self.assertEqual(report["calls"]["counts"]["unknown"], 3)
+                self.assertEqual(runtime.engines[0].calls, [])
+            finally:
+                close()
+
     def test_native_differential_failure_retains_completed_call_ledger(self):
         from src.experiments.lotus_records_movie import fixed_response_qualification
         import pandas as pd
@@ -309,7 +441,59 @@ class MovieRecordsTests(unittest.TestCase):
         self.assertEqual(failure.exception.query_report["calls"]["counts"]["succeeded"], 3)
 
 
+class ConfigurationTests(unittest.TestCase):
+    def test_core_selector_requires_single_row_batches_before_engine_profile_construction(self):
+        from src.experiments.lotus_records_movie import read_config
+        from src.serving.backends.vllm_engine import EngineSpec
+        cfg = dict(schema="semloom.movie_records_run.v1", backend="semloom-local-model-core", query_id="q",
+                   method=FilterMethod("openai/local-fixture").describe(),
+                   engine=dict(model_path="/tmp/model", model_python="/tmp/model-python",
+                               driver_python="/tmp/driver-python"),
+                   resources=dict(prepare_batch_rows=1, model_batch_rows=1))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text(json.dumps(cfg))
+            value, _, _, resources, _ = read_config(path)
+            self.assertEqual(value["backend"], "semloom-local-model-core")
+            self.assertEqual((resources.prepare_batch_rows, resources.model_batch_rows), (1, 1))
+            for batches in ({}, dict(prepare_batch_rows=2, model_batch_rows=1),
+                            dict(prepare_batch_rows=1, model_batch_rows=2)):
+                path.write_text(json.dumps(dict(cfg, resources=batches)))
+                with patch.object(EngineSpec, "from_dict") as engine, self.assertRaisesRegex(ValueError, "1"):
+                    read_config(path)
+                engine.assert_not_called()
+            for backend in ("daft-native-local-model", "ray-data-local-model", "semloom-local-model-static-reference"):
+                path.write_text(json.dumps(dict(cfg, backend=backend, resources={})))
+                self.assertEqual(read_config(path)[3].prepare_batch_rows, 4)
+
+
 class WorkerCleanupTests(unittest.TestCase):
+    def test_core_selector_allocates_lazily_and_does_not_claim_unconnected_core(self):
+        from src.experiments import lotus_records_movie as module
+        rows = iter(())
+        owner = SimpleNamespace(evaluate=Mock(return_value=rows), production_core_connected=False,
+                                close=Mock(return_value={"cleanup_errors": []}))
+        runtime = SimpleNamespace(init=Mock(), is_initialized=Mock(return_value=True), shutdown=Mock())
+        recorded = []
+        def query(*args, **kwargs):
+            constructor.assert_not_called()
+            self.assertIs(args[4](), rows)
+            return dict(status="completed", production_core_used=False)
+        with patch.dict("sys.modules", {"ray": runtime}), \
+             patch("src.execution_provider.adapters.lotus_records_core.SemLoomRecordsCore",
+                   return_value=owner) as constructor, \
+             patch("src.execution_provider.adapters.lotus_records_static.SemLoomRecordsStaticReference") as static, \
+             patch.object(module, "run_movie_query", side_effect=query), \
+             patch.object(module, "write_private_json", side_effect=lambda p, v: recorded.append(deepcopy(v))):
+            module._model_worker({"backend": "semloom-local-model-core", "query_id": "q"},
+                "source", "checkout", "method", "generation", SimpleNamespace(cpu_workers=1, gpu_workers=1),
+                "engine", Path("unused"))
+        constructor.assert_called_once()
+        owner.evaluate.assert_called_once_with("source", query_id="q")
+        static.assert_not_called()
+        owner.close.assert_called_once()
+        self.assertFalse(recorded[-1]["production_core_used"])
+
     def test_daft_selector_uses_lazy_native_graph_without_importing_ray(self):
         import builtins
         from src.experiments import lotus_records_movie as module
@@ -337,6 +521,7 @@ class WorkerCleanupTests(unittest.TestCase):
         evaluate.assert_called_once_with("source", "method", "engine", "generation", "resources", query_id="q")
         self.assertEqual(recorded[-1]["status"], "completed")
         self.assertFalse(recorded[-1]["independent_gpu_process_exit_check"])
+        self.assertFalse(recorded[-1]["production_core_used"])
 
     def worker(self, *, query_error=None, close_error=None, shutdown_error=None):
         from src.experiments import lotus_records_movie as module

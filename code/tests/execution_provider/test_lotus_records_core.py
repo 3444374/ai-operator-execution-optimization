@@ -273,6 +273,37 @@ class CoreRecordsTests(unittest.TestCase):
         self.assertEqual(actors[-1][2]["num_cpus"], 1)
         self.assertTrue(all(e[2]["max_task_retries"] == 0 for e in actors))
 
+    def test_connection_metadata_requires_actual_core_and_is_read_only(self):
+        with Runtime(self.rows):
+            owner = self.owner()
+            self.assertFalse(owner.production_core_connected)
+            with patch.object(owner, "core", object()):
+                self.assertFalse(owner.production_core_connected)
+                probe = object.__new__(core._CoreRows)
+                probe.owner = owner
+                self.assertFalse(probe.production_core_connected)
+            stream = owner.evaluate(Source(self.rows), query_id="metadata")
+            self.assertIsInstance(owner.core, SessionEngine)
+            self.assertTrue(owner.production_core_connected)
+            self.assertTrue(stream.production_core_connected)
+            with self.assertRaises(AttributeError):
+                stream.production_core_connected = False
+            with self.assertRaises(AttributeError):
+                owner.production_core_connected = False
+            list(stream)
+            self.assertTrue(owner.close()["production_core_connected"])
+
+    def test_source_preflight_failure_has_no_core_connection_metadata(self):
+        with Runtime(self.rows) as runtime:
+            owner = self.owner()
+            source = Source(self.rows)
+            with patch.object(source, "preflight", side_effect=ValueError("invalid source")):
+                with self.assertRaisesRegex(ValueError, "invalid source"):
+                    owner.evaluate(source, query_id="bad-source")
+            self.assertFalse(owner.production_core_connected)
+            self.assertFalse(owner.close()["production_core_connected"])
+            self.assertEqual(runtime.engines, [])
+
     def test_matching_single_row_static_reference_has_same_result_and_usage(self):
         results = []
         for owner_type in (static.SemLoomRecordsStaticReference, core.SemLoomRecordsCore):

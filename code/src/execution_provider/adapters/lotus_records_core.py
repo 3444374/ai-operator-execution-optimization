@@ -222,6 +222,10 @@ class _CoreRows(Iterator[dict[str, Any]]):
     def __iter__(self):
         return self
 
+    @property
+    def production_core_connected(self):
+        return isinstance(self.owner.core, SessionEngine)
+
     def _observe(self):
         for name, value in asdict(self.owner.core.capacity.usage()).items():
             self.peak_usage[name] = max(value, self.peak_usage[name])
@@ -381,6 +385,10 @@ class SemLoomRecordsCore:
         self._deadline = None
         self.last_query_report = self.last_close_report = None
 
+    @property
+    def production_core_connected(self):
+        return isinstance(self.core, SessionEngine)
+
     def _control(self):
         if threading.get_ident() != self._thread:
             raise RuntimeError("Core records owner requires its single control thread")
@@ -485,7 +493,7 @@ class SemLoomRecordsCore:
             transport_closed = self.transport.backend.close(timeout=0.05)
         usage = None if self.core is None else asdict(self.core.capacity.usage())
         self.last_close_report = dict(
-            implementation="semloom_records_core", production_core_connected=self.core is not None,
+            implementation="semloom_records_core", production_core_connected=self.production_core_connected,
             status="closed" if actor_report["status"] == "closed" and transport_closed
             and (usage is None or not usage["held_tasks"]) and not errors else "unknown",
             cleanup_scope="core_transport_actor_and_engine_api",
