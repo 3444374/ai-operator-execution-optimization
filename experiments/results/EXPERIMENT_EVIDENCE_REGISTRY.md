@@ -1,5 +1,9 @@
 # 实验与机制证据台账
 
+2026-10-19：[records共享引擎／actor owner CPU增量](diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)。
+逐调用generation、普通Filter JSON guard与启动失败unknown修复，51项内核及44项方法／owner／旧路径合同零skip通过；
+提取来源真实Ray／Daft双查询CPU图和后续小修合同分列，两轴独审通过。零模型／GPU；服务器未开机，冻结Daft资格和旧32/32保持原状态。
+
 2026-10-16：[IMLane 独立多行记录桥](diagnostics/imlane_records_echo_20261016/README.md)。
 职责78f05783的作者CPython10scope无模型echo、8正常退出及2异常监督清理保持原来源；新owner依赖收口另有修后22项本机CPU／Arrow／PID-SHM替身检查。真实模型、作者Ray及新helper作者实机重跑未验证，不恢复旧HTTP树。
 

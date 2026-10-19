@@ -469,5 +469,172 @@
       "code/src/execution_provider/adapters/lotus_records_static.py": "74ce39970408e8a686572dedadcf83ef3b8dd054b9dafb395862efd984a8c56f",
       "code/tests/execution_provider/test_lotus_records_static.py": "bb6cc971a3e14d34cee8b16a221ab52b9934ec11a79091111895a3ee434713a5"
     }
+  },
+  "shared_records_cpu_20261019": {
+    "source_base": "c0be45dd1278163a9e1e612694ff9752cfb433e0",
+    "generation_author_commit": "640446822c430d21f08d1f9bde75e61198912aa3",
+    "generation_integrated_commit": "37f8ba7d7ce6fb15e2365b08891127413dce4c57",
+    "filter_guard_integrated_commit": "7d8eee61730a7a8cd6dd4cf97ce16938bc05ff76",
+    "owner_extraction_author_commit": "f1d5f78077e2ede160b16310c7bd12075eebf99a",
+    "actor_factory_author_commit": "8d5d9418110942be466da4ad0750c54541979eb6",
+    "startup_failure_author_commit": "cabba5b5397666356f724101fe85f7d5119d5baf",
+    "combined_source_commit": "55d5bd6859b0854c3d332438d33a84b652f003a1",
+    "source_sha256": {
+      "code/src/serving/backends/vllm_engine.py": "d90828aabda1adda2e30c38954e0150eaa06839c142a1e14bc94e2e997f868d7",
+      "code/src/semantic_methods/lotus/engine.py": "da3f30acf1085a07933dd8709ee345ecfb52adca366b76eea3f97c7b49f2b722",
+      "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "cc823f1bc7b28b14da346f4378cc9316e8d86b2fbccc784e375ebe8c0dd4a08d",
+      "code/src/execution_provider/adapters/lotus_records_static.py": "b60a62fec86fa49eb6de1e041b006597369dc4fe22d9133bd3dcfb59ecdf7286"
+    },
+    "cpu_groups": [
+      {
+        "name": "kernel",
+        "tests": 51,
+        "skipped": 0,
+        "exit_code": 0,
+        "elapsed_seconds": 0.38653762499961886
+      },
+      {
+        "name": "filter-owner-static-ray",
+        "tests": 44,
+        "skipped": 0,
+        "exit_code": 0,
+        "elapsed_seconds": 4.817340542000238
+      }
+    ],
+    "scope": {
+      "kernel": "vLLM sampling/model are explicit fixtures",
+      "method": "6 tests use installed LOTUS 1.2.4",
+      "owner_static_ray": "38 contracts use explicit runtime/model fixtures",
+      "real_ray_daft_graph_reexecuted_for_factory_or_startup_fix": false,
+      "actual_model_calls": 0,
+      "gpu_work": false
+    },
+    "extraction_real_cpu_graph": {
+      "production_commit": "f1d5f78077e2ede160b16310c7bd12075eebf99a",
+      "ray": "2.56.1",
+      "daft": "0.7.21",
+      "original_lotus_parser_and_sembench_evaluator": true,
+      "queries": 2,
+      "synthetic_calls": 6,
+      "count": 1,
+      "true_positive": 1,
+      "true_negative": 2,
+      "observed_owned_processes_exited": 14,
+      "inference": "fixed CPU response and synthetic usage, no model",
+      "first_sandbox_inventory_unknown_retained": true,
+      "supervisor_reexecuted_after_sandbox_read_permission": true
+    },
+    "reviews": {
+      "axes": [
+        "Spec",
+        "Standards"
+      ],
+      "read_only": true,
+      "generation_and_ordinary_filter_guard": "pass",
+      "actor_owner": "pass after separate startup-failure P1 repair",
+      "unresolved_findings": 0,
+      "model_qualification_inherited": false
+    },
+    "raw_evidence": [
+      {
+        "artifact": "nonmodel-evidence/shared-records-dependencies-20261019-r1/summary.json",
+        "bytes": 2011,
+        "sha256": "b1f46dbffa69f63625c8efeed3d862518572d220b81244dca544f9323f00e313"
+      },
+      {
+        "artifact": "nonmodel-evidence/shared-records-dependencies-20261019-r1/kernel.log",
+        "bytes": 9083,
+        "sha256": "7c60052b1a88fc924718c1ee40368be61bf897012557c64917b1ae764cb58501"
+      },
+      {
+        "artifact": "nonmodel-evidence/shared-records-dependencies-20261019-r1/filter-owner-static-ray.log",
+        "bytes": 9806,
+        "sha256": "07170732f790bc07fa0e781078eaf3e8ec19fdaed17412327b5bf1fd4c21f83b"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-engine-generation-20261019-r1/summary.json",
+        "bytes": 1600,
+        "sha256": "e2de70944c8b67ad4a82793698ddf688035220aff6757d9fc0effbb461aafdba"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-contracts-r1.json",
+        "bytes": 2028,
+        "sha256": "f3dbaa4e7adf0804bc64b38f279060d16179c0313320f7bafb5f29cae20a1379"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-delivery-r1.json",
+        "bytes": 1810,
+        "sha256": "70144d0e7d83e94cfdad712944ae0f67a281709d117701298b7b80f3555f95ec"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-startup-failure-r1.json",
+        "bytes": 1033,
+        "sha256": "d9e94a35cfe8d7ca216f2609e599b0bf43da5716ca51baaa7bc9317350a6d36d"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-cpu-libraries-r1/supervisor.json",
+        "bytes": 1889,
+        "sha256": "c74e3859decafd728acfb3f39c3c4249b3d24b737059a9aa8a274812b10b40a8"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-cpu-libraries-r1/post-sandbox-check.json",
+        "bytes": 513,
+        "sha256": "a7db52484b46ac104d60fcf712449b89686cb05cd8806d011c91d2d5f38ba9c0"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-cpu-libraries-r2/supervisor.json",
+        "bytes": 2293,
+        "sha256": "805c175551fa5e46a5eeaaa2bf993b8a737ec8ac7d920ded9f579015df2fb748"
+      },
+      {
+        "artifact": "nonmodel-evidence/records-actor-owner-cpu-libraries-r2/worker.log",
+        "bytes": 1512,
+        "sha256": "631bd43b3c0a4e21f483744355c2172140d5fcca9aa65b0ad383d6f98d099660"
+      },
+      {
+        "artifact": "nonmodel-evidence/shared-records-dependencies-20261019-r1/prepublication-checks.json",
+        "bytes": 267,
+        "sha256": "6337ebcfdb10410ab6723b267578671ab4bc0fafa5c5b240d4e79b1286e0ae84"
+      }
+    ],
+    "raw_evidence_scope_note": "The combined raw summary field real_libraries_reexecuted=false refers to the opt-in Ray/Daft graph only; the separate 6 method tests use the installed original LOTUS library.",
+    "prepublication_checks": {
+      "markdown_files": 12,
+      "local_links": 699,
+      "link_failures": 0,
+      "secret_scan_files": 22,
+      "secret_scan_exit_code": 0,
+      "diff_check_exit_code": 0
+    }
+  },
+  "connection_recheck_20261019": {
+    "operation": "strict-public-key read-only preflight; no remote writes or model commands",
+    "exit_code": 255,
+    "stdout_bytes": 0,
+    "stderr_bytes": 0,
+    "failure_stage": "unavailable: empty output",
+    "valid_remote_probe": false,
+    "human_status": "server is not powered on yet",
+    "model_calls": 0,
+    "new_ledger_created": false,
+    "source_uploaded": false,
+    "old_32_of_32_budget_modified": false,
+    "raw_evidence": [
+      {
+        "artifact": "private-server-qualification/connection-recheck-1792373080694473000/metadata.json",
+        "bytes": 245,
+        "sha256": "f3b386a0e07f40cfca55a3ad4a6cff5740639206096ece92bce0f0f8a3a9d134"
+      },
+      {
+        "artifact": "private-server-qualification/connection-recheck-1792373080694473000/discovery.json",
+        "bytes": 75,
+        "sha256": "a7e94b8c3afcc57728ff06e9c8aeda924518b2ff31edc64c4da5e4823f9b07e9"
+      },
+      {
+        "artifact": "private-server-qualification/connection-recheck-1792373080694473000/classification.json",
+        "bytes": 748,
+        "sha256": "46e31068e8aee820aed2cf5df8529e4a2dfb428776798ea7b0060edffe003ec2"
+      }
+    ]
   }
 }

@@ -5,6 +5,15 @@ Ray actors and is a `diagnostic_reference`, with no production Core connection.
 Its shared method API, CPU checks and pending model qualification are documented in the
 [slice record](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md).
 
+The [records actor owner](lotus_records_actor_owner.py) provides shared preparation/model
+allocation, readiness and retryable closure. It owns no query scheduler or Core session.
+`start`, `wait_ready`, `prepare_actors` and `model_actor` let callers pass prepared ObjectRefs
+directly to the model; trusted subclasses can specialize `_model_actor_type`.
+An attempted model construction that raises remains unknown and cannot be retried as a new
+construction. Unknown closure retains the model handle; actor kill never proves GPU exit.
+The static reference uses this owner without changing its query/window scheduler. Its historical
+model qualification and the new owner's CPU checks retain separate fixed sources in the slice record.
+
 This module accepts prepared single-model request bytes through the existing Core.
 It does not interpret prompts, change generation parameters, or replace a supplier's parser.
 The implementation is adopted from integration source `671a22dd4285319209396ece3572bb89ff5ab74e`;

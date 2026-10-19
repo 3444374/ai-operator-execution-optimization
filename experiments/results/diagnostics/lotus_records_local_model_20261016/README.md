@@ -3,6 +3,7 @@
 本切片在已审阅 main `52391e375b6d9699e5bd76bb6d37bdbd939ef23e` 上独立实现，
 集成时同步已审纯文档 main `d73c44463e9fdb98e2ac1397295114568afabb1c`，由 `integration/data-execution` 集成。
 后续再同步已审纯文档main `6e3828b4a05d16962efb1166bb872a7fd97ae627` 的Daft布局／消费与有限算子链合同；下述实机仍按各自固定源码解释。
+2026-10-19 同步纯文档 main `9b74f00db35ffa532ca74ecf9fae65ae38015ef1` 的原生查询与计时边界；不改变历史模型资格来源。
 最终 Daft／Ray Data／IMLane CPython 与作者 Ray 对照均保留为计划要求；本切片只支持普通 Movie Q3 的 Filter＋COUNT，
 不是级联、图像、生产 Core 或性能结果。旧 request 接入、活动 baseline 和旧测试树没有修改。
 
@@ -82,6 +83,10 @@ Spec 独审指出空源原生参照丢失 DataFrame schema，现显式保留列�
 共享方法使用 `FilterMethod`／`GenerationSpec`，records 必须携带 `identity()` 的 query、model role、stage、row occurrence、source position、call index／ID。
 worker 本地 `LotusFilterMethod.prepare_rows()` 产出未套模型模板的 `messages_json`；模型 owner 返回紧凑 terminal rows，
 `run_movie_query(..., execute, query_id=...)` 在分配前检查、按 call 记账，最后由原 LOTUS 解释并评价。
+
+source 是共同离线投影的无标签 `records.csv`；driver 的 `preflight()`／`expected()` 在 `query_seconds` 起点前读取并核验 records、references 与原 CSV，后端仍会再次核验和读取。
+同步 `LLM.chat` 的批次返回与共同端收齐整个 Filter 后才原 parser／COUNT 是两个屏障；结果迭代不等于逐行推进后继。成功调用的异常格式由原 parser 解释，执行失败／unknown 不作为语义答案。
+`query_seconds` 在完整 COUNT 后、evaluator 前截取；结果交付前的主动模型关闭与 EOF 收尾可能在内，最终 owner 清理按实际时点及 `elapsed_seconds` 报告，不将全部清理一概移出或移入主计时。
 IMLane 新桥可复用这些值合同和方法核对，必须由作者 DBEnd／session 拥有调度；本报告的 LOTUS 模型切片未覆盖它，[独立无模型echo与集成检查](../imlane_records_echo_20261016/README.md)另列。
 
 当前仍为 pending：首发早于末准备及峰值留存观察、原全局 helper-LM 级联、AsyncLLM 持续供给、图像、
@@ -145,7 +150,28 @@ Python3.12.6 的控制器8项、child 7项检查全部通过；实际 Daft0.7.21
 调用上限证明还依赖受审单线图、完整execution／planning配置摘要保持一致，以及本隔离进程无配置写入。
 摘要观察不是框架的原子配置锁，CPU检查也不是模型或GPU资格。
 
-原SSH复用socket已结束，严格主机校验、公钥只读连接在认证前关闭，资源／lease现场预检未执行。
-已保留失败原件；待提供当前可用连接配置或已验证socket路径后，须先重新核对资源、模型／输入身份与正常lease。
+原SSH复用socket已结束，首次严格主机校验、公钥只读连接在认证前关闭，资源／lease现场预检未执行。
+2026-10-19 重查本机未发现可复用通道；严格公钥只读探测退出255、标准输出／错误均为空，无法据此确定失败阶段。
+用户随后明确服务器尚未开机；新探测原件与摘要另行保留。恢复后须先重新核对资源、模型／输入身份与正常lease。
 本轮未上传新源码、未发起模型调用，目标四条实际请求和两次独立引擎退出仍pending。
 IMLane本轮仅形成[方法与usage交接](../../../../code/integrations/imlane_records/README.md#普通-filter-方法接入交接)，没有增加第二个GPU单元。
+
+## 共享引擎与 actor owner：CPU 增量
+
+为有限链提供[逐调用生成配置](../../../../code/src/serving/backends/README.md)：职责 `64044682` 在
+`run_prepared(..., generation=None)` 保持构造默认；显式配置整份覆盖本次调用，每次新建采样参数。
+JSON 仅为 `json_object`，不增加严格 schema 或改写 stop；普通 Filter 方法明确拒绝该模式。
+logprobs 仍未开放，原全局 helper-LM 级联由独立方法任务继续实现，不按物理批重新校准。
+
+职责 `f1d5f780` 提取[准备／模型 actor owner](../../../../code/src/execution_provider/adapters/lotus_records_actor_owner.py)，
+static 的 `_StaticRows`／`evaluate` 调度保持原样；owner 不调用生产 Core，也不拥有查询或逐调用账本。
+后续 `8d5d9418` 只增加受信 actor 类型覆写点；独审发现模型构造部分失败后可能误报 empty closed，
+`cabba5b5` 单独修复为保留 unknown／句柄、禁止重构与模型 actor kill。未尝试构造的空关闭保持兼容。
+
+合成来源的内核51项、原LOTUS方法及 owner／static／Ray合同44项在隔离 Python3.12.6 下通过，零skip、零模型／GPU；
+后者包括真实安装 LOTUS 的6项方法检查，Ray 仍为合同替身。
+提取提交 `f1d5f780` 另有真实Ray2.56.1／Daft0.7.21双查询、原LOTUS parser与原SemBench evaluator的CPU图；
+6条固定响应、COUNT1／TP1／TN2，外层确认14个已观察进程退出。其首次沙箱进程检查 unknown 和后续核验保留；
+factory／启动失败修订只重跑CPU合同，未将这次图测冒称为修订后重跑。
+两轴只读独审均已通过 generation／Filter guard 和 owner 修订，原件与源码SHA见
+`verification.json.shared_records_cpu_20261019`。新增代码没有真实模型或性能资格，旧模型结果仍只绑定原归档来源。

@@ -57,11 +57,13 @@ independent.
 
 Each inference instance owns one private process in `model_python`, inheriting
 Daft's visible-device environment. It reuses that engine across batches of one
-query. Completed finite queries close the model; two independent queries are
-not promised model reuse. The worker records engine identity, PIDs, startup,
+query. This adapter explicitly closes the engine after the query's expected
+completion count; this is its workload policy, not a required Daft lifecycle or
+a limit on native cross-query reuse. The worker records engine identity, PIDs, startup,
 close, JSON encode/decode time and pipe bytes. `ipc_wait_seconds` includes engine
 execution and must not be reported as isolated IPC overhead. These combination
-costs are included in query time.
+costs incurred before the `query_seconds` boundary are included there; final
+owner cleanup is reported at its actual time.
 
 Cancellation interrupts private IPC waits and also reaps idle engines. Missing
 responses remain `unknown` with unavailable usage. Cleanup errors remain

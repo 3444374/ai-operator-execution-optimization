@@ -6,13 +6,16 @@
 以及[查询入口](../../../scripts/README.md#movie-q3-records-本地模型接点)。
 Ray Data 原生图、[Daft Native 记录图](../../baselines/text/frameworks/daft_lotus_records.README.md)与 Daft＋Ray Core 的 SemLoom 静态参照共享原 LOTUS 方法，后者尚未接生产 Core。
 Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身份、未知／失败及已知usage；真实 Daft CPU 接线与共享 selector 已验证，GPU／真实 vLLM 仍待验。
-新链直接消费不含标签的原记录，worker 准备 messages，模型 worker 负责一次模板；不经过下方旧完整请求执行器或 HTTP replay。
+新链消费共同离线投影、建立发生项身份并核验过的无标签 `records.csv`，worker 准备 messages，模型 worker 负责一次模板；不经过下方旧完整请求执行器或 HTTP replay。
 固定 LOTUS／SemBench 的真实 Python 3.12 差分和部分 Ray／Daft CPU 接线见[资格记录](../../../../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)。
 原生参照、Ray Data与静态参照的Qwen／单4090小切片已分别验证；static两查询同engine、隔离call IDs，原提示／token／usage／parser／COUNT与原评价一致。首次Native runner失败保留，静态修后来源单列。Daft GPU、原全局级联、图像、持续供给及production Core仍pending；旧request资格保持独立。
 
 `LotusFilterMethod.prepare_rows()` 是 worker 本地方法接口；`FilterMethod` 固定普通 Q3，
-`GenerationSpec` 显式拒绝当前不支持的 logprobs／repetition override。
+方法层拒绝 JSON 模式及当前不支持的 logprobs／repetition override。
+[共享引擎](../../serving/backends/README.md)另支持逐调用完整 `GenerationSpec` 与 `json_object`，供后续 Extract 选择；
+默认参数不变，每次调用独立构造采样参数。这项接口只有 CPU 合同资格，不继承上方固定源码的模型结果。
 模型 terminal rows 必须保留全部 call 身份、状态及真实 usage，不能以最终 COUNT 重建工作量。
+共同端收齐整个 Filter 的 terminal rows 后才原解析／COUNT；成功调用的异常格式按原 parser 处理，failed／unknown 或非法终态不转为语义判定。
 `run_movie_query()` 的 lazy `execute` 工厂在 source／版本／LM policy 检查后才调用；失败的 `query_report` 保留逐调用账本。
 输入上限和清理／unknown 的实际保证从上述资格记录核对。
 
@@ -63,7 +66,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 当前 `NativeCallExecutor` 下层也先收齐 calls，`LotusResponseReplay` 持有活动解析与客户端状态；旧内核／图段仅可选提取，新链的输入、执行和状态所有权按[接入计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)独立验证。
 `prepare_call()`／完整 HTTP 接点准备和传输模型服务请求，未生成 GPU 输入或持有生成式模型引擎。
 [第二层目标](../../../../experiments/plans/系统架构.md#model-engine-execution)将常驻 LLM／VLM 纳入 worker；已有 `ClipTensorActor.embed()` 真正完成 tensor 上卡、图像特征计算与 CPU 结果返回，
-但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)中的普通 Q3 接点现有上方分支实现，真实引擎与其余范围尚未取得资格。
+但属下节 CLIP 检索路径，不能认证 Animals VLM Filter。[路线映射](../../../../experiments/plans/数据组织.md#model-engine-roadmap)中的普通 Q3 接点现有上方分支实现；真实模型小样资格沿上方报告的各次固定源码解释，Daft GPU 与其余未覆盖范围仍待验。
 
 ## 原版 Movie 查询
 

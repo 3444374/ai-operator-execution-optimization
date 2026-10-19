@@ -21,6 +21,10 @@ Daft 职责提交 `fc5380a9` 的CPU资格与共享 selector 集成后26项／2su
 后续真实资格准备新增可选单实例请求上限、规范 messages 摘要及实际 prompt token IDs；
 52项受影响CPU检查／74subtests通过，默认保持兼容。static显式Native选择另有21项合同／真实CPU双查询图；真实结果从上述独立报告核对，不继承CPU资格。
 固定7d12d63c的Daft双查询入口与新16次独立预算已完成CPU准备（控制器8项、child7项、实际Daft配置／预测计划核对）；首次计划预留4次但尚未创建新账本。服务器连接在只读现场预检前中断，真实模型与资源退出仍pending，见[准备记录](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#daft-双查询模型资格准备尚未运行)。
+2026-10-19 用户确认服务器尚未开机；重查未取得现场报告，没有上传源码、创建新账本或调用模型。
+本轮共享引擎增加逐调用generation／JSON object，普通Filter拒绝JSON；static仅提取actor owner，并修复构造失败误报closed。
+新合成来源的51项内核与44项方法／owner／旧路径合同零skip通过；提取来源的真实CPU图另列，两轴审查通过。
+详情和源码SHA从[同题CPU增量](../experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)核对；有限链、Core及原级联仍按独立任务整合，不借旧模型资格。
 
 ## main 与集成分支的阅读范围
 

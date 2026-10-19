@@ -1,5 +1,12 @@
 # 项目日志
 
+## 2026-10-19：收口 records 公共接口与原生查询边界
+
+同步已审纯文档main9b74f00d及文档owner三份小补丁，明确离线records输入、同步chat与整Filter解析的两个屏障、计时和实际关闭位置。
+逐调用generation／json_object及普通Filter拒绝guard保留默认方法；static提取共享actor owner，调度原样，另修构造部分失败后unknown／禁止重构与保留句柄。
+新合成代码的内核51项、方法／owner／旧路径44项零skip通过；提取来源另有真实Ray／Daft双查询CPU图、14个已观察进程退出，后续修订只重跑合同。两轴独审关闭启动失败P1，原始失败与源码SHA分列于[主报告](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md#共享引擎与-actor-ownercpu-增量)。
+严格公钥只读重查退出255且无输出，用户确认服务器尚未开机；无现场资源报告、新账本、上传或模型调用。原Daft冻结资格待恢复后继续，旧32/32及历史模型来源不变；有限链、production Core、IMLane方法与原全局级联按独立任务整合。
+
 ## 2026-10-16：准备独立 Daft 双查询资格并交接 IMLane 方法边界
 
 固定7d12d63c的389文件闭包，准备独立控制器／双查询child与原方法、输入及原生控制原件绑定；新16次账本只计划首单元永久4次，每引擎cap2、并发1、零重试，旧32/32不动。外层单元1200秒／清理15秒，无工程累计截止时间。
