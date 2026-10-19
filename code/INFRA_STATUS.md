@@ -18,6 +18,10 @@
 
 ## 独立 IMLane 记录桥
 
+[普通 Map／Extract 与关系链](../experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)
+复用公共方法、有限模型进程及完整 Extract EOF；新增八项与原有限链九项共17个不同CPU测试通过。
+公共空关系 `f977c979` 原型接口单独依赖，失败原件保留；新作者CPython、模型／GPU及公共selector仍待验。
+
 [多行 DBEnd 桥](integrations/imlane_records/README.md)选择性接纳职责提交 `78f05783`，保留作者调度与输出所有权；作者 CPython 10scope／8正常退出＋2裸异常监督清理均有原证据，模型和GPU请求为0。
 当前主线新增独立owner helper，复用精确PID出生标识、namespace／SHM核验与禁止stale恢复的host lease；22项本机CPU检查通过。
 原echo作者实测不重新绑定为新helper实测；作者Ray、当前wire／模型生命周期及作者实机重跑按各自来源验证，见[历史报告](../experiments/results/diagnostics/imlane_records_echo_20261016/README.md)与下方后续记录。

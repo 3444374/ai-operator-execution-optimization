@@ -1,0 +1,142 @@
+{
+  "schema": "imlane.chain.cpu.qualification.v1",
+  "source_base": "aebbbcd8dc8797ea6714fab0e9e341432168fda6",
+  "responsibility_branch": "feat/imlane-records-chain",
+  "shared_dependency": {
+    "original_commit": "f977c9792ad730a8bdf05cbc9ef5637fab110add",
+    "selected_as": "fa185367",
+    "contract": "records_to_frame(..., empty_prototype=final_zero_row_frame); shared owner implementation unmodified"
+  },
+  "owned_slice_shared_or_native_changes": false,
+  "source_sha256": {
+    "code/integrations/imlane_records/chain_backend.py": "38f1c93f4e89f9c1539373104f60232c7bd60178a0c61d23d4d279ce73b2025e",
+    "code/integrations/imlane_records/chain_host.py": "be81ffdbcc0fa009e90ea293de3ab828bc8535bc6468ffced0c726d3671a9868",
+    "code/integrations/imlane_records/chain_udf.py": "548874372b9b86dfe391c164e404300920963ddd5f804689003ebf35ee013464",
+    "code/tests/integrations/imlane_chain_fixture.py": "7b6721907e79eeec4cb99352d63b56c949a27f18917dd7380f64398eb39cecb1",
+    "code/tests/integrations/imlane_chain_fixture_udf.py": "42ba26afdedf9c7fed2b4e33e168d50ce60f9223b62b1ffdfa6e30532381c8b0",
+    "code/tests/integrations/test_imlane_chain_backend.py": "f384d0e006aea946ec1f79f2dc5d4cc598e8ccc4dd782fcd8ca31d421f984036"
+  },
+  "local": {
+    "distinct_tests_passed": 17,
+    "new_backend_tests": 8,
+    "existing_chain_regressions": 9,
+    "runs": [
+      {
+        "run_id": "imlane-chain-cpu-20261019-r1",
+        "scope": "16 tests requested; original nine passed; new fixture response/descriptor errors and genuine empty-Map dtype difference retained",
+        "supervisor_sha256": "11510581bcaf24ea31587fadc7c4076a231a19d6981b4624e98da749e39d1ea7",
+        "worker_log_sha256": "4ccc0dbb90a358027d1f7dbcb32a9323929dafeb887a969e87bbca6b730df394",
+        "observed_owned_births": 4,
+        "status": "failed",
+        "worker_exit": 1,
+        "signals": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 6.924577958001464
+      },
+      {
+        "run_id": "imlane-chain-cpu-20261019-r2",
+        "scope": "Six new tests passed, including six chain subcases and actual CPU child ME/EF subcases; known shared empty dtype excluded pending owner repair",
+        "supervisor_sha256": "b802e92c98cc1f53aae1d89999827eefca999edd290cdf44d7ced850a94bf058",
+        "worker_log_sha256": "56b1bff29ee3a39efdb3dbf16e5992e7d570c0e283eacf97dd33b8843226947e",
+        "observed_owned_births": 4,
+        "status": "passed",
+        "worker_exit": 0,
+        "signals": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 8.80046887500066
+      },
+      {
+        "run_id": "imlane-chain-cpu-20261019-r3",
+        "scope": "Four targeted regressions after reversed ready order, exact failed identity, and retained model shutdown evidence",
+        "supervisor_sha256": "7a9cfd53b5e29af2afd6b1e7fcadbe00aa9ffc590a20468f71eef13d7745a936",
+        "worker_log_sha256": "71f1d9d711464a63ea37045a097c0396b61ea744679282e03655f41b4decd621",
+        "observed_owned_births": 4,
+        "status": "passed",
+        "worker_exit": 0,
+        "signals": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 7.226732584000274
+      },
+      {
+        "run_id": "imlane-chain-cpu-20261019-r4",
+        "scope": "Two empty-source and post-Filter empty relation regressions after consuming shared empty_prototype",
+        "supervisor_sha256": "986c9976bd8da3516c1a825ab390e010998ffe7b6685713455a3c26aae7565e5",
+        "worker_log_sha256": "7eae3c5c53555cc66b22e37877a5a78179dd3daafba36485f34df6252e3ab666",
+        "observed_owned_births": 1,
+        "status": "passed",
+        "worker_exit": 0,
+        "signals": [],
+        "cleanup_errors": [],
+        "remaining_owned_pids": [],
+        "observed_owned_exit_confirmed": true,
+        "elapsed_s": 5.676917292003054
+      }
+    ],
+    "environment": "Existing Python 3.12.6 / LOTUS 1.2.4 / driver Arrow 24; no dependency installation",
+    "author_carrier": "explicit fixture",
+    "model": "declared fixture responses; three actual CPU child identities in the ME/EF subcases"
+  },
+  "private_qualifier_regressions": {
+    "distinct_tests_passed": 4,
+    "save_api_tests": 3,
+    "actual_terminal_sdk_replay_tests": 1,
+    "model_replays": 0,
+    "supervisor_sha256": "bf827c9bd37a8a39e35bca73e7e236913253c7b7d921ad8bb65b10ce6913b412",
+    "worker_log_sha256": "d30752dd1d6433f3719e33b9bfc2bffc4b29239c4e7a981b6e1c39d65087307f",
+    "observed_owned_births": 1,
+    "observed_owned_exit_confirmed": true,
+    "cleanup_errors": [],
+    "status": "passed"
+  },
+  "author_cpu": {
+    "status": "pending",
+    "cases": [
+      "ME three rows",
+      "EF three rows"
+    ],
+    "call_cap": 12,
+    "total_timeout_s": 300,
+    "cleanup_reserved_s": 30,
+    "cpu_cores": 8,
+    "rss_bytes": 8589934592,
+    "shm_bytes": 2147483648,
+    "dispatch_status": "package preparation; unique server queue only"
+  },
+  "local_model": {
+    "status": "pending",
+    "execution_enabled": false,
+    "cases": [
+      "ME two rows",
+      "EF two rows"
+    ],
+    "permanent_call_cap": 8,
+    "automatic_retries": 0,
+    "engine_lifetime": "fresh instance per native segment; distinct queries",
+    "preparation_pending": [
+      "current machine/runtime/model/tokenizer/template identity binding",
+      "fresh durable ledger and reviewed exact execution config",
+      "author CPU qualification and independent resource settlement"
+    ]
+  },
+  "real_model_requests": 0,
+  "gpu_requests": 0,
+  "ray_runtime_initializations": 0,
+  "remaining_scope": [
+    "author CPython ordinary Map/Extract and Extract-successor path",
+    "real models, independent GPU exit between segments",
+    "author Ray and multiple executors",
+    "public backend selector integration and performance"
+  ],
+  "private_raw_locator": "Task owner retains all run logs and SHA manifests outside Git; failed r1 untouched",
+  "independent_reviews": {
+    "protocol": "accepted; production bridge, public source/CPU receipts, exact private helper/config and final documentation",
+    "resources": "accepted; sticky errors, known close evidence, final source/monitor/close gates and independent resource boundaries",
+    "scope": "Static independent reviews and recorded local CPU evidence only; no author runtime or model qualification"
+  }
+}

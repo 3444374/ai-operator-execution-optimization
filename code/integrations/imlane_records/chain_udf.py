@@ -41,8 +41,16 @@ class ChainWorker:
         self.query_id, self.uid = config["query_id"], uuid.uuid4().hex
         if config["chain"]["query_id"] != self.query_id:
             raise ValueError("chain and transport must identify the same query")
+        phase = config.get("phase", {})
+        parent_rows = phase.get("initial_parents")
+        parents = None
+        if parent_rows is not None:
+            parents = {(row[0],row[1]):tuple(row[2]) for row in parent_rows}
+            if len(parents) != len(parent_rows):
+                raise ValueError("phase parent rows repeat an occurrence")
         self.batch = OwnedBatch(config["chain"], config["engine"], config["expected"], config["control_dir"],
-            config["deadline_monotonic"], resources.startup_timeout_s, config["driver_host"], config["control_token"])
+            config["deadline_monotonic"], resources.startup_timeout_s, config["driver_host"], config["control_token"],
+            initial_parents=parents,columns=phase.get("columns"),allow_nulls=phase.get("allow_nulls",False))
         self.lock = threading.RLock()
         self.closed = self.broken = False
         self.close_report = None
@@ -94,6 +102,7 @@ def infer_records(table):
     if source["query_id"] != config["query_id"] or source["stage_id"] != STAGE:
         raise ValueError("chain task crosses query or workload stage")
     signature = hashlib.sha256(json.dumps(dict(kind="chain", stages=config["chain"]["stages"],
+        phase=config.get("phase"),
         **{key: config[key] for key in ("engine", "resources", "model_environment")}), sort_keys=True).encode()).hexdigest()
     work = owned_worker(config, signature, ChainWorker)
     if config["query_id"] != work.query_id:

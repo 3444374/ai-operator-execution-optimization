@@ -1,5 +1,8 @@
 # IMLane 多行记录桥
 
+[普通 Map／Extract 与关系链接点](chain.README.md)复用公共方法和完整 Extract EOF 边界；
+本地 17 个不同 CPU 测试通过，新作者 scope、真实模型与 GPU 分别待验。
+
 [通用全局级联接点](cascade.README.md)消费原 `CascadeStage`，固定角色／阶段／查询并保留逐发生项结果；本机 CPU、作者 CPython、模型及 GPU 资格见[分列报告](../../../experiments/results/diagnostics/imlane_cascade_cpu_20261019/README.md)。
 
 本目录保留无模型 v1 记录桥，并新增[普通 Filter v2 的 CPU 接线](#普通-filter-v2cpu-资格作者实机待验)。作者 DBEnd（数据库调用入口）、Coordinator（协调进程）、Lane
@@ -29,7 +32,8 @@
   [`ChainWorker`](chain_udf.py) 只调用共同 `lotus_chain_batch.FusedChainBatch.run_rows()`；唯一 stage loop
   仍是 `LotusRecordChain.run_batch`，模型子进程复用 `ChainEngineProcess` 的逐调用 generation。
   `ChainResults` 把完整批 envelope 交给共同 `ChainBatchResults`，分别保留模型调用账本与最终关系。
-  FME、MF、Map→Map→Filter、Filter→Filter→Map 共享此路径；Extract 仅末端，拒多部署、Join、分支和全局聚合。
+  FME、MF、Map→Map→Filter、Filter→Filter→Map 共享此路径；每段 Extract 仅末端，
+  后继通过[公共完整关系边界](chain.README.md#extract-后继与退出)接入，拒多部署、Join、分支和全局聚合。
 - 一个 IMLane 物理 block 使用一条 transport occurrence，`batch_json` 字符串携带 1..16 个
   `RecordOccurrence`；整批只执行一次，不为每个输入重复运行 stage loop 或重复记账。
   `row_id/source_position` 是 source occurrence 身份，业务 index 可重复；业务 `row_id/call_id`

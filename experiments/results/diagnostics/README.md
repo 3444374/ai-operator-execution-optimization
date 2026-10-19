@@ -1,5 +1,7 @@
 # Feasibility Results
 
+[IMLane 普通 Map／Extract 与关系链](imlane_chain_cpu_20261019/README.md)：原方法与重复 Index／父调用关联、空关系及失败退出 CPU 差分；新作者 scope 和真实模型分别待验。
+
 [Daft 单独退出复验](lotus_records_local_model_20261016/README.md#daft-exit-followup-20261019)：共享监督器的显式有限等待与逐 PID 信号记录通过 CPU 检查；新两调用 Map→Extract 无信号退出，旧 Daft 失败保留。
 
 [一行 Map→Extract 模型覆盖](lotus_records_local_model_20261016/README.md#map-extract-coverage-20261019)使用独立用例和新预算；Core／Ray 通过，Daft 语义通过但 supervisor 生命周期失败，最终资源已结清。

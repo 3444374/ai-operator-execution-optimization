@@ -1,5 +1,7 @@
 # 实验与机制证据台账
 
+2026-10-19：[IMLane 普通 Map／Extract 与关系链](diagnostics/imlane_chain_cpu_20261019/README.md)。新增8项及原chain9项共17个不同CPU测试通过；原SDK消息／关系、重复Index、两块乱序ready、空源／过滤后空关系及错误关闭核对。公共empty_prototype由原owner提供，r1失败保留；新作者CPU、真实模型／GPU和性能另验。
+
 2026-10-19：[原生 Extract 分段关系](diagnostics/lotus_extract_relation_20261019/README.md#raydaft-显式原生关系布局)：13 合同、Ray／Daft 各 2 项实际 native CPU 用例分列；18／11 observed-owned 退出。仅完整 EOF／覆盖／成功后广播，native 分批／调度保持；每非空段独立引擎，成本和 per-engine cap 明示，模型／GPU pending。
 
 2026-10-19：[空结果源 Index](diagnostics/lotus_extract_relation_20261019/README.md#空结果的源-index-元数据)：显式保存 dtype／name／空切片类型，无 metadata 默认兼容；51 项／43 subtests CPU 通过，2 额外 native 占位另列，原 RED／宽松相等反例保留。没有生产调用方自动迁移，不升级原 MFE 或模型结果。

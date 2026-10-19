@@ -1,5 +1,9 @@
 # 项目日志
 
+## 2026-10-19：增加 IMLane 普通 Map／Extract 和关系链入口
+
+独立职责分支从aebbbcd8建立，仅选择性消费root公共f977c979空关系原型；复用原方法、有限模型进程、账本和Extract关系控制，不增加阶段循环、线程池、SemLoom调度或作者补丁。新增8项与原chain9项共17个不同CPU测试通过，重复Index／业务身份、非Q3多列、两块乱序ready、稀疏键、父调用、已知失败和unknown关闭保持原语义。r1测试scaffold与真实empty dtype失败保留，公共修复后严格回归通过。作者CPU／真实模型包分别准备，模型配置禁用，当前模型／GPU请求为0。见[现有合同与运行证据](experiments/results/diagnostics/imlane_chain_cpu_20261019/README.md)。
+
 ## 2026-10-19：接纳原生 Extract 关系布局并保留空结果 Index
 
 选择性接纳 `aab43acb` 为 `2d02f2a7`，原生各段只在真实 EOF／覆盖／解析及关闭成功后广播完整关系；批处理／调度仍归 Ray／Daft，每段独立引擎及成本明示。13 合同和各 2 项实际 native CPU 用例通过，18／11 已观察 owned 退出；两轴独审和额外早停回执反例通过，GPU／新模型 pending。源 Index 新接口只使用调用方显式 metadata，51 项／43 subtests通过，2 额外独立 native 占位另列，原 RED 与 int→bool 反例保留；不改原 MFE。见[固定来源与限制](experiments/results/diagnostics/lotus_extract_relation_20261019/README.md)。
