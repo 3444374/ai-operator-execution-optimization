@@ -184,7 +184,7 @@ class MatchedSystemContractTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('PYTHONPATH=code "$DRIVER_PYTHON"', autodl)
         self.assertIn("--vllm-python", autodl)
-        self.assertIn("四阶段", scripts)
+        self.assertIn("[AutoDL 手册](../../deploy/autodl/README.md)", scripts)
         self.assertIn("当前五臂", calibration.splitlines()[2])
         self.assertNotIn("八臂 native-system matched comparison 的四份", calibration)
         self.assertNotIn("project ×5", calibration)
