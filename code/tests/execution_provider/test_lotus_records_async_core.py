@@ -109,6 +109,8 @@ class AsyncCoreCompositionTests(unittest.TestCase):
             self.assertEqual(closed["model_batch_mode"], "independent_final_results")
             self.assertTrue(closed["native_engine_abort_supported"])
             self.assertIsNone(closed["gpu_exit_confirmed"])
+            self.assertEqual([event[3] for event in runtime.events
+                if event[0] == "submit" and event[1] == "AsyncCoreModelActor.close"], [(15.0,)])
             self.assertFalse(any(event[0] == "driver_get" and event[1].endswith(".prepare")
                                  for event in runtime.events))
 
