@@ -1,0 +1,30 @@
+{
+  "scope": "Independent CPU component review; no model, Ray, GPU or performance qualification",
+  "base": "a4f47eab19ce4ff1b33f82b2cd1def2c47106e67",
+  "initial_reviewed_commit": "777a0bdb52103e5d0bc810816e45e58ec6e1c277",
+  "final_reviewed_commit": "3499916f99827bf2a0bb74e493389311396ca980",
+  "initial_findings": [
+    {"reviewers": ["Standards", "Spec"], "issue": "Idle child EOF could accept new work after the I/O thread exited", "resolution": "Reject dead child/completed I/O under the ownership lock and mark transport unavailable without overwriting known receipts"},
+    {"reviewers": ["Standards"], "issue": "Expired input or a deadline crossed during non-yielding rendering could still spend model-call budget", "resolution": "Check actual monotonic deadline at entry and immediately before native generation"},
+    {"reviewers": ["Spec"], "issue": "Native generate cancellation could await a stalled abort and prevent deadline notification", "resolution": "Bound generation tasks by held requests; notify unknown independently while retaining task and input ownership"},
+    {"reviewers": ["Spec"], "issue": "Compact receipt preflight underestimated actual fields; unobserved run-task exceptions could lose terminal notification", "resolution": "Reserve worst-case shared receipt metadata before acceptance and observe request task failure through one fault future"}
+  ],
+  "standards": {
+    "agent": "/root/async_review_standards",
+    "outcome": "PASS within CPU component scope",
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python -m pytest -q -p no:cacheprovider code/tests/serving/test_async_engine_process.py code/tests/serving/test_vllm_async_engine.py",
+    "tests": "29 passed, 2 subtests passed in 6.85s",
+    "additional_evidence": "A CPU generation task that repeatedly swallowed cancellation still produced deadline unknown. close(0.03) returned unknown in approximately 0.031s with pending_request_tasks=1; after releasing the fixture a later close reported 0 pending tasks.",
+    "conclusion": "Original EOF and expired-budget issues fixed; task retention is bounded; no new lifecycle or scoped-close regression found. GPU and descendant exit are not claimed."
+  },
+  "spec": {
+    "agent": "/root/async_review_spec",
+    "outcome": "PASS; no remaining required fix found",
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python -m pytest -p no:cacheprovider code/tests/serving/test_vllm_async_engine.py code/tests/serving/test_async_engine_process.py -q",
+    "tests": "29 passed, 2 subtests passed in 6.58s",
+    "additional_evidence": "Original CPU reproducers now reject an idle-dead child, reject the 4096-byte compact-receipt boundary identity before handoff with held=0, and notify unknown at deadline while cancellation cleanup remains owned.",
+    "tool_output_references": ["278803", "381778"],
+    "conclusion": "All three original substantive findings closed. Real vLLM/GPU, model descendant exit and actor/Core integration remain pending."
+  },
+  "provenance": "Reviewer terminal summaries transcribed from collaboration messages. Full transient reviewer debug logs were not archived; these summaries do not replace the retained parent regression log."
+}
