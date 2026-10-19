@@ -17,6 +17,7 @@ import threading
 import time
 import uuid
 from dataclasses import asdict
+from copy import deepcopy
 
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec, IDENTITY_FIELDS
 
@@ -27,6 +28,7 @@ CODE_ROOT = Path(__file__).resolve().parents[4]
 # second for its reply, then four seconds for bounded owned-process cleanup.
 DEFAULT_CLOSE_TIMEOUT_S = 15.0
 CLOSE_CLEANUP_RESERVE_S = 4.0
+RESULT_PROTOCOL_ERROR = "private engine result cardinality, order or association differs"
 
 
 def _encode(value):
@@ -45,6 +47,46 @@ def _publish(path, value):
     os.replace(temporary, path)
 
 
+def _verified_terminal(row, expected, engine_uid):
+    """Qualify a receipt from a damaged reply without inventing its evidence."""
+    if (type(row) is not dict or any(type(row.get(key)) is not type(expected[key])
+            or row[key] != expected[key] for key in IDENTITY_FIELDS)
+            or row.get("messages_sha256") != expected["messages_sha256"]
+            or type(engine_uid) is not str or not engine_uid or row.get("engine_uid") != engine_uid
+            or row.get("status") not in ("succeeded", "failed", "unknown")
+            or type(row.get("submission_confirmed")) is not bool):
+        return False
+    succeeded = row["status"] == "succeeded"
+    if succeeded:
+        if (row["submission_confirmed"] is not True or type(row.get("text")) is not str
+                or row.get("finish_reason") not in ("stop", "length")
+                or type(row.get("engine_request_id")) is not str or not row["engine_request_id"]):
+            return False
+    elif type(row.get("error_type")) is not str or not row["error_type"]:
+        return False
+    for count_name, ids_name in (("prompt_tokens", "prompt_token_ids_json"),
+                                 ("completion_tokens", "output_token_ids_json")):
+        count, encoded = row.get(count_name), row.get(ids_name)
+        if count is not None and (type(count) is not int or count < 0):
+            return False
+        if ((succeeded and count is None) or (count is not None and type(encoded) is not str)
+                or encoded is not None and type(encoded) is not str):
+            return False
+        if encoded is not None:
+            try:
+                ids = json.loads(encoded)
+            except (TypeError, ValueError):
+                return False
+            if ids is None and count is None and not succeeded:
+                continue
+            if (type(ids) is not list or any(type(token) is not int or token < 0 for token in ids)
+                    or count is not None and len(ids) != count):
+                return False
+    prompt, completion, total = (row.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens"))
+    return (total is None if prompt is None or completion is None else
+            type(total) is int and total == prompt + completion)
+
+
 class EngineProcess:
     """No retry, model sharing, batching policy or GPU routing lives here."""
 
@@ -61,6 +103,9 @@ class EngineProcess:
         self.ready_report = None
         self.engine_close = None
         self.last_close_report = None
+        self.last_result_failure = None
+        self._last_raw_response_json = None
+        self._result_failure_write_errors = []
         self.ipc_seconds = self.startup_seconds = 0.0
         self.ipc_request_bytes = self.ipc_response_bytes = 0
         self.ipc_encode_seconds = self.ipc_decode_seconds = 0.0
@@ -140,6 +185,7 @@ class EngineProcess:
                     self.pending = bytearray(rest)
                     decode_started = time.monotonic()
                     result = json.loads(line)
+                    self._last_raw_response_json = line.decode("utf-8", errors="replace")
                     self.ipc_decode_seconds += time.monotonic() - decode_started
                     self.ipc_response_bytes += len(line) + 1
                     if type(result) is not dict:
@@ -178,19 +224,22 @@ class EngineProcess:
         from src.serving.backends.vllm_engine import _prepared
 
         identities, _ = _prepared(rows)
+        self._last_raw_response_json = None
         try:
             if self._broken or self._closed:
                 raise RuntimeError("private engine cannot be reused after stop or close")
             response = self._exchange(dict(op="run", rows=rows, deadline=self.deadline), self.deadline)
-            if response.get("kind") != "results" or type(response.get("rows")) is not list:
-                raise RuntimeError("private engine call failed: " + str(response.get("error_type")))
-            results = response["rows"]
-            if (len(results) != len(identities)
+            results = response.get("rows")
+            if (response.get("kind") != "results" or type(results) is not list or len(results) != len(identities)
                     or any(type(row) is not dict or any(row.get(key) != item[key] for key in IDENTITY_FIELDS)
-                           for row, item in zip(results, identities))):
-                raise ValueError("private engine changed call association")
+                           or row.get("engine_protocol_error") for row, item in zip(results, identities))):
+                return self._result_failure(response, identities)
             return results
         except Exception as exc:
+            if self._last_raw_response_json is not None and self.last_result_failure is None:
+                # A decoded non-object reply still has authoritative raw bytes,
+                # although it cannot attest any input call's terminal.
+                return self._result_failure(json.loads(self._last_raw_response_json), identities)
             self._broken = True
             try:
                 self.close()
@@ -199,8 +248,51 @@ class EngineProcess:
             return [dict(item, status="unknown", submission_confirmed=False,
                          error_type=type(exc).__name__, prompt_tokens=None,
                          completion_tokens=None, total_tokens=None,
-                         engine_uid=(self.ready_report or {}).get("engine_uid"))
+                         engine_uid=(self.ready_report or {}).get("engine_uid"),
+                         **({"engine_protocol_error": RESULT_PROTOCOL_ERROR} if self.last_result_failure else {}))
                     for item in identities]
+
+    def _result_failure(self, response, identities):
+        raw = response.get("rows") if type(response) is dict and response.get("kind") == "results" else None
+        raw = raw if type(raw) is list else []
+        engine_uid = (self.ready_report or {}).get("engine_uid")
+        verified, indexes, normalized = [], set(), []
+        for item in identities:
+            matches = [(index, row) for index, row in enumerate(raw)
+                       if type(row) is dict and row.get("call_id") == item["call_id"]]
+            request_id = matches[0][1].get("engine_request_id") if len(matches) == 1 else None
+            request_unique = (request_id is None or sum(type(row) is dict
+                              and row.get("engine_request_id") == request_id for row in raw) == 1)
+            if len(matches) == 1 and request_unique and _verified_terminal(matches[0][1], item, engine_uid):
+                index, row = matches[0]
+                value = dict(deepcopy(row), engine_protocol_error=RESULT_PROTOCOL_ERROR)
+                verified.append(deepcopy(value))
+                indexes.add(index)
+            else:
+                value = dict(item, status="unknown", text=None, submission_confirmed=False,
+                    error_type="ValueError", engine_uid=engine_uid, prompt_tokens=None,
+                    completion_tokens=None, total_tokens=None, engine_protocol_error=RESULT_PROTOCOL_ERROR)
+            normalized.append(value)
+        self.last_result_failure = dict(error_type="ValueError", verified_call_results=verified,
+            raw_response_json=(self._last_raw_response_json if self._last_raw_response_json is not None else
+                               json.dumps(response, ensure_ascii=False)),
+            unassociated_result_indexes=[index for index in range(len(raw)) if index not in indexes])
+        self._broken = True
+        try:
+            _publish(self.report_path, dict(status="unknown", result_failure=self.last_result_failure,
+                engine_ready=self.ready_report, process_exit_confirmed=False, cleanup_errors=[],
+                model_pid=None if self.process is None else self.process.pid, process_created=self.created))
+        except Exception as error:
+            self._result_failure_write_errors.append("result_failure_report_write: " + type(error).__name__)
+        try:
+            self.close()
+        except Exception as error:
+            # Neither failed audit I/O nor cleanup may replace received usage.
+            previous = self.last_close_report or {}
+            self.last_close_report = dict(previous, status="unknown", result_failure=self.last_result_failure,
+                cleanup_errors=[*previous.get("cleanup_errors", []), *self._result_failure_write_errors,
+                                "result_failure_cleanup: " + type(error).__name__])
+        return normalized
 
     def close(self, timeout=DEFAULT_CLOSE_TIMEOUT_S):
         from src.experiments.lotus_records_supervisor import _seconds
@@ -216,10 +308,11 @@ class EngineProcess:
                 self.last_close_report = dict(
                     status="unknown", process_exit_confirmed=False, gpu_exit_confirmed=None,
                     cleanup_scope="private_engine_and_observed_os_processes",
-                    cleanup_errors=["cleanup_exception: " + type(exc).__name__],
+                    cleanup_errors=[*self._result_failure_write_errors, "cleanup_exception: " + type(exc).__name__],
                     model_pid=None if self.process is None else self.process.pid,
                     process_created=self.created,
                     owned_processes=[list(item) for item in sorted(self.owned)],
+                    **({"result_failure": self.last_result_failure} if self.last_result_failure else {}),
                 )
                 try:
                     _publish(self.report_path, self.last_close_report)
@@ -238,7 +331,7 @@ class EngineProcess:
         deadline = started + timeout
         cleanup_reserved = min(CLOSE_CLEANUP_RESERVE_S, timeout / 3)
         api_deadline = deadline - cleanup_reserved
-        errors = []
+        errors = list(self._result_failure_write_errors)
         api_confirmed = (type(self.engine_close) is dict and
                          self.engine_close.get("engine_api_shutdown_confirmed") is True)
         if self.process is not None:
@@ -314,6 +407,7 @@ class EngineProcess:
             worker_pid=os.getpid(), model_pid=None if self.process is None else self.process.pid,
             process_created=self.created,
             owned_processes=[list(item) for item in sorted(self.owned)],
+            **({"result_failure": self.last_result_failure} if self.last_result_failure else {}),
         )
         try:
             _publish(self.report_path, self.last_close_report)
