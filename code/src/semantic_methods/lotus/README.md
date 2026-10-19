@@ -29,6 +29,8 @@ Daft 拥有 process UDF 与私有模型子进程，完整结果 JSON 透传身�
 只在完整 uncached batch 的执行接点选择原 SDK、Daft、Ray Data 或 SemLoom。
 `sdk.validate_source()` 核对实际安装源码和版本；不把可选 PG 兼容 profile 当成原 LOTUS 查询。
 
+本页描述 main 已接纳的请求／检索接点；独立 records、有限链及本地模型分支的实现与资格统一见[实施来源](../../../../experiments/plans/数据组织.md#model-engine-roadmap)，不表示已纳入本模块。
+
 ## 接口与所有权
 
 - `batch.lotus_executor(lm, executor)` 在作用域内替换 uncached 执行接点，退出时恢复；
@@ -58,7 +60,7 @@ native 路径先构造整批再交给后端，SemLoom 仍在调用方准备请�
 
 `lotus_executor()` 已按 LM 实例挂载，helper／main 可分别复用；SDK 已支持 logprobs，LOTUS 已有作用域设置。
 现有限制在观测与预算对整批逐行一次的假设，见[Filter 接线与验证计划](../../../../experiments/plans/数据组织.md#lotus-filter-data-execution)。
-记录／媒体引用到准备、调用与结果的[新主链](../../../../experiments/plans/系统架构.md#lotus-data-execution)独立建设；上方普通 Q3 为本分支最小实现，更完整算法与模态仍待实现。旧请求路径冻结接入范围作参照和选择性复用。
+记录／媒体引用到准备、调用与结果的[新主链](../../../../experiments/plans/系统架构.md#lotus-data-execution)在独立分支推进，尚未纳入 main；旧请求路径冻结接入范围作参照和选择性复用。
 首闭环直接与原生 LOTUS 核对，不以旧 adapter 为唯一正确性定义，也不要求经过本模块的完整调用执行器。
 
 `sdk.validate_source()` 的默认 `text` profile 当前不核 `sem_filter.py`；`IMAGE_TEXT_PROFILE` 才追加该文件校验。

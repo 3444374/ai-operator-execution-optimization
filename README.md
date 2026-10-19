@@ -1,7 +1,7 @@
 # SemLoom
 
-本项目研究**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**。
-PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、快照、权限及查询生命周期；SemLoom 利用 Ray Core 的任务、actor 和对象设施组织外部执行，
+本项目研究**AI 语义算子与多模态数据任务的物理执行、数据组织与调度优化**，面向研究工作负载构建可扩展的语义数据执行层。
+PostgreSQL 是数据库接入场景之一，拥有该路径的 SQL、计划、快照、权限及查询生命周期；SemLoom 通过中立接口组织外部执行，具体准备与模型设施按路径选择，
 与 Ray Data、Daft 等原生数据执行路径比较。合理调优的原生批处理、actor 池、背压与 CPU/GPU 流水是共同起点。
 
 近期优先加速**单查询／一批数据的完整执行**，检验能否少准备、少搬运、少做重复计算。
@@ -13,9 +13,7 @@ LOTUS 主线由 SemBench 提供任务与评价、LOTUS 保留原算法及优化�
 自管准备、供给与回收，Ray Data／Daft／IMLane 对照各自原生执行。下一单元是[普通／级联 Filter 记录级执行](experiments/plans/数据组织.md#lotus-filter-data-execution)，
 records→结果独立建设，先用原生 Ray Data 普通 Filter 与原生 LOTUS 核对；旧 request 冻结范围作参照，选择性复用，不作为新主链的必经依赖。
 并沿同一合同将[真实 LLM／VLM 引擎纳入模型 worker／actor](experiments/plans/系统架构.md#model-engine-execution)，成为数据执行链的一部分。
-HTTP records 流水保留为阶段实现与对照；独立集成分支的[普通 Movie Q3 最小切片](experiments/results/diagnostics/lotus_records_local_model_20261016/README.md)
-已完成分列的CPU资格，以及原生参照／Ray Data／静态参照的Qwen单4090普通Q3小切片实测；Daft独立路径GPU与更完整范围待验证，边界由架构文档维护。
-[独立 IMLane 多行桥](code/integrations/imlane_records/README.md)保留作者 DBEnd／Lane 所有权；CPython 无模型 echo 与主线依赖收口分别有证据，LOTUS／本地模型和作者 Ray 接入仍待实现。
+HTTP records 流水保留为阶段实现与对照；记录级入口与生成模型引擎尚未纳入 main，功能分支的实现及资格统一从[实施来源](experiments/plans/数据组织.md#model-engine-roadmap)核对。
 
 | 要查什么 | 权威入口 |
 |---|---|

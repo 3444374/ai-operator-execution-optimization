@@ -437,8 +437,7 @@ def _write_json(path: Path, payload: dict) -> None:
     )
 
 
-# The two CSV writers below mirror the inline fieldnames in _run. _run_project_static
-# uses them; _run keeps its inline blocks (untouched). A future cleanup could unify.
+# All arms use the same evidence column order and CSV encoding.
 _PER_ROW_FIELDS = [
     "source_example_id", "status", "error", "output_chars",
     "prediction", "reference_answers",
@@ -748,24 +747,8 @@ def _run(args: argparse.Namespace, output_dir: Path) -> int:
             "error": redact_text(r.error or ""),
             "output_chars": len(r.output_text) if r.output_text else 0,
         })
-    with (output_dir / "per_row_evidence.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=["source_example_id", "status", "error", "output_chars",
-                        "prediction", "reference_answers",
-                        "finish_reason", "output_tokens",
-                        "submitted_at_s", "started_at_s", "completed_at_s",
-                        "queue_wait_s", "latency_s",
-                        "server_version", "pgvector_version"],
-        )
-        writer.writeheader()
-        writer.writerows(evidence_rows)
-    with (output_dir / "sunk_status.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=["doc_id", "source_example_id", "status", "error", "output_chars"],
-        )
-        writer.writeheader()
-        writer.writerows(sunk_status_rows)
+    _write_per_row_evidence(output_dir, evidence_rows)
+    _write_sunk_status(output_dir, sunk_status_rows)
 
     quality = squad_quality_metrics(predictions, references)
     success_count = sum(
