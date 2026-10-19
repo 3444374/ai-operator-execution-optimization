@@ -1,7 +1,7 @@
 """Actual CPU child/socket IPC and threaded actor object; no Ray/model runtime."""
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 import sys
@@ -13,7 +13,7 @@ from src.execution_provider.adapters.lotus_records_async_actor import (
     AsyncCoreModelActor, AsyncRecordsActorOwner,
 )
 from src.semantic_methods.lotus.records import FilterMethod, RecordsResources, identity
-from src.serving.backends.async_engine_process import AsyncEngineProcess
+from src.serving.backends.async_engine_process import AsyncEngineProcess, _frame
 from src.serving.backends.vllm_async_engine import AsyncEngineLimits
 from src.serving.backends.vllm_engine import EngineSpec, GenerationSpec
 
@@ -120,6 +120,23 @@ class AsyncActorTests(unittest.TestCase):
         self.assertEqual(actor.engine._sequence, 0)
         self.assertTrue(actor.acknowledge_core((0, 0)))
 
+    def test_actor_unacknowledged_results_respect_total_reserved_bytes(self):
+        self.limits = replace(self.limits, result_bytes=4096)
+        actor = self.actor()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            self.submit(pool, actor, 0).result(3)
+            waiting = self.submit(pool, actor, 1)
+            try:
+                time.sleep(0.03)
+                self.assertFalse(waiting.done())
+                self.assertEqual(actor.snapshot()["reserved_result_bytes"], 4096)
+                actor.acknowledge_core((0, 0))
+                waiting.result(3)
+                self.assertEqual(actor.snapshot()["reserved_result_bytes"], 4096)
+                actor.acknowledge_core((0, 1))
+            finally:
+                actor.close(2)
+
     def test_old_abort_does_not_cancel_reused_query_and_occurrence_in_next_session(self):
         actor = self.actor()
         with ThreadPoolExecutor(max_workers=4) as pool:
@@ -155,6 +172,64 @@ class AsyncActorTests(unittest.TestCase):
         self.assertEqual(report["status"], "unknown")
         self.assertFalse(report["engine_api_shutdown_confirmed"])
         self.assertEqual(report["unconsumed_call_results"][0]["prompt_tokens"], 11)
+
+    def test_temporary_input_byte_backpressure_waits_without_resubmitting_an_accepted_call(self):
+        self.limits = replace(self.limits, input_bytes=4096)
+        actor = self.actor()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            first = self.submit(pool, actor, 0, "hold" + "x" * 2200)
+            self.until(actor, lambda: actor.engine.snapshot()["accepted_requests"] == 1)
+            second = self.submit(pool, actor, 1, "fast" + "x" * 2200)
+            try:
+                self.until(actor, lambda: actor.snapshot()["held_requests"] == 2)
+                self.assertEqual(actor.engine._sequence, 1)
+                self.assertFalse(second.done())
+                actor.abort_core((0, 0))
+                self.assertEqual(json.loads(first.result(3))["prompt_tokens"], 11)
+                actor.acknowledge_core((0, 0))
+                self.assertEqual(json.loads(second.result(3))["prompt_tokens"], 11)
+                self.assertEqual(actor.engine._sequence, 2)
+                actor.acknowledge_core((0, 1))
+            finally:
+                actor.close(2)
+
+    def test_full_control_queue_keeps_cancel_intent_until_native_abort_can_be_queued(self):
+        self.limits = replace(self.limits, control_slots=1)
+        actor = self.actor()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            first = self.submit(pool, actor, 0, "hold")
+            second = self.submit(pool, actor, 1, "hold")
+            try:
+                self.until(actor, lambda: actor.engine.snapshot()["accepted_requests"] == 2)
+                with actor._condition, actor.engine._condition:
+                    actor.engine._controls.append(_frame(dict(op="drain"), actor.limits.control_frame_bytes))
+                    self.assertFalse(actor.abort_core((0, 0))["requested"])
+                    self.assertFalse(actor.abort_core((0, 1))["requested"])
+                self.assertEqual(json.loads(first.result(3))["prompt_tokens"], 11)
+                self.assertEqual(json.loads(second.result(3))["prompt_tokens"], 11)
+                actor.acknowledge_core((0, 0))
+                actor.acknowledge_core((0, 1))
+            finally:
+                actor.close(2)
+
+    def test_unknown_peer_does_not_busy_poll_other_still_active_work(self):
+        actor = self.actor()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            unknown = self.submit(pool, actor, 0, "hold-unknown")
+            other = self.submit(pool, actor, 1, "hold")
+            try:
+                self.until(actor, lambda: actor.engine.snapshot()["accepted_requests"] == 2)
+                actor.abort_core((0, 0))
+                self.assertEqual(json.loads(unknown.result(3))["status"], "unknown")
+                with patch.object(actor.engine, "poll", wraps=actor.engine.poll) as polls:
+                    started = time.monotonic()
+                    time.sleep(0.05)
+                    self.assertLess(polls.call_count, max(30, int((time.monotonic() - started) / 0.01) * 3 + 10))
+                self.assertFalse(other.done())
+                actor.abort_core((0, 1))
+                self.assertEqual(json.loads(other.result(3))["prompt_tokens"], 11)
+            finally:
+                actor.close(2)
 
     def test_close_control_with_full_results_preserves_usage_and_direct_child_exit(self):
         actor = self.actor()
