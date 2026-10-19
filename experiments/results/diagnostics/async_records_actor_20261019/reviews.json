@@ -1,0 +1,81 @@
+{
+  "final_source_commit": "a66648d53934eddad0bbe60ed865246068f68ee2",
+  "dependency_commit": "90fe33995ab72ed9e3911ae65c7b9ad6a414e944",
+  "provenance": "Independent collaboration agent reports, saved by implementation owner; report text is not pytest stdout. Reviewers did not edit files or run Ray/models/GPU.",
+  "resolved_findings": [
+    {
+      "reviewer": "async_review_standards",
+      "issue": "Unknown IPC state returned immediately from wait and triggered a busy polling loop while another request remained active.",
+      "resolution": "Condition wait after broken state; notify only on actual events; bounded poll-count and retained late usage regression."
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "issue": "Temporary NOT_ACCEPTED handoff backpressure became a query failure.",
+      "resolution": "Retain bounded unsent call and retry only before acceptance; actual IPC input-byte and command-slot probes."
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "issue": "Full control queue dropped cancellation intent.",
+      "resolution": "Separate cancel intent from successful abort enqueue and retry until queued; retain actual receipts and usage."
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "issue": "Next legitimate Core session failed while previous asynchronous ack had not run.",
+      "resolution": "Wait for prior receipt acknowledgement within deadline; production Core plus real CPU IPC delayed-ack test."
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "issue": "Late old aborts exhausted early-cancel capacity before next session first prepared call.",
+      "resolution": "Separate cancellation epoch, purge previous early set on higher epoch, reject stale absent keys, preserve cancels on held work and idempotent early cancels."
+    }
+  ],
+  "whole_package_reviews": [
+    {
+      "reviewer": "async_review_standards",
+      "source_at_review": "81feb546874cfb50444a73c6855f50b0f02cd7bb",
+      "reachable_own_source_equivalent": "44228bcd6b074487d34b88f8e3b86f5bde5f1e2d",
+      "result": "PASS",
+      "tests": "17 passed in 4.58s",
+      "scope": "All four new files and root/code/project requirements; no new high-value issue. git diff --check passed."
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "source_at_review": "81feb546874cfb50444a73c6855f50b0f02cd7bb",
+      "reachable_own_source_equivalent": "44228bcd6b074487d34b88f8e3b86f5bde5f1e2d",
+      "result": "PASS",
+      "tests": "17 passed in 4.121s",
+      "scope": "No remaining P1/P2. Original backpressure, control-full, delayed-ack and old-cancel probes passed; deadline, close, old-held cancellation, full TaskKey and unknown ownership checked."
+    }
+  ],
+  "final_reviews": [
+    {
+      "reviewer": "async_review_standards",
+      "result": "PASS",
+      "review_kind": "Narrow final review after whole-package PASS; unchanged own source replay plus five-line close hook and two-line RPC assertion.",
+      "tests": "38 passed, 14 subtests passed in 4.46s",
+      "report": "Standards PASS，固定 SHA：a66648d53934eddad0bbe60ed865246068f68ee2，基线90fe33995ab72ed9e3911ae65c7b9ad6a414e944。\n窄复核确认：异步 owner 的 hook 被实际消费，Core+IPC 测试断言关闭 RPC 传入15.0秒；响应等待仍与原查询/清理期限取min，超时保留同一关闭句柄。同步默认仍为10秒 RPC、11秒响应窗口。\n指定 nonmodel venv 重跑 actor、Core 和共享 owner 三组 CPU 测试：38 passed、14 subtests passed，4.46s。固定范围git diff --check通过，无新增问题。\n未编辑文件、未启动 Ray、GPU、模型或服务；本结论限于此次关闭窗口接线与 CPU 行为验证。"
+    },
+    {
+      "reviewer": "async_wiring_contract_audit",
+      "result": "PASS",
+      "review_kind": "Narrow final review after whole-package PASS; dependency close-window contract and deadline/retry behavior.",
+      "tests": "38 CPU tests passed in 4.870s",
+      "report": "PASS：a66648d53934eddad0bbe60ed865246068f68ee2，基于90fe33995ab72ed9e3911ae65c7b9ad6a414e944。窄复核无剩余发现。\n实际close RPC参数为(15.0,)。\nquery deadline仍限制等待：期限已过时立即返回unknown，保留原close ref；显式续清理复用同一RPC后closed。\nGPU与后代退出确认均保持None，未扩大物理清理声明。\n独立重跑38项CPU测试通过（4.870s）。\n未修改文件，未启动Ray、模型或GPU。"
+    }
+  ],
+  "report_text_policy": "Final reviewer content transcribed in plain text with Markdown formatting normalized; numeric results and scope preserved.",
+  "pending": [
+    "Real AsyncLLM/model qualification",
+    "Physical GPU and complete descendants exit confirmation",
+    "Public selector/CLI integration",
+    "Matched complete-query quality, performance and memory measurements"
+  ],
+  "documentation_review": {
+    "reviewer": "async_wiring_contract_audit",
+    "result": "PASS after one factual correction",
+    "scope": "Read-only audit of README, reviews, six metadata/gzip pairs and historical Git source recovery; no tests repeated.",
+    "finding": "README called the existing identity eight fields; both records._IDENTITY_FIELDS and vllm_engine.IDENTITY_FIELDS contain seven.",
+    "resolution": "Changed README to seven fields; implementation still selects the actual shared IDENTITY_FIELDS tuple.",
+    "verified": "Six gzip digests and byte counts, 75 source digest entries/history mappings; CPU qualification scopes and pending model/GPU/CLI/performance boundaries agree."
+  }
+}
