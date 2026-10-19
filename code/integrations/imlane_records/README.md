@@ -38,6 +38,11 @@ Filter／chain 作者 root 的等待同样为 20 秒；历史 echo 默认 8 秒�
 GPU 始终单独核验；故障或无法核验仍保留 unknown 与 owner 责任，已有 usage／audit 不因关闭失败清空。
 active model cancellation、未观察到的后代和实际 GPU 退出不能从 CPU 替身推导。
 
+Filter 层收到条数、顺序或单项关联错误时，仍保留完整且唯一关联的实际终态；重复或矛盾身份仅留作
+未关联 raw 回执，只有未确认调用补 unknown。host 先交付有效回执、停止补块并排空已接受块，再抛原错误。
+私有 `filter-audit-*.json`、wire raw 与 close 的 `unconsumed_call_results` 保留已知 usage，不重发，也不升级既有 unknown。
+本修复只覆盖 IMLane 实际收到的返回；共享 EngineProcess 在上游条数／关联检查失败时整批转 unknown 的既有边界仍待处理。
+
 方法环境保留作者 Python3.12／Arrow16.1 ABI，driver 与模型解释器各自独立。
 [`preflight_method`](method_environment.py) 在 owner 启动前核对两解释器 ABI 及固定 Filter／链源；
 `ChainScope` 必须显式提供方法解释器，不回落到缺少方法依赖的作者解释器。

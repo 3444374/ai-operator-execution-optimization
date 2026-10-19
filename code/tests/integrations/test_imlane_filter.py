@@ -208,6 +208,57 @@ class FilterTests(unittest.TestCase):
                     mapping.decode(rows, encoded)
                 self.assertEqual(mapping.collected, set())
 
+    def test_decode_shape_errors_retain_unique_receipts_and_exclude_ambiguous_identity_usage(self):
+        for fault, known, missing, raw_count in (("missing", 10, 1, 0), ("duplicate", 5, 2, 2),
+                                                 ("reorder", 15, 0, 0)):
+            with self.subTest(fault=fault):
+                mapping = Occurrences("q", columns=("reviewText",), max_calls=8)
+                encoded = mapping.encode(source())
+                client = LocalAuthor(self.worker())
+                client.submit("one", encoded)
+                rows = client.collect("one")
+                if fault == "missing": rows.pop()
+                if fault == "duplicate": rows[1] = rows[0]
+                if fault == "reorder": rows.reverse()
+                with self.assertRaises(ValueError) as caught:
+                    mapping.decode(rows, encoded)
+                self.assertEqual(sum(row["prompt_tokens"] or 0 for row in caught.exception.partial_results), known)
+                self.assertEqual(len(caught.exception.unconfirmed_results), missing)
+                self.assertEqual(len(mapping.unassociated_results), raw_count)
+                self.assertTrue(all(row["prompt_tokens"] is None for row in caught.exception.unconfirmed_results))
+                self.assertEqual(mapping.collected, set())
+
+    def test_receipt_recovery_cannot_upgrade_an_existing_unknown_and_remains_retryable(self):
+        from src.baselines.text.frameworks.daft_engine_process import _publish
+
+        class Unknown(FixedEngine):
+            def run_prepared(self, rows):
+                values = super().run_prepared(rows)
+                values[0].update(status="unknown", text=None, error_type="Unconfirmed", submission_confirmed=False,
+                                 prompt_tokens=None, completion_tokens=None, total_tokens=None,
+                                 prompt_token_ids_json="null", output_token_ids_json="null")
+                return values
+        worker = self.worker(Unknown)
+        values, _client = self.iterator(worker, source(count=1))
+        observed = list(values)
+        self.assertEqual(observed[0]["status"], "unknown")
+        path = Path(self.root.name, "filter-audit-conflicting-fixture.json")
+        forged = terminal(worker.kernel.calls[0])
+        _publish(path, dict(query_id="q", engine_uid="fixed", raw_results=[forged],
+                            known_receipts=[forged], unassociated_results=[]))
+        try:
+            with self.assertRaisesRegex(ValueError, "conflicts with an existing terminal"):
+                values.close()
+            self.assertFalse(values.closed)
+            self.assertEqual(values.last_close_report["status"], "unknown")
+            self.assertEqual(values.last_close_report["unconsumed_call_results"][0]["status"], "unknown")
+            self.assertIsNone(values.last_close_report["unconsumed_call_results"][0]["prompt_tokens"])
+        finally:
+            path.unlink()
+        values.close()
+        self.assertTrue(values.closed)
+        self.assertEqual(len(worker.kernel.calls), 1)
+
     def test_close_failure_is_retryable_without_inference_reuse(self):
         class RetryClose(FixedEngine):
             def close(self):
@@ -322,6 +373,89 @@ class FilterTests(unittest.TestCase):
                 self.assertEqual(rows[2]["output_token_ids_json"], "[6,7]")
                 self.assertEqual(rows[1]["submission_confirmed"], fault not in ("digest", "identity", "engine", "unbound_unknown"))
                 self.assertTrue(worker.broken)
+
+    def test_short_extra_duplicate_or_reordered_engine_returns_keep_unique_receipts_without_retry(self):
+        from copy import deepcopy
+
+        for fault, statuses, usage, unmatched in (
+            ("short", ["succeeded", "unknown", "unknown"], 5, 0),
+            ("extra", ["succeeded"] * 3, 15, 1),
+            ("duplicate", ["unknown", "succeeded", "succeeded"], 10, 2),
+            ("reorder", ["succeeded"] * 3, 15, 0),
+        ):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as directory:
+                self.config["control_dir"] = directory
+                class DamagedReturn(FixedEngine):
+                    def run_prepared(self, rows):
+                        values = super().run_prepared(rows)
+                        if fault == "short": return values[:1]
+                        if fault == "extra": return values + [dict(values[0], call_id="foreign")]
+                        if fault == "duplicate": return values + [deepcopy(values[0])]
+                        return list(reversed(values))
+                worker = self.worker(DamagedReturn)
+                client = LocalAuthor(worker)
+                values = FilterResults(source(), client, query_id="q", max_calls=8, columns=("reviewText",),
+                    control_dir=directory, deadline=time.monotonic() + 20,
+                    close_owner=lambda: {"resources_confirmed": True}, block_rows=3)
+                observed = []
+                with self.assertRaises(ValueError):
+                    for row in values:
+                        observed.append(row)
+                self.assertEqual([row["status"] for row in observed], statuses)
+                self.assertEqual(sum(row["prompt_tokens"] or 0 for row in observed), usage)
+                self.assertEqual(len(worker.kernel.calls), 3)
+                self.assertTrue(worker.broken)
+                report = values.close()
+                self.assertEqual(sum(row["prompt_tokens"] or 0 for row in report["unconsumed_call_results"]), usage)
+                self.assertEqual(len(report["unassociated_results"]), unmatched)
+                self.assertEqual(client.submissions, ["filter-0", "filter-close"])
+                self.assertEqual(len(report["raw_result_batches"][-1]), 1 if fault == "short" else
+                                 4 if fault in ("extra", "duplicate") else 3)
+
+    @unittest.skipUnless(os.environ.get("SEMBENCH_CHECKOUT"), "requires fixed original SemBench checkout")
+    def test_bad_late_wire_identity_keeps_known_prefix_and_only_marks_missing_call_unknown(self):
+        from src.experiments.lotus_records_movie import run_movie_query
+        from src.semantic_methods.lotus.engine import LotusFilterMethod
+        from tests.experiments.test_lotus_records_movie import fixture_source
+
+        directory = Path(self.root.name, "late-wire-source")
+        directory.mkdir()
+        dataset = fixture_source(directory)
+        rows = [dict(identity("q", row["row_id"], row["source_position"]), reviewText=row["reviewText"])
+                for row in dataset.rows() if row["id"] == "taken_3"]
+        iterator, client = self.iterator(self.worker(prepare=LotusFilterMethod), rows, block_rows=3)
+        collect = client.collect
+        def corrupt(block, **kwargs):
+            values = collect(block, **kwargs)
+            if block != "filter-close":
+                value = json.loads(values[2]["outcome_json"])
+                value["result"]["engine_result"]["call_id"] = "wrong-nested-call"
+                values[2]["outcome_json"] = json.dumps(value)
+            return values
+        client.collect = corrupt
+        # An independent cleanup error must not replace the first wire error.
+        iterator.close_owner = lambda: {"resources_confirmed": False}
+        try:
+            # This transport failure precedes query interpretation/evaluation;
+            # isolate the ledger test from the benchmark's Git subprocess probe.
+            with patch("src.experiments.lotus_records_movie.verify_checkout",
+                       return_value=Path(os.environ["SEMBENCH_CHECKOUT"])), self.assertRaises(ValueError) as caught:
+                run_movie_query(dataset, os.environ["SEMBENCH_CHECKOUT"], FilterMethod("openai/local-fixture"),
+                                GenerationSpec(), lambda: iterator, query_id="q")
+        finally:
+            iterator.close_owner = lambda: {"resources_confirmed": True}
+        report = caught.exception.query_report
+        self.assertEqual(report["error_type"], "ValueError")
+        self.assertEqual(report["calls"]["counts"]["succeeded"], 2)
+        self.assertEqual(report["calls"]["counts"]["unknown"], 1)
+        self.assertEqual(report["calls"]["usage"]["known_prompt_tokens"], 10)
+        self.assertEqual(report["calls"]["usage"]["unknown_prompt_tokens_calls"], 1)
+        self.assertEqual(len(report["backend_close"]["unconsumed_call_results"]), 2)
+        raw = report["backend_close"]["unassociated_results"]
+        self.assertEqual(len(raw), 1)
+        self.assertEqual(json.loads(raw[0]["outcome_json"])["result"]["engine_result"]["call_id"],
+                         "wrong-nested-call")
+        self.assertEqual(client.submissions, ["filter-0", "filter-close"])
 
     def test_later_subbatch_prepare_failure_cannot_erase_prior_terminal(self):
         self.config["resources"]["model_batch_rows"] = 1

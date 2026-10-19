@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 
 from src.semantic_methods.lotus.records import identity
 from src.serving.backends.vllm_engine import IDENTITY_FIELDS
@@ -111,6 +112,7 @@ class Occurrences:
         self.query_id, self.max_calls = query_id, max_calls
         self.columns = payload_columns(columns)
         self.inputs, self.collected = {}, set()
+        self.receipts, self.raw_result_batches, self.unassociated_results = {}, [], []
 
     def encode(self, rows):
         staged = []
@@ -135,33 +137,52 @@ class Occurrences:
         return staged
 
     def decode(self, rows, expected):
-        if len(rows) != len(expected):
-            raise ValueError("IMLane Filter output cardinality differs")
-        results = []
-        staged = set()
-        for row, source in zip(rows, expected, strict=True):
-            call = source["call_id"]
-            if (row.get("call_id") != call or row.get("row_id") != source["row_id"]
-                    or self.inputs.get(call) != source or call in self.collected or call in staged):
-                raise ValueError("IMLane Filter output occurrence or order differs")
-            value = json.loads(row["outcome_json"])
-            if (value.get("protocol") != PROTOCOL or value.get("query_id") != self.query_id
-                    or value.get("stage_id") != source["stage_id"]):
-                raise ValueError("IMLane Filter output protocol or query differs")
-            payload = value["result"]
-            if (payload.get("kind") != "filter" or payload.get("_occurrence_id") != call
-                    or payload.get("_position") != source["row_id"]):
-                raise ValueError("IMLane Filter result does not name its wire occurrence")
-            result = payload["engine_result"]
-            item = input_record(source, columns=self.columns)
-            validate_terminal(result, item, engine_uid=value["worker"].get("engine_uid"))
-            status = result.get("status")
-            if (status not in ("succeeded", "failed", "unknown")
-                    or type(result.get("submission_confirmed")) is not bool
-                    or value.get("status") != ("ok" if status == "succeeded" else "error")
-                    or value.get("completion_known") != (status != "unknown")):
-                raise ValueError("IMLane Filter terminal evidence is inconsistent")
-            results.append(dict(result, imlane_worker=value["worker"]))
-            staged.add(call)
-        self.collected.update(staged)
-        return results
+        raw = rows if type(rows) is list else [rows]
+        declared = {source["call_id"]: source for source in expected}
+        faulty = (type(rows) is not list or len(raw) != len(expected)
+                  or [row.get("call_id") if type(row) is dict else None for row in raw] != list(declared))
+        results, errors = {}, []
+        for row in raw:
+            try:
+                if type(row) is not dict or type(row.get("call_id")) is not str:
+                    raise ValueError("IMLane Filter output occurrence is malformed")
+                call = row["call_id"]
+                source = declared.get(call)
+                if (source is None or row.get("row_id") != source["row_id"] or self.inputs.get(call) != source
+                        or call in self.collected or sum(type(other) is dict and other.get("call_id") == call
+                                                       for other in raw) != 1):
+                    raise ValueError("IMLane Filter output occurrence is foreign, duplicated or contradictory")
+                value = json.loads(row["outcome_json"])
+                if (value.get("protocol") != PROTOCOL or value.get("query_id") != self.query_id
+                        or value.get("stage_id") != source["stage_id"]):
+                    raise ValueError("IMLane Filter output protocol or query differs")
+                payload = value["result"]
+                if (payload.get("kind") != "filter" or payload.get("_occurrence_id") != call
+                        or payload.get("_position") != source["row_id"]):
+                    raise ValueError("IMLane Filter result does not name its wire occurrence")
+                result = payload["engine_result"]
+                item = input_record(source, columns=self.columns)
+                validate_terminal(result, item, engine_uid=value["worker"].get("engine_uid"))
+                status = result["status"]
+                if (value.get("status") != ("ok" if status == "succeeded" else "error")
+                        or value.get("completion_known") != (status != "unknown")):
+                    raise ValueError("IMLane Filter terminal evidence is inconsistent")
+                results[call] = dict(result, imlane_worker=value["worker"])
+                if result.get("imlane_protocol_error"):
+                    faulty = True
+            except (ValueError, TypeError, KeyError, AttributeError) as error:
+                errors.append(error)
+                self.unassociated_results.append(deepcopy(row))
+        values = [results[source["call_id"]] for source in expected if source["call_id"] in results]
+        self.receipts.update(results)
+        if faulty or errors:
+            self.raw_result_batches.append(deepcopy(raw))
+            error = errors[0] if errors else ValueError("IMLane Filter result cardinality, order or model return differs")
+            error.partial_results = values
+            error.unconfirmed_results = [dict(checked_identity(input_record(source, columns=self.columns)),
+                status="unknown", submission_confirmed=False, error_type=type(error).__name__,
+                prompt_tokens=None, completion_tokens=None, total_tokens=None)
+                for source in expected if source["call_id"] not in results]
+            raise error
+        self.collected.update(results)
+        return values

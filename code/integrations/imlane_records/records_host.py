@@ -85,7 +85,17 @@ allocates a model, a worker pool or a vendor scheduler.
                 for block in ready:
                     if block not in self.pending:
                         raise ValueError("IMLane returned an undeclared ready block")
-                    values = self.mapping.decode(self.client.collect(block, deadline=self.deadline), self.pending[block])
+                    collected = self.client.collect(block, deadline=self.deadline)
+                    try:
+                        values = self.mapping.decode(collected, self.pending[block])
+                    except Exception as error:
+                        if not hasattr(error, "partial_results"):
+                            raise
+                        # The block was consumed once. A bad sibling cannot
+                        # hide independently verified terminals in that return.
+                        self.primary = self.primary or error
+                        self.failed = True
+                        values = error.partial_results
                     del self.pending[block]
                     if any(row["status"] != "succeeded" for row in values):
                         self.failed = True
@@ -94,8 +104,8 @@ allocates a model, a worker pool or a vendor scheduler.
                     yield from values
                 self._fill()
             except BaseException as error:
-                self.primary, self.failed = error, True
-                raise
+                self.primary, self.failed = self.primary or error, True
+                raise self.primary
         if self.primary is not None:
             raise self.primary
 

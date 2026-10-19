@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 import uuid
+from copy import deepcopy
 
 import pyarrow as pa
 
@@ -54,6 +55,7 @@ class FilterWorker:
         self.calls = set()
         self.closed = self.broken = False
         self.close_report = None
+        self.receipt_audit_errors = []
         self.uid = uuid.uuid4().hex
 
     def _check(self):
@@ -120,14 +122,18 @@ class FilterWorker:
                     raise ValueError("Filter ready PID differs from its private model child")
                 attempted = True
                 observed = kernel.run_prepared(prepared)
-                if type(observed) is not list or len(observed) != len(prepared):
-                    raise ValueError("Filter engine result cardinality differs")
-                for row, item, original in zip(observed, identities, prepared, strict=True):
+                raw = observed if type(observed) is list else [observed]
+                faulty = (type(observed) is not list or len(raw) != len(prepared)
+                          or [row.get("call_id") if type(row) is dict else None for row in raw]
+                          != [item["call_id"] for item in identities])
+                unassociated, associated, verified = [], [], []
+                for item, original in zip(identities, prepared, strict=True):
+                    matches = [row for row in raw if type(row) is dict and row.get("call_id") == item["call_id"]]
                     submitted = False
                     try:
-                        if type(row) is not dict:
-                            raise ValueError("Filter terminal must be an object")
-                        row = dict(row)
+                        if len(matches) != 1:
+                            raise ValueError("Filter terminal needs one uniquely associated result")
+                        row = dict(matches[0])
                         submitted = (row.get("submission_confirmed") is True and row.get("engine_uid") == ready_uid
                                      and row.get("messages_sha256") == item["messages_sha256"]
                                      and all(row.get(key) == item[key] for key in IDENTITY_FIELDS))
@@ -139,14 +145,32 @@ class FilterWorker:
                         row.setdefault("messages_sha256", item["messages_sha256"])
                         row.update({key: original[key] for key in (
                             "prepare_worker_pid", "prepare_started_ns", "prepare_finished_ns")})
+                        verified.append(row)
                     except Exception as error:
                         # Reject only the unverified item; other verified engine
                         # terminals in this same return retain their known usage.
                         row = self._failure(item, item["messages_sha256"], type(error).__name__, attempted=True,
                                             submitted=submitted)
+                        faulty = True
+                        unassociated.extend(matches)
                     if row["status"] != "succeeded":
                         self.broken = True
-                    results.append((row, attempted))
+                    associated.append(row)
+                declared = {item["call_id"] for item in identities}
+                unassociated.extend(row for row in raw if type(row) is not dict
+                                    or type(row.get("call_id")) is not str or row["call_id"] not in declared)
+                if faulty:
+                    self.broken = True
+                    associated[0]["imlane_protocol_error"] = "ValueError"
+                    from src.baselines.text.frameworks.daft_engine_process import _publish
+                    try:
+                        _publish(self.control / ("filter-audit-" + uuid.uuid4().hex + ".json"), dict(
+                            query_id=self.query_id, engine_uid=ready_uid, expected=identities,
+                            known_receipts=verified,
+                            raw_results=deepcopy(raw), unassociated_results=deepcopy(unassociated)))
+                    except Exception as error:
+                        self.receipt_audit_errors.append("filter_receipt_audit: " + type(error).__name__)
+                results.extend((row, attempted) for row in associated)
             except Exception as error:
                 self.broken = True
                 # A later subbatch cannot erase a previously observed terminal.
@@ -170,6 +194,8 @@ class FilterWorker:
         if self.closed:
             return self.close_report
         report = close_owned_model(self.kernel, attempted=self.kernel_initialization_attempted)
+        if self.receipt_audit_errors:
+            report = dict(report, receipt_audit_errors=list(self.receipt_audit_errors))
         self.close_report = report
         # Failed close remains retryable and keeps its engine handle.
         self.closed = model_closed(report)
