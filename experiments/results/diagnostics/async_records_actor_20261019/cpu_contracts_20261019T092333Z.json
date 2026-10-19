@@ -1,0 +1,60 @@
+{
+  "run_id": "cpu_contracts_20261019T092333Z",
+  "started_utc": "2026-10-19T09:23:33.801102+00:00",
+  "ended_utc": "2026-10-19T09:23:46.879012+00:00",
+  "exit_code": 0,
+  "source_commit": "a69ceb467fbdab034a458ee9b32da465f95fcd63",
+  "dependency_commit": "8e7f921a36d82b257247b74f05921bfc4064e2d2",
+  "branch": "work/async-records-wiring",
+  "source_unchanged_during_run": true,
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "c1a895276597e78e3c5d786f24555d4bec6e06428c627fbf9de3ee53bd82d64f",
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py": "f7926916efb61e223143471df5cd912422b013e2347a0d8b5ea608c1cf89219b",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "4da87831d75addc8fa0e4affce4439d50d5c3574e53b6eb3cdfc3ca467d48f6a",
+    "code/src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+    "code/src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+    "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+    "code/tests/execution_provider/test_lotus_records_actor_owner.py": "d0a069ee362f346693630ff32aa82616edb7e0c67311aa287846f6d62207e1ad",
+    "code/tests/execution_provider/test_lotus_records_async_actor.py": "72717391b776e357b2db1e4420cd0d7ddd5ea566158d49914b5cbeb04ce2260f",
+    "code/tests/execution_provider/test_lotus_records_async_core.py": "5c652934c58051a4af4083f498e6b9808732c189e844c17c806c44a53b52ae69",
+    "code/tests/execution_provider/test_lotus_records_core.py": "882de9e9614ed6b43f62e5045f1ed097f52e4f30bb30b83f9e5bbb0469fd4f75",
+    "code/tests/execution_provider/test_lotus_records_static.py": "041f5eb3004e1fe730396acb0043e56386e790e6f8fa32e2a31a7e030d94ad03",
+    "code/tests/scheduling/test_async_backend.py": "9f181591486f554f90999f602a1328483bb580e665a36f7db5178625ff04203b",
+    "code/tests/serving/async_engine_fixture.py": "35e92d1c56ffed6208c662bd861cb08f6f673dcf787a82d970e555bb491941e2",
+    "code/tests/serving/test_async_engine_close_faults.py": "3b105cfda981a7e0cadc1b544e7a18ed7eebbfc105fa269ba727893f62af443a",
+    "code/tests/serving/test_async_engine_process.py": "8bcfd15d4291f26c6b31c16f32b87f8d60953b342bb8b1e760ea2b24974b63e4",
+    "code/tests/serving/test_vllm_async_engine.py": "688b5f300f86dd1602985dbb14cdd5e34c09983b25cdb78f6e24b768533935c6"
+  },
+  "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python -m pytest -q -p no:cacheprovider code/tests/execution_provider/test_lotus_records_async_actor.py code/tests/execution_provider/test_lotus_records_async_core.py code/tests/execution_provider/test_lotus_records_actor_owner.py code/tests/execution_provider/test_lotus_records_core.py code/tests/execution_provider/test_lotus_records_static.py code/tests/scheduling/test_async_backend.py code/tests/serving/test_async_engine_process.py code/tests/serving/test_async_engine_close_faults.py code/tests/serving/test_vllm_async_engine.py",
+  "environment": {
+    "python": "3.12.6",
+    "ray": "2.56.1",
+    "pytest": "9.1.1",
+    "pyarrow": "24.0.0",
+    "existing_venv": true,
+    "installation_performed": false
+  },
+  "execution": {
+    "actual_child_socket_transport": true,
+    "production_session_engine": true,
+    "ray": "explicit stub",
+    "daft": "explicit stub in Core tests",
+    "formatter": "explicit prepared-message fixture",
+    "physical_model_inference_calls": 0,
+    "logical_ray_gpus": 0,
+    "server_access": false,
+    "model_runtime_qualified": false,
+    "actual_library_scope": "Core/actor/IPC contracts plus existing synchronous/Core regressions"
+  },
+  "output_path": "raw/cpu_contracts_20261019T092333Z.txt.gz",
+  "output_compression": "gzip of redacted, path-normalized stdout; exact retained bytes",
+  "output_sha256": "9edbf4526daea33583cd2a6bb5117cd6caa91e88bcefec8db030aabd5f1c1f3d",
+  "uncompressed_output_sha256": "37ffe8fc762ebe7bd968a2746cf0b6721cc9bdecc6f0eaac511b74e62d5541a1",
+  "uncompressed_output_bytes": 241,
+  "output_summary": "127 passed, 40 subtests passed in 12.85s",
+  "pending": [
+    "real vLLM/model/GPU and descendants qualification",
+    "full-query continuous-supply/performance",
+    "public selector integration owned by the integration thread"
+  ]
+}

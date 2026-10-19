@@ -1,0 +1,53 @@
+{
+  "run_id": "real_ray_cpu_20261019T093254Z",
+  "started_utc": "2026-10-19T09:32:54.976542+00:00",
+  "ended_utc": "2026-10-19T09:33:03.417889+00:00",
+  "exit_code": 0,
+  "source_commit": "a66648d53934eddad0bbe60ed865246068f68ee2",
+  "dependency_commit": "90fe33995ab72ed9e3911ae65c7b9ad6a414e944",
+  "branch": "work/async-records-wiring",
+  "source_unchanged_during_run": true,
+  "source_sha256": {
+    "code/src/execution_provider/adapters/lotus_records_actor_owner.py": "13b798a687dee0ff6257cd411dcd93b1172037cc08bcfaf496a369ff6519066f",
+    "code/src/execution_provider/adapters/lotus_records_async_actor.py": "70f86925764aac4952a1bde5e9ed72a3d4b4f246690ed66f17a8afa4987fcd22",
+    "code/src/execution_provider/adapters/lotus_records_core.py": "4da87831d75addc8fa0e4affce4439d50d5c3574e53b6eb3cdfc3ca467d48f6a",
+    "code/src/serving/backends/async_engine_process.py": "4a525c3dd53b7179f08b99aec34786f317f0cfddf937645eb71f3561bd520e01",
+    "code/src/serving/backends/vllm_async_engine.py": "b47dfaa455164f3eded707f1912f9d6a0d72a2f6be3495b99f05dc0121a262e7",
+    "code/src/serving/backends/vllm_engine.py": "70682539b13088859f9f88960993a41b97ad4ef8e9db67ad0154c5c369a0d215",
+    "code/tests/execution_provider/test_lotus_records_async_actor_libraries.py": "9746a353e11209f106cb04f1e435e6c442cb25966f922f2aae628fd6c0394c4c",
+    "code/tests/execution_provider/test_lotus_records_core.py": "882de9e9614ed6b43f62e5045f1ed097f52e4f30bb30b83f9e5bbb0469fd4f75",
+    "code/tests/serving/async_engine_fixture.py": "35e92d1c56ffed6208c662bd861cb08f6f673dcf787a82d970e555bb491941e2"
+  },
+  "command": "RUN_ASYNC_RECORDS_CPU_LIBRARIES=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=code python -m pytest -q -p no:cacheprovider code/tests/execution_provider/test_lotus_records_async_actor_libraries.py",
+  "environment": {
+    "python": "3.12.6",
+    "ray": "2.56.1",
+    "pytest": "9.1.1",
+    "pyarrow": "24.0.0",
+    "existing_venv": true,
+    "installation_performed": false
+  },
+  "execution": {
+    "actual_child_socket_transport": true,
+    "production_session_engine": false,
+    "ray": "actual 2.56.1 local threaded actor",
+    "daft": "unused",
+    "formatter": "explicit prepared-message fixture",
+    "physical_model_inference_calls": 0,
+    "logical_ray_gpus": 0,
+    "server_access": false,
+    "model_runtime_qualified": false,
+    "actual_library_scope": "actor/IPC only; Core composition covered separately"
+  },
+  "output_path": "raw/real_ray_cpu_20261019T093254Z.txt.gz",
+  "output_compression": "gzip of redacted, path-normalized stdout; exact retained bytes",
+  "output_sha256": "3df5ce334a27eaa96f391f297fb9213a0bad035ff16ce7066f5ea5d36876c31d",
+  "uncompressed_output_sha256": "b1024fa89b4d832dc38a41b84dbb8009790f068d83345a4a86e38edc14e2102f",
+  "uncompressed_output_bytes": 98,
+  "output_summary": "1 passed in 8.13s",
+  "pending": [
+    "real vLLM/model/GPU and descendants qualification",
+    "full-query continuous-supply/performance",
+    "public selector integration owned by the integration thread"
+  ]
+}
